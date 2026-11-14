@@ -283,3 +283,8 @@ mismatches = ["0:P", "1:P", "2:P"]
 id = "conic-center-010"
 reason = "GeoGebra treats a radius smaller in magnitude than 1e-8 as 0 (the data probes 5e-9) for Circle(A, r); the built-in circle keeps the radius"
 mismatches = ["1:k"]
+
+[[gap]]
+id = "conic-diameter-007"
+reason = "GeoGebra computes Diameter from the circle matrix without checking that the circle is defined, so with a negative radius it returns the diameter from the stale matrix of the last defined circle; the kernel has no such state and reports the diameter of an undefined circle as undefined"
+mismatches = ["1:g", "4:g"]

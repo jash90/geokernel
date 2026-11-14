@@ -76,6 +76,15 @@ for _ in range(2):
                    "O = Center(k)", "m = Circle(O, A)", "M = Midpoint(k)"],
          [mv("C", *on_line(a, b, 0.5)), mv("C", *rp()), mv("B", *a), mv("B", *rp())])
 
+# tiny-offset coincidence for the A = C and B = C pairs
+for mover, other in (("C", "A"), ("C", "B")):
+    pts = {"A": (0.0, 0.0), "B": (5.0, 1.0), "C": (2.0, 4.0)}
+    o = pts[other]
+    case("three", [pt("A", *pts["A"]), pt("B", *pts["B"]), pt("C", *pts["C"]),
+                   "k = Circle(A, B, C)"],
+         [mv(mover, o[0] + 5e-9, o[1]), mv(mover, o[0] + 2e-8, o[1]),
+          mv(mover, o[0], o[1] + 5e-9), mv(mover, *pts["C"])])
+
 # ------------------------------------------- Circle with a segment as radius
 topic("segrad")
 for _ in range(4):
@@ -100,6 +109,12 @@ p, b, c = rp(), rp(), rp()
 case("segrad", [pt("P", *p), pt("B", *b), pt("C", *c), "M = Midpoint(B, C)",
                 "s = Segment(B, M)", "k = Circle(P, s)"],
      [mv("C", *b), mv("C", *rp()), mv("P", *b)])
+
+# the end point of the segment is a derived point that becomes undefined
+case("segrad", [pt("A", 0, 0), pt("B", 5, 1), pt("C", 2, 4), pt("P", -3, 2),
+                "k = Circle(A, B, C)", "O = Center(k)", "s = Segment(P, O)",
+                "m = Circle(B, s)"],
+     [mv("C", 10, 2), mv("C", 2, 4), mv("B", 0, 0), mv("B", 5, 1)])
 
 # ------------------------------------------------------------------ Incircle
 topic("incircle")
@@ -133,6 +148,11 @@ for scale in (1000.0, 0.001):
     case("incircle", [pt("A", 0, 0), pt("B", scale, 0), pt("C", scale * 0.3, scale * 0.8),
                       "k = Incircle(A, B, C)"],
          [mv("C", scale * 0.5, scale * 1e-6), mv("C", scale * 0.3, scale * 0.8)])
+
+# tiny-offset coincidence for Incircle
+case("incircle", [pt("A", 0, 0), pt("B", 5, 1), pt("C", 2, 4), "k = Incircle(A, B, C)"],
+     [mv("C", 5e-9, 0), mv("C", 2e-8, 0), mv("C", 5.000000005, 1), mv("C", 5.00000002, 1),
+      mv("C", 2, 4)])
 
 # --------------------------------------------------- Center / Midpoint(circle)
 topic("center")
@@ -178,6 +198,12 @@ case("midseg", [pt("A", *a), pt("B", *b), "s = Segment(B, A)", "M = Midpoint(s)"
                 "t = Segment(M, A)", "N = Midpoint(t)"],
      [mv("B", *a), mv("B", *rp()), mv("A", *rp())])
 
+# the segment end point is a derived point that becomes undefined
+case("midseg", [pt("A", 0, 0), pt("B", 5, 1), pt("C", 2, 4), pt("P", -3, 2),
+                "k = Circle(A, B, C)", "O = Center(k)", "s = Segment(P, O)",
+                "M = Midpoint(s)"],
+     [mv("C", 10, 2), mv("C", 2, 4), mv("B", 0, 0), mv("B", 5, 1)])
+
 # --------------------------------------------------------- Diameter(line, circle)
 topic("diameter")
 for _ in range(3):
@@ -190,5 +216,25 @@ a, b, c = tri()
 case("diameter", [pt("A", *a), pt("B", *b), pt("C", *c), "s = Segment(A, B)",
                   num("r", 3), "k = Circle(C, r)", "g = Diameter(s, k)"],
      [setn("r", 0), setn("r", 2), mv("B", *a), mv("B", *rp())])
+
+# the line becomes undefined and defined again
+case("diameter", [pt("A", 1, 1), pt("B", 4, 3), pt("C", -2, 0), pt("D", 1, -3),
+                  "f = Line(A, B)", "k = Circle(C, D)", "g = Diameter(f, k)"],
+     [mv("B", 1, 1), mv("B", 4, 3), mv("A", 4, 3), mv("A", 1, 1)])
+
+# a three-point circle driven collinear and back
+case("diameter", [pt("A", 0, 0), pt("B", 5, 1), pt("C", 2, 4), pt("P", 1, 1), pt("Q", 4, 3),
+                  "f = Line(P, Q)", "k = Circle(A, B, C)", "g = Diameter(f, k)"],
+     [mv("C", 10, 2), mv("C", 2, 4), mv("B", 0, 0), mv("B", 5, 1), mv("C", 0, 0), mv("C", 2, 4)])
+
+# a negative radius and back
+case("diameter", [pt("A", 1, 1), pt("B", 4, 3), pt("C", -2, 0), num("r", 2),
+                  "f = Line(A, B)", "k = Circle(C, r)", "g = Diameter(f, k)"],
+     [setn("r", -1), setn("r", 2), setn("r", 0), setn("r", -3), setn("r", 1.5)])
+
+# a segment driven to length 0 and to a tiny length
+case("diameter", [pt("A", 1, 1), pt("B", 4, 3), pt("C", -2, 0), num("r", 2),
+                  "s = Segment(A, B)", "k = Circle(C, r)", "g = Diameter(s, k)"],
+     [mv("B", 1, 1), mv("B", 4, 3), mv("B", 1 + 5e-9, 1), mv("B", 1 + 2e-8, 1), mv("B", 4, 3)])
 
 cases.write()

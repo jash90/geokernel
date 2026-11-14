@@ -7,6 +7,11 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDiameterLine.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoSphereNDPointRadius.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/kernelND/GeoConicND.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/kernelND/GeoQuadricND.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoPoint.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoVec3D.java
+//   source/shared/common/src/main/java/org/geogebra/common/util/MyMath.java
+//   source/shared/common/src/main/java/org/geogebra/common/util/DoubleUtil.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
