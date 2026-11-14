@@ -175,10 +175,12 @@ final class Session {
         switch (m.group(1)) {
             case "Line":
             case "PerpendicularLine":
+            case "Diameter":
                 return "line";
             case "Segment":
                 return "segment";
             case "Midpoint":
+            case "Center":
             case "Intersect":
                 return "point";
             case "Distance":
@@ -193,6 +195,7 @@ final class Session {
             case "Angle":
                 return "number";
             case "Circle":
+            case "Incircle":
                 return "circle";
             default:
                 throw new IllegalArgumentException("unsupported command: " + definition);
