@@ -58,7 +58,12 @@ For every case `GoldenGenerator`:
    `AlgebraProcessor.processAlgebraCommandNoExceptionHandling` and an error
    handler that throws; it checks that each line creates exactly one object
    with the requested label and the expected class, and that free points and
-   numbers are independent;
+   numbers are independent. A command with several outputs (`Tangent(P, c)`,
+   `AngularBisector(g, h)`) is recorded under the labels GeoGebra gives its
+   outputs: `t_{1}`, `t_{2}` when two or more are defined at creation, the
+   plain label when only one is; unlabelled outputs are not recorded. The
+   Rust loader still requires the labels of a snapshot to be exactly the
+   left-hand sides of the script, so only the single-label states load;
 3. records a snapshot, then applies each step and records a snapshot after it.
    `move` calls `GeoPoint.setCoords(x, y, 1)` and `updateCascade()`;
    `set_number` calls `GeoNumeric.setValue` (it fails if GeoGebra clamps the

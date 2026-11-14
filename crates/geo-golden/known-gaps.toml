@@ -400,3 +400,25 @@ mismatches = ["0:m", "1:m", "3:m", "5:m", "6:m", "7:m"]
 id = "transform-stretch-025"
 reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
 mismatches = ["0:m", "1:m", "2:m", "3:m", "6:m", "7:m"]
+
+# lines
+
+[[gap]]
+id = "lines-oncircle-005"
+reason = "the point starts on the circle, so GeoGebra labels one tangent and its helper intersection keeps near-to state until the point has left the circle twice; which tangent t then follows depends on the path, while the kernel always follows the first (left) tangent"
+mismatches = ["4:t", "7:t", "8:t"]
+
+[[gap]]
+id = "lines-oncircle-006"
+reason = "the point starts on the circle, so GeoGebra labels one tangent and its helper intersection keeps near-to state until the point has left the circle twice; which tangent t then follows depends on the path, while the kernel always follows the first (left) tangent"
+mismatches = ["2:t", "3:t", "4:t", "6:t", "7:t"]
+
+[[gap]]
+id = "lines-oncircle-007"
+reason = "the point starts on the circle, so GeoGebra labels one tangent and its helper intersection keeps near-to state until the point has left the circle twice; which tangent t then follows depends on the path, while the kernel always follows the first (left) tangent"
+mismatches = ["3:t", "4:t", "5:t", "6:t", "7:t", "8:t"]
+
+[[gap]]
+id = "lines-oncircle-008"
+reason = "the point starts on the circle, so GeoGebra labels one tangent and its helper intersection keeps near-to state until the point has left the circle twice; which tangent t then follows depends on the path, while the kernel always follows the first (left) tangent"
+mismatches = ["2:t", "3:t", "4:t", "5:t", "6:t", "8:t"]

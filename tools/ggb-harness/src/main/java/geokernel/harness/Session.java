@@ -74,6 +74,9 @@ final class Session {
         }
         GeoElementND[] out = processor.processAlgebraCommandNoExceptionHandling(
                 line, false, new ThrowingErrorHandler(line), false, null);
+        if (out != null && out.length > 1 && transformed == null) {
+            return runMulti(line, expected, out);
+        }
         // A transformed segment with labelled end points also creates the two
         // image points; the segment is the first output. Any other object
         // gives exactly one output.
@@ -100,6 +103,46 @@ final class Session {
         }
         objects.put(label, geo);
         return geo;
+    }
+
+    /**
+     * Records the objects of a command that creates several (for example
+     * the two tangents of `Tangent(P, c)`) under the labels GeoGebra gave
+     * them. GeoGebra labels only the outputs that are defined when the line
+     * runs (two or more get indexed labels such as `t_{1}`, a single one the
+     * plain label); the others stay unlabelled and are not recorded. At least
+     * one output must be labelled.
+     */
+    private GeoElement runMulti(String line, String expected, GeoElementND[] out) {
+        GeoElement first = null;
+        for (GeoElementND nd : out) {
+            GeoElement geo = nd.toGeoElement();
+            if (!geo.isLabelSet()) {
+                continue;
+            }
+            String label = geo.getLabelSimple();
+            if (kernel.lookupLabel(label) != geo) {
+                throw new IllegalStateException("GeoGebra labelled an object of '" + line
+                        + "' as " + label + " but cannot look it up");
+            }
+            if (objects.containsKey(label)) {
+                throw new IllegalArgumentException("label used twice: " + label);
+            }
+            String actual = typeOf(geo);
+            if (!expected.equals(actual)) {
+                throw new IllegalStateException("expected a " + expected + " from '" + line
+                        + "', got " + geo.getClass().getSimpleName());
+            }
+            objects.put(label, geo);
+            if (first == null) {
+                first = geo;
+            }
+        }
+        if (first == null) {
+            throw new IllegalStateException("no object of '" + line
+                    + "' is labelled; at least one output must be defined when it is created");
+        }
+        return first;
     }
 
     /** Moves a free point and updates everything that depends on it. */
@@ -210,6 +253,13 @@ final class Session {
             case "Line":
             case "PerpendicularLine":
             case "Diameter":
+            case "OrthogonalLine":
+            case "LineBisector":
+            case "PerpendicularBisector":
+            case "AngularBisector":
+            case "AngleBisector":
+            case "Tangent":
+            case "Polar":
                 return "line";
             case "Segment":
                 return "segment";
