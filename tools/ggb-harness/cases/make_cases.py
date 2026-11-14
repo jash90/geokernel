@@ -17,7 +17,7 @@ import random
 from pathlib import Path
 
 GROUP = "geometry"
-rng = random.Random(20261114)
+rng = random.Random()
 cases = []
 counters = {}
 
@@ -56,6 +56,14 @@ def case(topic, script, steps):
     })
 
 
+def topic(name):
+    """Starts a topic: re-seeds so each topic's values do not depend on others.
+
+    New cases go at the end of their topic so existing ids keep their meaning.
+    """
+    rng.seed(f"{GROUP}-{name}", version=2)
+
+
 def r2(lo=-8.0, hi=8.0):
     return round(rng.uniform(lo, hi), 2)
 
@@ -65,6 +73,7 @@ def rp(lo=-8.0, hi=8.0):
 
 
 # ------------------------------------------------------------------ basic
+topic("basic")
 for _ in range(10):
     a, b = rp(), rp()
     script = [pt("A", *a), pt("B", *b), "M = Midpoint(A, B)", "d = Distance(A, B)",
@@ -94,7 +103,15 @@ for scale in (1000.0, 0.001, 123.456, 0.37, 54321.0):
                    "s = Segment(A, B)", "f = Line(A, B)"],
          [mv("B", -b[0], b[1]), mv("A", b[0] * 0.5, -a[1])])
 
+# coincident points at creation (Line(A, B) starts undefined, so it is a leaf)
+for _ in range(5):
+    a = rp()
+    case("basic", [pt("A", *a), pt("B", *a), "M = Midpoint(A, B)", "d = Distance(A, B)",
+                   "s = Segment(A, B)", "k = Circle(A, B)", "f = Line(A, B)"],
+         [mv("B", *rp()), mv("A", *rp()), mv("A", *a), mv("B", *a)])
+
 # ------------------------------------------------------------------- line
+topic("line")
 for _ in range(12):
     a, b = rp(), rp()
     steps = [mv("B", a[0], b[1]),          # horizontal
@@ -116,6 +133,7 @@ for _ in range(4):
          [mv("B", *rp()), mv("B", a[0], a[1]), mv("B", *rp())])
 
 # ------------------------------------------------------------ perpendicular
+topic("perp")
 for kind in ("line",) * 8 + ("segment",) * 6:
     a, b, c = rp(), rp(), rp()
     base = "f = Line(A, B)" if kind == "line" else "f = Segment(A, B)"
@@ -139,6 +157,7 @@ for _ in range(3):
          [mv("D", *c), mv("C", *rp()), mv("B", *rp())])
 
 # --------------------------------------------------------------- parallel
+topic("parallel")
 for kind in ("line",) * 8 + ("segment",) * 6:
     a, b, c = rp(), rp(), rp()
     base = "f = Line(A, B)" if kind == "line" else "f = Segment(A, B)"
@@ -161,6 +180,7 @@ for _ in range(3):
          [mv("D", *c), mv("C", *rp()), mv("A", *rp())])
 
 # ----------------------------------------------------------------- circle
+topic("circle")
 for _ in range(8):
     a, b = rp(), rp()
     case("circle", [pt("A", *a), pt("B", *b), "k = Circle(A, B)"],
@@ -185,7 +205,14 @@ for _ in range(4):
                     "k = Circle(M, C)", "h = Circle(C, M)"],
          [mv("C", *rp()), mv("A", *rp()), mv("C", (a[0] + b[0]) / 2, (a[1] + b[1]) / 2)])
 
+# zero and negative radius at creation
+for r in (0, 0, -1.5, -0.25, -3):
+    a = rp()
+    case("circle", [pt("A", *a), num("r", r), "k = Circle(A, r)"],
+         [setn("r", 2.5), setn("r", 0), setn("r", -r if r else 1), mv("A", *rp())])
+
 # ---------------------------------------------------------- line x line
+topic("ixll")
 for _ in range(10):
     a, b, c, d = rp(), rp(), rp(), rp()
     dx, dy = b[0] - a[0], b[1] - a[1]
@@ -224,6 +251,7 @@ for _ in range(4):
          [mv("D", *rp()), mv("B", *rp()), mv("A", *c)])
 
 # -------------------------------------------------------- line x circle
+topic("ixlc")
 for _ in range(12):
     a = rp(-4, 4)
     r = round(rng.uniform(1, 5), 2)
@@ -276,7 +304,19 @@ for _ in range(4):
                   "f = Line(C, D)", "P = Intersect(f, k, 1)", "Q = Intersect(f, k, 2)"],
          [mv("D", *c), mv("D", *rp()), mv("C", *a)])
 
+# tangent and disjoint at creation (undefined intersections stay leaves)
+for gap in (0, 0, 0, 0, 0.75, 0.75, 2.5, 2.5):
+    a = rp(-3, 3)
+    r = round(rng.uniform(1, 4), 2)
+    y0 = a[1] + r + gap
+    case("ixlc", [pt("A", *a), num("r", r), "k = Circle(A, r)", pt("C", a[0] - 5, y0),
+                  pt("D", a[0] + 5, y0), "f = Line(C, D)", "P = Intersect(f, k, 1)",
+                  "Q = Intersect(f, k, 2)"],
+         [mv("C", a[0] - 5, a[1]), mv("D", a[0] + 5, a[1] + 0.5),
+          mv("C", a[0] - 5, y0), mv("D", a[0] + 5, y0)])
+
 # ------------------------------------------------------ circle x circle
+topic("ixcc")
 for _ in range(10):
     a = rp(-3, 3)
     ang = rng.uniform(0, 2 * math.pi)
@@ -332,6 +372,7 @@ for _ in range(4):
          [mv("B", *rp()), mv("A", *rp()), mv("B", *rp())])
 
 # ------------------------------------------------------------------ chain
+topic("chain")
 for _ in range(5):
     a, b = rp(-2, 2), rp(4, 9)
     script = [pt("A", *a), pt("B", *b),
