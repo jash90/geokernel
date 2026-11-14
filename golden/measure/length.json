@@ -1,0 +1,291 @@
+{
+  "schema": 1,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "measure-length-001",
+      "group": "measure",
+      "script": [
+        "A = (6.6, -6.89)",
+        "B = (-4.96, 1.99)",
+        "s = Segment(A, B)",
+        "d = Length(s)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": -3.33, "y": -3.61 },
+        { "action": "move", "label": "B", "x": 7.34, "y": -2.69 },
+        { "action": "move", "label": "B", "x": 6.6, "y": -6.89 },
+        { "action": "move", "label": "B", "x": 0.18, "y": -0.24 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 6.6, "y": -6.89 },
+          "B": { "type": "point", "defined": true, "x": -4.96, "y": 1.99 },
+          "s": { "type": "segment", "defined": true, "x1": 6.6, "y1": -6.89, "x2": -4.96, "y2": 1.99 },
+          "d": { "type": "number", "defined": true, "value": 14.57696813469797 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.33, "y": -3.61 },
+          "B": { "type": "point", "defined": true, "x": -4.96, "y": 1.99 },
+          "s": { "type": "segment", "defined": true, "x1": -3.33, "y1": -3.61, "x2": -4.96, "y2": 1.99 },
+          "d": { "type": "number", "defined": true, "value": 5.832400877854677 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.33, "y": -3.61 },
+          "B": { "type": "point", "defined": true, "x": 7.34, "y": -2.69 },
+          "s": { "type": "segment", "defined": true, "x1": -3.33, "y1": -3.61, "x2": 7.34, "y2": -2.69 },
+          "d": { "type": "number", "defined": true, "value": 10.70958916112098 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.33, "y": -3.61 },
+          "B": { "type": "point", "defined": true, "x": 6.6, "y": -6.89 },
+          "s": { "type": "segment", "defined": true, "x1": -3.33, "y1": -3.61, "x2": 6.6, "y2": -6.89 },
+          "d": { "type": "number", "defined": true, "value": 10.457690949726905 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.33, "y": -3.61 },
+          "B": { "type": "point", "defined": true, "x": 0.18, "y": -0.24 },
+          "s": { "type": "segment", "defined": true, "x1": -3.33, "y1": -3.61, "x2": 0.18, "y2": -0.24 },
+          "d": { "type": "number", "defined": true, "value": 4.865901766373835 }
+        }
+      ]
+    },
+    {
+      "id": "measure-length-002",
+      "group": "measure",
+      "script": [
+        "A = (7.37, -0.07)",
+        "B = (6.75, 2.57)",
+        "s = Segment(A, B)",
+        "d = Length(s)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": -1.23, "y": 7.33 },
+        { "action": "move", "label": "B", "x": -4.74, "y": 4.89 },
+        { "action": "move", "label": "B", "x": 7.37, "y": -0.07 },
+        { "action": "move", "label": "B", "x": 7.03, "y": 6.82 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 7.37, "y": -0.07 },
+          "B": { "type": "point", "defined": true, "x": 6.75, "y": 2.57 },
+          "s": { "type": "segment", "defined": true, "x1": 7.37, "y1": -0.07, "x2": 6.75, "y2": 2.57 },
+          "d": { "type": "number", "defined": true, "value": 2.7118259531171978 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.23, "y": 7.33 },
+          "B": { "type": "point", "defined": true, "x": 6.75, "y": 2.57 },
+          "s": { "type": "segment", "defined": true, "x1": -1.23, "y1": 7.33, "x2": 6.75, "y2": 2.57 },
+          "d": { "type": "number", "defined": true, "value": 9.291824363385267 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.23, "y": 7.33 },
+          "B": { "type": "point", "defined": true, "x": -4.74, "y": 4.89 },
+          "s": { "type": "segment", "defined": true, "x1": -1.23, "y1": 7.33, "x2": -4.74, "y2": 4.89 },
+          "d": { "type": "number", "defined": true, "value": 4.274774847872108 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.23, "y": 7.33 },
+          "B": { "type": "point", "defined": true, "x": 7.37, "y": -0.07 },
+          "s": { "type": "segment", "defined": true, "x1": -1.23, "y1": 7.33, "x2": 7.37, "y2": -0.07 },
+          "d": { "type": "number", "defined": true, "value": 11.345483682946268 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.23, "y": 7.33 },
+          "B": { "type": "point", "defined": true, "x": 7.03, "y": 6.82 },
+          "s": { "type": "segment", "defined": true, "x1": -1.23, "y1": 7.33, "x2": 7.03, "y2": 6.82 },
+          "d": { "type": "number", "defined": true, "value": 8.275729575088834 }
+        }
+      ]
+    },
+    {
+      "id": "measure-length-003",
+      "group": "measure",
+      "script": [
+        "A = (-2.74, 4.36)",
+        "B = (0.43, 7.85)",
+        "s = Segment(A, B)",
+        "d = Length(s)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": -7.01, "y": -5.8 },
+        { "action": "move", "label": "B", "x": 6.59, "y": -5.61 },
+        { "action": "move", "label": "B", "x": -2.74, "y": 4.36 },
+        { "action": "move", "label": "B", "x": -1.41, "y": -2.49 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -2.74, "y": 4.36 },
+          "B": { "type": "point", "defined": true, "x": 0.43, "y": 7.85 },
+          "s": { "type": "segment", "defined": true, "x1": -2.74, "y1": 4.36, "x2": 0.43, "y2": 7.85 },
+          "d": { "type": "number", "defined": true, "value": 4.714764044997374 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.01, "y": -5.8 },
+          "B": { "type": "point", "defined": true, "x": 0.43, "y": 7.85 },
+          "s": { "type": "segment", "defined": true, "x1": -7.01, "y1": -5.8, "x2": 0.43, "y2": 7.85 },
+          "d": { "type": "number", "defined": true, "value": 15.545935160034599 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.01, "y": -5.8 },
+          "B": { "type": "point", "defined": true, "x": 6.59, "y": -5.61 },
+          "s": { "type": "segment", "defined": true, "x1": -7.01, "y1": -5.8, "x2": 6.59, "y2": -5.61 },
+          "d": { "type": "number", "defined": true, "value": 13.601327141128545 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.01, "y": -5.8 },
+          "B": { "type": "point", "defined": true, "x": -2.74, "y": 4.36 },
+          "s": { "type": "segment", "defined": true, "x1": -7.01, "y1": -5.8, "x2": -2.74, "y2": 4.36 },
+          "d": { "type": "number", "defined": true, "value": 11.020821203521995 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.01, "y": -5.8 },
+          "B": { "type": "point", "defined": true, "x": -1.41, "y": -2.49 },
+          "s": { "type": "segment", "defined": true, "x1": -7.01, "y1": -5.8, "x2": -1.41, "y2": -2.49 },
+          "d": { "type": "number", "defined": true, "value": 6.505082628222334 }
+        }
+      ]
+    },
+    {
+      "id": "measure-length-004",
+      "group": "measure",
+      "script": [
+        "A = (0.44, -2.68)",
+        "B = (4.34, 4.44)",
+        "s = Segment(A, B)",
+        "d = Length(s)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": 6.2, "y": -3.09 },
+        { "action": "move", "label": "B", "x": 2.72, "y": 2.86 },
+        { "action": "move", "label": "B", "x": 0.44, "y": -2.68 },
+        { "action": "move", "label": "B", "x": -7.12, "y": -3.82 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.44, "y": -2.68 },
+          "B": { "type": "point", "defined": true, "x": 4.34, "y": 4.44 },
+          "s": { "type": "segment", "defined": true, "x1": 0.44, "y1": -2.68, "x2": 4.34, "y2": 4.44 },
+          "d": { "type": "number", "defined": true, "value": 8.118152499183543 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 6.2, "y": -3.09 },
+          "B": { "type": "point", "defined": true, "x": 4.34, "y": 4.44 },
+          "s": { "type": "segment", "defined": true, "x1": 6.2, "y1": -3.09, "x2": 4.34, "y2": 4.44 },
+          "d": { "type": "number", "defined": true, "value": 7.756320003713101 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 6.2, "y": -3.09 },
+          "B": { "type": "point", "defined": true, "x": 2.72, "y": 2.86 },
+          "s": { "type": "segment", "defined": true, "x1": 6.2, "y1": -3.09, "x2": 2.72, "y2": 2.86 },
+          "d": { "type": "number", "defined": true, "value": 6.892960176876114 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 6.2, "y": -3.09 },
+          "B": { "type": "point", "defined": true, "x": 0.44, "y": -2.68 },
+          "s": { "type": "segment", "defined": true, "x1": 6.2, "y1": -3.09, "x2": 0.44, "y2": -2.68 },
+          "d": { "type": "number", "defined": true, "value": 5.774573577330191 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 6.2, "y": -3.09 },
+          "B": { "type": "point", "defined": true, "x": -7.12, "y": -3.82 },
+          "s": { "type": "segment", "defined": true, "x1": 6.2, "y1": -3.09, "x2": -7.12, "y2": -3.82 },
+          "d": { "type": "number", "defined": true, "value": 13.33998875561745 }
+        }
+      ]
+    },
+    {
+      "id": "measure-length-005",
+      "group": "measure",
+      "script": [
+        "A = (0, 0)",
+        "B = (3, 4)",
+        "s = Segment(A, B)",
+        "d = Length(s)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 1.0E-6, "y": 0.0 },
+        { "action": "move", "label": "A", "x": 1000000.0, "y": -2000000.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 4.0 },
+          "d": { "type": "number", "defined": true, "value": 5.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 4.0 },
+          "d": { "type": "number", "defined": true, "value": 5.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0E-6, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "s": { "type": "segment", "defined": true, "x1": 1.0E-6, "y1": 0.0, "x2": 3.0, "y2": 4.0 },
+          "d": { "type": "number", "defined": true, "value": 4.999999400000064 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1000000.0, "y": -2000000.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "s": { "type": "segment", "defined": true, "x1": 1000000.0, "y1": -2000000.0, "x2": 3.0, "y2": 4.0 },
+          "d": { "type": "number", "defined": true, "value": 2236070.213572239 }
+        }
+      ]
+    },
+    {
+      "id": "measure-length-006",
+      "group": "measure",
+      "script": [
+        "A = (0.001, 0.002)",
+        "B = (0.004, -0.001)",
+        "s = Segment(A, B)",
+        "d = Length(s)",
+        "t = Length(s)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 0.001, "y": 0.002 },
+        { "action": "move", "label": "B", "x": 100000.0, "y": 50000.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.001, "y": 0.002 },
+          "B": { "type": "point", "defined": true, "x": 0.004, "y": -0.001 },
+          "s": { "type": "segment", "defined": true, "x1": 0.001, "y1": 0.002, "x2": 0.004, "y2": -0.001 },
+          "d": { "type": "number", "defined": true, "value": 0.004242640687119286 },
+          "t": { "type": "number", "defined": true, "value": 0.004242640687119286 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.001, "y": 0.002 },
+          "B": { "type": "point", "defined": true, "x": 0.001, "y": 0.002 },
+          "s": { "type": "segment", "defined": true, "x1": 0.001, "y1": 0.002, "x2": 0.001, "y2": 0.002 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "t": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.001, "y": 0.002 },
+          "B": { "type": "point", "defined": true, "x": 100000.0, "y": 50000.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.001, "y1": 0.002, "x2": 100000.0, "y2": 50000.0 },
+          "d": { "type": "number", "defined": true, "value": 111803.39708613511 },
+          "t": { "type": "number", "defined": true, "value": 111803.39708613511 }
+        }
+      ]
+    }
+  ]
+}
