@@ -1,9 +1,278 @@
 # Golden cases that geo-kernel cannot reproduce yet.
 #
-# Every entry needs the case id and a non-empty reason:
+# Every entry needs the case id, a non-empty reason and the exact list of
+# disagreeing objects as "step:label":
 #
 # [[gap]]
 # id = "geometry-0001"
 # reason = "why the kernel differs from GeoGebra"
+# mismatches = ["0:Q", "2:Q"]
 #
-# A listed case that fully agrees makes the test fail, so remove its entry.
+# The test fails when a listed case disagrees anywhere else, or agrees where
+# the list says it does not, so an entry can neither hide a new difference
+# nor go stale.
+
+[[gap]]
+id = "geometry-circle-009"
+reason = "GeoGebra treats a radius smaller in magnitude than 1e-8 as 0 and keeps the circle defined (the data probes -1e-9); the kernel treats every negative radius as undefined"
+mismatches = ["5:k"]
+
+[[gap]]
+id = "geometry-circle-010"
+reason = "GeoGebra treats a radius smaller in magnitude than 1e-8 as 0 and keeps the circle defined (the data probes -1e-9); the kernel treats every negative radius as undefined"
+mismatches = ["5:k"]
+
+[[gap]]
+id = "geometry-circle-011"
+reason = "GeoGebra treats a radius smaller in magnitude than 1e-8 as 0 and keeps the circle defined (the data probes -1e-9); the kernel treats every negative radius as undefined"
+mismatches = ["5:k"]
+
+[[gap]]
+id = "geometry-circle-012"
+reason = "GeoGebra treats a radius smaller in magnitude than 1e-8 as 0 and keeps the circle defined (the data probes -1e-9); the kernel treats every negative radius as undefined"
+mismatches = ["5:k"]
+
+[[gap]]
+id = "geometry-circle-013"
+reason = "GeoGebra treats a radius smaller in magnitude than 1e-8 as 0 and keeps the circle defined (the data probes -1e-9); the kernel treats every negative radius as undefined"
+mismatches = ["5:k"]
+
+[[gap]]
+id = "geometry-circle-014"
+reason = "GeoGebra treats a radius smaller in magnitude than 1e-8 as 0 and keeps the circle defined (the data probes -1e-9); the kernel treats every negative radius as undefined"
+mismatches = ["5:k"]
+
+[[gap]]
+id = "geometry-circle-015"
+reason = "GeoGebra treats a radius smaller in magnitude than 1e-8 as 0 and keeps the circle defined (the data probes -1e-9); the kernel treats every negative radius as undefined"
+mismatches = ["5:k"]
+
+[[gap]]
+id = "geometry-circle-016"
+reason = "GeoGebra treats a radius smaller in magnitude than 1e-8 as 0 and keeps the circle defined (the data probes -1e-9); the kernel treats every negative radius as undefined"
+mismatches = ["5:k"]
+
+[[gap]]
+id = "geometry-ixcc-011"
+reason = "at tangency GeoGebra defines only intersection 1 and leaves intersection 2 undefined; the kernel returns the tangent point for both indices"
+mismatches = ["0:Q", "1:Q", "3:Q"]
+
+[[gap]]
+id = "geometry-ixcc-012"
+reason = "at tangency GeoGebra defines only intersection 1 and leaves intersection 2 undefined; the kernel returns the tangent point for both indices"
+mismatches = ["0:Q", "1:Q", "3:Q"]
+
+[[gap]]
+id = "geometry-ixcc-014"
+reason = "at tangency GeoGebra defines only intersection 1 and leaves intersection 2 undefined; the kernel returns the tangent point for both indices"
+mismatches = ["0:Q", "1:Q", "3:Q"]
+
+[[gap]]
+id = "geometry-ixcc-015"
+reason = "at tangency GeoGebra defines only intersection 1 and leaves intersection 2 undefined; the kernel returns the tangent point for both indices"
+mismatches = ["0:Q", "1:Q", "3:Q"]
+
+[[gap]]
+id = "geometry-ixcc-016"
+reason = "at tangency GeoGebra defines only intersection 1 and leaves intersection 2 undefined; the kernel returns the tangent point for both indices"
+mismatches = ["0:Q", "1:Q", "3:Q"]
+
+[[gap]]
+id = "geometry-ixcc-017"
+reason = "at tangency GeoGebra defines only intersection 1 and leaves intersection 2 undefined; the kernel returns the tangent point for both indices"
+mismatches = ["0:Q", "1:Q", "3:Q"]
+
+[[gap]]
+id = "geometry-ixcc-018"
+reason = "at tangency GeoGebra defines only intersection 1 and leaves intersection 2 undefined; the kernel returns the tangent point for both indices"
+mismatches = ["0:Q", "1:Q", "3:Q"]
+
+[[gap]]
+id = "geometry-ixcc-024"
+reason = "at tangency GeoGebra defines only intersection 1 and leaves intersection 2 undefined; the kernel returns the tangent point for both indices"
+mismatches = ["2:Q"]
+
+[[gap]]
+id = "geometry-ixcc-025"
+reason = "at tangency GeoGebra defines only intersection 1 and leaves intersection 2 undefined; the kernel returns the tangent point for both indices"
+mismatches = ["2:Q"]
+
+[[gap]]
+id = "geometry-ixcc-026"
+reason = "at tangency GeoGebra defines only intersection 1 and leaves intersection 2 undefined; the kernel returns the tangent point for both indices"
+mismatches = ["2:Q"]
+
+[[gap]]
+id = "geometry-ixlc-001"
+reason = "at tangency GeoGebra defines only intersection 1 and leaves intersection 2 undefined; the kernel returns the tangent point for both indices"
+mismatches = ["2:Q"]
+
+[[gap]]
+id = "geometry-ixlc-002"
+reason = "at tangency GeoGebra defines only intersection 1 and leaves intersection 2 undefined; the kernel returns the tangent point for both indices"
+mismatches = ["2:Q"]
+
+[[gap]]
+id = "geometry-ixlc-003"
+reason = "at tangency GeoGebra defines only intersection 1 and leaves intersection 2 undefined; the kernel returns the tangent point for both indices"
+mismatches = ["2:Q"]
+
+[[gap]]
+id = "geometry-ixlc-004"
+reason = "at tangency GeoGebra defines only intersection 1 and leaves intersection 2 undefined; the kernel returns the tangent point for both indices"
+mismatches = ["2:Q"]
+
+[[gap]]
+id = "geometry-ixlc-006"
+reason = "at tangency GeoGebra defines only intersection 1 and leaves intersection 2 undefined; the kernel returns the tangent point for both indices"
+mismatches = ["2:Q"]
+
+[[gap]]
+id = "geometry-ixlc-008"
+reason = "at tangency GeoGebra defines only intersection 1 and leaves intersection 2 undefined; the kernel returns the tangent point for both indices"
+mismatches = ["2:Q"]
+
+[[gap]]
+id = "geometry-ixlc-009"
+reason = "at tangency GeoGebra defines only intersection 1 and leaves intersection 2 undefined; the kernel returns the tangent point for both indices"
+mismatches = ["2:Q"]
+
+[[gap]]
+id = "geometry-ixlc-012"
+reason = "at tangency GeoGebra defines only intersection 1 and leaves intersection 2 undefined; the kernel returns the tangent point for both indices"
+mismatches = ["2:Q"]
+
+[[gap]]
+id = "geometry-ixlc-017"
+reason = "at tangency GeoGebra defines only intersection 1 and leaves intersection 2 undefined; the kernel returns the tangent point for both indices"
+mismatches = ["3:Q"]
+
+[[gap]]
+id = "geometry-ixlc-018"
+reason = "at tangency GeoGebra defines only intersection 1 and leaves intersection 2 undefined; the kernel returns the tangent point for both indices"
+mismatches = ["3:Q"]
+
+[[gap]]
+id = "geometry-ixlc-019"
+reason = "at tangency GeoGebra defines only intersection 1 and leaves intersection 2 undefined; the kernel returns the tangent point for both indices"
+mismatches = ["3:Q"]
+
+[[gap]]
+id = "geometry-ixlc-020"
+reason = "at tangency GeoGebra defines only intersection 1 and leaves intersection 2 undefined; the kernel returns the tangent point for both indices"
+mismatches = ["3:Q"]
+
+[[gap]]
+id = "geometry-ixlc-022"
+reason = "at tangency GeoGebra defines only intersection 1 and leaves intersection 2 undefined; the kernel returns the tangent point for both indices"
+mismatches = ["1:Q"]
+
+[[gap]]
+id = "geometry-ixlc-023"
+reason = "at tangency GeoGebra defines only intersection 1 and leaves intersection 2 undefined; the kernel returns the tangent point for both indices"
+mismatches = ["1:Q"]
+
+[[gap]]
+id = "geometry-ixlc-024"
+reason = "at tangency GeoGebra defines only intersection 1 and leaves intersection 2 undefined; the kernel returns the tangent point for both indices"
+mismatches = ["1:Q"]
+
+[[gap]]
+id = "geometry-ixlc-025"
+reason = "at tangency GeoGebra defines only intersection 1 and leaves intersection 2 undefined; the kernel returns the tangent point for both indices"
+mismatches = ["1:Q"]
+
+[[gap]]
+id = "geometry-ixlc-026"
+reason = "at tangency GeoGebra defines only intersection 1 and leaves intersection 2 undefined; the kernel returns the tangent point for both indices"
+mismatches = ["1:Q"]
+
+[[gap]]
+id = "geometry-ixlc-036"
+reason = "at tangency GeoGebra defines only intersection 1 and leaves intersection 2 undefined; the kernel returns the tangent point for both indices"
+mismatches = ["0:Q", "4:Q"]
+
+[[gap]]
+id = "geometry-ixlc-038"
+reason = "at tangency GeoGebra defines only intersection 1 and leaves intersection 2 undefined; the kernel returns the tangent point for both indices"
+mismatches = ["0:Q", "4:Q"]
+
+[[gap]]
+id = "geometry-ixcc-013"
+reason = "near-tangent intersection: the discriminant is rounding noise, so GeoGebra and the kernel differ by 1e-8 to 1e-7 in position and in whether a second point exists"
+mismatches = ["0:P", "0:Q", "1:P", "1:Q", "3:P", "3:Q"]
+
+[[gap]]
+id = "geometry-ixlc-005"
+reason = "near-tangent intersection: the discriminant is rounding noise, so GeoGebra and the kernel differ by 1e-8 to 1e-7 in position and in whether a second point exists"
+mismatches = ["2:P", "2:Q"]
+
+[[gap]]
+id = "geometry-ixlc-007"
+reason = "near-tangent intersection: the discriminant is rounding noise, so GeoGebra and the kernel differ by 1e-8 to 1e-7 in position and in whether a second point exists"
+mismatches = ["2:P", "2:Q"]
+
+[[gap]]
+id = "geometry-ixlc-010"
+reason = "near-tangent intersection: the discriminant is rounding noise, so GeoGebra and the kernel differ by 1e-8 to 1e-7 in position and in whether a second point exists"
+mismatches = ["2:P", "2:Q"]
+
+[[gap]]
+id = "geometry-ixlc-011"
+reason = "near-tangent intersection: the discriminant is rounding noise, so GeoGebra and the kernel differ by 1e-8 to 1e-7 in position and in whether a second point exists"
+mismatches = ["2:P", "2:Q"]
+
+[[gap]]
+id = "geometry-ixlc-021"
+reason = "near-tangent intersection: the discriminant is rounding noise, so GeoGebra and the kernel differ by 1e-8 to 1e-7 in position and in whether a second point exists"
+mismatches = ["1:P", "1:Q"]
+
+[[gap]]
+id = "geometry-ixlc-037"
+reason = "near-tangent intersection: the discriminant is rounding noise, so GeoGebra and the kernel differ by 1e-8 to 1e-7 in position and in whether a second point exists"
+mismatches = ["0:P", "0:Q", "4:P", "4:Q"]
+
+[[gap]]
+id = "geometry-ixlc-039"
+reason = "near-tangent intersection: the discriminant is rounding noise, so GeoGebra and the kernel differ by 1e-8 to 1e-7 in position and in whether a second point exists"
+mismatches = ["0:P", "0:Q", "4:P", "4:Q"]
+
+[[gap]]
+id = "geometry-ixlc-013"
+reason = "when a point that defines the line lies on the circle, GeoGebra makes that point intersection 1; the kernel always orders intersections along the line direction"
+mismatches = ["0:P", "0:Q", "1:P", "1:Q", "2:P", "2:Q", "3:P", "3:Q"]
+
+[[gap]]
+id = "geometry-ixlc-014"
+reason = "when a point that defines the line lies on the circle, GeoGebra makes that point intersection 1; the kernel always orders intersections along the line direction"
+mismatches = ["0:P", "0:Q", "1:P", "1:Q", "2:P", "2:Q", "3:P", "3:Q"]
+
+[[gap]]
+id = "geometry-ixlc-015"
+reason = "when a point that defines the line lies on the circle, GeoGebra makes that point intersection 1; the kernel always orders intersections along the line direction"
+mismatches = ["0:P", "0:Q", "1:P", "1:Q", "2:P", "2:Q", "3:P", "3:Q"]
+
+[[gap]]
+id = "geometry-ixlc-016"
+reason = "when a point that defines the line lies on the circle, GeoGebra makes that point intersection 1; the kernel always orders intersections along the line direction"
+mismatches = ["0:P", "0:Q", "1:P", "1:Q", "2:P", "2:Q", "3:P", "3:Q"]
+
+[[gap]]
+id = "geometry-ixlc-027"
+reason = "when a point that defines the line lies on the circle, GeoGebra makes that point intersection 1; the kernel always orders intersections along the line direction"
+mismatches = ["3:P", "3:Q", "5:P", "5:Q"]
+
+[[gap]]
+id = "geometry-ixlc-030"
+reason = "when a point that defines the line lies on the circle, GeoGebra makes that point intersection 1; the kernel always orders intersections along the line direction"
+mismatches = ["5:P", "5:Q"]
+
+[[gap]]
+id = "geometry-ixcc-022"
+reason = "identical circles through a shared point: GeoGebra returns that point as intersection 1; the kernel reports no intersection for circles with the same centre"
+mismatches = ["0:P", "1:P", "2:P"]
+
+[[gap]]
+id = "geometry-ixcc-023"
+reason = "identical circles through a shared point: GeoGebra returns that point as intersection 1; the kernel reports no intersection for circles with the same centre"
+mismatches = ["0:P", "1:P", "2:P"]

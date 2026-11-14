@@ -80,6 +80,8 @@ carries no numeric fields. When it is `true` it carries exactly these:
 
 All numbers are finite JSON numbers that round-trip to the same `f64`.
 A value that is not finite in GeoGebra is recorded as `defined: false`.
+This includes a point at infinity and a circle whose centre is at infinity,
+both of which GeoGebra itself reports as defined.
 
 ## Comparison rules
 
@@ -97,5 +99,7 @@ These rules are applied by the Rust side (`crates/geo-golden`).
 ## Known gaps
 
 A case that `geo-kernel` cannot reproduce yet is listed in
-`crates/geo-golden/known-gaps.toml` with a reason. The test fails when a
-listed case starts to agree, so the list cannot go stale.
+`crates/geo-golden/known-gaps.toml` with a reason and the exact objects that
+disagree, as `step:label`. The test fails when a listed case disagrees
+anywhere else or starts to agree, so an entry can neither hide a new
+difference nor go stale.

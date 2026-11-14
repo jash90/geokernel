@@ -1,0 +1,33 @@
+// Gradle init script, applied to GeoGebra's `source/shared` build with `-I`.
+// It adds one task to GeoGebra's `common-jre` project that builds its jars and
+// writes the runtime class path of the headless app (main code plus the test
+// fixtures that hold `AppCommonFactory`) to the file named by the system
+// property `ggbHarness.classpathFile`. No GeoGebra source file is modified.
+
+gradle.allprojects { p ->
+    if (p.path != ':common-jre') {
+        return
+    }
+    p.afterEvaluate {
+        p.tasks.register('ggbHarnessClasspath') {
+            def outPath = System.getProperty('ggbHarness.classpathFile')
+            def jarTask = p.tasks.named('jar')
+            def fixturesJarTask = p.tasks.named('testFixturesJar')
+            def runtime = p.configurations.named('testFixturesRuntimeClasspath')
+            dependsOn(jarTask, fixturesJarTask, runtime)
+            notCompatibleWithConfigurationCache('writes a class path for an external tool')
+            outputs.upToDateWhen { false }
+            doLast {
+                if (outPath == null) {
+                    throw new GradleException('set -DggbHarness.classpathFile=<file>')
+                }
+                def files = [jarTask.get().archiveFile.get().asFile,
+                             fixturesJarTask.get().archiveFile.get().asFile]
+                files.addAll(runtime.get().files)
+                def unique = new LinkedHashSet<File>(files)
+                new File(outPath).text = unique.collect { it.absolutePath }
+                        .join(File.pathSeparator) + '\n'
+            }
+        }
+    }
+}

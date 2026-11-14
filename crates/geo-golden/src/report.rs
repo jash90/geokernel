@@ -3,6 +3,7 @@
 use crate::gaps::Gaps;
 use crate::model::Case;
 use crate::replay::replay;
+use std::collections::BTreeSet;
 
 #[derive(Debug, Default)]
 pub struct Report {
@@ -52,11 +53,30 @@ pub fn evaluate(cases: &[Case], gaps: &Gaps) -> Report {
         let listed = gaps.get(&case.id);
         match (out.mismatches.is_empty(), listed) {
             (true, None) => r.agreed += 1,
-            (true, Some(reason)) => r.failures.push(format!(
-                "stale known gap `{}` ({reason}): the case now agrees, remove the entry",
-                case.id
+            (true, Some(gap)) => r.failures.push(format!(
+                "stale known gap `{}` ({}): the case now agrees, remove the entry",
+                case.id, gap.reason
             )),
-            (false, Some(_)) => r.known_gaps += 1,
+            (false, Some(gap)) => {
+                // A listed case must disagree exactly where the list says, so a
+                // new disagreement cannot hide behind an old one.
+                let actual: BTreeSet<String> = out
+                    .mismatches
+                    .iter()
+                    .map(|m| format!("{}:{}", m.step, m.label))
+                    .collect();
+                if actual == gap.mismatches {
+                    r.known_gaps += 1;
+                } else {
+                    let unlisted: Vec<&String> = actual.difference(&gap.mismatches).collect();
+                    let fixed: Vec<&String> = gap.mismatches.difference(&actual).collect();
+                    r.failures.push(format!(
+                        "known gap `{}` changed: new disagreements {unlisted:?}, \
+                         now agreeing {fixed:?}; update its `mismatches` list",
+                        case.id
+                    ));
+                }
+            }
             (false, None) => {
                 for m in &out.mismatches {
                     r.failures.push(format!(
@@ -86,6 +106,13 @@ mod tests {
 
     const SCRIPT: &str = r#""M = (1, 0)""#;
 
+    fn listed(id: &str, mismatch: &str) -> gaps::Gaps {
+        gaps::parse(&format!(
+            "[[gap]]\nid=\"{id}\"\nreason=\"r\"\nmismatches=[\"{mismatch}\"]\n"
+        ))
+        .unwrap()
+    }
+
     #[test]
     fn agreeing_case_passes() {
         let r = evaluate(&case(SCRIPT, 1.0), &gaps::Gaps::new());
@@ -103,18 +130,24 @@ mod tests {
 
     #[test]
     fn listed_disagreeing_case_is_a_known_gap() {
-        let gaps = gaps::parse("[[gap]]\nid=\"c1\"\nreason=\"r\"\n").unwrap();
-        let r = evaluate(&case(SCRIPT, 2.0), &gaps);
+        let r = evaluate(&case(SCRIPT, 2.0), &listed("c1", "0:M"));
         assert!(r.failures.is_empty());
         assert_eq!(r.known_gaps, 1);
     }
 
     #[test]
+    fn listed_case_must_disagree_exactly_where_listed() {
+        // Listed for another object: the real disagreement must not hide.
+        let r = evaluate(&case(SCRIPT, 2.0), &listed("c1", "0:Q"));
+        assert_eq!(r.known_gaps, 0);
+        assert!(r.failures[0].contains("changed") && r.failures[0].contains("0:M"));
+    }
+
+    #[test]
     fn stale_known_gap_fails() {
-        let gaps = gaps::parse("[[gap]]\nid=\"c1\"\nreason=\"r\"\n").unwrap();
-        let r = evaluate(&case(SCRIPT, 1.0), &gaps);
+        let r = evaluate(&case(SCRIPT, 1.0), &listed("c1", "0:M"));
         assert!(r.failures.iter().any(|f| f.contains("stale")));
-        let unknown = gaps::parse("[[gap]]\nid=\"nope\"\nreason=\"r\"\n").unwrap();
+        let unknown = listed("nope", "0:M");
         assert!(!evaluate(&case(SCRIPT, 1.0), &unknown).failures.is_empty());
     }
 

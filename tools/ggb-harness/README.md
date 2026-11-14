@@ -1,0 +1,109 @@
+# ggb-harness
+
+Runs GeoGebra headlessly to produce the golden data in `golden/` (format:
+`golden/SCHEMA.md`) and to time GeoGebra on the chain that
+`geokernel bench` builds. Nothing here is needed to build or test the Rust
+crates.
+
+The harness only calls GeoGebra's API (classes under the EUPL 1.2 header).
+It never copies GeoGebra code, jars, `.properties` files or artwork into this
+repository; the GeoGebra checkout stays outside it and is never modified.
+
+## Requirements
+
+- A GeoGebra source checkout (the golden data was recorded at commit
+  `112919f2d450ec7430a5cd3b65dba226fdc43b74`).
+- JDK 17 (GeoGebra's Gradle toolchain asks for 17). Gradle itself is
+  downloaded by GeoGebra's wrapper.
+- Python 3, only to regenerate the case inputs.
+
+## Commands
+
+Run from the repository root; `GEOGEBRA_SRC` points at the checkout.
+
+```sh
+export GEOGEBRA_SRC=<path to the GeoGebra checkout>
+tools/ggb-harness/harness.sh build    # build GeoGebra's common-jre, compile the harness
+tools/ggb-harness/harness.sh golden   # rewrite golden/geometry/*.json
+tools/ggb-harness/harness.sh chain    # time the bench() chain (optional: number of steps)
+python3 tools/ggb-harness/cases/make_cases.py   # rewrite cases/geometry.json
+```
+
+`build` runs `gradlew -p source/shared :common-jre:ggbHarnessClasspath` with
+the init script `gradle/classpath.init.gradle`. The script adds that one task,
+which builds `common-jre` and its test fixtures and writes their runtime class
+path to `build/classpath.txt` (ignored by git, it holds local paths). The
+harness is then compiled with plain `javac` into `build/classes`.
+
+`golden` stamps every file with the commit that `git rev-parse HEAD` reports
+for the checkout. Two runs produce byte-identical files.
+
+## How a case is replayed
+
+`cases/geometry.json` holds the inputs: `id`, `group`, `script`, `steps`.
+It is written by `cases/make_cases.py` (fixed seed, fixed order, one case per
+line). Ids have the form `geometry-<topic>-<nnn>`; the cases of one topic go
+to `golden/geometry/<topic>.json`. New cases must be appended to a topic so
+existing ids keep their meaning.
+
+For every case `GoldenGenerator`:
+
+1. creates a fresh headless app: `AppCommon` with `LocalizationCommon`,
+   `AwtFactoryCommon` (from GeoGebra's test fixtures) and the Classic
+   configuration `AppConfigDefault`;
+2. runs each script line with
+   `AlgebraProcessor.processAlgebraCommandNoExceptionHandling` and an error
+   handler that throws; it checks that each line creates exactly one object
+   with the requested label and the expected class, and that free points and
+   numbers are independent;
+3. records a snapshot, then applies each step and records a snapshot after it.
+   `move` calls `GeoPoint.setCoords(x, y, 1)` and `updateCascade()`;
+   `set_number` calls `GeoNumeric.setValue` (it fails if GeoGebra clamps the
+   value) and `updateCascade()`.
+
+Snapshot encoding:
+
+| GeoGebra object | Recorded as |
+| --- | --- |
+| `GeoPoint` | `point` with the inhomogeneous `x`, `y`; a point at infinity is undefined |
+| `GeoLine` | `line` with the raw fields `x`, `y`, `z` as `a`, `b`, `c` |
+| `GeoSegment` | `segment` with its start point and end point |
+| `GeoConic` from `Circle` | `circle` with the midpoint and the first half-axis |
+| `GeoNumeric` | `number` |
+
+`defined` is GeoGebra's `isDefined()` and, in addition, every recorded field
+must be finite. A circle of radius 0 is a single-point conic in GeoGebra; it is
+recorded as a defined `circle` with `r` 0 (GeoGebra's own midpoint and
+half-axis). A circle around an infinite centre becomes a pair of parallel
+lines with infinite half-axes and is therefore recorded as undefined. Any other
+conic type stops the run.
+
+Intersections are not continuous (`Kernel.isContinuous()` is false in this
+configuration), so the harness records whatever GeoGebra's fixed permutation
+gives.
+
+## Rules for case scripts
+
+- Only the constructs `geo-kernel` supports: free points `A = (x, y)`, free
+  numbers, `Line(A, B)`, `Segment`, `Midpoint`, `Distance`,
+  `PerpendicularLine(P, l)`, parallel `Line(P, l)`, `Circle(A, B)`,
+  `Circle(A, r)` with `r` a number object, and `Intersect` of two lines, a
+  line and a circle with an index, or two circles with an index.
+- Points have upper-case labels, everything else lower case. Labels avoid
+  `e`, `i`, `x`, `y`, `z` and letter-digit names such as `A1` (spreadsheet
+  cells).
+- GeoGebra gives an object that is undefined when it is created no label until
+  it becomes defined, so no line may refer to such an object. The harness
+  keeps a reference to it and records it like any other object.
+
+## Chain timing
+
+`ChainTiming` builds the same chain as `bench()` in `crates/geo-cli/src/main.rs`
+(free points `A`, `B`; per step a line, a circle, a perpendicular, two
+intersections, a midpoint and a line) with the views detached, checks that no
+chain object is undefined, drags `A` 200 times as a warm-up and then three
+timed rounds of 200 drags along the same path, and finally drags an unrelated
+point 100,000 times. The argument is the number of steps (default 15,000, as in
+the Rust bench). GeoGebra's memory grows with the square of the chain length,
+so the default does not fit in memory; see `docs/perf/geogebra-chain.md`, where
+the results are written up by hand.
