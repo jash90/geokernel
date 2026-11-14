@@ -286,6 +286,109 @@
           "t": { "type": "number", "defined": true, "value": 111803.39708613511 }
         }
       ]
+    },
+    {
+      "id": "measure-length-007",
+      "group": "measure",
+      "script": [
+        "A = (0, 0)",
+        "E = (0.000001, 0)",
+        "F = Midpoint(A, E)",
+        "G = Midpoint(A, F)",
+        "H = Midpoint(A, G)",
+        "J = Midpoint(A, H)",
+        "K = Midpoint(A, J)",
+        "L = Midpoint(A, K)",
+        "N = Midpoint(A, L)",
+        "s = Segment(A, L)",
+        "t = Segment(A, N)",
+        "d = Length(s)",
+        "g = Length(t)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "E", "x": 2.0E-6, "y": 0.0 },
+        { "action": "move", "label": "E", "x": 1.0E-6, "y": 0.0 },
+        { "action": "move", "label": "A", "x": 5.0, "y": 5.0 },
+        { "action": "move", "label": "E", "x": 5.000001, "y": 5.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "E": { "type": "point", "defined": true, "x": 1.0E-6, "y": 0.0 },
+          "F": { "type": "point", "defined": true, "x": 5.0E-7, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 2.5E-7, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 1.25E-7, "y": 0.0 },
+          "J": { "type": "point", "defined": true, "x": 6.25E-8, "y": 0.0 },
+          "K": { "type": "point", "defined": true, "x": 3.125E-8, "y": 0.0 },
+          "L": { "type": "point", "defined": true, "x": 1.5625E-8, "y": 0.0 },
+          "N": { "type": "point", "defined": true, "x": 7.8125E-9, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 1.5625E-8, "y2": 0.0 },
+          "t": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 7.8125E-9, "y2": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 1.5625E-8 },
+          "g": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "E": { "type": "point", "defined": true, "x": 2.0E-6, "y": 0.0 },
+          "F": { "type": "point", "defined": true, "x": 1.0E-6, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 5.0E-7, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 2.5E-7, "y": 0.0 },
+          "J": { "type": "point", "defined": true, "x": 1.25E-7, "y": 0.0 },
+          "K": { "type": "point", "defined": true, "x": 6.25E-8, "y": 0.0 },
+          "L": { "type": "point", "defined": true, "x": 3.125E-8, "y": 0.0 },
+          "N": { "type": "point", "defined": true, "x": 1.5625E-8, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.125E-8, "y2": 0.0 },
+          "t": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 1.5625E-8, "y2": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 3.125E-8 },
+          "g": { "type": "number", "defined": true, "value": 1.5625E-8 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "E": { "type": "point", "defined": true, "x": 1.0E-6, "y": 0.0 },
+          "F": { "type": "point", "defined": true, "x": 5.0E-7, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 2.5E-7, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 1.25E-7, "y": 0.0 },
+          "J": { "type": "point", "defined": true, "x": 6.25E-8, "y": 0.0 },
+          "K": { "type": "point", "defined": true, "x": 3.125E-8, "y": 0.0 },
+          "L": { "type": "point", "defined": true, "x": 1.5625E-8, "y": 0.0 },
+          "N": { "type": "point", "defined": true, "x": 7.8125E-9, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 1.5625E-8, "y2": 0.0 },
+          "t": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 7.8125E-9, "y2": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 1.5625E-8 },
+          "g": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "E": { "type": "point", "defined": true, "x": 1.0E-6, "y": 0.0 },
+          "F": { "type": "point", "defined": true, "x": 2.5000005, "y": 2.5 },
+          "G": { "type": "point", "defined": true, "x": 3.7500002500000003, "y": 3.75 },
+          "H": { "type": "point", "defined": true, "x": 4.375000125, "y": 4.375 },
+          "J": { "type": "point", "defined": true, "x": 4.6875000625, "y": 4.6875 },
+          "K": { "type": "point", "defined": true, "x": 4.84375003125, "y": 4.84375 },
+          "L": { "type": "point", "defined": true, "x": 4.921875015625, "y": 4.921875 },
+          "N": { "type": "point", "defined": true, "x": 4.9609375078125, "y": 4.9609375 },
+          "s": { "type": "segment", "defined": true, "x1": 5.0, "y1": 5.0, "x2": 4.921875015625, "y2": 4.921875 },
+          "t": { "type": "segment", "defined": true, "x1": 5.0, "y1": 5.0, "x2": 4.9609375078125, "y2": 4.9609375 },
+          "d": { "type": "number", "defined": true, "value": 0.11048542351185518 },
+          "g": { "type": "number", "defined": true, "value": 0.05524271175592759 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "E": { "type": "point", "defined": true, "x": 5.000001, "y": 5.0 },
+          "F": { "type": "point", "defined": true, "x": 5.0000005000000005, "y": 5.0 },
+          "G": { "type": "point", "defined": true, "x": 5.00000025, "y": 5.0 },
+          "H": { "type": "point", "defined": true, "x": 5.000000125, "y": 5.0 },
+          "J": { "type": "point", "defined": true, "x": 5.0000000625, "y": 5.0 },
+          "K": { "type": "point", "defined": true, "x": 5.00000003125, "y": 5.0 },
+          "L": { "type": "point", "defined": true, "x": 5.000000015625, "y": 5.0 },
+          "N": { "type": "point", "defined": true, "x": 5.0000000078125, "y": 5.0 },
+          "s": { "type": "segment", "defined": true, "x1": 5.0, "y1": 5.0, "x2": 5.000000015625, "y2": 5.0 },
+          "t": { "type": "segment", "defined": true, "x1": 5.0, "y1": 5.0, "x2": 5.0000000078125, "y2": 5.0 },
+          "d": { "type": "number", "defined": true, "value": 1.5624999960550667E-8 },
+          "g": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
     }
   ]
 }

@@ -375,6 +375,173 @@
           "m": { "type": "number", "defined": true, "value": 1000000.0 }
         }
       ]
+    },
+    {
+      "id": "measure-slope-008",
+      "group": "measure",
+      "script": [
+        "A = (0, 0)",
+        "B = (0.001, 1000000)",
+        "l = Line(A, B)",
+        "m = Slope(l)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 0.01, "y": 1000000.0 },
+        { "action": "move", "label": "B", "x": 1.0E-5, "y": 1000000.0 },
+        { "action": "move", "label": "B", "x": 1.0E-6, "y": 1000000.0 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 1000000.0 },
+        { "action": "move", "label": "B", "x": 0.001, "y": 1000000.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.001, "y": 1000000.0 },
+          "l": { "type": "line", "defined": true, "a": -1000000.0, "b": 0.001, "c": 0.0 },
+          "m": { "type": "number", "defined": true, "value": 1.0E9 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.01, "y": 1000000.0 },
+          "l": { "type": "line", "defined": true, "a": -1000000.0, "b": 0.01, "c": 0.0 },
+          "m": { "type": "number", "defined": true, "value": 1.0E8 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0E-5, "y": 1000000.0 },
+          "l": { "type": "line", "defined": true, "a": -1000000.0, "b": 1.0E-5, "c": 0.0 },
+          "m": { "type": "number", "defined": true, "value": 9.999999999999998E10 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0E-6, "y": 1000000.0 },
+          "l": { "type": "line", "defined": true, "a": -1000000.0, "b": 1.0E-6, "c": 0.0 },
+          "m": { "type": "number", "defined": true, "value": 1.0E12 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1000000.0 },
+          "l": { "type": "line", "defined": true, "a": -1000000.0, "b": 0.0, "c": 0.0 },
+          "m": { "type": "number", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.001, "y": 1000000.0 },
+          "l": { "type": "line", "defined": true, "a": -1000000.0, "b": 0.001, "c": 0.0 },
+          "m": { "type": "number", "defined": true, "value": 1.0E9 }
+        }
+      ]
+    },
+    {
+      "id": "measure-slope-009",
+      "group": "measure",
+      "script": [
+        "A = (0, 0)",
+        "B = (0.001, 1000000)",
+        "s = Segment(A, B)",
+        "m = Slope(s)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 1.0E-5, "y": 1000000.0 },
+        { "action": "move", "label": "B", "x": 1.0E-6, "y": 1000000.0 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 1000000.0 },
+        { "action": "move", "label": "B", "x": 0.001, "y": 1000000.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.001, "y": 1000000.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 0.001, "y2": 1000000.0 },
+          "m": { "type": "number", "defined": true, "value": 1.0E9 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0E-5, "y": 1000000.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 1.0E-5, "y2": 1000000.0 },
+          "m": { "type": "number", "defined": true, "value": 9.999999999999998E10 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0E-6, "y": 1000000.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 1.0E-6, "y2": 1000000.0 },
+          "m": { "type": "number", "defined": true, "value": 1.0E12 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1000000.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 0.0, "y2": 1000000.0 },
+          "m": { "type": "number", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.001, "y": 1000000.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 0.001, "y2": 1000000.0 },
+          "m": { "type": "number", "defined": true, "value": 1.0E9 }
+        }
+      ]
+    },
+    {
+      "id": "measure-slope-010",
+      "group": "measure",
+      "script": [
+        "A = (0, 0)",
+        "B = (1000000, 0.001)",
+        "P = (3, 4)",
+        "l = Line(A, B)",
+        "n = PerpendicularLine(P, l)",
+        "p = Line(P, l)",
+        "m = Slope(n)",
+        "q = Slope(p)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 1000000.0, "y": 1.0E-6 },
+        { "action": "move", "label": "B", "x": 1000000.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 1000000.0, "y": 0.001 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1000000.0, "y": 0.001 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "l": { "type": "line", "defined": true, "a": -0.001, "b": 1000000.0, "c": 0.0 },
+          "n": { "type": "line", "defined": true, "a": -1000000.0, "b": -0.001, "c": 3000000.004 },
+          "p": { "type": "line", "defined": true, "a": -0.001, "b": 1000000.0, "c": -3999999.997 },
+          "m": { "type": "number", "defined": true, "value": -1.0E9 },
+          "q": { "type": "number", "defined": true, "value": 1.0E-9 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1000000.0, "y": 1.0E-6 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "l": { "type": "line", "defined": true, "a": -1.0E-6, "b": 1000000.0, "c": 0.0 },
+          "n": { "type": "line", "defined": true, "a": -1000000.0, "b": -1.0E-6, "c": 3000000.000004 },
+          "p": { "type": "line", "defined": true, "a": -1.0E-6, "b": 1000000.0, "c": -3999999.999997 },
+          "m": { "type": "number", "defined": true, "value": -1.0E12 },
+          "q": { "type": "number", "defined": true, "value": 1.0E-12 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1000000.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1000000.0, "c": 0.0 },
+          "n": { "type": "line", "defined": true, "a": -1000000.0, "b": 0.0, "c": 3000000.0 },
+          "p": { "type": "line", "defined": true, "a": 0.0, "b": 1000000.0, "c": -4000000.0 },
+          "m": { "type": "number", "defined": false },
+          "q": { "type": "number", "defined": true, "value": -0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1000000.0, "y": 0.001 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "l": { "type": "line", "defined": true, "a": -0.001, "b": 1000000.0, "c": 0.0 },
+          "n": { "type": "line", "defined": true, "a": -1000000.0, "b": -0.001, "c": 3000000.004 },
+          "p": { "type": "line", "defined": true, "a": -0.001, "b": 1000000.0, "c": -3999999.997 },
+          "m": { "type": "number", "defined": true, "value": -1.0E9 },
+          "q": { "type": "number", "defined": true, "value": 1.0E-9 }
+        }
+      ]
     }
   ]
 }

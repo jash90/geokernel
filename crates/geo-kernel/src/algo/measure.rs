@@ -26,6 +26,13 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoPoint.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/matrix/Coords.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoAnglePoints.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoJoinPoints.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoJoinPointsSegment.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoLinePointLine.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoOrthoLinePointLine.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoVec3D.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/kernelND/GeoConicND.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/kernelND/GeoQuadricND.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoAngle.java
 //   source/shared/common/src/main/java/org/geogebra/common/util/DoubleUtil.java
 //   source/shared/common/src/main/java/org/geogebra/common/util/MyMath.java
@@ -35,12 +42,14 @@
 //! Numbers measured on objects: length, radius, circumference, area, slope,
 //! distances, affine and cross ratio, and the angle of three points.
 //!
+//! Zero tests on lines use GeoGebra's raw coefficients (see [`raw_line`]).
+//!
 //! GeoGebra decides "is this zero" with the absolute tolerance
 //! [`STANDARD_PRECISION`]; the same tests are used here so that degenerate
 //! cases switch at the same threshold.
 
 use super::{Group, Parents, CIRCLE, LINE_LIKE, POINT};
-use crate::kernel::{Construction, Error, Id, Kind, Value};
+use crate::kernel::{Construction, Def, Error, Id, Kind, Value};
 use crate::script::object;
 use crate::tol::STANDARD_PRECISION;
 use std::f64::consts::PI;
@@ -119,16 +128,56 @@ fn segment_length(x1: f64, y1: f64, x2: f64, y2: f64) -> f64 {
     }
 }
 
-/// The coefficients `(x, y, z)` of the line of a line or a segment as
-/// GeoGebra holds them. A segment keeps the raw cross product of its end
-/// points, so its coefficients are as long as the segment; a line is
-/// normalised. A segment with equal end points gives `(0, 0, 0)`.
+/// The coefficients `(x, y, z)` of a line or a segment as GeoGebra holds
+/// them, which are not normalised: the algorithm that makes the line decides
+/// the scale, and GeoGebra's zero tests depend on it.
+///
+/// Reproduced exactly for `Line(P, Q)` and `Segment(P, Q)` (the cross product
+/// of the end points), for a parallel (the coefficients of the parent) and
+/// for a perpendicular (the rotated coefficients of the parent, rescaled by
+/// powers of two when they leave `[1e-2, 1e7]`). Lines made by another group
+/// are used normalised, which is their scale only by chance.
 fn raw_line(c: &Construction, id: Id) -> Option<(f64, f64, f64)> {
-    match c.value(id) {
-        Value::Line { a, b, c } => Some((a, b, c)),
-        Value::Segment { x1, y1, x2, y2 } => Some((y1 - y2, x2 - x1, x1 * y2 - y1 * x2)),
-        _ => None,
+    let (a, b, z) = match c.value(id) {
+        Value::Undefined => return None,
+        Value::Line { a, b, c } => (a, b, c),
+        Value::Segment { x1, y1, x2, y2 } => return Some((y1 - y2, x2 - x1, x1 * y2 - y1 * x2)),
+        _ => return None,
+    };
+    match c.def(id) {
+        Def::Line(p, q) => {
+            let (p, q) = (c.point(p)?, c.point(q)?);
+            Some((p.1 - q.1, q.0 - p.0, p.0 * q.1 - p.1 * q.0))
+        }
+        Def::Parallel { through, to } => {
+            let (lx, ly, _) = raw_line(c, to)?;
+            let p = c.point(through)?;
+            Some((lx, ly, p.0 * -lx - p.1 * ly))
+        }
+        Def::Perpendicular { through, to } => {
+            let (lx, ly, _) = raw_line(c, to)?;
+            let p = c.point(through)?;
+            Some(rescale((-ly, lx, p.0 * ly - p.1 * lx), 10e6, 1e-2))
+        }
+        _ => Some((a, b, z)),
     }
+}
+
+/// `GeoLine.getNormalizedCoefficients`: scales by powers of two so that some
+/// coefficient lies in `[min, max]`.
+fn rescale(v: (f64, f64, f64), max: f64, min: f64) -> (f64, f64, f64) {
+    let (mut x, mut y, mut z) = v;
+    if is_zero(x) && is_zero(y) && is_zero(z) || !(x.is_finite() && y.is_finite() && z.is_finite())
+    {
+        return v;
+    }
+    while x.abs() < min && y.abs() < min && z.abs() < min {
+        (x, y, z) = (x * 2.0, y * 2.0, z * 2.0);
+    }
+    while x.abs() > max && y.abs() > max && z.abs() > max {
+        (x, y, z) = (x / 2.0, y / 2.0, z / 2.0);
+    }
+    (x, y, z)
 }
 
 /// `GeoLine.getSlope`: undefined for a vertical line.
@@ -631,5 +680,19 @@ mod tests {
         c.move_point(ptc, 6.0, 0.0).unwrap();
         c.move_point(ptd, 0.0, 0.0).unwrap();
         assert_eq!(num(&c, "q"), None);
+    }
+
+    #[test]
+    fn zero_tests_use_the_raw_scale_of_the_lines() {
+        // sin(angle) is 1e-10: parallel for unit normals, but the raw cross
+        // product is about 1e-2, so GeoGebra sees intersecting lines.
+        let c = load(
+            "A = (0, 0)\nB = (10000, 0)\nC = (0, 1)\nD = (10000, 1.000001)\n\
+             l = Line(A, B)\nm = Line(C, D)\nd = Distance(l, m)\n\
+             far = (0.001, 1000000)\nv = Line(A, far)\nt = Slope(v)\n",
+        )
+        .unwrap();
+        close(num(&c, "d"), 0.0);
+        close(num(&c, "t"), 1e9);
     }
 }

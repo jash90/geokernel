@@ -247,4 +247,82 @@ case("angle", [pt("A", 1, 1), pt("B", 2, 2), pt("C", 3, 3), "w = Angle(A, B, C)"
                "u = Angle(C, B, A)"],
      [mv("C", 0, 0), mv("C", 3, 1), mv("A", 2, 3), mv("B", 1, 1), mv("B", 2, 2)])
 
+# ------------------------------------------------ tolerance windows
+# Cases that land between a zero test on GeoGebra's raw line coefficients
+# (as long as the line's defining points are apart) and the same test on unit
+# normals. `mv` rounds to 6 decimals, so the windows are reached with long
+# lines.
+topic("distll")
+case("distll", [pt("A", 0, 0), pt("B", 10000, 0), pt("C", 0, 1), pt("D", 10000, 1.000001),
+                "l = Line(A, B)", "m = Line(C, D)", "d = Distance(l, m)"],
+     [mv("D", 10000, 1), mv("D", 10000, 1.000001), mv("D", 10000, 1.00001),
+      mv("C", 0, 5), mv("C", 0, 1)])
+case("distll", [pt("A", 0, 0), pt("B", 10000, 0), pt("C", 0, 1), pt("D", 10000, 1.000001),
+                "l = Line(A, B)", "s = Segment(C, D)", "d = Distance(l, s)",
+                "e = Distance(s, l)"],
+     [mv("D", 10000, 1), mv("D", 10000, 1.000001), mv("B", 10000, 0.000001),
+      mv("B", 10000, 0)])
+case("distll", [pt("A", 0, 0), pt("B", 10000, 0), pt("C", 0, 1), pt("D", 10000, 1.000001),
+                "s = Segment(A, B)", "t = Segment(C, D)", "d = Distance(s, t)"],
+     [mv("D", 10000, 1), mv("D", 10000, 1.000001), mv("B", 10000, 0.000001),
+      mv("B", 10000, 0)])
+case("distll", [pt("A", 0, 0), pt("B", 10000, 0), pt("P", 0, 1), "l = Line(A, B)",
+                "m = Line(P, l)", "n = PerpendicularLine(P, l)", "d = Distance(l, m)",
+                "e = Distance(l, n)", "f = Distance(m, n)"],
+     [mv("B", 10000, 0.000001), mv("B", 10000, 0.001), mv("P", 5, 7), mv("B", 10000, 0)])
+case("distll", [pt("A", 0, 0), pt("B", 100, 0), pt("C", 0, 1), pt("D", 100, 1.000001),
+                "l = Line(A, B)", "m = Line(C, D)", "d = Distance(l, m)"],
+     [mv("D", 100, 1.00001), mv("D", 100, 1.000001), mv("D", 100, 1)])
+# one line becomes undefined and comes back
+case("distll", [pt("A", 0, 0), pt("B", 4, 0), pt("C", 0, 2), pt("D", 4, 2),
+                "l = Line(A, B)", "m = Line(C, D)", "d = Distance(l, m)",
+                "g = Distance(m, l)"],
+     [mv("B", 0, 0), mv("B", 4, 0), mv("D", 0, 2), mv("D", 4, 2), mv("A", 4, 0),
+      mv("A", 0, 0)])
+case("distll", [pt("A", 0, 0), pt("B", 4, 0), pt("C", 0, 2), pt("D", 4, 2),
+                "s = Segment(A, B)", "m = Line(C, D)", "d = Distance(s, m)",
+                "g = Distance(m, s)"],
+     [mv("B", 0, 0), mv("B", 4, 0), mv("D", 0, 2), mv("D", 4, 2)])
+
+topic("slope")
+case("slope", [pt("A", 0, 0), pt("B", 0.001, 1000000), "l = Line(A, B)", "m = Slope(l)"],
+     [mv("B", 0.01, 1000000), mv("B", 0.00001, 1000000), mv("B", 0.000001, 1000000),
+      mv("B", 0, 1000000), mv("B", 0.001, 1000000)])
+case("slope", [pt("A", 0, 0), pt("B", 0.001, 1000000), "s = Segment(A, B)", "m = Slope(s)"],
+     [mv("B", 0.00001, 1000000), mv("B", 0.000001, 1000000), mv("B", 0, 1000000),
+      mv("B", 0.001, 1000000)])
+case("slope", [pt("A", 0, 0), pt("B", 1000000, 0.001), pt("P", 3, 4), "l = Line(A, B)",
+               "n = PerpendicularLine(P, l)", "p = Line(P, l)", "m = Slope(n)",
+               "q = Slope(p)"],
+     [mv("B", 1000000, 0.000001), mv("B", 1000000, 0), mv("B", 1000000, 0.001)])
+
+topic("length")
+# Segments of length about 1.6e-8 and 7.8e-9 from chained midpoints (6-decimal
+# moves cannot make a shorter segment directly).
+midpoints = ["F = Midpoint(A, E)", "G = Midpoint(A, F)", "H = Midpoint(A, G)",
+             "J = Midpoint(A, H)", "K = Midpoint(A, J)", "L = Midpoint(A, K)",
+             "N = Midpoint(A, L)"]
+case("length", [pt("A", 0, 0), pt("E", 0.000001, 0)] + midpoints +
+     ["s = Segment(A, L)", "t = Segment(A, N)", "d = Length(s)", "g = Length(t)"],
+     [mv("E", 0.000002, 0), mv("E", 0.000001, 0), mv("A", 5, 5), mv("E", 5.000001, 5)])
+
+topic("angle")
+case("angle", [pt("B", 0, 0), pt("E", 0.000001, 0)] + [
+    m.replace("A", "B") for m in midpoints] +
+     [pt("C", 0, 3), "w = Angle(L, B, C)", "u = Angle(N, B, C)", "v = Angle(C, B, N)"],
+     [mv("E", 0.000002, 0), mv("E", 0.000001, 0), mv("C", -3, 0)])
+
+topic("affine")
+case("affine", [pt("A", 0, 0), pt("B", 0.001, 0), pt("C", 0.002, 0), "r = AffineRatio(A, B, C)"],
+     [mv("C", 0.002, 0.000001), mv("C", 0.002, 0.00001), mv("C", 0.002, 0.00002),
+      mv("C", 0.002, 0), mv("B", 0.001, 0.000001)])
+case("affine", [pt("A", 0, 0), pt("B", 1, 0), pt("C", 2, 0), "r = AffineRatio(A, B, C)"],
+     [mv("C", 2, 0.000001), mv("C", 2, 0.00001), mv("C", 2, 0)])
+
+topic("cross")
+case("cross", [pt("A", 0, 0), pt("B", 0.001, 0), pt("C", 0.003, 0), pt("D", 0.007, 0),
+               "r = CrossRatio(A, B, C, D)"],
+     [mv("D", 0.007, 0.000001), mv("D", 0.007, 0.00002), mv("B", 0.001, 0.000001),
+      mv("B", 0.001, 0), mv("D", 0.007, 0)])
+
 cases.write()
