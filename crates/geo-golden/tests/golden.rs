@@ -2,8 +2,8 @@
 
 use geo_golden::{gaps, model, repo_root, report};
 
-/// Minimum number of cases recorded by `ggb-harness`. Raised once data lands.
-const MIN_GOLDEN_CASES: usize = 0;
+/// Minimum number of cases recorded by `ggb-harness`.
+const MIN_GOLDEN_CASES: usize = 200;
 
 #[test]
 fn kernel_agrees_with_golden_data() {
