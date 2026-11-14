@@ -39,3 +39,30 @@ pub(crate) fn with_radius(c: &Construction, center: Id, radius: Id) -> Option<Va
     };
     Some(Value::Circle { cx, cy, r })
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::kernel::Value;
+    use crate::script::load;
+
+    #[test]
+    fn a_radius_near_zero_is_zero_and_a_negative_one_undefined() {
+        let mut c = load("A = (1, 2)\nr = 3\nk = Circle(A, r)\n").unwrap();
+        let (r, k) = (c.id("r").unwrap(), c.id("k").unwrap());
+        for (v, expected) in [
+            (1e-9, Some(0.0)),
+            (-1e-9, Some(0.0)),
+            (0.0, Some(0.0)),
+            (2e-8, Some(2e-8)),
+            (-2e-8, None),
+            (-1.5, None),
+        ] {
+            c.set_number(r, v).unwrap();
+            let got = match c.value(k) {
+                Value::Circle { r, .. } => Some(r),
+                _ => None,
+            };
+            assert_eq!(got, expected, "radius {v}");
+        }
+    }
+}

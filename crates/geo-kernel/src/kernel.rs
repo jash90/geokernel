@@ -321,10 +321,12 @@ impl Construction {
         let id = Id(self.defs.len());
         let value = self.compute(def);
         let parents = def.parents();
-        let parents = parents.as_slice();
-        for (k, parent) in parents.iter().enumerate() {
+        // Objects the rule also reads, beyond its parents.
+        let hidden = algo::intersect::hidden_parents(self, &def);
+        let all = || parents.as_slice().iter().chain(hidden.as_slice());
+        for (k, parent) in all().enumerate() {
             // An object that is read twice is still one child.
-            if !parents[..k].contains(parent) {
+            if !all().take(k).any(|p| p == parent) {
                 self.children[parent.0].push(id);
             }
         }
