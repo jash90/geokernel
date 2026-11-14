@@ -1,0 +1,18 @@
+[package]
+name = "geo-app"
+description = "Desktop window for geo-kernel: draw a construction and drag its free points"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "geokernel-app"
+path = "src/main.rs"
+
+[dependencies]
+geo-kernel = { path = "../geo-kernel" }
+# Default features are off to avoid pulling in glow, accesskit and the web
+# helpers. We want the wgpu renderer, the bundled fonts and both Linux
+# window systems.
+eframe = { version = "0.37.0", default-features = false, features = ["wgpu", "default_fonts", "x11", "wayland"] }
