@@ -1,0 +1,9 @@
+# Golden cases that geo-kernel cannot reproduce yet.
+#
+# Every entry needs the case id and a non-empty reason:
+#
+# [[gap]]
+# id = "geometry-0001"
+# reason = "why the kernel differs from GeoGebra"
+#
+# A listed case that fully agrees makes the test fail, so remove its entry.
