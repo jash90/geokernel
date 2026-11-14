@@ -4,6 +4,8 @@
 //! A = (0, 0)              # free point
 //! r = 3                   # free number
 //! l = Line(A, B)
+//! m = Line(P, l)          # GeoGebra form: parallel to l (a line or segment) through P
+//! n = PerpendicularLine(P, l)  # GeoGebra name for `Perpendicular`
 //! k = Circle(A, B)        # centre A, through B
 //! m = Circle(A, r)        # centre A, radius r
 //! P = Intersect(l, k, 2)  # second intersection (1 is the default)
@@ -93,11 +95,23 @@ fn parse_def(c: &Construction, rhs: &str) -> Result<Def, String> {
     let obj = |s: &str| c.id(s).ok_or_else(|| format!("unknown object `{s}`"));
 
     match (func, args.len()) {
-        ("Line", 2) => Ok(Def::Line(obj(args[0])?, obj(args[1])?)),
+        ("Line", 2) => {
+            let first = obj(args[0])?;
+            let second = obj(args[1])?;
+            // GeoGebra: `Line(P, l)` is the parallel to `l` through `P`.
+            Ok(if matches!(c.kind(second), Kind::Line | Kind::Segment) {
+                Def::Parallel {
+                    through: first,
+                    to: second,
+                }
+            } else {
+                Def::Line(first, second)
+            })
+        }
         ("Segment", 2) => Ok(Def::Segment(obj(args[0])?, obj(args[1])?)),
         ("Midpoint", 2) => Ok(Def::Midpoint(obj(args[0])?, obj(args[1])?)),
         ("Distance", 2) => Ok(Def::Distance(obj(args[0])?, obj(args[1])?)),
-        ("Perpendicular", 2) => Ok(Def::Perpendicular {
+        ("Perpendicular" | "PerpendicularLine", 2) => Ok(Def::Perpendicular {
             through: obj(args[0])?,
             to: obj(args[1])?,
         }),
@@ -152,8 +166,8 @@ fn parse_def(c: &Construction, rhs: &str) -> Result<Def, String> {
             }
         }
         (
-            "Line" | "Segment" | "Midpoint" | "Distance" | "Perpendicular" | "Parallel" | "Circle"
-            | "Intersect",
+            "Line" | "Segment" | "Midpoint" | "Distance" | "Perpendicular" | "PerpendicularLine"
+            | "Parallel" | "Circle" | "Intersect",
             n,
         ) => Err(format!("`{func}` does not take {n} argument(s)")),
         _ => Err(format!("unknown command `{func}`")),
@@ -188,6 +202,35 @@ mod tests {
         assert_eq!(c.len(), 8);
         assert_eq!(c.value(c.id("P").unwrap()), Value::Point { x: 4.0, y: 3.0 });
         assert_eq!(c.value(c.id("d").unwrap()), Value::Number(6.0));
+    }
+
+    #[test]
+    fn geogebra_parallel_and_perpendicular_forms() {
+        let c = load(
+            "A = (0, 0)\nB = (4, 0)\nP = (1, 3)\n\
+             l = Line(A, B)\ns = Segment(A, B)\n\
+             p = Line(P, l)\nq = Line(P, s)\n\
+             n = PerpendicularLine(P, l)\nm = Line(A, P)\n",
+        )
+        .unwrap();
+        let v = |n: &str| c.value(c.id(n).unwrap());
+        assert_eq!(
+            v("p"),
+            Value::Line {
+                a: 0.0,
+                b: 1.0,
+                c: -3.0
+            }
+        );
+        assert_eq!(v("q"), v("p"));
+        assert_eq!(c.kind(c.id("n").unwrap()), Kind::Line);
+        let old =
+            load("A = (0, 0)\nB = (4, 0)\nP = (1, 3)\nl = Line(A, B)\nn = Perpendicular(P, l)\n")
+                .unwrap();
+        assert_eq!(old.value(old.id("n").unwrap()), v("n"));
+        // Two points still make a plain line.
+        assert!(matches!(c.def(c.id("m").unwrap()), Def::Line(..)));
+        assert!(matches!(c.def(c.id("p").unwrap()), Def::Parallel { .. }));
     }
 
     #[test]
