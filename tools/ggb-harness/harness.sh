@@ -2,12 +2,13 @@
 # Builds and runs the GeoGebra harness.
 #
 #   GEOGEBRA_SRC=<path to a GeoGebra checkout> tools/ggb-harness/harness.sh build
-#   GEOGEBRA_SRC=<path to a GeoGebra checkout> tools/ggb-harness/harness.sh golden
+#   GEOGEBRA_SRC=<path to a GeoGebra checkout> tools/ggb-harness/harness.sh golden [group...]
 #   GEOGEBRA_SRC=<path to a GeoGebra checkout> tools/ggb-harness/harness.sh chain
 #
 # `build`  builds GeoGebra's common-jre with its own Gradle wrapper, records the
 #          class path in build/classpath.txt and compiles the harness.
-# `golden` regenerates golden/geometry/*.json from cases/geometry.json.
+# `golden` regenerates golden/<group>/*.json from every cases/<group>.json;
+#          `golden <group>...` regenerates only the named groups.
 # `chain`  times the bench() chain (see README.md); extra arguments are passed on.
 set -euo pipefail
 
@@ -37,8 +38,16 @@ case "$cmd" in
     ;;
   golden)
     commit="$(git -C "$ggb" rev-parse HEAD)"
-    java "${java_opts[@]}" -cp "$build/classes:$(cat "$build/classpath.txt")" \
-      geokernel.harness.GoldenGenerator "$here/cases/geometry.json" "$repo/golden" "$commit"
+    if [ "$#" -gt 0 ]; then
+      files=()
+      for group in "$@"; do files+=("$here/cases/$group.json"); done
+    else
+      files=("$here"/cases/*.json)
+    fi
+    for file in "${files[@]}"; do
+      java "${java_opts[@]}" -cp "$build/classes:$(cat "$build/classpath.txt")" \
+        geokernel.harness.GoldenGenerator "$file" "$repo/golden" "$commit"
+    done
     ;;
   chain)
     java "${java_opts[@]}" -cp "$build/classes:$(cat "$build/classpath.txt")" \

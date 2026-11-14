@@ -9,18 +9,20 @@
 //! creation order, and a branch is cut as soon as a recomputed value turns
 //! out to be unchanged.
 
+use crate::algo::conic::ConicDef;
+use crate::algo::lines::LineDef;
+use crate::algo::measure::MeasureDef;
+use crate::algo::transform::TransformDef;
+use crate::algo::{
+    self, check_index, line_through, Group, Parents, CIRCLE, LINE, LINE_LIKE, NUMBER, POINT,
+};
 use std::cmp::Reverse;
 use std::collections::{BinaryHeap, HashMap};
 use std::fmt;
 
-/// Below this, lengths and determinants are treated as zero.
-const EPS: f64 = 1e-12;
-/// Relative slack that lets tangent circles and lines still intersect.
-const TANGENT_TOL: f64 = 1e-9;
-
 /// Handle of an object inside one [`Construction`].
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct Id(usize);
+pub struct Id(pub(crate) usize);
 
 impl Id {
     pub fn index(self) -> usize {
@@ -151,6 +153,14 @@ pub enum Def {
         c2: Id,
         which: u8,
     },
+    /// Bisectors and tangents.
+    Lines(LineDef),
+    /// Circles and their parts.
+    Conic(ConicDef),
+    /// Numbers measured on objects.
+    Measure(MeasureDef),
+    /// Reflections, rotations and dilations.
+    Transform(TransformDef),
 }
 
 impl Def {
@@ -165,6 +175,10 @@ impl Def {
             Def::Segment(..) => Kind::Segment,
             Def::CircleThrough { .. } | Def::CircleRadius { .. } => Kind::Circle,
             Def::Number(_) | Def::Distance(..) => Kind::Number,
+            Def::Lines(d) => d.kind(),
+            Def::Conic(d) => d.kind(),
+            Def::Measure(d) => d.kind(),
+            Def::Transform(d) => d.kind(),
         }
     }
 
@@ -172,22 +186,26 @@ impl Def {
         matches!(self, Def::FreePoint { .. } | Def::Number(_))
     }
 
-    /// The objects this definition reads (at most two).
-    fn parents(&self) -> ([Id; 2], usize) {
+    /// The objects this definition reads.
+    fn parents(&self) -> Parents {
         match *self {
-            Def::FreePoint { .. } | Def::Number(_) => ([Id(0); 2], 0),
+            Def::FreePoint { .. } | Def::Number(_) => Parents::none(),
             Def::Line(p, q)
             | Def::Segment(p, q)
             | Def::Midpoint(p, q)
             | Def::Distance(p, q)
-            | Def::IntersectLines(p, q) => ([p, q], 2),
+            | Def::IntersectLines(p, q) => Parents::of(&[p, q]),
             Def::Perpendicular { through, to } | Def::Parallel { through, to } => {
-                ([through, to], 2)
+                Parents::of(&[through, to])
             }
-            Def::CircleThrough { center, through } => ([center, through], 2),
-            Def::CircleRadius { center, radius } => ([center, radius], 2),
-            Def::IntersectLineCircle { line, circle, .. } => ([line, circle], 2),
-            Def::IntersectCircles { c1, c2, .. } => ([c1, c2], 2),
+            Def::CircleThrough { center, through } => Parents::of(&[center, through]),
+            Def::CircleRadius { center, radius } => Parents::of(&[center, radius]),
+            Def::IntersectLineCircle { line, circle, .. } => Parents::of(&[line, circle]),
+            Def::IntersectCircles { c1, c2, .. } => Parents::of(&[c1, c2]),
+            Def::Lines(d) => d.parents(),
+            Def::Conic(d) => d.parents(),
+            Def::Measure(d) => d.parents(),
+            Def::Transform(d) => d.parents(),
         }
     }
 }
@@ -302,12 +320,13 @@ impl Construction {
 
         let id = Id(self.defs.len());
         let value = self.compute(def);
-        let (parents, n) = def.parents();
-        for k in 0..n {
-            if k == 1 && parents[0] == parents[1] {
-                continue;
+        let parents = def.parents();
+        let parents = parents.as_slice();
+        for (k, parent) in parents.iter().enumerate() {
+            // An object that is read twice is still one child.
+            if !parents[..k].contains(parent) {
+                self.children[parent.0].push(id);
             }
-            self.children[parents[k].0].push(id);
         }
         self.defs.push(def);
         self.values.push(value);
@@ -395,12 +414,6 @@ impl Construction {
     }
 
     fn check(&self, def: &Def) -> Result<(), Error> {
-        const POINT: &[Kind] = &[Kind::Point];
-        const LINE: &[Kind] = &[Kind::Line];
-        const LINE_LIKE: &[Kind] = &[Kind::Line, Kind::Segment];
-        const CIRCLE: &[Kind] = &[Kind::Circle];
-        const NUMBER: &[Kind] = &[Kind::Number];
-
         match *def {
             Def::FreePoint { x, y } => {
                 if x.is_finite() && y.is_finite() {
@@ -450,10 +463,14 @@ impl Construction {
                 self.expect(c2, CIRCLE)?;
                 check_index(which)
             }
+            Def::Lines(d) => d.check(self),
+            Def::Conic(d) => d.check(self),
+            Def::Measure(d) => d.check(self),
+            Def::Transform(d) => d.check(self),
         }
     }
 
-    fn expect(&self, id: Id, expected: &'static [Kind]) -> Result<(), Error> {
+    pub(crate) fn expect(&self, id: Id, expected: &'static [Kind]) -> Result<(), Error> {
         let def = self.defs.get(id.0).ok_or(Error::UnknownObject)?;
         let found = def.kind();
         if expected.contains(&found) {
@@ -476,134 +493,41 @@ impl Construction {
 
     /// `None` means the object is undefined for the current inputs.
     fn try_compute(&self, def: Def) -> Option<Value> {
-        Some(match def {
-            Def::FreePoint { x, y } => Value::Point { x, y },
-            Def::Number(v) => Value::Number(v),
-            Def::Line(p, q) => {
-                let (a, b, c) = line_through(self.point(p)?, self.point(q)?)?;
-                Value::Line { a, b, c }
-            }
-            Def::Segment(p, q) => {
-                let (x1, y1) = self.point(p)?;
-                let (x2, y2) = self.point(q)?;
-                Value::Segment { x1, y1, x2, y2 }
-            }
-            Def::Midpoint(p, q) => {
-                let (x1, y1) = self.point(p)?;
-                let (x2, y2) = self.point(q)?;
-                Value::Point {
-                    x: 0.5 * (x1 + x2),
-                    y: 0.5 * (y1 + y2),
-                }
-            }
-            Def::Distance(p, q) => {
-                let (x1, y1) = self.point(p)?;
-                let (x2, y2) = self.point(q)?;
-                Value::Number(length(x2 - x1, y2 - y1))
-            }
-            Def::Perpendicular { through, to } => {
-                let (px, py) = self.point(through)?;
-                let (a, b, _) = self.carrier(to)?;
-                // The new line runs along the old normal (a, b).
-                let (na, nb) = (-b, a);
-                Value::Line {
-                    a: na,
-                    b: nb,
-                    c: -(na * px + nb * py),
-                }
-            }
-            Def::Parallel { through, to } => {
-                let (px, py) = self.point(through)?;
-                let (a, b, _) = self.carrier(to)?;
-                Value::Line {
-                    a,
-                    b,
-                    c: -(a * px + b * py),
-                }
-            }
-            Def::CircleThrough { center, through } => {
-                let (cx, cy) = self.point(center)?;
-                let (px, py) = self.point(through)?;
-                Value::Circle {
-                    cx,
-                    cy,
-                    r: length(px - cx, py - cy),
-                }
-            }
-            Def::CircleRadius { center, radius } => {
-                let (cx, cy) = self.point(center)?;
-                let r = self.number(radius)?;
-                if r < 0.0 {
-                    return None;
-                }
-                Value::Circle { cx, cy, r }
-            }
-            Def::IntersectLines(l, m) => {
-                let (a1, b1, c1) = self.line(l)?;
-                let (a2, b2, c2) = self.line(m)?;
-                let det = a1 * b2 - a2 * b1;
-                if det.abs() < EPS {
-                    return None; // parallel
-                }
-                Value::Point {
-                    x: (b1 * c2 - b2 * c1) / det,
-                    y: (a2 * c1 - a1 * c2) / det,
-                }
-            }
+        match def {
+            Def::FreePoint { x, y } => Some(Value::Point { x, y }),
+            Def::Number(v) => Some(Value::Number(v)),
+            Def::Line(p, q) => algo::basic::line(self, p, q),
+            Def::Segment(p, q) => algo::basic::segment(self, p, q),
+            Def::Midpoint(p, q) => algo::basic::midpoint(self, p, q),
+            Def::Distance(p, q) => algo::basic::distance(self, p, q),
+            Def::Perpendicular { through, to } => algo::basic::perpendicular(self, through, to),
+            Def::Parallel { through, to } => algo::basic::parallel(self, through, to),
+            Def::CircleThrough { center, through } => algo::circle::through(self, center, through),
+            Def::CircleRadius { center, radius } => algo::circle::with_radius(self, center, radius),
+            Def::IntersectLines(l, m) => algo::intersect::lines(self, l, m),
             Def::IntersectLineCircle {
                 line,
                 circle,
                 which,
-            } => {
-                let (a, b, c) = self.line(line)?;
-                let (cx, cy, r) = self.circle(circle)?;
-                // Signed distance from the centre to the line.
-                let d = a * cx + b * cy + c;
-                let h2 = r * r - d * d;
-                if h2 < -TANGENT_TOL * (r * r).max(1.0) {
-                    return None;
-                }
-                let h = h2.max(0.0).sqrt();
-                let (fx, fy) = (cx - a * d, cy - b * d);
-                let s = if which == 0 { -h } else { h };
-                Value::Point {
-                    x: fx + s * b,
-                    y: fy - s * a,
-                }
-            }
+            } => algo::intersect::line_circle(self, line, circle, which),
             Def::IntersectCircles { c1, c2, which } => {
-                let (x1, y1, r1) = self.circle(c1)?;
-                let (x2, y2, r2) = self.circle(c2)?;
-                let (dx, dy) = (x2 - x1, y2 - y1);
-                let d = length(dx, dy);
-                if d < EPS {
-                    return None; // concentric
-                }
-                let along = (r1 * r1 - r2 * r2 + d * d) / (2.0 * d);
-                let h2 = r1 * r1 - along * along;
-                if h2 < -TANGENT_TOL * (r1 * r1).max(1.0) {
-                    return None;
-                }
-                let h = h2.max(0.0).sqrt();
-                let (ux, uy) = (dx / d, dy / d);
-                let (bx, by) = (x1 + along * ux, y1 + along * uy);
-                let s = if which == 0 { h } else { -h };
-                Value::Point {
-                    x: bx - s * uy,
-                    y: by + s * ux,
-                }
+                algo::intersect::circles(self, c1, c2, which)
             }
-        })
+            Def::Lines(d) => d.compute(self),
+            Def::Conic(d) => d.compute(self),
+            Def::Measure(d) => d.compute(self),
+            Def::Transform(d) => d.compute(self),
+        }
     }
 
-    fn point(&self, id: Id) -> Option<(f64, f64)> {
+    pub(crate) fn point(&self, id: Id) -> Option<(f64, f64)> {
         match self.values[id.0] {
             Value::Point { x, y } => Some((x, y)),
             _ => None,
         }
     }
 
-    fn line(&self, id: Id) -> Option<(f64, f64, f64)> {
+    pub(crate) fn line(&self, id: Id) -> Option<(f64, f64, f64)> {
         match self.values[id.0] {
             Value::Line { a, b, c } => Some((a, b, c)),
             _ => None,
@@ -611,7 +535,7 @@ impl Construction {
     }
 
     /// The infinite line that a line or a segment lies on.
-    fn carrier(&self, id: Id) -> Option<(f64, f64, f64)> {
+    pub(crate) fn carrier(&self, id: Id) -> Option<(f64, f64, f64)> {
         match self.values[id.0] {
             Value::Line { a, b, c } => Some((a, b, c)),
             Value::Segment { x1, y1, x2, y2 } => line_through((x1, y1), (x2, y2)),
@@ -619,14 +543,14 @@ impl Construction {
         }
     }
 
-    fn circle(&self, id: Id) -> Option<(f64, f64, f64)> {
+    pub(crate) fn circle(&self, id: Id) -> Option<(f64, f64, f64)> {
         match self.values[id.0] {
             Value::Circle { cx, cy, r } => Some((cx, cy, r)),
             _ => None,
         }
     }
 
-    fn number(&self, id: Id) -> Option<f64> {
+    pub(crate) fn number(&self, id: Id) -> Option<f64> {
         match self.values[id.0] {
             Value::Number(v) => Some(v),
             _ => None,
@@ -634,35 +558,10 @@ impl Construction {
     }
 }
 
-fn check_index(which: u8) -> Result<(), Error> {
-    if which < 2 {
-        Ok(())
-    } else {
-        Err(Error::BadIndex(which))
-    }
-}
-
-/// Euclidean length. Plain `sqrt` is several times faster than `hypot`,
-/// and coordinates here are nowhere near the range where it would overflow.
-#[inline]
-fn length(dx: f64, dy: f64) -> f64 {
-    (dx * dx + dy * dy).sqrt()
-}
-
-/// Normalised line through two points, directed from `p` to `q`.
-fn line_through(p: (f64, f64), q: (f64, f64)) -> Option<(f64, f64, f64)> {
-    let (dx, dy) = (q.0 - p.0, q.1 - p.1);
-    let len = length(dx, dy);
-    if len < EPS {
-        return None;
-    }
-    let (a, b) = (-dy / len, dx / len);
-    Some((a, b, -(a * p.0 + b * p.1)))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::algo::length;
 
     fn pt(c: &mut Construction, label: &str, x: f64, y: f64) -> Id {
         c.add(label, Def::FreePoint { x, y }).unwrap()

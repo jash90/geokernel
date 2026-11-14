@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Writes cases/geometry.json: the case inputs (id, group, script, steps).
 
+The helpers live in caselib.py; every other group has its own
+make_<group>.py next to this file.
+
 The inputs only describe what to run. Snapshots come exclusively from running
 GeoGebra through the harness (`harness.sh golden`). The output is
 deterministic: a fixed seed and a fixed order, so case ids stay stable as long
@@ -11,65 +14,16 @@ it becomes defined, so a script never refers to an object that starts out
 undefined (such objects are always leaves).
 """
 
-import json
 import math
-import random
-from pathlib import Path
 
-GROUP = "geometry"
-rng = random.Random()
-cases = []
-counters = {}
+from caselib import Cases, mv, num, pt, setn
 
-
-def fmt(v):
-    """Plain decimal literal for a script line (no exponent notation)."""
-    v = round(float(v), 6)
-    if v == int(v):
-        return str(int(v))
-    return ("%.6f" % v).rstrip("0")
-
-
-def pt(label, x, y):
-    return f"{label} = ({fmt(x)}, {fmt(y)})"
-
-
-def num(label, v):
-    return f"{label} = {fmt(v)}"
-
-
-def mv(label, x, y):
-    return {"action": "move", "label": label, "x": float(round(x, 6)), "y": float(round(y, 6))}
-
-
-def setn(label, v):
-    return {"action": "set_number", "label": label, "value": float(v)}
-
-
-def case(topic, script, steps):
-    counters[topic] = counters.get(topic, 0) + 1
-    cases.append({
-        "id": f"{GROUP}-{topic}-{counters[topic]:03d}",
-        "group": GROUP,
-        "script": script,
-        "steps": [{"action": "initial"}] + steps,
-    })
-
-
-def topic(name):
-    """Starts a topic: re-seeds so each topic's values do not depend on others.
-
-    New cases go at the end of their topic so existing ids keep their meaning.
-    """
-    rng.seed(f"{GROUP}-{name}", version=2)
-
-
-def r2(lo=-8.0, hi=8.0):
-    return round(rng.uniform(lo, hi), 2)
-
-
-def rp(lo=-8.0, hi=8.0):
-    return (r2(lo, hi), r2(lo, hi))
+cases = Cases("geometry")
+rng = cases.rng
+case = cases.case
+topic = cases.topic
+r2 = cases.r2
+rp = cases.rp
 
 
 # ------------------------------------------------------------------ basic
@@ -432,7 +386,4 @@ for _ in range(3):
          [mv("D", a[0] + 5, a[1] + 4.5), mv("C", a[0] - 5, a[1] + 4.5),
           mv("C", a[0] - 5, a[1] + 1)])
 
-out = Path(__file__).with_name("geometry.json")
-lines = ",\n".join("    " + json.dumps(c, separators=(", ", ": ")) for c in cases)
-out.write_text('{\n  "cases": [\n' + lines + "\n  ]\n}\n")
-print(f"{len(cases)} cases written to {out.name}")
+cases.write()

@@ -11,6 +11,11 @@
 //! P = Intersect(l, k, 2)  # second intersection (1 is the default)
 //! ```
 
+use crate::algo::conic::ConicDef;
+use crate::algo::lines::LineDef;
+use crate::algo::measure::MeasureDef;
+use crate::algo::transform::TransformDef;
+use crate::algo::Group;
 use crate::kernel::{Construction, Def, Id, Kind};
 use std::fmt;
 
@@ -92,7 +97,22 @@ fn parse_def(c: &Construction, rhs: &str) -> Result<Def, String> {
         .ok_or("missing closing `)`")?;
     let func = rhs[..open].trim();
     let args: Vec<&str> = inner.split(',').map(str::trim).collect();
-    let obj = |s: &str| c.id(s).ok_or_else(|| format!("unknown object `{s}`"));
+    let obj = |s: &str| object(c, s);
+
+    // Groups are asked first, so that a group can add a new form of a
+    // built-in command (for example `Circle` with three points).
+    if let Some(def) = LineDef::parse(c, func, &args) {
+        return def.map(Def::Lines);
+    }
+    if let Some(def) = ConicDef::parse(c, func, &args) {
+        return def.map(Def::Conic);
+    }
+    if let Some(def) = MeasureDef::parse(c, func, &args) {
+        return def.map(Def::Measure);
+    }
+    if let Some(def) = TransformDef::parse(c, func, &args) {
+        return def.map(Def::Transform);
+    }
 
     match (func, args.len()) {
         ("Line", 2) => {
@@ -172,6 +192,12 @@ fn parse_def(c: &Construction, rhs: &str) -> Result<Def, String> {
         ) => Err(format!("`{func}` does not take {n} argument(s)")),
         _ => Err(format!("unknown command `{func}`")),
     }
+}
+
+/// Looks up an object by its label.
+pub(crate) fn object(c: &Construction, label: &str) -> Result<Id, String> {
+    c.id(label)
+        .ok_or_else(|| format!("unknown object `{label}`"))
 }
 
 fn parse_number(s: &str) -> Result<f64, String> {

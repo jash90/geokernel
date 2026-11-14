@@ -24,9 +24,11 @@ Run from the repository root; `GEOGEBRA_SRC` points at the checkout.
 ```sh
 export GEOGEBRA_SRC=<path to the GeoGebra checkout>
 tools/ggb-harness/harness.sh build    # build GeoGebra's common-jre, compile the harness
-tools/ggb-harness/harness.sh golden   # rewrite golden/geometry/*.json
+tools/ggb-harness/harness.sh golden   # rewrite golden/<group>/*.json for every group
+tools/ggb-harness/harness.sh golden lines   # rewrite one group only
 tools/ggb-harness/harness.sh chain    # time the bench() chain (optional: number of steps)
 python3 tools/ggb-harness/cases/make_cases.py   # rewrite cases/geometry.json
+python3 tools/ggb-harness/cases/make_lines.py   # rewrite cases/lines.json (one script per group)
 ```
 
 `build` runs `gradlew -p source/shared :common-jre:ggbHarnessClasspath` with
@@ -40,10 +42,11 @@ for the checkout. Two runs produce byte-identical files.
 
 ## How a case is replayed
 
-`cases/geometry.json` holds the inputs: `id`, `group`, `script`, `steps`.
-It is written by `cases/make_cases.py` (fixed seed, fixed order, one case per
-line). Ids have the form `geometry-<topic>-<nnn>`; the cases of one topic go
-to `golden/geometry/<topic>.json`. New cases must be appended to a topic so
+`cases/<group>.json` holds the inputs of one group: `id`, `group`, `script`,
+`steps`. It is written by `cases/make_<group>.py` (`make_cases.py` for the
+group `geometry`) with the helpers in `cases/caselib.py`: fixed seed, fixed
+order, one case per line. Ids have the form `<group>-<topic>-<nnn>`; the
+cases of one topic go to `golden/<group>/<topic>.json`. New cases must be appended to a topic so
 existing ids keep their meaning.
 
 For every case `GoldenGenerator`:

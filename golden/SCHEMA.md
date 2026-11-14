@@ -6,6 +6,9 @@ sequence of moves. The Rust tests replay the same script and moves on
 
 Golden values come only from running GeoGebra through `tools/ggb-harness`.
 They are never written by hand and never produced by `geo-kernel` itself.
+GeoGebra runs with its *continuity* setting off, which is the default of a
+new construction: every snapshot depends only on the current positions, not
+on the path the points took to get there.
 The file `crates/geo-golden/tests/fixtures/format-sample.json` is a
 hand-written sample of the format. It is not golden data.
 
