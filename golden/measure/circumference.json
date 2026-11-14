@@ -1,0 +1,261 @@
+{
+  "schema": 1,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "measure-circumference-001",
+      "group": "measure",
+      "script": [
+        "A = (7.33, -3.36)",
+        "B = (1.11, 1)",
+        "k = Circle(A, B)",
+        "p = Circumference(k)",
+        "q = Perimeter(k)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 5.54, "y": -5.48 },
+        { "action": "move", "label": "B", "x": 7.33, "y": -3.36 },
+        { "action": "move", "label": "B", "x": 4.4, "y": -3.35 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 7.33, "y": -3.36 },
+          "B": { "type": "point", "defined": true, "x": 1.11, "y": 1.0 },
+          "k": { "type": "circle", "defined": true, "cx": 7.33, "cy": -3.36, "r": 7.595919957450842 },
+          "p": { "type": "number", "defined": true, "value": 47.72657267116732 },
+          "q": { "type": "number", "defined": true, "value": 47.72657267116732 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.33, "y": -3.36 },
+          "B": { "type": "point", "defined": true, "x": 5.54, "y": -5.48 },
+          "k": { "type": "circle", "defined": true, "cx": 7.33, "cy": -3.36, "r": 2.7746170906991834 },
+          "p": { "type": "number", "defined": true, "value": 17.433433337330477 },
+          "q": { "type": "number", "defined": true, "value": 17.433433337330477 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.33, "y": -3.36 },
+          "B": { "type": "point", "defined": true, "x": 7.33, "y": -3.36 },
+          "k": { "type": "circle", "defined": true, "cx": 7.33, "cy": -3.36, "r": 0.0 },
+          "p": { "type": "number", "defined": false },
+          "q": { "type": "number", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.33, "y": -3.36 },
+          "B": { "type": "point", "defined": true, "x": 4.4, "y": -3.35 },
+          "k": { "type": "circle", "defined": true, "cx": 7.33, "cy": -3.36, "r": 2.930017064796722 },
+          "p": { "type": "number", "defined": true, "value": 18.409840171316223 },
+          "q": { "type": "number", "defined": true, "value": 18.409840171316223 }
+        }
+      ]
+    },
+    {
+      "id": "measure-circumference-002",
+      "group": "measure",
+      "script": [
+        "A = (-7.4, 5.94)",
+        "B = (0.56, -4.81)",
+        "k = Circle(A, B)",
+        "p = Circumference(k)",
+        "q = Perimeter(k)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": -2.35, "y": 8.0 },
+        { "action": "move", "label": "B", "x": -7.4, "y": 5.94 },
+        { "action": "move", "label": "B", "x": -1.41, "y": -2.21 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -7.4, "y": 5.94 },
+          "B": { "type": "point", "defined": true, "x": 0.56, "y": -4.81 },
+          "k": { "type": "circle", "defined": true, "cx": -7.4, "cy": 5.94, "r": 13.376251343332333 },
+          "p": { "type": "number", "defined": true, "value": 84.04546590556691 },
+          "q": { "type": "number", "defined": true, "value": 84.04546590556691 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.4, "y": 5.94 },
+          "B": { "type": "point", "defined": true, "x": -2.35, "y": 8.0 },
+          "k": { "type": "circle", "defined": true, "cx": -7.4, "cy": 5.94, "r": 5.4539985331864544 },
+          "p": { "type": "number", "defined": true, "value": 34.268483449096145 },
+          "q": { "type": "number", "defined": true, "value": 34.268483449096145 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.4, "y": 5.94 },
+          "B": { "type": "point", "defined": true, "x": -7.4, "y": 5.94 },
+          "k": { "type": "circle", "defined": true, "cx": -7.4, "cy": 5.94, "r": 0.0 },
+          "p": { "type": "number", "defined": false },
+          "q": { "type": "number", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.4, "y": 5.94 },
+          "B": { "type": "point", "defined": true, "x": -1.41, "y": -2.21 },
+          "k": { "type": "circle", "defined": true, "cx": -7.4, "cy": 5.94, "r": 10.114474776279785 },
+          "p": { "type": "number", "defined": true, "value": 63.55111930415968 },
+          "q": { "type": "number", "defined": true, "value": 63.55111930415968 }
+        }
+      ]
+    },
+    {
+      "id": "measure-circumference-003",
+      "group": "measure",
+      "script": [
+        "A = (0, 0)",
+        "r = 2",
+        "k = Circle(A, r)",
+        "p = Circumference(k)",
+        "q = Perimeter(k)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "r", "value": 0.0 },
+        { "action": "set_number", "label": "r", "value": 4.25 },
+        { "action": "set_number", "label": "r", "value": 0.0 },
+        { "action": "set_number", "label": "r", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "p": { "type": "number", "defined": true, "value": 12.566370614359172 },
+          "q": { "type": "number", "defined": true, "value": 12.566370614359172 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.0 },
+          "p": { "type": "number", "defined": false },
+          "q": { "type": "number", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 4.25 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 4.25 },
+          "p": { "type": "number", "defined": true, "value": 26.703537555513243 },
+          "q": { "type": "number", "defined": true, "value": 26.703537555513243 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.0 },
+          "p": { "type": "number", "defined": false },
+          "q": { "type": "number", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 1.0 },
+          "p": { "type": "number", "defined": true, "value": 6.283185307179586 },
+          "q": { "type": "number", "defined": true, "value": 6.283185307179586 }
+        }
+      ]
+    },
+    {
+      "id": "measure-circumference-004",
+      "group": "measure",
+      "script": [
+        "A = (2, -1)",
+        "B = (5, 3)",
+        "k = Circle(A, B)",
+        "p = Perimeter(k)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": 5.0, "y": 3.0 },
+        { "action": "move", "label": "A", "x": -2.0, "y": 8.0 },
+        { "action": "move", "label": "B", "x": -2.0, "y": 8.0 },
+        { "action": "move", "label": "B", "x": 7.0, "y": 7.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": -1.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 2.0, "cy": -1.0, "r": 5.0 },
+          "p": { "type": "number", "defined": true, "value": 31.41592653589793 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 3.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 5.0, "cy": 3.0, "r": 0.0 },
+          "p": { "type": "number", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 8.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": -2.0, "cy": 8.0, "r": 8.602325267042627 },
+          "p": { "type": "number", "defined": true, "value": 54.05000372546194 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 8.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": 8.0 },
+          "k": { "type": "circle", "defined": true, "cx": -2.0, "cy": 8.0, "r": 0.0 },
+          "p": { "type": "number", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 8.0 },
+          "B": { "type": "point", "defined": true, "x": 7.0, "y": 7.0 },
+          "k": { "type": "circle", "defined": true, "cx": -2.0, "cy": 8.0, "r": 9.055385138137417 },
+          "p": { "type": "number", "defined": true, "value": 56.896662850797405 }
+        }
+      ]
+    },
+    {
+      "id": "measure-circumference-005",
+      "group": "measure",
+      "script": [
+        "A = (0, 0)",
+        "q = 1",
+        "k = Circle(A, q)",
+        "p = Circumference(k)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "q", "value": 1.0E-7 },
+        { "action": "set_number", "label": "q", "value": 2.0E-8 },
+        { "action": "set_number", "label": "q", "value": 1.0E-8 },
+        { "action": "set_number", "label": "q", "value": 0.0 },
+        { "action": "set_number", "label": "q", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "q": { "type": "number", "defined": true, "value": 1.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 1.0 },
+          "p": { "type": "number", "defined": true, "value": 6.283185307179586 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "q": { "type": "number", "defined": true, "value": 1.0E-7 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 1.0E-7 },
+          "p": { "type": "number", "defined": true, "value": 6.283185307179586E-7 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "q": { "type": "number", "defined": true, "value": 2.0E-8 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0E-8 },
+          "p": { "type": "number", "defined": true, "value": 1.2566370614359172E-7 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "q": { "type": "number", "defined": true, "value": 1.0E-8 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 1.0E-8 },
+          "p": { "type": "number", "defined": true, "value": 6.283185307179586E-8 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "q": { "type": "number", "defined": true, "value": 0.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.0 },
+          "p": { "type": "number", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "q": { "type": "number", "defined": true, "value": 1.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 1.0 },
+          "p": { "type": "number", "defined": true, "value": 6.283185307179586 }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,620 @@
+{
+  "schema": 1,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "measure-areapts-001",
+      "group": "measure",
+      "script": [
+        "A = (0.16, -4.09)",
+        "B = (5.2, 4.84)",
+        "C = (6.48, 3.67)",
+        "ar = Area(A, B, C)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": -2.43, "y": 0.31 },
+        { "action": "move", "label": "B", "x": -5.23, "y": -0.68 },
+        { "action": "move", "label": "A", "x": 6.63, "y": 3.8 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.16, "y": -4.09 },
+          "B": { "type": "point", "defined": true, "x": 5.2, "y": 4.84 },
+          "C": { "type": "point", "defined": true, "x": 6.48, "y": 3.67 },
+          "ar": { "type": "number", "defined": true, "value": 8.6636 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.16, "y": -4.09 },
+          "B": { "type": "point", "defined": true, "x": 5.2, "y": 4.84 },
+          "C": { "type": "point", "defined": true, "x": -2.43, "y": 0.31 },
+          "ar": { "type": "number", "defined": true, "value": 22.65235 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.16, "y": -4.09 },
+          "B": { "type": "point", "defined": true, "x": -5.23, "y": -0.68 },
+          "C": { "type": "point", "defined": true, "x": -2.43, "y": 0.31 },
+          "ar": { "type": "number", "defined": true, "value": 7.442050000000001 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 6.63, "y": 3.8 },
+          "B": { "type": "point", "defined": true, "x": -5.23, "y": -0.68 },
+          "C": { "type": "point", "defined": true, "x": -2.43, "y": 0.31 },
+          "ar": { "type": "number", "defined": true, "value": 0.4013000000000009 }
+        }
+      ]
+    },
+    {
+      "id": "measure-areapts-002",
+      "group": "measure",
+      "script": [
+        "A = (-3.63, -2.4)",
+        "B = (-0.04, -2.98)",
+        "C = (-7.17, 1.98)",
+        "ar = Area(A, B, C)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 0.46, "y": 4.63 },
+        { "action": "move", "label": "B", "x": 2.3, "y": -4.87 },
+        { "action": "move", "label": "A", "x": -5.67, "y": 4.91 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -3.63, "y": -2.4 },
+          "B": { "type": "point", "defined": true, "x": -0.04, "y": -2.98 },
+          "C": { "type": "point", "defined": true, "x": -7.17, "y": 1.98 },
+          "ar": { "type": "number", "defined": true, "value": 6.8355 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.63, "y": -2.4 },
+          "B": { "type": "point", "defined": true, "x": -0.04, "y": -2.98 },
+          "C": { "type": "point", "defined": true, "x": 0.46, "y": 4.63 },
+          "ar": { "type": "number", "defined": true, "value": 13.80495 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.63, "y": -2.4 },
+          "B": { "type": "point", "defined": true, "x": 2.3, "y": -4.87 },
+          "C": { "type": "point", "defined": true, "x": 0.46, "y": 4.63 },
+          "ar": { "type": "number", "defined": true, "value": 25.8951 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -5.67, "y": 4.91 },
+          "B": { "type": "point", "defined": true, "x": 2.3, "y": -4.87 },
+          "C": { "type": "point", "defined": true, "x": 0.46, "y": 4.63 },
+          "ar": { "type": "number", "defined": true, "value": 28.8599 }
+        }
+      ]
+    },
+    {
+      "id": "measure-areapts-003",
+      "group": "measure",
+      "script": [
+        "A = (0.13, -0.94)",
+        "B = (1.88, 0.16)",
+        "C = (-6.49, 5.66)",
+        "ar = Area(A, B, C)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": -3.91, "y": -2.23 },
+        { "action": "move", "label": "B", "x": 4.33, "y": 0.02 },
+        { "action": "move", "label": "A", "x": -6.2, "y": 7.37 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.13, "y": -0.94 },
+          "B": { "type": "point", "defined": true, "x": 1.88, "y": 0.16 },
+          "C": { "type": "point", "defined": true, "x": -6.49, "y": 5.66 },
+          "ar": { "type": "number", "defined": true, "value": 9.416 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.13, "y": -0.94 },
+          "B": { "type": "point", "defined": true, "x": 1.88, "y": 0.16 },
+          "C": { "type": "point", "defined": true, "x": -3.91, "y": -2.23 },
+          "ar": { "type": "number", "defined": true, "value": 1.0932499999999996 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.13, "y": -0.94 },
+          "B": { "type": "point", "defined": true, "x": 4.33, "y": 0.02 },
+          "C": { "type": "point", "defined": true, "x": -3.91, "y": -2.23 },
+          "ar": { "type": "number", "defined": true, "value": 0.7698000000000003 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.2, "y": 7.37 },
+          "B": { "type": "point", "defined": true, "x": 4.33, "y": 0.02 },
+          "C": { "type": "point", "defined": true, "x": -3.91, "y": -2.23 },
+          "ar": { "type": "number", "defined": true, "value": 42.12825000000001 }
+        }
+      ]
+    },
+    {
+      "id": "measure-areapts-004",
+      "group": "measure",
+      "script": [
+        "A = (0, 0)",
+        "B = (4, 0)",
+        "C = (0, 3)",
+        "ar = Area(A, B, C)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 8.0, "y": 0.0 },
+        { "action": "move", "label": "C", "x": 2.0, "y": 0.0 },
+        { "action": "move", "label": "C", "x": 4.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 4.0, "y": 0.0 },
+        { "action": "move", "label": "C", "x": 0.0, "y": 3.0 },
+        { "action": "move", "label": "C", "x": 0.0, "y": -3.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "ar": { "type": "number", "defined": true, "value": 6.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 8.0, "y": 0.0 },
+          "ar": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "ar": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "ar": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "ar": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "ar": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "ar": { "type": "number", "defined": true, "value": 6.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": -3.0 },
+          "ar": { "type": "number", "defined": true, "value": 6.0 }
+        }
+      ]
+    },
+    {
+      "id": "measure-areapts-005",
+      "group": "measure",
+      "script": [
+        "A = (0, 0)",
+        "B = (4, 0)",
+        "C = (0, 3)",
+        "ar = Area(A, B, C)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "C", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 2.0, "y": 2.0 },
+        { "action": "move", "label": "C", "x": 3.0, "y": 3.0 },
+        { "action": "move", "label": "C", "x": 1.0, "y": 5.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "ar": { "type": "number", "defined": true, "value": 6.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "ar": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "ar": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "ar": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "ar": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "ar": { "type": "number", "defined": true, "value": 4.0 }
+        }
+      ]
+    },
+    {
+      "id": "measure-areapts-006",
+      "group": "measure",
+      "script": [
+        "A = (1, 1)",
+        "B = (5, 1)",
+        "C = (5, 4)",
+        "ar = Area(A, B, C)",
+        "br = Area(C, B, A)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 1.0, "y": 4.0 },
+        { "action": "move", "label": "C", "x": 3.0, "y": -2.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 5.0, "y": 4.0 },
+          "ar": { "type": "number", "defined": true, "value": 6.0 },
+          "br": { "type": "number", "defined": true, "value": 6.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 4.0 },
+          "ar": { "type": "number", "defined": true, "value": 6.0 },
+          "br": { "type": "number", "defined": true, "value": 6.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": -2.0 },
+          "ar": { "type": "number", "defined": true, "value": 6.0 },
+          "br": { "type": "number", "defined": true, "value": 6.0 }
+        }
+      ]
+    },
+    {
+      "id": "measure-areapts-007",
+      "group": "measure",
+      "script": [
+        "A = (6, 4.58)",
+        "B = (-2.41, -7.47)",
+        "C = (5.71, 0.01)",
+        "D = (-7.66, -1.57)",
+        "ar = Area(A, B, C, D)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "D", "x": -3.84, "y": -5.93 },
+        { "action": "move", "label": "C", "x": -6.46, "y": -7.49 },
+        { "action": "move", "label": "B", "x": -5.35, "y": -2.84 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 6.0, "y": 4.58 },
+          "B": { "type": "point", "defined": true, "x": -2.41, "y": -7.47 },
+          "C": { "type": "point", "defined": true, "x": 5.71, "y": 0.01 },
+          "D": { "type": "point", "defined": true, "x": -7.66, "y": -1.57 },
+          "ar": { "type": "number", "defined": true, "value": 12.85175 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 6.0, "y": 4.58 },
+          "B": { "type": "point", "defined": true, "x": -2.41, "y": -7.47 },
+          "C": { "type": "point", "defined": true, "x": 5.71, "y": 0.01 },
+          "D": { "type": "point", "defined": true, "x": -3.84, "y": -5.93 },
+          "ar": { "type": "number", "defined": true, "value": 3.4908499999999965 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 6.0, "y": 4.58 },
+          "B": { "type": "point", "defined": true, "x": -2.41, "y": -7.47 },
+          "C": { "type": "point", "defined": true, "x": -6.46, "y": -7.49 },
+          "D": { "type": "point", "defined": true, "x": -3.84, "y": -5.93 },
+          "ar": { "type": "number", "defined": true, "value": 18.224249999999998 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 6.0, "y": 4.58 },
+          "B": { "type": "point", "defined": true, "x": -5.35, "y": -2.84 },
+          "C": { "type": "point", "defined": true, "x": -6.46, "y": -7.49 },
+          "D": { "type": "point", "defined": true, "x": -3.84, "y": -5.93 },
+          "ar": { "type": "number", "defined": true, "value": 28.363550000000004 }
+        }
+      ]
+    },
+    {
+      "id": "measure-areapts-008",
+      "group": "measure",
+      "script": [
+        "A = (1.59, -6.96)",
+        "B = (7.29, 5.75)",
+        "C = (3.23, -0.79)",
+        "D = (-5.09, -1.05)",
+        "ar = Area(A, B, C, D)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "D", "x": -7.35, "y": -5.7 },
+        { "action": "move", "label": "C", "x": -4.27, "y": -5.91 },
+        { "action": "move", "label": "B", "x": -1.12, "y": -2.68 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.59, "y": -6.96 },
+          "B": { "type": "point", "defined": true, "x": 7.29, "y": 5.75 },
+          "C": { "type": "point", "defined": true, "x": 3.23, "y": -0.79 },
+          "D": { "type": "point", "defined": true, "x": -5.09, "y": -1.05 },
+          "ar": { "type": "number", "defined": true, "value": 32.616299999999995 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.59, "y": -6.96 },
+          "B": { "type": "point", "defined": true, "x": 7.29, "y": 5.75 },
+          "C": { "type": "point", "defined": true, "x": 3.23, "y": -0.79 },
+          "D": { "type": "point", "defined": true, "x": -7.35, "y": -5.7 },
+          "ar": { "type": "number", "defined": true, "value": 35.7754 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.59, "y": -6.96 },
+          "B": { "type": "point", "defined": true, "x": 7.29, "y": 5.75 },
+          "C": { "type": "point", "defined": true, "x": -4.27, "y": -5.91 },
+          "D": { "type": "point", "defined": true, "x": -7.35, "y": -5.7 },
+          "ar": { "type": "number", "defined": true, "value": 41.2345 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.59, "y": -6.96 },
+          "B": { "type": "point", "defined": true, "x": -1.12, "y": -2.68 },
+          "C": { "type": "point", "defined": true, "x": -4.27, "y": -5.91 },
+          "D": { "type": "point", "defined": true, "x": -7.35, "y": -5.7 },
+          "ar": { "type": "number", "defined": true, "value": 12.11935 }
+        }
+      ]
+    },
+    {
+      "id": "measure-areapts-009",
+      "group": "measure",
+      "script": [
+        "A = (-4.72, 1.32)",
+        "B = (0.19, -4.92)",
+        "C = (7.57, -1.6)",
+        "D = (3.94, 5.75)",
+        "ar = Area(A, B, C, D)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "D", "x": 6.6, "y": -6.57 },
+        { "action": "move", "label": "C", "x": -0.21, "y": -1.63 },
+        { "action": "move", "label": "B", "x": 1.7, "y": -2.38 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -4.72, "y": 1.32 },
+          "B": { "type": "point", "defined": true, "x": 0.19, "y": -4.92 },
+          "C": { "type": "point", "defined": true, "x": 7.57, "y": -1.6 },
+          "D": { "type": "point", "defined": true, "x": 3.94, "y": 5.75 },
+          "ar": { "type": "number", "defined": true, "value": 71.04214999999999 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -4.72, "y": 1.32 },
+          "B": { "type": "point", "defined": true, "x": 0.19, "y": -4.92 },
+          "C": { "type": "point", "defined": true, "x": 7.57, "y": -1.6 },
+          "D": { "type": "point", "defined": true, "x": 6.6, "y": -6.57 },
+          "ar": { "type": "number", "defined": true, "value": 0.780650000000005 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -4.72, "y": 1.32 },
+          "B": { "type": "point", "defined": true, "x": 0.19, "y": -4.92 },
+          "C": { "type": "point", "defined": true, "x": -0.21, "y": -1.63 },
+          "D": { "type": "point", "defined": true, "x": 6.6, "y": -6.57 },
+          "ar": { "type": "number", "defined": true, "value": 5.733999999999995 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -4.72, "y": 1.32 },
+          "B": { "type": "point", "defined": true, "x": 1.7, "y": -2.38 },
+          "C": { "type": "point", "defined": true, "x": -0.21, "y": -1.63 },
+          "D": { "type": "point", "defined": true, "x": 6.6, "y": -6.57 },
+          "ar": { "type": "number", "defined": true, "value": 2.220950000000002 }
+        }
+      ]
+    },
+    {
+      "id": "measure-areapts-010",
+      "group": "measure",
+      "script": [
+        "A = (0, 0)",
+        "B = (4, 0)",
+        "C = (4, 4)",
+        "D = (0, 4)",
+        "ar = Area(A, B, C, D)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 0.0, "y": 4.0 },
+        { "action": "move", "label": "D", "x": 4.0, "y": 4.0 },
+        { "action": "move", "label": "D", "x": 0.0, "y": 4.0 },
+        { "action": "move", "label": "C", "x": 4.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 0.0, "y": 4.0 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 4.0 },
+        { "action": "move", "label": "C", "x": 0.0, "y": 4.0 },
+        { "action": "move", "label": "D", "x": 0.0, "y": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "ar": { "type": "number", "defined": true, "value": 16.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "ar": { "type": "number", "defined": true, "value": 8.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 },
+          "ar": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "ar": { "type": "number", "defined": true, "value": 8.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "ar": { "type": "number", "defined": true, "value": 16.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "ar": { "type": "number", "defined": true, "value": 8.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "C": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "ar": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "ar": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "ar": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "measure-areapts-011",
+      "group": "measure",
+      "script": [
+        "A = (0, 0)",
+        "B = (2, 0)",
+        "C = (4, 0)",
+        "D = (6, 0)",
+        "ar = Area(A, B, C, D)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "D", "x": 6.0, "y": 3.0 },
+        { "action": "move", "label": "D", "x": 6.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 2.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 2.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "ar": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 6.0, "y": 3.0 },
+          "ar": { "type": "number", "defined": true, "value": 6.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "ar": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "ar": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "ar": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "measure-areapts-012",
+      "group": "measure",
+      "script": [
+        "A = (0, 0)",
+        "B = (4, 4)",
+        "C = (4, 0)",
+        "D = (0, 4)",
+        "ar = Area(A, B, C, D)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "D", "x": 0.0, "y": -4.0 },
+        { "action": "move", "label": "D", "x": 0.0, "y": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 },
+          "C": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "ar": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 },
+          "C": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": -4.0 },
+          "ar": { "type": "number", "defined": true, "value": 16.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 },
+          "C": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "ar": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    }
+  ]
+}
