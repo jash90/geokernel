@@ -13,46 +13,6 @@
 # nor go stale.
 
 [[gap]]
-id = "geometry-circle-009"
-reason = "GeoGebra treats a radius smaller in magnitude than 1e-8 as 0 and keeps the circle defined (the data probes -1e-9); the kernel treats every negative radius as undefined"
-mismatches = ["5:k"]
-
-[[gap]]
-id = "geometry-circle-010"
-reason = "GeoGebra treats a radius smaller in magnitude than 1e-8 as 0 and keeps the circle defined (the data probes -1e-9); the kernel treats every negative radius as undefined"
-mismatches = ["5:k"]
-
-[[gap]]
-id = "geometry-circle-011"
-reason = "GeoGebra treats a radius smaller in magnitude than 1e-8 as 0 and keeps the circle defined (the data probes -1e-9); the kernel treats every negative radius as undefined"
-mismatches = ["5:k"]
-
-[[gap]]
-id = "geometry-circle-012"
-reason = "GeoGebra treats a radius smaller in magnitude than 1e-8 as 0 and keeps the circle defined (the data probes -1e-9); the kernel treats every negative radius as undefined"
-mismatches = ["5:k"]
-
-[[gap]]
-id = "geometry-circle-013"
-reason = "GeoGebra treats a radius smaller in magnitude than 1e-8 as 0 and keeps the circle defined (the data probes -1e-9); the kernel treats every negative radius as undefined"
-mismatches = ["5:k"]
-
-[[gap]]
-id = "geometry-circle-014"
-reason = "GeoGebra treats a radius smaller in magnitude than 1e-8 as 0 and keeps the circle defined (the data probes -1e-9); the kernel treats every negative radius as undefined"
-mismatches = ["5:k"]
-
-[[gap]]
-id = "geometry-circle-015"
-reason = "GeoGebra treats a radius smaller in magnitude than 1e-8 as 0 and keeps the circle defined (the data probes -1e-9); the kernel treats every negative radius as undefined"
-mismatches = ["5:k"]
-
-[[gap]]
-id = "geometry-circle-016"
-reason = "GeoGebra treats a radius smaller in magnitude than 1e-8 as 0 and keeps the circle defined (the data probes -1e-9); the kernel treats every negative radius as undefined"
-mismatches = ["5:k"]
-
-[[gap]]
 id = "geometry-ixcc-011"
 reason = "at tangency GeoGebra defines only intersection 1 and leaves intersection 2 undefined; the kernel returns the tangent point for both indices"
 mismatches = ["0:Q", "1:Q", "3:Q"]
@@ -278,11 +238,6 @@ reason = "identical circles through a shared point: GeoGebra returns that point 
 mismatches = ["0:P", "1:P", "2:P"]
 
 # conic
-
-[[gap]]
-id = "conic-center-010"
-reason = "GeoGebra treats a radius smaller in magnitude than 1e-8 as 0 (the data probes 5e-9) for Circle(A, r); the built-in circle keeps the radius"
-mismatches = ["1:k"]
 
 [[gap]]
 id = "conic-diameter-007"
