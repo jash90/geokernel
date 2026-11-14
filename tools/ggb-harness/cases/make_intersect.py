@@ -260,4 +260,40 @@ for _ in range(2):
                      "P = Intersect(c, k, 1)", "Q = Intersect(c, k, 2)"],
          [mv("B", a[0] - 3, a[1] - 1), mv("B", a[0] + 4.5, a[1]), mv("A", *rp())])
 
+# ------------------------- line x circle: sliding along an unchanged line
+topic("slide")
+# The line reaches tangency along an axis, then its points slide along it:
+# the line stays the same, but GeoGebra's coefficients scale with the
+# distance between C and D.
+for vertical in (False, False, False, True, True):
+    a = rp(-4, 4)
+    r = round(rng.uniform(1, 5), 2)
+    if vertical:
+        x0, t = round(a[0] + 0.5 * r, 2), round(a[0] + r, 2)
+        script = [pt("C", x0, a[1] - 6), pt("D", x0, a[1] + 6)]
+        steps = [mv("C", t, a[1] - 6), mv("D", t, a[1] + 6)]
+        for lo, hi in ((-1, 1), (-25, 3), (-0.125, 40), (2, 2.5), (-7.3, 0.6)):
+            steps += [mv("C", t, a[1] + lo), mv("D", t, a[1] + hi)]
+        steps += [mv("D", t, a[1] - 9)]
+    else:
+        y0, t = round(a[1] + 0.5 * r, 2), round(a[1] + r, 2)
+        script = [pt("C", a[0] - 6, y0), pt("D", a[0] + 6, y0)]
+        steps = [mv("C", a[0] - 6, t), mv("D", a[0] + 6, t)]
+        for lo, hi in ((-1, 1), (-25, 3), (-0.125, 40), (2, 2.5), (-7.3, 0.6)):
+            steps += [mv("C", a[0] + lo, t), mv("D", a[0] + hi, t)]
+        steps += [mv("D", a[0] - 9, t)]
+    case("slide", [pt("A", *a), num("r", r), "k = Circle(A, r)"] + script
+         + ["f = Line(C, D)"] + LC, steps)
+
+# The radius makes the line tangent, then the points slide along the line.
+for _ in range(3):
+    a = rp(-3, 3)
+    off = round(rng.uniform(0.5, 2), 2)
+    r = round(off + rng.uniform(0.5, 2), 2)
+    case("slide", [pt("A", *a), num("r", r), "k = Circle(A, r)",
+                   pt("C", a[0] - 5, a[1] + off), pt("D", a[0] + 5, a[1] + off),
+                   "f = Line(C, D)"] + LC,
+         [setn("r", off), mv("C", a[0] - 0.5, a[1] + off), mv("D", a[0] + 30, a[1] + off),
+          mv("C", a[0] + 3, a[1] + off), mv("D", a[0] - 3, a[1] + off), setn("r", r)])
+
 cases.write()

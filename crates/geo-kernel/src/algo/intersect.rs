@@ -17,6 +17,7 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoJoinPoints.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoLinePointLine.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoOrthoLinePointLine.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/Kernel.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoLine.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoPoint.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoVec3D.java
@@ -31,33 +32,43 @@ use super::Parents;
 use crate::kernel::{Construction, Def, Id, Value};
 use crate::tol::{EPS, MAX_PRECISION, MIN_PRECISION, STANDARD_PRECISION};
 
-/// Points that an intersection reads besides its line and circles: a point
-/// on both objects by construction becomes intersection 1 with its own
-/// coordinates, so the intersection must be recomputed when that point
-/// moves even if the line and the circles keep their values.
+/// Points that an intersection reads besides its line and circles.
+///
+/// A point on both objects by construction becomes intersection 1 with its
+/// own coordinates, and the coefficients of a line through two points are
+/// rebuilt from those points (see [`raw_line`]). The intersection must be
+/// recomputed when such a point moves even if the line and the circles keep
+/// their values, for example when a point slides along a horizontal line.
 pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Parents {
+    let mut ids = [Id(0); 4];
+    let mut n = 0;
+    let mut push = |s: Option<Id>| {
+        if let Some(s) = s {
+            if !ids[..n].contains(&s) {
+                ids[n] = s;
+                n += 1;
+            }
+        }
+    };
     match *def {
         Def::IntersectLineCircle { line, circle, .. } => {
-            match existing_line_circle_point(c, line, c.def(line), circle) {
-                Some(s) => Parents::of(&[s]),
-                None => Parents::none(),
+            let line_def = c.def(line);
+            push(existing_line_circle_point(c, line, line_def, circle));
+            if let Def::Line(p, q) = line_def {
+                push(Some(p));
+                push(Some(q));
             }
         }
         Def::IntersectCircles { c1, c2, .. } => {
-            let mut ids = [Id(0); 4];
-            let mut n = 0;
             let [a, b] = circle_points_on_other(c, c1, c2);
             let [d, e] = circle_points_on_other(c, c2, c1);
-            for s in [a, b, d, e].into_iter().flatten() {
-                if !ids[..n].contains(&s) {
-                    ids[n] = s;
-                    n += 1;
-                }
+            for s in [a, b, d, e] {
+                push(s);
             }
-            Parents::of(&ids[..n])
         }
-        _ => Parents::none(),
+        _ => {}
     }
+    Parents::of(&ids[..n])
 }
 
 pub(crate) fn lines(c: &Construction, l: Id, m: Id) -> Option<Value> {
@@ -729,6 +740,17 @@ mod tests {
         .unwrap();
         assert!(close(xy(&c, "P"), -3.0, -4.0));
         assert!(close(xy(&c, "Q"), 3.0, 4.0));
+    }
+
+    #[test]
+    fn sliding_a_point_along_the_line_recomputes_the_intersections() {
+        // The normalised line does not change, but GeoGebra's coefficients
+        // of Line(C, D) do, so P and Q are recomputed with them.
+        let mut c = load(LINE_CIRCLE).unwrap();
+        let moved = c.move_point(c.id("C").unwrap(), -20.0, 3.0).unwrap();
+        assert_eq!(moved, 3); // f, P and Q
+        assert!(close(xy(&c, "P"), -4.0, 3.0));
+        assert!(close(xy(&c, "Q"), 4.0, 3.0));
     }
 
     const CIRCLES: &str = "A = (0, 0)\nB = (8, 0)\nr = 5\nq = 5\n\
