@@ -12,21 +12,6 @@
 # the list says it does not, so an entry can neither hide a new difference
 # nor go stale.
 
-[[gap]]
-id = "geometry-ixlc-007"
-reason = "near-tangent intersection: the discriminant is rounding noise, so GeoGebra and the kernel differ by 1e-8 to 1e-7 in position and in whether a second point exists"
-mismatches = ["2:P", "2:Q"]
-
-[[gap]]
-id = "geometry-ixlc-037"
-reason = "near-tangent intersection: the discriminant is rounding noise, so GeoGebra and the kernel differ by 1e-8 to 1e-7 in position and in whether a second point exists"
-mismatches = ["0:P", "0:Q", "4:P", "4:Q"]
-
-[[gap]]
-id = "geometry-ixlc-039"
-reason = "near-tangent intersection: the discriminant is rounding noise, so GeoGebra and the kernel differ by 1e-8 to 1e-7 in position and in whether a second point exists"
-mismatches = ["0:P", "0:Q", "4:P", "4:Q"]
-
 # conic
 
 [[gap]]

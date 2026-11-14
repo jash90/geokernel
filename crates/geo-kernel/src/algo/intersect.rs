@@ -253,9 +253,19 @@ fn point(x: f64, y: f64) -> Pt {
 
 // ----------------------------------------------------------------- lines
 
-/// The line's coefficients.
-fn raw_line(c: &Construction, line: Id, _line_def: Def) -> Option<[f64; 3]> {
+/// The line's coefficients as GeoGebra stores them.
+///
+/// `Value::Line` is normalised, but GeoGebra's tolerances in this algorithm
+/// depend on the size of the coefficients. For a line through two points
+/// they are rebuilt from the points exactly as `GeoVec3D.lineThroughPoints`
+/// computes them; any other line uses its normalised coefficients.
+fn raw_line(c: &Construction, line: Id, line_def: Def) -> Option<[f64; 3]> {
     let (a, b, cc) = c.line(line)?;
+    if let Def::Line(p, q) = line_def {
+        let (px, py) = c.point(p)?;
+        let (qx, qy) = c.point(q)?;
+        return Some([py - qy, qx - px, px * qy - py * qx]);
+    }
     Some([a, b, cc])
 }
 
