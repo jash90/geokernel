@@ -276,3 +276,10 @@ mismatches = ["0:P", "1:P", "2:P"]
 id = "geometry-ixcc-023"
 reason = "identical circles through a shared point: GeoGebra returns that point as intersection 1; the kernel reports no intersection for circles with the same centre"
 mismatches = ["0:P", "1:P", "2:P"]
+
+# conic
+
+[[gap]]
+id = "conic-center-010"
+reason = "GeoGebra treats a radius smaller in magnitude than 1e-8 as 0 (the data probes 5e-9) for Circle(A, r); the built-in circle keeps the radius"
+mismatches = ["1:k"]

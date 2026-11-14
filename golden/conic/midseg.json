@@ -1,0 +1,279 @@
+{
+  "schema": 1,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "conic-midseg-001",
+      "group": "conic",
+      "script": [
+        "A = (7.05, 1.1)",
+        "B = (2.17, -2.11)",
+        "s = Segment(A, B)",
+        "M = Midpoint(s)",
+        "N = Midpoint(A, B)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": 7.01, "y": -3.9 },
+        { "action": "move", "label": "B", "x": 7.05, "y": 1.1 },
+        { "action": "move", "label": "B", "x": 3.05, "y": 2.44 },
+        { "action": "move", "label": "A", "x": 0.48, "y": 0.3 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 7.05, "y": 1.1 },
+          "B": { "type": "point", "defined": true, "x": 2.17, "y": -2.11 },
+          "s": { "type": "segment", "defined": true, "x1": 7.05, "y1": 1.1, "x2": 2.17, "y2": -2.11 },
+          "M": { "type": "point", "defined": true, "x": 4.609999999999999, "y": -0.5049999999999999 },
+          "N": { "type": "point", "defined": true, "x": 4.609999999999999, "y": -0.5049999999999999 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.01, "y": -3.9 },
+          "B": { "type": "point", "defined": true, "x": 2.17, "y": -2.11 },
+          "s": { "type": "segment", "defined": true, "x1": 7.01, "y1": -3.9, "x2": 2.17, "y2": -2.11 },
+          "M": { "type": "point", "defined": true, "x": 4.59, "y": -3.005 },
+          "N": { "type": "point", "defined": true, "x": 4.59, "y": -3.005 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.01, "y": -3.9 },
+          "B": { "type": "point", "defined": true, "x": 7.05, "y": 1.1 },
+          "s": { "type": "segment", "defined": true, "x1": 7.01, "y1": -3.9, "x2": 7.05, "y2": 1.1 },
+          "M": { "type": "point", "defined": true, "x": 7.029999999999999, "y": -1.4 },
+          "N": { "type": "point", "defined": true, "x": 7.029999999999999, "y": -1.4 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.01, "y": -3.9 },
+          "B": { "type": "point", "defined": true, "x": 3.05, "y": 2.44 },
+          "s": { "type": "segment", "defined": true, "x1": 7.01, "y1": -3.9, "x2": 3.05, "y2": 2.44 },
+          "M": { "type": "point", "defined": true, "x": 5.029999999999999, "y": -0.73 },
+          "N": { "type": "point", "defined": true, "x": 5.029999999999999, "y": -0.73 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.48, "y": 0.3 },
+          "B": { "type": "point", "defined": true, "x": 3.05, "y": 2.44 },
+          "s": { "type": "segment", "defined": true, "x1": 0.48, "y1": 0.3, "x2": 3.05, "y2": 2.44 },
+          "M": { "type": "point", "defined": true, "x": 1.765, "y": 1.3699999999999999 },
+          "N": { "type": "point", "defined": true, "x": 1.765, "y": 1.3699999999999999 }
+        }
+      ]
+    },
+    {
+      "id": "conic-midseg-002",
+      "group": "conic",
+      "script": [
+        "A = (2.07, -4.17)",
+        "B = (-1.36, 2.83)",
+        "s = Segment(A, B)",
+        "M = Midpoint(s)",
+        "N = Midpoint(A, B)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": 2.15, "y": 1.22 },
+        { "action": "move", "label": "B", "x": 2.07, "y": -4.17 },
+        { "action": "move", "label": "B", "x": -1.62, "y": 6.3 },
+        { "action": "move", "label": "A", "x": -0.1, "y": 0.4 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 2.07, "y": -4.17 },
+          "B": { "type": "point", "defined": true, "x": -1.36, "y": 2.83 },
+          "s": { "type": "segment", "defined": true, "x1": 2.07, "y1": -4.17, "x2": -1.36, "y2": 2.83 },
+          "M": { "type": "point", "defined": true, "x": 0.35499999999999987, "y": -0.6699999999999999 },
+          "N": { "type": "point", "defined": true, "x": 0.35499999999999987, "y": -0.6699999999999999 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.15, "y": 1.22 },
+          "B": { "type": "point", "defined": true, "x": -1.36, "y": 2.83 },
+          "s": { "type": "segment", "defined": true, "x1": 2.15, "y1": 1.22, "x2": -1.36, "y2": 2.83 },
+          "M": { "type": "point", "defined": true, "x": 0.3949999999999999, "y": 2.025 },
+          "N": { "type": "point", "defined": true, "x": 0.3949999999999999, "y": 2.025 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.15, "y": 1.22 },
+          "B": { "type": "point", "defined": true, "x": 2.07, "y": -4.17 },
+          "s": { "type": "segment", "defined": true, "x1": 2.15, "y1": 1.22, "x2": 2.07, "y2": -4.17 },
+          "M": { "type": "point", "defined": true, "x": 2.11, "y": -1.475 },
+          "N": { "type": "point", "defined": true, "x": 2.11, "y": -1.475 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.15, "y": 1.22 },
+          "B": { "type": "point", "defined": true, "x": -1.62, "y": 6.3 },
+          "s": { "type": "segment", "defined": true, "x1": 2.15, "y1": 1.22, "x2": -1.62, "y2": 6.3 },
+          "M": { "type": "point", "defined": true, "x": 0.2649999999999999, "y": 3.76 },
+          "N": { "type": "point", "defined": true, "x": 0.2649999999999999, "y": 3.76 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -0.1, "y": 0.4 },
+          "B": { "type": "point", "defined": true, "x": -1.62, "y": 6.3 },
+          "s": { "type": "segment", "defined": true, "x1": -0.1, "y1": 0.4, "x2": -1.62, "y2": 6.3 },
+          "M": { "type": "point", "defined": true, "x": -0.8600000000000001, "y": 3.35 },
+          "N": { "type": "point", "defined": true, "x": -0.8600000000000001, "y": 3.35 }
+        }
+      ]
+    },
+    {
+      "id": "conic-midseg-003",
+      "group": "conic",
+      "script": [
+        "A = (-7.71, -1.76)",
+        "B = (-2.96, -4.93)",
+        "s = Segment(A, B)",
+        "M = Midpoint(s)",
+        "N = Midpoint(A, B)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": -0.85, "y": -7.26 },
+        { "action": "move", "label": "B", "x": -7.71, "y": -1.76 },
+        { "action": "move", "label": "B", "x": -0.12, "y": -7.2 },
+        { "action": "move", "label": "A", "x": 0.18, "y": 0.09 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -7.71, "y": -1.76 },
+          "B": { "type": "point", "defined": true, "x": -2.96, "y": -4.93 },
+          "s": { "type": "segment", "defined": true, "x1": -7.71, "y1": -1.76, "x2": -2.96, "y2": -4.93 },
+          "M": { "type": "point", "defined": true, "x": -5.335, "y": -3.3449999999999998 },
+          "N": { "type": "point", "defined": true, "x": -5.335, "y": -3.3449999999999998 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -0.85, "y": -7.26 },
+          "B": { "type": "point", "defined": true, "x": -2.96, "y": -4.93 },
+          "s": { "type": "segment", "defined": true, "x1": -0.85, "y1": -7.26, "x2": -2.96, "y2": -4.93 },
+          "M": { "type": "point", "defined": true, "x": -1.905, "y": -6.095 },
+          "N": { "type": "point", "defined": true, "x": -1.905, "y": -6.095 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -0.85, "y": -7.26 },
+          "B": { "type": "point", "defined": true, "x": -7.71, "y": -1.76 },
+          "s": { "type": "segment", "defined": true, "x1": -0.85, "y1": -7.26, "x2": -7.71, "y2": -1.76 },
+          "M": { "type": "point", "defined": true, "x": -4.28, "y": -4.51 },
+          "N": { "type": "point", "defined": true, "x": -4.28, "y": -4.51 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -0.85, "y": -7.26 },
+          "B": { "type": "point", "defined": true, "x": -0.12, "y": -7.2 },
+          "s": { "type": "segment", "defined": true, "x1": -0.85, "y1": -7.26, "x2": -0.12, "y2": -7.2 },
+          "M": { "type": "point", "defined": true, "x": -0.485, "y": -7.23 },
+          "N": { "type": "point", "defined": true, "x": -0.485, "y": -7.23 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.18, "y": 0.09 },
+          "B": { "type": "point", "defined": true, "x": -0.12, "y": -7.2 },
+          "s": { "type": "segment", "defined": true, "x1": 0.18, "y1": 0.09, "x2": -0.12, "y2": -7.2 },
+          "M": { "type": "point", "defined": true, "x": 0.03, "y": -3.555 },
+          "N": { "type": "point", "defined": true, "x": 0.03, "y": -3.555 }
+        }
+      ]
+    },
+    {
+      "id": "conic-midseg-004",
+      "group": "conic",
+      "script": [
+        "A = (-3.44, 4.85)",
+        "B = (-5.5, 6.38)",
+        "s = Segment(A, B)",
+        "M = Midpoint(s)",
+        "N = Midpoint(A, B)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": -6.85, "y": -1.69 },
+        { "action": "move", "label": "B", "x": -3.44, "y": 4.85 },
+        { "action": "move", "label": "B", "x": 2.84, "y": 6.62 },
+        { "action": "move", "label": "A", "x": -0.05, "y": 0.36 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -3.44, "y": 4.85 },
+          "B": { "type": "point", "defined": true, "x": -5.5, "y": 6.38 },
+          "s": { "type": "segment", "defined": true, "x1": -3.44, "y1": 4.85, "x2": -5.5, "y2": 6.38 },
+          "M": { "type": "point", "defined": true, "x": -4.47, "y": 5.615 },
+          "N": { "type": "point", "defined": true, "x": -4.47, "y": 5.615 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.85, "y": -1.69 },
+          "B": { "type": "point", "defined": true, "x": -5.5, "y": 6.38 },
+          "s": { "type": "segment", "defined": true, "x1": -6.85, "y1": -1.69, "x2": -5.5, "y2": 6.38 },
+          "M": { "type": "point", "defined": true, "x": -6.175, "y": 2.3449999999999998 },
+          "N": { "type": "point", "defined": true, "x": -6.175, "y": 2.3449999999999998 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.85, "y": -1.69 },
+          "B": { "type": "point", "defined": true, "x": -3.44, "y": 4.85 },
+          "s": { "type": "segment", "defined": true, "x1": -6.85, "y1": -1.69, "x2": -3.44, "y2": 4.85 },
+          "M": { "type": "point", "defined": true, "x": -5.145, "y": 1.5799999999999998 },
+          "N": { "type": "point", "defined": true, "x": -5.145, "y": 1.5799999999999998 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.85, "y": -1.69 },
+          "B": { "type": "point", "defined": true, "x": 2.84, "y": 6.62 },
+          "s": { "type": "segment", "defined": true, "x1": -6.85, "y1": -1.69, "x2": 2.84, "y2": 6.62 },
+          "M": { "type": "point", "defined": true, "x": -2.005, "y": 2.465 },
+          "N": { "type": "point", "defined": true, "x": -2.005, "y": 2.465 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -0.05, "y": 0.36 },
+          "B": { "type": "point", "defined": true, "x": 2.84, "y": 6.62 },
+          "s": { "type": "segment", "defined": true, "x1": -0.05, "y1": 0.36, "x2": 2.84, "y2": 6.62 },
+          "M": { "type": "point", "defined": true, "x": 1.395, "y": 3.49 },
+          "N": { "type": "point", "defined": true, "x": 1.395, "y": 3.49 }
+        }
+      ]
+    },
+    {
+      "id": "conic-midseg-005",
+      "group": "conic",
+      "script": [
+        "A = (-2.67, -7.46)",
+        "B = (-2.28, -1.74)",
+        "s = Segment(B, A)",
+        "M = Midpoint(s)",
+        "t = Segment(M, A)",
+        "N = Midpoint(t)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": -2.67, "y": -7.46 },
+        { "action": "move", "label": "B", "x": -1.58, "y": 1.12 },
+        { "action": "move", "label": "A", "x": -1.69, "y": -6.89 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -2.67, "y": -7.46 },
+          "B": { "type": "point", "defined": true, "x": -2.28, "y": -1.74 },
+          "s": { "type": "segment", "defined": true, "x1": -2.28, "y1": -1.74, "x2": -2.67, "y2": -7.46 },
+          "M": { "type": "point", "defined": true, "x": -2.4749999999999996, "y": -4.6 },
+          "t": { "type": "segment", "defined": true, "x1": -2.4749999999999996, "y1": -4.6, "x2": -2.67, "y2": -7.46 },
+          "N": { "type": "point", "defined": true, "x": -2.5725, "y": -6.029999999999999 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.67, "y": -7.46 },
+          "B": { "type": "point", "defined": true, "x": -2.67, "y": -7.46 },
+          "s": { "type": "segment", "defined": true, "x1": -2.67, "y1": -7.46, "x2": -2.67, "y2": -7.46 },
+          "M": { "type": "point", "defined": true, "x": -2.67, "y": -7.46 },
+          "t": { "type": "segment", "defined": true, "x1": -2.67, "y1": -7.46, "x2": -2.67, "y2": -7.46 },
+          "N": { "type": "point", "defined": true, "x": -2.67, "y": -7.46 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.67, "y": -7.46 },
+          "B": { "type": "point", "defined": true, "x": -1.58, "y": 1.12 },
+          "s": { "type": "segment", "defined": true, "x1": -1.58, "y1": 1.12, "x2": -2.67, "y2": -7.46 },
+          "M": { "type": "point", "defined": true, "x": -2.125, "y": -3.17 },
+          "t": { "type": "segment", "defined": true, "x1": -2.125, "y1": -3.17, "x2": -2.67, "y2": -7.46 },
+          "N": { "type": "point", "defined": true, "x": -2.3975, "y": -5.3149999999999995 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.69, "y": -6.89 },
+          "B": { "type": "point", "defined": true, "x": -1.58, "y": 1.12 },
+          "s": { "type": "segment", "defined": true, "x1": -1.58, "y1": 1.12, "x2": -1.69, "y2": -6.89 },
+          "M": { "type": "point", "defined": true, "x": -1.635, "y": -2.885 },
+          "t": { "type": "segment", "defined": true, "x1": -1.635, "y1": -2.885, "x2": -1.69, "y2": -6.89 },
+          "N": { "type": "point", "defined": true, "x": -1.6625, "y": -4.887499999999999 }
+        }
+      ]
+    }
+  ]
+}

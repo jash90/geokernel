@@ -1,0 +1,305 @@
+{
+  "schema": 1,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "conic-diameter-001",
+      "group": "conic",
+      "script": [
+        "A = (-4.47, 7.64)",
+        "B = (-6.52, -2.62)",
+        "C = (3.54, -6.68)",
+        "D = (-2.23, 5.99)",
+        "f = Line(A, B)",
+        "k = Circle(C, D)",
+        "g = Diameter(f, k)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": 0.8, "y": 6.65 },
+        { "action": "move", "label": "B", "x": 7.44, "y": -2.04 },
+        { "action": "move", "label": "C", "x": 0.64, "y": 2.84 },
+        { "action": "move", "label": "D", "x": 3.54, "y": -6.68 },
+        { "action": "move", "label": "D", "x": 1.53, "y": -5.5 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -4.47, "y": 7.64 },
+          "B": { "type": "point", "defined": true, "x": -6.52, "y": -2.62 },
+          "C": { "type": "point", "defined": true, "x": 3.54, "y": -6.68 },
+          "D": { "type": "point", "defined": true, "x": -2.23, "y": 5.99 },
+          "f": { "type": "line", "defined": true, "a": 10.26, "b": -2.05, "c": 61.52419999999999 },
+          "k": { "type": "circle", "defined": true, "cx": 3.54, "cy": -6.68, "r": 13.92198980031231 },
+          "g": { "type": "line", "defined": true, "a": -2.05, "b": -10.26, "c": -61.2798 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.8, "y": 6.65 },
+          "B": { "type": "point", "defined": true, "x": -6.52, "y": -2.62 },
+          "C": { "type": "point", "defined": true, "x": 3.54, "y": -6.68 },
+          "D": { "type": "point", "defined": true, "x": -2.23, "y": 5.99 },
+          "f": { "type": "line", "defined": true, "a": 9.27, "b": -7.319999999999999, "c": 41.262 },
+          "k": { "type": "circle", "defined": true, "cx": 3.54, "cy": -6.68, "r": 13.92198980031231 },
+          "g": { "type": "line", "defined": true, "a": -7.319999999999999, "b": -9.27, "c": -36.010799999999996 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.8, "y": 6.65 },
+          "B": { "type": "point", "defined": true, "x": 7.44, "y": -2.04 },
+          "C": { "type": "point", "defined": true, "x": 3.54, "y": -6.68 },
+          "D": { "type": "point", "defined": true, "x": -2.23, "y": 5.99 },
+          "f": { "type": "line", "defined": true, "a": 8.690000000000001, "b": 6.640000000000001, "c": -51.108000000000004 },
+          "k": { "type": "circle", "defined": true, "cx": 3.54, "cy": -6.68, "r": 13.92198980031231 },
+          "g": { "type": "line", "defined": true, "a": 6.640000000000001, "b": -8.690000000000001, "c": -81.5548 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.8, "y": 6.65 },
+          "B": { "type": "point", "defined": true, "x": 7.44, "y": -2.04 },
+          "C": { "type": "point", "defined": true, "x": 0.64, "y": 2.84 },
+          "D": { "type": "point", "defined": true, "x": -2.23, "y": 5.99 },
+          "f": { "type": "line", "defined": true, "a": 8.690000000000001, "b": 6.640000000000001, "c": -51.108000000000004 },
+          "k": { "type": "circle", "defined": true, "cx": 0.64, "cy": 2.84, "r": 4.261384751462839 },
+          "g": { "type": "line", "defined": true, "a": 6.640000000000001, "b": -8.690000000000001, "c": 20.43 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.8, "y": 6.65 },
+          "B": { "type": "point", "defined": true, "x": 7.44, "y": -2.04 },
+          "C": { "type": "point", "defined": true, "x": 0.64, "y": 2.84 },
+          "D": { "type": "point", "defined": true, "x": 3.54, "y": -6.68 },
+          "f": { "type": "line", "defined": true, "a": 8.690000000000001, "b": 6.640000000000001, "c": -51.108000000000004 },
+          "k": { "type": "circle", "defined": true, "cx": 0.64, "cy": 2.84, "r": 9.951904340376268 },
+          "g": { "type": "line", "defined": true, "a": 6.640000000000001, "b": -8.690000000000001, "c": 20.43 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.8, "y": 6.65 },
+          "B": { "type": "point", "defined": true, "x": 7.44, "y": -2.04 },
+          "C": { "type": "point", "defined": true, "x": 0.64, "y": 2.84 },
+          "D": { "type": "point", "defined": true, "x": 1.53, "y": -5.5 },
+          "f": { "type": "line", "defined": true, "a": 8.690000000000001, "b": 6.640000000000001, "c": -51.108000000000004 },
+          "k": { "type": "circle", "defined": true, "cx": 0.64, "cy": 2.84, "r": 8.387353575473016 },
+          "g": { "type": "line", "defined": true, "a": 6.640000000000001, "b": -8.690000000000001, "c": 20.43 }
+        }
+      ]
+    },
+    {
+      "id": "conic-diameter-002",
+      "group": "conic",
+      "script": [
+        "A = (7.27, 4.61)",
+        "B = (5.21, -3.49)",
+        "C = (-0.87, 2.06)",
+        "D = (3.99, 0.41)",
+        "f = Line(A, B)",
+        "k = Circle(C, D)",
+        "g = Diameter(f, k)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": 2.17, "y": 3.64 },
+        { "action": "move", "label": "B", "x": 7.95, "y": 6.62 },
+        { "action": "move", "label": "C", "x": 0.79, "y": 4.2 },
+        { "action": "move", "label": "D", "x": -0.87, "y": 2.06 },
+        { "action": "move", "label": "D", "x": -6.42, "y": 7.95 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 7.27, "y": 4.61 },
+          "B": { "type": "point", "defined": true, "x": 5.21, "y": -3.49 },
+          "C": { "type": "point", "defined": true, "x": -0.87, "y": 2.06 },
+          "D": { "type": "point", "defined": true, "x": 3.99, "y": 0.41 },
+          "f": { "type": "line", "defined": true, "a": 8.100000000000001, "b": -2.0599999999999996, "c": -49.3904 },
+          "k": { "type": "circle", "defined": true, "cx": -0.87, "cy": 2.06, "r": 5.132455552657032 },
+          "g": { "type": "line", "defined": true, "a": -2.0599999999999996, "b": -8.100000000000001, "c": 14.893800000000004 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.17, "y": 3.64 },
+          "B": { "type": "point", "defined": true, "x": 5.21, "y": -3.49 },
+          "C": { "type": "point", "defined": true, "x": -0.87, "y": 2.06 },
+          "D": { "type": "point", "defined": true, "x": 3.99, "y": 0.41 },
+          "f": { "type": "line", "defined": true, "a": 7.130000000000001, "b": 3.04, "c": -26.5377 },
+          "k": { "type": "circle", "defined": true, "cx": -0.87, "cy": 2.06, "r": 5.132455552657032 },
+          "g": { "type": "line", "defined": true, "a": 3.04, "b": -7.130000000000001, "c": 17.332600000000003 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.17, "y": 3.64 },
+          "B": { "type": "point", "defined": true, "x": 7.95, "y": 6.62 },
+          "C": { "type": "point", "defined": true, "x": -0.87, "y": 2.06 },
+          "D": { "type": "point", "defined": true, "x": 3.99, "y": 0.41 },
+          "f": { "type": "line", "defined": true, "a": -2.98, "b": 5.78, "c": -14.572600000000003 },
+          "k": { "type": "circle", "defined": true, "cx": -0.87, "cy": 2.06, "r": 5.132455552657032 },
+          "g": { "type": "line", "defined": true, "a": 5.78, "b": 2.98, "c": -1.1101999999999999 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.17, "y": 3.64 },
+          "B": { "type": "point", "defined": true, "x": 7.95, "y": 6.62 },
+          "C": { "type": "point", "defined": true, "x": 0.79, "y": 4.2 },
+          "D": { "type": "point", "defined": true, "x": 3.99, "y": 0.41 },
+          "f": { "type": "line", "defined": true, "a": -2.98, "b": 5.78, "c": -14.572600000000003 },
+          "k": { "type": "circle", "defined": true, "cx": 0.79, "cy": 4.2, "r": 4.960252009726926 },
+          "g": { "type": "line", "defined": true, "a": 5.78, "b": 2.98, "c": -17.0822 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.17, "y": 3.64 },
+          "B": { "type": "point", "defined": true, "x": 7.95, "y": 6.62 },
+          "C": { "type": "point", "defined": true, "x": 0.79, "y": 4.2 },
+          "D": { "type": "point", "defined": true, "x": -0.87, "y": 2.06 },
+          "f": { "type": "line", "defined": true, "a": -2.98, "b": 5.78, "c": -14.572600000000003 },
+          "k": { "type": "circle", "defined": true, "cx": 0.79, "cy": 4.2, "r": 2.7083574357901874 },
+          "g": { "type": "line", "defined": true, "a": 5.78, "b": 2.98, "c": -17.0822 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.17, "y": 3.64 },
+          "B": { "type": "point", "defined": true, "x": 7.95, "y": 6.62 },
+          "C": { "type": "point", "defined": true, "x": 0.79, "y": 4.2 },
+          "D": { "type": "point", "defined": true, "x": -6.42, "y": 7.95 },
+          "f": { "type": "line", "defined": true, "a": -2.98, "b": 5.78, "c": -14.572600000000003 },
+          "k": { "type": "circle", "defined": true, "cx": 0.79, "cy": 4.2, "r": 8.126905930303366 },
+          "g": { "type": "line", "defined": true, "a": 5.78, "b": 2.98, "c": -17.0822 }
+        }
+      ]
+    },
+    {
+      "id": "conic-diameter-003",
+      "group": "conic",
+      "script": [
+        "A = (-5.04, 7.22)",
+        "B = (6.8, 7.37)",
+        "C = (-5.53, -6.88)",
+        "D = (2.37, 6.93)",
+        "f = Line(A, B)",
+        "k = Circle(C, D)",
+        "g = Diameter(f, k)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": -1.37, "y": 5.04 },
+        { "action": "move", "label": "B", "x": -6.58, "y": -5.05 },
+        { "action": "move", "label": "C", "x": -6.55, "y": -3.63 },
+        { "action": "move", "label": "D", "x": -5.53, "y": -6.88 },
+        { "action": "move", "label": "D", "x": -3.75, "y": 0.52 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -5.04, "y": 7.22 },
+          "B": { "type": "point", "defined": true, "x": 6.8, "y": 7.37 },
+          "C": { "type": "point", "defined": true, "x": -5.53, "y": -6.88 },
+          "D": { "type": "point", "defined": true, "x": 2.37, "y": 6.93 },
+          "f": { "type": "line", "defined": true, "a": -0.15000000000000036, "b": 11.84, "c": -86.24080000000001 },
+          "k": { "type": "circle", "defined": true, "cx": -5.53, "cy": -6.88, "r": 15.90993714632462 },
+          "g": { "type": "line", "defined": true, "a": 11.84, "b": 0.15000000000000036, "c": 66.5072 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.37, "y": 5.04 },
+          "B": { "type": "point", "defined": true, "x": 6.8, "y": 7.37 },
+          "C": { "type": "point", "defined": true, "x": -5.53, "y": -6.88 },
+          "D": { "type": "point", "defined": true, "x": 2.37, "y": 6.93 },
+          "f": { "type": "line", "defined": true, "a": -2.33, "b": 8.17, "c": -44.3689 },
+          "k": { "type": "circle", "defined": true, "cx": -5.53, "cy": -6.88, "r": 15.90993714632462 },
+          "g": { "type": "line", "defined": true, "a": 8.17, "b": 2.33, "c": 61.2105 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.37, "y": 5.04 },
+          "B": { "type": "point", "defined": true, "x": -6.58, "y": -5.05 },
+          "C": { "type": "point", "defined": true, "x": -5.53, "y": -6.88 },
+          "D": { "type": "point", "defined": true, "x": 2.37, "y": 6.93 },
+          "f": { "type": "line", "defined": true, "a": 10.09, "b": -5.21, "c": 40.081700000000005 },
+          "k": { "type": "circle", "defined": true, "cx": -5.53, "cy": -6.88, "r": 15.90993714632462 },
+          "g": { "type": "line", "defined": true, "a": -5.21, "b": -10.09, "c": -98.2305 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.37, "y": 5.04 },
+          "B": { "type": "point", "defined": true, "x": -6.58, "y": -5.05 },
+          "C": { "type": "point", "defined": true, "x": -6.55, "y": -3.63 },
+          "D": { "type": "point", "defined": true, "x": 2.37, "y": 6.93 },
+          "f": { "type": "line", "defined": true, "a": 10.09, "b": -5.21, "c": 40.081700000000005 },
+          "k": { "type": "circle", "defined": true, "cx": -6.55, "cy": -3.63, "r": 13.823168956501977 },
+          "g": { "type": "line", "defined": true, "a": -5.21, "b": -10.09, "c": -70.7522 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.37, "y": 5.04 },
+          "B": { "type": "point", "defined": true, "x": -6.58, "y": -5.05 },
+          "C": { "type": "point", "defined": true, "x": -6.55, "y": -3.63 },
+          "D": { "type": "point", "defined": true, "x": -5.53, "y": -6.88 },
+          "f": { "type": "line", "defined": true, "a": 10.09, "b": -5.21, "c": 40.081700000000005 },
+          "k": { "type": "circle", "defined": true, "cx": -6.55, "cy": -3.63, "r": 3.4063029812393375 },
+          "g": { "type": "line", "defined": true, "a": -5.21, "b": -10.09, "c": -70.7522 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.37, "y": 5.04 },
+          "B": { "type": "point", "defined": true, "x": -6.58, "y": -5.05 },
+          "C": { "type": "point", "defined": true, "x": -6.55, "y": -3.63 },
+          "D": { "type": "point", "defined": true, "x": -3.75, "y": 0.52 },
+          "f": { "type": "line", "defined": true, "a": 10.09, "b": -5.21, "c": 40.081700000000005 },
+          "k": { "type": "circle", "defined": true, "cx": -6.55, "cy": -3.63, "r": 5.006246098625197 },
+          "g": { "type": "line", "defined": true, "a": -5.21, "b": -10.09, "c": -70.7522 }
+        }
+      ]
+    },
+    {
+      "id": "conic-diameter-004",
+      "group": "conic",
+      "script": [
+        "A = (-5.85, 2.56)",
+        "B = (6.55, 7.41)",
+        "C = (7.43, -5.11)",
+        "s = Segment(A, B)",
+        "r = 3",
+        "k = Circle(C, r)",
+        "g = Diameter(s, k)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "r", "value": 0.0 },
+        { "action": "set_number", "label": "r", "value": 2.0 },
+        { "action": "move", "label": "B", "x": -5.85, "y": 2.56 },
+        { "action": "move", "label": "B", "x": 4.6, "y": 3.46 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -5.85, "y": 2.56 },
+          "B": { "type": "point", "defined": true, "x": 6.55, "y": 7.41 },
+          "C": { "type": "point", "defined": true, "x": 7.43, "y": -5.11 },
+          "s": { "type": "segment", "defined": true, "x1": -5.85, "y1": 2.56, "x2": 6.55, "y2": 7.41 },
+          "r": { "type": "number", "defined": true, "value": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 7.43, "cy": -5.11, "r": 3.0 },
+          "g": { "type": "line", "defined": true, "a": 12.399999999999999, "b": 4.85, "c": -67.34849999999999 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -5.85, "y": 2.56 },
+          "B": { "type": "point", "defined": true, "x": 6.55, "y": 7.41 },
+          "C": { "type": "point", "defined": true, "x": 7.43, "y": -5.11 },
+          "s": { "type": "segment", "defined": true, "x1": -5.85, "y1": 2.56, "x2": 6.55, "y2": 7.41 },
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "k": { "type": "circle", "defined": true, "cx": 7.43, "cy": -5.11, "r": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 12.399999999999999, "b": 4.85, "c": -67.34849999999999 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -5.85, "y": 2.56 },
+          "B": { "type": "point", "defined": true, "x": 6.55, "y": 7.41 },
+          "C": { "type": "point", "defined": true, "x": 7.43, "y": -5.11 },
+          "s": { "type": "segment", "defined": true, "x1": -5.85, "y1": 2.56, "x2": 6.55, "y2": 7.41 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 7.43, "cy": -5.11, "r": 2.0 },
+          "g": { "type": "line", "defined": true, "a": 12.399999999999999, "b": 4.85, "c": -67.34849999999999 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -5.85, "y": 2.56 },
+          "B": { "type": "point", "defined": true, "x": -5.85, "y": 2.56 },
+          "C": { "type": "point", "defined": true, "x": 7.43, "y": -5.11 },
+          "s": { "type": "segment", "defined": true, "x1": -5.85, "y1": 2.56, "x2": -5.85, "y2": 2.56 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 7.43, "cy": -5.11, "r": 2.0 },
+          "g": { "type": "line", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -5.85, "y": 2.56 },
+          "B": { "type": "point", "defined": true, "x": 4.6, "y": 3.46 },
+          "C": { "type": "point", "defined": true, "x": 7.43, "y": -5.11 },
+          "s": { "type": "segment", "defined": true, "x1": -5.85, "y1": 2.56, "x2": 4.6, "y2": 3.46 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 7.43, "cy": -5.11, "r": 2.0 },
+          "g": { "type": "line", "defined": true, "a": 10.45, "b": 0.8999999999999999, "c": -73.04449999999999 }
+        }
+      ]
+    }
+  ]
+}
