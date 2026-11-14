@@ -4,8 +4,9 @@ A native dynamic-geometry application written in Rust, built for speed.
 GeoGebra is the reference for features and the source of algorithms; it is
 not a target for one-to-one compatibility. `geokernel` is a working name.
 
-This project is not affiliated with or endorsed by GeoGebra GmbH. It can
-import GeoGebra files; the name and logo GeoGebra belong to GeoGebra GmbH.
+This project is not affiliated with or endorsed by GeoGebra GmbH. Importing
+GeoGebra files is planned and not implemented yet. The name and logo GeoGebra
+belong to GeoGebra GmbH.
 
 ## Status
 
