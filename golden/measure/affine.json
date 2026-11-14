@@ -1,0 +1,444 @@
+{
+  "schema": 1,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "measure-affine-001",
+      "group": "measure",
+      "script": [
+        "A = (0, 0)",
+        "B = (2, 0)",
+        "C = (6, 0)",
+        "r = AffineRatio(A, B, C)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 8.0, "y": 0.0 },
+        { "action": "move", "label": "C", "x": 2.0, "y": 0.0 },
+        { "action": "move", "label": "C", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "C", "x": 6.0, "y": 1.0 },
+        { "action": "move", "label": "C", "x": 6.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 8.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 6.0, "y": 1.0 },
+          "r": { "type": "number", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "r": { "type": "number", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "measure-affine-002",
+      "group": "measure",
+      "script": [
+        "A = (1, 1)",
+        "B = (3, 3)",
+        "C = (7, 7)",
+        "r = AffineRatio(A, B, C)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": -5.0, "y": -5.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 3.0 },
+        { "action": "move", "label": "A", "x": 7.0, "y": 7.0 },
+        { "action": "move", "label": "C", "x": 3.0, "y": 3.0 },
+        { "action": "move", "label": "A", "x": 1.0, "y": 1.0 },
+        { "action": "move", "label": "C", "x": 7.0, "y": 7.000001 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "C": { "type": "point", "defined": true, "x": 7.0, "y": 7.0 },
+          "r": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "C": { "type": "point", "defined": true, "x": -5.0, "y": -5.0 },
+          "r": { "type": "number", "defined": true, "value": -3.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "C": { "type": "point", "defined": true, "x": -5.0, "y": -5.0 },
+          "r": { "type": "number", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.0, "y": 7.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "C": { "type": "point", "defined": true, "x": -5.0, "y": -5.0 },
+          "r": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.0, "y": 7.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "C": { "type": "point", "defined": true, "x": 7.0, "y": 7.000001 },
+          "r": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "measure-affine-003",
+      "group": "measure",
+      "script": [
+        "A = (0, 0)",
+        "B = (0, 4)",
+        "C = (0, -2)",
+        "r = AffineRatio(A, B, C)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 0.0, "y": 1.0 },
+        { "action": "move", "label": "C", "x": 0.0, "y": 1.0 },
+        { "action": "move", "label": "A", "x": 0.0, "y": 1.0 },
+        { "action": "move", "label": "A", "x": 5.0, "y": 1.0 },
+        { "action": "move", "label": "A", "x": 0.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": -2.0 },
+          "r": { "type": "number", "defined": true, "value": -0.5 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": -2.0 },
+          "r": { "type": "number", "defined": true, "value": -2.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "measure-affine-004",
+      "group": "measure",
+      "script": [
+        "A = (-6.08, 0.08)",
+        "B = (-4.08, 1.08)",
+        "C = (-1.08, 2.58)",
+        "r = AffineRatio(A, B, C)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 1.92, "y": 4.08 },
+        { "action": "move", "label": "B", "x": -2.08, "y": 2.08 },
+        { "action": "move", "label": "B", "x": -3.69, "y": 7.52 },
+        { "action": "move", "label": "C", "x": 3.66, "y": -7.33 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -6.08, "y": 0.08 },
+          "B": { "type": "point", "defined": true, "x": -4.08, "y": 1.08 },
+          "C": { "type": "point", "defined": true, "x": -1.08, "y": 2.58 },
+          "r": { "type": "number", "defined": true, "value": 2.5 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.08, "y": 0.08 },
+          "B": { "type": "point", "defined": true, "x": -4.08, "y": 1.08 },
+          "C": { "type": "point", "defined": true, "x": 1.92, "y": 4.08 },
+          "r": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.08, "y": 0.08 },
+          "B": { "type": "point", "defined": true, "x": -2.08, "y": 2.08 },
+          "C": { "type": "point", "defined": true, "x": 1.92, "y": 4.08 },
+          "r": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.08, "y": 0.08 },
+          "B": { "type": "point", "defined": true, "x": -3.69, "y": 7.52 },
+          "C": { "type": "point", "defined": true, "x": 1.92, "y": 4.08 },
+          "r": { "type": "number", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.08, "y": 0.08 },
+          "B": { "type": "point", "defined": true, "x": -3.69, "y": 7.52 },
+          "C": { "type": "point", "defined": true, "x": 3.66, "y": -7.33 },
+          "r": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "measure-affine-005",
+      "group": "measure",
+      "script": [
+        "A = (-2.41, 1.45)",
+        "B = (-0.41, 2.45)",
+        "C = (2.59, 3.95)",
+        "r = AffineRatio(A, B, C)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 5.59, "y": 5.45 },
+        { "action": "move", "label": "B", "x": 1.59, "y": 3.45 },
+        { "action": "move", "label": "B", "x": 3.59, "y": 4.05 },
+        { "action": "move", "label": "C", "x": 0.9, "y": -6.54 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -2.41, "y": 1.45 },
+          "B": { "type": "point", "defined": true, "x": -0.41, "y": 2.45 },
+          "C": { "type": "point", "defined": true, "x": 2.59, "y": 3.95 },
+          "r": { "type": "number", "defined": true, "value": 2.5 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.41, "y": 1.45 },
+          "B": { "type": "point", "defined": true, "x": -0.41, "y": 2.45 },
+          "C": { "type": "point", "defined": true, "x": 5.59, "y": 5.45 },
+          "r": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.41, "y": 1.45 },
+          "B": { "type": "point", "defined": true, "x": 1.59, "y": 3.45 },
+          "C": { "type": "point", "defined": true, "x": 5.59, "y": 5.45 },
+          "r": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.41, "y": 1.45 },
+          "B": { "type": "point", "defined": true, "x": 3.59, "y": 4.05 },
+          "C": { "type": "point", "defined": true, "x": 5.59, "y": 5.45 },
+          "r": { "type": "number", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.41, "y": 1.45 },
+          "B": { "type": "point", "defined": true, "x": 3.59, "y": 4.05 },
+          "C": { "type": "point", "defined": true, "x": 0.9, "y": -6.54 },
+          "r": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "measure-affine-006",
+      "group": "measure",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 0)",
+        "C = (9, 0)",
+        "s = Segment(A, C)",
+        "r = AffineRatio(A, B, C)",
+        "q = AffineRatio(C, B, A)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 10.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 4.5, "y": 0.5 },
+        { "action": "move", "label": "B", "x": 4.5, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 9.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 9.0, "y2": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 1.8 },
+          "q": { "type": "number", "defined": true, "value": 2.25 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 10.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 9.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 9.0, "y2": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 0.9 },
+          "q": { "type": "number", "defined": true, "value": -9.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.5, "y": 0.5 },
+          "C": { "type": "point", "defined": true, "x": 9.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 9.0, "y2": 0.0 },
+          "r": { "type": "number", "defined": false },
+          "q": { "type": "number", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.5, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 9.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 9.0, "y2": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "q": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "measure-affine-007",
+      "group": "measure",
+      "script": [
+        "A = (0, 0)",
+        "B = (0.001, 0)",
+        "C = (0.002, 0)",
+        "r = AffineRatio(A, B, C)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 0.002, "y": 1.0E-6 },
+        { "action": "move", "label": "C", "x": 0.002, "y": 1.0E-5 },
+        { "action": "move", "label": "C", "x": 0.002, "y": 2.0E-5 },
+        { "action": "move", "label": "C", "x": 0.002, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 0.001, "y": 1.0E-6 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.001, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.002, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.001, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.002, "y": 1.0E-6 },
+          "r": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.001, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.002, "y": 1.0E-5 },
+          "r": { "type": "number", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.001, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.002, "y": 2.0E-5 },
+          "r": { "type": "number", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.001, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.002, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.001, "y": 1.0E-6 },
+          "C": { "type": "point", "defined": true, "x": 0.002, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "measure-affine-008",
+      "group": "measure",
+      "script": [
+        "A = (0, 0)",
+        "B = (1, 0)",
+        "C = (2, 0)",
+        "r = AffineRatio(A, B, C)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 2.0, "y": 1.0E-6 },
+        { "action": "move", "label": "C", "x": 2.0, "y": 1.0E-5 },
+        { "action": "move", "label": "C", "x": 2.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 1.0E-6 },
+          "r": { "type": "number", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 1.0E-5 },
+          "r": { "type": "number", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    }
+  ]
+}

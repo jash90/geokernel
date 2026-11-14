@@ -184,6 +184,15 @@ final class Session {
             case "Intersect":
                 return "point";
             case "Distance":
+            case "Length":
+            case "Radius":
+            case "Circumference":
+            case "Perimeter":
+            case "Area":
+            case "Slope":
+            case "AffineRatio":
+            case "CrossRatio":
+            case "Angle":
                 return "number";
             case "Circle":
             case "Incircle":
