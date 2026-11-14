@@ -1,0 +1,181 @@
+//! Draws a construction as an SVG image.
+
+use crate::kernel::{Construction, Value};
+use std::fmt::Write;
+
+/// The rectangle of the plane that is drawn.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct View {
+    pub xmin: f64,
+    pub ymin: f64,
+    pub xmax: f64,
+    pub ymax: f64,
+}
+
+impl View {
+    /// A view that contains every point, segment and circle, with a margin.
+    pub fn fit(c: &Construction) -> View {
+        let mut v = View {
+            xmin: f64::INFINITY,
+            ymin: f64::INFINITY,
+            xmax: f64::NEG_INFINITY,
+            ymax: f64::NEG_INFINITY,
+        };
+        let mut grow = |x: f64, y: f64| {
+            v.xmin = v.xmin.min(x);
+            v.ymin = v.ymin.min(y);
+            v.xmax = v.xmax.max(x);
+            v.ymax = v.ymax.max(y);
+        };
+        for id in c.ids() {
+            match c.value(id) {
+                Value::Point { x, y } => grow(x, y),
+                Value::Segment { x1, y1, x2, y2 } => {
+                    grow(x1, y1);
+                    grow(x2, y2);
+                }
+                Value::Circle { cx, cy, r } => {
+                    grow(cx - r, cy - r);
+                    grow(cx + r, cy + r);
+                }
+                _ => {}
+            }
+        }
+        if !v.xmin.is_finite() {
+            return View {
+                xmin: -5.0,
+                ymin: -5.0,
+                xmax: 5.0,
+                ymax: 5.0,
+            };
+        }
+        let pad = (0.08 * (v.xmax - v.xmin).max(v.ymax - v.ymin)).max(0.5);
+        View {
+            xmin: v.xmin - pad,
+            ymin: v.ymin - pad,
+            xmax: v.xmax + pad,
+            ymax: v.ymax + pad,
+        }
+    }
+
+    /// The smallest view containing both.
+    pub fn union(self, o: View) -> View {
+        View {
+            xmin: self.xmin.min(o.xmin),
+            ymin: self.ymin.min(o.ymin),
+            xmax: self.xmax.max(o.xmax),
+            ymax: self.ymax.max(o.ymax),
+        }
+    }
+}
+
+/// Renders the construction into an SVG document of the given pixel size.
+pub fn render(c: &Construction, view: View, width: u32, height: u32) -> String {
+    let (w, h) = (width as f64, height as f64);
+    let (vw, vh) = (view.xmax - view.xmin, view.ymax - view.ymin);
+    let scale = (w / vw).min(h / vh);
+    // Centre the view inside the image.
+    let ox = 0.5 * (w - vw * scale);
+    let oy = 0.5 * (h - vh * scale);
+    let sx = |x: f64| ox + (x - view.xmin) * scale;
+    let sy = |y: f64| h - oy - (y - view.ymin) * scale;
+
+    let mut lines = String::new();
+    let mut segments = String::new();
+    let mut circles = String::new();
+    let mut points = String::new();
+
+    // Used to draw an "infinite" line as a segment longer than the view.
+    let (mx, my) = (0.5 * (view.xmin + view.xmax), 0.5 * (view.ymin + view.ymax));
+    let reach = vw.hypot(vh);
+
+    for id in c.ids() {
+        match c.value(id) {
+            Value::Line { a, b, c: k } => {
+                let d = a * mx + b * my + k;
+                let (fx, fy) = (mx - a * d, my - b * d);
+                let _ = writeln!(
+                    lines,
+                    r##"<line x1="{:.2}" y1="{:.2}" x2="{:.2}" y2="{:.2}"/>"##,
+                    sx(fx - reach * b),
+                    sy(fy + reach * a),
+                    sx(fx + reach * b),
+                    sy(fy - reach * a),
+                );
+            }
+            Value::Segment { x1, y1, x2, y2 } => {
+                let _ = writeln!(
+                    segments,
+                    r##"<line x1="{:.2}" y1="{:.2}" x2="{:.2}" y2="{:.2}"/>"##,
+                    sx(x1),
+                    sy(y1),
+                    sx(x2),
+                    sy(y2),
+                );
+            }
+            Value::Circle { cx, cy, r } => {
+                let _ = writeln!(
+                    circles,
+                    r##"<circle cx="{:.2}" cy="{:.2}" r="{:.2}"/>"##,
+                    sx(cx),
+                    sy(cy),
+                    r * scale,
+                );
+            }
+            Value::Point { x, y } => {
+                let free = c.def(id).is_free();
+                let (fill, radius) = if free {
+                    ("#1a73e8", 5.0)
+                } else {
+                    ("#5f6368", 4.0)
+                };
+                let _ = writeln!(
+                    points,
+                    r##"<circle cx="{px:.2}" cy="{py:.2}" r="{radius}" fill="{fill}" stroke="#ffffff" stroke-width="1"/><text x="{tx:.2}" y="{ty:.2}">{label}</text>"##,
+                    px = sx(x),
+                    py = sy(y),
+                    tx = sx(x) + 8.0,
+                    ty = sy(y) - 8.0,
+                    label = escape(c.label(id)),
+                );
+            }
+            Value::Number(_) | Value::Undefined => {}
+        }
+    }
+
+    let mut out = String::new();
+    let _ = writeln!(
+        out,
+        r##"<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">"##
+    );
+    let _ = writeln!(
+        out,
+        r##"<rect width="100%" height="100%" fill="#ffffff"/>"##
+    );
+    let _ = writeln!(out, r##"<g stroke="#9aa0a6" stroke-width="1">"##);
+    out.push_str(&lines);
+    let _ = writeln!(out, "</g>");
+    let _ = writeln!(
+        out,
+        r##"<g stroke="#1a73e8" stroke-width="1.5" fill="none">"##
+    );
+    out.push_str(&circles);
+    let _ = writeln!(out, "</g>");
+    let _ = writeln!(out, r##"<g stroke="#202124" stroke-width="2">"##);
+    out.push_str(&segments);
+    let _ = writeln!(out, "</g>");
+    let _ = writeln!(
+        out,
+        r##"<g font-family="sans-serif" font-size="14" fill="#202124">"##
+    );
+    out.push_str(&points);
+    let _ = writeln!(out, "</g>");
+    let _ = writeln!(out, "</svg>");
+    out
+}
+
+fn escape(s: &str) -> String {
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+}

@@ -1,0 +1,14 @@
+[package]
+name = "geo-cli"
+description = "Command-line front end for geo-kernel: run scripts, render SVG, time updates"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "geokernel"
+path = "src/main.rs"
+
+[dependencies]
+geo-kernel = { path = "../geo-kernel" }

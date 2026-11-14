@@ -1,0 +1,11 @@
+[package]
+name = "geo-kernel"
+description = "Dynamic-geometry construction kernel: a dependency graph with incremental updates"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+# No dependencies on purpose: the kernel is plain std Rust and knows nothing
+# about any user interface.
+[dependencies]
