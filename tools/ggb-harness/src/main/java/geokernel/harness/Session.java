@@ -66,13 +66,17 @@ final class Session {
             throw new IllegalArgumentException("not of the form 'label = definition': " + line);
         }
         String label = m.group(1);
-        String expected = expectedType(m.group(2).trim());
+        String definition = m.group(2).trim();
+        String transformed = transformedType(definition);
+        String expected = transformed != null ? transformed : expectedType(definition);
         if (objects.containsKey(label) || kernel.lookupLabel(label) != null) {
             throw new IllegalArgumentException("label used twice: " + label);
         }
         GeoElementND[] out = processor.processAlgebraCommandNoExceptionHandling(
                 line, false, new ThrowingErrorHandler(line), false, null);
-        if (out == null || out.length != 1) {
+        // A transformed segment with labelled end points also creates the two
+        // image points; the segment is the first output.
+        if (out == null || out.length == 0 || (out.length != 1 && transformed == null)) {
             throw new IllegalStateException("expected one object from: " + line);
         }
         GeoElement geo = out[0].toGeoElement();
@@ -158,6 +162,35 @@ final class Session {
             return "number";
         }
         throw new IllegalStateException("unsupported object " + geo.getClass().getSimpleName());
+    }
+
+    /**
+     * The schema type of a transformation (the image has the kind of the
+     * transformed object); null when the definition is not a transformation.
+     */
+    private String transformedType(String definition) {
+        Matcher m = COMMAND.matcher(definition);
+        if (!m.matches()) {
+            return null;
+        }
+        switch (m.group(1)) {
+            case "Mirror":
+            case "Reflect":
+            case "Rotate":
+            case "Dilate":
+            case "Shear":
+            case "Stretch":
+                break;
+            default:
+                return null;
+        }
+        String inner = definition.substring(definition.indexOf('(') + 1);
+        String first = inner.split("[,)]")[0].trim();
+        GeoElement source = objects.get(first);
+        if (source == null) {
+            throw new IllegalArgumentException("unknown transformed object: " + definition);
+        }
+        return typeOf(source);
     }
 
     /** The schema type a definition must produce; rejects unsupported input. */
