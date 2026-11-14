@@ -58,7 +58,9 @@ impl eframe::App for App {
                 if response.dragged() {
                     if let (Some(drag), Some(pos)) = (self.drag, response.interact_pointer_pos()) {
                         let (sx, sy) = to_local(pos);
-                        if let Ok(n) = drag.apply(&mut self.construction, &t, sx, sy) {
+                        // A frame in which the cursor did not move recomputes nothing;
+                        // keep the count from the last step that did.
+                        if let Ok(n @ 1..) = drag.apply(&mut self.construction, &t, sx, sy) {
                             self.recomputed = n;
                         }
                     }
