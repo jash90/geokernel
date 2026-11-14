@@ -25,7 +25,9 @@ jobs:
 
       # System packages needed to build the application crate on Linux.
       - name: Install system packages
-        run: echo "none needed yet"
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libxkbcommon-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev
 
       - name: Format
         run: cargo fmt --all --check
