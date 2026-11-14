@@ -68,3 +68,18 @@ The Rust bench chooses intersection points by its own rule (`which` 0 and 1)
 while GeoGebra uses indices 1 and 2. The two chains therefore need not pass
 through the same points; both stay defined, and the amount of work per drag is
 the same.
+
+## geo-kernel on the same chain (PROVISIONAL)
+
+`cargo run --release -p geo-cli -- bench <steps>` on the same machine, also
+under unrelated load (load average about 7), so equally provisional:
+
+| Steps | Dependent objects | Per drag of `A` | Per dependent object |
+| ---: | ---: | ---: | ---: |
+| 250 | 1,750 | 0.050 ms | 29 ns |
+| 500 | 3,500 | 0.110 ms | 31 ns |
+| 1,000 | 7,000 | 0.241 ms | 34 ns |
+| 15,000 | 105,000 | 4.721 ms | 45 ns |
+
+The two sides were not measured under the same load, so the ratio (roughly
+2.5 to 4.7 times at these sizes) is an indication only.

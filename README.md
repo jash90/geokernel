@@ -11,7 +11,10 @@ import GeoGebra files; the name and logo GeoGebra belong to GeoGebra GmbH.
 
 Early. The kernel covers points, lines, segments, circles and numbers with
 13 kinds of definitions, incremental updates, a small script language and
-SVG output. See `docs/command-matrix.csv` for what is planned and done.
+SVG output, plus a desktop window in which free points can be dragged.
+See `docs/command-matrix.csv` for what is planned and done, and
+`crates/geo-golden/known-gaps.toml` for where the kernel still differs
+from GeoGebra.
 
 ## Licence
 
@@ -41,6 +44,7 @@ The reference commit for ported code and recorded test data is
 | --- | --- |
 | `crates/geo-kernel` | The kernel: construction graph, object types, incremental updates, script parser, SVG output. No dependencies and no knowledge of any user interface. |
 | `crates/geo-cli` | The `geokernel` binary: `run`, `demo`, `bench`. |
+| `crates/geo-app` | The `geokernel-app` desktop window (egui on wgpu): draws a construction and lets you drag its free points. |
 | `crates/geo-golden` | Tests that compare the kernel with values recorded from GeoGebra. |
 | `golden/` | Recorded golden data and its format, [golden/SCHEMA.md](golden/SCHEMA.md). |
 | `examples/` | Example scripts. |
@@ -54,6 +58,7 @@ cargo test --workspace
 cargo run --release -p geo-cli -- demo out        # triangle before and after moving A
 cargo run --release -p geo-cli -- run examples/triangle.geo out.svg
 cargo run --release -p geo-cli -- bench           # 105 thousand objects, dragging a point
+cargo run --release -p geo-app                    # window with the triangle; drag the blue points
 ```
 
 ## Script syntax
