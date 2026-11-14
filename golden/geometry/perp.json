@@ -1,0 +1,1225 @@
+{
+  "schema": 1,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "geometry-perp-001",
+      "group": "geometry",
+      "script": [
+        "A = (-7.11, 0.95)",
+        "B = (-0.73, -0.99)",
+        "C = (-3.24, 0.56)",
+        "f = Line(A, B)",
+        "n = PerpendicularLine(C, f)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": -13.2986, "y": 2.8318 },
+        { "action": "move", "label": "C", "x": 0.65, "y": -4.32 },
+        { "action": "move", "label": "B", "x": -7.11, "y": 0.95 },
+        { "action": "move", "label": "B", "x": 0.15, "y": -0.66 },
+        { "action": "move", "label": "A", "x": 0.04, "y": 1.83 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -7.11, "y": 0.95 },
+          "B": { "type": "point", "defined": true, "x": -0.73, "y": -0.99 },
+          "C": { "type": "point", "defined": true, "x": -3.24, "y": 0.56 },
+          "f": { "type": "line", "defined": true, "a": 1.94, "b": 6.380000000000001, "c": 7.7324 },
+          "n": { "type": "line", "defined": true, "a": -6.380000000000001, "b": 1.94, "c": -21.757600000000004 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.11, "y": 0.95 },
+          "B": { "type": "point", "defined": true, "x": -0.73, "y": -0.99 },
+          "C": { "type": "point", "defined": true, "x": -13.2986, "y": 2.8318 },
+          "f": { "type": "line", "defined": true, "a": 1.94, "b": 6.380000000000001, "c": 7.7324 },
+          "n": { "type": "line", "defined": true, "a": -6.380000000000001, "b": 1.94, "c": -90.33876000000001 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.11, "y": 0.95 },
+          "B": { "type": "point", "defined": true, "x": -0.73, "y": -0.99 },
+          "C": { "type": "point", "defined": true, "x": 0.65, "y": -4.32 },
+          "f": { "type": "line", "defined": true, "a": 1.94, "b": 6.380000000000001, "c": 7.7324 },
+          "n": { "type": "line", "defined": true, "a": -6.380000000000001, "b": 1.94, "c": 12.527800000000001 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.11, "y": 0.95 },
+          "B": { "type": "point", "defined": true, "x": -7.11, "y": 0.95 },
+          "C": { "type": "point", "defined": true, "x": 0.65, "y": -4.32 },
+          "f": { "type": "line", "defined": false },
+          "n": { "type": "line", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.11, "y": 0.95 },
+          "B": { "type": "point", "defined": true, "x": 0.15, "y": -0.66 },
+          "C": { "type": "point", "defined": true, "x": 0.65, "y": -4.32 },
+          "f": { "type": "line", "defined": true, "a": 1.6099999999999999, "b": 7.260000000000001, "c": 4.5501000000000005 },
+          "n": { "type": "line", "defined": true, "a": -7.260000000000001, "b": 1.6099999999999999, "c": 11.674199999999999 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.04, "y": 1.83 },
+          "B": { "type": "point", "defined": true, "x": 0.15, "y": -0.66 },
+          "C": { "type": "point", "defined": true, "x": 0.65, "y": -4.32 },
+          "f": { "type": "line", "defined": true, "a": 2.49, "b": 0.10999999999999999, "c": -0.3009 },
+          "n": { "type": "line", "defined": true, "a": -0.10999999999999999, "b": 2.49, "c": 10.828300000000002 }
+        }
+      ]
+    },
+    {
+      "id": "geometry-perp-002",
+      "group": "geometry",
+      "script": [
+        "A = (1.43, 1)",
+        "B = (0.41, -7.9)",
+        "C = (-0.93, -3.92)",
+        "f = Line(A, B)",
+        "n = PerpendicularLine(C, f)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 1.9298, "y": 5.361 },
+        { "action": "move", "label": "C", "x": 1.97, "y": 4.07 },
+        { "action": "move", "label": "B", "x": 1.43, "y": 1.0 },
+        { "action": "move", "label": "B", "x": 7.71, "y": 7.43 },
+        { "action": "move", "label": "A", "x": -1.76, "y": -6.19 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.43, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 0.41, "y": -7.9 },
+          "C": { "type": "point", "defined": true, "x": -0.93, "y": -3.92 },
+          "f": { "type": "line", "defined": true, "a": 8.9, "b": -1.02, "c": -11.707 },
+          "n": { "type": "line", "defined": true, "a": 1.02, "b": 8.9, "c": 35.8366 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.43, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 0.41, "y": -7.9 },
+          "C": { "type": "point", "defined": true, "x": 1.9298, "y": 5.361 },
+          "f": { "type": "line", "defined": true, "a": 8.9, "b": -1.02, "c": -11.707 },
+          "n": { "type": "line", "defined": true, "a": 1.02, "b": 8.9, "c": -49.681295999999996 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.43, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 0.41, "y": -7.9 },
+          "C": { "type": "point", "defined": true, "x": 1.97, "y": 4.07 },
+          "f": { "type": "line", "defined": true, "a": 8.9, "b": -1.02, "c": -11.707 },
+          "n": { "type": "line", "defined": true, "a": 1.02, "b": 8.9, "c": -38.232400000000005 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.43, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.43, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.97, "y": 4.07 },
+          "f": { "type": "line", "defined": false },
+          "n": { "type": "line", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.43, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 7.71, "y": 7.43 },
+          "C": { "type": "point", "defined": true, "x": 1.97, "y": 4.07 },
+          "f": { "type": "line", "defined": true, "a": -6.43, "b": 6.28, "c": 2.9148999999999985 },
+          "n": { "type": "line", "defined": true, "a": -6.28, "b": -6.43, "c": 38.541700000000006 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.76, "y": -6.19 },
+          "B": { "type": "point", "defined": true, "x": 7.71, "y": 7.43 },
+          "C": { "type": "point", "defined": true, "x": 1.97, "y": 4.07 },
+          "f": { "type": "line", "defined": true, "a": -13.620000000000001, "b": 9.47, "c": 34.64810000000001 },
+          "n": { "type": "line", "defined": true, "a": -9.47, "b": -13.620000000000001, "c": 74.08930000000001 }
+        }
+      ]
+    },
+    {
+      "id": "geometry-perp-003",
+      "group": "geometry",
+      "script": [
+        "A = (0.63, 0.99)",
+        "B = (-1.26, -1.04)",
+        "C = (-1.23, -0.99)",
+        "f = Line(A, B)",
+        "n = PerpendicularLine(C, f)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 0.1386, "y": 0.4622 },
+        { "action": "move", "label": "C", "x": -6.71, "y": 0.27 },
+        { "action": "move", "label": "B", "x": 0.63, "y": 0.99 },
+        { "action": "move", "label": "B", "x": 0.21, "y": 2.39 },
+        { "action": "move", "label": "A", "x": 5.65, "y": -7.19 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.63, "y": 0.99 },
+          "B": { "type": "point", "defined": true, "x": -1.26, "y": -1.04 },
+          "C": { "type": "point", "defined": true, "x": -1.23, "y": -0.99 },
+          "f": { "type": "line", "defined": true, "a": 2.0300000000000002, "b": -1.8900000000000001, "c": 0.5922000000000001 },
+          "n": { "type": "line", "defined": true, "a": 1.8900000000000001, "b": 2.0300000000000002, "c": 4.3344000000000005 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.63, "y": 0.99 },
+          "B": { "type": "point", "defined": true, "x": -1.26, "y": -1.04 },
+          "C": { "type": "point", "defined": true, "x": 0.1386, "y": 0.4622 },
+          "f": { "type": "line", "defined": true, "a": 2.0300000000000002, "b": -1.8900000000000001, "c": 0.5922000000000001 },
+          "n": { "type": "line", "defined": true, "a": 1.8900000000000001, "b": 2.0300000000000002, "c": -1.2002200000000003 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.63, "y": 0.99 },
+          "B": { "type": "point", "defined": true, "x": -1.26, "y": -1.04 },
+          "C": { "type": "point", "defined": true, "x": -6.71, "y": 0.27 },
+          "f": { "type": "line", "defined": true, "a": 2.0300000000000002, "b": -1.8900000000000001, "c": 0.5922000000000001 },
+          "n": { "type": "line", "defined": true, "a": 1.8900000000000001, "b": 2.0300000000000002, "c": 12.1338 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.63, "y": 0.99 },
+          "B": { "type": "point", "defined": true, "x": 0.63, "y": 0.99 },
+          "C": { "type": "point", "defined": true, "x": -6.71, "y": 0.27 },
+          "f": { "type": "line", "defined": false },
+          "n": { "type": "line", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.63, "y": 0.99 },
+          "B": { "type": "point", "defined": true, "x": 0.21, "y": 2.39 },
+          "C": { "type": "point", "defined": true, "x": -6.71, "y": 0.27 },
+          "f": { "type": "line", "defined": true, "a": -1.4000000000000001, "b": -0.42000000000000004, "c": 1.2978 },
+          "n": { "type": "line", "defined": true, "a": 0.42000000000000004, "b": -1.4000000000000001, "c": 3.1962 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 5.65, "y": -7.19 },
+          "B": { "type": "point", "defined": true, "x": 0.21, "y": 2.39 },
+          "C": { "type": "point", "defined": true, "x": -6.71, "y": 0.27 },
+          "f": { "type": "line", "defined": true, "a": -9.58, "b": -5.44, "c": 15.0134 },
+          "n": { "type": "line", "defined": true, "a": 5.44, "b": -9.58, "c": 39.089 }
+        }
+      ]
+    },
+    {
+      "id": "geometry-perp-004",
+      "group": "geometry",
+      "script": [
+        "A = (-6.01, -0.67)",
+        "B = (2.77, -5.73)",
+        "C = (0.39, -0.9)",
+        "f = Line(A, B)",
+        "n = PerpendicularLine(C, f)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": -2.5858, "y": -2.6434 },
+        { "action": "move", "label": "C", "x": 3.4, "y": -1.74 },
+        { "action": "move", "label": "B", "x": -6.01, "y": -0.67 },
+        { "action": "move", "label": "B", "x": -1.6, "y": -3.57 },
+        { "action": "move", "label": "A", "x": -2.87, "y": -2.14 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -6.01, "y": -0.67 },
+          "B": { "type": "point", "defined": true, "x": 2.77, "y": -5.73 },
+          "C": { "type": "point", "defined": true, "x": 0.39, "y": -0.9 },
+          "f": { "type": "line", "defined": true, "a": 5.0600000000000005, "b": 8.78, "c": 36.2932 },
+          "n": { "type": "line", "defined": true, "a": -8.78, "b": 5.0600000000000005, "c": 7.9782 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.01, "y": -0.67 },
+          "B": { "type": "point", "defined": true, "x": 2.77, "y": -5.73 },
+          "C": { "type": "point", "defined": true, "x": -2.5858, "y": -2.6434 },
+          "f": { "type": "line", "defined": true, "a": 5.0600000000000005, "b": 8.78, "c": 36.2932 },
+          "n": { "type": "line", "defined": true, "a": -8.78, "b": 5.0600000000000005, "c": -9.327719999999996 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.01, "y": -0.67 },
+          "B": { "type": "point", "defined": true, "x": 2.77, "y": -5.73 },
+          "C": { "type": "point", "defined": true, "x": 3.4, "y": -1.74 },
+          "f": { "type": "line", "defined": true, "a": 5.0600000000000005, "b": 8.78, "c": 36.2932 },
+          "n": { "type": "line", "defined": true, "a": -8.78, "b": 5.0600000000000005, "c": 38.6564 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.01, "y": -0.67 },
+          "B": { "type": "point", "defined": true, "x": -6.01, "y": -0.67 },
+          "C": { "type": "point", "defined": true, "x": 3.4, "y": -1.74 },
+          "f": { "type": "line", "defined": false },
+          "n": { "type": "line", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.01, "y": -0.67 },
+          "B": { "type": "point", "defined": true, "x": -1.6, "y": -3.57 },
+          "C": { "type": "point", "defined": true, "x": 3.4, "y": -1.74 },
+          "f": { "type": "line", "defined": true, "a": 2.9, "b": 4.41, "c": 20.383699999999997 },
+          "n": { "type": "line", "defined": true, "a": -4.41, "b": 2.9, "c": 20.04 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.87, "y": -2.14 },
+          "B": { "type": "point", "defined": true, "x": -1.6, "y": -3.57 },
+          "C": { "type": "point", "defined": true, "x": 3.4, "y": -1.74 },
+          "f": { "type": "line", "defined": true, "a": 1.4299999999999997, "b": 1.27, "c": 6.8219 },
+          "n": { "type": "line", "defined": true, "a": -1.27, "b": 1.4299999999999997, "c": 6.806199999999999 }
+        }
+      ]
+    },
+    {
+      "id": "geometry-perp-005",
+      "group": "geometry",
+      "script": [
+        "A = (2.66, 1.5)",
+        "B = (-2.89, 2.93)",
+        "C = (2.65, 2.5)",
+        "f = Line(A, B)",
+        "n = PerpendicularLine(C, f)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": -7.8295, "y": 4.2027 },
+        { "action": "move", "label": "C", "x": -4.54, "y": 3.65 },
+        { "action": "move", "label": "B", "x": 2.66, "y": 1.5 },
+        { "action": "move", "label": "B", "x": -3.72, "y": -0.38 },
+        { "action": "move", "label": "A", "x": 5.21, "y": -7.08 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 2.66, "y": 1.5 },
+          "B": { "type": "point", "defined": true, "x": -2.89, "y": 2.93 },
+          "C": { "type": "point", "defined": true, "x": 2.65, "y": 2.5 },
+          "f": { "type": "line", "defined": true, "a": -1.4300000000000002, "b": -5.550000000000001, "c": 12.128800000000002 },
+          "n": { "type": "line", "defined": true, "a": 5.550000000000001, "b": -1.4300000000000002, "c": -11.1325 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.66, "y": 1.5 },
+          "B": { "type": "point", "defined": true, "x": -2.89, "y": 2.93 },
+          "C": { "type": "point", "defined": true, "x": -7.8295, "y": 4.2027 },
+          "f": { "type": "line", "defined": true, "a": -1.4300000000000002, "b": -5.550000000000001, "c": 12.128800000000002 },
+          "n": { "type": "line", "defined": true, "a": 5.550000000000001, "b": -1.4300000000000002, "c": 49.46358600000001 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.66, "y": 1.5 },
+          "B": { "type": "point", "defined": true, "x": -2.89, "y": 2.93 },
+          "C": { "type": "point", "defined": true, "x": -4.54, "y": 3.65 },
+          "f": { "type": "line", "defined": true, "a": -1.4300000000000002, "b": -5.550000000000001, "c": 12.128800000000002 },
+          "n": { "type": "line", "defined": true, "a": 5.550000000000001, "b": -1.4300000000000002, "c": 30.416500000000003 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.66, "y": 1.5 },
+          "B": { "type": "point", "defined": true, "x": 2.66, "y": 1.5 },
+          "C": { "type": "point", "defined": true, "x": -4.54, "y": 3.65 },
+          "f": { "type": "line", "defined": false },
+          "n": { "type": "line", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.66, "y": 1.5 },
+          "B": { "type": "point", "defined": true, "x": -3.72, "y": -0.38 },
+          "C": { "type": "point", "defined": true, "x": -4.54, "y": 3.65 },
+          "f": { "type": "line", "defined": true, "a": 1.88, "b": -6.380000000000001, "c": 4.5692 },
+          "n": { "type": "line", "defined": true, "a": 6.380000000000001, "b": 1.88, "c": 22.103200000000005 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 5.21, "y": -7.08 },
+          "B": { "type": "point", "defined": true, "x": -3.72, "y": -0.38 },
+          "C": { "type": "point", "defined": true, "x": -4.54, "y": 3.65 },
+          "f": { "type": "line", "defined": true, "a": -6.7, "b": -8.93, "c": -28.317400000000003 },
+          "n": { "type": "line", "defined": true, "a": 8.93, "b": -6.7, "c": 64.99719999999999 }
+        }
+      ]
+    },
+    {
+      "id": "geometry-perp-006",
+      "group": "geometry",
+      "script": [
+        "A = (5.58, -2.76)",
+        "B = (-1.85, -2.56)",
+        "C = (7.26, -5.89)",
+        "f = Line(A, B)",
+        "n = PerpendicularLine(C, f)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 9.7408, "y": -2.872 },
+        { "action": "move", "label": "C", "x": -7.17, "y": 0.94 },
+        { "action": "move", "label": "B", "x": 5.58, "y": -2.76 },
+        { "action": "move", "label": "B", "x": -3.58, "y": -0.06 },
+        { "action": "move", "label": "A", "x": 5.54, "y": 3.22 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 5.58, "y": -2.76 },
+          "B": { "type": "point", "defined": true, "x": -1.85, "y": -2.56 },
+          "C": { "type": "point", "defined": true, "x": 7.26, "y": -5.89 },
+          "f": { "type": "line", "defined": true, "a": -0.19999999999999973, "b": -7.43, "c": -19.3908 },
+          "n": { "type": "line", "defined": true, "a": 7.43, "b": -0.19999999999999973, "c": -55.11979999999999 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 5.58, "y": -2.76 },
+          "B": { "type": "point", "defined": true, "x": -1.85, "y": -2.56 },
+          "C": { "type": "point", "defined": true, "x": 9.7408, "y": -2.872 },
+          "f": { "type": "line", "defined": true, "a": -0.19999999999999973, "b": -7.43, "c": -19.3908 },
+          "n": { "type": "line", "defined": true, "a": 7.43, "b": -0.19999999999999973, "c": -72.948544 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 5.58, "y": -2.76 },
+          "B": { "type": "point", "defined": true, "x": -1.85, "y": -2.56 },
+          "C": { "type": "point", "defined": true, "x": -7.17, "y": 0.94 },
+          "f": { "type": "line", "defined": true, "a": -0.19999999999999973, "b": -7.43, "c": -19.3908 },
+          "n": { "type": "line", "defined": true, "a": 7.43, "b": -0.19999999999999973, "c": 53.4611 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 5.58, "y": -2.76 },
+          "B": { "type": "point", "defined": true, "x": 5.58, "y": -2.76 },
+          "C": { "type": "point", "defined": true, "x": -7.17, "y": 0.94 },
+          "f": { "type": "line", "defined": false },
+          "n": { "type": "line", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 5.58, "y": -2.76 },
+          "B": { "type": "point", "defined": true, "x": -3.58, "y": -0.06 },
+          "C": { "type": "point", "defined": true, "x": -7.17, "y": 0.94 },
+          "f": { "type": "line", "defined": true, "a": -2.6999999999999997, "b": -9.16, "c": -10.215599999999998 },
+          "n": { "type": "line", "defined": true, "a": 9.16, "b": -2.6999999999999997, "c": 68.2152 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 5.54, "y": 3.22 },
+          "B": { "type": "point", "defined": true, "x": -3.58, "y": -0.06 },
+          "C": { "type": "point", "defined": true, "x": -7.17, "y": 0.94 },
+          "f": { "type": "line", "defined": true, "a": 3.2800000000000002, "b": -9.120000000000001, "c": 11.195200000000002 },
+          "n": { "type": "line", "defined": true, "a": 9.120000000000001, "b": 3.2800000000000002, "c": 62.3072 }
+        }
+      ]
+    },
+    {
+      "id": "geometry-perp-007",
+      "group": "geometry",
+      "script": [
+        "A = (1.7, -5.69)",
+        "B = (1.19, -3.51)",
+        "C = (-2.31, -5.26)",
+        "f = Line(A, B)",
+        "n = PerpendicularLine(C, f)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 1.4807, "y": -4.7526 },
+        { "action": "move", "label": "C", "x": 7.42, "y": 1.47 },
+        { "action": "move", "label": "B", "x": 1.7, "y": -5.69 },
+        { "action": "move", "label": "B", "x": 4.3, "y": 6.42 },
+        { "action": "move", "label": "A", "x": -6.67, "y": 0.12 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.7, "y": -5.69 },
+          "B": { "type": "point", "defined": true, "x": 1.19, "y": -3.51 },
+          "C": { "type": "point", "defined": true, "x": -2.31, "y": -5.26 },
+          "f": { "type": "line", "defined": true, "a": -2.1800000000000006, "b": -0.51, "c": 0.8041000000000009 },
+          "n": { "type": "line", "defined": true, "a": 0.51, "b": -2.1800000000000006, "c": -10.288700000000002 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.7, "y": -5.69 },
+          "B": { "type": "point", "defined": true, "x": 1.19, "y": -3.51 },
+          "C": { "type": "point", "defined": true, "x": 1.4807, "y": -4.7526 },
+          "f": { "type": "line", "defined": true, "a": -2.1800000000000006, "b": -0.51, "c": 0.8041000000000009 },
+          "n": { "type": "line", "defined": true, "a": 0.51, "b": -2.1800000000000006, "c": -11.115825000000005 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.7, "y": -5.69 },
+          "B": { "type": "point", "defined": true, "x": 1.19, "y": -3.51 },
+          "C": { "type": "point", "defined": true, "x": 7.42, "y": 1.47 },
+          "f": { "type": "line", "defined": true, "a": -2.1800000000000006, "b": -0.51, "c": 0.8041000000000009 },
+          "n": { "type": "line", "defined": true, "a": 0.51, "b": -2.1800000000000006, "c": -0.5795999999999992 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.7, "y": -5.69 },
+          "B": { "type": "point", "defined": true, "x": 1.7, "y": -5.69 },
+          "C": { "type": "point", "defined": true, "x": 7.42, "y": 1.47 },
+          "f": { "type": "line", "defined": false },
+          "n": { "type": "line", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.7, "y": -5.69 },
+          "B": { "type": "point", "defined": true, "x": 4.3, "y": 6.42 },
+          "C": { "type": "point", "defined": true, "x": 7.42, "y": 1.47 },
+          "f": { "type": "line", "defined": true, "a": -12.11, "b": 2.5999999999999996, "c": 35.381 },
+          "n": { "type": "line", "defined": true, "a": -2.5999999999999996, "b": -12.11, "c": 37.0937 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.67, "y": 0.12 },
+          "B": { "type": "point", "defined": true, "x": 4.3, "y": 6.42 },
+          "C": { "type": "point", "defined": true, "x": 7.42, "y": 1.47 },
+          "f": { "type": "line", "defined": true, "a": -6.3, "b": 10.969999999999999, "c": -43.337399999999995 },
+          "n": { "type": "line", "defined": true, "a": -10.969999999999999, "b": -6.3, "c": 90.65839999999999 }
+        }
+      ]
+    },
+    {
+      "id": "geometry-perp-008",
+      "group": "geometry",
+      "script": [
+        "A = (-6.35, 7.65)",
+        "B = (4.99, 2.08)",
+        "C = (7.14, 2.84)",
+        "f = Line(A, B)",
+        "n = PerpendicularLine(C, f)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 12.928, "y": -1.819 },
+        { "action": "move", "label": "C", "x": -0.49, "y": 2.35 },
+        { "action": "move", "label": "B", "x": -6.35, "y": 7.65 },
+        { "action": "move", "label": "B", "x": 7.62, "y": 0.39 },
+        { "action": "move", "label": "A", "x": -5.36, "y": -3.97 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -6.35, "y": 7.65 },
+          "B": { "type": "point", "defined": true, "x": 4.99, "y": 2.08 },
+          "C": { "type": "point", "defined": true, "x": 7.14, "y": 2.84 },
+          "f": { "type": "line", "defined": true, "a": 5.57, "b": 11.34, "c": -51.3815 },
+          "n": { "type": "line", "defined": true, "a": -11.34, "b": 5.57, "c": 65.1488 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.35, "y": 7.65 },
+          "B": { "type": "point", "defined": true, "x": 4.99, "y": 2.08 },
+          "C": { "type": "point", "defined": true, "x": 12.928, "y": -1.819 },
+          "f": { "type": "line", "defined": true, "a": 5.57, "b": 11.34, "c": -51.3815 },
+          "n": { "type": "line", "defined": true, "a": -11.34, "b": 5.57, "c": 156.73535 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.35, "y": 7.65 },
+          "B": { "type": "point", "defined": true, "x": 4.99, "y": 2.08 },
+          "C": { "type": "point", "defined": true, "x": -0.49, "y": 2.35 },
+          "f": { "type": "line", "defined": true, "a": 5.57, "b": 11.34, "c": -51.3815 },
+          "n": { "type": "line", "defined": true, "a": -11.34, "b": 5.57, "c": -18.6461 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.35, "y": 7.65 },
+          "B": { "type": "point", "defined": true, "x": -6.35, "y": 7.65 },
+          "C": { "type": "point", "defined": true, "x": -0.49, "y": 2.35 },
+          "f": { "type": "line", "defined": false },
+          "n": { "type": "line", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.35, "y": 7.65 },
+          "B": { "type": "point", "defined": true, "x": 7.62, "y": 0.39 },
+          "C": { "type": "point", "defined": true, "x": -0.49, "y": 2.35 },
+          "f": { "type": "line", "defined": true, "a": 7.260000000000001, "b": 13.969999999999999, "c": -60.76950000000001 },
+          "n": { "type": "line", "defined": true, "a": -13.969999999999999, "b": 7.260000000000001, "c": -23.9063 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -5.36, "y": -3.97 },
+          "B": { "type": "point", "defined": true, "x": 7.62, "y": 0.39 },
+          "C": { "type": "point", "defined": true, "x": -0.49, "y": 2.35 },
+          "f": { "type": "line", "defined": true, "a": -4.36, "b": 12.98, "c": 28.161 },
+          "n": { "type": "line", "defined": true, "a": -12.98, "b": -4.36, "c": 3.8858000000000006 }
+        }
+      ]
+    },
+    {
+      "id": "geometry-perp-009",
+      "group": "geometry",
+      "script": [
+        "A = (5.34, 6.39)",
+        "B = (5.48, -2.39)",
+        "C = (-0.32, -3.34)",
+        "f = Segment(A, B)",
+        "n = PerpendicularLine(C, f)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 5.5304, "y": -5.5508 },
+        { "action": "move", "label": "C", "x": -1.25, "y": -1.89 },
+        { "action": "move", "label": "B", "x": 5.34, "y": 6.39 },
+        { "action": "move", "label": "B", "x": -2.35, "y": -0.12 },
+        { "action": "move", "label": "A", "x": 1.88, "y": -0.91 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 5.34, "y": 6.39 },
+          "B": { "type": "point", "defined": true, "x": 5.48, "y": -2.39 },
+          "C": { "type": "point", "defined": true, "x": -0.32, "y": -3.34 },
+          "f": { "type": "segment", "defined": true, "x1": 5.34, "y1": 6.39, "x2": 5.48, "y2": -2.39 },
+          "n": { "type": "line", "defined": true, "a": -0.14000000000000057, "b": 8.78, "c": 29.280399999999997 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 5.34, "y": 6.39 },
+          "B": { "type": "point", "defined": true, "x": 5.48, "y": -2.39 },
+          "C": { "type": "point", "defined": true, "x": 5.5304, "y": -5.5508 },
+          "f": { "type": "segment", "defined": true, "x1": 5.34, "y1": 6.39, "x2": 5.48, "y2": -2.39 },
+          "n": { "type": "line", "defined": true, "a": -0.14000000000000057, "b": 8.78, "c": 49.510279999999995 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 5.34, "y": 6.39 },
+          "B": { "type": "point", "defined": true, "x": 5.48, "y": -2.39 },
+          "C": { "type": "point", "defined": true, "x": -1.25, "y": -1.89 },
+          "f": { "type": "segment", "defined": true, "x1": 5.34, "y1": 6.39, "x2": 5.48, "y2": -2.39 },
+          "n": { "type": "line", "defined": true, "a": -0.14000000000000057, "b": 8.78, "c": 16.419199999999996 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 5.34, "y": 6.39 },
+          "B": { "type": "point", "defined": true, "x": 5.34, "y": 6.39 },
+          "C": { "type": "point", "defined": true, "x": -1.25, "y": -1.89 },
+          "f": { "type": "segment", "defined": true, "x1": 5.34, "y1": 6.39, "x2": 5.34, "y2": 6.39 },
+          "n": { "type": "line", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 5.34, "y": 6.39 },
+          "B": { "type": "point", "defined": true, "x": -2.35, "y": -0.12 },
+          "C": { "type": "point", "defined": true, "x": -1.25, "y": -1.89 },
+          "f": { "type": "segment", "defined": true, "x1": 5.34, "y1": 6.39, "x2": -2.35, "y2": -0.12 },
+          "n": { "type": "line", "defined": true, "a": 7.6899999999999995, "b": 6.51, "c": 21.916399999999996 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.88, "y": -0.91 },
+          "B": { "type": "point", "defined": true, "x": -2.35, "y": -0.12 },
+          "C": { "type": "point", "defined": true, "x": -1.25, "y": -1.89 },
+          "f": { "type": "segment", "defined": true, "x1": 1.88, "y1": -0.91, "x2": -2.35, "y2": -0.12 },
+          "n": { "type": "line", "defined": true, "a": 4.23, "b": -0.79, "c": 3.7944000000000004 }
+        }
+      ]
+    },
+    {
+      "id": "geometry-perp-010",
+      "group": "geometry",
+      "script": [
+        "A = (-4.35, 7.15)",
+        "B = (4.69, 2.29)",
+        "C = (-5.68, 3.69)",
+        "f = Segment(A, B)",
+        "n = PerpendicularLine(C, f)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 11.7412, "y": -1.5008 },
+        { "action": "move", "label": "C", "x": -2.71, "y": 0.36 },
+        { "action": "move", "label": "B", "x": -4.35, "y": 7.15 },
+        { "action": "move", "label": "B", "x": 6.16, "y": -1.13 },
+        { "action": "move", "label": "A", "x": -3.85, "y": -2.9 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -4.35, "y": 7.15 },
+          "B": { "type": "point", "defined": true, "x": 4.69, "y": 2.29 },
+          "C": { "type": "point", "defined": true, "x": -5.68, "y": 3.69 },
+          "f": { "type": "segment", "defined": true, "x1": -4.35, "y1": 7.15, "x2": 4.69, "y2": 2.29 },
+          "n": { "type": "line", "defined": true, "a": -9.04, "b": 4.86, "c": -69.28059999999999 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -4.35, "y": 7.15 },
+          "B": { "type": "point", "defined": true, "x": 4.69, "y": 2.29 },
+          "C": { "type": "point", "defined": true, "x": 11.7412, "y": -1.5008 },
+          "f": { "type": "segment", "defined": true, "x1": -4.35, "y1": 7.15, "x2": 4.69, "y2": 2.29 },
+          "n": { "type": "line", "defined": true, "a": -9.04, "b": 4.86, "c": 113.43433599999997 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -4.35, "y": 7.15 },
+          "B": { "type": "point", "defined": true, "x": 4.69, "y": 2.29 },
+          "C": { "type": "point", "defined": true, "x": -2.71, "y": 0.36 },
+          "f": { "type": "segment", "defined": true, "x1": -4.35, "y1": 7.15, "x2": 4.69, "y2": 2.29 },
+          "n": { "type": "line", "defined": true, "a": -9.04, "b": 4.86, "c": -26.247999999999998 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -4.35, "y": 7.15 },
+          "B": { "type": "point", "defined": true, "x": -4.35, "y": 7.15 },
+          "C": { "type": "point", "defined": true, "x": -2.71, "y": 0.36 },
+          "f": { "type": "segment", "defined": true, "x1": -4.35, "y1": 7.15, "x2": -4.35, "y2": 7.15 },
+          "n": { "type": "line", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -4.35, "y": 7.15 },
+          "B": { "type": "point", "defined": true, "x": 6.16, "y": -1.13 },
+          "C": { "type": "point", "defined": true, "x": -2.71, "y": 0.36 },
+          "f": { "type": "segment", "defined": true, "x1": -4.35, "y1": 7.15, "x2": 6.16, "y2": -1.13 },
+          "n": { "type": "line", "defined": true, "a": -10.51, "b": 8.280000000000001, "c": -31.462899999999998 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.85, "y": -2.9 },
+          "B": { "type": "point", "defined": true, "x": 6.16, "y": -1.13 },
+          "C": { "type": "point", "defined": true, "x": -2.71, "y": 0.36 },
+          "f": { "type": "segment", "defined": true, "x1": -3.85, "y1": -2.9, "x2": 6.16, "y2": -1.13 },
+          "n": { "type": "line", "defined": true, "a": -10.01, "b": -1.77, "c": -26.4899 }
+        }
+      ]
+    },
+    {
+      "id": "geometry-perp-011",
+      "group": "geometry",
+      "script": [
+        "A = (-0.79, -5.72)",
+        "B = (-6.89, -2.61)",
+        "C = (1.82, -7.64)",
+        "f = Segment(A, B)",
+        "n = PerpendicularLine(C, f)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": -0.912, "y": -5.6578 },
+        { "action": "move", "label": "C", "x": -6.6, "y": 2.62 },
+        { "action": "move", "label": "B", "x": -0.79, "y": -5.72 },
+        { "action": "move", "label": "B", "x": 4.98, "y": -3.86 },
+        { "action": "move", "label": "A", "x": 7.31, "y": -3.16 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -0.79, "y": -5.72 },
+          "B": { "type": "point", "defined": true, "x": -6.89, "y": -2.61 },
+          "C": { "type": "point", "defined": true, "x": 1.82, "y": -7.64 },
+          "f": { "type": "segment", "defined": true, "x1": -0.79, "y1": -5.72, "x2": -6.89, "y2": -2.61 },
+          "n": { "type": "line", "defined": true, "a": 6.1, "b": -3.11, "c": -34.862399999999994 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -0.79, "y": -5.72 },
+          "B": { "type": "point", "defined": true, "x": -6.89, "y": -2.61 },
+          "C": { "type": "point", "defined": true, "x": -0.912, "y": -5.6578 },
+          "f": { "type": "segment", "defined": true, "x1": -0.79, "y1": -5.72, "x2": -6.89, "y2": -2.61 },
+          "n": { "type": "line", "defined": true, "a": 6.1, "b": -3.11, "c": -12.032558 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -0.79, "y": -5.72 },
+          "B": { "type": "point", "defined": true, "x": -6.89, "y": -2.61 },
+          "C": { "type": "point", "defined": true, "x": -6.6, "y": 2.62 },
+          "f": { "type": "segment", "defined": true, "x1": -0.79, "y1": -5.72, "x2": -6.89, "y2": -2.61 },
+          "n": { "type": "line", "defined": true, "a": 6.1, "b": -3.11, "c": 48.408199999999994 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -0.79, "y": -5.72 },
+          "B": { "type": "point", "defined": true, "x": -0.79, "y": -5.72 },
+          "C": { "type": "point", "defined": true, "x": -6.6, "y": 2.62 },
+          "f": { "type": "segment", "defined": true, "x1": -0.79, "y1": -5.72, "x2": -0.79, "y2": -5.72 },
+          "n": { "type": "line", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -0.79, "y": -5.72 },
+          "B": { "type": "point", "defined": true, "x": 4.98, "y": -3.86 },
+          "C": { "type": "point", "defined": true, "x": -6.6, "y": 2.62 },
+          "f": { "type": "segment", "defined": true, "x1": -0.79, "y1": -5.72, "x2": 4.98, "y2": -3.86 },
+          "n": { "type": "line", "defined": true, "a": -5.7700000000000005, "b": -1.8599999999999999, "c": -33.208800000000004 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.31, "y": -3.16 },
+          "B": { "type": "point", "defined": true, "x": 4.98, "y": -3.86 },
+          "C": { "type": "point", "defined": true, "x": -6.6, "y": 2.62 },
+          "f": { "type": "segment", "defined": true, "x1": 7.31, "y1": -3.16, "x2": 4.98, "y2": -3.86 },
+          "n": { "type": "line", "defined": true, "a": 2.329999999999999, "b": 0.6999999999999997, "c": 13.543999999999993 }
+        }
+      ]
+    },
+    {
+      "id": "geometry-perp-012",
+      "group": "geometry",
+      "script": [
+        "A = (7.71, -4.89)",
+        "B = (1.37, -2.3)",
+        "C = (-3.85, -4.44)",
+        "f = Segment(A, B)",
+        "n = PerpendicularLine(C, f)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": -0.1516, "y": -1.6784 },
+        { "action": "move", "label": "C", "x": 6.66, "y": 0.15 },
+        { "action": "move", "label": "B", "x": 7.71, "y": -4.89 },
+        { "action": "move", "label": "B", "x": 2.99, "y": -6.41 },
+        { "action": "move", "label": "A", "x": -4.21, "y": 1.4 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 7.71, "y": -4.89 },
+          "B": { "type": "point", "defined": true, "x": 1.37, "y": -2.3 },
+          "C": { "type": "point", "defined": true, "x": -3.85, "y": -4.44 },
+          "f": { "type": "segment", "defined": true, "x1": 7.71, "y1": -4.89, "x2": 1.37, "y2": -2.3 },
+          "n": { "type": "line", "defined": true, "a": 6.34, "b": -2.59, "c": 12.909399999999998 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.71, "y": -4.89 },
+          "B": { "type": "point", "defined": true, "x": 1.37, "y": -2.3 },
+          "C": { "type": "point", "defined": true, "x": -0.1516, "y": -1.6784 },
+          "f": { "type": "segment", "defined": true, "x1": 7.71, "y1": -4.89, "x2": 1.37, "y2": -2.3 },
+          "n": { "type": "line", "defined": true, "a": 6.34, "b": -2.59, "c": -3.3859119999999994 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.71, "y": -4.89 },
+          "B": { "type": "point", "defined": true, "x": 1.37, "y": -2.3 },
+          "C": { "type": "point", "defined": true, "x": 6.66, "y": 0.15 },
+          "f": { "type": "segment", "defined": true, "x1": 7.71, "y1": -4.89, "x2": 1.37, "y2": -2.3 },
+          "n": { "type": "line", "defined": true, "a": 6.34, "b": -2.59, "c": -41.8359 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.71, "y": -4.89 },
+          "B": { "type": "point", "defined": true, "x": 7.71, "y": -4.89 },
+          "C": { "type": "point", "defined": true, "x": 6.66, "y": 0.15 },
+          "f": { "type": "segment", "defined": true, "x1": 7.71, "y1": -4.89, "x2": 7.71, "y2": -4.89 },
+          "n": { "type": "line", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.71, "y": -4.89 },
+          "B": { "type": "point", "defined": true, "x": 2.99, "y": -6.41 },
+          "C": { "type": "point", "defined": true, "x": 6.66, "y": 0.15 },
+          "f": { "type": "segment", "defined": true, "x1": 7.71, "y1": -4.89, "x2": 2.99, "y2": -6.41 },
+          "n": { "type": "line", "defined": true, "a": 4.72, "b": 1.5200000000000005, "c": -31.6632 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -4.21, "y": 1.4 },
+          "B": { "type": "point", "defined": true, "x": 2.99, "y": -6.41 },
+          "C": { "type": "point", "defined": true, "x": 6.66, "y": 0.15 },
+          "f": { "type": "segment", "defined": true, "x1": -4.21, "y1": 1.4, "x2": 2.99, "y2": -6.41 },
+          "n": { "type": "line", "defined": true, "a": -7.2, "b": 7.8100000000000005, "c": 46.7805 }
+        }
+      ]
+    },
+    {
+      "id": "geometry-perp-013",
+      "group": "geometry",
+      "script": [
+        "A = (3.36, 1.83)",
+        "B = (-6.73, -4.17)",
+        "C = (-4.08, 7.67)",
+        "f = Segment(A, B)",
+        "n = PerpendicularLine(C, f)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 3.36, "y": 1.83 },
+        { "action": "move", "label": "C", "x": 2.52, "y": -7.56 },
+        { "action": "move", "label": "B", "x": 3.36, "y": 1.83 },
+        { "action": "move", "label": "B", "x": -7.98, "y": -0.6 },
+        { "action": "move", "label": "A", "x": 1.21, "y": 7.48 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 3.36, "y": 1.83 },
+          "B": { "type": "point", "defined": true, "x": -6.73, "y": -4.17 },
+          "C": { "type": "point", "defined": true, "x": -4.08, "y": 7.67 },
+          "f": { "type": "segment", "defined": true, "x1": 3.36, "y1": 1.83, "x2": -6.73, "y2": -4.17 },
+          "n": { "type": "line", "defined": true, "a": 10.09, "b": 6.0, "c": -4.852799999999995 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.36, "y": 1.83 },
+          "B": { "type": "point", "defined": true, "x": -6.73, "y": -4.17 },
+          "C": { "type": "point", "defined": true, "x": 3.36, "y": 1.83 },
+          "f": { "type": "segment", "defined": true, "x1": 3.36, "y1": 1.83, "x2": -6.73, "y2": -4.17 },
+          "n": { "type": "line", "defined": true, "a": 10.09, "b": 6.0, "c": -44.882400000000004 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.36, "y": 1.83 },
+          "B": { "type": "point", "defined": true, "x": -6.73, "y": -4.17 },
+          "C": { "type": "point", "defined": true, "x": 2.52, "y": -7.56 },
+          "f": { "type": "segment", "defined": true, "x1": 3.36, "y1": 1.83, "x2": -6.73, "y2": -4.17 },
+          "n": { "type": "line", "defined": true, "a": 10.09, "b": 6.0, "c": 19.9332 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.36, "y": 1.83 },
+          "B": { "type": "point", "defined": true, "x": 3.36, "y": 1.83 },
+          "C": { "type": "point", "defined": true, "x": 2.52, "y": -7.56 },
+          "f": { "type": "segment", "defined": true, "x1": 3.36, "y1": 1.83, "x2": 3.36, "y2": 1.83 },
+          "n": { "type": "line", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.36, "y": 1.83 },
+          "B": { "type": "point", "defined": true, "x": -7.98, "y": -0.6 },
+          "C": { "type": "point", "defined": true, "x": 2.52, "y": -7.56 },
+          "f": { "type": "segment", "defined": true, "x1": 3.36, "y1": 1.83, "x2": -7.98, "y2": -0.6 },
+          "n": { "type": "line", "defined": true, "a": 11.34, "b": 2.43, "c": -10.206 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.21, "y": 7.48 },
+          "B": { "type": "point", "defined": true, "x": -7.98, "y": -0.6 },
+          "C": { "type": "point", "defined": true, "x": 2.52, "y": -7.56 },
+          "f": { "type": "segment", "defined": true, "x1": 1.21, "y1": 7.48, "x2": -7.98, "y2": -0.6 },
+          "n": { "type": "line", "defined": true, "a": 9.190000000000001, "b": 8.08, "c": 37.92599999999999 }
+        }
+      ]
+    },
+    {
+      "id": "geometry-perp-014",
+      "group": "geometry",
+      "script": [
+        "A = (-1.8, 3.19)",
+        "B = (-1.74, -7.87)",
+        "C = (2.3, 2.88)",
+        "f = Segment(A, B)",
+        "n = PerpendicularLine(C, f)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": -1.7082, "y": -13.7318 },
+        { "action": "move", "label": "C", "x": -5.94, "y": -2.35 },
+        { "action": "move", "label": "B", "x": -1.8, "y": 3.19 },
+        { "action": "move", "label": "B", "x": 3.84, "y": -4.01 },
+        { "action": "move", "label": "A", "x": -0.05, "y": -0.03 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -1.8, "y": 3.19 },
+          "B": { "type": "point", "defined": true, "x": -1.74, "y": -7.87 },
+          "C": { "type": "point", "defined": true, "x": 2.3, "y": 2.88 },
+          "f": { "type": "segment", "defined": true, "x1": -1.8, "y1": 3.19, "x2": -1.74, "y2": -7.87 },
+          "n": { "type": "line", "defined": true, "a": -0.06000000000000005, "b": 11.06, "c": -31.7148 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.8, "y": 3.19 },
+          "B": { "type": "point", "defined": true, "x": -1.74, "y": -7.87 },
+          "C": { "type": "point", "defined": true, "x": -1.7082, "y": -13.7318 },
+          "f": { "type": "segment", "defined": true, "x1": -1.8, "y1": 3.19, "x2": -1.74, "y2": -7.87 },
+          "n": { "type": "line", "defined": true, "a": -0.06000000000000005, "b": 11.06, "c": 151.77121599999998 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.8, "y": 3.19 },
+          "B": { "type": "point", "defined": true, "x": -1.74, "y": -7.87 },
+          "C": { "type": "point", "defined": true, "x": -5.94, "y": -2.35 },
+          "f": { "type": "segment", "defined": true, "x1": -1.8, "y1": 3.19, "x2": -1.74, "y2": -7.87 },
+          "n": { "type": "line", "defined": true, "a": -0.06000000000000005, "b": 11.06, "c": 25.634600000000002 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.8, "y": 3.19 },
+          "B": { "type": "point", "defined": true, "x": -1.8, "y": 3.19 },
+          "C": { "type": "point", "defined": true, "x": -5.94, "y": -2.35 },
+          "f": { "type": "segment", "defined": true, "x1": -1.8, "y1": 3.19, "x2": -1.8, "y2": 3.19 },
+          "n": { "type": "line", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.8, "y": 3.19 },
+          "B": { "type": "point", "defined": true, "x": 3.84, "y": -4.01 },
+          "C": { "type": "point", "defined": true, "x": -5.94, "y": -2.35 },
+          "f": { "type": "segment", "defined": true, "x1": -1.8, "y1": 3.19, "x2": 3.84, "y2": -4.01 },
+          "n": { "type": "line", "defined": true, "a": -5.64, "b": 7.199999999999999, "c": -16.581600000000005 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -0.05, "y": -0.03 },
+          "B": { "type": "point", "defined": true, "x": 3.84, "y": -4.01 },
+          "C": { "type": "point", "defined": true, "x": -5.94, "y": -2.35 },
+          "f": { "type": "segment", "defined": true, "x1": -0.05, "y1": -0.03, "x2": 3.84, "y2": -4.01 },
+          "n": { "type": "line", "defined": true, "a": -3.8899999999999997, "b": 3.98, "c": -13.7536 }
+        }
+      ]
+    },
+    {
+      "id": "geometry-perp-015",
+      "group": "geometry",
+      "script": [
+        "A = (-4.32, 1.65)",
+        "B = (2.67, 3.55)",
+        "f = Line(A, B)",
+        "n = PerpendicularLine(A, f)",
+        "m = PerpendicularLine(B, f)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": -4.99, "y": -4.36 },
+        { "action": "move", "label": "B", "x": 6.96, "y": -4.79 },
+        { "action": "move", "label": "A", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 4.5 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -4.32, "y": 1.65 },
+          "B": { "type": "point", "defined": true, "x": 2.67, "y": 3.55 },
+          "f": { "type": "line", "defined": true, "a": -1.9, "b": 6.99, "c": -19.741500000000002 },
+          "n": { "type": "line", "defined": true, "a": -6.99, "b": -1.9, "c": -27.061800000000005 },
+          "m": { "type": "line", "defined": true, "a": -6.99, "b": -1.9, "c": 25.408299999999997 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -4.99, "y": -4.36 },
+          "B": { "type": "point", "defined": true, "x": 2.67, "y": 3.55 },
+          "f": { "type": "line", "defined": true, "a": -7.91, "b": 7.66, "c": -6.0733 },
+          "n": { "type": "line", "defined": true, "a": -7.66, "b": -7.91, "c": -72.71100000000001 },
+          "m": { "type": "line", "defined": true, "a": -7.66, "b": -7.91, "c": 48.532700000000006 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -4.99, "y": -4.36 },
+          "B": { "type": "point", "defined": true, "x": 6.96, "y": -4.79 },
+          "f": { "type": "line", "defined": true, "a": 0.4299999999999997, "b": 11.95, "c": 54.2477 },
+          "n": { "type": "line", "defined": true, "a": -11.95, "b": 0.4299999999999997, "c": -57.7557 },
+          "m": { "type": "line", "defined": true, "a": -11.95, "b": 0.4299999999999997, "c": 85.23169999999999 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.96, "y": -4.79 },
+          "f": { "type": "line", "defined": true, "a": 4.79, "b": 6.96, "c": -0.0 },
+          "n": { "type": "line", "defined": true, "a": -6.96, "b": 4.79, "c": 0.0 },
+          "m": { "type": "line", "defined": true, "a": -6.96, "b": 4.79, "c": 71.3857 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 4.5 },
+          "f": { "type": "line", "defined": true, "a": -4.5, "b": 0.0, "c": 0.0 },
+          "n": { "type": "line", "defined": true, "a": 0.0, "b": -4.5, "c": 0.0 },
+          "m": { "type": "line", "defined": true, "a": 0.0, "b": -4.5, "c": 20.25 }
+        }
+      ]
+    },
+    {
+      "id": "geometry-perp-016",
+      "group": "geometry",
+      "script": [
+        "A = (-4.83, -2.25)",
+        "B = (7.74, -4.1)",
+        "f = Line(A, B)",
+        "n = PerpendicularLine(A, f)",
+        "m = PerpendicularLine(B, f)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": 2.49, "y": -0.06 },
+        { "action": "move", "label": "B", "x": 6.97, "y": 0.5 },
+        { "action": "move", "label": "A", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 4.5 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -4.83, "y": -2.25 },
+          "B": { "type": "point", "defined": true, "x": 7.74, "y": -4.1 },
+          "f": { "type": "line", "defined": true, "a": 1.8499999999999996, "b": 12.57, "c": 37.217999999999996 },
+          "n": { "type": "line", "defined": true, "a": -12.57, "b": 1.8499999999999996, "c": -56.5506 },
+          "m": { "type": "line", "defined": true, "a": -12.57, "b": 1.8499999999999996, "c": 104.8768 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.49, "y": -0.06 },
+          "B": { "type": "point", "defined": true, "x": 7.74, "y": -4.1 },
+          "f": { "type": "line", "defined": true, "a": 4.04, "b": 5.25, "c": -9.7446 },
+          "n": { "type": "line", "defined": true, "a": -5.25, "b": 4.04, "c": 13.314900000000002 },
+          "m": { "type": "line", "defined": true, "a": -5.25, "b": 4.04, "c": 57.199 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.49, "y": -0.06 },
+          "B": { "type": "point", "defined": true, "x": 6.97, "y": 0.5 },
+          "f": { "type": "line", "defined": true, "a": -0.56, "b": 4.4799999999999995, "c": 1.6632 },
+          "n": { "type": "line", "defined": true, "a": -4.4799999999999995, "b": -0.56, "c": 11.1216 },
+          "m": { "type": "line", "defined": true, "a": -4.4799999999999995, "b": -0.56, "c": 31.505599999999998 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.97, "y": 0.5 },
+          "f": { "type": "line", "defined": true, "a": -0.5, "b": 6.97, "c": 0.0 },
+          "n": { "type": "line", "defined": true, "a": -6.97, "b": -0.5, "c": 0.0 },
+          "m": { "type": "line", "defined": true, "a": -6.97, "b": -0.5, "c": 48.8309 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 4.5 },
+          "f": { "type": "line", "defined": true, "a": -4.5, "b": 0.0, "c": 0.0 },
+          "n": { "type": "line", "defined": true, "a": 0.0, "b": -4.5, "c": 0.0 },
+          "m": { "type": "line", "defined": true, "a": 0.0, "b": -4.5, "c": 20.25 }
+        }
+      ]
+    },
+    {
+      "id": "geometry-perp-017",
+      "group": "geometry",
+      "script": [
+        "A = (4.44, -5.33)",
+        "B = (-7.93, -1.27)",
+        "f = Line(A, B)",
+        "n = PerpendicularLine(A, f)",
+        "m = PerpendicularLine(B, f)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": -1.97, "y": 4.88 },
+        { "action": "move", "label": "B", "x": 2.31, "y": -5.79 },
+        { "action": "move", "label": "A", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 4.5 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 4.44, "y": -5.33 },
+          "B": { "type": "point", "defined": true, "x": -7.93, "y": -1.27 },
+          "f": { "type": "line", "defined": true, "a": -4.0600000000000005, "b": -12.370000000000001, "c": -47.9057 },
+          "n": { "type": "line", "defined": true, "a": 12.370000000000001, "b": -4.0600000000000005, "c": -76.56260000000002 },
+          "m": { "type": "line", "defined": true, "a": 12.370000000000001, "b": -4.0600000000000005, "c": 92.9379 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.97, "y": 4.88 },
+          "B": { "type": "point", "defined": true, "x": -7.93, "y": -1.27 },
+          "f": { "type": "line", "defined": true, "a": 6.15, "b": -5.96, "c": 41.2003 },
+          "n": { "type": "line", "defined": true, "a": 5.96, "b": 6.15, "c": -18.2708 },
+          "m": { "type": "line", "defined": true, "a": 5.96, "b": 6.15, "c": 55.073299999999996 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.97, "y": 4.88 },
+          "B": { "type": "point", "defined": true, "x": 2.31, "y": -5.79 },
+          "f": { "type": "line", "defined": true, "a": 10.67, "b": 4.28, "c": 0.13349999999999973 },
+          "n": { "type": "line", "defined": true, "a": -4.28, "b": 10.67, "c": -60.5012 },
+          "m": { "type": "line", "defined": true, "a": -4.28, "b": 10.67, "c": 71.6661 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.31, "y": -5.79 },
+          "f": { "type": "line", "defined": true, "a": 5.79, "b": 2.31, "c": -0.0 },
+          "n": { "type": "line", "defined": true, "a": -2.31, "b": 5.79, "c": 0.0 },
+          "m": { "type": "line", "defined": true, "a": -2.31, "b": 5.79, "c": 38.8602 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 4.5 },
+          "f": { "type": "line", "defined": true, "a": -4.5, "b": 0.0, "c": 0.0 },
+          "n": { "type": "line", "defined": true, "a": 0.0, "b": -4.5, "c": 0.0 },
+          "m": { "type": "line", "defined": true, "a": 0.0, "b": -4.5, "c": 20.25 }
+        }
+      ]
+    },
+    {
+      "id": "geometry-perp-018",
+      "group": "geometry",
+      "script": [
+        "A = (1.5, -7.13)",
+        "B = (1.35, 5.96)",
+        "C = (7.6, 0.18)",
+        "D = (-3.28, 2.9)",
+        "f = Line(A, B)",
+        "n = PerpendicularLine(C, f)",
+        "m = PerpendicularLine(D, n)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "D", "x": 7.6, "y": 0.18 },
+        { "action": "move", "label": "C", "x": -6.91, "y": -7.9 },
+        { "action": "move", "label": "B", "x": -0.56, "y": -7.59 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.5, "y": -7.13 },
+          "B": { "type": "point", "defined": true, "x": 1.35, "y": 5.96 },
+          "C": { "type": "point", "defined": true, "x": 7.6, "y": 0.18 },
+          "D": { "type": "point", "defined": true, "x": -3.28, "y": 2.9 },
+          "f": { "type": "line", "defined": true, "a": -13.09, "b": -0.1499999999999999, "c": 18.5655 },
+          "n": { "type": "line", "defined": true, "a": 0.1499999999999999, "b": -13.09, "c": 1.2162000000000006 },
+          "m": { "type": "line", "defined": true, "a": 13.09, "b": 0.1499999999999999, "c": 42.50019999999999 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.5, "y": -7.13 },
+          "B": { "type": "point", "defined": true, "x": 1.35, "y": 5.96 },
+          "C": { "type": "point", "defined": true, "x": 7.6, "y": 0.18 },
+          "D": { "type": "point", "defined": true, "x": 7.6, "y": 0.18 },
+          "f": { "type": "line", "defined": true, "a": -13.09, "b": -0.1499999999999999, "c": 18.5655 },
+          "n": { "type": "line", "defined": true, "a": 0.1499999999999999, "b": -13.09, "c": 1.2162000000000006 },
+          "m": { "type": "line", "defined": true, "a": 13.09, "b": 0.1499999999999999, "c": -99.511 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.5, "y": -7.13 },
+          "B": { "type": "point", "defined": true, "x": 1.35, "y": 5.96 },
+          "C": { "type": "point", "defined": true, "x": -6.91, "y": -7.9 },
+          "D": { "type": "point", "defined": true, "x": 7.6, "y": 0.18 },
+          "f": { "type": "line", "defined": true, "a": -13.09, "b": -0.1499999999999999, "c": 18.5655 },
+          "n": { "type": "line", "defined": true, "a": 0.1499999999999999, "b": -13.09, "c": -102.3745 },
+          "m": { "type": "line", "defined": true, "a": 13.09, "b": 0.1499999999999999, "c": -99.511 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.5, "y": -7.13 },
+          "B": { "type": "point", "defined": true, "x": -0.56, "y": -7.59 },
+          "C": { "type": "point", "defined": true, "x": -6.91, "y": -7.9 },
+          "D": { "type": "point", "defined": true, "x": 7.6, "y": 0.18 },
+          "f": { "type": "line", "defined": true, "a": 0.45999999999999996, "b": -2.06, "c": -15.3778 },
+          "n": { "type": "line", "defined": true, "a": 2.06, "b": 0.45999999999999996, "c": 17.8686 },
+          "m": { "type": "line", "defined": true, "a": -0.45999999999999996, "b": 2.06, "c": 3.1251999999999995 }
+        }
+      ]
+    },
+    {
+      "id": "geometry-perp-019",
+      "group": "geometry",
+      "script": [
+        "A = (5, -4.8)",
+        "B = (7.02, 5.76)",
+        "C = (-3.61, -5.95)",
+        "D = (-3.86, -7.76)",
+        "f = Line(A, B)",
+        "n = PerpendicularLine(C, f)",
+        "m = PerpendicularLine(D, n)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "D", "x": -3.61, "y": -5.95 },
+        { "action": "move", "label": "C", "x": -4.18, "y": 2.74 },
+        { "action": "move", "label": "B", "x": 3.63, "y": 4.95 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": -4.8 },
+          "B": { "type": "point", "defined": true, "x": 7.02, "y": 5.76 },
+          "C": { "type": "point", "defined": true, "x": -3.61, "y": -5.95 },
+          "D": { "type": "point", "defined": true, "x": -3.86, "y": -7.76 },
+          "f": { "type": "line", "defined": true, "a": -10.559999999999999, "b": 2.0199999999999996, "c": 62.495999999999995 },
+          "n": { "type": "line", "defined": true, "a": -2.0199999999999996, "b": -10.559999999999999, "c": -70.12419999999999 },
+          "m": { "type": "line", "defined": true, "a": 10.559999999999999, "b": -2.0199999999999996, "c": 25.086399999999998 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": -4.8 },
+          "B": { "type": "point", "defined": true, "x": 7.02, "y": 5.76 },
+          "C": { "type": "point", "defined": true, "x": -3.61, "y": -5.95 },
+          "D": { "type": "point", "defined": true, "x": -3.61, "y": -5.95 },
+          "f": { "type": "line", "defined": true, "a": -10.559999999999999, "b": 2.0199999999999996, "c": 62.495999999999995 },
+          "n": { "type": "line", "defined": true, "a": -2.0199999999999996, "b": -10.559999999999999, "c": -70.12419999999999 },
+          "m": { "type": "line", "defined": true, "a": 10.559999999999999, "b": -2.0199999999999996, "c": 26.102599999999995 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": -4.8 },
+          "B": { "type": "point", "defined": true, "x": 7.02, "y": 5.76 },
+          "C": { "type": "point", "defined": true, "x": -4.18, "y": 2.74 },
+          "D": { "type": "point", "defined": true, "x": -3.61, "y": -5.95 },
+          "f": { "type": "line", "defined": true, "a": -10.559999999999999, "b": 2.0199999999999996, "c": 62.495999999999995 },
+          "n": { "type": "line", "defined": true, "a": -2.0199999999999996, "b": -10.559999999999999, "c": 20.4908 },
+          "m": { "type": "line", "defined": true, "a": 10.559999999999999, "b": -2.0199999999999996, "c": 26.102599999999995 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": -4.8 },
+          "B": { "type": "point", "defined": true, "x": 3.63, "y": 4.95 },
+          "C": { "type": "point", "defined": true, "x": -4.18, "y": 2.74 },
+          "D": { "type": "point", "defined": true, "x": -3.61, "y": -5.95 },
+          "f": { "type": "line", "defined": true, "a": -9.75, "b": -1.37, "c": 42.174 },
+          "n": { "type": "line", "defined": true, "a": 1.37, "b": -9.75, "c": 32.4416 },
+          "m": { "type": "line", "defined": true, "a": 9.75, "b": 1.37, "c": 43.349 }
+        }
+      ]
+    },
+    {
+      "id": "geometry-perp-020",
+      "group": "geometry",
+      "script": [
+        "A = (1.5, -0.89)",
+        "B = (-5.04, -1)",
+        "C = (2.67, -0.43)",
+        "D = (-1.59, 1.4)",
+        "f = Line(A, B)",
+        "n = PerpendicularLine(C, f)",
+        "m = PerpendicularLine(D, n)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "D", "x": 2.67, "y": -0.43 },
+        { "action": "move", "label": "C", "x": -6.61, "y": 2.71 },
+        { "action": "move", "label": "B", "x": -1.92, "y": -4.46 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.5, "y": -0.89 },
+          "B": { "type": "point", "defined": true, "x": -5.04, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.67, "y": -0.43 },
+          "D": { "type": "point", "defined": true, "x": -1.59, "y": 1.4 },
+          "f": { "type": "line", "defined": true, "a": 0.10999999999999999, "b": -6.54, "c": -5.9856 },
+          "n": { "type": "line", "defined": true, "a": 6.54, "b": 0.10999999999999999, "c": -17.4145 },
+          "m": { "type": "line", "defined": true, "a": -0.10999999999999999, "b": 6.54, "c": -9.330899999999998 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.5, "y": -0.89 },
+          "B": { "type": "point", "defined": true, "x": -5.04, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.67, "y": -0.43 },
+          "D": { "type": "point", "defined": true, "x": 2.67, "y": -0.43 },
+          "f": { "type": "line", "defined": true, "a": 0.10999999999999999, "b": -6.54, "c": -5.9856 },
+          "n": { "type": "line", "defined": true, "a": 6.54, "b": 0.10999999999999999, "c": -17.4145 },
+          "m": { "type": "line", "defined": true, "a": -0.10999999999999999, "b": 6.54, "c": 3.1058999999999997 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.5, "y": -0.89 },
+          "B": { "type": "point", "defined": true, "x": -5.04, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": -6.61, "y": 2.71 },
+          "D": { "type": "point", "defined": true, "x": 2.67, "y": -0.43 },
+          "f": { "type": "line", "defined": true, "a": 0.10999999999999999, "b": -6.54, "c": -5.9856 },
+          "n": { "type": "line", "defined": true, "a": 6.54, "b": 0.10999999999999999, "c": 42.93130000000001 },
+          "m": { "type": "line", "defined": true, "a": -0.10999999999999999, "b": 6.54, "c": 3.1058999999999997 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.5, "y": -0.89 },
+          "B": { "type": "point", "defined": true, "x": -1.92, "y": -4.46 },
+          "C": { "type": "point", "defined": true, "x": -6.61, "y": 2.71 },
+          "D": { "type": "point", "defined": true, "x": 2.67, "y": -0.43 },
+          "f": { "type": "line", "defined": true, "a": 3.57, "b": -3.42, "c": -8.3988 },
+          "n": { "type": "line", "defined": true, "a": 3.42, "b": 3.57, "c": 12.931500000000002 },
+          "m": { "type": "line", "defined": true, "a": -3.57, "b": 3.42, "c": 11.002499999999998 }
+        }
+      ]
+    }
+  ]
+}
