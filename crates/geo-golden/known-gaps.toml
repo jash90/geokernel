@@ -288,3 +288,115 @@ mismatches = ["1:k"]
 id = "conic-diameter-007"
 reason = "GeoGebra computes Diameter from the circle matrix without checking that the circle is defined, so with a negative radius it returns the diameter from the stale matrix of the last defined circle; the kernel has no such state and reports the diameter of an undefined circle as undefined"
 mismatches = ["1:g", "4:g"]
+
+# transform
+
+[[gap]]
+id = "transform-dilate-020"
+reason = "GeoGebra classifies a dilated circle from its conic matrix, whose scale is not part of the kernel's circle value"
+mismatches = ["0:m", "1:m"]
+
+[[gap]]
+id = "transform-dilate-021"
+reason = "GeoGebra classifies a dilated circle from its conic matrix, whose scale is not part of the kernel's circle value"
+mismatches = ["0:m", "1:m", "2:m", "3:m", "4:m", "5:m", "6:m"]
+
+[[gap]]
+id = "transform-dilate-022"
+reason = "GeoGebra classifies a dilated circle from its conic matrix, whose scale is not part of the kernel's circle value"
+mismatches = ["8:m", "9:m"]
+
+[[gap]]
+id = "transform-dilate-023"
+reason = "GeoGebra classifies a dilated circle from its conic matrix, whose scale is not part of the kernel's circle value"
+mismatches = ["0:m", "1:m", "2:m"]
+
+[[gap]]
+id = "transform-dilate-024"
+reason = "GeoGebra classifies a dilated circle from its conic matrix, whose scale is not part of the kernel's circle value"
+mismatches = ["0:m"]
+
+[[gap]]
+id = "transform-dilate-026"
+reason = "GeoGebra classifies a dilated circle from its conic matrix, whose scale is not part of the kernel's circle value"
+mismatches = ["0:m"]
+
+[[gap]]
+id = "transform-dilate-027"
+reason = "GeoGebra classifies a dilated circle from its conic matrix, whose scale is not part of the kernel's circle value"
+mismatches = ["0:m", "1:m", "3:m", "4:m", "5:m", "6:m"]
+
+[[gap]]
+id = "transform-dilate-028"
+reason = "GeoGebra classifies a dilated circle from its conic matrix, whose scale is not part of the kernel's circle value"
+mismatches = ["8:m", "9:m", "10:m"]
+
+[[gap]]
+id = "transform-dilate-029"
+reason = "GeoGebra classifies a dilated circle from its conic matrix, whose scale is not part of the kernel's circle value"
+mismatches = ["0:m", "1:m", "3:m"]
+
+[[gap]]
+id = "transform-dilate-030"
+reason = "GeoGebra classifies a dilated circle from its conic matrix, whose scale is not part of the kernel's circle value"
+mismatches = ["4:m"]
+
+[[gap]]
+id = "transform-dilate-032"
+reason = "GeoGebra classifies a dilated circle from its conic matrix, whose scale is not part of the kernel's circle value"
+mismatches = ["0:m", "0:n", "0:p", "0:t", "0:u", "1:m", "1:n", "1:p", "1:t", "1:u", "2:m", "2:n", "2:p", "2:t", "2:u", "3:m", "3:n", "3:p", "3:t", "3:u", "4:m", "4:n", "4:p", "4:t", "4:u"]
+
+[[gap]]
+id = "transform-dilate-033"
+reason = "GeoGebra classifies a dilated circle from its conic matrix, whose scale is not part of the kernel's circle value"
+mismatches = ["0:m", "0:n", "0:p", "0:t", "0:u", "1:m", "1:n", "1:p", "1:t", "1:u", "2:m", "2:n", "2:p", "2:t", "2:u", "3:m", "3:n", "3:p", "3:t", "3:u"]
+
+[[gap]]
+id = "transform-dilate-036"
+reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
+mismatches = ["1:m", "2:m", "5:m"]
+
+[[gap]]
+id = "transform-dilate-037"
+reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
+mismatches = ["1:m", "2:m", "5:m"]
+
+[[gap]]
+id = "transform-dilate-038"
+reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
+mismatches = ["1:m", "2:m", "5:m"]
+
+[[gap]]
+id = "transform-dilate-039"
+reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
+mismatches = ["1:m", "2:m", "5:m"]
+
+[[gap]]
+id = "transform-dilate-042"
+reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
+mismatches = ["3:m", "4:m", "6:m"]
+
+[[gap]]
+id = "transform-dilate-043"
+reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
+mismatches = ["3:m", "4:m", "6:m"]
+
+[[gap]]
+id = "transform-shear-023"
+reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
+mismatches = ["0:m", "1:m", "2:m", "3:m", "4:m", "5:m", "6:m", "7:m"]
+
+[[gap]]
+id = "transform-shear-025"
+reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
+mismatches = ["0:m", "1:m", "5:m", "6:m", "7:m"]
+
+[[gap]]
+id = "transform-stretch-023"
+reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
+mismatches = ["0:m", "1:m", "3:m", "5:m", "6:m", "7:m"]
+
+[[gap]]
+id = "transform-stretch-025"
+reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
+mismatches = ["0:m", "1:m", "2:m", "3:m", "6:m", "7:m"]

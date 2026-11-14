@@ -1436,6 +1436,356 @@
           "n": { "type": "segment", "defined": true, "x1": 5.748025955309562, "y1": -0.6072190181620758, "x2": 7.72075520528325, "y2": 1.3087244325426273 }
         }
       ]
+    },
+    {
+      "id": "transform-rotate-016",
+      "group": "transform",
+      "script": [
+        "P = (1.14, 0.65)",
+        "w = 0.3",
+        "Q = (100000.5, -200000.25)",
+        "m = Rotate(P, w, Q)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "P", "x": 123456.789, "y": -98765.4321 },
+        { "action": "set_number", "label": "w", "value": 1.5707963267948966 },
+        { "action": "set_number", "label": "w", "value": -1.5707963267948966 },
+        { "action": "set_number", "label": "w", "value": 3.141592653589793 },
+        { "action": "set_number", "label": "w", "value": 4.71238898038469 },
+        { "action": "move", "label": "Q", "x": 123456.789, "y": -98765.4321 },
+        { "action": "set_number", "label": "w", "value": 1.5707963267948966 }
+      ],
+      "snapshots": [
+        {
+          "P": { "type": "point", "defined": true, "x": 1.14, "y": 0.65 },
+          "w": { "type": "number", "defined": true, "value": 0.3 },
+          "Q": { "type": "point", "defined": true, "x": 100000.5, "y": -200000.25 },
+          "m": { "type": "point", "defined": true, "x": -54636.84479766147, "y": -38483.923905240285 }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 123456.789, "y": -98765.4321 },
+          "w": { "type": "number", "defined": true, "value": 0.3 },
+          "Q": { "type": "point", "defined": true, "x": 100000.5, "y": -200000.25 },
+          "m": { "type": "point", "defined": true, "x": 92492.21447404451, "y": -96355.12711735583 }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 123456.789, "y": -98765.4321 },
+          "w": { "type": "number", "defined": true, "value": 1.5707963267948966 },
+          "Q": { "type": "point", "defined": true, "x": 100000.5, "y": -200000.25 },
+          "m": { "type": "point", "defined": true, "x": -1234.3178999999946, "y": -176543.961 }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 123456.789, "y": -98765.4321 },
+          "w": { "type": "number", "defined": true, "value": -1.5707963267948966 },
+          "Q": { "type": "point", "defined": true, "x": 100000.5, "y": -200000.25 },
+          "m": { "type": "point", "defined": true, "x": 201235.3179, "y": -223456.539 }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 123456.789, "y": -98765.4321 },
+          "w": { "type": "number", "defined": true, "value": 3.141592653589793 },
+          "Q": { "type": "point", "defined": true, "x": 100000.5, "y": -200000.25 },
+          "m": { "type": "point", "defined": true, "x": 76544.21099999998, "y": -301235.0679 }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 123456.789, "y": -98765.4321 },
+          "w": { "type": "number", "defined": true, "value": 4.71238898038469 },
+          "Q": { "type": "point", "defined": true, "x": 100000.5, "y": -200000.25 },
+          "m": { "type": "point", "defined": true, "x": 201235.3179, "y": -223456.53900000002 }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 123456.789, "y": -98765.4321 },
+          "w": { "type": "number", "defined": true, "value": 4.71238898038469 },
+          "Q": { "type": "point", "defined": true, "x": 123456.789, "y": -98765.4321 },
+          "m": { "type": "point", "defined": true, "x": 123456.789, "y": -98765.4321 }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 123456.789, "y": -98765.4321 },
+          "w": { "type": "number", "defined": true, "value": 1.5707963267948966 },
+          "Q": { "type": "point", "defined": true, "x": 123456.789, "y": -98765.4321 },
+          "m": { "type": "point", "defined": true, "x": 123456.789, "y": -98765.4321 }
+        }
+      ]
+    },
+    {
+      "id": "transform-rotate-017",
+      "group": "transform",
+      "script": [
+        "A = (-4.83, -3.07)",
+        "B = (3.34, -7.82)",
+        "k = Circle(A, B)",
+        "w = 0.3",
+        "Q = (100000.5, -200000.25)",
+        "m = Rotate(k, w, Q)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": 123456.789, "y": -98765.4321 },
+        { "action": "set_number", "label": "w", "value": 1.5707963267948966 },
+        { "action": "set_number", "label": "w", "value": -1.5707963267948966 },
+        { "action": "set_number", "label": "w", "value": 3.141592653589793 },
+        { "action": "set_number", "label": "w", "value": 4.71238898038469 },
+        { "action": "move", "label": "Q", "x": 123456.789, "y": -98765.4321 },
+        { "action": "set_number", "label": "w", "value": 1.5707963267948966 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -4.83, "y": -3.07 },
+          "B": { "type": "point", "defined": true, "x": 3.34, "y": -7.82 },
+          "k": { "type": "circle", "defined": true, "cx": -4.83, "cy": -3.07, "r": 9.450470887738875 },
+          "w": { "type": "number", "defined": true, "value": 0.3 },
+          "Q": { "type": "point", "defined": true, "x": 100000.5, "y": -200000.25 },
+          "m": { "type": "circle", "defined": true, "cx": -54641.44882133277, "cy": -38489.2420126136, "r": 9.450470887738875 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 123456.789, "y": -98765.4321 },
+          "B": { "type": "point", "defined": true, "x": 3.34, "y": -7.82 },
+          "k": { "type": "circle", "defined": true, "cx": 123456.789, "cy": -98765.4321, "r": 158094.33898052666 },
+          "w": { "type": "number", "defined": true, "value": 0.3 },
+          "Q": { "type": "point", "defined": true, "x": 100000.5, "y": -200000.25 },
+          "m": { "type": "circle", "defined": true, "cx": 92492.21447404451, "cy": -96355.12711735583, "r": 158094.33898052666 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 123456.789, "y": -98765.4321 },
+          "B": { "type": "point", "defined": true, "x": 3.34, "y": -7.82 },
+          "k": { "type": "circle", "defined": true, "cx": 123456.789, "cy": -98765.4321, "r": 158094.33898052666 },
+          "w": { "type": "number", "defined": true, "value": 1.5707963267948966 },
+          "Q": { "type": "point", "defined": true, "x": 100000.5, "y": -200000.25 },
+          "m": { "type": "circle", "defined": true, "cx": -1234.3178999999946, "cy": -176543.96099999998, "r": 158094.33898052666 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 123456.789, "y": -98765.4321 },
+          "B": { "type": "point", "defined": true, "x": 3.34, "y": -7.82 },
+          "k": { "type": "circle", "defined": true, "cx": 123456.789, "cy": -98765.4321, "r": 158094.33898052666 },
+          "w": { "type": "number", "defined": true, "value": -1.5707963267948966 },
+          "Q": { "type": "point", "defined": true, "x": 100000.5, "y": -200000.25 },
+          "m": { "type": "circle", "defined": true, "cx": 201235.3179, "cy": -223456.539, "r": 158094.33898052666 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 123456.789, "y": -98765.4321 },
+          "B": { "type": "point", "defined": true, "x": 3.34, "y": -7.82 },
+          "k": { "type": "circle", "defined": true, "cx": 123456.789, "cy": -98765.4321, "r": 158094.33898052666 },
+          "w": { "type": "number", "defined": true, "value": 3.141592653589793 },
+          "Q": { "type": "point", "defined": true, "x": 100000.5, "y": -200000.25 },
+          "m": { "type": "circle", "defined": true, "cx": 76544.21099999998, "cy": -301235.0679, "r": 158094.33898052666 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 123456.789, "y": -98765.4321 },
+          "B": { "type": "point", "defined": true, "x": 3.34, "y": -7.82 },
+          "k": { "type": "circle", "defined": true, "cx": 123456.789, "cy": -98765.4321, "r": 158094.33898052666 },
+          "w": { "type": "number", "defined": true, "value": 4.71238898038469 },
+          "Q": { "type": "point", "defined": true, "x": 100000.5, "y": -200000.25 },
+          "m": { "type": "circle", "defined": true, "cx": 201235.3179, "cy": -223456.53900000002, "r": 158094.33898052666 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 123456.789, "y": -98765.4321 },
+          "B": { "type": "point", "defined": true, "x": 3.34, "y": -7.82 },
+          "k": { "type": "circle", "defined": true, "cx": 123456.789, "cy": -98765.4321, "r": 158094.33898052666 },
+          "w": { "type": "number", "defined": true, "value": 4.71238898038469 },
+          "Q": { "type": "point", "defined": true, "x": 123456.789, "y": -98765.4321 },
+          "m": { "type": "circle", "defined": true, "cx": 123456.789, "cy": -98765.4321, "r": 158094.33898052666 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 123456.789, "y": -98765.4321 },
+          "B": { "type": "point", "defined": true, "x": 3.34, "y": -7.82 },
+          "k": { "type": "circle", "defined": true, "cx": 123456.789, "cy": -98765.4321, "r": 158094.33898052666 },
+          "w": { "type": "number", "defined": true, "value": 1.5707963267948966 },
+          "Q": { "type": "point", "defined": true, "x": 123456.789, "y": -98765.4321 },
+          "m": { "type": "circle", "defined": true, "cx": 123456.789, "cy": -98765.4321, "r": 158094.33898052666 }
+        }
+      ]
+    },
+    {
+      "id": "transform-rotate-018",
+      "group": "transform",
+      "script": [
+        "A = (5.62, -1.31)",
+        "r = 2.96",
+        "k = Circle(A, r)",
+        "w = 0.3",
+        "Q = (100000.5, -200000.25)",
+        "m = Rotate(k, w, Q)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": 123456.789, "y": -98765.4321 },
+        { "action": "set_number", "label": "w", "value": 1.5707963267948966 },
+        { "action": "set_number", "label": "w", "value": -1.5707963267948966 },
+        { "action": "set_number", "label": "w", "value": 3.141592653589793 },
+        { "action": "set_number", "label": "w", "value": 4.71238898038469 },
+        { "action": "move", "label": "Q", "x": 123456.789, "y": -98765.4321 },
+        { "action": "set_number", "label": "w", "value": 1.5707963267948966 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 5.62, "y": -1.31 },
+          "r": { "type": "number", "defined": true, "value": 2.96 },
+          "k": { "type": "circle", "defined": true, "cx": 5.62, "cy": -1.31, "r": 2.96 },
+          "w": { "type": "number", "defined": true, "value": 0.3 },
+          "Q": { "type": "point", "defined": true, "x": 100000.5, "y": -200000.25 },
+          "m": { "type": "circle", "defined": true, "cx": -54631.98567058513, "cy": -38484.47243423312, "r": 2.96 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 123456.789, "y": -98765.4321 },
+          "r": { "type": "number", "defined": true, "value": 2.96 },
+          "k": { "type": "circle", "defined": true, "cx": 123456.789, "cy": -98765.4321, "r": 2.96 },
+          "w": { "type": "number", "defined": true, "value": 0.3 },
+          "Q": { "type": "point", "defined": true, "x": 100000.5, "y": -200000.25 },
+          "m": { "type": "circle", "defined": true, "cx": 92492.21447404451, "cy": -96355.12711735583, "r": 2.96 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 123456.789, "y": -98765.4321 },
+          "r": { "type": "number", "defined": true, "value": 2.96 },
+          "k": { "type": "circle", "defined": true, "cx": 123456.789, "cy": -98765.4321, "r": 2.96 },
+          "w": { "type": "number", "defined": true, "value": 1.5707963267948966 },
+          "Q": { "type": "point", "defined": true, "x": 100000.5, "y": -200000.25 },
+          "m": { "type": "circle", "defined": true, "cx": -1234.3178999999946, "cy": -176543.96099999998, "r": 2.96 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 123456.789, "y": -98765.4321 },
+          "r": { "type": "number", "defined": true, "value": 2.96 },
+          "k": { "type": "circle", "defined": true, "cx": 123456.789, "cy": -98765.4321, "r": 2.96 },
+          "w": { "type": "number", "defined": true, "value": -1.5707963267948966 },
+          "Q": { "type": "point", "defined": true, "x": 100000.5, "y": -200000.25 },
+          "m": { "type": "circle", "defined": true, "cx": 201235.3179, "cy": -223456.539, "r": 2.96 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 123456.789, "y": -98765.4321 },
+          "r": { "type": "number", "defined": true, "value": 2.96 },
+          "k": { "type": "circle", "defined": true, "cx": 123456.789, "cy": -98765.4321, "r": 2.96 },
+          "w": { "type": "number", "defined": true, "value": 3.141592653589793 },
+          "Q": { "type": "point", "defined": true, "x": 100000.5, "y": -200000.25 },
+          "m": { "type": "circle", "defined": true, "cx": 76544.21099999998, "cy": -301235.0679, "r": 2.96 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 123456.789, "y": -98765.4321 },
+          "r": { "type": "number", "defined": true, "value": 2.96 },
+          "k": { "type": "circle", "defined": true, "cx": 123456.789, "cy": -98765.4321, "r": 2.96 },
+          "w": { "type": "number", "defined": true, "value": 4.71238898038469 },
+          "Q": { "type": "point", "defined": true, "x": 100000.5, "y": -200000.25 },
+          "m": { "type": "circle", "defined": true, "cx": 201235.3179, "cy": -223456.53900000002, "r": 2.96 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 123456.789, "y": -98765.4321 },
+          "r": { "type": "number", "defined": true, "value": 2.96 },
+          "k": { "type": "circle", "defined": true, "cx": 123456.789, "cy": -98765.4321, "r": 2.96 },
+          "w": { "type": "number", "defined": true, "value": 4.71238898038469 },
+          "Q": { "type": "point", "defined": true, "x": 123456.789, "y": -98765.4321 },
+          "m": { "type": "circle", "defined": true, "cx": 123456.789, "cy": -98765.4321, "r": 2.96 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 123456.789, "y": -98765.4321 },
+          "r": { "type": "number", "defined": true, "value": 2.96 },
+          "k": { "type": "circle", "defined": true, "cx": 123456.789, "cy": -98765.4321, "r": 2.96 },
+          "w": { "type": "number", "defined": true, "value": 1.5707963267948966 },
+          "Q": { "type": "point", "defined": true, "x": 123456.789, "y": -98765.4321 },
+          "m": { "type": "circle", "defined": true, "cx": 123456.789, "cy": -98765.4321, "r": 2.96 }
+        }
+      ]
+    },
+    {
+      "id": "transform-rotate-019",
+      "group": "transform",
+      "script": [
+        "A = (123456.789, 98765.4321)",
+        "r = 3",
+        "k = Circle(A, r)",
+        "w = 1.570796",
+        "m = Rotate(k, w)",
+        "n = Rotate(k, w, A)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "w", "value": 0.0 },
+        { "action": "set_number", "label": "w", "value": -1.5707963267948966 },
+        { "action": "set_number", "label": "w", "value": 1.5707963267948966 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 123456.789, "y": 98765.4321 },
+          "r": { "type": "number", "defined": true, "value": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 123456.789, "cy": 98765.4321, "r": 3.0 },
+          "w": { "type": "number", "defined": true, "value": 1.570796 },
+          "m": { "type": "circle", "defined": true, "cx": -98765.39175494615, "cy": 123456.82127603258, "r": 3.0 },
+          "n": { "type": "circle", "defined": true, "cx": 123456.789, "cy": 98765.4321, "r": 3.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 123456.789, "y": 98765.4321 },
+          "r": { "type": "number", "defined": true, "value": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 123456.789, "cy": 98765.4321, "r": 3.0 },
+          "w": { "type": "number", "defined": true, "value": 0.0 },
+          "m": { "type": "circle", "defined": true, "cx": 123456.789, "cy": 98765.4321, "r": 3.0 },
+          "n": { "type": "circle", "defined": true, "cx": 123456.789, "cy": 98765.4321, "r": 3.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 123456.789, "y": 98765.4321 },
+          "r": { "type": "number", "defined": true, "value": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 123456.789, "cy": 98765.4321, "r": 3.0 },
+          "w": { "type": "number", "defined": true, "value": -1.5707963267948966 },
+          "m": { "type": "circle", "defined": true, "cx": 98765.43210000002, "cy": -123456.789, "r": 3.0 },
+          "n": { "type": "circle", "defined": true, "cx": 123456.789, "cy": 98765.4321, "r": 3.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 123456.789, "y": 98765.4321 },
+          "r": { "type": "number", "defined": true, "value": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 123456.789, "cy": 98765.4321, "r": 3.0 },
+          "w": { "type": "number", "defined": true, "value": 1.5707963267948966 },
+          "m": { "type": "circle", "defined": true, "cx": -98765.43209999999, "cy": 123456.789, "r": 3.0 },
+          "n": { "type": "circle", "defined": true, "cx": 123456.789, "cy": 98765.4321, "r": 3.0 }
+        }
+      ]
+    },
+    {
+      "id": "transform-rotate-020",
+      "group": "transform",
+      "script": [
+        "A = (123456.789, 98765.4321)",
+        "r = 3",
+        "k = Circle(A, r)",
+        "w = -1.570796",
+        "m = Rotate(k, w)",
+        "n = Rotate(k, w, A)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "w", "value": 0.0 },
+        { "action": "set_number", "label": "w", "value": 1.5707963267948966 },
+        { "action": "set_number", "label": "w", "value": -1.5707963267948966 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 123456.789, "y": 98765.4321 },
+          "r": { "type": "number", "defined": true, "value": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 123456.789, "cy": 98765.4321, "r": 3.0 },
+          "w": { "type": "number", "defined": true, "value": -1.570796 },
+          "m": { "type": "circle", "defined": true, "cx": 98765.47244504333, "cy": -123456.75672395424, "r": 3.0 },
+          "n": { "type": "circle", "defined": true, "cx": 123456.789, "cy": 98765.4321, "r": 3.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 123456.789, "y": 98765.4321 },
+          "r": { "type": "number", "defined": true, "value": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 123456.789, "cy": 98765.4321, "r": 3.0 },
+          "w": { "type": "number", "defined": true, "value": 0.0 },
+          "m": { "type": "circle", "defined": true, "cx": 123456.789, "cy": 98765.4321, "r": 3.0 },
+          "n": { "type": "circle", "defined": true, "cx": 123456.789, "cy": 98765.4321, "r": 3.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 123456.789, "y": 98765.4321 },
+          "r": { "type": "number", "defined": true, "value": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 123456.789, "cy": 98765.4321, "r": 3.0 },
+          "w": { "type": "number", "defined": true, "value": 1.5707963267948966 },
+          "m": { "type": "circle", "defined": true, "cx": -98765.43209999999, "cy": 123456.789, "r": 3.0 },
+          "n": { "type": "circle", "defined": true, "cx": 123456.789, "cy": 98765.4321, "r": 3.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 123456.789, "y": 98765.4321 },
+          "r": { "type": "number", "defined": true, "value": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 123456.789, "cy": 98765.4321, "r": 3.0 },
+          "w": { "type": "number", "defined": true, "value": -1.5707963267948966 },
+          "m": { "type": "circle", "defined": true, "cx": 98765.43210000002, "cy": -123456.789, "r": 3.0 },
+          "n": { "type": "circle", "defined": true, "cx": 123456.789, "cy": 98765.4321, "r": 3.0 }
+        }
+      ]
     }
   ]
 }

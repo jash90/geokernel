@@ -14,9 +14,14 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoPoint.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoLine.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoConic.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoSegment.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoVec2D.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoVec3D.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/kernelND/GeoPointND.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/kernelND/GeoConicND.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/kernelND/GeoQuadricND.java
+//   source/shared/common/src/main/java/org/geogebra/common/util/DoubleUtil.java
+//   source/shared/common/src/main/java/org/geogebra/common/util/MyMath.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
@@ -154,6 +159,20 @@ impl Map {
         }
     }
 
+    /// Image of the centre of a circle: `GeoConicND` moves its midpoint with
+    /// `GeoVec2D`, which uses the plain cosine for rotations.
+    fn center(&self, x: f64, y: f64) -> (f64, f64) {
+        match *self {
+            Map::Rotate { phi, qx, qy } => {
+                let (sin, cos) = phi.sin_cos();
+                let (x, y) = (x - qx, y - qy);
+                (x * cos - y * sin + qx, x * sin + y * cos + qy)
+            }
+            Map::Dilate { r, sx, sy } => ((x - sx) * r + sx, (y - sy) * r + sy),
+            _ => self.point(x, y),
+        }
+    }
+
     /// Image of the raw line `a*x + b*y + c = 0`, as GeoGebra computes it.
     fn line(&self, a: f64, b: f64, c: f64) -> (f64, f64, f64) {
         match *self {
@@ -245,7 +264,7 @@ impl Map {
             }
             Value::Circle { cx, cy, r } => {
                 let r = self.radius(r)?;
-                let (cx, cy) = self.point(cx, cy);
+                let (cx, cy) = self.center(cx, cy);
                 Some(Value::Circle { cx, cy, r })
             }
             Value::Number(_) | Value::Undefined => None,

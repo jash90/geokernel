@@ -267,4 +267,98 @@ script = [pt("A", 1, 2), pt("B", 5, 3), pt("C", 2, 6), "l = Line(A, B)", "m = Mi
           "n = Mirror(m, l)", "p = Mirror(l, C)", "q = Mirror(p, C)"]
 case("chain", script, [mv("C", 3, 2.5), mv("A", 3, 2.5), mv("B", 3, 2.5), mv("B", 0, 0)])
 
+# ------------------------------------------------------------- recorded edge cases
+# Mirror in a line or segment whose end points are 1e-6 apart.
+topic("mirrorline")
+for kind in ("point", "line", "segment", "circle"):
+    for mirror in ("Line", "Segment"):
+        script, obj, free = subject(kind)
+        script += [pt("C", 1, 1), pt("D", 1.000001, 1), f"n = {mirror}(C, D)", f"m = Mirror({obj}, n)"]
+        case("mirrorline", script, [mv("D", 1, 1.000001), mv("D", 1.000001, 1.000001),
+                                    mv("C", 0, 0), mv("D", 0.000001, 0), mv("D", 3, 4)])
+
+# Rotation by +-pi/2 about and of points with large coordinates.
+topic("rotate")
+for kind in ("point", "circle", "circle_r"):
+    script, obj, free = subject(kind)
+    script += [num("w", 0.3), pt("Q", 100000.5, -200000.25), f"m = Rotate({obj}, w, Q)"]
+    steps = [mv(free[0], 123456.789, -98765.4321), setn("w", math.pi / 2),
+             setn("w", -math.pi / 2), setn("w", math.pi), setn("w", 3 * math.pi / 2),
+             mv("Q", 123456.789, -98765.4321), setn("w", math.pi / 2)]
+    case("rotate", script, steps)
+for w in (math.pi / 2, -math.pi / 2):
+    script = [pt("A", 123456.789, 98765.4321), num("r", 3), "k = Circle(A, r)", num("w", w),
+              "m = Rotate(k, w)", "n = Rotate(k, w, A)"]
+    case("rotate", script, [setn("w", 0.0), setn("w", -w), setn("w", w)])
+
+# Dilation of circles: GeoGebra classifies the image from the conic matrix,
+# so very small circles and extreme factors can become a single point.
+topic("dilate")
+CIRCLE_REGIMES = [
+    # (initial r, initial f, steps)
+    (4e-5, 2.0, [setn("r", 5e-5), setn("r", 1e-4), setn("f", 3.0), setn("f", 10.0), setn("r", 2.0)]),
+    (5e-5, 0.5, [setn("r", 4e-5), setn("r", 1e-4), setn("r", 9e-5), setn("f", 0.01),
+                 setn("r", 5e-5), setn("f", 1.0), setn("r", 2.0)]),
+    (2.0, 1e-7, [setn("f", 1e-6), setn("f", 1e-5), setn("f", 1e-4), setn("f", 1e-3),
+                 setn("f", 0.003), setn("f", 0.004), setn("f", 1.0), setn("f", -1e-7)]),
+    (1e-6, 50.0, [setn("f", 100.0), setn("r", 1e-5), setn("f", 30.0), setn("r", 1e-3),
+                  setn("f", -50.0), setn("f", 0.5)]),
+    (1e-4, 0.5, [setn("r", 2e-4), setn("f", -0.5), setn("f", 0.0032), setn("f", 0.0031),
+                 setn("f", 0.0), setn("f", 1.0)]),
+    (1.0, 150.0, [setn("f", 1000.0), setn("f", 120.0), setn("f", 100.0), setn("f", 99.0),
+                  setn("r", 0.001), setn("f", -150.0), setn("f", 2.0)]),
+]
+for centre in (False, True):
+    for r0, f0, steps in CIRCLE_REGIMES:
+        script = [pt("A", 1, 1), num("r", r0), "k = Circle(A, r)", num("f", f0)]
+        if centre:
+            script += [pt("Q", 3, -1), "m = Dilate(k, f, Q)"]
+            steps2 = steps + [mv("Q", -4, 2), mv("A", 5, 5)]
+        else:
+            script += ["m = Dilate(k, f)"]
+            steps2 = steps + [mv("A", 5, 5)]
+        case("dilate", script, steps2)
+
+# A dilated circle that is dilated, mirrored, rotated and inverted again.
+for r0, f0 in ((4e-5, 2.0), (5e-5, 0.5), (2.0, 1e-7), (3.0, 2.0)):
+    script = [pt("A", 1, 1), num("r", r0), "k = Circle(A, r)", num("f", f0), pt("Q", 3, -1),
+              num("g", 2.0), num("w", 0.7), "m = Dilate(k, f, Q)", "n = Dilate(m, g)",
+              "p = Mirror(m, Q)", "t = Rotate(m, w)", pt("P", 2, 5), "u = Mirror(P, m)"]
+    case("dilate", script, [setn("g", 0.5), setn("g", -3.0), setn("w", math.pi / 2),
+                            setn("f", 1.5), setn("r", 2.0), setn("g", 2.0), mv("P", 1, 1)])
+
+# A line dilated by a tiny factor (GeoGebra tests its raw coefficients, which
+# scale with the length of the defining segment) and short lines.
+for a, b, tag in (((0, 0), (30, 40), "long"), ((0, 0), (3, 4), "mid"), ((0, 0), (0.3, 0.4), "short"),
+                  ((10, 10), (10.003, 10.004), "tiny")):
+    for centre in (False, True):
+        script = [pt("A", *a), pt("B", *b), "l = Line(A, B)", num("f", 2.0)]
+        if centre:
+            script += [pt("Q", 1, 2), "m = Dilate(l, f, Q)"]
+        else:
+            script += ["m = Dilate(l, f)"]
+        case("dilate", script, [setn("f", 5e-9), setn("f", 1e-8), setn("f", 5e-8),
+                                setn("f", 1e-7), setn("f", -1e-8), setn("f", 1e-6), setn("f", 0.0),
+                                setn("f", 2.0)])
+
+# Shear and stretch of a line that is vertical or nearly vertical.
+for name in ("shear", "stretch"):
+    topic(name)
+    cmd = name.capitalize()
+    for a, b in (((3, -1), (3, 5)), ((0, -50), (0.000001, 50)), ((3, 0), (3.000001, 0.5)),
+                 ((3, -50), (3.000001, 50)), ((0, 0), (0, 80))):
+        script = [pt("A", *a), pt("B", *b), "l = Line(A, B)", pt("C", 0, 1), pt("D", 4, 3),
+                  "n = Line(C, D)", num("f", 1.5), f"m = {cmd}(l, n, f)"]
+        case(name, script, [setn("f", -2.0), setn("f", 0.0), mv("C", 3, 0), mv("D", 3, 6),
+                            setn("f", 2.0), mv("C", 0, 1), mv("D", 4, 3), mv("A", 1, 1),
+                            mv("B", 1, 9)])
+    # the axis itself is vertical, nearly vertical or very long
+    for c, d in (((3, 0), (3, 5)), ((3, 0), (3.000001, 5)), ((0, 0), (0.000001, 100))):
+        for kind in ("point", "line", "segment"):
+            script, obj, free = subject(kind)
+            script += [pt("C", *c), pt("D", *d), "n = Line(C, D)", num("f", 1.5),
+                       f"m = {cmd}({obj}, n, f)"]
+            case(name, script, [setn("f", -1.0), setn("f", 0.5), mv(free[0], 3, 3)])
+
+
 cases.write()

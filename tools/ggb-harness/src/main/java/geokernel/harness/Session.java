@@ -75,9 +75,10 @@ final class Session {
         GeoElementND[] out = processor.processAlgebraCommandNoExceptionHandling(
                 line, false, new ThrowingErrorHandler(line), false, null);
         // A transformed segment with labelled end points also creates the two
-        // image points; the segment is the first output.
-        if (out == null || out.length == 0 || (out.length != 1 && transformed == null)) {
-            throw new IllegalStateException("expected one object from: " + line);
+        // image points; the segment is the first output. Any other object
+        // gives exactly one output.
+        if (out == null || out.length != ("segment".equals(transformed) ? 3 : 1)) {
+            throw new IllegalStateException("unexpected number of objects from: " + line);
         }
         GeoElement geo = out[0].toGeoElement();
         boolean labelled = kernel.lookupLabel(label) == geo;
