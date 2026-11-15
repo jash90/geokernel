@@ -1,6 +1,9 @@
 //! The on-screen keyboard: tabs with digits and letters that type into the
 //! input row. The key model and text editing are plain functions; `show`
 //! draws the panel.
+//!
+//! The layout of the keys is our own, laid out by eye from a screenshot of
+//! the reference keyboard; no code or artwork of the reference was used.
 
 use crate::app::App;
 use crate::icons::{self, Icon};

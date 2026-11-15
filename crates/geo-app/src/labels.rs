@@ -1,3 +1,10 @@
+// Parts of this file are translated from GeoGebra (https://github.com/geogebra/geogebra),
+// commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoPolygon.java (getDefaultLabel)
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/LabelManager.java (the label alphabets)
+// Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
+// Licensed by GeoGebra GmbH under the EUPL 1.2.
+
 //! Automatic object labels: the first free one of a kind-specific sequence.
 
 use geo_kernel::kernel::Kind;

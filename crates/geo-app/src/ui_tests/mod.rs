@@ -10,6 +10,7 @@ use egui_kittest::Harness;
 use geo_kernel::kernel::Value;
 
 mod chrome;
+mod pointer;
 mod tangents;
 mod tools;
 
@@ -222,8 +223,6 @@ fn type_command(h: &mut Harness<'_, App>, top: f32, text: &str) {
     h.input_mut().events.push(Event::Text(text.to_owned()));
     h.step();
     h.key_press(egui::Key::Enter);
-    h.run();
-    h.state_mut().keyboard.open = false;
     h.run();
 }
 

@@ -72,6 +72,12 @@ impl Workbench {
         self.version
     }
 
+    /// The definition of the line that created `label`.
+    #[cfg(test)]
+    pub fn definition(&self, label: &str) -> Option<&str> {
+        self.log.rhs_of(label)
+    }
+
     /// See the field of the same name.
     pub fn rebuilds(&self) -> u64 {
         self.rebuilds

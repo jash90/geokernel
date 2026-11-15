@@ -1,8 +1,17 @@
+// Parts of this file are translated from GeoGebra (https://github.com/geogebra/geogebra),
+// commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/ConstructionDefaults.java
+//   source/shared/common/src/main/java/org/geogebra/common/main/GeoGebraColorConstants.java
+//   source/web/web/src/main/java/org/geogebra/web/full/main/embed/CalcEmbedElement.java (the accent colour)
+// Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
+// Licensed by GeoGebra GmbH under the EUPL 1.2.
+
 //! Colours, sizes and the global egui style: a light theme modelled on the
 //! classic desktop look of the reference application.
 
 use eframe::egui::{self, Color32, FontFamily, FontId, TextStyle};
 
+/// The purple accent, 0x6557d2 as in `CalcEmbedElement.java`.
 pub const ACCENT: Color32 = Color32::from_rgb(0x65, 0x57, 0xd2);
 pub const WHITE: Color32 = Color32::WHITE;
 pub const TEXT: Color32 = Color32::from_rgb(0x1c, 0x1c, 0x1f);

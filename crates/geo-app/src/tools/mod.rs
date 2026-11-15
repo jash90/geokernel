@@ -1,3 +1,9 @@
+// Parts of this file are translated from GeoGebra (https://github.com/geogebra/geogebra),
+// commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
+//   source/shared/common/src/main/java/org/geogebra/common/gui/toolbar/ToolBar.java (the tool groups)
+// Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
+// Licensed by GeoGebra GmbH under the EUPL 1.2.
+
 //! The construction tools as a state machine, with no UI types.
 //!
 //! A click on the drawing area is reported as [`ToolState::click`]. The state
