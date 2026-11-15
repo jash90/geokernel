@@ -181,6 +181,7 @@ fn parse_def(c: &Construction, rhs: &str) -> Result<Def, String> {
                     c1: first,
                     c2: second,
                     which,
+                    special: false,
                 }),
                 (a, b) => Err(format!("cannot intersect a {a} with a {b}")),
             }

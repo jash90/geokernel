@@ -7,9 +7,8 @@ lies on the circle by construction, circles through a common point that become
 identical, concentric circles, zero and tiny radii, and the order of the two
 points when the line or the line of centres changes direction.
 
-Every case starts with two distinct intersection points, so that every object
-is defined when it is created and GeoGebra fixes the order of the points at
-creation. Snapshots come exclusively from running GeoGebra through the
+Every object must be defined when it is created, so most cases start with two
+distinct intersection points; the "history" topic starts with one. Snapshots come exclusively from running GeoGebra through the
 harness (`harness.sh golden intersect`).
 """
 
@@ -295,5 +294,145 @@ for _ in range(3):
                    "f = Line(C, D)"] + LC,
          [setn("r", off), mv("C", a[0] - 0.5, a[1] + off), mv("D", a[0] + 30, a[1] + off),
           mv("C", a[0] + 3, a[1] + off), mv("D", a[0] - 3, a[1] + off), setn("r", r)])
+
+
+# ------------------------------ three-point circles: points on the circle
+topic("three")
+# Circle(A, B, C) lies on its three points by construction
+# (AlgoCircleThreePoints.setIncidence), in the order A, B, C.
+TRI = [pt("A", 3, 4), pt("B", -3, 4), pt("C", 0, -5), "k = Circle(A, B, C)"]
+for line, steps in (
+        ("f = Line(D, A)", [mv("D", -2, -6), mv("A", 5, 0), mv("A", 4, 3), mv("D", 0, 0),
+                            mv("A", 6, 1), mv("D", 3, -4)]),
+        ("f = Line(A, B)", [mv("C", 0, -7), mv("A", 4, -3), mv("B", -5, 0), mv("A", 3, 4)]),
+        ("f = Line(B, A)", [mv("C", 1, -6), mv("A", 0, 5), mv("A", -4, -3), mv("B", 2, 1)]),
+        ("f = Line(C, B)", [mv("A", 5, 0), mv("C", 3, -4), mv("B", -4, 3), mv("D", 1, 1)]),
+        ("f = Line(D, C)", [mv("D", 1, 7), mv("C", -5, 0), mv("D", -9, 1), mv("A", 0, 5)])):
+    case("three", TRI + [pt("D", 3, -4), line] + LC, steps)
+
+# A perpendicular through a vertex, and a line through an intersection point.
+case("three", TRI + [pt("E", -6, -1), pt("F", 6, 1), "g = Line(E, F)",
+                     "f = PerpendicularLine(C, g)"] + LC,
+     [mv("F", 6, -2), mv("C", 3, -4), mv("E", 1, 7), mv("C", 0, -5)])
+case("three", TRI + [pt("E", -6, 1), pt("F", 6, 2), "g = Line(E, F)",
+                     "S = Intersect(g, k, 1)", pt("D", 1, -7), "f = Line(D, S)"] + LC,
+     [mv("D", -1, -8), mv("F", 6, -1), mv("A", 4, -3), mv("D", 5, 5)])
+
+# Circle and circle: a vertex is the point the other circle was drawn through,
+# or a vertex of the other three-point circle.
+for other, cmd, steps in (
+        ("c = Circle(M, A)", CC, [mv("M", 7, 2), mv("A", 5, 0), mv("M", 2, 9), mv("A", 0, 5)]),
+        ("c = Circle(M, B)", ["P = Intersect(c, k, 1)", "Q = Intersect(c, k, 2)"],
+         [mv("M", -7, 1), mv("B", -5, 0), mv("M", -1, 8), mv("C", 3, -4)]),
+        ("c = Circle(A, M, E)", CC, [mv("M", 9, 1), mv("A", 4, -3), mv("E", 6, 9), mv("A", 3, 4)]),
+        ("c = Circle(B, A, E)", CC, [mv("E", 1, 9), mv("A", 5, 0), mv("B", -4, 3), mv("E", 0, 12)]),
+        ("c = Circle(B, A, E)", ["P = Intersect(c, k, 1)", "Q = Intersect(c, k, 2)"],
+         [mv("E", 1, 9), mv("A", 5, 0), mv("B", -4, 3), mv("E", 0, 12)])):
+    case("three", TRI + [pt("M", 6, 6), pt("E", 2, 10), other] + cmd, steps)
+
+# ---------------------- circles that pass through a point by geometry only
+topic("plain")
+# Circle(M, s), Incircle and transformed circles add no incidence, so a point
+# that lies on them is not preferred.
+case("plain", [pt("M", 1, 1), pt("A", 4, 5), "s = Segment(M, A)", "k = Circle(M, s)",
+               pt("D", -2, -3), "f = Line(D, A)"] + LC,
+     [mv("D", 7, -1), mv("A", -2, 9), mv("D", 1, 6), mv("M", 0, 0)])
+case("plain", [pt("M", 1, 1), pt("A", 4, 5), "s = Segment(M, A)", "k = Circle(M, s)",
+               pt("N", 7, 2), "c = Circle(N, A)"] + CC,
+     [mv("N", -5, 4), mv("A", 1, 6), mv("M", 3, -2), mv("N", 8, 8)])
+case("plain", [pt("M", 1, 1), pt("A", 4, 5), "k = Circle(M, A)", num("t", 1.2),
+               "c = Rotate(k, t, A)"] + CC,
+     [setn("t", 2.5), mv("M", -1, 2), setn("t", -0.7), mv("A", 2, 6)])
+case("plain", [pt("A", 0, 0), pt("B", 8, 0), pt("C", 2, 6), "k = Incircle(A, B, C)",
+               "g = Line(A, B)", "D = Intersect(g, k, 1)", pt("E", 3, 7), "f = Line(E, D)"] + LC,
+     [mv("E", -2, 6), mv("C", 5, 5), mv("E", 4, -6), mv("B", 9, 2)])
+
+# --------------------- circle x circle: special case decided at creation
+topic("created")
+# GeoGebra decides once, when the intersection is created, whether the two
+# circles through a common point use the special case; a circle of radius 0
+# is not a circle then.
+for cmd in ("P = Intersect(k, c, 1)", "P = Intersect(c, k, 1)"):
+    case("created", [pt("M", 2, 1), pt("A", 2, 1), pt("N", 5, 5), "k = Circle(M, A)",
+                     "c = Circle(N, A)", cmd],
+         [mv("M", 0, 0), mv("M", 4, -3), mv("A", -1, 2), mv("M", -1, 2), mv("M", 1, 7),
+          mv("N", 0, 6)])
+    case("created", [pt("M", 2, 1), pt("A", 5, 5), pt("N", 5, 5), "k = Circle(M, A)",
+                     "c = Circle(N, A)", cmd],
+         [mv("N", 8, 2), mv("N", 3, 9), mv("A", 1, 8), mv("N", 1, 8), mv("N", 6, 6)])
+
+# ------------------------- the same intersection in both argument orders
+topic("reuse")
+# A second Intersect of the same two objects reuses the first algorithm
+# (AlgoDispatcher.findExistingIntersectionAlgorithm).
+for first, second in ((("P", "k, c"), ("R", "c, k")), (("P", "c, k"), ("R", "k, c"))):
+    script = [pt("A", 0, 0), pt("B", 8, 0), num("r", 5), num("q", 5),
+              "k = Circle(A, r)", "c = Circle(B, q)",
+              f"{first[0]} = Intersect({first[1]}, 1)", f"{second[0]} = Intersect({second[1]}, 1)",
+              f"S = Intersect({first[1]}, 2)", f"T = Intersect({second[1]}, 2)"]
+    case("reuse", script, [mv("B", 0, 8), mv("B", -6, 1), setn("q", 3), mv("A", 1, -2),
+                           mv("B", 3, 3), setn("r", 9), mv("B", 8, 0)])
+case("reuse", [pt("A", 0, 0), pt("B", 8, 0), pt("E", 4, 3), "k = Circle(A, E)",
+               "c = Circle(B, E)", "P = Intersect(c, k, 1)", "R = Intersect(k, c, 1)",
+               "S = Intersect(k, c, 2)", "T = Intersect(c, k, 2)"],
+     [mv("E", 4, -3), mv("B", 0, 6), mv("E", 1, 1), mv("A", -3, 2)])
+case("reuse", [pt("A", 0, 0), num("r", 5), "k = Circle(A, r)", pt("C", -6, 1),
+               pt("D", 6, 2), "f = Line(C, D)", "P = Intersect(f, k, 1)",
+               "R = Intersect(k, f, 1)", "S = Intersect(k, f, 2)", "T = Intersect(f, k, 2)"],
+     [mv("D", -6, -2), mv("C", 6, 1), setn("r", 2), mv("A", 1, 1)])
+
+# ------------------------------- intersections created with one point
+topic("history")
+# An intersection created tangent has one point; the second appears later.
+# A point that is undefined at creation gets no label, so only the first
+# intersection can be observed.
+case("history", [pt("A", 0, 0), num("r", 3), "k = Circle(A, r)", pt("C", -5, 3),
+                 pt("D", 5, 3), "f = Line(C, D)", "P = Intersect(f, k, 1)"],
+     [mv("C", -5, 1), mv("D", 5, 1), mv("C", 10, 1), mv("C", -5, 1), mv("D", -10, 1),
+      mv("D", 5, 1), mv("C", -5, 3), mv("D", 5, 3), mv("D", 5, 1)])
+case("history", [pt("A", 0, 0), num("r", 3), "k = Circle(A, r)", pt("C", -5, 3),
+                 pt("D", 5, 3), "f = Line(C, D)", "P = Intersect(f, k, 1)"],
+     [mv("C", -5, 1), mv("C", 10, 1), mv("D", 5, -1), mv("C", -5, 1), mv("D", 5, 1)])
+case("history", [pt("A", 0, 0), num("r", 3), "k = Circle(A, r)", pt("C", -5, 3),
+                 pt("D", 5, 3), "f = Line(C, D)", "P = Intersect(f, k, 1)"],
+     [setn("r", 4), mv("C", 10, 3), setn("r", 3), setn("r", 5), mv("C", -5, 3)])
+case("history", [pt("A", 0, 0), num("r", 3), num("q", 2), "k = Circle(A, r)", pt("B", 5, 0),
+                 "c = Circle(B, q)", "P = Intersect(k, c, 1)"],
+     [setn("q", 3), mv("B", -5, 0), mv("B", 0, 4), mv("B", 5, 0), setn("q", 2), setn("q", 2.5)])
+case("history", [pt("A", 0, 0), num("r", 3), num("q", 2), "k = Circle(A, r)", pt("B", 5, 0),
+                 "c = Circle(B, q)", "P = Intersect(k, c, 1)"],
+     [mv("B", 4, 0), mv("B", -4, 0), mv("B", 0, -4), mv("B", 4, 0)])
+# Created with two points, the first move reverses the line.
+case("history", [pt("A", 0, 0), num("r", 3), "k = Circle(A, r)", pt("C", -5, 1),
+                 pt("D", 5, 1), "f = Line(C, D)"] + LC,
+     [mv("C", 10, 1), mv("D", 5, 0), mv("C", -5, 1), mv("D", 5, 1)])
+case("history", [pt("A", 0, 0), num("r", 3), num("q", 3), "k = Circle(A, r)", pt("B", 4, 0),
+                 "c = Circle(B, q)"] + CC,
+     [mv("B", -4, 0), mv("B", 0, 4), mv("B", 4, 0)])
+
+# ---------------- parallel and perpendicular lines of a long or short line
+topic("rawline")
+# GeoGebra's coefficients of these lines scale with the line they are built
+# on, and its tangency window depends on the size of the coefficients. The
+# circle is moved to within 1e-7 of the line from both sides.
+NEAR = [setn("r", 2.9999999), setn("r", 2.99999), setn("r", 3.0000001), setn("r", 2.99999999),
+        setn("r", 3)]
+for c0, d0, cmd in (((-400, 0), (400, 0), "f = Line(E, g)"),
+                    ((0, -400), (0, 400), "f = PerpendicularLine(E, g)"),
+                    ((-0.002, 0), (0.002, 0), "f = Line(E, g)"),
+                    ((-400, 7), (400, 7), "f = Line(E, g)")):
+    case("rawline", [pt("C", *c0), pt("D", *d0), "g = Line(C, D)", pt("E", 0, 1),
+                     pt("A", 0, 3), num("r", 3), "k = Circle(A, r)", cmd] + LC,
+         [mv("E", 0, 0)] + NEAR + [mv("E", 0, 1)])
+# A slanted perpendicular: its coefficients are rescaled by powers of 2.
+case("rawline", [pt("C", -300, -400), pt("D", 300, 400), "g = Line(C, D)", pt("E", 0.6, 0.8),
+                 pt("A", 1.8, 2.4), num("r", 3), "k = Circle(A, r)",
+                 "f = PerpendicularLine(E, g)"] + LC,
+     [mv("E", 0, 0)] + NEAR + [mv("E", 0.6, 0.8)])
+# The long line itself, whose coefficients the kernel rebuilds.
+case("rawline", [pt("C", -400, 0), pt("D", 400, 0), "f = Line(C, D)", pt("A", 0, 4),
+                 num("r", 3), "k = Circle(A, r)"] + LC,
+     [setn("r", 4)] + [setn("r", v + 1) for v in (2.9999999, 2.99999, 3.0000001, 2.99999999)]
+     + [setn("r", 3)])
 
 cases.write()

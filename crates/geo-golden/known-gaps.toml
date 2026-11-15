@@ -130,3 +130,30 @@ mismatches = ["0:m", "1:m", "3:m", "5:m", "6:m", "7:m"]
 id = "transform-stretch-025"
 reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
 mismatches = ["0:m", "1:m", "2:m", "3:m", "6:m", "7:m"]
+
+# intersect
+
+[[gap]]
+id = "intersect-history-003"
+reason = "GeoGebra fixes the order of the two points on the first move after they first become distinct, by nearness to the previous points (AlgoIntersectLineConic.permutation, firstIntersection, isPermutationNeeded); here that move reverses the line, so GeoGebra keeps the reversed order while the stateless kernel keeps the order of the computation"
+mismatches = ["2:P", "4:P", "5:P"]
+
+[[gap]]
+id = "intersect-rawline-001"
+reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
+mismatches = ["2:P", "5:P"]
+
+[[gap]]
+id = "intersect-rawline-002"
+reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
+mismatches = ["2:P", "5:P"]
+
+[[gap]]
+id = "intersect-rawline-004"
+reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
+mismatches = ["2:P", "5:P"]
+
+[[gap]]
+id = "intersect-rawline-005"
+reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
+mismatches = ["2:P", "5:P"]

@@ -13,6 +13,8 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersectLineConic.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersectSingle.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoCircleTwoPoints.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoCircleThreePoints.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDispatcher.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersectLines.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoJoinPoints.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoLinePointLine.java
@@ -28,9 +30,56 @@
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
-use super::Parents;
+use crate::algo::conic::ConicDef;
 use crate::kernel::{Construction, Def, Id, Value};
 use crate::tol::{EPS, MAX_PRECISION, MIN_PRECISION, STANDARD_PRECISION};
+
+/// Completes a new intersection with what GeoGebra decides when it is
+/// created.
+///
+/// A second intersection of the same two circles, in either order, reuses
+/// the algorithm of the first (`AlgoDispatcher.getIntersectionAlgorithm`),
+/// so it takes over the order of the circles and the special-case flag.
+/// Otherwise the flag records whether `AlgoIntersectConics.handleSpecialCase`
+/// applies at creation (`possibleSpecialCase`); GeoGebra never checks it again
+/// when it was false. The `special` value passed in is ignored.
+pub(crate) fn prepare(c: &Construction, def: Def) -> Def {
+    let Def::IntersectCircles { c1, c2, which, .. } = def else {
+        return def;
+    };
+    for &s in c.children(c1) {
+        if let Def::IntersectCircles {
+            c1: a,
+            c2: b,
+            special,
+            ..
+        } = c.def(s)
+        {
+            if (a, b) == (c1, c2) || (a, b) == (c2, c1) {
+                return Def::IntersectCircles {
+                    c1: a,
+                    c2: b,
+                    which,
+                    special,
+                };
+            }
+        }
+    }
+    let special = match (c.circle(c1), c.circle(c2)) {
+        (Some((x1, y1, r1)), Some((x2, y2, r2))) => {
+            let a = Conic::new(x1, y1, r1);
+            let b = Conic::new(x2, y2, r2);
+            shared_circles_point(c, c1, c2, &a, &b).is_some()
+        }
+        _ => false,
+    };
+    Def::IntersectCircles {
+        c1,
+        c2,
+        which,
+        special,
+    }
+}
 
 /// Points that an intersection reads besides its line and circles.
 ///
@@ -38,15 +87,14 @@ use crate::tol::{EPS, MAX_PRECISION, MIN_PRECISION, STANDARD_PRECISION};
 /// own coordinates, and the coefficients of a line through two points are
 /// rebuilt from those points (see [`raw_line`]). The intersection must be
 /// recomputed when such a point moves even if the line and the circles keep
-/// their values, for example when a point slides along a horizontal line.
-pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Parents {
-    let mut ids = [Id(0); 4];
-    let mut n = 0;
+/// their values, for example when a point slides along a horizontal line or
+/// a vertex of a three-point circle slides along the circle.
+pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
+    let mut ids = Vec::new();
     let mut push = |s: Option<Id>| {
         if let Some(s) = s {
-            if !ids[..n].contains(&s) {
-                ids[n] = s;
-                n += 1;
+            if !ids.contains(&s) {
+                ids.push(s);
             }
         }
     };
@@ -60,15 +108,13 @@ pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Parents {
             }
         }
         Def::IntersectCircles { c1, c2, .. } => {
-            let [a, b] = circle_points_on_other(c, c1, c2);
-            let [d, e] = circle_points_on_other(c, c2, c1);
-            for s in [a, b, d, e] {
+            for s in points_on_both(c, c1, c2) {
                 push(s);
             }
         }
         _ => {}
     }
-    Parents::of(&ids[..n])
+    ids
 }
 
 pub(crate) fn lines(c: &Construction, l: Id, m: Id) -> Option<Value> {
@@ -111,13 +157,19 @@ pub(crate) fn line_circle(c: &Construction, line: Id, circle: Id, which: u8) -> 
 }
 
 /// `which` is 0 or 1: GeoGebra's intersection 1 or 2 (`AlgoIntersectConics`).
-pub(crate) fn circles(c: &Construction, c1: Id, c2: Id, which: u8) -> Option<Value> {
+/// `special` is the flag decided at creation (see [`prepare`]).
+pub(crate) fn circles(c: &Construction, c1: Id, c2: Id, which: u8, special: bool) -> Option<Value> {
     let (x1, y1, r1) = c.circle(c1)?;
     let (x2, y2, r2) = c.circle(c2)?;
     let a = Conic::new(x1, y1, r1);
     let b = Conic::new(x2, y2, r2);
 
-    let p = match shared_circles_point(c, c1, c2, &a, &b) {
+    let shared = if special {
+        shared_circles_point(c, c1, c2, &a, &b)
+    } else {
+        None
+    };
+    let p = match shared {
         Some(s) => {
             let first = c.point(s);
             let q = shared_point_case(&a, &b);
@@ -539,7 +591,8 @@ fn shared_point_case(a: &Conic, b: &Conic) -> [Pt; 2] {
 /// `AlgoIntersectConics.matchExistingIntersections`: a computed point that
 /// is close to a point on both circles by construction becomes that point.
 fn match_existing_intersections(c: &Construction, c1: Id, c2: Id, p: &mut [Pt; 2]) {
-    let existing = circle_points_on_other(c, c1, c2);
+    // preexistPoints: the points on c1 whose incidence list contains c2
+    let existing = points_on_both(c, c1, c2);
     if existing.iter().all(Option::is_none) || p.iter().all(Option::is_none) {
         return;
     }
@@ -598,28 +651,35 @@ fn intersection_on_circle(c: &Construction, s: Id, circle: Id) -> bool {
     }
 }
 
-/// The point a circle was drawn through.
-fn circle_through(c: &Construction, circle: Id) -> Option<Id> {
+/// The points a circle was drawn through, in the order in which GeoGebra
+/// adds them to the circle's points on the conic (`AlgoCircleTwoPoints`,
+/// `AlgoCircleThreePoints`). The other circles add none.
+fn circle_points(c: &Construction, circle: Id) -> [Option<Id>; 3] {
     match c.def(circle) {
-        Def::CircleThrough { through, .. } => Some(through),
-        _ => None,
+        Def::CircleThrough { through, .. } => [Some(through), None, None],
+        Def::Conic(ConicDef::ThroughThree(a, b, d)) => [
+            Some(a),
+            Some(b).filter(|&b| b != a),
+            Some(d).filter(|&d| d != a && d != b),
+        ],
+        _ => [None; 3],
     }
 }
 
 /// Whether `s` lies on `circle` by construction.
 fn on_circle_by_construction(c: &Construction, s: Id, circle: Id) -> bool {
-    circle_through(c, circle) == Some(s) || intersection_on_circle(c, s, circle)
+    circle_points(c, circle).contains(&Some(s)) || intersection_on_circle(c, s, circle)
 }
 
 /// The point that `AlgoIntersectLineConic.handleSpecialCase` makes
-/// intersection 1: the first point on the circle by construction (the point
+/// intersection 1: the first point on the circle by construction (the points
 /// it was drawn through, then its intersection points in creation order)
 /// that also lies on the line by construction. The intersection points of
 /// this line and this circle themselves belong to this intersection and are
 /// never chosen.
 fn existing_line_circle_point(c: &Construction, line: Id, line_def: Def, circle: Id) -> Option<Id> {
     let (p, q) = line_points(line_def);
-    if let Some(t) = circle_through(c, circle) {
+    for t in circle_points(c, circle).into_iter().flatten() {
         if Some(t) == p || Some(t) == q || intersection_on_line(c, t, line) {
             return Some(t);
         }
@@ -634,15 +694,28 @@ fn existing_line_circle_point(c: &Construction, line: Id, line_def: Def, circle:
 }
 
 /// The points on circle `a` whose incidence list contains circle `b`, in the
-/// order of `a`'s list: the point `a` was drawn through if it lies on `b` by
-/// construction, then the point `b` was drawn through if it is an
-/// intersection point of `a`.
-fn circle_points_on_other(c: &Construction, a: Id, b: Id) -> [Option<Id>; 2] {
-    let first = circle_through(c, a).filter(|&t| on_circle_by_construction(c, t, b));
-    let second = circle_through(c, b)
-        .filter(|&t| intersection_on_circle(c, t, a))
-        .filter(|&t| Some(t) != first);
-    [first, second]
+/// order of `a`'s points on the conic: the points `a` was drawn through that
+/// lie on `b` by construction, then, in creation order, the points `b` was
+/// drawn through that are intersection points of `a`.
+fn points_on_both(c: &Construction, a: Id, b: Id) -> [Option<Id>; 6] {
+    let mut out = [None; 6];
+    let mut n = 0;
+    for t in circle_points(c, a).into_iter().flatten() {
+        if on_circle_by_construction(c, t, b) {
+            out[n] = Some(t);
+            n += 1;
+        }
+    }
+    let mut later = circle_points(c, b);
+    for t in later.iter_mut() {
+        *t = t.filter(|&t| intersection_on_circle(c, t, a) && !out[..n].contains(&Some(t)));
+    }
+    later.sort_by_key(|t| t.map_or(usize::MAX, |t| t.0));
+    for t in later.into_iter().flatten() {
+        out[n] = Some(t);
+        n += 1;
+    }
+    out
 }
 
 /// The point that `AlgoIntersectConics.handleSpecialCase` makes
@@ -658,10 +731,7 @@ fn shared_circles_point(c: &Construction, c1: Id, c2: Id, a: &Conic, b: &Conic) 
         (a.on_full_conic(p, STANDARD_PRECISION) && b.on_full_conic(p, STANDARD_PRECISION))
             .then_some(s)
     };
-    let from = |x: Id, y: Id| {
-        let [first, second] = circle_points_on_other(c, x, y);
-        first.or(second).and_then(check)
-    };
+    let from = |x: Id, y: Id| points_on_both(c, x, y)[0].and_then(check);
     from(c1, c2).or_else(|| from(c2, c1))
 }
 
@@ -809,5 +879,48 @@ mod tests {
         assert!(close(xy(&c, "S"), -4.0, -3.0));
         assert!(close(xy(&c, "P"), -4.0, -3.0));
         assert_eq!(xy(&c, "Q"), None);
+    }
+
+    #[test]
+    fn a_vertex_of_a_three_point_circle_comes_first() {
+        let mut c = load(
+            "A = (3, 4)\nB = (-3, 4)\nC = (0, -5)\nk = Circle(A, B, C)\nD = (3, -4)\n\
+             f = Line(D, A)\nP = Intersect(f, k, 1)\nQ = Intersect(f, k, 2)\n",
+        )
+        .unwrap();
+        assert!(close(xy(&c, "P"), 3.0, 4.0));
+        assert!(close(xy(&c, "Q"), 3.0, -4.0));
+        // A slides along k: k keeps its value, P follows A.
+        mv(&mut c, "A", 5.0, 0.0);
+        assert!(close(xy(&c, "P"), 5.0, 0.0));
+    }
+
+    #[test]
+    fn the_second_argument_order_reuses_the_first() {
+        let c = load(
+            "A = (0, 0)\nB = (8, 0)\nr = 5\nq = 5\nk = Circle(A, r)\nc = Circle(B, q)\n\
+             P = Intersect(k, c, 1)\nR = Intersect(c, k, 1)\n",
+        )
+        .unwrap();
+        assert_eq!(xy(&c, "P"), xy(&c, "R"));
+    }
+
+    #[test]
+    fn the_special_case_is_decided_at_creation() {
+        // k has radius 0 at creation, so the common point A is not preferred
+        // later; with the circles created apart it is.
+        let script = |m: &str| {
+            format!(
+                "M = {m}\nA = (2, 1)\nN = (5, 5)\nk = Circle(M, A)\nc = Circle(N, A)\n\
+                 P = Intersect(k, c, 1)\n"
+            )
+        };
+        let mut late = load(&script("(2, 1)")).unwrap();
+        let mut early = load(&script("(0, 0)")).unwrap();
+        mv(&mut late, "M", 0.0, 0.0);
+        assert!(close(xy(&early, "P"), 2.0, 1.0));
+        assert!(!close(xy(&late, "P"), 2.0, 1.0));
+        mv(&mut early, "M", 4.0, -3.0);
+        assert!(close(xy(&early, "P"), 2.0, 1.0));
     }
 }
