@@ -415,8 +415,48 @@ fn an_expression_is_rebuilt_from_its_tree_and_never_from_its_handle() {
         Err(crate::Error::UnknownObject)
     );
     assert_eq!(numbers.len(), 5);
+    // a free number keeps the decimal of its literal until it is changed
+    let a = orig.id("a").unwrap();
+    assert_eq!(orig.expression(a).map(|e| e.kind()), Some(Kind::Number));
     assert_eq!(
-        orig.expression(orig.id("a").unwrap()).map(|e| e.kind()),
+        fresh.expression(fresh.id("a").unwrap()).map(|e| e.kind()),
         None
     );
+    let added = Construction::new().add_expression("q", &orig.expression(a).unwrap());
+    assert_eq!(added, Ok(crate::kernel::Id(0)));
+    assert_eq!(
+        orig.expression(orig.id("A").unwrap()).map(|e| e.kind()),
+        None
+    );
+}
+
+#[test]
+fn decimal_literals_are_exact_until_changed() {
+    let mut c = load(
+        "a = 0.1
+b = a + 0.2 - 0.3
+d = 0.1 + 0.2 - 0.3
+r = (0.1 + 0.2) 1E20",
+    )
+    .unwrap();
+    assert_eq!(num(&c, "b"), 0.0);
+    assert_eq!(num(&c, "d"), 0.0);
+    assert_eq!(num(&c, "r"), 3e19);
+    // `setValue` drops the decimal even when the value stays: `b` changes
+    let a = c.id("a").unwrap();
+    assert_eq!(c.set_number(a, 0.1), Ok(1));
+    assert_eq!(num(&c, "b"), 0.1 + 0.2 - 0.3);
+    assert_eq!(c.set_number(a, 0.1), Ok(0));
+    // a literal made through the API has no decimal
+    let mut api = Construction::new();
+    let x = api.add("a", Def::Number(0.1)).unwrap();
+    assert!(api.expression(x).is_none());
+    // a hostile exponent falls back to doubles instead of growing
+    let h = load(
+        "t = 1E-999999999 + 1
+u = 0.999^999999 + 0.5",
+    )
+    .unwrap();
+    assert_eq!(num(&h, "t"), 1.0);
+    assert_eq!(num(&h, "u"), 0.5);
 }

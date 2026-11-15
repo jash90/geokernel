@@ -692,7 +692,7 @@ impl Construction {
             }
         }
         self.lists.truncate(at.lists.min(self.lists.len()));
-        self.exprs.truncate(at.exprs);
+        self.exprs.truncate(at.exprs, at.len);
         // Labels became free again, so the hints may be too high.
         self.label_hints
             .get_mut()
@@ -732,9 +732,10 @@ impl Construction {
         self.hints.push(algo::intersect::hint(self, &def));
         let value = match def {
             Def::Expr(d) => {
-                let raw = expr::evaluate(self, d);
-                expr::store(self, d, raw);
-                expr::value(d, raw)
+                let out = expr::evaluate(self, d);
+                let value = expr::value(d, out.raw);
+                expr::store(self, d, out);
+                value
             }
             _ => self.compute(def, id.0),
         };
@@ -756,7 +757,10 @@ impl Construction {
     /// The tree of the expression object `id`, owned, so that it can be added
     /// to another construction with [`Self::add_expression`]; `None` when
     /// `id` is not an expression object. Its [`Def::Expr`] cannot be used
-    /// for that: the handle is valid only here (see [`expr`]).
+    /// for that: the handle is valid only here (see [`expr`]). A free number
+    /// that still has the exact decimal of the literal or constant
+    /// expression it was made from is handed out too, with that decimal;
+    /// [`Self::add`] makes a free number without one.
     pub fn expression(&self, id: Id) -> Option<expr::Expression> {
         expr::expression(self, id)
     }
@@ -852,8 +856,13 @@ impl Construction {
         if !v.is_finite() {
             return Err(Error::NotFinite);
         }
+        // A changed number loses its exact decimal (`GeoNumeric.setValue`),
+        // which changes what reads it even when the value stays.
+        let had_decimal = expr::forget_decimal(self, id);
         // Bit equality: `0` to `-0` is a change (`1/a` flips its sign).
-        if matches!(self.values[id.0], Value::Number(old) if old.to_bits() == v.to_bits()) {
+        if !had_decimal
+            && matches!(self.values[id.0], Value::Number(old) if old.to_bits() == v.to_bits())
+        {
             return Ok(0);
         }
         self.defs[id.0] = new_def;
@@ -911,9 +920,9 @@ impl Construction {
     /// Kept out of line so that the loop of [`Self::propagate`] stays small.
     #[inline(never)]
     fn update_expr(&mut self, i: usize, d: ExprDef) -> bool {
-        let raw = expr::evaluate(self, d);
-        self.values[i] = expr::value(d, raw);
-        expr::store(self, d, raw)
+        let out = expr::evaluate(self, d);
+        self.values[i] = expr::value(d, out.raw);
+        expr::store(self, d, out)
     }
 
     pub(crate) fn check(&self, def: &Def) -> Result<(), Error> {

@@ -114,7 +114,13 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
         return result;
     }
     match define(c, name, rhs) {
-        Ok(id) => Ok(Some(id)),
+        Ok(id) => {
+            if matches!(c.def(id), Def::Number(_)) {
+                // a decimal literal keeps its exact decimal
+                crate::expr::record_literal(c, id, rhs);
+            }
+            Ok(Some(id))
+        }
         // A call of a command keeps the command's own error.
         Err(e) if is_single_call(c, rhs) => Err(e),
         Err(_) => crate::expr::define(c, name, rhs, is_vector_label(name)).map(Some),

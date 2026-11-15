@@ -31,6 +31,7 @@
 //! [`Construction::expression`] and add it with
 //! [`Construction::add_expression`]; the tree is checked again there.
 
+mod decimal;
 mod eval;
 mod lex;
 pub(crate) use lex::{is_name_char, plain_number};
@@ -43,6 +44,8 @@ mod types;
 use crate::algo::intersect::Hint;
 use crate::algo::vector::VectorDef;
 use crate::kernel::{Construction, Def, Error, Id, Kind, Value};
+use decimal::Dec;
+use std::collections::BTreeMap;
 
 /// Handle of an expression object's tree, valid only in the construction
 /// that made it; see the module documentation.
@@ -191,8 +194,18 @@ impl Raw {
     }
 }
 
+/// What GeoGebra's number object of a constant node is: a `MySpecialDouble`
+/// (a literal or a named constant, with the decimal it was written as, see
+/// [`decimal`]) or, by default, a plain `MyDouble` that the parser made.
+#[derive(Clone, Debug, Default)]
+pub(crate) struct Lit {
+    pub(crate) special: bool,
+    pub(crate) dec: Option<Dec>,
+}
+
 pub(crate) struct Entry {
     nodes: Vec<Node>,
+    lits: Vec<Lit>,
     tys: Vec<Ty>,
     root: u32,
     parents: Vec<Id>,
@@ -203,6 +216,9 @@ pub(crate) struct Entry {
     /// The last result; for a function, 0 when it is defined and `NaN`
     /// when not.
     raw: Raw,
+    /// The exact decimal of the last result of a number
+    /// (`GeoNumeric.exactValue`, set by `AlgoDependentNumber`).
+    dec: Option<Dec>,
     depth: u32,
     cost: u64,
     vars: u64,
@@ -212,12 +228,14 @@ impl Entry {
     fn new(p: parse::Parsed, function: bool) -> Self {
         Entry {
             nodes: p.nodes,
+            lits: p.lits,
             tys: p.tys,
             root: p.root,
             parents: p.parents,
             function,
             inputs: p.inputs,
             raw: Raw::Num(f64::NAN),
+            dec: None,
             depth: p.depth,
             cost: p.cost,
             vars: p.vars,
@@ -235,6 +253,10 @@ pub(crate) struct Table {
     entries: Vec<Entry>,
     /// The tree being added, the only one a new [`ExprDef`] may name.
     pending: Option<u32>,
+    /// The exact decimals of free numbers that a decimal literal or a
+    /// constant expression made and that were never changed since
+    /// (`GeoNumeric.exactValue` with a constant definition), by object.
+    free: BTreeMap<usize, Dec>,
 }
 
 /// An expression object's tree, owned: what [`Construction::expression`]
@@ -245,8 +267,18 @@ pub(crate) struct Table {
 #[derive(Clone, Debug)]
 pub struct Expression {
     kind: Kind,
-    nodes: Vec<Node>,
-    root: u32,
+    form: Form,
+}
+
+#[derive(Clone, Debug)]
+enum Form {
+    Tree {
+        nodes: Vec<Node>,
+        lits: Vec<Lit>,
+        root: u32,
+    },
+    /// A free number with its exact decimal (see [`Table`]).
+    Exact { def: Def, dec: Dec },
 }
 
 impl Expression {
@@ -261,10 +293,11 @@ impl Table {
         self.entries.len()
     }
 
-    /// Drops the trees added after the first `len` (see
-    /// `Construction::rollback`).
-    pub(crate) fn truncate(&mut self, len: usize) {
+    /// Drops the trees added after the first `len`, and what is known about
+    /// the objects from `objects` on (see `Construction::rollback`).
+    pub(crate) fn truncate(&mut self, len: usize, objects: usize) {
         self.entries.truncate(len);
+        self.free.split_off(&objects);
     }
 }
 
@@ -298,7 +331,27 @@ pub(crate) fn check_handle(c: &Construction, d: ExprDef) -> Result<(), Error> {
     }
 }
 
-/// The tree of the expression object `id`, if it is one.
+/// The exact decimal of the free number `id`, if it has one.
+pub(crate) fn free_decimal(c: &Construction, id: Id) -> Option<&Dec> {
+    c.exprs.free.get(&id.0)
+}
+
+/// Records the decimal of the free number `id` that a script line made from
+/// the decimal literal `text` (a `MySpecialDouble`).
+pub(crate) fn record_literal(c: &mut Construction, id: Id, text: &str) {
+    if let (Some(_), Some(d)) = (plain_number(text), Dec::parse(text.trim())) {
+        c.exprs.free.insert(id.0, d);
+    }
+}
+
+/// Forgets the exact decimal of a free number that is being changed
+/// (`GeoNumeric.setValue`); whether it had one.
+pub(crate) fn forget_decimal(c: &mut Construction, id: Id) -> bool {
+    c.exprs.free.remove(&id.0).is_some()
+}
+
+/// The tree of the expression object `id`, or the decimal of an exact free
+/// number, if it is one of these.
 pub(crate) fn expression(c: &Construction, id: Id) -> Option<Expression> {
     if id.0 >= c.len() {
         return None;
@@ -308,10 +361,20 @@ pub(crate) fn expression(c: &Construction, id: Id) -> Option<Expression> {
             let e = entry(c, d);
             Some(Expression {
                 kind: d.kind,
-                nodes: e.nodes.clone(),
-                root: e.root,
+                form: Form::Tree {
+                    nodes: e.nodes.clone(),
+                    lits: e.lits.clone(),
+                    root: e.root,
+                },
             })
         }
+        def @ (Def::Number(_) | Def::Angle(_)) => Some(Expression {
+            kind: Kind::Number,
+            form: Form::Exact {
+                def,
+                dec: free_decimal(c, id)?.clone(),
+            },
+        }),
         _ => None,
     }
 }
@@ -325,18 +388,32 @@ pub(crate) fn add_expression(
     name: &str,
     e: &Expression,
 ) -> Result<Id, Error> {
-    let parsed = reparse(c, e).ok_or(Error::UnknownObject)?;
+    let (nodes, lits, root) = match &e.form {
+        Form::Tree { nodes, lits, root } => (nodes, lits, *root),
+        Form::Exact { def, dec } => {
+            let id = c.add(name, *def)?;
+            c.exprs.free.insert(id.0, dec.clone());
+            return Ok(id);
+        }
+    };
+    let parsed = reparse(c, e.kind, nodes, lits, root).ok_or(Error::UnknownObject)?;
     if e.kind == Kind::Function && parsed.tys[parsed.root as usize] == Ty::Vec {
         return Err(Error::UnknownObject);
     }
     add_parsed(c, name, parsed, e.kind)
 }
 
-/// What [`parse::parse`] would have given for the tree of `e`, or `None`
-/// when the tree does not fit this construction.
-fn reparse(c: &Construction, e: &Expression) -> Option<parse::Parsed> {
-    let n = e.nodes.len();
-    if e.root as usize >= n {
+/// What [`parse::parse`] would have given for a tree, or `None` when the
+/// tree does not fit this construction.
+fn reparse(
+    c: &Construction,
+    kind: Kind,
+    nodes: &[Node],
+    lits: &[Lit],
+    root: u32,
+) -> Option<parse::Parsed> {
+    let n = nodes.len();
+    if root as usize >= n || lits.len() != n {
         return None;
     }
     let mut parents: Vec<Id> = Vec::new();
@@ -350,7 +427,7 @@ fn reparse(c: &Construction, e: &Expression) -> Option<parse::Parsed> {
         }
     };
     let mut uses_var = false;
-    for (i, node) in e.nodes.iter().enumerate() {
+    for (i, node) in nodes.iter().enumerate() {
         if children(node).any(|child| child as usize >= i) {
             return None;
         }
@@ -379,18 +456,19 @@ fn reparse(c: &Construction, e: &Expression) -> Option<parse::Parsed> {
             _ => {}
         }
     }
-    let (tys, depth, cost, vars) = types::check(c, &e.nodes, e.root).ok()?;
-    let r = e.root as usize;
+    let (tys, depth, cost, vars) = types::check(c, nodes, root).ok()?;
+    let r = root as usize;
     if depth[r] > parse::MAX_DEPTH || cost[r] > parse::MAX_COST {
         return None;
     }
-    if uses_var && e.kind != Kind::Function {
+    if uses_var && kind != Kind::Function {
         return None;
     }
     Some(parse::Parsed {
-        nodes: e.nodes.clone(),
+        nodes: nodes.to_vec(),
+        lits: lits.to_vec(),
         tys,
-        root: e.root,
+        root,
         parents,
         inputs,
         uses_var,
@@ -424,13 +502,22 @@ pub(crate) fn parents(c: &Construction, def: &Def) -> Vec<Id> {
     }
 }
 
+/// A result of [`evaluate`]: the raw value and the exact decimal of a
+/// number.
+pub(crate) struct Outcome {
+    pub(crate) raw: Raw,
+    dec: Option<Dec>,
+}
+
 /// Evaluates an expression object for the current values of its parents.
-pub(crate) fn evaluate(c: &Construction, d: ExprDef) -> Raw {
+pub(crate) fn evaluate(c: &Construction, d: ExprDef) -> Outcome {
     let e = entry(c, d);
     if e.function {
-        Raw::Num(if inputs_defined(c, e) { 0.0 } else { f64::NAN })
+        let raw = Raw::Num(if inputs_defined(c, e) { 0.0 } else { f64::NAN });
+        Outcome { raw, dec: None }
     } else {
-        eval::root(c, e)
+        let (raw, dec) = eval::root(c, e);
+        Outcome { raw, dec }
     }
 }
 
@@ -456,16 +543,19 @@ fn inputs_defined(c: &Construction, e: &Entry) -> bool {
 /// parents, without storing it.
 #[inline(never)]
 pub(crate) fn current(c: &Construction, d: ExprDef) -> Value {
-    value(d, evaluate(c, d))
+    value(d, evaluate(c, d).raw)
 }
 
 /// Stores the result of [`evaluate`]; tells whether it changed. A function
 /// always counts as changed: its values depend on its inputs even when it
 /// stays defined.
-pub(crate) fn store(c: &mut Construction, d: ExprDef, raw: Raw) -> bool {
+/// Keeps a result; whether it changed (a decimal of the same value counts:
+/// it changes what reads the number).
+pub(crate) fn store(c: &mut Construction, d: ExprDef, out: Outcome) -> bool {
     let e = &mut c.exprs.entries[d.index as usize];
-    let changed = e.function || !e.raw.same(raw);
-    e.raw = raw;
+    let changed = e.function || !e.raw.same(out.raw) || e.dec != out.dec;
+    e.raw = out.raw;
+    e.dec = out.dec;
     changed
 }
 
@@ -554,7 +644,8 @@ fn add_parsed(
     if constant {
         // `AlgebraProcessor`: an expression without objects is free.
         let angle = entry.root_ty() == Ty::Num(1);
-        let free = match eval::root(c, &entry) {
+        let (raw, dec) = eval::root(c, &entry);
+        let free = match raw {
             Raw::Num(v) if v.is_finite() && angle => Some(Def::Angle(v)),
             Raw::Num(v) if v.is_finite() => Some(Def::Number(v)),
             Raw::Vec(x, y) if x.is_finite() && y.is_finite() => Some(if vector_label {
@@ -565,7 +656,11 @@ fn add_parsed(
             _ => None,
         };
         if let Some(def) = free {
-            return c.add(name, def);
+            let id = c.add(name, def)?;
+            if let (Some(d), Kind::Number) = (dec, kind) {
+                c.exprs.free.insert(id.0, d);
+            }
+            return Ok(id);
         }
     }
     let index = u32::try_from(c.exprs.entries.len()).map_err(|_| Error::UnknownObject)?;

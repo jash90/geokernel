@@ -12,11 +12,12 @@
 //! than a product, so `a/2a` is `(a/2)·a`), unary signs, powers (right
 //! associative, `-2^2 = -4`), factorials, then elements.
 
+use super::decimal::Dec;
 use super::lex::{tokens, Tok, Token};
 use super::math::{self, PI_180};
 use super::names::{binary_builtin, builtin_name, unary_builtin};
 use super::types::check;
-use super::{Bin, Node, Ty, Un};
+use super::{Bin, Lit, Node, Ty, Un};
 use crate::algo::{intersect, vector};
 use crate::kernel::{Construction, Id, Kind};
 use std::f64::consts::{E, PI};
@@ -29,9 +30,15 @@ pub(crate) const MAX_DEPTH: u32 = 256;
 /// Upper bound on the nodes one evaluation visits, functions expanded.
 pub(crate) const MAX_COST: u64 = 1 << 20;
 
+/// `MySpecialDouble.getConstantDecimal` of `π` and `ℯ`.
+const PI_DECIMAL: &str = "3.1415926535897932385";
+const E_DECIMAL: &str = "2.7182818284590452353";
+
 /// A parsed and type-checked expression.
 pub(crate) struct Parsed {
     pub(crate) nodes: Vec<Node>,
+    /// What GeoGebra's number object of each constant is (see [`Lit`]).
+    pub(crate) lits: Vec<Lit>,
     pub(crate) tys: Vec<Ty>,
     pub(crate) root: u32,
     /// Objects the expression reads, directly or through a command.
@@ -53,6 +60,8 @@ pub(crate) fn parse(c: &Construction, src: &str) -> Result<Parsed, String> {
         toks: tokens(src)?,
         pos: 0,
         nodes: Vec::new(),
+        lits: Vec::new(),
+        bare: Vec::new(),
         nesting: 0,
         parents: Vec::new(),
         inputs: Vec::new(),
@@ -79,6 +88,7 @@ pub(crate) fn parse(c: &Construction, src: &str) -> Result<Parsed, String> {
         cost: cost[r],
         vars: vars[r],
         nodes: p.nodes,
+        lits: p.lits,
         tys,
         parents: p.parents,
         inputs: p.inputs,
@@ -92,6 +102,11 @@ struct Parser<'a> {
     toks: Vec<Token>,
     pos: usize,
     nodes: Vec<Node>,
+    lits: Vec<Lit>,
+    /// Literals written as such, which `unaryMinus` negates in place
+    /// (`-0.1`); a bracketed one (`-(0.1)`) or a letter constant (`-π`) is
+    /// multiplied by -1 instead, which gives a plain number.
+    bare: Vec<u32>,
     nesting: u32,
     parents: Vec<Id>,
     inputs: Vec<Id>,
@@ -122,7 +137,18 @@ impl Parser<'_> {
 
     fn push(&mut self, node: Node) -> u32 {
         self.nodes.push(node);
+        self.lits.push(Lit::default());
         (self.nodes.len() - 1) as u32
+    }
+
+    /// A constant that is a `MySpecialDouble` in GeoGebra, with its decimal.
+    fn push_special(&mut self, v: f64, dec: Option<Dec>) -> u32 {
+        let i = self.push(Node::Num(v));
+        self.lits[i as usize] = Lit {
+            special: true,
+            dec: dec.filter(|_| v.is_finite()),
+        };
+        i
     }
 
     fn node(&self, i: u32) -> Node {
@@ -285,7 +311,7 @@ impl Parser<'_> {
         }
         if op == Un::Cot {
             // `π/2 - atan(x)`
-            let pi = self.push(Node::Num(PI));
+            let pi = self.push_special(PI, Dec::parse(PI_DECIMAL));
             let two = self.push(Node::Num(2.0));
             let half = self.push(Node::Bin(Bin::Div, pi, two));
             let atan = self.push(Node::Un(Un::Atan, arg));
@@ -309,7 +335,17 @@ impl Parser<'_> {
     /// `(-x)°`, anything else is multiplied by -1.
     fn unary_minus(&mut self, e: u32, depth: u32) -> u32 {
         match self.node(e) {
-            Node::Num(v) => self.push(Node::Num(-v)),
+            Node::Num(v) => {
+                let lit = &self.lits[e as usize];
+                if lit.special && self.bare.contains(&e) {
+                    let dec = lit.dec.as_ref().map(Dec::negated);
+                    let n = self.push_special(-v, dec);
+                    self.bare.push(n);
+                    n
+                } else {
+                    self.push(Node::Num(-v))
+                }
+            }
             Node::Bin(Bin::Mul, a, b)
                 if depth < MAX_NESTING && matches!(self.node(b), Node::Degree) =>
             {
@@ -358,7 +394,7 @@ impl Parser<'_> {
                 Some(&Tok::Power(n)) => {
                     // `convertIndexToNumber`
                     self.pos += 1;
-                    let f = self.push(Node::Num(n));
+                    let f = self.push_special(n, Dec::from_f64(n));
                     exponents.push(f);
                 }
                 _ => break,
@@ -405,9 +441,18 @@ impl Parser<'_> {
         self.pos += 1;
         match token.tok {
             Tok::Num(v) => {
+                // `MySpecialDouble.toDecimal`: the literal as written
+                let dec = Dec::parse(&self.src[token.start..token.end]);
                 // `50%` is a literal (`Parser.parseDouble`)
-                let v = if self.eat(&Tok::Percent) { v * 0.01 } else { v };
-                let n = self.push(Node::Num(v));
+                let (v, dec) = if self.eat(&Tok::Percent) {
+                    let hundredth = Dec::parse("0.01");
+                    let dec = dec.zip(hundredth).and_then(|(d, h)| d.mul(&h));
+                    (v * 0.01, dec)
+                } else {
+                    (v, dec)
+                };
+                let n = self.push_special(v, dec);
+                self.bare.push(n);
                 if self.eat(&Tok::Degree) {
                     // `30°` is `30 * °` (`Parser.myDouble`)
                     let d = self.push(Node::Degree);
@@ -432,7 +477,11 @@ impl Parser<'_> {
                 self.expect(&Tok::RParen, ")")?;
                 Ok(match node {
                     Some(n) => self.push(n),
-                    None => first,
+                    None => {
+                        // a bracketed literal is no longer negated in place
+                        self.bare.retain(|&b| b != first);
+                        first
+                    }
                 })
             }
             Tok::Bar => {
@@ -452,10 +501,16 @@ impl Parser<'_> {
     /// or a command (`Parser.functionOrCommand`, `FunctionParser`).
     fn name(&mut self, text: &str, call: bool) -> Result<u32, String> {
         let free = |s: &str| self.c.id(s).is_none();
+        let letter = match text {
+            "pi" | "Pi" | "\u{3c0}" => Some((PI, PI_DECIMAL)),
+            "\u{212f}" => Some((E, E_DECIMAL)),
+            "e" if free("e") => Some((E, E_DECIMAL)),
+            _ => None,
+        };
+        if let Some((v, dec)) = letter {
+            return Ok(self.push_special(v, Dec::parse(dec)));
+        }
         let constant = match text {
-            "pi" | "Pi" | "\u{3c0}" => Some(Node::Num(PI)),
-            "\u{212f}" => Some(Node::Num(E)),
-            "e" if free("e") => Some(Node::Num(E)),
             "deg" if free("deg") => Some(Node::Degree),
             "Infinity" | "infinity" | "inf" => Some(Node::Num(f64::INFINITY)),
             "Undefined" | "NaN" => Some(Node::Num(f64::NAN)),

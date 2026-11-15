@@ -259,13 +259,19 @@ fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), St
 
         // 2/4. away and back gives the original values
         if step_no % 3 == 0 {
-            let snapshot = values(&case.c);
             let target = *rng.pick(&case.free);
             let home = match case.c.def(target) {
                 Def::FreePoint { x, y } => Step::Point { id: target, x, y },
                 Def::Number(v) => Step::Number { id: target, v },
                 other => fail!("free object has definition {other:?}"),
             };
+            // a number from a decimal literal loses its exact decimal when it
+            // is set, even to its own value (`GeoNumeric.setValue`), so the
+            // values to come back to are those after a first `home`
+            if let Err(e) = home.apply(&mut case.c) {
+                fail!("home move failed: {e}");
+            }
+            let snapshot = values(&case.c);
             let away = random_step(&mut rng, &case.c, &[target]);
             moves.push(format!("  away: {}", away.describe(&case.c)));
             if let Err(e) = away.apply(&mut case.c) {
@@ -292,6 +298,17 @@ fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), St
         if exec(&mut fresh, line).is_err() {
             ok = false;
             break;
+        }
+    }
+    if ok && fresh.len() == case.c.len() {
+        // A literal line gives a free number the exact decimal of the
+        // literal; one that was set since has none, so set it here too.
+        for &id in &case.free {
+            if let (Def::Number(v), None) = (case.c.def(id), case.c.expression(id)) {
+                if fresh.expression(id).is_some() && fresh.set_number(id, v).is_err() {
+                    fail!("setting `{}` in the fresh build failed", case.c.label(id));
+                }
+            }
         }
     }
     let same_layout = ok

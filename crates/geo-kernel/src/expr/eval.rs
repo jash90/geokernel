@@ -24,22 +24,113 @@
 //!   `Math.pow`, `Math.sin`, `Math.cos` and `Math.sqrt`; every other
 //!   operation falls back to the full evaluation of its subtree.
 //!
+//! The full evaluation also does GeoGebra's exact decimal arithmetic
+//! (`DoubleOperation`): `+ - * /` and whole powers of two operands that
+//! both have a decimal (see [`Ex`]) are computed on decimals, so
+//! `0.1 + 0.2` is `0.3`. The fast evaluation never does.
+//!
 //! A function is sampled by the fast evaluation with `x` set to a number
 //! (`Function.value`). Inside a function, an applied function is expanded
 //! (`AlgoDependentFunction.expandFunctionDerivativeNodes`): its `x` stands
 //! for the argument's subtree, evaluated in place. Outside a function,
 //! `f(a)` evaluates `a` and samples `f` there.
 
+use super::decimal::Dec;
 use super::math::{self, PI_180};
 use super::twonum;
 use super::{Bin, Entry, Node, Raw, Ty, Un};
 use crate::algo::intersect::Hint;
 use crate::kernel::{Construction, Def, Id, Kind, Value};
+use std::sync::OnceLock;
 
 #[derive(Clone, Copy)]
 enum Val {
     N(f64),
     V(f64, f64),
+}
+
+impl Val {
+    fn num(self) -> f64 {
+        match self {
+            Val::N(v) => v,
+            Val::V(..) => f64::NAN,
+        }
+    }
+}
+
+/// A result of the full evaluation with what GeoGebra's value object knows
+/// besides its value: whether it is a `MySpecialDouble` (`special`), which
+/// keeps a decimal, and that decimal (`toDecimal`). An object operand
+/// (`obj`) is a `GeoNumeric`: as a right operand its decimal is its
+/// `exactValue`; as a left operand GeoGebra takes `getNumber()`, which keeps
+/// the decimal only for a free number that was never changed (`special`).
+#[derive(Clone)]
+struct Ex {
+    val: Val,
+    dec: Option<Dec>,
+    special: bool,
+    obj: bool,
+}
+
+impl Ex {
+    fn plain(val: Val) -> Ex {
+        Ex {
+            val,
+            dec: None,
+            special: false,
+            obj: false,
+        }
+    }
+
+    /// `set(double)` on a copy of an operand: the class stays, the decimal
+    /// goes.
+    fn kept(special: bool, v: f64) -> Ex {
+        Ex {
+            val: Val::N(v),
+            dec: None,
+            special,
+            obj: false,
+        }
+    }
+
+    /// `MySpecialDouble.set(BigDecimal)`; an infinite value has no decimal.
+    fn exact(d: Dec) -> Ex {
+        let v = d.to_f64();
+        Ex {
+            val: Val::N(v),
+            dec: v.is_finite().then_some(d),
+            special: true,
+            obj: false,
+        }
+    }
+
+    /// `getNumber()`: the class and decimal of the copy an operation works on.
+    fn left(&self) -> (bool, Option<&Dec>) {
+        if self.obj && !self.special {
+            (false, None)
+        } else {
+            (self.special, self.dec.as_ref())
+        }
+    }
+
+    fn num(&self) -> f64 {
+        self.val.num()
+    }
+}
+
+/// `MySpecialDouble.setPrecise`: a `MySpecialDouble` takes the exact
+/// decimal of a finite result.
+fn precise(special: bool, v: f64) -> Ex {
+    match Dec::from_f64(v) {
+        Some(d) if special => Ex::exact(d),
+        _ => Ex::kept(special, v),
+    }
+}
+
+/// The decimal of `°` (`MySpecialDouble.DEGREE`).
+fn degree() -> &'static Dec {
+    static DEGREE: OnceLock<Dec> = OnceLock::new();
+    DEGREE.get_or_init(|| Dec::parse("0.017453292519943295769").expect("a decimal"))
 }
 
 /// What the variable `x` stands for.
@@ -56,16 +147,18 @@ struct Ctx<'a> {
     env: &'a Env<'a>,
 }
 
-/// Evaluates an entry's tree (full evaluation).
-pub(super) fn root(c: &Construction, e: &Entry) -> Raw {
+/// Evaluates an entry's tree (full evaluation), with the exact decimal of
+/// a number result (`toDecimal`).
+pub(super) fn root(c: &Construction, e: &Entry) -> (Raw, Option<Dec>) {
     let ctx = Ctx {
         c,
         e,
         env: &Env::None,
     };
-    match ctx.full(e.root) {
-        Val::N(v) => Raw::Num(v),
-        Val::V(x, y) => Raw::Vec(x, y),
+    let x = ctx.full(e.root);
+    match x.val {
+        Val::N(v) => (Raw::Num(v), x.dec),
+        Val::V(x, y) => (Raw::Vec(x, y), None),
     }
 }
 
@@ -100,31 +193,61 @@ impl Ctx<'_> {
         self.e.tys[i as usize] == Ty::Num(1)
     }
 
-    fn full(&self, i: u32) -> Val {
+    fn full(&self, i: u32) -> Ex {
         use Val::{N, V};
         match self.node(i) {
-            Node::Num(v) => N(v),
-            Node::MinusOne => N(-1.0),
-            Node::Degree => N(PI_180),
-            Node::Var => match *self.env {
+            Node::Num(v) => {
+                let lit = &self.e.lits[i as usize];
+                Ex {
+                    val: N(v),
+                    dec: lit.dec.clone(),
+                    special: lit.special,
+                    obj: false,
+                }
+            }
+            Node::MinusOne => Ex::plain(N(-1.0)),
+            Node::Degree => Ex {
+                val: N(PI_180),
+                dec: Some(degree().clone()),
+                special: true,
+                obj: false,
+            },
+            Node::Var => Ex::plain(match *self.env {
                 Env::None => N(f64::NAN),
                 Env::Value(x) => N(x),
                 Env::Arg(caller, a) => N(caller.full_number(a)),
+            }),
+            Node::Obj(id) => object_ex(self.c, id),
+            Node::Cmd(def, hint) => Ex {
+                obj: true,
+                ..Ex::plain(command(self.c, def, hint))
             },
-            Node::Obj(id) => object(self.c, id),
-            Node::Cmd(def, hint) => command(self.c, def, hint),
             // `MyVecNode.getVector`: coordinates by `evaluateDouble`.
-            Node::Tuple(a, b) => V(self.fast(a), self.fast(b)),
+            Node::Tuple(a, b) => Ex::plain(V(self.fast(a), self.fast(b))),
             Node::Polar(r, phi) => {
                 let (r, phi) = (self.fast(r), self.fast(phi));
-                V(r * phi.cos(), r * phi.sin())
+                Ex::plain(V(r * phi.cos(), r * phi.sin()))
             }
             Node::Un(op, a) => self.unary(op, a),
             Node::Bin(Bin::Pow, a, b) => self.power(a, b),
             Node::Bin(Bin::Round2, a, b) => self.round2(a, b),
-            Node::Bin(op, a, b) => binary(op, self.full(a), self.full(b), self.is_angle(a)),
-            Node::Apply(f, a) => N(self.apply(f, a, false)),
-            Node::FnName(_) => N(f64::NAN),
+            Node::Bin(op, a, b) => {
+                let (l, r) = (self.full(a), self.full(b));
+                match (l.val, r.val) {
+                    (N(_), N(_)) if matches!(op, Bin::Add | Bin::Sub | Bin::Mul | Bin::Div) => {
+                        arithmetic(op, &l, &r)
+                    }
+                    // the result of a command is a helper `GeoNumeric`
+                    _ if op.is_command() => Ex {
+                        obj: true,
+                        ..Ex::plain(binary(op, l.val, r.val, false))
+                    },
+                    (N(_), N(_)) => Ex::kept(l.left().0, binary(op, l.val, r.val, false).num()),
+                    _ => Ex::plain(binary(op, l.val, r.val, self.is_angle(a))),
+                }
+            }
+            Node::Apply(f, a) => Ex::plain(N(self.apply(f, a, false))),
+            Node::FnName(_) => Ex::plain(N(f64::NAN)),
         }
     }
 
@@ -152,10 +275,7 @@ impl Ctx<'_> {
     }
 
     fn full_number(&self, i: u32) -> f64 {
-        match self.full(i) {
-            Val::N(v) => v,
-            Val::V(..) => f64::NAN,
-        }
+        self.full(i).num()
     }
 
     /// `ExpressionNode.evaluateDouble`.
@@ -204,34 +324,49 @@ impl Ctx<'_> {
 
     /// `Operation.ROUND2`: digits that evaluate to `NaN` fall back to
     /// rounding to an integer, unless they are an object.
-    fn round2(&self, a: u32, b: u32) -> Val {
+    fn round2(&self, a: u32, b: u32) -> Ex {
         let (x, digits) = (self.full(a), self.full(b));
         let object = matches!(self.node(b), Node::Obj(_) | Node::Cmd(..));
-        match (x, digits) {
-            (Val::N(x), Val::N(d)) if d.is_nan() && !object => {
-                Val::N(math::round(x, 0.0, self.is_angle(a)))
+        match (x.val, digits.val) {
+            (Val::N(v), Val::N(d)) => {
+                let d = if d.is_nan() && !object { 0.0 } else { d };
+                let (special, dec) = x.left();
+                round(special, dec, v, d, self.is_angle(a))
             }
-            (x, digits) => binary(Bin::Round2, x, digits, self.is_angle(a)),
+            (l, r) => Ex::plain(binary(Bin::Round2, l, r, self.is_angle(a))),
         }
     }
 
-    /// `ExpressionNodeEvaluator.handlePower`.
-    fn power(&self, a: u32, b: u32) -> Val {
-        match (self.full(a), self.full(b)) {
+    /// `ExpressionNodeEvaluator.handlePower` and `MyDouble.pow`: a whole
+    /// exponent from 0 to below 10^6 is `DoubleOperation.INT_POWER`.
+    fn power(&self, a: u32, b: u32) -> Ex {
+        let (l, r) = (self.full(a), self.full(b));
+        match (l.val, r.val) {
             (Val::N(base), Val::N(e)) => {
+                let (special, dec) = l.left();
                 if math::is_euler(base) {
-                    return Val::N(e.exp());
+                    // `exponent.getNumber().exp()`
+                    return Ex::kept(r.left().0, e.exp());
                 }
                 if base < 0.0 {
                     if let Some(v) = self.neg_power(base, b) {
-                        return Val::N(v);
+                        return Ex::kept(special, v);
                     }
                 }
-                Val::N(math::my_pow(base, e))
+                if (0.0..1e6).contains(&e) && math::is_integer(e) && base.is_finite() {
+                    if let (Some(x), Some(_)) = (dec, r.dec.as_ref()) {
+                        if let Some(d) = x.pow(math::java_round(e) as u32) {
+                            return Ex::exact(d);
+                        }
+                    }
+                }
+                Ex::kept(special, math::my_pow(base, e))
             }
             // `v^2` is the scalar product of `v` with itself
-            (Val::V(x, y), Val::N(e)) => Val::N(if e == 2.0 { x * x + y * y } else { f64::NAN }),
-            _ => Val::N(f64::NAN),
+            (Val::V(x, y), Val::N(e)) => {
+                Ex::plain(Val::N(if e == 2.0 { x * x + y * y } else { f64::NAN }))
+            }
+            _ => Ex::plain(Val::N(f64::NAN)),
         }
     }
 
@@ -269,20 +404,42 @@ impl Ctx<'_> {
 
     /// The one-argument operations of `Operation` on a number, and `x()`,
     /// `y()` and `abs()` of a point or vector.
-    fn unary(&self, op: Un, a: u32) -> Val {
-        let x = match self.full(a) {
+    /// The result keeps the class of the operand's `getNumber()` copy;
+    /// `floor`, `ceil` and `round` of a `MySpecialDouble` are exact
+    /// (`setPrecise`, `doRound`).
+    fn unary(&self, op: Un, a: u32) -> Ex {
+        let operand = self.full(a);
+        let x = match operand.val {
             Val::N(x) => x,
             Val::V(x, y) => {
-                return Val::N(match op {
+                return Ex::plain(Val::N(match op {
                     Un::X => x,
                     Un::Y => y,
                     Un::Abs => complex_abs(x, y),
                     _ => f64::NAN,
-                })
+                }))
             }
         };
         let deg = self.is_angle(a);
-        Val::N(match op {
+        let (special, dec) = operand.left();
+        let v = match op {
+            Un::Floor | Un::Ceil if !deg => {
+                let v = if op == Un::Floor {
+                    math::floor(x, false)
+                } else {
+                    math::ceil(x, false)
+                };
+                return precise(special, v);
+            }
+            Un::Round => return round(special, dec, x, 0.0, deg),
+            _ => self.scalar(op, x, deg),
+        };
+        Ex::kept(special, v)
+    }
+
+    /// A one-argument operation on a number.
+    fn scalar(&self, op: Un, x: f64, deg: bool) -> f64 {
+        match op {
             Un::Factorial => math::factorial(x),
             Un::Sin => math::sin(x),
             Un::Cos => math::cos(x),
@@ -315,7 +472,84 @@ impl Ctx<'_> {
             Un::Log2 => math::log2(x),
             Un::Gamma => math::gamma(x),
             Un::X | Un::Y => f64::NAN,
-        })
+        }
+    }
+}
+
+/// `DoubleOperation.apply` for `+ - * /` (with the checks of `MyDouble.mult`
+/// and `MyDouble.div` first): on decimals when both operands have one and
+/// neither is infinite, else on doubles.
+fn arithmetic(op: Bin, l: &Ex, r: &Ex) -> Ex {
+    let (special, ldec) = l.left();
+    let (a, b) = (l.num(), r.num());
+    let double = match op {
+        Bin::Add => a + b,
+        Bin::Sub => a - b,
+        Bin::Mul => a * b,
+        _ => a / b,
+    };
+    let skip = match op {
+        // `? * anything = ?`
+        Bin::Mul => a.is_nan() || b.is_nan(),
+        // a division by zero is an imprecise double
+        Bin::Div => b == 0.0,
+        _ => false,
+    };
+    if !skip && a.is_finite() && b.is_finite() {
+        if let (Some(x), Some(y)) = (ldec, r.dec.as_ref()) {
+            let d = match op {
+                Bin::Add => x.add(y),
+                Bin::Sub => x.sub(y),
+                Bin::Mul => x.mul(y),
+                _ => x.div(y),
+            };
+            if let Some(d) = d {
+                return Ex::exact(d);
+            }
+        }
+    }
+    Ex::kept(special, double)
+}
+
+/// `MyDouble.round(digits)` and `doRound`: digits that are not whole give
+/// `NaN`; an angle in degrees rounds its degrees; a `MySpecialDouble` with a
+/// decimal uses `setScale(digits, HALF_UP)`; otherwise the double is
+/// rounded and, for a `MySpecialDouble`, made exact (`setPrecise`).
+fn round(special: bool, dec: Option<&Dec>, x: f64, digits: f64, deg: bool) -> Ex {
+    let v = math::round(x, digits, deg);
+    if deg || !math::is_integer(digits) {
+        return Ex::kept(special, v);
+    }
+    if let Some(d) = dec.filter(|_| special) {
+        if let Some(r) = d.set_scale_half_up(i64::from(digits as i32)) {
+            return Ex::exact(r);
+        }
+    }
+    precise(special, v)
+}
+
+/// An object as an operand, with its decimal (see [`Ex`]).
+fn object_ex(c: &Construction, id: Id) -> Ex {
+    let val = object(c, id);
+    if c.kind(id) != Kind::Number {
+        return Ex::plain(val);
+    }
+    let (dec, special) = match c.def(id) {
+        Def::Expr(d) => (super::entry(c, d).dec.clone(), false),
+        Def::Number(_) => {
+            let d = super::free_decimal(c, id).cloned();
+            let special = d.is_some();
+            (d, special)
+        }
+        // `GeoAngle.getNumber()` is a plain number
+        Def::Angle(_) => (super::free_decimal(c, id).cloned(), false),
+        _ => (None, false),
+    };
+    Ex {
+        val,
+        dec,
+        special,
+        obj: true,
     }
 }
 
