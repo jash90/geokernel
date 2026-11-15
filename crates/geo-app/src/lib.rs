@@ -21,6 +21,8 @@ mod tool_icons;
 mod toolbar;
 
 #[cfg(test)]
+mod budget_tests;
+#[cfg(test)]
 mod cull_tests;
 #[cfg(test)]
 mod frame_counts;
