@@ -125,6 +125,18 @@ pub enum ExpectedData {
         b: f64,
         c: f64,
     },
+    /// Vertices in order, area (never negative) and signed area (positive
+    /// counter-clockwise).
+    Polygon {
+        vertices: Vec<(f64, f64)>,
+        area: f64,
+        signed_area: f64,
+    },
+    /// Vertices in order, `None` for an undefined point, and length.
+    PolyLine {
+        vertices: Vec<Option<(f64, f64)>>,
+        length: f64,
+    },
 }
 
 #[derive(Deserialize)]
@@ -133,7 +145,33 @@ struct RawObject {
     ty: String,
     defined: bool,
     #[serde(flatten)]
-    fields: BTreeMap<String, f64>,
+    fields: BTreeMap<String, serde_json::Value>,
+}
+
+/// A number field.
+fn number(name: &str, v: &serde_json::Value) -> Result<f64, String> {
+    v.as_f64()
+        .ok_or_else(|| format!("field `{name}` must be a number, got {v}"))
+}
+
+/// A vertex `[x, y]`; `None` for `null` when `holes` allows it.
+fn vertex(v: &serde_json::Value, holes: bool) -> Result<Option<(f64, f64)>, String> {
+    if v.is_null() && holes {
+        return Ok(None);
+    }
+    match v.as_array().map(Vec::as_slice) {
+        Some([x, y]) => Ok(Some((number("x", x)?, number("y", y)?))),
+        _ => Err(format!("a vertex must be [x, y], got {v}")),
+    }
+}
+
+/// A list of vertices.
+fn vertices(v: &serde_json::Value, holes: bool) -> Result<Vec<Option<(f64, f64)>>, String> {
+    v.as_array()
+        .ok_or_else(|| format!("`vertices` must be a list, got {v}"))?
+        .iter()
+        .map(|p| vertex(p, holes))
+        .collect()
 }
 
 impl TryFrom<RawObject> for Expected {
@@ -148,6 +186,8 @@ impl TryFrom<RawObject> for Expected {
             "number" => (Kind::Number, &["value"]),
             "vector" => (Kind::Vector, &["x", "y"]),
             "ray" => (Kind::Ray, &["x", "y", "a", "b", "c"]),
+            "polygon" => (Kind::Polygon, &["vertices", "area", "signed_area"]),
+            "polyline" => (Kind::PolyLine, &["vertices", "length"]),
             other => return Err(format!("unknown object type `{other}`")),
         };
         if !raw.defined {
@@ -164,7 +204,31 @@ impl TryFrom<RawObject> for Expected {
                 raw.ty
             ));
         }
-        let f = |n: &str| raw.fields[n];
+        if kind == Kind::Polygon {
+            let vertices = vertices(&raw.fields["vertices"], false)?;
+            return Ok(Expected {
+                kind,
+                data: Some(ExpectedData::Polygon {
+                    vertices: vertices.into_iter().flatten().collect(),
+                    area: number("area", &raw.fields["area"])?,
+                    signed_area: number("signed_area", &raw.fields["signed_area"])?,
+                }),
+            });
+        }
+        if kind == Kind::PolyLine {
+            return Ok(Expected {
+                kind,
+                data: Some(ExpectedData::PolyLine {
+                    vertices: vertices(&raw.fields["vertices"], true)?,
+                    length: number("length", &raw.fields["length"])?,
+                }),
+            });
+        }
+        let mut nums = BTreeMap::new();
+        for (name, v) in &raw.fields {
+            nums.insert(name.as_str(), number(name, v)?);
+        }
+        let f = |n: &str| nums[n];
         let data = match kind {
             Kind::Point => ExpectedData::Point {
                 x: f("x"),
@@ -256,12 +320,20 @@ fn validate_case(case: &Case) -> Result<(), String> {
     if labels.len() != case.script.len() {
         return Err("script lines must each define a distinct `label = ...`".into());
     }
+    let polygon = has_polygon_line(&case.script);
     let mut first: Option<BTreeSet<String>> = None;
     for (i, snap) in case.snapshots.iter().enumerate() {
         let keys: BTreeSet<String> = snap.keys().cloned().collect();
         match &first {
             None => {
-                check_keys(&keys, &labels).map_err(|e| format!("snapshot {i}: {e}"))?;
+                // The sides and new vertices of a polygon get labels of
+                // their own (see `golden/SCHEMA.md`).
+                let created = |key: &str| {
+                    polygon
+                        && is_plain_label(key)
+                        && matches!(snap[key].kind, Kind::Point | Kind::Segment)
+                };
+                check_keys(&keys, &labels, created).map_err(|e| format!("snapshot {i}: {e}"))?;
                 first = Some(keys);
             }
             Some(f) if *f != keys => {
@@ -288,10 +360,43 @@ fn indexed_prefix(key: &str) -> Option<&str> {
     (digits && !n.starts_with('0') && !prefix.is_empty() && !prefix.contains('_')).then_some(prefix)
 }
 
+/// Whether a script line runs `Polygon(...)`, which also creates objects
+/// with labels of their own: the sides, and the new vertices of a regular
+/// polygon.
+fn has_polygon_line(script: &[String]) -> bool {
+    script.iter().any(|l| {
+        l.split_once('=')
+            .is_some_and(|(_, rhs)| rhs.trim_start().starts_with("Polygon("))
+    })
+}
+
+/// A label GeoGebra gives on its own: letters, optionally followed by
+/// `_<digits>` or `_{<digits>}`.
+fn is_plain_label(key: &str) -> bool {
+    let (name, index) = match key.split_once('_') {
+        Some((n, i)) => (n, Some(i)),
+        None => (key, None),
+    };
+    let digits = |s: &str| !s.is_empty() && s.bytes().all(|b| b.is_ascii_digit());
+    !name.is_empty()
+        && name.chars().all(char::is_alphabetic)
+        && index.is_none_or(|i| {
+            digits(i)
+                || i.strip_prefix('{')
+                    .and_then(|i| i.strip_suffix('}'))
+                    .is_some_and(digits)
+        })
+}
+
 /// Snapshot keys must match the script labels: each label is either a key
 /// itself, or (for a command with several outputs) is replaced by one or
-/// more keys `<prefix>_{n}`. No other key is allowed.
-fn check_keys(keys: &BTreeSet<String>, labels: &BTreeSet<String>) -> Result<(), String> {
+/// more keys `<prefix>_{n}`. Any other key must be an object created by a
+/// line on its own (`created`).
+fn check_keys(
+    keys: &BTreeSet<String>,
+    labels: &BTreeSet<String>,
+    created: impl Fn(&str) -> bool,
+) -> Result<(), String> {
     let replaced: BTreeSet<&str> = labels
         .iter()
         .filter(|l| !keys.contains(*l))
@@ -303,6 +408,7 @@ fn check_keys(keys: &BTreeSet<String>, labels: &BTreeSet<String>) -> Result<(), 
             Some(p) if replaced.contains(p) => {
                 used.insert(p);
             }
+            _ if created(key) => {}
             _ => return Err(format!("unexpected label `{key}`")),
         }
     }
@@ -449,25 +555,98 @@ mod tests {
         assert!(parse(r#"{"type":"vector","defined":true,"x":1.0,"y":2.0,"z":0.0}"#).is_err());
     }
 
+    fn check_keys_(keys: &BTreeSet<String>, labels: &BTreeSet<String>) -> Result<(), String> {
+        check_keys(keys, labels, |_| false)
+    }
+
+    #[test]
+    fn polygons_and_polylines_carry_lists_of_vertices() {
+        let parse = |json: &str| serde_json::from_str::<Expected>(json);
+        let p = parse(
+            r#"{"type":"polygon","defined":true,"vertices":[[0.0,0.0],[4.0,0.0],[0.0,3.0]],
+                "area":6.0,"signed_area":6.0}"#,
+        )
+        .unwrap();
+        assert_eq!(
+            p.data,
+            Some(ExpectedData::Polygon {
+                vertices: vec![(0.0, 0.0), (4.0, 0.0), (0.0, 3.0)],
+                area: 6.0,
+                signed_area: 6.0
+            })
+        );
+        let l = parse(
+            r#"{"type":"polyline","defined":true,"vertices":[[0.0,0.0],null,[3.0,4.0]],
+                "length":0.0}"#,
+        )
+        .unwrap();
+        assert_eq!(
+            l.data,
+            Some(ExpectedData::PolyLine {
+                vertices: vec![Some((0.0, 0.0)), None, Some((3.0, 4.0))],
+                length: 0.0
+            })
+        );
+        assert_eq!(
+            parse(r#"{"type":"polygon","defined":false}"#).unwrap().kind,
+            Kind::Polygon
+        );
+        for bad in [
+            // a polygon has no holes
+            r#"{"type":"polygon","defined":true,"vertices":[null],"area":0.0,"signed_area":0.0}"#,
+            r#"{"type":"polygon","defined":true,"vertices":[[1.0]],"area":0.0,"signed_area":0.0}"#,
+            r#"{"type":"polygon","defined":true,"vertices":[],"area":0.0}"#,
+            r#"{"type":"polygon","defined":true,"vertices":0.0,"area":0.0,"signed_area":0.0}"#,
+            r#"{"type":"polyline","defined":true,"vertices":[[0.0,"x"]],"length":0.0}"#,
+            r#"{"type":"point","defined":true,"x":[0.0],"y":0.0}"#,
+        ] {
+            assert!(parse(bad).is_err(), "accepted: {bad}");
+        }
+    }
+
+    #[test]
+    fn polygon_lines_allow_the_labels_of_sides_and_vertices() {
+        let file = |script: &str, extra: &str| {
+            format!(
+                r#"{{"schema":1,"generator":"g","upstream_commit":null,
+                  "cases":[{{"id":"x","group":"g","script":["A = (0, 0)",{script}],
+                  "steps":[{{"action":"initial"}}],
+                  "snapshots":[{{"A":{{"type":"point","defined":true,"x":0.0,"y":0.0}},
+                    "p":{{"type":"polygon","defined":false}},{extra}}}]}}]}}"#
+            )
+        };
+        let side = r#""a_1":{"type":"segment","defined":false}"#;
+        let point = r#""C":{"type":"point","defined":false}"#;
+        let number = r#""n":{"type":"number","defined":false}"#;
+        let odd = r#""a_x":{"type":"segment","defined":false}"#;
+        let polygon = r#""p = Polygon(A, A)""#;
+        let other = r#""p = PolyLine(A, A)""#;
+        assert!(parse_file(&file(polygon, side), "t").is_ok());
+        assert!(parse_file(&file(polygon, point), "t").is_ok());
+        assert!(parse_file(&file(polygon, number), "t").is_err());
+        assert!(parse_file(&file(polygon, odd), "t").is_err());
+        assert!(parse_file(&file(other, side), "t").is_err());
+    }
+
     fn set(items: &[&str]) -> BTreeSet<String> {
         items.iter().map(|s| s.to_string()).collect()
     }
 
     #[test]
     fn plain_labels_are_accepted() {
-        assert!(check_keys(&set(&["A", "c", "t"]), &set(&["A", "c", "t"])).is_ok());
+        assert!(check_keys_(&set(&["A", "c", "t"]), &set(&["A", "c", "t"])).is_ok());
     }
 
     #[test]
     fn indexed_outputs_replace_their_label() {
         let labels = set(&["P", "c", "t"]);
-        assert!(check_keys(&set(&["P", "c", "t_{1}", "t_{2}"]), &labels).is_ok());
-        assert!(check_keys(&set(&["P", "c", "t_{1}"]), &labels).is_ok());
+        assert!(check_keys_(&set(&["P", "c", "t_{1}", "t_{2}"]), &labels).is_ok());
+        assert!(check_keys_(&set(&["P", "c", "t_{1}"]), &labels).is_ok());
         let labels = set(&["P", "c", "b_1", "b"]);
-        assert!(check_keys(&set(&["P", "c", "b_1", "b_{2}", "b_{3}"]), &labels).is_ok());
+        assert!(check_keys_(&set(&["P", "c", "b_1", "b_{2}", "b_{3}"]), &labels).is_ok());
         // A label that is itself a key keeps it; `t_{1}` written in the
         // script is a plain label.
-        assert!(check_keys(&set(&["t_{1}"]), &set(&["t_{1}"])).is_ok());
+        assert!(check_keys_(&set(&["t_{1}"]), &set(&["t_{1}"])).is_ok());
     }
 
     #[test]
@@ -484,7 +663,7 @@ mod tests {
             &["P", "c", "t_{x}"],
         ] {
             assert!(
-                check_keys(&set(keys), &labels).is_err(),
+                check_keys_(&set(keys), &labels).is_err(),
                 "accepted {keys:?}"
             );
         }
@@ -492,9 +671,9 @@ mod tests {
 
     #[test]
     fn indexed_keys_need_a_matching_script_label() {
-        assert!(check_keys(&set(&["P", "c", "s_{1}"]), &set(&["P", "c", "t"])).is_err());
+        assert!(check_keys_(&set(&["P", "c", "s_{1}"]), &set(&["P", "c", "t"])).is_err());
         // Both labels are present, so nothing was replaced.
-        assert!(check_keys(&set(&["P", "c", "c_{1}"]), &set(&["P", "c"])).is_err());
+        assert!(check_keys_(&set(&["P", "c", "c_{1}"]), &set(&["P", "c"])).is_err());
     }
 
     #[test]

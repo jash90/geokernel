@@ -55,9 +55,33 @@ pub fn line_scale_agrees(expected: &Expected, actual: &Value) -> Option<bool> {
     Some(close(*a, x) && close(*b, y) && close(*c, z))
 }
 
-/// Compares one recorded object with what the kernel holds.
-/// `kind` is the kernel's kind of the object (valid even when undefined).
+/// Compares one recorded object with what the kernel holds, for objects
+/// without vertices (see [`compare_object`]).
 pub fn compare(expected: &Expected, kind: Kind, actual: &Value) -> Result<Sign, String> {
+    compare_object(expected, kind, actual, &[])
+}
+
+/// Whether two lists of vertices agree: same length, and each vertex
+/// undefined on both sides or agreeing in both coordinates.
+fn vertices_agree(expected: &[Option<(f64, f64)>], actual: &[Option<(f64, f64)>]) -> bool {
+    expected.len() == actual.len()
+        && expected.iter().zip(actual).all(|(e, a)| match (e, a) {
+            (None, None) => true,
+            (Some((x, y)), Some((ax, ay))) => all_agree(&[(*x, *ax), (*y, *ay)]),
+            _ => false,
+        })
+}
+
+/// Compares one recorded object with what the kernel holds.
+/// `kind` is the kernel's kind of the object (valid even when undefined);
+/// `vertices` are the kernel's vertices of a polygon or polyline
+/// (`Construction::vertices`), empty for other objects.
+pub fn compare_object(
+    expected: &Expected,
+    kind: Kind,
+    actual: &Value,
+    vertices: &[Option<(f64, f64)>],
+) -> Result<Sign, String> {
     if expected.kind != kind {
         return Err(format!(
             "type mismatch: expected {}, got {kind}",
@@ -149,6 +173,38 @@ pub fn compare(expected: &Expected, kind: Kind, actual: &Value) -> Result<Sign, 
                 Err("ray points the opposite way".into())
             } else {
                 Err("ray lies on a different line".into())
+            }
+        }
+        (
+            ExpectedData::Polygon {
+                vertices: ev,
+                area,
+                signed_area,
+            },
+            Value::Polygon { area: signed },
+        ) => {
+            let ev: Vec<_> = ev.iter().copied().map(Some).collect();
+            if !all_agree(&[(*area, signed.abs()), (*signed_area, signed)]) {
+                Err("areas differ".into())
+            } else if !vertices_agree(&ev, vertices) {
+                Err(format!("vertices differ: kernel has {vertices:?}"))
+            } else {
+                Ok(Sign::NotApplicable)
+            }
+        }
+        (
+            ExpectedData::PolyLine {
+                vertices: ev,
+                length,
+            },
+            Value::PolyLine { length: al },
+        ) => {
+            if !numbers_agree(*length, al) {
+                Err("lengths differ".into())
+            } else if !vertices_agree(ev, vertices) {
+                Err(format!("vertices differ: kernel has {vertices:?}"))
+            } else {
+                Ok(Sign::NotApplicable)
             }
         }
         _ => Err("kernel value has a different shape than its kind".into()),
@@ -365,5 +421,47 @@ mod tests {
         };
         assert!(compare(&e, Kind::Segment, &same).is_ok());
         assert!(compare(&e, Kind::Segment, &swapped).is_err());
+    }
+
+    #[test]
+    fn polygons_compare_areas_and_vertices_in_order() {
+        let e = Expected {
+            kind: Kind::Polygon,
+            data: Some(ExpectedData::Polygon {
+                vertices: vec![(0.0, 0.0), (4.0, 0.0), (0.0, 3.0)],
+                area: 6.0,
+                signed_area: 6.0,
+            }),
+        };
+        let v = |pts: &[(f64, f64)]| pts.iter().copied().map(Some).collect::<Vec<_>>();
+        let ccw = v(&[(0.0, 0.0), (4.0, 0.0), (0.0, 3.0)]);
+        let poly = |area| Value::Polygon { area };
+        assert!(compare_object(&e, Kind::Polygon, &poly(6.0), &ccw).is_ok());
+        // the sign of the area counts
+        assert!(compare_object(&e, Kind::Polygon, &poly(-6.0), &ccw).is_err());
+        // order and number of the vertices count
+        let turned = v(&[(4.0, 0.0), (0.0, 3.0), (0.0, 0.0)]);
+        assert!(compare_object(&e, Kind::Polygon, &poly(6.0), &turned).is_err());
+        assert!(compare_object(&e, Kind::Polygon, &poly(6.0), &ccw[..2]).is_err());
+        // without vertices, a polygon never agrees
+        assert!(compare(&e, Kind::Polygon, &poly(6.0)).is_err());
+    }
+
+    #[test]
+    fn polylines_compare_holes() {
+        let e = Expected {
+            kind: Kind::PolyLine,
+            data: Some(ExpectedData::PolyLine {
+                vertices: vec![Some((0.0, 0.0)), None, Some((3.0, 4.0))],
+                length: 0.0,
+            }),
+        };
+        let line = Value::PolyLine { length: 0.0 };
+        let holed = [Some((0.0, 0.0)), None, Some((3.0, 4.0))];
+        let filled = [Some((0.0, 0.0)), Some((1.0, 1.0)), Some((3.0, 4.0))];
+        assert!(compare_object(&e, Kind::PolyLine, &line, &holed).is_ok());
+        assert!(compare_object(&e, Kind::PolyLine, &line, &filled).is_err());
+        let longer = Value::PolyLine { length: 5.0 };
+        assert!(compare_object(&e, Kind::PolyLine, &longer, &holed).is_err());
     }
 }

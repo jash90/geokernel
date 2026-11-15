@@ -29,6 +29,7 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/parser/function/ParserFunctionsFactory.java
 //   source/shared/common/src/main/java/org/geogebra/common/util/DoubleUtil.java
 //   source/shared/common/src/main/java/org/geogebra/common/util/MyMath.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/matrix/Coords.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
@@ -50,7 +51,7 @@
 //! labels them (see [`exec`]). Like every command that creates several
 //! objects, the set of objects is fixed when the line runs.
 
-use super::measure::{angle_of_points, my_length, segment_length};
+use super::measure::{angle_of_points, segment_length};
 use super::{Group, Parents, NUMBER, POINT};
 use crate::kernel::{Construction, Def, Error, Id, IdList, Kind, Value};
 use crate::script::{index_label, object, split_call};
@@ -488,7 +489,10 @@ impl Group for PolygonDef {
                 let mut length = 0.0;
                 for pair in ids.windows(2) {
                     if let (Some(p), Some(q)) = (c.point(pair[0]), c.point(pair[1])) {
-                        length += my_length(q.0 - p.0, q.1 - p.1);
+                        // `GeoPointND.distance`: the norm of the difference
+                        // of the 3D coordinates (`Coords.distance`).
+                        let (dx, dy) = (p.0 - q.0, p.1 - q.1);
+                        length += (dx * dx + dy * dy).sqrt();
                     }
                 }
                 Some(Value::PolyLine { length })

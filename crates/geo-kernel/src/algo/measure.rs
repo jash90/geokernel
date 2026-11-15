@@ -92,7 +92,7 @@ fn is_equal(a: f64, b: f64) -> bool {
 }
 
 /// GeoGebra's `MyMath.length`: no overflow, no underflow.
-pub(crate) fn my_length(x: f64, y: f64) -> f64 {
+fn my_length(x: f64, y: f64) -> f64 {
     let (ax, ay) = (x.abs(), y.abs());
     if ax == 0.0 {
         ay
