@@ -23,7 +23,7 @@
 //! t = Tangent(P, k)       # two tangents t_{1} and t_{2} when both are defined at creation
 //! {t_{1}, t_{2}} = Tangent(P, k)   # the same, with the output labels stated
 //! {, g} = AngularBisector(l, m)    # only the second output is created, as `g`
-//! t_{1} = (1, 2)         # a label may have the indexed form `prefix_{digits}`
+//! t_{1} = (1, 2)         # a label may have the indexed form `prefix_{letters, digits}`
 //! a = $point(1, 2)        # a free point whose label starts with a lower-case letter
 //! B = $vector(1, 2)       # a free vector whose label starts with an upper-case letter
 //! ```
@@ -483,16 +483,28 @@ fn split_slots(s: &str) -> Vec<&str> {
     slots
 }
 
-/// A label for an output slot: an identifier, or `prefix_{digits}`.
+/// A label for an output slot or a plain line: an identifier, or the indexed
+/// form `prefix_{inner}` where `inner` is one or more letters, digits, `_` or
+/// `'` (`t_{1}`, `v_{max}`).
 fn is_output_label(s: &str) -> bool {
     match s.strip_suffix('}').and_then(|t| t.split_once("_{")) {
-        Some((prefix, digits)) => {
+        Some((prefix, inner)) => {
             is_identifier(prefix)
-                && !digits.is_empty()
-                && digits.bytes().all(|b| b.is_ascii_digit())
+                && !inner.is_empty()
+                && inner
+                    .chars()
+                    .all(|ch| ch.is_alphanumeric() || ch == '_' || ch == '\'')
         }
         None => is_identifier(s),
     }
+}
+
+/// Whether `rhs` (`Command(args)`) is a command that creates several objects
+/// and, if so, how many of them the kernel makes now (or why it cannot). `None`
+/// for a command that creates one object, and for anything that is not a call.
+/// A saved file uses it to choose between `name = ...` and `{a, b} = ...`.
+pub fn multi_output_count(c: &Construction, rhs: &str) -> Option<Result<usize, String>> {
+    parse_multi(c, rhs.trim()).map(|r| r.map(|defs| defs.len()))
 }
 
 /// `{t_{1}, t_{2}} = Tangent(P, k)`: names the outputs of a command that

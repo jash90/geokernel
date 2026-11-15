@@ -91,6 +91,12 @@ fn forced_forms_and_indexed_labels() {
     );
     assert_eq!(c.kind(c.id("t_{1}").unwrap()), Kind::Vector);
     assert_eq!(c.kind(c.id("T_{12}").unwrap()), Kind::Point);
+    let c = load("v_{max} = (1, 2)\nP_{ab'} = (1, 1)\n").unwrap();
+    assert!(c.id("v_{max}").is_some() && c.id("P_{ab'}").is_some());
+    let c = load("{u_{a}, w_{b}} = Tangent(P, k)\n");
+    assert!(c.is_err()); // P and k do not exist here
+    let c = load(&format!("{BASE}{{u_{{a}}, w_{{b}}}} = Tangent(P, k)\nV_{{max}} = Midpoint(A, B)\n")).unwrap();
+    assert!(c.id("u_{a}").is_some() && c.id("V_{max}").is_some());
     // a lower-case point is usable in constructions
     let c =
         load("p = $point(0, 0)\nq = $point(4, 0)\nM = Midpoint(p, q)\nl = Line(p, q)\n").unwrap();
@@ -98,7 +104,8 @@ fn forced_forms_and_indexed_labels() {
     for bad in [
         "t_{ = (1, 1)",
         "t_{} = (1, 1)",
-        "t_{a} = (1, 1)",
+        "t_{a,b} = (1, 1)",
+        "t_{a b} = (1, 1)",
         "_{1} = (1, 1)",
         "t_{1}x = (1, 1)",
     ] {
