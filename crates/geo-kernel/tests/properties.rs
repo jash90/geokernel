@@ -1524,7 +1524,7 @@ fn circle_intersections_survive_a_rebuild_from_definitions() {
 
 struct Snapshot {
     labels: Vec<String>,
-    values: Vec<Value>,
+    values: Vec<Snap>,
     defs: Vec<Def>,
 }
 
@@ -1895,7 +1895,7 @@ fn every_command_with_every_argument_kind() {
                         if c.len() != len
                             || c.ids()
                                 .take(base)
-                                .map(|id| c.value(id))
+                                .map(|id| snap(&c, id))
                                 .ne(base_values.iter().copied())
                         {
                             problems.push(format!(
