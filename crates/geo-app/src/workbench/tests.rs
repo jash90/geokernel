@@ -299,3 +299,22 @@ fn cancelling_a_gesture_restores_the_state_and_leaves_no_undo_step() {
     );
     assert!(!w.can_undo());
 }
+
+#[test]
+fn a_number_set_to_any_value_keeps_the_tangent_labels_through_undo_and_redo() {
+    let script =
+        "A = (0, 0)\nr = 2\nk = Circle(A, r)\nP = (5, 0)\nt = Tangent(P, k)\nQ = (-4, 3)\n";
+    let mut w = Workbench::from_script(script).unwrap();
+    let r = w.construction().id("r").unwrap();
+    assert!(w.set_number(r, 6.0));
+    let state = labels(&w);
+    assert_eq!(state, ["A", "r", "k", "P", "t_{1}", "t_{2}", "Q"]);
+    let q = w.construction().id("Q").unwrap();
+    assert!(w.delete(q));
+    assert!(w.undo());
+    assert!(w.undo());
+    assert!(w.redo());
+    assert!(w.redo());
+    assert_eq!(labels(&w), ["A", "r", "k", "P", "t_{1}", "t_{2}"]);
+    assert!(w.notice.is_none());
+}

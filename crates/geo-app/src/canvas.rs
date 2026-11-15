@@ -89,7 +89,12 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         app.drag = None;
         app.panning = false;
         if move_tool && response.dragged_by(egui::PointerButton::Primary) {
-            if let Some(pos) = response.interact_pointer_pos() {
+            // egui reports the drag a few pixels after the press: grab what
+            // was under the pointer when the button went down.
+            let origin = ui
+                .input(|i| i.pointer.press_origin())
+                .or(response.interact_pointer_pos());
+            if let Some(pos) = origin {
                 let (sx, sy) = to_local(pos);
                 app.drag = Drag::begin(app.wb.construction(), &t, sx, sy, free_radius, |id| {
                     app.wb.is_visible(id)

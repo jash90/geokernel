@@ -368,14 +368,78 @@ fn one_tangent_keeps_its_label_when_the_point_is_dragged_around_inside() {
     );
 }
 
+fn is_undefined(h: &Harness<'_, App>, label: &str) -> bool {
+    let c = h.state().wb.construction();
+    matches!(c.value(c.id(label).unwrap()), Value::Undefined)
+}
+
+fn p_at(h: &Harness<'_, App>) -> (f64, f64) {
+    let c = h.state().wb.construction();
+    let Value::Point { x, y } = c.value(c.id("P").unwrap()) else {
+        panic!("P is not a point");
+    };
+    (x, y)
+}
+
+/// Everything the user can see of the construction.
+fn snapshot(h: &Harness<'_, App>) -> Vec<(String, String)> {
+    let c = h.state().wb.construction();
+    c.ids()
+        .map(|id| (c.label(id).to_owned(), format!("{:?}", c.value(id))))
+        .collect()
+}
+
 #[test]
-fn a_drag_that_would_change_the_tangents_is_refused_and_labels_stay() {
+fn dragging_into_the_circle_undefines_both_tangents_and_they_come_back() {
+    let all = ["A", "r", "k", "P", "t_{1}", "t_{2}", "Q"];
     let mut h = harness(TANGENTS);
+    // A fast drag: the first pointer move is already far from the point.
     drag(&mut h, world(5.0, 0.0), world(1.0, 0.0));
-    assert_eq!(labels(&h), ["A", "r", "k", "P", "t_{1}", "t_{2}", "Q"]);
-    assert!(point_x(&h, "P") > 2.0, "P stays outside the circle");
+    assert_eq!(labels(&h), all);
+    let (x, y) = p_at(&h);
+    assert!((x - 1.0).abs() < 1e-6 && y.abs() < 1e-6, "{x} {y}");
+    assert!(is_undefined(&h, "t_{1}") && is_undefined(&h, "t_{2}"));
+    let state = snapshot(&h);
+    // An unrelated delete, then undo and redo, reproduce exactly that state.
+    let q = h.state().wb.construction().id("Q").unwrap();
+    assert!(h.state_mut().wb.delete(q));
+    assert!(is_undefined(&h, "t_{1}"));
     undo(&mut h);
-    assert_eq!(labels(&h), ["A", "r", "k", "P", "t_{1}", "t_{2}", "Q"]);
+    assert_eq!(snapshot(&h), state);
+    undo(&mut h);
+    assert_eq!(p_at(&h), (5.0, 0.0));
+    assert!(!is_undefined(&h, "t_{1}"));
+    redo(&mut h);
+    assert_eq!(snapshot(&h), state);
+    assert!(h.state().wb.notice.is_none());
+    // Dragging back out brings both tangents back under the same labels.
+    drag(&mut h, world(1.0, 0.0), world(6.0, 1.0));
+    assert_eq!(labels(&h), all);
+    assert!(!is_undefined(&h, "t_{1}") && !is_undefined(&h, "t_{2}"));
+}
+
+#[test]
+fn a_single_tangent_stays_one_object_when_the_point_moves_outside() {
+    let script = TANGENTS.replace("(5, 0)", "(1, 0)");
+    let all = ["A", "r", "k", "P", "t", "Q"];
+    let mut h = harness(&script);
+    assert!(is_undefined(&h, "t"));
+    drag(&mut h, world(1.0, 0.0), world(5.0, 0.0));
+    assert_eq!(labels(&h), all, "no new object appears");
+    assert!(!is_undefined(&h, "t"));
+    let state = snapshot(&h);
+    let q = h.state().wb.construction().id("Q").unwrap();
+    assert!(h.state_mut().wb.delete(q));
+    undo(&mut h);
+    assert_eq!(snapshot(&h), state);
+    undo(&mut h);
+    assert!(is_undefined(&h, "t"));
+    redo(&mut h);
+    assert_eq!(snapshot(&h), state);
+    drag(&mut h, world(5.0, 0.0), world(1.0, 0.0));
+    assert_eq!(labels(&h), all);
+    assert!(is_undefined(&h, "t"));
+    assert!(h.state().wb.notice.is_none());
 }
 
 #[test]
