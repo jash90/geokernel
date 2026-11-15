@@ -2,6 +2,8 @@
 //! hovers, a finger is wide and does not. One profile is chosen when the
 //! window starts and read by reference afterwards.
 
+use crate::style;
+
 /// The sizes of one input profile, in points (egui's unit, about one
 /// density-independent pixel on a phone).
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -46,8 +48,7 @@ impl Metrics {
             click_time: 0.8,
             point_radius: 11.0,
             curve_radius: 7.0,
-            // The drawn radius of a free point (5) plus 6.
-            grab_radius: 11.0,
+            grab_radius: style::FREE_POINT_RADIUS as f64 + 6.0,
             hover: true,
             toolbar_height: 52.0,
             toolbar_button: 40.0,
@@ -88,6 +89,22 @@ impl Default for Metrics {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_desktop_profile_keeps_the_sizes_the_window_always_had() {
+        let d = Metrics::desktop();
+        assert_eq!(
+            (d.point_radius, d.curve_radius, d.grab_radius),
+            (11.0, 7.0, 11.0)
+        );
+        assert_eq!((d.drag_slop, d.click_time), (6.0, 0.8));
+        assert_eq!(
+            (d.toolbar_height, d.toolbar_button, d.toolbar_pitch),
+            (52.0, 40.0, 45.0)
+        );
+        assert_eq!((d.algebra_width, d.keyboard_height), (380.0, 222.0));
+        assert!(d.hover);
+    }
 
     #[test]
     fn touch_targets_are_larger_than_mouse_ones() {

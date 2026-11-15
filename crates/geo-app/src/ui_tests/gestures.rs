@@ -4,6 +4,7 @@
 //! pans. These pin the behaviour of a mouse on the desktop.
 
 use super::*;
+use crate::geom::ToEgui;
 use geo_app_core::metrics::Metrics;
 
 /// Runs one frame at `time` seconds with `events`.
@@ -288,4 +289,174 @@ fn a_second_finger_puts_a_dragged_point_back_and_pinches_the_view() {
         h.state().camera.unwrap().scale > scale * 1.05,
         "the view zoomed in"
     );
+}
+
+/// Runs one frame with `events`.
+fn frame(h: &mut Harness<'_, App>, events: Vec<Event>) {
+    h.input_mut().events.extend(events);
+    h.step();
+}
+
+/// The events of one touch in egui-winit's order: the touch, then for the
+/// first finger (`primary`) the pointer events it emulates.
+fn finger(id: u64, phase: egui::TouchPhase, pos: Pos2, primary: bool) -> Vec<Event> {
+    use egui::TouchPhase::{Cancel, End, Move, Start};
+    let mut events = vec![Event::Touch {
+        device_id: egui::TouchDeviceId(1),
+        id: egui::TouchId(id),
+        phase,
+        pos,
+        force: None,
+    }];
+    if primary {
+        match phase {
+            Start => events.extend([
+                Event::PointerMoved(pos),
+                press(pos, PointerButton::Primary, true),
+            ]),
+            Move => events.push(Event::PointerMoved(pos)),
+            End => events.extend([
+                press(pos, PointerButton::Primary, false),
+                Event::PointerGone,
+            ]),
+            Cancel => events.push(Event::PointerGone),
+        }
+    }
+    events
+}
+
+/// Where the world point `(x, y)` is drawn now.
+fn drawn_at(h: &Harness<'_, App>, x: f64, y: f64) -> Pos2 {
+    let (rect, t) = h.state().view.unwrap();
+    let (sx, sy) = t.world_to_screen(x, y);
+    rect.min.egui() + egui::vec2(sx as f32, sy as f32)
+}
+
+fn camera(h: &Harness<'_, App>) -> (f64, f64, f64) {
+    let c = h.state().camera.unwrap();
+    (c.cx, c.cy, c.scale)
+}
+
+#[test]
+fn a_release_and_a_press_in_one_frame_end_the_drag_and_start_a_new_press() {
+    let mut h = harness("A = (0, 0)\n");
+    let from = world(0.0, 0.0);
+    moved(&mut h, from);
+    button(&mut h, from, true);
+    let to = from + egui::vec2(100.0, 0.0);
+    for i in 1..=5 {
+        moved(&mut h, from + (to - from) * (i as f32 / 5.0));
+    }
+    // The release of the drag and a press on empty space in one frame.
+    let empty = world(-6.0, 4.0);
+    frame(
+        &mut h,
+        vec![
+            press(to, PointerButton::Primary, false),
+            Event::PointerMoved(empty),
+            press(empty, PointerButton::Primary, true),
+        ],
+    );
+    assert_eq!(point(&h, "A").0, 2.0, "the drag ended where it was");
+    let cam = camera(&h);
+    for i in 1..=5 {
+        moved(&mut h, empty + egui::vec2(20.0 * i as f32, 0.0));
+    }
+    button(&mut h, empty + egui::vec2(100.0, 0.0), false);
+    h.run();
+    assert_ne!(camera(&h).0, cam.0, "the second press panned the view");
+    assert_eq!(point(&h, "A").0, 2.0);
+    // The drag of A is one undo step of its own.
+    undo(&mut h);
+    assert_eq!(point(&h, "A").0, 0.0);
+    assert!(!h.state().wb.can_undo());
+}
+
+#[test]
+fn a_press_on_the_toolbar_right_after_a_click_in_the_drawing_is_not_the_drawings() {
+    let mut h = harness("");
+    h.state_mut().select_tool(Tool::Point);
+    h.run();
+    let spot = world(1.0, 1.0);
+    moved(&mut h, spot);
+    button(&mut h, spot, true);
+    // The click's release and a press on a tool group button in one frame.
+    let group = group_button(0);
+    frame(
+        &mut h,
+        vec![
+            press(spot, PointerButton::Primary, false),
+            Event::PointerMoved(group),
+            press(group, PointerButton::Primary, true),
+        ],
+    );
+    let cam = camera(&h);
+    // Held and dragged down over the drawing: the drawing does not pan.
+    for i in 1..=6 {
+        moved(&mut h, group + egui::vec2(0.0, 40.0 * i as f32));
+    }
+    button(&mut h, group + egui::vec2(0.0, 240.0), false);
+    h.run();
+    assert_eq!(labels(&h), ["A"], "the click placed one point");
+    assert_eq!(point(&h, "A"), (1.0, 1.0));
+    assert_eq!(camera(&h), cam, "the press on the toolbar panned nothing");
+}
+
+#[test]
+fn after_a_pinch_the_finger_that_stays_neither_drags_nor_pans() {
+    use egui::TouchPhase::{End, Move, Start};
+    for first_lifts in [false, true] {
+        let mut h = touch_harness("A = (0, 0)\nB = (3, 1)\n", SIZE);
+        // The first finger on A, the second one far from it.
+        let mut f0 = drawn_at(&h, 0.0, 0.0);
+        frame(&mut h, finger(0, Start, f0, true));
+        let mut f1 = f0 + egui::vec2(0.0, 150.0);
+        frame(&mut h, finger(1, Start, f1, false));
+        for _ in 0..4 {
+            f0 += egui::vec2(0.0, -10.0);
+            f1 += egui::vec2(0.0, 10.0);
+            let mut events = finger(0, Move, f0, true);
+            events.extend(finger(1, Move, f1, false));
+            frame(&mut h, events);
+        }
+        // One finger lifts; the other one moves on, far.
+        let mut stays = if first_lifts {
+            frame(&mut h, finger(0, End, f0, true));
+            (1, f1, false)
+        } else {
+            frame(&mut h, finger(1, End, f1, false));
+            (0, f0, true)
+        };
+        h.run();
+        let cam = camera(&h);
+        for _ in 0..6 {
+            stays.1 += egui::vec2(25.0, 10.0);
+            frame(&mut h, finger(stays.0, Move, stays.1, stays.2));
+        }
+        frame(&mut h, finger(stays.0, End, stays.1, stays.2));
+        h.run();
+        let what = format!("first lifts: {first_lifts}");
+        assert_eq!(camera(&h), cam, "{what}: the finger that stayed panned");
+        assert_eq!(point(&h, "A"), (0.0, 0.0), "{what}: A moved");
+        assert!(!h.state().wb.can_undo(), "{what}");
+        assert_eq!(labels(&h), ["A", "B"], "{what}");
+    }
+}
+
+#[test]
+fn a_cancelled_touch_puts_the_dragged_point_back() {
+    use egui::TouchPhase::{Cancel, Move, Start};
+    let mut h = touch_harness("A = (0, 0)\n", SIZE);
+    let mut f = drawn_at(&h, 0.0, 0.0);
+    frame(&mut h, finger(4, Start, f, true));
+    for _ in 0..4 {
+        f += egui::vec2(15.0, 0.0);
+        frame(&mut h, finger(4, Move, f, true));
+    }
+    assert!(point(&h, "A").0 > 0.5, "the drag moved A");
+    frame(&mut h, finger(4, Cancel, f, true));
+    h.run();
+    assert_eq!(point(&h, "A"), (0.0, 0.0), "A is back");
+    assert!(!h.state().wb.can_undo(), "no undo step is left");
+    assert!(h.state().drag.is_none() && !h.state().gesture.pressed());
 }

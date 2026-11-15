@@ -15,14 +15,21 @@
 //!   that long, and it was made with the primary button;
 //! - a drag follows the pointer every frame; a pan moves by the pointer's
 //!   movement since the previous frame (so the slop itself is not panned);
-//! - the release frame ends the drag without applying its last movement.
+//! - the release frame ends the drag without applying its last movement;
+//! - the pointer leaving the window does not end a press (a captured mouse
+//!   keeps reporting moves outside it), but its position is forgotten, so a
+//!   pan does not jump by the way back in.
 //!
 //! On top of that: a second pointer going down, or a pinch, turns the press
 //! into a pinch that never moves a point (a point drag in progress is
-//! cancelled and the point goes back), and `Cancel` ends the press and puts
-//! a dragged point back.
+//! cancelled and the point goes back); a cancel of the pointer, or the window
+//! losing focus, ends the press and puts a dragged point back; and a press
+//! of the same button while one is held (its release was lost) ends the old
+//! press the same way before it starts.
 //!
 //! A frame is `begin_frame`, the frame's events in order, then `end_frame`.
+//! Each event is decided when it comes, so a release and a new press in one
+//! frame end the old drag and start the new press in that order.
 
 use crate::geom::Point;
 use crate::metrics::Metrics;
@@ -33,6 +40,11 @@ pub type PointerId = u64;
 /// The id of the mouse (and of the first finger, which the platform layer
 /// reports as the mouse).
 pub const MOUSE: PointerId = 0;
+
+/// The id of a finger other than the first one, from the platform's touch id.
+fn finger(touch: u64) -> PointerId {
+    touch | 1 << 63
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Button {
@@ -57,8 +69,24 @@ pub enum Event {
         id: PointerId,
         button: Button,
     },
-    /// The platform took the pointer away (a cancelled touch): the press
+    /// The platform took this pointer away (a cancelled touch): its press
     /// ends without a tap and a dragged point goes back.
+    Cancel {
+        id: PointerId,
+    },
+    /// The pointer left the window. A held press goes on; the position is
+    /// unknown until the pointer moves again.
+    Gone,
+    /// The window lost the focus: a held press ends as with `Cancel`.
+    FocusLost,
+}
+
+/// The phase of a touch, as the platform reports it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TouchPhase {
+    Start,
+    Move,
+    End,
     Cancel,
 }
 
@@ -73,19 +101,20 @@ pub enum Grab {
     Nothing,
 }
 
-/// What a frame asks the caller to do, in this order.
+/// What a frame asks the caller to do, in this order: put back or end the
+/// drag that ended, start the new one, follow the pointer, pan, tap.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Intents {
     /// Put a dragged point back where the drag started.
     pub cancel_drag: bool,
+    /// The drag ended (the point stays where it is).
+    pub end_drag: bool,
     /// A drag started this frame and took hold of this.
     pub started: Option<Grab>,
     /// Move the dragged point to follow the pointer, now here.
     pub drag_to: Option<Point>,
     /// Pan the view by this many points.
     pub pan: Option<(f32, f32)>,
-    /// The drag ended (the point stays where it is).
-    pub end_drag: bool,
     /// A tap here: a tool picks what is under it, or places something.
     pub tap: Option<Point>,
 }
@@ -145,8 +174,8 @@ pub struct Gesture {
     /// What the press is doing once it is a drag (or a pinch).
     mode: Option<Mode>,
     pressed_now: bool,
-    /// The press ended this frame: `Some(true)` when the release is a tap.
-    released_now: Option<bool>,
+    /// The touch id of the finger that the platform reports as the mouse.
+    primary_finger: Option<u64>,
     /// Intents decided by events, handed out by `end_frame`.
     pending: Intents,
 }
@@ -166,7 +195,7 @@ impl Gesture {
             press: None,
             mode: None,
             pressed_now: false,
-            released_now: None,
+            primary_finger: None,
             pending: Intents::default(),
         }
     }
@@ -186,31 +215,26 @@ impl Gesture {
         self.time = time;
         self.frame_start = self.latest;
         self.pressed_now = false;
-        self.released_now = None;
     }
 
     pub fn event(&mut self, event: Event) {
         match event {
             Event::Down { pos, id, button } => match self.press {
                 Some(p) if p.id != id => self.start_pinch(),
-                // Another button of the same mouse: the first press goes on.
-                Some(_) => {}
-                None => {
-                    self.latest = Some(pos);
-                    self.press = Some(Press {
-                        id,
-                        button,
-                        origin: pos,
-                        start: self.time,
-                        moved: false,
-                        no_drag: false,
-                    });
-                    self.pressed_now = true;
-                    self.mode = None;
+                // Another button of the same mouse: the first press goes on,
+                // as in egui (the first release of either ends it).
+                Some(p) if p.button != button => {}
+                // The release of the held press never came.
+                Some(_) => {
+                    self.abort();
+                    self.begin(pos, id, button);
                 }
+                None => self.begin(pos, id, button),
             },
             Event::Move { pos, id } => {
-                if self.press.is_some_and(|p| p.id != id) {
+                // Only the pointer of the press moves it; with no press, only
+                // the mouse (the first finger) has a position worth keeping.
+                if self.press.map_or(id != MOUSE, |p| p.id != id) {
                     return;
                 }
                 self.latest = Some(pos);
@@ -220,7 +244,9 @@ impl Gesture {
             }
             Event::Up { pos, id, button } => {
                 let Some(p) = self.press else {
-                    self.latest = Some(pos);
+                    if id == MOUSE {
+                        self.latest = Some(pos);
+                    }
                     return;
                 };
                 if p.id != id {
@@ -234,17 +260,103 @@ impl Gesture {
                     && !long
                     && button == Button::Primary
                     && self.mode != Some(Mode::Pinch);
-                self.released_now = Some(tap);
-                self.press = None;
-            }
-            Event::Cancel => {
-                if self.mode == Some(Mode::Point) {
-                    self.pending.cancel_drag = true;
+                if matches!(self.mode, Some(Mode::Point | Mode::Pan | Mode::Inert)) {
+                    self.pending.end_drag = true;
+                }
+                if tap {
+                    self.pending.tap = Some(pos);
                 }
                 self.mode = None;
                 self.press = None;
             }
+            Event::Cancel { id } => {
+                if self.press.is_some_and(|p| p.id == id) {
+                    self.abort();
+                    self.forget_position();
+                }
+            }
+            Event::Gone => self.forget_position(),
+            Event::FocusLost => {
+                self.abort();
+                self.forget_position();
+            }
         }
+    }
+
+    /// A touch of the finger with the platform's id `touch`. The platform
+    /// layer also reports the first finger down as the mouse (egui-winit
+    /// sends its pointer events right after the touch event), so that
+    /// finger's touches count only for a cancel, which the mouse events do
+    /// not carry. Any other finger is a pointer of its own; it matters only
+    /// while a press is held, which it turns into a pinch.
+    pub fn touch(&mut self, touch: u64, phase: TouchPhase, pos: Point) {
+        match self.primary_finger {
+            None if phase == TouchPhase::Start => {
+                self.primary_finger = Some(touch);
+                return;
+            }
+            Some(f) if f == touch => {
+                if matches!(phase, TouchPhase::End | TouchPhase::Cancel) {
+                    self.primary_finger = None;
+                }
+                if phase == TouchPhase::Cancel {
+                    self.event(Event::Cancel { id: MOUSE });
+                }
+                return;
+            }
+            _ => {}
+        }
+        let id = finger(touch);
+        match phase {
+            TouchPhase::Start if self.press.is_some() => self.event(Event::Down {
+                pos,
+                id,
+                button: Button::Primary,
+            }),
+            TouchPhase::Start => {}
+            TouchPhase::Move => self.event(Event::Move { pos, id }),
+            TouchPhase::End => self.event(Event::Up {
+                pos,
+                id,
+                button: Button::Primary,
+            }),
+            TouchPhase::Cancel => self.event(Event::Cancel { id }),
+        }
+    }
+
+    fn begin(&mut self, pos: Point, id: PointerId, button: Button) {
+        self.latest = Some(pos);
+        self.press = Some(Press {
+            id,
+            button,
+            origin: pos,
+            start: self.time,
+            moved: false,
+            no_drag: false,
+        });
+        self.pressed_now = true;
+        self.mode = None;
+    }
+
+    /// Ends the press without a tap; a dragged point goes back.
+    fn abort(&mut self) {
+        if self.mode == Some(Mode::Point) {
+            self.pending.cancel_drag = true;
+        }
+        self.mode = None;
+        self.press = None;
+    }
+
+    fn forget_position(&mut self) {
+        self.latest = None;
+        self.frame_start = None;
+    }
+
+    /// Ends whatever is held, as a cancel, and hands out what is still to do
+    /// (the area went away, so no `end_frame` follows).
+    pub fn cancel(&mut self) -> Intents {
+        self.abort();
+        std::mem::take(&mut self.pending)
     }
 
     /// Escape: the drag in progress ends where it is, and the press can no
@@ -304,16 +416,6 @@ impl Gesture {
     /// button takes hold of when one starts.
     pub fn end_frame(&mut self, inside: bool, grab: impl FnOnce(Point) -> Grab) -> Intents {
         let mut out = std::mem::take(&mut self.pending);
-        if let Some(tap) = self.released_now {
-            if matches!(self.mode, Some(Mode::Point | Mode::Pan | Mode::Inert)) {
-                out.end_drag = true;
-            }
-            self.mode = None;
-            if tap {
-                out.tap = self.latest;
-            }
-            return out;
-        }
         let Some(p) = self.press else {
             return out;
         };
@@ -552,25 +654,198 @@ mod tests {
 
     #[test]
     fn a_second_finger_turns_a_press_into_a_pinch() {
+        // The first finger comes as a touch and as the mouse; only the
+        // mouse events of it count.
+        let first = |g: &mut Gesture, phase| g.touch(3, phase, p(0.0, 0.0));
         let mut g = Gesture::new(&Metrics::touch());
-        frame(&mut g, 0.0, &[down(0.0, 0.0)], Grab::Point);
+        g.begin_frame(0.0);
+        first(&mut g, TouchPhase::Start);
+        g.event(down(0.0, 0.0));
+        g.end_frame(true, |_| Grab::Point);
         frame(&mut g, 0.1, &[mv(20.0, 0.0)], Grab::Point);
-        let second = Event::Down {
-            pos: p(100.0, 0.0),
-            id: 7,
-            button: Button::Primary,
-        };
-        let out = frame(&mut g, 0.2, &[second], Grab::Point);
+        g.begin_frame(0.2);
+        g.touch(8, TouchPhase::Start, p(100.0, 0.0));
+        let out = g.end_frame(true, |_| Grab::Point);
         assert!(out.cancel_drag);
         assert_eq!(out.drag_to, None);
         // Before the slop the press would have been a tap; now it is not.
         let mut g = Gesture::new(&Metrics::touch());
+        g.begin_frame(0.0);
+        first(&mut g, TouchPhase::Start);
+        g.event(down(0.0, 0.0));
+        g.touch(8, TouchPhase::Start, p(100.0, 0.0));
+        g.end_frame(true, |_| Grab::Point);
+        g.begin_frame(0.1);
+        first(&mut g, TouchPhase::End);
+        g.event(up(0.0, 0.0));
+        assert_eq!(g.end_frame(true, |_| Grab::Point), Intents::default());
+    }
+
+    #[test]
+    fn a_finger_without_a_press_is_ignored() {
+        let mut g = Gesture::new(&Metrics::touch());
+        g.begin_frame(0.0);
+        g.touch(3, TouchPhase::Start, p(0.0, 0.0));
+        g.touch(3, TouchPhase::End, p(0.0, 0.0));
+        // A second finger alone (the first one lifted) does nothing.
+        g.touch(5, TouchPhase::Start, p(50.0, 0.0));
+        assert!(!g.pressed());
+        g.touch(5, TouchPhase::Move, p(90.0, 0.0));
+        g.touch(5, TouchPhase::End, p(90.0, 0.0));
+        assert_eq!(g.end_frame(true, |_| Grab::Pan), Intents::default());
+        assert_eq!(g.latest, None);
+    }
+
+    #[test]
+    fn after_a_pinch_the_finger_that_stays_moves_nothing() {
+        for first_lifts in [false, true] {
+            let mut g = Gesture::new(&Metrics::touch());
+            g.begin_frame(0.0);
+            g.touch(1, TouchPhase::Start, p(0.0, 0.0));
+            g.event(down(0.0, 0.0));
+            g.end_frame(true, |_| Grab::Pan);
+            g.begin_frame(0.1);
+            g.touch(2, TouchPhase::Start, p(80.0, 0.0));
+            g.pinch(1.2, p(40.0, 0.0), (0.0, 0.0));
+            g.end_frame(true, |_| Grab::Pan);
+            g.begin_frame(0.2);
+            if first_lifts {
+                g.touch(1, TouchPhase::End, p(0.0, 0.0));
+                g.event(up(0.0, 0.0));
+                g.event(Event::Gone);
+            } else {
+                g.touch(2, TouchPhase::End, p(80.0, 0.0));
+            }
+            assert_eq!(g.end_frame(true, |_| Grab::Pan), Intents::default());
+            // The finger that stays moves far from where the press began.
+            for (i, x) in [30.0, 60.0, 90.0].into_iter().enumerate() {
+                g.begin_frame(0.3 + 0.1 * i as f64);
+                if first_lifts {
+                    g.touch(2, TouchPhase::Move, p(80.0 + x, 0.0));
+                } else {
+                    g.touch(1, TouchPhase::Move, p(x, 0.0));
+                    g.event(mv(x, 0.0));
+                }
+                let out = g.end_frame(true, |_| Grab::Pan);
+                assert_eq!(out, Intents::default(), "first lifts: {first_lifts}");
+            }
+        }
+    }
+
+    #[test]
+    fn a_cancel_counts_only_for_the_finger_of_the_press() {
+        let mut g = Gesture::new(&Metrics::touch());
+        g.begin_frame(0.0);
+        g.touch(1, TouchPhase::Start, p(0.0, 0.0));
+        g.event(down(0.0, 0.0));
+        g.end_frame(true, |_| Grab::Point);
+        let out = frame(&mut g, 0.1, &[mv(30.0, 0.0)], Grab::Point);
+        assert_eq!(out.started, Some(Grab::Point));
+        g.begin_frame(0.2);
+        g.touch(2, TouchPhase::Start, p(90.0, 0.0));
+        g.touch(2, TouchPhase::Cancel, p(90.0, 0.0));
+        assert!(g.pressed());
+        g.end_frame(true, |_| Grab::Point);
+        g.begin_frame(0.3);
+        g.touch(1, TouchPhase::Cancel, p(30.0, 0.0));
+        g.event(Event::Gone);
+        assert!(!g.pressed());
+        assert_eq!(g.end_frame(true, |_| Grab::Point), Intents::default());
+    }
+
+    #[test]
+    fn a_press_of_the_held_button_ends_the_old_press_first() {
+        let mut g = mouse();
         frame(&mut g, 0.0, &[down(0.0, 0.0)], Grab::Point);
-        frame(&mut g, 0.1, &[second], Grab::Point);
+        frame(&mut g, 0.1, &[mv(20.0, 0.0)], Grab::Point);
+        // The release was lost: the point goes back, the new press starts
+        // fresh and is a tap of its own.
+        let out = frame(&mut g, 0.2, &[down(50.0, 50.0)], Grab::Point);
+        assert!(out.cancel_drag && !out.end_drag);
+        assert_eq!((out.started, out.drag_to), (None, None));
+        let out = frame(&mut g, 0.3, &[up(50.0, 50.0)], Grab::Point);
+        assert_eq!(out.tap, Some(p(50.0, 50.0)));
+        // Another button while one is held: the first press goes on.
+        frame(&mut g, 1.0, &[down(0.0, 0.0)], Grab::Point);
+        let other = Event::Down {
+            pos: p(0.0, 0.0),
+            id: MOUSE,
+            button: Button::Other,
+        };
         assert_eq!(
-            frame(&mut g, 0.2, &[up(0.0, 0.0)], Grab::Point),
+            frame(&mut g, 1.1, &[other], Grab::Point),
             Intents::default()
         );
+        let out = frame(&mut g, 1.2, &[mv(20.0, 0.0)], Grab::Point);
+        assert_eq!(out.started, Some(Grab::Point));
+    }
+
+    #[test]
+    fn a_release_and_a_press_in_one_frame_end_the_drag_then_start_the_press() {
+        let mut g = mouse();
+        frame(&mut g, 0.0, &[down(0.0, 0.0)], Grab::Point);
+        frame(&mut g, 0.1, &[mv(20.0, 0.0)], Grab::Point);
+        let out = frame(&mut g, 0.2, &[up(20.0, 0.0), down(60.0, 0.0)], Grab::Point);
+        assert!(out.end_drag && !out.cancel_drag);
+        assert_eq!((out.started, out.drag_to, out.tap), (None, None, None));
+        assert!(g.pressed());
+        // The new press drags from where it went down.
+        let mut origin = None;
+        g.begin_frame(0.3);
+        g.event(mv(70.0, 0.0));
+        let out = g.end_frame(true, |o| {
+            origin = Some(o);
+            Grab::Point
+        });
+        assert_eq!(origin, Some(p(60.0, 0.0)));
+        assert_eq!(out.drag_to, Some(p(70.0, 0.0)));
+        // A tap and a press in one frame: the tap is at its release.
+        let mut g = mouse();
+        frame(&mut g, 0.0, &[down(5.0, 5.0)], Grab::Point);
+        let out = frame(&mut g, 0.1, &[up(5.0, 5.0), down(9.0, 9.0)], Grab::Point);
+        assert_eq!(out.tap, Some(p(5.0, 5.0)));
+        assert!(g.pressed());
+    }
+
+    #[test]
+    fn leaving_the_window_keeps_the_press_and_the_pan_does_not_jump() {
+        let mut g = mouse();
+        frame(&mut g, 0.0, &[down(0.0, 0.0)], Grab::Pan);
+        let out = frame(&mut g, 0.1, &[mv(10.0, 0.0)], Grab::Pan);
+        assert_eq!(out.pan, Some((10.0, 0.0)));
+        // Out of the window and back in somewhere else in one frame.
+        let out = frame(&mut g, 0.2, &[Event::Gone, mv(200.0, 90.0)], Grab::Pan);
+        assert_eq!(out.pan, Some((0.0, 0.0)));
+        let out = frame(&mut g, 0.3, &[mv(205.0, 90.0)], Grab::Pan);
+        assert_eq!(out.pan, Some((5.0, 0.0)));
+        // Moves outside the window still pan; the release ends the drag.
+        let out = frame(&mut g, 0.4, &[Event::Gone], Grab::Pan);
+        assert_eq!(out.pan, Some((0.0, 0.0)));
+        let out = frame(&mut g, 0.5, &[mv(-40.0, 0.0)], Grab::Pan);
+        assert_eq!(out.pan, Some((0.0, 0.0)));
+        let out = frame(&mut g, 0.6, &[mv(-50.0, 0.0)], Grab::Pan);
+        assert_eq!(out.pan, Some((-10.0, 0.0)));
+        assert!(frame(&mut g, 0.7, &[up(-50.0, 0.0)], Grab::Pan).end_drag);
+    }
+
+    #[test]
+    fn losing_the_focus_cancels_the_press() {
+        let mut g = mouse();
+        frame(&mut g, 0.0, &[down(0.0, 0.0)], Grab::Point);
+        frame(&mut g, 0.1, &[mv(20.0, 0.0)], Grab::Point);
+        let out = frame(&mut g, 0.2, &[Event::FocusLost], Grab::Point);
+        assert!(out.cancel_drag && !out.end_drag);
+        assert!(!g.pressed());
+        assert_eq!(
+            frame(&mut g, 0.3, &[mv(40.0, 0.0), up(40.0, 0.0)], Grab::Point),
+            Intents::default()
+        );
+        // Without a frame end (the area went away) the cancel is handed out
+        // at once.
+        frame(&mut g, 1.0, &[down(0.0, 0.0)], Grab::Point);
+        frame(&mut g, 1.1, &[mv(20.0, 0.0)], Grab::Point);
+        let out = g.cancel();
+        assert!(out.cancel_drag && !g.pressed());
     }
 
     #[test]
@@ -578,7 +853,7 @@ mod tests {
         let mut g = mouse();
         frame(&mut g, 0.0, &[down(0.0, 0.0)], Grab::Point);
         frame(&mut g, 0.1, &[mv(20.0, 0.0)], Grab::Point);
-        let out = frame(&mut g, 0.2, &[Event::Cancel], Grab::Point);
+        let out = frame(&mut g, 0.2, &[Event::Cancel { id: MOUSE }], Grab::Point);
         assert!(out.cancel_drag && !out.end_drag);
         assert_eq!(
             frame(&mut g, 0.3, &[mv(30.0, 0.0)], Grab::Point),

@@ -321,6 +321,14 @@ fn point_x(h: &Harness<'_, App>, label: &str) -> f64 {
     x
 }
 
+fn point(h: &Harness<'_, App>, label: &str) -> (f64, f64) {
+    let c = h.state().wb.construction();
+    let Value::Point { x, y } = c.value(c.id(label).unwrap()) else {
+        panic!("{label} is not a point");
+    };
+    (x, y)
+}
+
 fn redo(h: &mut Harness<'_, App>) {
     h.key_press_modifiers(Modifiers::COMMAND | Modifiers::SHIFT, egui::Key::Z);
     h.run();

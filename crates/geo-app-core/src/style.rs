@@ -7,6 +7,9 @@ use geo_kernel::algo::measure::MeasureDef;
 use geo_kernel::algo::polygon::PolygonDef;
 use geo_kernel::kernel::{Construction, Def, Id, Value};
 
+/// The drawn radius of a free point, in points (point size 5).
+pub const FREE_POINT_RADIUS: f32 = 5.0;
+
 /// The default colour of an object: blue free points, grey dependent
 /// points, green angles, brown polygons and their sides, near-black lines
 /// and circles.

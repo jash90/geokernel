@@ -108,11 +108,7 @@ pub fn snackbar(ui: &mut Ui, area: Rect, text: &str, lift: f32) -> bool {
     )
     .expand2(vec2(PAD / 2.0, 0.0));
     // The whole card takes clicks and drags, so none reach the drawing.
-    let notice = ui.interact(
-        rect,
-        ui.scope_id().with("snackbar"),
-        Sense::click_and_drag(),
-    );
+    let notice = ui.interact(rect, notice_id(ui), Sense::click_and_drag());
     notice.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Label, true, text));
     let close = ui
         .interact(
@@ -210,4 +206,16 @@ pub fn tool_tip(ui: &Ui, area: Rect, name: &str, hint: &str, closable: bool) -> 
         painter.line_segment([k - d, k + d], egui::Stroke::new(1.6, theme::WHITE));
     }
     Some(response)
+}
+
+fn notice_id(ui: &Ui) -> egui::Id {
+    ui.scope_id().with("snackbar")
+}
+
+/// Where the notice card was in the last frame, if it was shown. The card
+/// takes drags as well as clicks, so no press on it reaches the drawing.
+pub fn notice_card(ui: &Ui) -> Option<Rect> {
+    ui.ctx()
+        .read_response(notice_id(ui))
+        .map(|r| r.interact_rect)
 }

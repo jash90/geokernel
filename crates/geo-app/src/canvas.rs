@@ -5,7 +5,7 @@ use crate::describe;
 use crate::draw::{self, Scene};
 use crate::floating;
 use crate::geom::{ToCore, ToEgui};
-use crate::gesture::{Button, Event as GestureEvent, Gesture, Grab, MOUSE};
+use crate::gesture::{Button, Event as GestureEvent, Gesture, Grab, Intents, TouchPhase, MOUSE};
 use crate::grid;
 use crate::hit;
 use crate::icons::Icon;
@@ -19,13 +19,70 @@ use geo_kernel::kernel::{Id, Kind};
 
 const ZOOM_BUTTON: f64 = 1.25;
 const ZOOM_TOOL: f64 = 1.5;
+/// How many presses of one frame are checked against the areas over the
+/// drawing.
+const PRESSES: usize = 4;
 
 pub fn show(app: &mut App, ui: &mut Ui) {
     let size = ui.available_size();
     let (response, painter) = ui.allocate_painter(size, Sense::click_and_drag());
     let rect = response.rect;
     let (w, h) = (rect.width() as f64, rect.height() as f64);
+    // A press belongs to the area when it lands on it, no area (a menu, a
+    // dialog) lies over it there and no widget over the drawing takes its
+    // drag: egui's rule for the pointer, applied to each press where it
+    // happened (egui's own hit test is private and made for one position a
+    // frame). egui's lock is held while the events
+    // are read, so the positions of the frame's first presses are read
+    // first (into a fixed array, nothing when there is no press) and asked
+    // about outside it.
+    let mut presses: [Option<egui::Pos2>; PRESSES] = [None; PRESSES];
+    ui.input(|i| {
+        let found = i.events.iter().filter_map(|e| match *e {
+            egui::Event::PointerButton {
+                pos, pressed: true, ..
+            } => Some(pos),
+            _ => None,
+        });
+        for (slot, pos) in presses.iter_mut().zip(found) {
+            *slot = Some(pos);
+        }
+    });
+    // Of the widgets over the drawing only the notice card senses drags;
+    // the round and square buttons take the click of a press but leave its
+    // drag to the drawing, as egui decides.
+    let card = presses[0].and_then(|_| floating::notice_card(ui));
+    let owned = presses.map(|p| {
+        p.is_some_and(|p| {
+            rect.contains(p)
+                && ui.ctx().layer_id_at(p) == Some(response.layer_id)
+                && !card.is_some_and(|c| c.contains(p))
+        })
+    });
+    let mut next = 0;
+    let owns = |pos: egui::Pos2| {
+        next += 1;
+        // A press beyond the array (never seen in practice) is the area's
+        // when it lands on it.
+        owned
+            .get(next - 1)
+            .copied()
+            .unwrap_or_else(|| rect.contains(pos))
+    };
+    let mut gesture = app.gesture;
+    let fed = ui.input(|i| {
+        gesture.begin_frame(i.time);
+        feed(&mut gesture, &i.events, owns)
+    });
     if w < 1.0 || h < 1.0 {
+        // Nothing can be pressed on an area this small; a press held when
+        // it shrank ends as a cancel.
+        let intents = gesture.cancel();
+        app.gesture = gesture;
+        end_drag(app, &intents);
+        if fed.released {
+            app.press_view = None;
+        }
         return;
     }
     // Opening or closing the keyboard, or resizing the window, keeps the
@@ -60,15 +117,6 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         (d.x as f64, d.y as f64)
     };
 
-    // This frame's pointer events go to the automaton; egui decides which
-    // widget a press belongs to. The last primary press and whether the last
-    // primary event was a release are kept for the press-time view below.
-    let mut gesture = app.gesture;
-    let owns_press = response.is_pointer_button_down_on() || response.clicked();
-    let (pressed, released) = ui.input(|i| {
-        gesture.begin_frame(i.time);
-        feed(&mut gesture, &i.events, owns_press)
-    });
     let zoom = if response.hovered() {
         let (scroll, pinch, touch) = ui.input(|i| {
             (
@@ -131,7 +179,11 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     // change in this very frame, e.g. the keyboard closes on a press). The
     // press is read from this frame's events: when press and release come
     // in one frame (a touch tap) egui keeps no press origin.
-    if let Some(pos) = pressed {
+    // A tap in the frame of a later press (release, then press) belongs to
+    // the earlier press and its view.
+    let tap_view = app.press_view;
+    let tap_before_press = fed.pressed.is_some() && !fed.released;
+    if let Some(pos) = fed.pressed {
         app.press_view = app
             .view
             .filter(|(r, _)| r.contains(pos.core()))
@@ -139,11 +191,12 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     }
     // A press position in the area as it was at the press, and that
     // transform.
-    let at_press = |app: &App, pos: egui::Pos2| -> ((f64, f64), ViewTransform) {
-        let (r, pt) = app.press_view.unwrap_or((rect.core(), t));
+    let at_view = |view: Option<(geo_app_core::geom::Rect, ViewTransform)>, pos: egui::Pos2| {
+        let (r, pt) = view.unwrap_or((rect.core(), t));
         let d = pos - r.min.egui();
         ((d.x as f64, d.y as f64), pt)
     };
+    let at_press = |app: &App, pos: egui::Pos2| at_view(app.press_view, pos);
 
     // A drag that starts takes hold of what was under the pointer when the
     // button went down: a free point (with the move tool), or the view. A
@@ -171,9 +224,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         }
     });
     app.gesture = gesture;
-    if intents.cancel_drag && app.drag.take().is_some() {
-        app.wb.cancel_gesture();
-    }
+    end_drag(app, &intents);
     if intents.started.is_some() {
         app.drag = grabbed;
         if let Some(drag) = grabbed {
@@ -189,10 +240,6 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     if let Some((dx, dy)) = intents.pan {
         cam.pan_pixels(dx as f64, dy as f64);
     }
-    if intents.end_drag {
-        app.wb.end_gesture();
-        app.drag = None;
-    }
     // egui decides which widget a click belongs to: a button over the area
     // takes the click (though a drag from it still pans the view).
     let tap = intents.tap.filter(|_| response.clicked());
@@ -203,7 +250,12 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             Tool::ZoomOut => cam.zoom_at(1.0 / ZOOM_TOOL, local.0, local.1, w, h),
             Tool::MoveView => {}
             _ => {
-                let (local, pt) = at_press(app, pos);
+                let view = if tap_before_press {
+                    tap_view
+                } else {
+                    app.press_view
+                };
+                let (local, pt) = at_view(view, pos);
                 let c = app.wb.construction();
                 let hit = hit::pick(c, &pt, local, point_r, curve_r, |id| shown(app, id));
                 click(app, &pt, local, hit);
@@ -229,7 +281,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     let t = cam.transform(w, h);
     // Whoever got the press (this area, a button over it, a dialog), it
     // ends with the release.
-    if released {
+    if fed.released {
         app.press_view = None;
     }
     painter.rect_filled(rect, 0.0, theme::WHITE);
@@ -255,17 +307,37 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     app.view = Some((rect.core(), cam.transform(w, h)));
 }
 
-/// Gives this frame's pointer events to the automaton, in order. A press
-/// that egui gave to another widget only moves the pointer. Returns the
-/// position of the last primary press among the events, and whether the
-/// last primary button event was a release.
+/// Puts back or ends the drag that the automaton ended.
+fn end_drag(app: &mut App, intents: &Intents) {
+    if intents.cancel_drag && app.drag.take().is_some() {
+        app.wb.cancel_gesture();
+    }
+    if intents.end_drag {
+        app.wb.end_gesture();
+        app.drag = None;
+    }
+}
+
+/// What `feed` saw of the primary button.
+struct Fed {
+    /// The position of the last primary press among the events.
+    pressed: Option<egui::Pos2>,
+    /// The last primary button event was a release.
+    released: bool,
+}
+
+/// Gives this frame's pointer events to the automaton, in order. Each press
+/// is the area's when `owns` says so at its position; any other press only
+/// moves the pointer.
 fn feed(
     gesture: &mut Gesture,
     events: &[egui::Event],
-    owns_press: bool,
-) -> (Option<egui::Pos2>, bool) {
-    let mut pressed = None;
-    let mut released = false;
+    mut owns: impl FnMut(egui::Pos2) -> bool,
+) -> Fed {
+    let mut fed = Fed {
+        pressed: None,
+        released: false,
+    };
     for event in events {
         match *event {
             egui::Event::PointerMoved(pos) => gesture.event(GestureEvent::Move {
@@ -281,38 +353,50 @@ fn feed(
                 let primary = button == egui::PointerButton::Primary;
                 if primary {
                     if down {
-                        pressed = Some(pos);
+                        fed.pressed = Some(pos);
                     }
-                    released = !down;
+                    fed.released = !down;
                 }
                 let button = if primary {
                     Button::Primary
                 } else {
                     Button::Other
                 };
-                let pos = pos.core();
-                gesture.event(match (down, owns_press) {
-                    (true, true) => GestureEvent::Down {
-                        pos,
+                let core = pos.core();
+                gesture.event(if !down {
+                    GestureEvent::Up {
+                        pos: core,
                         id: MOUSE,
                         button,
-                    },
-                    (true, false) => GestureEvent::Move { pos, id: MOUSE },
-                    (false, _) => GestureEvent::Up {
-                        pos,
+                    }
+                } else if owns(pos) {
+                    GestureEvent::Down {
+                        pos: core,
                         id: MOUSE,
                         button,
-                    },
+                    }
+                } else {
+                    GestureEvent::Move {
+                        pos: core,
+                        id: MOUSE,
+                    }
                 });
             }
-            egui::Event::Touch {
-                phase: egui::TouchPhase::Cancel,
-                ..
-            } => gesture.event(GestureEvent::Cancel),
+            egui::Event::PointerGone => gesture.event(GestureEvent::Gone),
+            egui::Event::WindowFocused(false) => gesture.event(GestureEvent::FocusLost),
+            egui::Event::Touch { id, phase, pos, .. } => {
+                let phase = match phase {
+                    egui::TouchPhase::Start => TouchPhase::Start,
+                    egui::TouchPhase::Move => TouchPhase::Move,
+                    egui::TouchPhase::End => TouchPhase::End,
+                    egui::TouchPhase::Cancel => TouchPhase::Cancel,
+                };
+                gesture.touch(id.0, phase, pos.core());
+            }
             _ => {}
         }
     }
-    (pressed, released)
+    fed
 }
 
 fn hit_free_point(app: &App, t: &ViewTransform, pos: (f64, f64), radius: f64) -> bool {

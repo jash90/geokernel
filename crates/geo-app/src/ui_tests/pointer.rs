@@ -24,14 +24,6 @@ fn on_screen(h: &Harness<'_, App>, x: f64, y: f64) -> Pos2 {
     rect.min.egui() + egui::vec2(sx as f32, sy as f32)
 }
 
-fn point(h: &Harness<'_, App>, label: &str) -> (f64, f64) {
-    let c = h.state().wb.construction();
-    let Value::Point { x, y } = c.value(c.id(label).unwrap()) else {
-        panic!("{label} is not a point");
-    };
-    (x, y)
-}
-
 fn close(a: (f64, f64), b: (f64, f64)) -> bool {
     (a.0 - b.0).abs() < 1e-9 && (a.1 - b.1).abs() < 1e-9
 }

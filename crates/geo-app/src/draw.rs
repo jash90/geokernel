@@ -19,7 +19,7 @@ use geo_kernel::algo::vector;
 use geo_kernel::kernel::{Construction, Id, Value};
 
 /// Point radii in pixels: point size 5 for free points, 4 for dependent ones.
-pub const FREE_POINT_RADIUS: f32 = 5.0;
+pub use crate::style::FREE_POINT_RADIUS;
 const DEPENDENT_POINT_RADIUS: f32 = 4.0;
 /// Line thickness 5, drawn half as wide.
 pub const CURVE_WIDTH: f32 = 2.5;
