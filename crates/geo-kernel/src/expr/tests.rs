@@ -460,3 +460,29 @@ u = 0.999^999999 + 0.5",
     assert_eq!(num(&h, "t"), 1.0);
     assert_eq!(num(&h, "u"), 0.5);
 }
+
+#[test]
+fn unsupported_syntax_is_an_error_and_leaves_nothing_behind() {
+    let base = "a = 2\nA = (1, 2)";
+    for line in [
+        "b = 30\u{b0}15'",
+        "b = 2 rad",
+        "b = sin[a]",
+        "b = xcoord(A)",
+        "B = (1 | 2)",
+        "b = a < 3",
+        "b = \u{ac}a",
+        "b = 1..2",
+        "b = random()",
+        "b = \u{663}",
+        "b = 2\u{966}",
+    ] {
+        let mut c = load(base).unwrap();
+        assert!(exec(&mut c, line).is_err(), "`{line}` was accepted");
+        assert_eq!(c.len(), 2, "`{line}` left an object behind");
+    }
+    // the constants' names are labels
+    let c = load("inf = 3\nNaN = 4\nb = inf + NaN").unwrap();
+    assert!(matches!(c.value(c.id("b").unwrap()), Value::Undefined));
+    assert_eq!(num(&c, "inf"), 3.0);
+}
