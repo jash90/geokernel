@@ -68,7 +68,9 @@ fn keyboard(r: &mut Runner, n: usize) {
         .ctx
         .memory(|m| m.has_focus(eframe::egui::Id::unique("algebra_input")));
     let blink = r.ctx.global_style().visuals.text_cursor.blink;
-    notes.insert(format!("input row focused: {focused}, cursor blink: {blink}"));
+    notes.insert(format!(
+        "input row focused: {focused}, cursor blink: {blink}"
+    ));
     let frames = r.frames(
         n,
         |_, _| Vec::new(),
