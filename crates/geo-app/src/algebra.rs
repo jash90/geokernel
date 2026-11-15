@@ -141,14 +141,18 @@ fn paint_row(app: &App, ui: &mut Ui, row: &Row, actions: &mut Actions) {
         font.clone(),
         theme::TEXT,
     );
-    if let (Some(n), true) = (row.free_number, true) {
-        let mut v = n;
-        let speed = (n.abs() * 0.01).max(0.01);
+    if let Some(n) = row.free_number {
+        // An angle is edited in degrees.
+        let shown = if row.angle { n.to_degrees() } else { n };
+        let mut v = shown;
+        let speed = (shown.abs() * 0.01).max(0.01);
         let r = Rect::from_min_size(
             Pos2::new(head_pos.x + head_width + 8.0, head_y - 13.0),
             vec2(84.0, 26.0),
         );
-        let response = ui.put(r, egui::DragValue::new(&mut v).speed(speed).max_decimals(2));
+        let drag = egui::DragValue::new(&mut v).speed(speed).max_decimals(2);
+        let drag = if row.angle { drag.suffix("°") } else { drag };
+        let response = ui.put(r, drag);
         response.widget_info(|| {
             egui::WidgetInfo::labeled(
                 egui::Role::SpinButton,
@@ -162,7 +166,7 @@ fn paint_row(app: &App, ui: &mut Ui, row: &Row, actions: &mut Actions) {
             actions.number_drag = Some(false);
         }
         if response.changed() {
-            actions.set_number = Some((row.id, v));
+            actions.set_number = Some((row.id, if row.angle { v.to_radians() } else { v }));
         }
     }
     if let Some(value) = &row.value {

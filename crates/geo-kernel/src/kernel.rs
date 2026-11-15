@@ -441,7 +441,7 @@ impl std::error::Error for Error {}
 
 /// A state to return to with [`Construction::rollback`].
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) struct Checkpoint {
+pub struct Checkpoint {
     len: usize,
     lists: usize,
     exprs: usize,
@@ -658,7 +658,7 @@ impl Construction {
 
     /// The current length of the construction and of its lists, to return to
     /// with [`Construction::rollback`].
-    pub(crate) fn checkpoint(&self) -> Checkpoint {
+    pub fn checkpoint(&self) -> Checkpoint {
         Checkpoint {
             len: self.defs.len(),
             lists: self.lists.len(),
@@ -686,7 +686,7 @@ impl Construction {
     /// Removes every object added after `at`, newest first, together with
     /// the edges from its parents and the lists stored since. No object may
     /// have been moved in between.
-    pub(crate) fn rollback(&mut self, at: Checkpoint) {
+    pub fn rollback(&mut self, at: Checkpoint) {
         while self.defs.len() > at.len {
             let id = self.defs.len() - 1;
             let def = self.defs[id];

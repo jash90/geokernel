@@ -9,10 +9,26 @@
 //! the hidden objects as `SetCoords(A, x, y)`, `SetValue(n, v)` and
 //! `SetVisibleInView(A, 1, false)` (the script commands of the same meaning
 //! in GeoGebra scripts). These directives are read here, not by the kernel:
-//! they change the state of objects the script already made.
+//! they change the state of objects the script already made. Their three
+//! names are therefore reserved: a line that names an object or a function
+//! `SetCoords`, `SetValue` or `SetVisibleInView`, or defines an object by
+//! one of them, is refused (by the input bar too, where a typed directive
+//! would otherwise become `f = SetCoords(...)`).
+//!
+//! A snapshot (`to_labelled_script`) also lists, after a definition, the
+//! labels it made when they are not just the names before its `=` (the
+//! sides of a polygon, the outputs of `Tangent`): `p = Polygon(A, B, C)
+//! # labels: p, a_1, b, c`. The list is a comment, so the text stays a
+//! plain script; `load_tolerant` checks it.
 
 use geo_kernel::kernel::Construction;
 use std::collections::BTreeSet;
+
+/// The names of the directives, which no object may take.
+pub const DIRECTIVES: [&str; 3] = ["SetCoords", "SetValue", "SetVisibleInView"];
+
+/// Starts the list of labels after a definition in a snapshot.
+const LABELS: &str = "# labels: ";
 
 /// One accepted line and the objects it created.
 #[derive(Clone, Debug, PartialEq)]
@@ -73,7 +89,7 @@ fn directive(line: &str) -> Option<Result<Directive<'_>, String>> {
     }
     let (name, rest) = line.split_once('(')?;
     let name = name.trim();
-    if !matches!(name, "SetCoords" | "SetValue" | "SetVisibleInView") {
+    if !DIRECTIVES.contains(&name) {
         return None;
     }
     let parse = || -> Option<Directive<'_>> {
@@ -102,15 +118,33 @@ pub struct Rejected {
     pub dependent: bool,
 }
 
-/// The labels a definition line names before its `=`: `A`, or `{A, B}`.
+/// The labels a definition line names before its `=`: `A`, `f` of
+/// `f(x)`, or those of `{t_{1}, t_{2}}` (an empty slot names nothing).
 fn defined_labels(line: &str) -> impl Iterator<Item = &str> {
-    let lhs = line.split_once('=').map_or("", |(l, _)| l);
-    lhs.trim()
-        .trim_start_matches('{')
-        .trim_end_matches('}')
-        .split(',')
-        .map(str::trim)
-        .filter(|l| !l.is_empty())
+    let lhs = line.split_once('=').map_or("", |(l, _)| l.trim());
+    let lhs = match lhs.strip_prefix('{').and_then(|l| l.strip_suffix('}')) {
+        Some(list) => list,
+        None => lhs.strip_suffix("(x)").map_or(lhs, str::trim_end),
+    };
+    lhs.split(',').map(str::trim).filter(|l| !l.is_empty())
+}
+
+/// Refuses a definition that takes the name of a directive, as a label or
+/// a function, or that calls one (a directive defines nothing).
+pub fn check_names(line: &str) -> Result<(), String> {
+    if let Some(name) = defined_labels(line).find(|l| DIRECTIVES.contains(l)) {
+        return Err(format!(
+            "`{name}` is the name of a file directive and cannot name an object"
+        ));
+    }
+    let rhs = line.split_once('=').map_or("", |(_, r)| r);
+    let call = rhs.split('(').next().unwrap_or("").trim();
+    if rhs.contains('(') && DIRECTIVES.contains(&call) {
+        return Err(format!(
+            "`{call}` is a file directive: it sets an object of a saved file and defines nothing"
+        ));
+    }
+    Ok(())
 }
 
 /// The identifiers of a script line.
@@ -272,11 +306,28 @@ impl Log {
     ///
     /// It walks the whole journal: call it to save, not on every change.
     pub fn to_script(&self) -> String {
+        self.write_script(false)
+    }
+
+    /// `to_script`, with the labels each definition made where they are not
+    /// the names before its `=` (see the module docs), for `load_tolerant`
+    /// to check.
+    pub fn to_labelled_script(&self) -> String {
+        self.write_script(true)
+    }
+
+    fn write_script(&self, labels: bool) -> String {
         use std::fmt::Write;
         let mut out = String::new();
         for op in &self.ops {
             // Writing to a `String` cannot fail.
             let _ = match op {
+                Op::Define(e)
+                    if labels
+                        && !defined_labels(&e.line).eq(e.labels.iter().map(String::as_str)) =>
+                {
+                    writeln!(out, "{} {LABELS}{}", e.line, e.labels.join(", "))
+                }
                 Op::Define(e) => writeln!(out, "{}", e.line),
                 Op::Set {
                     label,
@@ -318,59 +369,102 @@ impl Log {
     }
 
     /// Builds a log and construction from a script, keeping every line that
-    /// loads. The lines the kernel rejects (or that set an object which is
-    /// not there) are returned instead of failing the whole text; a line is
-    /// marked `dependent` when it uses an object of a line rejected before
-    /// it. For texts the app wrote itself (an autosave): a kernel of another
-    /// version may refuse some line, and the rest must not be lost.
-    pub fn load_tolerant(src: &str) -> (Construction, Log, Vec<Rejected>) {
+    /// loads, in one pass. For texts the app wrote itself (an autosave): a
+    /// kernel of another version may refuse some line, and the rest must not
+    /// be lost. Left out, and returned instead of failing the whole text:
+    ///
+    /// - a line the kernel refuses (whatever it made of it is removed again);
+    /// - with `checked` (a snapshot with its header), a definition that makes
+    ///   other labels than the list after it, or the names before its `=`
+    ///   when it has no list: a later reference would otherwise reach the
+    ///   wrong object;
+    /// - a line that uses or names a label of a line left out before it
+    ///   (`dependent`): such a label stays reserved to the end, so neither a
+    ///   later definition nor a directive can take it over;
+    /// - a directive for a missing object.
+    pub fn load_tolerant(src: &str, checked: bool) -> (Construction, Log, Vec<Rejected>) {
         let mut c = Construction::new();
         let mut log = Log::default();
         let mut rejected = Vec::new();
-        let mut gone = BTreeSet::new();
+        let mut gone: BTreeSet<String> = BTreeSet::new();
         for (i, raw) in src.lines().enumerate() {
-            let line = normalize(raw);
+            let (body, listed) = match raw.split_once(LABELS) {
+                Some((body, list)) => (body, Some(list)),
+                None => (raw, None),
+            };
+            let line = normalize(body);
             if line.is_empty() {
                 continue;
             }
             let parsed = directive(&line);
             let is_directive = parsed.is_some();
-            let result = match parsed {
-                Some(d) => d.and_then(|d| log.apply(&mut c, d)),
-                None => {
-                    let before = c.len();
-                    match geo_kernel::script::exec(&mut c, &line) {
-                        Ok(_) => {
-                            log.record(&c, before, &line);
-                            Ok(())
-                        }
-                        Err(e) => {
-                            // A command with several outputs may have left
-                            // some of them: build again from the kept lines.
-                            if c.len() != before {
-                                if let Ok((c2, log2)) = log.rebuild() {
-                                    (c, log) = (c2, log2);
-                                }
-                            }
-                            Err(e.to_string())
-                        }
-                    }
+            let named: Vec<&str> = match listed {
+                Some(list) => list
+                    .split(',')
+                    .map(str::trim)
+                    .filter(|l| !l.is_empty())
+                    .collect(),
+                None if is_directive => Vec::new(),
+                None => defined_labels(&line).collect(),
+            };
+            let taken = tokens(&line)
+                .chain(named.iter().copied())
+                .find(|t| gone.contains(*t));
+            let result = if let Some(label) = taken {
+                Err(format!("`{label}` was left out before"))
+            } else {
+                match parsed {
+                    Some(d) => d.and_then(|d| log.apply(&mut c, d)),
+                    None => check_names(&line).and_then(|()| {
+                        let expected = (checked || listed.is_some()).then_some(named.as_slice());
+                        log.define_checked(&mut c, &line, expected)
+                    }),
                 }
             };
             if let Err(reason) = result {
-                let dependent = tokens(&line).any(|t| gone.contains(t));
-                if !is_directive {
-                    gone.extend(defined_labels(&line).map(str::to_owned));
-                }
+                let dependent = taken.is_some();
+                gone.extend(named.iter().map(|l| (*l).to_owned()));
                 rejected.push(Rejected {
                     line: i + 1,
-                    text: line,
+                    text: line.clone(),
                     reason,
                     dependent,
                 });
             }
         }
         (c, log, rejected)
+    }
+
+    /// Runs a definition line and records it. When `expected` is given the
+    /// line must make exactly those labels. On any failure what the line
+    /// made is removed again.
+    fn define_checked(
+        &mut self,
+        c: &mut Construction,
+        line: &str,
+        expected: Option<&[&str]>,
+    ) -> Result<(), String> {
+        let at = c.checkpoint();
+        let before = c.len();
+        if let Err(e) = geo_kernel::script::exec(c, line) {
+            c.rollback(at);
+            return Err(e);
+        }
+        if let Some(expected) = expected {
+            if !c
+                .ids()
+                .skip(before)
+                .map(|id| c.label(id))
+                .eq(expected.iter().copied())
+            {
+                let made: Vec<&str> = c.ids().skip(before).map(|id| c.label(id)).collect();
+                let reason = format!("it made {made:?} instead of {expected:?}");
+                c.rollback(at);
+                return Err(reason);
+            }
+        }
+        self.record(c, before, line);
+        Ok(())
     }
 
     /// Builds a log and construction from a whole script. The error carries
@@ -388,8 +482,9 @@ impl Log {
                 log.apply(&mut c, d.map_err(at)?).map_err(at)?;
                 continue;
             }
+            check_names(&line).map_err(at)?;
             let before = c.len();
-            geo_kernel::script::exec(&mut c, &line).map_err(|e| format!("line {}: {e}", i + 1))?;
+            geo_kernel::script::exec(&mut c, &line).map_err(at)?;
             log.record(&c, before, &line);
         }
         Ok((c, log))
@@ -521,7 +616,7 @@ mod tests {
     fn a_tolerant_load_keeps_what_loads_and_reports_the_rest() {
         let src = "A = (0, 0)\nQ = Nope(A)\nR = Midpoint(Q, A)\nSetCoords(Q, 1, 2)\n\
                    SetCoords(A, 3, 4)\n{T, U} = Nope(A)\nW = Segment(T, A)\nB = (1, 1)\n";
-        let (c, log, rejected) = Log::load_tolerant(src);
+        let (c, log, rejected) = Log::load_tolerant(src, false);
         let labels: Vec<&str> = c.ids().map(|id| c.label(id)).collect();
         assert_eq!(labels, ["A", "B"]);
         assert_eq!(c.value(c.id("A").unwrap()), Value::Point { x: 3.0, y: 4.0 });
@@ -535,9 +630,21 @@ mod tests {
         let (_, strict) = Log::load(&log.to_script()).unwrap();
         assert_eq!(strict, log);
         // A text without errors gives the same as a strict load.
-        let (_, all, none) = Log::load_tolerant("A = (0, 0)\nB = (1, 1)\n");
+        let (_, all, none) = Log::load_tolerant("A = (0, 0)\nB = (1, 1)\n", true);
         assert!(none.is_empty());
         assert_eq!(all, Log::load("A = (0, 0)\nB = (1, 1)\n").unwrap().1);
+    }
+
+    #[test]
+    fn the_defined_labels_of_each_form() {
+        fn labels(l: &str) -> Vec<&str> {
+            defined_labels(l).collect()
+        }
+        assert_eq!(labels("A = (1, 2)"), ["A"]);
+        assert_eq!(labels("{t_{1}, t_{2}} = Tangent(P, k)"), ["t_{1}", "t_{2}"]);
+        assert_eq!(labels("{, B} = Intersect(f, g)"), ["B"]);
+        assert_eq!(labels("f(x) = x^2"), ["f"]);
+        assert_eq!(labels("SetCoords(A, 1, 2)"), Vec::<&str>::new());
     }
 
     #[test]

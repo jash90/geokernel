@@ -25,6 +25,9 @@ pub struct Row {
     /// Second line of a dependent object, without the leading `=`.
     pub value: Option<String>,
     pub free_number: Option<f64>,
+    /// The free number is an angle: kept in radians, shown and set in
+    /// degrees.
+    pub angle: bool,
     /// The other objects created by the same line (deleted together).
     pub siblings: Vec<String>,
 }
@@ -85,6 +88,8 @@ impl Workbench {
 
     /// Replaces the whole document. On error the document is unchanged.
     pub fn load_script(&mut self, src: &str) -> Result<(), String> {
+        // A byte order mark (from a Windows editor) is not part of line 1.
+        let src = src.strip_prefix('\u{feff}').unwrap_or(src);
         let (c, log) = Log::load(src)?;
         self.replace(c, log);
         Ok(())
@@ -159,6 +164,10 @@ impl Workbench {
             let line = normalize(raw);
             if line.is_empty() {
                 continue;
+            }
+            if let Err(e) = crate::scriptlog::check_names(&line) {
+                failure = Some(e);
+                break;
             }
             let before = self.construction.len();
             // Only lines that succeeded go into the log: a failed one would
@@ -360,11 +369,14 @@ impl Workbench {
         if id.index() >= self.construction.len() {
             return false;
         }
-        let before = self.construction.value(id);
-        if self.construction.move_point(id, x, y).is_err() {
-            return false;
-        }
-        if self.construction.value(id) == before {
+        // Compared by bits, as the kernel does: `0` to `-0` is a change.
+        let same = match self.construction.value(id) {
+            Value::Point { x: ox, y: oy } | Value::Vector { x: ox, y: oy } => {
+                ox.to_bits() == x.to_bits() && oy.to_bits() == y.to_bits()
+            }
+            _ => false,
+        };
+        if self.construction.move_point(id, x, y).is_err() || same {
             return false;
         }
         self.note_change();
@@ -378,11 +390,13 @@ impl Workbench {
         if id.index() >= self.construction.len() {
             return false;
         }
-        let before = self.construction.value(id);
-        if self.construction.set_number(id, v).is_err() {
-            return false;
-        }
-        if self.construction.value(id) == before {
+        // Compared by bits, as the kernel does. A number that still has the
+        // exact decimal it was typed with loses it on any set, which can
+        // change what reads it in the last bits even when the value stays:
+        // that set is a change too, and it goes into the journal.
+        let same = matches!(self.construction.value(id), Value::Number(old) if old.to_bits() == v.to_bits())
+            && self.construction.expression(id).is_none();
+        if self.construction.set_number(id, v).is_err() || same {
             return false;
         }
         self.note_change();
@@ -420,8 +434,10 @@ impl Workbench {
                 (Def::Measure(MeasureDef::Angle(..)), Value::Number(n)) => describe::degrees(n),
                 _ => describe::value_text(&value),
             };
+            // A free angle is a free number shown and set in degrees.
             let free_number = match (c.def(id), value) {
                 (Def::Number(_), Value::Number(n)) => Some(n),
+                (Def::Angle(_), Value::Number(n)) => Some(n),
                 _ => None,
             };
             let (head, second) = if free_number.is_some() {
@@ -462,6 +478,7 @@ impl Workbench {
                 value: second,
                 siblings,
                 free_number,
+                angle: matches!(c.def(id), Def::Angle(_)),
             }
         }));
         self.rows_version = Some(self.version);

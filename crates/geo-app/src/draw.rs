@@ -475,4 +475,10 @@ mod tests {
         let with = shapes("A = (1, 0)\nB = (0, 0)\nC = (1, 1)\nα = Angle(A, B, C)\n");
         assert!(with >= base + 3, "{with} vs {base}");
     }
+
+    #[test]
+    fn a_function_draws_nothing_yet() {
+        let base = shapes("A = (5, 5)\n");
+        assert_eq!(shapes("A = (5, 5)\nf(x) = x^2\n"), base);
+    }
 }
