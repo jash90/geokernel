@@ -219,7 +219,8 @@ impl<'s> Runner<'s> {
         let rows0 = self.app.wb.rows_built();
         let rebuilds0 = self.app.wb.rebuilds();
         let app = &mut self.app;
-        let (mut out, ns, allocs, bytes) = timed(|| self.ctx.run_ui(input, |ui| app.show(ui)));
+        let (mut out, ns, allocs, bytes) =
+            timed(|| self.ctx.run_ui(input, |ui| adapter::show(app, ui)));
         (f.ui_ns, f.ui_allocs, f.ui_bytes) = (ns, allocs, bytes);
         f.passes = self.ctx.cumulative_pass_nr() - pass0;
         f.rows_built = self.app.wb.rows_built() - rows0;

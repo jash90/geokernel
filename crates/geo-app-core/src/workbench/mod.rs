@@ -393,7 +393,8 @@ impl Workbench {
         &self.rows
     }
 
-    #[cfg(test)]
+    /// How many times the object list was built (read by the window's
+    /// tests and its frame benchmark).
     pub fn rows_built(&self) -> u64 {
         self.rows_built
     }
