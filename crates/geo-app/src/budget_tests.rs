@@ -6,21 +6,20 @@
 //! rebuild the algebra list while dragging, fails here.
 //!
 //! The counters: leaf shapes and text shapes painted, vertices after
-//! tessellation, algebra rows made (`rows_formatted`) and list changes
-//! (`rows_built`), and whether the frame asked for an immediate repaint.
-//! Heap allocations per frame are measured by the frame benchmark
-//! (`ui_bench`), whose counting allocator is private to it.
+//! tessellation, heap allocations and bytes of the frame (the UI pass,
+//! counted by the benchmark's allocator), algebra rows made
+//! (`rows_formatted`) and list changes (`rows_built`), and whether the
+//! frame asked for an immediate repaint.
 
 use crate::app::App;
+use crate::headless::{self, Repaint};
 use crate::theme;
 use crate::tools::Tool;
+use crate::ui_bench::alloc;
 use crate::view::{self, Camera};
 use crate::workbench::Workbench;
-use eframe::egui::{
-    self, epaint, vec2, Event, Modifiers, PointerButton, Pos2, RawInput, Rect, Shape, ViewportId,
-};
+use eframe::egui::{self, epaint, vec2, Event, Modifiers, PointerButton, Pos2, Rect, Shape};
 use geo_kernel::kernel::{Kind, Value};
-use std::time::Duration;
 
 const SCREEN: (f32, f32) = (1400.0, 900.0);
 const DT: f64 = 1.0 / 60.0;
@@ -60,6 +59,8 @@ struct Counts {
     shapes: u64,
     texts: u64,
     vertices: u64,
+    allocs: u64,
+    bytes: u64,
     rows_formatted: u64,
     rows_built: u64,
     immediate: bool,
@@ -103,26 +104,21 @@ impl Window {
     }
 
     fn step(&mut self, events: Vec<Event>) -> Counts {
-        let input = RawInput {
-            screen_rect: Some(Rect::from_min_size(Pos2::ZERO, vec2(SCREEN.0, SCREEN.1))),
-            time: Some(self.time),
-            predicted_dt: DT as f32,
-            events,
-            focused: true,
-            ..Default::default()
-        };
+        let screen = Rect::from_min_size(Pos2::ZERO, vec2(SCREEN.0, SCREEN.1));
+        let input = headless::raw_input(screen, self.time, DT as f32, events);
         self.time += DT;
-        let (made, built) = (self.app.wb.rows_formatted(), self.app.wb.rows_built());
-        let app = &mut self.app;
-        let mut out = self.ctx.run_ui(input, |ui| crate::app::show(app, ui));
+        let made = self.app.wb.rows_formatted();
+        // The UI pass only, as the benchmark's `ui_allocs` / `ui_bytes`.
+        alloc::start();
+        let (mut out, pass) = headless::run(&self.ctx, &mut self.app, input, crate::app::show);
+        let (allocs, bytes) = alloc::stop();
         out.textures_delta.clear();
         let mut c = Counts {
+            allocs,
+            bytes,
             rows_formatted: self.app.wb.rows_formatted() - made,
-            rows_built: self.app.wb.rows_built() - built,
-            immediate: out
-                .viewport_output
-                .get(&ViewportId::ROOT)
-                .is_some_and(|v| v.repaint_delay == Duration::ZERO),
+            rows_built: pass.rows_built,
+            immediate: headless::repaint(&out) == Repaint::Immediate,
             ..Counts::default()
         };
         for s in &out.shapes {
@@ -282,6 +278,10 @@ fn states(cells: usize) -> Vec<(&'static str, Counts)> {
     );
     drag.rows_formatted += next.rows_formatted;
     drag.rows_built += next.rows_built;
+    // The heavier of the two frames: the one that moves, or the one that
+    // makes the rows.
+    drag.allocs = drag.allocs.max(next.allocs);
+    drag.bytes = drag.bytes.max(next.bytes);
     out.push(("drag_point", drag));
     // The pointer held still once more: nothing changed, nothing is made.
     let still = w.step(vec![Event::PointerMoved(p + vec2(14.0, 4.0))]);
@@ -345,6 +345,34 @@ fn frame_counters_stay_within_the_budget() {
         assert!(l.shapes <= shapes, "{name}: {} shapes", l.shapes);
         assert!(l.texts <= texts, "{name}: {} texts", l.texts);
         assert!(l.vertices <= vertices, "{name}: {} vertices", l.vertices);
+    }
+    // Heap allocations and bytes of the UI pass at n1000: the counts when
+    // they were set plus about 8%. Before the shared colours, the row cache
+    // and the visible-only list the idle frame made 16 696 allocations of
+    // 2.08 MB and a drag frame 27 725 of 2.43 MB; a copy of all rows per
+    // frame adds about 3000 allocations, making them all again about 10 000.
+    let ceilings = [
+        ("idle", 2_900, 565_000),
+        ("idle_zoomed_4x", 680, 170_000),
+        ("keyboard_open", 2_600, 520_000),
+        ("tool_preview_segment", 4_000, 570_000),
+        ("pan", 3_100, 580_000),
+        ("drag_point", 3_100, 580_000),
+        ("drag_point_still", 3_100, 580_000),
+    ];
+    for (name, allocs, bytes) in ceilings {
+        let (s, l) = (get(&small, name), get(&large, name));
+        assert!(l.allocs <= allocs, "{name}: {} allocations", l.allocs);
+        assert!(l.bytes <= bytes, "{name}: {} bytes", l.bytes);
+        // At most linear from n100 to n1000 (before: 8 to 9 times).
+        assert!(
+            l.allocs <= 7 * s.allocs && l.bytes <= 6 * s.bytes,
+            "{name}: allocations {} vs {}, bytes {} vs {}",
+            l.allocs,
+            s.allocs,
+            l.bytes,
+            s.bytes
+        );
     }
     // A drag frame makes only the rows of the objects it changed (checked
     // in `states`); a frame where nothing moved makes none.
