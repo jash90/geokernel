@@ -262,6 +262,14 @@ fn random_constructions_and_moves() {
             .collect::<Vec<_>>()
             .join("\n")
     );
+    // The script rebuild is skipped only for multi-output layouts; it must
+    // stay the rule (379 of 400 at the time of writing).
+    assert!(
+        totals.script_rebuilds >= 300,
+        "only {} of {} script rebuilds were compared",
+        totals.script_rebuilds,
+        totals.cases
+    );
     // The generator must reach undefined states, or contagion and recovery
     // would never be exercised.
     assert!(
@@ -276,6 +284,7 @@ fn random_constructions_and_moves() {
 #[ignore = "replays the seed given in GEO_REPLAY_SEED"]
 fn replay_seed() {
     let Ok(text) = std::env::var("GEO_REPLAY_SEED") else {
+        println!("GEO_REPLAY_SEED is not set: nothing was replayed");
         return;
     };
     let seed = match text.strip_prefix("0x") {
@@ -880,13 +889,17 @@ fn measures_agree_with_direct_formulas() {
                 let to_line = cross3(a, b, pnt).abs() / ab;
                 expect_near("Distance(P, line)", num(&c, "dpl"), to_line, sc)?;
                 expect_near("Distance(line, P)", num(&c, "dlp"), to_line, sc)?;
-                // the distance to a segment is never smaller than to its line
-                let to_seg = num(&c, "dps");
-                if to_seg < to_line - TOL * sc {
-                    return Err(format!(
-                        "Distance(P, segment) {to_seg} is below the distance to the line {to_line}"
-                    ));
-                }
+                // distance to the segment: the nearest point is the projection
+                // of P on the line, clamped to the segment
+                let t = (((pnt.0 - a.0) * (b.0 - a.0) + (pnt.1 - a.1) * (b.1 - a.1)) / (ab * ab))
+                    .clamp(0.0, 1.0);
+                let nearest = (a.0 + t * (b.0 - a.0), a.1 + t * (b.1 - a.1));
+                expect_near(
+                    "Distance(P, segment)",
+                    num(&c, "dps"),
+                    dist(pnt, nearest),
+                    sc,
+                )?;
                 expect_near("Distance(line, parallel)", num(&c, "dll"), to_line, sc)?;
                 // the angle at T1 from T1T0 to T1T2, counter-clockwise, in [0, 2pi)
                 let (v, w) = ((t0.0 - t1.0, t0.1 - t1.1), (t2.0 - t1.0, t2.1 - t1.1));
@@ -1104,12 +1117,9 @@ fn assert_history_independent(before: &str, moved: &str, to: (f64, f64), after: 
     }
 }
 
-/// `Slope` reads the unnormalised coefficients that `raw_line` rebuilds from
-/// the points behind the line, but the construction only recomputes it when
-/// the line's normalised value changes. Moving `C` along the line keeps the
-/// normalised line `(-0, 1, -0)` and `s` stays defined at `-0`; built fresh
-/// with `C = (1e-9, 0)` the raw coefficient is below `STANDARD_PRECISION`
-/// and `s` is undefined.
+/// Moving `C` along the line `Line(A, C)` to `(1e-9, 0)` leaves `s = Slope(l)`
+/// defined (at `-0`); building the same construction with `C` already there
+/// gives an undefined `s`. A value must not depend on the order of moves.
 #[test]
 #[ignore = "known defect: Slope depends on the history of moves"]
 fn slope_of_a_line_depends_on_the_history_of_moves() {
@@ -1121,9 +1131,9 @@ fn slope_of_a_line_depends_on_the_history_of_moves() {
     );
 }
 
-/// The same cause for `Distance(line, line)`: after moving `C` from
-/// `(3, 1.7)` to `(3, 2.9)` along the same line, `d` is `2.7000000000000006`;
-/// built fresh it is `2.6999999999999997`.
+/// Moving `C` from `(3, 1.7)` to `(3, 2.9)` along the line `Line(A, C)`
+/// leaves `d = Distance(l, m)` at `2.7000000000000006`; building the same
+/// construction with `C` already there gives `2.6999999999999997`.
 #[test]
 #[ignore = "known defect: Distance of two lines depends on the history of moves"]
 fn distance_of_lines_depends_on_the_history_of_moves() {
@@ -1135,9 +1145,8 @@ fn distance_of_lines_depends_on_the_history_of_moves() {
     );
 }
 
-/// With coordinates of about `1e154` or more, the squared length overflows
-/// and `Line(A, B)` is defined as the all-zero triple, which is not a line.
-/// It should be undefined, or a real line.
+/// `Line(A, B)` with `A = (4, 1e300)` is defined, but its coefficients are
+/// `a = b = 0`, which is not a line. It should be undefined or a real line.
 #[test]
 #[ignore = "known defect: Line through far points is the zero triple"]
 fn a_line_through_far_points_is_not_the_zero_line() {
@@ -1155,7 +1164,7 @@ fn a_line_through_far_points_is_not_the_zero_line() {
 }
 
 /// Random constructions that also use `Slope(line)` and `Distance(line,
-/// line)` fail the history checks, from the cause described above.
+/// line)` fail the history checks (see the two tests above).
 #[test]
 #[ignore = "known defect: see slope_of_a_line_depends_on_the_history_of_moves"]
 fn random_constructions_with_all_commands() {
@@ -1166,6 +1175,119 @@ fn random_constructions_with_all_commands() {
         CASES * 10,
         |rng| run_case(rng.state(), true, &mut totals),
     );
+}
+
+/// Shear, stretch and the affine and cross ratio against closed forms.
+#[test]
+fn shear_stretch_and_ratios_match_closed_forms() {
+    for_seeds("shear, stretch, ratios", 0xDDDD, 300, |rng| {
+        let m1 = rng.point(8.0);
+        let m2 = far_apart(rng, m1, 2.0, 8.0);
+        let a = rng.point(8.0);
+        let b = far_apart(rng, a, 1.5, 8.0);
+        let n = rng.range(-3.0, 3.0);
+        // four points on a line, with well separated parameters
+        let origin = rng.point(5.0);
+        let theta = rng.range(0.0, 2.0 * PI);
+        let u = (theta.cos(), theta.sin());
+        let ts = [
+            -3.0 + rng.range(-0.5, 0.5),
+            -1.0 + rng.range(-0.4, 0.4),
+            1.0 + rng.range(-0.4, 0.4),
+            3.0 + rng.range(-0.5, 0.5),
+        ];
+        let on = |t: f64| (origin.0 + t * u.0, origin.1 + t * u.1);
+        let src = format!(
+            "{}{}{}{}{}{}{}{}n = {n:?}\naxis = Line(M1, M2)\nsg = Segment(M1, M2)\n\
+             sh = Shear(A, axis, n)\nsh2 = Shear(A, sg, n)\nst = Stretch(A, axis, n)\nst2 = Stretch(A, sg, n)\n\
+             shl = Shear(l0, axis, n)\nstl = Stretch(l0, axis, n)\nsegs = Segment(A, B)\n\
+             shs = Shear(segs, axis, n)\nsts = Stretch(segs, axis, n)\nl0 = Line(A, B)\n\
+             ar = AffineRatio(R0, R1, R2)\ncr = CrossRatio(R0, R1, R2, R3)\n",
+            p("M1", m1),
+            p("M2", m2),
+            p("A", a),
+            p("B", b),
+            p("R0", on(ts[0])),
+            p("R1", on(ts[1])),
+            p("R2", on(ts[2])),
+            p("R3", on(ts[3])),
+        );
+        // `l0` is used before its definition above; build in dependency order
+        let src = src
+            .replace("shl = Shear(l0, axis, n)\nstl = Stretch(l0, axis, n)\n", "")
+            .replace(
+                "l0 = Line(A, B)\n",
+                "l0 = Line(A, B)\nshl = Shear(l0, axis, n)\nstl = Stretch(l0, axis, n)\n",
+            );
+        let c = build(&src);
+        with_script(
+            &src,
+            (|| {
+                let sc = 40.0 * n.abs().max(1.0);
+                let len = dist(m1, m2);
+                let d = ((m2.0 - m1.0) / len, (m2.1 - m1.1) / len);
+                let nrm = (-d.1, d.0);
+                // a shear moves a point along the axis by n times its signed
+                // distance from the axis; a stretch scales that distance by n
+                let shear = |v: (f64, f64)| {
+                    let (x, y) = (v.0 - m1.0, v.1 - m1.1);
+                    let h = d.0 * y - d.1 * x;
+                    (v.0 + n * h * d.0, v.1 + n * h * d.1)
+                };
+                let stretch = |v: (f64, f64)| {
+                    let (x, y) = (v.0 - m1.0, v.1 - m1.1);
+                    let (along, across) = (x * d.0 + y * d.1, x * nrm.0 + y * nrm.1);
+                    (
+                        m1.0 + along * d.0 + n * across * nrm.0,
+                        m1.1 + along * d.1 + n * across * nrm.1,
+                    )
+                };
+                for l in ["sh", "sh2"] {
+                    if !same_point(pt(&c, l), shear(a), sc) {
+                        return Err(format!("{l}: {:?} against {:?}", pt(&c, l), shear(a)));
+                    }
+                }
+                for l in ["st", "st2"] {
+                    if !same_point(pt(&c, l), stretch(a), sc) {
+                        return Err(format!("{l}: {:?} against {:?}", pt(&c, l), stretch(a)));
+                    }
+                }
+                // segments and lines go to the images of their end points
+                for (label, f) in [("shs", &shear as &dyn Fn(_) -> _), ("sts", &stretch)] {
+                    let got = ends_of(&c, label);
+                    for (g, e) in got.iter().zip([a, b]) {
+                        if !same_point(*g, f(e), sc) {
+                            return Err(format!("{label}: end {g:?} against {:?}", f(e)));
+                        }
+                    }
+                }
+                let (ia, ib) = (shear(a), shear(b));
+                let image = format!("Line through {ia:?} and {ib:?}");
+                if dist_to_line(ia, line(&c, "shl")) > TOL * sc
+                    || dist_to_line(ib, line(&c, "shl")) > TOL * sc
+                {
+                    return Err(format!("shl does not pass through the images: {image}"));
+                }
+                let (ja, jb) = (stretch(a), stretch(b));
+                if dist_to_line(ja, line(&c, "stl")) > TOL * sc
+                    || dist_to_line(jb, line(&c, "stl")) > TOL * sc
+                {
+                    return Err("stl does not pass through the images of A and B".into());
+                }
+                // AffineRatio(A, B, C): the lambda with C = A + lambda (B - A)
+                expect_near(
+                    "AffineRatio",
+                    num(&c, "ar"),
+                    (ts[2] - ts[0]) / (ts[1] - ts[0]),
+                    1.0,
+                )?;
+                // CrossRatio(A, B, C, D) = (B, C; D) / (A, C; D) with (S, P; Q) = (Q - S) / (P - S)
+                let cross =
+                    ((ts[3] - ts[1]) / (ts[2] - ts[1])) / ((ts[3] - ts[0]) / (ts[2] - ts[0]));
+                expect_near("CrossRatio", num(&c, "cr"), cross, cross.abs())
+            })(),
+        )
+    });
 }
 
 // ----------------------------------------------------- API robustness
@@ -1526,15 +1648,24 @@ fn every_command_with_every_argument_kind() {
                                 c.len()
                             ));
                         }
-                        if let Some(bad) = first_non_finite(&c) {
+                        if let Some(bad) =
+                            c.ids().skip(len).find(|&id| !is_all_finite(&c.value(id)))
+                        {
                             problems.push(format!(
-                                "[{world_name}] `{line}` left a non-finite value: {bad}"
+                                "[{world_name}] `{line}` made a non-finite value: `{}` = {:?}",
+                                c.label(bad),
+                                c.value(bad)
                             ));
                         }
                     }
                     Ok(None) => problems.push(format!("[{world_name}] `{line}` created nothing")),
                     Err(e) => {
-                        if c.len() != len || values(&c)[..base] != base_values[..] {
+                        if c.len() != len
+                            || c.ids()
+                                .take(base)
+                                .map(|id| c.value(id))
+                                .ne(base_values.iter().copied())
+                        {
                             problems.push(format!(
                                 "[{world_name}] `{line}` failed ({e}) but changed the construction"
                             ));

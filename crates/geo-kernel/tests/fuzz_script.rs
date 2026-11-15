@@ -35,7 +35,11 @@ const CONTEXT: &[&str] = &[
     "x_1 = (2, 2)",
 ];
 
-const SLOW: Duration = Duration::from_secs(2);
+/// At the time of writing: 697 case scripts and 21 README lines.
+const MIN_CASE_SCRIPTS: usize = 500;
+const MIN_README_LINES: usize = 10;
+
+const SLOW: Duration = Duration::from_secs(10);
 
 /// What went wrong with one input line, as a short stable key and a detail.
 struct Problem {
@@ -171,7 +175,9 @@ impl Findings {
         self.by_key.insert(key, (reduced, detail, 1));
     }
 
-    fn report(&self, name: &str) {
+    /// Fails on any problem, and when fewer than `min_created` lines
+    /// succeeded (the success checks would otherwise run on too little).
+    fn report(&self, name: &str, min_created: usize) {
         println!(
             "{name}: {} inputs, {} created objects, {} distinct problem(s)",
             self.runs,
@@ -186,6 +192,11 @@ impl Findings {
             })
             .collect();
         assert!(self.by_key.is_empty(), "{name}:\n{}", text.join("\n"));
+        assert!(
+            self.created >= min_created,
+            "{name}: only {} lines created objects (at least {min_created} expected)",
+            self.created
+        );
     }
 }
 
@@ -220,12 +231,12 @@ fn script_arrays(json: &str) -> Vec<Vec<String>> {
         };
         skip_ws(&mut i);
         if b.get(i) != Some(&':') {
-            continue;
+            panic!("`\"script\"` is not followed by a colon in the case file");
         }
         i += 1;
         skip_ws(&mut i);
         if b.get(i) != Some(&'[') {
-            continue;
+            panic!("`\"script\"` is not an array in the case file");
         }
         i += 1;
         let mut lines = Vec::new();
@@ -274,23 +285,32 @@ fn script_arrays(json: &str) -> Vec<Vec<String>> {
 fn case_scripts() -> Vec<Vec<String>> {
     let dir = repo_path("tools/ggb-harness/cases");
     let mut files: Vec<PathBuf> = std::fs::read_dir(&dir)
-        .map(|d| {
-            d.filter_map(|e| e.ok().map(|e| e.path()))
-                .filter(|p| p.extension().is_some_and(|x| x == "json"))
-                .collect()
-        })
-        .unwrap_or_default();
+        .unwrap_or_else(|e| panic!("cannot read the case directory {dir:?}: {e}"))
+        .map(|e| e.expect("directory entry").path())
+        .filter(|p| p.extension().is_some_and(|x| x == "json"))
+        .collect();
     files.sort();
-    files
+    let scripts: Vec<Vec<String>> = files
         .iter()
-        .filter_map(|f| std::fs::read_to_string(f).ok())
-        .flat_map(|text| script_arrays(&text))
-        .collect()
+        .flat_map(|f| {
+            let text = std::fs::read_to_string(f)
+                .unwrap_or_else(|e| panic!("cannot read case file {f:?}: {e}"));
+            script_arrays(&text)
+        })
+        .collect();
+    assert!(
+        scripts.len() >= MIN_CASE_SCRIPTS,
+        "only {} case scripts found in {dir:?} (at least {MIN_CASE_SCRIPTS} expected)",
+        scripts.len()
+    );
+    scripts
 }
 
 /// Lines of the code blocks of the README that look like script lines.
 fn readme_lines() -> Vec<String> {
-    let text = std::fs::read_to_string(repo_path("README.md")).unwrap_or_default();
+    let path = repo_path("README.md");
+    let text =
+        std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("cannot read {path:?}: {e}"));
     let mut inside = false;
     let mut lines = Vec::new();
     for line in text.lines() {
@@ -300,6 +320,11 @@ fn readme_lines() -> Vec<String> {
             lines.push(line.trim().to_string());
         }
     }
+    assert!(
+        lines.len() >= MIN_README_LINES,
+        "only {} script lines found in the README code blocks (at least {MIN_README_LINES} expected)",
+        lines.len()
+    );
     lines
 }
 
@@ -498,6 +523,16 @@ fn garbage_line(rng: &mut Rng) -> String {
             };
             let close = if rng.chance(0.9) { ")" } else { "" };
             format!("{name} = {cmd}({}{close}", args.join(sep))
+        }
+    }
+}
+
+/// A valid command with arguments of the right kinds, from the objects of `c`.
+fn template_line(rng: &mut Rng, c: &Construction) -> String {
+    loop {
+        let cmd = rng.pick(COMMANDS);
+        if let Some(call) = pick_args(rng, c, cmd, usize::MAX) {
+            return format!("g{} = {}", rng.below(100), call.text);
         }
     }
 }
@@ -714,9 +749,16 @@ fn random_text_never_panics() {
     with_timeout("random text", 120, || {
         let mut findings = Findings::default();
         let prefix = context_lines();
+        let pool = context();
         for i in 0..scaled(20_000) {
             let mut rng = Rng::new(case_seed(0xF022, i));
-            let line = garbage_line(&mut rng);
+            // a third of the inputs are valid command templates, so that the
+            // checks on successful lines run on many successes
+            let line = if i % 3 == 0 {
+                template_line(&mut rng, &pool)
+            } else {
+                garbage_line(&mut rng)
+            };
             findings.run(&prefix, &line);
         }
         // several lines in one construction, as `load` runs them
@@ -744,7 +786,7 @@ fn random_text_never_panics() {
             }
             findings.runs += 1;
         }
-        findings.report("random text");
+        findings.report("random text", 3000);
     });
 }
 
@@ -772,14 +814,17 @@ fn numbers_at_the_limits_and_oversized_lines() {
                 let cmd = rng.pick(COMMANDS);
                 if let Some(call) = pick_args(&mut rng, &c, cmd, usize::MAX) {
                     let line = format!("z{round} = {}", call.text);
-                    if let Err(p) = check_line(&mut c, &line) {
-                        findings.by_key.entry(p.key).or_insert((line, p.detail, 1));
+                    match check_line(&mut c, &line) {
+                        Ok(created) => findings.created += usize::from(created),
+                        Err(p) => {
+                            findings.by_key.entry(p.key).or_insert((line, p.detail, 1));
+                        }
                     }
                 }
             }
             findings.runs += 300;
         }
-        findings.report("numbers and sizes");
+        findings.report("numbers and sizes", 3000);
     });
 }
 
@@ -826,7 +871,7 @@ fn mutated_corpus_lines_never_panic() {
             }
             findings.run(&prefix, &line);
         }
-        findings.report("mutated corpus");
+        findings.report("mutated corpus", 20_000);
     });
 }
 
@@ -839,5 +884,5 @@ fn unmodified_corpus_lines_behave() {
     for line in readme_lines().iter().chain(&builtin_lines()) {
         findings.run(&prefix, line);
     }
-    findings.report("unmodified corpus");
+    findings.report("unmodified corpus", 50);
 }
