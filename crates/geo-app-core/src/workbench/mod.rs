@@ -6,7 +6,7 @@ use crate::history::History;
 use crate::labels::next_label;
 use crate::scriptlog::{normalize, Log, Setting};
 use crate::undo::Undo;
-pub use file::import_notice;
+pub use file::{import_notice, rejected_notice, SNAPSHOT_VERSION};
 use geo_kernel::algo::measure::MeasureDef;
 use geo_kernel::kernel::{Construction, Def, Id, Kind, Value};
 use std::collections::HashMap;
@@ -86,6 +86,12 @@ impl Workbench {
     /// Replaces the whole document. On error the document is unchanged.
     pub fn load_script(&mut self, src: &str) -> Result<(), String> {
         let (c, log) = Log::load(src)?;
+        self.replace(c, log);
+        Ok(())
+    }
+
+    /// Makes `c` and `log` the whole document.
+    fn replace(&mut self, c: Construction, log: Log) {
         self.construction = c;
         self.log = log;
         self.selected = None;
@@ -94,7 +100,6 @@ impl Workbench {
         self.notice = None;
         self.version += 1;
         self.rebuilds += 1;
-        Ok(())
     }
 
     /// Replaces the whole document with an imported file: its script, the

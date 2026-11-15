@@ -91,6 +91,28 @@ fn directive(line: &str) -> Option<Result<Directive<'_>, String>> {
     Some(parse().ok_or_else(|| format!("cannot read `{line}`")))
 }
 
+/// A line that `Log::load_tolerant` left out.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Rejected {
+    /// 1-based.
+    pub line: usize,
+    pub text: String,
+    pub reason: String,
+    /// It uses an object of a line rejected before it.
+    pub dependent: bool,
+}
+
+/// The labels a definition line names before its `=`: `A`, or `{A, B}`.
+fn defined_labels(line: &str) -> impl Iterator<Item = &str> {
+    let lhs = line.split_once('=').map_or("", |(l, _)| l);
+    lhs.trim()
+        .trim_start_matches('{')
+        .trim_end_matches('}')
+        .split(',')
+        .map(str::trim)
+        .filter(|l| !l.is_empty())
+}
+
 /// The identifiers of a script line.
 fn tokens(line: &str) -> impl Iterator<Item = &str> {
     line.split(|c: char| !(c.is_alphanumeric() || matches!(c, '_' | '{' | '}' | '\'')))
@@ -295,6 +317,62 @@ impl Log {
         Ok(())
     }
 
+    /// Builds a log and construction from a script, keeping every line that
+    /// loads. The lines the kernel rejects (or that set an object which is
+    /// not there) are returned instead of failing the whole text; a line is
+    /// marked `dependent` when it uses an object of a line rejected before
+    /// it. For texts the app wrote itself (an autosave): a kernel of another
+    /// version may refuse some line, and the rest must not be lost.
+    pub fn load_tolerant(src: &str) -> (Construction, Log, Vec<Rejected>) {
+        let mut c = Construction::new();
+        let mut log = Log::default();
+        let mut rejected = Vec::new();
+        let mut gone = BTreeSet::new();
+        for (i, raw) in src.lines().enumerate() {
+            let line = normalize(raw);
+            if line.is_empty() {
+                continue;
+            }
+            let parsed = directive(&line);
+            let is_directive = parsed.is_some();
+            let result = match parsed {
+                Some(d) => d.and_then(|d| log.apply(&mut c, d)),
+                None => {
+                    let before = c.len();
+                    match geo_kernel::script::exec(&mut c, &line) {
+                        Ok(_) => {
+                            log.record(&c, before, &line);
+                            Ok(())
+                        }
+                        Err(e) => {
+                            // A command with several outputs may have left
+                            // some of them: build again from the kept lines.
+                            if c.len() != before {
+                                if let Ok((c2, log2)) = log.rebuild() {
+                                    (c, log) = (c2, log2);
+                                }
+                            }
+                            Err(e.to_string())
+                        }
+                    }
+                }
+            };
+            if let Err(reason) = result {
+                let dependent = tokens(&line).any(|t| gone.contains(t));
+                if !is_directive {
+                    gone.extend(defined_labels(&line).map(str::to_owned));
+                }
+                rejected.push(Rejected {
+                    line: i + 1,
+                    text: line,
+                    reason,
+                    dependent,
+                });
+            }
+        }
+        (c, log, rejected)
+    }
+
     /// Builds a log and construction from a whole script. The error carries
     /// the 1-based line number like `script::load`.
     pub fn load(src: &str) -> Result<(Construction, Log), String> {
@@ -437,6 +515,29 @@ mod tests {
             Log::load("A = (0, 0)\nSetVisibleInView(A, 1, false)\nSetVisibleInView(A, 1, true)\n")
                 .unwrap();
         assert!(log.hidden.is_empty());
+    }
+
+    #[test]
+    fn a_tolerant_load_keeps_what_loads_and_reports_the_rest() {
+        let src = "A = (0, 0)\nQ = Nope(A)\nR = Midpoint(Q, A)\nSetCoords(Q, 1, 2)\n\
+                   SetCoords(A, 3, 4)\n{T, U} = Nope(A)\nW = Segment(T, A)\nB = (1, 1)\n";
+        let (c, log, rejected) = Log::load_tolerant(src);
+        let labels: Vec<&str> = c.ids().map(|id| c.label(id)).collect();
+        assert_eq!(labels, ["A", "B"]);
+        assert_eq!(c.value(c.id("A").unwrap()), Value::Point { x: 3.0, y: 4.0 });
+        let lines: Vec<(usize, bool)> = rejected.iter().map(|r| (r.line, r.dependent)).collect();
+        assert_eq!(
+            lines,
+            [(2, false), (3, true), (4, true), (6, false), (7, true)]
+        );
+        assert!(rejected[0].reason.contains("Nope"), "{:?}", rejected[0]);
+        // What was kept is what a strict load of the kept lines gives.
+        let (_, strict) = Log::load(&log.to_script()).unwrap();
+        assert_eq!(strict, log);
+        // A text without errors gives the same as a strict load.
+        let (_, all, none) = Log::load_tolerant("A = (0, 0)\nB = (1, 1)\n");
+        assert!(none.is_empty());
+        assert_eq!(all, Log::load("A = (0, 0)\nB = (1, 1)\n").unwrap().1);
     }
 
     #[test]

@@ -4,6 +4,12 @@
 //! saving it.
 
 use super::Workbench;
+use crate::scriptlog::{Log, Rejected};
+
+/// The format of `snapshot_text`. Its first line is a script comment, so a
+/// snapshot is also a plain script; `restore_text` refuses a newer version.
+pub const SNAPSHOT_VERSION: u32 = 1;
+const SNAPSHOT_HEADER: &str = "# geokernel snapshot ";
 
 impl Workbench {
     /// Replaces the whole document with a file's contents: a saved
@@ -30,14 +36,52 @@ impl Workbench {
     /// app). It walks the whole journal, so it is meant for such moments and
     /// never for every change; the desktop window calls neither function.
     pub fn snapshot_text(&self) -> String {
-        self.log.to_script()
+        format!(
+            "{SNAPSHOT_HEADER}{SNAPSHOT_VERSION}\n{}",
+            self.log.to_script()
+        )
     }
 
-    /// Replaces the document with a `snapshot_text`. On error the document
-    /// is unchanged.
-    pub fn restore_text(&mut self, text: &str) -> Result<(), String> {
-        self.load_script(text)
+    /// Replaces the document with a `snapshot_text`, keeping every line that
+    /// loads: a kernel of another version may refuse some line, and the rest
+    /// of the user's work must survive. The refused lines (and the lines
+    /// that depend on them) are returned and counted in `notice`, the way an
+    /// import reports what it left out. A text without the header loads the
+    /// same way. Only a header of a newer format is an error, which leaves
+    /// the document unchanged.
+    ///
+    /// Files the user opens (`load_bytes`, `load_script`) stay strict: the
+    /// first bad line is an error naming it, as desktop users know it.
+    pub fn restore_text(&mut self, text: &str) -> Result<Vec<Rejected>, String> {
+        if let Some(v) = text
+            .lines()
+            .next()
+            .and_then(|l| l.strip_prefix(SNAPSHOT_HEADER))
+        {
+            match v.trim().parse::<u32>() {
+                Ok(v) if v <= SNAPSHOT_VERSION => {}
+                _ => return Err(format!("Nieznana wersja zapisu: {}", v.trim())),
+            }
+        }
+        let (c, log, rejected) = Log::load_tolerant(text);
+        self.replace(c, log);
+        self.notice = rejected_notice(&rejected);
+        Ok(rejected)
     }
+}
+
+/// The notice after a restore that left lines out. `None` when all loaded.
+pub fn rejected_notice(rejected: &[Rejected]) -> Option<String> {
+    if rejected.is_empty() {
+        return None;
+    }
+    let dependents = rejected.iter().filter(|r| r.dependent).count();
+    let direct = rejected.len() - dependents;
+    let mut text = format!("Pominięte linie zapisu: {direct} (nie dały się wczytać)");
+    if dependents > 0 {
+        text.push_str(&format!(", zależne od nich: {dependents}"));
+    }
+    Some(text)
 }
 
 /// The text to show after a file was imported: what was left out (objects the
@@ -103,8 +147,15 @@ mod tests {
     fn assert_round_trip(wb: &Workbench, what: &str) {
         let text = wb.snapshot_text();
         let mut back = Workbench::default();
-        back.restore_text(&text)
+        let rejected = back
+            .restore_text(&text)
             .unwrap_or_else(|e| panic!("{what}: {e}\n{text}"));
+        assert!(rejected.is_empty(), "{what}: {rejected:?}");
+        assert_eq!(back.notice, None, "{what}");
+        // A snapshot is also a plain script that a strict load accepts.
+        let mut strict = Workbench::default();
+        strict.load_script(&text).unwrap();
+        assert_eq!(strict.log, wb.log, "{what}");
         assert_eq!(back.log, wb.log, "{what}:\n{text}");
         assert_eq!(state(&back), state(wb), "{what}:\n{text}");
         // And the text of the copy is the same text.
@@ -281,6 +332,49 @@ mod tests {
         // The generator makes real constructions with every kind of entry.
         assert!(sizes > 200 * 5, "{sizes}");
         assert!(seen.iter().all(|&n| n >= 10), "{seen:?}");
+    }
+
+    #[test]
+    fn a_snapshot_starts_with_its_version_and_a_newer_one_is_refused() {
+        let wb = Workbench::from_script("A = (0, 0)\n").unwrap();
+        let text = wb.snapshot_text();
+        assert!(
+            text.starts_with("# geokernel snapshot 1\nA = (0, 0)\n"),
+            "{text}"
+        );
+        let mut other = Workbench::from_script("B = (1, 1)\n").unwrap();
+        let err = other
+            .restore_text("# geokernel snapshot 2\nA = (0, 0)\n")
+            .unwrap_err();
+        assert!(err.contains('2'), "{err}");
+        assert!(
+            other.construction().id("B").is_some(),
+            "the document is unchanged"
+        );
+    }
+
+    #[test]
+    fn a_restore_keeps_the_lines_that_load_and_tells_about_the_rest() {
+        let mut wb = Workbench::default();
+        let rejected = wb
+            .restore_text(
+                "# geokernel snapshot 1\nA = (0, 0)\nQ = Nope(A)\nR = Midpoint(Q, A)\n\
+                 SetVisibleInView(R, 1, false)\nB = (1, 1)\nSetVisibleInView(B, 1, false)\n",
+            )
+            .unwrap();
+        assert_eq!(rejected.len(), 3);
+        let c = wb.construction();
+        assert!(c.id("A").is_some() && c.id("Q").is_none());
+        assert!(!wb.is_visible(c.id("B").unwrap()));
+        assert_eq!(
+            wb.notice.as_deref(),
+            Some("Pominięte linie zapisu: 1 (nie dały się wczytać), zależne od nich: 2")
+        );
+        // A user-opened file with the same lines fails at the first bad one.
+        let err = wb
+            .load_bytes(b"A = (0, 0)\nQ = Nope(A)\n", "x.geo")
+            .unwrap_err();
+        assert!(err.starts_with("x.geo: line 2:"), "{err}");
     }
 
     #[test]
