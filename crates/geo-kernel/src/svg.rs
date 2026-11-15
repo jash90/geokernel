@@ -150,7 +150,7 @@ pub fn render(c: &Construction, view: View, width: u32, height: u32) -> String {
             Value::Ray { x, y, a, b, .. } => {
                 // A half-line from the start point along (b, -a), long
                 // enough to leave the view.
-                let far = reach + (x - mx).hypot(y - my);
+                let far = (reach + (x - mx).hypot(y - my)) / a.hypot(b);
                 let _ = writeln!(
                     lines,
                     r##"<line x1="{:.2}" y1="{:.2}" x2="{:.2}" y2="{:.2}"/>"##,

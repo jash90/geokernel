@@ -108,13 +108,18 @@ pub enum VectorDef {
     /// `Translate(v, A)`: the vector `v` drawn from `A`.
     TranslateTo { vector: Id, start: Id },
     /// `Direction(l)` of a line, segment or ray.
-    Direction(Id),
+    ///
+    /// In this and the next three variants the pair holds the objects that
+    /// decide the raw scale of a line argument ([`scale_roots`]). They are
+    /// parents too: moving them can change the raw scale while the stored
+    /// line stays the same, and the vector must still be recomputed.
+    Direction(Id, (Id, Id)),
     /// `UnitVector(v)` of a vector, line, segment or ray.
-    Unit(Id),
+    Unit(Id, (Id, Id)),
     /// `OrthogonalVector(v)` and `PerpendicularVector(v)`.
-    Ortho(Id),
+    Ortho(Id, (Id, Id)),
     /// `UnitOrthogonalVector(v)` and `UnitPerpendicularVector(v)`.
-    UnitOrtho(Id),
+    UnitOrtho(Id, (Id, Id)),
     /// `Length(v)` of a vector.
     Length(Id),
 }
@@ -252,6 +257,30 @@ fn raw_normal(c: &Construction, mut id: Id) -> Option<(f64, f64)> {
     }
 }
 
+/// The objects whose moves can change the raw scale that [`raw_normal`]
+/// gives for `id` without changing the stored line: the two points of a
+/// line, segment or ray through two points, or the vector of a line or ray
+/// with a direction vector, found by following the same parents as
+/// [`raw_normal`]. `(id, id)` when there are none.
+fn scale_roots(c: &Construction, mut id: Id) -> (Id, Id) {
+    loop {
+        match c.def(id) {
+            Def::Line(p, q) | Def::Segment(p, q) | Def::Vector(VectorDef::RayPoints(p, q)) => {
+                return (p, q)
+            }
+            Def::Vector(
+                VectorDef::RayVector(_, v)
+                | VectorDef::LineVector(_, v)
+                | VectorDef::OrthoLineVector(_, v),
+            ) => return (v, v),
+            Def::Parallel { to, .. }
+            | Def::Perpendicular { to, .. }
+            | Def::Vector(VectorDef::Translate { src: to, .. }) => id = to,
+            _ => return (id, id),
+        }
+    }
+}
+
 /// The `(x, y)` of a vector, or the raw direction `(y, -x)` of a line,
 /// segment or ray (`AlgoUnitVectorVector`, `AlgoUnitVectorLine`).
 fn direction_of(c: &Construction, id: Id) -> Option<(f64, f64)> {
@@ -343,10 +372,10 @@ pub fn start(c: &Construction, id: Id) -> Option<(f64, f64)> {
         Def::Vector(VectorDef::TranslateTo { start, .. }) => from(start),
         Def::Vector(VectorDef::Translate { src, .. }) => start(c, src),
         Def::Vector(
-            VectorDef::Direction(l)
-            | VectorDef::Unit(l)
-            | VectorDef::Ortho(l)
-            | VectorDef::UnitOrtho(l),
+            VectorDef::Direction(l, _)
+            | VectorDef::Unit(l, _)
+            | VectorDef::Ortho(l, _)
+            | VectorDef::UnitOrtho(l, _),
         ) => match (c.kind(l), c.def(l)) {
             (Kind::Vector, _) => start(c, l),
             (_, Def::Line(p, _)) => from(p),
@@ -364,10 +393,10 @@ impl Group for VectorDef {
             | VectorDef::Between(..)
             | VectorDef::Position(_)
             | VectorDef::TranslateTo { .. }
-            | VectorDef::Direction(_)
-            | VectorDef::Unit(_)
-            | VectorDef::Ortho(_)
-            | VectorDef::UnitOrtho(_) => Kind::Vector,
+            | VectorDef::Direction(..)
+            | VectorDef::Unit(..)
+            | VectorDef::Ortho(..)
+            | VectorDef::UnitOrtho(..) => Kind::Vector,
             VectorDef::RayPoints(..) | VectorDef::RayVector(..) => Kind::Ray,
             VectorDef::LineVector(..) | VectorDef::OrthoLineVector(..) => Kind::Line,
             VectorDef::Translate { kind, .. } => kind,
@@ -385,12 +414,11 @@ impl Group for VectorDef {
             | VectorDef::OrthoLineVector(p, q) => Parents::of(&[p, q]),
             VectorDef::Translate { src, by, .. } => Parents::of(&[src, by]),
             VectorDef::TranslateTo { vector, start } => Parents::of(&[vector, start]),
-            VectorDef::Position(p)
-            | VectorDef::Direction(p)
-            | VectorDef::Unit(p)
-            | VectorDef::Ortho(p)
-            | VectorDef::UnitOrtho(p)
-            | VectorDef::Length(p) => Parents::of(&[p]),
+            VectorDef::Position(p) | VectorDef::Length(p) => Parents::of(&[p]),
+            VectorDef::Direction(p, (s, t))
+            | VectorDef::Unit(p, (s, t))
+            | VectorDef::Ortho(p, (s, t))
+            | VectorDef::UnitOrtho(p, (s, t)) => Parents::of(&[p, s, t]),
         }
     }
 
@@ -423,8 +451,8 @@ impl Group for VectorDef {
                 c.expect(vector, VECTOR)?;
                 c.expect(start, POINT)
             }
-            VectorDef::Direction(l) => c.expect(l, DIRECTED),
-            VectorDef::Unit(v) | VectorDef::Ortho(v) | VectorDef::UnitOrtho(v) => {
+            VectorDef::Direction(l, _) => c.expect(l, DIRECTED),
+            VectorDef::Unit(v, _) | VectorDef::Ortho(v, _) | VectorDef::UnitOrtho(v, _) => {
                 c.expect(v, VECTOR_OR_DIRECTED)
             }
             VectorDef::Length(v) => c.expect(v, VECTOR),
@@ -466,15 +494,15 @@ impl Group for VectorDef {
                 let (x, y) = vector(c, v)?;
                 Some(Value::Vector { x, y })
             }
-            VectorDef::Direction(l) => {
+            VectorDef::Direction(l, _) => {
                 let (x, y) = direction_of(c, l)?;
                 Some(Value::Vector { x, y })
             }
-            VectorDef::Unit(v) => {
+            VectorDef::Unit(v, _) => {
                 let (x, y) = direction_of(c, v)?;
                 unit(x, y)
             }
-            VectorDef::Ortho(v) => {
+            VectorDef::Ortho(v, _) => {
                 // `AlgoOrthoVectorVector` turns a vector by +90 degrees;
                 // `AlgoOrthoVectorLine` takes the raw normal of a line.
                 let (x, y) = if c.kind(v) == Kind::Vector {
@@ -485,7 +513,7 @@ impl Group for VectorDef {
                 };
                 Some(Value::Vector { x, y })
             }
-            VectorDef::UnitOrtho(v) => {
+            VectorDef::UnitOrtho(v, _) => {
                 let (x, y) = if c.kind(v) == Kind::Vector {
                     let (x, y) = vector(c, v)?;
                     (-y, x)
@@ -575,10 +603,14 @@ impl Group for VectorDef {
                     }
                 }
             }
-            ("Direction", &[l]) => VectorDef::Direction(l),
-            ("UnitVector", &[v]) => VectorDef::Unit(v),
-            ("OrthogonalVector" | "PerpendicularVector", &[v]) => VectorDef::Ortho(v),
-            ("UnitOrthogonalVector" | "UnitPerpendicularVector", &[v]) => VectorDef::UnitOrtho(v),
+            ("Direction", &[l]) => VectorDef::Direction(l, scale_roots(c, l)),
+            ("UnitVector", &[v]) => VectorDef::Unit(v, scale_roots(c, v)),
+            ("OrthogonalVector" | "PerpendicularVector", &[v]) => {
+                VectorDef::Ortho(v, scale_roots(c, v))
+            }
+            ("UnitOrthogonalVector" | "UnitPerpendicularVector", &[v]) => {
+                VectorDef::UnitOrtho(v, scale_roots(c, v))
+            }
             _ => unreachable!("argument count checked above"),
         }))
     }
@@ -820,6 +852,26 @@ mod tests {
         assert_eq!(start(&c, c.id("v").unwrap()), Some((1.0, 2.0)));
         assert_eq!(start(&c, c.id("u").unwrap()), Some((0.0, 0.0)));
         assert_eq!(start(&c, c.id("A").unwrap()), None);
+    }
+
+    #[test]
+    fn a_new_raw_scale_alone_updates_the_vectors() {
+        let mut c = load(&format!(
+            "{BASE}d = Direction(l)\no = OrthogonalVector(l)\nP = (5, 1)\np = Line(P, l)\n\
+             dp = Direction(p)\ng = Ray(A, u)\ntg = Translate(g, u)\ndg = Direction(tg)\n"
+        ))
+        .unwrap();
+        // B moves along l: the stored line stays the same, its raw scale doubles.
+        let b = c.id("B").unwrap();
+        let before = value(&c, "l");
+        c.move_point(b, 7.0, 10.0).unwrap();
+        assert_eq!(value(&c, "l"), before);
+        close(vec_of(&c, "d"), (6.0, 8.0));
+        close(vec_of(&c, "o"), (-8.0, 6.0));
+        close(vec_of(&c, "dp"), (6.0, 8.0));
+        let u = c.id("u").unwrap();
+        c.move_point(u, 6.0, -2.0).unwrap();
+        close(vec_of(&c, "dg"), (6.0, -2.0));
     }
 
     #[test]

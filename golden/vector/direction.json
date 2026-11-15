@@ -706,6 +706,433 @@
           "e": { "type": "vector", "defined": true, "x": -49.99, "y": -69.98 }
         }
       ]
+    },
+    {
+      "id": "vector-direction-014",
+      "group": "vector",
+      "script": [
+        "A = (1, 2)",
+        "B = (4, 6)",
+        "l = Line(A, B)",
+        "d = Direction(l)",
+        "o = OrthogonalVector(l)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 7.0, "y": 10.0 },
+        { "action": "move", "label": "B", "x": 2.5, "y": 4.0 },
+        { "action": "move", "label": "A", "x": -5.0, "y": -6.0 },
+        { "action": "move", "label": "B", "x": -2.0, "y": -2.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 6.0 },
+          "l": { "type": "line", "defined": true, "a": -4.0, "b": 3.0, "c": -2.0 },
+          "d": { "type": "vector", "defined": true, "x": 3.0, "y": 4.0 },
+          "o": { "type": "vector", "defined": true, "x": -4.0, "y": 3.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 7.0, "y": 10.0 },
+          "l": { "type": "line", "defined": true, "a": -8.0, "b": 6.0, "c": -4.0 },
+          "d": { "type": "vector", "defined": true, "x": 6.0, "y": 8.0 },
+          "o": { "type": "vector", "defined": true, "x": -8.0, "y": 6.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 2.5, "y": 4.0 },
+          "l": { "type": "line", "defined": true, "a": -2.0, "b": 1.5, "c": -1.0 },
+          "d": { "type": "vector", "defined": true, "x": 1.5, "y": 2.0 },
+          "o": { "type": "vector", "defined": true, "x": -2.0, "y": 1.5 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -5.0, "y": -6.0 },
+          "B": { "type": "point", "defined": true, "x": 2.5, "y": 4.0 },
+          "l": { "type": "line", "defined": true, "a": -10.0, "b": 7.5, "c": -5.0 },
+          "d": { "type": "vector", "defined": true, "x": 7.5, "y": 10.0 },
+          "o": { "type": "vector", "defined": true, "x": -10.0, "y": 7.5 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -5.0, "y": -6.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": -2.0 },
+          "l": { "type": "line", "defined": true, "a": -4.0, "b": 3.0, "c": -2.0 },
+          "d": { "type": "vector", "defined": true, "x": 3.0, "y": 4.0 },
+          "o": { "type": "vector", "defined": true, "x": -4.0, "y": 3.0 }
+        }
+      ]
+    },
+    {
+      "id": "vector-direction-015",
+      "group": "vector",
+      "script": [
+        "A = (1, 2)",
+        "B = (4, 6)",
+        "l = Segment(A, B)",
+        "d = Direction(l)",
+        "o = OrthogonalVector(l)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 7.0, "y": 10.0 },
+        { "action": "move", "label": "B", "x": 2.5, "y": 4.0 },
+        { "action": "move", "label": "A", "x": -5.0, "y": -6.0 },
+        { "action": "move", "label": "B", "x": -2.0, "y": -2.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 6.0 },
+          "l": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 6.0 },
+          "d": { "type": "vector", "defined": true, "x": 3.0, "y": 4.0 },
+          "o": { "type": "vector", "defined": true, "x": -4.0, "y": 3.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 7.0, "y": 10.0 },
+          "l": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 7.0, "y2": 10.0 },
+          "d": { "type": "vector", "defined": true, "x": 6.0, "y": 8.0 },
+          "o": { "type": "vector", "defined": true, "x": -8.0, "y": 6.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 2.5, "y": 4.0 },
+          "l": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 2.5, "y2": 4.0 },
+          "d": { "type": "vector", "defined": true, "x": 1.5, "y": 2.0 },
+          "o": { "type": "vector", "defined": true, "x": -2.0, "y": 1.5 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -5.0, "y": -6.0 },
+          "B": { "type": "point", "defined": true, "x": 2.5, "y": 4.0 },
+          "l": { "type": "segment", "defined": true, "x1": -5.0, "y1": -6.0, "x2": 2.5, "y2": 4.0 },
+          "d": { "type": "vector", "defined": true, "x": 7.5, "y": 10.0 },
+          "o": { "type": "vector", "defined": true, "x": -10.0, "y": 7.5 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -5.0, "y": -6.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": -2.0 },
+          "l": { "type": "segment", "defined": true, "x1": -5.0, "y1": -6.0, "x2": -2.0, "y2": -2.0 },
+          "d": { "type": "vector", "defined": true, "x": 3.0, "y": 4.0 },
+          "o": { "type": "vector", "defined": true, "x": -4.0, "y": 3.0 }
+        }
+      ]
+    },
+    {
+      "id": "vector-direction-016",
+      "group": "vector",
+      "script": [
+        "A = (1, 2)",
+        "B = (4, 6)",
+        "l = Ray(A, B)",
+        "d = Direction(l)",
+        "o = OrthogonalVector(l)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 7.0, "y": 10.0 },
+        { "action": "move", "label": "B", "x": 2.5, "y": 4.0 },
+        { "action": "move", "label": "A", "x": -5.0, "y": -6.0 },
+        { "action": "move", "label": "B", "x": -2.0, "y": -2.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 6.0 },
+          "l": { "type": "ray", "defined": true, "x": 1.0, "y": 2.0, "a": -4.0, "b": 3.0, "c": -2.0 },
+          "d": { "type": "vector", "defined": true, "x": 3.0, "y": 4.0 },
+          "o": { "type": "vector", "defined": true, "x": -4.0, "y": 3.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 7.0, "y": 10.0 },
+          "l": { "type": "ray", "defined": true, "x": 1.0, "y": 2.0, "a": -8.0, "b": 6.0, "c": -4.0 },
+          "d": { "type": "vector", "defined": true, "x": 6.0, "y": 8.0 },
+          "o": { "type": "vector", "defined": true, "x": -8.0, "y": 6.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 2.5, "y": 4.0 },
+          "l": { "type": "ray", "defined": true, "x": 1.0, "y": 2.0, "a": -2.0, "b": 1.5, "c": -1.0 },
+          "d": { "type": "vector", "defined": true, "x": 1.5, "y": 2.0 },
+          "o": { "type": "vector", "defined": true, "x": -2.0, "y": 1.5 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -5.0, "y": -6.0 },
+          "B": { "type": "point", "defined": true, "x": 2.5, "y": 4.0 },
+          "l": { "type": "ray", "defined": true, "x": -5.0, "y": -6.0, "a": -10.0, "b": 7.5, "c": -5.0 },
+          "d": { "type": "vector", "defined": true, "x": 7.5, "y": 10.0 },
+          "o": { "type": "vector", "defined": true, "x": -10.0, "y": 7.5 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -5.0, "y": -6.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": -2.0 },
+          "l": { "type": "ray", "defined": true, "x": -5.0, "y": -6.0, "a": -4.0, "b": 3.0, "c": -2.0 },
+          "d": { "type": "vector", "defined": true, "x": 3.0, "y": 4.0 },
+          "o": { "type": "vector", "defined": true, "x": -4.0, "y": 3.0 }
+        }
+      ]
+    },
+    {
+      "id": "vector-direction-017",
+      "group": "vector",
+      "script": [
+        "A = (1, 2)",
+        "u = (3, -1)",
+        "l = Ray(A, u)",
+        "d = Direction(l)",
+        "o = OrthogonalVector(l)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "u", "x": 6.0, "y": -2.0 },
+        { "action": "move", "label": "u", "x": 1.5, "y": -0.5 },
+        { "action": "move", "label": "A", "x": 4.0, "y": 1.0 },
+        { "action": "move", "label": "u", "x": -3.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 3.0, "y": -1.0 },
+          "l": { "type": "ray", "defined": true, "x": 1.0, "y": 2.0, "a": 1.0, "b": 3.0, "c": -7.0 },
+          "d": { "type": "vector", "defined": true, "x": 3.0, "y": -1.0 },
+          "o": { "type": "vector", "defined": true, "x": 1.0, "y": 3.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 6.0, "y": -2.0 },
+          "l": { "type": "ray", "defined": true, "x": 1.0, "y": 2.0, "a": 2.0, "b": 6.0, "c": -14.0 },
+          "d": { "type": "vector", "defined": true, "x": 6.0, "y": -2.0 },
+          "o": { "type": "vector", "defined": true, "x": 2.0, "y": 6.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.5, "y": -0.5 },
+          "l": { "type": "ray", "defined": true, "x": 1.0, "y": 2.0, "a": 0.5, "b": 1.5, "c": -3.5 },
+          "d": { "type": "vector", "defined": true, "x": 1.5, "y": -0.5 },
+          "o": { "type": "vector", "defined": true, "x": 0.5, "y": 1.5 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 4.0, "y": 1.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.5, "y": -0.5 },
+          "l": { "type": "ray", "defined": true, "x": 4.0, "y": 1.0, "a": 0.5, "b": 1.5, "c": -3.5 },
+          "d": { "type": "vector", "defined": true, "x": 1.5, "y": -0.5 },
+          "o": { "type": "vector", "defined": true, "x": 0.5, "y": 1.5 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 4.0, "y": 1.0 },
+          "u": { "type": "vector", "defined": true, "x": -3.0, "y": 1.0 },
+          "l": { "type": "ray", "defined": true, "x": 4.0, "y": 1.0, "a": -1.0, "b": -3.0, "c": 7.0 },
+          "d": { "type": "vector", "defined": true, "x": -3.0, "y": 1.0 },
+          "o": { "type": "vector", "defined": true, "x": -1.0, "y": -3.0 }
+        }
+      ]
+    },
+    {
+      "id": "vector-direction-018",
+      "group": "vector",
+      "script": [
+        "A = (1, 2)",
+        "u = (3, -1)",
+        "l = Line(A, u)",
+        "d = Direction(l)",
+        "o = OrthogonalVector(l)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "u", "x": 6.0, "y": -2.0 },
+        { "action": "move", "label": "u", "x": 1.5, "y": -0.5 },
+        { "action": "move", "label": "A", "x": 4.0, "y": 1.0 },
+        { "action": "move", "label": "u", "x": -3.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 3.0, "y": -1.0 },
+          "l": { "type": "line", "defined": true, "a": 1.0, "b": 3.0, "c": -7.0 },
+          "d": { "type": "vector", "defined": true, "x": 3.0, "y": -1.0 },
+          "o": { "type": "vector", "defined": true, "x": 1.0, "y": 3.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 6.0, "y": -2.0 },
+          "l": { "type": "line", "defined": true, "a": 2.0, "b": 6.0, "c": -14.0 },
+          "d": { "type": "vector", "defined": true, "x": 6.0, "y": -2.0 },
+          "o": { "type": "vector", "defined": true, "x": 2.0, "y": 6.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.5, "y": -0.5 },
+          "l": { "type": "line", "defined": true, "a": 0.5, "b": 1.5, "c": -3.5 },
+          "d": { "type": "vector", "defined": true, "x": 1.5, "y": -0.5 },
+          "o": { "type": "vector", "defined": true, "x": 0.5, "y": 1.5 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 4.0, "y": 1.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.5, "y": -0.5 },
+          "l": { "type": "line", "defined": true, "a": 0.5, "b": 1.5, "c": -3.5 },
+          "d": { "type": "vector", "defined": true, "x": 1.5, "y": -0.5 },
+          "o": { "type": "vector", "defined": true, "x": 0.5, "y": 1.5 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 4.0, "y": 1.0 },
+          "u": { "type": "vector", "defined": true, "x": -3.0, "y": 1.0 },
+          "l": { "type": "line", "defined": true, "a": -1.0, "b": -3.0, "c": 7.0 },
+          "d": { "type": "vector", "defined": true, "x": -3.0, "y": 1.0 },
+          "o": { "type": "vector", "defined": true, "x": -1.0, "y": -3.0 }
+        }
+      ]
+    },
+    {
+      "id": "vector-direction-019",
+      "group": "vector",
+      "script": [
+        "A = (1, 2)",
+        "u = (3, -1)",
+        "l = OrthogonalLine(A, u)",
+        "d = Direction(l)",
+        "o = OrthogonalVector(l)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "u", "x": 6.0, "y": -2.0 },
+        { "action": "move", "label": "u", "x": 1.5, "y": -0.5 },
+        { "action": "move", "label": "A", "x": 4.0, "y": 1.0 },
+        { "action": "move", "label": "u", "x": -3.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 3.0, "y": -1.0 },
+          "l": { "type": "line", "defined": true, "a": -3.0, "b": 1.0, "c": 1.0 },
+          "d": { "type": "vector", "defined": true, "x": 1.0, "y": 3.0 },
+          "o": { "type": "vector", "defined": true, "x": -3.0, "y": 1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 6.0, "y": -2.0 },
+          "l": { "type": "line", "defined": true, "a": -6.0, "b": 2.0, "c": 2.0 },
+          "d": { "type": "vector", "defined": true, "x": 2.0, "y": 6.0 },
+          "o": { "type": "vector", "defined": true, "x": -6.0, "y": 2.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.5, "y": -0.5 },
+          "l": { "type": "line", "defined": true, "a": -1.5, "b": 0.5, "c": 0.5 },
+          "d": { "type": "vector", "defined": true, "x": 0.5, "y": 1.5 },
+          "o": { "type": "vector", "defined": true, "x": -1.5, "y": 0.5 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 4.0, "y": 1.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.5, "y": -0.5 },
+          "l": { "type": "line", "defined": true, "a": -1.5, "b": 0.5, "c": 5.5 },
+          "d": { "type": "vector", "defined": true, "x": 0.5, "y": 1.5 },
+          "o": { "type": "vector", "defined": true, "x": -1.5, "y": 0.5 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 4.0, "y": 1.0 },
+          "u": { "type": "vector", "defined": true, "x": -3.0, "y": 1.0 },
+          "l": { "type": "line", "defined": true, "a": 3.0, "b": -1.0, "c": -11.0 },
+          "d": { "type": "vector", "defined": true, "x": -1.0, "y": -3.0 },
+          "o": { "type": "vector", "defined": true, "x": 3.0, "y": -1.0 }
+        }
+      ]
+    },
+    {
+      "id": "vector-direction-020",
+      "group": "vector",
+      "script": [
+        "A = (1, 2)",
+        "B = (4, 6)",
+        "P = (5, 1)",
+        "u = (2, 3)",
+        "l = Line(A, B)",
+        "m = Line(P, l)",
+        "n = PerpendicularLine(P, l)",
+        "t = Translate(l, u)",
+        "dm = Direction(m)",
+        "dn = Direction(n)",
+        "dt = Direction(t)",
+        "ot = OrthogonalVector(t)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 7.0, "y": 10.0 },
+        { "action": "move", "label": "A", "x": -2.0, "y": -2.0 },
+        { "action": "move", "label": "B", "x": 2.5, "y": 4.0 },
+        { "action": "move", "label": "u", "x": -1.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 6.0 },
+          "P": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "u": { "type": "vector", "defined": true, "x": 2.0, "y": 3.0 },
+          "l": { "type": "line", "defined": true, "a": -4.0, "b": 3.0, "c": -2.0 },
+          "m": { "type": "line", "defined": true, "a": -4.0, "b": 3.0, "c": 17.0 },
+          "n": { "type": "line", "defined": true, "a": -3.0, "b": -4.0, "c": 19.0 },
+          "t": { "type": "line", "defined": true, "a": -4.0, "b": 3.0, "c": -3.0 },
+          "dm": { "type": "vector", "defined": true, "x": 3.0, "y": 4.0 },
+          "dn": { "type": "vector", "defined": true, "x": -4.0, "y": 3.0 },
+          "dt": { "type": "vector", "defined": true, "x": 3.0, "y": 4.0 },
+          "ot": { "type": "vector", "defined": true, "x": -4.0, "y": 3.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 7.0, "y": 10.0 },
+          "P": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "u": { "type": "vector", "defined": true, "x": 2.0, "y": 3.0 },
+          "l": { "type": "line", "defined": true, "a": -8.0, "b": 6.0, "c": -4.0 },
+          "m": { "type": "line", "defined": true, "a": -8.0, "b": 6.0, "c": 34.0 },
+          "n": { "type": "line", "defined": true, "a": -6.0, "b": -8.0, "c": 38.0 },
+          "t": { "type": "line", "defined": true, "a": -8.0, "b": 6.0, "c": -6.0 },
+          "dm": { "type": "vector", "defined": true, "x": 6.0, "y": 8.0 },
+          "dn": { "type": "vector", "defined": true, "x": -8.0, "y": 6.0 },
+          "dt": { "type": "vector", "defined": true, "x": 6.0, "y": 8.0 },
+          "ot": { "type": "vector", "defined": true, "x": -8.0, "y": 6.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": -2.0 },
+          "B": { "type": "point", "defined": true, "x": 7.0, "y": 10.0 },
+          "P": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "u": { "type": "vector", "defined": true, "x": 2.0, "y": 3.0 },
+          "l": { "type": "line", "defined": true, "a": -12.0, "b": 9.0, "c": -6.0 },
+          "m": { "type": "line", "defined": true, "a": -12.0, "b": 9.0, "c": 51.0 },
+          "n": { "type": "line", "defined": true, "a": -9.0, "b": -12.0, "c": 57.0 },
+          "t": { "type": "line", "defined": true, "a": -12.0, "b": 9.0, "c": -9.0 },
+          "dm": { "type": "vector", "defined": true, "x": 9.0, "y": 12.0 },
+          "dn": { "type": "vector", "defined": true, "x": -12.0, "y": 9.0 },
+          "dt": { "type": "vector", "defined": true, "x": 9.0, "y": 12.0 },
+          "ot": { "type": "vector", "defined": true, "x": -12.0, "y": 9.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": -2.0 },
+          "B": { "type": "point", "defined": true, "x": 2.5, "y": 4.0 },
+          "P": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "u": { "type": "vector", "defined": true, "x": 2.0, "y": 3.0 },
+          "l": { "type": "line", "defined": true, "a": -6.0, "b": 4.5, "c": -3.0 },
+          "m": { "type": "line", "defined": true, "a": -6.0, "b": 4.5, "c": 25.5 },
+          "n": { "type": "line", "defined": true, "a": -4.5, "b": -6.0, "c": 28.5 },
+          "t": { "type": "line", "defined": true, "a": -6.0, "b": 4.5, "c": -4.5 },
+          "dm": { "type": "vector", "defined": true, "x": 4.5, "y": 6.0 },
+          "dn": { "type": "vector", "defined": true, "x": -6.0, "y": 4.5 },
+          "dt": { "type": "vector", "defined": true, "x": 4.5, "y": 6.0 },
+          "ot": { "type": "vector", "defined": true, "x": -6.0, "y": 4.5 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": -2.0 },
+          "B": { "type": "point", "defined": true, "x": 2.5, "y": 4.0 },
+          "P": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "u": { "type": "vector", "defined": true, "x": -1.0, "y": 0.0 },
+          "l": { "type": "line", "defined": true, "a": -6.0, "b": 4.5, "c": -3.0 },
+          "m": { "type": "line", "defined": true, "a": -6.0, "b": 4.5, "c": 25.5 },
+          "n": { "type": "line", "defined": true, "a": -4.5, "b": -6.0, "c": 28.5 },
+          "t": { "type": "line", "defined": true, "a": -6.0, "b": 4.5, "c": -9.0 },
+          "dm": { "type": "vector", "defined": true, "x": 4.5, "y": 6.0 },
+          "dn": { "type": "vector", "defined": true, "x": -6.0, "y": 4.5 },
+          "dt": { "type": "vector", "defined": true, "x": 4.5, "y": 6.0 },
+          "ot": { "type": "vector", "defined": true, "x": -6.0, "y": 4.5 }
+        }
+      ]
     }
   ]
 }

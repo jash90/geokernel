@@ -169,6 +169,21 @@ case("direction", [pt("A", 0.01, 0.02), pt("B", 0.012, 0.025), pt("P", 3, 1),
                    "s = Segment(A, B)", "m = PerpendicularLine(P, s)",
                    "n = PerpendicularLine(A, m)", "d = Direction(m)", "e = Direction(n)"],
      [mv("B", 0.011, 0.021), mv("B", 50, 70), mv("P", -2, 4)])
+# moves that change only the raw scale of the line: the stored line stays
+# the same, the direction and the orthogonal vector change length
+for make in ("l = Line(A, B)", "l = Segment(A, B)", "l = Ray(A, B)"):
+    case("direction", [pt("A", 1, 2), pt("B", 4, 6), make, "d = Direction(l)",
+                       "o = OrthogonalVector(l)"],
+         [mv("B", 7, 10), mv("B", 2.5, 4), mv("A", -5, -6), mv("B", -2, -2)])
+for make in ("l = Ray(A, u)", "l = Line(A, u)", "l = OrthogonalLine(A, u)"):
+    case("direction", [pt("A", 1, 2), vec("u", 3, -1), make, "d = Direction(l)",
+                       "o = OrthogonalVector(l)"],
+         [mv("u", 6, -2), mv("u", 1.5, -0.5), mv("A", 4, 1), mv("u", -3, 1)])
+case("direction", [pt("A", 1, 2), pt("B", 4, 6), pt("P", 5, 1), vec("u", 2, 3),
+                   "l = Line(A, B)", "m = Line(P, l)", "n = PerpendicularLine(P, l)",
+                   "t = Translate(l, u)", "dm = Direction(m)", "dn = Direction(n)",
+                   "dt = Direction(t)", "ot = OrthogonalVector(t)"],
+     [mv("B", 7, 10), mv("A", -2, -2), mv("B", 2.5, 4), mv("u", -1, 0)])
 
 # ------------------------------------------------------- unit and orthogonal vectors
 topic("unit")

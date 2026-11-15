@@ -51,7 +51,7 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform)
     for id in c.ids() {
         // A ray: a half-line from its start point along (b, -a).
         if let Value::Ray { x, y, a, b, .. } = c.value(id) {
-            let far = reach + (x - mx).hypot(y - my);
+            let far = (reach + (x - mx).hypot(y - my)) / a.hypot(b);
             painter.line_segment(
                 [p(x, y), p(x + far * b, y - far * a)],
                 Stroke::new(1.0, LINE),
