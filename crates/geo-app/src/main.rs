@@ -28,6 +28,7 @@ mod ui_tests;
 
 use app::App;
 use eframe::egui;
+use geo_app_core::metrics::Metrics;
 use geo_app_core::workbench::Workbench;
 use geo_app_core::{
     arc, describe, gesture, highlight, hit, interact, labelpos, layout, shape, style, ticks, tools,
@@ -54,7 +55,7 @@ fn main() -> eframe::Result {
             std::process::exit(2);
         }
     };
-    let cli::Command::Run { script } = command else {
+    let cli::Command::Run { script, touch } = command else {
         println!("{}", cli::USAGE);
         return Ok(());
     };
@@ -82,9 +83,22 @@ fn main() -> eframe::Result {
     eframe::run_native(
         "geokernel",
         options,
-        Box::new(|cc| {
+        Box::new(move |cc| {
             theme::apply(&cc.egui_ctx);
-            Ok(Box::new(Window(App::new(wb, load_error))))
+            let metrics = if touch {
+                Metrics::touch()
+            } else {
+                Metrics::desktop()
+            };
+            // egui's own click rules (buttons, rows) follow the profile too;
+            // the desktop profile holds egui's defaults.
+            cc.egui_ctx.options_mut(|o| {
+                o.input_options.max_click_dist = metrics.drag_slop;
+                o.input_options.max_click_duration = metrics.click_time;
+            });
+            let mut app = App::new(wb, load_error);
+            app.set_metrics(metrics);
+            Ok(Box::new(Window(app)))
         }),
     )
 }

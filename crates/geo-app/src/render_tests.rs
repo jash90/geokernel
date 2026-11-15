@@ -146,3 +146,15 @@ fn render_axes_out_of_view() {
     );
     println!("{}", path.display());
 }
+
+#[test]
+#[ignore = "needs a GPU adapter"]
+fn render_touch_portrait() {
+    let path = render_sized(
+        include_str!("../../../examples/triangle.geo"),
+        "touch-portrait.png",
+        (400, 800),
+        |app| app.set_metrics(geo_app_core::metrics::Metrics::touch()),
+    );
+    println!("{}", path.display());
+}

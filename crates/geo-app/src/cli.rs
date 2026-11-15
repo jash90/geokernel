@@ -4,7 +4,7 @@ use crate::workbench::Workbench;
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 
-pub const USAGE: &str = "usage: geokernel-app [script.geo | file.ggb]";
+pub const USAGE: &str = "usage: geokernel-app [--touch] [script.geo | file.ggb]\n  --touch  larger hit areas and buttons, as on a touch screen";
 
 /// What the command line asked for.
 #[derive(Debug, PartialEq, Eq)]
@@ -12,6 +12,8 @@ pub enum Command {
     /// Open the window, optionally loading a script.
     Run {
         script: Option<PathBuf>,
+        /// Use the touch profile (larger targets) instead of the mouse one.
+        touch: bool,
     },
     Help,
 }
@@ -20,9 +22,11 @@ pub enum Command {
 /// Unicode.
 pub fn parse_args<I: IntoIterator<Item = OsString>>(args: I) -> Result<Command, String> {
     let mut script = None;
+    let mut touch = false;
     for arg in args {
         match arg.to_str() {
             Some("-h" | "--help") => return Ok(Command::Help),
+            Some("--touch") => touch = true,
             Some(a) if a.starts_with('-') && a.len() > 1 => {
                 return Err(format!("unknown option `{a}`"));
             }
@@ -30,7 +34,7 @@ pub fn parse_args<I: IntoIterator<Item = OsString>>(args: I) -> Result<Command, 
             _ => script = Some(PathBuf::from(arg)),
         }
     }
-    Ok(Command::Run { script })
+    Ok(Command::Run { script, touch })
 }
 
 fn file_name(path: &Path) -> String {
@@ -104,7 +108,13 @@ mod tests {
 
     #[test]
     fn no_arguments_means_the_built_in_example() {
-        assert_eq!(parse(&[]), Ok(Command::Run { script: None }));
+        assert_eq!(
+            parse(&[]),
+            Ok(Command::Run {
+                script: None,
+                touch: false
+            })
+        );
     }
 
     #[test]
@@ -112,7 +122,8 @@ mod tests {
         assert_eq!(
             parse(&["a.geo"]),
             Ok(Command::Run {
-                script: Some(PathBuf::from("a.geo"))
+                script: Some(PathBuf::from("a.geo")),
+                touch: false
             })
         );
     }
@@ -125,7 +136,26 @@ mod tests {
         assert_eq!(
             parse_args([raw.clone()]),
             Ok(Command::Run {
-                script: Some(PathBuf::from(raw))
+                script: Some(PathBuf::from(raw)),
+                touch: false
+            })
+        );
+    }
+
+    #[test]
+    fn the_touch_flag_goes_with_or_without_a_path() {
+        assert_eq!(
+            parse(&["--touch", "a.geo"]),
+            Ok(Command::Run {
+                script: Some(PathBuf::from("a.geo")),
+                touch: true
+            })
+        );
+        assert_eq!(
+            parse(&["--touch"]),
+            Ok(Command::Run {
+                script: None,
+                touch: true
             })
         );
     }

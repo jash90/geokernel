@@ -119,15 +119,21 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     if pressed_at.is_some_and(|p| app.regions.graphics.egui().contains(p)) {
         app.keyboard.open = false;
     }
-    let regions = Regions::new(ui.max_rect().core(), app.keyboard.open);
+    let regions = Regions::new(ui.max_rect().core(), app.keyboard.open, &app.metrics);
     app.regions = regions;
     let splitter = regions.splitter.egui();
     let painter = ui.painter().clone();
     // The root ui of a real window has no fill of its own.
     painter.rect_filled(ui.max_rect(), 0.0, theme::WHITE);
     painter.rect_filled(splitter, 0.0, theme::TOOLBAR_BG);
-    for x in [splitter.left() + 0.5, splitter.right() - 0.5] {
-        painter.vline(x, splitter.y_range(), Stroke::new(1.0, theme::BORDER));
+    if regions.portrait {
+        for y in [splitter.top() + 0.5, splitter.bottom() - 0.5] {
+            painter.hline(splitter.x_range(), y, Stroke::new(1.0, theme::BORDER));
+        }
+    } else {
+        for x in [splitter.left() + 0.5, splitter.right() - 0.5] {
+            painter.vline(x, splitter.y_range(), Stroke::new(1.0, theme::BORDER));
+        }
     }
     region(app, ui, regions.algebra.egui(), "algebra", |app, ui| {
         algebra::show(app, ui)

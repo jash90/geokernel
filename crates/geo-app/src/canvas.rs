@@ -109,13 +109,18 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     // The show/hide tool shows hidden objects faintly and lets them be picked.
     let show_all = tool == Tool::ShowHide;
     let t = cam.transform(w, h);
-    let m = app.metrics;
+    // The hit radii of the profile (three numbers read once per frame).
+    let (point_r, curve_r, grab_r) = (
+        app.metrics.point_radius,
+        app.metrics.curve_radius,
+        app.metrics.grab_radius,
+    );
     let shown = |app: &App, id: Id| show_all || app.wb.is_visible(id);
 
     // What the pointer is over (for highlighting and for picking).
     let pick_at = |app: &App, pos: (f64, f64)| -> Option<Id> {
         let c = app.wb.construction();
-        hit::pick(c, &t, pos, m.point_radius, m.curve_radius, |id| {
+        hit::pick(c, &t, pos, point_r, curve_r, |id| {
             shown(app, id) && (move_tool || app.tool.accepts_object(c.label(id), c.kind(id)))
         })
     };
@@ -147,12 +152,12 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     let intents = gesture.end_frame(response.contains_pointer(), |origin| {
         let ((sx, sy), pt) = at_press(app, origin.egui());
         if move_tool {
-            grabbed = Drag::begin(app.wb.construction(), &pt, sx, sy, m.grab_radius, |id| {
+            grabbed = Drag::begin(app.wb.construction(), &pt, sx, sy, grab_r, |id| {
                 app.wb.is_visible(id)
             });
         }
         let c = app.wb.construction();
-        let on_point = hit::pick(c, &pt, (sx, sy), m.point_radius, m.curve_radius, |id| {
+        let on_point = hit::pick(c, &pt, (sx, sy), point_r, curve_r, |id| {
             shown(app, id) && c.kind(id) == Kind::Point
         })
         .is_some();
@@ -199,9 +204,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             _ => {
                 let (local, pt) = at_press(app, pos);
                 let c = app.wb.construction();
-                let hit = hit::pick(c, &pt, local, m.point_radius, m.curve_radius, |id| {
-                    shown(app, id)
-                });
+                let hit = hit::pick(c, &pt, local, point_r, curve_r, |id| shown(app, id));
                 click(app, &pt, local, hit);
             }
         }
@@ -213,7 +216,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         Tool::ZoomOut => Some(egui::CursorIcon::ZoomOut),
         Tool::Move => response
             .hover_pos()
-            .filter(|&p| hit_free_point(app, &t, to_local(p), m.grab_radius))
+            .filter(|&p| hit_free_point(app, &t, to_local(p), grab_r))
             .map(|_| egui::CursorIcon::Grab),
         _ => response.hover_pos().map(|_| egui::CursorIcon::Crosshair),
     };

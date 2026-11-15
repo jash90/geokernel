@@ -101,7 +101,7 @@ impl App {
             keyboard: Keyboard::default(),
             style_bar: false,
             number_text: String::new(),
-            regions: Regions::new(Rect::ZERO, false),
+            regions: Regions::new(Rect::ZERO, false, &Metrics::desktop()),
             seen_rebuilds: 0,
             view: None,
             press_view: None,

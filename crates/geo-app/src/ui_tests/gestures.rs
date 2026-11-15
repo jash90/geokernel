@@ -4,6 +4,7 @@
 //! pans. These pin the behaviour of a mouse on the desktop.
 
 use super::*;
+use geo_app_core::metrics::Metrics;
 
 /// Runs one frame at `time` seconds with `events`.
 fn frame_at(h: &mut Harness<'_, App>, time: f64, events: Vec<Event>) {
@@ -143,4 +144,50 @@ fn a_press_and_a_far_release_in_the_next_frame_do_nothing() {
     h.run();
     assert_eq!(labels(&h), ["A"]);
     assert_eq!(h.state().camera.unwrap().cx, cx0);
+}
+
+/// A window with the touch profile, `size` points large.
+fn touch_harness(script: &str, size: (f32, f32)) -> Harness<'static, App> {
+    let mut app = App::new(Workbench::from_script(script).unwrap(), None);
+    app.set_metrics(Metrics::touch());
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(size.0 + 2.0 * MARGIN, size.1 + 2.0 * MARGIN))
+        .with_pixels_per_point(1.0)
+        .with_context_setup(|ctx| {
+            ctx.options_mut(|o| {
+                o.input_options.max_click_dist = Metrics::touch().drag_slop;
+                o.input_options.max_click_duration = Metrics::touch().click_time;
+            })
+        })
+        .build_ui_state(|ui, app: &mut App| crate::app::show(app, ui), app);
+    h.run();
+    h
+}
+
+#[test]
+fn with_the_touch_profile_a_wobbly_tap_still_places_a_point() {
+    let mut h = touch_harness("A = (0, 0)\n", SIZE);
+    h.state_mut().tool.set_tool(Tool::Point);
+    let (rect, _) = h.state().view.unwrap();
+    let from = Pos2::new(rect.min.x + 100.0, rect.min.y + 100.0);
+    moved(&mut h, from);
+    button(&mut h, from, true);
+    moved(&mut h, from + egui::vec2(10.0, 0.0));
+    button(&mut h, from + egui::vec2(10.0, 0.0), false);
+    h.run();
+    assert_eq!(labels(&h), ["A", "B"]);
+}
+
+#[test]
+fn a_narrow_touch_window_stacks_the_views_and_still_works() {
+    let mut h = touch_harness("A = (0, 0)\n", (400.0, 800.0));
+    let app = h.state();
+    assert!(app.regions.portrait);
+    assert_eq!(app.regions.graphics.width(), 400.0);
+    // A tap in the graphics view with the point tool places a point there.
+    h.state_mut().tool.set_tool(Tool::Point);
+    let (rect, _) = h.state().view.unwrap();
+    let at = Pos2::new(rect.min.x + 50.0, rect.min.y + 50.0);
+    click(&mut h, at);
+    assert_eq!(labels(&h), ["A", "B"]);
 }

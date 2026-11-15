@@ -1,12 +1,13 @@
 //! Headless interaction tests: synthetic pointer events through the real UI.
 
 use crate::app::App;
-use crate::layout::{ALGEBRA_WIDTH, SPLITTER, TOOLBAR_HEIGHT};
+use crate::layout::SPLITTER;
 use crate::tools::{Tool, GROUPS};
 use crate::workbench::Workbench;
 use eframe::egui::{self, Event, Modifiers, PointerButton, Pos2};
 use egui_kittest::kittest::Queryable;
 use egui_kittest::Harness;
+use geo_app_core::metrics::Metrics;
 use geo_kernel::kernel::Value;
 
 mod chrome;
@@ -18,6 +19,8 @@ mod tools;
 /// The harness puts this margin around the root ui.
 const MARGIN: f32 = 8.0;
 const SIZE: (f32, f32) = (1400.0, 900.0);
+const TOOLBAR_HEIGHT: f32 = Metrics::desktop().toolbar_height;
+const ALGEBRA_WIDTH: f32 = Metrics::desktop().algebra_width;
 /// Heights of the algebra rows of a free and a dependent object.
 const ROW: f32 = 50.0;
 const ROW_DEPENDENT: f32 = 102.0;

@@ -18,11 +18,24 @@ pub struct Metrics {
     pub curve_radius: f64,
     /// How far from a free point a press still grabs it for a drag.
     pub grab_radius: f64,
+    /// The height of the toolbar across the top.
+    pub toolbar_height: f32,
+    /// The size of a tool group button, and the distance between the left
+    /// edges of two neighbours.
+    pub toolbar_button: f32,
+    pub toolbar_pitch: f32,
+    /// The width of the algebra view beside the graphics view.
+    pub algebra_width: f32,
+    /// The height of the on-screen keyboard.
+    pub keyboard_height: f32,
+    /// A window narrower than this is laid out for portrait: the algebra
+    /// view goes under the graphics view and the tool groups scroll.
+    pub portrait_below: f32,
 }
 
 impl Metrics {
     /// The mouse profile: exactly the sizes the window always had (egui's
-    /// click distance and time, and the window's own hit radii).
+    /// click distance and time, the window's own hit radii and layout).
     pub const fn desktop() -> Metrics {
         Metrics {
             drag_slop: 6.0,
@@ -31,6 +44,13 @@ impl Metrics {
             curve_radius: 7.0,
             // The drawn radius of a free point (5) plus 6.
             grab_radius: 11.0,
+            toolbar_height: 52.0,
+            toolbar_button: 40.0,
+            toolbar_pitch: 45.0,
+            algebra_width: 380.0,
+            keyboard_height: 222.0,
+            // Never: a narrow desktop window keeps its layout.
+            portrait_below: 0.0,
         }
     }
 
@@ -43,6 +63,12 @@ impl Metrics {
             point_radius: 22.0,
             curve_radius: 16.0,
             grab_radius: 24.0,
+            toolbar_height: 60.0,
+            toolbar_button: 48.0,
+            toolbar_pitch: 54.0,
+            algebra_width: 320.0,
+            keyboard_height: 222.0,
+            portrait_below: 600.0,
         }
     }
 }
@@ -50,5 +76,22 @@ impl Metrics {
 impl Default for Metrics {
     fn default() -> Metrics {
         Metrics::desktop()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn touch_targets_are_larger_than_mouse_ones() {
+        let (d, t) = (Metrics::desktop(), Metrics::touch());
+        assert!(t.drag_slop > d.drag_slop && t.point_radius > d.point_radius);
+        assert!(t.curve_radius > d.curve_radius && t.grab_radius > d.grab_radius);
+        assert!(t.toolbar_button > d.toolbar_button && t.toolbar_pitch > t.toolbar_button);
+        assert_eq!(
+            d.portrait_below, 0.0,
+            "the desktop layout never turns portrait"
+        );
     }
 }
