@@ -237,3 +237,55 @@ fn without_hover_the_move_tool_shows_its_hint() {
     // The panel and the two lines of text, and no close button.
     assert_eq!(shown(false), shown(true) + 3);
 }
+
+/// A touch event of finger `id`.
+fn touch(h: &mut Harness<'_, App>, id: u64, phase: egui::TouchPhase, pos: Pos2) {
+    h.input_mut().events.push(Event::Touch {
+        device_id: egui::TouchDeviceId(1),
+        id: egui::TouchId(id),
+        phase,
+        pos,
+        force: None,
+    });
+}
+
+#[test]
+fn a_second_finger_puts_a_dragged_point_back_and_pinches_the_view() {
+    use egui::TouchPhase::{End, Move, Start};
+    let mut h = harness("A = (0, 0)\nB = (3, 1)\n");
+    let scale = h.state().camera.unwrap().scale;
+    // The first finger takes A and drags it (the platform also sends the
+    // pointer events of the first finger, as egui-winit does).
+    let mut f0 = world(0.0, 0.0);
+    touch(&mut h, 0, Start, f0);
+    moved(&mut h, f0);
+    button(&mut h, f0, true);
+    for _ in 0..4 {
+        f0 += egui::vec2(10.0, 0.0);
+        touch(&mut h, 0, Move, f0);
+        moved(&mut h, f0);
+    }
+    assert!(point_x(&h, "A") > 0.5, "the drag moved A");
+    // A second finger: the drag is undone and the two fingers pinch.
+    let mut f1 = f0 + egui::vec2(0.0, 120.0);
+    touch(&mut h, 1, Start, f1);
+    h.run();
+    assert_eq!(point_x(&h, "A"), 0.0, "A is back");
+    for _ in 0..4 {
+        f0 += egui::vec2(0.0, -10.0);
+        f1 += egui::vec2(0.0, 10.0);
+        touch(&mut h, 0, Move, f0);
+        touch(&mut h, 1, Move, f1);
+        moved(&mut h, f0);
+    }
+    touch(&mut h, 1, End, f1);
+    touch(&mut h, 0, End, f0);
+    button(&mut h, f0, false);
+    h.run();
+    assert_eq!(point_x(&h, "A"), 0.0, "the pinch never moves A");
+    assert!(!h.state().wb.can_undo(), "no undo step is left");
+    assert!(
+        h.state().camera.unwrap().scale > scale * 1.05,
+        "the view zoomed in"
+    );
+}
