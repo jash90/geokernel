@@ -116,9 +116,20 @@ pub fn value_text(v: &Value) -> String {
     }
 }
 
+/// An angle given in radians, shown in degrees: `45°`, `33.69°`.
+pub fn degrees(radians: f64) -> String {
+    format!("{}°", n2(radians.to_degrees()))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn angles_are_shown_in_degrees() {
+        assert_eq!(degrees(std::f64::consts::FRAC_PI_4), "45°");
+        assert_eq!(degrees(std::f64::consts::PI), "180°");
+    }
 
     #[test]
     fn numbers_have_two_decimals_and_no_negative_zero() {

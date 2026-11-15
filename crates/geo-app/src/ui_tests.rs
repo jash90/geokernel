@@ -1,7 +1,8 @@
 //! Headless interaction tests: synthetic pointer events through the real UI.
 
-use crate::app::{App, Mode};
-use crate::tools::Tool;
+use crate::app::App;
+use crate::layout::{ALGEBRA_WIDTH, SPLITTER, TOOLBAR_HEIGHT};
+use crate::tools::{Tool, GROUPS};
 use crate::workbench::Workbench;
 use eframe::egui::{self, Event, Modifiers, PointerButton, Pos2};
 use egui_kittest::kittest::Queryable;
@@ -11,6 +12,9 @@ use geo_kernel::kernel::Value;
 /// The harness puts this margin around the root ui.
 const MARGIN: f32 = 8.0;
 const SIZE: (f32, f32) = (1400.0, 900.0);
+/// Heights of the algebra rows of a free and a dependent object.
+const ROW: f32 = 50.0;
+const ROW_DEPENDENT: f32 = 102.0;
 
 fn harness(script: &str) -> Harness<'static, App> {
     let app = App::new(Workbench::from_script(script).unwrap(), None);
@@ -27,15 +31,37 @@ fn at(x: f32, y: f32) -> Pos2 {
     Pos2::new(x + MARGIN, y + MARGIN)
 }
 
-/// Window position of the world point `(x, y)` in the standard view.
+/// Window position of the world point `(x, y)` in the standard view, with
+/// the on-screen keyboard closed.
 fn world(x: f64, y: f64) -> Pos2 {
-    use crate::theme::{HEADER_HEIGHT, RAIL_WIDTH, SIDE_WIDTH};
-    let left = RAIL_WIDTH + SIDE_WIDTH;
-    let (w, h) = (SIZE.0 - left, SIZE.1 - HEADER_HEIGHT);
+    let left = ALGEBRA_WIDTH + SPLITTER;
+    let (w, h) = (SIZE.0 - left, SIZE.1 - TOOLBAR_HEIGHT);
     at(
         left + w / 2.0 + (x * 50.0) as f32,
-        HEADER_HEIGHT + h / 2.0 - (y * 50.0) as f32,
+        TOOLBAR_HEIGHT + h / 2.0 - (y * 50.0) as f32,
     )
+}
+
+/// The middle of the text of the algebra row that starts `top` pixels below
+/// the toolbar.
+fn row_body(top: f32) -> Pos2 {
+    at(120.0, TOOLBAR_HEIGHT + top + ROW / 2.0)
+}
+
+/// The marker of the algebra row that starts `top` pixels below the toolbar.
+fn row_marker(top: f32) -> Pos2 {
+    at(28.0, TOOLBAR_HEIGHT + top + ROW / 2.0)
+}
+
+/// The menu button of a free row, or of a dependent one (`dependent`).
+fn row_menu(top: f32, dependent: bool) -> Pos2 {
+    let y = if dependent { 30.0 } else { ROW / 2.0 };
+    at(ALGEBRA_WIDTH - 28.0, TOOLBAR_HEIGHT + top + y)
+}
+
+/// The centre of toolbar group button `i`.
+fn group_button(i: usize) -> Pos2 {
+    at(5.0 + 45.0 * i as f32 + 20.0, TOOLBAR_HEIGHT / 2.0)
 }
 
 fn button(h: &mut Harness<'_, App>, pos: Pos2, pressed: bool) {
@@ -158,15 +184,13 @@ fn dragging_empty_space_pans_instead_of_moving_points() {
 #[test]
 fn the_marker_toggles_visibility_and_clicking_the_body_selects() {
     let mut h = harness("A = (0, 0)\nB = (2, 0)\n");
-    // First row: marker cell is 57 px wide, rows start under the 65 px header.
-    let marker = at(72.0 + 28.0, 65.0 + 24.0);
-    click(&mut h, marker);
+    click(&mut h, row_marker(0.0));
     let a = h.state().wb.construction().id("A").unwrap();
     assert!(!h.state().wb.is_visible(a));
-    click(&mut h, marker);
+    click(&mut h, row_marker(0.0));
     assert!(h.state().wb.is_visible(a));
-    // The text body of the second row selects B.
-    click(&mut h, at(72.0 + 120.0, 65.0 + 48.0 + 24.0));
+    // The text of the second row selects B.
+    click(&mut h, row_body(ROW));
     let b = h.state().wb.construction().id("B").unwrap();
     assert_eq!(h.state().wb.selected, Some(b));
 }
@@ -182,33 +206,62 @@ fn selecting_in_the_drawing_selects_the_object() {
 }
 
 #[test]
-fn the_rail_switches_between_the_object_list_and_the_tools() {
+fn a_toolbar_button_selects_the_tool_its_group_shows() {
     let mut h = harness("A = (0, 0)\n");
-    assert_eq!(h.state().mode, Mode::Algebra);
-    click(&mut h, at(36.0, 10.0 + 65.0 + 74.0 + 30.0));
-    assert_eq!(h.state().mode, Mode::Tools);
-    // The first tile is "move", the second "point".
-    click(&mut h, at(72.0 + 12.0 + 150.0, 65.0 + 12.0 + 45.0));
+    // The first button is "move", the second "point".
+    click(&mut h, group_button(1));
     assert_eq!(h.state().tool.tool(), Tool::Point);
+    // The drop-down opened by the click is closed by the click in the view.
     click(&mut h, world(3.0, 3.0));
     assert_eq!(labels(&h), ["A", "B"]);
+    click(&mut h, group_button(0));
+    assert_eq!(h.state().tool.tool(), Tool::Move);
 }
 
-/// Types `text` into the input row below one 48 px object row and presses Enter.
-fn type_command(h: &mut Harness<'_, App>, rows: usize, text: &str) {
-    click(h, at(72.0 + 120.0, 65.0 + 48.0 * rows as f32 + 24.0));
+#[test]
+fn a_group_drop_down_picks_a_tool_and_the_button_shows_it_after() {
+    let mut h = harness("A = (0, 0)\n");
+    click(&mut h, group_button(2));
+    assert_eq!(h.state().tool.tool(), Tool::Line);
+    h.get_by_label("Półprosta").click();
+    h.run();
+    assert_eq!(h.state().tool.tool(), Tool::Ray);
+    assert_eq!(h.state().group_tools[2], Tool::Ray);
+    assert!(h.query_by_label("Odcinek").is_none(), "the list closed");
+    // Every group's list names every tool of the group.
+    for (i, group) in GROUPS.iter().enumerate().filter(|(_, g)| g.len() > 1) {
+        h.state_mut().select_tool(Tool::Move);
+        click(&mut h, group_button(i));
+        for tool in group.iter().skip(1) {
+            assert!(
+                h.query_all_by_label(tool.caption()).next().is_some(),
+                "{tool:?} is missing in group {i}"
+            );
+        }
+        h.key_press(egui::Key::Escape);
+        h.run();
+    }
+}
+
+/// Types `text` into the input row below the rows that take `top` pixels
+/// and presses Enter. The on-screen keyboard that comes up with the field is
+/// put away again, so that `world` stays true.
+fn type_command(h: &mut Harness<'_, App>, top: f32, text: &str) {
+    click(h, row_body(top));
     h.input_mut().events.push(Event::Text(text.to_owned()));
     h.step();
     h.key_press(egui::Key::Enter);
+    h.run();
+    h.state_mut().keyboard.open = false;
     h.run();
 }
 
 #[test]
 fn the_input_row_runs_commands_in_both_label_forms() {
     let mut h = harness("A = (0, 0)\n");
-    type_command(&mut h, 1, "B = (2, 3)");
+    type_command(&mut h, ROW, "B = (2, 3)");
     assert_eq!(labels(&h), ["A", "B"]);
-    type_command(&mut h, 2, "f: Line(A, B)");
+    type_command(&mut h, 2.0 * ROW, "f: Line(A, B)");
     assert_eq!(labels(&h), ["A", "B", "f"]);
     assert_eq!(h.state().input_error, None);
     assert!(h.state().input.is_empty());
@@ -217,7 +270,7 @@ fn the_input_row_runs_commands_in_both_label_forms() {
 #[test]
 fn the_input_row_shows_errors_in_polish() {
     let mut h = harness("A = (0, 0)\n");
-    type_command(&mut h, 1, "f = Line(A, Z)");
+    type_command(&mut h, ROW, "f = Line(A, Z)");
     assert_eq!(labels(&h), ["A"]);
     assert_eq!(
         h.state().input_error.as_deref(),
@@ -226,15 +279,60 @@ fn the_input_row_shows_errors_in_polish() {
 }
 
 #[test]
-fn the_settings_menu_switches_grid_and_axes() {
+fn the_input_row_brings_up_the_keyboard_and_its_keys_type() {
     let mut h = harness("A = (0, 0)\n");
-    // The gear is 30 px from the top right corner of the drawing area.
-    click(&mut h, at(SIZE.0 - 30.0, 65.0 + 30.0));
+    assert!(!h.state().keyboard.open);
+    click(&mut h, row_body(ROW));
+    assert!(h.state().keyboard.open, "focus on the input row opens it");
+    h.get_by_label("ABC").click();
+    h.run();
+    assert_eq!(h.state().keyboard.tab, crate::keyboard::Tab::Letters);
+    h.get_by_label("123").click();
+    h.run();
+    for key in ["(", "1", ",", "2", ")"] {
+        h.get_by_label(key).click();
+        h.run();
+    }
+    assert_eq!(h.state().input, "(1,2)");
+    h.get_by_label("Zatwierdź").click();
+    h.run();
+    assert_eq!(labels(&h), ["A", "B"]);
+    assert!(h.state().input.is_empty());
+    // Escape leaves the field and puts the keyboard away.
+    h.key_press(egui::Key::Escape);
+    h.run();
+    assert!(!h.state().keyboard.open);
+}
+
+#[test]
+fn the_style_bar_switches_grid_and_axes() {
+    let mut h = harness("A = (0, 0)\n");
+    h.get_by_label("Pasek stylu").click();
+    h.run();
+    assert!(h.state().style_bar);
+    h.get_by_label("Siatka").click();
+    h.run();
+    assert!(!h.state().decor.grid && h.state().decor.axes);
+    h.get_by_label("Osie").click();
+    h.run();
+    assert!(!h.state().decor.grid && !h.state().decor.axes);
+    h.key_press(egui::Key::Escape);
+    h.run();
+    assert!(!h.state().style_bar);
+    assert_eq!(labels(&h), ["A"]);
+}
+
+#[test]
+fn the_main_menu_switches_grid_and_axes() {
+    let mut h = harness("A = (0, 0)\n");
+    h.get_by_label("Menu").click();
+    h.run();
     h.get_by_label("Siatka").click();
     h.run();
     assert!(!h.state().decor.grid && h.state().decor.axes);
     // The menu closes after a choice; open it again.
-    click(&mut h, at(SIZE.0 - 30.0, 65.0 + 30.0));
+    h.get_by_label("Menu").click();
+    h.run();
     h.get_by_label("Osie").click();
     h.run();
     assert!(!h.state().decor.grid && !h.state().decor.axes);
@@ -244,13 +342,22 @@ fn the_settings_menu_switches_grid_and_axes() {
 #[test]
 fn the_row_menu_deletes_the_object_and_its_dependents() {
     let mut h = harness("A = (0, 0)\nB = (2, 0)\nf = Line(A, B)\n");
-    // The kebab of the first row: 28 px from the right edge of the side panel.
-    click(&mut h, at(72.0 + 324.0 - 28.0, 65.0 + 24.0));
+    click(&mut h, row_menu(0.0, false));
     h.get_by_label("Usuń").click();
     h.run();
     assert_eq!(labels(&h), ["B"]);
     assert!(h.state_mut().wb.undo());
     assert_eq!(labels(&h), ["A", "B", "f"]);
+}
+
+#[test]
+fn the_row_menu_hides_the_object() {
+    let mut h = harness("A = (0, 0)\nB = (2, 0)\n");
+    click(&mut h, row_menu(ROW, false));
+    h.get_by_label("Ukryj obiekt").click();
+    h.run();
+    let b = h.state().wb.construction().id("B").unwrap();
+    assert!(!h.state().wb.is_visible(b));
 }
 
 #[test]
@@ -274,6 +381,20 @@ fn cmd_z_undoes_and_shift_cmd_z_redoes() {
 }
 
 #[test]
+fn the_toolbar_undo_and_redo_buttons_work() {
+    let mut h = harness("A = (0, 0)\n");
+    h.state_mut().tool.set_tool(Tool::Point);
+    click(&mut h, world(2.0, 2.0));
+    assert_eq!(labels(&h), ["A", "B"]);
+    h.get_by_label("Cofnij").click();
+    h.run();
+    assert_eq!(labels(&h), ["A"]);
+    h.get_by_label("Ponów").click();
+    h.run();
+    assert_eq!(labels(&h), ["A", "B"]);
+}
+
+#[test]
 fn the_object_under_the_pointer_is_hovered() {
     let mut h = harness("A = (0, 0)\nB = (2, 0)\n");
     moved(&mut h, world(2.0, 0.0));
@@ -284,12 +405,83 @@ fn the_object_under_the_pointer_is_hovered() {
 }
 
 #[test]
-fn a_click_on_a_disabled_undo_button_does_not_place_a_point() {
+fn a_click_on_a_round_view_button_does_not_place_a_point() {
     let mut h = harness("A = (0, 0)\n");
     h.state_mut().tool.set_tool(Tool::Point);
-    // The undo button is at the top left of the drawing area.
-    click(&mut h, at(72.0 + 324.0 + 34.0, 65.0 + 30.0));
+    let scale = h.state().camera.unwrap().scale;
+    // The zoom-in button sits in the lower right corner of the view.
+    click(&mut h, at(SIZE.0 - 35.0, SIZE.1 - 33.0 - 88.0));
     assert_eq!(labels(&h), ["A"]);
+    assert!(h.state().camera.unwrap().scale > scale);
+}
+
+/// A scene in which every kind of object can be clicked away from the others.
+const TOOL_SCENE: &str = "A = (-6, -3)\nB = (-2, -3)\nC = (-4, 1)\nf = Line(A, B)\n\
+                          D = (4, -2)\nE = (6, -2)\nk = Circle(D, E)\n\
+                          G = (-7, 3)\nH = (-3, 4)\nu = Vector(G, H)\n";
+
+#[test]
+fn every_tool_works_with_real_clicks() {
+    let (a, b, c) = ((-6.0, -3.0), (-2.0, -3.0), (-4.0, 1.0));
+    let (f, k, u, empty) = ((0.0, -3.0), (4.0, 0.0), (-5.0, 3.5), (0.0, 2.0));
+    let plan = |tool: Tool| -> Vec<(f64, f64)> {
+        match tool {
+            Tool::Point => vec![empty],
+            Tool::Intersect => vec![f, k],
+            Tool::Midpoint => vec![a, b],
+            Tool::Perpendicular | Tool::Parallel | Tool::ReflectLine => vec![c, f],
+            Tool::AngleBisector | Tool::Angle => vec![a, c, b],
+            Tool::Tangents | Tool::Polar | Tool::ReflectCircle => vec![c, k],
+            Tool::CircleRadius => vec![a],
+            Tool::Circle3 => vec![a, b, c],
+            Tool::ReflectPoint | Tool::Rotate | Tool::Dilate => vec![c, a],
+            Tool::Translate => vec![c, u],
+            _ => vec![a, c],
+        }
+    };
+    let mut failures = Vec::new();
+    for tool in Tool::all().filter(|t| !t.is_direct()) {
+        let mut h = harness(TOOL_SCENE);
+        let before = h.state().wb.construction().len();
+        h.state_mut().select_tool(tool);
+        for (x, y) in plan(tool) {
+            click(&mut h, world(x, y));
+        }
+        if h.state().tool.asking().is_some() {
+            // The number dialog: take the value it offers.
+            h.key_press(egui::Key::Enter);
+            h.run();
+        }
+        let app = h.state();
+        let after = app.wb.construction().len();
+        if after <= before || app.tool_error.is_some() {
+            failures.push(format!(
+                "{tool:?}: {before} -> {after}, {:?}",
+                app.tool_error
+            ));
+        }
+    }
+    assert!(failures.is_empty(), "{}", failures.join("\n"));
+}
+
+#[test]
+fn the_direct_tools_act_on_one_click() {
+    let mut h = harness(TOOL_SCENE);
+    h.state_mut().select_tool(Tool::Delete);
+    click(&mut h, world(-4.0, 1.0));
+    assert!(h.state().wb.construction().id("C").is_none());
+    h.state_mut().select_tool(Tool::ShowHide);
+    click(&mut h, world(-6.0, -3.0));
+    let a = h.state().wb.construction().id("A").unwrap();
+    assert!(!h.state().wb.is_visible(a));
+    let scale = h.state().camera.unwrap().scale;
+    h.state_mut().select_tool(Tool::ZoomIn);
+    click(&mut h, world(5.0, 5.0));
+    let zoomed = h.state().camera.unwrap().scale;
+    assert!(zoomed > scale);
+    h.state_mut().select_tool(Tool::ZoomOut);
+    click(&mut h, world(1.0, 1.0));
+    assert!(h.state().camera.unwrap().scale < zoomed);
 }
 
 const TANGENTS: &str =
@@ -445,8 +637,8 @@ fn a_single_tangent_stays_one_object_when_the_point_moves_outside() {
 #[test]
 fn deleting_one_tangent_says_the_sibling_goes_too() {
     let mut h = harness(TANGENTS);
-    // Row 4 is t_{1}; its kebab sits at the right edge of the side panel.
-    click(&mut h, at(72.0 + 324.0 - 28.0, 65.0 + 232.0 + 24.0));
+    // Row 4 is t_{1}, under A, r, k and P.
+    click(&mut h, row_menu(3.0 * ROW + ROW_DEPENDENT, true));
     h.get_by_label_contains("razem z t_{2}").click();
     h.run();
     assert_eq!(labels(&h), ["A", "r", "k", "P", "Q"]);
@@ -541,7 +733,7 @@ fn cmd_z_and_escape_belong_to_the_input_row_while_it_has_focus() {
     h.state_mut().wb.run_line("B = (1, 1)").unwrap();
     h.state_mut().tool.set_tool(Tool::Circle);
     // The input row is the third one.
-    click(&mut h, at(72.0 + 120.0, 65.0 + 48.0 * 2.0 + 24.0));
+    click(&mut h, row_body(2.0 * ROW));
     h.input_mut().events.push(Event::Text("abc".to_owned()));
     h.step();
     h.key_press_modifiers(Modifiers::COMMAND, egui::Key::Z);
@@ -572,7 +764,7 @@ fn a_bare_command_returning_a_point_gets_a_point_label() {
 fn hiding_through_the_marker_is_one_undo_step() {
     let mut h = harness("A = (0, 0)\nB = (2, 0)\n");
     let a = h.state().wb.construction().id("A").unwrap();
-    click(&mut h, at(72.0 + 28.0, 65.0 + 24.0));
+    click(&mut h, row_marker(0.0));
     assert!(!h.state().wb.is_visible(a));
     undo(&mut h);
     assert!(h.state().wb.is_visible(a));

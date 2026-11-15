@@ -23,7 +23,37 @@ fn alphabet(kind: Kind) -> &'static str {
 /// ...; circles `c`, `d`, ...; numbers `a`, `b`, ...; vectors `u`, `v`, ...; every other kind `f`, `g`, `h`, .... After the
 /// alphabet is used up, the sequence continues with `A_1`, `B_1`, ...
 pub fn next_label(kind: Kind, is_taken: impl Fn(&str) -> bool) -> String {
-    let letters = alphabet(kind);
+    next_from(alphabet(kind), is_taken)
+}
+
+/// Angles are named with Greek letters: `α`, `β`, `γ`, ...
+pub fn next_greek(is_taken: impl Fn(&str) -> bool) -> String {
+    next_from("αβγδεζηθικλμνξοπρστυφχψω", is_taken)
+}
+
+/// The label of an image under a transformation: the source label with a
+/// prime (`A'`, `A''`, ...). A source label that cannot take a prime (an
+/// indexed one such as `t_{1}`) falls back to the next label of `kind`.
+pub fn primed(source: &str, kind: Kind, is_taken: impl Fn(&str) -> bool) -> String {
+    let simple = source
+        .chars()
+        .all(|c| c.is_alphanumeric() || c == '_' || c == '\'');
+    if simple {
+        let mut label = format!("{source}'");
+        while is_taken(&label) {
+            label.push('\'');
+            if label.len() > source.len() + 8 {
+                break;
+            }
+        }
+        if !is_taken(&label) {
+            return label;
+        }
+    }
+    next_label(kind, is_taken)
+}
+
+fn next_from(letters: &str, is_taken: impl Fn(&str) -> bool) -> String {
     for round in 0.. {
         for ch in letters.chars() {
             let label = if round == 0 {
@@ -50,6 +80,15 @@ mod tests {
         assert_eq!(next_label(Kind::Segment, |_| false), "f");
         assert_eq!(next_label(Kind::Ray, |_| false), "f");
         assert_eq!(next_label(Kind::Circle, |_| false), "c");
+    }
+
+    #[test]
+    fn angles_are_greek_and_images_are_primed() {
+        assert_eq!(next_greek(|_| false), "α");
+        assert_eq!(next_greek(|l| l == "α"), "β");
+        assert_eq!(primed("A", Kind::Point, |_| false), "A'");
+        assert_eq!(primed("A", Kind::Point, |l| l == "A'"), "A''");
+        assert_eq!(primed("t_{1}", Kind::Line, |_| false), "f");
     }
 
     #[test]

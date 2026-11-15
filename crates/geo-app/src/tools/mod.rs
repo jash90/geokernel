@@ -2,87 +2,147 @@
 //!
 //! A click on the drawing area is reported as [`ToolState::click`]. The state
 //! remembers the objects picked so far; after the last pick it returns the
-//! script lines to run, exactly as if the user had typed them.
+//! script lines to run, exactly as if the user had typed them. Tools that need
+//! a number (a radius, an angle, a factor) first return
+//! [`Outcome::AskNumber`]; the answer goes to [`ToolState::finish_number`].
+
+mod recipe;
 
 use crate::describe::fixed;
-use crate::labels::next_label;
 use geo_kernel::kernel::Kind;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Tool {
     Move,
     Point,
+    Intersect,
+    Midpoint,
     Line,
     Segment,
     Ray,
-    Circle,
-    Midpoint,
+    Vector,
     Perpendicular,
     Parallel,
     Bisector,
-    Intersect,
+    AngleBisector,
+    Tangents,
+    Polar,
+    Circle,
+    CircleRadius,
+    Circle3,
+    Angle,
+    Distance,
+    ReflectLine,
+    ReflectPoint,
+    ReflectCircle,
+    Rotate,
+    Translate,
+    Dilate,
+    MoveView,
+    ZoomIn,
+    ZoomOut,
+    ShowHide,
     Delete,
 }
 
-impl Tool {
-    pub const ALL: [Tool; 12] = [
-        Tool::Move,
-        Tool::Point,
-        Tool::Line,
-        Tool::Segment,
-        Tool::Ray,
-        Tool::Circle,
-        Tool::Midpoint,
+/// The tool groups of the toolbar, in the order of the reference toolbar.
+/// Groups whose tools the kernel cannot serve yet (polygons, conics, sliders
+/// and texts) are left out; the polygon group goes between the special lines
+/// and the circles once the kernel has polygons.
+pub const GROUPS: &[&[Tool]] = &[
+    &[Tool::Move],
+    &[Tool::Point, Tool::Intersect, Tool::Midpoint],
+    &[Tool::Line, Tool::Segment, Tool::Ray, Tool::Vector],
+    &[
         Tool::Perpendicular,
         Tool::Parallel,
         Tool::Bisector,
-        Tool::Intersect,
+        Tool::AngleBisector,
+        Tool::Tangents,
+        Tool::Polar,
+    ],
+    &[Tool::Circle, Tool::CircleRadius, Tool::Circle3],
+    &[Tool::Angle, Tool::Distance],
+    &[
+        Tool::ReflectLine,
+        Tool::ReflectPoint,
+        Tool::ReflectCircle,
+        Tool::Rotate,
+        Tool::Translate,
+        Tool::Dilate,
+    ],
+    &[
+        Tool::MoveView,
+        Tool::ZoomIn,
+        Tool::ZoomOut,
+        Tool::ShowHide,
         Tool::Delete,
-    ];
+    ],
+];
 
-    /// The caption under the tool's button.
+impl Tool {
+    /// Every tool, group by group.
+    #[cfg_attr(not(test), allow(dead_code))]
+    pub fn all() -> impl Iterator<Item = Tool> {
+        GROUPS.iter().flat_map(|g| g.iter().copied())
+    }
+
+    /// The index of the group the tool belongs to.
+    pub fn group(self) -> usize {
+        GROUPS
+            .iter()
+            .position(|g| g.contains(&self))
+            .expect("every tool is in a group")
+    }
+
+    /// The tool's name in the drop-down list and the tooltip.
     pub fn caption(self) -> &'static str {
         match self {
             Tool::Move => "Przesuń",
             Tool::Point => "Punkt",
+            Tool::Intersect => "Przecięcie",
+            Tool::Midpoint => "Środek",
             Tool::Line => "Prosta",
             Tool::Segment => "Odcinek",
             Tool::Ray => "Półprosta",
-            Tool::Circle => "Okrąg",
-            Tool::Midpoint => "Środek",
+            Tool::Vector => "Wektor",
             Tool::Perpendicular => "Prostopadła",
             Tool::Parallel => "Równoległa",
             Tool::Bisector => "Symetralna",
-            Tool::Intersect => "Przecięcie",
+            Tool::AngleBisector => "Dwusieczna",
+            Tool::Tangents => "Styczne",
+            Tool::Polar => "Biegunowa",
+            Tool::Circle => "Okrąg: środek i punkt",
+            Tool::CircleRadius => "Okrąg: środek i promień",
+            Tool::Circle3 => "Okrąg przez trzy punkty",
+            Tool::Angle => "Kąt",
+            Tool::Distance => "Odległość lub długość",
+            Tool::ReflectLine => "Symetria osiowa",
+            Tool::ReflectPoint => "Symetria środkowa",
+            Tool::ReflectCircle => "Inwersja",
+            Tool::Rotate => "Obrót",
+            Tool::Translate => "Przesunięcie o wektor",
+            Tool::Dilate => "Jednokładność",
+            Tool::MoveView => "Przesuń widok",
+            Tool::ZoomIn => "Powiększ",
+            Tool::ZoomOut => "Pomniejsz",
+            Tool::ShowHide => "Pokaż lub ukryj",
             Tool::Delete => "Usuń",
         }
     }
 
-    /// The command that builds the result from its (up to two) arguments.
-    fn command(self) -> Option<&'static str> {
-        Some(match self {
-            Tool::Line => "Line",
-            Tool::Segment => "Segment",
-            Tool::Ray => "Ray",
-            Tool::Circle => "Circle",
-            Tool::Midpoint => "Midpoint",
-            Tool::Perpendicular => "Perpendicular",
-            Tool::Parallel => "Parallel",
-            Tool::Bisector => "PerpendicularBisector",
-            Tool::Intersect => "Intersect",
-            Tool::Move | Tool::Point | Tool::Delete => return None,
-        })
-    }
-
-    /// What kind of object the finished tool creates.
-    fn result_kind(self) -> Kind {
-        match self {
-            Tool::Point | Tool::Midpoint | Tool::Intersect => Kind::Point,
-            Tool::Segment => Kind::Segment,
-            Tool::Ray => Kind::Ray,
-            Tool::Circle => Kind::Circle,
-            _ => Kind::Line,
-        }
+    /// Tools that act on the view or on whole objects instead of building
+    /// something from picks.
+    pub fn is_direct(self) -> bool {
+        matches!(
+            self,
+            Tool::Move
+                | Tool::MoveView
+                | Tool::ZoomIn
+                | Tool::ZoomOut
+                | Tool::ShowHide
+                | Tool::Delete
+        )
     }
 }
 
@@ -100,35 +160,25 @@ pub enum Pick {
     },
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum Class {
-    Point,
-    /// A line, segment or ray.
-    Straight,
-    Circle,
-    Other,
-}
-
-fn class_of(kind: Kind) -> Class {
-    match kind {
-        Kind::Point => Class::Point,
-        Kind::Line | Kind::Segment | Kind::Ray => Class::Straight,
-        Kind::Circle => Class::Circle,
-        _ => Class::Other,
-    }
-}
-
 impl Pick {
-    fn class(&self) -> Class {
+    fn kind(&self) -> Kind {
         match self {
-            Pick::Object { kind, .. } => class_of(*kind),
-            Pick::New { .. } => Class::Point,
+            Pick::Object { kind, .. } => *kind,
+            Pick::New { .. } => Kind::Point,
         }
     }
 }
 
-fn rounded(v: f64, decimals: usize) -> f64 {
-    fixed(v, decimals).parse().unwrap_or(v)
+/// The number a tool asks for before it can finish.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct NumberRequest {
+    /// The dialog's title.
+    pub title: &'static str,
+    /// What the field holds.
+    pub prompt: &'static str,
+    pub default: f64,
+    /// The value is an angle typed in degrees.
+    pub degrees: bool,
 }
 
 /// What a click did.
@@ -138,18 +188,29 @@ pub enum Outcome {
     Pending,
     /// Run these script lines as one change.
     Run(Vec<String>),
+    /// The picks are complete; ask for a number, then call
+    /// [`ToolState::finish_number`].
+    AskNumber(NumberRequest),
     /// Delete the object (and its dependents).
     Delete(String),
+    /// Show or hide the object.
+    ToggleVisible(String),
     /// Select this existing object (the point tool clicked on a point).
     Select(String),
     /// Nothing happened: the click was not something the tool can use.
     Ignored,
 }
 
+fn rounded(v: f64, decimals: usize) -> f64 {
+    fixed(v, decimals).parse().unwrap_or(v)
+}
+
 #[derive(Clone, Debug)]
 pub struct ToolState {
     tool: Tool,
     picks: Vec<Pick>,
+    /// Set while the dialog for the number is open.
+    asking: Option<NumberRequest>,
 }
 
 impl ToolState {
@@ -157,6 +218,7 @@ impl ToolState {
         ToolState {
             tool,
             picks: Vec::new(),
+            asking: None,
         }
     }
 
@@ -167,7 +229,7 @@ impl ToolState {
     /// Switches tool and drops any half-finished picks.
     pub fn set_tool(&mut self, tool: Tool) {
         self.tool = tool;
-        self.picks.clear();
+        self.reset();
     }
 
     /// The picks made so far (for drawing a preview).
@@ -175,92 +237,48 @@ impl ToolState {
         &self.picks
     }
 
+    /// The number the tool waits for, if any.
+    pub fn asking(&self) -> Option<NumberRequest> {
+        self.asking
+    }
+
+    fn picked(&self, label: &str) -> bool {
+        self.picks
+            .iter()
+            .any(|p| matches!(p, Pick::Object { label: l, .. } if l == label))
+    }
+
+    fn kinds(&self) -> Vec<Kind> {
+        self.picks.iter().map(Pick::kind).collect()
+    }
+
     /// Whether the next click may pick an existing object of this kind
     /// (`label` is checked so that the same object is not taken twice).
     pub fn accepts_object(&self, label: &str, kind: Kind) -> bool {
-        let class = class_of(kind);
         match self.tool {
-            Tool::Move | Tool::Point => false,
-            Tool::Delete => true,
-            _ if self
-                .picks
-                .iter()
-                .any(|p| matches!(p, Pick::Object { label: l, .. } if l == label)) =>
-            {
-                false
-            }
-            _ => self.accepts_class(class, kind),
+            Tool::Move | Tool::MoveView | Tool::ZoomIn | Tool::ZoomOut => false,
+            Tool::Delete | Tool::ShowHide => true,
+            _ if self.asking.is_some() || self.picked(label) => false,
+            tool => recipe::accepts(tool, &self.kinds(), Some(kind)),
         }
     }
 
     /// Whether the next click may create a new point on empty space.
     pub fn accepts_new_point(&self) -> bool {
-        match self.tool {
-            Tool::Move | Tool::Delete | Tool::Intersect => false,
-            Tool::Point => true,
-            _ => self.accepts_class(Class::Point, Kind::Point),
-        }
-    }
-
-    fn accepts_class(&self, class: Class, kind: Kind) -> bool {
-        let have = |c: Class| self.picks.iter().any(|p| p.class() == c);
-        match self.tool {
-            Tool::Line
-            | Tool::Segment
-            | Tool::Ray
-            | Tool::Circle
-            | Tool::Midpoint
-            | Tool::Bisector => class == Class::Point,
-            Tool::Perpendicular => match class {
-                Class::Point => !have(Class::Point),
-                Class::Straight => kind != Kind::Ray && !have(Class::Straight),
-                _ => false,
-            },
-            Tool::Parallel => match class {
-                Class::Point => !have(Class::Point),
-                Class::Straight => kind != Kind::Ray && !have(Class::Straight),
-                _ => false,
-            },
-            // The kernel intersects whole lines and circles only.
-            Tool::Intersect => matches!(kind, Kind::Line | Kind::Circle),
-            Tool::Move | Tool::Point | Tool::Delete => false,
-        }
+        !self.tool.is_direct()
+            && self.asking.is_none()
+            && recipe::accepts(self.tool, &self.kinds(), None)
     }
 
     /// A one-line Polish hint for what the next click should be.
     pub fn hint(&self) -> &'static str {
-        let n = self.picks.len();
-        let first_is_point = self
-            .picks
-            .first()
-            .is_some_and(|p| p.class() == Class::Point);
-        match (self.tool, n) {
-            (Tool::Move, _) => "Przeciągnij punkt, aby go przesunąć",
-            (Tool::Point, _) => "Kliknij, aby umieścić punkt",
-            (Tool::Line, 0) => "Kliknij pierwszy punkt prostej",
-            (Tool::Line, _) => "Kliknij drugi punkt prostej",
-            (Tool::Segment, 0) => "Kliknij pierwszy koniec odcinka",
-            (Tool::Segment, _) => "Kliknij drugi koniec odcinka",
-            (Tool::Ray, 0) => "Kliknij początek półprostej",
-            (Tool::Ray, _) => "Kliknij punkt na półprostej",
-            (Tool::Circle, 0) => "Kliknij środek okręgu",
-            (Tool::Circle, _) => "Kliknij punkt na okręgu",
-            (Tool::Midpoint, 0) => "Kliknij pierwszy punkt",
-            (Tool::Midpoint, _) => "Kliknij drugi punkt",
-            (Tool::Perpendicular | Tool::Parallel, 0) => "Kliknij punkt lub prostą",
-            (Tool::Perpendicular | Tool::Parallel, _) if first_is_point => "Kliknij prostą",
-            (Tool::Perpendicular | Tool::Parallel, _) => "Kliknij punkt",
-            (Tool::Bisector, 0) => "Kliknij pierwszy koniec odcinka",
-            (Tool::Bisector, _) => "Kliknij drugi koniec odcinka",
-            (Tool::Intersect, 0) => "Kliknij pierwszy obiekt",
-            (Tool::Intersect, _) => "Kliknij drugi obiekt",
-            (Tool::Delete, _) => "Kliknij obiekt do usunięcia",
-        }
+        recipe::hint(self.tool, &self.kinds())
     }
 
-    /// Forgets the picks (after an error, or on Escape).
+    /// Forgets the picks (after an error, on Escape, or a cancelled dialog).
     pub fn reset(&mut self) {
         self.picks.clear();
+        self.asking = None;
     }
 
     /// Handles a click. `hit` is the existing object under the pointer that
@@ -278,19 +296,15 @@ impl ToolState {
         decimals: usize,
         is_taken: &dyn Fn(&str) -> bool,
     ) -> Outcome {
-        match self.tool {
-            Tool::Move => return Outcome::Ignored,
-            Tool::Delete => {
-                return match hit {
-                    Some((label, _)) => Outcome::Delete(label.to_owned()),
-                    None => Outcome::Ignored,
-                }
+        match (self.tool, hit) {
+            (Tool::Move | Tool::MoveView | Tool::ZoomIn | Tool::ZoomOut, _) => {
+                return Outcome::Ignored
             }
-            Tool::Point => {
-                if let Some((label, Kind::Point)) = hit {
-                    return Outcome::Select(label.to_owned());
-                }
-            }
+            (Tool::Delete, Some((label, _))) => return Outcome::Delete(label.to_owned()),
+            (Tool::ShowHide, Some((label, _))) => return Outcome::ToggleVisible(label.to_owned()),
+            (Tool::Delete | Tool::ShowHide, None) => return Outcome::Ignored,
+            (Tool::Point, Some((label, Kind::Point))) => return Outcome::Select(label.to_owned()),
+            _ if self.asking.is_some() => return Outcome::Ignored,
             _ => {}
         }
         let pick = match hit {
@@ -307,52 +321,40 @@ impl ToolState {
             _ => return Outcome::Ignored,
         };
         self.picks.push(pick);
-        let needed = if self.tool == Tool::Point { 1 } else { 2 };
-        if self.picks.len() < needed {
-            return Outcome::Pending;
+        match recipe::finish(self.tool, &self.kinds()) {
+            None => Outcome::Pending,
+            Some(recipe::Finish::Ask(request)) => {
+                self.asking = Some(request);
+                Outcome::AskNumber(request)
+            }
+            Some(recipe::Finish::Now) => {
+                let lines = recipe::build(self.tool, &self.picks, None, decimals, is_taken);
+                self.picks.clear();
+                Outcome::Run(lines)
+            }
         }
-        let lines = self.build(decimals, is_taken);
-        self.picks.clear();
-        Outcome::Run(lines)
     }
 
-    fn build(&self, decimals: usize, is_taken: &dyn Fn(&str) -> bool) -> Vec<String> {
-        let mut lines = Vec::new();
-        let mut allocated: Vec<String> = Vec::new();
-        let fresh = |kind: Kind, allocated: &mut Vec<String>| {
-            let label = next_label(kind, |l| is_taken(l) || allocated.iter().any(|a| a == l));
-            allocated.push(label.clone());
-            label
+    /// Completes a tool that asked for a number. `value` is in the unit the
+    /// request named (degrees for angles). Returns [`Outcome::Ignored`] when
+    /// the tool was not waiting.
+    pub fn finish_number(
+        &mut self,
+        value: f64,
+        decimals: usize,
+        is_taken: &dyn Fn(&str) -> bool,
+    ) -> Outcome {
+        let Some(request) = self.asking.take() else {
+            return Outcome::Ignored;
         };
-        let mut args: Vec<String> = Vec::new();
-        for pick in &self.picks {
-            match pick {
-                Pick::Object { label, .. } => args.push(label.clone()),
-                Pick::New { x, y } => {
-                    let label = fresh(Kind::Point, &mut allocated);
-                    lines.push(format!(
-                        "{label} = ({}, {})",
-                        fixed(*x, decimals),
-                        fixed(*y, decimals)
-                    ));
-                    args.push(label);
-                }
-            }
-        }
-        if let Some(command) = self.tool.command() {
-            // Perpendicular and Parallel take the point first, then the line.
-            if matches!(self.tool, Tool::Perpendicular | Tool::Parallel)
-                && self
-                    .picks
-                    .first()
-                    .is_some_and(|p| p.class() == Class::Straight)
-            {
-                args.swap(0, 1);
-            }
-            let label = fresh(self.tool.result_kind(), &mut allocated);
-            lines.push(format!("{label} = {command}({})", args.join(", ")));
-        }
-        lines
+        let value = if request.degrees {
+            value.to_radians()
+        } else {
+            value
+        };
+        let lines = recipe::build(self.tool, &self.picks, Some(value), decimals, is_taken);
+        self.picks.clear();
+        Outcome::Run(lines)
     }
 }
 

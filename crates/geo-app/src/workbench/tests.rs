@@ -30,7 +30,7 @@ fn both_label_forms_and_bare_definitions_work() {
     w.run_line("(1, 2)").unwrap();
     w.run_line("Circle(A, B)").unwrap();
     assert_eq!(labels(&w), ["A", "B", "f", "C", "D", "c"]);
-    assert_eq!(w.rows()[2].head, "f: Line(A, B)");
+    assert_eq!(w.rows()[2].head, "f = Line(A, B)");
 }
 
 #[test]
@@ -206,7 +206,7 @@ fn rows_describe_free_and_dependent_objects() {
     let rows = w.rows().to_vec();
     assert_eq!(rows[0].head, "A = (-5.64, 4.44)");
     assert!(rows[0].free && rows[0].value.is_none());
-    assert_eq!(rows[2].head, "f: Line(A, B)");
+    assert_eq!(rows[2].head, "f = Line(A, B)");
     assert_eq!(rows[2].value.as_deref(), Some("y = -0.12x + 3.75"));
     assert_eq!(rows[3].free_number, Some(3.0));
     assert_eq!(rows[3].head, "r =");

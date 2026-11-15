@@ -19,12 +19,21 @@ fn out_dir() -> PathBuf {
 }
 
 fn render(script: &str, name: &str, prepare: impl FnOnce(&mut App)) -> PathBuf {
+    render_sized(script, name, (1400, 900), prepare)
+}
+
+fn render_sized(
+    script: &str,
+    name: &str,
+    (w, h): (u32, u32),
+    prepare: impl FnOnce(&mut App),
+) -> PathBuf {
     let mut app = App::new(Workbench::from_script(script).unwrap(), None);
     prepare(&mut app);
     let mut harness = Harness::builder()
         .with_size(eframe::egui::vec2(
-            1400.0 + 2.0 * MARGIN,
-            900.0 + 2.0 * MARGIN,
+            w as f32 + 2.0 * MARGIN,
+            h as f32 + 2.0 * MARGIN,
         ))
         .with_pixels_per_point(1.0)
         .with_context_setup(crate::theme::apply)
@@ -34,7 +43,7 @@ fn render(script: &str, name: &str, prepare: impl FnOnce(&mut App)) -> PathBuf {
     let image = harness.render().expect("render");
     let path = out_dir().join(name);
     let m = MARGIN as u32;
-    let cropped = image::imageops::crop_imm(&image, m, m, 1400, 900).to_image();
+    let cropped = image::imageops::crop_imm(&image, m, m, w, h).to_image();
     cropped.save(&path).unwrap();
     path
 }
@@ -52,11 +61,39 @@ fn render_acceptance_scene() {
 
 #[test]
 #[ignore = "needs a GPU adapter"]
-fn render_tools_panel() {
+fn render_tool_drop_down_and_keyboard() {
     let path = render(
         include_str!("../../../examples/four-lines.geo"),
-        "tools.png",
-        |app| app.mode = crate::app::Mode::Tools,
+        "keyboard.png",
+        |app| {
+            app.keyboard.open = true;
+            app.style_bar = true;
+            app.select_tool(crate::tools::Tool::Circle);
+        },
+    );
+    println!("{}", path.display());
+}
+
+#[test]
+#[ignore = "needs a GPU adapter"]
+fn render_empty_reference_size() {
+    let path = render_sized("", "empty.png", (1728, 1050), |app| {
+        app.keyboard.open = true
+    });
+    println!("{}", path.display());
+}
+
+#[test]
+#[ignore = "needs a GPU adapter"]
+fn render_quadrilateral_reference_size() {
+    // The four sides stand in for a polygon until the kernel has polygons.
+    let path = render_sized(
+        "A = (-8.82, 7.97)\nB = (-3.5, 2.2)\nC = (2.4, 4.1)\nD = (-1.6, 9.3)\n\
+         a = Segment(A, B)\nb = Segment(B, C)\nc = Segment(C, D)\nd = Segment(D, A)\n\
+         α = Angle(B, A, D)\n",
+        "quadrilateral.png",
+        (1728, 1050),
+        |_| {},
     );
     println!("{}", path.display());
 }

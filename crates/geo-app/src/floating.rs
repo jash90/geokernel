@@ -1,4 +1,4 @@
-//! Round buttons floating over the drawing area, and the pill with the tool hint.
+//! Buttons floating over the drawing area, the tool tooltip and notices.
 
 use crate::icons::{self, Icon};
 use crate::theme;
@@ -33,6 +33,7 @@ pub fn round_button(
     let rect = Rect::from_center_size(center, vec2(RADIUS * 2.0, RADIUS * 2.0));
     // A disabled button still takes the click so it does not reach the drawing.
     let response = ui.interact(rect, ui.scope_id().with(("floating", key)), Sense::click());
+    response.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, enabled, tip));
     let painter = ui.painter();
     soft_shadow(painter, rect, RADIUS);
     let fill = if enabled && response.hovered() {
@@ -41,17 +42,13 @@ pub fn round_button(
         theme::WHITE
     };
     painter.circle_filled(center, RADIUS, fill);
-    painter.circle_stroke(
-        center,
-        RADIUS,
-        egui::Stroke::new(1.0, Color32::from_rgb(0xe4, 0xe4, 0xe4)),
-    );
+    painter.circle_stroke(center, RADIUS, egui::Stroke::new(1.0, theme::GRID_MINOR));
     let color = if enabled {
-        Color32::from_rgb(0x55, 0x55, 0x55)
+        theme::ICON
     } else {
-        Color32::from_rgb(0xc4, 0xc4, 0xc4)
+        theme::ICON_DISABLED
     };
-    icons::paint(painter, icon, center, 9.5, color);
+    icons::paint(painter, icon, center, 9.0, color);
     if enabled {
         response
             .on_hover_cursor(CursorIcon::PointingHand)
@@ -77,4 +74,47 @@ pub fn hint_pill(ui: &Ui, area: Rect, text: &str, color: Color32, row: f32) {
         FontId::proportional(14.0),
         color,
     );
+}
+
+/// A square white button at the edge of the drawing area (the style bar).
+pub fn square_button(ui: &mut Ui, key: &str, rect: Rect, icon: Icon, on: bool) -> Response {
+    let response = ui
+        .interact(rect, ui.scope_id().with(("square", key)), Sense::click())
+        .on_hover_cursor(CursorIcon::PointingHand);
+    let painter = ui.painter();
+    soft_shadow(painter, rect, 0.0);
+    let fill = if on {
+        theme::SELECTED_ROW
+    } else if response.hovered() {
+        theme::HOVER_ROW
+    } else {
+        theme::WHITE
+    };
+    painter.rect_filled(rect, 0.0, fill);
+    icons::paint(painter, icon, rect.center(), 11.0, theme::ICON);
+    response
+}
+
+/// The active tool's name and what to click next, at the bottom of `area`.
+pub fn tool_tip(ui: &Ui, area: Rect, name: &str, hint: &str) {
+    let painter = ui.painter();
+    let bold = FontId::new(15.0, egui::FontFamily::Proportional);
+    let name_galley = painter.layout_no_wrap(name.to_owned(), bold.clone(), theme::WHITE);
+    let hint_galley = painter.layout_no_wrap(
+        hint.to_owned(),
+        FontId::proportional(14.0),
+        Color32::from_gray(0xe0),
+    );
+    let width = name_galley.size().x.max(hint_galley.size().x) + 32.0;
+    let rect = Rect::from_min_size(
+        Pos2::new(area.left() + 16.0, area.bottom() - 16.0 - 54.0),
+        vec2(width, 54.0),
+    );
+    painter.rect_filled(
+        rect,
+        6.0,
+        Color32::from_rgba_unmultiplied(0x33, 0x33, 0x33, 235),
+    );
+    painter.galley(rect.min + vec2(16.0, 8.0), name_galley, theme::WHITE);
+    painter.galley(rect.min + vec2(16.0, 29.0), hint_galley, theme::WHITE);
 }

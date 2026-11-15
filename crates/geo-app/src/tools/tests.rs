@@ -184,7 +184,8 @@ fn labels_allocated_inside_one_run_do_not_collide() {
 fn every_offered_tool_combination_runs_in_the_kernel() {
     use crate::workbench::Workbench;
     const SCRIPT: &str = "A = (0, 0)\nB = (4, 1)\nC = (1, 3)\nf = Line(A, B)\n\
-                          s = Segment(B, C)\nr = Ray(A, C)\nc = Circle(A, B)\nd = Circle(C, B)\n";
+                          s = Segment(B, C)\nr = Ray(A, C)\nc = Circle(A, B)\nd = Circle(C, B)\n\
+                          u = Vector(A, C)\n";
     let objects: Vec<(String, Kind)> = {
         let w = Workbench::from_script(SCRIPT).unwrap();
         let c = w.construction();
@@ -195,53 +196,64 @@ fn every_offered_tool_combination_runs_in_the_kernel() {
     let mut candidates: Vec<Option<(String, Kind)>> = vec![None];
     candidates.extend(objects.iter().cloned().map(Some));
     let mut failures = Vec::new();
-    let mut ran = 0;
-    for tool in Tool::ALL {
-        if matches!(tool, Tool::Move | Tool::Delete) {
-            continue;
-        }
-        for first in &candidates {
-            for second in &candidates {
-                let mut state = ToolState::new(tool);
-                let w = Workbench::from_script(SCRIPT).unwrap();
-                let is_taken = |l: &str| w.construction().id(l).is_some();
-                let mut outcome = Outcome::Ignored;
-                let mut offered = 0;
-                for pick in [first, second] {
-                    let hit = pick.as_ref().map(|(l, k)| (l.as_str(), *k));
-                    let allowed = match &hit {
-                        Some((l, k)) => state.accepts_object(l, *k),
-                        None => state.accepts_new_point(),
-                    };
-                    if !allowed {
-                        break;
-                    }
-                    offered += 1;
-                    outcome = state.click(hit, (1.5, -2.5), 2, &is_taken);
+    let mut ran = std::collections::HashMap::new();
+    let n = candidates.len();
+    for tool in Tool::all().filter(|t| !t.is_direct()) {
+        for code in 0..n * n * n {
+            let picks = [
+                &candidates[code % n],
+                &candidates[code / n % n],
+                &candidates[code / n / n],
+            ];
+            let mut state = ToolState::new(tool);
+            let w = Workbench::from_script(SCRIPT).unwrap();
+            let is_taken = |l: &str| w.construction().id(l).is_some();
+            let mut outcome = Outcome::Ignored;
+            let mut used = 0;
+            for pick in picks {
+                if !matches!(outcome, Outcome::Ignored | Outcome::Pending) {
+                    break;
                 }
-                let needed = if tool == Tool::Point { 1 } else { 2 };
-                if offered < needed {
-                    continue;
-                }
-                let Outcome::Run(lines) = outcome else {
-                    failures.push(format!("{tool:?}: no lines for {first:?} {second:?}"));
-                    continue;
+                let hit = pick.as_ref().map(|(l, k)| (l.as_str(), *k));
+                let allowed = match &hit {
+                    Some((l, k)) => state.accepts_object(l, *k),
+                    None => state.accepts_new_point(),
                 };
-                let mut w = w;
-                ran += 1;
-                if let Err(e) = w.run_lines(&lines) {
-                    failures.push(format!("{tool:?} {first:?} {second:?}: {lines:?}: {e}"));
+                if !allowed {
+                    break;
                 }
+                used += 1;
+                outcome = state.click(hit, (1.5, -2.5), 2, &is_taken);
+            }
+            // Count each distinct sequence once: the unused tail varies.
+            if code % n.pow(used) != code {
+                continue;
+            }
+            if let Outcome::AskNumber(request) = outcome {
+                outcome = state.finish_number(request.default, 2, &is_taken);
+            }
+            let Outcome::Run(lines) = outcome else {
+                continue;
+            };
+            let mut w = w;
+            *ran.entry(tool).or_insert(0) += 1;
+            if let Err(e) = w.run_lines(&lines) {
+                failures.push(format!("{tool:?} {picks:?}: {lines:?}: {e}"));
             }
         }
     }
     assert!(
         failures.is_empty(),
-        "{} of {ran}:\n{}",
+        "{} failures:\n{}",
         failures.len(),
         failures.join("\n")
     );
-    assert!(ran > 100, "only {ran} combinations ran");
+    for tool in Tool::all().filter(|t| !t.is_direct()) {
+        assert!(
+            ran.get(&tool).copied().unwrap_or(0) > 0,
+            "{tool:?} never finished"
+        );
+    }
 }
 
 #[test]

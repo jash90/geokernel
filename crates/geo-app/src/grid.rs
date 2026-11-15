@@ -7,7 +7,7 @@ use eframe::egui::{vec2, Align2, FontId, Painter, Pos2, Rect, Stroke};
 
 const MIN_MAJOR_PX: f64 = 48.0;
 const MIN_MINOR_PX: f64 = 9.0;
-const TICK_FONT: f32 = 12.0;
+const TICK_FONT: f32 = 14.0;
 
 /// Which parts of the plane decoration are shown.
 #[derive(Clone, Copy, Debug)]

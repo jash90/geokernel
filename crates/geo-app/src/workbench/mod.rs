@@ -6,6 +6,7 @@ use crate::history::History;
 use crate::labels::next_label;
 use crate::scriptlog::{normalize, Log, Setting};
 use crate::undo::Undo;
+use geo_kernel::algo::measure::MeasureDef;
 use geo_kernel::kernel::{Construction, Def, Id, Kind, Value};
 use std::collections::HashMap;
 
@@ -17,7 +18,7 @@ pub struct Row {
     pub kind: Kind,
     /// Free objects take one line: `A = (-5.64, 4.44)`.
     pub free: bool,
-    /// First line: `A = (1, 2)` or `f: Line(A, B)`. A free number's head
+    /// First line: `A = (1, 2)` or `f = Line(A, B)`. A free number's head
     /// ends at the `=`; its value is edited in place.
     pub head: String,
     /// Second line of a dependent object, without the leading `=`.
@@ -343,7 +344,11 @@ impl Workbench {
             let label = c.label(id).to_owned();
             let kind = c.kind(id);
             let free = c.def(id).is_free();
-            let text = describe::value_text(&value);
+            let text = match (c.def(id), value) {
+                // Angles are kept in radians and shown in degrees.
+                (Def::Measure(MeasureDef::Angle(..)), Value::Number(n)) => describe::degrees(n),
+                _ => describe::value_text(&value),
+            };
             let free_number = match (c.def(id), value) {
                 (Def::Number(_), Value::Number(n)) => Some(n),
                 _ => None,
@@ -353,9 +358,9 @@ impl Workbench {
             } else if free {
                 (format!("{label} = {text}"), None)
             } else {
+                // `label = definition` for every kind, as in the reference.
                 match rhs.get(label.as_str()).copied() {
-                    Some(rhs) if kind == Kind::Point => (format!("{label} = {rhs}"), Some(text)),
-                    Some(rhs) => (format!("{label}: {rhs}"), Some(text)),
+                    Some(rhs) => (format!("{label} = {rhs}"), Some(text)),
                     None => (label.clone(), Some(text)),
                 }
             };
