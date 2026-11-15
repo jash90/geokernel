@@ -101,6 +101,33 @@ pub fn circle_equation(cx: f64, cy: f64, r: f64) -> String {
     format!("{} + {} = {}", square("x", cx), square("y", cy), n2(r * r))
 }
 
+/// The row value of an object of a kind the window does not know yet: a
+/// kernel that gains a kind must not make its objects vanish. Such an object
+/// keeps its algebra row (label, definition and this text); the drawing and
+/// picking skip it.
+pub const NOT_DRAWN_YET: &str = "(ten rodzaj obiektu nie jest jeszcze rysowany)";
+
+/// Whether the window knows how to show a value: every variant the kernel
+/// has today. `Value` is `#[non_exhaustive]`; a variant added later is not
+/// known and its row says so (see [`NOT_DRAWN_YET`]). One match, no
+/// allocation.
+pub fn is_known(v: &Value) -> bool {
+    matches!(
+        v,
+        Value::Undefined
+            | Value::Point { .. }
+            | Value::Vector { .. }
+            | Value::Number(_)
+            | Value::Bool(_)
+            | Value::Line { .. }
+            | Value::Ray { .. }
+            | Value::Segment { .. }
+            | Value::Circle { .. }
+            | Value::Polygon { .. }
+            | Value::PolyLine { .. }
+    )
+}
+
 /// The text after `=` in the second line of a dependent object's row.
 pub fn value_text(v: &Value) -> String {
     match *v {
@@ -113,9 +140,11 @@ pub fn value_text(v: &Value) -> String {
         // A polygon shows its area, a polyline its length.
         Value::Polygon { area } => n2(area.abs()),
         Value::PolyLine { length } => n2(length),
-        // A kind added to the kernel later still shows as plain text.
+        // As before the fallback below existed (the debug form, `Bool(true)`).
+        Value::Bool(_) => format!("{v:?}"),
+        // A kind added to the kernel later keeps its row with this text.
         #[allow(unreachable_patterns)]
-        other => format!("{other:?}"),
+        _ => NOT_DRAWN_YET.into(),
     }
 }
 
