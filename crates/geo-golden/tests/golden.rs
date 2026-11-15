@@ -4,7 +4,7 @@ use geo_golden::{gaps, model, repo_root, report};
 
 /// Number of cases recorded by `ggb-harness` so far. Raise it when adding cases,
 /// so that losing a file is noticed.
-const MIN_GOLDEN_CASES: usize = 950;
+const MIN_GOLDEN_CASES: usize = 970;
 
 #[test]
 fn kernel_agrees_with_golden_data() {

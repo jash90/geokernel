@@ -77,6 +77,23 @@ pub fn value(v: &Value) -> String {
         Value::Circle { cx, cy, r } => {
             format!("centre ({}, {}), r = {}", number(cx), number(cy), number(r))
         }
+        Value::Vector { x, y } => format!("({}, {})", number(x), number(y)),
+        Value::Ray { x, y, a, b, .. } => {
+            // A ray points along (b, -a); show the unit direction.
+            let len = a.hypot(b);
+            let (dx, dy) = if len > 0.0 {
+                (b / len, -a / len)
+            } else {
+                (0.0, 0.0)
+            };
+            format!(
+                "from ({}, {}), direction ({}, {})",
+                number(x),
+                number(y),
+                number(dx),
+                number(dy)
+            )
+        }
         // Kinds added to the kernel later still get a readable fallback.
         #[allow(unreachable_patterns)]
         other => format!("{other:?}"),
@@ -148,6 +165,22 @@ mod tests {
         );
         assert_eq!(value(&Value::Number(7.25)), "7.25");
         assert_eq!(value(&Value::Undefined), "undefined");
+    }
+
+    #[test]
+    fn vectors_and_rays() {
+        assert_eq!(value(&Value::Vector { x: 4.0, y: -1.5 }), "(4, -1.5)");
+        // Raw coefficients of any scale: the ray from (1, 2) along +x.
+        assert_eq!(
+            value(&Value::Ray {
+                x: 1.0,
+                y: 2.0,
+                a: 0.0,
+                b: 8.0,
+                c: -16.0
+            }),
+            "from (1, 2), direction (1, 0)"
+        );
     }
 
     #[test]
