@@ -477,10 +477,20 @@ impl Session {
             pressed,
             modifiers: m,
         };
-        let mut frames = vec![(DT, vec![Event::PointerMoved(pos)])];
+        // Held modifiers are input state too: they are pressed before the
+        // pointer moves and let go after the last release.
+        let mut first = Vec::new();
+        if m != Modifiers::NONE {
+            first.push(Event::ModifiersChanged(m));
+        }
+        first.push(Event::PointerMoved(pos));
+        let mut frames = vec![(DT, first)];
         for _ in 0..clicks {
             frames.push((DT, vec![btn(true)]));
             frames.push((DT, vec![btn(false)]));
+        }
+        if m != Modifiers::NONE {
+            frames.push((DT, vec![Event::ModifiersChanged(Modifiers::NONE)]));
         }
         Ok(self.act(frames))
     }

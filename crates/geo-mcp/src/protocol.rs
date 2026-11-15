@@ -252,8 +252,9 @@ impl Server {
         let modern = version.is_some();
         if let Some(v) = version {
             if v.as_str() != Some(MODERN) {
-                let mut supported = vec![MODERN];
-                supported.extend(LEGACY);
+                // Only the modern revision can be named in `_meta`; the
+                // legacy ones are reached through `initialize`.
+                let supported = [MODERN];
                 return Some(error(
                     id,
                     UNSUPPORTED_VERSION,

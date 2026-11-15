@@ -76,7 +76,10 @@ A position can be given three ways:
 - `wx` and `wy` in world coordinates, through the view as last painted;
 - `widget`, an id or a label from `widgets`, which gives its centre.
 
-Optional `dx` and `dy` move any of these by that many points. Touch events go
+Optional `dx` and `dy` move any of these by that many points. In `input`,
+the `modifiers` of a `down`, `up` or `wheel` event go on that event only; a
+`modifiers` event changes the held keys (a `key` event and `click` do both).
+A dropped file is the `open` tool. Touch events go
 through egui-winit's touch-to-pointer emulation unless `raw` is set, so a
 touch window behaves as it does on a phone.
 
