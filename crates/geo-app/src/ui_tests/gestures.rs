@@ -366,8 +366,9 @@ fn camera(h: &Harness<'_, App>) -> (f64, f64, f64) {
     (c.cx, c.cy, c.scale)
 }
 
-/// With the earlier code (the release decided at the frame's end) the new
-/// press never panned.
+/// With the earlier code (one ownership flag a frame, from egui's
+/// `is_pointer_button_down_on`, which the release clears) the new press was
+/// not the drawing's and never panned.
 #[test]
 fn a_release_and_a_press_in_one_frame_end_the_drag_and_start_a_new_press() {
     let mut h = harness("A = (0, 0)\n");
@@ -403,7 +404,8 @@ fn a_release_and_a_press_in_one_frame_end_the_drag_and_start_a_new_press() {
     assert!(!h.state().wb.can_undo());
 }
 
-/// With the earlier code the tap was placed where the new press went down.
+/// With the earlier code (the release decided at the frame's end, at the
+/// last pointer position) the tap was placed where the new press went down.
 #[test]
 fn a_tap_and_a_press_in_one_frame_place_the_point_where_the_tap_was() {
     let mut h = harness("");
