@@ -14,9 +14,19 @@ path = "src/main.rs"
 geo-kernel = { path = "../geo-kernel" }
 geo-app-core = { path = "../geo-app-core" }
 # Default features are off to avoid pulling in glow, accesskit and the web
-# helpers. We want the wgpu renderer, the bundled fonts and both Linux
-# window systems.
-eframe = { version = "0.37.0", default-features = false, features = ["wgpu", "default_fonts", "x11", "wayland"] }
+# helpers. We want the wgpu renderer and the bundled fonts everywhere.
+eframe = { version = "0.37.0", default-features = false, features = ["wgpu", "default_fonts"] }
+
+# Both Linux window systems, on Linux only: Cargo merges these features with
+# the ones above, and other targets (macOS, Windows, later Android) build
+# without them.
+[target.'cfg(target_os = "linux")'.dependencies]
+eframe = { version = "0.37.0", default-features = false, features = ["x11", "wayland"] }
+
+# An Android build will need a `[lib]` with `crate-type = ["cdylib"]`, an
+# `android_main` entry point and eframe's `android-native-activity` (or
+# `android-game-activity`) feature for that target. None of it is added yet:
+# it changes nothing on the desktop, so it belongs to the port itself.
 
 [dev-dependencies]
 egui_kittest = { version = "0.37", features = ["wgpu"] }
