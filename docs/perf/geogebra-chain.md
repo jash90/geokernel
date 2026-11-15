@@ -148,3 +148,37 @@ separate alternating run at load 28 to 44 with the pre-port binary at
 15.9 ns).
 That is still 12.6% over the pre-port 15.9 ns, so the 10% gate for the local
 drag is **not met**; the full-drag gate is.
+
+### A far child, and the size of `Value` (PROVISIONAL, 15 November 2026)
+
+The bench now also times dragging a free point `F`, created early, whose one
+dependent is the last object of the chain (105,006 objects in all). The
+single-level bit set above read every word between `F` and that dependent.
+The fix adds levels, each with one bit per non-zero word of the level below,
+so the search for the next dirty object reads a few words per level however
+far away it is. The bits above level 0 are cleared lazily, when a search meets
+them. The same bench code, patched into each binary, was run in alternation
+for 15 rounds at load 39 to 57; minimums:
+
+| Binary | Full drag (A) | Local drag (Z1) | Far drag (F) |
+| --- | ---: | ---: | ---: |
+| 5bdc473, before the port (binary heap) | 4.823 ms | 15.9 ns | 16.0 ns |
+| 3b841da, single-level bit set | 3.447 ms | 18.2 ns | 946.2 ns |
+| 6d66ac2, multi-level bit set | 3.406 ms | 19.2 ns | 24.3 ns |
+
+The far drag now costs about as much as a local drag rather than growing with
+the distance between the point and its dependent. The extra levels cost about
+1 ns on the local drag, which is now 21% over the pre-port binary; the gate
+for the local drag stays **not met**.
+
+To test whether the local-drag step at 46bbb9a comes from `Value` growing from
+40 to 48 bytes, `Value::Ray` was cut to four numbers on a throwaway branch
+(`c` recomputed as `-(a*x + b*y)` where it was read; golden data not
+checked), which makes `Value` 40 bytes. Run in alternation with two copies of
+the unchanged head for 15 rounds at load 53 to 75, it gave a local drag of
+19.1 ns against 19.2 ns for both copies. The size of `Value` is therefore not
+the cause. The rest of that commit adds the vector variants to `Kind`, `Def`
+and `Value`, so `move_point`, `compute` and `Value::is_finite` match over more
+cases. A next step would be to count instructions per local drag at 4994707
+and at the head, and to look at the code for those three functions, rather
+than measure more layouts.
