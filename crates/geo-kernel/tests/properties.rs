@@ -1102,7 +1102,7 @@ fn perpendiculars_parallels_and_diameters() {
 
 // ------------------------------------------------------ known defects
 //
-// Each test below fails today; they are ignored so that the suite passes.
+// The tests below that fail today are ignored so that the suite passes.
 // Run them with `cargo test -p geo-kernel --test properties -- --ignored`.
 
 /// Asserts that moving `moved` to `to` gives the same values as building the
@@ -1117,11 +1117,10 @@ fn assert_history_independent(before: &str, moved: &str, to: (f64, f64), after: 
     }
 }
 
-/// Moving `C` along the line `Line(A, C)` to `(1e-9, 0)` leaves `s = Slope(l)`
-/// defined (at `-0`); building the same construction with `C` already there
-/// gives an undefined `s`. A value must not depend on the order of moves.
+/// Moving `C` along the line `Line(A, C)` to `(1e-9, 0)` must give the same
+/// `s = Slope(l)` as building the construction with `C` already there. A
+/// value must not depend on the order of moves.
 #[test]
-#[ignore = "known defect: Slope depends on the history of moves"]
 fn slope_of_a_line_depends_on_the_history_of_moves() {
     assert_history_independent(
         "A = (0, 0)\nC = (1, 0)\nl = Line(A, C)\ns = Slope(l)\n",
@@ -1131,11 +1130,10 @@ fn slope_of_a_line_depends_on_the_history_of_moves() {
     );
 }
 
-/// Moving `C` from `(3, 1.7)` to `(3, 2.9)` along the line `Line(A, C)`
-/// leaves `d = Distance(l, m)` at `2.7000000000000006`; building the same
-/// construction with `C` already there gives `2.6999999999999997`.
+/// Moving `C` from `(3, 1.7)` to `(3, 2.9)` along the line `Line(A, C)` must
+/// give the same `d = Distance(l, m)`, to the last bit, as building the
+/// construction with `C` already there.
 #[test]
-#[ignore = "known defect: Distance of two lines depends on the history of moves"]
 fn distance_of_lines_depends_on_the_history_of_moves() {
     assert_history_independent(
         "A = (3, 0.1)\nC = (3, 1.7)\nP = (0.3, 0.7)\nl = Line(A, C)\nm = Line(P, l)\nd = Distance(l, m)\n",
@@ -1145,10 +1143,9 @@ fn distance_of_lines_depends_on_the_history_of_moves() {
     );
 }
 
-/// `Line(A, B)` with `A = (4, 1e300)` is defined, but its coefficients are
-/// `a = b = 0`, which is not a line. It should be undefined or a real line.
+/// `Line(A, B)` with `A = (4, 1e300)` must be undefined or a real line, never
+/// the triple with `a = b = 0`.
 #[test]
-#[ignore = "known defect: Line through far points is the zero triple"]
 fn a_line_through_far_points_is_not_the_zero_line() {
     let c = build("A = (4, 1e300)\nB = (1, 1)\nl = Line(A, B)\n");
     match val(&c, "l") {
@@ -1164,10 +1161,12 @@ fn a_line_through_far_points_is_not_the_zero_line() {
 }
 
 /// Random constructions that also use `Slope(line)`, `Distance(line, line)`
-/// and `Intersect(circle, circle)` fail the history or recompute checks (see
-/// the tests above and below).
+/// and `Intersect(circle, circle)`. Constructions that intersect a circle
+/// with itself fail: a fresh build at the final values decides the `special`
+/// flag of `Def::IntersectCircles` differently (see the test below), and the
+/// incremental update can differ from a recompute.
 #[test]
-#[ignore = "known defect: see slope_of_a_line_depends_on_the_history_of_moves"]
+#[ignore = "known defect: Intersect of a circle with itself depends on the history of moves"]
 fn random_constructions_with_all_commands() {
     let mut totals = Totals::default();
     for_seeds(
