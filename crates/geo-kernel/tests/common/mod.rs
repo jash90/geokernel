@@ -7,7 +7,7 @@
 #![allow(dead_code)]
 
 use geo_kernel::script::exec;
-use geo_kernel::{ConicData, ConicType, Construction, Def, Id, Kind, Value};
+use geo_kernel::{ConicData, ConicType, Construction, Def, Id, Kind, PathState, Value};
 use std::cell::{Cell, RefCell};
 use std::panic::{self, AssertUnwindSafe};
 use std::sync::mpsc;
@@ -164,6 +164,9 @@ pub fn first_non_finite(c: &Construction) -> Option<String> {
 pub struct Snap {
     pub value: Value,
     pub conic: Option<ConicData>,
+    /// The state of a point on a path (`Construction::path_state`),
+    /// compared bit for bit.
+    pub path: Option<PathState>,
 }
 
 impl Snap {
@@ -221,6 +224,7 @@ impl PartialEq for Snap {
     fn eq(&self, other: &Snap) -> bool {
         self.value == other.value
             && self.conic.as_ref().map(conic_bits) == other.conic.as_ref().map(conic_bits)
+            && self.path == other.path
     }
 }
 
@@ -228,6 +232,7 @@ pub fn snap(c: &Construction, id: Id) -> Snap {
     Snap {
         value: c.value(id),
         conic: c.conic(id),
+        path: c.path_state(id),
     }
 }
 
@@ -591,6 +596,19 @@ pub const COMMANDS: &[Cmd] = &[
     cmd("Diameter", &[LL, CO]),
 ];
 
+/// Points on paths and their parameters. [`generate`] adds them after the
+/// other commands, from a stream of their own, so that the objects before
+/// them are those of the same seed without them. Their state depends on the
+/// history of moves; a test that rebuilds a construction restores it
+/// (`Construction::restore_path_state`).
+pub const PATH_COMMANDS: &[Cmd] = &[
+    cmd("Point", &[LL]),
+    cmd("Point", &[CI]),
+    cmd("Point", &[LL, NU]),
+    cmd("Point", &[CI, NU]),
+    cmd("PathParameter", &[PT]),
+];
+
 /// A command call, as script text and as the objects it reads.
 pub struct Call {
     pub text: String,
@@ -799,6 +817,34 @@ pub fn generate(seed: u64, n_commands: usize, all_commands: bool) -> Case {
                 }
                 lines.push(line);
                 multi_lines.push(call.multi);
+                made += 1;
+            }
+            Ok(None) => unreachable!("a command line creates an object"),
+            Err(e) => rejected.push(format!("{line}: {e}")),
+        }
+    }
+    let mut path_rng = Rng::new(seed ^ 0x5EED_0A7B_9A7B_0A7B);
+    for _ in 0..path_rng.below(5) {
+        let cmd = path_rng.pick(PATH_COMMANDS);
+        let Some(call) = pick_args(&mut path_rng, &c, cmd, usize::MAX) else {
+            continue;
+        };
+        let label = format!("o{made}");
+        let line = format!("{label} = {}", call.text);
+        let before = c.len();
+        match exec(&mut c, &line) {
+            Ok(Some(_)) => {
+                let arg_ids: Vec<usize> = call
+                    .args
+                    .iter()
+                    .map(|a| c.id(a).expect("argument exists").index())
+                    .collect();
+                for _ in before..c.len() {
+                    deps.push(arg_ids.clone());
+                    expr.push(false);
+                }
+                lines.push(line);
+                multi_lines.push(false);
                 made += 1;
             }
             Ok(None) => unreachable!("a command line creates an object"),

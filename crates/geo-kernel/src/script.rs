@@ -303,6 +303,7 @@ fn probe(c: &Construction, def: &Def) -> Result<bool, String> {
         Def::Measure(d) => run(c, d),
         Def::Transform(d) => run(c, d),
         Def::ConicPart(d) => run(c, d),
+        Def::Path(d) => run(c, d),
         _ => Ok(true),
     }
 }
@@ -437,6 +438,9 @@ pub(crate) fn parse_def(c: &Construction, rhs: &str) -> Result<Def, String> {
     }
     if let Some(def) = PointDef::parse(c, func, &args) {
         return def.map(Def::Point);
+    }
+    if let Some(def) = crate::algo::path::PathDef::parse(c, func, &args) {
+        return def.map(Def::Path);
     }
 
     match (func, args.len()) {

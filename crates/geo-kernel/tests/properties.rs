@@ -9,6 +9,7 @@ mod common;
 
 use common::*;
 use geo_kernel::algo::conic::ConicDef;
+use geo_kernel::algo::path::PathDef;
 use geo_kernel::script::exec;
 use geo_kernel::{Construction, Def, Error, Id, Kind, Value};
 use std::f64::consts::PI;
@@ -102,9 +103,36 @@ fn rebuild_from_defs(orig: &Construction) -> Result<Construction, String> {
             }
             (None, None) => fresh.add(orig.label(id), def),
         };
-        added.map_err(|e| format!("rebuilding `{}` failed: {e}", orig.label(id)))?;
+        let new = added.map_err(|e| format!("rebuilding `{}` failed: {e}", orig.label(id)))?;
+        // the state of a point on a path depends on its history
+        if let Some(state) = orig.path_state(id) {
+            fresh
+                .restore_path_state(new, state)
+                .map_err(|e| format!("restoring `{}` failed: {e}", orig.label(id)))?;
+        }
     }
     Ok(fresh)
+}
+
+/// Gives every point on a path of `to` the state of the object at the same
+/// index of `from`, in creation order: the one part of a construction that
+/// depends on the history of moves by design (`Construction::path_state`).
+fn restore_path_states(from: &Construction, to: &mut Construction) -> Result<(), String> {
+    for id in from.ids() {
+        if let Some(state) = from.path_state(id) {
+            // a fresh build with another layout is reported by the caller
+            let Some(target) = to
+                .ids()
+                .nth(id.index())
+                .filter(|&t| to.path_state(t).is_some())
+            else {
+                continue;
+            };
+            to.restore_path_state(target, state)
+                .map_err(|e| format!("restoring `{}` failed: {e}", from.label(id)))?;
+        }
+    }
+    Ok(())
 }
 
 /// The script of `case` with the free objects at their current values.
@@ -131,7 +159,11 @@ fn check_contagion(case: &Case) -> Result<(), String> {
         // GeoGebra does, which counts it as defined (`1 / (r - a)` with
         // `a = ∞` is `-0`): for expressions such a parent is not undefined.
         let read_as_value = |p: Id| case.expr[id.index()] && case.c.infinite_number(p).is_some();
-        let undefined = |p: Id| !case.c.value(p).is_defined() && !read_as_value(p);
+        // A point at a parameter keeps the parameter it had when the number
+        // becomes undefined (`PathParameter.setT` ignores NaN).
+        let kept_parameter = |p: Id| matches!(case.c.def(id), Def::Path(PathDef::OnParam { param, .. }) if param == p);
+        let undefined =
+            |p: Id| !case.c.value(p).is_defined() && !read_as_value(p) && !kept_parameter(p);
         let broken = parents.iter().find(|&&p| undefined(id_at(&case.c, p)));
         if let Some(&p) = broken {
             let v = case.c.value(id);
@@ -234,56 +266,74 @@ fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), St
         fail!("after creation: {e}");
     }
 
+    // Points on paths are moved in extra steps from their own stream, so
+    // that the moves of the free objects are those of a construction
+    // without them.
+    let mut path_rng = Rng::new(seed ^ 0x0A7B_9A7B_5EED_0A7B);
     for step_no in 0..STEPS {
-        totals.steps += 1;
-        let step = random_step(&mut rng, &case.c, &case.free);
-        let before = values(&case.c);
-        let moved = step.id();
-        moves.push(format!("{step_no}: {}", step.describe(&case.c)));
-        note(&step);
-        let count = match step.apply(&mut case.c) {
-            Ok(n) => n,
-            Err(e) => fail!("move {step_no} failed: {e}"),
-        };
-        let after = values(&case.c);
-        totals.undefined_seen += after.iter().filter(|v| !v.is_defined()).count();
+        let on_paths: Vec<Id> = case
+            .c
+            .ids()
+            .filter(|&id| matches!(case.c.def(id), Def::Path(PathDef::On { .. })))
+            .collect();
+        let mut steps = vec![random_step(&mut rng, &case.c, &case.free)];
+        if !on_paths.is_empty() && path_rng.chance(0.3) {
+            steps.push(Step::Point {
+                id: *path_rng.pick(&on_paths),
+                x: path_rng.range(-10.0, 10.0),
+                y: path_rng.range(-10.0, 10.0),
+            });
+        }
+        for step in steps {
+            totals.steps += 1;
+            let before = values(&case.c);
+            let moved = step.id();
+            moves.push(format!("{step_no}: {}", step.describe(&case.c)));
+            note(&step);
+            let count = match step.apply(&mut case.c) {
+                Ok(n) => n,
+                Err(e) => fail!("move {step_no} failed: {e}"),
+            };
+            let after = values(&case.c);
+            totals.undefined_seen += after.iter().filter(|v| !v.is_defined()).count();
 
-        // 1. no non-finite numbers
-        if let Some(bad) = first_non_finite(&case.c) {
-            fail!("non-finite value after move {step_no}: {bad}");
-        }
-        // 3. only dependents change, and no more are recomputed than exist
-        let reach = dependents(&case, &reads, moved);
-        let n_dependents = reach.iter().filter(|&&r| r).count();
-        if count > n_dependents {
-            fail!("move {step_no} recomputed {count} objects but only {n_dependents} depend on it");
-        }
-        for i in 0..before.len() {
-            if i != moved.index() && !reach[i] && before[i] != after[i] {
-                fail!(
-                    "move {step_no} changed `{}`, which does not depend on `{}`",
-                    case.c.label(id_at(&case.c, i)),
-                    case.c.label(moved)
-                );
+            // 1. no non-finite numbers
+            if let Some(bad) = first_non_finite(&case.c) {
+                fail!("non-finite value after move {step_no}: {bad}");
             }
-        }
-        // 3. incremental update equals a full recompute
-        let fresh = rebuild_from_defs(&case.c)?;
-        if let Some(d) = first_difference(&case.c, &after, &values(&fresh)) {
-            fail!("incremental update differs from recompute after move {step_no}: {d}");
-        }
-        // 4. undefined is contagious
-        if let Err(e) = check_contagion(&case) {
-            fail!("after move {step_no}: {e}");
-        }
-        // 3. moving to the current position recomputes nothing
-        match step.apply(&mut case.c) {
-            Ok(0) => {}
-            Ok(n) => fail!("repeating move {step_no} recomputed {n} objects"),
-            Err(e) => fail!("repeating move {step_no} failed: {e}"),
-        }
-        if let Some(d) = first_difference(&case.c, &after, &values(&case.c)) {
-            fail!("repeating move {step_no} changed a value: {d}");
+            // 3. only dependents change, and no more are recomputed than exist
+            let reach = dependents(&case, &reads, moved);
+            let n_dependents = reach.iter().filter(|&&r| r).count();
+            if count > n_dependents {
+                fail!("move {step_no} recomputed {count} objects but only {n_dependents} depend on it");
+            }
+            for i in 0..before.len() {
+                if i != moved.index() && !reach[i] && before[i] != after[i] {
+                    fail!(
+                        "move {step_no} changed `{}`, which does not depend on `{}`",
+                        case.c.label(id_at(&case.c, i)),
+                        case.c.label(moved)
+                    );
+                }
+            }
+            // 3. incremental update equals a full recompute
+            let fresh = rebuild_from_defs(&case.c)?;
+            if let Some(d) = first_difference(&case.c, &after, &values(&fresh)) {
+                fail!("incremental update differs from recompute after move {step_no}: {d}");
+            }
+            // 4. undefined is contagious
+            if let Err(e) = check_contagion(&case) {
+                fail!("after move {step_no}: {e}");
+            }
+            // 3. moving to the current position recomputes nothing
+            match step.apply(&mut case.c) {
+                Ok(0) => {}
+                Ok(n) => fail!("repeating move {step_no} recomputed {n} objects"),
+                Err(e) => fail!("repeating move {step_no} failed: {e}"),
+            }
+            if let Some(d) = first_difference(&case.c, &after, &values(&case.c)) {
+                fail!("repeating move {step_no} changed a value: {d}");
+            }
         }
 
         // 2/4. away and back gives the original values
@@ -318,7 +368,31 @@ fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), St
             if let Err(e) = home.apply(&mut case.c) {
                 fail!("back move failed: {e}");
             }
-            if let Some(d) = first_difference(&case.c, &snapshot, &values(&case.c)) {
+            // A point on a path need not come back: it follows the parameter
+            // it kept, and a way through an undefined or degenerate path
+            // changes that parameter (`GeoPoint.setUndefined` restores the
+            // one of the last move; a single point resets it to 0), as in
+            // GeoGebra. Points on paths and what depends on them are compared
+            // against a recompute above; here they are left out.
+            let on_path = |i: usize| case.c.path_state(id_at(&case.c, i)).is_some();
+            let mut history = vec![false; case.c.len()];
+            for i in 0..case.c.len() {
+                history[i] = on_path(i) || reads[i].iter().any(|&p| history[p]);
+            }
+            let comparable = |v: Vec<Snap>| {
+                v.into_iter()
+                    .enumerate()
+                    .map(|(i, s)| if history[i] { None } else { Some(s) })
+                    .collect::<Vec<_>>()
+            };
+            let (expected, got) = (comparable(snapshot.clone()), comparable(values(&case.c)));
+            if let Some(i) = (0..expected.len()).find(|&i| expected[i] != got[i]) {
+                let d = format!(
+                    "`{}`: {:?} against {:?}",
+                    case.c.label(id_at(&case.c, i)),
+                    expected[i],
+                    got[i]
+                );
                 fail!(
                     "moving `{}` away and back changed a value: {d}",
                     case.c.label(target)
@@ -347,6 +421,10 @@ fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), St
                     fail!("setting `{}` in the fresh build failed", case.c.label(id));
                 }
             }
+        }
+        // after the numbers: setting one makes the points on paths follow
+        if let Err(e) = restore_path_states(&case.c, &mut fresh) {
+            fail!("{e}");
         }
     }
     let same_layout = ok
@@ -386,6 +464,9 @@ fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), St
                     fresh.label(f)
                 );
             }
+        }
+        if let Err(e) = restore_path_states(&case.c, &mut carried) {
+            fail!("{e}");
         }
         if let Some(d) = first_difference(&case.c, &values(&case.c), &values(&carried)) {
             fail!(
@@ -1787,7 +1868,7 @@ fn every_command_with_every_argument_kind() {
     let mut accepted = 0usize;
     let mut problems: Vec<String> = Vec::new();
     for (world_name, src) in &worlds {
-        for (ci, cmd) in COMMANDS.iter().enumerate() {
+        for (ci, cmd) in COMMANDS.iter().chain(PATH_COMMANDS).enumerate() {
             let mut c = build(src);
             let base = c.len();
             let base_values = values(&c);

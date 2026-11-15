@@ -18,6 +18,7 @@ import org.geogebra.common.jre.headless.Utf8Control;
 import org.geogebra.common.kernel.Kernel;
 import org.geogebra.common.kernel.algos.AlgoElement;
 import org.geogebra.common.kernel.algos.AlgoJoinPointsRay;
+import org.geogebra.common.kernel.algos.AlgoPointOnPath;
 import org.geogebra.common.kernel.algos.AlgoRayPointVector;
 import org.geogebra.common.kernel.commands.AlgebraProcessor;
 import org.geogebra.common.kernel.geos.GeoConic;
@@ -233,9 +234,20 @@ final class Session {
         return poly;
     }
 
-    /** Moves a free point or a free vector and updates everything that depends on it. */
+    /**
+     * Moves a free point or a free vector and updates everything that depends
+     * on it. A point on a path made by `Point(path)` (without a parameter) is
+     * moved the same way: `setCoords` projects it onto its path and stores its
+     * path parameter (`GeoPoint.setCoords` calls `Path.pointChanged`).
+     */
     void move(String label, double x, double y) {
         GeoElement geo = lookup(label);
+        if (isMovableOnPath(geo)) {
+            GeoPoint p = (GeoPoint) geo;
+            p.setCoords(x, y, 1.0);
+            p.updateCascade();
+            return;
+        }
         if (geo instanceof GeoVector && geo.isIndependent()) {
             GeoVector v = (GeoVector) geo;
             v.setCoords(x, y, 0.0);
@@ -248,6 +260,13 @@ final class Session {
         GeoPoint p = (GeoPoint) geo;
         p.setCoords(x, y, 1.0);
         p.updateCascade();
+    }
+
+    /** Whether `geo` is a point on a path that the user can drag: `Point(path)`. */
+    private static boolean isMovableOnPath(GeoElement geo) {
+        AlgoElement parent = geo.getParentAlgorithm();
+        return geo instanceof GeoPoint && parent instanceof AlgoPointOnPath
+                && ((AlgoPointOnPath) parent).isChangeable(geo);
     }
 
     /** Sets a free number and updates everything that depends on it. */
@@ -547,6 +566,7 @@ final class Session {
             case "Centroid":
             case "Vertex":
             case "Focus":
+            case "Point":
                 return "point";
             case "Polygon":
                 return "polygon";
@@ -580,6 +600,7 @@ final class Session {
             case "LinearEccentricity":
             case "Excentricity":
             case "Parameter":
+            case "PathParameter":
                 return "number";
             case "Circle":
             case "Incircle":
