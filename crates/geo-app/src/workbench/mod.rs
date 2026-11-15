@@ -51,6 +51,9 @@ pub struct Workbench {
     rows: Vec<Row>,
     rows_version: Option<u64>,
     rows_built: u64,
+    /// Tests make the next rebuild fail with this message.
+    #[cfg(test)]
+    pub fail_next_rebuild: Option<String>,
 }
 
 impl Workbench {
@@ -159,8 +162,14 @@ impl Workbench {
         let changed = self.construction.len() != n0;
         match failure {
             Some(e) => {
-                if changed {
-                    let _ = self.restore(snapshot);
+                if changed && self.restore(snapshot.clone()).is_err() {
+                    // The rollback failed, so the objects made before the
+                    // error stay. The log recorded every line that made
+                    // objects, so it still matches the construction: keep
+                    // the partial change as one undo step, and `restore`
+                    // has set the notice.
+                    self.undo.record(snapshot);
+                    self.version += 1;
                 }
                 Err(e)
             }
@@ -177,6 +186,14 @@ impl Workbench {
     /// Replays `log` into a new construction, keeping the selection by label.
     /// If the replay fails the previous state stays and `notice` says why.
     fn restore(&mut self, log: Log) -> Result<(), String> {
+        #[cfg(test)]
+        let log = match self.fail_next_rebuild.take() {
+            Some(e) => {
+                self.notice = Some(format!("Nie można odtworzyć konstrukcji: {e}"));
+                return Err(e);
+            }
+            None => log,
+        };
         let (c, mut kept) = match log.rebuild() {
             Ok(r) => r,
             Err(e) => {

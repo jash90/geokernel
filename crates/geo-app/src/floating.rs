@@ -76,6 +76,69 @@ pub fn hint_pill(ui: &Ui, area: Rect, text: &str, color: Color32, row: f32) {
     );
 }
 
+/// A dark card at the bottom centre of `area` with a notice that may run
+/// over several lines (what an import left out, a failed rebuild), and a
+/// button that closes it. `lift` raises it above the tool tip. Returns
+/// true when the user closed it.
+pub fn snackbar(ui: &mut Ui, area: Rect, text: &str, lift: f32) -> bool {
+    const PAD: f32 = 16.0;
+    const CLOSE: &str = "Zamknij";
+    let font = FontId::proportional(14.0);
+    let close_galley = ui
+        .painter()
+        .layout_no_wrap(CLOSE.to_owned(), font.clone(), theme::WHITE);
+    let width = (area.width() - 32.0).clamp(120.0, 600.0);
+    let text_width = (width - 3.0 * PAD - close_galley.size().x).max(40.0);
+    let galley = ui
+        .painter()
+        .layout(text.to_owned(), font.clone(), theme::WHITE, text_width);
+    let height = galley.size().y + 2.0 * 12.0;
+    let width = galley.size().x + 3.0 * PAD + close_galley.size().x;
+    let rect = Rect::from_min_size(
+        Pos2::new(
+            area.center().x - 0.5 * width,
+            area.bottom() - 16.0 - lift - height,
+        ),
+        vec2(width, height),
+    );
+    let close_rect = Rect::from_min_size(
+        Pos2::new(rect.right() - PAD - close_galley.size().x, rect.top()),
+        vec2(close_galley.size().x, height),
+    )
+    .expand2(vec2(PAD / 2.0, 0.0));
+    let notice = ui.interact(rect, ui.scope_id().with("snackbar"), Sense::hover());
+    notice.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Label, true, text));
+    let close = ui
+        .interact(
+            close_rect,
+            ui.scope_id().with("snackbar_close"),
+            Sense::click(),
+        )
+        .on_hover_cursor(CursorIcon::PointingHand);
+    close.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, "Zamknij komunikat"));
+    let painter = ui.painter();
+    painter.rect_filled(
+        rect,
+        6.0,
+        Color32::from_rgba_unmultiplied(0x33, 0x33, 0x33, 240),
+    );
+    painter.galley(rect.min + vec2(PAD, 12.0), galley, theme::WHITE);
+    let close_color = if close.hovered() {
+        theme::WHITE
+    } else {
+        Color32::from_gray(0xc8)
+    };
+    painter.galley(
+        Pos2::new(
+            rect.right() - PAD - close_galley.size().x,
+            rect.center().y - 0.5 * close_galley.size().y,
+        ),
+        close_galley,
+        close_color,
+    );
+    close.clicked()
+}
+
 /// A square white button at the edge of the drawing area (the style bar).
 pub fn square_button(ui: &mut Ui, key: &str, rect: Rect, icon: Icon, on: bool) -> Response {
     let response = ui

@@ -346,7 +346,14 @@ fn overlay(app: &mut App, ui: &mut Ui, rect: Rect, w: f64, h: f64, cam: &mut Cam
         }
     }
     if let Some(notice) = app.wb.notice.clone() {
-        floating::hint_pill(ui, rect, &notice, theme::ERROR, 0.0);
+        let lift = if app.tool.tool() == Tool::Move {
+            0.0
+        } else {
+            66.0
+        };
+        if floating::snackbar(ui, rect, &notice, lift) {
+            app.wb.notice = None;
+        }
     }
     if app.tool.tool() != Tool::Move {
         floating::tool_tip(ui, rect, app.tool.tool().caption(), app.tool.hint());

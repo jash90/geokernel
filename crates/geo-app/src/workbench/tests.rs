@@ -331,3 +331,29 @@ fn the_sides_of_a_polygon_name_the_polygon() {
     let t1 = rows.iter().find(|r| r.label == "t1").unwrap();
     assert_eq!(t1.value.as_deref(), Some("6"));
 }
+
+#[test]
+fn a_failed_rollback_is_told_and_kept_as_one_undo_step() {
+    let mut w = Workbench::from_script("A = (0, 0)\n").unwrap();
+    w.fail_next_rebuild = Some("test".into());
+    let lines = ["B = (1, 1)".to_owned(), "f = Line(B, Nope)".to_owned()];
+    assert!(w.run_lines(&lines).is_err());
+    assert_eq!(
+        w.notice.as_deref(),
+        Some("Nie można odtworzyć konstrukcji: test")
+    );
+    // The objects made before the error stay, consistent with the log.
+    assert_eq!(labels(&w), ["A", "B"]);
+    let replayed = w.log.rebuild().unwrap().0;
+    assert_eq!(replayed.len(), w.construction().len());
+    // One undo takes the partial change back.
+    assert!(w.undo());
+    assert_eq!(labels(&w), ["A"]);
+    assert!(w.notice.is_none());
+
+    // Normally the rollback succeeds and nothing stays.
+    let mut w = Workbench::from_script("A = (0, 0)\n").unwrap();
+    assert!(w.run_lines(&lines).is_err());
+    assert_eq!(labels(&w), ["A"]);
+    assert!(w.notice.is_none() && !w.undo());
+}

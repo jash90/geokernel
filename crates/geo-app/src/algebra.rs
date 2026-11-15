@@ -30,7 +30,7 @@ struct Actions {
 pub fn show(app: &mut App, ui: &mut Ui) {
     if let Some(e) = app.load_error.clone() {
         ui.horizontal_wrapped(|ui| {
-            ui.colored_label(theme::ERROR, format!("Nie można wczytać skryptu: {e}"));
+            ui.colored_label(theme::ERROR, format!("Nie można wczytać pliku: {e}"));
             if ui.small_button("Zamknij").clicked() {
                 app.load_error = None;
             }
