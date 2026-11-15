@@ -245,6 +245,24 @@ impl Dec {
         }
     }
 
+    /// Calls `f` with the digits, least significant first, without
+    /// allocating.
+    fn with_digits<R>(&self, f: impl FnOnce(&[u8]) -> R) -> R {
+        match &self.mag {
+            Mag::Small(c) => {
+                let (mut buf, mut n, mut c) = ([0u8; 39], 0, *c);
+                while c > 0 {
+                    buf[n] = (c % 10) as u8;
+                    c /= 10;
+                    n += 1;
+                }
+                f(&buf[..n])
+            }
+            Mag::Wide(w) => f(w.write_digits(&mut [0; 78])),
+            Mag::Big(d) => f(d),
+        }
+    }
+
     fn len(&self) -> usize {
         match &self.mag {
             Mag::Small(c) => digit_count(*c),
@@ -500,13 +518,14 @@ impl Dec {
 
     /// The exact product, before normalising; `None` beyond [`MAX_WORK`].
     fn mul_raw(&self, other: &Dec) -> Option<Raw> {
-        let (a, b) = (self.digits(), other.digits());
-        if a.len() * b.len() > MAX_WORK {
+        // refused before anything is copied
+        if self.len().saturating_mul(other.len()) > MAX_WORK {
             return None;
         }
+        let digits = self.with_digits(|a| other.with_digits(|b| mul_mag(a, b)));
         Some(Raw {
             neg: self.neg != other.neg,
-            digits: mul_mag(&a, &b),
+            digits,
             exp: self.exp + other.exp,
         })
     }
@@ -532,21 +551,24 @@ impl Dec {
             }
         }
         // the quotient needs PRECISION + 2 digits: more of the dividend
-        // only decide whether the remainder is zero
-        let (a, b) = (self.digits(), other.digits());
-        let want = PRECISION + 2 + b.len();
-        if b.len() * want > MAX_WORK {
+        // only decide whether the remainder is zero; the work is checked
+        // before anything is copied
+        let lb = other.len();
+        let want = PRECISION + 2 + lb;
+        if lb.saturating_mul(want) > MAX_WORK {
             return None;
         }
-        let (num, exp, sticky) = if a.len() >= want {
-            let drop = a.len() - want;
-            let sticky = a[..drop].iter().any(|&d| d != 0);
-            (a[drop..].to_vec(), self.exp + drop as i64, sticky)
-        } else {
-            let pad = want - a.len();
-            (shifted(&a, pad), self.exp - pad as i64, false)
-        };
-        let (q, r) = div_mag(&num, &b);
+        let (num, exp, sticky) = self.with_digits(|a| {
+            if a.len() >= want {
+                let drop = a.len() - want;
+                let sticky = a[..drop].iter().any(|&d| d != 0);
+                (a[drop..].to_vec(), self.exp + drop as i64, sticky)
+            } else {
+                let pad = want - a.len();
+                (shifted(a, pad), self.exp - pad as i64, false)
+            }
+        });
+        let (q, rest) = other.with_digits(|b| div_mag(&num, b));
         round_raw(
             Raw {
                 neg,
@@ -554,7 +576,7 @@ impl Dec {
                 exp: exp - other.exp,
             },
             PRECISION,
-            sticky || !r.is_empty(),
+            sticky || rest,
             Mode::HalfEven,
         )
     }
@@ -1025,8 +1047,101 @@ fn carry_all(acc: &mut Vec<u32>) {
     }
 }
 
-/// Quotient and remainder of `a / b`, digit by digit; `b` is not zero.
-fn div_mag(a: &[u8], b: &[u8]) -> (Vec<u8>, Vec<u8>) {
+/// Quotient of `a / b` (digits least significant first) and whether the
+/// remainder is nonzero; `b` is not zero. Schoolbook division with an
+/// estimated quotient digit: the remainder is kept most significant digit
+/// first, so the next digit of `a` is appended, and each quotient digit
+/// costs one multiply-and-subtract over the divisor in place, plus a
+/// correction in the rare case the estimate is one off.
+fn div_mag(a: &[u8], b: &[u8]) -> (Vec<u8>, bool) {
+    let b = &b[..significant(b)];
+    let n = b.len();
+    let big: Vec<u8> = b.iter().rev().copied().collect();
+    // the divisor's leading digits, for the estimate
+    let k = n.min(18);
+    let top = big[..k].iter().fold(0u64, |v, &d| v * 10 + u64::from(d));
+    let mut q = vec![0u8; a.len()];
+    // the remainder is `r[lead..]`, most significant digit first
+    let mut r: Vec<u8> = Vec::with_capacity(a.len());
+    let mut lead = 0;
+    for i in (0..a.len()).rev() {
+        r.push(a[i]);
+        while lead < r.len() && r[lead] == 0 {
+            lead += 1;
+        }
+        if !at_least(&r[lead..], &big) {
+            continue;
+        }
+        // `r` has n or n + 1 digits; compare as many leading digits
+        let take = k + (r.len() - lead - n);
+        let head = r[lead..lead + take]
+            .iter()
+            .fold(0u64, |v, &d| v * 10 + u64::from(d));
+        let mut digit = (head / top).min(9) as u8;
+        if sub_times(&mut r[lead..], &big, digit) {
+            // one too many: add the divisor back until the borrow is gone
+            loop {
+                digit -= 1;
+                if add_back(&mut r[lead..], &big) {
+                    break;
+                }
+            }
+        }
+        while lead < r.len() && r[lead] == 0 {
+            lead += 1;
+        }
+        // one too few
+        while at_least(&r[lead..], &big) {
+            sub_times(&mut r[lead..], &big, 1);
+            digit += 1;
+            while lead < r.len() && r[lead] == 0 {
+                lead += 1;
+            }
+        }
+        q[i] = digit;
+    }
+    q.truncate(significant(&q));
+    (q, r[lead..].iter().any(|&d| d != 0))
+}
+
+/// `x >= y` for digits most significant first, `x` without leading zeros.
+fn at_least(x: &[u8], y: &[u8]) -> bool {
+    x.len() > y.len() || x.len() == y.len() && x >= y
+}
+
+/// `x -= k · y` in place (most significant first, `y` no longer than `x`);
+/// whether the result went below zero (then `x` holds it plus a power of
+/// ten).
+fn sub_times(x: &mut [u8], y: &[u8], k: u8) -> bool {
+    let (lx, ly) = (x.len(), y.len());
+    let mut borrow = 0i32;
+    for j in 0..lx {
+        let yd = if j < ly { i32::from(y[ly - 1 - j]) } else { 0 };
+        let v = i32::from(x[lx - 1 - j]) - yd * i32::from(k) - borrow;
+        borrow = if v < 0 { (9 - v) / 10 } else { 0 };
+        x[lx - 1 - j] = (v + 10 * borrow) as u8;
+    }
+    borrow > 0
+}
+
+/// `x += y` in place, both most significant first; whether a carry left the
+/// top (which cancels the borrow of [`sub_times`]).
+fn add_back(x: &mut [u8], y: &[u8]) -> bool {
+    let (lx, ly) = (x.len(), y.len());
+    let mut carry = 0u8;
+    for j in 0..lx {
+        let yd = if j < ly { y[ly - 1 - j] } else { 0 };
+        let v = x[lx - 1 - j] + yd + carry;
+        carry = v / 10;
+        x[lx - 1 - j] = v % 10;
+    }
+    carry > 0
+}
+
+/// The division as it was first written: digit by digit, with up to nine
+/// subtractions per digit (the oracle for [`div_mag`]).
+#[cfg(test)]
+fn div_mag_reference(a: &[u8], b: &[u8]) -> (Vec<u8>, Vec<u8>) {
     let b = &b[..significant(b)];
     let mut q = vec![0u8; a.len()];
     let mut r: Vec<u8> = Vec::new();
@@ -1165,6 +1280,45 @@ mod tests {
         assert_eq!(d("123").set_scale_half_up(-1).unwrap(), d("120"));
         assert_eq!(d("2.567").set_scale_half_up(400).unwrap(), d("2.567"));
         assert_eq!(d("2.567").set_scale_half_up(-400).unwrap(), Dec::zero());
+    }
+
+    #[test]
+    fn long_division_agrees_with_the_reference() {
+        let mut state = 5u64;
+        let mut next = |m: u64| {
+            state = state
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
+            (state >> 33) % m
+        };
+        for round in 0..3_000 {
+            let lb = 1 + next(if round % 3 == 0 { 60 } else { 25 }) as usize;
+            let la = next(90) as usize;
+            // runs of nines and zeros make the estimate miss
+            let digit = |next: &mut dyn FnMut(u64) -> u64| match next(4) {
+                0 => 9,
+                1 => 0,
+                _ => next(10) as u8,
+            };
+            let mut b: Vec<u8> = (0..lb).map(|_| digit(&mut next)).collect();
+            if b.iter().all(|&d| d == 0) {
+                b[0] = 7;
+            }
+            let a: Vec<u8> = (0..la).map(|_| digit(&mut next)).collect();
+            let (q, rest) = div_mag(&a, &b);
+            let (qr, rr) = div_mag_reference(&a, &b);
+            assert_eq!((&q, rest), (&qr, !rr.is_empty()), "{a:?} / {b:?}");
+        }
+        // an estimate of ten, and one that is one too low
+        for (a, b) in [
+            ("99999999999999999999999", "1000000000000000000001"),
+            ("1999999999999999999990000", "199999999999999999999"),
+        ] {
+            let le = |s: &str| s.bytes().rev().map(|c| c - b'0').collect::<Vec<u8>>();
+            let (q, rest) = div_mag(&le(a), &le(b));
+            let (qr, rr) = div_mag_reference(&le(a), &le(b));
+            assert_eq!((q, rest), (qr, !rr.is_empty()), "{a} / {b}");
+        }
     }
 
     #[test]

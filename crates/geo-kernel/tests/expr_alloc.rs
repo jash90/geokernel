@@ -197,6 +197,25 @@ fn the_exact_decimal_of_a_rounded_double_does_not_allocate() {
 }
 
 #[test]
+fn a_long_division_does_bounded_work() {
+    // a quotient of 34 digits by a 200-digit divisor: a handful of buffers,
+    // not one per subtraction
+    let divisor = format!("1.{}7", "3".repeat(198));
+    let mut c = load(&format!("A = (1, 2)\nc = 7 / {divisor} + x(A)")).unwrap();
+    let n = drag(&mut c, "c");
+    assert!(n <= 1000 * 8, "{n} allocations for 1000 divisions");
+}
+
+#[test]
+fn a_refused_product_copies_nothing() {
+    // 5000 by 5000 digits is past the work bound: the product is refused
+    // before its operands are copied, and computed with doubles
+    let long = "7".repeat(5000);
+    let mut c = load(&format!("A = (1, 2)\nc = 0.{long} * 0.{long} + x(A)")).unwrap();
+    assert_eq!(drag(&mut c, "c"), 0);
+}
+
+#[test]
 fn a_long_literal_recomputes_without_allocating() {
     let mut c =
         load("A = (1, 2)\nc = 3.14159265358979323846264338327950288419716939937510 x(A)").unwrap();
