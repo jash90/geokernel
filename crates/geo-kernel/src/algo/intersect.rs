@@ -50,9 +50,18 @@ const INV_MAX_DOUBLE_PRECISION: f64 = 1e15;
 /// so it takes over the order of the circles and the special-case flag.
 /// Otherwise the flag records whether `AlgoIntersectConics.handleSpecialCase`
 /// applies at creation (`possibleSpecialCase`); GeoGebra never checks it again
-/// when it was false. The `special` value passed in is ignored.
+/// when it was false. A flag that is already decided belongs to an
+/// intersection created earlier (a definition read back from a
+/// construction) and is kept, like the state of GeoGebra's algorithm object;
+/// only `None` is decided from the current positions.
 pub(crate) fn prepare(c: &Construction, def: Def) -> Def {
-    let Def::IntersectCircles { c1, c2, which, .. } = def else {
+    let Def::IntersectCircles {
+        c1,
+        c2,
+        which,
+        special: given,
+    } = def
+    else {
         return def;
     };
     for &s in c.children(c1) {
@@ -73,19 +82,19 @@ pub(crate) fn prepare(c: &Construction, def: Def) -> Def {
             }
         }
     }
-    let special = match (c.circle(c1), c.circle(c2)) {
+    let special = given.unwrap_or_else(|| match (c.circle(c1), c.circle(c2)) {
         (Some((x1, y1, r1)), Some((x2, y2, r2))) => {
             let a = Conic::new(x1, y1, r1);
             let b = Conic::new(x2, y2, r2);
             shared_circles_point(c, c1, c2, &a, &b).is_some()
         }
         _ => false,
-    };
+    });
     Def::IntersectCircles {
         c1,
         c2,
         which,
-        special,
+        special: Some(special),
     }
 }
 
@@ -1073,7 +1082,7 @@ mod tests {
                 c1: k,
                 c2: cc,
                 which: 0,
-                special: true
+                special: Some(true)
             }
         );
         assert_eq!(
@@ -1082,7 +1091,7 @@ mod tests {
                 c1: k,
                 c2: cc,
                 which: 1,
-                special: true
+                special: Some(true)
             }
         );
         assert_eq!(
@@ -1091,7 +1100,7 @@ mod tests {
                 c1: m,
                 c2: cc,
                 which: 0,
-                special: false
+                special: Some(false)
             }
         );
     }

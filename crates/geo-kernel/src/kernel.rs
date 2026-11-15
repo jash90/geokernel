@@ -187,15 +187,19 @@ pub enum Def {
         which: u8,
     },
     /// `which` is 0 or 1: the point to the left or to the right of the
-    /// direction from the first centre to the second. `special` is decided by
-    /// [`Construction::add`]: whether the circles had a common point by
-    /// construction when the intersection was created. `add` also gives a
-    /// second intersection of the same circles the order of the first.
+    /// direction from the first centre to the second. `special` is state of
+    /// the intersection from the moment it was created: whether the circles
+    /// had a common point by construction then. A new intersection passes
+    /// `None` and [`Construction::add`] decides it; a definition read back
+    /// with [`Construction::def`] carries the decision, and `add` keeps it,
+    /// so a construction rebuilt from its definitions is the same. `add` also
+    /// gives a second intersection of the same circles the order and the flag
+    /// of the first.
     IntersectCircles {
         c1: Id,
         c2: Id,
         which: u8,
-        special: bool,
+        special: Option<bool>,
     },
     /// Bisectors and tangents.
     Lines(LineDef),
@@ -580,7 +584,7 @@ impl Construction {
                 c2,
                 which,
                 special,
-            } => algo::intersect::circles(self, c1, c2, which, special),
+            } => algo::intersect::circles(self, c1, c2, which, special == Some(true)),
             Def::Lines(d) => d.compute(self),
             Def::Conic(d) => d.compute(self),
             Def::Measure(d) => d.compute(self),
@@ -828,7 +832,7 @@ mod tests {
                     c1: k1,
                     c2: k2,
                     which: 0,
-                    special: false,
+                    special: None,
                 },
             )
             .unwrap();
@@ -839,7 +843,7 @@ mod tests {
                     c1: k1,
                     c2: k2,
                     which: 1,
-                    special: false,
+                    special: None,
                 },
             )
             .unwrap();

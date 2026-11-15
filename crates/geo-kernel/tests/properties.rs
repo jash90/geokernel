@@ -1298,13 +1298,12 @@ fn shear_stretch_and_ratios_match_closed_forms() {
 }
 
 /// Rebuilding a construction from its definitions (`add(label, def(id))` for
-/// every object) does not reproduce circle intersections: `add` recomputes
-/// the `special` flag of `Def::IntersectCircles` from the positions at that
-/// moment and ignores the one in the definition. With `M` moved to `(0, 0)`
+/// every object) reproduces circle intersections: the `special` flag of
+/// `Def::IntersectCircles` is state from the creation of the intersection,
+/// and `add` keeps a flag that is already decided. With `M` moved to `(0, 0)`
 /// after the intersection was created at `M = (2, 1)`, the intersection is
-/// not at `(2, 1)`; rebuilt from the definitions it is.
+/// not at `(2, 1)`, rebuilt from the definitions or not.
 #[test]
-#[ignore = "known defect: Intersect of two circles cannot be rebuilt from its definition"]
 fn circle_intersections_survive_a_rebuild_from_definitions() {
     let mut c = build(
         "M = (2, 1)\nA = (2, 1)\nN = (5, 5)\nk = Circle(M, A)\nc = Circle(N, A)\n\
@@ -1432,7 +1431,7 @@ fn misuse_of_the_api_is_an_error_and_changes_nothing() {
                 c1: k,
                 c2: k,
                 which: 255,
-                special: false
+                special: None
             }
         ),
         Err(Error::BadIndex(255))
@@ -1489,7 +1488,7 @@ fn misuse_of_the_api_is_an_error_and_changes_nothing() {
                 c1: i[0],
                 c2: i[1],
                 which: 1,
-                special: false,
+                special: None,
             }
         }),
     ];
