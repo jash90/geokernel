@@ -16,7 +16,7 @@
 
 [[gap]]
 id = "conic-diameter-007"
-reason = "GeoGebra computes Diameter from the circle matrix without checking that the circle is defined, so with a negative radius it returns the diameter from the stale matrix of the last defined circle; the kernel has no such state and reports the diameter of an undefined circle as undefined"
+reason = "intended difference, recorded in DIFFERENCES.md: GeoGebra keeps the diameter line of an undefined circle (negative radius) at its last value, computed from the stale matrix of the last defined circle; the kernel reports it undefined"
 mismatches = ["1:g", "4:g"]
 
 # transform
@@ -81,56 +81,6 @@ id = "transform-dilate-033"
 reason = "GeoGebra classifies a dilated circle from its conic matrix, whose scale is not part of the kernel's circle value"
 mismatches = ["0:m", "0:n", "0:p", "0:t", "0:u", "1:m", "1:n", "1:p", "1:t", "1:u", "2:m", "2:n", "2:p", "2:t", "2:u", "3:m", "3:n", "3:p", "3:t", "3:u"]
 
-[[gap]]
-id = "transform-dilate-036"
-reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
-mismatches = ["1:m", "2:m", "5:m"]
-
-[[gap]]
-id = "transform-dilate-037"
-reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
-mismatches = ["1:m", "2:m", "5:m"]
-
-[[gap]]
-id = "transform-dilate-038"
-reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
-mismatches = ["1:m", "2:m", "5:m"]
-
-[[gap]]
-id = "transform-dilate-039"
-reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
-mismatches = ["1:m", "2:m", "5:m"]
-
-[[gap]]
-id = "transform-dilate-042"
-reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
-mismatches = ["3:m", "4:m", "6:m"]
-
-[[gap]]
-id = "transform-dilate-043"
-reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
-mismatches = ["3:m", "4:m", "6:m"]
-
-[[gap]]
-id = "transform-shear-023"
-reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
-mismatches = ["0:m", "1:m", "2:m", "3:m", "4:m", "5:m", "6:m", "7:m"]
-
-[[gap]]
-id = "transform-shear-025"
-reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
-mismatches = ["0:m", "1:m", "5:m", "6:m", "7:m"]
-
-[[gap]]
-id = "transform-stretch-023"
-reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
-mismatches = ["0:m", "1:m", "3:m", "5:m", "6:m", "7:m"]
-
-[[gap]]
-id = "transform-stretch-025"
-reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
-mismatches = ["0:m", "1:m", "2:m", "3:m", "6:m", "7:m"]
-
 # lines
 
 [[gap]]
@@ -153,42 +103,12 @@ id = "lines-oncircle-008"
 reason = "the point starts on the circle, so GeoGebra labels one tangent. With continuity off the tangent order is the fixed AlgoIntersectLineConic.permutation of the helper intersection (AlgoTangentPointND.algoIntersect). AlgoIntersectLineConic.firstIntersection stays true while both tangent points coincide, which keeps isPermutationNeeded true, and permutation is then set by a near-to match against the previous points D on the update after the one that clears firstIntersection. Which tangent t follows depends on the path; the kernel always follows the first (left) tangent"
 mismatches = ["2:t", "3:t", "4:t", "5:t", "6:t", "8:t"]
 
-# Long, nearly parallel lines: the raw cross product is above 1e-8 and the
-# unit-normal one below it, so GeoGebra intersects them far away and defines
-# both bisectors through that point, while the kernel treats them as
-# parallel (its b_{1} is the middle line, slightly off GeoGebra's, and its
-# b_{2} is undefined).
-[[gap]]
-id = "lines-anglelines-012"
-reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
-mismatches = ["2:b_{1}", "2:b_{2}", "3:b_{1}", "3:b_{2}", "4:b_{1}", "4:b_{2}", "6:b_{1}", "6:b_{2}"]
-
 # intersect
 
 [[gap]]
 id = "intersect-history-003"
 reason = "GeoGebra fixes the order of the two points on the first move after they first become distinct, by nearness to the previous points (AlgoIntersectLineConic.permutation, firstIntersection, isPermutationNeeded); here that move reverses the line, so GeoGebra keeps the reversed order while the stateless kernel keeps the order of the computation"
 mismatches = ["2:P", "4:P", "5:P"]
-
-[[gap]]
-id = "intersect-rawline-001"
-reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
-mismatches = ["2:P", "5:P"]
-
-[[gap]]
-id = "intersect-rawline-002"
-reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
-mismatches = ["2:P", "5:P"]
-
-[[gap]]
-id = "intersect-rawline-004"
-reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
-mismatches = ["2:P", "5:P"]
-
-[[gap]]
-id = "intersect-rawline-005"
-reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
-mismatches = ["2:P", "5:P"]
 
 # vector
 
@@ -197,22 +117,17 @@ id = "vector-ray-008"
 reason = "GeoGebra keeps the intersection of two parallel lines as a point at infinity and makes Ray(C, S) the ray from C in its direction; the kernel has no points at infinity, so S and the ray are undefined"
 mismatches = ["1:h"]
 
+# A parallel and a perpendicular through S = Intersect(l, m): GeoGebra keeps
+# S in homogeneous coordinates with z the raw cross product of l and m
+# (AlgoIntersectLines, GeoVec3D.cross), and AlgoLinePointLine and
+# AlgoOrthoLinePointLine multiply by it, so Direction and OrthogonalVector
+# show that factor. The lines, Slope and Distance(line, line) agree.
 [[gap]]
-id = "vector-rawscale-001"
-reason = "GeoGebra applies Direction to the raw coefficients of the line bisector; the kernel stores lines normalised and does not rebuild the raw scale of lines from other groups, so the direction has the right sense but length 1"
-mismatches = ["0:d", "1:d", "2:d"]
+id = "vector-rawscale-008"
+reason = "points carry no homogeneous weight"
+mismatches = ["0:d", "0:e", "1:d", "1:e", "2:d", "2:e", "3:d", "3:e", "4:d", "4:e"]
 
 [[gap]]
-id = "vector-rawscale-002"
-reason = "GeoGebra applies OrthogonalVector to the raw coefficients of the mirrored line; the kernel stores lines normalised and does not rebuild the raw scale of lines from other groups, so the vector has the right sense but length 1"
-mismatches = ["0:o", "1:o", "2:o"]
-
-[[gap]]
-id = "vector-rawscale-003"
-reason = "raw scale of a line built by a chain of perpendicular lines"
-mismatches = ["1:d", "2:d"]
-
-[[gap]]
-id = "vector-rawscale-004"
-reason = "raw scale of a line built by a chain of perpendicular lines"
-mismatches = ["1:o", "2:o"]
+id = "vector-rawscale-009"
+reason = "points carry no homogeneous weight"
+mismatches = ["0:o", "1:o", "2:o", "3:o", "4:o"]

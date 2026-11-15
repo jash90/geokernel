@@ -50,16 +50,13 @@
 //! GeoGebra makes a line or a ray from raw coefficients `(x, y, z)` of
 //! `x*X + y*Y + z = 0` whose scale the algorithm decides, and calls the
 //! line undefined when both `x` and `y` are zero within
-//! `STANDARD_PRECISION`. [`stored_line`] turns such raw coefficients into
-//! what `Value::Line` and `Value::Ray` store.
+//! `STANDARD_PRECISION`. `Value::Line` and `Value::Ray` hold those raw
+//! coefficients (see [`stored_line`]).
 //!
 //! `Direction(l)` is `(y, -x)` and `OrthogonalVector(l)` is `(x, y)` of the
-//! raw coefficients, so their length depends on the raw scale, and GeoGebra
-//! still computes them when the line is undefined (a zero vector).
-//! [`raw_normal`] rebuilds the raw `(x, y)` from the definition for the lines
-//! whose scale is known; other lines are used with their stored coefficients.
+//! raw coefficients, so their length depends on the raw scale.
 
-use super::{Group, Parents, POINT};
+use super::{normalized_coefficients, Group, Parents, POINT};
 use crate::kernel::{Construction, Def, Error, Id, Kind, Value};
 use crate::script::object;
 use crate::tol::STANDARD_PRECISION;
@@ -144,17 +141,15 @@ fn ggb_length(x: f64, y: f64) -> f64 {
     }
 }
 
-/// The coefficients that `Value::Line` and `Value::Ray` store for GeoGebra's
-/// raw coefficients `(x, y, z)`; `None` where GeoGebra's `GeoLine.isDefined`
-/// is false. `Value::Line` holds coefficients normalised so that `(a, b)` has
-/// length 1, which keeps the direction `(b, -a)`. Every line and ray value
-/// of this group comes from here.
+/// GeoGebra's raw coefficients `(x, y, z)` as `Value::Line` and `Value::Ray`
+/// store them; `None` where GeoGebra's `GeoLine.isDefined` is false or a
+/// coefficient is not finite. Every line and ray value of this group comes
+/// from here.
 pub(crate) fn stored_line(x: f64, y: f64, z: f64) -> Option<(f64, f64, f64)> {
     if !(x.is_finite() && y.is_finite() && z.is_finite()) || is_zero(x) && is_zero(y) {
         return None;
     }
-    let len = (x * x + y * y).sqrt();
-    Some((x / len, y / len, z / len))
+    Some((x, y, z))
 }
 
 fn point(c: &Construction, id: Id) -> Option<(f64, f64)> {
@@ -187,117 +182,116 @@ fn raw_ortho(p: (f64, f64), v: (f64, f64)) -> (f64, f64, f64) {
     (-v.0, -v.1, p.0 * v.0 + p.1 * v.1)
 }
 
-/// `GeoLine.getNormalizedCoefficients`: scales by powers of two until some
-/// coefficient is at least `min` and some coefficient at most `max`.
-fn rescale(v: (f64, f64, f64), max: f64, min: f64) -> (f64, f64, f64) {
-    let (mut x, mut y, mut z) = v;
-    if is_zero(x) && is_zero(y) && is_zero(z) || !(x.is_finite() && y.is_finite() && z.is_finite())
-    {
-        return v;
-    }
-    while x.abs() < min && y.abs() < min && z.abs() < min {
-        (x, y, z) = (x * 2.0, y * 2.0, z * 2.0);
-    }
-    while x.abs() > max && y.abs() > max && z.abs() > max {
-        (x, y, z) = (x / 2.0, y / 2.0, z / 2.0);
-    }
-    (x, y, z)
+/// The raw `(x, y)` of a line, segment or ray, also when the kernel holds
+/// the line undefined (see [`undefined_raw`]).
+fn normal_of(c: &Construction, id: Id) -> Option<(f64, f64)> {
+    let (x, y, _) = raw_or_undefined(c, id)?;
+    Some((x, y))
 }
 
-/// The raw `(x, y)` that GeoGebra holds for the line, segment or ray `id`,
-/// also when it is undefined because they vanish.
+fn raw_or_undefined(c: &Construction, id: Id) -> Option<(f64, f64, f64)> {
+    c.raw_carrier(id).or_else(|| undefined_raw(c, id))
+}
+
+/// GeoGebra's raw coefficients of a line or ray that the kernel holds as
+/// undefined.
 ///
-/// Rebuilt from the definition for `Line(A, B)`, `Segment(A, B)`, the
-/// parallel `Line(P, l)` (the parent's coefficients), `PerpendicularLine(P, l)`
-/// (the parent's normal turned and rescaled), the lines and rays of this
-/// group and their translations (a translation keeps `x` and `y`). The point
-/// `P` is taken with homogeneous coordinate 1, which holds for free points.
-/// Any other line is used with its stored coefficients, which equal
-/// GeoGebra's only up to a positive or negative factor.
-fn raw_normal(c: &Construction, mut id: Id) -> Option<(f64, f64)> {
-    loop {
-        match c.def(id) {
-            Def::Line(p, q) | Def::Segment(p, q) | Def::Vector(VectorDef::RayPoints(p, q)) => {
-                let (x, y, _) = raw_through(point(c, p)?, point(c, q)?);
-                return Some((x, y));
-            }
-            Def::Vector(VectorDef::RayVector(p, v) | VectorDef::LineVector(p, v)) => {
-                let (x, y, _) = raw_along(point(c, p)?, vector(c, v)?);
-                return Some((x, y));
-            }
-            Def::Vector(VectorDef::OrthoLineVector(p, v)) => {
-                let (x, y, _) = raw_ortho(point(c, p)?, vector(c, v)?);
-                return Some((x, y));
-            }
-            Def::Parallel { through, to } => {
-                point(c, through)?;
-                id = to;
-            }
-            Def::Perpendicular { through, to } => {
-                // `AlgoOrthoLinePointLine`: `GeoVec3D.cross(P, l.x, l.y, 0)`,
-                // then rescaled by `GeoLine.getNormalizedCoefficients`.
-                let (lx, ly) = raw_normal(c, to)?;
-                let (px, py) = point(c, through)?;
-                let (x, y, _) = rescale((-ly, lx, px * ly - py * lx), 10e6, 1e-2);
-                return Some((x, y));
-            }
-            Def::Vector(VectorDef::Translate { src, by, .. }) => {
-                vector(c, by)?;
-                id = src;
-            }
-            _ => {
-                return match c.value(id) {
-                    Value::Line { a, b, .. } | Value::Ray { a, b, .. } => Some((a, b)),
-                    Value::Segment { x1, y1, x2, y2 } => Some((y1 - y2, x2 - x1)),
-                    _ => None,
-                }
-            }
+/// GeoGebra calls a line undefined when its `x` and `y` are both below
+/// `STANDARD_PRECISION`, but it keeps them, and `Direction`,
+/// `OrthogonalVector` and the unit vectors read them (a tiny or zero
+/// vector, or a unit vector of the tiny one). `Value::Undefined` carries no
+/// coefficients, so they are computed again from the definition for the
+/// lines made from points and directions: `AlgoJoinPoints`,
+/// `AlgoJoinPointsRay`, `AlgoRayPointVector`, `AlgoLinePointVector`,
+/// `AlgoOrthoLinePointVector`, and parallels, perpendiculars and
+/// translations of these. `None` when an input is undefined (GeoGebra's
+/// coefficients are then NaN) or the line is made otherwise.
+fn undefined_raw(c: &Construction, id: Id) -> Option<(f64, f64, f64)> {
+    match c.def(id) {
+        Def::Line(p, q) | Def::Vector(VectorDef::RayPoints(p, q)) => {
+            Some(raw_through(point(c, p)?, point(c, q)?))
         }
+        Def::Vector(VectorDef::RayVector(p, v) | VectorDef::LineVector(p, v)) => {
+            Some(raw_along(point(c, p)?, vector(c, v)?))
+        }
+        Def::Vector(VectorDef::OrthoLineVector(p, v)) => {
+            Some(raw_ortho(point(c, p)?, vector(c, v)?))
+        }
+        Def::Parallel { through, to } => {
+            // `AlgoLinePointLine`: `GeoVec3D.cross(P, l.y, -l.x, 0)`.
+            let (px, py) = point(c, through)?;
+            let (lx, ly, _) = raw_or_undefined(c, to)?;
+            Some((py * 0.0 - -lx, ly - px * 0.0, px * -lx - py * ly))
+        }
+        Def::Perpendicular { through, to } => {
+            // `AlgoOrthoLinePointLine`: `GeoVec3D.cross(P, l.x, l.y, 0)`,
+            // then `GeoLine.getNormalizedCoefficients`.
+            let (px, py) = point(c, through)?;
+            let (lx, ly, _) = raw_or_undefined(c, to)?;
+            Some(normalized_coefficients(
+                (py * 0.0 - ly, lx - px * 0.0, px * ly - py * lx),
+                10e6,
+                1e-2,
+            ))
+        }
+        Def::Vector(VectorDef::Translate { src, by, .. }) => {
+            // `GeoLine.translate`.
+            let (dx, dy) = vector(c, by)?;
+            let (x, y, z) = raw_or_undefined(c, src)?;
+            Some((x, y, z - (x * dx + y * dy)))
+        }
+        _ => None,
     }
 }
 
 /// Objects that a direction vector reads besides its argument.
 ///
-/// `Direction`, `UnitVector`, `OrthogonalVector` and `UnitOrthogonalVector`
-/// of a line take its raw coefficients (see [`raw_normal`]), which depend on
-/// the objects the line is built from ([`scale_roots`]). Moving those can
-/// change the raw scale while the stored line stays the same, and the vector
-/// must still be recomputed.
+/// For a line the kernel holds as undefined, [`undefined_raw`] reads the
+/// objects of the line's definition: the points and vectors it is made from,
+/// and the line, ray or segment that a parallel, perpendicular or
+/// translation is made from. The line stays undefined while they change, so
+/// the vector must be recomputed from them directly.
 pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
-    match *def {
-        Def::Vector(
-            VectorDef::Direction(l)
-            | VectorDef::Unit(l)
-            | VectorDef::Ortho(l)
-            | VectorDef::UnitOrtho(l),
-        ) => {
-            let (s, t) = scale_roots(c, l);
-            [s, t].into_iter().filter(|&r| r != l).collect()
+    let mut ids = Vec::new();
+    let Def::Vector(
+        VectorDef::Direction(l)
+        | VectorDef::Unit(l)
+        | VectorDef::Ortho(l)
+        | VectorDef::UnitOrtho(l),
+    ) = *def
+    else {
+        return ids;
+    };
+    let mut push = |s: Id| {
+        if !ids.contains(&s) {
+            ids.push(s);
         }
-        _ => Vec::new(),
-    }
-}
-
-/// The objects whose moves can change the raw scale that [`raw_normal`]
-/// gives for `id` without changing the stored line: the two points of a
-/// line, segment or ray through two points, or the vector of a line or ray
-/// with a direction vector, found by following the same parents as
-/// [`raw_normal`]. `(id, id)` when there are none.
-fn scale_roots(c: &Construction, mut id: Id) -> (Id, Id) {
+    };
+    let mut id = l;
     loop {
         match c.def(id) {
-            Def::Line(p, q) | Def::Segment(p, q) | Def::Vector(VectorDef::RayPoints(p, q)) => {
-                return (p, q)
+            Def::Line(p, q)
+            | Def::Vector(
+                VectorDef::RayPoints(p, q)
+                | VectorDef::RayVector(p, q)
+                | VectorDef::LineVector(p, q)
+                | VectorDef::OrthoLineVector(p, q),
+            ) => {
+                push(p);
+                push(q);
+                return ids;
             }
-            Def::Vector(
-                VectorDef::RayVector(_, v)
-                | VectorDef::LineVector(_, v)
-                | VectorDef::OrthoLineVector(_, v),
-            ) => return (v, v),
-            Def::Parallel { to, .. }
-            | Def::Perpendicular { to, .. }
-            | Def::Vector(VectorDef::Translate { src: to, .. }) => id = to,
-            _ => return (id, id),
+            Def::Parallel { through, to } | Def::Perpendicular { through, to } => {
+                push(through);
+                push(to);
+                id = to;
+            }
+            Def::Vector(VectorDef::Translate { src, by, .. }) => {
+                push(by);
+                push(src);
+                id = src;
+            }
+            _ => return ids,
         }
     }
 }
@@ -308,7 +302,7 @@ fn direction_of(c: &Construction, id: Id) -> Option<(f64, f64)> {
     if c.kind(id) == Kind::Vector {
         vector(c, id)
     } else {
-        let (x, y) = raw_normal(c, id)?;
+        let (x, y) = normal_of(c, id)?;
         Some((y, -x))
     }
 }
@@ -531,7 +525,7 @@ impl Group for VectorDef {
                     let (x, y) = vector(c, v)?;
                     (-y, x)
                 } else {
-                    raw_normal(c, v)?
+                    normal_of(c, v)?
                 };
                 Some(Value::Vector { x, y })
             }
@@ -540,7 +534,7 @@ impl Group for VectorDef {
                     let (x, y) = vector(c, v)?;
                     (-y, x)
                 } else {
-                    raw_normal(c, v)?
+                    normal_of(c, v)?
                 };
                 unit(x, y)
             }
@@ -820,12 +814,11 @@ mod tests {
             panic!()
         };
         assert_eq!((x, y), (1.0, 2.0));
-        close((b, -a), (0.6, 0.8));
+        close((b, -a), (3.0, 4.0));
         let Value::Ray { a, b, c: k, .. } = value(&c, "h") else {
             panic!()
         };
-        let s10 = 10f64.sqrt();
-        close((b, -a), (3.0 / s10, -1.0 / s10));
+        close((b, -a), (3.0, -1.0));
         // The ray and the line through A with direction u share coefficients.
         assert_eq!(value(&c, "m"), Value::Line { a, b, c: k });
     }
@@ -873,17 +866,32 @@ mod tests {
     }
 
     #[test]
+    fn the_direction_of_an_undefined_parallel_follows_its_segment() {
+        let mut c = load(
+            "A = (0, 0)\nB = (0.000000001, 0)\ns = Segment(A, B)\nP = (0, 1)\n\
+             p = Line(P, s)\nd = Direction(p)\n",
+        )
+        .unwrap();
+        assert_eq!(value(&c, "p"), Value::Undefined);
+        assert_eq!(vec_of(&c, "d"), (1e-9, 0.0));
+        let b = c.id("B").unwrap();
+        c.move_point(b, 3e-9, 0.0).unwrap();
+        assert_eq!(value(&c, "p"), Value::Undefined);
+        assert_eq!(vec_of(&c, "d"), (3e-9, 0.0));
+    }
+
+    #[test]
     fn a_new_raw_scale_alone_updates_the_vectors() {
         let mut c = load(&format!(
             "{BASE}d = Direction(l)\no = OrthogonalVector(l)\nP = (5, 1)\np = Line(P, l)\n\
              dp = Direction(p)\ng = Ray(A, u)\ntg = Translate(g, u)\ndg = Direction(tg)\n"
         ))
         .unwrap();
-        // B moves along l: the stored line stays the same, its raw scale doubles.
+        // B moves along l: the line stays the same, its raw scale doubles.
         let b = c.id("B").unwrap();
-        let before = value(&c, "l");
+        let before = value(&c, "l").unit_line();
         c.move_point(b, 7.0, 10.0).unwrap();
-        assert_eq!(value(&c, "l"), before);
+        assert_eq!(value(&c, "l").unit_line(), before);
         close(vec_of(&c, "d"), (6.0, 8.0));
         close(vec_of(&c, "o"), (-8.0, 6.0));
         close(vec_of(&c, "dp"), (6.0, 8.0));

@@ -1,3 +1,11 @@
+// Parts of this file are translated from GeoGebra (https://github.com/geogebra/geogebra),
+// commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoLine.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoVec3D.java
+//   source/shared/common/src/main/java/org/geogebra/common/util/DoubleUtil.java
+// Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
+// Licensed by GeoGebra GmbH under the EUPL 1.2.
+
 //! The rules that compute one object from others, one module per group.
 //!
 //! The first definitions of the kernel are plain variants of [`Def`] and
@@ -18,7 +26,7 @@ pub mod transform;
 pub mod vector;
 
 use crate::kernel::{Construction, Error, Id, Kind, Value};
-use crate::tol::EPS;
+use crate::tol::{EPS, STANDARD_PRECISION};
 
 pub(crate) const POINT: &[Kind] = &[Kind::Point];
 pub(crate) const LINE: &[Kind] = &[Kind::Line];
@@ -109,7 +117,48 @@ pub(crate) fn length(dx: f64, dy: f64) -> f64 {
     (dx * dx + dy * dy).sqrt()
 }
 
+/// A line value from GeoGebra's raw coefficients `(x, y, z)`, kept as they
+/// are. Undefined like `GeoLine.isDefined`: a NaN, or `x` and `y` both zero
+/// within the standard precision (`DoubleUtil.isZero`).
+pub(crate) fn line_value(x: f64, y: f64, z: f64) -> Option<Value> {
+    let zero = |v: f64| -STANDARD_PRECISION < v && v < STANDARD_PRECISION;
+    if x.is_nan() || y.is_nan() || z.is_nan() || (zero(x) && zero(y)) {
+        return None;
+    }
+    Some(Value::Line { a: x, b: y, c: z })
+}
+
+/// `GeoVec3D.lineThroughPoints(P, Q, g)` for two finite points: the raw
+/// coefficients of the line from `p` to `q`, all zero when they coincide.
+#[inline]
+pub(crate) fn join(p: (f64, f64), q: (f64, f64)) -> (f64, f64, f64) {
+    (p.1 - q.1, q.0 - p.0, p.0 * q.1 - p.1 * q.0)
+}
+
+/// `GeoLine.getNormalizedCoefficients(ret, max, min)`: scales the raw
+/// coefficients by powers of two until one of them lies in `[min, max]`.
+/// Coefficients that are all zero or not all finite are returned as they are.
+pub(crate) fn normalized_coefficients(g: (f64, f64, f64), max: f64, min: f64) -> (f64, f64, f64) {
+    let zero = |v: f64| -STANDARD_PRECISION < v && v < STANDARD_PRECISION;
+    let (mut x, mut y, mut z) = g;
+    if (zero(x) && zero(y) && zero(z)) || !(x.is_finite() && y.is_finite() && z.is_finite()) {
+        return g;
+    }
+    while x.abs() < min && y.abs() < min && z.abs() < min {
+        x *= 2.0;
+        y *= 2.0;
+        z *= 2.0;
+    }
+    while x.abs() > max && y.abs() > max && z.abs() > max {
+        x /= 2.0;
+        y /= 2.0;
+        z /= 2.0;
+    }
+    (x, y, z)
+}
+
 /// Normalised line through two points, directed from `p` to `q`.
+#[allow(dead_code)] // used by `Construction::carrier`
 pub(crate) fn line_through(p: (f64, f64), q: (f64, f64)) -> Option<(f64, f64, f64)> {
     let (dx, dy) = (q.0 - p.0, q.1 - p.1);
     let len = length(dx, dy);

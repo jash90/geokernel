@@ -37,7 +37,10 @@
 use crate::algo::conic::ConicDef;
 use crate::algo::lines::{self, LineDef};
 use crate::kernel::{Construction, Def, Id, Value};
-use crate::tol::{EPS, MAX_PRECISION, MIN_PRECISION, STANDARD_PRECISION};
+use crate::tol::{MAX_PRECISION, MIN_PRECISION, STANDARD_PRECISION};
+
+/// `Kernel.INV_MAX_DOUBLE_PRECISION`.
+const INV_MAX_DOUBLE_PRECISION: f64 = 1e15;
 
 /// Completes a new intersection with what GeoGebra decides when it is
 /// created.
@@ -89,11 +92,10 @@ pub(crate) fn prepare(c: &Construction, def: Def) -> Def {
 /// Points that an intersection reads besides its line and circles.
 ///
 /// A point on both objects by construction becomes intersection 1 with its
-/// own coordinates, and the coefficients of a line through two points are
-/// rebuilt from those points (see [`raw_line`]). The intersection must be
-/// recomputed when such a point moves even if the line and the circles keep
-/// their values, for example when a point slides along a horizontal line or
-/// a vertex of a three-point circle slides along the circle.
+/// own coordinates, and a tangent point is computed from the tangent's own
+/// parents. The intersection must be recomputed when such a point moves even
+/// if the line and the circles keep their values, for example when a vertex
+/// of a three-point circle slides along the circle.
 pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
     let mut ids = Vec::new();
     let mut push = |s: Option<Id>| {
@@ -108,10 +110,6 @@ pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
             let line_def = c.def(line);
             push(existing_line_circle_point(c, line, line_def, circle));
             match line_def {
-                Def::Line(p, q) => {
-                    push(Some(p));
-                    push(Some(q));
-                }
                 // the tangent point is computed from these (see
                 // `lines::tangent_point_on`)
                 Def::Lines(LineDef::TangentPoint {
@@ -133,17 +131,44 @@ pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
     ids
 }
 
+/// `AlgoIntersectLines`: the cross product of the raw coefficients
+/// (`GeoVec3D.cross`), kept only when it lies on both lines
+/// (`GeoLine.isOnFullLine`). A point at infinity (`GeoPoint.updateCoords`)
+/// is reported undefined.
 pub(crate) fn lines(c: &Construction, l: Id, m: Id) -> Option<Value> {
-    let (a1, b1, c1) = c.line(l)?;
-    let (a2, b2, c2) = c.line(m)?;
-    let det = a1 * b2 - a2 * b1;
-    if det.abs() < EPS {
-        return None; // parallel
+    let (a1, b1, c1) = c.raw_line(l)?;
+    let (a2, b2, c2) = c.raw_line(m)?;
+    let (mut x, mut y, mut z) = (b1 * c2 - c1 * b2, c1 * a2 - a1 * c2, a1 * b2 - b1 * a2);
+    if (z.is_finite() && z.abs() > INV_MAX_DOUBLE_PRECISION)
+        || (z != 0.0 && z.abs() < MAX_PRECISION)
+    {
+        x /= z;
+        y /= z;
+        z = 1.0;
     }
-    Some(Value::Point {
-        x: (b1 * c2 - b2 * c1) / det,
-        y: (a2 * c1 - a1 * c2) / det,
-    })
+    if x.is_nan() || y.is_nan() || z.is_nan() || is_epsilon(z, x, y) {
+        return None;
+    }
+    if z < 0.0 {
+        (x, y, z) = (-x, -y, -z);
+    }
+    let (px, py) = if z == 1.0 { (x, y) } else { (x / z, y / z) };
+    let incident = |(a, b, cc): (f64, f64, f64)| {
+        (a * px + b * py + cc).abs() < MIN_PRECISION * (a.abs() + b.abs())
+    };
+    if !(incident((a1, b1, c1)) && incident((a2, b2, c2))) {
+        return None;
+    }
+    to_value(Some((px, py)))
+}
+
+/// `DoubleUtil.isEpsilon(e, x, y)`: whether `e` is zero compared with
+/// `STANDARD_PRECISION` and with `x` and `y` (a point at infinity).
+fn is_epsilon(e: f64, x: f64, y: f64) -> bool {
+    let ea = e.abs();
+    !(ea > STANDARD_PRECISION
+        || ea > x.abs() * STANDARD_PRECISION
+        || ea > y.abs() * STANDARD_PRECISION)
 }
 
 /// A point, or `None` where GeoGebra's point is undefined or at infinity.
@@ -160,7 +185,8 @@ pub(crate) fn line_circle(c: &Construction, line: Id, circle: Id, which: u8) -> 
         }
     }
     let (cx, cy, r) = c.circle(circle)?;
-    let g = raw_line(c, line, line_def)?;
+    let (a, b, cc) = c.raw_line(line)?;
+    let g = [a, b, cc];
     let conic = Conic::new(cx, cy, r);
 
     let p = match existing_line_circle_point(c, line, line_def, circle) {
@@ -317,12 +343,8 @@ fn hom_point(x: f64, y: f64, z: f64) -> Pt {
     if x.is_nan() || y.is_nan() || z.is_nan() {
         return None;
     }
-    // DoubleUtil.isEpsilon(z, x, y): a point at infinity.
-    let za = z.abs();
-    if !(za > STANDARD_PRECISION
-        || za > x.abs() * STANDARD_PRECISION
-        || za > y.abs() * STANDARD_PRECISION)
-    {
+    if is_epsilon(z, x, y) {
+        // a point at infinity
         return None;
     }
     let (x, y, z) = if z < 0.0 { (-x, -y, -z) } else { (x, y, z) };
@@ -339,36 +361,10 @@ fn point(x: f64, y: f64) -> Pt {
 
 // ----------------------------------------------------------------- lines
 
-/// The line's coefficients as GeoGebra stores them.
-///
-/// `Value::Line` is normalised, but GeoGebra's tolerances in this algorithm
-/// depend on the size of the coefficients. For a line through two points
-/// they are rebuilt from the points exactly as `GeoVec3D.lineThroughPoints`
-/// computes them; any other line uses its normalised coefficients.
-fn raw_line(c: &Construction, line: Id, line_def: Def) -> Option<[f64; 3]> {
-    let (a, b, cc) = c.line(line)?;
-    if let Def::Line(p, q) = line_def {
-        let (px, py) = c.point(p)?;
-        let (qx, qy) = c.point(q)?;
-        return Some([py - qy, qx - px, px * qy - py * qx]);
-    }
-    Some([a, b, cc])
-}
-
-/// `GeoLine.getNormalizedCoefficients(ret, 2, 0.5)`: scales by powers of 2
-/// until no coefficient is above 2 or not all are below 0.5.
+/// `GeoLine.getNormalizedCoefficients(ret, 2, 0.5)`.
 fn normalized_coefficients(g: [f64; 3]) -> [f64; 3] {
-    let mut r = g;
-    if (is_zero(g[0]) && is_zero(g[1]) && is_zero(g[2])) || !g.iter().all(|v| v.is_finite()) {
-        return r;
-    }
-    while r[0].abs() < 0.5 && r[1].abs() < 0.5 && r[2].abs() < 0.5 {
-        r = [r[0] * 2.0, r[1] * 2.0, r[2] * 2.0];
-    }
-    while r[0].abs() > 2.0 && r[1].abs() > 2.0 && r[2].abs() > 2.0 {
-        r = [r[0] / 2.0, r[1] / 2.0, r[2] / 2.0];
-    }
-    r
+    let (x, y, z) = super::normalized_coefficients((g[0], g[1], g[2]), 2.0, 0.5);
+    [x, y, z]
 }
 
 /// `GeoLine.isOnFullLine` for a finite point.
@@ -853,8 +849,8 @@ mod tests {
 
     #[test]
     fn sliding_a_point_along_the_line_recomputes_the_intersections() {
-        // The normalised line does not change, but GeoGebra's coefficients
-        // of Line(C, D) do, so P and Q are recomputed with them.
+        // The line stays the same, but the raw coefficients of Line(C, D)
+        // change, so P and Q are recomputed with them.
         let mut c = load(LINE_CIRCLE).unwrap();
         let moved = c.move_point(c.id("C").unwrap(), -20.0, 3.0).unwrap();
         assert_eq!(moved, 3); // f, P and Q

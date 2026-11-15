@@ -1,11 +1,25 @@
-//! Lines, segments, midpoints and distances built from points.
+// Parts of this file are translated from GeoGebra (https://github.com/geogebra/geogebra),
+// commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoJoinPoints.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoLinePointLine.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoOrthoLinePointLine.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoVec3D.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoLine.java
+// Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
+// Licensed by GeoGebra GmbH under the EUPL 1.2.
 
-use super::{length, line_through};
+//! Lines, segments, midpoints and distances built from points.
+//!
+//! Lines carry GeoGebra's raw coefficients (see [`Value::Line`]). A free
+//! point is `(x, y, 1)` in GeoGebra's homogeneous coordinates.
+
+use super::{join, length, line_value, normalized_coefficients};
 use crate::kernel::{Construction, Id, Value};
 
+/// `AlgoJoinPoints`: `GeoVec3D.lineThroughPoints(P, Q)`.
 pub(crate) fn line(c: &Construction, p: Id, q: Id) -> Option<Value> {
-    let (a, b, c) = line_through(c.point(p)?, c.point(q)?)?;
-    Some(Value::Line { a, b, c })
+    let (x, y, z) = join(c.point(p)?, c.point(q)?);
+    line_value(x, y, z)
 }
 
 pub(crate) fn segment(c: &Construction, p: Id, q: Id) -> Option<Value> {
@@ -29,24 +43,25 @@ pub(crate) fn distance(c: &Construction, p: Id, q: Id) -> Option<Value> {
     Some(Value::Number(length(x2 - x1, y2 - y1)))
 }
 
-pub(crate) fn perpendicular(c: &Construction, through: Id, to: Id) -> Option<Value> {
-    let (px, py) = c.point(through)?;
-    let (a, b, _) = c.carrier(to)?;
-    // The new line runs along the old normal (a, b).
-    let (na, nb) = (-b, a);
-    Some(Value::Line {
-        a: na,
-        b: nb,
-        c: -(na * px + nb * py),
-    })
+/// `GeoVec3D.cross(P, vx, vy, vz)` for the point `(px, py, 1)`.
+fn cross_point(px: f64, py: f64, vx: f64, vy: f64, vz: f64) -> (f64, f64, f64) {
+    (py * vz - vy, vx - px * vz, px * vy - py * vx)
 }
 
+/// `AlgoOrthoLinePointLine`: the cross product of `P` with the normal of
+/// the line, rescaled by powers of two into `[1e-2, 1e7]` so that chains of
+/// perpendiculars neither overflow nor underflow.
+pub(crate) fn perpendicular(c: &Construction, through: Id, to: Id) -> Option<Value> {
+    let (px, py) = c.point(through)?;
+    let (lx, ly, _) = c.raw_carrier(to)?;
+    let (x, y, z) = normalized_coefficients(cross_point(px, py, lx, ly, 0.0), 10e6, 1e-2);
+    line_value(x, y, z)
+}
+
+/// `AlgoLinePointLine`: the cross product of `P` with the direction of the line.
 pub(crate) fn parallel(c: &Construction, through: Id, to: Id) -> Option<Value> {
     let (px, py) = c.point(through)?;
-    let (a, b, _) = c.carrier(to)?;
-    Some(Value::Line {
-        a,
-        b,
-        c: -(a * px + b * py),
-    })
+    let (lx, ly, _) = c.raw_carrier(to)?;
+    let (x, y, z) = cross_point(px, py, ly, -lx, 0.0);
+    line_value(x, y, z)
 }

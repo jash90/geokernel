@@ -107,6 +107,11 @@ These rules are applied by the Rust side (`crates/geo-golden`).
 - Lines: both sides are normalised so that `(a, b)` has length 1, then the
   triples must agree up to a common sign. Whether the sign agrees is counted
   and reported separately; it does not fail the comparison.
+- Lines and rays, scale: whether the kernel holds GeoGebra's raw
+  coefficients exactly (every component within `1e-9` times the largest
+  component magnitude of the two triples, same sign) is also counted for the
+  `ggb-harness` cases and reported per group and defining command; it does
+  not fail the comparison.
 - Segments are compared with their end points in order.
 - Vectors are compared by `x` and `y`.
 - Rays: the start points must agree, and the coefficients are normalised like

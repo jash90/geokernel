@@ -361,4 +361,35 @@ for name in ("shear", "stretch"):
             case(name, script, [setn("f", -1.0), setn("f", 0.5), mv(free[0], 3, 3)])
 
 
+# ------------------------------------------------ raw scale of the lines
+# Images of lines with tiny raw coefficients used where GeoGebra tests raw
+# coefficients against 1e-8: Distance(line, line), Slope and
+# AngularBisector(line, line).
+topic("mirrorline")
+# a line through points 1e-6 apart, mirrored in a point and in a line
+case("mirrorline", [pt("A", 0, 0), pt("B", 0.000001, 0.000002), "l = Line(A, B)", pt("Q", 2, 1),
+                    pt("C", 0, 3), pt("D", 1, 4), "g = Line(C, D)", "m = Mirror(l, Q)",
+                    "n = Mirror(l, g)", "d = Distance(l, m)", "e = Distance(m, n)",
+                    "s = Slope(n)", "b = AngularBisector(m, n)"],
+     [mv("B", 0.000001, 0), mv("B", 0, 0.000001), mv("D", 1, 3), mv("B", 3, 4), mv("Q", 5, 5),
+      mv("B", 0.000001, 0.000002)])
+
+topic("rotate")
+# a short line and its image under a small rotation
+case("rotate", [pt("A", 0, 0), pt("B", 0.000001, 0.000002), "l = Line(A, B)", num("w", 0.5),
+                pt("Q", 1, 1), "m = Rotate(l, w)", "n = Rotate(l, w, Q)", "d = Distance(l, m)",
+                "e = Distance(l, n)", "s = Slope(n)", "b = AngularBisector(l, n)"],
+     [setn("w", 0.001), setn("w", 1e-6), setn("w", 0.0), setn("w", 0.5), mv("B", 3, 1),
+      setn("w", 1e-6), setn("w", 0.5)])
+
+topic("dilate")
+# a nearly vertical line dilated by a small factor: its raw y coefficient
+# scales with the factor
+case("dilate", [pt("A", 0, 0), pt("B", 0.000001, 1), "l = Line(A, B)", num("f", 1),
+                pt("Q", 2, 1), "m = Dilate(l, f)", "n = Dilate(l, f, Q)", pt("C", 1, 0),
+                pt("D", 3, 1), "g = Line(C, D)", "s = Slope(m)", "d = Distance(m, n)",
+                "e = Distance(n, g)", "b = AngularBisector(n, g)"],
+     [setn("f", 0.001), setn("f", 1e-5), setn("f", -0.001), mv("D", 1.000001, 1),
+      mv("D", 3, 1), setn("f", 1)])
+
 cases.write()

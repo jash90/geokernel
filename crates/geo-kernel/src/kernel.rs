@@ -15,7 +15,7 @@ use crate::algo::measure::MeasureDef;
 use crate::algo::transform::TransformDef;
 use crate::algo::vector::VectorDef;
 use crate::algo::{
-    self, check_index, line_through, Group, Parents, CIRCLE, LINE, LINE_LIKE, NUMBER, POINT,
+    self, check_index, join, line_through, Group, Parents, CIRCLE, LINE, LINE_LIKE, NUMBER, POINT,
 };
 use std::cmp::Reverse;
 use std::collections::{BinaryHeap, HashMap};
@@ -64,8 +64,13 @@ pub enum Value {
         x: f64,
         y: f64,
     },
-    /// `a*x + b*y + c = 0` with `(a, b)` of unit length.
-    /// The line's direction is `(b, -a)`.
+    /// `a*x + b*y + c = 0` with the raw coefficients GeoGebra's `GeoLine`
+    /// holds (its `x`, `y`, `z`) for the same definition. They are not
+    /// normalised: the algorithm that makes the line decides their scale, and
+    /// GeoGebra's zero and equality tests on lines depend on it. `(a, b)` is
+    /// never zero (a line with both zero is undefined). The line's direction
+    /// is `(b, -a)`. [`Value::unit_line`] gives the form with `(a, b)` of
+    /// unit length.
     Line {
         a: f64,
         b: f64,
@@ -104,6 +109,18 @@ pub enum Value {
 impl Value {
     pub fn is_defined(&self) -> bool {
         !matches!(self, Value::Undefined)
+    }
+
+    /// For a line, `(a, b, c)` scaled so that `(a, b)` has length 1, with the
+    /// same orientation. `None` for every other value.
+    pub fn unit_line(&self) -> Option<(f64, f64, f64)> {
+        match *self {
+            Value::Line { a, b, c } => {
+                let len = a.hypot(b);
+                (len > 0.0).then(|| (a / len, b / len, c / len))
+            }
+            _ => None,
+        }
     }
 
     fn is_finite(&self) -> bool {
@@ -576,18 +593,39 @@ impl Construction {
         }
     }
 
+    /// A line with `(a, b)` of unit length (see [`Value::unit_line`]).
+    #[allow(dead_code)] // part of the accessor set; every rule here reads lines raw
     pub(crate) fn line(&self, id: Id) -> Option<(f64, f64, f64)> {
+        self.values[id.0].unit_line()
+    }
+
+    /// A line's raw coefficients, as GeoGebra holds them (see [`Value::Line`]).
+    /// For code that follows an upstream formula on raw coefficients.
+    pub(crate) fn raw_line(&self, id: Id) -> Option<(f64, f64, f64)> {
         match self.values[id.0] {
             Value::Line { a, b, c } => Some((a, b, c)),
             _ => None,
         }
     }
 
-    /// The infinite line that a line or a segment lies on.
+    /// The infinite line that a line or a segment lies on, with `(a, b)` of
+    /// unit length. `None` for a segment whose end points coincide.
+    #[allow(dead_code)] // part of the accessor set; every rule here reads carriers raw
     pub(crate) fn carrier(&self, id: Id) -> Option<(f64, f64, f64)> {
         match self.values[id.0] {
-            Value::Line { a, b, c } => Some((a, b, c)),
             Value::Segment { x1, y1, x2, y2 } => line_through((x1, y1), (x2, y2)),
+            v => v.unit_line(),
+        }
+    }
+
+    /// The raw coefficients of the line that a line, ray or segment lies on. For
+    /// a segment they are those of `GeoVec3D.lineThroughPoints` from its start
+    /// to its end point, which is what GeoGebra's `GeoSegment` holds; they are
+    /// all zero when the end points coincide.
+    pub(crate) fn raw_carrier(&self, id: Id) -> Option<(f64, f64, f64)> {
+        match self.values[id.0] {
+            Value::Line { a, b, c } | Value::Ray { a, b, c, .. } => Some((a, b, c)),
+            Value::Segment { x1, y1, x2, y2 } => Some(join((x1, y1), (x2, y2))),
             _ => None,
         }
     }
@@ -859,6 +897,79 @@ mod tests {
         let m = c.add("m", Def::Parallel { through: p, to: l }).unwrap();
         let x = c.add("X", Def::IntersectLines(l, m)).unwrap();
         assert_eq!(c.value(x), Value::Undefined);
+    }
+
+    #[test]
+    fn lines_hold_geogebra_raw_coefficients() {
+        let mut c = Construction::new();
+        let a = pt(&mut c, "A", 1.0, 2.0);
+        let b = pt(&mut c, "B", 4.0, 6.0);
+        let p = pt(&mut c, "P", 0.0, 1.0);
+        let l = c.add("l", Def::Line(a, b)).unwrap();
+        let s = c.add("s", Def::Segment(a, b)).unwrap();
+        let q = c.add("q", Def::Parallel { through: p, to: s }).unwrap();
+        // `GeoVec3D.lineThroughPoints`: (Ay - By, Bx - Ax, Ax By - Ay Bx).
+        assert_eq!(
+            c.value(l),
+            Value::Line {
+                a: -4.0,
+                b: 3.0,
+                c: -2.0
+            }
+        );
+        assert_eq!(c.raw_line(l), Some((-4.0, 3.0, -2.0)));
+        assert_eq!(c.raw_carrier(s), Some((-4.0, 3.0, -2.0)));
+        assert_eq!(c.raw_line(s), None);
+        assert_eq!(c.raw_carrier(q), Some((-4.0, 3.0, -3.0)));
+        // The unit form keeps the orientation.
+        let (ua, ub, uc) = c.line(l).unwrap();
+        assert!(close(ua, -0.8) && close(ub, 0.6) && close(uc, -0.4));
+        let (sa, sb, sc) = c.carrier(s).unwrap();
+        assert!(close(sa, ua) && close(sb, ub) && close(sc, uc));
+        assert_eq!(c.value(l).unit_line(), c.line(l));
+        assert_eq!(c.value(a).unit_line(), None);
+    }
+
+    #[test]
+    fn a_line_is_undefined_when_both_raw_coefficients_are_tiny() {
+        // GeoGebra's `GeoLine.isDefined` tests x and y against 1e-8.
+        let mut c = Construction::new();
+        let a = pt(&mut c, "A", 0.0, 0.0);
+        let b = pt(&mut c, "B", 1.0, 1.0);
+        let l = c.add("l", Def::Line(a, b)).unwrap();
+        let s = c.add("s", Def::Segment(a, b)).unwrap();
+        let p = c
+            .add("p", Def::Perpendicular { through: b, to: s })
+            .unwrap();
+        c.move_point(b, 5e-9, -5e-9).unwrap();
+        assert_eq!(c.value(l), Value::Undefined);
+        assert_eq!(c.value(p), Value::Undefined);
+        assert_eq!(c.raw_carrier(s), Some((5e-9, 5e-9, 0.0)));
+        c.move_point(b, 2e-8, 0.0).unwrap();
+        assert!(c.value(l).is_defined() && c.value(p).is_defined());
+    }
+
+    #[test]
+    fn perpendiculars_are_rescaled_by_powers_of_two() {
+        // `AlgoOrthoLinePointLine` keeps some coefficient within [1e-2, 1e7].
+        let mut c = Construction::new();
+        let a = pt(&mut c, "A", 0.0, 0.0);
+        let b = pt(&mut c, "B", 0.001, 0.0);
+        let p = pt(&mut c, "P", 0.0, 0.0);
+        let l = c.add("l", Def::Line(a, b)).unwrap();
+        let n = c
+            .add("n", Def::Perpendicular { through: p, to: l })
+            .unwrap();
+        // l is (0, 0.001, 0); the perpendicular (-0.001, 0, 0) doubles to
+        // (-0.016, 0, 0).
+        assert_eq!(c.raw_line(n), Some((-0.016, 0.0, 0.0)));
+        // Only when all three leave the range: (-3e7, 3e7, 0) through
+        // (0, 0) gives (-3e7, -3e7, 0), kept as it is...
+        c.move_point(b, 3e7, 3e7).unwrap();
+        assert_eq!(c.raw_line(n), Some((-3e7, -3e7, 0.0)));
+        // ...and through (1, 0) gives (-3e7, -3e7, 3e7), halved twice.
+        c.move_point(p, 1.0, 0.0).unwrap();
+        assert_eq!(c.raw_line(n), Some((-7.5e6, -7.5e6, 7.5e6)));
     }
 
     #[test]

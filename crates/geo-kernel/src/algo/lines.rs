@@ -30,10 +30,12 @@
 //! tangents to circles and polar lines.
 //!
 //! GeoGebra computes these lines with raw (not normalised) coefficients and
-//! decides "undefined" on those raw values, so the rules below build the
-//! raw triple first and normalise it only at the end, in [`line_value`].
+//! decides "undefined" on those raw values; the rules below build the same
+//! raw triple and keep it (see [`Value::Line`]).
 
-use super::{check_index, Group, Parents, CIRCLE, LINE_LIKE, POINT};
+use super::{
+    check_index, line_value, normalized_coefficients, Group, Parents, CIRCLE, LINE_LIKE, POINT,
+};
 use crate::kernel::{Construction, Error, Id, Kind, Value};
 use crate::script::object;
 use crate::tol::{MAX_PRECISION, MIN_PRECISION, STANDARD_PRECISION};
@@ -137,7 +139,7 @@ impl Group for LineDef {
                 angle_bisector_points(c.point(leg1)?, c.point(vertex)?, c.point(leg2)?)
             }
             LineDef::AngleBisectorLines { g, h, which } => {
-                angle_bisector_lines(c.carrier(g)?, c.carrier(h)?, which)
+                angle_bisector_lines(c.raw_carrier(g)?, c.raw_carrier(h)?, which)
             }
             LineDef::TangentPoint {
                 point,
@@ -148,7 +150,7 @@ impl Group for LineDef {
                 line,
                 circle,
                 which,
-            } => tangent_line(c.carrier(line)?, c.circle(circle)?, which),
+            } => tangent_line(c.raw_carrier(line)?, c.circle(circle)?, which),
             LineDef::Polar { point, circle } => {
                 let (px, py) = c.point(point)?;
                 let (cx, cy, r) = c.circle(circle)?;
@@ -347,21 +349,6 @@ fn my_length(x: f64, y: f64) -> f64 {
     }
 }
 
-/// A line from GeoGebra's raw coefficients: undefined like `GeoLine.isDefined`
-/// (a NaN, or both `x` and `y` zero within the standard precision),
-/// otherwise normalised with the same orientation.
-fn line_value(x: f64, y: f64, z: f64) -> Option<Value> {
-    if x.is_nan() || y.is_nan() || z.is_nan() || (is_zero(x) && is_zero(y)) {
-        return None;
-    }
-    let len = (x * x + y * y).sqrt();
-    Some(Value::Line {
-        a: x / len,
-        b: y / len,
-        c: z / len,
-    })
-}
-
 /// `GeoVec3D.cross(u, v, w)`, including its rescaling by `w.z`.
 fn cross(u: (f64, f64, f64), v: (f64, f64, f64)) -> (f64, f64, f64) {
     let (mut x, mut y, mut z) = (
@@ -544,33 +531,12 @@ fn is_on_line(g: (f64, f64, f64), px: f64, py: f64, eps: f64) -> bool {
     (g.0 * px + g.1 * py + g.2).abs() < eps * (g.0.abs() + g.1.abs())
 }
 
-/// `GeoLine.getNormalizedCoefficients(ret, 2, 0.5)`: scales by powers of two.
-fn normalized_coefficients(g: (f64, f64, f64)) -> (f64, f64, f64) {
-    let (mut x, mut y, mut z) = g;
-    if (is_zero(x) && is_zero(y) && is_zero(z))
-        || !(x.is_finite() && y.is_finite() && z.is_finite())
-    {
-        return g;
-    }
-    while x.abs() < 0.5 && y.abs() < 0.5 && z.abs() < 0.5 {
-        x *= 2.0;
-        y *= 2.0;
-        z *= 2.0;
-    }
-    while x.abs() > 2.0 && y.abs() > 2.0 && z.abs() > 2.0 {
-        x /= 2.0;
-        y /= 2.0;
-        z /= 2.0;
-    }
-    (x, y, z)
-}
-
 type Pt = Option<(f64, f64)>;
 
 /// `AlgoIntersectLineConic.intersectLineConic` for a circle: the points in
 /// the order of increasing parameter along the direction `(y, -x)`.
 fn intersect_line_circle(g: (f64, f64, f64), a: &CircleMatrix, eps: f64) -> [Pt; 2] {
-    let (x, y, z) = normalized_coefficients(g);
+    let (x, y, z) = normalized_coefficients(g, 2.0, 0.5);
     let m = &a.m;
     // an arbitrary point of the line
     let (px, py) = if x.abs() > y.abs() {
@@ -689,7 +655,7 @@ pub(crate) fn tangent_point_on(c: &Construction, d: LineDef, circle: Id) -> Opti
             circle: k,
             which,
         } if k == circle => Some((|| {
-            let g = c.carrier(line)?;
+            let g = c.raw_carrier(line)?;
             let (cx, cy, r) = c.circle(k)?;
             let a = CircleMatrix::new(cx, cy, r);
             if a.is_degenerate() {
@@ -760,11 +726,10 @@ mod tests {
         }
     }
 
-    /// Compares with GeoGebra's raw coefficients, normalised.
+    /// Compares with GeoGebra's raw coefficients, scale and sign included.
     fn assert_line(c: &Construction, label: &str, raw: (f64, f64, f64)) {
-        let len = (raw.0 * raw.0 + raw.1 * raw.1).sqrt();
         let (a, b, cc) = line(c, label);
-        for (got, want) in [(a, raw.0 / len), (b, raw.1 / len), (cc, raw.2 / len)] {
+        for (got, want) in [(a, raw.0), (b, raw.1), (cc, raw.2)] {
             assert!((got - want).abs() < 1e-12, "{label}: {got} != {want}");
         }
     }
@@ -906,7 +871,8 @@ mod tests {
         // on the circle: both tangents are the tangent at P
         c.move_point(p, 0.0, 2.0).unwrap();
         assert_eq!(line(&c, "t_{1}"), line(&c, "t_{2}"));
-        assert_eq!(line(&c, "t_{1}"), (0.0, 1.0, -2.0));
+        // the polar of P: GeoGebra's raw coefficients (0, 2, -4)
+        assert_eq!(line(&c, "t_{1}"), (0.0, 2.0, -4.0));
         // at the centre: no polar, no perpendicular bisector
         c.move_point(p, 0.0, 0.0).unwrap();
         assert!(undefined(&c, "p") && undefined(&c, "f"));
