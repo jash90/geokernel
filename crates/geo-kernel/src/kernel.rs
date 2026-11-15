@@ -608,6 +608,20 @@ impl Construction {
         self.values[id.0]
     }
 
+    /// `±∞` when `id` is an expression number whose value is infinite.
+    /// [`Self::value`] reports such a number undefined, but GeoGebra counts
+    /// it as defined, and expressions that read it use the infinite value
+    /// (`1 / (r - a)` with `a = ∞` is `-0`).
+    pub fn infinite_number(&self, id: Id) -> Option<f64> {
+        match self.defs.get(id.0)? {
+            &Def::Expr(d) if d.kind() == Kind::Number => match expr::raw(self, d) {
+                expr::Raw::Num(v) if v.is_infinite() => Some(v),
+                _ => None,
+            },
+            _ => None,
+        }
+    }
+
     /// The value of the function `id` at `x`, evaluated as GeoGebra's
     /// `GeoFunction.value` does; it may be infinite or `NaN` where the
     /// function is not defined. `None` when `id` is not a defined function.
