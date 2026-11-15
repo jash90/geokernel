@@ -32,9 +32,13 @@ import org.geogebra.common.main.App;
  * after GeoGebra has written it.
  *
  * <p>The zip writer stamps every entry with the current time, so a new archive
- * is written only when its entries differ from the file that is already there;
- * files of the group that this run did not produce are deleted. Running it
- * twice therefore leaves every file byte-identical.
+ * is written only when its entries differ from the file that is already there.
+ * Running it twice therefore leaves every file byte-identical.
+ *
+ * <p>Nothing is ever deleted by a partial run (a sample step above 1). A full
+ * run (sample step 1) removes the files of the group directories that it did
+ * not produce, for example the zip files of a different zip step, and prints
+ * each file it removes.
  */
 public final class GgbExporter {
 
@@ -94,11 +98,14 @@ public final class GgbExporter {
                 zips++;
             }
         }
-        for (Map.Entry<Path, Set<String>> e : produced.entrySet()) {
-            try (var files = Files.list(e.getKey())) {
-                for (Path file : (Iterable<Path>) files::iterator) {
-                    if (!e.getValue().contains(file.getFileName().toString())) {
-                        Files.delete(file);
+        if (sampleStep == 1) {
+            for (Map.Entry<Path, Set<String>> e : produced.entrySet()) {
+                try (var files = Files.list(e.getKey())) {
+                    for (Path file : (Iterable<Path>) files::iterator) {
+                        if (!e.getValue().contains(file.getFileName().toString())) {
+                            System.out.println("pruned " + file);
+                            Files.delete(file);
+                        }
                     }
                 }
             }
