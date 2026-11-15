@@ -37,6 +37,11 @@ impl<T> Undo<T> {
         !self.future.is_empty()
     }
 
+    /// The undo and redo steps held.
+    pub fn depth(&self) -> (usize, usize) {
+        (self.past.len(), self.future.len())
+    }
+
     /// Steps back: returns the previous state and keeps `current` for redo.
     pub fn undo(&mut self, current: T) -> Option<T> {
         let prev = self.past.pop()?;

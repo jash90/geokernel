@@ -7,6 +7,7 @@
 //! [`session`] the tools, [`report`] what they return.
 
 mod base64;
+pub mod limits;
 pub mod protocol;
 pub mod report;
 mod screenshot;

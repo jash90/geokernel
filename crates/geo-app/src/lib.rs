@@ -23,8 +23,11 @@ mod toolbar;
 #[cfg(test)]
 mod frame_counts;
 // The window driven without a window, shared by the window tests, the frame
-// benchmark and the `geokernel-mcp` server. Only tests and the `headless`
-// feature compile it; the desktop build does not.
+// benchmark and the `geokernel-mcp` server. Compiled for tests and with the
+// `headless` feature. Cargo unifies features over one build invocation, so a
+// workspace build that includes `geo-mcp` compiles it into this crate too;
+// `cargo build -p geo-app` alone does not. Either way the desktop window
+// never calls it: it does no work at run time.
 #[cfg(any(test, feature = "headless"))]
 pub mod headless;
 #[cfg(test)]

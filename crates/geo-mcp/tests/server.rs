@@ -190,6 +190,9 @@ mod protocol_tests {
         assert!(r["result"]["capabilities"]["tools"].is_object());
         let r = rpc(&mut s, "tools/list", json!({ "_meta": meta }));
         assert_eq!(r["result"]["resultType"], "complete");
+        // 2026-07-28 requires a cache lifetime and scope on list results.
+        assert!(r["result"]["ttlMs"].as_u64().unwrap() > 0);
+        assert_eq!(r["result"]["cacheScope"], "public");
         let r = rpc(
             &mut s,
             "tools/call",
@@ -205,10 +208,11 @@ mod protocol_tests {
         );
         assert_eq!(r["error"]["code"], -32022);
         assert_eq!(r["error"]["data"]["requested"], "1900-01-01");
-        assert!(r["error"]["data"]["supported"]
-            .as_array()
-            .unwrap()
-            .contains(&json!("2026-07-28")));
+        // Every version the server accepts, by `_meta` or `initialize`.
+        assert_eq!(
+            r["error"]["data"]["supported"],
+            json!(["2026-07-28", "2025-11-25", "2025-06-18", "2024-11-05"])
+        );
         let r = rpc(
             &mut s,
             "tools/list",
@@ -274,7 +278,7 @@ mod protocol_tests {
         input.extend_from_slice(b"\n");
         input.extend_from_slice(request(2, "tools/list", json!({})).as_bytes());
         let mut out = Vec::new();
-        protocol::serve(&input[..], &mut out, |l| s.handle_line(l)).unwrap();
+        protocol::serve(&input[..], &mut out, |l| s.handle_input(l)).unwrap();
         let text = String::from_utf8(out).unwrap();
         let lines: Vec<Value> = text
             .lines()
@@ -298,7 +302,7 @@ mod protocol_tests {
         ];
         let out: Vec<Value> = lines
             .iter()
-            .filter_map(|l| protocol::batch_line(&mut session, l))
+            .filter_map(|l| protocol::batch_line(&mut session, protocol::Line::Text(l)))
             .map(|l| serde_json::from_str(&l).unwrap())
             .collect();
         assert_eq!(out.len(), 4);
@@ -307,6 +311,49 @@ mod protocol_tests {
         assert_eq!(out[2]["ok"], false);
         assert_eq!(out[2]["tool"], "click");
         assert_eq!(out[3]["ok"], false);
+    }
+
+    #[test]
+    fn a_line_over_the_limit_is_refused_and_the_next_one_is_read() {
+        let mut s = Server::new();
+        let mut input = Vec::new();
+        input.extend_from_slice(request(1, "ping", json!({})).as_bytes());
+        input.push(b'\n');
+        input.extend_from_slice(&[b'x'; 5000]);
+        input.push(b'\n');
+        input.extend_from_slice(request(2, "ping", json!({})).as_bytes());
+        let mut out = Vec::new();
+        protocol::serve_bounded(&input[..], &mut out, 100, |l| s.handle_input(l)).unwrap();
+        let lines: Vec<Value> = String::from_utf8(out)
+            .unwrap()
+            .lines()
+            .map(|l| serde_json::from_str(l).unwrap())
+            .collect();
+        assert_eq!(lines.len(), 3);
+        assert_eq!(lines[0]["id"], 1);
+        assert_eq!(lines[1]["error"]["code"], -32700);
+        assert_eq!(lines[2]["id"], 2);
+    }
+
+    #[test]
+    fn a_panic_in_the_window_is_reported_and_the_window_replaced() {
+        let mut s = Server::new();
+        call(
+            &mut s,
+            "reset",
+            json!({"script": "A = (1, 2)\n", "width": 900, "profile": "touch"}),
+        );
+        s.session.panic_on_next_call();
+        let e = call_err(&mut s, "state", json!({}));
+        assert!(e.contains("panicked in `state`"), "{e}");
+        assert!(e.contains("a panic asked for by a test"), "{e}");
+        assert!(e.contains("fresh default window"), "{e}");
+        let st = state(&mut s);
+        assert!(objects(&st).is_empty());
+        assert_eq!(
+            st["window"],
+            json!({"width": 1400.0, "height": 900.0, "profile": "desktop", "scale": 1.0, "focused": true})
+        );
     }
 }
 
@@ -432,29 +479,41 @@ fn random_tool_arguments_fail_cleanly() {
 mod window_tests {
     use super::*;
 
-    /// Port of `ui_tests::gestures::a_release_and_a_press_in_one_frame_end_the_drag_and_start_a_new_press`.
+    /// Port of `ui_tests::gestures::a_release_and_a_press_in_one_frame_end_the_drag_and_start_a_new_press`:
+    /// the same window points, worked out once from the opening view, as
+    /// the original does. The first assertion fails with the earlier code
+    /// (the release decided at the frame's end, at the new press).
     #[test]
     fn a_release_and_a_press_in_one_frame_end_the_drag_and_start_a_new_press() {
         let mut s = Server::new();
-        call(&mut s, "reset", json!({"script": "A = (0, 0)\n"}));
-        let from = world(0.0, 0.0);
-        let to = json!({"wx": 0.0, "wy": 0.0, "dx": 100.0});
-        let empty = world(-6.0, 4.0);
+        let st = call(&mut s, "reset", json!({"script": "A = (0, 0)\n"}));
+        let px = |x: f64, y: f64| {
+            let o = &st["view"]["origin"];
+            let k = st["view"]["scale"].as_f64().unwrap();
+            (
+                o[0].as_f64().unwrap() + x * k,
+                o[1].as_f64().unwrap() - y * k,
+            )
+        };
+        let from = px(0.0, 0.0);
+        let to = (from.0 + 100.0, from.1);
+        let empty = px(-6.0, 4.0);
         let mut frames = vec![
-            frame(vec![ev("move", from.clone())]),
-            frame(vec![ev("down", from.clone())]),
+            frame(vec![ev("move", at(from.0, from.1))]),
+            frame(vec![ev("down", at(from.0, from.1))]),
         ];
         for i in 1..=5 {
+            let t = i as f64 / 5.0;
             frames.push(frame(vec![ev(
                 "move",
-                json!({"wx": 0.0, "wy": 0.0, "dx": 20.0 * i as f64}),
+                at(from.0 + (to.0 - from.0) * t, from.1),
             )]));
         }
         // The release of the drag and a press on empty space in one frame.
         frames.push(frame(vec![
-            ev("up", to),
-            ev("move", empty.clone()),
-            ev("down", empty.clone()),
+            ev("up", at(to.0, to.1)),
+            ev("move", at(empty.0, empty.1)),
+            ev("down", at(empty.0, empty.1)),
         ]));
         input(&mut s, frames, false);
         let st = state(&mut s);
@@ -464,20 +523,13 @@ mod window_tests {
         for i in 1..=5 {
             frames.push(frame(vec![ev(
                 "move",
-                json!({"wx": -6.0, "wy": 4.0, "dx": 20.0 * i as f64}),
+                at(empty.0 + 20.0 * i as f64, empty.1),
             )]));
         }
-        input(&mut s, frames, false);
-        // The pan moved the view: the release goes where the pointer is.
-        let release = {
-            let st = state(&mut s);
-            let st_cam = camera(&st);
-            assert_ne!(st_cam.0, cam.0, "the second press panned the view");
-            json!({"wx": -6.0, "wy": 4.0, "dx": 100.0 - (st_cam.0 - cam.0) * 50.0})
-        };
-        input(&mut s, vec![frame(vec![ev("up", release)])], true);
+        frames.push(frame(vec![ev("up", at(empty.0 + 100.0, empty.1))]));
+        input(&mut s, frames, true);
         let st = state(&mut s);
-        assert_ne!(camera(&st).0, cam.0);
+        assert_ne!(camera(&st).0, cam.0, "the second press panned the view");
         assert_eq!(point(&st, "A").0, 2.0);
         // The drag of A is one undo step of its own.
         call(&mut s, "undo", json!({}));
@@ -509,6 +561,17 @@ mod window_tests {
         let st = state(&mut s);
         assert_eq!(widget(&mut s, "zoom_in"), [x, y, w, h]);
         let (a, cam) = (point(&st, "A"), camera(&st));
+        // The precondition: A is drawn under the button.
+        let o = &st["view"]["origin"];
+        let k = st["view"]["scale"].as_f64().unwrap();
+        let drawn = (
+            o[0].as_f64().unwrap() + a.0 * k,
+            o[1].as_f64().unwrap() - a.1 * k,
+        );
+        assert!(
+            (drawn.0 - bx).abs() < 1.0 && (drawn.1 - by).abs() < 1.0,
+            "A is drawn at {drawn:?}, the button's centre is ({bx}, {by})"
+        );
         call(
             &mut s,
             "drag",
@@ -598,7 +661,12 @@ fn a_full_session_places_drags_undoes_and_types() {
     assert_eq!(point(st, "B"), (4.0, 2.0));
     assert_eq!(point(st, "C"), (3.0, -1.0));
     assert_eq!(st["tool"]["id"], "move");
-    assert_eq!(st["undo"], json!({"can_undo": true, "can_redo": false}));
+    // Points A and B, the segment, the drag; two undos; the typed line.
+    assert_eq!(
+        st["undo"],
+        json!({"can_undo": true, "can_redo": false, "undo_depth": 3, "redo_depth": 0})
+    );
+    assert_eq!(results[10]["changes"]["undo"]["redo_depth"], 2);
     assert_eq!(
         st["keyboard_open"], true,
         "the input bar opened the keyboard"
@@ -830,4 +898,242 @@ fn a_free_number_row_is_as_tall_as_it_is_painted() {
         number[1] + number[3],
         "the next row starts inside it"
     );
+}
+
+/// Through the frame loop the gesture rules hold: a press held longer than
+/// the click time is no tap, and a press that moves less than the drag
+/// slop is no drag (values from the desktop metrics). A server that
+/// applied clicks and drags directly would fail both.
+#[test]
+fn the_click_time_and_the_drag_slop_decide_through_the_frame_loop() {
+    let m = geo_app_core::metrics::Metrics::desktop();
+    let mut s = Server::new();
+    call(&mut s, "select_tool", json!({"tool": "point"}));
+    let press_for = |s: &mut Server, x: f64, held: f64| {
+        let p = world(x, 2.0);
+        input(
+            s,
+            vec![
+                frame(vec![ev("move", p.clone())]),
+                frame(vec![ev("down", p.clone())]),
+                json!({"dt": held, "events": []}),
+                json!({"dt": 0.0, "events": [ev("up", p)]}),
+            ],
+            true,
+        );
+    };
+    press_for(&mut s, 2.0, m.click_time + 0.1);
+    assert!(
+        objects(&state(&mut s)).is_empty(),
+        "a long press placed a point"
+    );
+    press_for(&mut s, -2.0, m.click_time - 0.1);
+    assert_eq!(objects(&state(&mut s)), ["A"], "a short press is a tap");
+
+    call(&mut s, "reset", json!({"script": "A = (0, 0)\n"}));
+    let slop = m.drag_slop as f64;
+    let press_and_move = |s: &mut Server, by: f64| {
+        let st = state(s);
+        let o = &st["view"]["origin"];
+        let a = point(&st, "A");
+        let k = st["view"]["scale"].as_f64().unwrap();
+        let p = (
+            o[0].as_f64().unwrap() + a.0 * k,
+            o[1].as_f64().unwrap() - a.1 * k,
+        );
+        let mut frames = vec![
+            frame(vec![ev("move", at(p.0, p.1))]),
+            frame(vec![ev("down", at(p.0, p.1))]),
+        ];
+        for i in 1..=4 {
+            frames.push(frame(vec![ev("move", at(p.0 + by * i as f64 / 4.0, p.1))]));
+        }
+        frames.push(frame(vec![ev("up", at(p.0 + by, p.1))]));
+        input(s, frames, true);
+        state(s)
+    };
+    let st = press_and_move(&mut s, slop - 2.0);
+    assert_eq!(
+        point(&st, "A"),
+        (0.0, 0.0),
+        "a move inside the slop dragged"
+    );
+    assert_eq!(st["selected"], "A", "a move inside the slop is a tap");
+    let st = press_and_move(&mut s, slop + 24.0);
+    assert!(point(&st, "A").0 > 0.0, "a move past the slop did not drag");
+}
+
+/// Reading never changes the window: any number of `state` (both modes),
+/// `widgets` and `frame_stats` calls between two inputs leave the results
+/// and the next frame's counters as they are.
+#[test]
+fn reading_the_window_changes_nothing() {
+    let calls = [
+        ("select_tool", json!({"tool": "point"})),
+        ("click", world(1.0, 1.0)),
+        ("click", world(3.0, 1.0)),
+        ("input", json!({"frames": [{"events": []}]})),
+        ("frame_stats", json!({})),
+        ("type_line", json!({"text": "r = 5"})),
+        ("input", json!({"frames": [{"events": []}]})),
+        ("frame_stats", json!({})),
+    ];
+    let run = |read: bool| {
+        let mut s = Server::new();
+        let mut out = Vec::new();
+        for (name, args) in &calls {
+            if read {
+                for _ in 0..3 {
+                    call(&mut s, "state", json!({}));
+                    call(&mut s, "state", json!({"verbose": true}));
+                    call(&mut s, "widgets", json!({}));
+                }
+            }
+            out.push(call(&mut s, name, args.clone()));
+        }
+        out
+    };
+    assert_eq!(run(false), run(true));
+}
+
+#[test]
+fn a_retina_window_lays_out_in_points_and_clicks_land() {
+    let mut s = Server::new();
+    let at_one = widget(&mut s, "group:1");
+    let st = call(&mut s, "reset", json!({"scale": 2.0}));
+    assert_eq!(st["window"]["scale"], 2.0);
+    assert_eq!(
+        widget(&mut s, "group:1"),
+        at_one,
+        "rectangles are in points"
+    );
+    call(&mut s, "select_tool", json!({"tool": "point"}));
+    call(&mut s, "click", world(1.0, 1.0));
+    assert_eq!(point(&state(&mut s), "A"), (1.0, 1.0));
+    let e = call_err(&mut s, "reset", json!({"scale": 9}));
+    assert!(e.contains("scale"), "{e}");
+}
+
+#[test]
+fn a_touch_window_clicks_with_a_finger() {
+    let mut s = Server::new();
+    call(&mut s, "reset", json!({"profile": "touch"}));
+    call(&mut s, "select_tool", json!({"tool": "point"}));
+    let before = state(&mut s)["frames"].as_u64().unwrap();
+    let r = call(&mut s, "click", world(1.0, 1.0));
+    // Touch down and lift, one frame each: no hover frame before them.
+    let settle = r["settle_frames"].as_u64().unwrap();
+    assert_eq!(r["frames"].as_u64().unwrap() - before, 2 + settle);
+    assert_eq!(r["changes"]["added"], json!(["A"]));
+    let st = call(&mut s, "state", json!({"verbose": true}));
+    assert_eq!(
+        st["hovered"],
+        Value::Null,
+        "the pointer is gone after a lift"
+    );
+    // A mouse on the same window moves first, in a frame of its own.
+    let before = st["frames"].as_u64().unwrap();
+    let r = call(
+        &mut s,
+        "click",
+        json!({"wx": -2, "wy": 1, "pointer": "mouse"}),
+    );
+    let settle = r["settle_frames"].as_u64().unwrap();
+    assert_eq!(r["frames"].as_u64().unwrap() - before, 3 + settle);
+    assert_eq!(r["changes"]["added"], json!(["B"]));
+}
+
+#[test]
+fn viewport_commands_and_focus_reach_the_caller() {
+    let mut s = Server::new();
+    let r = call(&mut s, "click", json!({"widget": "fullscreen"}));
+    assert_eq!(r["viewport_commands"], json!(["Fullscreen(true)"]));
+    assert_eq!(
+        state(&mut s)["window"]["width"],
+        1400.0,
+        "nothing carried out"
+    );
+    input(
+        &mut s,
+        vec![frame(vec![json!({"type": "focus", "focused": false})])],
+        true,
+    );
+    assert_eq!(state(&mut s)["window"]["focused"], false);
+}
+
+#[test]
+fn files_open_by_path_and_odd_paths_are_refused() {
+    let dir = concat!(env!("CARGO_MANIFEST_DIR"), "/../../examples");
+    let mut s = Server::new();
+    let st = call(
+        &mut s,
+        "open",
+        json!({"path": format!("{dir}/triangle.geo")}),
+    );
+    assert!(!objects(&st).is_empty());
+    for path in [dir, "/dev/null"] {
+        let e = call_err(&mut s, "open", json!({ "path": path }));
+        assert!(e.contains("not a regular file"), "{e}");
+    }
+    let e = call_err(
+        &mut s,
+        "open",
+        json!({"text": "A = (1, 1)", "name": "../x.geo"}),
+    );
+    assert!(e.contains("plain file name"), "{e}");
+    for path in ["/dev/null.png", "/dev/stdout", "shot.txt"] {
+        let e = call_err(&mut s, "screenshot", json!({ "path": path }));
+        assert!(!e.contains("GPU"), "{path}: {e}");
+    }
+}
+
+#[test]
+fn oversized_input_is_refused_before_anything_runs() {
+    let mut s = Server::new();
+    let frames = state(&mut s)["frames"].clone();
+    let many: Vec<Value> = (0..=geo_mcp::limits::MAX_EVENTS)
+        .map(|_| json!({"type": "gone"}))
+        .collect();
+    let e = call_err(
+        &mut s,
+        "input",
+        json!({"frames": [{"events": []}, {"events": many}]}),
+    );
+    assert!(e.contains("events per frame"), "{e}");
+    assert_eq!(state(&mut s)["frames"], frames, "a frame ran");
+    let long = "x".repeat(geo_mcp::limits::MAX_TEXT + 1);
+    let e = call_err(&mut s, "type_line", json!({ "text": long }));
+    assert!(e.contains("longer than"), "{e}");
+}
+
+#[test]
+fn values_read_as_the_algebra_view_shows_them() {
+    let mut s = Server::new();
+    let st = call(
+        &mut s,
+        "reset",
+        json!({"script": "A = (1, 0)\nB = (0, 0)\nC = (0, 1)\nα = Angle(A, B, C)\na = 1\nf(x) = a*x\n"}),
+    );
+    let alpha = &st["objects"][3];
+    assert_eq!(alpha["value"], "90°");
+    assert_eq!(alpha["raw_value"], "1.57");
+    let st = call(&mut s, "state", json!({"verbose": true}));
+    let row = |name: &str| {
+        st["algebra"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|r| r["name"] == name)
+            .unwrap()
+            .clone()
+    };
+    assert_eq!(row("α")["value"], "90°");
+    assert_eq!(row("a")["head"], "a =");
+    // A function changes with what it depends on.
+    let r = call(
+        &mut s,
+        "drag",
+        json!({"from": {"widget": "value:a"}, "to": {"widget": "value:a", "dx": 40}}),
+    );
+    assert_eq!(r["changes"]["changed"], json!(["a", "f"]));
 }

@@ -18,7 +18,8 @@ path = "src/main.rs"
 
 [features]
 # The window driven without a window (`geo_app::headless`), for the
-# `geokernel-mcp` server. Off by default: the desktop app does not compile it.
+# `geokernel-mcp` server. Off by default; a build of this crate alone does not
+# compile it, a workspace build with geo-mcp does (feature unification).
 headless = []
 
 [dependencies]

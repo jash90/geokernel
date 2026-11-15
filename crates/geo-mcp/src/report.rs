@@ -3,10 +3,12 @@
 //! named widgets, the counters of a frame, and what changed between two
 //! moments.
 
+use geo_app::headless::egui::{epaint, Rect, Shape};
 use geo_app::headless::{Headless, Profile, Repaint, Widget, WidgetKind};
 use geo_app_core::describe;
 use geo_app_core::tools::{Tool, GROUPS};
-use geo_kernel::kernel::{Construction, Id, Value};
+use geo_kernel::algo::measure::MeasureDef;
+use geo_kernel::kernel::{Construction, Def, Id, Value};
 use serde_json::{json, Map, Value as Json};
 
 /// The name of a tool in the protocol: its Rust name in snake case
@@ -70,8 +72,33 @@ fn coords(c: &Construction, id: Id) -> Json {
             json!({"area": area, "vertices": vertices})
         }
         Value::PolyLine { length } => json!({ "length": length }),
+        // A function has no coordinates: its values at a few points stand
+        // for it, so that a change of what it depends on shows.
+        Value::Function => {
+            let samples: Vec<Json> = [-2.0, -1.0, 0.0, 1.0, 2.0]
+                .iter()
+                .map(|&x| json!([x, c.function_value(id, x).filter(|y| y.is_finite())]))
+                .collect();
+            json!({ "samples": samples })
+        }
         _ => Json::Null,
     }
+}
+
+/// The value of an object as the algebra view shows it (angles in
+/// degrees, as `Workbench::rows` writes them), and the plain value text when
+/// that differs.
+fn value_texts(c: &Construction, id: Id) -> (String, Option<String>) {
+    let value = c.value(id);
+    let raw = describe::value_text(&value);
+    let shown = match (c.def(id), value) {
+        (Def::Measure(MeasureDef::Angle(..)) | Def::Angle(_), Value::Number(n)) => {
+            describe::degrees(n)
+        }
+        _ => raw.clone(),
+    };
+    let raw = (raw != shown).then_some(raw);
+    (shown, raw)
 }
 
 fn object(h: &Headless, id: Id) -> Json {
@@ -80,18 +107,95 @@ fn object(h: &Headless, id: Id) -> Json {
     let label = c.label(id);
     let value = c.value(id);
     let free = c.def(id).is_free();
-    json!({
+    let (shown, raw) = value_texts(c, id);
+    let mut o = json!({
         "name": label,
         "type": c.kind(id).to_string(),
         "coords": coords(c, id),
-        "value": describe::value_text(&value),
+        "value": shown,
         // As in GeoGebra, a free object has no definition (its value is
         // the current one, not the line that first made it).
         "definition": if free { None } else { wb.definition(label) },
         "defined": value.is_defined(),
         "visible": wb.is_visible(id),
         "free": free,
-    })
+    });
+    if let Some(raw) = raw {
+        o["raw_value"] = json!(raw);
+    }
+    o
+}
+
+/// The texts the last frame painted, with where they were painted.
+fn painted_texts(h: &Headless) -> Vec<(Rect, String)> {
+    fn walk(shape: &Shape, out: &mut Vec<(Rect, String)>) {
+        match shape {
+            Shape::Vec(v) => v.iter().for_each(|s| walk(s, out)),
+            Shape::Text(t) => out.push((t.visual_bounding_rect(), t.galley.text().to_owned())),
+            _ => {}
+        }
+    }
+    let mut out = Vec::new();
+    if let Some(o) = h.last_output() {
+        for epaint::ClippedShape { shape, .. } in &o.shapes {
+            walk(shape, &mut out);
+        }
+    }
+    out
+}
+
+/// The algebra rows as the last frame painted them, in display order: the
+/// first line (`head`) and what follows it (`value`: the second line of a
+/// dependent object, the field of a free number). Read from the painted
+/// texts, so reading them changes nothing.
+fn algebra_rows(h: &Headless) -> Vec<Json> {
+    let texts = painted_texts(h);
+    let mut rows: Vec<Widget> = h
+        .widgets()
+        .into_iter()
+        .filter(|w| w.kind == WidgetKind::Row)
+        .collect();
+    rows.sort_by(|a, b| a.rect.top().total_cmp(&b.rect.top()));
+    rows.iter()
+        .map(|row| {
+            let mut inside: Vec<&(Rect, String)> = texts
+                .iter()
+                .filter(|(r, _)| row.rect.contains(r.center()))
+                .collect();
+            // Reading order: lines (texts whose centres lie within 8 points
+            // of the line's first one), each left to right.
+            inside.sort_by(|a, b| a.0.center().y.total_cmp(&b.0.center().y));
+            let mut line = 0;
+            let mut line_y = f32::NEG_INFINITY;
+            let mut keyed: Vec<(usize, f32, &(Rect, String))> = Vec::new();
+            for t in inside {
+                if t.0.center().y - line_y > 8.0 {
+                    line += 1;
+                    line_y = t.0.center().y;
+                }
+                keyed.push((line, t.0.left(), t));
+            }
+            keyed.sort_by(|a, b| {
+                (a.0, a.1)
+                    .partial_cmp(&(b.0, b.1))
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            });
+            let inside: Vec<&(Rect, String)> = keyed.into_iter().map(|(_, _, t)| t).collect();
+            let head = inside.first().map(|(_, t)| t.clone());
+            let rest: Vec<&str> = inside
+                .iter()
+                .skip(1)
+                .map(|(_, t)| t.as_str())
+                .filter(|t| *t != "=")
+                .collect();
+            json!({
+                "name": row.object,
+                "head": head,
+                "value": (!rest.is_empty()).then(|| rest.join(" ")),
+                "in_view": row.visible,
+            })
+        })
+        .collect()
 }
 
 fn rect(r: geo_app::headless::egui::Rect) -> Json {
@@ -106,7 +210,7 @@ fn label_of(h: &Headless, id: Option<Id>) -> Json {
 
 /// The state of the window. `verbose` adds the algebra rows, the regions,
 /// the pointer automaton and the decoration switches.
-pub fn state(h: &mut Headless, verbose: bool) -> Json {
+pub fn state(h: &Headless, verbose: bool) -> Json {
     let objects: Vec<Json> = {
         let c = h.app.wb.construction();
         c.ids().map(|id| object(h, id)).collect()
@@ -130,8 +234,15 @@ pub fn state(h: &mut Headless, verbose: bool) -> Json {
         .camera
         .map(|c| json!({"cx": c.cx, "cy": c.cy, "scale": c.scale}));
     let (w, hgt) = h.size();
+    let (undo_depth, redo_depth) = app.wb.undo_depth();
     let mut s = json!({
-        "window": {"width": w, "height": hgt, "profile": profile_name(h.profile())},
+        "window": {
+            "width": w,
+            "height": hgt,
+            "profile": profile_name(h.profile()),
+            "scale": h.scale(),
+            "focused": h.focused(),
+        },
         "time": h.time(),
         "frames": h.frames(),
         "objects": objects,
@@ -144,7 +255,12 @@ pub fn state(h: &mut Headless, verbose: bool) -> Json {
         },
         "camera": camera,
         "view": view,
-        "undo": {"can_undo": app.wb.can_undo(), "can_redo": app.wb.can_redo()},
+        "undo": {
+            "can_undo": app.wb.can_undo(),
+            "can_redo": app.wb.can_redo(),
+            "undo_depth": undo_depth,
+            "redo_depth": redo_depth,
+        },
         "selected": label_of(h, app.wb.selected),
         "input": {"text": app.input, "error": app.input_error},
         "tool_error": app.tool_error,
@@ -170,15 +286,8 @@ pub fn state(h: &mut Headless, verbose: bool) -> Json {
             "keyboard": regions.keyboard.map(region),
             "portrait": regions.portrait,
         });
-        let rows: Vec<Json> = h
-            .app
-            .wb
-            .rows()
-            .iter()
-            .map(|r| json!({"name": r.label, "head": r.head, "value": r.value}))
-            .collect();
         let m = s.as_object_mut().expect("an object");
-        m.insert("algebra".into(), json!(rows));
+        m.insert("algebra".into(), json!(algebra_rows(h)));
         m.insert("gesture".into(), gesture);
         m.insert("hovered".into(), hovered);
         m.insert("decor".into(), decor);
@@ -296,6 +405,10 @@ pub fn widget_json(id: &str, w: &Widget) -> Json {
     if let Some(c) = w.checked {
         m.insert("checked".into(), json!(c));
     }
+    if !w.visible {
+        // An algebra row scrolled out of the list's viewport.
+        m.insert("in_view".into(), json!(false));
+    }
     Json::Object(m)
 }
 
@@ -313,7 +426,6 @@ pub fn frame_stats(h: &Headless) -> Json {
         "shapes": s.shapes.shapes,
         "text_shapes": s.shapes.text_shapes,
         "glyphs": s.shapes.glyphs,
-        "new_galleys": s.shapes.new_galleys,
         "meshes": s.meshes.meshes,
         "vertices": s.meshes.vertices,
         "indices": s.meshes.indices,
@@ -322,7 +434,7 @@ pub fn frame_stats(h: &Headless) -> Json {
         "rows_built": s.passes.rows_built,
         "rebuilds": s.passes.rebuilds,
         "repaint": repaint,
-        "note": "times and allocation counts are left out: they are not deterministic here",
+        "note": "times, allocation counts and new galleys are left out: they are not deterministic here",
     })
 }
 
@@ -335,7 +447,7 @@ pub struct Snapshot {
     asking: bool,
     camera: Option<(f64, f64, f64)>,
     selected: Json,
-    undo: (bool, bool),
+    undo: (bool, bool, usize, usize),
     keyboard_open: bool,
     input: String,
     input_error: Option<String>,
@@ -354,7 +466,16 @@ impl Snapshot {
         let objects = c
             .ids()
             .map(|id| {
-                let v = json!([coords(c, id), app.wb.is_visible(id)]);
+                // The value text and the definition too: a function has no
+                // coordinates, and a redefinition may keep the value.
+                let label = c.label(id);
+                let v = json!([
+                    coords(c, id),
+                    app.wb.is_visible(id),
+                    value_texts(c, id).0,
+                    app.wb.definition(label),
+                    c.kind(id).to_string(),
+                ]);
                 (c.label(id).to_owned(), v)
             })
             .collect();
@@ -370,7 +491,10 @@ impl Snapshot {
             asking: app.tool.asking().is_some(),
             camera: app.camera.map(|c| (c.cx, c.cy, c.scale)),
             selected: label_of(h, app.wb.selected),
-            undo: (app.wb.can_undo(), app.wb.can_redo()),
+            undo: {
+                let (u, r) = app.wb.undo_depth();
+                (app.wb.can_undo(), app.wb.can_redo(), u, r)
+            },
             keyboard_open: app.keyboard.open,
             input: app.input.clone(),
             input_error: app.input_error.clone(),
@@ -425,8 +549,11 @@ impl Snapshot {
             m.insert("selected".into(), after.selected.clone());
         }
         if self.undo != after.undo {
-            let (u, r) = after.undo;
-            m.insert("undo".into(), json!({"can_undo": u, "can_redo": r}));
+            let (u, r, ud, rd) = after.undo;
+            m.insert(
+                "undo".into(),
+                json!({"can_undo": u, "can_redo": r, "undo_depth": ud, "redo_depth": rd}),
+            );
         }
         if self.keyboard_open != after.keyboard_open {
             m.insert("keyboard_open".into(), json!(after.keyboard_open));

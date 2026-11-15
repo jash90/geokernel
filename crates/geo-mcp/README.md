@@ -7,6 +7,19 @@ events and run through the window's own frame loop (`geo_app::headless`), on
 a clock the caller controls. The click-or-drag slop, the click time limit and
 a release and a press in one frame therefore behave as they do on screen.
 
+The server feeds the window what egui-winit feeds it: events, the clock, the
+window size in points, the pixels per point, focus, the viewport info (never
+full screen) and dropped files. Three tools set state directly instead:
+`reset` (a new window), `resize` (a new size for the next frames) and
+`set_view` (the camera). Viewport commands the window issues, such as full
+screen, are reported in `viewport_commands` and not carried out.
+
+The window code is shared through the `headless` feature of `geo-app`, which
+is off by default. `cargo build -p geo-app` alone does not compile it. Cargo
+unifies features within one build, so a workspace build that includes
+`geo-mcp` compiles the module into `geo-app` too. In either case the desktop
+window never calls it, so it does no work at run time.
+
 Build it with `cargo build --release -p geo-mcp`. The binary is
 `target/release/geokernel-mcp`.
 
@@ -20,13 +33,18 @@ eras of the protocol are served:
   `io.modelcontextprotocol/protocolVersion` and
   `io.modelcontextprotocol/clientCapabilities` in `params._meta`, and
   `server/discover` returns the supported versions;
-- legacy, revisions `2025-11-25`, `2025-06-18`, `2025-03-26` and
-  `2024-11-05`: an `initialize` handshake comes first.
+- legacy, revisions `2025-11-25`, `2025-06-18` and `2024-11-05`: an
+  `initialize` handshake comes first. `2025-03-26` is not offered because it
+  requires accepting JSON-RPC batches.
+
+`tools/list` in the modern revision carries `ttlMs` and `cacheScope`, which
+that revision requires. The tool list never changes while the server runs.
 
 A tool that fails returns a result with `isError: true`. Malformed lines,
 unknown methods and unknown tools get JSON-RPC errors. Nothing panics the
-server: a panic inside the window is reported as a failed call, and the
-window is replaced by a new one.
+server. A panic inside the window is reported as a failed call with the
+panic's message, and the window is replaced by a fresh default one: 1400 x
+900 points, desktop profile, 1 pixel per point, empty document.
 
 **Batch mode**: `geokernel-mcp --batch calls.jsonl`, or `--batch` alone to
 read from stdin. Each line holds one call, `{"tool": "click", "arguments":
@@ -51,24 +69,58 @@ binary:
 }
 ```
 
+## Trust
+
+The server is a local tool for whoever runs it. It reads and writes the
+paths the caller names: `open` reads a file, and `screenshot` writes a PNG.
+An `open` error may quote a line of the file the caller pointed at.
+`screenshot` writes only paths that end in `.png`, are in an existing
+directory outside `/dev`, and are regular files if they already exist.
+`open` reads only regular files: devices, FIFOs and directories are refused.
+
+## Limits
+
+All limits are set in `src/limits.rs`. A request beyond a limit is refused
+with an error.
+
+| Limit | Value |
+| --- | --- |
+| Request line | 16 MiB. A longer line gets an error and is skipped up to its newline. |
+| Document for `reset`, `open` (inline, base64 or by path) | 8 MiB |
+| Frames per call (`input` frames, `drag` steps) | 10,000 |
+| Events per `input` frame | 1,000, checked before any frame runs |
+| Text of a `text` event or `type_line` | 64 KiB |
+| Coordinates | 1e6 |
+| Delay between frames | 3,600 s |
+| Settle frames after an action | 120 |
+
+Texture changes are kept as the current images only, so memory does not grow
+with the number of frames between screenshots.
+
 ## Tools
 
 | Tool | What it does |
 | --- | --- |
-| `reset` | Opens a new window: `width` and `height` in points (default 1400 x 900), `profile` `desktop` or `touch`, an optional `script`. |
-| `open` | Opens a document the way a dropped file does: `path`, inline `text`, or `base64` bytes (a `.ggb`). `name` gives the format. |
-| `state` | Returns objects in construction order (name, type, coords, value, definition, defined, visible, free), the tool and its picks, the camera and view, undo and redo, the selection, the input bar, notices, errors, the keyboard, and the window size and profile. `verbose` adds the algebra rows, the regions, the pointer automaton, hover and decoration. |
-| `widgets` | Returns the named rectangles of the last frame: tool groups and drop-down entries, undo, redo, menu, algebra rows (`row:A`, `marker:A`, `row_menu:A`, `value:r`), `input_bar`, view and style buttons, keys, the hint card, notices, menu entries and dialog controls. |
-| `input` | Runs frames, each with its `dt` (default 1/60 s) and `events` applied in order within the frame. Event types: `move`, `down`, `up`, `gone`, `wheel`, `zoom`, `touch`, `key`, `text`, `modifiers`, `focus`. Returns what changed in each frame. |
-| `click` | Moves the pointer to a position, presses and releases, one frame each, then settles. |
-| `drag` | Presses at `from`, moves to `to` in `steps` frames over `duration` seconds, then releases. |
-| `type_line` | Clicks the input bar, types the text and presses Enter. |
-| `select_tool` | Clicks the tool's toolbar group and, when the drop-down opens, its entry. |
-| `undo`, `redo` | Clicks the toolbar button. |
+| `reset` | Opens a new window: `width` and `height` in points (default 1400 x 900), `scale` in pixels per point (default 1, which keeps geometry deterministic; a Retina display is 2), `profile` `desktop` or `touch`, an optional `script`. |
+| `open` | Drops a file on the window, which reads it itself: `path`, inline `text`, or `base64` bytes (a `.ggb`). Inline documents are written to a scratch file named `name` first; the extension gives the format. |
+| `state` | Returns objects in construction order (name, type, coords, value as the algebra view shows it, `raw_value` where that differs, definition, defined, visible, free; a function's coords are its values at x = -2..2), the tool and its picks, the camera and view, undo and redo with their depths, the selection, the input bar, notices, errors, the keyboard, and the window size, scale, focus and profile. `verbose` adds the algebra rows as painted, the regions, the pointer automaton, hover and decoration. Reading changes nothing. |
+| `widgets` | Returns the named rectangles of the last frame, in points: tool groups and drop-down entries, undo, redo, menu, algebra rows (`row:A`, `marker:A`, `row_menu:A`, `value:r`; `in_view: false` marks a row scrolled out of the list), `input_bar`, view and style buttons, keys, the hint card, notices, menu entries and dialog controls. |
+| `input` | Runs frames, each with its `dt` (default 1/60 s) and `events` applied in order within the frame. Event types: `move`, `down`, `up`, `gone`, `wheel`, `zoom`, `touch`, `key`, `text`, `modifiers`, `focus`. Returns what changed in each frame, with the viewport commands it issued. |
+| `click` | Clicks a position, then settles. A mouse moves there in a frame of its own, then presses and releases, one frame each. A finger touches down and lifts, one frame each, and the pointer is gone after the lift. `pointer` (`mouse` or `touch`) defaults to the window's profile. |
+| `drag` | Presses or touches down at `from`, moves to `to` in `steps` frames over `duration` seconds, then releases. `pointer` as for `click`. |
+| `type_line` | Clicks the input bar with the window's pointer, types the text and presses Enter. |
+| `select_tool` | Clicks the tool's toolbar group and, when the drop-down opens, its entry, with the window's pointer. |
+| `undo`, `redo` | Clicks the toolbar button with the window's pointer. |
 | `resize` | Changes the window size. |
 | `set_view` | Sets the camera: the world centre `cx`, `cy` and the `scale` in points per unit. |
 | `screenshot` | Renders the last frame to a PNG at `path`. Without a GPU adapter it fails with a clear message. |
-| `frame_stats` | Returns the deterministic counters of the last frame (shapes, glyphs, meshes, vertices, indices, passes, rows built, rebuilds, repaint). |
+| `frame_stats` | Returns the deterministic counters of the last frame (shapes, glyphs, meshes, vertices, indices, passes, rows built, rebuilds, repaint). Times, allocation counts and new galleys are left out because they vary between runs. |
+
+Actions settle afterwards: they run empty frames, 1/60 s apart, while the
+window asks for a frame at once. They stop after 120 frames. `settled:
+false` says the cap was hit, and `settle_frames` says how many ran. A repaint
+the window asks for later, such as a timer, is not followed. To advance the
+clock past one, send `input` with a frame whose `dt` covers the delay.
 
 A position can be given three ways:
 

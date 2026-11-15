@@ -38,13 +38,13 @@ impl Renderer {
         ctx: &Context,
         out: &FullOutput,
         textures: &mut TexturesDelta,
-        path: &str,
+        path: &std::path::Path,
     ) -> Result<(u32, u32), String> {
         self.inner.handle_delta(textures);
         let image = self.inner.render(ctx, out)?;
         image
             .save_with_format(path, image::ImageFormat::Png)
-            .map_err(|e| format!("{path}: {e}"))?;
+            .map_err(|e| format!("{}: {e}", path.display()))?;
         Ok(image.dimensions())
     }
 }

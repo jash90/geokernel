@@ -19,7 +19,7 @@ fn main() {
                 protocol::LEGACY.join(", ")
             );
             let mut server = Server::new();
-            protocol::serve(io::stdin().lock(), stdout, |line| server.handle_line(line))
+            protocol::serve(io::stdin().lock(), stdout, |line| server.handle_input(line))
         }
         ["--batch"] | ["--batch", "-"] => {
             let mut session = Session::new();

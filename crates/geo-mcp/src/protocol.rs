@@ -4,19 +4,25 @@
 //! - modern (revision 2026-07-28): every request carries its protocol
 //!   version and client capabilities in `params._meta`; `server/discover`
 //!   tells what the server supports; results carry `resultType`;
-//! - legacy (revisions 2024-11-05 to 2025-11-25): an `initialize` handshake
-//!   first, then plain requests.
+//! - legacy (revisions 2025-11-25, 2025-06-18 and 2024-11-05): an
+//!   `initialize` handshake first, then plain requests. 2025-03-26 is not
+//!   offered: it requires accepting JSON-RPC batches, which this server
+//!   does not.
 //!
 //! Also the batch mode: one tool call per line in, one result per line out,
 //! through the same handlers.
 
+use crate::limits::MAX_LINE;
 use crate::session::{CallError, Session};
 use serde_json::{json, Map, Value as Json};
 
 /// The modern revision served.
 pub const MODERN: &str = "2026-07-28";
 /// The legacy revisions an `initialize` may name, newest first.
-pub const LEGACY: [&str; 4] = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
+pub const LEGACY: [&str; 3] = ["2025-11-25", "2025-06-18", "2024-11-05"];
+/// How long a client may keep the tool list (2026-07-28 `ttlMs`): it never
+/// changes while the server runs.
+const LIST_TTL_MS: u64 = 3_600_000;
 
 const META_VERSION: &str = "io.modelcontextprotocol/protocolVersion";
 const META_CAPABILITIES: &str = "io.modelcontextprotocol/clientCapabilities";
@@ -71,6 +77,7 @@ pub fn tools() -> Vec<Json> {
     });
     let button =
         json!({"enum": ["primary", "secondary", "middle"], "description": "Default primary."});
+    let pointer = json!({"enum": ["mouse", "touch"], "description": "Default: touch on a touch window, mouse otherwise."});
     let event = json!({
         "type": "object",
         "description": "One event. type: move | down | up (x/y, wx/wy or widget; button, modifiers) | gone | wheel (dx, dy, unit point|line|page) | zoom (factor) | touch (phase start|move|end|cancel, id, position; egui-winit's pointer events for the followed finger are added unless raw) | key (key: egui key name such as Escape, Enter, Z; action tap|press|release; modifiers) | text (text) | modifiers (modifiers) | focus (focused).",
@@ -87,9 +94,10 @@ pub fn tools() -> Vec<Json> {
     });
     let def = |name: &str, description: &str, schema: Json| json!({"name": name, "description": description, "inputSchema": schema});
     vec![
-        def("reset", "A new window: size in points (default 1400 x 900), input profile (desktop or touch), optional initial script. Settles and returns the state.",
+        def("reset", "A new window: size in points (default 1400 x 900), pixels per point (`scale`, default 1 for deterministic geometry; a Retina display is 2), input profile (desktop or touch), optional initial script. Settles and returns the state.",
             object_schema(json!({
                 "width": {"type": "number"}, "height": {"type": "number"},
+                "scale": {"type": "number", "minimum": 0.5, "maximum": 4},
                 "profile": {"enum": ["desktop", "touch"]},
                 "script": {"type": "string", "description": "A geokernel script to start with."}
             }), &[])),
@@ -109,14 +117,15 @@ pub fn tools() -> Vec<Json> {
                 }, "additionalProperties": false}},
                 "settle": {"type": "boolean"}, "state": {"type": "boolean", "description": "Also return the final state."}
             }), &["frames"])),
-        def("click", "Moves the pointer to a position, presses and releases (count times), one frame each, then settles.",
+        def("click", "Clicks a position (count times), then settles. A mouse moves there in a frame of its own, then presses and releases, one frame each; a finger touches down and lifts, one frame each, through egui-winit's touch emulation. `pointer` defaults to the window's profile.",
             with(position.clone(), json!({"properties": with(pos_schema(), json!({
-                "button": button, "count": {"type": "integer", "minimum": 1, "maximum": 3}, "modifiers": modifiers
+                "button": button, "count": {"type": "integer", "minimum": 1, "maximum": 3}, "modifiers": modifiers,
+                "pointer": pointer
             }))}))),
-        def("drag", "Presses at `from`, moves to `to` in `steps` frames over `duration` seconds, releases, then settles.",
+        def("drag", "Presses (or touches down) at `from`, moves to `to` in `steps` frames over `duration` seconds, releases, then settles. `pointer` defaults to the window's profile.",
             object_schema(json!({
                 "from": position, "to": position, "steps": {"type": "integer", "minimum": 1, "maximum": 1000},
-                "duration": {"type": "number", "minimum": 0}, "button": button
+                "duration": {"type": "number", "minimum": 0}, "button": button, "pointer": pointer
             }), &["from", "to"])),
         def("type_line", "Clicks the input bar, types the text and (unless submit is false) presses Enter, then settles.",
             object_schema(json!({"text": {"type": "string"}, "submit": {"type": "boolean"}}), &["text"])),
@@ -151,7 +160,7 @@ fn error(id: &Json, code: i64, message: &str, data: Option<Json>) -> Json {
 
 /// Runs a tool and turns the outcome into a `tools/call` result (`None`:
 /// there is no such tool). A panic inside the window is caught and reported
-/// as a failed call, and the window is replaced by a new one.
+/// as a failed call, and the window is replaced by a fresh default one.
 fn call_tool(session: &mut Session, name: &str, args: &Json) -> Option<Result<Json, String>> {
     let outcome =
         std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| session.call(name, args)));
@@ -159,13 +168,29 @@ fn call_tool(session: &mut Session, name: &str, args: &Json) -> Option<Result<Js
         Ok(Ok(v)) => Some(Ok(v)),
         Ok(Err(CallError::Failed(e))) => Some(Err(e)),
         Ok(Err(CallError::UnknownTool(_))) => None,
-        Err(_) => {
+        Err(payload) => {
+            let message = payload
+                .downcast_ref::<&str>()
+                .map(|s| (*s).to_owned())
+                .or_else(|| payload.downcast_ref::<String>().cloned())
+                .unwrap_or_else(|| "no message".to_owned());
             *session = Session::new();
+            let (w, h) = crate::session::DEFAULT_SIZE;
             Some(Err(format!(
-                "internal error: the window panicked in `{name}`; it was replaced by a new one"
+                "internal error: the window panicked in `{name}`: {message}. It was replaced \
+                 by a fresh default window ({w} x {h} points, desktop profile, 1 pixel per \
+                 point, empty document): earlier state is gone"
             )))
         }
     }
+}
+
+/// One line of input as read.
+pub enum Line<'a> {
+    Text(&'a str),
+    NotUtf8,
+    /// Longer than the limit; skipped up to its newline.
+    TooLong,
 }
 
 /// The MCP server: a session and the protocol state.
@@ -184,6 +209,16 @@ impl Server {
         Server {
             session: Session::new(),
         }
+    }
+
+    /// Handles one line as read by [`serve`].
+    pub fn handle_input(&mut self, line: Line) -> Option<String> {
+        let message = match line {
+            Line::Text(l) => return self.handle_line(l),
+            Line::NotUtf8 => "Parse error: not UTF-8".to_owned(),
+            Line::TooLong => "Parse error: the line is too long".to_owned(),
+        };
+        Some(error(&Json::Null, PARSE_ERROR, &message, None).to_string())
     }
 
     /// Handles one line of input; returns the line to write back, if any
@@ -252,9 +287,10 @@ impl Server {
         let modern = version.is_some();
         if let Some(v) = version {
             if v.as_str() != Some(MODERN) {
-                // Only the modern revision can be named in `_meta`; the
-                // legacy ones are reached through `initialize`.
-                let supported = [MODERN];
+                // Every version served: the modern one by `_meta`, the
+                // legacy ones by `initialize`.
+                let mut supported = vec![MODERN];
+                supported.extend(LEGACY);
                 return Some(error(
                     id,
                     UNSUPPORTED_VERSION,
@@ -277,8 +313,16 @@ impl Server {
                 "supportedVersions": [MODERN],
                 "capabilities": {"tools": {}},
                 "_meta": {"io.modelcontextprotocol/serverInfo": server_info()},
+                "ttlMs": LIST_TTL_MS,
+                "cacheScope": "public",
             })),
             "ping" => Ok(json!({})),
+            // 2026-07-28 requires `ttlMs` and `cacheScope` on list results.
+            "tools/list" if modern => Ok(json!({
+                "tools": tools(),
+                "ttlMs": LIST_TTL_MS,
+                "cacheScope": "public",
+            })),
             "tools/list" => Ok(json!({ "tools": tools() })),
             "tools/call" => self.tools_call(params),
             _ => Err((METHOD_NOT_FOUND, format!("Method not found: {method}"))),
@@ -338,8 +382,12 @@ impl Server {
 /// tool call `{"tool": "click", "arguments": {...}}` (or `"name"` for
 /// `"tool"`); each gets one line back, `{"tool": ..., "ok": true, "result":
 /// ...}` or `{"tool": ..., "ok": false, "error": ...}`.
-pub fn batch_line(session: &mut Session, line: &str) -> Option<String> {
-    let line = line.trim();
+pub fn batch_line(session: &mut Session, line: Line) -> Option<String> {
+    let line = match line {
+        Line::Text(l) => l.trim(),
+        Line::NotUtf8 => return Some(batch_failure("not UTF-8")),
+        Line::TooLong => return Some(batch_failure("the line is too long")),
+    };
     if line.is_empty() || line.starts_with('#') {
         return None;
     }
@@ -366,29 +414,77 @@ pub fn batch_line(session: &mut Session, line: &str) -> Option<String> {
     })
 }
 
-/// Reads lines from `input` and writes the replies of `handle` to `out`,
-/// one per line, flushing after each. A line that is not UTF-8 gets a
-/// parse error.
+fn batch_failure(e: &str) -> String {
+    json!({"tool": null, "ok": false, "error": e}).to_string()
+}
+
+/// Reads one line of at most `max` bytes into `buf`; a longer one is read
+/// to its newline without being kept. `None` at the end of the input,
+/// otherwise whether the line fitted.
+fn read_line(
+    input: &mut impl std::io::BufRead,
+    buf: &mut Vec<u8>,
+    max: usize,
+) -> std::io::Result<Option<bool>> {
+    buf.clear();
+    let mut too_long = false;
+    let mut any = false;
+    loop {
+        let available = input.fill_buf()?;
+        if available.is_empty() {
+            return Ok(any.then_some(!too_long));
+        }
+        any = true;
+        let (n, done) = match available.iter().position(|&b| b == b'\n') {
+            Some(i) => (i + 1, true),
+            None => (available.len(), false),
+        };
+        if !too_long {
+            if buf.len() + n > max {
+                too_long = true;
+                buf.clear();
+            } else {
+                buf.extend_from_slice(&available[..n]);
+            }
+        }
+        input.consume(n);
+        if done {
+            return Ok(Some(!too_long));
+        }
+    }
+}
+
+/// Reads lines from `input` (each at most [`MAX_LINE`] bytes) and writes
+/// the replies of `handle` to `out`, one per line, flushing after each.
 pub fn serve(
+    input: impl std::io::BufRead,
+    out: impl std::io::Write,
+    handle: impl FnMut(Line) -> Option<String>,
+) -> std::io::Result<()> {
+    serve_bounded(input, out, MAX_LINE, handle)
+}
+
+/// [`serve`] with a line limit of `max` bytes.
+pub fn serve_bounded(
     mut input: impl std::io::BufRead,
     mut out: impl std::io::Write,
-    mut handle: impl FnMut(&str) -> Option<String>,
+    max: usize,
+    mut handle: impl FnMut(Line) -> Option<String>,
 ) -> std::io::Result<()> {
     let mut buf = Vec::new();
-    loop {
-        buf.clear();
-        if input.read_until(b'\n', &mut buf)? == 0 {
-            return Ok(());
-        }
-        let reply = match std::str::from_utf8(&buf) {
-            Ok(line) => handle(line),
-            Err(_) => {
-                Some(error(&Json::Null, PARSE_ERROR, "Parse error: not UTF-8", None).to_string())
+    while let Some(fits) = read_line(&mut input, &mut buf, max)? {
+        let line = if !fits {
+            Line::TooLong
+        } else {
+            match std::str::from_utf8(&buf) {
+                Ok(l) => Line::Text(l),
+                Err(_) => Line::NotUtf8,
             }
         };
-        if let Some(reply) = reply {
+        if let Some(reply) = handle(line) {
             writeln!(out, "{reply}")?;
             out.flush()?;
         }
     }
+    Ok(())
 }

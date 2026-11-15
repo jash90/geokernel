@@ -4,9 +4,18 @@
 //!
 //! Shared by the frame benchmark (the free functions [`raw_input`], [`run`]
 //! and the counters), the window tests (the touch emulation and the event
-//! constructors) and the `geokernel-mcp` server ([`Headless`]). Only tests
-//! and the `headless` cargo feature compile it.
+//! constructors) and the `geokernel-mcp` server ([`Headless`]). Compiled for
+//! tests and with the `headless` cargo feature (see `lib.rs` on feature
+//! unification).
+//!
+//! [`Headless`] feeds the window what a platform layer (egui-winit) feeds
+//! it: events, the clock, the window size in points, the pixels per point,
+//! focus, the viewport info and dropped files. Its only direct setters are
+//! a new window ([`Headless::new`]) and a new size
+//! ([`Headless::set_size`]); the server's `set_view` also sets the camera
+//! of [`Headless::app`].
 
+mod textures;
 mod touch;
 mod widgets;
 
@@ -17,10 +26,11 @@ use crate::workbench::Workbench;
 pub use eframe::egui;
 use eframe::egui::{
     epaint, vec2, ClippedPrimitive, Context, Event, FullOutput, Key, Modifiers, PointerButton,
-    Pos2, RawInput, Rect, Shape, TexturesDelta, ViewportId,
+    Pos2, RawInput, Rect, Shape, TexturesDelta, ViewportCommand, ViewportId,
 };
 use geo_app_core::metrics::Metrics;
 use std::collections::HashSet;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
 pub use touch::TouchEmulation;
@@ -211,6 +221,23 @@ impl Profile {
 
 /// The largest window side accepted, in points.
 pub const MAX_SIDE: f32 = 8192.0;
+/// The pixels per point accepted.
+pub const SCALES: std::ops::RangeInclusive<f32> = 0.5..=4.0;
+
+/// A file dropped on the window: what egui-winit reports, a path the
+/// window reads itself.
+#[derive(Debug)]
+struct Dropped(PathBuf);
+
+impl egui::DroppedFile for Dropped {
+    fn path(&self) -> &Path {
+        &self.0
+    }
+
+    fn bytes(&self) -> Result<Vec<u8>, String> {
+        std::fs::read(&self.0).map_err(|e| e.to_string())
+    }
+}
 
 /// The whole window without a window: its egui context, the application
 /// state, the window size, a clock that only moves when told to, and the
@@ -222,6 +249,10 @@ pub struct Headless {
     pub app: App,
     profile: Profile,
     size: (f32, f32),
+    /// Pixels per point of the display (egui-winit's scale factor).
+    scale: f32,
+    /// Whether the window has the keyboard focus (`RawInput::focused`).
+    focused: bool,
     /// The time of the last frame, in seconds; `None` before the first.
     time: Option<f64>,
     galleys: HashSet<usize>,
@@ -230,20 +261,25 @@ pub struct Headless {
     /// into `textures`).
     last: Option<FullOutput>,
     stats: FrameStats,
-    textures: TexturesDelta,
+    textures: textures::Textures,
+    /// The viewport commands of the last frame (full screen, close, ...),
+    /// which nothing carries out here.
+    commands: Vec<ViewportCommand>,
     frames: u64,
 }
 
 impl Headless {
-    /// A window of `size` points with the document `wb` and the profile
-    /// `profile`, set up as the desktop window sets up its context. No frame
-    /// has run yet. AccessKit output is on, so that [`Headless::widgets`]
-    /// can name what is on screen.
+    /// A window of `size` points at `scale` pixels per point with the
+    /// document `wb` and the profile `profile`, set up as the desktop window
+    /// sets up its context. No frame has run yet. AccessKit output is on, so
+    /// that [`Headless::widgets`] can name what is on screen (a test shows
+    /// that it changes neither the layout nor the frame counters).
     pub fn new(
         wb: Workbench,
         load_error: Option<String>,
         profile: Profile,
         size: (f32, f32),
+        scale: f32,
     ) -> Headless {
         let ctx = Context::default();
         let metrics = profile.metrics();
@@ -256,12 +292,15 @@ impl Headless {
             app,
             profile,
             size: clamp_size(size),
+            scale: if SCALES.contains(&scale) { scale } else { 1.0 },
+            focused: true,
             time: None,
             galleys: HashSet::new(),
             touch: TouchEmulation::default(),
             last: None,
             stats: FrameStats::default(),
-            textures: TexturesDelta::default(),
+            textures: textures::Textures::default(),
+            commands: Vec::new(),
             frames: 0,
         }
     }
@@ -276,6 +315,15 @@ impl Headless {
 
     pub fn size(&self) -> (f32, f32) {
         self.size
+    }
+
+    /// Pixels per point.
+    pub fn scale(&self) -> f32 {
+        self.scale
+    }
+
+    pub fn focused(&self) -> bool {
+        self.focused
     }
 
     /// The window size the next frames get (clamped to a sane range).
@@ -301,18 +349,59 @@ impl Headless {
     /// Runs one frame `dt` seconds after the previous one (the first frame
     /// is at time 0) with `events`.
     pub fn frame(&mut self, dt: f64, events: Vec<Event>) -> Repaint {
+        self.frame_with(dt, events, Vec::new())
+    }
+
+    /// Runs one frame in which the files at `paths` are dropped on the
+    /// window, as a platform layer reports a drop.
+    pub fn drop_files(&mut self, dt: f64, paths: Vec<PathBuf>) -> Repaint {
+        let files = paths
+            .into_iter()
+            .map(|p| Arc::new(Dropped(p)) as egui::DroppedFileHandle)
+            .collect();
+        self.frame_with(dt, Vec::new(), files)
+    }
+
+    fn frame_with(
+        &mut self,
+        dt: f64,
+        events: Vec<Event>,
+        dropped: Vec<egui::DroppedFileHandle>,
+    ) -> Repaint {
         let time = match self.time {
             Some(t) => t + dt.max(0.0),
             None => 0.0,
         };
         self.time = Some(time);
-        let input = raw_input(self.screen(), time, DT as f32, events);
+        // egui-winit keeps the focus as state and reports its changes as
+        // events too.
+        for e in &events {
+            if let Event::WindowFocused(f) = e {
+                self.focused = *f;
+            }
+        }
+        let screen = self.screen();
+        let mut input = raw_input(screen, time, DT as f32, events);
+        input.focused = self.focused;
+        input.dropped_files = dropped;
+        let info = input.viewports.entry(ViewportId::ROOT).or_default();
+        info.native_pixels_per_point = Some(self.scale);
+        info.inner_rect = Some(screen);
+        info.outer_rect = Some(screen);
+        info.focused = Some(self.focused);
+        info.fullscreen = Some(false);
+        info.minimized = Some(false);
+        info.maximized = Some(false);
         let (mut out, passes) = run(&self.ctx, &mut self.app, input, app::show);
         self.frames += 1;
         let shapes = count_shapes(&out, &mut self.galleys);
         let texture_updates = out.textures_delta.set.len() as u64;
-        self.textures
-            .append(std::mem::take(&mut out.textures_delta));
+        self.textures.apply(&mut out.textures_delta);
+        self.commands = out
+            .viewport_output
+            .get(&ViewportId::ROOT)
+            .map(|v| v.commands.clone())
+            .unwrap_or_default();
         let repaint = repaint(&out);
         self.stats = FrameStats {
             shapes,
@@ -325,16 +414,27 @@ impl Headless {
         repaint
     }
 
-    /// Runs empty frames `dt` apart while the last frame asked to be
-    /// repainted at once, at most `max` of them, as a window does while it
-    /// animates. Returns how many ran.
+    /// Whether the window wants another frame at once (it animates, or no
+    /// frame ran yet). A repaint asked for later (a timer) does not count.
+    pub fn animating(&self) -> bool {
+        self.last.is_none() || self.stats.repaint == Repaint::Immediate
+    }
+
+    /// Runs empty frames `dt` apart while the window animates, at most `max`
+    /// of them. Returns how many ran; [`Headless::animating`] tells whether
+    /// the cap was hit.
     pub fn settle(&mut self, dt: f64, max: usize) -> usize {
         let mut n = 0;
-        while n < max && (self.last.is_none() || self.stats.repaint == Repaint::Immediate) {
+        while n < max && self.animating() {
             self.frame(dt, Vec::new());
             n += 1;
         }
         n
+    }
+
+    /// The viewport commands the last frame issued (none are carried out).
+    pub fn viewport_commands(&self) -> &[ViewportCommand] {
+        &self.commands
     }
 
     /// The events a platform layer sends for one touch event of finger `id`
@@ -358,10 +458,17 @@ impl Headless {
         self.last.as_ref()
     }
 
-    /// The texture changes of all frames since the last call (a renderer
-    /// that starts late needs all of them, from the font atlas on).
-    pub fn take_textures(&mut self) -> TexturesDelta {
-        std::mem::take(&mut self.textures)
+    /// The textures a renderer needs to paint the last frame: all of them
+    /// for a new renderer (`all`), otherwise those changed since the last
+    /// call. Only the current images are kept in between, so the memory
+    /// does not grow with the number of frames.
+    pub fn take_textures(&mut self, all: bool) -> TexturesDelta {
+        self.textures.take(all)
+    }
+
+    /// Pixels of the textures kept for a renderer.
+    pub fn texture_pixels(&self) -> usize {
+        self.textures.pixels()
     }
 
     /// The counters of the last frame, with its shapes tessellated now.
@@ -395,14 +502,6 @@ impl Headless {
         Some(t.screen_to_world(d.x as f64, d.y as f64))
     }
 
-    /// Opens a script or construction file given as bytes, as dropping the
-    /// file on the window does (`name` tells the format by its extension).
-    pub fn open_bytes(&mut self, bytes: &[u8], name: &str) -> Result<(), String> {
-        let result = self.app.wb.load_bytes(bytes, name);
-        app::opened(&mut self.app, result.clone());
-        result
-    }
-
     /// The named rectangles on screen in the last frame.
     pub fn widgets(&self) -> Vec<Widget> {
         let update = self
@@ -423,13 +522,6 @@ impl Headless {
     }
 }
 
-impl Drop for Headless {
-    fn drop(&mut self) {
-        // Texture changes no renderer took are dropped on purpose.
-        self.textures.clear();
-    }
-}
-
 fn clamp_size((w, h): (f32, f32)) -> (f32, f32) {
     let side = |v: f32| {
         if v.is_finite() {
@@ -439,4 +531,79 @@ fn clamp_size((w, h): (f32, f32)) -> (f32, f32) {
         }
     };
     (side(w), side(h))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// What egui recorded of every widget of the last pass.
+    fn widget_rects(h: &Headless) -> Vec<(egui::Id, Rect, Rect, bool)> {
+        h.ctx().viewport(|v| {
+            v.prev_pass
+                .widgets
+                .layers()
+                .flat_map(|(_, ws)| ws.iter())
+                .map(|w| (w.id, w.rect, w.interact_rect, w.sense.senses_click()))
+                .collect()
+        })
+    }
+
+    fn stats(h: &Headless) -> FrameStats {
+        let mut s = h.frame_stats();
+        // Keyed on galley addresses, which two contexts do not share.
+        s.shapes.new_galleys = 0;
+        s
+    }
+
+    #[test]
+    fn accesskit_changes_neither_the_layout_nor_the_counters() {
+        let script = "A = (1, 1)\nB = (3, 2)\nf = Segment(A, B)\nr = 2\n";
+        let window = |accesskit: bool| {
+            let wb = Workbench::from_script(script).unwrap();
+            let h = Headless::new(wb, None, Profile::Desktop, (1000.0, 700.0), 1.0);
+            if !accesskit {
+                h.ctx().disable_accesskit();
+            }
+            h
+        };
+        let (mut on, mut off) = (window(true), window(false));
+        let canvas = Pos2::new(700.0, 300.0);
+        let row = Pos2::new(150.0, 75.0);
+        let frames: Vec<Vec<Event>> = vec![
+            vec![],
+            vec![Event::PointerMoved(canvas)],
+            vec![press(canvas, PointerButton::Primary, true)],
+            vec![Event::PointerMoved(canvas + vec2(40.0, 10.0))],
+            vec![press(
+                canvas + vec2(40.0, 10.0),
+                PointerButton::Primary,
+                false,
+            )],
+            vec![Event::PointerMoved(row)],
+            vec![press(row, PointerButton::Primary, true)],
+            vec![press(row, PointerButton::Primary, false)],
+            vec![],
+        ];
+        for (i, events) in frames.into_iter().enumerate() {
+            on.frame(DT, events.clone());
+            off.frame(DT, events);
+            assert_eq!(stats(&on), stats(&off), "frame {i}");
+            assert_eq!(widget_rects(&on), widget_rects(&off), "frame {i}");
+            assert_eq!(on.app.camera, off.app.camera, "frame {i}");
+            assert_eq!(on.app.wb.selected, off.app.wb.selected, "frame {i}");
+        }
+        assert!(on
+            .last_output()
+            .unwrap()
+            .platform_output
+            .accesskit_update
+            .is_some());
+        assert!(off
+            .last_output()
+            .unwrap()
+            .platform_output
+            .accesskit_update
+            .is_none());
+    }
 }

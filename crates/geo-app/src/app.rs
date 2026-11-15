@@ -16,13 +16,7 @@ use std::path::Path;
 
 /// Opens a script or construction file into the window.
 pub fn open(app: &mut App, path: &Path) {
-    let result = crate::cli::load_into(&mut app.wb, path);
-    opened(app, result);
-}
-
-/// What opening a document does to the window, given how loading it went.
-pub(crate) fn opened(app: &mut App, result: Result<(), String>) {
-    match result {
+    match crate::cli::load_into(&mut app.wb, path) {
         Ok(()) => {
             app.load_error = None;
             app.drag = None;
