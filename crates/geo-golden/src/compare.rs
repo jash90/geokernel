@@ -82,6 +82,7 @@ pub fn compare(expected: &Expected, kind: Kind, actual: &Value) -> Result<Sign, 
             ok(all_agree(&[(*x, ax), (*y, ay)]))
         }
         (ExpectedData::Number(v), Value::Number(av)) => ok(numbers_agree(*v, av)),
+        (ExpectedData::Bool(b), Value::Bool(ab)) => ok(*b == ab),
         (
             ExpectedData::Circle { cx, cy, r },
             Value::Circle {

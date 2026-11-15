@@ -117,6 +117,8 @@ pub enum ExpectedData {
         x: f64,
         y: f64,
     },
+    /// The value of a boolean.
+    Bool(bool),
     /// Start point `(x, y)` and raw line coefficients.
     Ray {
         x: f64,
@@ -133,7 +135,15 @@ struct RawObject {
     ty: String,
     defined: bool,
     #[serde(flatten)]
-    fields: BTreeMap<String, f64>,
+    fields: BTreeMap<String, Scalar>,
+}
+
+/// A field of an object: a number, or the truth value of a boolean.
+#[derive(Deserialize, Clone, Copy)]
+#[serde(untagged)]
+enum Scalar {
+    Bool(bool),
+    Num(f64),
 }
 
 impl TryFrom<RawObject> for Expected {
@@ -148,6 +158,7 @@ impl TryFrom<RawObject> for Expected {
             "number" => (Kind::Number, &["value"]),
             "vector" => (Kind::Vector, &["x", "y"]),
             "ray" => (Kind::Ray, &["x", "y", "a", "b", "c"]),
+            "boolean" => (Kind::Boolean, &["value"]),
             other => return Err(format!("unknown object type `{other}`")),
         };
         if !raw.defined {
@@ -164,7 +175,25 @@ impl TryFrom<RawObject> for Expected {
                 raw.ty
             ));
         }
-        let f = |n: &str| raw.fields[n];
+        if kind == Kind::Boolean {
+            return match raw.fields["value"] {
+                Scalar::Bool(b) => Ok(Expected {
+                    kind,
+                    data: Some(ExpectedData::Bool(b)),
+                }),
+                Scalar::Num(_) => Err("a boolean's `value` must be true or false".to_string()),
+            };
+        }
+        let mut numbers = BTreeMap::new();
+        for (name, v) in &raw.fields {
+            match v {
+                Scalar::Num(x) => numbers.insert(name.as_str(), *x),
+                Scalar::Bool(_) => {
+                    return Err(format!("field `{name}` of a {} must be a number", raw.ty))
+                }
+            };
+        }
+        let f = |n: &str| numbers[n];
         let data = match kind {
             Kind::Point => ExpectedData::Point {
                 x: f("x"),
@@ -198,6 +227,7 @@ impl TryFrom<RawObject> for Expected {
                 b: f("b"),
                 c: f("c"),
             },
+            Kind::Boolean => unreachable!("handled above"),
             // `Kind` is non-exhaustive: a kind without a golden type yet.
             other => return Err(format!("no golden data format for {other:?}")),
         };

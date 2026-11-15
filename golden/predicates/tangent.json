@@ -1,0 +1,1379 @@
+{
+  "schema": 1,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "predicates-tangent-001",
+      "group": "predicates",
+      "script": [
+        "A = (0, 1)",
+        "B = (1, 1)",
+        "O = (0, 0)",
+        "r = 1",
+        "l = Line(A, B)",
+        "c = Circle(O, r)",
+        "t = IsTangent(l, c)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "r", "value": 1.000001 },
+        { "action": "set_number", "label": "r", "value": 0.999999 },
+        { "action": "set_number", "label": "r", "value": 1.00001 },
+        { "action": "set_number", "label": "r", "value": 0.5 },
+        { "action": "set_number", "label": "r", "value": 2.0 },
+        { "action": "set_number", "label": "r", "value": 1.0 },
+        { "action": "set_number", "label": "r", "value": 0.0 },
+        { "action": "set_number", "label": "r", "value": -1.0 },
+        { "action": "set_number", "label": "r", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 1.0 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 1.000001 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 1.000001 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 0.999999 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.999999 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 1.00001 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 1.00001 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 0.5 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.5 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 1.0 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": -1.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.0 },
+          "c": { "type": "circle", "defined": false },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 1.0 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "predicates-tangent-002",
+      "group": "predicates",
+      "script": [
+        "A = (0, 100000)",
+        "B = (1, 100000)",
+        "O = (0, 0)",
+        "r = 100000",
+        "l = Line(A, B)",
+        "c = Circle(O, r)",
+        "t = IsTangent(l, c)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "r", "value": 100000.000001 },
+        { "action": "set_number", "label": "r", "value": 99999.999999 },
+        { "action": "set_number", "label": "r", "value": 100000.0001 },
+        { "action": "set_number", "label": "r", "value": 100000.01 },
+        { "action": "set_number", "label": "r", "value": 100000.0 },
+        { "action": "set_number", "label": "r", "value": 99999.99 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 100000.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 100000.0 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 100000.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -100000.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 100000.0 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 100000.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 100000.0 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 100000.000001 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -100000.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 100000.000001 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 100000.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 100000.0 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 99999.999999 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -100000.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 99999.999999 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 100000.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 100000.0 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 100000.0001 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -100000.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 100000.0001 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 100000.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 100000.0 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 100000.01 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -100000.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 100000.01 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 100000.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 100000.0 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 100000.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -100000.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 100000.0 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 100000.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 100000.0 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 99999.99 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -100000.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 99999.99 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "predicates-tangent-003",
+      "group": "predicates",
+      "script": [
+        "A = (0, 0.001)",
+        "B = (1, 0.001)",
+        "O = (0, 0)",
+        "r = 0.001",
+        "l = Line(A, B)",
+        "c = Circle(O, r)",
+        "t = IsTangent(l, c)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "r", "value": 0.001001 },
+        { "action": "set_number", "label": "r", "value": 9.99E-4 },
+        { "action": "set_number", "label": "r", "value": 0.0010001 },
+        { "action": "set_number", "label": "r", "value": 9.999E-4 },
+        { "action": "set_number", "label": "r", "value": 0.001 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.001 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.001 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 0.001 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -0.001 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.001 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.001 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.001 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 0.001001 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -0.001 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.001001 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.001 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.001 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 9.99E-4 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -0.001 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 9.99E-4 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.001 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.001 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 0.0010001 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -0.001 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.0010001 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.001 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.001 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 9.999E-4 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -0.001 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 9.999E-4 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.001 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.001 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 0.001 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -0.001 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.001 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "predicates-tangent-004",
+      "group": "predicates",
+      "script": [
+        "O = (-6.36, 5.78)",
+        "A = (-4.65, -5.43)",
+        "B = (-0.78, -1.33)",
+        "P = (-7.21, 4.54)",
+        "c = Circle(O, P)",
+        "l = Line(A, B)",
+        "t = IsTangent(l, c)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 1.26, "y": -7.86 },
+        { "action": "move", "label": "P", "x": 1.08, "y": -6.35 },
+        { "action": "move", "label": "A", "x": 2.84, "y": 4.42 },
+        { "action": "move", "label": "O", "x": -0.96, "y": 7.69 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": -6.36, "y": 5.78 },
+          "A": { "type": "point", "defined": true, "x": -4.65, "y": -5.43 },
+          "B": { "type": "point", "defined": true, "x": -0.78, "y": -1.33 },
+          "P": { "type": "point", "defined": true, "x": -7.21, "y": 4.54 },
+          "c": { "type": "circle", "defined": true, "cx": -6.36, "cy": 5.78, "r": 1.5033628969746458 },
+          "l": { "type": "line", "defined": true, "a": -4.1, "b": 3.87, "c": 1.9491000000000005 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": -6.36, "y": 5.78 },
+          "A": { "type": "point", "defined": true, "x": -4.65, "y": -5.43 },
+          "B": { "type": "point", "defined": true, "x": 1.26, "y": -7.86 },
+          "P": { "type": "point", "defined": true, "x": -7.21, "y": 4.54 },
+          "c": { "type": "circle", "defined": true, "cx": -6.36, "cy": 5.78, "r": 1.5033628969746458 },
+          "l": { "type": "line", "defined": true, "a": 2.4300000000000006, "b": 5.91, "c": 43.390800000000006 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": -6.36, "y": 5.78 },
+          "A": { "type": "point", "defined": true, "x": -4.65, "y": -5.43 },
+          "B": { "type": "point", "defined": true, "x": 1.26, "y": -7.86 },
+          "P": { "type": "point", "defined": true, "x": 1.08, "y": -6.35 },
+          "c": { "type": "circle", "defined": true, "cx": -6.36, "cy": 5.78, "r": 14.229915670867484 },
+          "l": { "type": "line", "defined": true, "a": 2.4300000000000006, "b": 5.91, "c": 43.390800000000006 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": -6.36, "y": 5.78 },
+          "A": { "type": "point", "defined": true, "x": 2.84, "y": 4.42 },
+          "B": { "type": "point", "defined": true, "x": 1.26, "y": -7.86 },
+          "P": { "type": "point", "defined": true, "x": 1.08, "y": -6.35 },
+          "c": { "type": "circle", "defined": true, "cx": -6.36, "cy": 5.78, "r": 14.229915670867484 },
+          "l": { "type": "line", "defined": true, "a": 12.280000000000001, "b": -1.5799999999999998, "c": -27.891599999999997 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": -0.96, "y": 7.69 },
+          "A": { "type": "point", "defined": true, "x": 2.84, "y": 4.42 },
+          "B": { "type": "point", "defined": true, "x": 1.26, "y": -7.86 },
+          "P": { "type": "point", "defined": true, "x": 1.08, "y": -6.35 },
+          "c": { "type": "circle", "defined": true, "cx": -0.96, "cy": 7.69, "r": 14.187431057101211 },
+          "l": { "type": "line", "defined": true, "a": 12.280000000000001, "b": -1.5799999999999998, "c": -27.891599999999997 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "predicates-tangent-005",
+      "group": "predicates",
+      "script": [
+        "O = (-4.99, -6.95)",
+        "A = (-3.78, 3.27)",
+        "B = (-7.93, -5.32)",
+        "P = (-4.99, -4.21)",
+        "c = Circle(O, P)",
+        "l = Line(A, B)",
+        "t = IsTangent(l, c)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": -4.43, "y": -2.07 },
+        { "action": "move", "label": "P", "x": -1.18, "y": -3.4 },
+        { "action": "move", "label": "A", "x": 3.8, "y": -6.12 },
+        { "action": "move", "label": "O", "x": 5.82, "y": 4.43 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": -4.99, "y": -6.95 },
+          "A": { "type": "point", "defined": true, "x": -3.78, "y": 3.27 },
+          "B": { "type": "point", "defined": true, "x": -7.93, "y": -5.32 },
+          "P": { "type": "point", "defined": true, "x": -4.99, "y": -4.21 },
+          "c": { "type": "circle", "defined": true, "cx": -4.99, "cy": -6.95, "r": 2.74 },
+          "l": { "type": "line", "defined": true, "a": 8.59, "b": -4.15, "c": 46.0407 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": -4.99, "y": -6.95 },
+          "A": { "type": "point", "defined": true, "x": -3.78, "y": 3.27 },
+          "B": { "type": "point", "defined": true, "x": -4.43, "y": -2.07 },
+          "P": { "type": "point", "defined": true, "x": -4.99, "y": -4.21 },
+          "c": { "type": "circle", "defined": true, "cx": -4.99, "cy": -6.95, "r": 2.74 },
+          "l": { "type": "line", "defined": true, "a": 5.34, "b": -0.6499999999999999, "c": 22.310699999999997 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": -4.99, "y": -6.95 },
+          "A": { "type": "point", "defined": true, "x": -3.78, "y": 3.27 },
+          "B": { "type": "point", "defined": true, "x": -4.43, "y": -2.07 },
+          "P": { "type": "point", "defined": true, "x": -1.18, "y": -3.4 },
+          "c": { "type": "circle", "defined": true, "cx": -4.99, "cy": -6.95, "r": 5.20755220809163 },
+          "l": { "type": "line", "defined": true, "a": 5.34, "b": -0.6499999999999999, "c": 22.310699999999997 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": -4.99, "y": -6.95 },
+          "A": { "type": "point", "defined": true, "x": 3.8, "y": -6.12 },
+          "B": { "type": "point", "defined": true, "x": -4.43, "y": -2.07 },
+          "P": { "type": "point", "defined": true, "x": -1.18, "y": -3.4 },
+          "c": { "type": "circle", "defined": true, "cx": -4.99, "cy": -6.95, "r": 5.20755220809163 },
+          "l": { "type": "line", "defined": true, "a": -4.050000000000001, "b": -8.23, "c": -34.977599999999995 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 5.82, "y": 4.43 },
+          "A": { "type": "point", "defined": true, "x": 3.8, "y": -6.12 },
+          "B": { "type": "point", "defined": true, "x": -4.43, "y": -2.07 },
+          "P": { "type": "point", "defined": true, "x": -1.18, "y": -3.4 },
+          "c": { "type": "circle", "defined": true, "cx": 5.82, "cy": 4.43, "r": 10.50280438740054 },
+          "l": { "type": "line", "defined": true, "a": -4.050000000000001, "b": -8.23, "c": -34.977599999999995 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "predicates-tangent-006",
+      "group": "predicates",
+      "script": [
+        "O = (-3.18, -1.34)",
+        "A = (5.2, 7.9)",
+        "B = (1.66, -7.59)",
+        "P = (3.06, -1.6)",
+        "c = Circle(O, P)",
+        "l = Line(A, B)",
+        "t = IsTangent(l, c)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": -2.43, "y": 2.38 },
+        { "action": "move", "label": "P", "x": -7.55, "y": 7.07 },
+        { "action": "move", "label": "A", "x": 4.32, "y": 0.48 },
+        { "action": "move", "label": "O", "x": -6.09, "y": 4.57 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": -3.18, "y": -1.34 },
+          "A": { "type": "point", "defined": true, "x": 5.2, "y": 7.9 },
+          "B": { "type": "point", "defined": true, "x": 1.66, "y": -7.59 },
+          "P": { "type": "point", "defined": true, "x": 3.06, "y": -1.6 },
+          "c": { "type": "circle", "defined": true, "cx": -3.18, "cy": -1.34, "r": 6.245414317721443 },
+          "l": { "type": "line", "defined": true, "a": 15.49, "b": -3.54, "c": -52.58200000000001 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": -3.18, "y": -1.34 },
+          "A": { "type": "point", "defined": true, "x": 5.2, "y": 7.9 },
+          "B": { "type": "point", "defined": true, "x": -2.43, "y": 2.38 },
+          "P": { "type": "point", "defined": true, "x": 3.06, "y": -1.6 },
+          "c": { "type": "circle", "defined": true, "cx": -3.18, "cy": -1.34, "r": 6.245414317721443 },
+          "l": { "type": "line", "defined": true, "a": 5.5200000000000005, "b": -7.630000000000001, "c": 31.573 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": -3.18, "y": -1.34 },
+          "A": { "type": "point", "defined": true, "x": 5.2, "y": 7.9 },
+          "B": { "type": "point", "defined": true, "x": -2.43, "y": 2.38 },
+          "P": { "type": "point", "defined": true, "x": -7.55, "y": 7.07 },
+          "c": { "type": "circle", "defined": true, "cx": -3.18, "cy": -1.34, "r": 9.477605182745268 },
+          "l": { "type": "line", "defined": true, "a": 5.5200000000000005, "b": -7.630000000000001, "c": 31.573 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": -3.18, "y": -1.34 },
+          "A": { "type": "point", "defined": true, "x": 4.32, "y": 0.48 },
+          "B": { "type": "point", "defined": true, "x": -2.43, "y": 2.38 },
+          "P": { "type": "point", "defined": true, "x": -7.55, "y": 7.07 },
+          "c": { "type": "circle", "defined": true, "cx": -3.18, "cy": -1.34, "r": 9.477605182745268 },
+          "l": { "type": "line", "defined": true, "a": -1.9, "b": -6.75, "c": 11.448 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": -6.09, "y": 4.57 },
+          "A": { "type": "point", "defined": true, "x": 4.32, "y": 0.48 },
+          "B": { "type": "point", "defined": true, "x": -2.43, "y": 2.38 },
+          "P": { "type": "point", "defined": true, "x": -7.55, "y": 7.07 },
+          "c": { "type": "circle", "defined": true, "cx": -6.09, "cy": 4.57, "r": 2.895099307450437 },
+          "l": { "type": "line", "defined": true, "a": -1.9, "b": -6.75, "c": 11.448 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "predicates-tangent-007",
+      "group": "predicates",
+      "script": [
+        "O = (0, 0)",
+        "P = (3, 4)",
+        "Q = (7, 1)",
+        "c = Circle(O, P)",
+        "r = Line(O, P)",
+        "l = PerpendicularLine(P, r)",
+        "m = Line(P, Q)",
+        "t = IsTangent(l, c)",
+        "u = IsTangent(m, c)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "P", "x": 5.0, "y": 12.0 },
+        { "action": "move", "label": "Q", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "P", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "P", "x": 3.0, "y": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "Q": { "type": "point", "defined": true, "x": 7.0, "y": 1.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "r": { "type": "line", "defined": true, "a": -4.0, "b": 3.0, "c": 0.0 },
+          "l": { "type": "line", "defined": true, "a": -3.0, "b": -4.0, "c": 25.0 },
+          "m": { "type": "line", "defined": true, "a": 3.0, "b": 4.0, "c": -25.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 5.0, "y": 12.0 },
+          "Q": { "type": "point", "defined": true, "x": 7.0, "y": 1.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 13.0 },
+          "r": { "type": "line", "defined": true, "a": -12.0, "b": 5.0, "c": 0.0 },
+          "l": { "type": "line", "defined": true, "a": -5.0, "b": -12.0, "c": 169.0 },
+          "m": { "type": "line", "defined": true, "a": 11.0, "b": 2.0, "c": -79.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 5.0, "y": 12.0 },
+          "Q": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 13.0 },
+          "r": { "type": "line", "defined": true, "a": -12.0, "b": 5.0, "c": 0.0 },
+          "l": { "type": "line", "defined": true, "a": -5.0, "b": -12.0, "c": 169.0 },
+          "m": { "type": "line", "defined": true, "a": 8.0, "b": -2.0, "c": -16.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.0 },
+          "r": { "type": "line", "defined": false },
+          "l": { "type": "line", "defined": false },
+          "m": { "type": "line", "defined": true, "a": -4.0, "b": 3.0, "c": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "Q": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "r": { "type": "line", "defined": true, "a": -4.0, "b": 3.0, "c": 0.0 },
+          "l": { "type": "line", "defined": true, "a": -3.0, "b": -4.0, "c": 25.0 },
+          "m": { "type": "line", "defined": false },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "predicates-tangent-008",
+      "group": "predicates",
+      "script": [
+        "O = (0, 0)",
+        "P = (5, 1)",
+        "R = (2, 0)",
+        "c = Circle(O, R)",
+        "t = Tangent(P, c)",
+        "u = IsTangent(t_{1}, c)",
+        "v = IsTangent(t_{2}, c)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "P", "x": 1.0, "y": 0.0 },
+        { "action": "move", "label": "P", "x": 2.0, "y": 0.0 },
+        { "action": "move", "label": "P", "x": 3.0, "y": 3.0 },
+        { "action": "move", "label": "R", "x": 4.0, "y": 0.0 },
+        { "action": "move", "label": "R", "x": 0.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "R": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "t_{1}": { "type": "line", "defined": true, "a": -0.957852215316704, "b": -4.591570443063341, "c": 9.380831519646861 },
+          "t_{2}": { "type": "line", "defined": true, "a": 2.6501599076243956, "b": -3.869968018475121, "c": -9.38083151964686 },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "t_{1}": { "type": "line", "defined": false },
+          "t_{2}": { "type": "line", "defined": false },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "t_{1}": { "type": "line", "defined": true, "a": 2.0, "b": 0.0, "c": -4.0 },
+          "t_{2}": { "type": "line", "defined": true, "a": 2.0, "b": 0.0, "c": -4.0 },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "R": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "t_{1}": { "type": "line", "defined": true, "a": 1.0861142044086862, "b": -3.5805524622579803, "c": 7.483314773547883 },
+          "t_{2}": { "type": "line", "defined": true, "a": 3.5805524622579803, "b": -1.0861142044086862, "c": -7.483314773547883 },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "R": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 4.0 },
+          "t_{1}": { "type": "line", "defined": true, "a": -0.6094757082487305, "b": -1.2761423749153973, "c": 5.656854249492383 },
+          "t_{2}": { "type": "line", "defined": true, "a": 1.2761423749153975, "b": 0.6094757082487305, "c": -5.656854249492384 },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "R": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.0 },
+          "t_{1}": { "type": "line", "defined": false },
+          "t_{2}": { "type": "line", "defined": false },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "predicates-tangent-009",
+      "group": "predicates",
+      "script": [
+        "O = (0, 0)",
+        "A = (0, 1)",
+        "B = (1, 2)",
+        "R = (2, 0)",
+        "c = Circle(O, R)",
+        "g = Line(A, B)",
+        "t = Tangent(g, c)",
+        "u = IsTangent(t_{1}, c)",
+        "v = IsTangent(t_{2}, c)",
+        "w = IsTangent(g, c)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 5.0, "y": 1.0 },
+        { "action": "move", "label": "R", "x": 3.0, "y": 0.0 },
+        { "action": "move", "label": "R", "x": 0.5, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "R": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": -1.0 },
+          "t_{1}": { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": -2.8284271247461903 },
+          "t_{2}": { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": 2.82842712474619 },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true },
+          "w": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "R": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 5.0, "c": -5.0 },
+          "t_{1}": { "type": "line", "defined": true, "a": 0.0, "b": 5.0, "c": -10.0 },
+          "t_{2}": { "type": "line", "defined": true, "a": 0.0, "b": 5.0, "c": 10.0 },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true },
+          "w": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 3.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 5.0, "c": -5.0 },
+          "t_{1}": { "type": "line", "defined": true, "a": 0.0, "b": 5.0, "c": -15.0 },
+          "t_{2}": { "type": "line", "defined": true, "a": 0.0, "b": 5.0, "c": 15.0 },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true },
+          "w": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "R": { "type": "point", "defined": true, "x": 0.5, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.5 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 5.0, "c": -5.0 },
+          "t_{1}": { "type": "line", "defined": true, "a": 0.0, "b": 5.0, "c": -2.5 },
+          "t_{2}": { "type": "line", "defined": true, "a": 0.0, "b": 5.0, "c": 2.5 },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true },
+          "w": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "predicates-tangent-010",
+      "group": "predicates",
+      "script": [
+        "O = (0, 0)",
+        "Q = (6, 0)",
+        "P = (3, 5)",
+        "R = (2, 0)",
+        "S = (2, 6)",
+        "c = Circle(O, R)",
+        "d = Circle(Q, S)",
+        "t = Tangent(P, c)",
+        "u = IsTangent(t_{1}, c)",
+        "v = IsTangent(t_{1}, d)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "S", "x": 4.0, "y": 0.0 },
+        { "action": "move", "label": "P", "x": 5.0, "y": 5.0 },
+        { "action": "move", "label": "Q", "x": 3.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 5.0 },
+          "R": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "S": { "type": "point", "defined": true, "x": 2.0, "y": 6.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "d": { "type": "circle", "defined": true, "cx": 6.0, "cy": 0.0, "r": 7.211102550927979 },
+          "t_{1}": { "type": "line", "defined": true, "a": 3.445195486755589, "b": -4.258007522074018, "c": 10.95445115010332 },
+          "t_{2}": { "type": "line", "defined": true, "a": 5.378333925009117, "b": -1.0361101249848055, "c": -10.954451150103322 },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 5.0 },
+          "R": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "S": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "d": { "type": "circle", "defined": true, "cx": 6.0, "cy": 0.0, "r": 2.0 },
+          "t_{1}": { "type": "line", "defined": true, "a": 3.445195486755589, "b": -4.258007522074018, "c": 10.95445115010332 },
+          "t_{2}": { "type": "line", "defined": true, "a": 5.378333925009117, "b": -1.0361101249848055, "c": -10.954451150103322 },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "R": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "S": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "d": { "type": "circle", "defined": true, "cx": 6.0, "cy": 0.0, "r": 2.0 },
+          "t_{1}": { "type": "line", "defined": true, "a": 3.2435340033749465, "b": -5.956465996625053, "c": 13.564659966250534 },
+          "t_{2}": { "type": "line", "defined": true, "a": 5.956465996625054, "b": -3.243534003374946, "c": -13.564659966250538 },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "R": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "S": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "d": { "type": "circle", "defined": true, "cx": 3.0, "cy": 0.0, "r": 1.0 },
+          "t_{1}": { "type": "line", "defined": true, "a": 3.2435340033749465, "b": -5.956465996625053, "c": 13.564659966250534 },
+          "t_{2}": { "type": "line", "defined": true, "a": 5.956465996625054, "b": -3.243534003374946, "c": -13.564659966250538 },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "predicates-tangent-011",
+      "group": "predicates",
+      "script": [
+        "O = (0, 0)",
+        "A = (-3, 2)",
+        "B = (3, 2)",
+        "C = (0, 2)",
+        "D = (1, 2)",
+        "E = (5, 0)",
+        "F = (5, 1)",
+        "R = (2, 0)",
+        "c = Circle(O, R)",
+        "s = Segment(A, B)",
+        "r = Ray(C, D)",
+        "q = Segment(E, F)",
+        "t = IsTangent(s, c)",
+        "u = IsTangent(r, c)",
+        "v = IsTangent(q, c)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "R", "x": 2.5, "y": 0.0 },
+        { "action": "move", "label": "R", "x": 2.0, "y": 0.0 },
+        { "action": "move", "label": "E", "x": 2.0, "y": 0.0 },
+        { "action": "move", "label": "F", "x": 2.0, "y": 1.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 2.000001 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "E": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 },
+          "F": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "R": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "s": { "type": "segment", "defined": true, "x1": -3.0, "y1": 2.0, "x2": 3.0, "y2": 2.0 },
+          "r": { "type": "ray", "defined": true, "x": 0.0, "y": 2.0, "a": 0.0, "b": 1.0, "c": -2.0 },
+          "q": { "type": "segment", "defined": true, "x1": 5.0, "y1": 0.0, "x2": 5.0, "y2": 1.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "E": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 },
+          "F": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "R": { "type": "point", "defined": true, "x": 2.5, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.5 },
+          "s": { "type": "segment", "defined": true, "x1": -3.0, "y1": 2.0, "x2": 3.0, "y2": 2.0 },
+          "r": { "type": "ray", "defined": true, "x": 0.0, "y": 2.0, "a": 0.0, "b": 1.0, "c": -2.0 },
+          "q": { "type": "segment", "defined": true, "x1": 5.0, "y1": 0.0, "x2": 5.0, "y2": 1.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "E": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 },
+          "F": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "R": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "s": { "type": "segment", "defined": true, "x1": -3.0, "y1": 2.0, "x2": 3.0, "y2": 2.0 },
+          "r": { "type": "ray", "defined": true, "x": 0.0, "y": 2.0, "a": 0.0, "b": 1.0, "c": -2.0 },
+          "q": { "type": "segment", "defined": true, "x1": 5.0, "y1": 0.0, "x2": 5.0, "y2": 1.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "E": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "F": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "R": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "s": { "type": "segment", "defined": true, "x1": -3.0, "y1": 2.0, "x2": 3.0, "y2": 2.0 },
+          "r": { "type": "ray", "defined": true, "x": 0.0, "y": 2.0, "a": 0.0, "b": 1.0, "c": -2.0 },
+          "q": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 5.0, "y2": 1.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "E": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "F": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "R": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "s": { "type": "segment", "defined": true, "x1": -3.0, "y1": 2.0, "x2": 3.0, "y2": 2.0 },
+          "r": { "type": "ray", "defined": true, "x": 0.0, "y": 2.0, "a": 0.0, "b": 1.0, "c": -2.0 },
+          "q": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 2.0, "y2": 1.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 2.000001 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "E": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "F": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "R": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "s": { "type": "segment", "defined": true, "x1": -3.0, "y1": 2.0, "x2": 3.0, "y2": 2.000001 },
+          "r": { "type": "ray", "defined": true, "x": 0.0, "y": 2.0, "a": 0.0, "b": 1.0, "c": -2.0 },
+          "q": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 2.0, "y2": 1.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "predicates-tangent-012",
+      "group": "predicates",
+      "script": [
+        "O = (0, 0)",
+        "A = (0, 2)",
+        "B = (3, 2)",
+        "r = 2",
+        "c = Circle(O, r)",
+        "l = Line(A, B)",
+        "t = IsTangent(l, c)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "r", "value": 1.0 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 2.0 },
+        { "action": "move", "label": "A", "x": 0.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 2.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 3.0, "c": -6.0 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 2.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 1.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 3.0, "c": -6.0 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 1.0 },
+          "l": { "type": "line", "defined": false },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 2.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 1.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 3.0, "c": -6.0 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 2.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 1.0 },
+          "l": { "type": "line", "defined": true, "a": -2.0, "b": 3.0, "c": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "predicates-tangent-013",
+      "group": "predicates",
+      "script": [
+        "O = (0, 0)",
+        "A = (0, 0)",
+        "B = (1, 0)",
+        "r = 0",
+        "c = Circle(O, r)",
+        "l = Line(A, B)",
+        "t = IsTangent(l, c)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": 0.0, "y": 1.0E-6 },
+        { "action": "move", "label": "A", "x": 0.0, "y": 1.0 },
+        { "action": "set_number", "label": "r", "value": 1.0 },
+        { "action": "move", "label": "B", "x": 1.0, "y": 1.0 },
+        { "action": "set_number", "label": "r", "value": -1.0 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0E-6 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.0 },
+          "l": { "type": "line", "defined": true, "a": 1.0E-6, "b": 1.0, "c": -1.0E-6 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.0 },
+          "l": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 1.0 },
+          "l": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 1.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.0 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "r": { "type": "number", "defined": true, "value": -1.0 },
+          "c": { "type": "circle", "defined": false },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.0 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "predicates-tangent-014",
+      "group": "predicates",
+      "script": [
+        "A = (0, 0.05)",
+        "B = (1, 0.05)",
+        "O = (0, 0)",
+        "r = 0.05",
+        "l = Line(A, B)",
+        "c = Circle(O, r)",
+        "t = IsTangent(l, c)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "r", "value": 0.050001 },
+        { "action": "set_number", "label": "r", "value": 0.050005 },
+        { "action": "set_number", "label": "r", "value": 0.05001 },
+        { "action": "set_number", "label": "r", "value": 0.0501 },
+        { "action": "set_number", "label": "r", "value": 0.049999 },
+        { "action": "set_number", "label": "r", "value": 0.049995 },
+        { "action": "set_number", "label": "r", "value": 0.04999 },
+        { "action": "set_number", "label": "r", "value": 0.05 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.05 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.05 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 0.05 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -0.05 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.05 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.05 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.05 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 0.050001 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -0.05 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.050001 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.05 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.05 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 0.050005 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -0.05 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.050005 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.05 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.05 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 0.05001 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -0.05 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.05001 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.05 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.05 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 0.0501 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -0.05 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.0501 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.05 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.05 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 0.049999 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -0.05 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.049999 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.05 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.05 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 0.049995 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -0.05 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.049995 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.05 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.05 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 0.04999 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -0.05 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.04999 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.05 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.05 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 0.05 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -0.05 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.05 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "predicates-tangent-015",
+      "group": "predicates",
+      "script": [
+        "A = (0, 0.5)",
+        "B = (1, 0.5)",
+        "O = (0, 0)",
+        "r = 0.5",
+        "l = Line(A, B)",
+        "c = Circle(O, r)",
+        "t = IsTangent(l, c)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "r", "value": 0.500001 },
+        { "action": "set_number", "label": "r", "value": 0.500005 },
+        { "action": "set_number", "label": "r", "value": 0.49999 },
+        { "action": "set_number", "label": "r", "value": 0.4999999 },
+        { "action": "set_number", "label": "r", "value": 0.5 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.5 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.5 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 0.5 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -0.5 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.5 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.5 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.5 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 0.500001 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -0.5 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.500001 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.5 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.5 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 0.500005 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -0.5 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.500005 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.5 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.5 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 0.49999 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -0.5 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.49999 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.5 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.5 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 0.4999999 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -0.5 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.4999999 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.5 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.5 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 0.5 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -0.5 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.5 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "predicates-tangent-016",
+      "group": "predicates",
+      "script": [
+        "O = (3, 4)",
+        "A = (8, 4)",
+        "B = (8, 9)",
+        "r = 5",
+        "c = Circle(O, r)",
+        "l = Line(A, B)",
+        "s = Segment(A, B)",
+        "t = IsTangent(l, c)",
+        "u = IsTangent(s, c)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "r", "value": 5.000002 },
+        { "action": "set_number", "label": "r", "value": 4.99999 },
+        { "action": "set_number", "label": "r", "value": 5.0 },
+        { "action": "move", "label": "B", "x": 8.00001, "y": 9.0 },
+        { "action": "move", "label": "B", "x": 8.0, "y": 9.0 },
+        { "action": "move", "label": "O", "x": 3.0, "y": 4.00001 },
+        { "action": "move", "label": "O", "x": 3.000001, "y": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "A": { "type": "point", "defined": true, "x": 8.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 8.0, "y": 9.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "c": { "type": "circle", "defined": true, "cx": 3.0, "cy": 4.0, "r": 5.0 },
+          "l": { "type": "line", "defined": true, "a": -5.0, "b": 0.0, "c": 40.0 },
+          "s": { "type": "segment", "defined": true, "x1": 8.0, "y1": 4.0, "x2": 8.0, "y2": 9.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "A": { "type": "point", "defined": true, "x": 8.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 8.0, "y": 9.0 },
+          "r": { "type": "number", "defined": true, "value": 5.000002 },
+          "c": { "type": "circle", "defined": true, "cx": 3.0, "cy": 4.0, "r": 5.000002 },
+          "l": { "type": "line", "defined": true, "a": -5.0, "b": 0.0, "c": 40.0 },
+          "s": { "type": "segment", "defined": true, "x1": 8.0, "y1": 4.0, "x2": 8.0, "y2": 9.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "A": { "type": "point", "defined": true, "x": 8.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 8.0, "y": 9.0 },
+          "r": { "type": "number", "defined": true, "value": 4.99999 },
+          "c": { "type": "circle", "defined": true, "cx": 3.0, "cy": 4.0, "r": 4.99999 },
+          "l": { "type": "line", "defined": true, "a": -5.0, "b": 0.0, "c": 40.0 },
+          "s": { "type": "segment", "defined": true, "x1": 8.0, "y1": 4.0, "x2": 8.0, "y2": 9.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "A": { "type": "point", "defined": true, "x": 8.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 8.0, "y": 9.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "c": { "type": "circle", "defined": true, "cx": 3.0, "cy": 4.0, "r": 5.0 },
+          "l": { "type": "line", "defined": true, "a": -5.0, "b": 0.0, "c": 40.0 },
+          "s": { "type": "segment", "defined": true, "x1": 8.0, "y1": 4.0, "x2": 8.0, "y2": 9.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "A": { "type": "point", "defined": true, "x": 8.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 8.00001, "y": 9.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "c": { "type": "circle", "defined": true, "cx": 3.0, "cy": 4.0, "r": 5.0 },
+          "l": { "type": "line", "defined": true, "a": -5.0, "b": 9.999999999621423E-6, "c": 39.99996 },
+          "s": { "type": "segment", "defined": true, "x1": 8.0, "y1": 4.0, "x2": 8.00001, "y2": 9.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "A": { "type": "point", "defined": true, "x": 8.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 8.0, "y": 9.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "c": { "type": "circle", "defined": true, "cx": 3.0, "cy": 4.0, "r": 5.0 },
+          "l": { "type": "line", "defined": true, "a": -5.0, "b": 0.0, "c": 40.0 },
+          "s": { "type": "segment", "defined": true, "x1": 8.0, "y1": 4.0, "x2": 8.0, "y2": 9.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 3.0, "y": 4.00001 },
+          "A": { "type": "point", "defined": true, "x": 8.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 8.0, "y": 9.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "c": { "type": "circle", "defined": true, "cx": 3.0, "cy": 4.00001, "r": 5.0 },
+          "l": { "type": "line", "defined": true, "a": -5.0, "b": 0.0, "c": 40.0 },
+          "s": { "type": "segment", "defined": true, "x1": 8.0, "y1": 4.0, "x2": 8.0, "y2": 9.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 3.000001, "y": 4.0 },
+          "A": { "type": "point", "defined": true, "x": 8.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 8.0, "y": 9.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "c": { "type": "circle", "defined": true, "cx": 3.000001, "cy": 4.0, "r": 5.0 },
+          "l": { "type": "line", "defined": true, "a": -5.0, "b": 0.0, "c": 40.0 },
+          "s": { "type": "segment", "defined": true, "x1": 8.0, "y1": 4.0, "x2": 8.0, "y2": 9.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    }
+  ]
+}
