@@ -972,6 +972,20 @@ impl Construction {
         self.lists.get(list.range()).unwrap_or(&[])
     }
 
+    /// The objects the definition of `id` takes as its inputs, in the order
+    /// of the command: its parents, then its stored list (a polygon's
+    /// vertices). An expression has none, and the objects a rule only reads
+    /// on the side (such as the line an intersection was prepared with) are
+    /// not inputs. An unknown id has none.
+    pub fn inputs(&self, id: Id) -> impl Iterator<Item = Id> + '_ {
+        let def = self.defs.get(id.0);
+        let parents = def.map_or_else(Parents::none, Def::parents);
+        let list = def.and_then(Def::list).map_or(&[][..], |l| self.list(l));
+        (0..parents.as_slice().len())
+            .map(move |i| parents.as_slice()[i])
+            .chain(list.iter().copied())
+    }
+
     /// Checks that `list` was stored here and that every object in it exists
     /// and has one of the `expected` kinds.
     pub(crate) fn expect_list(&self, list: IdList, expected: &'static [Kind]) -> Result<(), Error> {

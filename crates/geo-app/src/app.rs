@@ -70,9 +70,8 @@ fn shortcuts(app: &mut App, ctx: &egui::Context) {
         }
         if escape {
             if app.drag.is_some() {
-                // Abandon the drag and put the point back.
-                app.wb.cancel_gesture();
-                app.drag = None;
+                // Abandon the drag and put the point (or the label) back.
+                app.cancel_drag();
             } else {
                 app.leave_tool();
             }

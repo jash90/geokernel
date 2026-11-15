@@ -35,6 +35,8 @@ pub enum Label {
     LeaveTool,
     Close,
     CloseNotice,
+    /// The notice of a refused drag of a dependent point.
+    PointDependsOnOthers,
     Cancel,
     Ok,
     NotANumber,
@@ -79,6 +81,9 @@ pub const fn label(key: Label) -> &'static str {
         Label::LeaveTool => "Zakończ",
         Label::Close => "Zamknij",
         Label::CloseNotice => "Zamknij komunikat",
+        Label::PointDependsOnOthers => {
+            "Tego punktu nie można przesunąć: zależy od innych obiektów."
+        }
         Label::Cancel => "Anuluj",
         Label::Ok => "OK",
         Label::NotANumber => "To nie jest liczba",

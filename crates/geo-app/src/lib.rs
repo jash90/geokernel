@@ -80,8 +80,8 @@ impl Window {
 fn configure(ctx: &egui::Context, metrics: &Metrics) {
     theme::apply(ctx);
     ctx.options_mut(|o| {
-        o.input_options.max_click_dist = metrics.drag_slop;
-        o.input_options.max_click_duration = metrics.click_time;
+        o.input_options.max_click_dist = metrics.widget_click_dist;
+        o.input_options.max_click_duration = metrics.widget_click_time;
     });
 }
 

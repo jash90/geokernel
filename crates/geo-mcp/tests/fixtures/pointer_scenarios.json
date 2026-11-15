@@ -1,0 +1,6599 @@
+{
+ "about": "Observed pointer behaviour of the reference Classic app (web build, headless Chromium, 1280x800, standard view). UI observations, not kernel golden data. Positions are world coordinates in the standard view.",
+ "standard_view": {
+  "xZero": 446,
+  "yZero": 373.5,
+  "scale": 50,
+  "yscale": 50,
+  "canvas": [
+   892,
+   747
+  ]
+ },
+ "scenarios": [
+  {
+   "name": "drag_free_point_centre",
+   "group": "A",
+   "row": "A1",
+   "tool_mode": 0,
+   "initial_script": [
+    "A=(1,1.01)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    },
+    {
+     "t": 150,
+     "type": "mouse_move",
+     "pos": [
+      1.2825,
+      1.1875
+     ]
+    },
+    {
+     "t": 350,
+     "type": "mouse_move",
+     "pos": [
+      1.565,
+      1.365
+     ]
+    },
+    {
+     "t": 550,
+     "type": "mouse_move",
+     "pos": [
+      1.8475,
+      1.5425
+     ]
+    },
+    {
+     "t": 750,
+     "type": "mouse_move",
+     "pos": [
+      2.13,
+      1.72
+     ]
+    },
+    {
+     "t": 950,
+     "type": "mouse_move",
+     "pos": [
+      2.4125,
+      1.8975
+     ]
+    },
+    {
+     "t": 1150,
+     "type": "mouse_move",
+     "pos": [
+      2.695,
+      2.075
+     ]
+    },
+    {
+     "t": 1350,
+     "type": "mouse_move",
+     "pos": [
+      2.9775,
+      2.2525
+     ]
+    },
+    {
+     "t": 1550,
+     "type": "mouse_move",
+     "pos": [
+      3.26,
+      2.43
+     ]
+    },
+    {
+     "t": 1850,
+     "type": "mouse_up",
+     "pos": [
+      3.26,
+      2.43
+     ]
+    }
+   ],
+   "expected": {
+    "objects": {
+     "A": [
+      3.26,
+      2.43
+     ]
+    },
+    "undo_steps_added": 1
+   }
+  },
+  {
+   "name": "drag_free_point_offset_grab_jumps_to_pointer",
+   "group": "A",
+   "row": "A1o",
+   "tool_mode": 0,
+   "initial_script": [
+    "A=(1,1.01)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      1.06,
+      0.97
+     ]
+    },
+    {
+     "t": 150,
+     "type": "mouse_move",
+     "pos": [
+      1.3425,
+      1.1475
+     ]
+    },
+    {
+     "t": 350,
+     "type": "mouse_move",
+     "pos": [
+      1.625,
+      1.325
+     ]
+    },
+    {
+     "t": 550,
+     "type": "mouse_move",
+     "pos": [
+      1.9075,
+      1.5025
+     ]
+    },
+    {
+     "t": 750,
+     "type": "mouse_move",
+     "pos": [
+      2.19,
+      1.68
+     ]
+    },
+    {
+     "t": 950,
+     "type": "mouse_move",
+     "pos": [
+      2.4725,
+      1.8575
+     ]
+    },
+    {
+     "t": 1150,
+     "type": "mouse_move",
+     "pos": [
+      2.755,
+      2.035
+     ]
+    },
+    {
+     "t": 1350,
+     "type": "mouse_move",
+     "pos": [
+      3.0375,
+      2.2125
+     ]
+    },
+    {
+     "t": 1550,
+     "type": "mouse_move",
+     "pos": [
+      3.32,
+      2.39
+     ]
+    },
+    {
+     "t": 1850,
+     "type": "mouse_up",
+     "pos": [
+      3.32,
+      2.39
+     ]
+    }
+   ],
+   "expected": {
+    "objects": {
+     "A": [
+      3.32,
+      2.39
+     ]
+    },
+    "undo_steps_added": 1
+   }
+  },
+  {
+   "name": "drag_free_point_snaps_at_grid_crossing",
+   "group": "A",
+   "row": "A1g",
+   "tool_mode": 0,
+   "initial_script": [
+    "A=(1,1.01)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    },
+    {
+     "t": 150,
+     "type": "mouse_move",
+     "pos": [
+      1.25,
+      1.135
+     ]
+    },
+    {
+     "t": 350,
+     "type": "mouse_move",
+     "pos": [
+      1.5,
+      1.26
+     ]
+    },
+    {
+     "t": 550,
+     "type": "mouse_move",
+     "pos": [
+      1.75,
+      1.385
+     ]
+    },
+    {
+     "t": 750,
+     "type": "mouse_move",
+     "pos": [
+      2.0,
+      1.51
+     ]
+    },
+    {
+     "t": 950,
+     "type": "mouse_move",
+     "pos": [
+      2.25,
+      1.635
+     ]
+    },
+    {
+     "t": 1150,
+     "type": "mouse_move",
+     "pos": [
+      2.5,
+      1.76
+     ]
+    },
+    {
+     "t": 1350,
+     "type": "mouse_move",
+     "pos": [
+      2.75,
+      1.885
+     ]
+    },
+    {
+     "t": 1550,
+     "type": "mouse_move",
+     "pos": [
+      3.0,
+      2.01
+     ]
+    },
+    {
+     "t": 1850,
+     "type": "mouse_up",
+     "pos": [
+      3.0,
+      2.01
+     ]
+    }
+   ],
+   "expected": {
+    "objects": {
+     "A": [
+      3,
+      2
+     ]
+    }
+   }
+  },
+  {
+   "name": "time_gate_early_move_ignored",
+   "group": "A",
+   "row": "A2t",
+   "tool_mode": 0,
+   "initial_script": [
+    "A=(1.5,1.51)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      1.5,
+      1.51
+     ]
+    },
+    {
+     "t": 50,
+     "type": "mouse_move",
+     "pos": [
+      1.9,
+      1.51
+     ]
+    },
+    {
+     "t": 350,
+     "type": "mouse_up",
+     "pos": [
+      1.9,
+      1.51
+     ]
+    }
+   ],
+   "expected": {
+    "objects": {
+     "A": [
+      1.5,
+      1.51
+     ]
+    }
+   }
+  },
+  {
+   "name": "time_gate_late_move_applied",
+   "group": "A",
+   "row": "A2t",
+   "tool_mode": 0,
+   "initial_script": [
+    "A=(1.5,1.51)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      1.5,
+      1.51
+     ]
+    },
+    {
+     "t": 120,
+     "type": "mouse_move",
+     "pos": [
+      1.9,
+      1.51
+     ]
+    },
+    {
+     "t": 420,
+     "type": "mouse_up",
+     "pos": [
+      1.9,
+      1.51
+     ]
+    }
+   ],
+   "expected": {
+    "objects": {
+     "A": [
+      1.9,
+      1.51
+     ]
+    }
+   }
+  },
+  {
+   "name": "no_distance_threshold_1px",
+   "group": "A",
+   "row": "A2d",
+   "tool_mode": 0,
+   "initial_script": [
+    "A=(1.5,1.51)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      1.5,
+      1.51
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_move",
+     "pos": [
+      1.52,
+      1.51
+     ]
+    },
+    {
+     "t": 600,
+     "type": "mouse_up",
+     "pos": [
+      1.52,
+      1.51
+     ]
+    }
+   ],
+   "expected": {
+    "objects": {
+     "A": [
+      1.52,
+      1.51
+     ]
+    }
+   }
+  },
+  {
+   "name": "early_motion_recovered",
+   "group": "A",
+   "row": "A2e",
+   "tool_mode": 0,
+   "initial_script": [
+    "A=(1.5,1.51)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      1.5,
+      1.51
+     ]
+    },
+    {
+     "t": 5,
+     "type": "mouse_move",
+     "pos": [
+      1.7,
+      1.51
+     ]
+    },
+    {
+     "t": 305,
+     "type": "mouse_move",
+     "pos": [
+      1.72,
+      1.51
+     ]
+    },
+    {
+     "t": 605,
+     "type": "mouse_up",
+     "pos": [
+      1.72,
+      1.51
+     ]
+    }
+   ],
+   "expected": {
+    "objects_after_event_1": {
+     "A": [
+      1.5,
+      1.51
+     ]
+    },
+    "objects": {
+     "A": [
+      1.72,
+      1.51
+     ]
+    }
+   }
+  },
+  {
+   "name": "press_release_on_point_selects_only",
+   "group": "A",
+   "row": "A3",
+   "tool_mode": 0,
+   "initial_script": [
+    "A=(1,1.01)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    }
+   ],
+   "expected": {
+    "objects": {
+     "A": [
+      1,
+      1.01
+     ]
+    },
+    "selected": [
+     "A"
+    ],
+    "undo_steps_added": 0
+   }
+  },
+  {
+   "name": "drag_line_translates_both_parents",
+   "group": "A",
+   "row": "A4",
+   "tool_mode": 0,
+   "initial_script": [
+    "A=(1,1.01)",
+    "B=(3,2.01)",
+    "f=Line(A,B)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      2.0,
+      1.51
+     ]
+    },
+    {
+     "t": 150,
+     "type": "mouse_move",
+     "pos": [
+      2.08,
+      1.456667
+     ]
+    },
+    {
+     "t": 175,
+     "type": "mouse_move",
+     "pos": [
+      2.16,
+      1.403333
+     ]
+    },
+    {
+     "t": 200,
+     "type": "mouse_move",
+     "pos": [
+      2.24,
+      1.35
+     ]
+    },
+    {
+     "t": 225,
+     "type": "mouse_move",
+     "pos": [
+      2.32,
+      1.296667
+     ]
+    },
+    {
+     "t": 250,
+     "type": "mouse_move",
+     "pos": [
+      2.4,
+      1.243333
+     ]
+    },
+    {
+     "t": 275,
+     "type": "mouse_move",
+     "pos": [
+      2.48,
+      1.19
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_move",
+     "pos": [
+      2.56,
+      1.136667
+     ]
+    },
+    {
+     "t": 325,
+     "type": "mouse_move",
+     "pos": [
+      2.64,
+      1.083333
+     ]
+    },
+    {
+     "t": 350,
+     "type": "mouse_move",
+     "pos": [
+      2.72,
+      1.03
+     ]
+    },
+    {
+     "t": 375,
+     "type": "mouse_move",
+     "pos": [
+      2.8,
+      0.976667
+     ]
+    },
+    {
+     "t": 400,
+     "type": "mouse_move",
+     "pos": [
+      2.88,
+      0.923333
+     ]
+    },
+    {
+     "t": 425,
+     "type": "mouse_move",
+     "pos": [
+      2.96,
+      0.87
+     ]
+    },
+    {
+     "t": 450,
+     "type": "mouse_move",
+     "pos": [
+      3.04,
+      0.816667
+     ]
+    },
+    {
+     "t": 475,
+     "type": "mouse_move",
+     "pos": [
+      3.12,
+      0.763333
+     ]
+    },
+    {
+     "t": 500,
+     "type": "mouse_move",
+     "pos": [
+      3.2,
+      0.71
+     ]
+    },
+    {
+     "t": 625,
+     "type": "mouse_up",
+     "pos": [
+      3.2,
+      0.71
+     ]
+    }
+   ],
+   "expected": {
+    "objects": {
+     "A": [
+      2.2,
+      0.21
+     ],
+     "B": [
+      4.2,
+      1.21
+     ]
+    },
+    "undo_steps_added": 1,
+    "line_implicit": {
+     "f": [
+      -1,
+      2,
+      -1.78
+     ]
+    }
+   }
+  },
+  {
+   "name": "free_equation_line_not_draggable",
+   "group": "A",
+   "row": "A4f",
+   "tool_mode": 0,
+   "initial_script": [
+    "f: y=1.01"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      2.0,
+      1.01
+     ]
+    },
+    {
+     "t": 150,
+     "type": "mouse_move",
+     "pos": [
+      2.08,
+      0.956667
+     ]
+    },
+    {
+     "t": 175,
+     "type": "mouse_move",
+     "pos": [
+      2.16,
+      0.903333
+     ]
+    },
+    {
+     "t": 200,
+     "type": "mouse_move",
+     "pos": [
+      2.24,
+      0.85
+     ]
+    },
+    {
+     "t": 225,
+     "type": "mouse_move",
+     "pos": [
+      2.32,
+      0.796667
+     ]
+    },
+    {
+     "t": 250,
+     "type": "mouse_move",
+     "pos": [
+      2.4,
+      0.743333
+     ]
+    },
+    {
+     "t": 275,
+     "type": "mouse_move",
+     "pos": [
+      2.48,
+      0.69
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_move",
+     "pos": [
+      2.56,
+      0.636667
+     ]
+    },
+    {
+     "t": 325,
+     "type": "mouse_move",
+     "pos": [
+      2.64,
+      0.583333
+     ]
+    },
+    {
+     "t": 350,
+     "type": "mouse_move",
+     "pos": [
+      2.72,
+      0.53
+     ]
+    },
+    {
+     "t": 375,
+     "type": "mouse_move",
+     "pos": [
+      2.8,
+      0.476667
+     ]
+    },
+    {
+     "t": 400,
+     "type": "mouse_move",
+     "pos": [
+      2.88,
+      0.423333
+     ]
+    },
+    {
+     "t": 425,
+     "type": "mouse_move",
+     "pos": [
+      2.96,
+      0.37
+     ]
+    },
+    {
+     "t": 450,
+     "type": "mouse_move",
+     "pos": [
+      3.04,
+      0.316667
+     ]
+    },
+    {
+     "t": 475,
+     "type": "mouse_move",
+     "pos": [
+      3.12,
+      0.263333
+     ]
+    },
+    {
+     "t": 500,
+     "type": "mouse_move",
+     "pos": [
+      3.2,
+      0.21
+     ]
+    },
+    {
+     "t": 625,
+     "type": "mouse_up",
+     "pos": [
+      3.2,
+      0.21
+     ]
+    }
+   ],
+   "expected": {
+    "selected": [
+     "f"
+    ],
+    "unchanged": [
+     "f"
+    ]
+   }
+  },
+  {
+   "name": "drag_circle_translates_centre_and_point",
+   "group": "A",
+   "row": "A5",
+   "tool_mode": 0,
+   "initial_script": [
+    "A=(1,1.01)",
+    "B=(3,1.01)",
+    "c=Circle(A,B)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      1.0,
+      3.01
+     ]
+    },
+    {
+     "t": 150,
+     "type": "mouse_move",
+     "pos": [
+      1.08,
+      2.956667
+     ]
+    },
+    {
+     "t": 175,
+     "type": "mouse_move",
+     "pos": [
+      1.16,
+      2.903333
+     ]
+    },
+    {
+     "t": 200,
+     "type": "mouse_move",
+     "pos": [
+      1.24,
+      2.85
+     ]
+    },
+    {
+     "t": 225,
+     "type": "mouse_move",
+     "pos": [
+      1.32,
+      2.796667
+     ]
+    },
+    {
+     "t": 250,
+     "type": "mouse_move",
+     "pos": [
+      1.4,
+      2.743333
+     ]
+    },
+    {
+     "t": 275,
+     "type": "mouse_move",
+     "pos": [
+      1.48,
+      2.69
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_move",
+     "pos": [
+      1.56,
+      2.636667
+     ]
+    },
+    {
+     "t": 325,
+     "type": "mouse_move",
+     "pos": [
+      1.64,
+      2.583333
+     ]
+    },
+    {
+     "t": 350,
+     "type": "mouse_move",
+     "pos": [
+      1.72,
+      2.53
+     ]
+    },
+    {
+     "t": 375,
+     "type": "mouse_move",
+     "pos": [
+      1.8,
+      2.476667
+     ]
+    },
+    {
+     "t": 400,
+     "type": "mouse_move",
+     "pos": [
+      1.88,
+      2.423333
+     ]
+    },
+    {
+     "t": 425,
+     "type": "mouse_move",
+     "pos": [
+      1.96,
+      2.37
+     ]
+    },
+    {
+     "t": 450,
+     "type": "mouse_move",
+     "pos": [
+      2.04,
+      2.316667
+     ]
+    },
+    {
+     "t": 475,
+     "type": "mouse_move",
+     "pos": [
+      2.12,
+      2.263333
+     ]
+    },
+    {
+     "t": 500,
+     "type": "mouse_move",
+     "pos": [
+      2.2,
+      2.21
+     ]
+    },
+    {
+     "t": 625,
+     "type": "mouse_up",
+     "pos": [
+      2.2,
+      2.21
+     ]
+    }
+   ],
+   "expected": {
+    "objects": {
+     "A": [
+      2.2,
+      0.22
+     ],
+     "B": [
+      4.2,
+      0.22
+     ]
+    }
+   }
+  },
+  {
+   "name": "press_inside_unfilled_circle_pans",
+   "group": "A",
+   "row": "A5i",
+   "tool_mode": 0,
+   "initial_script": [
+    "A=(1,1.01)",
+    "B=(3,1.01)",
+    "c=Circle(A,B)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      2.0,
+      1.51
+     ]
+    },
+    {
+     "t": 150,
+     "type": "mouse_move",
+     "pos": [
+      2.08,
+      1.456667
+     ]
+    },
+    {
+     "t": 175,
+     "type": "mouse_move",
+     "pos": [
+      2.16,
+      1.403333
+     ]
+    },
+    {
+     "t": 200,
+     "type": "mouse_move",
+     "pos": [
+      2.24,
+      1.35
+     ]
+    },
+    {
+     "t": 225,
+     "type": "mouse_move",
+     "pos": [
+      2.32,
+      1.296667
+     ]
+    },
+    {
+     "t": 250,
+     "type": "mouse_move",
+     "pos": [
+      2.4,
+      1.243333
+     ]
+    },
+    {
+     "t": 275,
+     "type": "mouse_move",
+     "pos": [
+      2.48,
+      1.19
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_move",
+     "pos": [
+      2.56,
+      1.136667
+     ]
+    },
+    {
+     "t": 325,
+     "type": "mouse_move",
+     "pos": [
+      2.64,
+      1.083333
+     ]
+    },
+    {
+     "t": 350,
+     "type": "mouse_move",
+     "pos": [
+      2.72,
+      1.03
+     ]
+    },
+    {
+     "t": 375,
+     "type": "mouse_move",
+     "pos": [
+      2.8,
+      0.976667
+     ]
+    },
+    {
+     "t": 400,
+     "type": "mouse_move",
+     "pos": [
+      2.88,
+      0.923333
+     ]
+    },
+    {
+     "t": 425,
+     "type": "mouse_move",
+     "pos": [
+      2.96,
+      0.87
+     ]
+    },
+    {
+     "t": 450,
+     "type": "mouse_move",
+     "pos": [
+      3.04,
+      0.816667
+     ]
+    },
+    {
+     "t": 475,
+     "type": "mouse_move",
+     "pos": [
+      3.12,
+      0.763333
+     ]
+    },
+    {
+     "t": 500,
+     "type": "mouse_move",
+     "pos": [
+      3.2,
+      0.71
+     ]
+    },
+    {
+     "t": 625,
+     "type": "mouse_up",
+     "pos": [
+      3.2,
+      0.71
+     ]
+    }
+   ],
+   "expected": {
+    "objects": {
+     "A": [
+      1,
+      1.01
+     ],
+     "B": [
+      3,
+      1.01
+     ]
+    },
+    "view": {
+     "xZero": 506,
+     "yZero": 413.5,
+     "scale": 50
+    }
+   }
+  },
+  {
+   "name": "drag_segment",
+   "group": "A",
+   "row": "A6",
+   "tool_mode": 0,
+   "initial_script": [
+    "A=(1,1.01)",
+    "B=(3,2.01)",
+    "s=Segment(A,B)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      2.0,
+      1.51
+     ]
+    },
+    {
+     "t": 150,
+     "type": "mouse_move",
+     "pos": [
+      2.08,
+      1.456667
+     ]
+    },
+    {
+     "t": 175,
+     "type": "mouse_move",
+     "pos": [
+      2.16,
+      1.403333
+     ]
+    },
+    {
+     "t": 200,
+     "type": "mouse_move",
+     "pos": [
+      2.24,
+      1.35
+     ]
+    },
+    {
+     "t": 225,
+     "type": "mouse_move",
+     "pos": [
+      2.32,
+      1.296667
+     ]
+    },
+    {
+     "t": 250,
+     "type": "mouse_move",
+     "pos": [
+      2.4,
+      1.243333
+     ]
+    },
+    {
+     "t": 275,
+     "type": "mouse_move",
+     "pos": [
+      2.48,
+      1.19
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_move",
+     "pos": [
+      2.56,
+      1.136667
+     ]
+    },
+    {
+     "t": 325,
+     "type": "mouse_move",
+     "pos": [
+      2.64,
+      1.083333
+     ]
+    },
+    {
+     "t": 350,
+     "type": "mouse_move",
+     "pos": [
+      2.72,
+      1.03
+     ]
+    },
+    {
+     "t": 375,
+     "type": "mouse_move",
+     "pos": [
+      2.8,
+      0.976667
+     ]
+    },
+    {
+     "t": 400,
+     "type": "mouse_move",
+     "pos": [
+      2.88,
+      0.923333
+     ]
+    },
+    {
+     "t": 425,
+     "type": "mouse_move",
+     "pos": [
+      2.96,
+      0.87
+     ]
+    },
+    {
+     "t": 450,
+     "type": "mouse_move",
+     "pos": [
+      3.04,
+      0.816667
+     ]
+    },
+    {
+     "t": 475,
+     "type": "mouse_move",
+     "pos": [
+      3.12,
+      0.763333
+     ]
+    },
+    {
+     "t": 500,
+     "type": "mouse_move",
+     "pos": [
+      3.2,
+      0.71
+     ]
+    },
+    {
+     "t": 625,
+     "type": "mouse_up",
+     "pos": [
+      3.2,
+      0.71
+     ]
+    }
+   ],
+   "expected": {
+    "objects": {
+     "A": [
+      2.2,
+      0.21
+     ],
+     "B": [
+      4.2,
+      1.21
+     ]
+    }
+   }
+  },
+  {
+   "name": "drag_polygon_interior",
+   "group": "A",
+   "row": "A7",
+   "tool_mode": 0,
+   "initial_script": [
+    "A=(1,1.01)",
+    "B=(5,1.01)",
+    "C=(1,4.01)",
+    "p=Polygon(A,B,C)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      2.0,
+      2.01
+     ]
+    },
+    {
+     "t": 150,
+     "type": "mouse_move",
+     "pos": [
+      2.08,
+      1.956667
+     ]
+    },
+    {
+     "t": 175,
+     "type": "mouse_move",
+     "pos": [
+      2.16,
+      1.903333
+     ]
+    },
+    {
+     "t": 200,
+     "type": "mouse_move",
+     "pos": [
+      2.24,
+      1.85
+     ]
+    },
+    {
+     "t": 225,
+     "type": "mouse_move",
+     "pos": [
+      2.32,
+      1.796667
+     ]
+    },
+    {
+     "t": 250,
+     "type": "mouse_move",
+     "pos": [
+      2.4,
+      1.743333
+     ]
+    },
+    {
+     "t": 275,
+     "type": "mouse_move",
+     "pos": [
+      2.48,
+      1.69
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_move",
+     "pos": [
+      2.56,
+      1.636667
+     ]
+    },
+    {
+     "t": 325,
+     "type": "mouse_move",
+     "pos": [
+      2.64,
+      1.583333
+     ]
+    },
+    {
+     "t": 350,
+     "type": "mouse_move",
+     "pos": [
+      2.72,
+      1.53
+     ]
+    },
+    {
+     "t": 375,
+     "type": "mouse_move",
+     "pos": [
+      2.8,
+      1.476667
+     ]
+    },
+    {
+     "t": 400,
+     "type": "mouse_move",
+     "pos": [
+      2.88,
+      1.423333
+     ]
+    },
+    {
+     "t": 425,
+     "type": "mouse_move",
+     "pos": [
+      2.96,
+      1.37
+     ]
+    },
+    {
+     "t": 450,
+     "type": "mouse_move",
+     "pos": [
+      3.04,
+      1.316667
+     ]
+    },
+    {
+     "t": 475,
+     "type": "mouse_move",
+     "pos": [
+      3.12,
+      1.263333
+     ]
+    },
+    {
+     "t": 500,
+     "type": "mouse_move",
+     "pos": [
+      3.2,
+      1.21
+     ]
+    },
+    {
+     "t": 625,
+     "type": "mouse_up",
+     "pos": [
+      3.2,
+      1.21
+     ]
+    }
+   ],
+   "expected": {
+    "objects": {
+     "A": [
+      2.2,
+      0.22
+     ],
+     "B": [
+      6.2,
+      0.22
+     ],
+     "C": [
+      2.2,
+      3.22
+     ]
+    }
+   }
+  },
+  {
+   "name": "press_on_polygon_edge_does_nothing",
+   "group": "A",
+   "row": "A7e",
+   "tool_mode": 0,
+   "initial_script": [
+    "A=(1,1.01)",
+    "B=(5,1.01)",
+    "C=(1,4.01)",
+    "p=Polygon(A,B,C)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      3.0,
+      1.01
+     ]
+    },
+    {
+     "t": 150,
+     "type": "mouse_move",
+     "pos": [
+      3.12,
+      0.93
+     ]
+    },
+    {
+     "t": 175,
+     "type": "mouse_move",
+     "pos": [
+      3.24,
+      0.85
+     ]
+    },
+    {
+     "t": 200,
+     "type": "mouse_move",
+     "pos": [
+      3.36,
+      0.77
+     ]
+    },
+    {
+     "t": 225,
+     "type": "mouse_move",
+     "pos": [
+      3.48,
+      0.69
+     ]
+    },
+    {
+     "t": 250,
+     "type": "mouse_move",
+     "pos": [
+      3.6,
+      0.61
+     ]
+    },
+    {
+     "t": 275,
+     "type": "mouse_move",
+     "pos": [
+      3.72,
+      0.53
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_move",
+     "pos": [
+      3.84,
+      0.45
+     ]
+    },
+    {
+     "t": 325,
+     "type": "mouse_move",
+     "pos": [
+      3.96,
+      0.37
+     ]
+    },
+    {
+     "t": 350,
+     "type": "mouse_move",
+     "pos": [
+      4.08,
+      0.29
+     ]
+    },
+    {
+     "t": 375,
+     "type": "mouse_move",
+     "pos": [
+      4.2,
+      0.21
+     ]
+    },
+    {
+     "t": 500,
+     "type": "mouse_up",
+     "pos": [
+      4.2,
+      0.21
+     ]
+    }
+   ],
+   "expected": {
+    "objects": {
+     "A": [
+      1,
+      1.01
+     ],
+     "B": [
+      5,
+      1.01
+     ],
+     "C": [
+      1,
+      4.01
+     ]
+    },
+    "view": {
+     "xZero": 446,
+     "yZero": 373.5,
+     "scale": 50,
+     "yscale": 50,
+     "canvas": [
+      892,
+      747
+     ]
+    },
+    "selected": []
+   }
+  },
+  {
+   "name": "drag_midpoint_refused",
+   "group": "A",
+   "row": "A8",
+   "tool_mode": 0,
+   "initial_script": [
+    "A=(1,1.01)",
+    "B=(5,1.01)",
+    "M=Midpoint(A,B)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      3.0,
+      1.01
+     ]
+    },
+    {
+     "t": 150,
+     "type": "mouse_move",
+     "pos": [
+      3.08,
+      0.956667
+     ]
+    },
+    {
+     "t": 175,
+     "type": "mouse_move",
+     "pos": [
+      3.16,
+      0.903333
+     ]
+    },
+    {
+     "t": 200,
+     "type": "mouse_move",
+     "pos": [
+      3.24,
+      0.85
+     ]
+    },
+    {
+     "t": 225,
+     "type": "mouse_move",
+     "pos": [
+      3.32,
+      0.796667
+     ]
+    },
+    {
+     "t": 250,
+     "type": "mouse_move",
+     "pos": [
+      3.4,
+      0.743333
+     ]
+    },
+    {
+     "t": 275,
+     "type": "mouse_move",
+     "pos": [
+      3.48,
+      0.69
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_move",
+     "pos": [
+      3.56,
+      0.636667
+     ]
+    },
+    {
+     "t": 325,
+     "type": "mouse_move",
+     "pos": [
+      3.64,
+      0.583333
+     ]
+    },
+    {
+     "t": 350,
+     "type": "mouse_move",
+     "pos": [
+      3.72,
+      0.53
+     ]
+    },
+    {
+     "t": 375,
+     "type": "mouse_move",
+     "pos": [
+      3.8,
+      0.476667
+     ]
+    },
+    {
+     "t": 400,
+     "type": "mouse_move",
+     "pos": [
+      3.88,
+      0.423333
+     ]
+    },
+    {
+     "t": 425,
+     "type": "mouse_move",
+     "pos": [
+      3.96,
+      0.37
+     ]
+    },
+    {
+     "t": 450,
+     "type": "mouse_move",
+     "pos": [
+      4.04,
+      0.316667
+     ]
+    },
+    {
+     "t": 475,
+     "type": "mouse_move",
+     "pos": [
+      4.12,
+      0.263333
+     ]
+    },
+    {
+     "t": 500,
+     "type": "mouse_move",
+     "pos": [
+      4.2,
+      0.21
+     ]
+    },
+    {
+     "t": 625,
+     "type": "mouse_up",
+     "pos": [
+      4.2,
+      0.21
+     ]
+    }
+   ],
+   "expected": {
+    "objects": {
+     "A": [
+      1,
+      1.01
+     ],
+     "B": [
+      5,
+      1.01
+     ],
+     "M": [
+      3,
+      1.01
+     ]
+    },
+    "view": {
+     "xZero": 446,
+     "yZero": 373.5,
+     "scale": 50,
+     "yscale": 50,
+     "canvas": [
+      892,
+      747
+     ]
+    },
+    "undo_steps_added": 0
+   }
+  },
+  {
+   "name": "drag_intersection_refused",
+   "group": "A",
+   "row": "A8i",
+   "tool_mode": 0,
+   "initial_script": [
+    "A=(1,1.01)",
+    "B=(5,1.01)",
+    "C=(3,-1.99)",
+    "D=(3,3.01)",
+    "f=Line(A,B)",
+    "g=Line(C,D)",
+    "I=Intersect(f,g)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      3.0,
+      1.01
+     ]
+    },
+    {
+     "t": 150,
+     "type": "mouse_move",
+     "pos": [
+      3.08,
+      0.956667
+     ]
+    },
+    {
+     "t": 175,
+     "type": "mouse_move",
+     "pos": [
+      3.16,
+      0.903333
+     ]
+    },
+    {
+     "t": 200,
+     "type": "mouse_move",
+     "pos": [
+      3.24,
+      0.85
+     ]
+    },
+    {
+     "t": 225,
+     "type": "mouse_move",
+     "pos": [
+      3.32,
+      0.796667
+     ]
+    },
+    {
+     "t": 250,
+     "type": "mouse_move",
+     "pos": [
+      3.4,
+      0.743333
+     ]
+    },
+    {
+     "t": 275,
+     "type": "mouse_move",
+     "pos": [
+      3.48,
+      0.69
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_move",
+     "pos": [
+      3.56,
+      0.636667
+     ]
+    },
+    {
+     "t": 325,
+     "type": "mouse_move",
+     "pos": [
+      3.64,
+      0.583333
+     ]
+    },
+    {
+     "t": 350,
+     "type": "mouse_move",
+     "pos": [
+      3.72,
+      0.53
+     ]
+    },
+    {
+     "t": 375,
+     "type": "mouse_move",
+     "pos": [
+      3.8,
+      0.476667
+     ]
+    },
+    {
+     "t": 400,
+     "type": "mouse_move",
+     "pos": [
+      3.88,
+      0.423333
+     ]
+    },
+    {
+     "t": 425,
+     "type": "mouse_move",
+     "pos": [
+      3.96,
+      0.37
+     ]
+    },
+    {
+     "t": 450,
+     "type": "mouse_move",
+     "pos": [
+      4.04,
+      0.316667
+     ]
+    },
+    {
+     "t": 475,
+     "type": "mouse_move",
+     "pos": [
+      4.12,
+      0.263333
+     ]
+    },
+    {
+     "t": 500,
+     "type": "mouse_move",
+     "pos": [
+      4.2,
+      0.21
+     ]
+    },
+    {
+     "t": 625,
+     "type": "mouse_up",
+     "pos": [
+      4.2,
+      0.21
+     ]
+    }
+   ],
+   "expected": {
+    "objects": {
+     "I": [
+      3,
+      1.01
+     ],
+     "A": [
+      1,
+      1.01
+     ],
+     "C": [
+      3,
+      -1.99
+     ]
+    },
+    "view": {
+     "xZero": 446,
+     "yZero": 373.5,
+     "scale": 50,
+     "yscale": 50,
+     "canvas": [
+      892,
+      747
+     ]
+    }
+   }
+  },
+  {
+   "name": "drag_point_on_line_slides",
+   "group": "A",
+   "row": "A8p",
+   "tool_mode": 0,
+   "initial_script": [
+    "f: y=1.01",
+    "P=Point(f)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      0.0,
+      1.01
+     ]
+    },
+    {
+     "t": 150,
+     "type": "mouse_move",
+     "pos": [
+      0.08,
+      0.956667
+     ]
+    },
+    {
+     "t": 175,
+     "type": "mouse_move",
+     "pos": [
+      0.16,
+      0.903333
+     ]
+    },
+    {
+     "t": 200,
+     "type": "mouse_move",
+     "pos": [
+      0.24,
+      0.85
+     ]
+    },
+    {
+     "t": 225,
+     "type": "mouse_move",
+     "pos": [
+      0.32,
+      0.796667
+     ]
+    },
+    {
+     "t": 250,
+     "type": "mouse_move",
+     "pos": [
+      0.4,
+      0.743333
+     ]
+    },
+    {
+     "t": 275,
+     "type": "mouse_move",
+     "pos": [
+      0.48,
+      0.69
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_move",
+     "pos": [
+      0.56,
+      0.636667
+     ]
+    },
+    {
+     "t": 325,
+     "type": "mouse_move",
+     "pos": [
+      0.64,
+      0.583333
+     ]
+    },
+    {
+     "t": 350,
+     "type": "mouse_move",
+     "pos": [
+      0.72,
+      0.53
+     ]
+    },
+    {
+     "t": 375,
+     "type": "mouse_move",
+     "pos": [
+      0.8,
+      0.476667
+     ]
+    },
+    {
+     "t": 400,
+     "type": "mouse_move",
+     "pos": [
+      0.88,
+      0.423333
+     ]
+    },
+    {
+     "t": 425,
+     "type": "mouse_move",
+     "pos": [
+      0.96,
+      0.37
+     ]
+    },
+    {
+     "t": 450,
+     "type": "mouse_move",
+     "pos": [
+      1.04,
+      0.316667
+     ]
+    },
+    {
+     "t": 475,
+     "type": "mouse_move",
+     "pos": [
+      1.12,
+      0.263333
+     ]
+    },
+    {
+     "t": 500,
+     "type": "mouse_move",
+     "pos": [
+      1.2,
+      0.21
+     ]
+    },
+    {
+     "t": 625,
+     "type": "mouse_up",
+     "pos": [
+      1.2,
+      0.21
+     ]
+    }
+   ],
+   "expected": {
+    "objects": {
+     "P": [
+      1.2,
+      1.01
+     ]
+    }
+   }
+  },
+  {
+   "name": "pan_from_empty_space",
+   "group": "A",
+   "row": "A9",
+   "tool_mode": 0,
+   "initial_script": [
+    "A=(1,1.01)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      -4.68,
+      4.53
+     ]
+    },
+    {
+     "t": 150,
+     "type": "mouse_move",
+     "pos": [
+      -4.582667,
+      4.584667
+     ]
+    },
+    {
+     "t": 175,
+     "type": "mouse_move",
+     "pos": [
+      -4.485333,
+      4.639333
+     ]
+    },
+    {
+     "t": 200,
+     "type": "mouse_move",
+     "pos": [
+      -4.388,
+      4.694
+     ]
+    },
+    {
+     "t": 225,
+     "type": "mouse_move",
+     "pos": [
+      -4.290667,
+      4.748667
+     ]
+    },
+    {
+     "t": 250,
+     "type": "mouse_move",
+     "pos": [
+      -4.193333,
+      4.803333
+     ]
+    },
+    {
+     "t": 275,
+     "type": "mouse_move",
+     "pos": [
+      -4.096,
+      4.858
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_move",
+     "pos": [
+      -3.998667,
+      4.912667
+     ]
+    },
+    {
+     "t": 325,
+     "type": "mouse_move",
+     "pos": [
+      -3.901333,
+      4.967333
+     ]
+    },
+    {
+     "t": 350,
+     "type": "mouse_move",
+     "pos": [
+      -3.804,
+      5.022
+     ]
+    },
+    {
+     "t": 375,
+     "type": "mouse_move",
+     "pos": [
+      -3.706667,
+      5.076667
+     ]
+    },
+    {
+     "t": 400,
+     "type": "mouse_move",
+     "pos": [
+      -3.609333,
+      5.131333
+     ]
+    },
+    {
+     "t": 425,
+     "type": "mouse_move",
+     "pos": [
+      -3.512,
+      5.186
+     ]
+    },
+    {
+     "t": 450,
+     "type": "mouse_move",
+     "pos": [
+      -3.414667,
+      5.240667
+     ]
+    },
+    {
+     "t": 475,
+     "type": "mouse_move",
+     "pos": [
+      -3.317333,
+      5.295333
+     ]
+    },
+    {
+     "t": 500,
+     "type": "mouse_move",
+     "pos": [
+      -3.22,
+      5.35
+     ]
+    },
+    {
+     "t": 625,
+     "type": "mouse_up",
+     "pos": [
+      -3.22,
+      5.35
+     ]
+    }
+   ],
+   "expected": {
+    "objects": {
+     "A": [
+      1,
+      1.01
+     ]
+    },
+    "view": {
+     "xZero": 519,
+     "yZero": 332.5,
+     "scale": 50
+    },
+    "undo_steps_added": 1
+   }
+  },
+  {
+   "name": "drag_on_label_moves_label_only",
+   "group": "A",
+   "row": "A10",
+   "tool_mode": 0,
+   "initial_script": [
+    "A=(1,1.01)",
+    "ShowLabel(A,true)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      1.2,
+      1.33
+     ]
+    },
+    {
+     "t": 150,
+     "type": "mouse_move",
+     "pos": [
+      1.28,
+      1.27
+     ]
+    },
+    {
+     "t": 175,
+     "type": "mouse_move",
+     "pos": [
+      1.36,
+      1.21
+     ]
+    },
+    {
+     "t": 200,
+     "type": "mouse_move",
+     "pos": [
+      1.44,
+      1.15
+     ]
+    },
+    {
+     "t": 225,
+     "type": "mouse_move",
+     "pos": [
+      1.52,
+      1.09
+     ]
+    },
+    {
+     "t": 250,
+     "type": "mouse_move",
+     "pos": [
+      1.6,
+      1.03
+     ]
+    },
+    {
+     "t": 275,
+     "type": "mouse_move",
+     "pos": [
+      1.68,
+      0.97
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_move",
+     "pos": [
+      1.76,
+      0.91
+     ]
+    },
+    {
+     "t": 325,
+     "type": "mouse_move",
+     "pos": [
+      1.84,
+      0.85
+     ]
+    },
+    {
+     "t": 350,
+     "type": "mouse_move",
+     "pos": [
+      1.92,
+      0.79
+     ]
+    },
+    {
+     "t": 375,
+     "type": "mouse_move",
+     "pos": [
+      2.0,
+      0.73
+     ]
+    },
+    {
+     "t": 500,
+     "type": "mouse_up",
+     "pos": [
+      2.0,
+      0.73
+     ]
+    }
+   ],
+   "expected": {
+    "objects": {
+     "A": [
+      1,
+      1.01
+     ]
+    },
+    "label_offset_px": {
+     "A": [
+      40,
+      30
+     ]
+    },
+    "undo_steps_added": 0
+   }
+  },
+  {
+   "name": "point_wins_over_line_underneath",
+   "group": "A",
+   "row": "A13",
+   "tool_mode": 0,
+   "initial_script": [
+    "f: y=1.01",
+    "A=(1,1.01)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    },
+    {
+     "t": 150,
+     "type": "mouse_move",
+     "pos": [
+      1.08,
+      0.93
+     ]
+    },
+    {
+     "t": 175,
+     "type": "mouse_move",
+     "pos": [
+      1.16,
+      0.85
+     ]
+    },
+    {
+     "t": 200,
+     "type": "mouse_move",
+     "pos": [
+      1.24,
+      0.77
+     ]
+    },
+    {
+     "t": 225,
+     "type": "mouse_move",
+     "pos": [
+      1.32,
+      0.69
+     ]
+    },
+    {
+     "t": 250,
+     "type": "mouse_move",
+     "pos": [
+      1.4,
+      0.61
+     ]
+    },
+    {
+     "t": 275,
+     "type": "mouse_move",
+     "pos": [
+      1.48,
+      0.53
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_move",
+     "pos": [
+      1.56,
+      0.45
+     ]
+    },
+    {
+     "t": 325,
+     "type": "mouse_move",
+     "pos": [
+      1.64,
+      0.37
+     ]
+    },
+    {
+     "t": 350,
+     "type": "mouse_move",
+     "pos": [
+      1.72,
+      0.29
+     ]
+    },
+    {
+     "t": 375,
+     "type": "mouse_move",
+     "pos": [
+      1.8,
+      0.21
+     ]
+    },
+    {
+     "t": 500,
+     "type": "mouse_up",
+     "pos": [
+      1.8,
+      0.21
+     ]
+    }
+   ],
+   "expected": {
+    "objects": {
+     "A": [
+      1.8,
+      0.21
+     ]
+    },
+    "unchanged": [
+     "f"
+    ]
+   }
+  },
+  {
+   "name": "overlapping_points_newest_wins",
+   "group": "A",
+   "row": "A14",
+   "tool_mode": 0,
+   "initial_script": [
+    "A=(1,1.01)",
+    "B=(1,1.01)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    },
+    {
+     "t": 150,
+     "type": "mouse_move",
+     "pos": [
+      1.08,
+      0.93
+     ]
+    },
+    {
+     "t": 175,
+     "type": "mouse_move",
+     "pos": [
+      1.16,
+      0.85
+     ]
+    },
+    {
+     "t": 200,
+     "type": "mouse_move",
+     "pos": [
+      1.24,
+      0.77
+     ]
+    },
+    {
+     "t": 225,
+     "type": "mouse_move",
+     "pos": [
+      1.32,
+      0.69
+     ]
+    },
+    {
+     "t": 250,
+     "type": "mouse_move",
+     "pos": [
+      1.4,
+      0.61
+     ]
+    },
+    {
+     "t": 275,
+     "type": "mouse_move",
+     "pos": [
+      1.48,
+      0.53
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_move",
+     "pos": [
+      1.56,
+      0.45
+     ]
+    },
+    {
+     "t": 325,
+     "type": "mouse_move",
+     "pos": [
+      1.64,
+      0.37
+     ]
+    },
+    {
+     "t": 350,
+     "type": "mouse_move",
+     "pos": [
+      1.72,
+      0.29
+     ]
+    },
+    {
+     "t": 375,
+     "type": "mouse_move",
+     "pos": [
+      1.8,
+      0.21
+     ]
+    },
+    {
+     "t": 500,
+     "type": "mouse_up",
+     "pos": [
+      1.8,
+      0.21
+     ]
+    }
+   ],
+   "expected": {
+    "objects": {
+     "A": [
+      1,
+      1.01
+     ],
+     "B": [
+      1.8,
+      0.21
+     ]
+    }
+   }
+  },
+  {
+   "name": "near_points_newest_wins_not_nearest",
+   "group": "A",
+   "row": "A14n",
+   "tool_mode": 0,
+   "initial_script": [
+    "A=(1,1.01)",
+    "B=(1.08,1.01)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      1.02,
+      1.01
+     ]
+    },
+    {
+     "t": 150,
+     "type": "mouse_move",
+     "pos": [
+      1.1,
+      0.93
+     ]
+    },
+    {
+     "t": 175,
+     "type": "mouse_move",
+     "pos": [
+      1.18,
+      0.85
+     ]
+    },
+    {
+     "t": 200,
+     "type": "mouse_move",
+     "pos": [
+      1.26,
+      0.77
+     ]
+    },
+    {
+     "t": 225,
+     "type": "mouse_move",
+     "pos": [
+      1.34,
+      0.69
+     ]
+    },
+    {
+     "t": 250,
+     "type": "mouse_move",
+     "pos": [
+      1.42,
+      0.61
+     ]
+    },
+    {
+     "t": 275,
+     "type": "mouse_move",
+     "pos": [
+      1.5,
+      0.53
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_move",
+     "pos": [
+      1.58,
+      0.45
+     ]
+    },
+    {
+     "t": 325,
+     "type": "mouse_move",
+     "pos": [
+      1.66,
+      0.37
+     ]
+    },
+    {
+     "t": 350,
+     "type": "mouse_move",
+     "pos": [
+      1.74,
+      0.29
+     ]
+    },
+    {
+     "t": 375,
+     "type": "mouse_move",
+     "pos": [
+      1.82,
+      0.21
+     ]
+    },
+    {
+     "t": 500,
+     "type": "mouse_up",
+     "pos": [
+      1.82,
+      0.21
+     ]
+    }
+   ],
+   "expected": {
+    "objects": {
+     "A": [
+      1,
+      1.01
+     ],
+     "B": [
+      1.82,
+      0.21
+     ]
+    }
+   }
+  },
+  {
+   "name": "wheel_zoom_in_about_pointer",
+   "group": "B",
+   "row": "B1",
+   "tool_mode": 0,
+   "initial_script": [],
+   "events": [
+    {
+     "t": 0,
+     "type": "wheel",
+     "pos": [
+      -2.68,
+      2.53
+     ],
+     "deltaY": -100
+    }
+   ],
+   "expected": {
+    "view": {
+     "xZero": 459.4,
+     "yZero": 386.15,
+     "scale": 55,
+     "yscale": 55
+    },
+    "fixed_world_point": [
+     -2.68,
+     2.53
+    ],
+    "undo_steps_added": 0
+   }
+  },
+  {
+   "name": "wheel_zoom_out_about_pointer",
+   "group": "B",
+   "row": "B1o",
+   "tool_mode": 0,
+   "initial_script": [],
+   "events": [
+    {
+     "t": 0,
+     "type": "wheel",
+     "pos": [
+      -2.68,
+      2.53
+     ],
+     "deltaY": 100
+    }
+   ],
+   "expected": {
+    "view": {
+     "scale": 45.454545
+    },
+    "fixed_world_point": [
+     -2.68,
+     2.53
+    ]
+   }
+  },
+  {
+   "name": "zoom_in_button_about_canvas_centre",
+   "group": "B",
+   "row": "B2",
+   "tool_mode": 0,
+   "initial_script": [],
+   "events": [
+    {
+     "t": 0,
+     "type": "button",
+     "button": "zoom_in"
+    }
+   ],
+   "expected": {
+    "view": {
+     "xZero": 446,
+     "yZero": 373.5,
+     "scale": 75
+    },
+    "undo_steps_added": 0
+   }
+  },
+  {
+   "name": "zoom_to_fit_changes_aspect",
+   "group": "B",
+   "row": "B2f",
+   "tool_mode": 0,
+   "initial_script": [
+    "A=(1,1)",
+    "B=(5,2)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "button",
+     "button": "zoom_to_fit"
+    }
+   ],
+   "expected": {
+    "visible_world": {
+     "xmin": 0.562,
+     "xmax": 5.438,
+     "ymin": 0.662,
+     "ymax": 2.358
+    }
+   }
+  },
+  {
+   "name": "move_view_tool_on_point_pans",
+   "group": "B",
+   "row": "B3p",
+   "tool_mode": 40,
+   "initial_script": [
+    "A=(1,1.01)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    },
+    {
+     "t": 150,
+     "type": "mouse_move",
+     "pos": [
+      1.097333,
+      1.064667
+     ]
+    },
+    {
+     "t": 175,
+     "type": "mouse_move",
+     "pos": [
+      1.194667,
+      1.119333
+     ]
+    },
+    {
+     "t": 200,
+     "type": "mouse_move",
+     "pos": [
+      1.292,
+      1.174
+     ]
+    },
+    {
+     "t": 225,
+     "type": "mouse_move",
+     "pos": [
+      1.389333,
+      1.228667
+     ]
+    },
+    {
+     "t": 250,
+     "type": "mouse_move",
+     "pos": [
+      1.486667,
+      1.283333
+     ]
+    },
+    {
+     "t": 275,
+     "type": "mouse_move",
+     "pos": [
+      1.584,
+      1.338
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_move",
+     "pos": [
+      1.681333,
+      1.392667
+     ]
+    },
+    {
+     "t": 325,
+     "type": "mouse_move",
+     "pos": [
+      1.778667,
+      1.447333
+     ]
+    },
+    {
+     "t": 350,
+     "type": "mouse_move",
+     "pos": [
+      1.876,
+      1.502
+     ]
+    },
+    {
+     "t": 375,
+     "type": "mouse_move",
+     "pos": [
+      1.973333,
+      1.556667
+     ]
+    },
+    {
+     "t": 400,
+     "type": "mouse_move",
+     "pos": [
+      2.070667,
+      1.611333
+     ]
+    },
+    {
+     "t": 425,
+     "type": "mouse_move",
+     "pos": [
+      2.168,
+      1.666
+     ]
+    },
+    {
+     "t": 450,
+     "type": "mouse_move",
+     "pos": [
+      2.265333,
+      1.720667
+     ]
+    },
+    {
+     "t": 475,
+     "type": "mouse_move",
+     "pos": [
+      2.362667,
+      1.775333
+     ]
+    },
+    {
+     "t": 500,
+     "type": "mouse_move",
+     "pos": [
+      2.46,
+      1.83
+     ]
+    },
+    {
+     "t": 625,
+     "type": "mouse_up",
+     "pos": [
+      2.46,
+      1.83
+     ]
+    }
+   ],
+   "expected": {
+    "objects": {
+     "A": [
+      1,
+      1.01
+     ]
+    },
+    "view": {
+     "xZero": 519,
+     "yZero": 332.5,
+     "scale": 50
+    }
+   }
+  },
+  {
+   "name": "axis_drag_move_tool_pans",
+   "group": "B",
+   "row": "B4m",
+   "tool_mode": 0,
+   "initial_script": [],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      3.0,
+      0.01
+     ]
+    },
+    {
+     "t": 150,
+     "type": "mouse_move",
+     "pos": [
+      3.1,
+      0.01
+     ]
+    },
+    {
+     "t": 175,
+     "type": "mouse_move",
+     "pos": [
+      3.2,
+      0.01
+     ]
+    },
+    {
+     "t": 200,
+     "type": "mouse_move",
+     "pos": [
+      3.3,
+      0.01
+     ]
+    },
+    {
+     "t": 225,
+     "type": "mouse_move",
+     "pos": [
+      3.4,
+      0.01
+     ]
+    },
+    {
+     "t": 250,
+     "type": "mouse_move",
+     "pos": [
+      3.5,
+      0.01
+     ]
+    },
+    {
+     "t": 275,
+     "type": "mouse_move",
+     "pos": [
+      3.6,
+      0.01
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_move",
+     "pos": [
+      3.7,
+      0.01
+     ]
+    },
+    {
+     "t": 325,
+     "type": "mouse_move",
+     "pos": [
+      3.8,
+      0.01
+     ]
+    },
+    {
+     "t": 350,
+     "type": "mouse_move",
+     "pos": [
+      3.9,
+      0.01
+     ]
+    },
+    {
+     "t": 375,
+     "type": "mouse_move",
+     "pos": [
+      4.0,
+      0.01
+     ]
+    },
+    {
+     "t": 500,
+     "type": "mouse_up",
+     "pos": [
+      4.0,
+      0.01
+     ]
+    }
+   ],
+   "expected": {
+    "view": {
+     "xZero": 496,
+     "yZero": 373.5,
+     "scale": 50,
+     "yscale": 50
+    }
+   }
+  },
+  {
+   "name": "axis_drag_move_view_tool_rescales_x",
+   "group": "B",
+   "row": "B4v",
+   "tool_mode": 40,
+   "initial_script": [],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      3.0,
+      0.01
+     ]
+    },
+    {
+     "t": 150,
+     "type": "mouse_move",
+     "pos": [
+      3.1,
+      0.01
+     ]
+    },
+    {
+     "t": 175,
+     "type": "mouse_move",
+     "pos": [
+      3.2,
+      0.01
+     ]
+    },
+    {
+     "t": 200,
+     "type": "mouse_move",
+     "pos": [
+      3.3,
+      0.01
+     ]
+    },
+    {
+     "t": 225,
+     "type": "mouse_move",
+     "pos": [
+      3.4,
+      0.01
+     ]
+    },
+    {
+     "t": 250,
+     "type": "mouse_move",
+     "pos": [
+      3.5,
+      0.01
+     ]
+    },
+    {
+     "t": 275,
+     "type": "mouse_move",
+     "pos": [
+      3.6,
+      0.01
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_move",
+     "pos": [
+      3.7,
+      0.01
+     ]
+    },
+    {
+     "t": 325,
+     "type": "mouse_move",
+     "pos": [
+      3.8,
+      0.01
+     ]
+    },
+    {
+     "t": 350,
+     "type": "mouse_move",
+     "pos": [
+      3.9,
+      0.01
+     ]
+    },
+    {
+     "t": 375,
+     "type": "mouse_move",
+     "pos": [
+      4.0,
+      0.01
+     ]
+    },
+    {
+     "t": 500,
+     "type": "mouse_up",
+     "pos": [
+      4.0,
+      0.01
+     ]
+    }
+   ],
+   "expected": {
+    "view": {
+     "xZero": 446,
+     "yZero": 373.5,
+     "scale": 66.666667,
+     "yscale": 50
+    },
+    "undo_steps_added": 1
+   }
+  },
+  {
+   "name": "axis_drag_left_of_origin_shrinks_x",
+   "group": "B",
+   "row": "B4v",
+   "tool_mode": 40,
+   "initial_script": [],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      -3.0,
+      0.01
+     ]
+    },
+    {
+     "t": 150,
+     "type": "mouse_move",
+     "pos": [
+      -2.9,
+      0.01
+     ]
+    },
+    {
+     "t": 175,
+     "type": "mouse_move",
+     "pos": [
+      -2.8,
+      0.01
+     ]
+    },
+    {
+     "t": 200,
+     "type": "mouse_move",
+     "pos": [
+      -2.7,
+      0.01
+     ]
+    },
+    {
+     "t": 225,
+     "type": "mouse_move",
+     "pos": [
+      -2.6,
+      0.01
+     ]
+    },
+    {
+     "t": 250,
+     "type": "mouse_move",
+     "pos": [
+      -2.5,
+      0.01
+     ]
+    },
+    {
+     "t": 275,
+     "type": "mouse_move",
+     "pos": [
+      -2.4,
+      0.01
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_move",
+     "pos": [
+      -2.3,
+      0.01
+     ]
+    },
+    {
+     "t": 325,
+     "type": "mouse_move",
+     "pos": [
+      -2.2,
+      0.01
+     ]
+    },
+    {
+     "t": 350,
+     "type": "mouse_move",
+     "pos": [
+      -2.1,
+      0.01
+     ]
+    },
+    {
+     "t": 375,
+     "type": "mouse_move",
+     "pos": [
+      -2.0,
+      0.01
+     ]
+    },
+    {
+     "t": 500,
+     "type": "mouse_up",
+     "pos": [
+      -2.0,
+      0.01
+     ]
+    }
+   ],
+   "expected": {
+    "view": {
+     "xZero": 446,
+     "scale": 33.333333,
+     "yscale": 50
+    }
+   }
+  },
+  {
+   "name": "zoom_in_tool_click_about_click",
+   "group": "B",
+   "row": "B5i",
+   "tool_mode": 41,
+   "initial_script": [],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      4.0,
+      4.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      4.0,
+      4.01
+     ]
+    }
+   ],
+   "expected": {
+    "view": {
+     "xZero": 346,
+     "yZero": 473.75,
+     "scale": 75
+    },
+    "fixed_world_point": [
+     4.0,
+     4.01
+    ],
+    "undo_steps_added": 1
+   }
+  },
+  {
+   "name": "zoom_in_tool_rectangle_fills_canvas",
+   "group": "B",
+   "row": "B5r",
+   "tool_mode": 41,
+   "initial_script": [],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    },
+    {
+     "t": 20,
+     "type": "mouse_move",
+     "pos": [
+      1.266667,
+      1.143333
+     ]
+    },
+    {
+     "t": 45,
+     "type": "mouse_move",
+     "pos": [
+      1.533333,
+      1.276667
+     ]
+    },
+    {
+     "t": 70,
+     "type": "mouse_move",
+     "pos": [
+      1.8,
+      1.41
+     ]
+    },
+    {
+     "t": 95,
+     "type": "mouse_move",
+     "pos": [
+      2.066667,
+      1.543333
+     ]
+    },
+    {
+     "t": 120,
+     "type": "mouse_move",
+     "pos": [
+      2.333333,
+      1.676667
+     ]
+    },
+    {
+     "t": 145,
+     "type": "mouse_move",
+     "pos": [
+      2.6,
+      1.81
+     ]
+    },
+    {
+     "t": 170,
+     "type": "mouse_move",
+     "pos": [
+      2.866667,
+      1.943333
+     ]
+    },
+    {
+     "t": 195,
+     "type": "mouse_move",
+     "pos": [
+      3.133333,
+      2.076667
+     ]
+    },
+    {
+     "t": 220,
+     "type": "mouse_move",
+     "pos": [
+      3.4,
+      2.21
+     ]
+    },
+    {
+     "t": 245,
+     "type": "mouse_move",
+     "pos": [
+      3.666667,
+      2.343333
+     ]
+    },
+    {
+     "t": 270,
+     "type": "mouse_move",
+     "pos": [
+      3.933333,
+      2.476667
+     ]
+    },
+    {
+     "t": 295,
+     "type": "mouse_move",
+     "pos": [
+      4.2,
+      2.61
+     ]
+    },
+    {
+     "t": 320,
+     "type": "mouse_move",
+     "pos": [
+      4.466667,
+      2.743333
+     ]
+    },
+    {
+     "t": 345,
+     "type": "mouse_move",
+     "pos": [
+      4.733333,
+      2.876667
+     ]
+    },
+    {
+     "t": 370,
+     "type": "mouse_move",
+     "pos": [
+      5.0,
+      3.01
+     ]
+    },
+    {
+     "t": 495,
+     "type": "mouse_up",
+     "pos": [
+      5.0,
+      3.01
+     ]
+    }
+   ],
+   "expected": {
+    "visible_world": {
+     "xmin": 1,
+     "xmax": 5,
+     "ymin": 1.01,
+     "ymax": 3.01
+    },
+    "view": {
+     "scale": 223,
+     "yscale": 373.5
+    }
+   }
+  },
+  {
+   "name": "keyboard_open_keeps_centre",
+   "group": "B",
+   "row": "B6",
+   "tool_mode": 0,
+   "initial_script": [],
+   "events": [
+    {
+     "t": 0,
+     "type": "focus_input_row"
+    }
+   ],
+   "expected": {
+    "canvas": [
+     892,
+     526
+    ],
+    "view": {
+     "xZero": 446,
+     "yZero": 263,
+     "scale": 50
+    }
+   }
+  },
+  {
+   "name": "viewport_resize_keeps_centre",
+   "group": "B",
+   "row": "B7",
+   "tool_mode": 0,
+   "initial_script": [],
+   "events": [
+    {
+     "t": 0,
+     "type": "resize_window",
+     "viewport": [
+      1000,
+      700
+     ]
+    }
+   ],
+   "expected": {
+    "canvas": [
+     612,
+     647
+    ],
+    "view": {
+     "xZero": 306,
+     "yZero": 323.5,
+     "scale": 50
+    },
+    "world_at_canvas_centre": [
+     0,
+     0
+    ]
+   }
+  },
+  {
+   "name": "tool_line_two_clicks_empty",
+   "group": "C",
+   "row": "C1l",
+   "tool_mode": 2,
+   "initial_script": [],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    },
+    {
+     "t": 500,
+     "type": "mouse_down",
+     "pos": [
+      4.0,
+      3.01
+     ]
+    },
+    {
+     "t": 530,
+     "type": "mouse_up",
+     "pos": [
+      4.0,
+      3.01
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "A",
+      "point": [
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "label": "B",
+      "point": [
+       4.0,
+       3.0
+      ]
+     },
+     {
+      "label": "f",
+      "definition": "Line(A, B)"
+     }
+    ],
+    "after_first_click": [
+     {
+      "label": "A",
+      "point": [
+       1.0,
+       1.0
+      ]
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 2,
+    "preview_after_first_click": true
+   }
+  },
+  {
+   "name": "tool_segment_two_clicks_empty",
+   "group": "C",
+   "row": "C1s",
+   "tool_mode": 15,
+   "initial_script": [],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    },
+    {
+     "t": 500,
+     "type": "mouse_down",
+     "pos": [
+      4.0,
+      3.01
+     ]
+    },
+    {
+     "t": 530,
+     "type": "mouse_up",
+     "pos": [
+      4.0,
+      3.01
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "A",
+      "point": [
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "label": "B",
+      "point": [
+       4.0,
+       3.0
+      ]
+     },
+     {
+      "label": "f",
+      "definition": "Segment(A, B)"
+     }
+    ],
+    "after_first_click": [
+     {
+      "label": "A",
+      "point": [
+       1.0,
+       1.0
+      ]
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 15,
+    "preview_after_first_click": true
+   }
+  },
+  {
+   "name": "tool_ray_two_clicks_empty",
+   "group": "C",
+   "row": "C1r",
+   "tool_mode": 18,
+   "initial_script": [],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    },
+    {
+     "t": 500,
+     "type": "mouse_down",
+     "pos": [
+      4.0,
+      3.01
+     ]
+    },
+    {
+     "t": 530,
+     "type": "mouse_up",
+     "pos": [
+      4.0,
+      3.01
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "A",
+      "point": [
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "label": "B",
+      "point": [
+       4.0,
+       3.0
+      ]
+     },
+     {
+      "label": "f",
+      "definition": "Ray(A, B)"
+     }
+    ],
+    "after_first_click": [
+     {
+      "label": "A",
+      "point": [
+       1.0,
+       1.0
+      ]
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 18,
+    "preview_after_first_click": true
+   }
+  },
+  {
+   "name": "tool_vector_two_clicks_empty",
+   "group": "C",
+   "row": "C1v",
+   "tool_mode": 7,
+   "initial_script": [],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    },
+    {
+     "t": 500,
+     "type": "mouse_down",
+     "pos": [
+      4.0,
+      3.01
+     ]
+    },
+    {
+     "t": 530,
+     "type": "mouse_up",
+     "pos": [
+      4.0,
+      3.01
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "A",
+      "point": [
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "label": "B",
+      "point": [
+       4.0,
+       3.0
+      ]
+     },
+     {
+      "label": "u",
+      "definition": "Vector(A, B)"
+     }
+    ],
+    "after_first_click": [
+     {
+      "label": "A",
+      "point": [
+       1.0,
+       1.0
+      ]
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 7,
+    "preview_after_first_click": true
+   }
+  },
+  {
+   "name": "tool_circle_centre_point_two_clicks_empty",
+   "group": "C",
+   "row": "C1c",
+   "tool_mode": 10,
+   "initial_script": [],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    },
+    {
+     "t": 500,
+     "type": "mouse_down",
+     "pos": [
+      4.0,
+      3.01
+     ]
+    },
+    {
+     "t": 530,
+     "type": "mouse_up",
+     "pos": [
+      4.0,
+      3.01
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "A",
+      "point": [
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "label": "B",
+      "point": [
+       4.0,
+       3.0
+      ]
+     },
+     {
+      "label": "c",
+      "definition": "Circle(A, B)"
+     }
+    ],
+    "after_first_click": [
+     {
+      "label": "A",
+      "point": [
+       1.0,
+       1.0
+      ]
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 10,
+    "preview_after_first_click": true
+   }
+  },
+  {
+   "name": "tool_midpoint_two_clicks_empty",
+   "group": "C",
+   "row": "C1m",
+   "tool_mode": 19,
+   "initial_script": [],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    },
+    {
+     "t": 500,
+     "type": "mouse_down",
+     "pos": [
+      4.0,
+      3.01
+     ]
+    },
+    {
+     "t": 530,
+     "type": "mouse_up",
+     "pos": [
+      4.0,
+      3.01
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "A",
+      "point": [
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "label": "B",
+      "point": [
+       4.0,
+       3.0
+      ]
+     },
+     {
+      "label": "C",
+      "definition": "Midpoint(A, B)"
+     }
+    ],
+    "after_first_click": [
+     {
+      "label": "A",
+      "point": [
+       1.0,
+       1.0
+      ]
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 19,
+    "preview_after_first_click": false
+   }
+  },
+  {
+   "name": "tool_circle3_three_clicks",
+   "group": "C",
+   "row": "C2c",
+   "tool_mode": 11,
+   "initial_script": [],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    },
+    {
+     "t": 500,
+     "type": "mouse_down",
+     "pos": [
+      4.0,
+      3.01
+     ]
+    },
+    {
+     "t": 530,
+     "type": "mouse_up",
+     "pos": [
+      4.0,
+      3.01
+     ]
+    },
+    {
+     "t": 1000,
+     "type": "mouse_down",
+     "pos": [
+      3.0,
+      -0.99
+     ]
+    },
+    {
+     "t": 1030,
+     "type": "mouse_up",
+     "pos": [
+      3.0,
+      -0.99
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "A",
+      "point": [
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "label": "B",
+      "point": [
+       4.0,
+       3.0
+      ]
+     },
+     {
+      "label": "C",
+      "point": [
+       3.0,
+       -1.0
+      ]
+     },
+     {
+      "label": "c",
+      "definition": "Circle(A, B, C)"
+     }
+    ],
+    "undo_steps_added": 1
+   }
+  },
+  {
+   "name": "tool_polygon_closed_on_first_vertex",
+   "group": "C",
+   "row": "C2p",
+   "tool_mode": 16,
+   "initial_script": [],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    },
+    {
+     "t": 500,
+     "type": "mouse_down",
+     "pos": [
+      4.0,
+      3.01
+     ]
+    },
+    {
+     "t": 530,
+     "type": "mouse_up",
+     "pos": [
+      4.0,
+      3.01
+     ]
+    },
+    {
+     "t": 1000,
+     "type": "mouse_down",
+     "pos": [
+      3.0,
+      -0.99
+     ]
+    },
+    {
+     "t": 1030,
+     "type": "mouse_up",
+     "pos": [
+      3.0,
+      -0.99
+     ]
+    },
+    {
+     "t": 1500,
+     "type": "mouse_down",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    },
+    {
+     "t": 1530,
+     "type": "mouse_up",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "A",
+      "point": [
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "label": "B",
+      "point": [
+       4.0,
+       3.0
+      ]
+     },
+     {
+      "label": "C",
+      "point": [
+       3.0,
+       -1.0
+      ]
+     },
+     {
+      "label": "t1",
+      "definition": "Polygon(A, B, C)"
+     },
+     {
+      "label": "c",
+      "definition": "Segment(A, B, t1)"
+     },
+     {
+      "label": "a",
+      "definition": "Segment(B, C, t1)"
+     },
+     {
+      "label": "b",
+      "definition": "Segment(C, A, t1)"
+     }
+    ],
+    "undo_steps_added": 1
+   }
+  },
+  {
+   "name": "tool_angle_three_clicks",
+   "group": "C",
+   "row": "C2a",
+   "tool_mode": 36,
+   "initial_script": [],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      4.0,
+      3.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      4.0,
+      3.01
+     ]
+    },
+    {
+     "t": 500,
+     "type": "mouse_down",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    },
+    {
+     "t": 530,
+     "type": "mouse_up",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    },
+    {
+     "t": 1000,
+     "type": "mouse_down",
+     "pos": [
+      3.0,
+      -0.99
+     ]
+    },
+    {
+     "t": 1030,
+     "type": "mouse_up",
+     "pos": [
+      3.0,
+      -0.99
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "A",
+      "point": [
+       4.0,
+       3.0
+      ]
+     },
+     {
+      "label": "B",
+      "point": [
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "label": "C",
+      "point": [
+       3.0,
+       -1.0
+      ]
+     },
+     {
+      "label": "α",
+      "definition": "Angle(A, B, C)"
+     }
+    ],
+    "unchanged": [
+     "α"
+    ]
+   }
+  },
+  {
+   "name": "tool_perpendicular_line_then_point",
+   "group": "C",
+   "row": "C3p",
+   "tool_mode": 4,
+   "initial_script": [
+    "f: y=-2.99"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      -2.68,
+      -2.99
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      -2.68,
+      -2.99
+     ]
+    },
+    {
+     "t": 500,
+     "type": "mouse_down",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    },
+    {
+     "t": 530,
+     "type": "mouse_up",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "A",
+      "point": [
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "label": "g",
+      "definition": "OrthogonalLine(A, f)"
+     }
+    ]
+   }
+  },
+  {
+   "name": "tool_parallel_line_then_point",
+   "group": "C",
+   "row": "C3q",
+   "tool_mode": 3,
+   "initial_script": [
+    "f: y=-2.99"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      -2.68,
+      -2.99
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      -2.68,
+      -2.99
+     ]
+    },
+    {
+     "t": 500,
+     "type": "mouse_down",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    },
+    {
+     "t": 530,
+     "type": "mouse_up",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "A",
+      "point": [
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "label": "g",
+      "definition": "Line(A, f)"
+     }
+    ]
+   }
+  },
+  {
+   "name": "tool_segment_reuses_point_within_radius",
+   "group": "C",
+   "row": "C4c",
+   "tool_mode": 15,
+   "initial_script": [
+    "A=(1,1.01)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      -2.0,
+      2.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      -2.0,
+      2.01
+     ]
+    },
+    {
+     "t": 500,
+     "type": "mouse_down",
+     "pos": [
+      1.24,
+      1.01
+     ]
+    },
+    {
+     "t": 530,
+     "type": "mouse_up",
+     "pos": [
+      1.24,
+      1.01
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "B",
+      "point": [
+       -2.0,
+       2.0
+      ]
+     },
+     {
+      "label": "f",
+      "definition": "Segment(B, A)"
+     }
+    ]
+   }
+  },
+  {
+   "name": "point_tool_on_line_attaches",
+   "group": "C",
+   "row": "C5",
+   "tool_mode": 1,
+   "initial_script": [
+    "f: y=-2.99"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      -2.68,
+      -2.99
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      -2.68,
+      -2.99
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "A",
+      "definition": "Point(f)"
+     }
+    ],
+    "objects": {
+     "A": [
+      -2.68,
+      -2.99
+     ]
+    }
+   }
+  },
+  {
+   "name": "point_tool_5px_off_line_is_free",
+   "group": "C",
+   "row": "C5",
+   "tool_mode": 1,
+   "initial_script": [
+    "f: y=-2.99"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      -2.68,
+      -2.89
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      -2.68,
+      -2.89
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "A",
+      "point": [
+       -2.68,
+       -2.89
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "name": "point_tool_on_line_crossing_intersects",
+   "group": "C",
+   "row": "C6",
+   "tool_mode": 1,
+   "initial_script": [
+    "f: y=-2.99",
+    "g: x=-3"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      -3.0,
+      -2.99
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      -3.0,
+      -2.99
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "A",
+      "definition": "Intersect(f, g)"
+     }
+    ]
+   }
+  },
+  {
+   "name": "point_tool_on_circle_line_crossing",
+   "group": "C",
+   "row": "C6c",
+   "tool_mode": 1,
+   "initial_script": [
+    "c: x^2+y^2=9",
+    "f: y=0.01"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      3.0,
+      0.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      3.0,
+      0.01
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "A",
+      "definition": "Intersect(c, f, 2)"
+     }
+    ]
+   }
+  },
+  {
+   "name": "escape_mid_tool_removes_pending_point",
+   "group": "C",
+   "row": "C7",
+   "tool_mode": 15,
+   "initial_script": [],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    },
+    {
+     "t": 600,
+     "type": "key",
+     "key": "Escape"
+    }
+   ],
+   "expected": {
+    "objects": {},
+    "tool_mode_after": 0,
+    "undo_steps_added": 0
+   }
+  },
+  {
+   "name": "switch_tool_mid_sequence_removes_pending_point",
+   "group": "C",
+   "row": "C8",
+   "tool_mode": 15,
+   "initial_script": [],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    },
+    {
+     "t": 600,
+     "type": "select_tool",
+     "mode": 10
+    }
+   ],
+   "expected": {
+    "objects": {},
+    "tool_mode_after": 10
+   }
+  },
+  {
+   "name": "press_drag_release_makes_segment",
+   "group": "C",
+   "row": "C10",
+   "tool_mode": 15,
+   "initial_script": [],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    },
+    {
+     "t": 20,
+     "type": "mouse_move",
+     "pos": [
+      1.2,
+      1.143333
+     ]
+    },
+    {
+     "t": 45,
+     "type": "mouse_move",
+     "pos": [
+      1.4,
+      1.276667
+     ]
+    },
+    {
+     "t": 70,
+     "type": "mouse_move",
+     "pos": [
+      1.6,
+      1.41
+     ]
+    },
+    {
+     "t": 95,
+     "type": "mouse_move",
+     "pos": [
+      1.8,
+      1.543333
+     ]
+    },
+    {
+     "t": 120,
+     "type": "mouse_move",
+     "pos": [
+      2.0,
+      1.676667
+     ]
+    },
+    {
+     "t": 145,
+     "type": "mouse_move",
+     "pos": [
+      2.2,
+      1.81
+     ]
+    },
+    {
+     "t": 170,
+     "type": "mouse_move",
+     "pos": [
+      2.4,
+      1.943333
+     ]
+    },
+    {
+     "t": 195,
+     "type": "mouse_move",
+     "pos": [
+      2.6,
+      2.076667
+     ]
+    },
+    {
+     "t": 220,
+     "type": "mouse_move",
+     "pos": [
+      2.8,
+      2.21
+     ]
+    },
+    {
+     "t": 245,
+     "type": "mouse_move",
+     "pos": [
+      3.0,
+      2.343333
+     ]
+    },
+    {
+     "t": 270,
+     "type": "mouse_move",
+     "pos": [
+      3.2,
+      2.476667
+     ]
+    },
+    {
+     "t": 295,
+     "type": "mouse_move",
+     "pos": [
+      3.4,
+      2.61
+     ]
+    },
+    {
+     "t": 320,
+     "type": "mouse_move",
+     "pos": [
+      3.6,
+      2.743333
+     ]
+    },
+    {
+     "t": 345,
+     "type": "mouse_move",
+     "pos": [
+      3.8,
+      2.876667
+     ]
+    },
+    {
+     "t": 370,
+     "type": "mouse_move",
+     "pos": [
+      4.0,
+      3.01
+     ]
+    },
+    {
+     "t": 495,
+     "type": "mouse_up",
+     "pos": [
+      4.0,
+      3.01
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "A",
+      "point": [
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "label": "B",
+      "point": [
+       4.0,
+       3.0
+      ]
+     },
+     {
+      "label": "f",
+      "definition": "Segment(A, B)"
+     }
+    ],
+    "undo_steps_added": 1
+   }
+  },
+  {
+   "name": "drag_existing_point_with_segment_tool",
+   "group": "C",
+   "row": "C11",
+   "tool_mode": 15,
+   "initial_script": [
+    "A=(1,1.01)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    },
+    {
+     "t": 20,
+     "type": "mouse_move",
+     "pos": [
+      1.150667,
+      1.104667
+     ]
+    },
+    {
+     "t": 45,
+     "type": "mouse_move",
+     "pos": [
+      1.301333,
+      1.199333
+     ]
+    },
+    {
+     "t": 70,
+     "type": "mouse_move",
+     "pos": [
+      1.452,
+      1.294
+     ]
+    },
+    {
+     "t": 95,
+     "type": "mouse_move",
+     "pos": [
+      1.602667,
+      1.388667
+     ]
+    },
+    {
+     "t": 120,
+     "type": "mouse_move",
+     "pos": [
+      1.753333,
+      1.483333
+     ]
+    },
+    {
+     "t": 145,
+     "type": "mouse_move",
+     "pos": [
+      1.904,
+      1.578
+     ]
+    },
+    {
+     "t": 170,
+     "type": "mouse_move",
+     "pos": [
+      2.054667,
+      1.672667
+     ]
+    },
+    {
+     "t": 195,
+     "type": "mouse_move",
+     "pos": [
+      2.205333,
+      1.767333
+     ]
+    },
+    {
+     "t": 220,
+     "type": "mouse_move",
+     "pos": [
+      2.356,
+      1.862
+     ]
+    },
+    {
+     "t": 245,
+     "type": "mouse_move",
+     "pos": [
+      2.506667,
+      1.956667
+     ]
+    },
+    {
+     "t": 270,
+     "type": "mouse_move",
+     "pos": [
+      2.657333,
+      2.051333
+     ]
+    },
+    {
+     "t": 295,
+     "type": "mouse_move",
+     "pos": [
+      2.808,
+      2.146
+     ]
+    },
+    {
+     "t": 320,
+     "type": "mouse_move",
+     "pos": [
+      2.958667,
+      2.240667
+     ]
+    },
+    {
+     "t": 345,
+     "type": "mouse_move",
+     "pos": [
+      3.109333,
+      2.335333
+     ]
+    },
+    {
+     "t": 370,
+     "type": "mouse_move",
+     "pos": [
+      3.26,
+      2.43
+     ]
+    },
+    {
+     "t": 495,
+     "type": "mouse_up",
+     "pos": [
+      3.26,
+      2.43
+     ]
+    }
+   ],
+   "expected": {
+    "objects": {
+     "A": [
+      1,
+      1.01
+     ],
+     "B": [
+      3.26,
+      2.43
+     ]
+    },
+    "created": [
+     {
+      "label": "B",
+      "point": [
+       3.26,
+       2.43
+      ]
+     },
+     {
+      "label": "f",
+      "definition": "Segment(A, B)"
+     }
+    ]
+   }
+  },
+  {
+   "name": "drag_existing_point_with_point_tool",
+   "group": "C",
+   "row": "C11",
+   "tool_mode": 1,
+   "initial_script": [
+    "A=(1,1.01)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    },
+    {
+     "t": 20,
+     "type": "mouse_move",
+     "pos": [
+      1.150667,
+      1.104667
+     ]
+    },
+    {
+     "t": 45,
+     "type": "mouse_move",
+     "pos": [
+      1.301333,
+      1.199333
+     ]
+    },
+    {
+     "t": 70,
+     "type": "mouse_move",
+     "pos": [
+      1.452,
+      1.294
+     ]
+    },
+    {
+     "t": 95,
+     "type": "mouse_move",
+     "pos": [
+      1.602667,
+      1.388667
+     ]
+    },
+    {
+     "t": 120,
+     "type": "mouse_move",
+     "pos": [
+      1.753333,
+      1.483333
+     ]
+    },
+    {
+     "t": 145,
+     "type": "mouse_move",
+     "pos": [
+      1.904,
+      1.578
+     ]
+    },
+    {
+     "t": 170,
+     "type": "mouse_move",
+     "pos": [
+      2.054667,
+      1.672667
+     ]
+    },
+    {
+     "t": 195,
+     "type": "mouse_move",
+     "pos": [
+      2.205333,
+      1.767333
+     ]
+    },
+    {
+     "t": 220,
+     "type": "mouse_move",
+     "pos": [
+      2.356,
+      1.862
+     ]
+    },
+    {
+     "t": 245,
+     "type": "mouse_move",
+     "pos": [
+      2.506667,
+      1.956667
+     ]
+    },
+    {
+     "t": 270,
+     "type": "mouse_move",
+     "pos": [
+      2.657333,
+      2.051333
+     ]
+    },
+    {
+     "t": 295,
+     "type": "mouse_move",
+     "pos": [
+      2.808,
+      2.146
+     ]
+    },
+    {
+     "t": 320,
+     "type": "mouse_move",
+     "pos": [
+      2.958667,
+      2.240667
+     ]
+    },
+    {
+     "t": 345,
+     "type": "mouse_move",
+     "pos": [
+      3.109333,
+      2.335333
+     ]
+    },
+    {
+     "t": 370,
+     "type": "mouse_move",
+     "pos": [
+      3.26,
+      2.43
+     ]
+    },
+    {
+     "t": 495,
+     "type": "mouse_up",
+     "pos": [
+      3.26,
+      2.43
+     ]
+    }
+   ],
+   "expected": {
+    "objects": {
+     "A": [
+      3.26,
+      2.43
+     ]
+    },
+    "created": []
+   }
+  },
+  {
+   "name": "segment_tool_twice_stays_selected",
+   "group": "C",
+   "row": "C12",
+   "tool_mode": 15,
+   "initial_script": [],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    },
+    {
+     "t": 500,
+     "type": "mouse_down",
+     "pos": [
+      4.0,
+      3.01
+     ]
+    },
+    {
+     "t": 530,
+     "type": "mouse_up",
+     "pos": [
+      4.0,
+      3.01
+     ]
+    },
+    {
+     "t": 1000,
+     "type": "mouse_down",
+     "pos": [
+      3.0,
+      -0.99
+     ]
+    },
+    {
+     "t": 1030,
+     "type": "mouse_up",
+     "pos": [
+      3.0,
+      -0.99
+     ]
+    },
+    {
+     "t": 1500,
+     "type": "mouse_down",
+     "pos": [
+      -2.0,
+      2.01
+     ]
+    },
+    {
+     "t": 1530,
+     "type": "mouse_up",
+     "pos": [
+      -2.0,
+      2.01
+     ]
+    }
+   ],
+   "expected": {
+    "tool_mode_after": 15,
+    "undo_steps_added": 2,
+    "created_labels": [
+     "A",
+     "B",
+     "f",
+     "C",
+     "D",
+     "g"
+    ]
+   }
+  },
+  {
+   "name": "area_tool_on_polygon",
+   "group": "C",
+   "row": "C13",
+   "tool_mode": 49,
+   "initial_script": [
+    "A=(1,1)",
+    "B=(5,1)",
+    "C=(1,4)",
+    "p=Polygon(A,B,C)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      2.0,
+      1.51
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      2.0,
+      1.51
+     ]
+    }
+   ],
+   "expected": {}
+  },
+  {
+   "name": "delete_tool_click_point_removes_dependents",
+   "group": "D",
+   "row": "D4",
+   "tool_mode": 6,
+   "initial_script": [
+    "A=(1,1.01)",
+    "B=(4,1.01)",
+    "s=Segment(A,B)",
+    "C=(-3,-1.99)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    }
+   ],
+   "expected": {
+    "remaining": [
+     "B",
+     "C"
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 6
+   }
+  },
+  {
+   "name": "delete_tool_area_drag_deletes_nothing",
+   "group": "D",
+   "row": "D5",
+   "tool_mode": 6,
+   "initial_script": [
+    "A=(1,1.01)",
+    "B=(4,1.01)",
+    "s=Segment(A,B)",
+    "C=(-3,-1.99)",
+    "D=(6,4.01)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      -3.68,
+      2.53
+     ]
+    },
+    {
+     "t": 150,
+     "type": "mouse_move",
+     "pos": [
+      -3.28,
+      2.29
+     ]
+    },
+    {
+     "t": 175,
+     "type": "mouse_move",
+     "pos": [
+      -2.88,
+      2.05
+     ]
+    },
+    {
+     "t": 200,
+     "type": "mouse_move",
+     "pos": [
+      -2.48,
+      1.81
+     ]
+    },
+    {
+     "t": 225,
+     "type": "mouse_move",
+     "pos": [
+      -2.08,
+      1.57
+     ]
+    },
+    {
+     "t": 250,
+     "type": "mouse_move",
+     "pos": [
+      -1.68,
+      1.33
+     ]
+    },
+    {
+     "t": 275,
+     "type": "mouse_move",
+     "pos": [
+      -1.28,
+      1.09
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_move",
+     "pos": [
+      -0.88,
+      0.85
+     ]
+    },
+    {
+     "t": 325,
+     "type": "mouse_move",
+     "pos": [
+      -0.48,
+      0.61
+     ]
+    },
+    {
+     "t": 350,
+     "type": "mouse_move",
+     "pos": [
+      -0.08,
+      0.37
+     ]
+    },
+    {
+     "t": 375,
+     "type": "mouse_move",
+     "pos": [
+      0.32,
+      0.13
+     ]
+    },
+    {
+     "t": 400,
+     "type": "mouse_move",
+     "pos": [
+      0.72,
+      -0.11
+     ]
+    },
+    {
+     "t": 425,
+     "type": "mouse_move",
+     "pos": [
+      1.12,
+      -0.35
+     ]
+    },
+    {
+     "t": 450,
+     "type": "mouse_move",
+     "pos": [
+      1.52,
+      -0.59
+     ]
+    },
+    {
+     "t": 475,
+     "type": "mouse_move",
+     "pos": [
+      1.92,
+      -0.83
+     ]
+    },
+    {
+     "t": 500,
+     "type": "mouse_move",
+     "pos": [
+      2.32,
+      -1.07
+     ]
+    },
+    {
+     "t": 525,
+     "type": "mouse_move",
+     "pos": [
+      2.72,
+      -1.31
+     ]
+    },
+    {
+     "t": 550,
+     "type": "mouse_move",
+     "pos": [
+      3.12,
+      -1.55
+     ]
+    },
+    {
+     "t": 575,
+     "type": "mouse_move",
+     "pos": [
+      3.52,
+      -1.79
+     ]
+    },
+    {
+     "t": 600,
+     "type": "mouse_move",
+     "pos": [
+      3.92,
+      -2.03
+     ]
+    },
+    {
+     "t": 625,
+     "type": "mouse_move",
+     "pos": [
+      4.32,
+      -2.27
+     ]
+    },
+    {
+     "t": 750,
+     "type": "mouse_up",
+     "pos": [
+      4.32,
+      -2.27
+     ]
+    }
+   ],
+   "expected": {
+    "remaining": [
+     "A",
+     "B",
+     "s",
+     "C",
+     "D"
+    ]
+   }
+  },
+  {
+   "name": "delete_tool_stroke_erases_crossed_object",
+   "group": "D",
+   "row": "D5s",
+   "tool_mode": 6,
+   "initial_script": [
+    "A=(1,1.01)",
+    "B=(4,1.01)",
+    "s=Segment(A,B)",
+    "C=(-3,-1.99)",
+    "D=(6,4.01)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      3.0,
+      1.73
+     ]
+    },
+    {
+     "t": 150,
+     "type": "mouse_move",
+     "pos": [
+      3.0,
+      1.65
+     ]
+    },
+    {
+     "t": 175,
+     "type": "mouse_move",
+     "pos": [
+      3.0,
+      1.57
+     ]
+    },
+    {
+     "t": 200,
+     "type": "mouse_move",
+     "pos": [
+      3.0,
+      1.49
+     ]
+    },
+    {
+     "t": 225,
+     "type": "mouse_move",
+     "pos": [
+      3.0,
+      1.41
+     ]
+    },
+    {
+     "t": 250,
+     "type": "mouse_move",
+     "pos": [
+      3.0,
+      1.33
+     ]
+    },
+    {
+     "t": 275,
+     "type": "mouse_move",
+     "pos": [
+      3.0,
+      1.25
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_move",
+     "pos": [
+      3.0,
+      1.17
+     ]
+    },
+    {
+     "t": 325,
+     "type": "mouse_move",
+     "pos": [
+      3.0,
+      1.09
+     ]
+    },
+    {
+     "t": 350,
+     "type": "mouse_move",
+     "pos": [
+      3.0,
+      1.01
+     ]
+    },
+    {
+     "t": 375,
+     "type": "mouse_move",
+     "pos": [
+      3.0,
+      0.93
+     ]
+    },
+    {
+     "t": 400,
+     "type": "mouse_move",
+     "pos": [
+      3.0,
+      0.85
+     ]
+    },
+    {
+     "t": 425,
+     "type": "mouse_move",
+     "pos": [
+      3.0,
+      0.77
+     ]
+    },
+    {
+     "t": 450,
+     "type": "mouse_move",
+     "pos": [
+      3.0,
+      0.69
+     ]
+    },
+    {
+     "t": 475,
+     "type": "mouse_move",
+     "pos": [
+      3.0,
+      0.61
+     ]
+    },
+    {
+     "t": 500,
+     "type": "mouse_move",
+     "pos": [
+      3.0,
+      0.53
+     ]
+    },
+    {
+     "t": 525,
+     "type": "mouse_move",
+     "pos": [
+      3.0,
+      0.45
+     ]
+    },
+    {
+     "t": 550,
+     "type": "mouse_move",
+     "pos": [
+      3.0,
+      0.37
+     ]
+    },
+    {
+     "t": 575,
+     "type": "mouse_move",
+     "pos": [
+      3.0,
+      0.29
+     ]
+    },
+    {
+     "t": 600,
+     "type": "mouse_move",
+     "pos": [
+      3.0,
+      0.21
+     ]
+    },
+    {
+     "t": 625,
+     "type": "mouse_move",
+     "pos": [
+      3.0,
+      0.13
+     ]
+    },
+    {
+     "t": 750,
+     "type": "mouse_up",
+     "pos": [
+      3.0,
+      0.13
+     ]
+    }
+   ],
+   "expected": {
+    "remaining": [
+     "A",
+     "B",
+     "C",
+     "D"
+    ]
+   }
+  },
+  {
+   "name": "point_tool_snaps_within_box",
+   "group": "E",
+   "row": "E1d",
+   "tool_mode": 1,
+   "initial_script": [],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      2.12,
+      3.11
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      2.12,
+      3.11
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "A",
+      "point": [
+       2.0,
+       3.0
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "name": "point_tool_no_snap_7px",
+   "group": "E",
+   "row": "E1",
+   "tool_mode": 1,
+   "initial_script": [],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      2.14,
+      2.99
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      2.14,
+      2.99
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "A",
+      "point": [
+       2.14,
+       2.99
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "name": "point_tool_no_per_axis_snap",
+   "group": "E",
+   "row": "E1x",
+   "tool_mode": 1,
+   "initial_script": [],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      2.1,
+      3.39
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      2.1,
+      3.39
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "A",
+      "point": [
+       2.1,
+       3.39
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "name": "point_tool_ignores_minor_crossing",
+   "group": "E",
+   "row": "E1m",
+   "tool_mode": 1,
+   "initial_script": [],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      2.22,
+      2.99
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      2.22,
+      2.99
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "A",
+      "point": [
+       2.22,
+       2.99
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "name": "touch_drag_point",
+   "group": "F",
+   "row": "F3",
+   "tool_mode": 0,
+   "initial_script": [
+    "A=(1,1.01)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "touch_down",
+     "pos": [
+      1.0,
+      1.01
+     ]
+    },
+    {
+     "t": 150,
+     "type": "touch_move",
+     "pos": [
+      1.188333,
+      1.128333
+     ]
+    },
+    {
+     "t": 175,
+     "type": "touch_move",
+     "pos": [
+      1.376667,
+      1.246667
+     ]
+    },
+    {
+     "t": 200,
+     "type": "touch_move",
+     "pos": [
+      1.565,
+      1.365
+     ]
+    },
+    {
+     "t": 225,
+     "type": "touch_move",
+     "pos": [
+      1.753333,
+      1.483333
+     ]
+    },
+    {
+     "t": 250,
+     "type": "touch_move",
+     "pos": [
+      1.941667,
+      1.601667
+     ]
+    },
+    {
+     "t": 275,
+     "type": "touch_move",
+     "pos": [
+      2.13,
+      1.72
+     ]
+    },
+    {
+     "t": 300,
+     "type": "touch_move",
+     "pos": [
+      2.318333,
+      1.838333
+     ]
+    },
+    {
+     "t": 325,
+     "type": "touch_move",
+     "pos": [
+      2.506667,
+      1.956667
+     ]
+    },
+    {
+     "t": 350,
+     "type": "touch_move",
+     "pos": [
+      2.695,
+      2.075
+     ]
+    },
+    {
+     "t": 375,
+     "type": "touch_move",
+     "pos": [
+      2.883333,
+      2.193333
+     ]
+    },
+    {
+     "t": 400,
+     "type": "touch_move",
+     "pos": [
+      3.071667,
+      2.311667
+     ]
+    },
+    {
+     "t": 425,
+     "type": "touch_move",
+     "pos": [
+      3.26,
+      2.43
+     ]
+    },
+    {
+     "t": 550,
+     "type": "touch_up",
+     "pos": [
+      3.26,
+      2.43
+     ]
+    }
+   ],
+   "expected": {
+    "objects": {
+     "A": [
+      3.26,
+      2.43
+     ]
+    },
+    "undo_steps_added": 1
+   }
+  },
+  {
+   "name": "touch_pan_one_finger",
+   "group": "F",
+   "row": "F4",
+   "tool_mode": 0,
+   "initial_script": [
+    "A=(1,1.01)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "touch_down",
+     "pos": [
+      -4.68,
+      4.53
+     ]
+    },
+    {
+     "t": 150,
+     "type": "touch_move",
+     "pos": [
+      -4.558333,
+      4.598333
+     ]
+    },
+    {
+     "t": 175,
+     "type": "touch_move",
+     "pos": [
+      -4.436667,
+      4.666667
+     ]
+    },
+    {
+     "t": 200,
+     "type": "touch_move",
+     "pos": [
+      -4.315,
+      4.735
+     ]
+    },
+    {
+     "t": 225,
+     "type": "touch_move",
+     "pos": [
+      -4.193333,
+      4.803333
+     ]
+    },
+    {
+     "t": 250,
+     "type": "touch_move",
+     "pos": [
+      -4.071667,
+      4.871667
+     ]
+    },
+    {
+     "t": 275,
+     "type": "touch_move",
+     "pos": [
+      -3.95,
+      4.94
+     ]
+    },
+    {
+     "t": 300,
+     "type": "touch_move",
+     "pos": [
+      -3.828333,
+      5.008333
+     ]
+    },
+    {
+     "t": 325,
+     "type": "touch_move",
+     "pos": [
+      -3.706667,
+      5.076667
+     ]
+    },
+    {
+     "t": 350,
+     "type": "touch_move",
+     "pos": [
+      -3.585,
+      5.145
+     ]
+    },
+    {
+     "t": 375,
+     "type": "touch_move",
+     "pos": [
+      -3.463333,
+      5.213333
+     ]
+    },
+    {
+     "t": 400,
+     "type": "touch_move",
+     "pos": [
+      -3.341667,
+      5.281667
+     ]
+    },
+    {
+     "t": 425,
+     "type": "touch_move",
+     "pos": [
+      -3.22,
+      5.35
+     ]
+    },
+    {
+     "t": 550,
+     "type": "touch_up",
+     "pos": [
+      -3.22,
+      5.35
+     ]
+    }
+   ],
+   "expected": {
+    "view": {
+     "xZero": 519,
+     "yZero": 332.5,
+     "scale": 50
+    }
+   }
+  },
+  {
+   "name": "pinch_spread_symmetric",
+   "group": "F",
+   "row": "F5",
+   "tool_mode": 0,
+   "initial_script": [
+    "A=(1,1.01)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "touch_down",
+     "id": 0,
+     "pos": [
+      -4.68,
+      2.53
+     ]
+    },
+    {
+     "t": 30,
+     "type": "touch_down",
+     "id": 1,
+     "pos": [
+      -0.68,
+      2.53
+     ]
+    },
+    {
+     "t": 180,
+     "type": "touch_move",
+     "id": 0,
+     "pos": [
+      -4.746667,
+      2.53
+     ]
+    },
+    {
+     "t": 180,
+     "type": "touch_move",
+     "id": 1,
+     "pos": [
+      -0.613333,
+      2.53
+     ]
+    },
+    {
+     "t": 210,
+     "type": "touch_move",
+     "id": 0,
+     "pos": [
+      -4.813333,
+      2.53
+     ]
+    },
+    {
+     "t": 210,
+     "type": "touch_move",
+     "id": 1,
+     "pos": [
+      -0.546667,
+      2.53
+     ]
+    },
+    {
+     "t": 240,
+     "type": "touch_move",
+     "id": 0,
+     "pos": [
+      -4.88,
+      2.53
+     ]
+    },
+    {
+     "t": 240,
+     "type": "touch_move",
+     "id": 1,
+     "pos": [
+      -0.48,
+      2.53
+     ]
+    },
+    {
+     "t": 270,
+     "type": "touch_move",
+     "id": 0,
+     "pos": [
+      -4.946667,
+      2.53
+     ]
+    },
+    {
+     "t": 270,
+     "type": "touch_move",
+     "id": 1,
+     "pos": [
+      -0.413333,
+      2.53
+     ]
+    },
+    {
+     "t": 300,
+     "type": "touch_move",
+     "id": 0,
+     "pos": [
+      -5.013333,
+      2.53
+     ]
+    },
+    {
+     "t": 300,
+     "type": "touch_move",
+     "id": 1,
+     "pos": [
+      -0.346667,
+      2.53
+     ]
+    },
+    {
+     "t": 330,
+     "type": "touch_move",
+     "id": 0,
+     "pos": [
+      -5.08,
+      2.53
+     ]
+    },
+    {
+     "t": 330,
+     "type": "touch_move",
+     "id": 1,
+     "pos": [
+      -0.28,
+      2.53
+     ]
+    },
+    {
+     "t": 360,
+     "type": "touch_move",
+     "id": 0,
+     "pos": [
+      -5.146667,
+      2.53
+     ]
+    },
+    {
+     "t": 360,
+     "type": "touch_move",
+     "id": 1,
+     "pos": [
+      -0.213333,
+      2.53
+     ]
+    },
+    {
+     "t": 390,
+     "type": "touch_move",
+     "id": 0,
+     "pos": [
+      -5.213333,
+      2.53
+     ]
+    },
+    {
+     "t": 390,
+     "type": "touch_move",
+     "id": 1,
+     "pos": [
+      -0.146667,
+      2.53
+     ]
+    },
+    {
+     "t": 420,
+     "type": "touch_move",
+     "id": 0,
+     "pos": [
+      -5.28,
+      2.53
+     ]
+    },
+    {
+     "t": 420,
+     "type": "touch_move",
+     "id": 1,
+     "pos": [
+      -0.08,
+      2.53
+     ]
+    },
+    {
+     "t": 450,
+     "type": "touch_move",
+     "id": 0,
+     "pos": [
+      -5.346667,
+      2.53
+     ]
+    },
+    {
+     "t": 450,
+     "type": "touch_move",
+     "id": 1,
+     "pos": [
+      -0.013333,
+      2.53
+     ]
+    },
+    {
+     "t": 480,
+     "type": "touch_move",
+     "id": 0,
+     "pos": [
+      -5.413333,
+      2.53
+     ]
+    },
+    {
+     "t": 480,
+     "type": "touch_move",
+     "id": 1,
+     "pos": [
+      0.053333,
+      2.53
+     ]
+    },
+    {
+     "t": 510,
+     "type": "touch_move",
+     "id": 0,
+     "pos": [
+      -5.48,
+      2.53
+     ]
+    },
+    {
+     "t": 510,
+     "type": "touch_move",
+     "id": 1,
+     "pos": [
+      0.12,
+      2.53
+     ]
+    },
+    {
+     "t": 540,
+     "type": "touch_move",
+     "id": 0,
+     "pos": [
+      -5.546667,
+      2.53
+     ]
+    },
+    {
+     "t": 540,
+     "type": "touch_move",
+     "id": 1,
+     "pos": [
+      0.186667,
+      2.53
+     ]
+    },
+    {
+     "t": 570,
+     "type": "touch_move",
+     "id": 0,
+     "pos": [
+      -5.613333,
+      2.53
+     ]
+    },
+    {
+     "t": 570,
+     "type": "touch_move",
+     "id": 1,
+     "pos": [
+      0.253333,
+      2.53
+     ]
+    },
+    {
+     "t": 600,
+     "type": "touch_move",
+     "id": 0,
+     "pos": [
+      -5.68,
+      2.53
+     ]
+    },
+    {
+     "t": 600,
+     "type": "touch_move",
+     "id": 1,
+     "pos": [
+      0.32,
+      2.53
+     ]
+    },
+    {
+     "t": 830,
+     "type": "touch_up",
+     "id": 0
+    },
+    {
+     "t": 880,
+     "type": "touch_up",
+     "id": 1
+    }
+   ],
+   "expected": {
+    "view": {
+     "scale": 74.25
+    },
+    "fixed_world_point_approx": [
+     -2.66,
+     2.53
+    ],
+    "objects": {
+     "A": [
+      1,
+      1.01
+     ]
+    }
+   }
+  },
+  {
+   "name": "enter_on_empty_input_row",
+   "group": "G",
+   "row": "G4",
+   "tool_mode": 0,
+   "initial_script": [],
+   "events": [
+    {
+     "t": 0,
+     "type": "focus_input_row"
+    },
+    {
+     "t": 300,
+     "type": "key",
+     "key": "Enter"
+    }
+   ],
+   "expected": {
+    "objects": {},
+    "undo_steps_added": 0,
+    "keyboard_stays_open": true
+   }
+  }
+ ]
+}

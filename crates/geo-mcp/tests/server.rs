@@ -106,6 +106,12 @@ fn frame(events: Vec<Value>) -> Value {
     json!({ "events": events })
 }
 
+/// A frame 50 ms after the previous one: two of them outlast the drag
+/// delay after a press (moves within it are dropped).
+fn slow_frame(events: Vec<Value>) -> Value {
+    json!({ "dt": 0.05, "events": events })
+}
+
 fn input(s: &mut Server, frames: Vec<Value>, settle: bool) -> Value {
     call(s, "input", json!({"frames": frames, "settle": settle}))
 }
@@ -502,9 +508,11 @@ mod window_tests {
             frame(vec![ev("move", at(from.0, from.1))]),
             frame(vec![ev("down", at(from.0, from.1))]),
         ];
+        // Moves 50 ms apart: the first one comes within the drag delay and
+        // is dropped, the drag follows from the second one.
         for i in 1..=5 {
             let t = i as f64 / 5.0;
-            frames.push(frame(vec![ev(
+            frames.push(slow_frame(vec![ev(
                 "move",
                 at(from.0 + (to.0 - from.0) * t, from.1),
             )]));
@@ -521,7 +529,7 @@ mod window_tests {
         let cam = camera(&st);
         let mut frames = Vec::new();
         for i in 1..=5 {
-            frames.push(frame(vec![ev(
+            frames.push(slow_frame(vec![ev(
                 "move",
                 at(empty.0 + 20.0 * i as f64, empty.1),
             )]));
@@ -963,39 +971,39 @@ fn rows_are_named_in_and_out_of_view_at_any_scroll_offset() {
     );
 }
 
-/// Through the frame loop the gesture rules hold: a press held longer than
-/// the click time is no tap, and a press that moves less than the drag
-/// slop is no drag (values from the desktop metrics). A server that
-/// applied clicks and drags directly would fail both.
+/// Through the frame loop the gesture rules hold (values from the desktop
+/// metrics, which follow the reference app's `EuclidianController`): a still
+/// press is a tap however long it is held (no long press for the mouse),
+/// moves within the drag delay after the press are dropped
+/// (`shouldCancelDrag`), the first move after it takes the point straight
+/// to the pointer (no slop), and a release is a click unless the drag went
+/// beyond the threshold (`isDraggingBeyondThreshold`, one move late). A
+/// server that applied clicks and drags directly would fail these.
 #[test]
-fn the_click_time_and_the_drag_slop_decide_through_the_frame_loop() {
+fn the_drag_delay_and_the_click_threshold_decide_through_the_frame_loop() {
     let m = geo_app_core::metrics::Metrics::desktop();
     let mut s = Server::new();
     call(&mut s, "select_tool", json!({"tool": "point"}));
-    let press_for = |s: &mut Server, x: f64, held: f64| {
-        let p = world(x, 2.0);
-        input(
-            s,
-            vec![
-                frame(vec![ev("move", p.clone())]),
-                frame(vec![ev("down", p.clone())]),
-                json!({"dt": held, "events": []}),
-                json!({"dt": 0.0, "events": [ev("up", p)]}),
-            ],
-            true,
-        );
-    };
-    press_for(&mut s, 2.0, m.click_time + 0.1);
-    assert!(
-        objects(&state(&mut s)).is_empty(),
-        "a long press placed a point"
+    let p = world(2.0, 2.0);
+    input(
+        &mut s,
+        vec![
+            frame(vec![ev("move", p.clone())]),
+            frame(vec![ev("down", p.clone())]),
+            json!({"dt": 3.0, "events": []}),
+            json!({"dt": 0.0, "events": [ev("up", p)]}),
+        ],
+        true,
     );
-    press_for(&mut s, -2.0, m.click_time - 0.1);
-    assert_eq!(objects(&state(&mut s)), ["A"], "a short press is a tap");
+    assert_eq!(objects(&state(&mut s)), ["A"], "a long press is a tap");
 
-    call(&mut s, "reset", json!({"script": "A = (0, 0)\n"}));
-    let slop = m.drag_slop as f64;
-    let press_and_move = |s: &mut Server, by: f64| {
+    // A is off the grid and stays off it here: a free point near a grid
+    // crossing is captured to it (`transformCoords`).
+    call(&mut s, "reset", json!({"script": "A = (0.5, 0.5)\n"}));
+    let delay = m.drag_delay;
+    let threshold = m.drag_threshold as f64;
+    // Presses A, moves it by `by` in `moves` steps `dt` apart, releases.
+    let press_and_move = |s: &mut Server, by: f64, moves: usize, dt: f64| {
         let st = state(s);
         let o = &st["view"]["origin"];
         let a = point(&st, "A");
@@ -1008,22 +1016,63 @@ fn the_click_time_and_the_drag_slop_decide_through_the_frame_loop() {
             frame(vec![ev("move", at(p.0, p.1))]),
             frame(vec![ev("down", at(p.0, p.1))]),
         ];
-        for i in 1..=4 {
-            frames.push(frame(vec![ev("move", at(p.0 + by * i as f64 / 4.0, p.1))]));
+        for i in 1..=moves {
+            let x = p.0 + by * i as f64 / moves as f64;
+            frames.push(json!({"dt": dt, "events": [ev("move", at(x, p.1))]}));
         }
-        frames.push(frame(vec![ev("up", at(p.0 + by, p.1))]));
+        frames.push(json!({"dt": 0.3, "events": [ev("up", at(p.0 + by, p.1))]}));
         input(s, frames, true);
         state(s)
     };
-    let st = press_and_move(&mut s, slop - 2.0);
+    let st = press_and_move(&mut s, 30.0, 4, 0.2 * delay);
     assert_eq!(
         point(&st, "A"),
-        (0.0, 0.0),
-        "a move inside the slop dragged"
+        (0.5, 0.5),
+        "moves within the delay dragged"
     );
-    assert_eq!(st["selected"], "A", "a move inside the slop is a tap");
-    let st = press_and_move(&mut s, slop + 24.0);
-    assert!(point(&st, "A").0 > 0.0, "a move past the slop did not drag");
+    call(&mut s, "reset", json!({"script": "A = (0.5, 0.5)\n"}));
+    let st = press_and_move(&mut s, threshold - 4.0, 2, delay + 0.05);
+    let (x, k) = (point(&st, "A").0, st["view"]["scale"].as_f64().unwrap());
+    assert!(
+        (x - 0.5 - (threshold - 4.0) / k).abs() < 1e-6,
+        "slop held back: {x}"
+    );
+    let st = press_and_move(&mut s, threshold + 24.0, 4, delay + 0.05);
+    let k = st["view"]["scale"].as_f64().unwrap();
+    assert!(
+        point(&st, "A").0 > x + (threshold + 20.0) / k,
+        "a drag beyond the threshold did not follow"
+    );
+
+    // The threshold decides the click: a press on empty space with the
+    // point tool whose drag (two moves after the delay, so the threshold is
+    // checked) ends 9 or 10 px away is a click and places a point; 11 px is
+    // a drag and places none. The distances are the reference app's
+    // (`DRAG_THRESHOLD` 10), not read from the metrics, so that this fails
+    // with a threshold of 6 (9 px no click) or of 20 (11 px a click).
+    for (by, click) in [(9.0, true), (10.0, true), (11.0, false)] {
+        call(&mut s, "reset", json!({}));
+        call(&mut s, "select_tool", json!({"tool": "point"}));
+        let st = state(&mut s);
+        let o = &st["view"]["origin"];
+        let p = (
+            o[0].as_f64().unwrap() + 115.0,
+            o[1].as_f64().unwrap() - 85.0,
+        );
+        input(
+            &mut s,
+            vec![
+                frame(vec![ev("move", at(p.0, p.1))]),
+                frame(vec![ev("down", at(p.0, p.1))]),
+                json!({"dt": delay + 0.05, "events": [ev("move", at(p.0 + by, p.1))]}),
+                json!({"dt": 0.05, "events": [ev("move", at(p.0 + by, p.1))]}),
+                json!({"dt": 0.05, "events": [ev("up", at(p.0 + by, p.1))]}),
+            ],
+            true,
+        );
+        let placed = objects(&state(&mut s)).len() == 1;
+        assert_eq!(placed, click, "a release {by} px from the press");
+    }
 }
 
 /// Reading never changes the window: any number of `state` (both modes),
