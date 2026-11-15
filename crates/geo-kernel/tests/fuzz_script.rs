@@ -36,6 +36,7 @@ const CONTEXT: &[&str] = &[
     "u = (1, 2)",
     "v = Vector(A, B)",
     "g = Ray(A, B)",
+    "e = Ellipse(A, B, C)",
 ];
 
 /// At the time of writing: 697 case scripts and 21 README lines.
@@ -349,6 +350,9 @@ fn builtin_lines() -> Vec<String> {
         "zl = Join(Sort({n, 1, 2}), Reverse(Append(First({P, P}, 1), P)))".to_string(),
         "zn = Product({n, 2}) + Mean({n}) + Max({1, n}) + x(Sum({P, P}) - {1, n})".to_string(),
         "zb = !(n == 3) || true && n \u{2264} 2".to_string(),
+        "e2 = Intersect(l, e, 2)".to_string(),
+        "e2 = Tangent(D, e)".to_string(),
+        "e2 = Directrix(e)".to_string(),
         "# only a comment".to_string(),
         "".to_string(),
     ];
@@ -533,13 +537,25 @@ const TOKENS: &[&str] = &[
     "Append(",
     "Join(",
     "{{1}, {2}}",
+    "Conic",
+    "Ellipse",
+    "Hyperbola",
+    "Parabola",
+    "Focus",
+    "Vertex",
+    "Axes",
+    "MajorAxis",
+    "Directrix",
+    "Eccentricity",
+    "FirstAxisLength",
+    "Parameter",
     "Foo",
     "",
 ];
 
 const LABELS: &[&str] = &[
     "A", "B", "C", "D", "l", "m", "s", "k", "k2", "r", "q", "d", "M", "t_{1}", "t_{2}", "A'",
-    "X_1", "u", "v", "g", "1", "2",
+    "X_1", "u", "v", "g", "e", "1", "2",
 ];
 
 fn random_char(rng: &mut Rng) -> char {

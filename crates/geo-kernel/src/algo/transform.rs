@@ -66,6 +66,7 @@ fn of_kind(kind: Kind) -> &'static [Kind] {
         Kind::Polygon => &[Kind::Polygon],
         Kind::PolyLine => &[Kind::PolyLine],
         Kind::List => &[Kind::List],
+        Kind::Conic => &[Kind::Conic],
     }
 }
 
@@ -274,6 +275,7 @@ impl Map {
             | Value::Polygon { .. }
             | Value::PolyLine { .. }
             | Value::List { .. }
+            | Value::Conic { .. }
             | Value::Undefined => None,
         }
     }
@@ -560,6 +562,7 @@ fn parse_transform(c: &Construction, func: &str, args: &[&str]) -> Result<Transf
             | Kind::Polygon
             | Kind::PolyLine
             | Kind::List
+            | Kind::Conic
             | Kind::Function => Err(format!(
                 "`{}` is a {second_kind}, expected a mirror",
                 args[1]

@@ -37,6 +37,11 @@ impl<T> Undo<T> {
         !self.future.is_empty()
     }
 
+    /// The undo and redo steps held.
+    pub fn depth(&self) -> (usize, usize) {
+        (self.past.len(), self.future.len())
+    }
+
     /// Steps back: returns the previous state and keeps `current` for redo.
     pub fn undo(&mut self, current: T) -> Option<T> {
         let prev = self.past.pop()?;
@@ -64,6 +69,13 @@ impl<T> Undo<T> {
     pub fn clear(&mut self) {
         self.past.clear();
         self.future.clear();
+    }
+
+    /// Every state kept, undo steps then redo steps (for the tests that
+    /// measure what the history holds).
+    #[cfg(test)]
+    pub fn states(&self) -> impl Iterator<Item = &T> {
+        self.past.iter().chain(&self.future)
     }
 }
 

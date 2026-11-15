@@ -20,24 +20,22 @@
 //! Everything that depends on the app's layout is in `adapter.rs`.
 
 mod adapter;
-mod alloc;
+pub(crate) mod alloc;
 mod report;
 mod scene;
 
 use crate::app::App;
+use crate::headless;
+pub use crate::headless::Repaint;
 use crate::interact::ViewTransform;
 use crate::theme;
 use crate::view::{self, Camera};
 use crate::workbench::Workbench;
-use eframe::egui::{
-    self, epaint, vec2, Event, Key, Modifiers, PointerButton, Pos2, RawInput, Rect, Shape,
-    ViewportId,
-};
+use eframe::egui::{self, vec2, Event, Key, Modifiers, PointerButton, Pos2, Rect, Shape};
 use geo_kernel::kernel::{Kind, Value};
 use scene::Scene;
 use std::collections::{BTreeSet, HashSet};
-use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 // The test binary only: counts the allocations of the benchmark thread
 // while a measurement is running and is a plain pass-through otherwise.
@@ -47,16 +45,6 @@ static GLOBAL: alloc::Counting = alloc::Counting;
 const SCREEN: (f32, f32) = (1400.0, 900.0);
 const DT: f64 = 1.0 / 60.0;
 const WARMUP: usize = 3;
-
-/// The repaint a frame asked for.
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub enum Repaint {
-    #[default]
-    None,
-    Immediate,
-    /// After this many milliseconds.
-    After(f64),
-}
 
 /// What one frame cost.
 #[derive(Clone, Debug, Default)]
@@ -125,44 +113,11 @@ fn moved(p: Pos2) -> Event {
 }
 
 fn button(p: Pos2, pressed: bool) -> Event {
-    Event::PointerButton {
-        pos: p,
-        button: PointerButton::Primary,
-        pressed,
-        modifiers: Modifiers::NONE,
-    }
+    headless::press(p, PointerButton::Primary, pressed)
 }
 
 fn key(k: Key, pressed: bool) -> Event {
-    Event::Key {
-        key: k,
-        physical_key: None,
-        pressed,
-        repeat: false,
-        modifiers: Modifiers::NONE,
-    }
-}
-
-fn walk(shape: &Shape, f: &mut Frame, seen: &mut HashSet<usize>, prev: &HashSet<usize>) {
-    match shape {
-        Shape::Noop => {}
-        Shape::Vec(v) => v.iter().for_each(|s| walk(s, f, seen, prev)),
-        Shape::Text(t) => {
-            f.shapes += 1;
-            f.text_shapes += 1;
-            f.glyphs += t
-                .galley
-                .rows
-                .iter()
-                .map(|r| r.glyphs.len() as u64)
-                .sum::<u64>();
-            let ptr = Arc::as_ptr(&t.galley) as usize;
-            if seen.insert(ptr) && !prev.contains(&ptr) {
-                f.new_galleys += 1;
-            }
-        }
-        _ => f.shapes += 1,
-    }
+    headless::key(k, pressed, Modifiers::NONE)
 }
 
 fn collect_texts(shape: &Shape, out: &mut Vec<String>) {
@@ -205,54 +160,35 @@ impl<'s> Runner<'s> {
     }
 
     fn step(&mut self, events: Vec<Event>) -> Frame {
-        let input = RawInput {
-            screen_rect: Some(self.screen),
-            time: Some(self.time),
-            predicted_dt: DT as f32,
-            events,
-            focused: true,
-            ..Default::default()
-        };
+        let input = headless::raw_input(self.screen, self.time, DT as f32, events);
         self.time += DT;
         let mut f = Frame::default();
-        let pass0 = self.ctx.cumulative_pass_nr();
-        let rows0 = self.app.wb.rows_built();
-        let rebuilds0 = self.app.wb.rebuilds();
-        let app = &mut self.app;
-        let (mut out, ns, allocs, bytes) =
-            timed(|| self.ctx.run_ui(input, |ui| adapter::show(app, ui)));
+        let (ctx, app) = (&self.ctx, &mut self.app);
+        let ((mut out, pass), ns, allocs, bytes) =
+            timed(|| headless::run(ctx, app, input, adapter::show));
         (f.ui_ns, f.ui_allocs, f.ui_bytes) = (ns, allocs, bytes);
-        f.passes = self.ctx.cumulative_pass_nr() - pass0;
-        f.rows_built = self.app.wb.rows_built() - rows0;
-        f.rebuilds = self.app.wb.rebuilds() - rebuilds0;
-        f.repaint = match out.viewport_output.get(&ViewportId::ROOT) {
-            Some(v) if v.repaint_delay == Duration::ZERO => Repaint::Immediate,
-            Some(v) if v.repaint_delay < Duration::MAX => {
-                Repaint::After(v.repaint_delay.as_secs_f64() * 1000.0)
-            }
-            _ => Repaint::None,
-        };
+        (f.passes, f.rows_built, f.rebuilds) = (pass.passes, pass.rows_built, pass.rebuilds);
+        f.repaint = headless::repaint(&out);
         f.texture_updates = out.textures_delta.set.len() as u64;
         out.textures_delta.clear();
-        let mut seen = HashSet::new();
-        for clipped in &out.shapes {
-            walk(&clipped.shape, &mut f, &mut seen, &self.galleys);
-            if let Some(texts) = &mut self.texts {
+        let shapes = headless::count_shapes(&out, &mut self.galleys);
+        (f.shapes, f.text_shapes, f.glyphs, f.new_galleys) = (
+            shapes.shapes,
+            shapes.text_shapes,
+            shapes.glyphs,
+            shapes.new_galleys,
+        );
+        if let Some(texts) = &mut self.texts {
+            for clipped in &out.shapes {
                 collect_texts(&clipped.shape, texts);
             }
         }
-        self.galleys = seen;
         let shapes = std::mem::take(&mut out.shapes);
         let ppp = out.pixels_per_point;
         let (prims, ns, allocs, bytes) = timed(|| self.ctx.tessellate(shapes, ppp));
         (f.tess_ns, f.tess_allocs, f.tess_bytes) = (ns, allocs, bytes);
-        for p in &prims {
-            if let epaint::Primitive::Mesh(m) = &p.primitive {
-                f.meshes += 1;
-                f.vertices += m.vertices.len() as u64;
-                f.indices += m.indices.len() as u64;
-            }
-        }
+        let meshes = headless::count_meshes(&prims);
+        (f.meshes, f.vertices, f.indices) = (meshes.meshes, meshes.vertices, meshes.indices);
         f
     }
 

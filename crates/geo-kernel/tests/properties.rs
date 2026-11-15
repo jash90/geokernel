@@ -93,9 +93,14 @@ fn with_creation_state_of(def: Def, orig: Def) -> Def {
 fn rebuild_from_defs(orig: &Construction) -> Result<Construction, String> {
     let mut fresh = Construction::new();
     for id in orig.ids() {
-        let added = match orig.expression(id) {
-            Some(e) => fresh.add_expression(orig.label(id), &e),
-            None => fresh.add(orig.label(id), orig.def(id)),
+        let def = orig.def(id);
+        let added = match (orig.expression(id), def.list()) {
+            (Some(e), _) => fresh.add_expression(orig.label(id), &e),
+            // a list handle is valid only in its construction
+            (None, Some(list)) => {
+                fresh.add_with_list(orig.label(id), orig.list(list), |l| def.with_list(l))
+            }
+            (None, None) => fresh.add(orig.label(id), def),
         };
         added.map_err(|e| format!("rebuilding `{}` failed: {e}", orig.label(id)))?;
     }
@@ -1893,8 +1898,8 @@ fn every_command_with_every_argument_kind() {
                         if c.len() != len
                             || c.ids()
                                 .take(base)
-                                .map(|id| c.value(id))
-                                .ne(base_values.iter().map(|s| s.value))
+                                .map(|id| snap(&c, id))
+                                .ne(base_values.iter().cloned())
                         {
                             problems.push(format!(
                                 "[{world_name}] `{line}` failed ({e}) but changed the construction"

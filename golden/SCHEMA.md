@@ -117,6 +117,22 @@ carries no numeric fields. When it is `true` it carries exactly these:
 | `polygon` | `vertices`, `area`, `signed_area` | `vertices` is the list of vertices in order, each `[x, y]`. `area` is GeoGebra's area (never negative), `signed_area` the area with its sign: positive when the vertices run counter-clockwise. |
 | `polyline` | `vertices`, `length` | `vertices` is the list of vertices in order, each `[x, y]`, or `null` for an undefined point (GeoGebra leaves a hole there). `length` is the sum of the lengths of the pieces between two defined points. |
 | `list` | `elements` | The elements in order, each an Object of its own (`number`, `point`, `vector`, `boolean` or `list`, defined or not): `{ "type": "list", "defined": true, "elements": [{ "type": "number", "defined": true, "value": 1.0 }, { "type": "list", "defined": true, "elements": [] }] }`. An element that is a point or vector carries `x` and `y` like an object. |
+| `conic` | `conic_type`, `matrix`, and the parts of the type (below) | A general conic: an object made by `Conic`, `Ellipse`, `Hyperbola` or `Parabola`, or the image of one under a transformation. Every other conic object of GeoGebra is a `circle`. |
+
+A `conic` carries `conic_type`, a string, and `matrix`, the six numbers
+`[A00, A11, A22, A01, A02, A12]` of
+`A00*x² + A11*y² + A22 + 2*A01*x*y + 2*A02*x + 2*A12*y = 0` raw as GeoGebra
+holds them (`GeoConicND.getMatrix`): not normalised, and scaled by a power of
+two when GeoGebra rescales huge or tiny coefficients. The other fields depend
+on `conic_type`:
+
+| `conic_type` | Further fields |
+| --- | --- |
+| `circle`, `ellipse`, `hyperbola` | `midpoint` `[x, y]`, `half_axes` `[a, b]` (first and second axis), `eigenvectors` `[[x, y], [x, y]]` (the directions of the first and second axis) |
+| `parabola` | `vertex` `[x, y]`, `p` (the parameter), `eigenvectors` (the first points from the directrix to the focus) |
+| `single_point` | `point` `[x, y]` |
+| `intersecting_lines`, `parallel_lines`, `double_line` | `lines` `[[x, y, z], [x, y, z]]`, the two lines raw in GeoGebra's order |
+| `empty` | none |
 
 All numbers are finite JSON numbers that round-trip to the same `f64`.
 A value that is not finite in GeoGebra is recorded as `defined: false`.
@@ -158,6 +174,11 @@ These rules are applied by the Rust side (`crates/geo-golden`).
 - Lists: the number of elements must be equal, and each element is
   compared like an object of its type, nested lists recursively
   (`Construction::elements`).
+- Conics: `conic_type` must be equal, and every number of `matrix` and of
+  the parts must agree, raw: the matrix with GeoGebra's scale, the
+  eigenvectors with their signs and the two lines in GeoGebra's order.
+  Whether the matrices also agree up to a common factor is counted and
+  reported separately; it does not decide the comparison.
 
 Free vectors come from a script line `v = (x, y)` whose label starts with a
 lower-case letter; with an upper-case label the same line makes a point, as in
@@ -181,6 +202,8 @@ A line `f(x) = ...` defines a function of `x`, recorded under the label `f`;
 other lines may apply it (`v = f(2)`, `g(x) = f(x) + 1`).
 Expressions and the type `function` were added after the first golden files
 were written; no existing file changed and the schema version stays 1.
+The type `conic` was added the same way, later still: no existing file
+changed and the schema version stays 1.
 
 Expressions may also compare and combine booleans and pick a branch with
 `If` (group `logic`), and build lists (group `lists`): literals such as

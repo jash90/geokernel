@@ -38,17 +38,60 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             }
         });
     }
-    let rows = app.wb.rows().to_vec();
+    app.wb.refresh_rows();
     let mut actions = Actions::default();
-    egui::ScrollArea::vertical()
+    let kept: Option<String> = ui.data(|d| d.get_temp(kept_id()));
+    let all = lay_out_all_rows();
+    let output = egui::ScrollArea::vertical()
         .auto_shrink([false, false])
-        .show(ui, |ui| {
+        .show_viewport(ui, |ui, viewport| {
             ui.spacing_mut().item_spacing = vec2(0.0, 0.0);
-            for row in &rows {
-                paint_row(app, ui, row, &mut actions);
+            let origin = ui.cursor().min;
+            let width = ui.available_width();
+            // Only the rows in the visible part are laid out, and the row
+            // that holds the keyboard focus or an open menu (egui forgets
+            // both for a widget it does not see). The space of the others
+            // is left empty, so the list is as tall and every row where it
+            // would be with all of them laid out.
+            let rows = app.wb.current_rows();
+            let (mut top, mut skipped) = (0.0, 0.0);
+            let mut keep = None;
+            for row in rows {
+                let height = row_height(row);
+                let in_view = top + height > viewport.min.y && top < viewport.max.y;
+                if all || in_view || kept.as_deref() == Some(row.label.as_str()) {
+                    ui.add_space(skipped);
+                    skipped = 0.0;
+                    if paint_row(app, ui, row, &mut actions) {
+                        keep = Some(row.label.clone());
+                    }
+                } else {
+                    skipped += height;
+                }
+                top += height;
             }
+            ui.add_space(skipped);
             input_row(app, ui);
+            (origin, width, keep)
         });
+    let (origin, width, keep) = output.inner;
+    ui.data_mut(|d| {
+        d.insert_temp(
+            geometry_id(),
+            ListGeometry {
+                origin,
+                width,
+                viewport: output.inner_rect,
+                content: output.content_size,
+                offset: output.state.clamped_offset().y,
+            },
+        );
+        if let Some(label) = keep {
+            d.insert_temp(kept_id(), label);
+        } else {
+            d.remove::<String>(kept_id());
+        }
+    });
     if let Some(s) = actions.select {
         app.wb.selected = s;
     }
@@ -71,10 +114,91 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     }
 }
 
-fn paint_row(app: &App, ui: &mut Ui, row: &Row, actions: &mut Actions) {
-    let height = if row.free { ROW_FREE } else { ROW_DEPENDENT };
+pub(crate) fn row_height(row: &Row) -> f32 {
+    if row.free {
+        ROW_FREE
+    } else {
+        ROW_DEPENDENT
+    }
+}
+
+/// The id of an object's row. Its widgets' ids derive from it (`body`,
+/// `marker`, `kebab`, `value`), so they stay the same when other rows
+/// scroll in or out, and the headless window names rows by them.
+pub(crate) fn row_id(label: &str) -> egui::Id {
+    egui::Id::unique(("algebra_row", label))
+}
+
+/// The click areas of a row laid out at `rect`: its text (`body`), its
+/// visibility marker and its menu button, with the salt of each one's id.
+pub(crate) fn row_parts(row: &Row, rect: Rect) -> [(&'static str, Rect); 3] {
+    let body = Rect::from_min_max(rect.min + vec2(theme::MARKER_CELL, 0.0), rect.max);
+    let marker = Rect::from_min_size(rect.min, vec2(theme::MARKER_CELL, rect.height()));
+    let kebab = Rect::from_center_size(
+        Pos2::new(rect.right() - 28.0, head_y(row, rect)),
+        vec2(30.0, 30.0),
+    );
+    [("body", body), ("marker", marker), ("kebab", kebab)]
+}
+
+/// The middle of a row's first line.
+fn head_y(row: &Row, rect: Rect) -> f32 {
+    if row.free {
+        rect.center().y
+    } else {
+        rect.top() + 30.0
+    }
+}
+
+/// Where the list was laid out in the last frame, in window points.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) struct ListGeometry {
+    /// The top left corner of the first row, scrolled.
+    pub origin: Pos2,
+    pub width: f32,
+    /// The visible part of the list.
+    pub viewport: Rect,
+    /// The size of everything in the list (rows and the input row).
+    pub content: egui::Vec2,
+    /// How far the list is scrolled.
+    pub offset: f32,
+}
+
+fn geometry_id() -> egui::Id {
+    egui::Id::unique("algebra_list_geometry")
+}
+
+fn kept_id() -> egui::Id {
+    egui::Id::unique("algebra_kept_row")
+}
+
+/// The list as the last frame laid it out.
+#[cfg(any(test, feature = "headless"))]
+pub(crate) fn geometry(ctx: &egui::Context) -> Option<ListGeometry> {
+    ctx.data(|d| d.get_temp(geometry_id()))
+}
+
+#[cfg(test)]
+thread_local! {
+    /// Tests lay out every row, to compare the visible-only list with it.
+    pub(crate) static ALL_ROWS: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+fn lay_out_all_rows() -> bool {
+    #[cfg(test)]
+    return ALL_ROWS.with(std::cell::Cell::get);
+    #[cfg(not(test))]
+    false
+}
+
+/// Lays out one row; returns whether it holds the keyboard focus or an
+/// open menu.
+fn paint_row(app: &App, ui: &mut Ui, row: &Row, actions: &mut Actions) -> bool {
+    let height = row_height(row);
     let (rect, _) = ui.allocate_exact_size(vec2(ui.available_width(), height), Sense::hover());
-    let id = ui.scope_id().with(("row", row.id.index()));
+    let id = row_id(&row.label);
+    let [(_, body), (_, cell), (_, kebab_rect)] = row_parts(row, rect);
+    let mut keep = false;
     let selected = app.wb.selected == Some(row.id);
     let hovered = app.hovered == Some(row.id);
     let painter = ui.painter_at(rect);
@@ -95,18 +219,17 @@ fn paint_row(app: &App, ui: &mut Ui, row: &Row, actions: &mut Actions) {
     );
 
     // The body selects the object.
-    let body = Rect::from_min_max(rect.min + vec2(theme::MARKER_CELL, 0.0), rect.max);
     let body_response = ui.interact(body, id.with("body"), Sense::click());
     if body_response.clicked() {
         actions.select = Some(if selected { None } else { Some(row.id) });
     }
 
     // The marker toggles visibility.
-    let cell = Rect::from_min_size(rect.min, vec2(theme::MARKER_CELL, height));
     let marker = ui.interact(cell, id.with("marker"), Sense::click());
     let center = cell.center();
     let visible = app.wb.is_visible(row.id);
-    let (fill, ring) = style::marker(app.wb.construction(), row.id);
+    let base = app.wb.palette().color(row.id);
+    let (fill, ring) = style::marker_of(base);
     let (fill, ring) = (fill.egui(), ring.egui());
     if visible {
         painter.circle(center, 10.0, fill, Stroke::new(1.5, ring));
@@ -126,11 +249,7 @@ fn paint_row(app: &App, ui: &mut Ui, row: &Row, actions: &mut Actions) {
 
     // Text.
     let font = FontId::proportional(FONT);
-    let head_y = if row.free {
-        rect.center().y
-    } else {
-        rect.top() + 30.0
-    };
+    let head_y = head_y(row, rect);
     let head_pos = Pos2::new(rect.left() + TEXT_X, head_y);
     let head_galley = painter.layout_no_wrap(row.head.clone(), font.clone(), theme::TEXT);
     let head_width = head_galley.size().x;
@@ -152,7 +271,20 @@ fn paint_row(app: &App, ui: &mut Ui, row: &Row, actions: &mut Actions) {
         );
         let drag = egui::DragValue::new(&mut v).speed(speed).max_decimals(2);
         let drag = if row.angle { drag.suffix("°") } else { drag };
-        let response = ui.put(r, drag);
+        // In a child of the row that does not move the row's cursor: the
+        // next row starts where this one ends, as the skipped rows are
+        // counted. Its id is the object's, so the field keeps its focus and
+        // text when the first drawn row changes.
+        let mut field = ui.new_child(
+            egui::UiBuilder::new()
+                .scope_id(id.with("value"))
+                .max_rect(r)
+                .layout(egui::Layout::centered_and_justified(
+                    egui::Direction::TopDown,
+                )),
+        );
+        let response = field.add(drag);
+        keep |= response.has_focus();
         response.widget_info(|| {
             egui::WidgetInfo::labeled(
                 egui::Role::SpinButton,
@@ -188,8 +320,7 @@ fn paint_row(app: &App, ui: &mut Ui, row: &Row, actions: &mut Actions) {
     }
 
     // The menu button.
-    let kebab_center = Pos2::new(rect.right() - 28.0, head_y);
-    let kebab_rect = Rect::from_center_size(kebab_center, vec2(30.0, 30.0));
+    let kebab_center = kebab_rect.center();
     let kebab = ui.interact(kebab_rect, id.with("kebab"), Sense::click());
     if kebab.hovered() {
         painter.circle_filled(kebab_center, 15.0, Color32::from_rgb(0xec, 0xec, 0xec));
@@ -201,7 +332,7 @@ fn paint_row(app: &App, ui: &mut Ui, row: &Row, actions: &mut Actions) {
         9.0,
         Color32::from_rgb(0x55, 0x55, 0x55),
     );
-    egui::Popup::menu(&kebab).show(|ui| {
+    let menu = egui::Popup::menu(&kebab).show(|ui| {
         ui.set_min_width(120.0);
         let text = if row.siblings.is_empty() {
             text::label(Label::Delete).to_owned()
@@ -222,6 +353,7 @@ fn paint_row(app: &App, ui: &mut Ui, row: &Row, actions: &mut Actions) {
             ui.close();
         }
     });
+    keep || menu.is_some()
 }
 
 fn input_row(app: &mut App, ui: &mut Ui) {

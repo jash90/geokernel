@@ -1,4 +1,4 @@
-//! Intersection points of lines and circles.
+//! Intersection points of lines, circles and general conics.
 //!
 //! Line–circle and circle–circle intersections follow GeoGebra with its
 //! continuity setting off: the two points keep the order in which they were
@@ -35,6 +35,9 @@
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
 use crate::algo::conic::ConicDef;
+use crate::algo::conic_nd::{ConicData, ConicType};
+use crate::algo::conic_parts::ConicPartDef;
+use crate::algo::general_conic::GeneralConicDef;
 use crate::algo::lines::{self, LineDef};
 use crate::kernel::{Construction, Def, Id, Value};
 use crate::tol::{MAX_PRECISION, MIN_PRECISION, STANDARD_PRECISION};
@@ -191,6 +194,9 @@ pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
                 _ => {}
             }
         }
+        Def::ConicPart(ConicPartDef::IntersectLine { line, conic, .. }) => {
+            push(existing_line_conic_point(c, line, c.def(line), conic));
+        }
         Def::IntersectCircles { c1, c2, .. } if c1 == c2 => push(first_point_on(c, c1)),
         Def::IntersectCircles { c1, c2, .. } => {
             for s in points_on_both(c, c1, c2) {
@@ -243,7 +249,7 @@ fn is_epsilon(e: f64, x: f64, y: f64) -> bool {
 }
 
 /// A point, or `None` where GeoGebra's point is undefined or at infinity.
-type Pt = Option<(f64, f64)>;
+pub(crate) type Pt = Option<(f64, f64)>;
 
 /// `which` is 0 or 1: GeoGebra's intersection 1 or 2 (`AlgoIntersectLineConic`).
 /// `hint` is the intersection's [`Hint`].
@@ -288,6 +294,102 @@ pub(crate) fn line_circle(
         }
     };
     to_value(p[usize::from(which)])
+}
+
+/// `which` is 0 or 1: GeoGebra's intersection 1 or 2 (`AlgoIntersectLineConic`)
+/// of a line and a general conic.
+///
+/// A point on both by construction is intersection 1 (`handleSpecialCase`),
+/// even when the line or the conic is undefined. Otherwise the points keep
+/// the order of `intersectLineConic`, with the defined points first, as
+/// GeoGebra fills them while it has not yet seen two distinct points
+/// (`computeContinuous` with `firstIntersection`); a tangent point is only
+/// intersection 1.
+pub(crate) fn line_general_conic(
+    c: &Construction,
+    line: Id,
+    conic: Id,
+    which: u8,
+) -> Option<Value> {
+    let line_def = c.def(line);
+    if let Def::ConicPart(d) = line_def {
+        // A tangent of this conic has one point, the tangent algorithm's
+        // own (`isDefinedAsTangent`).
+        if let Some(t) = super::conic_parts::tangent_point_on(c, d, conic) {
+            return if which == 0 { to_value(t) } else { None };
+        }
+    }
+    let q = match (c.raw_line(line), c.conic(conic)) {
+        (Some((a, b, cc)), Some(data)) if data.defined => {
+            intersect_line_general_conic([a, b, cc], &data)
+        }
+        _ => [None, None],
+    };
+    let p = match existing_line_conic_point(c, line, line_def, conic) {
+        Some(s) => {
+            let first = c.point(s);
+            [first, other_point(&q, first)]
+        }
+        None => {
+            let mut p = q;
+            if p[0].is_none() {
+                p = [p[1], None];
+            }
+            avoid_double_tangent_point(&mut p);
+            p
+        }
+    };
+    to_value(p[usize::from(which)])
+}
+
+/// The points of the helper `AlgoIntersectLineConic` that a tangent
+/// algorithm makes for the raw line `g` and the conic: in the order of
+/// `intersectLineConic`, the defined points first, a tangent point only
+/// once. Both are undefined when the line or the conic is.
+pub(crate) fn helper_line_conic_points(g: [f64; 3], conic: &ConicData) -> [Pt; 2] {
+    let defined_line = !(g.iter().any(|v| v.is_nan()) || (is_zero(g[0]) && is_zero(g[1])));
+    if !(conic.defined && defined_line) {
+        return [None, None];
+    }
+    let mut p = intersect_line_general_conic(g, conic);
+    if p[0].is_none() {
+        p = [p[1], None];
+    }
+    avoid_double_tangent_point(&mut p);
+    p
+}
+
+/// Whether the point `s` lies on the general conic `conic` by construction
+/// (it is in the conic's incidence list).
+pub(crate) fn on_general_conic_by_construction(c: &Construction, s: Id, conic: Id) -> bool {
+    general_conic_points(c, conic).contains(&Some(s)) || intersection_on_general_conic(c, s, conic)
+}
+
+/// `AlgoIntersectLineConic.intersect` for a general conic: retries with a
+/// growing epsilon until one point lies on both the line and the conic
+/// (`testPoints`).
+fn intersect_line_general_conic(g: [f64; 3], conic: &ConicData) -> [Pt; 2] {
+    let normalized = normalized_coefficients(g);
+    let double_line = conic.ty == ConicType::DoubleLine;
+    let mut eps = 1e-15;
+    while eps <= MIN_PRECISION {
+        let mut sol = line_conic_points(normalized, &conic.matrix, double_line, eps);
+        let mut found = false;
+        for p in sol.iter_mut() {
+            if let Some(q) = *p {
+                if conic.on_full_conic(q, MIN_PRECISION) && on_full_line(g, q, MIN_PRECISION) {
+                    found = true;
+                } else {
+                    *p = None;
+                }
+            }
+        }
+        if found {
+            return sol;
+        }
+        eps *= 10.0;
+    }
+    [None, None]
 }
 
 /// `which` is 0 or 1: GeoGebra's intersection 1 or 2 (`AlgoIntersectConics`).
@@ -531,9 +633,10 @@ fn evaluate(m: &[f64; 6], x: f64, y: f64) -> f64 {
     m[2] + m[4] * x + m[5] * y + y * (m[5] + m[3] * x + m[1] * y) + x * (m[4] + m[0] * x + m[3] * y)
 }
 
-/// `AlgoIntersectLineConic.intersectLineConic(double[] g, double[] A, ...)`
-/// for a conic that is not a double line. `g` holds normalised coefficients.
-fn line_conic_points(g: [f64; 3], m: &[f64; 6], eps: f64) -> [Pt; 2] {
+/// `AlgoIntersectLineConic.intersectLineConic(double[] g, double[] A, type, ...)`.
+/// `g` holds normalised coefficients; `double_line` is whether the conic's
+/// type is a double line.
+fn line_conic_points(g: [f64; 3], m: &[f64; 6], double_line: bool, eps: f64) -> [Pt; 2] {
     let [x, y, z] = g;
     // an arbitrary point of the line
     let (px, py) = if x.abs() > y.abs() {
@@ -567,6 +670,12 @@ fn line_conic_points(g: [f64; 3], m: &[f64; 6], eps: f64) -> [Pt; 2] {
         let p = point(px + t1 * y, py - t1 * x);
         return [p, p];
     }
+    if double_line {
+        // a secant of a double line meets it once
+        let t1 = -d / u;
+        let p = point(px + t1 * y, py - t1 * x);
+        return [p, p];
+    }
     if dis > 0.0 {
         dis = dis.sqrt();
         // one root from (-d ± dis) / u, the other from w / (-d ± dis),
@@ -592,7 +701,7 @@ fn intersect_line_conic(g: [f64; 3], conic: &Conic) -> [Pt; 2] {
     let normalized = normalized_coefficients(g);
     let mut eps = 1e-15;
     while eps <= MIN_PRECISION {
-        let mut sol = line_conic_points(normalized, &conic.m, eps);
+        let mut sol = line_conic_points(normalized, &conic.m, false, eps);
         // testPoints
         let mut found = false;
         for p in sol.iter_mut() {
@@ -648,11 +757,11 @@ fn intersect_equal_submatrix(a: &Conic, b: &Conic, points: &mut [Pt; 2], eps: f6
         c1[2] * c2[0] - c1[0] * c2[2],
     ];
     let normalized = normalized_coefficients(line);
-    *points = line_conic_points(normalized, c1, eps);
+    *points = line_conic_points(normalized, c1, false, eps);
     if test_conic_points(a, b, points, MIN_PRECISION) {
         return true;
     }
-    *points = line_conic_points(normalized, c2, eps);
+    *points = line_conic_points(normalized, c2, false, eps);
     test_conic_points(a, b, points, MIN_PRECISION)
 }
 
@@ -750,6 +859,7 @@ fn intersection_on_line(c: &Construction, s: Id, line: Id) -> bool {
     match c.def(s) {
         Def::IntersectLines(l, m) => l == line || m == line,
         Def::IntersectLineCircle { line: l, .. } => l == line,
+        Def::ConicPart(ConicPartDef::IntersectLine { line: l, .. }) => l == line,
         _ => false,
     }
 }
@@ -807,6 +917,57 @@ fn existing_line_circle_point(c: &Construction, line: Id, line_def: Def, circle:
     // starts at, which does not have the line in its incidence list.
     drawn_through
         .or_else(|| start_point(line_def).filter(|&s| on_circle_by_construction(c, s, circle)))
+}
+
+/// Whether `s` is an intersection point of the general conic `conic` and
+/// another object.
+fn intersection_on_general_conic(c: &Construction, s: Id, conic: Id) -> bool {
+    matches!(
+        c.def(s),
+        Def::ConicPart(ConicPartDef::IntersectLine { conic: k, .. }) if k == conic
+    )
+}
+
+/// The points a general conic was drawn through, in the order in which
+/// GeoGebra adds them to its points on the conic (`AlgoConicFivePoints`,
+/// `AlgoEllipseHyperbolaFociPointND`). The other conics add none.
+fn general_conic_points(c: &Construction, conic: Id) -> [Option<Id>; 5] {
+    let mut out = [None; 5];
+    match c.def(conic) {
+        Def::GeneralConic(GeneralConicDef::FivePoints(list)) => {
+            let mut n = 0;
+            for &s in c.list(list) {
+                if !out[..n].contains(&Some(s)) && n < 5 {
+                    out[n] = Some(s);
+                    n += 1;
+                }
+            }
+        }
+        Def::GeneralConic(GeneralConicDef::FociPoint { through, .. }) => out[0] = Some(through),
+        _ => {}
+    }
+    out
+}
+
+/// [`existing_line_circle_point`] for a general conic: the first point on
+/// the conic by construction that also lies on the line by construction.
+fn existing_line_conic_point(c: &Construction, line: Id, line_def: Def, conic: Id) -> Option<Id> {
+    let (p, q) = line_points(line_def);
+    let drawn = general_conic_points(c, conic);
+    for t in drawn.into_iter().flatten() {
+        if Some(t) == p || Some(t) == q || intersection_on_line(c, t, line) {
+            return Some(t);
+        }
+    }
+    let on = |s: Option<Id>| s.filter(|&s| intersection_on_general_conic(c, s, conic));
+    let drawn_through = match (on(p), on(q)) {
+        (Some(p), Some(q)) => Some(p.min(q)),
+        (p, q) => p.or(q),
+    };
+    drawn_through.or_else(|| {
+        start_point(line_def)
+            .filter(|&s| drawn.contains(&Some(s)) || intersection_on_general_conic(c, s, conic))
+    })
 }
 
 /// The labelled point a line starts at without being incident with it:

@@ -39,3 +39,9 @@ jobs:
       # makes sure the benchmark still builds.
       - name: Build benchmark
         run: cargo build --release -p geo-cli
+      # The kernel, the importer and the window's logic must keep building for
+      # Android; the window itself is not built for it yet.
+      - name: Check Android target
+        run: |
+          rustup target add aarch64-linux-android
+          cargo check --target aarch64-linux-android -p geo-kernel -p geo-import -p geo-app-core

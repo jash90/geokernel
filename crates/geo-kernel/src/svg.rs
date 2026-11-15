@@ -221,6 +221,22 @@ pub fn render(c: &Construction, view: View, width: u32, height: u32) -> String {
                     }
                 }
             }
+            Value::Conic { .. } => {
+                let Some(d) = c.conic(id) else {
+                    continue;
+                };
+                for path in conic_paths(&d, (mx, my), reach) {
+                    let mut pts = String::new();
+                    for (x, y) in path {
+                        let _ = write!(pts, "{:.2},{:.2} ", sx(x), sy(y));
+                    }
+                    let _ = writeln!(
+                        segments,
+                        r##"<polyline points="{}" fill="none"/>"##,
+                        pts.trim_end()
+                    );
+                }
+            }
             Value::Number(_)
             | Value::Bool(_)
             | Value::Function
@@ -270,4 +286,82 @@ fn escape(s: &str) -> String {
     s.replace('&', "&amp;")
         .replace('<', "&lt;")
         .replace('>', "&gt;")
+}
+
+/// Polylines that draw a conic in a view centred at `mid` whose diagonal is
+/// `reach`: an ellipse sampled around, each branch of a hyperbola and a
+/// parabola sampled until it leaves the view, the lines of a degenerate
+/// conic as long segments, and a single point as a tiny cross.
+fn conic_paths(
+    d: &crate::algo::conic_nd::ConicData,
+    mid: (f64, f64),
+    reach: f64,
+) -> Vec<Vec<(f64, f64)>> {
+    use crate::algo::conic_nd::ConicType;
+    const N: usize = 120;
+    let [e0, e1] = d.eigenvec;
+    let [bx, by] = d.midpoint;
+    // a point given in the eigenvector system
+    let at = |u: f64, v: f64| (bx + u * e0[0] + v * e1[0], by + u * e0[1] + v * e1[1]);
+    let far = reach + (bx - mid.0).hypot(by - mid.1);
+    let line = |l: [f64; 3]| {
+        let n = l[0].hypot(l[1]);
+        let (a, b, k) = (l[0] / n, l[1] / n, l[2] / n);
+        let dist = a * mid.0 + b * mid.1 + k;
+        let (fx, fy) = (mid.0 - a * dist, mid.1 - b * dist);
+        vec![
+            (fx - reach * b, fy + reach * a),
+            (fx + reach * b, fy - reach * a),
+        ]
+    };
+    match d.ty {
+        ConicType::Circle | ConicType::Ellipse => {
+            let [a, b] = d.half_axes;
+            let path = (0..=N)
+                .map(|i| {
+                    let t = std::f64::consts::TAU * i as f64 / N as f64;
+                    at(a * t.cos(), b * t.sin())
+                })
+                .collect();
+            vec![path]
+        }
+        ConicType::Hyperbola => {
+            let [a, b] = d.half_axes;
+            let tmax = (far / a.min(b).max(1e-12)).asinh();
+            [1.0, -1.0]
+                .iter()
+                .map(|&s| {
+                    (0..=N)
+                        .map(|i| {
+                            let t = -tmax + 2.0 * tmax * i as f64 / N as f64;
+                            at(s * a * t.cosh(), b * t.sinh())
+                        })
+                        .collect()
+                })
+                .collect()
+        }
+        ConicType::Parabola => {
+            let p = d.p;
+            let vmax = far.max((2.0 * p * far).abs().sqrt());
+            let path = (0..=N)
+                .map(|i| {
+                    let v = -vmax + 2.0 * vmax * i as f64 / N as f64;
+                    at(v * v / (2.0 * p), v)
+                })
+                .collect();
+            vec![path]
+        }
+        ConicType::IntersectingLines | ConicType::ParallelLines => {
+            vec![line(d.lines[0]), line(d.lines[1])]
+        }
+        ConicType::DoubleLine => vec![line(d.lines[0])],
+        ConicType::SinglePoint => {
+            let r = reach * 1e-3;
+            vec![
+                vec![(bx - r, by), (bx + r, by)],
+                vec![(bx, by - r), (bx, by + r)],
+            ]
+        }
+        ConicType::Empty | ConicType::NotClassified => Vec::new(),
+    }
 }

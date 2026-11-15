@@ -133,11 +133,15 @@ fn frame_counts_are_unchanged() {
     for (name, counts) in &got {
         println!("{name}: {counts:?}");
     }
+    // The algebra list lays out only the rows in its visible part: the
+    // rows below it (61 shapes in this example, 79 with the keyboard open)
+    // are no longer painted and clipped away. Vertices and indices, that
+    // is the picture, are what they were.
     let expected: &[(&str, Counts)] = &[
         (
             "idle",
             Counts {
-                shapes: 578,
+                shapes: 517,
                 vertices: 12790,
                 indices: 52767,
                 immediate_repaints: 0,
@@ -146,7 +150,7 @@ fn frame_counts_are_unchanged() {
         (
             "hover",
             Counts {
-                shapes: 580,
+                shapes: 519,
                 vertices: 12930,
                 indices: 53484,
                 immediate_repaints: 1,
@@ -155,7 +159,7 @@ fn frame_counts_are_unchanged() {
         (
             "drag",
             Counts {
-                shapes: 581,
+                shapes: 520,
                 vertices: 13110,
                 indices: 54243,
                 immediate_repaints: 1,
@@ -167,7 +171,7 @@ fn frame_counts_are_unchanged() {
             // indices), whatever the size of the construction.
             "segment preview",
             Counts {
-                shapes: 584,
+                shapes: 523,
                 vertices: 13014,
                 indices: 53367,
                 immediate_repaints: 1,
@@ -176,7 +180,7 @@ fn frame_counts_are_unchanged() {
         (
             "keyboard",
             Counts {
-                shapes: 629,
+                shapes: 550,
                 vertices: 14914,
                 indices: 62493,
                 immediate_repaints: 0,

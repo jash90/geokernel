@@ -1,6 +1,6 @@
 //! Replays a golden case on `geo-kernel` and compares every snapshot.
 
-use crate::compare::{compare_list, compare_sampled, line_scale_agrees, Sign};
+use crate::compare::{compare_conic, compare_list, compare_sampled, line_scale_agrees, Sign};
 use crate::model::{Case, Step};
 use geo_kernel::{script, Construction, Kind};
 
@@ -24,6 +24,12 @@ pub struct CaseOutcome {
     /// Labels of the defined lines whose raw coefficients differ from
     /// GeoGebra's, once per snapshot.
     pub scale_disagree: Vec<String>,
+    /// Defined conics whose raw matrix agrees with GeoGebra's.
+    pub conic_raw_agree: usize,
+    /// Defined conics whose matrix agrees with GeoGebra's up to a factor.
+    pub conic_scaled_agree: usize,
+    /// Defined conics on both sides.
+    pub conic_compared: usize,
 }
 
 fn failure(step: usize, label: &str, expected: &str, actual: String) -> Mismatch {
@@ -66,6 +72,25 @@ pub fn replay(case: &Case) -> CaseOutcome {
                 continue;
             };
             let actual = c.value(id);
+            if c.kind(id) == geo_kernel::Kind::Conic {
+                let data = c.conic(id);
+                let (result, agreement) =
+                    compare_conic(expected, c.kind(id), &actual, data.as_ref());
+                if let Some(a) = agreement {
+                    out.conic_compared += 1;
+                    out.conic_raw_agree += usize::from(a.raw);
+                    out.conic_scaled_agree += usize::from(a.up_to_scale);
+                }
+                if let Err(why) = result {
+                    out.mismatches.push(failure(
+                        i,
+                        label,
+                        &format!("{expected:?}"),
+                        format!("{actual:?} ({why})"),
+                    ));
+                }
+                continue;
+            }
             match line_scale_agrees(expected, &actual) {
                 Some(true) => out.scale_agree += 1,
                 Some(false) => out.scale_disagree.push(label.clone()),

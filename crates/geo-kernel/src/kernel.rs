@@ -30,6 +30,9 @@
 //! so incremental updates treat them exactly like fixed parents.
 
 use crate::algo::conic::ConicDef;
+use crate::algo::conic_nd::{ConicData, ConicType};
+use crate::algo::conic_parts::ConicPartDef;
+use crate::algo::general_conic::GeneralConicDef;
 use crate::algo::lines::LineDef;
 use crate::algo::measure::MeasureDef;
 use crate::algo::point::PointDef;
@@ -105,6 +108,9 @@ pub enum Kind {
     /// A list of numbers, points, vectors, booleans or lists, such as
     /// `{1, 2, 3}`; its elements are read with [`Construction::elements`].
     List,
+    /// A general conic (`Conic`, `Ellipse`, `Hyperbola`, `Parabola` and
+    /// their images); its state is read with [`Construction::conic`].
+    Conic,
 }
 
 impl fmt::Display for Kind {
@@ -122,6 +128,7 @@ impl fmt::Display for Kind {
             Kind::Polygon => "polygon",
             Kind::PolyLine => "polyline",
             Kind::List => "list",
+            Kind::Conic => "conic",
         })
     }
 }
@@ -194,6 +201,11 @@ pub enum Value {
     List {
         len: u32,
     },
+    /// A defined general conic of type `ty`. Its matrix and parts are not
+    /// copied into the value; read them with [`Construction::conic`].
+    Conic {
+        ty: ConicType,
+    },
     /// The object does not exist for the current positions
     /// (for example two circles that no longer meet).
     Undefined,
@@ -230,7 +242,7 @@ impl Value {
             Value::Bool(_) => true,
             Value::Polygon { area } => area.is_finite(),
             Value::PolyLine { length } => length.is_finite(),
-            Value::Function | Value::List { .. } | Value::Undefined => true,
+            Value::Function | Value::List { .. } | Value::Conic { .. } | Value::Undefined => true,
         }
     }
 }
@@ -319,6 +331,12 @@ pub enum Def {
     Expr(ExprDef),
     /// Polygons, polylines and what is measured on them.
     Polygon(PolygonDef),
+    /// General conics and transformations of conics; the construction keeps
+    /// a [`ConicData`] record for each (see [`Construction::conic`]).
+    GeneralConic(GeneralConicDef),
+    /// Objects computed from a general conic, such as its intersection
+    /// points with a line.
+    ConicPart(ConicPartDef),
 }
 
 impl Def {
@@ -342,6 +360,8 @@ impl Def {
             Def::Point(d) => d.kind(),
             Def::Expr(d) => d.kind(),
             Def::Polygon(d) => d.kind(),
+            Def::GeneralConic(d) => d.kind(),
+            Def::ConicPart(d) => d.kind(),
         }
     }
 
@@ -349,6 +369,7 @@ impl Def {
     pub fn list(&self) -> Option<IdList> {
         match self {
             Def::Polygon(d) => d.list(),
+            Def::GeneralConic(d) => d.list(),
             _ => None,
         }
     }
@@ -358,6 +379,7 @@ impl Def {
     pub fn with_list(self, list: IdList) -> Def {
         match self {
             Def::Polygon(d) => Def::Polygon(d.with_list(list)),
+            Def::GeneralConic(d) => Def::GeneralConic(d.with_list(list)),
             other => other,
         }
     }
@@ -399,6 +421,8 @@ impl Def {
             Def::Predicate(d) => d.parents(),
             Def::Point(d) => d.parents(),
             Def::Polygon(d) => d.parents(),
+            Def::GeneralConic(d) => d.parents(),
+            Def::ConicPart(d) => d.parents(),
         }
     }
 }
@@ -500,6 +524,9 @@ pub struct Construction {
     /// How many times [`Construction::rollback`] has run: a checkpoint taken
     /// before the last rollback is stale. Changed by nothing else.
     generation: u64,
+    /// The conic records of the [`Def::GeneralConic`] objects, with the
+    /// index of each object, in creation order.
+    conics: Vec<(usize, ConicData)>,
 }
 
 /// The objects waiting to be recomputed during an update; empty between
@@ -772,6 +799,13 @@ impl Construction {
         }
         self.lists.truncate(at.lists.min(self.lists.len()));
         self.exprs.truncate(at.exprs, at.len);
+        while self
+            .conics
+            .last()
+            .is_some_and(|&(owner, _)| owner >= at.len)
+        {
+            self.conics.pop();
+        }
         // Labels became free again, so the hints may be too high.
         self.label_hints
             .get_mut()
@@ -811,6 +845,11 @@ impl Construction {
         self.hints.push(algo::intersect::hint(self, &def));
         let value = match def {
             Def::Expr(d) => expr::update(self, d).0,
+            Def::GeneralConic(d) => {
+                let data = d.record(self, &ConicData::new());
+                self.conics.push((id.0, data));
+                algo::general_conic::value(d.kind(), &data)
+            }
             _ => self.compute(def, id.0),
         };
         // An object that is read twice is still one child.
@@ -974,17 +1013,25 @@ impl Construction {
             from = i + 1;
             let def = self.defs[i];
             recomputed += 1;
-            if let Def::Expr(d) = def {
-                if !self.update_expr(i, d) {
-                    continue;
+            match def {
+                Def::Expr(d) => {
+                    if !self.update_expr(i, d) {
+                        continue;
+                    }
                 }
-            } else {
-                let new = self.compute(def, i);
-                if new == self.values[i] {
-                    // Nothing downstream can change because of this object.
-                    continue;
+                Def::GeneralConic(d) => {
+                    if !self.update_conic(i, d) {
+                        continue;
+                    }
                 }
-                self.values[i] = new;
+                _ => {
+                    let new = self.compute(def, i);
+                    if new == self.values[i] {
+                        // Nothing downstream can change because of this object.
+                        continue;
+                    }
+                    self.values[i] = new;
+                }
             }
             for &child in &self.children[i] {
                 dirty.insert(child.0);
@@ -1003,6 +1050,45 @@ impl Construction {
         let (value, changed) = expr::update(self, d);
         self.values[i] = value;
         changed
+    }
+
+    /// Recomputes the conic record of object `i` from its previous record;
+    /// tells whether its children must follow: whether the record changed,
+    /// bit for bit. Out of line like [`Self::update_expr`].
+    #[inline(never)]
+    fn update_conic(&mut self, i: usize, d: GeneralConicDef) -> bool {
+        let Some(slot) = self.conic_slot(i) else {
+            return false;
+        };
+        let new = d.record(self, &self.conics[slot].1);
+        if new.same(&self.conics[slot].1) {
+            return false;
+        }
+        self.conics[slot].1 = new;
+        self.values[i] = algo::general_conic::value(d.kind(), &new);
+        true
+    }
+
+    /// Where the record of object `i` is kept in `conics`.
+    fn conic_slot(&self, i: usize) -> Option<usize> {
+        self.conics
+            .binary_search_by_key(&i, |&(owner, _)| owner)
+            .ok()
+    }
+
+    /// The conic state of `id`, as GeoGebra's `GeoConicND` would hold it:
+    /// the record of a general conic or of a transformed circle, and for
+    /// any other defined circle the record GeoGebra's circle commands make.
+    /// `None` for other objects and for an undefined circle that keeps no
+    /// record. A record may be undefined ([`ConicData::defined`]).
+    pub fn conic(&self, id: Id) -> Option<ConicData> {
+        match self.defs.get(id.0)? {
+            Def::GeneralConic(_) => self.conic_slot(id.0).map(|slot| self.conics[slot].1),
+            _ => match self.values[id.0] {
+                Value::Circle { cx, cy, r } => Some(ConicData::circle(cx, cy, r)),
+                _ => None,
+            },
+        }
     }
 
     pub(crate) fn check(&self, def: &Def) -> Result<(), Error> {
@@ -1065,6 +1151,8 @@ impl Construction {
             // the tree was checked when it was parsed or handed in
             Def::Expr(d) => expr::check_handle(self, d),
             Def::Polygon(d) => d.check(self),
+            Def::GeneralConic(d) => d.check(self),
+            Def::ConicPart(d) => d.check(self),
         }
     }
 
@@ -1144,6 +1232,8 @@ impl Construction {
             Def::Point(d) => d.compute(self),
             Def::Expr(d) => Some(expr::current(self, d)),
             Def::Polygon(d) => d.compute(self),
+            Def::GeneralConic(d) => d.compute(self),
+            Def::ConicPart(d) => d.compute(self),
         }
     }
 

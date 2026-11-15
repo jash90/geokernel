@@ -11,7 +11,8 @@ dropped silently.
 
 ## Status
 
-Early. The kernel covers points, lines, segments, rays, circles, vectors,
+Early. The kernel covers points, lines, segments, rays, circles, general
+conics (ellipse, hyperbola, parabola and the degenerate cases), vectors,
 polygons, polylines, numbers, booleans and functions of x, arithmetic
 expressions with GeoGebra's exact decimal arithmetic, incremental updates,
 a small script language and SVG output.
@@ -20,7 +21,9 @@ an input row with an on-screen keyboard, undo and redo, and lets you drag
 free points. The commands so far: lines,
 segments, rays, midpoints, perpendicular and parallel lines, bisectors,
 tangents and polars of circles, circles (centre and point, centre and
-radius, three points, incircle), intersections, measures (length, distance,
+radius, three points, incircle), conics (through five points, ellipse and
+hyperbola from foci, parabola from focus and directrix, their centre, foci,
+vertices, axes, directrix, eccentricity), intersections, measures (length, distance,
 radius, area, slope, angle, ratios), vectors (between points, direction,
 unit and orthogonal vectors), transformations (translation, reflection,
 rotation, dilation, shear, stretch), polygons (by vertices, regular, their
@@ -62,6 +65,8 @@ The reference commit for ported code and recorded test data is
 | `crates/geo-kernel` | The kernel: construction graph, object types, incremental updates, script parser, SVG output. No dependencies and no knowledge of any user interface. |
 | `crates/geo-cli` | The `geokernel` binary: `run`, `demo`, `bench`. |
 | `crates/geo-app` | The `geokernel-app` desktop window (egui on wgpu): toolbar with construction tools, algebra view, graphics view with pan and zoom, on-screen keyboard, undo and redo. Opens scripts and GeoGebra files. |
+| `crates/geo-app-core` | The window's logic without any UI toolkit: pointer and touch gestures, layout and size profiles, tools, the document with its undo history, snapshots. Builds for Android. |
+| `crates/geo-mcp` | The `geokernel-mcp` server: drives the window without a window through its own frame loop, so an agent or a script can click, drag, type and read the exact state. See [crates/geo-mcp/README.md](crates/geo-mcp/README.md). |
 | `crates/geo-import` | Reads GeoGebra construction files (`.ggb` or bare XML) into a kernel script, and reports what it skipped and what differs from the values saved in the file. |
 | `crates/geo-golden` | Tests that compare the kernel with values recorded from GeoGebra. |
 | `golden/` | Recorded golden data and its format, [golden/SCHEMA.md](golden/SCHEMA.md). |
@@ -79,6 +84,8 @@ cargo run --release -p geo-cli -- run drawing.ggb out.svg   # a file saved by Ge
 cargo run --release -p geo-cli -- bench           # 105 thousand objects, dragging a point
 cargo run --release -p geo-app                    # window with the triangle; pick a tool, drag the blue points, type commands
 cargo run --release -p geo-app -- drawing.ggb     # open a script or a file saved by GeoGebra
+cargo run --release -p geo-app -- --touch         # touch-sized targets and the narrow layout, on a desktop
+cargo run --release -p geo-mcp -- --batch calls.jsonl   # drive the window headlessly, one tool call per line
 ```
 
 ## Script syntax
@@ -106,6 +113,8 @@ R = Rotate(A, a, B)     # A rotated by the angle a about B
 u = Vector(A, B)
 h = Ray(A, B)
 T = Translate(k, u)     # the circle k moved by the vector u
+w = Ellipse(A, B, C)    # foci A and B, through C; also Hyperbola, Parabola(A, l), Conic of five points
+F = Focus(w)            # creates F_{1} and F_{2}; also Center, Vertex, Axes, Eccentricity
 q = Polygon(A, B, C)    # also creates the sides, named as GeoGebra names them
 g = Polygon(A, B, 5)    # regular polygon on the side AB
 e = AreCollinear(A, B, C)    # a boolean

@@ -19,67 +19,42 @@ id = "conic-diameter-007"
 reason = "intended difference, recorded in DIFFERENCES.md: GeoGebra keeps the diameter line of an undefined circle (negative radius) at its last value, computed from the stale matrix of the last defined circle; the kernel reports it undefined"
 mismatches = ["1:g", "4:g"]
 
-# transform
+# conics
 
 [[gap]]
-id = "transform-dilate-020"
-reason = "GeoGebra classifies a dilated circle from its conic matrix, whose scale is not part of the kernel's circle value"
-mismatches = ["0:m", "1:m"]
+id = "conics-intersection-010"
+reason = "a line parallel to the axis of a parabola meets it once, at index 1 or 2 of intersectLineConic depending on the sign of d. GeoGebra moves the defined point to intersection 1 only while AlgoIntersectLineConic.firstIntersection is true, which an update with two distinct points clears for good; afterwards the fixed permutation keeps the point at intersection 2. Not ported: upstream's firstIntersection permutation state (AlgoIntersectLineConic.java:466-468, 534); the kernel always puts the single point first, which agrees at creation and until two points have been seen"
+mismatches = ["4:S", "4:T"]
 
 [[gap]]
-id = "transform-dilate-021"
-reason = "GeoGebra classifies a dilated circle from its conic matrix, whose scale is not part of the kernel's circle value"
-mismatches = ["0:m", "1:m", "2:m", "3:m", "4:m", "5:m", "6:m"]
+id = "conics-intersection-011"
+reason = "a line parallel to the axis of a parabola meets it once, at index 1 or 2 of intersectLineConic depending on the sign of d. GeoGebra moves the defined point to intersection 1 only while AlgoIntersectLineConic.firstIntersection is true, which an update with two distinct points clears for good; afterwards the fixed permutation keeps the point at intersection 2. Not ported: upstream's firstIntersection permutation state (AlgoIntersectLineConic.java:466-468, 534); the kernel always puts the single point first, which agrees at creation and until two points have been seen"
+mismatches = ["2:S", "2:T"]
 
 [[gap]]
-id = "transform-dilate-022"
-reason = "GeoGebra classifies a dilated circle from its conic matrix, whose scale is not part of the kernel's circle value"
-mismatches = ["8:m", "9:m"]
+id = "conics-intersection-012"
+reason = "a line parallel to the axis of a parabola meets it once, at index 1 or 2 of intersectLineConic depending on the sign of d. GeoGebra moves the defined point to intersection 1 only while AlgoIntersectLineConic.firstIntersection is true, which an update with two distinct points clears for good; afterwards the fixed permutation keeps the point at intersection 2. Not ported: upstream's firstIntersection permutation state (AlgoIntersectLineConic.java:466-468, 534); the kernel always puts the single point first, which agrees at creation and until two points have been seen"
+mismatches = ["2:S", "2:T"]
 
 [[gap]]
-id = "transform-dilate-023"
-reason = "GeoGebra classifies a dilated circle from its conic matrix, whose scale is not part of the kernel's circle value"
-mismatches = ["0:m", "1:m", "2:m"]
+id = "conics-readers-009"
+reason = "intended difference, recorded in DIFFERENCES.md: GeoGebra does not clear an undefined conic, and AlgoVertexConic, AlgoAxis, AlgoEccentricity, AlgoExcentricity, AlgoParabolaParameter and GeoConicND.diameterLine read its fields without an isDefined check; the kernel makes every object computed from an undefined conic undefined"
+mismatches = ["3:X_{1}", "3:X_{2}", "3:ax_{1}", "3:ax_{2}", "3:ecc", "3:la", "3:lb", "3:lin", "3:maj", "3:mnr"]
 
 [[gap]]
-id = "transform-dilate-024"
-reason = "GeoGebra classifies a dilated circle from its conic matrix, whose scale is not part of the kernel's circle value"
-mismatches = ["0:m"]
+id = "conics-readers-010"
+reason = "intended difference, recorded in DIFFERENCES.md: GeoGebra does not clear an undefined conic, and AlgoVertexConic, AlgoAxis, AlgoEccentricity, AlgoExcentricity, AlgoParabolaParameter and GeoConicND.diameterLine read its fields without an isDefined check; the kernel makes every object computed from an undefined conic undefined"
+mismatches = ["1:X_{1}", "1:X_{2}", "1:X_{3}", "1:X_{4}", "1:ecc", "1:la", "1:lb", "1:lin"]
 
 [[gap]]
-id = "transform-dilate-026"
-reason = "GeoGebra classifies a dilated circle from its conic matrix, whose scale is not part of the kernel's circle value"
-mismatches = ["0:m"]
+id = "conics-readers-011"
+reason = "intended difference, recorded in DIFFERENCES.md: GeoGebra does not clear an undefined conic, and AlgoVertexConic, AlgoAxis, AlgoEccentricity, AlgoExcentricity, AlgoParabolaParameter and GeoConicND.diameterLine read its fields without an isDefined check; the kernel makes every object computed from an undefined conic undefined"
+mismatches = ["1:ecc", "1:lin", "1:par"]
 
 [[gap]]
-id = "transform-dilate-027"
-reason = "GeoGebra classifies a dilated circle from its conic matrix, whose scale is not part of the kernel's circle value"
-mismatches = ["0:m", "1:m", "3:m", "4:m", "5:m", "6:m"]
-
-[[gap]]
-id = "transform-dilate-028"
-reason = "GeoGebra classifies a dilated circle from its conic matrix, whose scale is not part of the kernel's circle value"
-mismatches = ["8:m", "9:m", "10:m"]
-
-[[gap]]
-id = "transform-dilate-029"
-reason = "GeoGebra classifies a dilated circle from its conic matrix, whose scale is not part of the kernel's circle value"
-mismatches = ["0:m", "1:m", "3:m"]
-
-[[gap]]
-id = "transform-dilate-030"
-reason = "GeoGebra classifies a dilated circle from its conic matrix, whose scale is not part of the kernel's circle value"
-mismatches = ["4:m"]
-
-[[gap]]
-id = "transform-dilate-032"
-reason = "GeoGebra classifies a dilated circle from its conic matrix, whose scale is not part of the kernel's circle value"
-mismatches = ["0:m", "0:n", "0:p", "0:t", "0:u", "1:m", "1:n", "1:p", "1:t", "1:u", "2:m", "2:n", "2:p", "2:t", "2:u", "3:m", "3:n", "3:p", "3:t", "3:u", "4:m", "4:n", "4:p", "4:t", "4:u"]
-
-[[gap]]
-id = "transform-dilate-033"
-reason = "GeoGebra classifies a dilated circle from its conic matrix, whose scale is not part of the kernel's circle value"
-mismatches = ["0:m", "0:n", "0:p", "0:t", "0:u", "1:m", "1:n", "1:p", "1:t", "1:u", "2:m", "2:n", "2:p", "2:t", "2:u", "3:m", "3:n", "3:p", "3:t", "3:u"]
+id = "conics-tangent-013"
+reason = "intended difference, recorded in DIFFERENCES.md: GeoGebra does not clear an undefined conic, and AlgoVertexConic, AlgoAxis, AlgoEccentricity, AlgoExcentricity, AlgoParabolaParameter and GeoConicND.diameterLine read its fields without an isDefined check; the kernel makes every object computed from an undefined conic undefined"
+mismatches = ["3:m"]
 
 # lines
 
