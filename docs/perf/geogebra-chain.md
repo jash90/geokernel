@@ -109,14 +109,15 @@ the 10% regression gate can be applied.
 
 Method: `geokernel bench` (15,000 steps, 105,003 objects) from release
 binaries built at each commit, run in alternation, one run of every binary
-per round, 15 rounds; the table gives the minimum over the rounds. A second
-copy of the pre-port binary was run alongside as an A/A control and stayed
-within 0.5% (full drag) and 0.1 ns (local drag) of the first. The load
-average was between 20 and 37 during the run below (other runs that day,
-at load 36 to 215, gave the same picture). The machine was not quiet, so
-these numbers are provisional, but the alternation and the control make the
-comparison between binaries fair. Commits before this one print the local
-drag in whole nanoseconds.
+per round, 15 rounds; the table gives the minimum over the rounds. The
+load average was between 20 and 37 during the run below (other runs that
+day, at load 28 to 215, gave the same picture). In a separate run at load
+28 to 44, a second copy of the pre-port binary run alongside as an A/A
+control gave 4.848 ms and 15.9 ns against 4.849 ms and 16.0 ns. The machine
+was not quiet, so these numbers are provisional, but the alternation makes
+the comparison between binaries fair. The intermediate commits print the
+local drag in whole nanoseconds; the pre-port binary was rebuilt with the
+one-decimal print of this fix and nothing else changed.
 
 | Commit | `size_of` Value / Def | Full drag (A) | Local drag (Z1) |
 | --- | ---: | ---: | ---: |
