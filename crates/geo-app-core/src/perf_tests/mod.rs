@@ -135,7 +135,7 @@ pub(crate) fn session(
                     10 if points.len() >= 2 => {
                         let (a, b) = (rng.pick(&points), rng.pick(&points));
                         let cmd = ["Vector", "Ray"][rng.below(2)];
-                        format!("{}{step} = {cmd}({a}, {b})", &cmd[..1].to_lowercase())
+                        format!("{}{step} = {cmd}({a}, {b})", cmd[..1].to_lowercase())
                     }
                     // Decimal numbers: their text is the exact decimal.
                     11 => format!("d{step} = {}", ["0.1", "1.25", "-2.5", "0.3"][rng.below(4)]),
