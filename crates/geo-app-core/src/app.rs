@@ -33,8 +33,33 @@ pub enum ViewRequest {
     Fit,
 }
 
+/// The rules where the window deliberately differs from the reference app
+/// (the owner's choice), one named switch each. `OURS` is what the window
+/// runs; `REFERENCE` follows the reference app, for tests that compare
+/// with its observed behaviour.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct OwnerRules {
+    /// `hit::SIDE_TAKES_THE_POLYGON`.
+    pub side_takes_the_polygon: bool,
+    /// `interact::REFUSED_DRAG_NOTICE`.
+    pub refused_drag_notice: bool,
+}
+
+impl OwnerRules {
+    pub const OURS: OwnerRules = OwnerRules {
+        side_takes_the_polygon: crate::hit::SIDE_TAKES_THE_POLYGON,
+        refused_drag_notice: crate::interact::REFUSED_DRAG_NOTICE,
+    };
+    pub const REFERENCE: OwnerRules = OwnerRules {
+        side_takes_the_polygon: false,
+        refused_drag_notice: false,
+    };
+}
+
 pub struct App {
     pub wb: Workbench,
+    /// The owner's rules where the window differs from the reference app.
+    pub rules: OwnerRules,
     /// `None` until the first frame, when the size of the area is known.
     pub camera: Option<Camera>,
     pub view_request: Option<ViewRequest>,
@@ -92,6 +117,7 @@ impl App {
     pub fn new(wb: Workbench, load_error: Option<String>) -> Self {
         App {
             wb,
+            rules: OwnerRules::OURS,
             camera: None,
             view_request: Some(ViewRequest::Initial),
             drag: None,

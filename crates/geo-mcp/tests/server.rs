@@ -1037,16 +1037,42 @@ fn the_drag_delay_and_the_click_threshold_decide_through_the_frame_loop() {
         (x - 0.5 - (threshold - 4.0) / k).abs() < 1e-6,
         "slop held back: {x}"
     );
-    assert_eq!(
-        st["selected"], "A",
-        "a drag within the threshold is a click"
-    );
     let st = press_and_move(&mut s, threshold + 24.0, 4, delay + 0.05);
     let k = st["view"]["scale"].as_f64().unwrap();
     assert!(
         point(&st, "A").0 > x + (threshold + 20.0) / k,
         "a drag beyond the threshold did not follow"
     );
+
+    // The threshold decides the click: a press on empty space with the
+    // point tool whose drag (two moves after the delay, so the threshold is
+    // checked) ends 9 or 10 px away is a click and places a point; 11 px is
+    // a drag and places none. The distances are the reference app's
+    // (`DRAG_THRESHOLD` 10), not read from the metrics, so that this fails
+    // with a threshold of 6 (9 px no click) or of 20 (11 px a click).
+    for (by, click) in [(9.0, true), (10.0, true), (11.0, false)] {
+        call(&mut s, "reset", json!({}));
+        call(&mut s, "select_tool", json!({"tool": "point"}));
+        let st = state(&mut s);
+        let o = &st["view"]["origin"];
+        let p = (
+            o[0].as_f64().unwrap() + 115.0,
+            o[1].as_f64().unwrap() - 85.0,
+        );
+        input(
+            &mut s,
+            vec![
+                frame(vec![ev("move", at(p.0, p.1))]),
+                frame(vec![ev("down", at(p.0, p.1))]),
+                json!({"dt": delay + 0.05, "events": [ev("move", at(p.0 + by, p.1))]}),
+                json!({"dt": 0.05, "events": [ev("move", at(p.0 + by, p.1))]}),
+                json!({"dt": 0.05, "events": [ev("up", at(p.0 + by, p.1))]}),
+            ],
+            true,
+        );
+        let placed = objects(&state(&mut s)).len() == 1;
+        assert_eq!(placed, click, "a release {by} px from the press");
+    }
 }
 
 /// Reading never changes the window: any number of `state` (both modes),

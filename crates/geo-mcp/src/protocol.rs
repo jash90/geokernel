@@ -94,11 +94,12 @@ pub fn tools() -> Vec<Json> {
     });
     let def = |name: &str, description: &str, schema: Json| json!({"name": name, "description": description, "inputSchema": schema});
     vec![
-        def("reset", "A new window: size in points (default 1400 x 900), pixels per point (`scale`, default 1 for deterministic geometry; a Retina display is 2), input profile (desktop or touch), optional initial script. Settles and returns the state.",
+        def("reset", "A new window: size in points (default 1400 x 900), pixels per point (`scale`, default 1 for deterministic geometry; a Retina display is 2), input profile (desktop or touch), optional initial script, and `rules`: `ours` (default) or `reference`, which turns off the owner's deliberate differences from the reference app (a press on a polygon's side takes the polygon; a refused drag says why) for comparisons. Settles and returns the state.",
             object_schema(json!({
                 "width": {"type": "number"}, "height": {"type": "number"},
                 "scale": {"type": "number", "minimum": 0.5, "maximum": 4},
                 "profile": {"enum": ["desktop", "touch"]},
+                "rules": {"enum": ["ours", "reference"]},
                 "script": {"type": "string", "description": "A geokernel script to start with."}
             }), &[])),
         def("open", "Opens a document as dropping a file on the window does: a file path, inline script text, or file bytes as base64 (a .ggb). `name` gives the format by its extension.",

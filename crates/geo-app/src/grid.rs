@@ -6,7 +6,6 @@ use crate::ticks;
 use eframe::egui::{vec2, Align2, FontId, Painter, Pos2, Rect, Stroke};
 use geo_app_core::app::Decor;
 
-const MIN_MINOR_PX: f64 = 9.0;
 const TICK_FONT: f32 = 16.0;
 
 fn crisp(v: f64) -> f32 {
@@ -18,7 +17,7 @@ fn crisp(v: f64) -> f32 {
 pub fn paint(painter: &Painter, rect: Rect, t: &ViewTransform, decor: Decor, numbering_px: f64) {
     let (w, h) = (rect.width() as f64, rect.height() as f64);
     let v = t.view();
-    let steps = ticks::grid_steps(t.scale(), numbering_px, MIN_MINOR_PX);
+    let steps = ticks::grid_steps(t.scale(), numbering_px);
     let at = |sx: f64, sy: f64| -> Pos2 { rect.min + vec2(sx as f32, sy as f32) };
     let vline = |sx: f64, stroke: Stroke| {
         let x = crisp(sx);
@@ -35,14 +34,12 @@ pub fn paint(painter: &Painter, rect: Rect, t: &ViewTransform, decor: Decor, num
         );
     };
     if decor.grid {
-        if let Some(minor) = steps.minor {
-            let stroke = Stroke::new(1.0, theme::GRID_MINOR);
-            for i in ticks::multiples(v.xmin, v.xmax, minor) {
-                vline(t.world_to_screen(i as f64 * minor, 0.0).0, stroke);
-            }
-            for i in ticks::multiples(v.ymin, v.ymax, minor) {
-                hline(t.world_to_screen(0.0, i as f64 * minor).1, stroke);
-            }
+        let (minor, stroke) = (steps.minor, Stroke::new(1.0, theme::GRID_MINOR));
+        for i in ticks::multiples(v.xmin, v.xmax, minor) {
+            vline(t.world_to_screen(i as f64 * minor, 0.0).0, stroke);
+        }
+        for i in ticks::multiples(v.ymin, v.ymax, minor) {
+            hline(t.world_to_screen(0.0, i as f64 * minor).1, stroke);
         }
         let stroke = Stroke::new(1.0, theme::GRID_MAJOR);
         for i in ticks::multiples(v.xmin, v.xmax, steps.major) {

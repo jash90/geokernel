@@ -225,6 +225,11 @@ pub struct Gesture {
     /// was decided: `end_frame` decides it from this press position (and
     /// button), applies its motion and ends it.
     unresolved: Option<(Point, Button)>,
+    /// A running drag that ended (released) this frame: `end_frame` still
+    /// applies the motion accepted before the release, as the reference app
+    /// handles each drag event before the release
+    /// (`wrapMouseDraggedND`, then `wrapMouseReleasedND`).
+    ended: Option<Mode>,
     /// Motion accepted this frame: the newest position, and the pan since
     /// the last frame.
     moved_to: Option<Point>,
@@ -254,6 +259,7 @@ impl Gesture {
             touch_last: false,
             mode: None,
             unresolved: None,
+            ended: None,
             moved_to: None,
             panned: (0.0, 0.0),
             primary_finger: None,
@@ -340,7 +346,10 @@ impl Gesture {
                 }
                 let tap = !p.beyond && button == Button::Primary && self.mode != Some(Mode::Pinch);
                 match self.mode {
-                    Some(Mode::Point | Mode::Pan | Mode::Inert) => self.pending.end_drag = true,
+                    Some(m @ (Mode::Point | Mode::Pan | Mode::Inert)) => {
+                        self.ended = Some(m);
+                        self.pending.end_drag = true;
+                    }
                     // Moves were accepted but the drag is decided only at
                     // the end of the frame: it is decided, applied and ended
                     // there.
@@ -473,6 +482,7 @@ impl Gesture {
         self.abort();
         self.forget_fingers();
         self.unresolved = None;
+        self.ended = None;
         let mut out = std::mem::take(&mut self.pending);
         // Nothing is moved or panned any more.
         out.drag_to = None;
@@ -546,11 +556,16 @@ impl Gesture {
             .take()
             .map(|(o, b)| (o, b, false))
             .or_else(|| {
+                // Only a press with accepted moves of its own: a press that
+                // follows a release in the same frame never has any (the
+                // delay), and the motion is the released drag's.
                 self.press
-                    .filter(|p| self.mode.is_none() && !p.no_drag && moved_to.is_some())
+                    .filter(|p| {
+                        self.mode.is_none() && !p.no_drag && p.moves > 0 && moved_to.is_some()
+                    })
                     .map(|p| (p.origin, p.button, true))
             });
-        let mut mode = self.mode;
+        let mut mode = self.ended.take().or(self.mode);
         if let Some((origin, button, held)) = undecided {
             let g = match button {
                 Button::Primary => grab(origin),
@@ -732,6 +747,14 @@ mod tests {
         let out = frame(&mut g, 0.3, &[mv(10.0, 10.0), up(10.0, 10.0)], Grab::Point);
         assert_eq!(out.tap, Some(p(10.0, 10.0)));
         assert_eq!(out.released, released(false, 3, 10.0));
+        // One pixel more is beyond it. With a threshold of 6 the case above
+        // fails, with one of 20 this one does.
+        let mut g = mouse();
+        frame(&mut g, 0.0, &[down(0.0, 0.0)], Grab::Point);
+        frame(&mut g, 0.2, &[mv(11.0, 3.0)], Grab::Point);
+        let out = frame(&mut g, 0.3, &[mv(11.0, 3.0), up(11.0, 3.0)], Grab::Point);
+        assert_eq!(out.tap, None);
+        assert_eq!(out.released, released(true, 2, 11.0));
     }
 
     #[test]
@@ -746,6 +769,55 @@ mod tests {
         }
         assert_eq!(panned, (-50.0, -50.0));
         assert!(g.panning());
+    }
+
+    /// A running drag whose last moves share a frame with the release: the
+    /// moves are applied before the drag ends (`wrapMouseDraggedND` runs
+    /// for each move before `wrapMouseReleasedND`). Fails if `Event::Up`
+    /// drops the motion of the frame (the mode cleared before `end_frame`).
+    #[test]
+    fn the_last_moves_of_a_running_drag_count_when_the_release_comes_in_their_frame() {
+        let mut g = mouse();
+        frame(&mut g, 0.0, &[down(0.0, 0.0)], Grab::Point);
+        frame(&mut g, 0.2, &[mv(20.0, 0.0)], Grab::Point);
+        let out = frame(
+            &mut g,
+            0.3,
+            &[mv(30.0, 5.0), mv(40.0, 6.0), up(40.0, 6.0)],
+            Grab::Point,
+        );
+        assert_eq!(out.started, None);
+        assert_eq!(out.drag_to, Some(p(40.0, 6.0)));
+        assert!(out.end_drag && out.tap.is_none());
+        assert_eq!(out.released, released(true, 3, 40.0));
+        assert_eq!(frame(&mut g, 0.4, &[], Grab::Point), Intents::default());
+        // The same for a pan: the view pans by the whole movement.
+        let mut g = mouse();
+        frame(&mut g, 0.0, &[down(0.0, 0.0)], Grab::Pan);
+        let first = frame(&mut g, 0.2, &[mv(-20.0, 0.0)], Grab::Pan)
+            .pan
+            .unwrap();
+        let out = frame(&mut g, 0.3, &[mv(-50.0, 4.0), up(-50.0, 4.0)], Grab::Pan);
+        let last = out.pan.unwrap();
+        assert_eq!((first.0 + last.0, first.1 + last.1), (-50.0, 4.0));
+        assert!(out.end_drag);
+        assert!(!g.panning());
+        // A press right after the release, in the same frame, takes none of
+        // the released drag's motion.
+        let mut g = mouse();
+        frame(&mut g, 0.0, &[down(0.0, 0.0)], Grab::Point);
+        frame(&mut g, 0.2, &[mv(20.0, 0.0)], Grab::Point);
+        let out = frame(
+            &mut g,
+            0.3,
+            &[mv(30.0, 0.0), up(30.0, 0.0), down(60.0, 0.0)],
+            Grab::Pan,
+        );
+        assert_eq!(
+            (out.started, out.drag_to, out.pan),
+            (None, Some(p(30.0, 0.0)), None)
+        );
+        assert!(out.end_drag && g.pressed() && !g.panning());
     }
 
     #[test]
@@ -821,6 +893,13 @@ mod tests {
         );
         let out = frame(&mut g, 0.1, &[up(10.0, 0.0)], Grab::Point);
         assert_eq!(out.tap, Some(p(10.0, 0.0)));
+        // A wobble after the delay is applied, and a tap while it stays
+        // within the threshold (fails with a threshold under 9).
+        frame(&mut g, 0.5, &[down(0.0, 0.0)], Grab::Point);
+        frame(&mut g, 0.65, &[mv(9.0, -3.0)], Grab::Point);
+        let out = frame(&mut g, 0.7, &[mv(9.0, -3.0), up(9.0, -3.0)], Grab::Point);
+        assert_eq!(out.drag_to, Some(p(9.0, -3.0)));
+        assert_eq!(out.tap, Some(p(9.0, -3.0)));
         // Moves beyond it after the delay make it a drag that is no tap.
         frame(&mut g, 1.0, &[down(0.0, 0.0)], Grab::Point);
         frame(&mut g, 1.15, &[mv(13.0, 0.0)], Grab::Point);

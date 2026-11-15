@@ -1,5 +1,6 @@
 // Parts of this file are translated from GeoGebra (https://github.com/geogebra/geogebra),
 // commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
+//   source/shared/common/src/main/java/org/geogebra/common/euclidian/DrawGrid.java
 //   source/shared/common/src/main/java/org/geogebra/common/euclidian/EuclidianView.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
@@ -33,26 +34,25 @@ pub fn numbering_step(scale: f64, max_pix: f64) -> f64 {
     }
 }
 
-/// The grid of one zoom level: a major step (with captions) and a minor step
-/// that divides it, or `None` when the minor lines would be too dense.
+/// The grid of one zoom level: a major step (with captions) and the minor
+/// step that divides it.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct GridSteps {
     pub major: f64,
-    pub minor: Option<f64>,
+    pub minor: f64,
 }
 
-/// Picks the steps for `scale` pixels per world unit. Major lines are the
-/// axis numbering step apart (one number per `numbering_px`, see
-/// [`numbering_step`]); minor lines at least `min_minor_px`.
-pub fn grid_steps(scale: f64, numbering_px: f64, min_minor_px: f64) -> GridSteps {
+/// `DrawGrid.drawVerticalGridLinear` / `drawHorizontalGridLinear` with the
+/// default grid of the reference app (`GRID_CARTESIAN_WITH_SUBGRID`): the
+/// major lines are the axis numbering step apart (one number per
+/// `numbering_px`, see [`numbering_step`]), and every major cell is split
+/// into five, whatever the step and however dense (major cells are 40 to
+/// 100 px, so minor lines are 8 to 20 px apart).
+pub fn grid_steps(scale: f64, numbering_px: f64) -> GridSteps {
     let major = numbering_step(scale, numbering_px);
-    // 1 and 5 split into five parts, 2 into four (0.5 steps).
-    let lead = major / 10f64.powf(major.log10().floor());
-    let parts = if (lead - 2.0).abs() < 1e-9 { 4.0 } else { 5.0 };
-    let minor = major / parts;
     GridSteps {
         major,
-        minor: (minor * scale >= min_minor_px).then_some(minor),
+        minor: major / 5.0,
     }
 }
 
@@ -115,24 +115,38 @@ mod tests {
 
     #[test]
     fn standard_view_has_unit_major_and_fifth_minor_lines() {
-        let g = grid_steps(50.0, 100.0, 8.0);
+        let g = grid_steps(50.0, 100.0);
         assert_eq!(g.major, 1.0);
-        assert!((g.minor.unwrap() - 0.2).abs() < 1e-12);
+        assert!((g.minor - 0.2).abs() < 1e-12);
     }
 
+    /// Was `step_two_splits_into_halves_and_dense_minor_lines_are_dropped`
+    /// (a 2-step split into four, no minor lines under 9 px):
+    /// `DrawGrid` always splits into five (`n = 5`) and drops none.
     #[test]
-    fn step_two_splits_into_halves_and_dense_minor_lines_are_dropped() {
-        let g = grid_steps(25.0, 100.0, 8.0);
+    fn every_major_cell_splits_into_five() {
+        let g = grid_steps(25.0, 100.0);
         assert_eq!(g.major, 2.0);
-        assert!((g.minor.unwrap() - 0.5).abs() < 1e-12);
-        let g = grid_steps(5.0, 100.0, 8.0);
-        assert_eq!(g.major, 10.0);
-        assert_eq!(g.minor, Some(2.0));
-        let g = grid_steps(2.0, 100.0, 8.0);
-        assert_eq!(g.major, 20.0);
-        assert_eq!(g.minor, Some(5.0));
-        let g = grid_steps(50.0, 100.0, 11.0);
-        assert_eq!(g.minor, None);
+        assert!((g.minor - 0.4).abs() < 1e-12);
+        assert_eq!(
+            grid_steps(5.0, 100.0),
+            GridSteps {
+                major: 10.0,
+                minor: 2.0
+            }
+        );
+        assert_eq!(
+            grid_steps(2.0, 100.0),
+            GridSteps {
+                major: 20.0,
+                minor: 4.0
+            }
+        );
+        // The densest grid: at 200 px per unit the step is 0.2 (40 px), so
+        // minor lines are 8 px apart, and kept (they were dropped).
+        let g = grid_steps(200.0, 100.0);
+        assert_eq!(g.major, 0.2);
+        assert!((g.minor * 200.0 - 8.0).abs() < 1e-9);
     }
 
     #[test]

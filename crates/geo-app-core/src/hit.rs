@@ -55,10 +55,12 @@ pub const CURVE_STROKE: f64 = 2.5;
 /// with the mouse's square whatever the pointer.
 const MIN_HITTING_SIZE: f64 = 20.0;
 
-/// The owner's choice where the reference app is not followed (its "press
-/// on a polygon's edge does nothing", whose source path was never found):
-/// a press on a side of a polygon takes hold of the polygon. `false` would
-/// leave the side chosen, as `chooseGeo` does.
+/// The owner's choice where the reference app is not followed: a press of
+/// the move tool on a side of a polygon takes hold of the polygon. `false`
+/// follows the reference app as observed (scenario
+/// `press_on_polygon_edge_does_nothing`; the source path was never found):
+/// such a press selects nothing, moves nothing and does not pan. The window
+/// reads it through `app::OwnerRules`.
 pub const SIDE_TAKES_THE_POLYGON: bool = true;
 
 /// How far from the pointer an object is still hit, for one press.
@@ -590,5 +592,86 @@ mod tests {
             pick(&c, &t, (sx, sy - 20.0), &mouse(), None, only(&c, "f")),
             None
         );
+    }
+
+    /// `removePolygonsIfNotOnlyCS2D`: a press on a polygon's side hits the
+    /// polygon and its side (a segment); the polygon is dropped and the side
+    /// chosen, and a line across the inside wins over the filling. Fails if
+    /// the polygon is kept among other hits.
+    #[test]
+    fn a_polygon_is_dropped_when_anything_else_is_hit() {
+        let c = geo_kernel::script::load(
+            "A = (-3, -3)\nB = (3, -3)\nC = (0, 3)\nq = Polygon(A, B, C)\nD = (-4, 0)\nE = (4, 0)\nf = Line(D, E)\n",
+        )
+        .unwrap();
+        let (_, t) = setup();
+        let side = t.world_to_screen(1.0, -3.0);
+        let id = pick(&c, &t, side, &mouse(), None, |_| true);
+        let kind = id.map(|id| c.kind(id));
+        assert_eq!(kind, Some(Kind::Segment), "{:?}", label(&c, id));
+        let on_line = t.world_to_screen(0.5, 0.0);
+        let id = pick(&c, &t, on_line, &mouse(), None, |_| true);
+        assert_eq!(label(&c, id).as_deref(), Some("f"));
+        // Alone, the polygon is hit through its filling and on its side.
+        let q = |pos| label(&c, pick(&c, &t, pos, &mouse(), None, only(&c, "q")));
+        assert_eq!(q(side).as_deref(), Some("q"));
+        assert_eq!(q(on_line).as_deref(), Some("q"));
+    }
+
+    /// `chooseGeo`: a free point wins over a dependent point at the same
+    /// place, even when the free one was made first. Fails if the point
+    /// made last wins whether it is free or not.
+    #[test]
+    fn a_free_point_wins_over_a_dependent_point_on_it() {
+        let c =
+            geo_kernel::script::load("P = (2, 0)\nA = (0, 0)\nB = (4, 0)\nM = Midpoint(A, B)\n")
+                .unwrap();
+        let (_, t) = setup();
+        let at = t.world_to_screen(2.0, 0.0);
+        let id = pick(&c, &t, at, &mouse(), None, |_| true);
+        assert_eq!(label(&c, id).as_deref(), Some("P"));
+    }
+
+    /// `chooseGeo` takes a segment before the type priority: a vector is
+    /// drawn above a segment (`GeoClass` 120 against 110), yet the segment
+    /// wins, whichever was made first. Fails if the type priority decides.
+    #[test]
+    fn a_segment_wins_over_a_vector_drawn_above_it() {
+        for script in [
+            "A = (0, 0)\nB = (4, 0)\ns = Segment(A, B)\nu = Vector(A, B)\n",
+            "A = (0, 0)\nB = (4, 0)\nu = Vector(A, B)\ns = Segment(A, B)\n",
+        ] {
+            let c = geo_kernel::script::load(script).unwrap();
+            let (_, t) = setup();
+            let at = t.world_to_screen(2.0, 0.0);
+            let both = |id: Id| matches!(c.label(id), "s" | "u");
+            assert_eq!(
+                label(
+                    &c,
+                    pick(&c, &t, at, &mouse(), None, |id| c.label(id) == "u")
+                )
+                .as_deref(),
+                Some("u"),
+                "the vector is hit"
+            );
+            let id = pick(&c, &t, at, &mouse(), None, both);
+            assert_eq!(label(&c, id).as_deref(), Some("s"), "{script}");
+        }
+    }
+
+    /// The finger's retry runs only when the first square hit nothing: a
+    /// line 5 px away is hit at once, so a point 30 px away (within the
+    /// retry's 27 + 12, beyond the first 9 + 12) is not tried, though a
+    /// point would win. Fails if the retry always runs.
+    #[test]
+    fn a_finger_does_not_retry_when_something_is_hit() {
+        let (c, t) = setup();
+        let (sx, sy) = t.world_to_screen(0.0, 0.0);
+        let near = |id: Id| matches!(c.label(id), "A" | "f");
+        let id = pick(&c, &t, (sx + 30.0, sy - 5.0), &touch(), None, near);
+        assert_eq!(label(&c, id).as_deref(), Some("f"));
+        // Away from the line, the retry finds the point.
+        let id = pick(&c, &t, (sx + 30.0, sy - 12.0), &touch(), None, near);
+        assert_eq!(label(&c, id).as_deref(), Some("A"));
     }
 }

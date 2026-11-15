@@ -181,23 +181,28 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     };
     // What a press of the move tool at `pos` (in the area as it was, with
     // the transform `pt`) takes hold of.
-    let target = |app: &App, pt: &ViewTransform, pos: (f64, f64)| -> Option<Id> {
+    let target = |app: &App, pt: &ViewTransform, pos: (f64, f64)| -> Target {
         let c = app.wb.construction();
-        let id = hit::pick(c, pt, pos, &press_reach, app.wb.selected, |id| {
+        let Some(id) = hit::pick(c, pt, pos, &press_reach, app.wb.selected, |id| {
             shown(app, id)
-        })?;
-        // The owner's rule (`hit::SIDE_TAKES_THE_POLYGON`): a side of a
-        // polygon under the pointer stands for the polygon.
-        if hit::SIDE_TAKES_THE_POLYGON {
-            if let Some(p) = app.wb.polygon_of_side(id).filter(|&p| shown(app, p)) {
-                let (t0, retry) = (press_reach.threshold, press_reach.retry);
-                let hits = |th: f64| hit::hit(c, p, pt, pos, th, &press_reach).is_some();
-                if hits(t0) || retry.is_some_and(hits) {
-                    return Some(p);
-                }
+        }) else {
+            return Target::Nothing;
+        };
+        // A side of a polygon under the pointer: the owner's rule
+        // (`hit::SIDE_TAKES_THE_POLYGON`) takes the polygon; the reference
+        // app does nothing with such a press.
+        if let Some(p) = app.wb.polygon_of_side(id).filter(|&p| shown(app, p)) {
+            let (t0, retry) = (press_reach.threshold, press_reach.retry);
+            let hits = |th: f64| hit::hit(c, p, pt, pos, th, &press_reach).is_some();
+            if hits(t0) || retry.is_some_and(hits) {
+                return if app.rules.side_takes_the_polygon {
+                    Target::Object(p)
+                } else {
+                    Target::Inert
+                };
             }
         }
-        Some(id)
+        Target::Object(id)
     };
     app.hovered = response.hover_pos().and_then(|p| pick_at(app, to_local(p)));
 
@@ -230,7 +235,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     if let (true, Some(pos)) = (move_tool, fed.owned) {
         let (local, pt) = at_press(app, pos);
         if app.label_at(local).is_none() {
-            if let Some(id) = target(app, &pt, local) {
+            if let Target::Object(id) = target(app, &pt, local) {
                 app.wb.selected = Some(id);
             }
         }
@@ -255,8 +260,10 @@ pub fn show(app: &mut App, ui: &mut Ui) {
                 grabbed = Some(Drag::label(id, old, (sx, sy)));
                 return Grab::Point;
             }
-            let Some(id) = target(app, &pt, (sx, sy)) else {
-                return Grab::Pan;
+            let id = match target(app, &pt, (sx, sy)) {
+                Target::Object(id) => id,
+                Target::Nothing => return Grab::Pan,
+                Target::Inert => return Grab::Nothing,
             };
             // The press position, captured to the grid with no offset
             // (`wrapMousePressed` calls `transformCoords`).
@@ -286,7 +293,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     app.gesture = gesture;
     // A refused drag of a dependent point says why, once per press (the
     // owner's rule, `interact::REFUSED_DRAG_NOTICE`).
-    if let Some(id) = refused.filter(|_| interact::REFUSED_DRAG_NOTICE) {
+    if let Some(id) = refused.filter(|_| app.rules.refused_drag_notice) {
         if app.wb.construction().kind(id) == Kind::Point {
             app.wb.notice = Some(text::label(Label::PointDependsOnOthers).to_owned());
         }
@@ -344,9 +351,16 @@ pub fn show(app: &mut App, ui: &mut Ui) {
                     target(app, &pt, local)
                 } else {
                     let c = app.wb.construction();
-                    hit::pick(c, &pt, local, &press_reach, None, |id| shown(app, id))
+                    match hit::pick(c, &pt, local, &press_reach, None, |id| shown(app, id)) {
+                        Some(id) => Target::Object(id),
+                        None => Target::Nothing,
+                    }
                 };
-                click(app, &pt, local, hit);
+                match hit {
+                    Target::Object(id) => click(app, &pt, local, Some(id)),
+                    Target::Nothing => click(app, &pt, local, None),
+                    Target::Inert => {}
+                }
             }
         }
     }
@@ -397,6 +411,18 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     overlay(app, ui, rect, w, h, &mut cam);
     app.camera = Some(cam);
     app.view = Some((rect.core(), cam.transform(w, h)));
+}
+
+/// What a press of the move tool takes hold of.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Target {
+    /// Nothing is hit: the press pans, a click deselects.
+    Nothing,
+    Object(Id),
+    /// Something is hit that the press must leave alone: it selects
+    /// nothing, drags nothing and does not pan (a polygon's side under the
+    /// reference app's rule, `OwnerRules::side_takes_the_polygon` off).
+    Inert,
 }
 
 /// Puts back or ends the drag that the automaton ended.

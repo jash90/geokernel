@@ -149,7 +149,8 @@ pub fn movable(c: &Construction, id: Id) -> bool {
 /// The owner's choice where the reference app is not followed (it refuses
 /// such a drag without a word, `isElementAllowedToMove`): a drag of a point
 /// that depends on other objects shows a short notice, once per press, and
-/// does not pan. `false` would refuse silently.
+/// does not pan. `false` refuses silently, as the reference app does. The
+/// window reads it through `app::OwnerRules`.
 pub const REFUSED_DRAG_NOTICE: bool = true;
 
 /// What a drag holds, and the state its moves need.

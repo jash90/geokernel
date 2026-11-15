@@ -163,6 +163,28 @@ fn a_flick_in_the_next_frame_moves_and_is_still_a_click() {
         "the click on nothing deselects"
     );
     assert_eq!(labels(&h), ["A"]);
+
+    // With the point tool the flick pans and still places a point at the
+    // release position, read in the view as it was at the press (the tools'
+    // rule until group 6): 40 px right of the press. Fails if a single move
+    // counted beyond the threshold (no point) or if the flick did not pan.
+    let mut h = harness("A = (1, 1)\n");
+    h.state_mut().tool.set_tool(Tool::Point);
+    let from = world(-3.3, -2.7);
+    let cx0 = h.state().camera.unwrap().cx;
+    moved(&mut h, from);
+    button(&mut h, from, true);
+    let to = from + egui::vec2(40.0, 0.0);
+    h.input_mut().events.push(Event::PointerMoved(to));
+    h.input_mut()
+        .events
+        .push(press(to, PointerButton::Primary, false));
+    h.step();
+    h.run();
+    let cam = h.state().camera.unwrap();
+    assert!((cam.cx - cx0 + 40.0 / 50.0).abs() < 1e-12, "{}", cam.cx);
+    assert_eq!(labels(&h), ["A", "B"]);
+    assert_eq!(point(&h, "B"), (-2.5, -2.7));
 }
 
 /// A window with the touch profile, `size` points large.
@@ -184,31 +206,92 @@ fn touch_harness(script: &str, size: (f32, f32)) -> Harness<'static, App> {
 }
 
 /// The touch profile no longer has a wider slop of its own: a wobble within
-/// the 100 ms delay is dropped (`shouldCancelDrag`, for every pointer) and
-/// the tap places its point where it is released (`wrapMouseReleasedND`).
+/// the 100 ms delay is dropped (`shouldCancelDrag`, for every pointer), and
+/// one after the delay is applied (the view pans with it) but keeps the tap
+/// a tap while it stays within the 10 px threshold
+/// (`isDraggingBeyondThreshold`); the point goes where the tap is released
+/// (`wrapMouseReleasedND`), read in the view as it was at the press (the
+/// tools' rule until group 6). The second wobble fails with a threshold
+/// under 9 px.
 #[test]
 fn with_the_touch_profile_a_wobbly_tap_still_places_a_point() {
-    let mut h = touch_harness("A = (0, 0)\n", SIZE);
-    h.state_mut().tool.set_tool(Tool::Point);
-    let (rect, _) = h.state().view.unwrap();
-    let from = Pos2::new(rect.min.x + 100.0, rect.min.y + 100.0);
+    for after_delay in [false, true] {
+        let mut h = touch_harness("A = (0, 0)\n", SIZE);
+        h.state_mut().tool.set_tool(Tool::Point);
+        let from = drawn_at(&h, 1.3, 1.7);
+        let cam = h.state().camera.unwrap();
+        let wobble = from + egui::vec2(9.0, -4.0);
+        let (t_move, t_up) = if after_delay {
+            (20.25, 20.3)
+        } else {
+            (20.15, 20.19)
+        };
+        frame_at(&mut h, 20.0, vec![Event::PointerMoved(from)]);
+        frame_at(
+            &mut h,
+            20.1,
+            vec![press(from, PointerButton::Primary, true)],
+        );
+        frame_at(&mut h, t_move, vec![Event::PointerMoved(wobble)]);
+        frame_at(
+            &mut h,
+            t_up,
+            vec![
+                Event::PointerMoved(wobble),
+                press(wobble, PointerButton::Primary, false),
+            ],
+        );
+        h.run();
+        let what = format!("after the delay: {after_delay}");
+        assert_eq!(labels(&h), ["A", "B"], "{what}");
+        let (b, scale) = (point(&h, "B"), cam.scale);
+        let want = (1.3 + 9.0 / scale, 1.7 + 4.0 / scale);
+        assert!(
+            (b.0 - want.0).abs() < 1e-9 && (b.1 - want.1).abs() < 1e-9,
+            "{what}: {b:?}"
+        );
+        let now = h.state().camera.unwrap();
+        if after_delay {
+            assert!(
+                (now.cx - cam.cx + 9.0 / scale).abs() < 1e-9,
+                "{what}: no pan"
+            );
+        } else {
+            assert_eq!(now, cam, "{what}: the wobble panned");
+        }
+    }
+}
+
+/// A mouse press between the old point radius (11 px) and the new one
+/// (3 + 12 = 15 px, `DrawPoint.SELECTION_RADIUS_MIN`) takes the point; a
+/// finger press between its first reach (9 + 12 = 21 px) and its retry
+/// (27 + 12 = 39 px, `HitDetector.setHits`) does too. Fails with
+/// `point_selection_min` 8 (the old 11 px for the mouse) or with
+/// `touch_retry_factor` 1 (no retry): the press then hits nothing and pans.
+#[test]
+fn presses_between_the_old_and_the_new_reach_take_the_point() {
+    use egui::TouchPhase::{End, Move, Start};
+    // The mouse, 13 px right of A.
+    let mut h = harness("A = (1, 1)\n");
     let cam = h.state().camera.unwrap();
-    let wobble = from + egui::vec2(10.0, 0.0);
-    frame_at(&mut h, 20.0, vec![Event::PointerMoved(from)]);
-    frame_at(
-        &mut h,
-        20.1,
-        vec![press(from, PointerButton::Primary, true)],
-    );
-    frame_at(&mut h, 20.15, vec![Event::PointerMoved(wobble)]);
-    frame_at(
-        &mut h,
-        20.19,
-        vec![press(wobble, PointerButton::Primary, false)],
-    );
+    let from = world(1.0, 1.0) + egui::vec2(13.0, 0.0);
+    drag(&mut h, from, from + egui::vec2(40.0, -30.0));
+    assert_ne!(point(&h, "A"), (1.0, 1.0), "the mouse press missed A");
+    assert_eq!(h.state().camera.unwrap(), cam, "the press panned");
+    // A finger, 30 px right of A.
+    let mut h = touch_harness("A = (0, 0)\n", SIZE);
+    let cam = h.state().camera.unwrap();
+    let mut w = Winit::default();
+    let mut f = drawn_at(&h, 0.0, 0.0) + egui::vec2(30.0, 0.0);
+    frame_at(&mut h, 10.0, w.touch(0, Start, f));
+    for i in 1..=4 {
+        f += egui::vec2(10.0, 0.0);
+        frame_at(&mut h, 10.1 + 0.05 * i as f64, w.touch(0, Move, f));
+    }
+    frame_at(&mut h, 10.5, w.touch(0, End, f));
     h.run();
-    assert_eq!(labels(&h), ["A", "B"]);
-    assert_eq!(h.state().camera.unwrap(), cam, "the wobble panned nothing");
+    assert_ne!(point(&h, "A"), (0.0, 0.0), "the finger missed A");
+    assert_eq!(h.state().camera.unwrap(), cam, "the finger panned");
 }
 
 #[test]
@@ -579,4 +662,92 @@ fn a_rebuild_during_a_pan_leaves_the_pan_inert_until_the_release() {
     h.run();
     assert_eq!(camera(&h), cam, "the view no longer follows");
     assert_eq!(labels(&h), ["A"]);
+}
+
+/// The last move of a running drag that shares a frame with the release
+/// still counts (`wrapMouseDraggedND` runs before `wrapMouseReleasedND`):
+/// the point ends at the last move, as one undo step. The same for a pan
+/// and for a finger. Fails if the release drops the motion of its frame.
+#[test]
+fn the_last_move_of_a_drag_counts_when_the_release_shares_its_frame() {
+    // A drag of a point with the mouse.
+    let mut h = harness("A = (0, 0)\n");
+    let from = world(0.0, 0.0);
+    frame_at(&mut h, 10.0, vec![Event::PointerMoved(from)]);
+    frame_at(
+        &mut h,
+        10.05,
+        vec![press(from, PointerButton::Primary, true)],
+    );
+    frame_at(
+        &mut h,
+        10.2,
+        vec![Event::PointerMoved(from + egui::vec2(30.0, 0.0))],
+    );
+    let to = from + egui::vec2(60.0, -40.0);
+    frame_at(
+        &mut h,
+        10.3,
+        vec![
+            Event::PointerMoved(to),
+            press(to, PointerButton::Primary, false),
+        ],
+    );
+    h.run();
+    assert_eq!(point(&h, "A"), (1.2, 0.8));
+    undo(&mut h);
+    assert_eq!(point(&h, "A"), (0.0, 0.0));
+    assert!(!h.state().wb.can_undo(), "one step for the whole drag");
+
+    // A pan.
+    let mut h = harness("A = (0, 0)\n");
+    let (cx0, cy0, _) = camera(&h);
+    let from = world(-4.0, -3.0);
+    frame_at(&mut h, 10.0, vec![Event::PointerMoved(from)]);
+    frame_at(
+        &mut h,
+        10.05,
+        vec![press(from, PointerButton::Primary, true)],
+    );
+    frame_at(
+        &mut h,
+        10.2,
+        vec![Event::PointerMoved(from + egui::vec2(-20.0, 0.0))],
+    );
+    let to = from + egui::vec2(-50.0, 20.0);
+    frame_at(
+        &mut h,
+        10.3,
+        vec![
+            Event::PointerMoved(to),
+            press(to, PointerButton::Primary, false),
+        ],
+    );
+    h.run();
+    let (cx, cy, _) = camera(&h);
+    assert!((cx - cx0 - 1.0).abs() < 1e-12, "{}", cx - cx0);
+    assert!(((cy - cy0).abs() - 0.4).abs() < 1e-12, "{}", cy - cy0);
+    assert!(!h.state().wb.can_undo());
+
+    // A drag of a point with a finger.
+    use egui::TouchPhase::{End, Move, Start};
+    let mut h = touch_harness("A = (0, 0)\n", SIZE);
+    let scale = camera(&h).2;
+    let mut w = Winit::default();
+    let f = drawn_at(&h, 0.0, 0.0);
+    frame_at(&mut h, 10.0, w.touch(0, Start, f));
+    frame_at(&mut h, 10.2, w.touch(0, Move, f + egui::vec2(30.0, 0.0)));
+    let to = f + egui::vec2(60.0, -40.0);
+    let mut events = w.touch(0, Move, to);
+    events.extend(w.touch(0, End, to));
+    frame_at(&mut h, 10.3, events);
+    h.run();
+    let a = point(&h, "A");
+    assert!(
+        (a.0 - 60.0 / scale).abs() < 1e-9 && (a.1 - 40.0 / scale).abs() < 1e-9,
+        "{a:?}"
+    );
+    undo(&mut h);
+    assert_eq!(point(&h, "A"), (0.0, 0.0));
+    assert!(!h.state().wb.can_undo());
 }
