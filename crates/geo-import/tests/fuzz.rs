@@ -106,7 +106,7 @@ fn collect(dir: &Path, ext: &str, out: &mut Vec<PathBuf>) {
     }
 }
 
-fn check(name: &str, bytes: &[u8]) {
+fn check(name: &str, bytes: &[u8]) -> bool {
     let started = Instant::now();
     let result = catch_unwind(AssertUnwindSafe(|| import(bytes)))
         .unwrap_or_else(|_| panic!("{name}: the importer panicked on {} bytes", bytes.len()));
@@ -115,6 +115,7 @@ fn check(name: &str, bytes: &[u8]) {
         "{name}: took {:?}",
         started.elapsed()
     );
+    let reached = result.is_ok();
     if let Ok(imported) = result {
         let mut c = Construction::new();
         for line in &imported.script {
@@ -133,6 +134,53 @@ fn check(name: &str, bytes: &[u8]) {
             );
         }
     }
+    reached
+}
+
+/// The XML of a `.ggb` archive, mutated, and packed again so that the zip
+/// layer accepts it and the mutation reaches the converter.
+fn rezip(xml: &[u8]) -> Vec<u8> {
+    use std::io::Write;
+    let mut out = Vec::new();
+    {
+        let mut w = zip::ZipWriter::new(std::io::Cursor::new(&mut out));
+        let options = zip::write::SimpleFileOptions::default()
+            .compression_method(zip::CompressionMethod::Deflated);
+        w.start_file("geogebra.xml", options).unwrap();
+        w.write_all(xml).unwrap();
+        w.finish().unwrap();
+    }
+    out
+}
+
+/// Structure-aware mutation: swaps the values of two attributes of the same
+/// name (labels, inputs, outputs), or repeats a tag, so that references go
+/// to the wrong or to missing objects while the XML stays well formed.
+fn mutate_structure(input: &str, rng: &mut Rng) -> String {
+    let mut text = input.to_string();
+    for _ in 0..1 + rng.below(3) {
+        let attr = ["label=\"", "a0=\"", "a1=\"", "name=\"", "type=\""][rng.below(5)];
+        let positions: Vec<usize> = text.match_indices(attr).map(|(i, _)| i).collect();
+        if positions.len() < 2 {
+            continue;
+        }
+        let value = |t: &str, at: usize| {
+            let start = at + attr.len();
+            t[start..].find('"').map(|n| (start, start + n))
+        };
+        let (p, q) = (
+            positions[rng.below(positions.len())],
+            positions[rng.below(positions.len())],
+        );
+        if let (Some((ps, pe)), Some((qs, qe))) = (value(&text, p), value(&text, q)) {
+            if ps < qs {
+                let (a, b) = (text[ps..pe].to_string(), text[qs..qe].to_string());
+                text.replace_range(qs..qe, &a);
+                text.replace_range(ps..pe, &b);
+            }
+        }
+    }
+    text
 }
 
 #[test]
@@ -163,4 +211,35 @@ fn mutated_files_never_panic() {
         }
     }
     println!("{} inputs, {runs} mutated files", inputs.len());
+}
+
+#[test]
+fn mutations_inside_a_valid_archive_reach_the_converter() {
+    let root = repo_root().join("golden/ggb");
+    let mut xml = Vec::new();
+    collect(&root, "xml", &mut xml);
+    xml.sort();
+    let (mut runs, mut reached) = (0, 0);
+    for (n, path) in xml.iter().step_by(40).enumerate() {
+        let original = fs::read_to_string(path).unwrap();
+        let mut rng = Rng(0x2545_f491_4f6c_dd1d ^ ((n as u64 + 1) * 0x1000_0000_01b3));
+        for m in 0..40 {
+            let text = if m % 2 == 0 {
+                mutate_structure(&original, &mut rng)
+            } else {
+                String::from_utf8_lossy(&mutate(original.as_bytes(), &mut rng)).into_owned()
+            };
+            let name = format!("{} archive mutation {m}", path.display());
+            // as a bare file and inside an archive
+            reached += usize::from(check(&name, text.as_bytes()));
+            reached += usize::from(check(&name, &rezip(text.as_bytes())));
+            runs += 2;
+        }
+    }
+    println!("{runs} mutated files, {reached} imported");
+    // most mutations leave a file the converter can read
+    assert!(
+        reached * 2 > runs,
+        "only {reached} of {runs} reached the converter"
+    );
 }

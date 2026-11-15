@@ -51,13 +51,15 @@ fn zip_error(detail: &str) -> ImportError {
 }
 
 fn u16_at(b: &[u8], at: usize) -> Result<usize, ImportError> {
-    at.checked_add(2).and_then(|end| b.get(at..end))
+    at.checked_add(2)
+        .and_then(|end| b.get(at..end))
         .map(|s| u16::from_le_bytes([s[0], s[1]]) as usize)
         .ok_or_else(|| zip_error("truncated"))
 }
 
 fn u32_at(b: &[u8], at: usize) -> Result<u64, ImportError> {
-    at.checked_add(4).and_then(|end| b.get(at..end))
+    at.checked_add(4)
+        .and_then(|end| b.get(at..end))
         .map(|s| u32::from_le_bytes([s[0], s[1], s[2], s[3]]) as u64)
         .ok_or_else(|| zip_error("truncated"))
 }

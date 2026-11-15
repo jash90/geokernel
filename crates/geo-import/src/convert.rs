@@ -185,7 +185,10 @@ impl Converter {
             return Ok(());
         }
         let steps = match labelled.iter().find(|l| !is_label(l)) {
-            Some(bad) => Err(format!("`{}` is not a label the script can use", quote(bad))),
+            Some(bad) => Err(format!(
+                "`{}` is not a label the script can use",
+                quote(bad)
+            )),
             None => self.steps(name, inputs, outputs),
         };
         match steps {
@@ -331,7 +334,7 @@ impl Converter {
         }
         let call = format!("{name}({})", args.join(", "));
         let labelled: Vec<String> = outputs.iter().filter(|l| !l.is_empty()).cloned().collect();
-        if outputs.len() > 1 && labels_by_kernel(name, inputs) {
+        if labels_by_kernel(name, inputs) {
             return Ok(vec![Step {
                 line: format!("{} = {call}", labelled[0]),
                 labels: labelled,
@@ -408,7 +411,10 @@ impl Converter {
         }
         let label = el.label.as_str();
         if !is_label(label) {
-            return Ok(Err(format!("`{}` is not a label the script can use", quote(label))));
+            return Ok(Err(format!(
+                "`{}` is not a label the script can use",
+                quote(label)
+            )));
         }
         let number = |text: &str| -> Result<f64, ImportError> {
             text.trim()

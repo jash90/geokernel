@@ -194,52 +194,238 @@ fn tens_of_thousands_of_items_are_imported_in_bounded_time() {
     assert!(took < BOUND, "{took:?}");
 }
 
-/// A and B, then `n` commands that each give one object.
-fn many_commands(n: usize, command: &str, coords: &str) -> String {
-    let mut s = String::from(
-        "<geogebra><construction>\
-         <element type=\"point\" label=\"A\"><coords x=\"0\" y=\"0\" z=\"1\"/></element>\
-         <element type=\"point\" label=\"B\"><coords x=\"4\" y=\"0\" z=\"1\"/></element>",
-    );
+/// The bytes of text an import result holds.
+fn held(r: &geo_import::Imported) -> usize {
+    r.script.iter().map(String::len).sum::<usize>()
+        + r.skipped
+            .iter()
+            .map(|s| s.label.len() + s.kind.len() + s.reason.len())
+            .sum::<usize>()
+        + r.hidden.iter().map(String::len).sum::<usize>()
+        + r.notes.iter().map(String::len).sum::<usize>()
+        + r.mismatched
+            .iter()
+            .map(|m| m.label.len() + m.saved.len() + m.computed.len())
+            .sum::<usize>()
+}
+
+fn outputs(n: usize) -> String {
+    let mut s = String::from("<output");
     for i in 0..n {
-        s.push_str(&format!(
-            "<command name=\"{command}\"><input a0=\"A\" a1=\"B\"/><output a0=\"M{i}\"/></command>\
-             <element type=\"point\" label=\"M{i}\">{coords}</element>"
-        ));
+        s.push_str(&format!(" a{i}=\"o{i}\""));
     }
-    s.push_str("</construction></geogebra>");
+    s.push_str("/>");
     s
 }
 
+const AB: &str = "<element type=\"point\" label=\"A\"><coords x=\"0\" y=\"0\" z=\"1\"/></element>\
+                  <element type=\"point\" label=\"B\"><coords x=\"4\" y=\"0\" z=\"1\"/></element>";
+
+fn wrap(body: &str) -> String {
+    format!("<geogebra><construction>{AB}{body}</construction></geogebra>")
+}
+
 #[test]
-fn thousands_of_rejected_lines_take_linear_time() {
-    // The kernel has no `Frobnicate`: every line is refused.
-    let small = many_commands(3_000, "Frobnicate", "");
-    let big = many_commands(12_000, "Frobnicate", "");
-    let (a, t_small) = timed(|| import(small.as_bytes()).unwrap());
-    let (b, t_big) = timed(|| import(big.as_bytes()).unwrap());
-    assert_eq!((a.skipped.len(), b.skipped.len()), (3_000, 12_000));
-    assert!(t_big < BOUND, "{t_big:?}");
-    // Four times the lines must not take sixteen times as long.
-    assert!(
-        t_big.as_secs_f64() < 10.0 * t_small.as_secs_f64().max(0.05),
-        "{t_small:?} -> {t_big:?}"
+fn a_wide_command_with_a_huge_argument_holds_memory_in_proportion_to_the_input() {
+    use geo_import::xml::{MAX_ARGUMENTS, MAX_ATTRIBUTE_BYTES};
+    // One argument that is not a label, as long as an attribute may be, and
+    // as many output labels as a command may list.
+    let arg = "1+".repeat(MAX_ATTRIBUTE_BYTES / 2);
+    assert_eq!(arg.len(), MAX_ATTRIBUTE_BYTES);
+    for name in ["Line", "Intersect"] {
+        let input = if name == "Line" {
+            format!("<input a0=\"{arg}\" a1=\"B\"/>")
+        } else {
+            format!("<input a0=\"{arg}\" a1=\"B\"/>")
+        };
+        let xml = wrap(&format!(
+            "<command name=\"{name}\">{input}{}</command>",
+            outputs(MAX_ARGUMENTS)
+        ));
+        let (r, took) = timed(|| import(xml.as_bytes()).unwrap());
+        assert_eq!(r.skipped.len(), MAX_ARGUMENTS, "{name}");
+        assert!(
+            held(&r) < 2 * xml.len(),
+            "{name}: {} of {}",
+            held(&r),
+            xml.len()
+        );
+        assert!(took < BOUND, "{name}: {took:?}");
+    }
+    // One output over the limit, and one attribute over the limit, are errors.
+    let xml = wrap(&format!(
+        "<command name=\"Line\"><input a0=\"A\" a1=\"B\"/>{}</command>",
+        outputs(MAX_ARGUMENTS + 1)
+    ));
+    assert!(matches!(
+        import(xml.as_bytes()),
+        Err(ImportError::TooManyArguments(_))
+    ));
+    let xml = wrap(&format!(
+        "<element type=\"point\" label=\"{}\"/>",
+        "x".repeat(MAX_ATTRIBUTE_BYTES + 1)
+    ));
+    assert_eq!(import(xml.as_bytes()), Err(ImportError::AttributeTooLong));
+}
+
+#[test]
+fn many_inputs_and_many_outputs_of_a_single_command() {
+    // 10000 label arguments, 10000 outputs; the kernel has no such command,
+    // so every output is skipped with one short reason.
+    let mut input = String::from("<input");
+    for _ in 0..10_000 {
+        input.push_str(&format!(" a{}=\"A\"", input.matches(" a").count()));
+    }
+    input.push_str("/>");
+    let xml = wrap(&format!(
+        "<command name=\"Frob\">{input}{}</command>",
+        outputs(10_000)
+    ));
+    let (r, took) = timed(|| import(xml.as_bytes()).unwrap());
+    assert_eq!(r.skipped.len(), 10_000);
+    // each skipped output keeps its label, its kind and one short reason
+    assert!(held(&r) < 8 * xml.len(), "{} of {}", held(&r), xml.len());
+    assert!(took < BOUND, "{took:?}");
+}
+
+#[test]
+fn outputs_count_toward_the_item_limit() {
+    // 25 commands of 10000 outputs are 250000 outputs: over MAX_ITEMS.
+    let mut body = String::new();
+    for k in 0..25 {
+        let out: String = (0..10_000).map(|i| format!(" a{i}=\"o{k}_{i}\"")).collect();
+        body.push_str(&format!(
+            "<command name=\"Frob\"><input a0=\"A\"/><output{out}/></command>"
+        ));
+    }
+    assert_eq!(
+        import(wrap(&body).as_bytes()),
+        Err(ImportError::TooManyItems)
     );
 }
 
 #[test]
-fn thousands_of_mismatching_values_take_linear_time() {
-    // The midpoint is (2, 0); the file claims (9, 9).
-    let coords = "<coords x=\"9\" y=\"9\" z=\"1\"/>";
-    let small = many_commands(3_000, "Midpoint", coords);
-    let big = many_commands(12_000, "Midpoint", coords);
-    let (a, t_small) = timed(|| import(small.as_bytes()).unwrap());
-    let (b, t_big) = timed(|| import(big.as_bytes()).unwrap());
-    assert_eq!((a.mismatched.len(), b.mismatched.len()), (3_000, 12_000));
-    assert_eq!(b.script.len(), 12_002, "every object stays in the script");
-    assert!(t_big < BOUND, "{t_big:?}");
-    assert!(
-        t_big.as_secs_f64() < 10.0 * t_small.as_secs_f64().max(0.05),
-        "{t_small:?} -> {t_big:?}"
+fn an_element_with_a_million_attributes_is_read_in_linear_time() {
+    // The label is the last attribute; a duplicate check on every attribute
+    // would be quadratic.
+    let mut attrs = String::new();
+    for i in 0..300_000 {
+        attrs.push_str(&format!(" k{i}=\"v\""));
+    }
+    let xml = wrap(&format!("<element type=\"point\"{attrs} label=\"P\"/>"));
+    let (r, took) = timed(|| import(xml.as_bytes()).unwrap());
+    assert_eq!(r.skipped.len(), 1);
+    assert!(took < BOUND, "{took:?}");
+}
+
+#[test]
+fn deep_nesting_does_not_overflow_the_stack() {
+    let depth = 200_000;
+    let xml = format!(
+        "<geogebra><construction>{}{}</construction></geogebra>",
+        "<a>".repeat(depth),
+        "</a>".repeat(depth)
     );
+    let (r, took) = timed(|| import(xml.as_bytes()));
+    assert!(r.is_ok());
+    assert!(took < BOUND, "{took:?}");
+}
+
+#[test]
+fn rejected_lines_are_not_rescanned() {
+    // Every refused line costs the work of that line only: 12000 refusals
+    // must create nothing and keep the construction as it was, which is what
+    // makes the work linear (there is no rebuild any more).
+    let mut body = String::new();
+    for i in 0..12_000 {
+        body.push_str(&format!(
+            "<command name=\"Frobnicate\"><input a0=\"A\" a1=\"B\"/><output a0=\"M{i}\"/></command>"
+        ));
+    }
+    let (r, took) = timed(|| import(wrap(&body).as_bytes()).unwrap());
+    assert_eq!(r.skipped.len(), 12_000);
+    assert_eq!(r.script.len(), 2);
+    assert!(took < BOUND, "{took:?}");
+}
+
+#[test]
+fn thousands_of_mismatching_values_stay_in_the_script() {
+    let mut body = String::new();
+    for i in 0..12_000 {
+        body.push_str(&format!(
+            "<command name=\"Midpoint\"><input a0=\"A\" a1=\"B\"/><output a0=\"M{i}\"/></command>\
+             <element type=\"point\" label=\"M{i}\"><coords x=\"9\" y=\"9\" z=\"1\"/></element>"
+        ));
+    }
+    let (r, took) = timed(|| import(wrap(&body).as_bytes()).unwrap());
+    assert_eq!(r.mismatched.len(), 12_000);
+    assert_eq!(r.script.len(), 12_002);
+    assert!(took < BOUND, "{took:?}");
+}
+
+#[test]
+fn twenty_thousand_polygons() {
+    let mut body = String::from(
+        "<element type=\"point\" label=\"C\"><coords x=\"0\" y=\"3\" z=\"1\"/></element>",
+    );
+    for i in 0..20_000 {
+        // the sides of a triangle are named after the opposite vertex
+        body.push_str(&format!(
+            "<command name=\"Polygon\"><input a0=\"A\" a1=\"B\" a2=\"C\"/>\
+             <output a0=\"p{i}\"/></command>"
+        ));
+    }
+    let (r, took) = timed(|| import(wrap(&body).as_bytes()).unwrap());
+    assert_eq!(r.script.len(), 20_003);
+    assert!(took < BOUND, "{took:?}");
+}
+
+/// An archive with a comment, built by hand around a stored entry.
+fn with_comment(comment: &[u8]) -> Vec<u8> {
+    let mut zip = zip_with(
+        &[("geogebra.xml", SMALL.as_bytes())],
+        zip::CompressionMethod::Stored,
+    );
+    let n = zip.len();
+    // the comment length is the last two bytes of the 22-byte end record
+    zip[n - 2..].copy_from_slice(&(comment.len() as u16).to_le_bytes());
+    zip.extend_from_slice(comment);
+    zip
+}
+
+#[test]
+fn archives_with_comments_and_fake_end_records() {
+    assert_eq!(
+        import(&with_comment(b"hello")).unwrap().script,
+        ["A = (1, 2)"]
+    );
+    // a fake end-of-central-directory signature inside the comment
+    let mut fake = b"xx".to_vec();
+    fake.extend_from_slice(b"PK\x05\x06");
+    fake.extend_from_slice(&[0u8; 30]);
+    assert_eq!(import(&with_comment(&fake)).unwrap().script, ["A = (1, 2)"]);
+    // a comment as long as a comment may be
+    let long = vec![b'x'; 0xFFFF];
+    assert_eq!(import(&with_comment(&long)).unwrap().script, ["A = (1, 2)"]);
+}
+
+#[test]
+fn zip64_markers_are_refused() {
+    let zip = zip_with(
+        &[("geogebra.xml", SMALL.as_bytes())],
+        zip::CompressionMethod::Stored,
+    );
+    for field in [20, 24, 42] {
+        let mut copy = zip.clone();
+        patch_u32(&mut copy, CENTRAL, field, 0xFFFF_FFFF);
+        assert!(
+            matches!(import(&copy), Err(ImportError::Zip(m)) if m.contains("zip64")),
+            "field {field}"
+        );
+    }
+    // entry count and directory offset markers of the end record
+    let mut copy = zip.clone();
+    let n = copy.len();
+    copy[n - 12..n - 8].copy_from_slice(&0xFFFF_FFFFu32.to_le_bytes());
+    assert!(matches!(import(&copy), Err(ImportError::Zip(m)) if m.contains("zip64")));
 }
