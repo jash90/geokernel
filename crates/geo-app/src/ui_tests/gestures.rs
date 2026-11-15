@@ -460,3 +460,25 @@ fn a_cancelled_touch_puts_the_dragged_point_back() {
     assert!(!h.state().wb.can_undo(), "no undo step is left");
     assert!(h.state().drag.is_none() && !h.state().gesture.pressed());
 }
+
+#[test]
+fn a_rebuild_during_a_pan_leaves_the_pan_inert_until_the_release() {
+    let mut h = harness("A = (1, 1)\n");
+    h.state_mut().wb.run_line("B = (4, 4)").unwrap();
+    let start = world(-5.0, -3.0);
+    moved(&mut h, start);
+    button(&mut h, start, true);
+    for i in 1..=5 {
+        moved(&mut h, start + egui::vec2(10.0 * i as f32, 0.0));
+    }
+    assert!(h.state().gesture.panning(), "the drag pans");
+    undo(&mut h);
+    let cam = camera(&h);
+    for i in 6..=12 {
+        moved(&mut h, start + egui::vec2(10.0 * i as f32, 0.0));
+    }
+    button(&mut h, start + egui::vec2(120.0, 0.0), false);
+    h.run();
+    assert_eq!(camera(&h), cam, "the view no longer follows");
+    assert_eq!(labels(&h), ["A"]);
+}

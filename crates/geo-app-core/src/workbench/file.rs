@@ -305,6 +305,7 @@ mod tests {
     #[derive(Default)]
     struct Done {
         deletes: usize,
+        /// Bare definitions that made something.
         bare: usize,
     }
 
@@ -338,7 +339,6 @@ mod tests {
                     // A bare definition takes the next free label.
                     let (a, b) = (pick(&mut rng, &points), pick(&mut rng, &points));
                     let cmd = ["Segment", "Midpoint", "Line"][rng.below(3)];
-                    done.bare += 1;
                     Some(format!("{cmd}({a}, {b})"))
                 }
                 7..=9 if curves.len() >= 2 => {
@@ -375,7 +375,9 @@ mod tests {
             };
             if let Some(line) = line {
                 // Failing lines (parallel lines, a point with itself) are fine.
-                let _ = wb.run_line(&line);
+                let before = wb.construction().len();
+                let made = wb.run_line(&line).is_ok() && wb.construction().len() > before;
+                done.bare += usize::from(made && !line.contains('='));
                 continue;
             }
             match rng.below(7) {
@@ -476,35 +478,51 @@ mod tests {
     fn generated_constructions_round_trip() {
         let mut sizes = 0;
         let mut done = Done::default();
-        let needles = [
-            "SetCoords(",
-            "SetValue(",
-            "SetVisibleInView(",
-            "Intersect(",
-            "Polygon(",
-            "Tangent(",
-            "} = Tangent(",
-            "# labels: ",
-            "°",
-            "(x) = ",
-            "-0",
-            "1000000000000000000000",
+        let subnormal = format!("0.{}5", "0".repeat(323));
+        type Check = Box<dyn Fn(&str) -> bool>;
+        let checks: [(&str, Check); 16] = [
+            ("SetCoords", Box::new(|t| t.contains("SetCoords("))),
+            ("SetValue", Box::new(|t| t.contains("SetValue("))),
+            (
+                "SetVisibleInView",
+                Box::new(|t| t.contains("SetVisibleInView(")),
+            ),
+            ("Intersect", Box::new(|t| t.contains("Intersect("))),
+            ("Polygon", Box::new(|t| t.contains("Polygon("))),
+            ("{a, b} = Tangent", Box::new(|t| t.contains("} = Tangent("))),
+            ("label list", Box::new(|t| t.contains("# labels: "))),
+            ("free angle", Box::new(|t| t.contains("°"))),
+            ("function", Box::new(|t| t.contains("(x) = x^2 + "))),
+            ("point sum", Box::new(|t| t.contains(") / 2"))),
+            ("number sum", Box::new(|t| t.contains(" + 0.2"))),
+            (
+                "-0",
+                Box::new(|t| t.contains("(-0, ") || t.contains(", -0)") || t.contains(", -0,")),
+            ),
+            ("subnormal", Box::new(move |t| t.contains(&subnormal))),
+            ("1e21", Box::new(|t| t.contains("1000000000000000000000"))),
+            ("-1e-7", Box::new(|t| t.contains("-0.0000001"))),
+            (
+                "typed decimal",
+                Box::new(|t| t.contains(" = 0.1\n") || t.contains(" = 0.3\n")),
+            ),
         ];
-        let mut seen = [0; 12];
+        let mut seen = [0; 16];
         let mut moved_parents = 0;
         for seed in 1..=200u64 {
             let mut wb = generated(seed.wrapping_mul(0x9e37_79b9_7f4a_7c15), &mut done);
             sizes += wb.construction().len();
             let text = wb.snapshot_text();
-            for (n, what) in needles.iter().enumerate() {
-                seen[n] += usize::from(text.contains(what));
+            for (n, (_, check)) in checks.iter().enumerate() {
+                seen[n] += usize::from(check(&text));
             }
             moved_parents += usize::from(moves_a_parent_of_an_intersection(&text));
             assert_round_trip(&mut wb, &format!("seed {seed}"));
         }
         // The generator makes real constructions with every kind of entry.
         assert!(sizes > 200 * 5, "{sizes}");
-        assert!(seen.iter().all(|&n| n >= 10), "{needles:?}\n{seen:?}");
+        let names: Vec<&str> = checks.iter().map(|(n, _)| *n).collect();
+        assert!(seen.iter().all(|&n| n >= 10), "{names:?}\n{seen:?}");
         assert!(
             done.deletes >= 50 && done.bare >= 50,
             "{} {}",
@@ -591,6 +609,25 @@ mod tests {
             Some(crate::describe::NOT_DRAWN_YET)
         );
         assert_round_trip(&mut wb, "function");
+    }
+
+    #[test]
+    fn unusual_number_texts_are_read_back_bit_for_bit() {
+        let tiny = format!("0.{}5", "0".repeat(323));
+        let mut wb = Workbench::default();
+        wb.run_line(&format!("P = (-0, {tiny})")).unwrap();
+        wb.run_line("Q = (1000000000000000000000, -0.0000001)")
+            .unwrap();
+        let c = wb.construction();
+        let point = |l: &str| match c.value(c.id(l).unwrap()) {
+            Value::Point { x, y } => (x.to_bits(), y.to_bits()),
+            v => panic!("{v:?}"),
+        };
+        assert_eq!(point("P"), ((-0.0f64).to_bits(), 5e-324f64.to_bits()));
+        assert_eq!(point("Q"), (1e21f64.to_bits(), (-1e-7f64).to_bits()));
+        let p = wb.construction().id("P").unwrap();
+        assert!(wb.move_point(p, 5e-324, -0.0));
+        assert_round_trip(&mut wb, "unusual numbers");
     }
 
     #[test]

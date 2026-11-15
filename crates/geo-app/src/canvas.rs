@@ -108,7 +108,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     if app.seen_rebuilds != app.wb.rebuilds() {
         app.seen_rebuilds = app.wb.rebuilds();
         app.drag = None;
-        app.gesture.forget_target();
+        gesture.forget_target();
         app.tool.reset();
     }
     let mut cam = app.camera.unwrap_or(Camera::STANDARD);
