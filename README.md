@@ -13,7 +13,7 @@ dropped silently.
 
 Early. The kernel covers points, lines, segments, rays, circles, general
 conics (ellipse, hyperbola, parabola and the degenerate cases), vectors,
-polygons, polylines, numbers, booleans and functions of x, arithmetic
+polygons, polylines, numbers, booleans, lists and functions of x, arithmetic
 expressions with GeoGebra's exact decimal arithmetic, incremental updates,
 a small script language and SVG output.
 The desktop window has a toolbar with construction tools, an algebra view,
@@ -121,6 +121,8 @@ e = AreCollinear(A, B, C)    # a boolean
 c = 2 r + sqrt(x(A)^2 + y(A)^2)   # an expression; recomputed when r or A change
 N = (A + B) / 2         # points and vectors in expressions
 f(x) = x^2 + r          # a function of x; f(2) in other expressions
+v = If(r > 2, r, 0)     # comparisons, boolean operators and If
+L = Sequence(i^2, i, 1, 5)   # lists: {1, 4, 9, 16, 25}; also Sum, Sort, First, Join, L(2)
 ```
 
 The group files in `crates/geo-kernel/src/algo/` list every command and

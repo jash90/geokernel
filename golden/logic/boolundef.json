@@ -1,0 +1,1016 @@
+{
+  "schema": 1,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "logic-boolundef-001",
+      "group": "logic",
+      "script": [
+        "a = 1",
+        "d = 1 / a",
+        "r = sqrt(a)",
+        "c = d > 3"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 16.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": false },
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "d": { "type": "number", "defined": true, "value": -1.0 },
+          "r": { "type": "number", "defined": false },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "d": { "type": "number", "defined": true, "value": 0.25 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 16.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0625 },
+          "r": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolundef-002",
+      "group": "logic",
+      "script": [
+        "a = 1",
+        "d = 1 / a",
+        "r = sqrt(a)",
+        "c = d < 3"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 16.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": false },
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "d": { "type": "number", "defined": true, "value": -1.0 },
+          "r": { "type": "number", "defined": false },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "d": { "type": "number", "defined": true, "value": 0.25 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 16.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0625 },
+          "r": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolundef-003",
+      "group": "logic",
+      "script": [
+        "a = 1",
+        "d = 1 / a",
+        "r = sqrt(a)",
+        "c = d == d"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 16.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": false },
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "d": { "type": "number", "defined": true, "value": -1.0 },
+          "r": { "type": "number", "defined": false },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "d": { "type": "number", "defined": true, "value": 0.25 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 16.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0625 },
+          "r": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolundef-004",
+      "group": "logic",
+      "script": [
+        "a = 1",
+        "d = 1 / a",
+        "r = sqrt(a)",
+        "c = d != 3"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 16.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": false },
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "d": { "type": "number", "defined": true, "value": -1.0 },
+          "r": { "type": "number", "defined": false },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "d": { "type": "number", "defined": true, "value": 0.25 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 16.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0625 },
+          "r": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolundef-005",
+      "group": "logic",
+      "script": [
+        "a = 1",
+        "d = 1 / a",
+        "r = sqrt(a)",
+        "c = d >= 3"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 16.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": false },
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "d": { "type": "number", "defined": true, "value": -1.0 },
+          "r": { "type": "number", "defined": false },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "d": { "type": "number", "defined": true, "value": 0.25 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 16.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0625 },
+          "r": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolundef-006",
+      "group": "logic",
+      "script": [
+        "a = 1",
+        "d = 1 / a",
+        "r = sqrt(a)",
+        "c = r < 3"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 16.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": false },
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "d": { "type": "number", "defined": true, "value": -1.0 },
+          "r": { "type": "number", "defined": false },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "d": { "type": "number", "defined": true, "value": 0.25 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 16.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0625 },
+          "r": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolundef-007",
+      "group": "logic",
+      "script": [
+        "a = 1",
+        "d = 1 / a",
+        "r = sqrt(a)",
+        "c = r > 3"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 16.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": false },
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "d": { "type": "number", "defined": true, "value": -1.0 },
+          "r": { "type": "number", "defined": false },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "d": { "type": "number", "defined": true, "value": 0.25 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 16.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0625 },
+          "r": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolundef-008",
+      "group": "logic",
+      "script": [
+        "a = 1",
+        "d = 1 / a",
+        "r = sqrt(a)",
+        "c = r == r"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 16.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": false },
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "d": { "type": "number", "defined": true, "value": -1.0 },
+          "r": { "type": "number", "defined": false },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "d": { "type": "number", "defined": true, "value": 0.25 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 16.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0625 },
+          "r": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolundef-009",
+      "group": "logic",
+      "script": [
+        "a = 1",
+        "d = 1 / a",
+        "r = sqrt(a)",
+        "c = r != r"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 16.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": false },
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "d": { "type": "number", "defined": true, "value": -1.0 },
+          "r": { "type": "number", "defined": false },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "d": { "type": "number", "defined": true, "value": 0.25 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 16.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0625 },
+          "r": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolundef-010",
+      "group": "logic",
+      "script": [
+        "a = 1",
+        "d = 1 / a",
+        "r = sqrt(a)",
+        "c = r != 3"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 16.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": false },
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "d": { "type": "number", "defined": true, "value": -1.0 },
+          "r": { "type": "number", "defined": false },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "d": { "type": "number", "defined": true, "value": 0.25 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 16.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0625 },
+          "r": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolundef-011",
+      "group": "logic",
+      "script": [
+        "a = 1",
+        "d = 1 / a",
+        "r = sqrt(a)",
+        "c = !(r < 3)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 16.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": false },
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "d": { "type": "number", "defined": true, "value": -1.0 },
+          "r": { "type": "number", "defined": false },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "d": { "type": "number", "defined": true, "value": 0.25 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 16.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0625 },
+          "r": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolundef-012",
+      "group": "logic",
+      "script": [
+        "a = 1",
+        "d = 1 / a",
+        "r = sqrt(a)",
+        "c = r < 3 || a < 0"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 16.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": false },
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "d": { "type": "number", "defined": true, "value": -1.0 },
+          "r": { "type": "number", "defined": false },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "d": { "type": "number", "defined": true, "value": 0.25 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 16.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0625 },
+          "r": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolundef-013",
+      "group": "logic",
+      "script": [
+        "a = 1",
+        "d = 1 / a",
+        "r = sqrt(a)",
+        "c = r < 3 && a < 0"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 16.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": false },
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "d": { "type": "number", "defined": true, "value": -1.0 },
+          "r": { "type": "number", "defined": false },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "d": { "type": "number", "defined": true, "value": 0.25 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 16.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0625 },
+          "r": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolundef-014",
+      "group": "logic",
+      "script": [
+        "a = 1",
+        "d = 1 / a",
+        "r = sqrt(a)",
+        "c = r < 3 -> a < 0"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 16.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": false },
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "d": { "type": "number", "defined": true, "value": -1.0 },
+          "r": { "type": "number", "defined": false },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "d": { "type": "number", "defined": true, "value": 0.25 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 16.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0625 },
+          "r": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolundef-015",
+      "group": "logic",
+      "script": [
+        "a = 1",
+        "d = 1 / a",
+        "r = sqrt(a)",
+        "c = (r < 3) + 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 16.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": false },
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "d": { "type": "number", "defined": true, "value": -1.0 },
+          "r": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "d": { "type": "number", "defined": true, "value": 0.25 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 16.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0625 },
+          "r": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolundef-016",
+      "group": "logic",
+      "script": [
+        "a = 1",
+        "d = 1 / a",
+        "r = sqrt(a)",
+        "c = d > 3 ⊕ r > 3"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 16.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": false },
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "d": { "type": "number", "defined": true, "value": -1.0 },
+          "r": { "type": "number", "defined": false },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "d": { "type": "number", "defined": true, "value": 0.25 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 16.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0625 },
+          "r": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolundef-017",
+      "group": "logic",
+      "script": [
+        "a = 1",
+        "d = 1 / a",
+        "r = sqrt(a)",
+        "c = 1 < r < 3"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 16.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": false },
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "d": { "type": "number", "defined": true, "value": -1.0 },
+          "r": { "type": "number", "defined": false },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "d": { "type": "number", "defined": true, "value": 0.25 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 16.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0625 },
+          "r": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolundef-018",
+      "group": "logic",
+      "script": [
+        "A = (1, 2)",
+        "a = 1",
+        "C = (1 / a, 2)",
+        "c = C == C",
+        "d = C != A",
+        "g = x(C) < 3",
+        "h = C == A"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "c": { "type": "boolean", "defined": true, "value": true },
+          "d": { "type": "boolean", "defined": true, "value": false },
+          "g": { "type": "boolean", "defined": true, "value": true },
+          "h": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "C": { "type": "point", "defined": false },
+          "c": { "type": "boolean", "defined": true, "value": false },
+          "d": { "type": "boolean", "defined": true, "value": true },
+          "g": { "type": "boolean", "defined": true, "value": false },
+          "h": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 0.5, "y": 2.0 },
+          "c": { "type": "boolean", "defined": true, "value": true },
+          "d": { "type": "boolean", "defined": true, "value": true },
+          "g": { "type": "boolean", "defined": true, "value": true },
+          "h": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "c": { "type": "boolean", "defined": true, "value": true },
+          "d": { "type": "boolean", "defined": true, "value": false },
+          "g": { "type": "boolean", "defined": true, "value": true },
+          "h": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    }
+  ]
+}

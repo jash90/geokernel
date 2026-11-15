@@ -1,0 +1,217 @@
+{
+  "schema": 1,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "logic-boolconst-001",
+      "group": "logic",
+      "script": [
+        "c = true"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolconst-002",
+      "group": "logic",
+      "script": [
+        "c = false"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolconst-003",
+      "group": "logic",
+      "script": [
+        "c = True"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolconst-004",
+      "group": "logic",
+      "script": [
+        "c = False"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolconst-005",
+      "group": "logic",
+      "script": [
+        "c = 1 < 2"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolconst-006",
+      "group": "logic",
+      "script": [
+        "c = ¬false"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolconst-007",
+      "group": "logic",
+      "script": [
+        "c = !true"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolconst-008",
+      "group": "logic",
+      "script": [
+        "c = true ⊕ false"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolconst-009",
+      "group": "logic",
+      "script": [
+        "c = true -> false"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolconst-010",
+      "group": "logic",
+      "script": [
+        "c = false -> false"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolconst-011",
+      "group": "logic",
+      "script": [
+        "c = 2 < 3 < 4"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolconst-012",
+      "group": "logic",
+      "script": [
+        "c = 2 < 3 > 4"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolconst-013",
+      "group": "logic",
+      "script": [
+        "c = true && false || true"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolconst-014",
+      "group": "logic",
+      "script": [
+        "c = true || false && false"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    }
+  ]
+}

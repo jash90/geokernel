@@ -156,9 +156,140 @@ fn rounding_a_literal_product_recomputes_without_allocating() {
     assert_eq!(drag(&mut c, "d"), 0);
 }
 
+/// Moves `A` between `(x1, 2)` and `(x2, 2)` 1000 times; every move must
+/// change `watch`. Returns the allocations of the 1000 moves.
+fn drag_x(c: &mut Construction, watch: &str, x1: f64, x2: f64) -> u64 {
+    let (a, w) = (id(c, "A"), id(c, watch));
+    c.move_point(a, x2, 2.0).unwrap();
+    c.move_point(a, x1, 2.0).unwrap();
+    let mut changed = 0;
+    let n = allocations(|| {
+        for i in 0..1000 {
+            let before = c.value(w);
+            let x = if i % 2 == 0 { x2 } else { x1 };
+            let count = c.move_point(a, x, 2.0).unwrap();
+            changed += usize::from(count > 0 && c.value(w) != before);
+        }
+    });
+    assert_eq!(changed, 1000, "every move must recompute `{watch}`");
+    n
+}
+
+#[test]
+fn an_exact_power_recomputes_without_allocating() {
+    // the working precision of `1.5^2` depends on the digits of the exponent
+    let mut c = load("A = (1, 2)\nc = 1.5^2 + x(A)\nd = 0.3^12 + y(A)").unwrap();
+    assert_eq!(drag(&mut c, "c"), 0);
+    assert_eq!(drag(&mut c, "d"), 0);
+}
+
+#[test]
+fn the_exact_decimal_of_a_rounded_double_does_not_allocate() {
+    // `round(0.5 x(A), 2)` is exact as a double (`setPrecise`): 0.65 and
+    // 0.85 have about 50 digits, which the next `+ 0.1` writes out
+    let mut c =
+        load("A = (1.3, 2)\nc = round(0.5 x(A), 2) + 0.1\nd = round(0.5 x(A), 2) * 3").unwrap();
+    assert_eq!(drag_x(&mut c, "c", 1.3, 1.7), 0);
+    assert_eq!(drag_x(&mut c, "d", 1.3, 1.7), 0);
+    // coordinates in the usual range of a drawing
+    let mut c = load("A = (1.3, 2)\nc = round(x(A) / 7, 6) - 0.25").unwrap();
+    assert_eq!(drag_x(&mut c, "c", 123.457, -0.0123), 0);
+}
+
+#[test]
+fn a_long_division_does_bounded_work() {
+    // a quotient of 34 digits by a 200-digit divisor: a handful of buffers,
+    // not one per subtraction
+    let divisor = format!("1.{}7", "3".repeat(198));
+    let mut c = load(&format!("A = (1, 2)\nc = 7 / {divisor} + x(A)")).unwrap();
+    let n = drag(&mut c, "c");
+    assert!(n <= 1000 * 8, "{n} allocations for 1000 divisions");
+}
+
+#[test]
+fn a_refused_product_copies_nothing() {
+    // 5000 by 5000 digits is past the work bound: the product is refused
+    // before its operands are copied, and computed with doubles
+    let long = "7".repeat(5000);
+    let mut c = load(&format!("A = (1, 2)\nc = 0.{long} * 0.{long} + x(A)")).unwrap();
+    assert_eq!(drag(&mut c, "c"), 0);
+}
+
 #[test]
 fn a_long_literal_recomputes_without_allocating() {
     let mut c =
         load("A = (1, 2)\nc = 3.14159265358979323846264338327950288419716939937510 x(A)").unwrap();
     assert_eq!(drag(&mut c, "c"), 0);
+}
+
+/// A checksum of the elements of list `l`, to see that they changed.
+fn element_sum(c: &Construction, l: Id) -> f64 {
+    use geo_kernel::expr::Element;
+    let list = c.elements(l).expect("a defined list");
+    let mut sum = 0.0;
+    for e in list.iter() {
+        match e {
+            Element::Value(_, Value::Number(v)) => sum += v,
+            Element::Value(_, Value::Point { x, y }) => sum += x + y,
+            Element::List(inner) => {
+                for f in inner.iter() {
+                    if let Element::Value(_, Value::Number(v)) = f {
+                        sum += v;
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+    sum
+}
+
+/// Sets `a` back and forth 1000 times; every set must change list `watch`
+/// (its elements, not only its length). Returns the allocations.
+fn toggle_list(c: &mut Construction, watch: &str, a1: f64, a2: f64) -> u64 {
+    let (a, w) = (id(c, "a"), id(c, watch));
+    // warm up: the first sets establish the buffers' capacity
+    c.set_number(a, a2).unwrap();
+    c.set_number(a, a1).unwrap();
+    let mut changed = 0;
+    let n = allocations(|| {
+        for i in 0..1000 {
+            let before = element_sum(c, w);
+            let count = c.set_number(a, if i % 2 == 0 { a2 } else { a1 }).unwrap();
+            changed += usize::from(count > 0 && element_sum(c, w) != before);
+        }
+    });
+    assert_eq!(changed, 1000, "every set must recompute `{watch}`");
+    n
+}
+
+#[test]
+fn a_list_of_numbers_recomputes_without_allocating() {
+    let mut c = load(
+        "a = 2\nA = (1, 2)\nl = Sequence(k a, k, 1, 200)\nm = {a, 2 a, a^2, {a, 1}, A + (a, 0)}\n\
+         s = Sum(l)\nt = l(3) + Length(m)\nu = l + l\nw = Sort(-l)\n\
+         r = Reverse(Append(First(l, 50), a))\nj = Join(l, {a, 1}, Last(l, 3))\n\
+         q = Product(l) + Mean(l) + Max(l) + Sum({A, (a, 1)})",
+    )
+    .unwrap();
+    for watch in ["l", "m", "u", "w", "r", "j"] {
+        assert_eq!(
+            toggle_list(&mut c, watch, 2.0, 3.0),
+            0,
+            "recomputing `{watch}`"
+        );
+    }
+}
+
+#[test]
+fn a_list_that_changes_length_recomputes_without_allocating_after_warm_up() {
+    // the longer list establishes the capacity; the shorter one reuses it
+    let mut c = load("a = 50\nl = Sequence(a)\nm = Sequence(k^2, k, 1, a)").unwrap();
+    for watch in ["l", "m"] {
+        assert_eq!(
+            toggle_list(&mut c, watch, 50.0, 80.0),
+            0,
+            "recomputing `{watch}`"
+        );
+    }
 }

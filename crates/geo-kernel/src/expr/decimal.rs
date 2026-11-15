@@ -8,8 +8,19 @@
 //! Only values matter here, never the scale a `BigDecimal` would carry, so a
 //! number is kept in a canonical form: a coefficient without trailing zeros.
 //! A coefficient of up to 38 digits is kept inline in a `u128`, so the
-//! common small cases neither allocate nor loop over digits; longer ones
+//! common small cases neither allocate nor loop over digits; one of 39 to
+//! 77 digits is kept inline in a 256-bit integer ([`U256`]), which holds
+//! the exact decimal of most doubles (see [`Dec::from_f64`]); longer ones
 //! use a digit vector.
+//!
+//! What allocates: a result or an operand of more than 77 digits (the
+//! digit vector); the exact decimal of a double that has more than 77
+//! digits (a double with a full 53-bit mantissa below about `2^-35`, or
+//! one of `2^256` or more); a division whose divisor has more than 36
+//! digits; a power whose base has more than 38 digits or whose exact
+//! intermediate products pass 38 digits (before rounding to the working
+//! precision); `setScale` and the other operations never allocate below
+//! 78 digits.
 //!
 //! The work of one operation is bounded, not the size of the numbers
 //! GeoGebra would handle: a result may have up to [`MAX_DIGITS`] digits; a
@@ -18,6 +29,7 @@
 //! gives `None` and the caller computes with doubles from there on (where
 //! GeoGebra throws, runs out of memory or carries on, see `DIFFERENCES.md`).
 
+use super::wide::{self, U256};
 use std::cmp::Ordering;
 use std::sync::Arc;
 
@@ -48,7 +60,8 @@ const POW10: [u128; 39] = {
 
 /// `sign · coefficient · 10^exp`; the coefficient has no trailing zero, and
 /// zero is `+0 · 10^0`. A coefficient of at most 38 digits is always
-/// [`Mag::Small`], a longer one [`Mag::Big`], so equal values compare equal.
+/// [`Mag::Small`], one of 39 to 77 digits [`Mag::Wide`], a longer one
+/// [`Mag::Big`], so equal values compare equal.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct Dec {
     neg: bool,
@@ -59,6 +72,8 @@ pub(crate) struct Dec {
 #[derive(Clone, Debug, PartialEq, Eq)]
 enum Mag {
     Small(u128),
+    /// 39 to 77 digits.
+    Wide(U256),
     /// Digits, least significant first, no zero at either end.
     Big(Arc<[u8]>),
 }
@@ -91,6 +106,18 @@ fn digit_count(x: u128) -> usize {
     POW10.iter().position(|&p| p > x).unwrap_or(39)
 }
 
+/// How many decimal digits `n` has (`n.to_string().len()`), without
+/// allocating.
+fn decimal_digits(n: u32) -> usize {
+    let mut digits = 1;
+    let mut rest = n / 10;
+    while rest > 0 {
+        digits += 1;
+        rest /= 10;
+    }
+    digits
+}
+
 fn to_digits(mut x: u128) -> Vec<u8> {
     let mut d = Vec::with_capacity(39);
     while x > 0 {
@@ -112,6 +139,7 @@ impl Dec {
     fn is_zero(&self) -> bool {
         match &self.mag {
             Mag::Small(c) => *c == 0,
+            Mag::Wide(_) => false,
             Mag::Big(d) => d.is_empty(),
         }
     }
@@ -119,8 +147,41 @@ impl Dec {
     fn small_coef(&self) -> Option<u128> {
         match self.mag {
             Mag::Small(c) => Some(c),
+            _ => None,
+        }
+    }
+
+    /// The coefficient when it is inline.
+    fn wide_coef(&self) -> Option<U256> {
+        match self.mag {
+            Mag::Small(c) => Some(U256::from_u128(c)),
+            Mag::Wide(w) => Some(w),
             Mag::Big(_) => None,
         }
+    }
+
+    /// The canonical decimal `±coef · 10^exp` of an inline coefficient.
+    fn wide(neg: bool, mut coef: U256, mut exp: i64) -> Option<Dec> {
+        if coef.is_zero() {
+            return Some(Dec::zero());
+        }
+        exp += coef.strip_zeros();
+        if let Some(c) = coef.to_u128() {
+            return Dec::small(neg, c, exp);
+        }
+        if coef.digit_count() > wide::DIGITS {
+            let mut buf = [0; 78];
+            return Dec::from_raw(Raw {
+                neg,
+                digits: coef.write_digits(&mut buf).to_vec(),
+                exp,
+            });
+        }
+        (exp.abs() <= MAX_EXP).then_some(Dec {
+            neg,
+            exp,
+            mag: Mag::Wide(coef),
+        })
     }
 
     /// The canonical decimal `±coef · 10^exp`.
@@ -133,10 +194,10 @@ impl Dec {
             exp += 1;
         }
         if coef >= POW10[SMALL_DIGITS] {
-            return Dec::from_raw(Raw {
+            return (exp.abs() <= MAX_EXP).then_some(Dec {
                 neg,
-                digits: to_digits(coef),
                 exp,
+                mag: Mag::Wide(U256::from_u128(coef)),
             });
         }
         (exp.abs() <= MAX_EXP).then_some(Dec {
@@ -167,6 +228,8 @@ impl Dec {
         }
         let mag = if digits.len() <= SMALL_DIGITS {
             Mag::Small(digits.iter().rev().fold(0, |v, &d| v * 10 + u128::from(d)))
+        } else if digits.len() <= wide::DIGITS {
+            Mag::Wide(U256::from_digits(&digits))
         } else {
             Mag::Big(digits.into())
         };
@@ -177,13 +240,33 @@ impl Dec {
     fn digits(&self) -> Vec<u8> {
         match &self.mag {
             Mag::Small(c) => to_digits(*c),
+            Mag::Wide(w) => w.write_digits(&mut [0; 78]).to_vec(),
             Mag::Big(d) => d.to_vec(),
+        }
+    }
+
+    /// Calls `f` with the digits, least significant first, without
+    /// allocating.
+    fn with_digits<R>(&self, f: impl FnOnce(&[u8]) -> R) -> R {
+        match &self.mag {
+            Mag::Small(c) => {
+                let (mut buf, mut n, mut c) = ([0u8; 39], 0, *c);
+                while c > 0 {
+                    buf[n] = (c % 10) as u8;
+                    c /= 10;
+                    n += 1;
+                }
+                f(&buf[..n])
+            }
+            Mag::Wide(w) => f(w.write_digits(&mut [0; 78])),
+            Mag::Big(d) => f(d),
         }
     }
 
     fn len(&self) -> usize {
         match &self.mag {
             Mag::Small(c) => digit_count(*c),
+            Mag::Wide(w) => w.digit_count(),
             Mag::Big(d) => d.len(),
         }
     }
@@ -270,6 +353,22 @@ impl Dec {
             // m · 2^e = m · 5^-e · 10^e, with m · 5^-e below 2^127
             return Dec::small(neg, m * 5u128.pow((-e) as u32), e);
         }
+        // the same in 256 bits, while the coefficient fits
+        let inline = if e > 0 {
+            U256::from_u128(m).checked_shl(e as u32).map(|c| (c, 0))
+        } else {
+            U256::pow5((-e) as usize)
+                .and_then(|p| p.checked_mul(U256::from_u128(m)))
+                .map(|c| (c, e))
+        };
+        if let Some((c, exp)) = inline.filter(|(c, _)| c.digit_count() <= wide::DIGITS) {
+            return Dec::wide(neg, c, exp);
+        }
+        Dec::from_f64_digits(neg, m, e)
+    }
+
+    /// [`Dec::from_f64`] of `±m · 2^e` on a digit vector.
+    fn from_f64_digits(neg: bool, m: u128, e: i64) -> Option<Dec> {
         let mut digits = to_digits(m);
         if e >= 0 {
             for _ in 0..e {
@@ -297,6 +396,7 @@ impl Dec {
     pub(crate) fn to_f64(&self) -> f64 {
         let v = match self.mag {
             Mag::Small(c) => to_f64_parts(c, self.exp),
+            Mag::Wide(w) => digits_to_f64(w.write_digits(&mut [0; 78]), self.exp),
             Mag::Big(ref d) if d.is_empty() => 0.0,
             Mag::Big(ref d) => {
                 let mut s = String::with_capacity(d.len() + 24);
@@ -348,6 +448,26 @@ impl Dec {
                 }
             }
         }
+        if let (Some(a), Some(b)) = (self.wide_coef(), other.wide_coef()) {
+            let shift = |c: U256, by: i64| {
+                usize::try_from(by)
+                    .ok()
+                    .and_then(U256::pow10)
+                    .and_then(|p| c.checked_mul(p))
+            };
+            if let (Some(a), Some(b)) = (shift(a, self.exp - exp), shift(b, other.exp - exp)) {
+                let sum = if self.neg == other.neg {
+                    a.checked_add(b).map(|s| (self.neg, s))
+                } else if a >= b {
+                    Some((self.neg, a.sub(b)))
+                } else {
+                    Some((other.neg, b.sub(a)))
+                };
+                if let Some((neg, s)) = sum {
+                    return Dec::wide(neg, s, exp);
+                }
+            }
+        }
         // aligning must not need more digits than a result may have
         let (la, lb) = (self.len() as i64, other.len() as i64);
         if (la + self.exp - exp).max(lb + other.exp - exp) > MAX_DIGITS as i64 + 1 {
@@ -372,15 +492,8 @@ impl Dec {
             count_op();
             return Some(self.clone());
         }
-        match other.mag {
-            // negating a small decimal does not allocate
-            Mag::Small(c) => self.add(&Dec {
-                neg: !other.neg,
-                exp: other.exp,
-                mag: Mag::Small(c),
-            }),
-            Mag::Big(_) => self.add(&other.negated()),
-        }
+        // negating does not allocate: a digit vector is shared
+        self.add(&other.negated())
     }
 
     pub(crate) fn mul(&self, other: &Dec) -> Option<Dec> {
@@ -395,18 +508,24 @@ impl Dec {
                 return Dec::small(neg, p, exp);
             }
         }
+        if let (Some(a), Some(b)) = (self.wide_coef(), other.wide_coef()) {
+            if let Some(p) = a.checked_mul(b) {
+                return Dec::wide(neg, p, exp);
+            }
+        }
         Dec::from_raw(self.mul_raw(other)?)
     }
 
     /// The exact product, before normalising; `None` beyond [`MAX_WORK`].
     fn mul_raw(&self, other: &Dec) -> Option<Raw> {
-        let (a, b) = (self.digits(), other.digits());
-        if a.len() * b.len() > MAX_WORK {
+        // refused before anything is copied
+        if self.len().saturating_mul(other.len()) > MAX_WORK {
             return None;
         }
+        let digits = self.with_digits(|a| other.with_digits(|b| mul_mag(a, b)));
         Some(Raw {
             neg: self.neg != other.neg,
-            digits: mul_mag(&a, &b),
+            digits,
             exp: self.exp + other.exp,
         })
     }
@@ -426,22 +545,30 @@ impl Dec {
                 return div_small(neg, x, y, self.exp - other.exp);
             }
         }
+        if let (Some(x), Some(y)) = (self.wide_coef(), other.small_coef()) {
+            if y < POW10[37] {
+                return div_wide(neg, x, y, self.exp - other.exp);
+            }
+        }
         // the quotient needs PRECISION + 2 digits: more of the dividend
-        // only decide whether the remainder is zero
-        let (a, b) = (self.digits(), other.digits());
-        let want = PRECISION + 2 + b.len();
-        if b.len() * want > MAX_WORK {
+        // only decide whether the remainder is zero; the work is checked
+        // before anything is copied
+        let lb = other.len();
+        let want = PRECISION + 2 + lb;
+        if lb.saturating_mul(want) > MAX_WORK {
             return None;
         }
-        let (num, exp, sticky) = if a.len() >= want {
-            let drop = a.len() - want;
-            let sticky = a[..drop].iter().any(|&d| d != 0);
-            (a[drop..].to_vec(), self.exp + drop as i64, sticky)
-        } else {
-            let pad = want - a.len();
-            (shifted(&a, pad), self.exp - pad as i64, false)
-        };
-        let (q, r) = div_mag(&num, &b);
+        let (num, exp, sticky) = self.with_digits(|a| {
+            if a.len() >= want {
+                let drop = a.len() - want;
+                let sticky = a[..drop].iter().any(|&d| d != 0);
+                (a[drop..].to_vec(), self.exp + drop as i64, sticky)
+            } else {
+                let pad = want - a.len();
+                (shifted(a, pad), self.exp - pad as i64, false)
+            }
+        });
+        let (q, rest) = other.with_digits(|b| div_mag(&num, b));
         round_raw(
             Raw {
                 neg,
@@ -449,7 +576,7 @@ impl Dec {
                 exp: exp - other.exp,
             },
             PRECISION,
-            sticky || !r.is_empty(),
+            sticky || rest,
             Mode::HalfEven,
         )
     }
@@ -463,7 +590,7 @@ impl Dec {
         if n == 0 {
             return Dec::small(false, 1, 0);
         }
-        let work = PRECISION + n.to_string().len() + 1;
+        let work = PRECISION + decimal_digits(n) + 1;
         // nothing is rounded while every product stays within the working
         // precision, so exact products of small coefficients are the result
         if let Some(acc) = self.pow_small(n, POW10[work.min(SMALL_DIGITS)]) {
@@ -530,6 +657,19 @@ impl Dec {
             let kept = c / p + u128::from(c % p >= p / 2);
             return Dec::small(self.neg, kept, self.exp + drop);
         }
+        if let Mag::Wide(c) = self.mag {
+            let Some(p) = usize::try_from(drop).ok().and_then(U256::pow10) else {
+                return Some(Dec::zero());
+            };
+            let (q, r) = c.divrem(p);
+            let half = p.divrem_u64(2).0;
+            let kept = if r >= half {
+                q.checked_add(U256::from_u128(1))?
+            } else {
+                q
+            };
+            return Dec::wide(self.neg, kept, self.exp + drop);
+        }
         let len = self.len() as i64;
         if drop > len {
             return Some(Dec::zero());
@@ -573,6 +713,55 @@ fn div_small(neg: bool, x: u128, y: u128, mut exp: i64) -> Option<Dec> {
     Dec::small(neg, q, exp)
 }
 
+/// `x / y · 10^exp` rounded to 34 digits, half to even, for an inline `x`
+/// and `y < 10^37`.
+fn div_wide(neg: bool, x: U256, y: u128, exp: i64) -> Option<Dec> {
+    let (q, r) = x.divrem(U256::from_u128(y));
+    let r = r.to_u128()?;
+    match q.to_u128() {
+        Some(q) if q < POW10[35] => {
+            // the loop of `div_small`, from the first quotient on
+            let (mut q, mut r, mut exp) = (q, r, exp);
+            while r != 0 && q < POW10[35] {
+                r *= 10;
+                q = q * 10 + r / y;
+                r %= y;
+                exp -= 1;
+            }
+            let (q, exp) = round_u128(q, exp, PRECISION, r != 0, Mode::HalfEven);
+            Dec::small(neg, q, exp)
+        }
+        // 36 digits or more: round them
+        _ => {
+            let (q, exp) = round_u256(q, exp, PRECISION, r != 0)?;
+            Dec::wide(neg, q, exp)
+        }
+    }
+}
+
+/// [`round_u128`] half to even of a 256-bit coefficient.
+fn round_u256(q: U256, exp: i64, keep: usize, sticky: bool) -> Option<(U256, i64)> {
+    let len = q.digit_count();
+    if len <= keep {
+        return Some((q, exp));
+    }
+    let drop = len - keep;
+    let p = U256::pow10(drop)?;
+    let (kept, rest) = q.divrem(p);
+    let half = p.divrem_u64(2).0;
+    let up = match rest.cmp(&half) {
+        Ordering::Greater => true,
+        Ordering::Less => false,
+        Ordering::Equal => sticky || kept.divrem_u64(2).1 == 1,
+    };
+    let kept = if up {
+        kept.checked_add(U256::from_u128(1))?
+    } else {
+        kept
+    };
+    Some((kept, exp + drop as i64))
+}
+
 /// `q · 10^exp` (plus a nonzero tail when `sticky`) rounded to `keep`
 /// significant digits.
 fn round_u128(q: u128, exp: i64, keep: usize, sticky: bool, mode: Mode) -> (u128, i64) {
@@ -604,6 +793,10 @@ fn round_dec(d: Dec, keep: usize) -> Option<Dec> {
         Mag::Small(c) => {
             let (c, exp) = round_u128(c, d.exp, keep, false, Mode::HalfEven);
             Dec::small(d.neg, c, exp)
+        }
+        Mag::Wide(c) => {
+            let (c, exp) = round_u256(c, d.exp, keep, false)?;
+            Dec::wide(d.neg, c, exp)
         }
         Mag::Big(_) => {
             let digits = d.digits();
@@ -676,11 +869,17 @@ fn round_raw(raw: Raw, keep: usize, sticky: bool, mode: Mode) -> Option<Dec> {
     })
 }
 
+/// The powers of ten that are exact doubles, `10^0` to `10^22`.
+const EXACT_POW10: [f64; 23] = [
+    1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9, 1e10, 1e11, 1e12, 1e13, 1e14, 1e15, 1e16,
+    1e17, 1e18, 1e19, 1e20, 1e21, 1e22,
+];
+
 /// The nearest double to `c · 10^exp`, without allocating.
 pub(crate) fn to_f64_parts(c: u128, exp: i64) -> f64 {
     // both operands exact and one rounding: correctly rounded
     if c < 1 << 53 && (-22..=22).contains(&exp) {
-        let p = 10f64.powi(exp.unsigned_abs() as i32);
+        let p = EXACT_POW10[exp.unsigned_abs() as usize];
         if exp >= 0 {
             c as f64 * p
         } else {
@@ -696,17 +895,23 @@ pub(crate) fn to_f64_parts(c: u128, exp: i64) -> f64 {
 /// The nearest double to `c · 10^exp`, through a decimal string on the
 /// stack.
 fn small_to_f64(mut c: u128, exp: i64) -> f64 {
-    let mut buf = [0u8; 64];
     let mut digits = [0u8; 39];
     let mut n = 0;
     while c > 0 {
-        digits[n] = b'0' + (c % 10) as u8;
+        digits[n] = (c % 10) as u8;
         c /= 10;
         n += 1;
     }
+    digits_to_f64(&digits[..n], exp)
+}
+
+/// The nearest double to `digits · 10^exp` for at most 78 digits, least
+/// significant first, through a decimal string on the stack.
+fn digits_to_f64(digits: &[u8], exp: i64) -> f64 {
+    let mut buf = [0u8; 104];
     let mut len = 0;
-    for &d in digits[..n].iter().rev() {
-        buf[len] = d;
+    for &d in digits.iter().rev() {
+        buf[len] = b'0' + d;
         len += 1;
     }
     buf[len] = b'e';
@@ -842,8 +1047,101 @@ fn carry_all(acc: &mut Vec<u32>) {
     }
 }
 
-/// Quotient and remainder of `a / b`, digit by digit; `b` is not zero.
-fn div_mag(a: &[u8], b: &[u8]) -> (Vec<u8>, Vec<u8>) {
+/// Quotient of `a / b` (digits least significant first) and whether the
+/// remainder is nonzero; `b` is not zero. Schoolbook division with an
+/// estimated quotient digit: the remainder is kept most significant digit
+/// first, so the next digit of `a` is appended, and each quotient digit
+/// costs one multiply-and-subtract over the divisor in place, plus a
+/// correction in the rare case the estimate is one off.
+fn div_mag(a: &[u8], b: &[u8]) -> (Vec<u8>, bool) {
+    let b = &b[..significant(b)];
+    let n = b.len();
+    let big: Vec<u8> = b.iter().rev().copied().collect();
+    // the divisor's leading digits, for the estimate
+    let k = n.min(18);
+    let top = big[..k].iter().fold(0u64, |v, &d| v * 10 + u64::from(d));
+    let mut q = vec![0u8; a.len()];
+    // the remainder is `r[lead..]`, most significant digit first
+    let mut r: Vec<u8> = Vec::with_capacity(a.len());
+    let mut lead = 0;
+    for i in (0..a.len()).rev() {
+        r.push(a[i]);
+        while lead < r.len() && r[lead] == 0 {
+            lead += 1;
+        }
+        if !at_least(&r[lead..], &big) {
+            continue;
+        }
+        // `r` has n or n + 1 digits; compare as many leading digits
+        let take = k + (r.len() - lead - n);
+        let head = r[lead..lead + take]
+            .iter()
+            .fold(0u64, |v, &d| v * 10 + u64::from(d));
+        let mut digit = (head / top).min(9) as u8;
+        if sub_times(&mut r[lead..], &big, digit) {
+            // one too many: add the divisor back until the borrow is gone
+            loop {
+                digit -= 1;
+                if add_back(&mut r[lead..], &big) {
+                    break;
+                }
+            }
+        }
+        while lead < r.len() && r[lead] == 0 {
+            lead += 1;
+        }
+        // one too few
+        while at_least(&r[lead..], &big) {
+            sub_times(&mut r[lead..], &big, 1);
+            digit += 1;
+            while lead < r.len() && r[lead] == 0 {
+                lead += 1;
+            }
+        }
+        q[i] = digit;
+    }
+    q.truncate(significant(&q));
+    (q, r[lead..].iter().any(|&d| d != 0))
+}
+
+/// `x >= y` for digits most significant first, `x` without leading zeros.
+fn at_least(x: &[u8], y: &[u8]) -> bool {
+    x.len() > y.len() || x.len() == y.len() && x >= y
+}
+
+/// `x -= k · y` in place (most significant first, `y` no longer than `x`);
+/// whether the result went below zero (then `x` holds it plus a power of
+/// ten).
+fn sub_times(x: &mut [u8], y: &[u8], k: u8) -> bool {
+    let (lx, ly) = (x.len(), y.len());
+    let mut borrow = 0i32;
+    for j in 0..lx {
+        let yd = if j < ly { i32::from(y[ly - 1 - j]) } else { 0 };
+        let v = i32::from(x[lx - 1 - j]) - yd * i32::from(k) - borrow;
+        borrow = if v < 0 { (9 - v) / 10 } else { 0 };
+        x[lx - 1 - j] = (v + 10 * borrow) as u8;
+    }
+    borrow > 0
+}
+
+/// `x += y` in place, both most significant first; whether a carry left the
+/// top (which cancels the borrow of [`sub_times`]).
+fn add_back(x: &mut [u8], y: &[u8]) -> bool {
+    let (lx, ly) = (x.len(), y.len());
+    let mut carry = 0u8;
+    for j in 0..lx {
+        let yd = if j < ly { y[ly - 1 - j] } else { 0 };
+        let v = x[lx - 1 - j] + yd + carry;
+        carry = v / 10;
+        x[lx - 1 - j] = v % 10;
+    }
+    carry > 0
+}
+
+/// The division as it was first written: digit by digit, with up to nine
+/// subtractions per digit (the oracle for [`div_mag`]).
+#[cfg(test)]
+fn div_mag_reference(a: &[u8], b: &[u8]) -> (Vec<u8>, Vec<u8>) {
     let b = &b[..significant(b)];
     let mut q = vec![0u8; a.len()];
     let mut r: Vec<u8> = Vec::new();
@@ -958,6 +1256,13 @@ mod tests {
     }
 
     #[test]
+    fn decimal_digits_count_like_to_string() {
+        for n in [0, 1, 9, 10, 99, 100, 999_999, 1_000_000, u32::MAX] {
+            assert_eq!(decimal_digits(n), n.to_string().len(), "{n}");
+        }
+    }
+
+    #[test]
     fn powers_and_scales() {
         assert_eq!(d("0.1").pow(3).unwrap(), d("0.001"));
         assert_eq!(d("1.1").pow(2).unwrap(), d("1.21"));
@@ -978,6 +1283,45 @@ mod tests {
     }
 
     #[test]
+    fn long_division_agrees_with_the_reference() {
+        let mut state = 5u64;
+        let mut next = |m: u64| {
+            state = state
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
+            (state >> 33) % m
+        };
+        for round in 0..3_000 {
+            let lb = 1 + next(if round % 3 == 0 { 60 } else { 25 }) as usize;
+            let la = next(90) as usize;
+            // runs of nines and zeros make the estimate miss
+            let digit = |next: &mut dyn FnMut(u64) -> u64| match next(4) {
+                0 => 9,
+                1 => 0,
+                _ => next(10) as u8,
+            };
+            let mut b: Vec<u8> = (0..lb).map(|_| digit(&mut next)).collect();
+            if b.iter().all(|&d| d == 0) {
+                b[0] = 7;
+            }
+            let a: Vec<u8> = (0..la).map(|_| digit(&mut next)).collect();
+            let (q, rest) = div_mag(&a, &b);
+            let (qr, rr) = div_mag_reference(&a, &b);
+            assert_eq!((&q, rest), (&qr, !rr.is_empty()), "{a:?} / {b:?}");
+        }
+        // an estimate of ten, and one that is one too low
+        for (a, b) in [
+            ("99999999999999999999999", "1000000000000000000001"),
+            ("1999999999999999999990000", "199999999999999999999"),
+        ] {
+            let le = |s: &str| s.bytes().rev().map(|c| c - b'0').collect::<Vec<u8>>();
+            let (q, rest) = div_mag(&le(a), &le(b));
+            let (qr, rr) = div_mag_reference(&le(a), &le(b));
+            assert_eq!((q, rest), (qr, !rr.is_empty()), "{a} / {b}");
+        }
+    }
+
+    #[test]
     fn work_is_bounded() {
         // aligning `1E-999999999` with 1 needs a billion digits
         assert!(d("1E-999999999").add(&d("1")).is_none());
@@ -991,7 +1335,8 @@ mod tests {
         assert_eq!(back, tiny);
     }
 
-    /// A small random decimal from a linear congruential generator.
+    /// A random decimal of up to 77 digits from a linear congruential
+    /// generator: inline in a `u128` or in 256 bits.
     fn random(state: &mut u64) -> Dec {
         let mut next = || {
             *state = state
@@ -999,10 +1344,33 @@ mod tests {
                 .wrapping_add(1442695040888963407);
             *state >> 11
         };
-        let digits = (next() % 39) as u32;
-        let coef = (u128::from(next()) << 64 | u128::from(next())) % 10u128.pow(digits).max(1);
+        let digits = (next() % 78) as usize;
+        let mut coef = U256::ZERO;
+        for _ in 0..4 {
+            coef = coef
+                .checked_mul(U256::from_u128(1 << 64))
+                .unwrap_or(coef)
+                .checked_add(U256::from_u128(
+                    u128::from(next()) << 11 | u128::from(next() % 2048),
+                ))
+                .unwrap_or(coef);
+        }
+        let coef = coef.divrem(U256::pow10(digits).unwrap()).1;
         let exp = (next() % 81) as i64 - 40;
-        Dec::small(next() % 2 == 0, coef, exp).unwrap()
+        Dec::wide(next() % 2 == 0, coef, exp).unwrap()
+    }
+
+    /// A random finite double from all of its bit patterns.
+    fn random_double(state: &mut u64) -> f64 {
+        loop {
+            *state = state
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
+            let x = f64::from_bits(*state ^ (*state >> 29));
+            if x.is_finite() {
+                return x;
+            }
+        }
     }
 
     /// The canonical form of a result (an operation that returns an
@@ -1042,6 +1410,55 @@ mod tests {
                 assert_eq!(small, canon(big), "{a:?} {op} {b:?} (n {n}, scale {scale})");
             }
             assert_eq!(a.to_f64(), ab.to_f64(), "{a:?}");
+        }
+    }
+
+    #[test]
+    fn the_exact_decimal_of_a_double_is_inline_up_to_77_digits() {
+        let mut state = 11;
+        for i in 0..20_000 {
+            let mut x = random_double(&mut state);
+            if i % 2 == 0 {
+                // doubles of the usual sizes, not only the extreme exponents
+                x = x.abs().log2().fract() * 1e3 * x.signum();
+            }
+            let d = Dec::from_f64(x).unwrap();
+            let bits = x.to_bits();
+            let raw = ((bits >> 52) & 0x7ff) as i64;
+            let frac = bits & ((1 << 52) - 1);
+            let (m, e) = if raw == 0 {
+                (frac, -1074)
+            } else {
+                (frac | 1 << 52, raw - 1075)
+            };
+            if m == 0 {
+                assert_eq!(d, Dec::zero());
+                continue;
+            }
+            let z = m.trailing_zeros();
+            let slow = Dec::from_f64_digits(bits >> 63 == 1, u128::from(m >> z), e + i64::from(z));
+            assert_eq!(Some(d.clone()), canon(slow), "{x:e}");
+            assert_eq!(matches!(d.mag, Mag::Big(_)), d.len() > 77, "{x:e}");
+            assert_eq!(d.to_f64().to_bits(), x.to_bits(), "{x:e}");
+        }
+        // the window: a full mantissa down to 2^-35 and up to 2^256
+        let full = 1.0 + f64::EPSILON;
+        for (x, inline) in [
+            (full * 2f64.powi(-35), true),
+            (full * 2f64.powi(-36), false),
+            (0.65, true),
+            (1.3e-10, true),
+            (2f64.powi(255) * full, true),
+            (2f64.powi(256), false),
+            (123.457 / 7.0, true),
+        ] {
+            let d = Dec::from_f64(x).unwrap();
+            assert_eq!(
+                !matches!(d.mag, Mag::Big(_)),
+                inline,
+                "{x:e}: {} digits",
+                d.len()
+            );
         }
     }
 }
