@@ -184,18 +184,18 @@ impl Converter {
     fn run(&mut self, line: &str, expected: &[String]) -> Result<Result<(), String>, ImportError> {
         let before = self.kernel.len();
         let result = exec(&mut self.kernel, line);
-        let created: Vec<&str> = self
-            .kernel
-            .ids()
-            .skip(before)
-            .map(|id| self.kernel.label(id))
-            .collect();
-        let matches = created.len() == expected.len()
-            && created.iter().zip(expected).all(|(a, b)| *a == b.as_str());
+        // Exactly the expected labels, and nothing else, were added.
+        let created = self.kernel.len() - before;
+        let matches = created == expected.len()
+            && expected.iter().all(|l| {
+                self.kernel
+                    .id(l)
+                    .is_some_and(|id| id.index() >= before)
+            });
         match result {
             Ok(_) if matches => Ok(Ok(())),
             Ok(_) => Err(ImportError::Internal(format!(
-                "`{line}` created {created:?}, expected {expected:?}"
+                "`{line}` created {created} objects, expected {expected:?}"
             ))),
             Err(e) if self.kernel.len() == before => Ok(Err(e)),
             Err(e) => Err(ImportError::Internal(format!(
