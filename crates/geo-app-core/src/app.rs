@@ -122,6 +122,14 @@ impl App {
         self.tool_error = None;
     }
 
+    /// Leaves the active tool for the move tool, clears the selection and
+    /// closes the style bar: Escape, or the close button of the tool hint.
+    pub fn leave_tool(&mut self) {
+        self.select_tool(Tool::Move);
+        self.wb.selected = None;
+        self.style_bar = false;
+    }
+
     /// Runs the input row's text.
     pub fn submit_input(&mut self) {
         match self.wb.run_line(&self.input) {

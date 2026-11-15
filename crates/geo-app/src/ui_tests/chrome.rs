@@ -125,3 +125,24 @@ fn a_click_on_a_round_view_button_does_not_place_a_point() {
     assert_eq!(labels(&h), ["A"]);
     assert!(h.state().camera.unwrap().scale > scale);
 }
+
+#[test]
+fn the_close_button_of_the_tool_hint_leaves_the_tool_like_escape() {
+    let mut h = harness("A = (0, 0)\nB = (1, 1)\n");
+    h.state_mut().select_tool(Tool::Segment);
+    h.state_mut().style_bar = true;
+    // One pick, then the close button: back to the move tool, nothing new.
+    click(&mut h, world(0.0, 0.0));
+    assert_eq!(h.state().tool.picks().len(), 1);
+    h.state_mut().wb.selected = h.state().wb.construction().id("B");
+    h.get_by_label("Zakończ").click();
+    h.run();
+    let app = h.state();
+    assert_eq!(app.tool.tool(), Tool::Move);
+    assert!(app.tool.picks().is_empty());
+    assert_eq!(app.wb.selected, None);
+    assert!(!app.style_bar);
+    assert_eq!(labels(&h), ["A", "B"]);
+    // The move tool's hint has no close button with a mouse.
+    assert!(h.query_by_label("Zakończ").is_none());
+}

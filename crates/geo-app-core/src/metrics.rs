@@ -18,6 +18,10 @@ pub struct Metrics {
     pub curve_radius: f64,
     /// How far from a free point a press still grabs it for a drag.
     pub grab_radius: f64,
+    /// The pointer can hover (a mouse). Without hover the window shows in
+    /// the open what a mouse user finds by pointing, such as the hint of the
+    /// move tool.
+    pub hover: bool,
     /// The height of the toolbar across the top.
     pub toolbar_height: f32,
     /// The size of a tool group button, and the distance between the left
@@ -44,6 +48,7 @@ impl Metrics {
             curve_radius: 7.0,
             // The drawn radius of a free point (5) plus 6.
             grab_radius: 11.0,
+            hover: true,
             toolbar_height: 52.0,
             toolbar_button: 40.0,
             toolbar_pitch: 45.0,
@@ -63,6 +68,7 @@ impl Metrics {
             point_radius: 22.0,
             curve_radius: 16.0,
             grab_radius: 24.0,
+            hover: false,
             toolbar_height: 60.0,
             toolbar_button: 48.0,
             toolbar_pitch: 54.0,
@@ -89,6 +95,7 @@ mod tests {
         assert!(t.drag_slop > d.drag_slop && t.point_radius > d.point_radius);
         assert!(t.curve_radius > d.curve_radius && t.grab_radius > d.grab_radius);
         assert!(t.toolbar_button > d.toolbar_button && t.toolbar_pitch > t.toolbar_button);
+        assert!(d.hover && !t.hover);
         assert_eq!(
             d.portrait_below, 0.0,
             "the desktop layout never turns portrait"

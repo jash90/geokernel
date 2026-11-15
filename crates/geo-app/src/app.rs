@@ -9,7 +9,6 @@ use crate::keyboard;
 use crate::layout::Regions;
 use crate::theme;
 use crate::toolbar;
-use crate::tools::Tool;
 use eframe::egui::{self, Rect, Stroke, Ui, UiBuilder};
 pub use geo_app_core::app::{parse_number, App, ViewRequest};
 use std::path::Path;
@@ -74,9 +73,7 @@ fn shortcuts(app: &mut App, ctx: &egui::Context) {
                 app.wb.cancel_gesture();
                 app.drag = None;
             } else {
-                app.select_tool(Tool::Move);
-                app.wb.selected = None;
-                app.style_bar = false;
+                app.leave_tool();
             }
         }
         if ctx.input(|i| {

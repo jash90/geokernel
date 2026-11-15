@@ -191,3 +191,49 @@ fn a_narrow_touch_window_stacks_the_views_and_still_works() {
     click(&mut h, at);
     assert_eq!(labels(&h), ["A", "B"]);
 }
+
+/// The shapes of the last frame.
+fn shapes(h: &Harness<'_, App>) -> usize {
+    h.output().shapes.len()
+}
+
+#[test]
+fn without_hover_the_tool_preview_waits_for_the_pointer_and_never_goes_stale() {
+    let mut h = harness("A = (0, 0)\n");
+    h.state_mut().tool.set_tool(Tool::Segment);
+    // A touch tap: the press and release, then the pointer is gone.
+    let first = world(2.0, 2.0);
+    button(&mut h, first, true);
+    button(&mut h, first, false);
+    h.input_mut().events.push(Event::PointerGone);
+    h.run();
+    assert_eq!(h.state().tool.picks().len(), 1);
+    let without = shapes(&h);
+    // A pointer over the view draws the segment to it ...
+    moved(&mut h, world(-2.0, 1.0));
+    h.run();
+    assert!(shapes(&h) > without);
+    // ... and once it is gone nothing of it stays.
+    h.input_mut().events.push(Event::PointerGone);
+    h.run();
+    assert_eq!(shapes(&h), without);
+}
+
+#[test]
+fn without_hover_the_move_tool_shows_its_hint() {
+    let shown = |hover: bool| {
+        let mut app = App::new(Workbench::from_script("A = (0, 0)\n").unwrap(), None);
+        app.set_metrics(Metrics {
+            hover,
+            ..Metrics::desktop()
+        });
+        let mut h = Harness::builder()
+            .with_size(egui::vec2(SIZE.0 + 2.0 * MARGIN, SIZE.1 + 2.0 * MARGIN))
+            .with_pixels_per_point(1.0)
+            .build_ui_state(|ui, app: &mut App| crate::app::show(app, ui), app);
+        h.run();
+        shapes(&h)
+    };
+    // The panel and the two lines of text, and no close button.
+    assert_eq!(shown(false), shown(true) + 3);
+}

@@ -162,11 +162,14 @@ fn frame_counts_are_unchanged() {
             },
         ),
         (
+            // Two more shapes than before the tool hint got its close
+            // button: the two strokes of its cross (16 vertices, 60
+            // indices), whatever the size of the construction.
             "segment preview",
             Counts {
-                shapes: 582,
-                vertices: 12998,
-                indices: 53307,
+                shapes: 584,
+                vertices: 13014,
+                indices: 53367,
                 immediate_repaints: 1,
             },
         ),

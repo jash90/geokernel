@@ -447,20 +447,31 @@ fn overlay(app: &mut App, ui: &mut Ui, rect: Rect, w: f64, h: f64, cam: &mut Cam
             }
         }
     }
+    // The hint of the move tool is for a pointer that cannot hover; any
+    // other tool shows its hint with a button that leaves it.
+    let other_tool = app.tool.tool() != Tool::Move;
+    let tip = other_tool || !app.metrics.hover;
     if let Some(notice) = app.wb.notice.clone() {
-        let lift = if app.tool.tool() == Tool::Move {
-            0.0
-        } else {
-            66.0
-        };
+        let lift = if tip { 66.0 } else { 0.0 };
         if floating::snackbar(ui, rect, &notice, lift) {
             app.wb.notice = None;
         }
     }
-    if app.tool.tool() != Tool::Move {
-        floating::tool_tip(ui, rect, app.tool.tool().caption(), app.tool.hint());
-        if let Some(e) = app.tool_error.clone() {
-            floating::hint_pill(ui, rect, &e, theme::ERROR, 1.0);
+    if tip {
+        let close = floating::tool_tip(
+            ui,
+            rect,
+            app.tool.tool().caption(),
+            app.tool.hint(),
+            other_tool,
+        );
+        if other_tool {
+            if let Some(e) = app.tool_error.clone() {
+                floating::hint_pill(ui, rect, &e, theme::ERROR, 1.0);
+            }
+        }
+        if close.is_some_and(|c| c.clicked()) {
+            app.leave_tool();
         }
     }
 }

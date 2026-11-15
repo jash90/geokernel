@@ -164,7 +164,10 @@ pub fn square_button(ui: &mut Ui, key: &str, rect: Rect, icon: Icon, on: bool) -
 }
 
 /// The active tool's name and what to click next, at the bottom of `area`.
-pub fn tool_tip(ui: &Ui, area: Rect, name: &str, hint: &str) {
+/// With `closable` it ends in a close button (the counterpart of Escape for
+/// a pointer without a keyboard), whose response is returned.
+pub fn tool_tip(ui: &Ui, area: Rect, name: &str, hint: &str, closable: bool) -> Option<Response> {
+    const CLOSE: f32 = 36.0;
     let painter = ui.painter();
     let bold = FontId::new(15.0, egui::FontFamily::Proportional);
     let name_galley = painter.layout_no_wrap(name.to_owned(), bold.clone(), theme::WHITE);
@@ -173,7 +176,8 @@ pub fn tool_tip(ui: &Ui, area: Rect, name: &str, hint: &str) {
         FontId::proportional(14.0),
         Color32::from_gray(0xe0),
     );
-    let width = name_galley.size().x.max(hint_galley.size().x) + 32.0;
+    let close_room = if closable { CLOSE } else { 0.0 };
+    let width = name_galley.size().x.max(hint_galley.size().x) + 32.0 + close_room;
     let rect = Rect::from_min_size(
         Pos2::new(area.left() + 16.0, area.bottom() - 16.0 - 54.0),
         vec2(width, 54.0),
@@ -185,4 +189,20 @@ pub fn tool_tip(ui: &Ui, area: Rect, name: &str, hint: &str) {
     );
     painter.galley(rect.min + vec2(16.0, 8.0), name_galley, theme::WHITE);
     painter.galley(rect.min + vec2(16.0, 29.0), hint_galley, theme::WHITE);
+    if !closable {
+        return None;
+    }
+    let close = Rect::from_center_size(
+        Pos2::new(rect.right() - CLOSE / 2.0 - 4.0, rect.center().y),
+        vec2(CLOSE, CLOSE),
+    );
+    let response = ui
+        .interact(close, ui.scope_id().with("tool_tip_close"), Sense::click())
+        .on_hover_cursor(CursorIcon::PointingHand);
+    response.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, "Zakończ"));
+    let k = close.center();
+    for d in [vec2(6.0, 6.0), vec2(6.0, -6.0)] {
+        painter.line_segment([k - d, k + d], egui::Stroke::new(1.6, theme::WHITE));
+    }
+    Some(response)
 }
