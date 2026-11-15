@@ -106,7 +106,8 @@ fn paint_row(app: &App, ui: &mut Ui, row: &Row, actions: &mut Actions) {
     let marker = ui.interact(cell, id.with("marker"), Sense::click());
     let center = cell.center();
     let visible = app.wb.is_visible(row.id);
-    let (fill, ring) = style::marker(app.wb.construction(), row.id);
+    let base = style::color_in(app.wb.construction(), row.id, app.wb.sides());
+    let (fill, ring) = style::marker_of(base);
     let (fill, ring) = (fill.egui(), ring.egui());
     if visible {
         painter.circle(center, 10.0, fill, Stroke::new(1.5, ring));

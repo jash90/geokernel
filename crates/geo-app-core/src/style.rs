@@ -13,28 +13,75 @@ pub const FREE_POINT_RADIUS: f32 = 5.0;
 /// The default colour of an object: blue free points, grey dependent
 /// points, green angles, brown polygons and their sides, near-black lines
 /// and circles.
+///
+/// For one object. It looks through every polygon for a segment, so a
+/// loop over all objects calls [`color_in`] with one [`Sides`] instead.
 pub fn color(c: &Construction, id: Id) -> Rgba {
+    color_with(c, id, |a, b| is_side(c, a, b))
+}
+
+/// [`color`] with the sides of the polygons looked up in `sides`, which
+/// must have been made from `c` as it is now ([`Sides::of`]): constant
+/// time per object.
+pub fn color_in(c: &Construction, id: Id, sides: &Sides) -> Rgba {
+    debug_assert_eq!(sides.objects, c.len(), "the sides of another construction");
+    color_with(c, id, |a, b| sides.contains(a, b))
+}
+
+fn color_with(c: &Construction, id: Id, side: impl Fn(Id, Id) -> bool) -> Rgba {
     match (c.value(id), c.def(id)) {
         (Value::Point { .. }, def) if def.is_free() => palette::FREE_POINT,
         (Value::Point { .. }, _) => palette::DEPENDENT_POINT,
         (_, Def::Measure(MeasureDef::Angle(..))) => palette::ANGLE,
         (Value::Polygon { .. }, _) => palette::POLYGON,
         (_, Def::Polygon(PolygonDef::RegularSide { .. })) => palette::POLYGON,
-        (_, Def::Segment(a, b)) if is_side(c, a, b) => palette::POLYGON,
+        (_, Def::Segment(a, b)) if side(a, b) => palette::POLYGON,
         _ => palette::CURVE,
     }
 }
 
 /// Whether the segment from `a` to `b` is a side of a `Polygon(...)`.
 fn is_side(c: &Construction, a: Id, b: Id) -> bool {
-    c.ids().any(|p| match c.def(p) {
-        Def::Polygon(PolygonDef::Polygon(list)) => {
-            let v = c.list(list);
-            let n = v.len();
-            n >= 3 && (0..n).any(|i| v[i] == a && v[(i + 1) % n] == b)
+    c.ids().any(|p| polygon_sides(c, p).any(|s| s == (a, b)))
+}
+
+/// The sides `(from, to)` of `p` when it is a `Polygon(...)` of three or
+/// more vertices; nothing otherwise.
+fn polygon_sides(c: &Construction, p: Id) -> impl Iterator<Item = (Id, Id)> + '_ {
+    let v: &[Id] = match c.def(p) {
+        Def::Polygon(PolygonDef::Polygon(list)) if c.list(list).len() >= 3 => c.list(list),
+        _ => &[],
+    };
+    (0..v.len()).map(move |i| (v[i], v[(i + 1) % v.len()]))
+}
+
+/// Every side `(from, to)` of every `Polygon(...)` of a construction, for
+/// [`color_in`]. Depends only on the definitions, so it stays valid until
+/// objects are added or the construction is replaced; moves keep it.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Sides {
+    pairs: std::collections::HashSet<(Id, Id)>,
+    /// The number of objects it was made for (a staleness check).
+    objects: usize,
+}
+
+impl Sides {
+    /// Made in one pass over the objects and the polygons' vertex lists.
+    pub fn of(c: &Construction) -> Sides {
+        Sides {
+            pairs: c.ids().flat_map(|p| polygon_sides(c, p)).collect(),
+            objects: c.len(),
         }
-        _ => false,
-    })
+    }
+
+    pub fn contains(&self, a: Id, b: Id) -> bool {
+        self.pairs.contains(&(a, b))
+    }
+
+    /// The number of objects of the construction it was made from.
+    pub fn objects(&self) -> usize {
+        self.objects
+    }
 }
 
 /// `color` laid over white with opacity `alpha`.
@@ -46,7 +93,11 @@ pub fn over_white(color: Rgba, alpha: f32) -> Rgba {
 /// The marker of an object's row in the algebra view: a light fill and a
 /// darker ring of the object's colour.
 pub fn marker(c: &Construction, id: Id) -> (Rgba, Rgba) {
-    let base = color(c, id);
+    marker_of(color(c, id))
+}
+
+/// [`marker`] for an object of colour `base`.
+pub fn marker_of(base: Rgba) -> (Rgba, Rgba) {
     (over_white(base, 0.35), over_white(base, 0.75))
 }
 

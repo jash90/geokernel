@@ -5,11 +5,13 @@ use crate::describe;
 use crate::history::History;
 use crate::labels::next_label;
 use crate::scriptlog::{normalize, Log, Setting};
+use crate::style::Sides;
 use crate::undo::Undo;
 pub use file::{import_notice, rejected_notice, SNAPSHOT_VERSION};
 use geo_kernel::algo::measure::MeasureDef;
 use geo_kernel::kernel::{Construction, Def, Id, Kind, Value};
 use std::collections::HashMap;
+use std::sync::OnceLock;
 
 /// What the algebra list shows for one object.
 #[derive(Clone, Debug, PartialEq)]
@@ -55,6 +57,9 @@ pub struct Workbench {
     rows: Vec<Row>,
     rows_version: Option<u64>,
     rows_built: u64,
+    /// The sides of the polygons, for the colours; made on first use after
+    /// the objects changed (see `objects_changed`).
+    sides: OnceLock<Sides>,
     /// Tests make every rebuild fail with this message while it is set.
     #[cfg(test)]
     pub fail_rebuilds: Option<String>,
@@ -69,6 +74,20 @@ impl Workbench {
 
     pub fn construction(&self) -> &Construction {
         &self.construction
+    }
+
+    /// The sides of the polygons of the construction, for
+    /// [`crate::style::color_in`]. Made once after objects were added or the
+    /// construction replaced, so a frame colours every object in linear
+    /// time.
+    pub fn sides(&self) -> &Sides {
+        self.sides.get_or_init(|| Sides::of(&self.construction))
+    }
+
+    /// Forgets what is derived from the set of objects (not their values):
+    /// called whenever objects were added, or the construction replaced.
+    fn objects_changed(&mut self) {
+        self.sides = OnceLock::new();
     }
 
     #[cfg(test)]
@@ -98,6 +117,7 @@ impl Workbench {
     /// Makes `c` and `log` the whole document.
     fn replace(&mut self, c: Construction, log: Log) {
         self.construction = c;
+        self.objects_changed();
         self.log = log;
         self.selected = None;
         self.undo.clear();
@@ -185,6 +205,9 @@ impl Workbench {
             }
         }
         let changed = self.construction.len() != n0;
+        if changed {
+            self.objects_changed();
+        }
         match failure {
             Some(e) => {
                 if changed {
@@ -249,6 +272,7 @@ impl Workbench {
         // A label can be reused later; it must not come back hidden.
         kept.hidden.retain(|l| c.id(l).is_some());
         self.construction = c;
+        self.objects_changed();
         self.log = kept;
         self.gesture = None;
         self.notice = None;

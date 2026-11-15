@@ -33,6 +33,8 @@ pub struct Scene<'a> {
     pub ghost: &'a dyn Fn(Id) -> bool,
     pub selected: Option<Id>,
     pub hovered: Option<Id>,
+    /// The sides of the polygons of the construction, for the colours.
+    pub sides: &'a style::Sides,
 }
 
 /// A point: a filled disc with a thin dark ring.
@@ -60,7 +62,7 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
     let screen = |x: f64, y: f64| t.world_to_screen(x, y);
     let in_rect = |s: (f64, f64)| s.0 >= 0.0 && s.0 <= w && s.1 >= 0.0 && s.1 <= h;
     let color = |id: Id| {
-        let c = style::color(c, id).egui();
+        let c = style::color_in(c, id, scene.sides).egui();
         if (scene.ghost)(id) {
             c.gamma_multiply(0.3)
         } else {
@@ -90,13 +92,19 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
                     .iter()
                     .map(|&(x, y)| origin + vec2(x as f32, y as f32))
                     .collect();
-                let glow = Stroke::new(8.0, style::color(c, id).egui().gamma_multiply(alpha));
+                let glow = Stroke::new(
+                    8.0,
+                    style::color_in(c, id, scene.sides)
+                        .egui()
+                        .gamma_multiply(alpha),
+                );
                 painter.add(Shape::closed_line(points, glow));
             }
             continue;
         }
         if let Some(hl) = highlight::of_value(&c.value(id), t, w, h) {
-            paint_highlight(painter, rect, hl, style::color(c, id).egui(), strong);
+            let col = style::color_in(c, id, scene.sides).egui();
+            paint_highlight(painter, rect, hl, col, strong);
         }
     }
 
@@ -453,6 +461,7 @@ mod tests {
                 ghost: &|_| false,
                 selected: None,
                 hovered: None,
+                sides: wb.sides(),
             };
             paint(ui.painter(), rect, c, &t, &scene);
         });
