@@ -12,6 +12,7 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersectConics.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersectLineConic.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersectSingle.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoAngularBisectorPoints.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoCircleTwoPoints.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoCircleThreePoints.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDispatcher.java
@@ -20,6 +21,7 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoLinePointLine.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoOrthoLinePointLine.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoTangentLineND.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoTangentPoint.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoTangentPointND.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/Kernel.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoLine.java
@@ -33,7 +35,7 @@
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
 use crate::algo::conic::ConicDef;
-use crate::algo::lines;
+use crate::algo::lines::{self, LineDef};
 use crate::kernel::{Construction, Def, Id, Value};
 use crate::tol::{EPS, MAX_PRECISION, MIN_PRECISION, STANDARD_PRECISION};
 
@@ -697,9 +699,25 @@ fn existing_line_circle_point(c: &Construction, line: Id, line_def: Def, circle:
     // Any other point on both is an intersection point of the circle that
     // the line was drawn through.
     let on = |s: Option<Id>| s.filter(|&s| intersection_on_circle(c, s, circle));
-    match (on(p), on(q)) {
+    let drawn_through = match (on(p), on(q)) {
         (Some(p), Some(q)) => Some(p.min(q)),
         (p, q) => p.or(q),
+    };
+    // handleSpecialCasePoint(g.getStartPoint()): a labelled point the line
+    // starts at, which does not have the line in its incidence list.
+    drawn_through
+        .or_else(|| start_point(line_def).filter(|&s| on_circle_by_construction(c, s, circle)))
+}
+
+/// The labelled point a line starts at without being incident with it:
+/// the vertex of `AngularBisector(A, B, C)` (`AlgoAngularBisectorPoints`)
+/// and the point of `Tangent(P, c)` (`AlgoTangentPoint`). Other lines start
+/// at no point or at an unlabelled one.
+fn start_point(line_def: Def) -> Option<Id> {
+    match line_def {
+        Def::Lines(LineDef::AngleBisectorPoints { vertex, .. }) => Some(vertex),
+        Def::Lines(LineDef::TangentPoint { point, .. }) => Some(point),
+        _ => None,
     }
 }
 

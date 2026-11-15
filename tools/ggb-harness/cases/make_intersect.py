@@ -384,8 +384,6 @@ case("reuse", [pt("A", 0, 0), num("r", 5), "k = Circle(A, r)", pt("C", -6, 1),
 # ------------------------------- intersections created with one point
 topic("history")
 # An intersection created tangent has one point; the second appears later.
-# A point that is undefined at creation gets no label, so only the first
-# intersection can be observed.
 case("history", [pt("A", 0, 0), num("r", 3), "k = Circle(A, r)", pt("C", -5, 3),
                  pt("D", 5, 3), "f = Line(C, D)", "P = Intersect(f, k, 1)"],
      [mv("C", -5, 1), mv("D", 5, 1), mv("C", 10, 1), mv("C", -5, 1), mv("D", -10, 1),
@@ -508,5 +506,34 @@ for circle in ("k = Circle(A, B, C)", "k = Incircle(A, B, C)", "u = Segment(A, B
     cl = circle.split("\n")
     case("groups", GC + cl + ["f = Line(D, E)"] + LC, CMOVES)
     case("groups", GC + cl + ["c = Circle(E, D)"] + CC, CMOVES)
+
+# ------------------------------ the point a line starts at, on the circle
+topic("startpoint")
+# AngularBisector(A, B, C) and Tangent(P, c) start at B and P without B or P
+# having the line in their incidence lists; AlgoIntersectLineConic still
+# prefers that point when it lies on the circle by construction.
+SP = [pt("A", -4, 3), pt("B", 1, 1), pt("C", 5, 4), pt("M", 2, -3)]
+SPMOVES = [mv("A", -5, -1), mv("M", -1, -2), mv("B", 0, 2), mv("C", 3, 6), mv("M", 1, 1.5)]
+case("startpoint", SP + ["k = Circle(M, B)", "f = AngularBisector(A, B, C)"] + LC, SPMOVES)
+case("startpoint", SP + ["k = Circle(M, B)", "f = AngularBisector(A, B, C)",
+                         "P = Intersect(k, f, 1)", "Q = Intersect(k, f, 2)"], SPMOVES)
+case("startpoint", SP + [pt("E", 6, -2), "k = Circle(E, B, M)", "f = AngularBisector(C, B, A)"] + LC,
+     SPMOVES + [mv("E", -3, -4)])
+case("startpoint", [pt("A", 0, 0), num("r", 2), "k = Circle(A, r)", pt("P", 5, 1), pt("M", 4, 4),
+                    "c = Circle(M, P)", "t = Tangent(P, k)", "X = Intersect(t_{1}, c, 1)",
+                    "Y = Intersect(t_{1}, c, 2)", "Z = Intersect(c, t_{2}, 1)"],
+     [mv("P", 6, -1), mv("M", 1, 6), setn("r", 3), mv("P", -5, 2), mv("M", 5, 1)])
+# The midpoint a perpendicular bisector starts at has no label.
+case("startpoint", SP + ["k = Circle(M, B)", "f = LineBisector(B, C)"] + LC, SPMOVES)
+
+# ------------------ intersections created with one point: the second index
+topic("history2")
+case("history2", [pt("A", 0, 0), num("r", 3), "k = Circle(A, r)", pt("C", -5, 3),
+                  pt("D", 5, 3), "f = Line(C, D)", "P = Intersect(f, k, 1)", "Q = Intersect(f, k, 2)"],
+     [mv("C", -5, 1), mv("D", 5, 1), mv("C", 10, 1), mv("C", -5, 1), setn("r", 4),
+      mv("C", 10, 3), setn("r", 3), setn("r", 5), mv("C", -5, 3)])
+case("history2", [pt("A", 0, 0), num("r", 3), num("q", 2), "k = Circle(A, r)", pt("B", 5, 0),
+                  "c = Circle(B, q)", "P = Intersect(k, c, 1)", "Q = Intersect(k, c, 2)"],
+     [setn("q", 3), mv("B", -5, 0), mv("B", 0, 4), mv("B", 5, 0), setn("q", 2), setn("q", 2.5)])
 
 cases.write()
