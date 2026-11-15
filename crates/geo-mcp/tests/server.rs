@@ -106,6 +106,12 @@ fn frame(events: Vec<Value>) -> Value {
     json!({ "events": events })
 }
 
+/// A frame 50 ms after the previous one: two of them outlast the drag
+/// delay after a press (moves within it are dropped).
+fn slow_frame(events: Vec<Value>) -> Value {
+    json!({ "dt": 0.05, "events": events })
+}
+
 fn input(s: &mut Server, frames: Vec<Value>, settle: bool) -> Value {
     call(s, "input", json!({"frames": frames, "settle": settle}))
 }
@@ -502,9 +508,11 @@ mod window_tests {
             frame(vec![ev("move", at(from.0, from.1))]),
             frame(vec![ev("down", at(from.0, from.1))]),
         ];
+        // Moves 50 ms apart: the first one comes within the drag delay and
+        // is dropped, the drag follows from the second one.
         for i in 1..=5 {
             let t = i as f64 / 5.0;
-            frames.push(frame(vec![ev(
+            frames.push(slow_frame(vec![ev(
                 "move",
                 at(from.0 + (to.0 - from.0) * t, from.1),
             )]));
@@ -521,7 +529,7 @@ mod window_tests {
         let cam = camera(&st);
         let mut frames = Vec::new();
         for i in 1..=5 {
-            frames.push(frame(vec![ev(
+            frames.push(slow_frame(vec![ev(
                 "move",
                 at(empty.0 + 20.0 * i as f64, empty.1),
             )]));
