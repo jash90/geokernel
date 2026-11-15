@@ -23,6 +23,13 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoSequenceRange.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoListElement.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoStats1D.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoListMinMax.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoReverse.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoFirst.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoLast.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoSort.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoAppend.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoJoin.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
@@ -111,6 +118,28 @@ impl Lists {
 
     fn set(&self, i: u32, slot: Slot) {
         self.arena.borrow_mut()[i as usize] = slot;
+    }
+
+    /// Sorts `len` elements from `start` in place, numbers and booleans by
+    /// value and points by `x`, then `y`; undefined ones go last.
+    fn sort(&self, start: u32, len: u32) {
+        // `+ 0.0` makes -0 equal to 0
+        let key = |s: &Slot| match s.value {
+            Value::Number(v) => (v + 0.0, 0.0),
+            Value::Bool(b) => (bool_number(b), 0.0),
+            Value::Point { x, y } | Value::Vector { x, y } => (x + 0.0, y + 0.0),
+            _ => (f64::NAN, f64::NAN),
+        };
+        let mut arena = self.arena.borrow_mut();
+        let run = &mut arena[start as usize..(start + len) as usize];
+        // a total order, so the sort cannot fail; it does not allocate
+        run.sort_unstable_by(|a, b| {
+            let (ka, kb) = (key(a), key(b));
+            ka.0.is_nan()
+                .cmp(&kb.0.is_nan())
+                .then(ka.0.total_cmp(&kb.0))
+                .then(ka.1.total_cmp(&kb.1))
+        });
     }
 
     /// Counts `n` more elements; false past [`MAX_ELEMENTS`].
@@ -778,6 +807,7 @@ impl Ctx<'_> {
             Node::Un(op, a) => self.list_unary(op, a),
             Node::Range(from, to, step) => self.range(from, to, step),
             Node::Seq(e, from, to, step, depth) => self.sequence(e, from, to, step, depth),
+            Node::ListOp(op, l, n) if op.makes_list() => self.list_fn(op, l, n),
             // an element that is a list: its elements were built with the
             // list it belongs to
             Node::ListOp(op, l, n) => self.pick(op, l, n)?.run(),
@@ -1106,7 +1136,17 @@ impl Ctx<'_> {
         let mark = lists.len();
         let val = match op {
             ListOp::Length => Val::N(self.list(l).map_or(f64::NAN, |(_, len)| f64::from(len))),
-            ListOp::Sum => Val::N(self.sum(l, n)),
+            ListOp::Sum if self.e.tys[i as usize] == Ty::Vec => self.sum_vectors(l, n),
+            ListOp::Sum | ListOp::Product | ListOp::Mean => Val::N(self.stats(op, l, n)),
+            ListOp::Min | ListOp::Max => Val::N(self.min_max(op == ListOp::Min, l)),
+            // a list: built by `list`
+            ListOp::Reverse
+            | ListOp::First
+            | ListOp::Last
+            | ListOp::Sort
+            | ListOp::Append
+            | ListOp::Prepend
+            | ListOp::Join => Val::N(f64::NAN),
             ListOp::Index | ListOp::Element => {
                 match (self.pick(op, l, n), self.e.tys[i as usize]) {
                     (Some(slot), _) => slot_val(slot),
@@ -1123,43 +1163,223 @@ impl Ctx<'_> {
         }
     }
 
-    /// `AlgoStats1D` with `STATS_SIGMAX`: the sum of the first `n` (all by
-    /// default) elements as doubles; `n` is cut to a whole number, 0 gives
-    /// 0 and anything outside the list is undefined.
-    fn sum(&self, l: u32, n: u32) -> f64 {
+    /// `AlgoStats1D`: the sum, product or mean of the first `n` (all by
+    /// default) elements as doubles. `n` is cut to a whole number and
+    /// anything outside the list is undefined; no elements sum to 0, and
+    /// have no product (as recorded with the harness) and no mean.
+    fn stats(&self, op: ListOp, l: u32, n: u32) -> f64 {
         let Some(lists) = self.lists else {
             return f64::NAN;
         };
-        let truncate = (n != NONE).then(|| self.full_number(n));
+        let Some((start, size)) = self.truncated(l, n) else {
+            return f64::NAN;
+        };
+        if size == 0 {
+            return if op == ListOp::Sum { 0.0 } else { f64::NAN };
+        }
+        let (mut sum, mut product) = (0.0, 1.0);
+        for k in 0..size {
+            let Some(v) = number_of(lists.get(start + k)) else {
+                return f64::NAN;
+            };
+            sum += v;
+            product *= v;
+        }
+        match op {
+            ListOp::Sum => sum,
+            ListOp::Product => product,
+            _ => sum / f64::from(size),
+        }
+    }
+
+    /// The list `l` and how many of its elements a truncation `n` keeps
+    /// (`AlgoStats1D`): all without `n`, `(int) n` otherwise, where 0 is
+    /// none and a count below 0 or past the end is undefined.
+    fn truncated(&self, l: u32, n: u32) -> Option<(u32, u32)> {
+        let lists = self.lists?;
+        let truncate = (n != NONE).then(|| {
+            let mark = lists.len();
+            let t = self.full_number(n);
+            lists.truncate(mark);
+            t
+        });
+        let (start, len) = self.list(l)?;
+        match truncate {
+            None => Some((start, len)),
+            Some(t) if t.is_nan() => None,
+            // Java's `(int)`: towards zero, saturating
+            Some(t) => match u32::try_from(t as i32) {
+                Ok(t) if t <= len => Some((start, t)),
+                _ => None,
+            },
+        }
+    }
+
+    /// `AlgoListMinMax`: the least or greatest element; an empty list, or
+    /// one with an element that is no number, has none.
+    fn min_max(&self, min: bool, l: u32) -> f64 {
+        let Some(lists) = self.lists else {
+            return f64::NAN;
+        };
         let Some((start, len)) = self.list(l) else {
             return f64::NAN;
         };
-        let mut size = len;
-        if let Some(t) = truncate {
-            if t.is_nan() {
-                return f64::NAN;
-            }
-            // Java's `(int)`: towards zero, saturating
-            let t = t as i32;
-            if t == 0 {
-                return 0.0;
-            }
-            match u32::try_from(t) {
-                Ok(t) if t <= len => size = t,
-                _ => return f64::NAN,
-            }
+        if len == 0 {
+            return f64::NAN;
         }
-        let mut sum = 0.0;
-        for k in 0..size {
-            let slot = lists.get(start + k);
-            sum += match (slot.kind, slot.value) {
-                (_, Value::Number(v)) => v,
-                (_, Value::Bool(b)) => bool_number(b),
-                (Kind::Number, _) => f64::NAN,
-                _ => return f64::NAN,
+        let mut best = if min {
+            f64::INFINITY
+        } else {
+            f64::NEG_INFINITY
+        };
+        for k in 0..len {
+            let Some(v) = number_of(lists.get(start + k)) else {
+                return f64::NAN;
+            };
+            // `Math.min` and `Math.max`: NaN wins
+            best = if v.is_nan() || best.is_nan() {
+                f64::NAN
+            } else if min {
+                best.min(v)
+            } else {
+                best.max(v)
             };
         }
-        sum
+        best
+    }
+
+    /// `Sum` of points and vectors: the sum of their coordinates.
+    fn sum_vectors(&self, l: u32, n: u32) -> Val {
+        let undefined = Val::V(f64::NAN, f64::NAN);
+        let Some(lists) = self.lists else {
+            return undefined;
+        };
+        let Some((start, size)) = self.truncated(l, n).filter(|&(_, size)| size > 0) else {
+            return undefined;
+        };
+        let (mut x, mut y) = (0.0, 0.0);
+        for k in 0..size {
+            match slot_val(lists.get(start + k)) {
+                Val::V(a, b) => {
+                    x += a;
+                    y += b;
+                }
+                _ => return undefined,
+            }
+        }
+        Val::V(x, y)
+    }
+
+    /// A list command whose result is a list, built at the end of the
+    /// scratch buffer.
+    fn list_fn(&self, op: ListOp, l: u32, n: u32) -> Option<(u32, u32)> {
+        let lists = self.lists?;
+        match op {
+            ListOp::Append | ListOp::Prepend => {
+                let (s, len) = self.list(l)?;
+                let start = lists.reserve(len + 1)?;
+                let at = if op == ListOp::Append {
+                    start
+                } else {
+                    start + 1
+                };
+                for k in 0..len {
+                    lists.set(at + k, lists.get(s + k));
+                }
+                let object = self.element(n);
+                let at = if op == ListOp::Append {
+                    start + len
+                } else {
+                    start
+                };
+                lists.set(at, object);
+                Some((start, len + 1))
+            }
+            ListOp::First | ListOp::Last => {
+                // `(int) n`, 1 without `n`; undefined for an empty list
+                let mark = lists.len();
+                let count = if n == NONE { 1.0 } else { self.full_number(n) };
+                lists.truncate(mark);
+                let (s, len) = self.list(l)?;
+                let count = count as i32;
+                let count = u32::try_from(count).ok().filter(|&c| len > 0 && c <= len)?;
+                let from = if op == ListOp::First {
+                    s
+                } else {
+                    s + len - count
+                };
+                self.copy_run(from, count)
+            }
+            ListOp::Reverse => {
+                let (s, len) = self.list(l)?;
+                let start = lists.reserve(len)?;
+                for k in 0..len {
+                    lists.set(start + k, lists.get(s + len - 1 - k));
+                }
+                Some((start, len))
+            }
+            ListOp::Sort => {
+                let (s, len) = self.list(l)?;
+                let first = (len > 0).then(|| lists.get(s).kind)?;
+                // numbers or booleans (`GeoNumeric.getComparator`) or
+                // points (`GeoPoint.getComparatorX`), all of the same class
+                if !matches!(first, Kind::Number | Kind::Boolean | Kind::Point)
+                    || (0..len).any(|k| lists.get(s + k).kind != first)
+                {
+                    return None;
+                }
+                let (start, len) = self.copy_run(s, len)?;
+                lists.sort(start, len);
+                Some((start, len))
+            }
+            ListOp::Join => {
+                let (s, len) = self.list(l)?;
+                let mut total = 0u32;
+                for k in 0..len {
+                    let slot = lists.get(s + k);
+                    match (slot.kind, slot.run()) {
+                        (_, Some((_, m))) => total = total.checked_add(m)?,
+                        // an undefined list has no elements
+                        (Kind::List, None) => {}
+                        _ => return None,
+                    }
+                }
+                let start = lists.reserve(total)?;
+                let mut at = start;
+                for k in 0..len {
+                    if let Some((from, m)) = lists.get(s + k).run() {
+                        for j in 0..m {
+                            lists.set(at + j, lists.get(from + j));
+                        }
+                        at += m;
+                    }
+                }
+                Some((start, total))
+            }
+            _ => None,
+        }
+    }
+
+    /// A copy of `len` elements from `from` at the end of the buffer.
+    fn copy_run(&self, from: u32, len: u32) -> Option<(u32, u32)> {
+        let lists = self.lists?;
+        let start = lists.reserve(len)?;
+        for k in 0..len {
+            lists.set(start + k, lists.get(from + k));
+        }
+        Some((start, len))
+    }
+}
+
+/// The value of an element as `AlgoStats1D` reads it (`NumberValue`): a
+/// number (NaN when undefined) or a boolean as 0 or 1; `None` for anything
+/// else.
+fn number_of(slot: Slot) -> Option<f64> {
+    match (slot.kind, slot.value) {
+        (_, Value::Number(v)) => Some(v),
+        (_, Value::Bool(b)) => Some(bool_number(b)),
+        (Kind::Number, _) => Some(f64::NAN),
+        _ => None,
     }
 }
 

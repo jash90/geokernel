@@ -267,10 +267,12 @@ fn toggle_list(c: &mut Construction, watch: &str, a1: f64, a2: f64) -> u64 {
 fn a_list_of_numbers_recomputes_without_allocating() {
     let mut c = load(
         "a = 2\nA = (1, 2)\nl = Sequence(k a, k, 1, 200)\nm = {a, 2 a, a^2, {a, 1}, A + (a, 0)}\n\
-         s = Sum(l)\nt = l(3) + Length(m)\nu = l + l",
+         s = Sum(l)\nt = l(3) + Length(m)\nu = l + l\nw = Sort(-l)\n\
+         r = Reverse(Append(First(l, 50), a))\nj = Join(l, {a, 1}, Last(l, 3))\n\
+         q = Product(l) + Mean(l) + Max(l) + Sum({A, (a, 1)})",
     )
     .unwrap();
-    for watch in ["l", "m", "u"] {
+    for watch in ["l", "m", "u", "w", "r", "j"] {
         assert_eq!(
             toggle_list(&mut c, watch, 2.0, 3.0),
             0,

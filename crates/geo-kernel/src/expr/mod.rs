@@ -11,6 +11,13 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdIf.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDependentList.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDependentListExpression.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoListMinMax.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoReverse.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoFirst.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoLast.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoSort.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoAppend.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoJoin.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
@@ -147,6 +154,43 @@ pub(crate) enum ListOp {
     Index,
     /// `Element(l, n)`: rounded, from 1 (`AlgoListElement`).
     Element,
+    /// `Product(list)` and `Product(list, n)` (`AlgoStats1D`).
+    Product,
+    /// `Min(list)` and `Max(list)` (`AlgoListMinMax`).
+    Min,
+    Max,
+    /// `Mean(list)` (`AlgoStats1D`).
+    Mean,
+    /// `Reverse(list)` (`AlgoReverse`).
+    Reverse,
+    /// `First(list)`, `First(list, n)` and `Last` (`AlgoFirst`, `AlgoLast`).
+    First,
+    Last,
+    /// `Sort(list)` of numbers or points (`AlgoSort`).
+    Sort,
+    /// `Append(list, object)` and `Append(object, list)`: the second
+    /// operand is the object (`AlgoAppend`).
+    Append,
+    Prepend,
+    /// `Join(list of lists)`; `Join(l1, l2, ...)` joins the list of its
+    /// arguments (`AlgoJoin`).
+    Join,
+}
+
+impl ListOp {
+    /// Whether the result is a list.
+    pub(crate) fn makes_list(self) -> bool {
+        matches!(
+            self,
+            ListOp::Reverse
+                | ListOp::First
+                | ListOp::Last
+                | ListOp::Sort
+                | ListOp::Append
+                | ListOp::Prepend
+                | ListOp::Join
+        )
+    }
 }
 
 /// No node: the missing else branch of an `If`.
@@ -496,7 +540,21 @@ fn is_list_node(node: &Node) -> bool {
 /// The commands that expressions compute themselves; `Length` and `Sum`
 /// also of a list.
 pub(crate) fn is_expression_command(name: &str) -> bool {
-    matches!(name, "If" | "Sequence" | "Element" | "Length" | "Sum")
+    matches!(
+        name,
+        "If" | "Sequence"
+            | "Element"
+            | "Length"
+            | "Sum"
+            | "Product"
+            | "Mean"
+            | "Reverse"
+            | "First"
+            | "Last"
+            | "Sort"
+            | "Append"
+            | "Join"
+    )
 }
 
 fn entry(c: &Construction, d: ExprDef) -> &Entry {

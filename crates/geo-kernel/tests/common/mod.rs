@@ -786,7 +786,7 @@ fn expression_line(rng: &mut Rng, c: &Construction, made: usize) -> Option<(Stri
     let m = rng.pick(&numbers).clone();
     let p = rng.pick(&points).clone();
     let q = rng.pick(&points).clone();
-    let pick = rng.below(20);
+    let pick = rng.below(24);
     let (label, rhs, used) = match pick {
         0 => (format!("o{made}"), format!("{n} * 2 + {m}"), vec![n, m]),
         1 => (
@@ -868,6 +868,26 @@ fn expression_line(rng: &mut Rng, c: &Construction, made: usize) -> Option<(Stri
                 "Sum({{{n}, {m}, x({p})}}, 3) + Length(Sequence({m})) - Sum({{x({p}), y({q})}})"
             ),
             vec![n, m, p, q],
+        ),
+        19 => (
+            format!("s{made}"),
+            format!("Sort(Append(Reverse({{{n}, {m}, x({p})}}), y({q})))"),
+            vec![n, m, p, q],
+        ),
+        20 => (
+            format!("o{made}"),
+            format!("Product({{{n}, {m}}}) + Mean({{{n}, x({p})}}) - Max({{{m}, y({q})}})"),
+            vec![n, m, p, q],
+        ),
+        21 => (
+            format!("P{made}"),
+            format!("Sum({{{p}, {q}}}) + Sum(First({{{q}, {p}}}, 1))"),
+            vec![p, q],
+        ),
+        22 => (
+            format!("s{made}"),
+            format!("Join({{{n}}}, Last({{{m}, x({p})}}, 1), {{}})"),
+            vec![n, m, p],
         ),
         _ => {
             let body = if rng.chance(0.5) {

@@ -807,31 +807,44 @@ impl Parser<'_> {
                 [l, n] => Ok(Some(self.push(Node::ListOp(ListOp::Element, l, n)))),
                 _ => Err("`Element` takes a list and one index".into()),
             },
-            "Length" | "Sum" => {
+            "Length" | "Sum" | "Product" | "Min" | "Max" | "Mean" | "Reverse" | "First"
+            | "Last" | "Sort" | "Append" | "Join" => {
                 let saved = (
                     self.pos,
                     self.parents.len(),
                     self.inputs.len(),
                     self.uses_var,
                 );
-                let op = if text == "Length" {
-                    ListOp::Length
-                } else {
-                    ListOp::Sum
-                };
-                let node = match self.arguments() {
-                    Ok(args) if self.is_list(args[0]) => match (op, &args[..]) {
-                        (ListOp::Length, &[l]) => Some(Node::ListOp(op, l, NONE)),
-                        (ListOp::Sum, &[l]) => Some(Node::ListOp(op, l, NONE)),
-                        (ListOp::Sum, &[l, n]) => Some(Node::ListOp(op, l, n)),
-                        _ => {
-                            return Err(format!(
-                                "`{text}` of a list does not take {} arguments",
-                                args.len()
-                            ))
+                // on an error the script parser reports what is wrong
+                let args = self.arguments().unwrap_or_default();
+                let lists: Vec<bool> = args.iter().map(|&a| self.is_list(a)).collect();
+                let node = match (text, &args[..], &lists[..]) {
+                    (_, [], _) => None,
+                    ("Join", [l], [true]) => Some(Node::ListOp(ListOp::Join, *l, NONE)),
+                    ("Join", _, _) if lists.iter().all(|&b| b) => {
+                        // `CmdJoin`: the list of the arguments
+                        let first = self.nodes.len() as u32;
+                        for &a in &args {
+                            self.push(Node::Item(a));
                         }
-                    },
-                    _ => None,
+                        let list = self.push(Node::List(first, args.len() as u32));
+                        Some(Node::ListOp(ListOp::Join, list, NONE))
+                    }
+                    ("Append", [l, x], [true, _]) => Some(Node::ListOp(ListOp::Append, *l, *x)),
+                    ("Append", [x, l], [false, true]) => {
+                        Some(Node::ListOp(ListOp::Prepend, *l, *x))
+                    }
+                    (_, _, [false, ..]) => None,
+                    (_, &[l], _) if text != "Append" => Some(Node::ListOp(list_op(text), l, NONE)),
+                    ("Sum" | "Product" | "First" | "Last", &[l, n], _) => {
+                        Some(Node::ListOp(list_op(text), l, n))
+                    }
+                    _ => {
+                        return Err(format!(
+                            "`{text}` of a list does not take {} arguments",
+                            args.len()
+                        ))
+                    }
                 };
                 match node {
                     Some(node) => Ok(Some(self.push(node))),
@@ -986,5 +999,22 @@ impl Parser<'_> {
         }
         let hint = intersect::hint(self.c, &def);
         Ok(self.push(Node::Cmd(def, hint)))
+    }
+}
+
+/// The list command of a name that [`Parser::list_command`] reads.
+fn list_op(name: &str) -> ListOp {
+    match name {
+        "Length" => ListOp::Length,
+        "Sum" => ListOp::Sum,
+        "Product" => ListOp::Product,
+        "Min" => ListOp::Min,
+        "Max" => ListOp::Max,
+        "Mean" => ListOp::Mean,
+        "Reverse" => ListOp::Reverse,
+        "First" => ListOp::First,
+        "Last" => ListOp::Last,
+        "Sort" => ListOp::Sort,
+        _ => unreachable!("not a list command: {name}"),
     }
 }

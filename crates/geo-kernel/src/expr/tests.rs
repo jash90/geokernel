@@ -1235,3 +1235,73 @@ fn misplaced_lists_are_errors() {
         assert_eq!(c.len(), 3, "`{line}` left an object behind");
     }
 }
+
+#[test]
+fn list_statistics_and_reordering() {
+    let mut c = load(
+        "n = 2\n\
+         a = 3\n\
+         A = (1, 2)\n\
+         B = (3, -1)\n\
+         l = {a, 1, 2, -a}\n\
+         b = Product(l)\n\
+         d = Product(l, n)\n\
+         g = Min(l) + Max(l)\n\
+         h = Mean(l)\n\
+         k = Min(a, 1)\n\
+         P = Sum({A, B})\n\
+         p = Reverse(l)\n\
+         q = First(l, n)\n\
+         r = Last(l, n)\n\
+         s = Sort(l)\n\
+         t = Sort({B, A, (1, 0)})\n\
+         u = Append(l, n)\n\
+         w = Append(n, {A})\n\
+         m = Join(l, {n}, {})\n\
+         o = Join({{1}, {2, a}})",
+    )
+    .unwrap();
+    assert_eq!(num(&c, "b"), -18.0);
+    assert_eq!(num(&c, "d"), 3.0);
+    assert_eq!(num(&c, "g"), 0.0);
+    assert_eq!(num(&c, "h"), 0.75);
+    assert_eq!(num(&c, "k"), 1.0);
+    assert_eq!(c.value(c.id("P").unwrap()), Value::Point { x: 4.0, y: 1.0 });
+    assert_eq!(elems(&c, "p"), "{-3, 2, 1, 3}");
+    assert_eq!(elems(&c, "q"), "{3, 1}");
+    assert_eq!(elems(&c, "r"), "{2, -3}");
+    assert_eq!(elems(&c, "s"), "{-3, 1, 2, 3}");
+    assert_eq!(elems(&c, "t"), "{(1, 0), (1, 2), (3, -1)}");
+    assert_eq!(elems(&c, "u"), "{3, 1, 2, -3, 2}");
+    assert_eq!(elems(&c, "w"), "{2, (1, 2)}");
+    assert_eq!(elems(&c, "m"), "{3, 1, 2, -3, 2}");
+    assert_eq!(elems(&c, "o"), "{1, 2, 3}");
+    let n = c.id("n").unwrap();
+    // a count cut to a whole number; 0 is empty, past the end undefined;
+    // `Product` of no elements is undefined
+    c.set_number(n, 0.0).unwrap();
+    assert_eq!(elems(&c, "q"), "{}");
+    assert_eq!(c.value(c.id("d").unwrap()), Value::Undefined);
+    c.set_number(n, 3.9).unwrap();
+    assert_eq!(elems(&c, "r"), "{1, 2, -3}");
+    for bad in [5.0, -1.0] {
+        c.set_number(n, bad).unwrap();
+        assert_eq!(c.value(c.id("q").unwrap()), Value::Undefined, "{bad}");
+        assert_eq!(c.value(c.id("d").unwrap()), Value::Undefined, "{bad}");
+    }
+    c.set_number(c.id("a").unwrap(), 0.5).unwrap();
+    assert_eq!(elems(&c, "s"), "{-0.5, 0.5, 1, 2}");
+    rebuilt(&c);
+    for line in [
+        "bad = Product({A})",
+        "bad = Sort({1, 2}, 3)",
+        "bad = Append({1})",
+        "bad = Join({1}, 2)",
+        "bad = Join({1, 2})",
+        "bad = First({1}, A)",
+    ] {
+        let len = c.len();
+        assert!(exec(&mut c, line).is_err(), "`{line}` was accepted");
+        assert_eq!(c.len(), len, "`{line}` left an object behind");
+    }
+}

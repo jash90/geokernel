@@ -185,7 +185,8 @@ were written; no existing file changed and the schema version stays 1.
 Expressions may also compare and combine booleans and pick a branch with
 `If` (group `logic`), and build lists (group `lists`): literals such as
 `l = {1, 2, 3}` or `{A, B}`, element access `l(n)` and `Element(l, n)`,
-`Length`, `Sum`, `Sequence` and element-wise arithmetic. A constant boolean
+list commands such as `Length`, `Sum`, `Sort`, `Join` and `Sequence`, and
+element-wise arithmetic. A constant boolean
 or list is an object like any other but cannot be set. The type `list` was
 added the same way: no existing file changed and the schema version stays 1.
 

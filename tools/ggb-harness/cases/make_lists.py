@@ -5,7 +5,9 @@ List literals of numbers, points, vectors, booleans and lists, element
 access `l(n)` and `Element(l, n)` (rounded, negative and out-of-range
 indices), `Length`, `Sum` (with a truncation), the forms of `Sequence`
 (a count, a range with and without a step, an expression of a variable),
-and element-wise arithmetic, with lists of unequal length.
+element-wise arithmetic, with lists of unequal length, and a list minus a
+point; `Product`, `Min`, `Max`, `Mean` and `Sum` of points; `Reverse`,
+`First`, `Last` and `Sort`; `Append` and `Join`.
 
 The steps set the free numbers (`set_number`) and move the free points so
 that lists grow, shrink and change, and come back to the first state.
@@ -118,5 +120,45 @@ for line in ("p = {1, 2} - A", "P = {1, 2} - A", "p = A - {1, 2}", "p = {a, b} -
              "P = 2 ({1, a} - A)", "p = v - {a, {1}}", "p = {} - v", "P = {A, B} - A"):
     case("arith", nums(a=2, b=3) + [pt("A", 1, 2), pt("B", 3, -1), "v = (1, 1)", line],
          [setn("a", 5), mv("A", -2, 5), setn("b", -1), setn("a", 2), mv("A", 1, 2), setn("b", 3)])
+
+# ------------------------------------------------------- statistics
+# `AlgoStats1D` (`Product`, `Mean`, `Sum` with a truncation) and
+# `AlgoListMinMax`; `Sum` of points and vectors; `Min` and `Max` of two
+# numbers stay the functions.
+topic("stats")
+for line in ("c = Product(l)", "c = Product({})", "c = Product(l, n)", "c = Product({a < 1, 2})",
+             "c = Min(l)", "c = Max(l)", "c = Min({})", "c = Max({a, 1 / 0})", "c = Mean(l)",
+             "c = Mean({})", "c = Mean({a, sqrt(a - 1)})", "c = Min(l) + Max(l) Mean(l)", "c = Min(a, 3)",
+             "c = Max(n, a)", "P = Sum({A, B})", "P = Sum({A, v})", "u = Sum({v, 2 v})", "P = Sum({A, B}, n)",
+             "c = Product(l) - Product(Sequence(n))", "c = Max(Sequence(k (-1)^k, k, 1, n))"):
+    case("stats", nums(n=2, a=0.1) + [pt("A", 1, 2), pt("B", 3, -1), "v = (1, 1)",
+                                      "l = {a, 0.2, 0.3, -1}", line],
+         [setn("n", 0), setn("n", 3), setn("n", 5), setn("n", -1), setn("n", 1.7), setn("a", 2),
+          setn("a", -3), mv("A", -2, 5), setn("a", 0.1), setn("n", 2), mv("A", 1, 2)])
+
+# ------------------------------------------------------- reordering
+# `Reverse`, `First`, `Last` (a count cut to a whole number) and `Sort` of
+# numbers, booleans or points.
+topic("order")
+for line in ("p = Reverse(l)", "p = Reverse({})", "p = First(l)", "p = First(l, n)", "p = Last(l, n)",
+             "p = First({})", "p = Last(l, 0)", "p = Sort(l)", "p = Sort(m)", "p = Sort({})", "p = Sort({1, A})",
+             "p = Sort({a < 2, true, false})", "p = Sort({v, 2 v})", "p = Sort(Sequence(k (-1)^k, k, 1, n))",
+             "p = Last(Sort(l))", "p = Reverse(m)", "p = First(m, n)", "p = Sort({{2}, {1}})",
+             "c = Length(First(l, n))", "c = Sum(Reverse(l))", "p = Sort({a, a, 1})", "p = Sort({A, (1, a)})"):
+    case("order", nums(n=2, a=3) + [pt("A", 1, 2), pt("B", 3, -1), "v = (1, 1)", "l = {a, 1, 2, -a}",
+                                    "m = {A, B, (a, 0)}", line],
+         [setn("n", 0), setn("n", 3), setn("n", 4), setn("n", 5), setn("n", -1), setn("n", 2.7), setn("a", 0),
+          setn("a", -2), mv("A", 3, -1), setn("a", 1.5), mv("A", 1, 2), setn("a", 3), setn("n", 2)])
+
+# ------------------------------------------------------- joining
+# `Append` at either end and `Join` of its arguments or of a list of lists.
+topic("join")
+for line in ("p = Append(l, a)", "p = Append(a, l)", "p = Append(l, m)", "p = Append(m, l)", "p = Append({}, 1)",
+             "p = Append(l, A)", "p = Append(A, {B})", "p = Join(l, m)", "p = Join(l, m, {})", "p = Join({l, m})",
+             "p = Join({{1}, {2, a}})", "p = Join(l, Sequence(n))", "c = Length(Join(l, m))", "p = Join({A}, {B})",
+             "p = Join(Append(l, n), Reverse(m))", "c = Sum(Append(l, n)) + Length(Append(l, {1, 2}))"):
+    case("join", nums(n=2, a=3) + [pt("A", 1, 2), pt("B", 3, -1), "l = {a, 1}", "m = {2, a}", line],
+         [setn("n", 0), setn("n", 3), setn("a", -1), mv("A", -2, 5), setn("n", -1), setn("a", 3),
+          mv("A", 1, 2), setn("n", 2)])
 
 cases.write()
