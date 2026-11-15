@@ -29,6 +29,7 @@
 //! other: they are linked into the dependency graph when the object is added,
 //! so incremental updates treat them exactly like fixed parents.
 
+use crate::algo::arc::{ArcData, ArcDef};
 use crate::algo::conic::ConicDef;
 use crate::algo::conic_nd::{ConicData, ConicType};
 use crate::algo::conic_parts::ConicPartDef;
@@ -109,6 +110,11 @@ pub enum Kind {
     /// A general conic (`Conic`, `Ellipse`, `Hyperbola`, `Parabola` and
     /// their images); its state is read with [`Construction::conic`].
     Conic,
+    /// An arc of a circle or conic; its state is read with
+    /// [`Construction::arc`].
+    Arc,
+    /// A sector of a circle or conic, read like an arc.
+    Sector,
 }
 
 impl fmt::Display for Kind {
@@ -126,6 +132,8 @@ impl fmt::Display for Kind {
             Kind::Polygon => "polygon",
             Kind::PolyLine => "polyline",
             Kind::Conic => "conic",
+            Kind::Arc => "arc",
+            Kind::Sector => "sector",
         })
     }
 }
@@ -198,6 +206,15 @@ pub enum Value {
     Conic {
         ty: ConicType,
     },
+    /// A defined arc with its length. Its conic and parameters are read
+    /// with [`Construction::arc`].
+    Arc {
+        length: f64,
+    },
+    /// A defined sector with its area, read like an arc.
+    Sector {
+        area: f64,
+    },
     /// The object does not exist for the current positions
     /// (for example two circles that no longer meet).
     Undefined,
@@ -234,6 +251,8 @@ impl Value {
             Value::Bool(_) => true,
             Value::Polygon { area } => area.is_finite(),
             Value::PolyLine { length } => length.is_finite(),
+            Value::Arc { length } => length.is_finite(),
+            Value::Sector { area } => area.is_finite(),
             Value::Function | Value::Conic { .. } | Value::Undefined => true,
         }
     }
@@ -332,6 +351,10 @@ pub enum Def {
     /// Points on paths and their parameters; a point on a path keeps a
     /// [`PathState`] in the construction (see [`Construction::path_state`]).
     Path(PathDef),
+    /// Arcs and sectors and what is measured on them; an arc or sector
+    /// keeps an [`ArcData`] record in the construction (see
+    /// [`Construction::arc`]).
+    Arc(ArcDef),
 }
 
 impl Def {
@@ -358,6 +381,7 @@ impl Def {
             Def::GeneralConic(d) => d.kind(),
             Def::ConicPart(d) => d.kind(),
             Def::Path(d) => d.kind(),
+            Def::Arc(d) => d.kind(),
         }
     }
 
@@ -420,6 +444,7 @@ impl Def {
             Def::GeneralConic(d) => d.parents(),
             Def::ConicPart(d) => d.parents(),
             Def::Path(d) => d.parents(),
+            Def::Arc(d) => d.parents(),
         }
     }
 }
@@ -527,6 +552,9 @@ pub struct Construction {
     /// The states of the points on paths, with the index of each point, in
     /// creation order.
     paths: Vec<(usize, PathState)>,
+    /// The records of the arcs and sectors, with the index of each object,
+    /// in creation order.
+    arcs: Vec<(usize, ArcData)>,
 }
 
 /// The objects waiting to be recomputed during an update; empty between
@@ -809,6 +837,9 @@ impl Construction {
         while self.paths.last().is_some_and(|&(owner, _)| owner >= at.len) {
             self.paths.pop();
         }
+        while self.arcs.last().is_some_and(|&(owner, _)| owner >= at.len) {
+            self.arcs.pop();
+        }
         // Labels became free again, so the hints may be too high.
         self.label_hints
             .get_mut()
@@ -863,6 +894,11 @@ impl Construction {
                 let state = d.create(self);
                 self.paths.push((id.0, state));
                 PathDef::value(&state)
+            }
+            Def::Arc(d) if d.has_record() => {
+                let record = d.record(self);
+                self.arcs.push((id.0, record));
+                algo::arc::value(d.kind() == Kind::Sector, &record)
             }
             _ => self.compute(def, id.0),
         };
@@ -1063,6 +1099,11 @@ impl Construction {
                         continue;
                     }
                 }
+                Def::Arc(d) if d.has_record() => {
+                    if !self.update_arc(i, d) {
+                        continue;
+                    }
+                }
                 _ => {
                     let new = self.compute(def, i);
                     if new == self.values[i] {
@@ -1123,6 +1164,37 @@ impl Construction {
         self.paths[slot].1 = new;
         self.values[i] = PathDef::value(&new);
         true
+    }
+
+    /// Recomputes the record of the arc or sector `i`; tells whether its
+    /// children must follow: whether the record changed, bit for bit. Out
+    /// of line like [`Self::update_expr`].
+    #[inline(never)]
+    fn update_arc(&mut self, i: usize, d: ArcDef) -> bool {
+        let Some(slot) = self.arc_slot(i) else {
+            return false;
+        };
+        let new = d.record(self);
+        if new.same(&self.arcs[slot].1) {
+            return false;
+        }
+        self.arcs[slot].1 = new;
+        self.values[i] = algo::arc::value(d.kind() == Kind::Sector, &new);
+        true
+    }
+
+    /// Where the record of object `i` is kept in `arcs`.
+    fn arc_slot(&self, i: usize) -> Option<usize> {
+        self.arcs.binary_search_by_key(&i, |&(owner, _)| owner).ok()
+    }
+
+    /// The record of the arc or sector `id`: its conic, the range of its
+    /// parameter and its measures. `None` for any other object.
+    pub fn arc(&self, id: Id) -> Option<ArcData> {
+        match self.defs.get(id.0)? {
+            Def::Arc(d) if d.has_record() => self.arc_slot(id.0).map(|slot| self.arcs[slot].1),
+            _ => None,
+        }
     }
 
     /// Where the state of object `i` is kept in `paths`.
@@ -1264,6 +1336,7 @@ impl Construction {
             Def::GeneralConic(d) => d.check(self),
             Def::ConicPart(d) => d.check(self),
             Def::Path(d) => d.check(self),
+            Def::Arc(d) => d.check(self),
         }
     }
 
@@ -1346,6 +1419,7 @@ impl Construction {
             Def::GeneralConic(d) => d.compute(self),
             Def::ConicPart(d) => d.compute(self),
             Def::Path(d) => d.compute(self),
+            Def::Arc(d) => d.compute(self),
         }
     }
 

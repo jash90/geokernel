@@ -43,6 +43,7 @@
 //! (`Path.pointChanged`). When the path changes, the point follows its
 //! stored parameter (`Path.pathChanged`, called by `AlgoPointOnPath`).
 
+use super::arc::ArcData;
 use super::conic_nd::{my_length, ConicData};
 use super::{join, Group, Parents, POINT};
 use crate::kernel::{Construction, Def, Error, Id, Kind, Value};
@@ -60,6 +61,8 @@ pub(crate) const PATH: &[Kind] = &[
     Kind::Circle,
     Kind::Polygon,
     Kind::PolyLine,
+    Kind::Arc,
+    Kind::Sector,
 ];
 const NUMBER: &[Kind] = &[Kind::Number];
 
@@ -199,6 +202,17 @@ impl PathState {
         }
     }
 
+    /// A direct write `pp.t = t`, which keeps NaN (unlike [`Self::set_t`]).
+    pub(crate) fn put_t(&mut self, t: f64) {
+        self.t = t;
+    }
+
+    /// `P.setX(x)` alone, as `GeoConicPart.pathChanged` does for an
+    /// undefined part.
+    pub(crate) fn put_x(&mut self, x: f64) {
+        self.x = x;
+    }
+
     /// `GeoPoint.setCoords(x, y, 1)` for a point on a path.
     fn set_coords(&mut self, path: &Geom<'_>, x: f64, y: f64) {
         self.set_coords_2d(x, y, 1.0);
@@ -241,6 +255,22 @@ fn is_epsilon(e: f64, x: f64, y: f64) -> bool {
 
 fn is_zero(v: f64) -> bool {
     -STANDARD_PRECISION < v && v < STANDARD_PRECISION
+}
+
+/// The parameter that the full conic `d` gives a temporary point at
+/// `(x, y)`: `pointChanged` (`pointChangedUnlimited` for a full conic) on a
+/// new point. With `on_path` the point lies on `d` first, as a point whose
+/// path is `d` does when `setCoords` projects it (`AlgoConicPartConicPoints`
+/// calls `setCoords` and then `pointChangedUnlimited`).
+pub(crate) fn conic_parameter(d: &ConicData, (x, y): (f64, f64), on_path: bool) -> f64 {
+    let mut st = PathState::new();
+    if on_path {
+        st.set_coords(&Geom::Conic(*d), x, y);
+    } else {
+        st.set_coords_2d(x, y, 1.0);
+    }
+    super::conic_path::point_changed(d, &mut st);
+    st.t
 }
 
 /// `PathNormalizer.infFunction`.
@@ -342,6 +372,8 @@ pub(crate) enum Geom<'a> {
         id: Id,
         n: usize,
     },
+    /// An arc or sector (`GeoConicPart`) with its record.
+    Arc(ArcData),
 }
 
 /// A `GeoSegment`: its line through the start and end point
@@ -485,6 +517,17 @@ pub(crate) fn line_path_changed(
 }
 
 impl Geom<'_> {
+    /// `isDefined` of the path. An arc whose value is not finite (two rays,
+    /// a sector of a degenerate conic) is defined, as `GeoConicPart.isDefined`
+    /// says.
+    fn is_defined(&self) -> bool {
+        match self {
+            Geom::Undefined => false,
+            Geom::Arc(a) => a.defined,
+            _ => true,
+        }
+    }
+
     /// `Path.getMinParameter` and `Path.getMaxParameter`.
     fn range(&self) -> (f64, f64) {
         match self {
@@ -495,6 +538,7 @@ impl Geom<'_> {
             Geom::Conic(d) => super::conic_path::range(d),
             Geom::Polygon { n, .. } => (0.0, *n as f64),
             Geom::PolyLine { n, .. } => (0.0, *n as f64 - 1.0),
+            Geom::Arc(a) => a.range(),
         }
     }
 
@@ -518,6 +562,7 @@ impl Geom<'_> {
             Geom::Conic(d) => super::conic_path::point_changed(d, p),
             &Geom::Polygon { c, id, n } => polygonal_point_changed(c, id, n, true, p),
             &Geom::PolyLine { c, id, n } => polygonal_point_changed(c, id, n, false, p),
+            Geom::Arc(a) => a.point_changed(p),
         }
     }
 
@@ -568,6 +613,7 @@ impl Geom<'_> {
                 let (x, y) = seg.point_at(p.t - index as f64);
                 p.set_coords_2d(x, y, 1.0);
             }
+            Geom::Arc(a) => a.path_changed(p),
         }
     }
 }
@@ -688,6 +734,11 @@ fn line_start(c: &Construction, line: Id) -> Option<(f64, f64, f64)> {
 
 /// The path `path` as the path code reads it now.
 pub(crate) fn geom(c: &Construction, path: Id) -> Geom<'_> {
+    // an arc is read as it is even when undefined: `setCoords` still asks
+    // it to place the point (see `Geom::is_defined`)
+    if let Some(a) = c.arc(path) {
+        return Geom::Arc(a);
+    }
     let value = c.value(path);
     if !value.is_defined() {
         return Geom::Undefined;
@@ -730,7 +781,7 @@ fn follow(c: &Construction, path: &Geom<'_>, param: Option<Id>, st: &mut PathSta
         let (min, max) = path.range();
         st.set_t(to_parent(c.number(param).unwrap_or(f64::NAN), min, max));
     }
-    if matches!(path, Geom::Undefined) {
+    if !path.is_defined() {
         st.set_undefined();
     } else {
         path.path_changed(st);
@@ -818,7 +869,7 @@ fn path_parameter(c: &Construction, point: Id) -> Option<Value> {
         Def::Point(PointDef::Closest { path, point: q }) => {
             let (qx, qy) = c.point(q)?;
             let g = geom(c, path);
-            if matches!(g, Geom::Undefined) {
+            if !g.is_defined() {
                 return None;
             }
             let mut st = PathState::new();

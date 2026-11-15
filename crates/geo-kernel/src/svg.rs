@@ -51,6 +51,13 @@ impl View {
                         grow(x0 + x, y0 + y);
                     }
                 }
+                Value::Arc { .. } | Value::Sector { .. } => {
+                    if let Some(a) = c.arc(id) {
+                        for (x, y) in arc_path(&a) {
+                            grow(x, y);
+                        }
+                    }
+                }
                 _ => {}
             }
         }
@@ -237,6 +244,20 @@ pub fn render(c: &Construction, view: View, width: u32, height: u32) -> String {
                     );
                 }
             }
+            Value::Arc { .. } | Value::Sector { .. } => {
+                let Some(a) = c.arc(id) else {
+                    continue;
+                };
+                let mut pts = String::new();
+                for (x, y) in arc_path(&a) {
+                    let _ = write!(pts, "{:.2},{:.2} ", sx(x), sy(y));
+                }
+                let pts = pts.trim_end();
+                if a.sector {
+                    let _ = writeln!(polygons, r##"<polygon points="{pts}"/>"##);
+                }
+                let _ = writeln!(segments, r##"<polyline points="{pts}" fill="none"/>"##);
+            }
             Value::Number(_) | Value::Bool(_) | Value::Function | Value::Undefined => {}
         }
     }
@@ -282,6 +303,42 @@ fn escape(s: &str) -> String {
     s.replace('&', "&amp;")
         .replace('<', "&lt;")
         .replace('>', "&gt;")
+}
+
+/// The points of an arc or sector, sampled from its start to its end
+/// parameter on its circle or ellipse; a sector also runs through the
+/// centre at both ends. A part that degenerated to a segment is that
+/// segment; any other degenerate part gives no points (an arc of two rays
+/// has no finite value and is not drawn).
+fn arc_path(a: &crate::algo::arc::ArcData) -> Vec<(f64, f64)> {
+    use crate::algo::conic_nd::ConicType;
+    const N: usize = 120;
+    let d = &a.conic;
+    match d.ty {
+        ConicType::Circle | ConicType::Ellipse => {
+            let [e0, e1] = d.eigenvec;
+            let [bx, by] = d.midpoint;
+            let [ha, hb] = d.half_axes;
+            // more samples for a longer part, at least a few
+            let n = ((N as f64 * a.extent / std::f64::consts::TAU).ceil() as usize).max(4);
+            let mut path: Vec<(f64, f64)> = (0..=n)
+                .map(|i| {
+                    let t = a.start + a.extent * i as f64 / n as f64;
+                    let (u, v) = (ha * t.cos(), hb * t.sin());
+                    (bx + u * e0[0] + v * e1[0], by + u * e0[1] + v * e1[1])
+                })
+                .collect();
+            if a.sector {
+                path.insert(0, (bx, by));
+                path.push((bx, by));
+            }
+            path
+        }
+        ConicType::ParallelLines if !a.sector && a.positive => {
+            a.segment().map(|[p, q]| vec![p, q]).unwrap_or_default()
+        }
+        _ => Vec::new(),
+    }
 }
 
 /// Polylines that draw a conic in a view centred at `mid` whose diagonal is

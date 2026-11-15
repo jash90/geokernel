@@ -42,7 +42,7 @@ fn rw_to_ev(d: &ConicData, p: &mut PathState) {
 }
 
 /// `GeoConicND.coordsEVtoRW`.
-fn ev_to_rw(d: &ConicData, p: &mut PathState) {
+pub(crate) fn ev_to_rw(d: &ConicData, p: &mut PathState) {
     let (x, y, z) = p.coords();
     let [e0, e1] = d.eigenvec;
     let rx = x * e0[0] + y * e1[0];

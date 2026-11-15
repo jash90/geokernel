@@ -1,7 +1,7 @@
 //! The comparison rules of `golden/SCHEMA.md`.
 
 use crate::model::{ConicParts, Expected, ExpectedData, SAMPLE_XS};
-use geo_kernel::{ConicData, Kind, Value};
+use geo_kernel::{ArcData, ConicData, Kind, Value};
 
 /// Result of a successful comparison.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -364,6 +364,84 @@ pub fn compare_conic(
         }
     };
     (result, Some(agreement))
+}
+
+/// Compares an arc or sector with the kernel's value and its record
+/// (`Construction::arc`): the value, the conic type, the orientation where
+/// GeoGebra records it, and for a part of a circle or ellipse its start and
+/// end parameter, arc length, area and conic parts, raw.
+pub fn compare_arc(
+    expected: &Expected,
+    kind: Kind,
+    actual: &Value,
+    data: Option<&ArcData>,
+) -> Result<Sign, String> {
+    if expected.kind != kind {
+        return Err(format!(
+            "type mismatch: expected {}, got {kind}",
+            expected.kind
+        ));
+    }
+    let (value, conic_type, orientation, curve) = match (&expected.data, actual, data) {
+        (None, Value::Undefined, _) => return Ok(Sign::NotApplicable),
+        (None, _, _) => return Err("expected undefined, kernel has a value".into()),
+        (Some(_), Value::Undefined, _) | (Some(_), _, None) => {
+            return Err("expected a value, kernel is undefined".into())
+        }
+        (
+            Some(ExpectedData::Arc {
+                value,
+                conic_type,
+                orientation,
+                curve,
+            }),
+            Value::Arc { .. } | Value::Sector { .. },
+            Some(_),
+        ) => (value, conic_type, orientation, curve),
+        _ => return Err("kernel value has a different shape than its kind".into()),
+    };
+    let d = data.expect("matched above");
+    let got = match *actual {
+        Value::Arc { length } => length,
+        Value::Sector { area } => area,
+        _ => unreachable!("matched above"),
+    };
+    if !numbers_agree(*value, got) {
+        return Err(format!("value differs: kernel has {got}"));
+    }
+    if conic_type != d.conic.ty.name() {
+        return Err(format!(
+            "conic type differs: kernel has {}",
+            d.conic.ty.name()
+        ));
+    }
+    if orientation.is_some_and(|o| o != d.positive) {
+        return Err(format!(
+            "orientation differs: kernel has positive = {}",
+            d.positive
+        ));
+    }
+    if let Some(e) = curve {
+        let k = &d.conic;
+        let ok = all_agree(&[
+            (e.start, d.start),
+            (e.end, d.end),
+            (e.arc_length, d.arc_length()),
+            (e.area, d.area()),
+            (e.midpoint.0, k.midpoint[0]),
+            (e.midpoint.1, k.midpoint[1]),
+            (e.half_axes.0, k.half_axes[0]),
+            (e.half_axes.1, k.half_axes[1]),
+            (e.eigenvectors[0].0, k.eigenvec[0][0]),
+            (e.eigenvectors[0].1, k.eigenvec[0][1]),
+            (e.eigenvectors[1].0, k.eigenvec[1][0]),
+            (e.eigenvectors[1].1, k.eigenvec[1][1]),
+        ]);
+        if !ok {
+            return Err(format!("parts differ: kernel has {d:?}"));
+        }
+    }
+    Ok(Sign::NotApplicable)
 }
 
 #[cfg(test)]

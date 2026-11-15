@@ -22,6 +22,7 @@ import org.geogebra.common.kernel.algos.AlgoPointOnPath;
 import org.geogebra.common.kernel.algos.AlgoRayPointVector;
 import org.geogebra.common.kernel.commands.AlgebraProcessor;
 import org.geogebra.common.kernel.geos.GeoConic;
+import org.geogebra.common.kernel.geos.GeoConicPart;
 import org.geogebra.common.kernel.geos.GeoElement;
 import org.geogebra.common.kernel.geos.GeoFunction;
 import org.geogebra.common.kernel.geos.GeoLine;
@@ -391,6 +392,11 @@ final class Session {
         if (geo instanceof GeoLine) {
             return "line";
         }
+        // an arc or sector is a GeoConic too
+        if (geo instanceof GeoConicPart) {
+            return ((GeoConicPart) geo).getConicPartType()
+                    == GeoConicNDConstants.CONIC_PART_SECTOR ? "sector" : "arc";
+        }
         if (geo instanceof GeoConic) {
             return "circle";
         }
@@ -620,6 +626,19 @@ final class Session {
                 return "vector";
             case "Ray":
                 return "ray";
+            case "CircularArc":
+            case "CircleArc":
+            case "CircumcircularArc":
+            case "CircumcircleArc":
+            case "Semicircle":
+            case "Arc":
+                return "arc";
+            case "CircularSector":
+            case "CircleSector":
+            case "CircumcircularSector":
+            case "CircumcircleSector":
+            case "Sector":
+                return "sector";
             default:
                 // a mathematical function such as `sqrt(a)` or `x(A)`
                 return null;
@@ -739,6 +758,9 @@ final class Session {
             }
             case "conic":
                 return conicFields((GeoConicND) geo);
+            case "arc":
+            case "sector":
+                return arcFields((GeoConicPart) geo);
             case "number":
                 f.put("value", ((GeoNumeric) geo).getDouble());
                 return f;
@@ -855,6 +877,50 @@ final class Session {
             }
             default:
                 break;
+        }
+        return f;
+    }
+
+    /**
+     * The fields of an arc or sector (see golden/SCHEMA.md): its value (arc
+     * length or area) and the type of its conic; for a part of a circle or
+     * an ellipse also its orientation, its start and end parameter, its arc
+     * length and area and the parts of the conic; for a part that
+     * degenerated to a segment or two rays its orientation. GeoGebra keeps
+     * the other numbers of a degenerate part from earlier updates, so they
+     * are not recorded.
+     */
+    private static Map<String, Object> arcFields(GeoConicPart p) {
+        Map<String, Object> f = new LinkedHashMap<>();
+        f.put("value", p.getValue());
+        String orientation = p.positiveOrientation() ? "positive" : "negative";
+        int t = p.getType();
+        switch (t) {
+            case GeoConicNDConstants.CONIC_CIRCLE:
+            case GeoConicNDConstants.CONIC_ELLIPSE: {
+                f.put("conic_type", t == GeoConicNDConstants.CONIC_CIRCLE ? "circle" : "ellipse");
+                f.put("orientation", orientation);
+                f.put("start", p.getParameterStart());
+                f.put("end", p.getParameterEnd());
+                f.put("arc_length", p.getArcLength());
+                f.put("area", p.getArea());
+                Coords mid = p.getMidpoint2D();
+                f.put("midpoint", pair(mid.getX(), mid.getY()));
+                f.put("half_axes", pair(p.getHalfAxis(0), p.getHalfAxis(1)));
+                f.put("eigenvectors", Arrays.asList(
+                        pair(p.getEigenvec(0).getX(), p.getEigenvec(0).getY()),
+                        pair(p.getEigenvec(1).getX(), p.getEigenvec(1).getY())));
+                break;
+            }
+            case GeoConicNDConstants.CONIC_PARALLEL_LINES:
+                f.put("conic_type", "parallel_lines");
+                f.put("orientation", orientation);
+                break;
+            case GeoConicNDConstants.CONIC_SINGLE_POINT:
+                f.put("conic_type", "single_point");
+                break;
+            default:
+                throw new IllegalStateException("part of a conic of unsupported type " + t);
         }
         return f;
     }
