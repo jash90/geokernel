@@ -12,6 +12,7 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoTangentPoint.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoTangentLineND.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoTangentLine.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/TangentAlgo.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoPolarLine.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersectLineConic.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersect.java

@@ -107,9 +107,20 @@ pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
         Def::IntersectLineCircle { line, circle, .. } => {
             let line_def = c.def(line);
             push(existing_line_circle_point(c, line, line_def, circle));
-            if let Def::Line(p, q) = line_def {
-                push(Some(p));
-                push(Some(q));
+            match line_def {
+                Def::Line(p, q) => {
+                    push(Some(p));
+                    push(Some(q));
+                }
+                // the tangent point is computed from these (see
+                // `lines::tangent_point_on`)
+                Def::Lines(LineDef::TangentPoint {
+                    point, circle: k, ..
+                }) if k == circle => push(Some(point)),
+                Def::Lines(LineDef::TangentLine {
+                    line: g, circle: k, ..
+                }) if k == circle => push(Some(g)),
+                _ => {}
             }
         }
         Def::IntersectCircles { c1, c2, .. } => {
@@ -964,5 +975,128 @@ mod tests {
         assert_eq!(xy(&c, "Z"), None);
         mv(&mut c, "P", 1.0, 1.0);
         assert_eq!(xy(&c, "X"), None);
+    }
+
+    #[test]
+    fn a_vertex_shared_by_a_three_point_circle_is_the_first_circle_point() {
+        let mut c = load(
+            "A = (3, 4)\nB = (-3, 4)\nC = (0, -5)\nk = Circle(A, B, C)\nM = (6, 6)\n\
+             c = Circle(M, A)\nP = Intersect(k, c, 1)\nQ = Intersect(c, k, 2)\n",
+        )
+        .unwrap();
+        assert!(close(xy(&c, "P"), 3.0, 4.0));
+        assert!(!close(xy(&c, "Q"), 3.0, 4.0));
+        // A slides along k: k keeps its value, P follows A.
+        mv(&mut c, "A", 4.0, -3.0);
+        assert!(close(xy(&c, "P"), 4.0, -3.0));
+    }
+
+    #[test]
+    fn a_tangent_parallel_to_a_line_has_only_its_tangent_point() {
+        let mut c = load(
+            "A = (0, 0)\nr = 5\nk = Circle(A, r)\nB = (-1, 1)\nC = (1, 1)\ng = Line(B, C)\n\
+             t = Tangent(g, k)\nX = Intersect(t_{1}, k, 1)\nY = Intersect(k, t_{2}, 1)\n\
+             Z = Intersect(t_{1}, k, 2)\n",
+        )
+        .unwrap();
+        assert!(close(xy(&c, "X"), 0.0, 5.0) || close(xy(&c, "X"), 0.0, -5.0));
+        assert!(close(xy(&c, "Y"), 0.0, -xy(&c, "X").unwrap().1));
+        assert_eq!(xy(&c, "Z"), None);
+        // the line is the tangent's hidden parent
+        let (g, x) = (c.id("g").unwrap(), c.id("X").unwrap());
+        assert!(c.children(g).contains(&x));
+        mv(&mut c, "C", 1.0, 3.0);
+        mv(&mut c, "B", -1.0, 3.0);
+        assert!(close(xy(&c, "X"), 0.0, 5.0) || close(xy(&c, "X"), 0.0, -5.0));
+    }
+
+    #[test]
+    fn the_point_of_a_tangent_is_its_hidden_parent() {
+        let c = load(
+            "A = (0, 0)\nr = 5\nk = Circle(A, r)\nP = (0, 6.25)\nt = Tangent(P, k)\n\
+             X = Intersect(t_{1}, k)\n",
+        )
+        .unwrap();
+        let (p, x) = (c.id("P").unwrap(), c.id("X").unwrap());
+        assert!(c.children(p).contains(&x));
+    }
+
+    #[test]
+    fn the_vertex_of_an_angle_bisector_on_the_circle_comes_first() {
+        let mut c = load(
+            "A = (-4, 3)\nB = (1, 1)\nC = (5, 4)\nM = (2, -3)\nk = Circle(M, B)\n\
+             f = AngularBisector(A, B, C)\nP = Intersect(f, k, 1)\nR = Intersect(k, f, 1)\n",
+        )
+        .unwrap();
+        assert!(close(xy(&c, "P"), 1.0, 1.0));
+        assert!(close(xy(&c, "R"), 1.0, 1.0));
+        mv(&mut c, "B", 0.0, 2.0);
+        assert!(close(xy(&c, "P"), 0.0, 2.0));
+    }
+
+    #[test]
+    fn the_point_of_a_tangent_on_another_circle_comes_first() {
+        let mut c = load(
+            "A = (0, 0)\nr = 2\nk = Circle(A, r)\nP = (5, 1)\nM = (4, 4)\nc = Circle(M, P)\n\
+             t = Tangent(P, k)\nX = Intersect(t_{1}, c, 1)\nY = Intersect(c, t_{2}, 1)\n",
+        )
+        .unwrap();
+        assert!(close(xy(&c, "X"), 5.0, 1.0));
+        assert!(close(xy(&c, "Y"), 5.0, 1.0));
+        mv(&mut c, "P", 6.0, -1.0);
+        assert!(close(xy(&c, "X"), 6.0, -1.0));
+    }
+
+    #[test]
+    fn the_second_argument_order_reuses_the_first_for_index_2() {
+        let mut c = load(
+            "A = (0, 0)\nB = (8, 0)\nr = 5\nq = 5\nk = Circle(A, r)\nc = Circle(B, q)\n\
+             P = Intersect(k, c, 2)\nR = Intersect(c, k, 2)\nS = Intersect(c, k, 1)\n",
+        )
+        .unwrap();
+        assert_eq!(xy(&c, "P"), xy(&c, "R"));
+        assert_ne!(xy(&c, "P"), xy(&c, "S"));
+        mv(&mut c, "B", -6.0, 1.0);
+        assert_eq!(xy(&c, "P"), xy(&c, "R"));
+    }
+
+    #[test]
+    fn the_stored_definition_takes_the_order_and_flag_of_the_first() {
+        use crate::kernel::Def;
+        let c = load(
+            "A = (0, 0)\nB = (8, 0)\nE = (4, 3)\nk = Circle(A, E)\nc = Circle(B, E)\n\
+             r = 5\nm = Circle(A, r)\nP = Intersect(k, c, 1)\nR = Intersect(c, k, 2)\n\
+             S = Intersect(m, c, 1)\nT = Intersect(c, m, 1)\n",
+        )
+        .unwrap();
+        let id = |l: &str| c.id(l).unwrap();
+        let (k, cc, m) = (id("k"), id("c"), id("m"));
+        assert_eq!(
+            c.def(id("P")),
+            Def::IntersectCircles {
+                c1: k,
+                c2: cc,
+                which: 0,
+                special: true
+            }
+        );
+        assert_eq!(
+            c.def(id("R")),
+            Def::IntersectCircles {
+                c1: k,
+                c2: cc,
+                which: 1,
+                special: true
+            }
+        );
+        assert_eq!(
+            c.def(id("T")),
+            Def::IntersectCircles {
+                c1: m,
+                c2: cc,
+                which: 0,
+                special: false
+            }
+        );
     }
 }
