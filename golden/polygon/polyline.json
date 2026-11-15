@@ -1,0 +1,2238 @@
+{
+  "schema": 1,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "polygon-polyline-001",
+      "group": "polygon",
+      "script": [
+        "A = (2.02, -6.22)",
+        "B = (-5.76, -7.53)",
+        "pl = PolyLine(A, B)",
+        "V = Vertex(pl)",
+        "W = Vertex(pl, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": -3.92, "y": -2.61 },
+        { "action": "move", "label": "A", "x": 4.22, "y": 2.57 },
+        { "action": "move", "label": "B", "x": -7.16, "y": -4.42 },
+        { "action": "move", "label": "B", "x": -1.34, "y": 3.61 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "A", "x": 0.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 2.02, "y": -6.22 },
+          "B": { "type": "point", "defined": true, "x": -5.76, "y": -7.53 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [2.02, -6.22],
+              [-5.76, -7.53]
+            ],
+            "length": 7.889518362992762
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": 2.02, "y": -6.22 },
+          "V_{2}": { "type": "point", "defined": true, "x": -5.76, "y": -7.53 },
+          "W": { "type": "point", "defined": true, "x": -5.76, "y": -7.53 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.92, "y": -2.61 },
+          "B": { "type": "point", "defined": true, "x": -5.76, "y": -7.53 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-3.92, -2.61],
+              [-5.76, -7.53]
+            ],
+            "length": 5.252808772456884
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -3.92, "y": -2.61 },
+          "V_{2}": { "type": "point", "defined": true, "x": -5.76, "y": -7.53 },
+          "W": { "type": "point", "defined": true, "x": -5.76, "y": -7.53 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 4.22, "y": 2.57 },
+          "B": { "type": "point", "defined": true, "x": -5.76, "y": -7.53 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [4.22, 2.57],
+              [-5.76, -7.53]
+            ],
+            "length": 14.198957708226333
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": 4.22, "y": 2.57 },
+          "V_{2}": { "type": "point", "defined": true, "x": -5.76, "y": -7.53 },
+          "W": { "type": "point", "defined": true, "x": -5.76, "y": -7.53 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 4.22, "y": 2.57 },
+          "B": { "type": "point", "defined": true, "x": -7.16, "y": -4.42 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [4.22, 2.57],
+              [-7.16, -4.42]
+            ],
+            "length": 13.355317293123363
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": 4.22, "y": 2.57 },
+          "V_{2}": { "type": "point", "defined": true, "x": -7.16, "y": -4.42 },
+          "W": { "type": "point", "defined": true, "x": -7.16, "y": -4.42 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 4.22, "y": 2.57 },
+          "B": { "type": "point", "defined": true, "x": -1.34, "y": 3.61 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [4.22, 2.57],
+              [-1.34, 3.61]
+            ],
+            "length": 5.656429969512572
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": 4.22, "y": 2.57 },
+          "V_{2}": { "type": "point", "defined": true, "x": -1.34, "y": 3.61 },
+          "W": { "type": "point", "defined": true, "x": -1.34, "y": 3.61 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 4.22, "y": 2.57 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [4.22, 2.57],
+              [0.0, 0.0]
+            ],
+            "length": 4.940981683835713
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": 4.22, "y": 2.57 },
+          "V_{2}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "W": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [0.0, 0.0]
+            ],
+            "length": 0.0
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "V_{2}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "W": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "polygon-polyline-002",
+      "group": "polygon",
+      "script": [
+        "A = (5.96, 4.46)",
+        "B = (3.73, -4.62)",
+        "C = (7.33, -6.87)",
+        "pl = PolyLine(A, B, C)",
+        "V = Vertex(pl)",
+        "W = Vertex(pl, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": -4.98, "y": -6.1 },
+        { "action": "move", "label": "B", "x": 0.84, "y": 2.2 },
+        { "action": "move", "label": "C", "x": -2.41, "y": -2.5 },
+        { "action": "move", "label": "B", "x": 0.94, "y": 2.27 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "A", "x": 0.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 5.96, "y": 4.46 },
+          "B": { "type": "point", "defined": true, "x": 3.73, "y": -4.62 },
+          "C": { "type": "point", "defined": true, "x": 7.33, "y": -6.87 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [5.96, 4.46],
+              [3.73, -4.62],
+              [7.33, -6.87]
+            ],
+            "length": 13.595120384864849
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": 5.96, "y": 4.46 },
+          "V_{2}": { "type": "point", "defined": true, "x": 3.73, "y": -4.62 },
+          "V_{3}": { "type": "point", "defined": true, "x": 7.33, "y": -6.87 },
+          "W": { "type": "point", "defined": true, "x": 3.73, "y": -4.62 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 5.96, "y": 4.46 },
+          "B": { "type": "point", "defined": true, "x": 3.73, "y": -4.62 },
+          "C": { "type": "point", "defined": true, "x": -4.98, "y": -6.1 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [5.96, 4.46],
+              [3.73, -4.62],
+              [-4.98, -6.1]
+            ],
+            "length": 18.1846746579078
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": 5.96, "y": 4.46 },
+          "V_{2}": { "type": "point", "defined": true, "x": 3.73, "y": -4.62 },
+          "V_{3}": { "type": "point", "defined": true, "x": -4.98, "y": -6.1 },
+          "W": { "type": "point", "defined": true, "x": 3.73, "y": -4.62 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 5.96, "y": 4.46 },
+          "B": { "type": "point", "defined": true, "x": 0.84, "y": 2.2 },
+          "C": { "type": "point", "defined": true, "x": -4.98, "y": -6.1 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [5.96, 4.46],
+              [0.84, 2.2],
+              [-4.98, -6.1]
+            ],
+            "length": 15.733785209220803
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": 5.96, "y": 4.46 },
+          "V_{2}": { "type": "point", "defined": true, "x": 0.84, "y": 2.2 },
+          "V_{3}": { "type": "point", "defined": true, "x": -4.98, "y": -6.1 },
+          "W": { "type": "point", "defined": true, "x": 0.84, "y": 2.2 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 5.96, "y": 4.46 },
+          "B": { "type": "point", "defined": true, "x": 0.84, "y": 2.2 },
+          "C": { "type": "point", "defined": true, "x": -2.41, "y": -2.5 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [5.96, 4.46],
+              [0.84, 2.2],
+              [-2.41, -2.5]
+            ],
+            "length": 11.310842721355124
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": 5.96, "y": 4.46 },
+          "V_{2}": { "type": "point", "defined": true, "x": 0.84, "y": 2.2 },
+          "V_{3}": { "type": "point", "defined": true, "x": -2.41, "y": -2.5 },
+          "W": { "type": "point", "defined": true, "x": 0.84, "y": 2.2 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 5.96, "y": 4.46 },
+          "B": { "type": "point", "defined": true, "x": 0.94, "y": 2.27 },
+          "C": { "type": "point", "defined": true, "x": -2.41, "y": -2.5 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [5.96, 4.46],
+              [0.94, 2.27],
+              [-2.41, -2.5]
+            ],
+            "length": 11.305748141457833
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": 5.96, "y": 4.46 },
+          "V_{2}": { "type": "point", "defined": true, "x": 0.94, "y": 2.27 },
+          "V_{3}": { "type": "point", "defined": true, "x": -2.41, "y": -2.5 },
+          "W": { "type": "point", "defined": true, "x": 0.94, "y": 2.27 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 5.96, "y": 4.46 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": -2.41, "y": -2.5 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [5.96, 4.46],
+              [0.0, 0.0],
+              [-2.41, -2.5]
+            ],
+            "length": 10.916481800489837
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": 5.96, "y": 4.46 },
+          "V_{2}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "V_{3}": { "type": "point", "defined": true, "x": -2.41, "y": -2.5 },
+          "W": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": -2.41, "y": -2.5 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [0.0, 0.0],
+              [-2.41, -2.5]
+            ],
+            "length": 3.472477501726973
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "V_{2}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "V_{3}": { "type": "point", "defined": true, "x": -2.41, "y": -2.5 },
+          "W": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "polygon-polyline-003",
+      "group": "polygon",
+      "script": [
+        "A = (-0.72, -7.76)",
+        "B = (-7.27, -4.37)",
+        "C = (7.83, 5.96)",
+        "pl = PolyLine(A, B, C)",
+        "V = Vertex(pl)",
+        "W = Vertex(pl, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 4.41, "y": 6.4 },
+        { "action": "move", "label": "B", "x": -3.1, "y": -6.28 },
+        { "action": "move", "label": "A", "x": -4.52, "y": -1.44 },
+        { "action": "move", "label": "C", "x": 0.92, "y": -3.07 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "A", "x": 0.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -0.72, "y": -7.76 },
+          "B": { "type": "point", "defined": true, "x": -7.27, "y": -4.37 },
+          "C": { "type": "point", "defined": true, "x": 7.83, "y": 5.96 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-0.72, -7.76],
+              [-7.27, -4.37],
+              [7.83, 5.96]
+            ],
+            "length": 25.670594025947942
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -0.72, "y": -7.76 },
+          "V_{2}": { "type": "point", "defined": true, "x": -7.27, "y": -4.37 },
+          "V_{3}": { "type": "point", "defined": true, "x": 7.83, "y": 5.96 },
+          "W": { "type": "point", "defined": true, "x": -7.27, "y": -4.37 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -0.72, "y": -7.76 },
+          "B": { "type": "point", "defined": true, "x": -7.27, "y": -4.37 },
+          "C": { "type": "point", "defined": true, "x": 4.41, "y": 6.4 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-0.72, -7.76],
+              [-7.27, -4.37],
+              [4.41, 6.4]
+            ],
+            "length": 23.262852688586953
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -0.72, "y": -7.76 },
+          "V_{2}": { "type": "point", "defined": true, "x": -7.27, "y": -4.37 },
+          "V_{3}": { "type": "point", "defined": true, "x": 4.41, "y": 6.4 },
+          "W": { "type": "point", "defined": true, "x": -7.27, "y": -4.37 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -0.72, "y": -7.76 },
+          "B": { "type": "point", "defined": true, "x": -3.1, "y": -6.28 },
+          "C": { "type": "point", "defined": true, "x": 4.41, "y": 6.4 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-0.72, -7.76],
+              [-3.1, -6.28],
+              [4.41, 6.4]
+            ],
+            "length": 17.53975462547919
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -0.72, "y": -7.76 },
+          "V_{2}": { "type": "point", "defined": true, "x": -3.1, "y": -6.28 },
+          "V_{3}": { "type": "point", "defined": true, "x": 4.41, "y": 6.4 },
+          "W": { "type": "point", "defined": true, "x": -3.1, "y": -6.28 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -4.52, "y": -1.44 },
+          "B": { "type": "point", "defined": true, "x": -3.1, "y": -6.28 },
+          "C": { "type": "point", "defined": true, "x": 4.41, "y": 6.4 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-4.52, -1.44],
+              [-3.1, -6.28],
+              [4.41, 6.4]
+            ],
+            "length": 19.781119358594516
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -4.52, "y": -1.44 },
+          "V_{2}": { "type": "point", "defined": true, "x": -3.1, "y": -6.28 },
+          "V_{3}": { "type": "point", "defined": true, "x": 4.41, "y": 6.4 },
+          "W": { "type": "point", "defined": true, "x": -3.1, "y": -6.28 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -4.52, "y": -1.44 },
+          "B": { "type": "point", "defined": true, "x": -3.1, "y": -6.28 },
+          "C": { "type": "point", "defined": true, "x": 0.92, "y": -3.07 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-4.52, -1.44],
+              [-3.1, -6.28],
+              [0.92, -3.07]
+            ],
+            "length": 10.188372194298882
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -4.52, "y": -1.44 },
+          "V_{2}": { "type": "point", "defined": true, "x": -3.1, "y": -6.28 },
+          "V_{3}": { "type": "point", "defined": true, "x": 0.92, "y": -3.07 },
+          "W": { "type": "point", "defined": true, "x": -3.1, "y": -6.28 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -4.52, "y": -1.44 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.92, "y": -3.07 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-4.52, -1.44],
+              [0.0, 0.0],
+              [0.92, -3.07]
+            ],
+            "length": 7.948725002016185
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -4.52, "y": -1.44 },
+          "V_{2}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "V_{3}": { "type": "point", "defined": true, "x": 0.92, "y": -3.07 },
+          "W": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.92, "y": -3.07 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [0.0, 0.0],
+              [0.92, -3.07]
+            ],
+            "length": 3.204886893480018
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "V_{2}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "V_{3}": { "type": "point", "defined": true, "x": 0.92, "y": -3.07 },
+          "W": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "polygon-polyline-004",
+      "group": "polygon",
+      "script": [
+        "A = (-3.93, 1.35)",
+        "B = (1.17, -3.13)",
+        "C = (1.14, -1.09)",
+        "D = (6.28, -2.72)",
+        "pl = PolyLine(A, B, C, D)",
+        "V = Vertex(pl)",
+        "W = Vertex(pl, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "D", "x": -0.69, "y": -3.16 },
+        { "action": "move", "label": "B", "x": 1.65, "y": -6.07 },
+        { "action": "move", "label": "D", "x": 0.1, "y": 7.03 },
+        { "action": "move", "label": "B", "x": 1.68, "y": -0.16 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "A", "x": 0.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -3.93, "y": 1.35 },
+          "B": { "type": "point", "defined": true, "x": 1.17, "y": -3.13 },
+          "C": { "type": "point", "defined": true, "x": 1.14, "y": -1.09 },
+          "D": { "type": "point", "defined": true, "x": 6.28, "y": -2.72 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-3.93, 1.35],
+              [1.17, -3.13],
+              [1.14, -1.09],
+              [6.28, -2.72]
+            ],
+            "length": 14.22073811420277
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -3.93, "y": 1.35 },
+          "V_{2}": { "type": "point", "defined": true, "x": 1.17, "y": -3.13 },
+          "V_{3}": { "type": "point", "defined": true, "x": 1.14, "y": -1.09 },
+          "V_{4}": { "type": "point", "defined": true, "x": 6.28, "y": -2.72 },
+          "W": { "type": "point", "defined": true, "x": 1.17, "y": -3.13 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.93, "y": 1.35 },
+          "B": { "type": "point", "defined": true, "x": 1.17, "y": -3.13 },
+          "C": { "type": "point", "defined": true, "x": 1.14, "y": -1.09 },
+          "D": { "type": "point", "defined": true, "x": -0.69, "y": -3.16 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-3.93, 1.35],
+              [1.17, -3.13],
+              [1.14, -1.09],
+              [-0.69, -3.16]
+            ],
+            "length": 11.591408362368563
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -3.93, "y": 1.35 },
+          "V_{2}": { "type": "point", "defined": true, "x": 1.17, "y": -3.13 },
+          "V_{3}": { "type": "point", "defined": true, "x": 1.14, "y": -1.09 },
+          "V_{4}": { "type": "point", "defined": true, "x": -0.69, "y": -3.16 },
+          "W": { "type": "point", "defined": true, "x": 1.17, "y": -3.13 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.93, "y": 1.35 },
+          "B": { "type": "point", "defined": true, "x": 1.65, "y": -6.07 },
+          "C": { "type": "point", "defined": true, "x": 1.14, "y": -1.09 },
+          "D": { "type": "point", "defined": true, "x": -0.69, "y": -3.16 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-3.93, 1.35],
+              [1.65, -6.07],
+              [1.14, -1.09],
+              [-0.69, -3.16]
+            ],
+            "length": 17.052987323395655
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -3.93, "y": 1.35 },
+          "V_{2}": { "type": "point", "defined": true, "x": 1.65, "y": -6.07 },
+          "V_{3}": { "type": "point", "defined": true, "x": 1.14, "y": -1.09 },
+          "V_{4}": { "type": "point", "defined": true, "x": -0.69, "y": -3.16 },
+          "W": { "type": "point", "defined": true, "x": 1.65, "y": -6.07 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.93, "y": 1.35 },
+          "B": { "type": "point", "defined": true, "x": 1.65, "y": -6.07 },
+          "C": { "type": "point", "defined": true, "x": 1.14, "y": -1.09 },
+          "D": { "type": "point", "defined": true, "x": 0.1, "y": 7.03 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-3.93, 1.35],
+              [1.65, -6.07],
+              [1.14, -1.09],
+              [0.1, 7.03]
+            ],
+            "length": 22.476384168531553
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -3.93, "y": 1.35 },
+          "V_{2}": { "type": "point", "defined": true, "x": 1.65, "y": -6.07 },
+          "V_{3}": { "type": "point", "defined": true, "x": 1.14, "y": -1.09 },
+          "V_{4}": { "type": "point", "defined": true, "x": 0.1, "y": 7.03 },
+          "W": { "type": "point", "defined": true, "x": 1.65, "y": -6.07 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.93, "y": 1.35 },
+          "B": { "type": "point", "defined": true, "x": 1.68, "y": -0.16 },
+          "C": { "type": "point", "defined": true, "x": 1.14, "y": -1.09 },
+          "D": { "type": "point", "defined": true, "x": 0.1, "y": 7.03 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-3.93, 1.35],
+              [1.68, -0.16],
+              [1.14, -1.09],
+              [0.1, 7.03]
+            ],
+            "length": 15.071401330898848
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -3.93, "y": 1.35 },
+          "V_{2}": { "type": "point", "defined": true, "x": 1.68, "y": -0.16 },
+          "V_{3}": { "type": "point", "defined": true, "x": 1.14, "y": -1.09 },
+          "V_{4}": { "type": "point", "defined": true, "x": 0.1, "y": 7.03 },
+          "W": { "type": "point", "defined": true, "x": 1.68, "y": -0.16 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.93, "y": 1.35 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 1.14, "y": -1.09 },
+          "D": { "type": "point", "defined": true, "x": 0.1, "y": 7.03 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-3.93, 1.35],
+              [0.0, 0.0],
+              [1.14, -1.09],
+              [0.1, 7.03]
+            ],
+            "length": 13.918980618968309
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -3.93, "y": 1.35 },
+          "V_{2}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "V_{3}": { "type": "point", "defined": true, "x": 1.14, "y": -1.09 },
+          "V_{4}": { "type": "point", "defined": true, "x": 0.1, "y": 7.03 },
+          "W": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 1.14, "y": -1.09 },
+          "D": { "type": "point", "defined": true, "x": 0.1, "y": 7.03 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [0.0, 0.0],
+              [1.14, -1.09],
+              [0.1, 7.03]
+            ],
+            "length": 9.76357450163152
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "V_{2}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "V_{3}": { "type": "point", "defined": true, "x": 1.14, "y": -1.09 },
+          "V_{4}": { "type": "point", "defined": true, "x": 0.1, "y": 7.03 },
+          "W": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "polygon-polyline-005",
+      "group": "polygon",
+      "script": [
+        "A = (0.5, 2.31)",
+        "B = (6.34, 6.5)",
+        "C = (-3.79, -4.43)",
+        "D = (-7.62, 3.91)",
+        "pl = PolyLine(A, B, C, D)",
+        "V = Vertex(pl)",
+        "W = Vertex(pl, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": -2.39, "y": 0.6 },
+        { "action": "move", "label": "A", "x": 0.9, "y": 4.71 },
+        { "action": "move", "label": "D", "x": 0.46, "y": 6.73 },
+        { "action": "move", "label": "B", "x": -6.03, "y": 1.96 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "A", "x": 0.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.5, "y": 2.31 },
+          "B": { "type": "point", "defined": true, "x": 6.34, "y": 6.5 },
+          "C": { "type": "point", "defined": true, "x": -3.79, "y": -4.43 },
+          "D": { "type": "point", "defined": true, "x": -7.62, "y": 3.91 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [0.5, 2.31],
+              [6.34, 6.5],
+              [-3.79, -4.43],
+              [-7.62, 3.91]
+            ],
+            "length": 31.267407288408492
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": 0.5, "y": 2.31 },
+          "V_{2}": { "type": "point", "defined": true, "x": 6.34, "y": 6.5 },
+          "V_{3}": { "type": "point", "defined": true, "x": -3.79, "y": -4.43 },
+          "V_{4}": { "type": "point", "defined": true, "x": -7.62, "y": 3.91 },
+          "W": { "type": "point", "defined": true, "x": 6.34, "y": 6.5 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.5, "y": 2.31 },
+          "B": { "type": "point", "defined": true, "x": -2.39, "y": 0.6 },
+          "C": { "type": "point", "defined": true, "x": -3.79, "y": -4.43 },
+          "D": { "type": "point", "defined": true, "x": -7.62, "y": 3.91 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [0.5, 2.31],
+              [-2.39, 0.6],
+              [-3.79, -4.43],
+              [-7.62, 3.91]
+            ],
+            "length": 17.75659323776
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": 0.5, "y": 2.31 },
+          "V_{2}": { "type": "point", "defined": true, "x": -2.39, "y": 0.6 },
+          "V_{3}": { "type": "point", "defined": true, "x": -3.79, "y": -4.43 },
+          "V_{4}": { "type": "point", "defined": true, "x": -7.62, "y": 3.91 },
+          "W": { "type": "point", "defined": true, "x": -2.39, "y": 0.6 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.9, "y": 4.71 },
+          "B": { "type": "point", "defined": true, "x": -2.39, "y": 0.6 },
+          "C": { "type": "point", "defined": true, "x": -3.79, "y": -4.43 },
+          "D": { "type": "point", "defined": true, "x": -7.62, "y": 3.91 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [0.9, 4.71],
+              [-2.39, 0.6],
+              [-3.79, -4.43],
+              [-7.62, 3.91]
+            ],
+            "length": 19.66320562233873
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": 0.9, "y": 4.71 },
+          "V_{2}": { "type": "point", "defined": true, "x": -2.39, "y": 0.6 },
+          "V_{3}": { "type": "point", "defined": true, "x": -3.79, "y": -4.43 },
+          "V_{4}": { "type": "point", "defined": true, "x": -7.62, "y": 3.91 },
+          "W": { "type": "point", "defined": true, "x": -2.39, "y": 0.6 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.9, "y": 4.71 },
+          "B": { "type": "point", "defined": true, "x": -2.39, "y": 0.6 },
+          "C": { "type": "point", "defined": true, "x": -3.79, "y": -4.43 },
+          "D": { "type": "point", "defined": true, "x": 0.46, "y": 6.73 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [0.9, 4.71],
+              [-2.39, 0.6],
+              [-3.79, -4.43],
+              [0.46, 6.73]
+            ],
+            "length": 22.427678264324122
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": 0.9, "y": 4.71 },
+          "V_{2}": { "type": "point", "defined": true, "x": -2.39, "y": 0.6 },
+          "V_{3}": { "type": "point", "defined": true, "x": -3.79, "y": -4.43 },
+          "V_{4}": { "type": "point", "defined": true, "x": 0.46, "y": 6.73 },
+          "W": { "type": "point", "defined": true, "x": -2.39, "y": 0.6 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.9, "y": 4.71 },
+          "B": { "type": "point", "defined": true, "x": -6.03, "y": 1.96 },
+          "C": { "type": "point", "defined": true, "x": -3.79, "y": -4.43 },
+          "D": { "type": "point", "defined": true, "x": 0.46, "y": 6.73 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [0.9, 4.71],
+              [-6.03, 1.96],
+              [-3.79, -4.43],
+              [0.46, 6.73]
+            ],
+            "length": 26.168799802352424
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": 0.9, "y": 4.71 },
+          "V_{2}": { "type": "point", "defined": true, "x": -6.03, "y": 1.96 },
+          "V_{3}": { "type": "point", "defined": true, "x": -3.79, "y": -4.43 },
+          "V_{4}": { "type": "point", "defined": true, "x": 0.46, "y": 6.73 },
+          "W": { "type": "point", "defined": true, "x": -6.03, "y": 1.96 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.9, "y": 4.71 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": -3.79, "y": -4.43 },
+          "D": { "type": "point", "defined": true, "x": 0.46, "y": 6.73 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [0.9, 4.71],
+              [0.0, 0.0],
+              [-3.79, -4.43],
+              [0.46, 6.73]
+            ],
+            "length": 22.567088281353627
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": 0.9, "y": 4.71 },
+          "V_{2}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "V_{3}": { "type": "point", "defined": true, "x": -3.79, "y": -4.43 },
+          "V_{4}": { "type": "point", "defined": true, "x": 0.46, "y": 6.73 },
+          "W": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": -3.79, "y": -4.43 },
+          "D": { "type": "point", "defined": true, "x": 0.46, "y": 6.73 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [0.0, 0.0],
+              [-3.79, -4.43],
+              [0.46, 6.73]
+            ],
+            "length": 17.77187191501519
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "V_{2}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "V_{3}": { "type": "point", "defined": true, "x": -3.79, "y": -4.43 },
+          "V_{4}": { "type": "point", "defined": true, "x": 0.46, "y": 6.73 },
+          "W": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "polygon-polyline-006",
+      "group": "polygon",
+      "script": [
+        "A = (-6.25, 5.58)",
+        "B = (-7.23, -7.66)",
+        "C = (2.55, -4.85)",
+        "D = (4.35, 0.58)",
+        "E = (0.68, 4.17)",
+        "pl = PolyLine(A, B, C, D, E)",
+        "V = Vertex(pl)",
+        "W = Vertex(pl, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": -3.1, "y": -1.38 },
+        { "action": "move", "label": "D", "x": 0.15, "y": 4.14 },
+        { "action": "move", "label": "C", "x": 2.32, "y": -4.21 },
+        { "action": "move", "label": "D", "x": 6.0, "y": -4.28 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "A", "x": 0.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -6.25, "y": 5.58 },
+          "B": { "type": "point", "defined": true, "x": -7.23, "y": -7.66 },
+          "C": { "type": "point", "defined": true, "x": 2.55, "y": -4.85 },
+          "D": { "type": "point", "defined": true, "x": 4.35, "y": 0.58 },
+          "E": { "type": "point", "defined": true, "x": 0.68, "y": 4.17 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-6.25, 5.58],
+              [-7.23, -7.66],
+              [2.55, -4.85],
+              [4.35, 0.58],
+              [0.68, 4.17]
+            ],
+            "length": 34.306376184668736
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -6.25, "y": 5.58 },
+          "V_{2}": { "type": "point", "defined": true, "x": -7.23, "y": -7.66 },
+          "V_{3}": { "type": "point", "defined": true, "x": 2.55, "y": -4.85 },
+          "V_{4}": { "type": "point", "defined": true, "x": 4.35, "y": 0.58 },
+          "V_{5}": { "type": "point", "defined": true, "x": 0.68, "y": 4.17 },
+          "W": { "type": "point", "defined": true, "x": -7.23, "y": -7.66 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.25, "y": 5.58 },
+          "B": { "type": "point", "defined": true, "x": -3.1, "y": -1.38 },
+          "C": { "type": "point", "defined": true, "x": 2.55, "y": -4.85 },
+          "D": { "type": "point", "defined": true, "x": 4.35, "y": 0.58 },
+          "E": { "type": "point", "defined": true, "x": 0.68, "y": 4.17 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-6.25, 5.58],
+              [-3.1, -1.38],
+              [2.55, -4.85],
+              [4.35, 0.58],
+              [0.68, 4.17]
+            ],
+            "length": 25.124605269800302
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -6.25, "y": 5.58 },
+          "V_{2}": { "type": "point", "defined": true, "x": -3.1, "y": -1.38 },
+          "V_{3}": { "type": "point", "defined": true, "x": 2.55, "y": -4.85 },
+          "V_{4}": { "type": "point", "defined": true, "x": 4.35, "y": 0.58 },
+          "V_{5}": { "type": "point", "defined": true, "x": 0.68, "y": 4.17 },
+          "W": { "type": "point", "defined": true, "x": -3.1, "y": -1.38 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.25, "y": 5.58 },
+          "B": { "type": "point", "defined": true, "x": -3.1, "y": -1.38 },
+          "C": { "type": "point", "defined": true, "x": 2.55, "y": -4.85 },
+          "D": { "type": "point", "defined": true, "x": 0.15, "y": 4.14 },
+          "E": { "type": "point", "defined": true, "x": 0.68, "y": 4.17 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-6.25, 5.58],
+              [-3.1, -1.38],
+              [2.55, -4.85],
+              [0.15, 4.14],
+              [0.68, 4.17]
+            ],
+            "length": 24.105821424544022
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -6.25, "y": 5.58 },
+          "V_{2}": { "type": "point", "defined": true, "x": -3.1, "y": -1.38 },
+          "V_{3}": { "type": "point", "defined": true, "x": 2.55, "y": -4.85 },
+          "V_{4}": { "type": "point", "defined": true, "x": 0.15, "y": 4.14 },
+          "V_{5}": { "type": "point", "defined": true, "x": 0.68, "y": 4.17 },
+          "W": { "type": "point", "defined": true, "x": -3.1, "y": -1.38 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.25, "y": 5.58 },
+          "B": { "type": "point", "defined": true, "x": -3.1, "y": -1.38 },
+          "C": { "type": "point", "defined": true, "x": 2.32, "y": -4.21 },
+          "D": { "type": "point", "defined": true, "x": 0.15, "y": 4.14 },
+          "E": { "type": "point", "defined": true, "x": 0.68, "y": 4.17 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-6.25, 5.58],
+              [-3.1, -1.38],
+              [2.32, -4.21],
+              [0.15, 4.14],
+              [0.68, 4.17]
+            ],
+            "length": 22.912203834706766
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -6.25, "y": 5.58 },
+          "V_{2}": { "type": "point", "defined": true, "x": -3.1, "y": -1.38 },
+          "V_{3}": { "type": "point", "defined": true, "x": 2.32, "y": -4.21 },
+          "V_{4}": { "type": "point", "defined": true, "x": 0.15, "y": 4.14 },
+          "V_{5}": { "type": "point", "defined": true, "x": 0.68, "y": 4.17 },
+          "W": { "type": "point", "defined": true, "x": -3.1, "y": -1.38 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.25, "y": 5.58 },
+          "B": { "type": "point", "defined": true, "x": -3.1, "y": -1.38 },
+          "C": { "type": "point", "defined": true, "x": 2.32, "y": -4.21 },
+          "D": { "type": "point", "defined": true, "x": 6.0, "y": -4.28 },
+          "E": { "type": "point", "defined": true, "x": 0.68, "y": 4.17 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-6.25, 5.58],
+              [-3.1, -1.38],
+              [2.32, -4.21],
+              [6.0, -4.28],
+              [0.68, 4.17]
+            ],
+            "length": 27.41989181187531
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -6.25, "y": 5.58 },
+          "V_{2}": { "type": "point", "defined": true, "x": -3.1, "y": -1.38 },
+          "V_{3}": { "type": "point", "defined": true, "x": 2.32, "y": -4.21 },
+          "V_{4}": { "type": "point", "defined": true, "x": 6.0, "y": -4.28 },
+          "V_{5}": { "type": "point", "defined": true, "x": 0.68, "y": 4.17 },
+          "W": { "type": "point", "defined": true, "x": -3.1, "y": -1.38 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.25, "y": 5.58 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.32, "y": -4.21 },
+          "D": { "type": "point", "defined": true, "x": 6.0, "y": -4.28 },
+          "E": { "type": "point", "defined": true, "x": 0.68, "y": 4.17 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-6.25, 5.58],
+              [0.0, 0.0],
+              [2.32, -4.21],
+              [6.0, -4.28],
+              [0.68, 4.17]
+            ],
+            "length": 26.85130027335626
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -6.25, "y": 5.58 },
+          "V_{2}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "V_{3}": { "type": "point", "defined": true, "x": 2.32, "y": -4.21 },
+          "V_{4}": { "type": "point", "defined": true, "x": 6.0, "y": -4.28 },
+          "V_{5}": { "type": "point", "defined": true, "x": 0.68, "y": 4.17 },
+          "W": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.32, "y": -4.21 },
+          "D": { "type": "point", "defined": true, "x": 6.0, "y": -4.28 },
+          "E": { "type": "point", "defined": true, "x": 0.68, "y": 4.17 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [0.0, 0.0],
+              [2.32, -4.21],
+              [6.0, -4.28],
+              [0.68, 4.17]
+            ],
+            "length": 18.472821891215503
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "V_{2}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "V_{3}": { "type": "point", "defined": true, "x": 2.32, "y": -4.21 },
+          "V_{4}": { "type": "point", "defined": true, "x": 6.0, "y": -4.28 },
+          "V_{5}": { "type": "point", "defined": true, "x": 0.68, "y": 4.17 },
+          "W": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "polygon-polyline-007",
+      "group": "polygon",
+      "script": [
+        "A = (-3.26, -3.12)",
+        "B = (-3.82, 6.82)",
+        "C = (4.59, -5.37)",
+        "D = (-4.57, -5.29)",
+        "E = (-5.64, 2.59)",
+        "F = (0.59, -5.32)",
+        "pl = PolyLine(A, B, C, D, E, F)",
+        "V = Vertex(pl)",
+        "W = Vertex(pl, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 0.67, "y": 4.97 },
+        { "action": "move", "label": "E", "x": -6.59, "y": 5.65 },
+        { "action": "move", "label": "C", "x": 5.59, "y": 6.25 },
+        { "action": "move", "label": "F", "x": -6.52, "y": 0.11 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "A", "x": 0.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -3.26, "y": -3.12 },
+          "B": { "type": "point", "defined": true, "x": -3.82, "y": 6.82 },
+          "C": { "type": "point", "defined": true, "x": 4.59, "y": -5.37 },
+          "D": { "type": "point", "defined": true, "x": -4.57, "y": -5.29 },
+          "E": { "type": "point", "defined": true, "x": -5.64, "y": 2.59 },
+          "F": { "type": "point", "defined": true, "x": 0.59, "y": -5.32 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-3.26, -3.12],
+              [-3.82, 6.82],
+              [4.59, -5.37],
+              [-4.57, -5.29],
+              [-5.64, 2.59],
+              [0.59, -5.32]
+            ],
+            "length": 51.94683709345649
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -3.26, "y": -3.12 },
+          "V_{2}": { "type": "point", "defined": true, "x": -3.82, "y": 6.82 },
+          "V_{3}": { "type": "point", "defined": true, "x": 4.59, "y": -5.37 },
+          "V_{4}": { "type": "point", "defined": true, "x": -4.57, "y": -5.29 },
+          "V_{5}": { "type": "point", "defined": true, "x": -5.64, "y": 2.59 },
+          "V_{6}": { "type": "point", "defined": true, "x": 0.59, "y": -5.32 },
+          "W": { "type": "point", "defined": true, "x": -3.82, "y": 6.82 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.26, "y": -3.12 },
+          "B": { "type": "point", "defined": true, "x": -3.82, "y": 6.82 },
+          "C": { "type": "point", "defined": true, "x": 0.67, "y": 4.97 },
+          "D": { "type": "point", "defined": true, "x": -4.57, "y": -5.29 },
+          "E": { "type": "point", "defined": true, "x": -5.64, "y": 2.59 },
+          "F": { "type": "point", "defined": true, "x": 0.59, "y": -5.32 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-3.26, -3.12],
+              [-3.82, 6.82],
+              [0.67, 4.97],
+              [-4.57, -5.29],
+              [-5.64, 2.59],
+              [0.59, -5.32]
+            ],
+            "length": 44.3537237830823
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -3.26, "y": -3.12 },
+          "V_{2}": { "type": "point", "defined": true, "x": -3.82, "y": 6.82 },
+          "V_{3}": { "type": "point", "defined": true, "x": 0.67, "y": 4.97 },
+          "V_{4}": { "type": "point", "defined": true, "x": -4.57, "y": -5.29 },
+          "V_{5}": { "type": "point", "defined": true, "x": -5.64, "y": 2.59 },
+          "V_{6}": { "type": "point", "defined": true, "x": 0.59, "y": -5.32 },
+          "W": { "type": "point", "defined": true, "x": -3.82, "y": 6.82 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.26, "y": -3.12 },
+          "B": { "type": "point", "defined": true, "x": -3.82, "y": 6.82 },
+          "C": { "type": "point", "defined": true, "x": 0.67, "y": 4.97 },
+          "D": { "type": "point", "defined": true, "x": -4.57, "y": -5.29 },
+          "E": { "type": "point", "defined": true, "x": -6.59, "y": 5.65 },
+          "F": { "type": "point", "defined": true, "x": 0.59, "y": -5.32 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-3.26, -3.12],
+              [-3.82, 6.82],
+              [0.67, 4.97],
+              [-4.57, -5.29],
+              [-6.59, 5.65],
+              [0.59, -5.32]
+            ],
+            "length": 50.56833190177462
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -3.26, "y": -3.12 },
+          "V_{2}": { "type": "point", "defined": true, "x": -3.82, "y": 6.82 },
+          "V_{3}": { "type": "point", "defined": true, "x": 0.67, "y": 4.97 },
+          "V_{4}": { "type": "point", "defined": true, "x": -4.57, "y": -5.29 },
+          "V_{5}": { "type": "point", "defined": true, "x": -6.59, "y": 5.65 },
+          "V_{6}": { "type": "point", "defined": true, "x": 0.59, "y": -5.32 },
+          "W": { "type": "point", "defined": true, "x": -3.82, "y": 6.82 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.26, "y": -3.12 },
+          "B": { "type": "point", "defined": true, "x": -3.82, "y": 6.82 },
+          "C": { "type": "point", "defined": true, "x": 5.59, "y": 6.25 },
+          "D": { "type": "point", "defined": true, "x": -4.57, "y": -5.29 },
+          "E": { "type": "point", "defined": true, "x": -6.59, "y": 5.65 },
+          "F": { "type": "point", "defined": true, "x": 0.59, "y": -5.32 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-3.26, -3.12],
+              [-3.82, 6.82],
+              [5.59, 6.25],
+              [-4.57, -5.29],
+              [-6.59, 5.65],
+              [0.59, -5.32]
+            ],
+            "length": 58.99395919708454
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -3.26, "y": -3.12 },
+          "V_{2}": { "type": "point", "defined": true, "x": -3.82, "y": 6.82 },
+          "V_{3}": { "type": "point", "defined": true, "x": 5.59, "y": 6.25 },
+          "V_{4}": { "type": "point", "defined": true, "x": -4.57, "y": -5.29 },
+          "V_{5}": { "type": "point", "defined": true, "x": -6.59, "y": 5.65 },
+          "V_{6}": { "type": "point", "defined": true, "x": 0.59, "y": -5.32 },
+          "W": { "type": "point", "defined": true, "x": -3.82, "y": 6.82 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.26, "y": -3.12 },
+          "B": { "type": "point", "defined": true, "x": -3.82, "y": 6.82 },
+          "C": { "type": "point", "defined": true, "x": 5.59, "y": 6.25 },
+          "D": { "type": "point", "defined": true, "x": -4.57, "y": -5.29 },
+          "E": { "type": "point", "defined": true, "x": -6.59, "y": 5.65 },
+          "F": { "type": "point", "defined": true, "x": -6.52, "y": 0.11 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-3.26, -3.12],
+              [-3.82, 6.82],
+              [5.59, 6.25],
+              [-4.57, -5.29],
+              [-6.59, 5.65],
+              [-6.52, 0.11]
+            ],
+            "length": 51.423592899536494
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -3.26, "y": -3.12 },
+          "V_{2}": { "type": "point", "defined": true, "x": -3.82, "y": 6.82 },
+          "V_{3}": { "type": "point", "defined": true, "x": 5.59, "y": 6.25 },
+          "V_{4}": { "type": "point", "defined": true, "x": -4.57, "y": -5.29 },
+          "V_{5}": { "type": "point", "defined": true, "x": -6.59, "y": 5.65 },
+          "V_{6}": { "type": "point", "defined": true, "x": -6.52, "y": 0.11 },
+          "W": { "type": "point", "defined": true, "x": -3.82, "y": 6.82 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.26, "y": -3.12 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 5.59, "y": 6.25 },
+          "D": { "type": "point", "defined": true, "x": -4.57, "y": -5.29 },
+          "E": { "type": "point", "defined": true, "x": -6.59, "y": 5.65 },
+          "F": { "type": "point", "defined": true, "x": -6.52, "y": 0.11 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-3.26, -3.12],
+              [0.0, 0.0],
+              [5.59, 6.25],
+              [-4.57, -5.29],
+              [-6.59, 5.65],
+              [-6.52, 0.11]
+            ],
+            "length": 44.9381519118019
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -3.26, "y": -3.12 },
+          "V_{2}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "V_{3}": { "type": "point", "defined": true, "x": 5.59, "y": 6.25 },
+          "V_{4}": { "type": "point", "defined": true, "x": -4.57, "y": -5.29 },
+          "V_{5}": { "type": "point", "defined": true, "x": -6.59, "y": 5.65 },
+          "V_{6}": { "type": "point", "defined": true, "x": -6.52, "y": 0.11 },
+          "W": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 5.59, "y": 6.25 },
+          "D": { "type": "point", "defined": true, "x": -4.57, "y": -5.29 },
+          "E": { "type": "point", "defined": true, "x": -6.59, "y": 5.65 },
+          "F": { "type": "point", "defined": true, "x": -6.52, "y": 0.11 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [0.0, 0.0],
+              [5.59, 6.25],
+              [-4.57, -5.29],
+              [-6.59, 5.65],
+              [-6.52, 0.11]
+            ],
+            "length": 40.425724627069215
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "V_{2}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "V_{3}": { "type": "point", "defined": true, "x": 5.59, "y": 6.25 },
+          "V_{4}": { "type": "point", "defined": true, "x": -4.57, "y": -5.29 },
+          "V_{5}": { "type": "point", "defined": true, "x": -6.59, "y": 5.65 },
+          "V_{6}": { "type": "point", "defined": true, "x": -6.52, "y": 0.11 },
+          "W": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "polygon-polyline-008",
+      "group": "polygon",
+      "script": [
+        "A = (7.25, -7.85)",
+        "B = (7.9, -7.43)",
+        "C = (4.64, 4.62)",
+        "D = (5.43, -5.6)",
+        "E = (5.91, 5.51)",
+        "F = (4, 3.84)",
+        "G = (6.33, 7.15)",
+        "pl = PolyLine(A, B, C, D, E, F, G)",
+        "V = Vertex(pl)",
+        "W = Vertex(pl, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "D", "x": 7.83, "y": -0.81 },
+        { "action": "move", "label": "G", "x": -2.92, "y": -4.55 },
+        { "action": "move", "label": "A", "x": 4.44, "y": -7.98 },
+        { "action": "move", "label": "A", "x": 2.38, "y": -2.11 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "A", "x": 0.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 7.25, "y": -7.85 },
+          "B": { "type": "point", "defined": true, "x": 7.9, "y": -7.43 },
+          "C": { "type": "point", "defined": true, "x": 4.64, "y": 4.62 },
+          "D": { "type": "point", "defined": true, "x": 5.43, "y": -5.6 },
+          "E": { "type": "point", "defined": true, "x": 5.91, "y": 5.51 },
+          "F": { "type": "point", "defined": true, "x": 4.0, "y": 3.84 },
+          "G": { "type": "point", "defined": true, "x": 6.33, "y": 7.15 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [7.25, -7.85],
+              [7.9, -7.43],
+              [4.64, 4.62],
+              [5.43, -5.6],
+              [5.91, 5.51],
+              [4.0, 3.84],
+              [6.33, 7.15]
+            ],
+            "length": 41.21289427911903
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": 7.25, "y": -7.85 },
+          "V_{2}": { "type": "point", "defined": true, "x": 7.9, "y": -7.43 },
+          "V_{3}": { "type": "point", "defined": true, "x": 4.64, "y": 4.62 },
+          "V_{4}": { "type": "point", "defined": true, "x": 5.43, "y": -5.6 },
+          "V_{5}": { "type": "point", "defined": true, "x": 5.91, "y": 5.51 },
+          "V_{6}": { "type": "point", "defined": true, "x": 4.0, "y": 3.84 },
+          "V_{7}": { "type": "point", "defined": true, "x": 6.33, "y": 7.15 },
+          "W": { "type": "point", "defined": true, "x": 7.9, "y": -7.43 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.25, "y": -7.85 },
+          "B": { "type": "point", "defined": true, "x": 7.9, "y": -7.43 },
+          "C": { "type": "point", "defined": true, "x": 4.64, "y": 4.62 },
+          "D": { "type": "point", "defined": true, "x": 7.83, "y": -0.81 },
+          "E": { "type": "point", "defined": true, "x": 5.91, "y": 5.51 },
+          "F": { "type": "point", "defined": true, "x": 4.0, "y": 3.84 },
+          "G": { "type": "point", "defined": true, "x": 6.33, "y": 7.15 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [7.25, -7.85],
+              [7.9, -7.43],
+              [4.64, 4.62],
+              [7.83, -0.81],
+              [5.91, 5.51],
+              [4.0, 3.84],
+              [6.33, 7.15]
+            ],
+            "length": 32.74495034009257
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": 7.25, "y": -7.85 },
+          "V_{2}": { "type": "point", "defined": true, "x": 7.9, "y": -7.43 },
+          "V_{3}": { "type": "point", "defined": true, "x": 4.64, "y": 4.62 },
+          "V_{4}": { "type": "point", "defined": true, "x": 7.83, "y": -0.81 },
+          "V_{5}": { "type": "point", "defined": true, "x": 5.91, "y": 5.51 },
+          "V_{6}": { "type": "point", "defined": true, "x": 4.0, "y": 3.84 },
+          "V_{7}": { "type": "point", "defined": true, "x": 6.33, "y": 7.15 },
+          "W": { "type": "point", "defined": true, "x": 7.9, "y": -7.43 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.25, "y": -7.85 },
+          "B": { "type": "point", "defined": true, "x": 7.9, "y": -7.43 },
+          "C": { "type": "point", "defined": true, "x": 4.64, "y": 4.62 },
+          "D": { "type": "point", "defined": true, "x": 7.83, "y": -0.81 },
+          "E": { "type": "point", "defined": true, "x": 5.91, "y": 5.51 },
+          "F": { "type": "point", "defined": true, "x": 4.0, "y": 3.84 },
+          "G": { "type": "point", "defined": true, "x": -2.92, "y": -4.55 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [7.25, -7.85],
+              [7.9, -7.43],
+              [4.64, 4.62],
+              [7.83, -0.81],
+              [5.91, 5.51],
+              [4.0, 3.84],
+              [-2.92, -4.55]
+            ],
+            "length": 39.57270334840383
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": 7.25, "y": -7.85 },
+          "V_{2}": { "type": "point", "defined": true, "x": 7.9, "y": -7.43 },
+          "V_{3}": { "type": "point", "defined": true, "x": 4.64, "y": 4.62 },
+          "V_{4}": { "type": "point", "defined": true, "x": 7.83, "y": -0.81 },
+          "V_{5}": { "type": "point", "defined": true, "x": 5.91, "y": 5.51 },
+          "V_{6}": { "type": "point", "defined": true, "x": 4.0, "y": 3.84 },
+          "V_{7}": { "type": "point", "defined": true, "x": -2.92, "y": -4.55 },
+          "W": { "type": "point", "defined": true, "x": 7.9, "y": -7.43 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 4.44, "y": -7.98 },
+          "B": { "type": "point", "defined": true, "x": 7.9, "y": -7.43 },
+          "C": { "type": "point", "defined": true, "x": 4.64, "y": 4.62 },
+          "D": { "type": "point", "defined": true, "x": 7.83, "y": -0.81 },
+          "E": { "type": "point", "defined": true, "x": 5.91, "y": 5.51 },
+          "F": { "type": "point", "defined": true, "x": 4.0, "y": 3.84 },
+          "G": { "type": "point", "defined": true, "x": -2.92, "y": -4.55 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [4.44, -7.98],
+              [7.9, -7.43],
+              [4.64, 4.62],
+              [7.83, -0.81],
+              [5.91, 5.51],
+              [4.0, 3.84],
+              [-2.92, -4.55]
+            ],
+            "length": 42.30225821732887
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": 4.44, "y": -7.98 },
+          "V_{2}": { "type": "point", "defined": true, "x": 7.9, "y": -7.43 },
+          "V_{3}": { "type": "point", "defined": true, "x": 4.64, "y": 4.62 },
+          "V_{4}": { "type": "point", "defined": true, "x": 7.83, "y": -0.81 },
+          "V_{5}": { "type": "point", "defined": true, "x": 5.91, "y": 5.51 },
+          "V_{6}": { "type": "point", "defined": true, "x": 4.0, "y": 3.84 },
+          "V_{7}": { "type": "point", "defined": true, "x": -2.92, "y": -4.55 },
+          "W": { "type": "point", "defined": true, "x": 7.9, "y": -7.43 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.38, "y": -2.11 },
+          "B": { "type": "point", "defined": true, "x": 7.9, "y": -7.43 },
+          "C": { "type": "point", "defined": true, "x": 4.64, "y": 4.62 },
+          "D": { "type": "point", "defined": true, "x": 7.83, "y": -0.81 },
+          "E": { "type": "point", "defined": true, "x": 5.91, "y": 5.51 },
+          "F": { "type": "point", "defined": true, "x": 4.0, "y": 3.84 },
+          "G": { "type": "point", "defined": true, "x": -2.92, "y": -4.55 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [2.38, -2.11],
+              [7.9, -7.43],
+              [4.64, 4.62],
+              [7.83, -0.81],
+              [5.91, 5.51],
+              [4.0, 3.84],
+              [-2.92, -4.55]
+            ],
+            "length": 46.46515907395798
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": 2.38, "y": -2.11 },
+          "V_{2}": { "type": "point", "defined": true, "x": 7.9, "y": -7.43 },
+          "V_{3}": { "type": "point", "defined": true, "x": 4.64, "y": 4.62 },
+          "V_{4}": { "type": "point", "defined": true, "x": 7.83, "y": -0.81 },
+          "V_{5}": { "type": "point", "defined": true, "x": 5.91, "y": 5.51 },
+          "V_{6}": { "type": "point", "defined": true, "x": 4.0, "y": 3.84 },
+          "V_{7}": { "type": "point", "defined": true, "x": -2.92, "y": -4.55 },
+          "W": { "type": "point", "defined": true, "x": 7.9, "y": -7.43 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.38, "y": -2.11 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 4.64, "y": 4.62 },
+          "D": { "type": "point", "defined": true, "x": 7.83, "y": -0.81 },
+          "E": { "type": "point", "defined": true, "x": 5.91, "y": 5.51 },
+          "F": { "type": "point", "defined": true, "x": 4.0, "y": 3.84 },
+          "G": { "type": "point", "defined": true, "x": -2.92, "y": -4.55 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [2.38, -2.11],
+              [0.0, 0.0],
+              [4.64, 4.62],
+              [7.83, -0.81],
+              [5.91, 5.51],
+              [4.0, 3.84],
+              [-2.92, -4.55]
+            ],
+            "length": 36.04409300607155
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": 2.38, "y": -2.11 },
+          "V_{2}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "V_{3}": { "type": "point", "defined": true, "x": 4.64, "y": 4.62 },
+          "V_{4}": { "type": "point", "defined": true, "x": 7.83, "y": -0.81 },
+          "V_{5}": { "type": "point", "defined": true, "x": 5.91, "y": 5.51 },
+          "V_{6}": { "type": "point", "defined": true, "x": 4.0, "y": 3.84 },
+          "V_{7}": { "type": "point", "defined": true, "x": -2.92, "y": -4.55 },
+          "W": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 4.64, "y": 4.62 },
+          "D": { "type": "point", "defined": true, "x": 7.83, "y": -0.81 },
+          "E": { "type": "point", "defined": true, "x": 5.91, "y": 5.51 },
+          "F": { "type": "point", "defined": true, "x": 4.0, "y": 3.84 },
+          "G": { "type": "point", "defined": true, "x": -2.92, "y": -4.55 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [0.0, 0.0],
+              [4.64, 4.62],
+              [7.83, -0.81],
+              [5.91, 5.51],
+              [4.0, 3.84],
+              [-2.92, -4.55]
+            ],
+            "length": 32.863448417312846
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "V_{2}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "V_{3}": { "type": "point", "defined": true, "x": 4.64, "y": 4.62 },
+          "V_{4}": { "type": "point", "defined": true, "x": 7.83, "y": -0.81 },
+          "V_{5}": { "type": "point", "defined": true, "x": 5.91, "y": 5.51 },
+          "V_{6}": { "type": "point", "defined": true, "x": 4.0, "y": 3.84 },
+          "V_{7}": { "type": "point", "defined": true, "x": -2.92, "y": -4.55 },
+          "W": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "polygon-polyline-009",
+      "group": "polygon",
+      "script": [
+        "A = (-6, 1)",
+        "B = (-2, 4)",
+        "O = (3, 0)",
+        "r = 7",
+        "k = Circle(O, r)",
+        "l = Line(A, B)",
+        "X = Intersect(l, k, 1)",
+        "C = (5.54, -0.04)",
+        "D = (-1.15, -1.37)",
+        "pl = PolyLine(A, B, X, C, D)",
+        "V = Vertex(pl)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "r", "value": 0.5 },
+        { "action": "move", "label": "B", "x": -2.0, "y": 1.0 },
+        { "action": "set_number", "label": "r", "value": 4.0 },
+        { "action": "move", "label": "O", "x": 20.0, "y": 20.0 },
+        { "action": "move", "label": "O", "x": 3.0, "y": 0.0 },
+        { "action": "set_number", "label": "r", "value": 7.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": 4.0 },
+          "O": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 7.0 },
+          "k": { "type": "circle", "defined": true, "cx": 3.0, "cy": 0.0, "r": 7.0 },
+          "l": { "type": "line", "defined": true, "a": -3.0, "b": 4.0, "c": -22.0 },
+          "X": { "type": "point", "defined": true, "x": -3.3196922894835073, "y": 3.0102307828873696 },
+          "C": { "type": "point", "defined": true, "x": 5.54, "y": -0.04 },
+          "D": { "type": "point", "defined": true, "x": -1.15, "y": -1.37 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-6.0, 1.0],
+              [-2.0, 4.0],
+              [-3.3196922894835073, 3.0102307828873696],
+              [5.54, -0.04],
+              [-1.15, -1.37]
+            ],
+            "length": 22.84060070128249
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "V_{2}": { "type": "point", "defined": true, "x": -2.0, "y": 4.0 },
+          "V_{3}": { "type": "point", "defined": true, "x": -3.3196922894835073, "y": 3.0102307828873696 },
+          "V_{4}": { "type": "point", "defined": true, "x": 5.54, "y": -0.04 },
+          "V_{5}": { "type": "point", "defined": true, "x": -1.15, "y": -1.37 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": 4.0 },
+          "O": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 0.5 },
+          "k": { "type": "circle", "defined": true, "cx": 3.0, "cy": 0.0, "r": 0.5 },
+          "l": { "type": "line", "defined": true, "a": -3.0, "b": 4.0, "c": -22.0 },
+          "X": { "type": "point", "defined": false },
+          "C": { "type": "point", "defined": true, "x": 5.54, "y": -0.04 },
+          "D": { "type": "point", "defined": true, "x": -1.15, "y": -1.37 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-6.0, 1.0],
+              [-2.0, 4.0],
+              null,
+              [5.54, -0.04],
+              [-1.15, -1.37]
+            ],
+            "length": 11.820923691113983
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "V_{2}": { "type": "point", "defined": true, "x": -2.0, "y": 4.0 },
+          "V_{3}": { "type": "point", "defined": false },
+          "V_{4}": { "type": "point", "defined": true, "x": 5.54, "y": -0.04 },
+          "V_{5}": { "type": "point", "defined": true, "x": -1.15, "y": -1.37 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "O": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 0.5 },
+          "k": { "type": "circle", "defined": true, "cx": 3.0, "cy": 0.0, "r": 0.5 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": -4.0 },
+          "X": { "type": "point", "defined": false },
+          "C": { "type": "point", "defined": true, "x": 5.54, "y": -0.04 },
+          "D": { "type": "point", "defined": true, "x": -1.15, "y": -1.37 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-6.0, 1.0],
+              [-2.0, 1.0],
+              null,
+              [5.54, -0.04],
+              [-1.15, -1.37]
+            ],
+            "length": 10.820923691113983
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "V_{2}": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "V_{3}": { "type": "point", "defined": false },
+          "V_{4}": { "type": "point", "defined": true, "x": 5.54, "y": -0.04 },
+          "V_{5}": { "type": "point", "defined": true, "x": -1.15, "y": -1.37 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "O": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 4.0 },
+          "k": { "type": "circle", "defined": true, "cx": 3.0, "cy": 0.0, "r": 4.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": -4.0 },
+          "X": { "type": "point", "defined": true, "x": -0.8729833462074169, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 5.54, "y": -0.04 },
+          "D": { "type": "point", "defined": true, "x": -1.15, "y": -1.37 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-6.0, 1.0],
+              [-2.0, 1.0],
+              [-0.8729833462074169, 1.0],
+              [5.54, -0.04],
+              [-1.15, -1.37]
+            ],
+            "length": 18.4447053397893
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "V_{2}": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "V_{3}": { "type": "point", "defined": true, "x": -0.8729833462074169, "y": 1.0 },
+          "V_{4}": { "type": "point", "defined": true, "x": 5.54, "y": -0.04 },
+          "V_{5}": { "type": "point", "defined": true, "x": -1.15, "y": -1.37 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "O": { "type": "point", "defined": true, "x": 20.0, "y": 20.0 },
+          "r": { "type": "number", "defined": true, "value": 4.0 },
+          "k": { "type": "circle", "defined": true, "cx": 20.0, "cy": 20.0, "r": 4.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": -4.0 },
+          "X": { "type": "point", "defined": false },
+          "C": { "type": "point", "defined": true, "x": 5.54, "y": -0.04 },
+          "D": { "type": "point", "defined": true, "x": -1.15, "y": -1.37 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-6.0, 1.0],
+              [-2.0, 1.0],
+              null,
+              [5.54, -0.04],
+              [-1.15, -1.37]
+            ],
+            "length": 10.820923691113983
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "V_{2}": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "V_{3}": { "type": "point", "defined": false },
+          "V_{4}": { "type": "point", "defined": true, "x": 5.54, "y": -0.04 },
+          "V_{5}": { "type": "point", "defined": true, "x": -1.15, "y": -1.37 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "O": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 4.0 },
+          "k": { "type": "circle", "defined": true, "cx": 3.0, "cy": 0.0, "r": 4.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": -4.0 },
+          "X": { "type": "point", "defined": true, "x": -0.8729833462074169, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 5.54, "y": -0.04 },
+          "D": { "type": "point", "defined": true, "x": -1.15, "y": -1.37 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-6.0, 1.0],
+              [-2.0, 1.0],
+              [-0.8729833462074169, 1.0],
+              [5.54, -0.04],
+              [-1.15, -1.37]
+            ],
+            "length": 18.4447053397893
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "V_{2}": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "V_{3}": { "type": "point", "defined": true, "x": -0.8729833462074169, "y": 1.0 },
+          "V_{4}": { "type": "point", "defined": true, "x": 5.54, "y": -0.04 },
+          "V_{5}": { "type": "point", "defined": true, "x": -1.15, "y": -1.37 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "O": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 7.0 },
+          "k": { "type": "circle", "defined": true, "cx": 3.0, "cy": 0.0, "r": 7.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": -4.0 },
+          "X": { "type": "point", "defined": true, "x": -3.928203230275509, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 5.54, "y": -0.04 },
+          "D": { "type": "point", "defined": true, "x": -1.15, "y": -1.37 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-6.0, 1.0],
+              [-2.0, 1.0],
+              [-3.928203230275509, 1.0],
+              [5.54, -0.04],
+              [-1.15, -1.37]
+            ],
+            "length": 22.27427639054742
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "V_{2}": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "V_{3}": { "type": "point", "defined": true, "x": -3.928203230275509, "y": 1.0 },
+          "V_{4}": { "type": "point", "defined": true, "x": 5.54, "y": -0.04 },
+          "V_{5}": { "type": "point", "defined": true, "x": -1.15, "y": -1.37 }
+        }
+      ]
+    },
+    {
+      "id": "polygon-polyline-010",
+      "group": "polygon",
+      "script": [
+        "A = (-6, 1)",
+        "B = (-2, 4)",
+        "O = (3, 0)",
+        "r = 7",
+        "k = Circle(O, r)",
+        "l = Line(A, B)",
+        "X = Intersect(l, k, 1)",
+        "C = (-7.53, -5.77)",
+        "D = (1.29, -7.01)",
+        "pl = PolyLine(A, B, X, C, D)",
+        "V = Vertex(pl)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "r", "value": 0.5 },
+        { "action": "move", "label": "B", "x": -2.0, "y": 1.0 },
+        { "action": "set_number", "label": "r", "value": 4.0 },
+        { "action": "move", "label": "O", "x": 20.0, "y": 20.0 },
+        { "action": "move", "label": "O", "x": 3.0, "y": 0.0 },
+        { "action": "set_number", "label": "r", "value": 7.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": 4.0 },
+          "O": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 7.0 },
+          "k": { "type": "circle", "defined": true, "cx": 3.0, "cy": 0.0, "r": 7.0 },
+          "l": { "type": "line", "defined": true, "a": -3.0, "b": 4.0, "c": -22.0 },
+          "X": { "type": "point", "defined": true, "x": -3.3196922894835073, "y": 3.0102307828873696 },
+          "C": { "type": "point", "defined": true, "x": -7.53, "y": -5.77 },
+          "D": { "type": "point", "defined": true, "x": 1.29, "y": -7.01 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-6.0, 1.0],
+              [-2.0, 4.0],
+              [-3.3196922894835073, 3.0102307828873696],
+              [-7.53, -5.77],
+              [1.29, -7.01]
+            ],
+            "length": 25.293866571852856
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "V_{2}": { "type": "point", "defined": true, "x": -2.0, "y": 4.0 },
+          "V_{3}": { "type": "point", "defined": true, "x": -3.3196922894835073, "y": 3.0102307828873696 },
+          "V_{4}": { "type": "point", "defined": true, "x": -7.53, "y": -5.77 },
+          "V_{5}": { "type": "point", "defined": true, "x": 1.29, "y": -7.01 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": 4.0 },
+          "O": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 0.5 },
+          "k": { "type": "circle", "defined": true, "cx": 3.0, "cy": 0.0, "r": 0.5 },
+          "l": { "type": "line", "defined": true, "a": -3.0, "b": 4.0, "c": -22.0 },
+          "X": { "type": "point", "defined": false },
+          "C": { "type": "point", "defined": true, "x": -7.53, "y": -5.77 },
+          "D": { "type": "point", "defined": true, "x": 1.29, "y": -7.01 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-6.0, 1.0],
+              [-2.0, 4.0],
+              null,
+              [-7.53, -5.77],
+              [1.29, -7.01]
+            ],
+            "length": 13.906739021662194
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "V_{2}": { "type": "point", "defined": true, "x": -2.0, "y": 4.0 },
+          "V_{3}": { "type": "point", "defined": false },
+          "V_{4}": { "type": "point", "defined": true, "x": -7.53, "y": -5.77 },
+          "V_{5}": { "type": "point", "defined": true, "x": 1.29, "y": -7.01 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "O": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 0.5 },
+          "k": { "type": "circle", "defined": true, "cx": 3.0, "cy": 0.0, "r": 0.5 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": -4.0 },
+          "X": { "type": "point", "defined": false },
+          "C": { "type": "point", "defined": true, "x": -7.53, "y": -5.77 },
+          "D": { "type": "point", "defined": true, "x": 1.29, "y": -7.01 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-6.0, 1.0],
+              [-2.0, 1.0],
+              null,
+              [-7.53, -5.77],
+              [1.29, -7.01]
+            ],
+            "length": 12.906739021662194
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "V_{2}": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "V_{3}": { "type": "point", "defined": false },
+          "V_{4}": { "type": "point", "defined": true, "x": -7.53, "y": -5.77 },
+          "V_{5}": { "type": "point", "defined": true, "x": 1.29, "y": -7.01 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "O": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 4.0 },
+          "k": { "type": "circle", "defined": true, "cx": 3.0, "cy": 0.0, "r": 4.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": -4.0 },
+          "X": { "type": "point", "defined": true, "x": -0.8729833462074169, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": -7.53, "y": -5.77 },
+          "D": { "type": "point", "defined": true, "x": 1.29, "y": -7.01 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-6.0, 1.0],
+              [-2.0, 1.0],
+              [-0.8729833462074169, 1.0],
+              [-7.53, -5.77],
+              [1.29, -7.01]
+            ],
+            "length": 23.528426324238325
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "V_{2}": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "V_{3}": { "type": "point", "defined": true, "x": -0.8729833462074169, "y": 1.0 },
+          "V_{4}": { "type": "point", "defined": true, "x": -7.53, "y": -5.77 },
+          "V_{5}": { "type": "point", "defined": true, "x": 1.29, "y": -7.01 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "O": { "type": "point", "defined": true, "x": 20.0, "y": 20.0 },
+          "r": { "type": "number", "defined": true, "value": 4.0 },
+          "k": { "type": "circle", "defined": true, "cx": 20.0, "cy": 20.0, "r": 4.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": -4.0 },
+          "X": { "type": "point", "defined": false },
+          "C": { "type": "point", "defined": true, "x": -7.53, "y": -5.77 },
+          "D": { "type": "point", "defined": true, "x": 1.29, "y": -7.01 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-6.0, 1.0],
+              [-2.0, 1.0],
+              null,
+              [-7.53, -5.77],
+              [1.29, -7.01]
+            ],
+            "length": 12.906739021662194
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "V_{2}": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "V_{3}": { "type": "point", "defined": false },
+          "V_{4}": { "type": "point", "defined": true, "x": -7.53, "y": -5.77 },
+          "V_{5}": { "type": "point", "defined": true, "x": 1.29, "y": -7.01 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "O": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 4.0 },
+          "k": { "type": "circle", "defined": true, "cx": 3.0, "cy": 0.0, "r": 4.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": -4.0 },
+          "X": { "type": "point", "defined": true, "x": -0.8729833462074169, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": -7.53, "y": -5.77 },
+          "D": { "type": "point", "defined": true, "x": 1.29, "y": -7.01 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-6.0, 1.0],
+              [-2.0, 1.0],
+              [-0.8729833462074169, 1.0],
+              [-7.53, -5.77],
+              [1.29, -7.01]
+            ],
+            "length": 23.528426324238325
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "V_{2}": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "V_{3}": { "type": "point", "defined": true, "x": -0.8729833462074169, "y": 1.0 },
+          "V_{4}": { "type": "point", "defined": true, "x": -7.53, "y": -5.77 },
+          "V_{5}": { "type": "point", "defined": true, "x": 1.29, "y": -7.01 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "O": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 7.0 },
+          "k": { "type": "circle", "defined": true, "cx": 3.0, "cy": 0.0, "r": 7.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": -4.0 },
+          "X": { "type": "point", "defined": true, "x": -3.928203230275509, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": -7.53, "y": -5.77 },
+          "D": { "type": "point", "defined": true, "x": 1.29, "y": -7.01 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-6.0, 1.0],
+              [-2.0, 1.0],
+              [-3.928203230275509, 1.0],
+              [-7.53, -5.77],
+              [1.29, -7.01]
+            ],
+            "length": 22.5034388432128
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "V_{2}": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "V_{3}": { "type": "point", "defined": true, "x": -3.928203230275509, "y": 1.0 },
+          "V_{4}": { "type": "point", "defined": true, "x": -7.53, "y": -5.77 },
+          "V_{5}": { "type": "point", "defined": true, "x": 1.29, "y": -7.01 }
+        }
+      ]
+    },
+    {
+      "id": "polygon-polyline-011",
+      "group": "polygon",
+      "script": [
+        "A = (-6, 1)",
+        "B = (-2, 4)",
+        "O = (3, 0)",
+        "r = 7",
+        "k = Circle(O, r)",
+        "l = Line(A, B)",
+        "X = Intersect(l, k, 1)",
+        "C = (-4.23, -5.94)",
+        "D = (5.22, 5.78)",
+        "pl = PolyLine(A, B, X, C, D)",
+        "V = Vertex(pl)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "r", "value": 0.5 },
+        { "action": "move", "label": "B", "x": -2.0, "y": 1.0 },
+        { "action": "set_number", "label": "r", "value": 4.0 },
+        { "action": "move", "label": "O", "x": 20.0, "y": 20.0 },
+        { "action": "move", "label": "O", "x": 3.0, "y": 0.0 },
+        { "action": "set_number", "label": "r", "value": 7.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": 4.0 },
+          "O": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 7.0 },
+          "k": { "type": "circle", "defined": true, "cx": 3.0, "cy": 0.0, "r": 7.0 },
+          "l": { "type": "line", "defined": true, "a": -3.0, "b": 4.0, "c": -22.0 },
+          "X": { "type": "point", "defined": true, "x": -3.3196922894835073, "y": 3.0102307828873696 },
+          "C": { "type": "point", "defined": true, "x": -4.23, "y": -5.94 },
+          "D": { "type": "point", "defined": true, "x": 5.22, "y": 5.78 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-6.0, 1.0],
+              [-2.0, 4.0],
+              [-3.3196922894835073, 3.0102307828873696],
+              [-4.23, -5.94],
+              [5.22, 5.78]
+            ],
+            "length": 30.701281248713236
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "V_{2}": { "type": "point", "defined": true, "x": -2.0, "y": 4.0 },
+          "V_{3}": { "type": "point", "defined": true, "x": -3.3196922894835073, "y": 3.0102307828873696 },
+          "V_{4}": { "type": "point", "defined": true, "x": -4.23, "y": -5.94 },
+          "V_{5}": { "type": "point", "defined": true, "x": 5.22, "y": 5.78 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": 4.0 },
+          "O": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 0.5 },
+          "k": { "type": "circle", "defined": true, "cx": 3.0, "cy": 0.0, "r": 0.5 },
+          "l": { "type": "line", "defined": true, "a": -3.0, "b": 4.0, "c": -22.0 },
+          "X": { "type": "point", "defined": false },
+          "C": { "type": "point", "defined": true, "x": -4.23, "y": -5.94 },
+          "D": { "type": "point", "defined": true, "x": 5.22, "y": 5.78 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-6.0, 1.0],
+              [-2.0, 4.0],
+              null,
+              [-4.23, -5.94],
+              [5.22, 5.78]
+            ],
+            "length": 20.055261538744517
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "V_{2}": { "type": "point", "defined": true, "x": -2.0, "y": 4.0 },
+          "V_{3}": { "type": "point", "defined": false },
+          "V_{4}": { "type": "point", "defined": true, "x": -4.23, "y": -5.94 },
+          "V_{5}": { "type": "point", "defined": true, "x": 5.22, "y": 5.78 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "O": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 0.5 },
+          "k": { "type": "circle", "defined": true, "cx": 3.0, "cy": 0.0, "r": 0.5 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": -4.0 },
+          "X": { "type": "point", "defined": false },
+          "C": { "type": "point", "defined": true, "x": -4.23, "y": -5.94 },
+          "D": { "type": "point", "defined": true, "x": 5.22, "y": 5.78 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-6.0, 1.0],
+              [-2.0, 1.0],
+              null,
+              [-4.23, -5.94],
+              [5.22, 5.78]
+            ],
+            "length": 19.055261538744517
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "V_{2}": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "V_{3}": { "type": "point", "defined": false },
+          "V_{4}": { "type": "point", "defined": true, "x": -4.23, "y": -5.94 },
+          "V_{5}": { "type": "point", "defined": true, "x": 5.22, "y": 5.78 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "O": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 4.0 },
+          "k": { "type": "circle", "defined": true, "cx": 3.0, "cy": 0.0, "r": 4.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": -4.0 },
+          "X": { "type": "point", "defined": true, "x": -0.8729833462074169, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": -4.23, "y": -5.94 },
+          "D": { "type": "point", "defined": true, "x": 5.22, "y": 5.78 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-6.0, 1.0],
+              [-2.0, 1.0],
+              [-0.8729833462074169, 1.0],
+              [-4.23, -5.94],
+              [5.22, 5.78]
+            ],
+            "length": 27.891568744451767
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "V_{2}": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "V_{3}": { "type": "point", "defined": true, "x": -0.8729833462074169, "y": 1.0 },
+          "V_{4}": { "type": "point", "defined": true, "x": -4.23, "y": -5.94 },
+          "V_{5}": { "type": "point", "defined": true, "x": 5.22, "y": 5.78 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "O": { "type": "point", "defined": true, "x": 20.0, "y": 20.0 },
+          "r": { "type": "number", "defined": true, "value": 4.0 },
+          "k": { "type": "circle", "defined": true, "cx": 20.0, "cy": 20.0, "r": 4.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": -4.0 },
+          "X": { "type": "point", "defined": false },
+          "C": { "type": "point", "defined": true, "x": -4.23, "y": -5.94 },
+          "D": { "type": "point", "defined": true, "x": 5.22, "y": 5.78 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-6.0, 1.0],
+              [-2.0, 1.0],
+              null,
+              [-4.23, -5.94],
+              [5.22, 5.78]
+            ],
+            "length": 19.055261538744517
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "V_{2}": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "V_{3}": { "type": "point", "defined": false },
+          "V_{4}": { "type": "point", "defined": true, "x": -4.23, "y": -5.94 },
+          "V_{5}": { "type": "point", "defined": true, "x": 5.22, "y": 5.78 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "O": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 4.0 },
+          "k": { "type": "circle", "defined": true, "cx": 3.0, "cy": 0.0, "r": 4.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": -4.0 },
+          "X": { "type": "point", "defined": true, "x": -0.8729833462074169, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": -4.23, "y": -5.94 },
+          "D": { "type": "point", "defined": true, "x": 5.22, "y": 5.78 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-6.0, 1.0],
+              [-2.0, 1.0],
+              [-0.8729833462074169, 1.0],
+              [-4.23, -5.94],
+              [5.22, 5.78]
+            ],
+            "length": 27.891568744451767
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "V_{2}": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "V_{3}": { "type": "point", "defined": true, "x": -0.8729833462074169, "y": 1.0 },
+          "V_{4}": { "type": "point", "defined": true, "x": -4.23, "y": -5.94 },
+          "V_{5}": { "type": "point", "defined": true, "x": 5.22, "y": 5.78 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "O": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 7.0 },
+          "k": { "type": "circle", "defined": true, "cx": 3.0, "cy": 0.0, "r": 7.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": -4.0 },
+          "X": { "type": "point", "defined": true, "x": -3.928203230275509, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": -4.23, "y": -5.94 },
+          "D": { "type": "point", "defined": true, "x": 5.22, "y": 5.78 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-6.0, 1.0],
+              [-2.0, 1.0],
+              [-3.928203230275509, 1.0],
+              [-4.23, -5.94],
+              [5.22, 5.78]
+            ],
+            "length": 27.93002372221521
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "V_{2}": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "V_{3}": { "type": "point", "defined": true, "x": -3.928203230275509, "y": 1.0 },
+          "V_{4}": { "type": "point", "defined": true, "x": -4.23, "y": -5.94 },
+          "V_{5}": { "type": "point", "defined": true, "x": 5.22, "y": 5.78 }
+        }
+      ]
+    },
+    {
+      "id": "polygon-polyline-012",
+      "group": "polygon",
+      "script": [
+        "A = (0, 0)",
+        "B = (3, 4)",
+        "C = (3, 4)",
+        "D = (0, 0)",
+        "pl = PolyLine(A, B, C, D, A)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 6.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 1000000.0, "y": 0.0 },
+        { "action": "move", "label": "A", "x": 1.0E-6, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [3.0, 4.0],
+              [3.0, 4.0],
+              [0.0, 0.0],
+              [0.0, 0.0]
+            ],
+            "length": 10.0
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "C": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [3.0, 4.0],
+              [6.0, 0.0],
+              [0.0, 0.0],
+              [0.0, 0.0]
+            ],
+            "length": 16.0
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1000000.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1000000.0, 0.0],
+              [6.0, 0.0],
+              [0.0, 0.0],
+              [0.0, 0.0]
+            ],
+            "length": 2000000.0
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0E-6, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1000000.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "pl": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [1.0E-6, 0.0],
+              [1000000.0, 0.0],
+              [6.0, 0.0],
+              [0.0, 0.0],
+              [1.0E-6, 0.0]
+            ],
+            "length": 2000000.0
+          }
+        }
+      ]
+    }
+  ]
+}

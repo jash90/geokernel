@@ -8,11 +8,32 @@
 //! When a free object changes, only its descendants are recomputed, in
 //! creation order, and a branch is cut as soon as a recomputed value turns
 //! out to be unchanged.
+//!
+//! # Definitions with any number of parents
+//!
+//! [`Def`] and [`Value`] are `Copy` and have a fixed size, so a definition
+//! that reads any number of objects (the vertices of a polygon, for example)
+//! keeps them in a side table of the construction and holds an [`IdList`],
+//! a small `Copy` handle to one stored list:
+//!
+//! - [`Construction::add_with_list`] stores the list, passes its handle to a
+//!   closure that makes the definition, and adds the object. When the object
+//!   is rejected the list is removed again, so a failed call leaves the
+//!   construction as it was.
+//! - [`Construction::list`] reads a stored list back.
+//! - [`Def::list`] gives the handle a definition holds, and [`Def::with_list`]
+//!   replaces it. To copy such a definition into another construction, store
+//!   `list(h)` there with `add_with_list` and pass `def.with_list(new_h)`.
+//!
+//! Stored lists never change. The objects of a list are parents like any
+//! other: they are linked into the dependency graph when the object is added,
+//! so incremental updates treat them exactly like fixed parents.
 
 use crate::algo::conic::ConicDef;
 use crate::algo::lines::LineDef;
 use crate::algo::measure::MeasureDef;
 use crate::algo::point::PointDef;
+use crate::algo::polygon::PolygonDef;
 use crate::algo::predicate::PredicateDef;
 use crate::algo::transform::TransformDef;
 use crate::algo::vector::VectorDef;
@@ -32,6 +53,37 @@ impl Id {
     }
 }
 
+/// Handle of a list of objects stored in one [`Construction`] (see
+/// [`Construction::add_with_list`]).
+///
+/// A handle is only meaningful in the construction that stored the list. A
+/// construction checks only that a handle lies within its own lists:
+/// [`Construction::list`] reads a handle beyond them as an empty list, and
+/// adding a definition with such a handle fails. A handle from another
+/// construction that happens to lie within the lists reads whatever objects
+/// are stored there. Several definitions may share one handle; a list that
+/// no definition reads any more stays stored and does no harm.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct IdList {
+    start: u32,
+    len: u32,
+}
+
+impl IdList {
+    /// How many objects the list holds.
+    pub fn len(self) -> usize {
+        self.len as usize
+    }
+
+    pub fn is_empty(self) -> bool {
+        self.len == 0
+    }
+
+    fn range(self) -> std::ops::Range<usize> {
+        self.start as usize..self.start as usize + self.len as usize
+    }
+}
+
 /// What an object is, independent of whether it is currently defined.
 #[non_exhaustive]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -45,6 +97,8 @@ pub enum Kind {
     Ray,
     /// A true or false answer, such as the result of `AreCollinear`.
     Boolean,
+    Polygon,
+    PolyLine,
 }
 
 impl fmt::Display for Kind {
@@ -58,6 +112,8 @@ impl fmt::Display for Kind {
             Kind::Vector => "vector",
             Kind::Ray => "ray",
             Kind::Boolean => "boolean",
+            Kind::Polygon => "polygon",
+            Kind::PolyLine => "polyline",
         })
     }
 }
@@ -111,6 +167,17 @@ pub enum Value {
     /// prover's "unknown" answer, so the kernel reports `Undefined` only when
     /// a predicate cannot decide.
     Bool(bool),
+    /// A polygon with its signed area: positive when the vertices run
+    /// counter-clockwise. The vertices are not copied into the value; read
+    /// them with [`Construction::vertices`].
+    Polygon {
+        area: f64,
+    },
+    /// A polyline with its length. Its vertices are read with
+    /// [`Construction::vertices`] like those of a polygon.
+    PolyLine {
+        length: f64,
+    },
     /// The object does not exist for the current positions
     /// (for example two circles that no longer meet).
     Undefined,
@@ -145,6 +212,8 @@ impl Value {
             Value::Vector { x, y } => x.is_finite() && y.is_finite(),
             Value::Ray { x, y, a, b, c } => [x, y, a, b, c].iter().all(|v| v.is_finite()),
             Value::Bool(_) => true,
+            Value::Polygon { area } => area.is_finite(),
+            Value::PolyLine { length } => length.is_finite(),
             Value::Undefined => true,
         }
     }
@@ -224,6 +293,8 @@ pub enum Def {
     Predicate(PredicateDef),
     /// Points from `ClosestPoint` and `Trilinear`.
     Point(PointDef),
+    /// Polygons, polylines and what is measured on them.
+    Polygon(PolygonDef),
 }
 
 impl Def {
@@ -245,6 +316,24 @@ impl Def {
             Def::Vector(d) => d.kind(),
             Def::Predicate(d) => d.kind(),
             Def::Point(d) => d.kind(),
+            Def::Polygon(d) => d.kind(),
+        }
+    }
+
+    /// The stored list of parents this definition reads, if it has one.
+    pub fn list(&self) -> Option<IdList> {
+        match self {
+            Def::Polygon(d) => d.list(),
+            _ => None,
+        }
+    }
+
+    /// The same definition reading the list `list` instead of its own.
+    /// A definition without a list is returned unchanged.
+    pub fn with_list(self, list: IdList) -> Def {
+        match self {
+            Def::Polygon(d) => Def::Polygon(d.with_list(list)),
+            other => other,
         }
     }
 
@@ -278,6 +367,7 @@ impl Def {
             Def::Vector(d) => d.parents(),
             Def::Predicate(d) => d.parents(),
             Def::Point(d) => d.parents(),
+            Def::Polygon(d) => d.parents(),
         }
     }
 }
@@ -327,6 +417,13 @@ impl fmt::Display for Error {
 
 impl std::error::Error for Error {}
 
+/// A state to return to with [`Construction::rollback`].
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct Checkpoint {
+    len: usize,
+    lists: usize,
+}
+
 /// A geometric construction.
 #[derive(Default)]
 pub struct Construction {
@@ -339,6 +436,8 @@ pub struct Construction {
     /// objects, decided when it is created (see [`algo::intersect::Hint`]).
     hints: Vec<algo::intersect::Hint>,
     by_label: HashMap<String, Id>,
+    /// The stored lists of parents, one after the other (see [`IdList`]).
+    lists: Vec<Id>,
     // Scratch state for updates, kept to avoid allocating on every drag.
     dirty: DirtySet,
 }
@@ -480,9 +579,80 @@ impl Construction {
         self.values[id.0]
     }
 
+    /// The vertices of a polygon or polyline in order, `None` for a vertex
+    /// that is undefined. Nothing for any other object, and nothing for a
+    /// regular polygon that is undefined.
+    pub fn vertices(&self, id: Id) -> algo::polygon::Vertices<'_> {
+        algo::polygon::Vertices::of(self, id)
+    }
+
+    /// How many ids the stored lists hold together.
+    #[cfg(test)]
+    pub(crate) fn stored_ids(&self) -> usize {
+        self.lists.len()
+    }
+
     /// The objects computed from `id`.
     pub(crate) fn children(&self, id: Id) -> &[Id] {
         &self.children[id.0]
+    }
+
+    /// Checks a definition and computes the value it would have if it were
+    /// added now, without adding it.
+    pub(crate) fn evaluate(&self, def: Def) -> Result<Value, Error> {
+        self.check(&def)?;
+        let def = algo::intersect::prepare(self, def);
+        let hint = algo::intersect::hint(self, &def);
+        Ok(self.compute_with(def, |_| hint))
+    }
+
+    /// The current length of the construction and of its lists, to return to
+    /// with [`Construction::rollback`].
+    pub(crate) fn checkpoint(&self) -> Checkpoint {
+        Checkpoint {
+            len: self.defs.len(),
+            lists: self.lists.len(),
+        }
+    }
+
+    /// Removes every object added after `at`, newest first, together with
+    /// the edges from its parents and the lists stored since. No object may
+    /// have been moved in between.
+    pub(crate) fn rollback(&mut self, at: Checkpoint) {
+        while self.defs.len() > at.len {
+            let id = self.defs.len() - 1;
+            let def = self.defs[id];
+            for parent in self.read_ids(&def) {
+                // Children are linked in creation order: the newest are last.
+                let children = &mut self.children[parent.0];
+                while children.last().is_some_and(|c| c.0 >= id) {
+                    children.pop();
+                }
+            }
+            self.defs.pop();
+            self.values.pop();
+            self.children.pop();
+            self.hints.pop();
+            if let Some(label) = self.labels.pop() {
+                self.by_label.remove(&label);
+            }
+        }
+        self.lists.truncate(at.lists.min(self.lists.len()));
+    }
+
+    /// Every object `def` reads: its parents, the objects its rule also
+    /// reads (for example the line an intersection was prepared with), and
+    /// its list. An object may appear more than once.
+    fn read_ids(&self, def: &Def) -> Vec<Id> {
+        let mut ids = algo::intersect::hidden_parents(self, def);
+        ids.extend(algo::vector::hidden_parents(self, def));
+        ids.extend(algo::predicate::hidden_parents(self, def));
+        ids.extend(algo::polygon::hidden_parents(self, def));
+        ids.extend_from_slice(def.parents().as_slice());
+        if let Some(list) = def.list() {
+            ids.extend_from_slice(self.list(list));
+        }
+        ids
     }
 
     /// Adds an object and computes its value.
@@ -500,17 +670,12 @@ impl Construction {
         // compute reads the hint of the new object from `hints`
         self.hints.push(algo::intersect::hint(self, &def));
         let value = self.compute(def, id.0);
-        let parents = def.parents();
-        // Objects the rule also reads, beyond its parents.
-        let mut hidden = algo::intersect::hidden_parents(self, &def);
-        hidden.extend(algo::vector::hidden_parents(self, &def));
-        hidden.extend(algo::predicate::hidden_parents(self, &def));
-        let all = || parents.as_slice().iter().chain(&hidden);
-        for (k, parent) in all().enumerate() {
-            // An object that is read twice is still one child.
-            if !all().take(k).any(|p| p == parent) {
-                self.children[parent.0].push(id);
-            }
+        // An object that is read twice is still one child.
+        let mut parents = self.read_ids(&def);
+        parents.sort_unstable();
+        parents.dedup();
+        for parent in parents {
+            self.children[parent.0].push(id);
         }
         self.defs.push(def);
         self.values.push(value);
@@ -518,6 +683,44 @@ impl Construction {
         self.children.push(Vec::new());
         self.by_label.insert(label.to_string(), id);
         Ok(id)
+    }
+
+    /// Stores `ids` as a list of parents and adds the object that `make`
+    /// defines from its handle (see the [module docs](self)). When the object
+    /// is rejected, the list is removed again and the error is returned.
+    pub fn add_with_list(
+        &mut self,
+        label: &str,
+        ids: &[Id],
+        make: impl FnOnce(IdList) -> Def,
+    ) -> Result<Id, Error> {
+        let start = self.lists.len();
+        let list = match (u32::try_from(start), u32::try_from(ids.len())) {
+            (Ok(start), Ok(len)) if start.checked_add(len).is_some() => IdList { start, len },
+            _ => return Err(Error::UnknownObject),
+        };
+        self.lists.extend_from_slice(ids);
+        let result = self.add(label, make(list));
+        if result.is_err() {
+            self.lists.truncate(start);
+        }
+        result
+    }
+
+    /// The objects of a stored list. A handle that this construction did not
+    /// give out reads as an empty list.
+    pub fn list(&self, list: IdList) -> &[Id] {
+        self.lists.get(list.range()).unwrap_or(&[])
+    }
+
+    /// Checks that `list` was stored here and that every object in it exists
+    /// and has one of the `expected` kinds.
+    pub(crate) fn expect_list(&self, list: IdList, expected: &'static [Kind]) -> Result<(), Error> {
+        let ids = self.lists.get(list.range()).ok_or(Error::UnknownObject)?;
+        for &id in ids {
+            self.expect(id, expected)?;
+        }
+        Ok(())
     }
 
     /// Moves a free point or a free vector and recomputes everything that
@@ -667,6 +870,7 @@ impl Construction {
             Def::Vector(d) => d.check(self),
             Def::Predicate(d) => d.check(self),
             Def::Point(d) => d.check(self),
+            Def::Polygon(d) => d.check(self),
         }
     }
 
@@ -686,14 +890,24 @@ impl Construction {
 
     /// `def` is the definition of the object at index `i`.
     fn compute(&self, def: Def, i: usize) -> Value {
-        match self.try_compute(def, i) {
+        self.compute_with(def, |c| c.hints[i])
+    }
+
+    /// Computes `def` with the hint that `hint` gives, which is only asked
+    /// for by intersections.
+    fn compute_with(&self, def: Def, hint: impl Fn(&Self) -> algo::intersect::Hint) -> Value {
+        match self.try_compute(def, hint) {
             Some(v) if v.is_finite() => v,
             _ => Value::Undefined,
         }
     }
 
     /// `None` means the object is undefined for the current inputs.
-    fn try_compute(&self, def: Def, i: usize) -> Option<Value> {
+    fn try_compute(
+        &self,
+        def: Def,
+        hint: impl Fn(&Self) -> algo::intersect::Hint,
+    ) -> Option<Value> {
         match def {
             Def::FreePoint { x, y } => Some(Value::Point { x, y }),
             Def::Number(v) => Some(Value::Number(v)),
@@ -710,15 +924,13 @@ impl Construction {
                 line,
                 circle,
                 which,
-            } => algo::intersect::line_circle(self, line, circle, which, self.hints[i]),
+            } => algo::intersect::line_circle(self, line, circle, which, hint(self)),
             Def::IntersectCircles {
                 c1,
                 c2,
                 which,
                 special,
-            } => {
-                algo::intersect::circles(self, c1, c2, which, special == Some(true), self.hints[i])
-            }
+            } => algo::intersect::circles(self, c1, c2, which, special == Some(true), hint(self)),
             Def::Lines(d) => d.compute(self),
             Def::Conic(d) => d.compute(self),
             Def::Measure(d) => d.compute(self),
@@ -726,6 +938,7 @@ impl Construction {
             Def::Vector(d) => d.compute(self),
             Def::Predicate(d) => d.compute(self),
             Def::Point(d) => d.compute(self),
+            Def::Polygon(d) => d.compute(self),
         }
     }
 
@@ -1147,6 +1360,54 @@ mod tests {
     }
 
     #[test]
+    fn listed_parents_are_parents_and_a_rejected_list_is_removed() {
+        use crate::algo::polygon::PolygonDef;
+        let mut c = Construction::new();
+        let p: Vec<Id> = (0..6)
+            .map(|i| pt(&mut c, &format!("P{i}"), i as f64, (i * i) as f64))
+            .collect();
+        let k = c
+            .add(
+                "k",
+                Def::CircleThrough {
+                    center: p[0],
+                    through: p[1],
+                },
+            )
+            .unwrap();
+        let area = |list| Def::Polygon(PolygonDef::AreaPoints(list));
+        // a circle in the list: rejected, and the list is not kept
+        assert!(matches!(
+            c.add_with_list("bad", &[p[0], p[1], k, p[2], p[3]], area),
+            Err(Error::WrongKind { .. })
+        ));
+        assert!(c.lists.is_empty());
+        // P1 twice: still one child of P1
+        let a = c
+            .add_with_list("a", &[p[0], p[1], p[2], p[1], p[4], p[5]], area)
+            .unwrap();
+        assert_eq!(c.lists.len(), 6);
+        assert_eq!(c.children(p[1]), &[k, a]);
+        assert_eq!(c.children(p[3]), &[] as &[Id]);
+        let list = c.def(a).list().unwrap();
+        assert_eq!(list.len(), 6);
+        assert_eq!(c.list(list), &[p[0], p[1], p[2], p[1], p[4], p[5]]);
+        let before = c.value(a);
+        assert_eq!(c.move_point(p[5], 10.0, -3.0).unwrap(), 1);
+        assert_ne!(c.value(a), before);
+        assert_eq!(c.move_point(p[3], 10.0, -3.0).unwrap(), 0);
+        // a handle this construction did not give out
+        let mut other = Construction::new();
+        pt(&mut other, "Q", 0.0, 0.0);
+        assert_eq!(other.list(list), &[] as &[Id]);
+        assert_eq!(other.add("a", c.def(a)), Err(Error::UnknownObject));
+        // a copy in the same construction may share the list
+        let b = c.add("b", c.def(a)).unwrap();
+        assert_eq!(c.value(b), c.value(a));
+        assert_eq!(c.children(p[1]), &[k, a, b]);
+    }
+
+    #[test]
     fn invalid_input_is_rejected() {
         let mut c = Construction::new();
         let a = pt(&mut c, "A", 0.0, 0.0);
@@ -1174,5 +1435,87 @@ mod tests {
         assert_eq!(c.move_point(a, f64::NAN, 0.0), Err(Error::NotFinite));
         // A rejected object leaves the construction untouched.
         assert_eq!(c.len(), 4);
+    }
+
+    /// Everything a rejected line or a rollback must leave as it was.
+    #[derive(Debug, PartialEq)]
+    struct Snapshot {
+        labels: Vec<String>,
+        by_label: Vec<(String, Id)>,
+        children: Vec<Vec<Id>>,
+        lists: Vec<Id>,
+        values: Vec<Value>,
+    }
+
+    fn snapshot(c: &Construction) -> Snapshot {
+        let mut by_label: Vec<_> = c.by_label.iter().map(|(l, &id)| (l.clone(), id)).collect();
+        by_label.sort();
+        Snapshot {
+            labels: c.labels.clone(),
+            by_label,
+            children: c.children.clone(),
+            lists: c.lists.clone(),
+            values: c.values.clone(),
+        }
+    }
+
+    #[test]
+    fn rollback_removes_objects_edges_labels_and_lists() {
+        use crate::algo::polygon::PolygonDef;
+        let mut c = Construction::new();
+        let p: Vec<Id> = (0..5)
+            .map(|i| pt(&mut c, &format!("P{i}"), i as f64, (i * i) as f64))
+            .collect();
+        let area = |list| Def::Polygon(PolygonDef::AreaPoints(list));
+        c.add_with_list("a", &p, area).unwrap();
+        c.add("s", Def::Segment(p[0], p[1])).unwrap();
+        let before = snapshot(&c);
+        let at = c.checkpoint();
+        let poly = c
+            .add_with_list("q", &[p[0], p[2], p[4]], |l| {
+                Def::Polygon(PolygonDef::Polygon(l))
+            })
+            .unwrap();
+        c.add("t", Def::Segment(p[2], p[4])).unwrap();
+        c.add("r", Def::Polygon(PolygonDef::Area(poly))).unwrap();
+        c.add_with_list("b", &[p[1], p[1], p[3], p[4], p[0]], area)
+            .unwrap();
+        assert_ne!(snapshot(&c), before);
+        c.rollback(at);
+        assert_eq!(snapshot(&c), before);
+        assert_eq!(c.hints.len(), c.len());
+        assert_eq!(c.len(), 7);
+        assert_eq!(c.id("q"), None);
+        // the construction still works after a rollback
+        let t = c.add("t", Def::Segment(p[3], p[4])).unwrap();
+        assert_eq!(c.children(p[3]), &[c.id("a").unwrap(), t]);
+        assert_eq!(c.move_point(p[3], 1.0, 1.0).unwrap(), 2);
+    }
+
+    #[test]
+    fn a_rejected_line_with_several_objects_changes_nothing() {
+        use crate::script::{exec, load};
+        let mut c = load(
+            "A = (0, 0)\nB = (4, 0)\nC = (5, 3)\nD = (2, 5)\nE = (-1, 3)\n\
+             q = Polygon(A, B, C, D, E)\nV_1 = (9, 9)\nn = 4\n",
+        )
+        .unwrap();
+        assert!(!c.lists.is_empty());
+        let before = snapshot(&c);
+        for line in [
+            "A = Area(A, B, C, D, E)",
+            "q = Polygon(A, B, C)",
+            "q = Polygon(A, B, n)",
+            "n = Vertex(q)",
+            "V_1 = InteriorAngles(q)",
+            "A = Angle(q)",
+            "w = Polygon(A, B, 2000)",
+        ] {
+            assert!(exec(&mut c, line).is_err(), "{line}");
+            assert_eq!(snapshot(&c), before, "{line}");
+        }
+        // `V_1` is taken, so the vertices are `V_{2}`, ...
+        exec(&mut c, "V = Vertex(q)").unwrap();
+        assert_eq!(c.label(Id(c.len() - 5)), "V_{2}");
     }
 }

@@ -26,7 +26,7 @@ public final class Reload {
     private Reload() {
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
         if (args.length < 2) {
             System.err.println("usage: Reload <file.xml> <label>...");
             System.exit(2);

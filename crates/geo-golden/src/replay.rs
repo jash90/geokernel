@@ -1,6 +1,6 @@
 //! Replays a golden case on `geo-kernel` and compares every snapshot.
 
-use crate::compare::{compare, line_scale_agrees, Sign};
+use crate::compare::{compare_object, line_scale_agrees, Sign};
 use crate::model::{Case, Step};
 use geo_kernel::{script, Construction};
 
@@ -71,7 +71,8 @@ pub fn replay(case: &Case) -> CaseOutcome {
                 Some(false) => out.scale_disagree.push(label.clone()),
                 None => {}
             }
-            match compare(expected, c.kind(id), &actual) {
+            let vertices: Vec<_> = c.vertices(id).collect();
+            match compare_object(expected, c.kind(id), &actual, &vertices) {
                 Ok(Sign::Agrees) => out.sign_agree += 1,
                 Ok(Sign::Flipped) => out.sign_disagree += 1,
                 Ok(Sign::NotApplicable) => {}

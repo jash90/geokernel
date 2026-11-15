@@ -99,6 +99,9 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
     if let Some(def) = parse_forced(rhs) {
         return c.add(name, def?).map(Some).map_err(|e| e.to_string());
     }
+    if let Some(result) = crate::algo::polygon::exec(c, name, rhs) {
+        return result;
+    }
     if let Some(defs) = parse_multi(c, rhs) {
         return add_outputs(c, name, defs?).map(Some);
     }
@@ -111,7 +114,7 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
 
 /// `Name(args)` split into the name and the trimmed arguments; `None` for
 /// anything else (a point literal, a number, a malformed line).
-fn split_call(rhs: &str) -> Option<(&str, Vec<&str>)> {
+pub(crate) fn split_call(rhs: &str) -> Option<(&str, Vec<&str>)> {
     if rhs.starts_with('(') {
         return None;
     }
@@ -185,7 +188,7 @@ fn add_outputs(c: &mut Construction, name: &str, defs: Vec<Def>) -> Result<Id, S
 
 /// `Construction.buildIndexedLabel`: the first `p_{n}` that is free, where
 /// for `n < 10` the short form `p_n` must be free too.
-fn index_label(c: &Construction, prefix: &str) -> String {
+pub(crate) fn index_label(c: &Construction, prefix: &str) -> String {
     let mut n = 1;
     loop {
         let long = format!("{prefix}_{{{n}}}");
@@ -223,6 +226,8 @@ fn is_finite(v: &Value) -> bool {
         Value::Vector { x, y } => x.is_finite() && y.is_finite(),
         Value::Ray { x, y, a, b, c } => [x, y, a, b, c].iter().all(|v| v.is_finite()),
         Value::Bool(_) => true,
+        Value::Polygon { area } => area.is_finite(),
+        Value::PolyLine { length } => length.is_finite(),
         Value::Undefined => false,
     }
 }

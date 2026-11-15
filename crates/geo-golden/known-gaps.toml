@@ -173,3 +173,15 @@ mismatches = ["0:t"]
 id = "points-infinity-001"
 reason = "ClosestPoint(circle, S) with S a point at infinity: GeoGebra projects the direction of S, the kernel has no points at infinity and S is undefined"
 mismatches = ["0:R", "2:R", "3:R"]
+
+# polygon
+
+[[gap]]
+id = "polygon-regundef-001"
+reason = "intended difference, recorded in DIFFERENCES.md: GeoGebra keeps the new vertices of a regular polygon whose first two points are undefined at their last coordinates ((0, 0) before the first computation); the kernel reports them undefined"
+mismatches = ["0:D", "0:E", "3:D", "3:E"]
+
+[[gap]]
+id = "polygon-regundef-002"
+reason = "intended difference, recorded in DIFFERENCES.md: GeoGebra keeps the new vertices of a regular polygon whose first two points are undefined at their last coordinates ((0, 0) before the first computation); the kernel reports them undefined"
+mismatches = ["0:D", "0:E", "0:F", "3:D", "3:E", "3:F"]

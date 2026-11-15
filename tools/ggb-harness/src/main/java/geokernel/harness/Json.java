@@ -261,6 +261,18 @@ final class Json {
             sb.append("[]");
             return;
         }
+        // A list of numbers (a vertex `[x, y]`) stays on one line.
+        if (list.stream().allMatch(v -> v instanceof Double)) {
+            sb.append('[');
+            for (int i = 0; i < list.size(); i++) {
+                if (i > 0) {
+                    sb.append(", ");
+                }
+                writeScalar(sb, list.get(i));
+            }
+            sb.append(']');
+            return;
+        }
         sb.append("[\n");
         for (int i = 0; i < list.size(); i++) {
             pad(sb, indent + 1);
