@@ -4,7 +4,8 @@
 use std::f64::consts::TAU;
 
 use super::conic::{
-    ellipse_ranges, hyperbola_ranges, parabola_ranges, plot, Eigen, Plot, FLATNESS, HUGE_RADIUS,
+    ellipse_ranges, hyperbola_ranges, parabola_ranges, plot, reaches, Eigen, Plot, FLATNESS,
+    HUGE_RADIUS,
 };
 use super::{inside, Frame, PAD};
 use crate::algo::conic_nd::{ConicData, ConicType};
@@ -449,4 +450,105 @@ fn extreme_zooms_do_not_panic() {
             }
         }
     }
+}
+
+/// Fills in the matrix of an open conic made by `conic`, from its local
+/// equation `alpha u² + beta v² + gamma u + delta = 0`.
+fn with_matrix(mut d: ConicData) -> ConicData {
+    let (alpha, beta, gamma, delta) = match d.ty {
+        ConicType::Hyperbola => {
+            let [a, b] = d.half_axes;
+            (1.0 / (a * a), -1.0 / (b * b), 0.0, -1.0)
+        }
+        _ => (0.0, 1.0, -2.0 * d.p, 0.0),
+    };
+    let ([e0, e1], [mx, my]) = (d.eigenvec, d.midpoint);
+    let xx = alpha * e0[0] * e0[0] + beta * e1[0] * e1[0];
+    let yy = alpha * e0[1] * e0[1] + beta * e1[1] * e1[1];
+    let xy = alpha * e0[0] * e0[1] + beta * e1[0] * e1[1];
+    let (lx, ly) = (gamma * e0[0], gamma * e0[1]);
+    d.matrix = [
+        xx,
+        yy,
+        xx * mx * mx + 2.0 * xy * mx * my + yy * my * my - lx * mx - ly * my + delta,
+        xy,
+        (lx - 2.0 * xx * mx - 2.0 * xy * my) / 2.0,
+        (ly - 2.0 * yy * my - 2.0 * xy * mx) / 2.0,
+    ];
+    d
+}
+
+#[test]
+fn the_open_conic_cull_never_hides_a_drawn_curve() {
+    let mut g = Lcg(41);
+    let (mut culled, mut kept_empty, mut drawn) = (0, 0, 0);
+    for i in 0..3000 {
+        let b = [g.range(-40.0, 40.0), g.range(-30.0, 30.0)];
+        let angle = g.range(0.0, TAU);
+        let d = with_matrix(if i % 2 == 0 {
+            conic(
+                ConicType::Hyperbola,
+                b,
+                angle,
+                [g.range(0.1, 8.0), g.range(0.1, 8.0)],
+                0.0,
+            )
+        } else {
+            conic(
+                ConicType::Parabola,
+                b,
+                angle,
+                [0.0, 0.0],
+                g.range(0.05, 10.0),
+            )
+        });
+        let half = 10f64.powf(g.range(-1.0, 1.5));
+        let (cx, cy) = (g.range(-30.0, 30.0), g.range(-25.0, 25.0));
+        let fr = frame(cx - half, cx + half, cy - 0.75 * half, cy + 0.75 * half);
+        let shown = !plot(&d, &fr).paths.is_empty();
+        let kept = reaches(&d, &fr);
+        assert!(
+            kept || !shown,
+            "a drawn curve was culled: {d:?} in {cx} {cy} {half}"
+        );
+        match (shown, kept) {
+            (true, _) => drawn += 1,
+            (false, true) => kept_empty += 1,
+            (false, false) => culled += 1,
+        }
+    }
+    assert!(
+        drawn > 300 && culled > 300,
+        "{drawn} drawn, {culled} culled"
+    );
+    // The edge test is about as tight as the ranges; margins differ a little.
+    assert!(kept_empty < culled / 4, "{kept_empty} kept but empty");
+}
+
+#[test]
+fn the_cull_matrix_matches_the_curve() {
+    let d = with_matrix(conic(
+        ConicType::Hyperbola,
+        [1.0, 2.0],
+        0.7,
+        [2.0, 3.0],
+        0.0,
+    ));
+    let m = d.matrix;
+    let q = |x: f64, y: f64| {
+        m[0] * x * x + m[1] * y * y + m[2] + 2.0 * (m[3] * x * y + m[4] * x + m[5] * y)
+    };
+    let ([e0, e1], t) = (d.eigenvec, 0.4f64);
+    let (u, v) = (2.0 * t.cosh(), 3.0 * t.sinh());
+    let (x, y) = (1.0 + u * e0[0] + v * e1[0], 2.0 + u * e0[1] + v * e1[1]);
+    assert!(q(x, y).abs() < 1e-9, "{}", q(x, y));
+    let d = with_matrix(conic(ConicType::Parabola, [1.0, 2.0], 0.7, [0.0, 0.0], 1.5));
+    let m = d.matrix;
+    let q = |x: f64, y: f64| {
+        m[0] * x * x + m[1] * y * y + m[2] + 2.0 * (m[3] * x * y + m[4] * x + m[5] * y)
+    };
+    let v = 1.3;
+    let u = v * v / 3.0;
+    let (x, y) = (1.0 + u * e0[0] + v * e1[0], 2.0 + u * e0[1] + v * e1[1]);
+    assert!(q(x, y).abs() < 1e-9, "{}", q(x, y));
 }

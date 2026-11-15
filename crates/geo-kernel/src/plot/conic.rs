@@ -139,6 +139,53 @@ pub fn plot(d: &ConicData, frame: &Frame) -> Plot {
 }
 
 /// Java's `(int)` of a double: towards zero, saturating, `NaN` to 0.
+/// Whether an open conic (hyperbola or parabola) has any part near the
+/// frame. Such a curve cannot lie inside a rectangle, so it reaches the
+/// rectangle exactly when it crosses one of its edges: on each edge the
+/// equation is a quadratic in the edge parameter. Nothing is allocated, so
+/// the test can run every frame. Other types answer `true`; their bounds are
+/// cheaper to test from outside.
+pub fn reaches(d: &ConicData, frame: &Frame) -> bool {
+    if !matches!(d.ty, ConicType::Hyperbola | ConicType::Parabola) {
+        return true;
+    }
+    let scale = frame.scale();
+    if !(d.defined && scale.is_finite() && scale > 0.0) {
+        return false;
+    }
+    let r = frame.visible(RANGE_MARGIN);
+    let m = d.matrix;
+    let q = |x: f64, y: f64| {
+        m[0] * x * x + m[1] * y * y + m[2] + 2.0 * (m[3] * x * y + m[4] * x + m[5] * y)
+    };
+    let corners = [
+        (r.xmin, r.ymin),
+        (r.xmax, r.ymin),
+        (r.xmax, r.ymax),
+        (r.xmin, r.ymax),
+    ];
+    (0..4).any(|i| {
+        let ((x0, y0), (x1, y1)) = (corners[i], corners[(i + 1) % 4]);
+        // q along the edge: a t² + b t + c for t in [0, 1].
+        let (c, end, mid) = (q(x0, y0), q(x1, y1), q(0.5 * (x0 + x1), 0.5 * (y0 + y1)));
+        let a = 2.0 * (end + c) - 4.0 * mid;
+        let b = end - c - a;
+        let t = -b / (2.0 * a);
+        let low = if a != 0.0 && t > 0.0 && t < 1.0 {
+            (a * t + b) * t + c
+        } else {
+            c
+        };
+        // Anything not finite is kept: the cull must never hide a curve.
+        !(c.is_finite() && end.is_finite() && low.is_finite())
+            || c.signum() != end.signum()
+            || c == 0.0
+            || end == 0.0
+            || low.signum() != c.signum()
+            || low == 0.0
+    })
+}
+
 fn java_int(v: f64) -> f64 {
     (v as i32) as f64
 }

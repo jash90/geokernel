@@ -264,6 +264,29 @@ fn off_screen_ellipses_are_culled_before_they_are_plotted() {
 }
 
 #[test]
+fn off_screen_hyperbolas_and_parabolas_are_culled_before_they_are_plotted() {
+    // The hyperbola opens left and right around (100, 0); the parabola opens
+    // to the right of x = 200. Neither comes near the standard view.
+    let wb = Workbench::from_script(
+        "F = (98, 0)\nG = (102, 0)\nk = 1\nh = Hyperbola(F, G, k)\n\
+         L = (201, 0)\nM = (199, -1)\nN = (199, 1)\nd = Line(M, N)\np = Parabola(L, d)\n",
+    )
+    .unwrap();
+    let ctx = Context::default();
+    let n = curves_tessellated();
+    stroke_triangles(&ctx, &wb, &standard(), (None, None));
+    assert_eq!(curves_tessellated(), n);
+    // Seen from near them, both are plotted.
+    stroke_triangles(
+        &ctx,
+        &wb,
+        &transform(90.0, 210.0, -45.0, 45.0),
+        (None, None),
+    );
+    assert_eq!(curves_tessellated(), n + 2);
+}
+
+#[test]
 fn extreme_zooms_draw_without_panicking() {
     let wb = Workbench::from_script(
         "F = (-2, 0)\nG = (2, 0)\nr = 3\nk = 1\ne = Ellipse(F, G, r)\nh = Hyperbola(F, G, k)\n\

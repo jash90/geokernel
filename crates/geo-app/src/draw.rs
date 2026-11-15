@@ -106,6 +106,10 @@ fn near_view(c: &Construction, id: Id, t: &ViewTransform, w: f64, h: f64) -> boo
                 near(&mut std::iter::once((d.midpoint[0], d.midpoint[1])), NEAR)
             }
             Some(d) if d.ty == ConicType::Empty || !d.defined => false,
+            // The parameter ranges of an open conic are its cull test.
+            Some(d) if matches!(d.ty, ConicType::Hyperbola | ConicType::Parabola) => {
+                geo_kernel::plot::conic::reaches(&d, &geo_kernel::plot::Frame::fit(t.view(), w, h))
+            }
             _ => true,
         },
         _ => true,
