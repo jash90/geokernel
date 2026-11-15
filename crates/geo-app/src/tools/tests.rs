@@ -271,3 +271,20 @@ fn new_points_keep_the_precision_the_zoom_asks_for() {
         }
     );
 }
+
+#[test]
+fn a_double_click_on_empty_space_makes_one_new_point() {
+    let mut s = ToolState::new(Tool::Circle);
+    assert!(matches!(
+        s.click(None, (1.0, 1.0), 2, &none),
+        Outcome::Pending
+    ));
+    assert!(matches!(
+        s.click(None, (1.004, 1.0), 2, &none),
+        Outcome::Ignored
+    ));
+    let Outcome::Run(lines) = s.click(None, (3.0, 1.0), 2, &none) else {
+        panic!("the second distinct click finishes the circle");
+    };
+    assert_eq!(lines.len(), 3, "{lines:?}");
+}

@@ -257,6 +257,8 @@ impl App {
         let regions = Regions::new(ui.max_rect(), self.keyboard.open);
         self.regions = regions;
         let painter = ui.painter().clone();
+        // The root ui of a real window has no fill of its own.
+        painter.rect_filled(ui.max_rect(), 0.0, theme::WHITE);
         painter.rect_filled(regions.splitter, 0.0, theme::TOOLBAR_BG);
         for x in [
             regions.splitter.left() + 0.5,

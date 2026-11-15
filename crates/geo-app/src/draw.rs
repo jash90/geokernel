@@ -352,10 +352,12 @@ fn paint_highlight(painter: &Painter, rect: Rect, hl: Highlight, color: Color32,
     let glow = Stroke::new(8.0, color.gamma_multiply(alpha));
     match hl {
         Highlight::Point { x, y } => {
-            painter.circle_filled(
+            // A light disc with a ring, as the reference shows under the pointer.
+            painter.circle(
                 p(x, y),
                 FREE_POINT_RADIUS + 5.0,
-                color.gamma_multiply(alpha),
+                color.gamma_multiply(alpha * 0.7),
+                Stroke::new(1.0, color.gamma_multiply(0.6)),
             );
         }
         Highlight::Stroke { x1, y1, x2, y2 } => {

@@ -320,6 +320,19 @@ impl ToolState {
             },
             _ => return Outcome::Ignored,
         };
+        if let Pick::New { x, y } = pick {
+            // A second click on a new point that is not made yet (a double
+            // click) must not make a second point on top of it. The step of
+            // `decimals` is at most half a pixel, so this is a few pixels.
+            let near = 10.0 * 10f64.powi(-(decimals as i32));
+            let twice = self.picks.iter().any(|p| match p {
+                Pick::New { x: px, y: py } => (x - px).hypot(y - py) < near,
+                Pick::Object { .. } => false,
+            });
+            if twice {
+                return Outcome::Ignored;
+            }
+        }
         self.picks.push(pick);
         match recipe::finish(self.tool, &self.kinds()) {
             None => Outcome::Pending,
