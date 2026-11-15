@@ -87,6 +87,8 @@ pub enum Kind {
     Number,
     Vector,
     Ray,
+    Polygon,
+    PolyLine,
 }
 
 impl fmt::Display for Kind {
@@ -99,6 +101,8 @@ impl fmt::Display for Kind {
             Kind::Number => "number",
             Kind::Vector => "vector",
             Kind::Ray => "ray",
+            Kind::Polygon => "polygon",
+            Kind::PolyLine => "polyline",
         })
     }
 }
@@ -148,6 +152,17 @@ pub enum Value {
         b: f64,
         c: f64,
     },
+    /// A polygon with its signed area: positive when the vertices run
+    /// counter-clockwise. The vertices are not copied into the value; read
+    /// them with [`Construction::vertices`].
+    Polygon {
+        area: f64,
+    },
+    /// A polyline with its length. Its vertices are read with
+    /// [`Construction::vertices`] like those of a polygon.
+    PolyLine {
+        length: f64,
+    },
     /// The object does not exist for the current positions
     /// (for example two circles that no longer meet).
     Undefined,
@@ -181,6 +196,8 @@ impl Value {
             Value::Number(v) => v.is_finite(),
             Value::Vector { x, y } => x.is_finite() && y.is_finite(),
             Value::Ray { x, y, a, b, c } => [x, y, a, b, c].iter().all(|v| v.is_finite()),
+            Value::Polygon { area } => area.is_finite(),
+            Value::PolyLine { length } => length.is_finite(),
             Value::Undefined => true,
         }
     }
@@ -425,6 +442,13 @@ impl Construction {
 
     pub fn value(&self, id: Id) -> Value {
         self.values[id.0]
+    }
+
+    /// The vertices of a polygon or polyline in order, `None` for a vertex
+    /// that is undefined. Nothing for any other object, and nothing for a
+    /// regular polygon that is undefined.
+    pub fn vertices(&self, id: Id) -> algo::polygon::Vertices<'_> {
+        algo::polygon::Vertices::of(self, id)
     }
 
     /// The objects computed from `id`.

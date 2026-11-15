@@ -160,7 +160,7 @@ fn add_outputs(c: &mut Construction, name: &str, defs: Vec<Def>) -> Result<Id, S
 
 /// `Construction.buildIndexedLabel`: the first `p_{n}` that is free, where
 /// for `n < 10` the short form `p_n` must be free too.
-fn index_label(c: &Construction, prefix: &str) -> String {
+pub(crate) fn index_label(c: &Construction, prefix: &str) -> String {
     let mut n = 1;
     loop {
         let long = format!("{prefix}_{{{n}}}");
@@ -197,6 +197,8 @@ fn is_finite(v: &Value) -> bool {
         Value::Number(v) => v.is_finite(),
         Value::Vector { x, y } => x.is_finite() && y.is_finite(),
         Value::Ray { x, y, a, b, c } => [x, y, a, b, c].iter().all(|v| v.is_finite()),
+        Value::Polygon { area } => area.is_finite(),
+        Value::PolyLine { length } => length.is_finite(),
         Value::Undefined => false,
     }
 }
