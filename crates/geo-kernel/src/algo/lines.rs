@@ -655,7 +655,7 @@ pub(crate) fn tangent_point_on(c: &Construction, d: LineDef, circle: Id) -> Opti
             circle: k,
             which,
         } if k == circle => Some((|| {
-            let g = c.carrier(line)?;
+            let g = c.raw_carrier(line)?;
             let (cx, cy, r) = c.circle(k)?;
             let a = CircleMatrix::new(cx, cy, r);
             if a.is_degenerate() {

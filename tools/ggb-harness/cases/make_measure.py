@@ -360,5 +360,13 @@ case("distll", [pt("A", 0, 0), pt("B", 4, 1), pt("C", 1, 3), pt("D", 2, -1), "l 
                 "g = Line(E, F)", "p = Line(S, g)", "n = PerpendicularLine(S, g)",
                 "da = Distance(p, g)", "db = Distance(n, l)", "sa = Slope(n)"],
      [mv("D", 5, 0), mv("B", 40, 10), mv("E", 0, 0), mv("D", 2, -1)])
+# Intersection of long, nearly parallel lines: GeoGebra takes the cross
+# product of the raw coefficients, which stays well above zero although the
+# angle between the lines is far below 1e-12.
+case("distll", [pt("A", 0, 0), pt("B", 10000000, 1), pt("C", -10000000, -1.000001),
+                pt("D", 10000000, 1.000001), "l = Line(A, B)", "m = Line(C, D)",
+                "S = Intersect(l, m)", "k = Distance(A, S)"],
+     [mv("D", 10000000, 1.0000001), mv("C", -10000000, -1), mv("D", 10000000, 1),
+      mv("D", 10000000, 1.00000001), mv("A", 0, 0.5), mv("B", 10, 0.000001)])
 
 cases.write()

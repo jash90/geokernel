@@ -560,13 +560,13 @@ impl Construction {
     }
 
     /// A line with `(a, b)` of unit length (see [`Value::unit_line`]).
+    #[allow(dead_code)] // part of the accessor set; every rule here reads lines raw
     pub(crate) fn line(&self, id: Id) -> Option<(f64, f64, f64)> {
         self.values[id.0].unit_line()
     }
 
     /// A line's raw coefficients, as GeoGebra holds them (see [`Value::Line`]).
     /// For code that follows an upstream formula on raw coefficients.
-    #[allow(dead_code)] // part of the accessor set; no rule reads only lines raw yet
     pub(crate) fn raw_line(&self, id: Id) -> Option<(f64, f64, f64)> {
         match self.values[id.0] {
             Value::Line { a, b, c } => Some((a, b, c)),

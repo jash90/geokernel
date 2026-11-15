@@ -109,23 +109,3 @@ mismatches = ["2:t", "3:t", "4:t", "5:t", "6:t", "8:t"]
 id = "intersect-history-003"
 reason = "GeoGebra fixes the order of the two points on the first move after they first become distinct, by nearness to the previous points (AlgoIntersectLineConic.permutation, firstIntersection, isPermutationNeeded); here that move reverses the line, so GeoGebra keeps the reversed order while the stateless kernel keeps the order of the computation"
 mismatches = ["2:P", "4:P", "5:P"]
-
-[[gap]]
-id = "intersect-rawline-001"
-reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
-mismatches = ["2:P", "5:P"]
-
-[[gap]]
-id = "intersect-rawline-002"
-reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
-mismatches = ["2:P", "5:P"]
-
-[[gap]]
-id = "intersect-rawline-004"
-reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
-mismatches = ["2:P", "5:P"]
-
-[[gap]]
-id = "intersect-rawline-005"
-reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
-mismatches = ["2:P", "5:P"]
