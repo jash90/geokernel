@@ -19,13 +19,20 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoVertexPolygon.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoAnglePolygon.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoAnglePolygonND.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoAnglePoints.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoElement.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoJoinPointsSegment.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDependentList.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoPolygon.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoPolyLine.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoPoly.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoSegment.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoPoint.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoElement.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/LabelManager.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/LabelType.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/Construction.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/Kernel.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/parser/function/ParserFunctionsFactory.java
 //   source/shared/common/src/main/java/org/geogebra/common/util/DoubleUtil.java
 //   source/shared/common/src/main/java/org/geogebra/common/util/MyMath.java
@@ -49,7 +56,8 @@
 //! `p = Polygon(A, B, C, ...)` also creates the sides of the polygon, and
 //! `Polygon(A, B, n)` its new vertices and its sides, labelled as GeoGebra
 //! labels them (see [`exec`]). Like every command that creates several
-//! objects, the set of objects is fixed when the line runs.
+//! objects, the set of objects is fixed when the line runs, and a line
+//! creates all of its objects or none.
 
 use super::measure::{angle_of_points, segment_length};
 use super::{Group, Parents, NUMBER, POINT};
@@ -901,10 +909,11 @@ impl Plan {
 ///   from 10 on, and `x`, `y`, `z` are reserved); a longer label in lower
 ///   case when it is free, else the next default segment label `f`, `g`,
 ///   `h`, ... `Polygon(A)` creates no side.
-/// - `p = Polygon(A, B, n)`: the polygon and, when it is defined as the line
-///   runs, the new vertices from the third on with default point labels (the
-///   next free of `A`, `B`, ..., `Z`), then the sides with default segment
-///   labels. Their number is fixed by `n` when the line runs.
+/// - `p = Polygon(A, B, n)`: the polygon and, when `n` gives three or more
+///   vertices as the line runs, the new vertices from the third on with
+///   default point labels (the next free of `A`, `B`, ..., `Z`), then, when
+///   `A` and `B` are defined then, the sides with default segment labels.
+///   Their number is fixed by `n` when the line runs.
 /// - `V = Vertex(p)`, `w = InteriorAngles(p)`, `w = Angle(p)`: one object per
 ///   vertex at creation (one when the polygon is undefined then for
 ///   `Vertex`), labelled `V_{1}`, `V_{2}`, ... even when there is one.
@@ -1074,10 +1083,12 @@ fn polygon_line(c: &mut Construction, name: &str, args: &[&str]) -> Result<Id, S
     plan.commit(c)
 }
 
-/// `Polygon(A, B, n)` (`AlgoPolygonRegularND`): the polygon and, when it is
-/// defined now, its new vertices and its sides, as many as `n` gives now.
-/// GeoGebra labels none of them while the polygon is undefined, also when
-/// `round(n) <= 2` (`updateOutput` returns before labelling).
+/// `Polygon(A, B, n)` (`AlgoPolygonRegularND`): the polygon, its new
+/// vertices and its sides, as many as `n` gives now. GeoGebra labels them
+/// in `updateOutput`, before it checks that the polygon is defined: nothing
+/// when `round(n) <= 2`; else every new vertex, and the sides only when
+/// they are defined then, which is when the side from `A` to `B` is (each
+/// new side starts as a copy of it).
 fn plan_regular(
     c: &Construction,
     plan: &mut Plan,
@@ -1092,15 +1103,20 @@ fn plan_regular(
             "a regular polygon may have at most {MAX_REGULAR_VERTICES} vertices"
         ));
     }
-    let poly = Def::Polygon(PolygonDef::Regular { a, b, n });
-    plan.first(name, Planned::Def(poly));
-    if !defined(c, poly)? {
+    plan.first(
+        name,
+        Planned::Def(Def::Polygon(PolygonDef::Regular { a, b, n })),
+    );
+    if count < 3 {
         return Ok(());
     }
     for k in 2..count as u32 {
         let label = next_indexed_label(c, &plan.taken, POINT_LABELS);
         let def = PolygonDef::RegularVertex { a, b, n, k };
         plan.push(label, Planned::Def(Def::Polygon(def)));
+    }
+    if !defined(c, Def::Segment(a, b))? {
+        return Ok(());
     }
     for k in 0..count as u32 {
         let label = next_indexed_label(c, &plan.taken, LINE_LABELS);
@@ -1314,29 +1330,34 @@ mod tests {
     }
 
     #[test]
-    fn regular_polygons_undefined_at_creation_have_no_outputs() {
+    fn regular_polygons_label_what_geogebra_labels_at_creation() {
         let src = "A = (0, 0)\nB = (4, 0)\nO = (10, 0)\nr = 1\nk = Circle(O, r)\n\
                    P = (0, 5)\nQ = (1, 5)\nl = Line(P, Q)\nX = Intersect(l, k)\nm = 2\n";
-        for (rhs, vertices) in [
-            ("Polygon(A, B, 0)", 0),
-            ("Polygon(A, B, 1)", 0),
-            ("Polygon(A, B, 2)", 0),
-            ("Polygon(A, B, -3)", 0),
-            ("Polygon(A, B, 2.4)", 0),
-            ("Polygon(A, B, m)", 5),
-            ("Polygon(X, B, 4)", 0),
-            ("Polygon(A, X, 4)", 0),
+        for (rhs, created, vertices) in [
+            // at most two vertices: nothing besides the polygon
+            ("Polygon(A, B, 0)", &["p"][..], 0),
+            ("Polygon(A, B, 1)", &["p"], 0),
+            ("Polygon(A, B, 2)", &["p"], 0),
+            ("Polygon(A, B, -3)", &["p"], 0),
+            ("Polygon(A, B, 2.4)", &["p"], 0),
+            ("Polygon(A, B, m)", &["p"], 5),
+            // an undefined point: the vertices, but no sides
+            ("Polygon(X, B, 4)", &["p", "C", "D"], 0),
+            ("Polygon(A, X, 3)", &["p", "C"], 0),
         ] {
             let mut c = load(src).unwrap();
             let n = c.len();
             run(&mut c, &format!("p = {rhs}")).unwrap();
-            assert_eq!(labels(&c, n), ["p"], "{rhs}");
+            assert_eq!(labels(&c, n), created, "{rhs}");
             let p = c.id("p").unwrap();
             assert_eq!(c.value(p), Value::Undefined, "{rhs}");
+            for id in c.ids().skip(n + 1) {
+                assert_eq!(c.value(id), Value::Undefined, "{rhs}");
+            }
             // the polygon follows later changes, without new objects
             c.set_number(c.id("m").unwrap(), 5.0).unwrap();
             assert_eq!(c.vertices(p).count(), vertices, "{rhs}");
-            assert_eq!(c.len(), n + 1);
+            assert_eq!(c.len(), n + created.len());
         }
     }
 

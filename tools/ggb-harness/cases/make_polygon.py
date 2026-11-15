@@ -12,6 +12,10 @@ their orientation, make them self-intersect, move vertices so that the area
 stays the same (a vertex parallel to a diagonal), change the vertex count of
 regular polygons, and make polyline points undefined (holes).
 
+Further topics cover what is labelled when a point or the vertex count is
+undefined or too small at creation, vertex counts and Vertex indices beyond
+a Java int, and Area of points one of which is undefined.
+
 The inputs only describe what to run. Snapshots come exclusively from running
 GeoGebra through the harness (`harness.sh golden polygon`).
 """
@@ -248,5 +252,77 @@ for _ in range(3):
                                  "q = Polygon(A, G, D)", "ar = Area(q)", "pe = Perimeter(q)",
                                  "V = Vertex(q)"],
          moves("ABCD", 4))
+
+# ----------------------------------------------------------------- undefined at creation
+# A point that is undefined at creation: the line AB misses the circle of
+# radius 0.5 (its distance from O is 6.2) and meets the one of radius 7.
+MISSING = [pt("A", -6, 1), pt("B", -2, 4), pt("O", 3, 0), num("r", 0.5), "k = Circle(O, r)",
+           "l = Line(A, B)", "X = Intersect(l, k, 1)"]
+APPEAR = [setn("r", 7), mv("B", -2, 2), setn("r", 0.5), setn("r", 7)]
+
+# regular polygons with at most two vertices at creation: no vertices or
+# sides are labelled, also when the vertex count grows later
+topic("regsmall")
+for n in ("0", "1", "2", "-3", "2.4", "-0.4"):
+    case("regsmall", [pt("A", 0, 0), pt("B", 2, 0), f"p = Polygon(A, B, {n})", "ar = Area(p)"],
+         [mv("B", 0, 2)])
+case("regsmall", [pt("A", 0, 0), pt("B", 2, 0), num("nv", 2), "p = Polygon(A, B, nv)",
+                  "ar = Area(p)", "pe = Perimeter(p)", "S = Centroid(p)"],
+     [setn("nv", v) for v in (4, 6, 3, 2, 5)] + [mv("B", 1, 3)])
+# the vertex count from a number that is undefined at creation
+case("regsmall", MISSING + [pt("C", 4, -4), pt("D", 1, -6), "d = Area(A, B, C, X, D)",
+                            "p = Polygon(C, D, d)", "ar = Area(p)"],
+     APPEAR)
+
+# regular polygons on a point that is undefined at creation
+topic("regundef")
+case("regundef", MISSING + [pt("C", 4, -4), "p = Polygon(X, C, 4)", "ar = Area(p)",
+                            "pe = Perimeter(p)"], APPEAR)
+case("regundef", MISSING + [pt("C", 4, -4), "p = Polygon(C, X, 5)", "ar = Area(p)",
+                            "W = Vertex(p, 3)"], APPEAR)
+
+# vertex counts are rounded to a Java int, which wraps
+topic("wrap")
+for n in ("4294967299", "-4294967293", "4294967296", "1000000000000000"):
+    case("wrap", [pt("A", 0, 0), pt("B", 2, 0), f"p = Polygon(A, B, {n})", "ar = Area(p)",
+                  "pe = Perimeter(p)"],
+         [mv("B", 1, 2)])
+case("wrap", [pt("A", 0, 0), pt("B", 2, 0), num("nv", 4), "p = Polygon(A, B, nv)",
+              "ar = Area(p)", "V = Vertex(p)"],
+     [setn("nv", v) for v in (4294967299, 4294967296, 1e20, -4294967293, -1e20, 4)])
+
+# Vertex(p, n) with indices beyond an int, below one, or undefined
+topic("vertexidx")
+case("vertexidx", [pt("A", 0, 0), pt("B", 2, 0), "p = Polygon(A, B, 5)", num("idx", 2),
+                   "W = Vertex(p, idx)"],
+     [setn("idx", v) for v in (7, 1e20, -1e20, 4294967298, 4294967297, 2147483648,
+                               -2147483648, -0.5, 0.99, 5, 6, 1)])
+case("vertexidx", [pt("A", 0, 0), pt("B", 4, 0), pt("C", 4, 3), pt("D", 0, 3),
+                   "p = Polygon(A, B, C, D)", num("idx", 2), "W = Vertex(p, idx)"],
+     [setn("idx", v) for v in (4294967298, 2147483649, -2147483649, 5, 4)])
+case("vertexidx", MISSING + [pt("C", 4, -4), pt("D", 1, -6), "d = Area(A, B, C, X, D)",
+                             "q = Polygon(A, B, C, D)", "W = Vertex(q, d)"], APPEAR)
+
+# polygons from one point, and the sides of polygons with a vertex that is
+# undefined at creation
+topic("small")
+case("small", [pt("A", 1, 2), "p = Polygon(A)", "ar = Area(p)", "pe = Perimeter(p)",
+               "M = Centroid(p)"],
+     [mv("A", -3, 0)])
+case("small", MISSING + [pt("C", 4, -4), "p = Polygon(A, X, C)", "ar = Area(p)",
+                         "pe = Perimeter(p)"], APPEAR)
+case("small", MISSING + [pt("C", 4, -4), "p = Polygon(A, B, X, C)", "ar = Area(p)"], APPEAR)
+case("small", MISSING + ["p = Polygon(A, X)", "pe = Perimeter(p)"], APPEAR)
+
+# Area of five or more points, one of them undefined
+topic("areaundef")
+case("areaundef", MISSING + [pt("C", 4, -4), pt("D", 1, -6), "ar = Area(A, B, X, C, D)",
+                             "as = Area(A, B, C, D, X, A)"], APPEAR)
+
+# a regular polygon whose vertex count shrinks below three and grows again
+topic("shrink")
+case("shrink", [pt("A", 0, 0), pt("B", 2, 0), num("nv", 5), "p = Polygon(A, B, nv)",
+                "w = InteriorAngles(p)", "V = Vertex(p)", "W = Vertex(p, 4)"],
+     [setn("nv", v) for v in (3, 2, 1, 0, 4, 5, 6)] + [mv("B", 0, 2)])
 
 cases.write()

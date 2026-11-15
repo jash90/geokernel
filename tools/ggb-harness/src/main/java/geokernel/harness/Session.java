@@ -167,20 +167,29 @@ final class Session {
     /**
      * Records a polygon and the objects `Polygon` creates with it: its sides
      * and, for a regular polygon, its new vertices, under the labels GeoGebra
-     * gave them. The polygon must get the script label and every other
-     * output must be a labelled segment or point.
+     * gave them. The polygon must get the script label, or be undefined and
+     * wait for it like any other object (see `run`). Outputs GeoGebra left
+     * unlabelled are not recorded; every labelled one must be a segment or a
+     * point.
      */
     private GeoElement runPolygon(String line, String label, GeoElementND[] out) {
         GeoElement poly = out[0].toGeoElement();
-        if (!(poly instanceof GeoPolygon) || kernel.lookupLabel(label) != poly) {
+        boolean labelled = kernel.lookupLabel(label) == poly;
+        boolean waiting = !poly.isLabelSet() && !poly.isDefined()
+                && label.equals(poly.getLabelSimple());
+        if (!(poly instanceof GeoPolygon) || !labelled && !waiting) {
             throw new IllegalStateException("'" + line + "' did not create polygon " + label);
         }
         objects.put(label, poly);
         for (int i = 1; i < out.length; i++) {
             GeoElement geo = out[i].toGeoElement();
+            if (!geo.isLabelSet()) {
+                continue;
+            }
             String name = geo.getLabelSimple();
-            if (!geo.isLabelSet() || kernel.lookupLabel(name) != geo) {
-                throw new IllegalStateException("an object of '" + line + "' is not labelled");
+            if (kernel.lookupLabel(name) != geo) {
+                throw new IllegalStateException("GeoGebra labelled an object of '" + line
+                        + "' as " + name + " but cannot look it up");
             }
             if (objects.containsKey(name)) {
                 throw new IllegalArgumentException("label used twice: " + name);
