@@ -495,3 +495,38 @@ fn inverse_or_power_follows_the_brackets_and_constant_exponents() {
     assert!((num(&c, "d") - std::f64::consts::FRAC_PI_6).abs() < 1e-15);
     assert!((num(&c, "k") - 0.125f64.sin().powi(2)).abs() < 1e-15);
 }
+
+#[test]
+fn an_intersection_hint_is_decided_again_where_the_tree_is_added() {
+    // GeoGebra accepts `Intersect(k, k, 1)` inside an expression; it is the
+    // point on `k` by construction, here `S`
+    let src = "O = (0, 0)\nr = 1\nk = Circle(O, r)\nQ = (1, 1)\nl = Line(O, Q)\n\
+               S = Intersect(l, k, 1)\nM = Intersect(k, k, 1) * 1\nm = x(Intersect(k, k, 1))";
+    let orig = load(src).unwrap();
+    let s = orig.value(orig.id("S").unwrap());
+    assert_eq!(orig.value(orig.id("M").unwrap()), s);
+    let e = orig.expression(orig.id("M").unwrap()).unwrap();
+    // only `O, r, k`: the hint names `S`, which is not there
+    let mut small = load("O = (0, 0)\nr = 1\nk = Circle(O, r)").unwrap();
+    let m = small.add_expression("M", &e).unwrap();
+    exec(&mut small, "N = Intersect(k, k, 1)").unwrap();
+    assert_eq!(small.value(m), small.value(small.id("N").unwrap()));
+}
+
+#[test]
+fn an_applied_function_keeps_the_decimals_of_its_argument() {
+    // values from GeoGebra: inside a function `f(1.005)` is `round(1.005 * 100)`
+    // on the decimal, elsewhere `f` is sampled at the double 1.005
+    let c = load(
+        "f(x) = round(x 100)\ng(x) = f(1.005) + x\nv = f(1.005)\nb = 1.005\n\
+         k(x) = f(b) + x\nw = f(b)\nq(x) = f(1.005 + 0) + x\nm(x) = x + f(1.005)",
+    )
+    .unwrap();
+    for (name, at0) in [("g", 101.0), ("k", 101.0), ("q", 101.0), ("m", 101.0)] {
+        let id = c.id(name).unwrap();
+        assert_eq!(c.function_value(id, 0.0), Some(at0), "`{name}`");
+        assert_eq!(c.function_value(id, 2.0), Some(at0 + 2.0), "`{name}`");
+    }
+    assert_eq!(num(&c, "v"), 100.0);
+    assert_eq!(num(&c, "w"), 100.0);
+}

@@ -191,11 +191,16 @@ pub(crate) fn is_name_char(c: char) -> bool {
     c.is_alphanumeric() && !matches!(c, '\u{ba}' | '\u{2c6}') && superscript_digit(c).is_none()
 }
 
-/// The value of a literal that [`number_end`] delimited.
+/// The value of a literal that [`number_end`] delimited. GeoGebra's lexer
+/// takes `–` and `−` as the sign of an exponent, but converting such a
+/// literal fails ("Not a digit"), so the line is an error there too.
 fn literal_value(text: &str) -> Result<f64, String> {
-    text.replace(['\u{2013}', '\u{2212}'], "-")
-        .parse::<f64>()
-        .map_err(|_| format!("`{text}` is not a number"))
+    if !text.contains(['\u{2013}', '\u{2212}']) {
+        if let Ok(v) = text.parse::<f64>() {
+            return Ok(v);
+        }
+    }
+    Err(format!("`{text}` is not a number"))
 }
 
 /// A whole string that is one number literal, optionally after a `-`:
@@ -291,7 +296,8 @@ mod tests {
         assert_eq!(kinds("2e"), vec![Tok::Num(2.0), name("e", false)]);
         // only an upper-case `E` starts an exponent
         assert_eq!(kinds("2e3"), vec![Tok::Num(2.0), name("e3", false)]);
-        assert_eq!(kinds("1.E\u{2212}3"), vec![Tok::Num(0.001)]);
+        assert_eq!(kinds("1.E-3"), vec![Tok::Num(0.001)]);
+        assert!(tokens("1.E\u{2212}3").is_err() && tokens("1E\u{2013}3 + 1").is_err());
         assert_eq!(kinds("2E"), vec![Tok::Num(2.0), name("E", false)]);
         assert_eq!(kinds(".5°"), vec![Tok::Num(0.5), Tok::Degree]);
         assert_eq!(kinds("5."), vec![Tok::Num(5.0)]);

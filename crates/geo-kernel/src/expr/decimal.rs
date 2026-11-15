@@ -77,9 +77,7 @@ impl Dec {
             None => 0,
             Some(e) => {
                 let (eneg, digits) = match e.chars().next() {
-                    Some('-' | '\u{2013}' | '\u{2212}') => {
-                        (true, e.trim_start_matches(['-', '\u{2013}', '\u{2212}']))
-                    }
+                    Some('-') => (true, &e[1..]),
                     Some('+') => (false, &e[1..]),
                     _ => (false, e),
                 };
@@ -476,7 +474,8 @@ mod tests {
         assert_eq!(d("0.10"), d("1E-1"));
         assert_eq!(d(".5"), d("5.").div(&d("10")).unwrap());
         assert_eq!(d("-0"), Dec::zero());
-        assert_eq!(d("1.5E\u{2212}3").to_f64(), 0.0015);
+        assert_eq!(d("1.5E-3").to_f64(), 0.0015);
+        assert!(Dec::parse("1.5E\u{2212}3").is_none());
         assert!(Dec::parse("1.2.3").is_none() && Dec::parse("E3").is_none());
         assert_eq!(
             Dec::from_f64(0.1).unwrap(),

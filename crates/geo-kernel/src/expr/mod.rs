@@ -428,7 +428,10 @@ fn reparse(
         }
     };
     let mut uses_var = false;
-    for (i, node) in nodes.iter().enumerate() {
+    // the intersection hints are decided again for this construction, as
+    // creation does: the tree's own may name objects that are not here
+    let mut nodes = nodes.to_vec();
+    for (i, node) in nodes.iter_mut().enumerate() {
         if children(node).any(|child| child as usize >= i) {
             return None;
         }
@@ -443,6 +446,7 @@ fn reparse(
             }
             Node::Cmd(def, _) => {
                 c.check(&def).ok()?;
+                *node = Node::Cmd(def, crate::algo::intersect::hint(c, &def));
                 for &p in def.parents().as_slice() {
                     read(p, false);
                 }
@@ -457,7 +461,7 @@ fn reparse(
             _ => {}
         }
     }
-    let (tys, depth, cost, vars) = types::check(c, nodes, root).ok()?;
+    let (tys, depth, cost, vars) = types::check(c, &nodes, root).ok()?;
     let r = root as usize;
     if depth[r] > parse::MAX_DEPTH || cost[r] > parse::MAX_COST {
         return None;
@@ -466,7 +470,7 @@ fn reparse(
         return None;
     }
     Some(parse::Parsed {
-        nodes: nodes.to_vec(),
+        nodes,
         lits: lits.to_vec(),
         tys,
         root,

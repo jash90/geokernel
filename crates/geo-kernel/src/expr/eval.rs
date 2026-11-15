@@ -216,11 +216,13 @@ impl Ctx<'_> {
                 special: true,
                 obj: false,
             },
-            Node::Var => Ex::plain(match *self.env {
-                Env::None => N(f64::NAN),
-                Env::Value(x) => N(x),
-                Env::Arg(caller, a) => N(caller.full_number(a)),
-            }),
+            Node::Var => match *self.env {
+                Env::None => Ex::plain(N(f64::NAN)),
+                Env::Value(x) => Ex::plain(N(x)),
+                // `AlgoDependentFunction.substituteFunction` puts a copy of
+                // the argument in place of `x`: it keeps its decimal
+                Env::Arg(caller, a) => caller.full(a),
+            },
             Node::Obj(id) => object_ex(self.c, id),
             Node::Cmd(def, hint) => Ex {
                 obj: true,
@@ -250,7 +252,7 @@ impl Ctx<'_> {
                     _ => Ex::plain(binary(op, l.val, r.val, self.is_angle(a))),
                 }
             }
-            Node::Apply(f, a) => Ex::plain(N(self.apply(f, a, false))),
+            Node::Apply(f, a) => self.apply_full(f, a),
             Node::FnName(_) => Ex::plain(N(f64::NAN)),
         }
     }
@@ -276,6 +278,24 @@ impl Ctx<'_> {
         } else {
             sample(self.c, e, self.full_number(a))
         }
+    }
+
+    /// `f(a)` in the full evaluation: inside a function the expanded tree
+    /// keeps its decimals; elsewhere `f` is sampled at the value of `a`.
+    fn apply_full(&self, f: Id, a: u32) -> Ex {
+        if !self.e.function {
+            return Ex::plain(Val::N(self.apply(f, a, false)));
+        }
+        let Some(e) = function_entry(self.c, f) else {
+            return Ex::plain(Val::N(f64::NAN));
+        };
+        let env = Env::Arg(self, a);
+        Ctx {
+            c: self.c,
+            e,
+            env: &env,
+        }
+        .full(e.root)
     }
 
     fn full_number(&self, i: u32) -> f64 {
