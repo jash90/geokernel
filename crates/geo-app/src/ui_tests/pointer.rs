@@ -3,7 +3,6 @@
 //! that very frame, which must not move the drawing or the hit.
 
 use super::*;
-use crate::tools::Outcome;
 
 /// Opens the keyboard the way a user does: a click in the input row, which
 /// starts `top` pixels below the toolbar.
