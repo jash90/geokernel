@@ -1,33 +1,58 @@
-# Objects of the stored files that disagree with the golden snapshot because of
-# what GeoGebra writes, not because of the kernel or the importer. Same format
-# as crates/geo-golden/known-gaps.toml; only step 0 ("0:label") applies.
-# The test fails when an entry stops disagreeing, so none can go stale.
-
-# GeoGebra writes the inputs of `Distance(line, line)` in the opposite order:
-# AlgoDistanceLineLine.setInputOutput puts `h` before `g`. Reading the file
-# back, GeoGebra itself computes `g.distance(h)` the other way round, and the
-# distance of two lines that are not parallel depends on the order. The
-# importer follows what GeoGebra reads. This was checked by loading the four
-# files back into a fresh GeoGebra (`getXMLio().processXMLString`): it gives the
-# importer's values (d = 1.7888543819998317 for conic-diameter-009), not the
-# golden ones.
+# Objects of the stored files whose imported value differs from the golden
+# snapshot and from the value saved in the file, for a reason that lies in what
+# GeoGebra writes, not in the kernel or the importer. Each entry pins the exact
+# values on both sides, so nothing else can hide behind it: the test fails
+# when the golden value, the imported value or the reason for the disagreement
+# change, or when the object stops disagreeing.
+#
+# All four are `Distance(line, line)` of two lines whose raw coefficients are
+# about 1e-6 (a line through points 1e-6 apart). `GeoLine.distance(GeoLine)`
+# returns 0 for lines that are not parallel, and tests "parallel" with
+# `isZero(g.x * y - g.y * x)` on the raw coefficients, where products of two
+# 1e-6 numbers are below the zero threshold: such lines count as parallel,
+# a point of `g` is chosen and the distance is measured with the
+# normalisation of `this`, so the order of the two lines matters. For
+# ordinary lines it does not (a single zero either way).
+#
+# `AlgoDistanceLineLine.setInputOutput` writes `input[0] = h; input[1] = g`,
+# the reverse of the order the algorithm computes in, so the saved command
+# lists the lines in the opposite order. GeoGebra's reader evaluates the saved
+# command in the saved order, and the importer does the same (loading the four
+# files into a fresh GeoGebra gives the imported values, see
+# `tools/ggb-harness/harness.sh reload`). The value saved in the file is the
+# golden one, so the cross-check reports these objects in `mismatched`.
 
 [[gap]]
 id = "conic-diameter-009"
-reason = "GeoGebra writes Distance(line, line) with its inputs swapped"
-mismatches = ["0:d"]
+label = "d"
+golden = 0.8944271909999159
+imported = 1.7888543819998317
+reason = "Distance(f, g) of two lines with raw coefficients near 1e-6; the file lists the lines in the opposite order"
 
 [[gap]]
 id = "lines-bisector-015"
-reason = "GeoGebra writes Distance(line, line) with its inputs swapped"
-mismatches = ["0:d", "0:e"]
+label = "d"
+golden = 0.7905682291879723
+imported = 2.236068350177786
+reason = "Distance(f, g) of two lines with raw coefficients near 1e-6; the file lists the lines in the opposite order"
+
+[[gap]]
+id = "lines-bisector-015"
+label = "e"
+golden = 2.236068350177786
+imported = 0.7905682291879723
+reason = "Distance(g, f) of two lines with raw coefficients near 1e-6; the file lists the lines in the opposite order"
 
 [[gap]]
 id = "transform-mirrorline-032"
-reason = "GeoGebra writes Distance(line, line) with its inputs swapped"
-mismatches = ["0:e"]
+label = "e"
+golden = 4.69574275274956
+imported = 5.366563145999496
+reason = "Distance(m, n) of two lines with raw coefficients near 1e-6; the file lists the lines in the opposite order"
 
 [[gap]]
 id = "transform-rotate-021"
-reason = "GeoGebra writes Distance(line, line) with its inputs swapped"
-mismatches = ["0:e"]
+label = "e"
+golden = 0.526691643295513
+imported = 0.5884701140321686
+reason = "Distance(l, n) of two lines with raw coefficients near 1e-6; the file lists the lines in the opposite order"

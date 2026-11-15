@@ -8,14 +8,15 @@
 //! the kernel cannot do is skipped with the kernel's message.
 
 use crate::xml::{Document, Element, Item};
-use crate::{ImportError, Imported, Skipped};
-use geo_kernel::script::{exec, is_vector_label};
-use geo_kernel::Construction;
+use crate::{ImportError, Imported, Mismatch, Skipped};
+use geo_kernel::script::{exec, is_vector_label, multi_output_count};
+use geo_kernel::{Construction, Value};
 use std::collections::{BTreeMap, BTreeSet};
 
 /// Runs the whole conversion.
 pub fn convert(doc: Document) -> Result<Imported, ImportError> {
     let mut c = Converter::default();
+    let mut flags = Flags::default();
     for item in doc.items {
         match item {
             Item::Expression { label, exp } => {
@@ -26,7 +27,10 @@ pub fn convert(doc: Document) -> Result<Imported, ImportError> {
                 inputs,
                 outputs,
             } => c.command(&name, &inputs, &outputs)?,
-            Item::Element(el) => c.element(el)?,
+            Item::Element(el) => {
+                flags.count(&el);
+                c.element(el)?;
+            }
         }
     }
     let mut out = c.out;
@@ -38,7 +42,53 @@ pub fn convert(doc: Document) -> Result<Imported, ImportError> {
                 .into(),
         );
     }
+    if doc.constructions > 1 {
+        out.notes.push(format!(
+            "the file has {} construction sections; their elements are appended one after \
+             the other, as GeoGebra's reader does",
+            doc.constructions
+        ));
+    }
+    flags.notes(&mut out.notes);
     Ok(out)
+}
+
+/// Properties of elements that no value depends on and the kernel has no
+/// place for; only counted.
+#[derive(Default)]
+struct Flags {
+    fixed: usize,
+    auxiliary: usize,
+    conditional: usize,
+    start_points: usize,
+}
+
+impl Flags {
+    fn count(&mut self, el: &Element) {
+        self.fixed += el.fixed as usize;
+        self.auxiliary += el.auxiliary as usize;
+        self.conditional += el.conditional as usize;
+        self.start_points += el.start_point as usize;
+    }
+
+    fn notes(&self, notes: &mut Vec<String>) {
+        for (n, what) in [
+            (self.fixed, "fixed (the kernel has no fixed flag)"),
+            (self.auxiliary, "auxiliary objects"),
+            (
+                self.conditional,
+                "objects with a condition for showing them (not used)",
+            ),
+            (
+                self.start_points,
+                "vectors with a start point (the kernel draws none)",
+            ),
+        ] {
+            if n > 0 {
+                notes.push(format!("the file has {n} {what}"));
+            }
+        }
+    }
 }
 
 #[derive(Default)]
@@ -54,6 +104,12 @@ struct Converter {
     skipped: BTreeMap<String, String>,
     /// `<expression>` texts waiting for their element.
     expressions: BTreeMap<String, String>,
+}
+
+/// One script line and the labels it has to create.
+struct Step {
+    line: String,
+    labels: Vec<String>,
 }
 
 impl Converter {
@@ -94,19 +150,23 @@ impl Converter {
             self.skip("", name, "the command has no labelled output".into());
             return Ok(());
         }
-        let line = match labelled.iter().find(|l| !is_label(l)) {
+        let steps = match labelled.iter().find(|l| !is_label(l)) {
             Some(bad) => Err(format!("`{bad}` is not a label the script can use")),
-            None => self.command_line(name, inputs, outputs),
+            None => self.steps(name, inputs, outputs),
         };
-        match line {
-            Ok(line) => match self.run(&line, &labelled) {
-                Ok(()) => self.out.script.push(line),
-                Err(reason) => {
-                    for label in labelled {
-                        self.skip(label, name, reason.clone());
+        match steps {
+            Ok(steps) => {
+                for step in steps {
+                    match self.run(&step.line, &step.labels)? {
+                        Ok(()) => self.out.script.push(step.line),
+                        Err(reason) => {
+                            for label in &step.labels {
+                                self.skip(label, name, reason.clone());
+                            }
+                        }
                     }
                 }
-            },
+            }
             Err(reason) => {
                 for label in labelled {
                     self.skip(label, name, reason.clone());
@@ -117,9 +177,11 @@ impl Converter {
     }
 
     /// Runs a line on the scratch construction. The line is accepted only when
-    /// it creates exactly the objects the file has for it; otherwise the
-    /// scratch construction is rebuilt from the lines accepted so far.
-    fn run(&mut self, line: &str, expected: &[&String]) -> Result<(), String> {
+    /// it creates exactly the objects the file has for it. The outer error is
+    /// a bug: a line the kernel refused that nevertheless changed it, or
+    /// created other objects than it was told to (the forms the importer
+    /// writes cannot, and are checked before the run).
+    fn run(&mut self, line: &str, expected: &[String]) -> Result<Result<(), String>, ImportError> {
         let before = self.kernel.len();
         let result = exec(&mut self.kernel, line);
         let created: Vec<&str> = self
@@ -128,32 +190,27 @@ impl Converter {
             .skip(before)
             .map(|id| self.kernel.label(id))
             .collect();
-        let matches =
-            created.len() == expected.len() && created.iter().zip(expected).all(|(a, b)| a == b);
-        let outcome = match result {
-            Ok(_) if matches => return Ok(()),
-            Ok(_) => Err(format!(
-                "the kernel would create {created:?} for this command, the file has {:?}",
-                expected
-            )),
-            Err(e) => Err(e),
-        };
-        if self.kernel.len() != before {
-            self.kernel = Construction::new();
-            for accepted in &self.out.script {
-                exec(&mut self.kernel, accepted).expect("an accepted line runs again");
-            }
+        let matches = created.len() == expected.len()
+            && created.iter().zip(expected).all(|(a, b)| *a == b.as_str());
+        match result {
+            Ok(_) if matches => Ok(Ok(())),
+            Ok(_) => Err(ImportError::Internal(format!(
+                "`{line}` created {created:?}, expected {expected:?}"
+            ))),
+            Err(e) if self.kernel.len() == before => Ok(Err(e)),
+            Err(e) => Err(ImportError::Internal(format!(
+                "`{line}` failed ({e}) after it had created objects"
+            ))),
         }
-        outcome
     }
 
-    /// The script line of a command, or why there is none.
-    fn command_line(
+    /// The script lines of a command, or why there are none.
+    fn steps(
         &self,
         name: &str,
         inputs: &[String],
         outputs: &[String],
-    ) -> Result<String, String> {
+    ) -> Result<Vec<Step>, String> {
         if name.is_empty() || !name.bytes().all(|b| b.is_ascii_alphanumeric()) {
             return Err(format!("`{name}` is not a command name"));
         }
@@ -166,20 +223,53 @@ impl Converter {
             }
             args.push(pass_argument(arg)?);
         }
+        // GeoGebra saves `Intersect(a, b)` of a line and a conic (or two
+        // conics) without an index and lists both points as outputs; the
+        // kernel takes the n-th point as `Intersect(a, b, n)`.
+        if name == "Intersect" && args.len() == 2 && outputs.len() >= 2 {
+            return Ok(outputs
+                .iter()
+                .enumerate()
+                .filter(|(_, label)| !label.is_empty())
+                .map(|(n, label)| Step {
+                    line: format!("{label} = Intersect({}, {}, {})", args[0], args[1], n + 1),
+                    labels: vec![label.clone()],
+                })
+                .collect());
+        }
         let call = format!("{name}({})", args.join(", "));
-        Ok(if outputs.len() == 1 {
-            format!("{} = {call}", outputs[0])
-        } else {
-            format!("{{{}}} = {call}", outputs.join(", "))
-        })
+        let line = match multi_output_count(&self.kernel, &call) {
+            // A command that makes several objects: every output gets its label.
+            Some(_) => format!("{{{}}} = {call}", outputs.join(", ")),
+            None if outputs.len() == 1 => format!("{} = {call}", outputs[0]),
+            None => {
+                return Err(format!(
+                    "the file lists {} outputs, the kernel makes one object for this command",
+                    outputs.len()
+                ))
+            }
+        };
+        Ok(vec![Step {
+            line,
+            labels: outputs.iter().filter(|l| !l.is_empty()).cloned().collect(),
+        }])
     }
 
     fn element(&mut self, el: Element) -> Result<(), ImportError> {
         if self.produced.contains(&el.label) {
             // The result of a command: its value is the kernel's business.
             self.expressions.remove(&el.label);
-            if !el.shown && self.kernel.id(&el.label).is_some() {
-                self.out.hidden.push(el.label);
+            if let Some(id) = self.kernel.id(&el.label) {
+                if let Some((saved, computed)) = cross_check(&el, &self.kernel.value(id)) {
+                    self.out.mismatched.push(Mismatch {
+                        label: el.label.clone(),
+                        saved,
+                        computed,
+                    });
+                }
+                if !el.shown {
+                    self.out.hidden.push(el.label);
+                }
             }
             return Ok(());
         }
@@ -187,7 +277,7 @@ impl Converter {
         let expression = self.expressions.remove(&el.label);
         let (label, kind) = (el.label.clone(), el.kind.clone());
         match self.free_object(&el, expression.as_deref())? {
-            Ok(line) => match self.run(&line, &[&label]) {
+            Ok(line) => match self.run(&line, std::slice::from_ref(&label))? {
                 Ok(()) => {
                     self.out.script.push(line);
                     if !el.shown {
@@ -209,7 +299,9 @@ impl Converter {
         expression: Option<&str>,
     ) -> Result<Result<String, String>, ImportError> {
         if let Some(exp) = expression {
-            if !is_literal(exp) {
+            // A constant expression (`(1/2, 3)`, `2^10`) is an independent
+            // object for GeoGebra, whose value is the one the element saved.
+            if !is_literal(exp) && !is_constant_expression(exp) {
                 return Ok(expression_line(exp));
             }
         }
@@ -312,20 +404,143 @@ fn is_literal(s: &str) -> bool {
     }
 }
 
-/// A label: letters, digits, `_`, `'` and the index `_{digits}`.
+/// An expression with no object in it, only numbers and operators:
+/// digits, `.`, `,`, `+ - * / ^`, parentheses, white space, and an exponent
+/// `E` or `e` right after a digit or `.`. GeoGebra treats it as an
+/// independent object (`isIndependent = !n.any(isDynamicGeoElement)`), so the
+/// importer reads the value from the element, as for a literal. Any
+/// identifier (`pi`, `sqrt`, a label) makes it an ordinary expression.
+pub fn is_constant_expression(s: &str) -> bool {
+    let mut previous = ' ';
+    let mut digits = false;
+    for ch in s.chars() {
+        let ok = match ch {
+            '0'..='9' => {
+                digits = true;
+                true
+            }
+            '.' | ',' | '+' | '-' | '*' | '/' | '^' | '(' | ')' => true,
+            c if c.is_whitespace() => true,
+            'E' | 'e' => previous.is_ascii_digit() || previous == '.',
+            _ => false,
+        };
+        if !ok {
+            return false;
+        }
+        previous = ch;
+    }
+    digits
+}
+
+/// A label: letters, digits, `_`, `'` and an index `_{...}` whose inside has
+/// letters, digits, `_` and `'` (the same rule as the kernel's output labels).
 fn is_label(s: &str) -> bool {
     let (base, index) = match s.strip_suffix('}').and_then(|t| t.split_once("_{")) {
-        Some((base, digits)) => (base, Some(digits)),
+        Some((base, inner)) => (base, Some(inner)),
         None => (s, None),
     };
-    let ok_index = index.is_none_or(|d| !d.is_empty() && d.bytes().all(|b| b.is_ascii_digit()));
+    let word = |c: char| c.is_alphanumeric() || c == '_' || c == '\'';
+    let ok_index = index.is_none_or(|d| !d.is_empty() && d.chars().all(word));
     let mut chars = base.chars();
     let first = chars.next().is_some_and(|c| c.is_alphabetic() || c == '_');
-    ok_index && first && chars.all(|c| c.is_alphanumeric() || c == '_' || c == '\'')
+    ok_index && first && chars.all(word)
 }
 
 /// The label-like words of an argument.
 fn tokens(arg: &str) -> impl Iterator<Item = &str> {
     arg.split(|c: char| !(c.is_alphanumeric() || matches!(c, '_' | '\'' | '{' | '}')))
         .filter(|t| !t.is_empty())
+}
+
+const TOLERANCE: f64 = 1e-9;
+
+/// `|p - q| <= 1e-9 * max(1, |p|, |q|)`, the comparison of the golden files.
+fn close(p: f64, q: f64) -> bool {
+    (p - q).abs() <= TOLERANCE * 1.0_f64.max(p.abs()).max(q.abs())
+}
+
+fn num(text: &str) -> Option<f64> {
+    text.trim().parse::<f64>().ok().filter(|v| v.is_finite())
+}
+
+/// Three numbers of `<coords>`, all finite.
+fn coords3(el: &Element) -> Option<[f64; 3]> {
+    let [x, y, z] = el.coords.as_ref()?;
+    Some([num(x)?, num(y)?, num(z)?])
+}
+
+/// Whether the lines `(a, b, c)` and `(sa, sb, sc)` are the same up to a
+/// positive factor (the orientation of a line is part of its value).
+fn same_line(line: [f64; 3], saved: [f64; 3]) -> bool {
+    let (n, sn) = (line[0].hypot(line[1]), saved[0].hypot(saved[1]));
+    n > 0.0
+        && sn > 0.0
+        && (0..3).all(|i| close(line[i] / n, saved[i] / sn))
+}
+
+fn saved_text(el: &Element) -> String {
+    let mut parts = Vec::new();
+    if let Some([x, y, z]) = &el.coords {
+        parts.push(format!("coords ({x}, {y}, {z})"));
+    }
+    if let Some(m) = &el.matrix {
+        parts.push(format!("matrix [{}]", m.join(", ")));
+    }
+    if let Some(v) = &el.value {
+        parts.push(format!("value {v}"));
+    }
+    parts.join(", ")
+}
+
+/// Compares what the kernel computed with what the file saved for the same
+/// object. `Some((saved, computed))` for a disagreement, `None` when they
+/// agree or when the file saved nothing the kernel value can be compared with.
+fn cross_check(el: &Element, value: &Value) -> Option<(String, String)> {
+    let agrees: Option<bool> = match *value {
+        Value::Point { x, y } => coords3(el).map(|[sx, sy, sz]| {
+            sz != 0.0 && close(x, sx / sz) && close(y, sy / sz)
+        }),
+        Value::Vector { x, y } => coords3(el).map(|[sx, sy, _]| close(x, sx) && close(y, sy)),
+        Value::Line { a, b, c } | Value::Ray { a, b, c, .. } => {
+            coords3(el).map(|saved| same_line([a, b, c], saved))
+        }
+        Value::Segment { x1, y1, x2, y2 } => coords3(el).map(|saved| {
+            if x1 == x2 && y1 == y2 {
+                // GeoGebra saves the line of a degenerate segment as (0, 0, 0).
+                saved == [0.0, 0.0, 0.0]
+            } else {
+                same_line([y1 - y2, x2 - x1, x1 * y2 - y1 * x2], saved)
+            }
+        }),
+        Value::Circle { cx, cy, r } => el.matrix.as_ref().and_then(|m| {
+            let a: Vec<f64> = m.iter().map(|t| num(t)).collect::<Option<_>>()?;
+            // A0 x^2 + A1 y^2 + A2 + 2 A3 x y + 2 A4 x + 2 A5 y = 0
+            if a[0] == 0.0 || !close(a[0], a[1]) || a[3].abs() > TOLERANCE * a[0].abs() {
+                return Some(false);
+            }
+            let (sx, sy) = (-a[4] / a[0], -a[5] / a[0]);
+            let r2 = sx * sx + sy * sy - a[2] / a[0];
+            // The saved radius is the difference of terms of the size of
+            // `sx^2 + sy^2`, so its error is relative to those terms, not to
+            // the (possibly tiny) radius.
+            let scale = 1.0_f64.max(sx * sx + sy * sy).max((a[2] / a[0]).abs());
+            Some(close(cx, sx) && close(cy, sy) && (r * r - r2).abs() <= TOLERANCE * scale)
+        }),
+        Value::Number(n) => el.value.as_deref().and_then(num).map(|s| close(n, s)),
+        Value::Bool(b) => el
+            .value
+            .as_deref()
+            .map(|v| v.trim() == if b { "true" } else { "false" }),
+        // The kernel has no value. The file disagrees when it saved a defined
+        // one: a point at infinity (z = 0) and a line with (a, b) = (0, 0)
+        // are undefined for the kernel, as in the golden snapshots.
+        Value::Undefined => match el.kind.as_str() {
+            "point" => coords3(el).map(|[_, _, z]| z == 0.0),
+            "line" | "segment" | "ray" => coords3(el).map(|[a, b, _]| a == 0.0 && b == 0.0),
+            "vector" => coords3(el).map(|_| false),
+            _ => el.value.as_deref().and_then(num).map(|_| false),
+        },
+        _ => None,
+    };
+    (agrees == Some(false)).then(|| (saved_text(el), format!("{value:?}")))
 }

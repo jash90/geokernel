@@ -60,6 +60,19 @@ pub struct Imported {
     /// Things worth telling the user that are not an object (for example that
     /// the file was saved with continuity on).
     pub notes: Vec<String>,
+    /// Objects the kernel computed differently from the value saved in the
+    /// file (relative tolerance `1e-9`). The object stays in the script.
+    pub mismatched: Vec<Mismatch>,
+}
+
+/// An imported object whose computed value differs from the saved one.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Mismatch {
+    pub label: String,
+    /// What the file saved (coordinates, matrix, value), as text.
+    pub saved: String,
+    /// What the kernel computed.
+    pub computed: String,
 }
 
 /// An object that was not imported.
@@ -99,6 +112,13 @@ pub enum ImportError {
     NoConstruction,
     /// The unpacked XML is bigger than [`archive::MAX_XML_BYTES`].
     TooLarge,
+    /// The archive lists more than [`archive::MAX_ZIP_ENTRIES`] entries.
+    TooManyEntries(usize),
+    /// The construction has more than [`xml::MAX_ITEMS`] items.
+    TooManyItems,
+    /// A bug of the importer (the scratch construction disagrees with the
+    /// lines it accepted).
+    Internal(String),
     /// A number of an object that has to be read is not a number.
     BadNumber { label: String, text: String },
     /// Two objects have the same label.
@@ -114,7 +134,22 @@ impl fmt::Display for ImportError {
             ImportError::MissingXml => write!(f, "the archive has no geogebra.xml"),
             ImportError::Xml(e) => write!(f, "damaged XML: {e}"),
             ImportError::NoConstruction => write!(f, "the file has no construction"),
-            ImportError::TooLarge => write!(f, "the construction is too large"),
+            ImportError::TooLarge => write!(
+                f,
+                "the construction is larger than {} MiB",
+                archive::MAX_XML_BYTES >> 20
+            ),
+            ImportError::TooManyEntries(n) => write!(
+                f,
+                "the archive lists {n} entries, more than the {} allowed",
+                archive::MAX_ZIP_ENTRIES
+            ),
+            ImportError::TooManyItems => write!(
+                f,
+                "the construction has more than {} items",
+                xml::MAX_ITEMS
+            ),
+            ImportError::Internal(e) => write!(f, "internal error: {e}"),
             ImportError::BadNumber { label, text } => {
                 write!(f, "object `{label}`: `{text}` is not a number")
             }
@@ -129,8 +164,46 @@ impl fmt::Display for ImportError {
 impl std::error::Error for ImportError {}
 
 /// Imports a `.ggb` file or a bare `geogebra.xml`.
+///
+/// Limits: the unpacked XML at most [`archive::MAX_XML_BYTES`], an archive at
+/// most [`archive::MAX_ZIP_ENTRIES`] entries, a construction at most
+/// [`xml::MAX_ITEMS`] items. Beyond them the answer is an error, not an
+/// attempt.
 pub fn import(bytes: &[u8]) -> Result<Imported, ImportError> {
-    let text = archive::extract_xml(bytes)?;
-    let doc = xml::parse(&text)?;
+    let doc = {
+        let text = archive::extract_xml(bytes)?;
+        xml::parse(&text)?
+    };
     convert::convert(doc)
+}
+
+/// Whether `bytes` look like a construction file (a zip archive, or XML whose
+/// root element is `geogebra`) and not like a script. Only the beginning is
+/// looked at.
+pub fn looks_like_construction(bytes: &[u8]) -> bool {
+    if archive::is_zip(bytes) {
+        return true;
+    }
+    let head = &bytes[..bytes.len().min(4096)];
+    let head = head.strip_prefix(b"\xEF\xBB\xBF").unwrap_or(head);
+    let mut rest = String::from_utf8_lossy(head);
+    // Skip the declaration, comments and white space before the root.
+    loop {
+        let t = rest.trim_start();
+        let after = if t.starts_with("<?") {
+            t.find("?>").map(|i| &t[i + 2..])
+        } else if t.starts_with("<!--") {
+            t.find("-->").map(|i| &t[i + 3..])
+        } else if t.starts_with("<!") {
+            t.find('>').map(|i| &t[i + 1..])
+        } else {
+            return t.strip_prefix("<geogebra").is_some_and(|r| {
+                r.starts_with(|c: char| c.is_whitespace() || c == '>' || c == '/')
+            });
+        };
+        match after {
+            Some(a) => rest = std::borrow::Cow::Owned(a.to_string()),
+            None => return false,
+        }
+    }
 }

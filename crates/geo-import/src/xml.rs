@@ -16,11 +16,20 @@
 //!   `<show object=/>`.
 //! * `<kernel>`: `Kernel.getKernelXML` (decimals, angle unit, continuity).
 //!
+//! * `<matrix A0= .. A5=>` of a conic, and the cheap flags `<fixed>`,
+//!   `<auxiliary>`, `<condition>`, `<startPoint>`, which no value depends on
+//!   (they are only counted, for a note).
+//!
 //! Everything else (the user interface, styles, scripts) is ignored.
+//!
+//! At most [`MAX_ITEMS`] items are read.
 
 use crate::{ImportError, Settings};
 use quick_xml::events::{BytesStart, Event};
 use quick_xml::{Reader, XmlVersion};
+
+/// The most items (expressions, commands, elements) a construction may have.
+pub const MAX_ITEMS: usize = 200_000;
 
 /// An element of the construction that GeoGebra wrote.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -34,6 +43,16 @@ pub struct Element {
     pub coords: Option<[String; 3]>,
     /// `<value val=>` as written.
     pub value: Option<String>,
+    /// `<matrix A0= ... A5=>` of a conic as written.
+    pub matrix: Option<[String; 6]>,
+    /// `<fixed val="true">`: not used, counted for a note.
+    pub fixed: bool,
+    /// `<auxiliary val="true">`: not used, counted for a note.
+    pub auxiliary: bool,
+    /// A `<condition>` (conditional visibility): not used, counted for a note.
+    pub conditional: bool,
+    /// A `<startPoint>` of a vector: not used, counted for a note.
+    pub start_point: bool,
 }
 
 /// One entry of the construction, in file order.
@@ -58,6 +77,9 @@ pub enum Item {
 pub struct Document {
     pub items: Vec<Item>,
     pub settings: Settings,
+    /// How many `<construction>` tags the file has. GeoGebra's reader appends
+    /// the elements of a second one to the first, and so does the importer.
+    pub constructions: usize,
 }
 
 fn bad(e: impl std::fmt::Display) -> ImportError {
@@ -109,6 +131,14 @@ fn numbered(e: &BytesStart, command: &str) -> Result<Vec<String>, ImportError> {
     Ok(found.into_iter().map(|(_, v)| v).collect())
 }
 
+fn push(doc: &mut Document, item: Item) -> Result<(), ImportError> {
+    if doc.items.len() >= MAX_ITEMS {
+        return Err(ImportError::TooManyItems);
+    }
+    doc.items.push(item);
+    Ok(())
+}
+
 /// Parses the text of a `geogebra.xml`.
 pub fn parse(text: &str) -> Result<Document, ImportError> {
     let mut reader = Reader::from_str(text);
@@ -131,6 +161,7 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                 "construction" if !in_construction => {
                     in_construction = !empty;
                     seen_construction = true;
+                    doc.constructions += 1;
                 }
                 "kernel" if !in_construction => in_kernel = !empty,
                 "continuous" | "decimals" | "significantfigures" | "angleUnit" if in_kernel => {
@@ -146,17 +177,20 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                     // Outputs of commands that make several objects have no label
                     // here; an object needs one.
                     if let (Some(label), Some(exp)) = (attr(e, "label")?, attr(e, "exp")?) {
-                        doc.items.push(Item::Expression { label, exp });
+                        push(&mut doc, Item::Expression { label, exp })?;
                     }
                 }
                 "command" if in_construction && command.is_none() && element.is_none() => {
                     let cmd = attr(e, "name")?.unwrap_or_default();
                     if empty {
-                        doc.items.push(Item::Command {
-                            name: cmd,
-                            inputs: vec![],
-                            outputs: vec![],
-                        });
+                        push(
+                            &mut doc,
+                            Item::Command {
+                                name: cmd,
+                                inputs: vec![],
+                                outputs: vec![],
+                            },
+                        )?;
                     } else {
                         command = Some((cmd, vec![], vec![]));
                     }
@@ -178,7 +212,7 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                         ..Element::default()
                     };
                     if empty {
-                        doc.items.push(Item::Element(el));
+                        push(&mut doc, Item::Element(el))?;
                     } else {
                         element = Some(el);
                     }
@@ -193,6 +227,32 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                     element.as_mut().expect("checked above").coords =
                         Some([get("x")?, get("y")?, get("z")?]);
                 }
+                "matrix" if element.is_some() => {
+                    let get = |k: &str| attr(e, k).map(Option::unwrap_or_default);
+                    element.as_mut().expect("checked above").matrix = Some([
+                        get("A0")?,
+                        get("A1")?,
+                        get("A2")?,
+                        get("A3")?,
+                        get("A4")?,
+                        get("A5")?,
+                    ]);
+                }
+                "fixed" | "auxiliary" if element.is_some() => {
+                    let on = attr(e, "val")?.is_some_and(|v| v == "true");
+                    let el = element.as_mut().expect("checked above");
+                    if name == "fixed" {
+                        el.fixed = on;
+                    } else {
+                        el.auxiliary = on;
+                    }
+                }
+                "condition" if element.is_some() => {
+                    element.as_mut().expect("checked above").conditional = true;
+                }
+                "startPoint" if element.is_some() => {
+                    element.as_mut().expect("checked above").start_point = true;
+                }
                 "value" if element.is_some() => {
                     element.as_mut().expect("checked above").value = attr(e, "val")?;
                 }
@@ -205,16 +265,19 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                 "kernel" => in_kernel = false,
                 "command" => {
                     if let Some((name, inputs, outputs)) = command.take() {
-                        doc.items.push(Item::Command {
-                            name,
-                            inputs,
-                            outputs,
-                        });
+                        push(
+                            &mut doc,
+                            Item::Command {
+                                name,
+                                inputs,
+                                outputs,
+                            },
+                        )?;
                     }
                 }
                 "element" => {
                     if let Some(el) = element.take() {
-                        doc.items.push(Item::Element(el));
+                        push(&mut doc, Item::Element(el))?;
                     }
                 }
                 _ => {}

@@ -11,10 +11,12 @@ publish = false
 geo-kernel = { path = "../geo-kernel" }
 # Pull parser; the optional encoding and serde features are not needed.
 quick-xml = "0.42"
-# Only reading, only deflate (the method GeoGebra's writer uses).
-zip = { version = "9.6", default-features = false, features = ["deflate-flate2-zlib-rs"] }
+# Inflate with an output limit; the zip directory is read by `archive.rs`.
+miniz_oxide = "0.9"
 
 [dev-dependencies]
 geo-golden = { path = "../geo-golden" }
-# Tests build archives with stored (uncompressed) entries.
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"
+# Tests build archives (stored and deflated entries) to attack the reader.
 zip = { version = "9.6", default-features = false, features = ["deflate-flate2-zlib-rs"] }
