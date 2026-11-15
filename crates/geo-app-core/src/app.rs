@@ -4,9 +4,11 @@
 
 use crate::errors;
 use crate::geom::Rect;
+use crate::gesture::Gesture;
 use crate::interact::{Drag, ViewTransform};
 use crate::keyboard::Keyboard;
 use crate::layout::Regions;
+use crate::metrics::Metrics;
 use crate::tools::{Outcome, Tool, ToolState, GROUPS};
 use crate::view::Camera;
 use crate::workbench::Workbench;
@@ -35,7 +37,10 @@ pub struct App {
     pub camera: Option<Camera>,
     pub view_request: Option<ViewRequest>,
     pub drag: Option<Drag>,
-    pub panning: bool,
+    /// The pointer automaton of the graphics view.
+    pub gesture: Gesture,
+    /// The sizes of the input profile chosen at start.
+    pub metrics: Metrics,
     pub tool: ToolState,
     /// The tool each toolbar group shows (the last one chosen in it).
     pub group_tools: Vec<Tool>,
@@ -77,7 +82,8 @@ impl App {
             camera: None,
             view_request: Some(ViewRequest::Initial),
             drag: None,
-            panning: false,
+            gesture: Gesture::new(&Metrics::desktop()),
+            metrics: Metrics::desktop(),
             tool: ToolState::new(Tool::Move),
             group_tools: GROUPS.iter().map(|g| g[0]).collect(),
             input: String::new(),
@@ -101,6 +107,12 @@ impl App {
             press_view: None,
             was_typing: false,
         }
+    }
+
+    /// Chooses the input profile (for example the touch one).
+    pub fn set_metrics(&mut self, metrics: Metrics) {
+        self.metrics = metrics;
+        self.gesture = Gesture::new(&metrics);
     }
 
     /// Makes `tool` the active tool and the one its group shows.

@@ -30,8 +30,8 @@ use app::App;
 use eframe::egui;
 use geo_app_core::workbench::Workbench;
 use geo_app_core::{
-    arc, describe, highlight, hit, interact, labelpos, layout, shape, style, ticks, tools, view,
-    workbench,
+    arc, describe, gesture, highlight, hit, interact, labelpos, layout, shape, style, ticks, tools,
+    view, workbench,
 };
 
 const SCRIPT: &str = include_str!("../../../examples/triangle.geo");

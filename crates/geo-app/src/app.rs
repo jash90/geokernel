@@ -34,6 +34,10 @@ fn shortcuts(app: &mut App, ctx: &egui::Context) {
     let typing = ctx.egui_wants_keyboard_input();
     let was_typing = std::mem::replace(&mut app.was_typing, typing);
     let typing = typing || was_typing;
+    // egui ends any drag on Escape, whoever takes the key afterwards.
+    if ctx.input(|i| i.key_pressed(egui::Key::Escape)) {
+        app.gesture.stop();
+    }
     if app.tool.asking().is_some() {
         return;
     }
@@ -69,7 +73,6 @@ fn shortcuts(app: &mut App, ctx: &egui::Context) {
                 // Abandon the drag and put the point back.
                 app.wb.cancel_gesture();
                 app.drag = None;
-                app.panning = false;
             } else {
                 app.select_tool(Tool::Move);
                 app.wb.selected = None;

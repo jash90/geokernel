@@ -5,6 +5,7 @@ use crate::describe;
 use crate::draw::{self, Scene};
 use crate::floating;
 use crate::geom::{ToCore, ToEgui};
+use crate::gesture::{Button, Event as GestureEvent, Gesture, Grab, MOUSE};
 use crate::grid;
 use crate::hit;
 use crate::icons::Icon;
@@ -15,8 +16,6 @@ use crate::view::{self, Camera};
 use eframe::egui::{self, pos2, vec2, Rect, Sense, Stroke, Ui};
 use geo_kernel::kernel::{Id, Kind};
 
-const POINT_RADIUS: f64 = 11.0;
-const CURVE_RADIUS: f64 = 7.0;
 const ZOOM_BUTTON: f64 = 1.25;
 const ZOOM_TOOL: f64 = 1.5;
 
@@ -51,7 +50,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     if app.seen_rebuilds != app.wb.rebuilds() {
         app.seen_rebuilds = app.wb.rebuilds();
         app.drag = None;
-        app.panning = false;
+        app.gesture.forget_target();
         app.tool.reset();
     }
     let mut cam = app.camera.unwrap_or(Camera::STANDARD);
@@ -60,13 +59,48 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         (d.x as f64, d.y as f64)
     };
 
-    if response.hovered() {
-        let (scroll, pinch) =
-            ui.input(|i| (i.smooth_scroll_delta().y as f64, i.zoom_delta() as f64));
+    // This frame's pointer events go to the automaton; egui decides which
+    // widget a press belongs to. The last primary press and whether the last
+    // primary event was a release are kept for the press-time view below.
+    let mut gesture = app.gesture;
+    let owns_press = response.is_pointer_button_down_on() || response.clicked();
+    let (pressed, released) = ui.input(|i| {
+        gesture.begin_frame(i.time);
+        feed(&mut gesture, &i.events, owns_press)
+    });
+    let zoom = if response.hovered() {
+        let (scroll, pinch, touch) = ui.input(|i| {
+            (
+                i.smooth_scroll_delta().y as f64,
+                i.zoom_delta() as f64,
+                i.multi_touch(),
+            )
+        });
         let factor = view::zoom_factor(scroll, pinch);
-        if factor != 1.0 {
-            let (sx, sy) = response.hover_pos().map_or((0.5 * w, 0.5 * h), to_local);
-            cam.zoom_at(factor, sx, sy, w, h);
+        match touch {
+            Some(t) => Some(gesture.pinch(
+                factor,
+                t.center_pos.core(),
+                (t.translation_delta.x, t.translation_delta.y),
+            )),
+            None => {
+                let center = response.hover_pos().unwrap_or(rect.center());
+                gesture.zoom(factor, center.core())
+            }
+        }
+    } else {
+        None
+    };
+    if let Some(z) = zoom {
+        if z.cancel_drag && app.drag.take().is_some() {
+            app.wb.cancel_gesture();
+        }
+        let (sx, sy) = to_local(z.center.egui());
+        if z.factor != 1.0 {
+            cam.zoom_at(z.factor, sx, sy, w, h);
+        }
+        if z.pan != (0.0, 0.0) {
+            cam.pan_pixels(z.pan.0 as f64, z.pan.1 as f64);
         }
     }
 
@@ -75,13 +109,13 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     // The show/hide tool shows hidden objects faintly and lets them be picked.
     let show_all = tool == Tool::ShowHide;
     let t = cam.transform(w, h);
-    let free_radius = (draw::FREE_POINT_RADIUS + 6.0) as f64;
+    let m = app.metrics;
     let shown = |app: &App, id: Id| show_all || app.wb.is_visible(id);
 
     // What the pointer is over (for highlighting and for picking).
     let pick_at = |app: &App, pos: (f64, f64)| -> Option<Id> {
         let c = app.wb.construction();
-        hit::pick(c, &t, pos, POINT_RADIUS, CURVE_RADIUS, |id| {
+        hit::pick(c, &t, pos, m.point_radius, m.curve_radius, |id| {
             shown(app, id) && (move_tool || app.tool.accepts_object(c.label(id), c.kind(id)))
         })
     };
@@ -91,7 +125,6 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     // change in this very frame, e.g. the keyboard closes on a press). The
     // press is read from this frame's events: when press and release come
     // in one frame (a touch tap) egui keeps no press origin.
-    let (pressed, released) = primary_events(ui);
     if let Some(pos) = pressed {
         app.press_view = app
             .view
@@ -106,80 +139,81 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         ((d.x as f64, d.y as f64), pt)
     };
 
-    if response.drag_started() {
-        app.drag = None;
-        app.panning = false;
-        // egui reports the drag a few pixels after the press: grab what
-        // was under the pointer when the button went down.
-        let origin = ui
-            .input(|i| i.pointer.press_origin())
-            .or(response.interact_pointer_pos());
-        let mut on_point = false;
-        if let (Some(pos), true) = (origin, response.dragged_by(egui::PointerButton::Primary)) {
-            let ((sx, sy), pt) = at_press(app, pos);
-            if move_tool {
-                app.drag = Drag::begin(app.wb.construction(), &pt, sx, sy, free_radius, |id| {
-                    app.wb.is_visible(id)
-                });
-            }
-            // A press on a point never pans: a free point drags (with the
-            // move tool), a dependent one stays.
-            let c = app.wb.construction();
-            on_point = hit::pick(c, &pt, (sx, sy), POINT_RADIUS, CURVE_RADIUS, |id| {
-                shown(app, id) && c.kind(id) == Kind::Point
-            })
-            .is_some();
+    // A drag that starts takes hold of what was under the pointer when the
+    // button went down: a free point (with the move tool), or the view. A
+    // press on a point never pans: a dependent point stays where it is,
+    // unless the move-view tool pans from anywhere.
+    let mut grabbed = None;
+    let intents = gesture.end_frame(response.contains_pointer(), |origin| {
+        let ((sx, sy), pt) = at_press(app, origin.egui());
+        if move_tool {
+            grabbed = Drag::begin(app.wb.construction(), &pt, sx, sy, m.grab_radius, |id| {
+                app.wb.is_visible(id)
+            });
         }
-        if let Some(drag) = app.drag {
+        let c = app.wb.construction();
+        let on_point = hit::pick(c, &pt, (sx, sy), m.point_radius, m.curve_radius, |id| {
+            shown(app, id) && c.kind(id) == Kind::Point
+        })
+        .is_some();
+        if grabbed.is_some() {
+            Grab::Point
+        } else if !on_point || tool == Tool::MoveView {
+            Grab::Pan
+        } else {
+            Grab::Nothing
+        }
+    });
+    app.gesture = gesture;
+    if intents.cancel_drag && app.drag.take().is_some() {
+        app.wb.cancel_gesture();
+    }
+    if intents.started.is_some() {
+        app.drag = grabbed;
+        if let Some(drag) = grabbed {
             app.wb.begin_gesture();
             app.wb.selected = Some(drag.id());
         }
-        // The move-view tool pans from anywhere.
-        app.panning = app.drag.is_none() && (!on_point || tool == Tool::MoveView);
     }
-    if response.dragged() {
-        if let Some(drag) = app.drag {
-            if let Some(pos) = response.interact_pointer_pos() {
-                let (sx, sy) = to_local(pos);
-                let (x, y) = drag.target(&t, sx, sy);
-                app.wb.move_point(drag.id(), x, y);
-            }
-        } else if app.panning {
-            let d = response.drag_delta();
-            cam.pan_pixels(d.x as f64, d.y as f64);
-        }
+    if let (Some(pos), Some(drag)) = (intents.drag_to, app.drag) {
+        let (sx, sy) = to_local(pos.egui());
+        let (x, y) = drag.target(&t, sx, sy);
+        app.wb.move_point(drag.id(), x, y);
     }
-    if response.drag_stopped() {
+    if let Some((dx, dy)) = intents.pan {
+        cam.pan_pixels(dx as f64, dy as f64);
+    }
+    if intents.end_drag {
         app.wb.end_gesture();
         app.drag = None;
-        app.panning = false;
     }
-    if response.clicked() {
-        if let Some(pos) = response.interact_pointer_pos() {
-            let local = to_local(pos);
-            match tool {
-                Tool::ZoomIn => cam.zoom_at(ZOOM_TOOL, local.0, local.1, w, h),
-                Tool::ZoomOut => cam.zoom_at(1.0 / ZOOM_TOOL, local.0, local.1, w, h),
-                Tool::MoveView => {}
-                _ => {
-                    let (local, pt) = at_press(app, pos);
-                    let c = app.wb.construction();
-                    let hit = hit::pick(c, &pt, local, POINT_RADIUS, CURVE_RADIUS, |id| {
-                        shown(app, id)
-                    });
-                    click(app, &pt, local, hit);
-                }
+    // egui decides which widget a click belongs to: a button over the area
+    // takes the click (though a drag from it still pans the view).
+    let tap = intents.tap.filter(|_| response.clicked());
+    if let Some(pos) = tap.map(ToEgui::egui) {
+        let local = to_local(pos);
+        match tool {
+            Tool::ZoomIn => cam.zoom_at(ZOOM_TOOL, local.0, local.1, w, h),
+            Tool::ZoomOut => cam.zoom_at(1.0 / ZOOM_TOOL, local.0, local.1, w, h),
+            Tool::MoveView => {}
+            _ => {
+                let (local, pt) = at_press(app, pos);
+                let c = app.wb.construction();
+                let hit = hit::pick(c, &pt, local, m.point_radius, m.curve_radius, |id| {
+                    shown(app, id)
+                });
+                click(app, &pt, local, hit);
             }
         }
     }
     let cursor = match tool {
-        _ if app.drag.is_some() || app.panning => Some(egui::CursorIcon::Grabbing),
+        _ if app.drag.is_some() || app.gesture.panning() => Some(egui::CursorIcon::Grabbing),
         Tool::MoveView => Some(egui::CursorIcon::Grab),
         Tool::ZoomIn => Some(egui::CursorIcon::ZoomIn),
         Tool::ZoomOut => Some(egui::CursorIcon::ZoomOut),
         Tool::Move => response
             .hover_pos()
-            .filter(|&p| hit_free_point(app, &t, to_local(p), free_radius))
+            .filter(|&p| hit_free_point(app, &t, to_local(p), m.grab_radius))
             .map(|_| egui::CursorIcon::Grab),
         _ => response.hover_pos().map(|_| egui::CursorIcon::Crosshair),
     };
@@ -217,28 +251,64 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     app.view = Some((rect.core(), cam.transform(w, h)));
 }
 
-/// The position of the last primary press among this frame's events, and
-/// whether the last primary button event was a release.
-fn primary_events(ui: &Ui) -> (Option<egui::Pos2>, bool) {
-    ui.input(|i| {
-        let mut pressed = None;
-        let mut released = false;
-        for event in &i.events {
-            if let egui::Event::PointerButton {
+/// Gives this frame's pointer events to the automaton, in order. A press
+/// that egui gave to another widget only moves the pointer. Returns the
+/// position of the last primary press among the events, and whether the
+/// last primary button event was a release.
+fn feed(
+    gesture: &mut Gesture,
+    events: &[egui::Event],
+    owns_press: bool,
+) -> (Option<egui::Pos2>, bool) {
+    let mut pressed = None;
+    let mut released = false;
+    for event in events {
+        match *event {
+            egui::Event::PointerMoved(pos) => gesture.event(GestureEvent::Move {
+                pos: pos.core(),
+                id: MOUSE,
+            }),
+            egui::Event::PointerButton {
                 pos,
-                button: egui::PointerButton::Primary,
+                button,
                 pressed: down,
                 ..
-            } = event
-            {
-                if *down {
-                    pressed = Some(*pos);
+            } => {
+                let primary = button == egui::PointerButton::Primary;
+                if primary {
+                    if down {
+                        pressed = Some(pos);
+                    }
+                    released = !down;
                 }
-                released = !*down;
+                let button = if primary {
+                    Button::Primary
+                } else {
+                    Button::Other
+                };
+                let pos = pos.core();
+                gesture.event(match (down, owns_press) {
+                    (true, true) => GestureEvent::Down {
+                        pos,
+                        id: MOUSE,
+                        button,
+                    },
+                    (true, false) => GestureEvent::Move { pos, id: MOUSE },
+                    (false, _) => GestureEvent::Up {
+                        pos,
+                        id: MOUSE,
+                        button,
+                    },
+                });
             }
+            egui::Event::Touch {
+                phase: egui::TouchPhase::Cancel,
+                ..
+            } => gesture.event(GestureEvent::Cancel),
+            _ => {}
         }
-        (pressed, released)
-    })
+    }
+    (pressed, released)
 }
 
 fn hit_free_point(app: &App, t: &ViewTransform, pos: (f64, f64), radius: f64) -> bool {
