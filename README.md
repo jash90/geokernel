@@ -4,22 +4,26 @@ A native dynamic-geometry application written in Rust, built for speed.
 GeoGebra is the reference for features and the source of algorithms; it is
 not a target for one-to-one compatibility. `geokernel` is a working name.
 
-This project is not affiliated with or endorsed by GeoGebra GmbH. Importing
-GeoGebra files is planned and not implemented yet. The name and logo GeoGebra
-belong to GeoGebra GmbH.
+This project is not affiliated with or endorsed by GeoGebra GmbH. The name
+and logo GeoGebra belong to GeoGebra GmbH. Construction files saved by
+GeoGebra (`.ggb`) can be opened; what is not supported yet is reported, not
+dropped silently.
 
 ## Status
 
-Early. The kernel covers points, lines, segments, rays, circles, vectors
-and numbers, incremental updates, a small script language and SVG output.
+Early. The kernel covers points, lines, segments, rays, circles, vectors,
+polygons, polylines, numbers and booleans, incremental updates, a small
+script language and SVG output.
 The desktop window draws a construction, runs commands from an input bar,
 lists the objects and lets you drag free points. The commands so far: lines,
 segments, rays, midpoints, perpendicular and parallel lines, bisectors,
 tangents and polars of circles, circles (centre and point, centre and
 radius, three points, incircle), intersections, measures (length, distance,
 radius, area, slope, angle, ratios), vectors (between points, direction,
-unit and orthogonal vectors) and transformations (translation, reflection,
-rotation, dilation, shear, stretch).
+unit and orthogonal vectors), transformations (translation, reflection,
+rotation, dilation, shear, stretch), polygons (by vertices, regular, their
+area, perimeter, centroid, vertices and angles) and predicates (collinear,
+parallel, perpendicular, concurrent, concyclic, equal, congruent, tangent).
 
 Every command is checked against values recorded from GeoGebra. See
 `docs/command-matrix.csv` for what is planned and done,
@@ -56,6 +60,7 @@ The reference commit for ported code and recorded test data is
 | `crates/geo-kernel` | The kernel: construction graph, object types, incremental updates, script parser, SVG output. No dependencies and no knowledge of any user interface. |
 | `crates/geo-cli` | The `geokernel` binary: `run`, `demo`, `bench`. |
 | `crates/geo-app` | The `geokernel-app` desktop window (egui on wgpu): draws a construction, with pan and zoom, an input bar, an object list and dragging of free points. |
+| `crates/geo-import` | Reads GeoGebra construction files (`.ggb` or bare XML) into a kernel script, and reports what it skipped and what differs from the values saved in the file. |
 | `crates/geo-golden` | Tests that compare the kernel with values recorded from GeoGebra. |
 | `golden/` | Recorded golden data and its format, [golden/SCHEMA.md](golden/SCHEMA.md). |
 | `examples/` | Example scripts. |
@@ -68,6 +73,7 @@ The reference commit for ported code and recorded test data is
 cargo test --workspace
 cargo run --release -p geo-cli -- demo out        # triangle before and after moving A
 cargo run --release -p geo-cli -- run examples/triangle.geo out.svg
+cargo run --release -p geo-cli -- run drawing.ggb out.svg   # a file saved by GeoGebra
 cargo run --release -p geo-cli -- bench           # 105 thousand objects, dragging a point
 cargo run --release -p geo-app                    # window with the triangle; drag the blue points, type commands
 ```
@@ -97,6 +103,9 @@ R = Rotate(A, a, B)     # A rotated by the angle a about B
 u = Vector(A, B)
 h = Ray(A, B)
 T = Translate(k, u)     # the circle k moved by the vector u
+q = Polygon(A, B, C)    # also creates the sides, named as GeoGebra names them
+g = Polygon(A, B, 5)    # regular polygon on the side AB
+e = AreCollinear(A, B, C)    # a boolean
 ```
 
 The group files in `crates/geo-kernel/src/algo/` list every command and
