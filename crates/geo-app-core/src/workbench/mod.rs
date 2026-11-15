@@ -73,7 +73,6 @@ impl Workbench {
     }
 
     /// The definition of the line that created `label`.
-    #[cfg(test)]
     pub fn definition(&self, label: &str) -> Option<&str> {
         self.log.rhs_of(label)
     }

@@ -1,40 +1,24 @@
 //! `geokernel-app`: a desktop workbench for the construction kernel.
 //!
-//! Logic lives in plain modules (`view`, `interact`, `hit`, `tools`,
-//! `workbench`, `scriptlog`, `undo`, `ticks`, `labels`, `describe`, ...); the
-//! rest (`app`, `canvas`, `algebra`, `toolbar`, `keyboard`, `grid`, `draw`, `icons`)
-//! only turns them into egui calls.
+//! Logic lives in the `geo-app-core` crate (`view`, `interact`, `hit`,
+//! `tools`, `workbench`, `scriptlog`, `undo`, `ticks`, `labels`, `describe`,
+//! ...); the modules here (`app`, `canvas`, `algebra`, `toolbar`, `keyboard`,
+//! `grid`, `draw`, `icons`) only turn it into egui calls.
 
 mod algebra;
 mod app;
-mod arc;
 mod canvas;
 mod cli;
-mod describe;
 mod draw;
-mod errors;
 mod floating;
 mod grid;
-mod highlight;
-mod history;
-mod hit;
 mod icons;
-mod interact;
 mod keyboard;
-mod labelpos;
-mod labels;
 mod layout;
-mod scriptlog;
-mod shape;
 mod style;
 mod theme;
-mod ticks;
 mod tool_icons;
 mod toolbar;
-mod tools;
-mod undo;
-mod view;
-mod workbench;
 
 #[cfg(test)]
 mod frame_counts;
@@ -45,7 +29,10 @@ mod ui_tests;
 
 use app::App;
 use eframe::egui;
-use workbench::Workbench;
+use geo_app_core::workbench::Workbench;
+use geo_app_core::{
+    arc, describe, errors, highlight, hit, interact, labelpos, shape, ticks, tools, view, workbench,
+};
 
 const SCRIPT: &str = include_str!("../../../examples/triangle.geo");
 

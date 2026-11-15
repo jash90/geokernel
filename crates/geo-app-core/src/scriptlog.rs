@@ -113,7 +113,6 @@ impl Log {
     }
 
     /// The definition text of the entry that created `label`.
-    #[cfg(test)]
     pub fn rhs_of(&self, label: &str) -> Option<&str> {
         self.definitions()
             .find(|(l, _)| *l == label)

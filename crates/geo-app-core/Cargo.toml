@@ -1,0 +1,13 @@
+[package]
+name = "geo-app-core"
+description = "The application logic of the geokernel window without any UI toolkit: document, tools, hit tests, view transforms"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+# No dependency on egui, eframe, winit or wgpu: the crate boundary keeps the
+# logic usable by another front end (for example a phone build).
+[dependencies]
+geo-kernel = { path = "../geo-kernel" }

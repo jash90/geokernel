@@ -786,9 +786,17 @@ version = "0.1.0"
 dependencies = [
  "eframe",
  "egui_kittest",
+ "geo-app-core",
  "geo-import",
  "geo-kernel",
  "image",
+]
+
+[[package]]
+name = "geo-app-core"
+version = "0.1.0"
+dependencies = [
+ "geo-kernel",
 ]
 
 [[package]]
