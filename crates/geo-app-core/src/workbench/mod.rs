@@ -355,6 +355,11 @@ impl Workbench {
         self.undo.can_redo()
     }
 
+    /// The undo and redo steps held.
+    pub fn undo_depth(&self) -> (usize, usize) {
+        self.undo.depth()
+    }
+
     pub fn undo(&mut self) -> bool {
         let Some(prev) = self.undo.undo(self.copy(&self.log)) else {
             return false;
