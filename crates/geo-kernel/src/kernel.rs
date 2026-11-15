@@ -116,7 +116,7 @@ impl Value {
     pub fn unit_line(&self) -> Option<(f64, f64, f64)> {
         match *self {
             Value::Line { a, b, c } => {
-                let len = (a * a + b * b).sqrt();
+                let len = a.hypot(b);
                 (len > 0.0).then(|| (a / len, b / len, c / len))
             }
             _ => None,

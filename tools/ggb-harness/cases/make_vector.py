@@ -264,5 +264,24 @@ case("rawscale", [pt("C", 0, 0), "r = 2", "k = Circle(C, r)", pt("E", -5, 1), pt
                   "h = Line(E, F)", "S = Intersect(h, k, 1)", pt("B", 3, -4), "l = Line(S, B)",
                   "d = Direction(l)", "o = OrthogonalVector(l)", "q = UnitVector(l)"],
      [mv("E", -5, 4), mv("F", 5, 4), mv("E", -5, 1), mv("F", 5, 1)])
+# a parallel and a perpendicular to a tiny segment: the parallel is
+# undefined, and its direction still follows the segment
+case("rawscale", [pt("A", 0, 0), pt("Q", 5, 3), num("f", 1), "B = Dilate(Q, f, A)",
+                  "s = Segment(A, B)", pt("P", 0, 1), "p = Line(P, s)", "d = Direction(p)",
+                  "n = PerpendicularLine(P, s)", "o = OrthogonalVector(n)"],
+     [setn("f", 0.000000001), setn("f", 0.000000003), setn("f", 1), setn("f", 0),
+      setn("f", 0.000000003)])
+# a parallel and a perpendicular through an intersection point: GeoGebra
+# keeps the point in homogeneous coordinates, and the lines carry its weight
+THROUGH_S = [pt("A", 0, 0), pt("B", 2, 0), pt("C", 1, -1), pt("D", 1, 3), "l = Line(A, B)",
+             "m = Line(C, D)", "S = Intersect(l, m)", pt("E", 0, 2), pt("F", 3, 3),
+             "g = Line(E, F)"]
+case("rawscale", THROUGH_S + ["p = Line(S, l)", "d = Direction(p)", "q = Line(S, g)",
+                              "e = Direction(q)", "k = Distance(q, g)", "w = Slope(q)"],
+     [mv("D", 2, 3), mv("B", 4, 1), mv("E", -1, 1), mv("D", 1, 3)])
+case("rawscale", THROUGH_S + ["n = PerpendicularLine(S, g)", "o = OrthogonalVector(n)",
+                              "u = UnitVector(n)", "h = PerpendicularLine(E, g)",
+                              "k = Distance(n, h)", "w = Slope(n)"],
+     [mv("D", 2, 3), mv("B", 4, 1), mv("E", -1, 1), mv("D", 1, 3)])
 
 cases.write()

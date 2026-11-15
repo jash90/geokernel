@@ -1156,6 +1156,13 @@ fn a_line_through_far_points_is_not_the_zero_line() {
                 a.hypot(b) > 0.0,
                 "Line(A, B) with A = (4, 1e300) is defined as {v:?}"
             );
+            // The unit-normal form must not overflow to a zero or NaN line.
+            let (ua, ub, uc) = v.unit_line().expect("a unit line");
+            assert!(
+                (ua.hypot(ub) - 1.0).abs() < 1e-12 && uc.is_finite(),
+                "unit form of {v:?} is {:?}",
+                (ua, ub, uc)
+            );
         }
     }
 }

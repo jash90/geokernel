@@ -368,5 +368,15 @@ case("distll", [pt("A", 0, 0), pt("B", 10000000, 1), pt("C", -10000000, -1.00000
                 "S = Intersect(l, m)", "k = Distance(A, S)"],
      [mv("D", 10000000, 1.000002), mv("C", -10000000, -1), mv("D", 10000000, 1),
       mv("D", 10000000, 1.000001), mv("A", 0, 0.5), mv("B", 10, 0.000001)])
+# Nearly parallel lines through points 0.001 apart: the intersection is at
+# infinity when its z is negligible against 1e-8 and against its x and y
+# (DoubleUtil.isEpsilon in GeoPoint.updateCoords), and finite otherwise.
+for x0, y0 in ((0.001, 0.002), (10000, 20000), (1000000000, -3)):
+    case("distll", [pt("A", x0, y0), pt("B", x0 + 0.001, y0 + 0.001), pt("C", x0, y0 + 0.001),
+                    pt("D", x0 + 0.001, y0 + 0.002), "l = Line(A, B)", "m = Line(C, D)",
+                    "S = Intersect(l, m)", "k = Distance(A, S)"],
+         [mv("D", x0 + 0.001, y0 + 0.002001), mv("D", x0 + 0.001, y0 + 0.002002),
+          mv("D", x0 + 0.001, y0 + 0.00201), mv("D", x0 + 0.001, y0 + 0.002),
+          mv("D", x0 + 0.001, y0 + 0.0021)])
 
 cases.write()

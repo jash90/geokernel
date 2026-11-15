@@ -132,7 +132,9 @@ pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
 }
 
 /// `AlgoIntersectLines`: the cross product of the raw coefficients
-/// (`GeoVec3D.cross`), kept only when it lies on both lines.
+/// (`GeoVec3D.cross`), kept only when it lies on both lines
+/// (`GeoLine.isOnFullLine`). A point at infinity (`GeoPoint.updateCoords`)
+/// is reported undefined.
 pub(crate) fn lines(c: &Construction, l: Id, m: Id) -> Option<Value> {
     let (a1, b1, c1) = c.raw_line(l)?;
     let (a2, b2, c2) = c.raw_line(m)?;
@@ -144,18 +146,29 @@ pub(crate) fn lines(c: &Construction, l: Id, m: Id) -> Option<Value> {
         y /= z;
         z = 1.0;
     }
+    if x.is_nan() || y.is_nan() || z.is_nan() || is_epsilon(z, x, y) {
+        return None;
+    }
+    if z < 0.0 {
+        (x, y, z) = (-x, -y, -z);
+    }
+    let (px, py) = if z == 1.0 { (x, y) } else { (x / z, y / z) };
     let incident = |(a, b, cc): (f64, f64, f64)| {
-        let bound = MIN_PRECISION * (a.abs() + b.abs());
-        if is_zero(z) {
-            (a * x + b * y).abs() < bound
-        } else {
-            (a * x / z + b * y / z + cc).abs() < bound
-        }
+        (a * px + b * py + cc).abs() < MIN_PRECISION * (a.abs() + b.abs())
     };
     if !(incident((a1, b1, c1)) && incident((a2, b2, c2))) {
         return None;
     }
-    to_value(hom_point(x, y, z))
+    to_value(Some((px, py)))
+}
+
+/// `DoubleUtil.isEpsilon(e, x, y)`: whether `e` is zero compared with
+/// `STANDARD_PRECISION` and with `x` and `y` (a point at infinity).
+fn is_epsilon(e: f64, x: f64, y: f64) -> bool {
+    let ea = e.abs();
+    !(ea > STANDARD_PRECISION
+        || ea > x.abs() * STANDARD_PRECISION
+        || ea > y.abs() * STANDARD_PRECISION)
 }
 
 /// A point, or `None` where GeoGebra's point is undefined or at infinity.
@@ -330,12 +343,8 @@ fn hom_point(x: f64, y: f64, z: f64) -> Pt {
     if x.is_nan() || y.is_nan() || z.is_nan() {
         return None;
     }
-    // DoubleUtil.isEpsilon(z, x, y): a point at infinity.
-    let za = z.abs();
-    if !(za > STANDARD_PRECISION
-        || za > x.abs() * STANDARD_PRECISION
-        || za > y.abs() * STANDARD_PRECISION)
-    {
+    if is_epsilon(z, x, y) {
+        // a point at infinity
         return None;
     }
     let (x, y, z) = if z < 0.0 { (-x, -y, -z) } else { (x, y, z) };

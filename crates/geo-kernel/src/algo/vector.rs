@@ -247,8 +247,10 @@ fn undefined_raw(c: &Construction, id: Id) -> Option<(f64, f64, f64)> {
 /// Objects that a direction vector reads besides its argument.
 ///
 /// For a line the kernel holds as undefined, [`undefined_raw`] reads the
-/// inputs of the line's definition. The line stays undefined while they
-/// move, so the vector must be recomputed from them directly.
+/// objects of the line's definition: the points and vectors it is made from,
+/// and the line, ray or segment that a parallel, perpendicular or
+/// translation is made from. The line stays undefined while they change, so
+/// the vector must be recomputed from them directly.
 pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
     let mut ids = Vec::new();
     let Def::Vector(
@@ -281,10 +283,12 @@ pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
             }
             Def::Parallel { through, to } | Def::Perpendicular { through, to } => {
                 push(through);
+                push(to);
                 id = to;
             }
             Def::Vector(VectorDef::Translate { src, by, .. }) => {
                 push(by);
+                push(src);
                 id = src;
             }
             _ => return ids,
@@ -859,6 +863,21 @@ mod tests {
         assert_eq!(start(&c, c.id("v").unwrap()), Some((1.0, 2.0)));
         assert_eq!(start(&c, c.id("u").unwrap()), Some((0.0, 0.0)));
         assert_eq!(start(&c, c.id("A").unwrap()), None);
+    }
+
+    #[test]
+    fn the_direction_of_an_undefined_parallel_follows_its_segment() {
+        let mut c = load(
+            "A = (0, 0)\nB = (0.000000001, 0)\ns = Segment(A, B)\nP = (0, 1)\n\
+             p = Line(P, s)\nd = Direction(p)\n",
+        )
+        .unwrap();
+        assert_eq!(value(&c, "p"), Value::Undefined);
+        assert_eq!(vec_of(&c, "d"), (1e-9, 0.0));
+        let b = c.id("B").unwrap();
+        c.move_point(b, 3e-9, 0.0).unwrap();
+        assert_eq!(value(&c, "p"), Value::Undefined);
+        assert_eq!(vec_of(&c, "d"), (3e-9, 0.0));
     }
 
     #[test]
