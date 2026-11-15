@@ -336,4 +336,42 @@ for centre in ("0.00000002", "0.000000005"):
     case("smallcircle", [f"A = ({centre}, 0)", "B = (3, 0)", "c = Circle(A, B)"] + REST,
          [mv("B", 0, 0), mv("B", 3, 0)])
 
+# ------------------------------------------------ raw scale of the lines
+# Lines of this group with tiny raw coefficients used where GeoGebra tests
+# raw coefficients against 1e-8: Distance(line, line), Slope and
+# AngularBisector(line, line). The tiny offsets are carried by script
+# literals, since moves are rounded to 6 decimals.
+topic("bisector")
+# perpendicular bisectors of two pairs of points 1e-6 apart
+case("bisector", [pt("A", 0, 0), pt("B", 0.000001, 0.000003), pt("C", 2, 1),
+                  pt("D", 2.000002, 1.000001), "f = LineBisector(A, B)", "g = LineBisector(C, D)",
+                  "d = Distance(f, g)", "e = Distance(g, f)", "m = Slope(f)",
+                  "b = AngularBisector(f, g)"],
+     [mv("D", 2.000001, 1.000003), mv("D", 2.000003, 1.000001), mv("B", 0.000001, 0),
+      mv("B", 3, 1), mv("D", 4, 2), mv("D", 2.000002, 1.000001)])
+
+topic("polar")
+# the pole 2e-8 and 5e-9 off the centre: the polar is defined, its raw y
+# coefficient passes GeoGebra's zero test
+case("polar", ["A = (0.00000002, 0.000000005)", pt("B", 2, 0), "c = Circle(A, B)", pt("P", 1, 1),
+               "p = Polar(P, c)", pt("E", -1, 3), pt("F", 4, 2), "l = Line(E, F)",
+               "m = Slope(p)", "d = Distance(p, l)", "b = AngularBisector(p, l)"],
+     [mv("P", 0, 0), mv("F", 4, 3), mv("P", 0, 1), mv("P", 0, 0), mv("P", 1, 1)])
+
+topic("tangent")
+# the point approaches the circle: the two tangents become short and nearly
+# the same line
+case("tangent", [pt("A", 0, 0), num("r", 2), "c = Circle(A, r)", pt("P", 3, 0),
+                 "t = Tangent(P, c)", "d = Distance(t_{1}, t_{2})", "m = Slope(t_{1})",
+                 "b = AngularBisector(t_{1}, t_{2})"],
+     [mv("P", 2.001, 0), mv("P", 2.00001, 0), mv("P", 2.000001, 0), mv("P", 0, 2.000001),
+      mv("P", 1.414214, 1.414214), mv("P", 3, 0)])
+# the polar and the tangents of a dilated circle: GeoGebra scales the
+# circle's matrix, and the polar and the tangent at a point on the circle
+# carry that scale
+case("polar", [pt("A", 1, 1), num("r", 2), "k = Circle(A, r)", num("f", 3), "c = Dilate(k, f)",
+               pt("P", 12, 9), "p = Polar(P, c)", "t = Tangent(P, c)", pt("E", 2, -1),
+               pt("F", 4, 0), "l = Line(E, F)", "u = Tangent(l, c)", "d = Distance(p, l)"],
+     [setn("f", 0.5), mv("P", 2.5, 1.5), setn("f", -2), mv("P", 9, 4), setn("f", 3)])
+
 cases.write()

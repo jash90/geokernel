@@ -1786,6 +1786,147 @@
           "n": { "type": "circle", "defined": true, "cx": 123456.789, "cy": 98765.4321, "r": 3.0 }
         }
       ]
+    },
+    {
+      "id": "transform-rotate-021",
+      "group": "transform",
+      "script": [
+        "A = (0, 0)",
+        "B = (0.000001, 0.000002)",
+        "l = Line(A, B)",
+        "w = 0.5",
+        "Q = (1, 1)",
+        "m = Rotate(l, w)",
+        "n = Rotate(l, w, Q)",
+        "d = Distance(l, m)",
+        "e = Distance(l, n)",
+        "s = Slope(n)",
+        "b = AngularBisector(l, n)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "w", "value": 0.001 },
+        { "action": "set_number", "label": "w", "value": 1.0E-6 },
+        { "action": "set_number", "label": "w", "value": 0.0 },
+        { "action": "set_number", "label": "w", "value": 0.5 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 1.0 },
+        { "action": "set_number", "label": "w", "value": 1.0E-6 },
+        { "action": "set_number", "label": "w", "value": 0.5 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0E-6, "y": 2.0E-6 },
+          "l": { "type": "line", "defined": true, "a": -2.0E-6, "b": 1.0E-6, "c": 0.0 },
+          "w": { "type": "number", "defined": true, "value": 0.5 },
+          "Q": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "m": { "type": "line", "defined": true, "a": -2.2345906623849485E-6, "b": -8.126851531803334E-8, "c": 0.0 },
+          "n": { "type": "line", "defined": true, "a": -2.2345906623849485E-6, "b": -8.126851531803334E-8, "c": 1.3158591777029819E-6 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "e": { "type": "number", "defined": true, "value": 0.526691643295513 },
+          "s": { "type": "number", "defined": true, "value": -27.496388406262625 },
+          "b_{1}": { "type": "line", "defined": true, "a": -0.9772640298347183, "b": 0.21202597951950836, "c": 0.3036755958774924 },
+          "b_{2}": { "type": "line", "defined": true, "a": -0.21202597951950836, "b": -0.9772640298347183, "c": 1.1892900093542265 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0E-6, "y": 2.0E-6 },
+          "l": { "type": "line", "defined": true, "a": -2.0E-6, "b": 1.0E-6, "c": 0.0 },
+          "w": { "type": "number", "defined": true, "value": 0.001 },
+          "Q": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "m": { "type": "line", "defined": true, "a": -2.0009989998334163E-6, "b": 9.97999500333375E-7, "c": 0.0 },
+          "n": { "type": "line", "defined": true, "a": -2.0009989998334163E-6, "b": 9.97999500333375E-7, "c": 2.9994995000416995E-9 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "e": { "type": "number", "defined": true, "value": 0.001340747252972788 },
+          "s": { "type": "number", "defined": true, "value": 2.005010021713434 },
+          "b_{1}": { "type": "line", "defined": true, "a": -0.8946506859849523, "b": 0.4467663260213936, "c": 6.7070856189555E-4 },
+          "b_{2}": { "type": "line", "defined": true, "a": -0.4467663260213936, "b": -0.8946506859849523, "c": 1.3414170120064042 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0E-6, "y": 2.0E-6 },
+          "l": { "type": "line", "defined": true, "a": -2.0E-6, "b": 1.0E-6, "c": 0.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0E-6 },
+          "Q": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "m": { "type": "line", "defined": true, "a": -2.000000999999E-6, "b": 9.999979999995E-7, "c": 0.0 },
+          "n": { "type": "line", "defined": true, "a": -2.000000999999E-6, "b": 9.999979999995E-7, "c": 2.9999994999550498E-12 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "e": { "type": "number", "defined": true, "value": 1.3416398920536986E-6 },
+          "s": { "type": "number", "defined": true, "value": 2.00000500001 },
+          "b_{1}": { "type": "line", "defined": true, "a": -0.8944274146066018, "b": 0.44721314828630654, "c": 6.708202813232589E-7 },
+          "b_{2}": { "type": "line", "defined": true, "a": -0.44721314828630654, "b": -0.8944274146066018, "c": 1.3416405628569614 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0E-6, "y": 2.0E-6 },
+          "l": { "type": "line", "defined": true, "a": -2.0E-6, "b": 1.0E-6, "c": 0.0 },
+          "w": { "type": "number", "defined": true, "value": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "m": { "type": "line", "defined": true, "a": -2.0E-6, "b": 1.0E-6, "c": 0.0 },
+          "n": { "type": "line", "defined": true, "a": -2.0E-6, "b": 1.0E-6, "c": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "e": { "type": "number", "defined": true, "value": 0.0 },
+          "s": { "type": "number", "defined": true, "value": 2.0 },
+          "b_{1}": { "type": "line", "defined": true, "a": -0.8944271909999159, "b": 0.4472135954999579, "c": 0.0 },
+          "b_{2}": { "type": "line", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0E-6, "y": 2.0E-6 },
+          "l": { "type": "line", "defined": true, "a": -2.0E-6, "b": 1.0E-6, "c": 0.0 },
+          "w": { "type": "number", "defined": true, "value": 0.5 },
+          "Q": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "m": { "type": "line", "defined": true, "a": -2.2345906623849485E-6, "b": -8.126851531803334E-8, "c": 0.0 },
+          "n": { "type": "line", "defined": true, "a": -2.2345906623849485E-6, "b": -8.126851531803334E-8, "c": 1.3158591777029819E-6 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "e": { "type": "number", "defined": true, "value": 0.526691643295513 },
+          "s": { "type": "number", "defined": true, "value": -27.496388406262625 },
+          "b_{1}": { "type": "line", "defined": true, "a": -0.9772640298347183, "b": 0.21202597951950836, "c": 0.3036755958774924 },
+          "b_{2}": { "type": "line", "defined": true, "a": -0.21202597951950836, "b": -0.9772640298347183, "c": 1.1892900093542265 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "l": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": 0.0 },
+          "w": { "type": "number", "defined": true, "value": 0.5 },
+          "Q": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "m": { "type": "line", "defined": true, "a": -2.3158591777029818, "b": 2.1533221470669153, "c": 0.0 },
+          "n": { "type": "line", "defined": true, "a": -2.3158591777029818, "b": 2.1533221470669153, "c": 2.1625370306360665 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "e": { "type": "number", "defined": true, "value": 0.0 },
+          "s": { "type": "number", "defined": true, "value": 1.0754819852930326 },
+          "b_{1}": { "type": "line", "defined": true, "a": -0.5411050145998574, "b": 0.8409550304117862, "c": 0.3528978671361049 },
+          "b_{2}": { "type": "line", "defined": true, "a": -0.8409550304117862, "b": -0.5411050145998574, "c": 1.3820600450116434 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "l": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": 0.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0E-6 },
+          "Q": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "m": { "type": "line", "defined": true, "a": -1.0000029999995, "b": 2.9999989999984997, "c": 0.0 },
+          "n": { "type": "line", "defined": true, "a": -1.0000029999995, "b": 2.9999989999984997, "c": 4.000001000088234E-6 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "e": { "type": "number", "defined": true, "value": 0.0 },
+          "s": { "type": "number", "defined": true, "value": 0.3333344444448148 },
+          "b_{1}": { "type": "line", "defined": true, "a": -0.3162282403584475, "b": 0.9486831399365122, "c": 6.324556902082001E-7 },
+          "b_{2}": { "type": "line", "defined": true, "a": -0.9486831399365122, "b": -0.3162282403584475, "c": 1.2649113803145748 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "l": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": 0.0 },
+          "w": { "type": "number", "defined": true, "value": 0.5 },
+          "Q": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "m": { "type": "line", "defined": true, "a": -2.3158591777029818, "b": 2.1533221470669153, "c": 0.0 },
+          "n": { "type": "line", "defined": true, "a": -2.3158591777029818, "b": 2.1533221470669153, "c": 2.1625370306360665 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "e": { "type": "number", "defined": true, "value": 0.0 },
+          "s": { "type": "number", "defined": true, "value": 1.0754819852930326 },
+          "b_{1}": { "type": "line", "defined": true, "a": -0.5411050145998574, "b": 0.8409550304117862, "c": 0.3528978671361049 },
+          "b_{2}": { "type": "line", "defined": true, "a": -0.8409550304117862, "b": -0.5411050145998574, "c": 1.3820600450116434 }
+        }
+      ]
     }
   ]
 }

@@ -237,4 +237,13 @@ case("diameter", [pt("A", 1, 1), pt("B", 4, 3), pt("C", -2, 0), num("r", 2),
                   "s = Segment(A, B)", "k = Circle(C, r)", "g = Diameter(s, k)"],
      [mv("B", 1, 1), mv("B", 4, 3), mv("B", 1 + 5e-9, 1), mv("B", 1 + 2e-8, 1), mv("B", 4, 3)])
 
+# Diameters conjugate to a line through points 1e-6 apart: the raw
+# coefficients of the diameter have the scale of the line, so GeoGebra's
+# zero tests in Distance(line, line), Slope and AngularBisector see them.
+case("diameter", [pt("A", 0, 0), pt("B", 0.000001, 0.000002), pt("C", 2, 1), num("r", 3),
+                  "f = Line(A, B)", "k = Circle(C, r)", "g = Diameter(f, k)",
+                  "d = Distance(f, g)", "s = Slope(g)", "b = AngularBisector(f, g)"],
+     [mv("B", 0.000001, 0), mv("B", 0, 0.000001), mv("B", 0.000002, 0.000001), mv("B", 3, 1),
+      mv("C", -1, 4), mv("B", 0.000001, 0.000002)])
+
 cases.write()

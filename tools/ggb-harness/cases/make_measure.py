@@ -325,4 +325,40 @@ case("cross", [pt("A", 0, 0), pt("B", 0.001, 0), pt("C", 0.003, 0), pt("D", 0.00
      [mv("D", 0.007, 0.000001), mv("D", 0.007, 0.00002), mv("B", 0.001, 0.000001),
       mv("B", 0.001, 0), mv("D", 0.007, 0)])
 
+# ------------------------------------------------ raw scale of the lines
+# GeoGebra keeps the raw coefficients each algorithm computes and tests them
+# against 1e-8; these cases probe that scale.
+topic("distll")
+# The reverse window: short lines whose raw cross product is below 1e-8
+# although their directions differ clearly, so GeoGebra calls them parallel.
+for a, b in (("Line", "Line"), ("Segment", "Segment")):
+    case("distll", [pt("A", 0, 0), pt("B", 0.0001, 0), pt("C", 0, 1), pt("D", 0.0001, 1.0003),
+                    f"l = {a}(A, B)", f"m = {b}(C, D)", "d = Distance(l, m)",
+                    "g = Distance(m, l)"],
+         [mv("D", 0.0001, 1.00005), mv("D", 0.0001, 1.00001), mv("D", 0.0002, 1.00005),
+          mv("B", 0.001, 0), mv("B", 0.0001, 0), mv("C", 0.00003, 1), mv("D", 0.0001, 0.99995),
+          mv("D", 0.0001, 1.0003)])
+# Chains of perpendiculars and parallels on a tiny and on a very long base
+# line: GeoGebra rescales each perpendicular by powers of two into [1e-2, 1e7].
+CHAIN = ["l = Line(A, B)", pt("P", 3, 1), pt("Q", -2, 4), pt("R", 1, -3),
+         "f = PerpendicularLine(P, l)", "g = PerpendicularLine(Q, f)",
+         "h = PerpendicularLine(R, g)", "i = PerpendicularLine(P, h)", "p = Line(Q, i)",
+         "q = Line(R, p)", "j = PerpendicularLine(Q, q)", "da = Distance(f, h)",
+         "db = Distance(l, g)", "dc = Distance(g, q)", "dd = Distance(j, l)",
+         "sa = Slope(h)", "sb = Slope(q)"]
+case("distll", [pt("A", 0, 0), pt("B", 0.000002, 0.000001)] + CHAIN,
+     [mv("B", 0.000001, 0), mv("B", 0, 0.000001), mv("B", 0.000001, 0.000003), mv("P", -5, 2),
+      mv("A", 0.000001, 0.000001), mv("A", 0, 0)])
+case("distll", [pt("A", -20000000, 10000000), pt("B", 20000000, -15000000)] + CHAIN,
+     [mv("B", 20000000, 10000000.5), mv("B", 20000000, 10000001), mv("P", 70000000, 1),
+      mv("B", -20000000, -15000000), mv("A", 30000000, 0)])
+# Parallel and perpendicular through an intersection point. GeoGebra keeps
+# the point in homogeneous coordinates (x, y, z) with z the raw cross product
+# of the two lines, and both lines carry that z in their raw coefficients.
+case("distll", [pt("A", 0, 0), pt("B", 4, 1), pt("C", 1, 3), pt("D", 2, -1), "l = Line(A, B)",
+                "m = Line(C, D)", "S = Intersect(l, m)", pt("E", -2, 2), pt("F", 3, 4),
+                "g = Line(E, F)", "p = Line(S, g)", "n = PerpendicularLine(S, g)",
+                "da = Distance(p, g)", "db = Distance(n, l)", "sa = Slope(n)"],
+     [mv("D", 5, 0), mv("B", 40, 10), mv("E", 0, 0), mv("D", 2, -1)])
+
 cases.write()

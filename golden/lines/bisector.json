@@ -792,6 +792,124 @@
           "f": { "type": "line", "defined": true, "a": -3.0, "b": -4.0, "c": -987.5 }
         }
       ]
+    },
+    {
+      "id": "lines-bisector-015",
+      "group": "lines",
+      "script": [
+        "A = (0, 0)",
+        "B = (0.000001, 0.000003)",
+        "C = (2, 1)",
+        "D = (2.000002, 1.000001)",
+        "f = LineBisector(A, B)",
+        "g = LineBisector(C, D)",
+        "d = Distance(f, g)",
+        "e = Distance(g, f)",
+        "m = Slope(f)",
+        "b = AngularBisector(f, g)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "D", "x": 2.000001, "y": 1.000003 },
+        { "action": "move", "label": "D", "x": 2.000003, "y": 1.000001 },
+        { "action": "move", "label": "B", "x": 1.0E-6, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 1.0 },
+        { "action": "move", "label": "D", "x": 4.0, "y": 2.0 },
+        { "action": "move", "label": "D", "x": 2.000002, "y": 1.000001 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0E-6, "y": 3.0E-6 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 2.000002, "y": 1.000001 },
+          "f": { "type": "line", "defined": true, "a": -1.0E-6, "b": -3.0E-6, "c": 5.0000000000000005E-12 },
+          "g": { "type": "line", "defined": true, "a": -1.9999999998354667E-6, "b": -9.999999999177334E-7, "c": 5.000002499588667E-6 },
+          "d": { "type": "number", "defined": true, "value": 0.7905682291879723 },
+          "e": { "type": "number", "defined": true, "value": 2.236068350177786 },
+          "m": { "type": "number", "defined": true, "value": -0.3333333333333333 },
+          "b_{1}": { "type": "line", "defined": true, "a": -0.655201741360129, "b": -0.7554539549957064, "c": 1.210152729866484 },
+          "b_{2}": { "type": "line", "defined": true, "a": 0.7554539549957064, "b": -0.655201741360129, "c": -2.9215630012716143 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0E-6, "y": 3.0E-6 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 2.000001, "y": 1.000003 },
+          "f": { "type": "line", "defined": true, "a": -1.0E-6, "b": -3.0E-6, "c": 5.0000000000000005E-12 },
+          "g": { "type": "line", "defined": true, "a": -1.000000000139778E-6, "b": -2.9999999999752447E-6, "c": 5.000005000254801E-6 },
+          "d": { "type": "number", "defined": true, "value": 1.5811388301778118 },
+          "e": { "type": "number", "defined": true, "value": 1.5811388301544063 },
+          "m": { "type": "number", "defined": true, "value": -0.3333333333333333 },
+          "b_{1}": { "type": "line", "defined": true, "a": -0.3162277660168379, "b": -0.9486832980505138, "c": 0.7905709962160332 },
+          "b_{2}": { "type": "line", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0E-6, "y": 3.0E-6 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 2.000003, "y": 1.000001 },
+          "f": { "type": "line", "defined": true, "a": -1.0E-6, "b": -3.0E-6, "c": 5.0000000000000005E-12 },
+          "g": { "type": "line", "defined": true, "a": -2.9999999999752447E-6, "b": -9.999999999177334E-7, "c": 7.000004999868221E-6 },
+          "d": { "type": "number", "defined": true, "value": 0.7378637332722665 },
+          "e": { "type": "number", "defined": true, "value": 2.2135954162033973 },
+          "m": { "type": "number", "defined": true, "value": -0.3333333333333333 },
+          "b_{1}": { "type": "line", "defined": true, "a": -0.707106781194398, "b": -0.7071067811786969, "c": 1.2374386348463544 },
+          "b_{2}": { "type": "line", "defined": true, "a": 0.7071067811786969, "b": -0.707106781194398, "c": -2.474873734090111 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0E-6, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 2.000003, "y": 1.000001 },
+          "f": { "type": "line", "defined": true, "a": -1.0E-6, "b": 0.0, "c": 5.0E-13 },
+          "g": { "type": "line", "defined": true, "a": -2.9999999999752447E-6, "b": -9.999999999177334E-7, "c": 7.000004999868221E-6 },
+          "d": { "type": "number", "defined": true, "value": 2.333334499975328 },
+          "e": { "type": "number", "defined": true, "value": 2.2135954689080246 },
+          "m": { "type": "number", "defined": false },
+          "b_{1}": { "type": "line", "defined": true, "a": -0.9870874576392752, "b": -0.16018224299600836, "c": 1.1212767552247729 },
+          "b_{2}": { "type": "line", "defined": true, "a": 0.16018224299600836, "b": -0.9870874576392752, "c": 6.9096155786282605 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 2.000003, "y": 1.000001 },
+          "f": { "type": "line", "defined": true, "a": -3.0, "b": -1.0, "c": 5.0 },
+          "g": { "type": "line", "defined": true, "a": -2.9999999999752447E-6, "b": -9.999999999177334E-7, "c": 7.000004999868221E-6 },
+          "d": { "type": "number", "defined": true, "value": 0.6324571131491001 },
+          "e": { "type": "number", "defined": true, "value": 0.6324571131537811 },
+          "m": { "type": "number", "defined": true, "value": -3.0 },
+          "b_{1}": { "type": "line", "defined": true, "a": -0.9486832980505138, "b": -0.31622776601683794, "c": 1.8973673866669316 },
+          "b_{2}": { "type": "line", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 4.0, "y": 2.0 },
+          "f": { "type": "line", "defined": true, "a": -3.0, "b": -1.0, "c": 5.0 },
+          "g": { "type": "line", "defined": true, "a": -2.0, "b": -1.0, "c": 7.5 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "e": { "type": "number", "defined": true, "value": 0.0 },
+          "m": { "type": "number", "defined": true, "value": -3.0 },
+          "b_{1}": { "type": "line", "defined": true, "a": -0.9238795325112867, "b": -0.3826834323650897, "c": 2.473844073285405 },
+          "b_{2}": { "type": "line", "defined": true, "a": 0.3826834323650897, "b": -0.9238795325112867, "c": 12.50520273730381 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 2.000002, "y": 1.000001 },
+          "f": { "type": "line", "defined": true, "a": -3.0, "b": -1.0, "c": 5.0 },
+          "g": { "type": "line", "defined": true, "a": -1.9999999998354667E-6, "b": -9.999999999177334E-7, "c": 5.000002499588667E-6 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "e": { "type": "number", "defined": true, "value": 0.0 },
+          "m": { "type": "number", "defined": true, "value": -3.0 },
+          "b_{1}": { "type": "line", "defined": true, "a": -0.9238795325112867, "b": -0.3826834323650897, "c": 1.9134177222523605 },
+          "b_{2}": { "type": "line", "defined": true, "a": 0.3826834323650897, "b": -0.9238795325112867, "c": 4.6194055483615095 }
+        }
+      ]
     }
   ]
 }
