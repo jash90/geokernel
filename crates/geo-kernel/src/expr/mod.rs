@@ -23,10 +23,17 @@
 //! A function `f(x) = ...` keeps its tree and is evaluated wherever it is
 //! used: sampled through [`function_value`], expanded inside other
 //! functions (`g(x) = f(x) + 1`), or applied to a number (`v = f(2)`).
+//!
+//! An [`ExprDef`] is valid only in the construction that made it: adding it
+//! anywhere else, or adding it a second time, is
+//! [`Error::UnknownObject`](crate::Error::UnknownObject). To rebuild an
+//! expression object elsewhere, take its tree with
+//! [`Construction::expression`] and add it with
+//! [`Construction::add_expression`]; the tree is checked again there.
 
 mod eval;
 mod lex;
-pub(crate) use lex::plain_number;
+pub(crate) use lex::{is_name_char, plain_number};
 pub(crate) mod math;
 mod names;
 mod parse;
@@ -35,9 +42,10 @@ mod types;
 
 use crate::algo::intersect::Hint;
 use crate::algo::vector::VectorDef;
-use crate::kernel::{Construction, Def, Id, Kind, Value};
+use crate::kernel::{Construction, Def, Error, Id, Kind, Value};
 
-/// Handle of an expression object's tree; see the module documentation.
+/// Handle of an expression object's tree, valid only in the construction
+/// that made it; see the module documentation.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ExprDef {
     kind: Kind,
@@ -225,6 +233,27 @@ impl Entry {
 #[derive(Default)]
 pub(crate) struct Table {
     entries: Vec<Entry>,
+    /// The tree being added, the only one a new [`ExprDef`] may name.
+    pending: Option<u32>,
+}
+
+/// An expression object's tree, owned: what [`Construction::expression`]
+/// hands out and [`Construction::add_expression`] adds again. Like a
+/// [`Def`], it names other objects by [`Id`], so it belongs in a
+/// construction whose objects up to those ids are the same ones, such as a
+/// rebuild of the construction it came from.
+#[derive(Clone, Debug)]
+pub struct Expression {
+    kind: Kind,
+    nodes: Vec<Node>,
+    root: u32,
+}
+
+impl Expression {
+    /// The kind of object the expression defines.
+    pub fn kind(&self) -> Kind {
+        self.kind
+    }
 }
 
 impl Table {
@@ -256,6 +285,119 @@ pub(crate) fn children(node: &Node) -> impl Iterator<Item = u32> {
 
 fn entry(c: &Construction, d: ExprDef) -> &Entry {
     &c.exprs.entries[d.index as usize]
+}
+
+/// `Construction::check` of an expression handle: only the tree being
+/// added may be named, so a handle from another construction, or one that
+/// an object already holds, is rejected.
+pub(crate) fn check_handle(c: &Construction, d: ExprDef) -> Result<(), Error> {
+    if c.exprs.pending == Some(d.index) {
+        Ok(())
+    } else {
+        Err(Error::UnknownObject)
+    }
+}
+
+/// The tree of the expression object `id`, if it is one.
+pub(crate) fn expression(c: &Construction, id: Id) -> Option<Expression> {
+    if id.0 >= c.len() {
+        return None;
+    }
+    match c.def(id) {
+        Def::Expr(d) => {
+            let e = entry(c, d);
+            Some(Expression {
+                kind: d.kind,
+                nodes: e.nodes.clone(),
+                root: e.root,
+            })
+        }
+        _ => None,
+    }
+}
+
+/// Adds the expression `e` as `name`, checking its tree against this
+/// construction as a parsed line is checked. A tree that names a missing
+/// object, an object of another kind, or a command whose arguments do not
+/// fit is [`Error::UnknownObject`].
+pub(crate) fn add_expression(
+    c: &mut Construction,
+    name: &str,
+    e: &Expression,
+) -> Result<Id, Error> {
+    let parsed = reparse(c, e).ok_or(Error::UnknownObject)?;
+    if e.kind == Kind::Function && parsed.tys[parsed.root as usize] == Ty::Vec {
+        return Err(Error::UnknownObject);
+    }
+    add_parsed(c, name, parsed, e.kind)
+}
+
+/// What [`parse::parse`] would have given for the tree of `e`, or `None`
+/// when the tree does not fit this construction.
+fn reparse(c: &Construction, e: &Expression) -> Option<parse::Parsed> {
+    let n = e.nodes.len();
+    if e.root as usize >= n {
+        return None;
+    }
+    let mut parents: Vec<Id> = Vec::new();
+    let mut inputs: Vec<Id> = Vec::new();
+    let mut read = |id: Id, input: bool| {
+        if !parents.contains(&id) {
+            parents.push(id);
+        }
+        if input && !inputs.contains(&id) {
+            inputs.push(id);
+        }
+    };
+    let mut uses_var = false;
+    for (i, node) in e.nodes.iter().enumerate() {
+        if children(node).any(|child| child as usize >= i) {
+            return None;
+        }
+        match *node {
+            Node::Obj(id) => {
+                (id.0 < c.len()).then_some(())?;
+                read(id, true);
+            }
+            Node::Apply(f, _) => {
+                (f.0 < c.len() && c.kind(f) == Kind::Function).then_some(())?;
+                read(f, true);
+            }
+            Node::Cmd(def, _) => {
+                c.check(&def).ok()?;
+                for &p in def.parents().as_slice() {
+                    read(p, false);
+                }
+                for p in crate::algo::intersect::hidden_parents(c, &def) {
+                    read(p, false);
+                }
+                for p in crate::algo::vector::hidden_parents(c, &def) {
+                    read(p, false);
+                }
+            }
+            Node::Var => uses_var = true,
+            _ => {}
+        }
+    }
+    let (tys, depth, cost, vars) = types::check(c, &e.nodes, e.root).ok()?;
+    let r = e.root as usize;
+    if depth[r] > parse::MAX_DEPTH || cost[r] > parse::MAX_COST {
+        return None;
+    }
+    if uses_var && e.kind != Kind::Function {
+        return None;
+    }
+    Some(parse::Parsed {
+        nodes: e.nodes.clone(),
+        tys,
+        root: e.root,
+        parents,
+        inputs,
+        uses_var,
+        depth: depth[r],
+        cost: cost[r],
+        vars: vars[r],
+    })
 }
 
 /// Whether an expression object is an angle (one angle dimension).
@@ -389,6 +531,15 @@ fn function(c: &mut Construction, name: &str, parsed: parse::Parsed) -> Result<I
 }
 
 fn add(c: &mut Construction, name: &str, parsed: parse::Parsed, kind: Kind) -> Result<Id, String> {
+    add_parsed(c, name, parsed, kind).map_err(|e| e.to_string())
+}
+
+fn add_parsed(
+    c: &mut Construction,
+    name: &str,
+    parsed: parse::Parsed,
+    kind: Kind,
+) -> Result<Id, Error> {
     let function = kind == Kind::Function;
     // `AlgebraProcessor.processNumber`: independent unless it reads an
     // object; a command such as `Mod(7, 3)` makes a helper object, so an
@@ -414,16 +565,18 @@ fn add(c: &mut Construction, name: &str, parsed: parse::Parsed, kind: Kind) -> R
             _ => None,
         };
         if let Some(def) = free {
-            return c.add(name, def).map_err(|e| e.to_string());
+            return c.add(name, def);
         }
     }
-    let index = u32::try_from(c.exprs.entries.len()).map_err(|_| "too many expressions")?;
+    let index = u32::try_from(c.exprs.entries.len()).map_err(|_| Error::UnknownObject)?;
     c.exprs.entries.push(entry);
-    let def = Def::Expr(ExprDef { kind, index });
-    c.add(name, def).map_err(|e| {
+    c.exprs.pending = Some(index);
+    let result = c.add(name, Def::Expr(ExprDef { kind, index }));
+    c.exprs.pending = None;
+    if result.is_err() {
         c.exprs.entries.pop();
-        e.to_string()
-    })
+    }
+    result
 }
 
 #[cfg(test)]

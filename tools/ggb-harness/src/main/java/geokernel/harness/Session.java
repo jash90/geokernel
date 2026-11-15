@@ -53,6 +53,7 @@ final class Session {
     private static final Pattern NUMBER = Pattern.compile("^-?\\d+(\\.\\d+)?$");
     private static final Pattern POINT =
             Pattern.compile("^\\(-?\\d+(\\.\\d+)?, -?\\d+(\\.\\d+)?\\)$");
+    private static final Pattern CALL = Pattern.compile("(?<![A-Za-z0-9_])([A-Z][A-Za-z0-9]*)\\s*\\(");
     private static final Pattern COMMAND = Pattern.compile("^([A-Za-z]+)\\[?\\(.*\\)$");
 
     private final AppCommon app;
@@ -127,7 +128,7 @@ final class Session {
                     + "', got " + geo.getClass().getSimpleName());
         }
         boolean free = expression || functionLine
-                ? !readsObjects(definition)
+                ? !readsObjects(definition) && !callsCommand(definition)
                 : (expected.equals("point") || expected.equals("vector"))
                         && POINT.matcher(definition).matches()
                         || expected.equals("number") && NUMBER.matcher(definition).matches();
@@ -285,6 +286,21 @@ final class Session {
     }
 
     /** Whether a definition names a scripted object (then GeoGebra makes it dependent). */
+    /**
+     * Whether the definition calls a command such as {@code Mod(7, 3)}: an
+     * upper-case name before a bracket that is not an object. The command
+     * makes a helper object, so the result is dependent even on constants.
+     */
+    private boolean callsCommand(String definition) {
+        Matcher m = CALL.matcher(definition);
+        while (m.find()) {
+            if (!objects.containsKey(m.group(1))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private boolean readsObjects(String definition) {
         Matcher m = LABEL.matcher(definition);
         while (m.find()) {

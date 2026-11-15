@@ -187,7 +187,7 @@ fn number_end(src: &str, start: usize) -> Result<usize, String> {
 /// A letter or digit of a name. The masculine ordinal `º` (a degree sign
 /// on some keyboards), the modifier circumflex `ˆ` (a power) and the
 /// superscript digits are letters or digits to Unicode but operators here.
-fn is_name_char(c: char) -> bool {
+pub(crate) fn is_name_char(c: char) -> bool {
     c.is_alphanumeric() && !matches!(c, '\u{ba}' | '\u{2c6}') && superscript_digit(c).is_none()
 }
 

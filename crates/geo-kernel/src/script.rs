@@ -141,7 +141,12 @@ fn is_single_call(c: &Construction, rhs: &str) -> bool {
         return false;
     };
     let name = rhs[..open].trim();
-    if !is_identifier(name) || crate::expr::is_function_name(name) || c.id(name).is_some() {
+    // `sin²(a)` is a power of a function, not a call of `sin²`
+    if !is_identifier(name)
+        || !name.chars().all(crate::expr::is_name_char)
+        || crate::expr::is_function_name(name)
+        || c.id(name).is_some()
+    {
         return false;
     }
     let mut depth = 0usize;
@@ -639,6 +644,7 @@ fn exec_labelled(c: &mut Construction, line: &str) -> Result<Option<Id>, String>
         if !is_output_label(slot) {
             return Err(format!("`{slot}` is not a valid object name"));
         }
+        check_label(slot)?;
         if !seen.insert(*slot) {
             return Err(format!("the label `{slot}` is used twice"));
         }

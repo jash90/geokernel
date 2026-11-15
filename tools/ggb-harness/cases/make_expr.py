@@ -339,4 +339,102 @@ case("twonum", nums(a=2, b=5) + ["f(x) = x^2 - a", "c = Mod(f(b), 7)", "g(x) = x
 case("twonum", nums(a=2) + ["P = (Mod(a, 3), Div(a, 3))", "u = (Max(a, 0); Min(a, 1))"],
      [setn("a", -4), setn("a", 9.5), setn("a", 2)])
 
+# ------------------------------------------------------- number literals
+topic("lit")
+for rhs in ("1E3 a", "2.5E-3 + a", "1E+2 - a", ".5 a", "5. + a", "a³", "a²³", "a⁻¹", "a⁻¹²",
+            "2⁻² a", "√a", "√(a + 1)", "ℯ^a", "a ℯ", "a + ?", "a ∞", "-∞ a", "1E3"):
+    case("lit", nums(a=1.5) + [f"c = {rhs}"],
+         [setn("a", -2), setn("a", 0), setn("a", 0.25), setn("a", 1.5)])
+
+# ------------------------------------------------------- operator spellings
+topic("ops")
+for rhs in ("a ** b", "a × b", "a ÷ b", "a ⋅ b", "a ∙ b", "a − b", "a – b",
+            "50% a", "a * 10%", "a ** -b", "a ÷ b × 2", "−a + b"):
+    case("ops", nums(a=3, b=2) + [f"c = {rhs}"],
+         [setn("a", -1.5), setn("b", 0), setn("a", 4), setn("b", 2), setn("a", 3)])
+
+# ------------------------------------------------------- powers of function names
+topic("fnpow")
+for rhs in ("sin^2(a)", "sin^2 a", "sin²(a)", "cos^3(a) + 1", "tan^2(a)", "sin^-1(a)",
+            "cos^-1(a)", "tan^-1(a)", "sec^-1(1 / a)", "csc^-1(1 / a)", "cot^-1(a)",
+            "sinh^-1(a)", "cosh^-1(a + 2)", "tanh^-1(a / 2)", "sech^-1(a / 2)",
+            "csch^-1(a)", "coth^-1(a + 2)", "log^-1(a + 2)", "sin^-2(a)", "sin^(-1)(a)",
+            "sin^-1 a"):
+    case("fnpow", nums(a=0.5) + [f"c = {rhs}", "d = floor(c)", "g = round(c, 1)"],
+         [setn("a", -0.25), setn("a", 0), setn("a", 0.9), setn("a", 0.5)])
+
+# ------------------------------------------------------- x outside f(x) =
+topic("var")
+for rhs in ("x + a", "x^2 - a", "a sin(x)", "x / a", "abs(x - a)", "3x"):
+    case("var", nums(a=2) + [f"f = {rhs}", "c = f(a) + 1"],
+         [setn("a", -1), setn("a", 0), setn("a", 2)])
+
+# ------------------------------------------------------- names and degrees
+topic("names")
+case("names", ["r_{k} = 2", "c = 3 r_{k}^2", "d = r_{k} + c"],
+     [setn("r_{k}", -1), setn("r_{k}", 0.5), setn("r_{k}", 2)])
+case("names", ["a_{nm} = 2", "b_{a} = a_{nm} / 4", "c = b_{a} a_{nm}"],
+     [setn("a_{nm}", 6), setn("a_{nm}", 2)])
+for rhs in ("-a°", "30° + a", "a°^2", "-a°^2", "(a°)^2", "a° a°", "a° / 2°", "a°°",
+            "floor(30° + a)", "round(-a°)"):
+    case("names", nums(a=30) + [f"c = {rhs}", "d = floor(c)"],
+         [setn("a", 45.7), setn("a", -12.3), setn("a", 0), setn("a", 30)])
+
+# ------------------------------------------------------- every function name and alias
+topic("alias")
+for name, lo, hi in (("csch", 0.2, 3), ("sech", -3, 3), ("coth", 0.2, 3), ("cosec", 0.2, 3),
+                     ("cotan", 0.2, 3), ("cosech", 0.2, 3), ("cotanh", 0.2, 3),
+                     ("arcsin", -1, 1), ("arccos", -1, 1), ("arctan", -8, 8),
+                     ("arsinh", -8, 8), ("arcsinh", -8, 8), ("arcosh", 1, 8),
+                     ("arccosh", 1, 8), ("artanh", -0.9, 0.9), ("arctanh", -0.9, 0.9),
+                     ("sign", -3, 3), ("lg", 0.1, 9), ("log10", 0.1, 9), ("log2", 0.1, 9)):
+    v = r2(lo, hi)
+    case("alias", nums(a=v) + [f"c = {name}(a)"],
+         [setn("a", r2(lo, hi)), setn("a", 0), setn("a", -v), setn("a", v)])
+case("alias", nums(a=2, b=3) + ["c = arctan2(a, b)", "d = log(2, a)", "g = ln(b, a)"],
+     [setn("a", -1), setn("b", 0), setn("a", 0), setn("a", 2), setn("b", 3)])
+
+# ------------------------------------------------------- negative bases with fractions
+topic("negpow")
+for rhs in ("a^(1/b)", "a^(2/b)", "a^(b/3)", "a^(-1/b)", "a^-(b/3)", "a^(1/3) + a^(2/b)"):
+    case("negpow", nums(a=-8, b=3) + [f"c = {rhs}"],
+         [setn("b", 0), setn("b", 1.5), setn("b", 5), setn("a", 8), setn("a", -27),
+          setn("b", 3), setn("a", -8)])
+case("negpow", nums(a=-8, b=3) + ["P = (a^(1/b), a^(2/3))", "u = (a^(1/3); 1)"],
+     [setn("b", 0), setn("a", 27), setn("b", 5), setn("a", -8), setn("b", 3)])
+for rhs in ("∞^0", "1^∞", "(-∞)^0", "0^0", "∞^a", "a^∞", "(-1)^∞", "(1 / a)^0"):
+    case("negpow", nums(a=2) + [f"c = {rhs}"], [setn("a", 0.5), setn("a", 0), setn("a", 2)])
+
+# ------------------------------------------------------- rounding and special values
+topic("special")
+for rhs in ("round(a, 1.5)", "round(a, 2.5)", "round(a, -1.5)", "round(a, 400)",
+            "round(a, 330)", "round(a, -400)", "round(a, ?)", "round(a, 0 / 0)",
+            "round(a, ∞)", "round(a, -∞)", "round(a, b / b)"):
+    case("special", nums(a=2.567, b=1) + [f"c = {rhs}"],
+         [setn("a", -2.567), setn("b", 0), setn("a", 1E300), setn("b", 1), setn("a", 2.567)])
+for rhs in ("sgn(a)", "sgn(a / 1E300)", "sgn(-a / 1E300)", "gamma(a)", "a!",
+            "Max(a, 0)", "Min(a, 0)", "Max(0, a)", "Min(0, a)", "1 / Max(a, 0)",
+            "1 / Min(0, a)", "1 / Max(-0, a)", "1 / Min(a, -0)"):
+    case("special", nums(a=-2.5) + [f"c = {rhs}"],
+         [setn("a", -0.0), setn("a", 0.0), setn("a", -0.5), setn("a", 1E-300),
+          setn("a", -1E-300), setn("a", -3.5), setn("a", -2.5)])
+
+# ------------------------------------------------------- the bar and constant expressions
+topic("syntax")
+for rhs in ("||a| - |b||", "|a - |b||", "|a|b", "|a| + |b| / 2",
+            "|-a|", "|a b|^2", "|(a, b)|"):
+    case("syntax", nums(a=-3, b=2) + [f"c = {rhs}"],
+         [setn("a", 1.5), setn("b", -4), setn("a", 0), setn("a", -3), setn("b", 2)])
+for rhs in ("Mod(7, 3)", "Max(1, 2)", "2 + Mod(7, 3)", "Mod(7, 3) + sqrt(2)", "GCD(12, 18)",
+            "Div(7, 2)", "2 + 3", "sqrt(2)", "sin(30°)", "30°", "(1, 2)", "(2; 30°)",
+            "abs((3, 4))", "round(2.567, ?)"):
+    case("syntax", [f"c = {rhs}"], [])
+case("syntax", ["c = 30°", "d = floor(c)", "g = round(c, 1)", "h = ceil(2c)", "k = c + c"],
+     [setn("c", 0.7), setn("c", -0.2), setn("c", 0.5236)])
+case("syntax", nums(a=2) + ["b = a(a) / a", "c = a(a + 1) / 2", "d = a(2) / a"],
+     [setn("a", 1E200), setn("a", 0), setn("a", -3), setn("a", 2)])
+case("syntax", nums(a=2, b=3) + ["u = (1 / a, 2)", "c = abs(u)", "v = (1 / a, 1 / b)",
+                                 "d = abs(v)", "w = (1 / a, 0 / b)", "g = abs(w)"],
+     [setn("a", 0), setn("b", 0), setn("a", 2), setn("b", 3)])
+
 cases.write()

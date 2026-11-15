@@ -353,3 +353,70 @@ fn literals_names_and_commands_follow_the_input_bar() {
     assert_eq!(num(&c, "g"), 3.0);
     assert_eq!(c.value(c.id("h").unwrap()), Value::Undefined);
 }
+
+#[test]
+fn lines_the_input_bar_rejects_are_rejected() {
+    // GeoGebra's parser gives "Please check your input" for each of these
+    // (checked with the harness).
+    for line in ["c = a % b", "c = a%", "c = |a| |b|", "c = 2|a|", "c = a|b|"] {
+        let mut c = load("a = 3\nb = 2").unwrap();
+        assert!(exec(&mut c, line).is_err(), "`{line}` was accepted");
+        assert_eq!(c.len(), 2, "`{line}` left an object behind");
+    }
+}
+
+#[test]
+fn an_expression_is_rebuilt_from_its_tree_and_never_from_its_handle() {
+    let src = "a = 2\nA = (1, 2)\nB = (4, 6)\nc = a + Distance(A, B) / 2\n\
+               f(x) = x^2 + c\nv = f(a)\nM = (A + B) / 2\nu = (a; 30\u{b0})\nh = Mod(7, 3)";
+    let orig = load(src).unwrap();
+    let mut fresh = Construction::new();
+    for i in 0..orig.len() {
+        let id = crate::kernel::Id(i);
+        let added = match orig.expression(id) {
+            Some(e) => {
+                assert_eq!(e.kind(), orig.kind(id));
+                fresh.add_expression(orig.label(id), &e)
+            }
+            None => fresh.add(orig.label(id), orig.def(id)),
+        };
+        assert_eq!(added, Ok(id));
+        assert_eq!(fresh.value(id), orig.value(id), "`{}`", orig.label(id));
+    }
+    assert_eq!(fresh.set_number(fresh.id("a").unwrap(), 3.0), Ok(4));
+    assert!((num(&fresh, "v") - 14.5).abs() < 1e-12);
+
+    // the handle itself names a tree of `orig`: in another construction, and
+    // a second time in its own, it is an error and changes nothing
+    let c = orig.id("c").unwrap();
+    let mut other = load("a = 2\nb = 5").unwrap();
+    assert_eq!(
+        other.add("w", orig.def(c)),
+        Err(crate::Error::UnknownObject)
+    );
+    assert_eq!(other.len(), 2);
+    let mut same = load(src).unwrap();
+    let n = same.len();
+    let handle = same.def(same.id("c").unwrap());
+    assert_eq!(same.add("w", handle), Err(crate::Error::UnknownObject));
+    assert_eq!(same.len(), n);
+
+    // a tree is checked against the construction it is added to
+    let e = orig.expression(c).unwrap();
+    assert_eq!(
+        other.add_expression("w", &e),
+        Err(crate::Error::UnknownObject)
+    );
+    let f = orig.expression(orig.id("f").unwrap()).unwrap();
+    let mut numbers = load("a = 2\nb = 3\nC = (1, 1)\nD = (2, 2)\nk = 1").unwrap();
+    // `c` (id 3) is a point there, and object 4 is not a function
+    assert_eq!(
+        numbers.add_expression("w", &f),
+        Err(crate::Error::UnknownObject)
+    );
+    assert_eq!(numbers.len(), 5);
+    assert_eq!(
+        orig.expression(orig.id("a").unwrap()).map(|e| e.kind()),
+        None
+    );
+}

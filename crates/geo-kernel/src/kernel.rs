@@ -304,7 +304,9 @@ pub enum Def {
     Predicate(PredicateDef),
     /// Points from `ClosestPoint` and `Trilinear`.
     Point(PointDef),
-    /// An arithmetic expression; the tree is kept by the construction.
+    /// An arithmetic expression; the tree is kept by the construction, so
+    /// this handle is valid only there. Rebuild it elsewhere with
+    /// [`Construction::expression`] and [`Construction::add_expression`].
     Expr(ExprDef),
     /// Polygons, polylines and what is measured on them.
     Polygon(PolygonDef),
@@ -751,6 +753,20 @@ impl Construction {
         Ok(id)
     }
 
+    /// The tree of the expression object `id`, owned, so that it can be added
+    /// to another construction with [`Self::add_expression`]; `None` when
+    /// `id` is not an expression object. Its [`Def::Expr`] cannot be used
+    /// for that: the handle is valid only here (see [`expr`]).
+    pub fn expression(&self, id: Id) -> Option<expr::Expression> {
+        expr::expression(self, id)
+    }
+
+    /// Adds the expression `e` as `label`, checking its tree against this
+    /// construction; see [`expr::Expression`].
+    pub fn add_expression(&mut self, label: &str, e: &expr::Expression) -> Result<Id, Error> {
+        expr::add_expression(self, label, e)
+    }
+
     /// Stores `ids` as a list of parents and adds the object that `make`
     /// defines from its handle (see the [module docs](self)). When the object
     /// is rejected, the list is removed again and the error is returned.
@@ -957,8 +973,8 @@ impl Construction {
             Def::Vector(d) => d.check(self),
             Def::Predicate(d) => d.check(self),
             Def::Point(d) => d.check(self),
-            // checked when the expression was parsed
-            Def::Expr(_) => Ok(()),
+            // the tree was checked when it was parsed or handed in
+            Def::Expr(d) => expr::check_handle(self, d),
             Def::Polygon(d) => d.check(self),
         }
     }

@@ -23,6 +23,8 @@ const COMMANDS_PER_CASE: usize = 14;
 struct Totals {
     cases: usize,
     objects: usize,
+    /// Objects made by expression lines.
+    expressions: usize,
     steps: usize,
     undefined_seen: usize,
     script_rebuilds: usize,
@@ -71,13 +73,16 @@ fn with_creation_state_of(def: Def, orig: Def) -> Def {
 }
 
 /// Builds a fresh construction from the definitions of `orig`: every free
-/// object is created directly at its current value.
+/// object is created directly at its current value, and an expression
+/// object from its tree (its `Def::Expr` handle is valid only in `orig`).
 fn rebuild_from_defs(orig: &Construction) -> Result<Construction, String> {
     let mut fresh = Construction::new();
     for id in orig.ids() {
-        fresh
-            .add(orig.label(id), orig.def(id))
-            .map_err(|e| format!("rebuilding `{}` failed: {e}", orig.label(id)))?;
+        let added = match orig.expression(id) {
+            Some(e) => fresh.add_expression(orig.label(id), &e),
+            None => fresh.add(orig.label(id), orig.def(id)),
+        };
+        added.map_err(|e| format!("rebuilding `{}` failed: {e}", orig.label(id)))?;
     }
     Ok(fresh)
 }
@@ -85,7 +90,7 @@ fn rebuild_from_defs(orig: &Construction) -> Result<Construction, String> {
 /// The script of `case` with the free objects at their current values.
 fn script_at_current_values(case: &Case) -> Vec<String> {
     let mut lines = Vec::new();
-    for id in case.c.ids() {
+    for &id in &case.free {
         let label = case.c.label(id);
         match case.c.def(id) {
             Def::FreePoint { x, y } => lines.push(format!("{label} = ({}, {})", lit(x), lit(y))),
@@ -101,6 +106,9 @@ fn script_at_current_values(case: &Case) -> Vec<String> {
 /// undefined too.
 fn check_contagion(case: &Case) -> Result<(), String> {
     for id in case.c.ids() {
+        if case.expr[id.index()] {
+            continue;
+        }
         let parents = &case.deps[id.index()];
         let broken = parents
             .iter()
@@ -177,6 +185,7 @@ fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), St
     let mut rng = Rng::new(seed ^ 0x5DEE_CE66_D1CE_5EED);
     totals.cases += 1;
     totals.objects += case.c.len();
+    totals.expressions += case.expr.iter().filter(|&&e| e).count();
     totals.rejected.append(&mut case.rejected);
 
     macro_rules! fail {
@@ -314,7 +323,11 @@ fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), St
         let mut carried = Construction::new();
         for (f, o) in fresh.ids().zip(case.c.ids()) {
             let def = with_creation_state_of(fresh.def(f), case.c.def(o));
-            if let Err(e) = carried.add(fresh.label(f), def) {
+            let added = match fresh.expression(f) {
+                Some(e) => carried.add_expression(fresh.label(f), &e),
+                None => carried.add(fresh.label(f), def),
+            };
+            if let Err(e) = added {
                 fail!(
                     "rebuilding `{}` with its creation state failed: {e}",
                     fresh.label(f)
@@ -349,10 +362,11 @@ fn random_constructions_and_moves() {
         run_case(rng.state(), false, &mut totals)
     });
     println!(
-        "{} constructions, {} objects, {} moves ({} undefined values seen), \
+        "{} constructions, {} objects ({} from expressions), {} moves ({} undefined values seen), \
          {} script rebuilds compared, {} skipped (multi-output layout), {} rejected commands",
         totals.cases,
         totals.objects,
+        totals.expressions,
         totals.steps,
         totals.undefined_seen,
         totals.script_rebuilds,
@@ -372,6 +386,13 @@ fn random_constructions_and_moves() {
             .cloned()
             .collect::<Vec<_>>()
             .join("\n")
+    );
+    // Expression objects take part in every check (a quarter of the lines).
+    assert!(
+        totals.expressions * 20 >= totals.objects,
+        "only {} of {} objects come from expressions",
+        totals.expressions,
+        totals.objects
     );
     // The script rebuild is skipped only for multi-output layouts; it must
     // stay the rule (379 of 400 at the time of writing).
