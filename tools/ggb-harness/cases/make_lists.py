@@ -110,4 +110,13 @@ for rhs in ("l + m", "l + 1", "2 l", "l^2", "l / m", "l - m", "m l", "-l", "l + 
          [setn("a", 5), setn("b", 2), mv("A", -2, 5), setn("b", -1), setn("a", 0), mv("A", 1, 2),
           setn("a", 2), setn("b", 3)])
 
+# `ExpressionNodeEvaluator.handleMinus`: a list minus a point or vector (or
+# the other way round) is not element-wise but `GeoVec2D.sub`, which reads
+# a list of two numbers as `(x, y)`; anything else is undefined.
+for line in ("p = {1, 2} - A", "P = {1, 2} - A", "p = A - {1, 2}", "p = {a, b} - v", "P = {a, 2 b} - A",
+             "p = {1, 2, 3} - A", "p = {A} - A", "p = {true, 1} - A", "c = x({a, b} - A) + 1",
+             "P = 2 ({1, a} - A)", "p = v - {a, {1}}", "p = {} - v", "P = {A, B} - A"):
+    case("arith", nums(a=2, b=3) + [pt("A", 1, 2), pt("B", 3, -1), "v = (1, 1)", line],
+         [setn("a", 5), mv("A", -2, 5), setn("b", -1), setn("a", 2), mv("A", 1, 2), setn("b", 3)])
+
 cases.write()

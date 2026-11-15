@@ -300,6 +300,13 @@ fn binary_type(op: Bin, a: Ty, b: Ty) -> Result<Ty, String> {
         Ty::List(e) => ty_of(e).map(Some),
         _ => Ok(None),
     };
+    // `handleMinus`: a list minus a point or vector, or the other way
+    // round, reads the list as one vector (`GeoVec2D.sub`), whatever its
+    // elements are
+    let is_list = |t: Ty| matches!(t, Ty::List(_));
+    if op == Bin::Sub && is_list(a) != is_list(b) && (a == Ty::Vec || b == Ty::Vec) {
+        return Ok(Ty::Vec);
+    }
     match (list(a)?, list(b)?) {
         (None, None) => scalar_binary_type(op, a, b),
         _ if op.is_comparison() || op.is_logic() => Err("comparing lists is not supported".into()),

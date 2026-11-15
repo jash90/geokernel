@@ -1133,9 +1133,19 @@ fn list_arithmetic_works_element_by_element() {
          p = {A, B} + v\n\
          q = 2 {A, B}\n\
          r = {v, 2 v} + v\n\
-         s = x({A, B})",
+         s = x({A, B})\n\
+         t = {a, 2} - A\n\
+         T = {A, B} - A",
     )
     .unwrap();
+    // a list minus a point is no list: the list is read as `(x, y)` when
+    // it has two numbers, and the result is undefined otherwise
+    assert_eq!(
+        c.value(c.id("t").unwrap()),
+        Value::Vector { x: 1.0, y: 0.0 }
+    );
+    assert_eq!(c.kind(c.id("T").unwrap()), Kind::Point);
+    assert_eq!(c.value(c.id("T").unwrap()), Value::Undefined);
     assert_eq!(elems(&c, "b"), "{3, 5, 4}");
     assert_eq!(elems(&c, "d"), "{3, 5, 7}");
     assert_eq!(elems(&c, "g"), "{1, 4, 9}");

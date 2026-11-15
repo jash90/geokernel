@@ -420,6 +420,11 @@ impl Ctx<'_> {
             Node::Un(op, a) => self.unary(op, a),
             Node::Bin(Bin::Pow, a, b) => self.power(a, b),
             Node::Bin(Bin::Round2, a, b) => self.round2(a, b),
+            Node::Bin(Bin::Sub, a, b)
+                if self.is_list(a) != self.is_list(b) && (self.is_vec(a) || self.is_vec(b)) =>
+            {
+                Ex::plain(self.list_minus_vector(a, b))
+            }
             Node::Bin(op, a, b) => {
                 let (l, r) = (self.operand(a), self.operand(b));
                 match (l.val, r.val) {
@@ -885,6 +890,42 @@ impl Ctx<'_> {
             lists.set(start + k, combine(op, x, y));
         }
         Some((start, len))
+    }
+
+    /// `ExpressionNodeEvaluator.handleMinus` of a list and a point or
+    /// vector, in either order, is not element by element: `GeoVec2D.sub`
+    /// reads a list of two elements as `(x, y)` (`evaluateDouble`: a
+    /// boolean is 0 or 1, a point or a list not a number); a list of any
+    /// other length gives an undefined result.
+    fn list_minus_vector(&self, a: u32, b: u32) -> Val {
+        use Val::{N, V};
+        let undefined = V(f64::NAN, f64::NAN);
+        let Some(lists) = self.lists else {
+            return undefined;
+        };
+        let (list, vector, reverse) = if self.is_list(a) {
+            (a, b, false)
+        } else {
+            (b, a, true)
+        };
+        let coordinate = |slot: Slot| match slot_val(slot) {
+            N(v) => v,
+            Val::B(b, _) => bool_number(b),
+            V(..) => f64::NAN,
+        };
+        let mark = lists.len();
+        let xy = self.list(list).and_then(|(s, n)| {
+            (n == 2).then(|| (coordinate(lists.get(s)), coordinate(lists.get(s + 1))))
+        });
+        lists.truncate(mark);
+        let Some((lx, ly)) = xy else {
+            return undefined;
+        };
+        match self.operand(vector).val {
+            V(x, y) if reverse => V(x - lx, y - ly),
+            V(x, y) => V(lx - x, ly - y),
+            _ => undefined,
+        }
     }
 
     /// `MyList.apply` of a one-operand operation.
