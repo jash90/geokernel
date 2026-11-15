@@ -676,7 +676,7 @@ fn exec_labelled(c: &mut Construction, line: &str) -> Result<Option<Id>, String>
                     first.get_or_insert(id);
                 }
                 Err(e) => {
-                    c.rollback(at);
+                    c.discard_since(at);
                     return Err(e.to_string());
                 }
             }

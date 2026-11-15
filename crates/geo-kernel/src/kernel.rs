@@ -445,7 +445,26 @@ pub struct Checkpoint {
     len: usize,
     lists: usize,
     exprs: usize,
+    /// How many rollbacks the construction had made when it was taken.
+    generation: u64,
 }
+
+/// [`Construction::rollback`] refused a checkpoint: the construction was
+/// rolled back since it was taken, or it is longer than the construction
+/// (it belongs to another one). Nothing was changed.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct StaleCheckpoint;
+
+impl fmt::Display for StaleCheckpoint {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "the checkpoint is stale: the construction was rolled back since it was taken"
+        )
+    }
+}
+
+impl std::error::Error for StaleCheckpoint {}
 
 /// A geometric construction.
 #[derive(Default)]
@@ -469,6 +488,9 @@ pub struct Construction {
     dirty: DirtySet,
     /// Trees of the expression objects.
     pub(crate) exprs: expr::Table,
+    /// How many times [`Construction::rollback`] has run: a checkpoint taken
+    /// before the last rollback is stale. Changed by nothing else.
+    generation: u64,
 }
 
 /// The objects waiting to be recomputed during an update; empty between
@@ -658,11 +680,20 @@ impl Construction {
 
     /// The current length of the construction and of its lists, to return to
     /// with [`Construction::rollback`].
+    ///
+    /// The contract: a checkpoint can be rolled back to as long as no
+    /// rollback has run since it was taken, whatever was added in between.
+    /// Any rollback, to this checkpoint or to another one, makes every
+    /// checkpoint taken before it stale, even one that it did not cut (a
+    /// later rollback to an earlier checkpoint is refused too): take a new
+    /// checkpoint after each rollback. A checkpoint belongs to the
+    /// construction it was taken from.
     pub fn checkpoint(&self) -> Checkpoint {
         Checkpoint {
             len: self.defs.len(),
             lists: self.lists.len(),
             exprs: self.exprs.len(),
+            generation: self.generation,
         }
     }
 
@@ -684,9 +715,34 @@ impl Construction {
     }
 
     /// Removes every object added after `at`, newest first, together with
-    /// the edges from its parents and the lists stored since. No object may
-    /// have been moved in between.
-    pub fn rollback(&mut self, at: Checkpoint) {
+    /// the edges from its parents, the lists and the expression entries
+    /// stored since. No object may have been moved in between.
+    ///
+    /// `at` must have been taken from this construction after its last
+    /// rollback (see [`Construction::checkpoint`]); otherwise the
+    /// construction is left exactly as it is and [`StaleCheckpoint`] is
+    /// returned. A rollback that succeeds makes every checkpoint taken so far
+    /// stale, `at` included. Checking costs four comparisons; adding objects
+    /// and updating them pay nothing for it.
+    pub fn rollback(&mut self, at: Checkpoint) -> Result<(), StaleCheckpoint> {
+        if at.generation != self.generation
+            || at.len > self.defs.len()
+            || at.lists > self.lists.len()
+            || at.exprs > self.exprs.len()
+        {
+            return Err(StaleCheckpoint);
+        }
+        self.discard_since(at);
+        self.generation += 1;
+        Ok(())
+    }
+
+    /// The work of [`Construction::rollback`], for an all-or-nothing step
+    /// inside one call of the kernel (a command that makes several objects):
+    /// `at` was taken in that call, so every checkpoint the caller holds lies
+    /// at or before it and stays valid, and the generation does not change.
+    pub(crate) fn discard_since(&mut self, at: Checkpoint) {
+        debug_assert_eq!(at.generation, self.generation, "a checkpoint of this call");
         while self.defs.len() > at.len {
             let id = self.defs.len() - 1;
             let def = self.defs[id];
@@ -1620,7 +1676,7 @@ mod tests {
         c.add_with_list("b", &[p[1], p[1], p[3], p[4], p[0]], area)
             .unwrap();
         assert_ne!(snapshot(&c), before);
-        c.rollback(at);
+        c.rollback(at).unwrap();
         assert_eq!(snapshot(&c), before);
         assert_eq!(c.hints.len(), c.len());
         assert_eq!(c.len(), 7);
@@ -1629,6 +1685,82 @@ mod tests {
         let t = c.add("t", Def::Segment(p[3], p[4])).unwrap();
         assert_eq!(c.children(p[3]), &[c.id("a").unwrap(), t]);
         assert_eq!(c.move_point(p[3], 1.0, 1.0).unwrap(), 2);
+    }
+
+    #[test]
+    fn a_checkpoint_from_before_a_rollback_is_refused_and_changes_nothing() {
+        use crate::script::{exec, load};
+        let mut c = load("A = (0, 0)\nB = (4, 0)\n").unwrap();
+        let early = c.checkpoint();
+        for line in ["C = (2, 3)", "n = 1 + 2", "q = Polygon(A, B, C)"] {
+            exec(&mut c, line).unwrap();
+        }
+        let late = c.checkpoint();
+        c.rollback(early).unwrap();
+        // More objects, expressions and lists than `late` had.
+        for line in [
+            "C = (1, 1)",
+            "m = 3 * 4",
+            "r = Polygon(A, B, C)",
+            "s = Segment(A, B)",
+            "t = m + 6",
+            "u = Polygon(A, C, B)",
+        ] {
+            exec(&mut c, line).unwrap();
+        }
+        assert!(c.len() > late.len && c.lists.len() > late.lists);
+        assert!(c.exprs.len() > late.exprs);
+        let before = snapshot(&c);
+        let exprs = c.exprs.len();
+        assert_eq!(c.rollback(late), Err(StaleCheckpoint));
+        assert_eq!(snapshot(&c), before);
+        assert_eq!(c.exprs.len(), exprs);
+        // Everything still works: the expressions and the lists that the
+        // refused rollback would have cut.
+        let a = c.id("A").unwrap();
+        c.move_point(a, -2.0, 0.0).unwrap();
+        assert_eq!(c.value(c.id("t").unwrap()), Value::Number(18.0));
+        assert!(matches!(c.value(c.id("u").unwrap()), Value::Polygon { .. }));
+        // A checkpoint taken after the rollback is good, once.
+        let fresh = c.checkpoint();
+        exec(&mut c, "v = 7").unwrap();
+        c.rollback(fresh).unwrap();
+        assert_eq!(c.id("v"), None);
+        assert_eq!(c.rollback(fresh), Err(StaleCheckpoint));
+        // Even a checkpoint that the last rollback did not cut is stale.
+        let first = c.checkpoint();
+        exec(&mut c, "w = 1").unwrap();
+        let second = c.checkpoint();
+        exec(&mut c, "k = 2").unwrap();
+        c.rollback(second).unwrap();
+        assert_eq!(c.rollback(first), Err(StaleCheckpoint));
+        assert!(c.id("w").is_some());
+    }
+
+    #[test]
+    fn a_checkpoint_longer_than_the_construction_is_refused() {
+        use crate::script::load;
+        let long = load("A = (0, 0)\nB = (1, 0)\nn = 2 + 2\n").unwrap();
+        let mut short = load("A = (0, 0)\n").unwrap();
+        let before = snapshot(&short);
+        assert_eq!(short.rollback(long.checkpoint()), Err(StaleCheckpoint));
+        assert_eq!(snapshot(&short), before);
+    }
+
+    #[test]
+    fn an_all_or_nothing_step_keeps_the_callers_checkpoint_valid() {
+        use crate::script::exec;
+        let mut c = Construction::new();
+        exec(&mut c, "A = (0, 0)").unwrap();
+        let outer = c.checkpoint();
+        exec(&mut c, "B = (1, 0)").unwrap();
+        // What a command that makes several objects does when one fails.
+        let inner = c.checkpoint();
+        exec(&mut c, "C = (2, 0)").unwrap();
+        c.discard_since(inner);
+        assert_eq!(c.id("C"), None);
+        c.rollback(outer).unwrap();
+        assert_eq!((c.len(), c.id("B")), (1, None));
     }
 
     #[test]

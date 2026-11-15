@@ -907,7 +907,7 @@ impl Plan {
                     first.get_or_insert(id);
                 }
                 Err(e) => {
-                    c.rollback(start);
+                    c.discard_since(start);
                     return Err(e.to_string());
                 }
             }

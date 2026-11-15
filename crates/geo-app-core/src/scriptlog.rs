@@ -446,9 +446,15 @@ impl Log {
     ) -> Result<(), String> {
         let at = c.checkpoint();
         let before = c.len();
+        // The checkpoint was taken just above and nothing rolls the
+        // construction back in between, so the kernel cannot refuse it; if it
+        // ever did, the line is still reported as left out, with the reason.
+        let undo = |c: &mut Construction, reason: String| match c.rollback(at) {
+            Ok(()) => reason,
+            Err(e) => format!("{reason}; {e}"),
+        };
         if let Err(e) = geo_kernel::script::exec(c, line) {
-            c.rollback(at);
-            return Err(e);
+            return Err(undo(c, e));
         }
         if let Some(expected) = expected {
             if !c
@@ -459,8 +465,7 @@ impl Log {
             {
                 let made: Vec<&str> = c.ids().skip(before).map(|id| c.label(id)).collect();
                 let reason = format!("it made {made:?} instead of {expected:?}");
-                c.rollback(at);
-                return Err(reason);
+                return Err(undo(c, reason));
             }
         }
         self.record(c, before, line);
