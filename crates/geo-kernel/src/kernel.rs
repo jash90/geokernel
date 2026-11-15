@@ -32,6 +32,7 @@ impl Id {
 }
 
 /// What an object is, independent of whether it is currently defined.
+#[non_exhaustive]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Kind {
     Point,
@@ -58,6 +59,7 @@ impl fmt::Display for Kind {
 }
 
 /// Current numeric state of an object.
+#[non_exhaustive]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Value {
     Point {
@@ -140,6 +142,7 @@ impl Value {
 }
 
 /// How an object is defined.
+#[non_exhaustive]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Def {
     /// A point the user can drag.

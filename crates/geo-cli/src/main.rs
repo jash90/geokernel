@@ -118,6 +118,9 @@ fn describe(v: Value) -> String {
             )
         }
         Value::Undefined => "undefined".to_string(),
+        // `Value` is non-exhaustive: a kind this printer does not know yet
+        // is shown in its debug form.
+        other => format!("{other:?}"),
     }
 }
 

@@ -198,6 +198,8 @@ impl TryFrom<RawObject> for Expected {
                 b: f("b"),
                 c: f("c"),
             },
+            // `Kind` is non-exhaustive: a kind without a golden type yet.
+            other => return Err(format!("no golden data format for {other:?}")),
         };
         Ok(Expected {
             kind,
