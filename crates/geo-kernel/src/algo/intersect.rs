@@ -1215,6 +1215,32 @@ mod tests {
             }
         }
         assert_eq!((checked, hinted), (15, 12));
+
+        // A circle with itself: the first point on it, by construction.
+        let c = load(
+            "A = (0, 0)\nB = (5, 0)\nk = Circle(A, B)\nP = Intersect(k, k, 1)\n\
+             E = (4, 3)\nc = Circle(E, B)\nX = Intersect(c, k, 2)\nQ = Intersect(c, c, 1)\n\
+             r = 2\nm = Circle(E, r)\nR = Intersect(m, m, 1)\nS = Intersect(m, m, 2)\n",
+        )
+        .unwrap();
+        let mut checked = 0;
+        for id in c.ids() {
+            if let Def::IntersectCircles {
+                c1,
+                c2,
+                which,
+                special,
+            } = c.def(id)
+            {
+                let special = special == Some(true);
+                let hint = super::hint(&c, &c.def(id));
+                let cached = super::circles(&c, c1, c2, which, special, hint);
+                let looked_up = super::circles(&c, c1, c2, which, special, Hint::Lookup);
+                assert_eq!(cached, looked_up, "{}", c.label(id));
+                checked += 1;
+            }
+        }
+        assert_eq!(checked, 5);
     }
 
     #[test]

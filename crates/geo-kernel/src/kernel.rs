@@ -381,8 +381,9 @@ impl Construction {
         let def = algo::intersect::prepare(self, def);
 
         let id = Id(self.defs.len());
-        let hint = algo::intersect::hint(self, &def);
-        let value = self.compute(def, hint);
+        // compute reads the hint of the new object from `hints`
+        self.hints.push(algo::intersect::hint(self, &def));
+        let value = self.compute(def, id.0);
         let parents = def.parents();
         // Objects the rule also reads, beyond its parents.
         let mut hidden = algo::intersect::hidden_parents(self, &def);
@@ -398,7 +399,6 @@ impl Construction {
         self.values.push(value);
         self.labels.push(label.to_string());
         self.children.push(Vec::new());
-        self.hints.push(hint);
         self.dirty.resize(self.defs.len().div_ceil(64), 0);
         self.by_label.insert(label.to_string(), id);
         Ok(id)
@@ -408,18 +408,22 @@ impl Construction {
     /// depends on it. Returns how many dependent objects were recomputed.
     pub fn move_point(&mut self, id: Id, x: f64, y: f64) -> Result<usize, Error> {
         let def = self.defs.get(id.0).ok_or(Error::UnknownObject)?;
-        let (def, new) = match def {
-            Def::FreePoint { .. } => (Def::FreePoint { x, y }, Value::Point { x, y }),
-            Def::Vector(VectorDef::Free { .. }) => (
+        // The value of a free point or vector is always its coordinates.
+        let (def, new, old) = match *def {
+            Def::FreePoint { x: ox, y: oy } => {
+                (Def::FreePoint { x, y }, Value::Point { x, y }, (ox, oy))
+            }
+            Def::Vector(VectorDef::Free { x: ox, y: oy }) => (
                 Def::Vector(VectorDef::Free { x, y }),
                 Value::Vector { x, y },
+                (ox, oy),
             ),
             _ => return Err(Error::NotFree(self.labels[id.0].clone())),
         };
         if !(x.is_finite() && y.is_finite()) {
             return Err(Error::NotFinite);
         }
-        if self.values[id.0] == new {
+        if old == (x, y) {
             return Ok(0);
         }
         self.defs[id.0] = def;
@@ -475,7 +479,7 @@ impl Construction {
             // clear the lowest set bit; children only set higher ones
             dirty[word] = bits & (bits - 1);
             let i = word * 64 + bits.trailing_zeros() as usize;
-            let new = self.compute(self.defs[i], self.hints[i]);
+            let new = self.compute(self.defs[i], i);
             recomputed += 1;
             if new == self.values[i] {
                 // Nothing downstream can change because of this object.
@@ -564,15 +568,16 @@ impl Construction {
         }
     }
 
-    fn compute(&self, def: Def, hint: algo::intersect::Hint) -> Value {
-        match self.try_compute(def, hint) {
+    /// `def` is the definition of the object at index `i`.
+    fn compute(&self, def: Def, i: usize) -> Value {
+        match self.try_compute(def, i) {
             Some(v) if v.is_finite() => v,
             _ => Value::Undefined,
         }
     }
 
     /// `None` means the object is undefined for the current inputs.
-    fn try_compute(&self, def: Def, hint: algo::intersect::Hint) -> Option<Value> {
+    fn try_compute(&self, def: Def, i: usize) -> Option<Value> {
         match def {
             Def::FreePoint { x, y } => Some(Value::Point { x, y }),
             Def::Number(v) => Some(Value::Number(v)),
@@ -589,13 +594,15 @@ impl Construction {
                 line,
                 circle,
                 which,
-            } => algo::intersect::line_circle(self, line, circle, which, hint),
+            } => algo::intersect::line_circle(self, line, circle, which, self.hints[i]),
             Def::IntersectCircles {
                 c1,
                 c2,
                 which,
                 special,
-            } => algo::intersect::circles(self, c1, c2, which, special == Some(true), hint),
+            } => {
+                algo::intersect::circles(self, c1, c2, which, special == Some(true), self.hints[i])
+            }
             Def::Lines(d) => d.compute(self),
             Def::Conic(d) => d.compute(self),
             Def::Measure(d) => d.compute(self),

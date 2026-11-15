@@ -217,7 +217,7 @@ fn bench(steps: usize) -> Result<(), String> {
     }
     let local_time = start.elapsed();
     println!(
-        "local drag (Z1):    {:.0} ns per drag, {} object recomputed each time",
+        "local drag (Z1):    {:.1} ns per drag, {} object recomputed each time",
         local_time.as_secs_f64() * 1e9 / local_drags as f64,
         local / local_drags
     );
