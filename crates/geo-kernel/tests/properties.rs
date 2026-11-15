@@ -121,6 +121,9 @@ fn script_at_current_values(case: &Case) -> Vec<String> {
 /// undefined too.
 fn check_contagion(case: &Case) -> Result<(), String> {
     for id in case.c.ids() {
+        if case.lenient[id.index()] {
+            continue;
+        }
         let parents = &case.deps[id.index()];
         // An expression reads an infinite expression number as a value, as
         // GeoGebra does, which counts it as defined (`1 / (r - a)` with
@@ -1519,7 +1522,7 @@ fn circle_intersections_survive_a_rebuild_from_definitions() {
 
 struct Snapshot {
     labels: Vec<String>,
-    values: Vec<Value>,
+    values: Vec<Snap>,
     defs: Vec<Def>,
 }
 
@@ -1891,7 +1894,7 @@ fn every_command_with_every_argument_kind() {
                             || c.ids()
                                 .take(base)
                                 .map(|id| c.value(id))
-                                .ne(base_values.iter().copied())
+                                .ne(base_values.iter().map(|s| s.value))
                         {
                             problems.push(format!(
                                 "[{world_name}] `{line}` failed ({e}) but changed the construction"

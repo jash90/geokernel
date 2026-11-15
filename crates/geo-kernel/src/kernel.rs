@@ -102,6 +102,9 @@ pub enum Kind {
     Function,
     Polygon,
     PolyLine,
+    /// A list of numbers, points, vectors, booleans or lists, such as
+    /// `{1, 2, 3}`; its elements are read with [`Construction::elements`].
+    List,
 }
 
 impl fmt::Display for Kind {
@@ -118,6 +121,7 @@ impl fmt::Display for Kind {
             Kind::Function => "function",
             Kind::Polygon => "polygon",
             Kind::PolyLine => "polyline",
+            Kind::List => "list",
         })
     }
 }
@@ -185,6 +189,11 @@ pub enum Value {
     PolyLine {
         length: f64,
     },
+    /// A list with its number of elements. The elements are not copied
+    /// into the value; read them with [`Construction::elements`].
+    List {
+        len: u32,
+    },
     /// The object does not exist for the current positions
     /// (for example two circles that no longer meet).
     Undefined,
@@ -221,7 +230,7 @@ impl Value {
             Value::Bool(_) => true,
             Value::Polygon { area } => area.is_finite(),
             Value::PolyLine { length } => length.is_finite(),
-            Value::Function | Value::Undefined => true,
+            Value::Function | Value::List { .. } | Value::Undefined => true,
         }
     }
 }
@@ -801,12 +810,7 @@ impl Construction {
         // compute reads the hint of the new object from `hints`
         self.hints.push(algo::intersect::hint(self, &def));
         let value = match def {
-            Def::Expr(d) => {
-                let out = expr::evaluate(self, d);
-                let value = expr::value(d, out.raw);
-                expr::store(self, d, out);
-                value
-            }
+            Def::Expr(d) => expr::update(self, d).0,
             _ => self.compute(def, id.0),
         };
         // An object that is read twice is still one child.
@@ -822,6 +826,12 @@ impl Construction {
         self.children.push(Vec::new());
         self.by_label.insert(label.to_string(), id);
         Ok(id)
+    }
+
+    /// The elements of the list object `id`; `None` when it is not a list
+    /// or the list is undefined.
+    pub fn elements(&self, id: Id) -> Option<expr::List<'_>> {
+        expr::list(self, id)
     }
 
     /// The tree of the expression object `id`, owned, so that it can be added
@@ -990,9 +1000,9 @@ impl Construction {
     /// Kept out of line so that the loop of [`Self::propagate`] stays small.
     #[inline(never)]
     fn update_expr(&mut self, i: usize, d: ExprDef) -> bool {
-        let out = expr::evaluate(self, d);
-        self.values[i] = expr::value(d, out.raw);
-        expr::store(self, d, out)
+        let (value, changed) = expr::update(self, d);
+        self.values[i] = value;
+        changed
     }
 
     pub(crate) fn check(&self, def: &Def) -> Result<(), Error> {

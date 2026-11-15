@@ -197,3 +197,15 @@ mismatches = ["0:D", "0:E", "3:D", "3:E"]
 id = "polygon-regundef-002"
 reason = "intended difference, recorded in DIFFERENCES.md: GeoGebra keeps the new vertices of a regular polygon whose first two points are undefined at their last coordinates ((0, 0) before the first computation); the kernel reports them undefined"
 mismatches = ["0:D", "0:E", "0:F", "3:D", "3:E", "3:F"]
+
+# lists
+
+[[gap]]
+id = "lists-arith-019"
+reason = "GeoGebra makes `p = {A, B} - A` (a list of points minus a point) an undefined vector, not a list; the kernel subtracts element by element and gives a list of points"
+mismatches = ["0:p", "1:p", "2:p", "3:p", "4:p", "5:p", "6:p", "7:p", "8:p"]
+
+[[gap]]
+id = "lists-index-017"
+reason = "an index past the end of a list of lists: GeoGebra gives its template element, a list holding one undefined number (so `Length` is 1); the kernel gives an undefined list"
+mismatches = ["2:c", "2:m"]

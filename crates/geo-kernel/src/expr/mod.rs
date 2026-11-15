@@ -9,6 +9,8 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoNumeric.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDependentBoolean.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdIf.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDependentList.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDependentListExpression.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
@@ -29,6 +31,13 @@
 //! also the number 1 or 0. A constant boolean (`b = 1 < 2`) stays an
 //! expression object: the kernel has no free boolean.
 //!
+//! Lists (`{1, 2, 3}`, `{A, B}`, `Sequence(k^2, k, 1, n)`) are list
+//! objects whose elements are kept, flattened, in their entry (see
+//! [`list`]); `l(n)`, `Element`, `Length` and `Sum` read them, and
+//! arithmetic combines them element by element. Every list is an expression
+//! object, also a constant one: the kernel has no free list. A list is not
+//! allowed in a function of `x`.
+//!
 //! A function `f(x) = ...` keeps its tree and is evaluated wherever it is
 //! used: sampled through [`function_value`], expanded inside other
 //! functions (`g(x) = f(x) + 1`), or applied to a number (`v = f(2)`).
@@ -44,6 +53,9 @@ mod decimal;
 mod eval;
 mod lex;
 pub(crate) use lex::{is_name_char, plain_number};
+mod list;
+use list::Slot;
+pub use list::{Element, List};
 pub(crate) mod math;
 mod names;
 mod parse;
@@ -103,6 +115,38 @@ pub(crate) enum Node {
     /// condition of a longer `If` (another `If` node of the same mode), or
     /// [`NONE`].
     If(IfMode, u32, u32, u32),
+    /// `{a, b, ...}`: the elements are the [`Node::Item`]s from the first
+    /// index on, as many as the second says, one after the other.
+    List(u32, u32),
+    /// One element of a list literal.
+    Item(u32),
+    /// A command on a list and an optional number ([`NONE`] when absent).
+    ListOp(ListOp, u32, u32),
+    /// `Sequence(n)`, `Sequence(a, b)` and `Sequence(a, b, step)`
+    /// (`AlgoSequenceRange`): from ([`NONE`] for `Sequence(n)`), to, step
+    /// ([`NONE`] when absent).
+    Range(u32, u32, u32),
+    /// `Sequence(expression, k, from, to, step)` (`AlgoSequence`): the
+    /// expression, from, to, step ([`NONE`] when absent), and the depth of
+    /// its variable `k`, a [`Node::Local`].
+    Seq(u32, u32, u32, u32, u32),
+    /// The variable of the enclosing `Sequence` of this depth (0 for the
+    /// outermost).
+    Local(u32),
+}
+
+/// The commands that read a list.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum ListOp {
+    /// `Length(list)`.
+    Length,
+    /// `Sum(list)` and `Sum(list, n)` of numbers (`AlgoStats1D`).
+    Sum,
+    /// `l(n)`: rounded, from 1; a negative index counts from the end
+    /// (`ExpressionNodeEvaluator.handleElementOf`).
+    Index,
+    /// `Element(l, n)`: rounded, from 1 (`AlgoListElement`).
+    Element,
 }
 
 /// No node: the missing else branch of an `If`.
@@ -245,6 +289,21 @@ pub(crate) enum Ty {
     Num(i8),
     Vec,
     Bool,
+    List(Elem),
+}
+
+/// The type of the elements of a list.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Elem {
+    Num,
+    /// Points and vectors.
+    Vec,
+    Bool,
+    List,
+    /// No element: `{}`.
+    Empty,
+    /// Elements of different types, such as `{1, (1, 2)}`.
+    Any,
 }
 
 /// The last result of an expression, with infinities kept: GeoGebra keeps
@@ -254,6 +313,8 @@ pub(crate) enum Ty {
 pub(crate) enum Raw {
     Num(f64),
     Vec(f64, f64),
+    /// A defined list of this many elements, kept in the entry.
+    List(u32),
 }
 
 impl Raw {
@@ -265,6 +326,7 @@ impl Raw {
             (Raw::Vec(a, b), Raw::Vec(c, d)) => {
                 a.to_bits() == c.to_bits() && b.to_bits() == d.to_bits()
             }
+            (Raw::List(a), Raw::List(b)) => a == b,
             _ => false,
         }
     }
@@ -298,6 +360,11 @@ pub(crate) struct Entry {
     /// The exact decimal of the last result of a number
     /// (`GeoNumeric.exactValue`, set by `AlgoDependentNumber`).
     dec: Option<eval::Exact>,
+    /// Whether the tree has a list in it, which its evaluation builds in a
+    /// scratch buffer.
+    lists: bool,
+    /// The elements of a list result (see [`list`]).
+    items: Vec<Slot>,
     depth: u32,
     cost: u64,
     vars: u64,
@@ -306,8 +373,12 @@ pub(crate) struct Entry {
 impl Entry {
     fn new(p: parse::Parsed, function: bool) -> Self {
         let has_if = function && p.nodes.iter().any(|n| matches!(n, Node::If(..)));
+        let lists =
+            p.nodes.iter().any(is_list_node) || matches!(p.tys[p.root as usize], Ty::List(_));
         Entry {
             has_if,
+            lists,
+            items: Vec::new(),
             nodes: p.nodes,
             lits: p.lits,
             tys: p.tys,
@@ -338,6 +409,11 @@ pub(crate) struct Table {
     /// constant expression made and that were never changed since
     /// (`GeoNumeric.exactValue` with a constant definition), by object.
     free: Vec<Option<Dec>>,
+    /// Scratch buffers of list evaluations, kept so that a recompute does
+    /// not allocate: the lists being built, and a list result before it is
+    /// compared with the last one.
+    arena: Vec<Slot>,
+    out: Vec<Slot>,
 }
 
 /// An expression object's tree, owned: what [`Construction::expression`]
@@ -389,18 +465,38 @@ pub(crate) fn is_function_name(name: &str) -> bool {
 
 /// The children of a node.
 pub(crate) fn children(node: &Node) -> impl Iterator<Item = u32> {
-    let (a, b, c) = match *node {
-        Node::Tuple(a, b) | Node::Polar(a, b) | Node::Bin(_, a, b) => (Some(a), Some(b), None),
-        Node::Un(_, a) | Node::Apply(_, a) => (Some(a), None, None),
-        Node::If(_, cond, then, rest) => (Some(cond), Some(then), (rest != NONE).then_some(rest)),
-        _ => (None, None, None),
-    };
-    a.into_iter().chain(b).chain(c)
+    let mut fixed = [NONE; 4];
+    let mut run = 0..0;
+    match *node {
+        Node::Tuple(a, b) | Node::Polar(a, b) | Node::Bin(_, a, b) | Node::ListOp(_, a, b) => {
+            fixed[..2].copy_from_slice(&[a, b]);
+        }
+        Node::Un(_, a) | Node::Apply(_, a) | Node::Item(a) => fixed[0] = a,
+        Node::If(_, a, b, c) | Node::Range(a, b, c) => fixed[..3].copy_from_slice(&[a, b, c]),
+        Node::Seq(a, b, c, d, _) => fixed = [a, b, c, d],
+        Node::List(first, len) => run = first..first.saturating_add(len),
+        _ => {}
+    }
+    fixed.into_iter().filter(|&c| c != NONE).chain(run)
 }
 
-/// The commands that expressions compute themselves.
+/// Whether a node makes or reads a list, which a command does in GeoGebra.
+fn is_list_node(node: &Node) -> bool {
+    matches!(
+        node,
+        Node::List(..)
+            | Node::Item(_)
+            | Node::ListOp(..)
+            | Node::Range(..)
+            | Node::Seq(..)
+            | Node::Local(_)
+    )
+}
+
+/// The commands that expressions compute themselves; `Length` and `Sum`
+/// also of a list.
 pub(crate) fn is_expression_command(name: &str) -> bool {
-    name == "If"
+    matches!(name, "If" | "Sequence" | "Element" | "Length" | "Sum")
 }
 
 fn entry(c: &Construction, d: ExprDef) -> &Entry {
@@ -497,6 +593,7 @@ pub(crate) fn add_expression(
         (Kind::Function | Kind::Number, Ty::Num(_))
             | (Kind::Boolean, Ty::Bool)
             | (Kind::Point | Kind::Vector, Ty::Vec)
+            | (Kind::List, Ty::List(_))
     );
     if !fits {
         return Err(Error::UnknownObject);
@@ -566,7 +663,9 @@ fn reparse(
     if depth[r] > parse::MAX_DEPTH || cost[r] > parse::MAX_COST {
         return None;
     }
-    if uses_var && kind != Kind::Function {
+    if uses_var && kind != Kind::Function
+        || kind == Kind::Function && nodes.iter().any(is_list_node)
+    {
         return None;
     }
     Some(parse::Parsed {
@@ -614,16 +713,58 @@ pub(crate) struct Outcome {
     dec: Option<eval::Exact>,
 }
 
-/// Evaluates an expression object for the current values of its parents.
-pub(crate) fn evaluate(c: &Construction, d: ExprDef) -> Outcome {
+/// Evaluates an expression object for the current values of its parents;
+/// the elements of a list result go to `out`. `lists` is the scratch of a
+/// tree with lists.
+fn evaluate(
+    c: &Construction,
+    d: ExprDef,
+    lists: Option<&eval::Lists>,
+    out: &mut Vec<Slot>,
+) -> Outcome {
     let e = entry(c, d);
     if e.function {
         let raw = Raw::Num(if inputs_defined(c, e) { 0.0 } else { f64::NAN });
         Outcome { raw, dec: None }
+    } else if let (Ty::List(_), Some(lists)) = (e.root_ty(), lists) {
+        let raw = match eval::root_list(c, e, lists, out) {
+            Some(len) => Raw::List(len),
+            None => {
+                out.clear();
+                Raw::Num(f64::NAN)
+            }
+        };
+        Outcome { raw, dec: None }
     } else {
-        let (raw, dec) = eval::root(c, e);
+        let (raw, dec) = eval::root(c, e, lists);
         Outcome { raw, dec }
     }
+}
+
+/// Recomputes the expression object `d` and keeps its result; its value,
+/// and whether it changed (see [`store`]). The scratch buffers of a tree
+/// with lists are taken from the table and given back, so a recompute
+/// allocates nothing once they have grown.
+pub(crate) fn update(c: &mut Construction, d: ExprDef) -> (Value, bool) {
+    if !entry(c, d).lists {
+        let out = evaluate(c, d, None, &mut Vec::new());
+        return (value(d, out.raw), store(c, d, out));
+    }
+    let lists = eval::Lists::new(std::mem::take(&mut c.exprs.arena));
+    let mut items = std::mem::take(&mut c.exprs.out);
+    items.clear();
+    let out = evaluate(c, d, Some(&lists), &mut items);
+    c.exprs.arena = lists.into_arena();
+    let e = &mut c.exprs.entries[d.index as usize];
+    let items_changed = !list::same_slots(&e.items, &items);
+    if items_changed {
+        e.items.clear();
+        e.items.extend_from_slice(&items);
+    }
+    c.exprs.out = items;
+    let v = value(d, out.raw);
+    let changed = store(c, d, out);
+    (v, changed || items_changed)
 }
 
 /// `AlgoDependentFunction.inputDefined`: a function is defined when every
@@ -679,7 +820,16 @@ fn defined_below(c: &Construction, e: &Entry, i: u32) -> bool {
 /// parents, without storing it.
 #[inline(never)]
 pub(crate) fn current(c: &Construction, d: ExprDef) -> Value {
-    value(d, evaluate(c, d).raw)
+    let lists = entry(c, d).lists.then(|| eval::Lists::new(Vec::new()));
+    value(d, evaluate(c, d, lists.as_ref(), &mut Vec::new()).raw)
+}
+
+/// The elements of the list object `id`, when it is a defined list.
+pub(crate) fn list(c: &Construction, id: Id) -> Option<List<'_>> {
+    match (c.def(id), c.value(id)) {
+        (Def::Expr(d), Value::List { len }) => Some(List::new(&entry(c, d).items, len)),
+        _ => None,
+    }
 }
 
 /// Stores the result of [`evaluate`]; tells whether it changed. A function
@@ -721,6 +871,7 @@ pub(crate) fn value(d: ExprDef, raw: Raw) -> Value {
         // `AlgoDependentBoolean`: a boolean is never undefined, a
         // comparison of an undefined number is false
         (Kind::Boolean, Raw::Num(v)) => Value::Bool(v == 1.0),
+        (Kind::List, Raw::List(len)) => Value::List { len },
         _ => Value::Undefined,
     }
 }
@@ -743,6 +894,7 @@ pub(crate) fn define(
         Ty::Vec if vector_label => Kind::Vector,
         Ty::Vec => Kind::Point,
         Ty::Bool => Kind::Boolean,
+        Ty::List(_) => Kind::List,
     };
     add(c, name, parsed, kind)
 }
@@ -757,7 +909,11 @@ fn function(c: &mut Construction, name: &str, parsed: parse::Parsed) -> Result<I
     match parsed.tys[parsed.root as usize] {
         Ty::Vec => return Err("a function must give a number".into()),
         Ty::Bool => return Err("a function that gives a boolean is not supported".into()),
+        Ty::List(_) => return Err("a function cannot give a list".into()),
         Ty::Num(_) => {}
+    }
+    if parsed.nodes.iter().any(is_list_node) {
+        return Err("a list in a function is not supported".into());
     }
     add(c, name, parsed, Kind::Function)
 }
@@ -779,16 +935,20 @@ fn add_parsed(
     let has_command = parsed.nodes.iter().any(|n| {
         matches!(n, Node::Bin(op, ..) if op.is_command())
             || matches!(n, Node::Cmd(..) | Node::If(IfMode::Algo, ..))
+            || is_list_node(n)
     });
-    // a constant boolean (`b = 1 < 2`) stays an expression: there is no
-    // free boolean object
-    let constant = parsed.parents.is_empty() && !function && !has_command && kind != Kind::Boolean;
+    // a constant boolean (`b = 1 < 2`) or list stays an expression: there
+    // is no free boolean or list object
+    let constant = parsed.parents.is_empty()
+        && !function
+        && !has_command
+        && !matches!(kind, Kind::Boolean | Kind::List);
     let vector_label = kind == Kind::Vector;
     let entry = Entry::new(parsed, function);
     if constant {
         // `AlgebraProcessor`: an expression without objects is free.
         let angle = entry.root_ty() == Ty::Num(1);
-        let (raw, dec) = eval::root(c, &entry);
+        let (raw, dec) = eval::root(c, &entry, None);
         let free = match raw {
             Raw::Num(v) if v.is_finite() && angle => Some(Def::Angle(v)),
             Raw::Num(v) if v.is_finite() => Some(Def::Number(v)),
@@ -797,7 +957,7 @@ fn add_parsed(
             } else {
                 Def::FreePoint { x, y }
             }),
-            _ => None,
+            Raw::List(_) | Raw::Num(_) | Raw::Vec(..) => None,
         };
         if let Some(def) = free {
             let id = c.add(name, def)?;

@@ -116,6 +116,7 @@ carries no numeric fields. When it is `true` it carries exactly these:
 | `function` | `samples` | The values at `x` = -8, -4, -2, -1, -0.5, 0, 0.5, 1, 2, 4, 8, as pairs `[x, y]` in this order: `{ "type": "function", "defined": true, "samples": [[-8.0, 82.0], [-4.0, 26.0], ..., [0.5, null], ...] }`. `y` is `null` where GeoGebra's value (`GeoFunction.value`) is not finite. An undefined function carries no `samples`. |
 | `polygon` | `vertices`, `area`, `signed_area` | `vertices` is the list of vertices in order, each `[x, y]`. `area` is GeoGebra's area (never negative), `signed_area` the area with its sign: positive when the vertices run counter-clockwise. |
 | `polyline` | `vertices`, `length` | `vertices` is the list of vertices in order, each `[x, y]`, or `null` for an undefined point (GeoGebra leaves a hole there). `length` is the sum of the lengths of the pieces between two defined points. |
+| `list` | `elements` | The elements in order, each an Object of its own (`number`, `point`, `vector`, `boolean` or `list`, defined or not): `{ "type": "list", "defined": true, "elements": [{ "type": "number", "defined": true, "value": 1.0 }, { "type": "list", "defined": true, "elements": [] }] }`. An element that is a point or vector carries `x` and `y` like an object. |
 
 All numbers are finite JSON numbers that round-trip to the same `f64`.
 A value that is not finite in GeoGebra is recorded as `defined: false`.
@@ -154,6 +155,9 @@ These rules are applied by the Rust side (`crates/geo-golden`).
   (`Construction::vertices`) must agree, in the same order and number.
 - Polylines: `length` and the vertices must agree, in the same order and
   number, with `null` on both sides at the same places.
+- Lists: the number of elements must be equal, and each element is
+  compared like an object of its type, nested lists recursively
+  (`Construction::elements`).
 
 Free vectors come from a script line `v = (x, y)` whose label starts with a
 lower-case letter; with an upper-case label the same line makes a point, as in
@@ -177,6 +181,13 @@ A line `f(x) = ...` defines a function of `x`, recorded under the label `f`;
 other lines may apply it (`v = f(2)`, `g(x) = f(x) + 1`).
 Expressions and the type `function` were added after the first golden files
 were written; no existing file changed and the schema version stays 1.
+
+Expressions may also compare and combine booleans and pick a branch with
+`If` (group `logic`), and build lists (group `lists`): literals such as
+`l = {1, 2, 3}` or `{A, B}`, element access `l(n)` and `Element(l, n)`,
+`Length`, `Sum`, `Sequence` and element-wise arithmetic. A constant boolean
+or list is an object like any other but cannot be set. The type `list` was
+added the same way: no existing file changed and the schema version stays 1.
 
 ## Known gaps
 

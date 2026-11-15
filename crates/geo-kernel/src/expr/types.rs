@@ -3,6 +3,7 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/MyDouble.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/ExpressionNodeEvaluator.java
 //   source/shared/common/src/main/java/org/geogebra/common/plugin/Operation.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/MyList.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
@@ -13,7 +14,7 @@
 //! `MyError` from `Operation`); the evaluation of a new object always runs,
 //! so rejecting the same trees here gives the same lines errors.
 
-use super::{Bin, IfMode, Node, Ty, Un, NONE};
+use super::{Bin, Elem, IfMode, ListOp, Node, Ty, Un, NONE};
 use crate::algo::measure::MeasureDef;
 use crate::kernel::{Construction, Def, Id, Kind};
 
@@ -58,7 +59,9 @@ pub(crate) fn check(
             Node::FnName(_) => return Err("a function name needs an argument".into()),
             Node::Tuple(a, b) | Node::Polar(a, b) => {
                 let (a, b) = (a as usize, b as usize);
-                if tys[a] == Ty::Vec || tys[b] == Ty::Vec {
+                if !matches!(tys[a], Ty::Num(_) | Ty::Bool)
+                    || !matches!(tys[b], Ty::Num(_) | Ty::Bool)
+                {
                     return Err("coordinates must be numbers".into());
                 }
                 (
@@ -117,7 +120,7 @@ pub(crate) fn check(
             }
             Node::Apply(f, a) => {
                 let a = a as usize;
-                if tys[a] == Ty::Vec {
+                if !matches!(tys[a], Ty::Num(_) | Ty::Bool) {
                     return Err("a function takes a number".into());
                 }
                 let (fd, fc, fv) = super::function_metrics(c, f);
@@ -127,6 +130,72 @@ pub(crate) fn check(
                     fc.saturating_add(fv.saturating_mul(cost[a])),
                     fv.saturating_mul(vars[a]),
                 )
+            }
+            Node::Local(_) => (Ty::Num(0), 1, 1, 0),
+            Node::Item(a) => {
+                let a = a as usize;
+                (tys[a], depth[a], cost[a], vars[a])
+            }
+            Node::List(first, len) => {
+                let mut elem = Elem::Empty;
+                let (mut d, mut k, mut v) = (0u32, 1u64, 0u64);
+                for item in first..first.saturating_add(len) {
+                    let item = item as usize;
+                    elem = join_elem(elem, elem_of(tys[item]));
+                    d = d.max(depth[item]);
+                    k = k.saturating_add(cost[item]);
+                    v = v.saturating_add(vars[item]);
+                }
+                (Ty::List(elem), 1 + d, k, v)
+            }
+            Node::ListOp(op, l, n) => {
+                let Ty::List(elem) = tys[l as usize] else {
+                    return Err("the command needs a list".into());
+                };
+                if n != NONE && !matches!(tys[n as usize], Ty::Num(_) | Ty::Bool) {
+                    return Err("the index must be a number".into());
+                }
+                let ty = match op {
+                    ListOp::Length => Ty::Num(0),
+                    ListOp::Sum => match elem {
+                        Elem::Num | Elem::Bool | Elem::Empty => Ty::Num(0),
+                        _ => return Err("only the sum of numbers is supported".into()),
+                    },
+                    ListOp::Index | ListOp::Element => ty_of(elem)?,
+                };
+                let (l, n) = (l as usize, n as usize);
+                let (nd, nc, nv) = if n == NONE as usize {
+                    (0, 0, 0)
+                } else {
+                    (depth[n], cost[n], vars[n])
+                };
+                (
+                    ty,
+                    1 + depth[l].max(nd),
+                    1u64.saturating_add(cost[l]).saturating_add(nc),
+                    vars[l].saturating_add(nv),
+                )
+            }
+            Node::Range(..) | Node::Seq(..) => {
+                let (args, elem): (&[u32], Elem) = match *node {
+                    Node::Range(a, b, c) => (&[a, b, c], Elem::Num),
+                    Node::Seq(e, a, b, c, _) => (&[a, b, c, e], elem_of(tys[e as usize])),
+                    _ => unreachable!("matched above"),
+                };
+                let (mut d, mut k, mut v) = (0u32, 1u64, 0u64);
+                for (j, &a) in args.iter().enumerate() {
+                    if a == NONE {
+                        continue;
+                    }
+                    let a = a as usize;
+                    if j < 3 && !matches!(tys[a], Ty::Num(_) | Ty::Bool) {
+                        return Err("the bounds of `Sequence` must be numbers".into());
+                    }
+                    d = d.max(depth[a]);
+                    k = k.saturating_add(cost[a]);
+                    v = v.saturating_add(vars[a]);
+                }
+                (Ty::List(elem), 1 + d, k, v)
             }
         };
         tys.push(ty);
@@ -148,7 +217,40 @@ fn is_angle_def(c: &Construction, def: &Def) -> bool {
 }
 
 fn object_type(c: &Construction, id: Id) -> Result<Ty, String> {
-    result_type(c.kind(id), is_angle_def(c, &c.def(id)))
+    match (c.kind(id), c.def(id)) {
+        (Kind::List, Def::Expr(d)) => Ok(super::entry(c, d).root_ty()),
+        (kind, def) => result_type(kind, is_angle_def(c, &def)),
+    }
+}
+
+/// The element type of a list of elements of type `t`.
+fn elem_of(t: Ty) -> Elem {
+    match t {
+        Ty::Num(_) => Elem::Num,
+        Ty::Vec => Elem::Vec,
+        Ty::Bool => Elem::Bool,
+        Ty::List(_) => Elem::List,
+    }
+}
+
+fn join_elem(a: Elem, b: Elem) -> Elem {
+    match (a, b) {
+        (Elem::Empty, t) | (t, Elem::Empty) => t,
+        (a, b) if a == b => a,
+        _ => Elem::Any,
+    }
+}
+
+/// The type of one element of a list (`GeoList.createTemplateElement` for
+/// an empty one: a number).
+fn ty_of(e: Elem) -> Result<Ty, String> {
+    match e {
+        Elem::Num | Elem::Empty => Ok(Ty::Num(0)),
+        Elem::Vec => Ok(Ty::Vec),
+        Elem::Bool => Ok(Ty::Bool),
+        Elem::List => Ok(Ty::List(Elem::Any)),
+        Elem::Any => Err("the elements of the list have different types".into()),
+    }
 }
 
 fn result_type(kind: Kind, angle: bool) -> Result<Ty, String> {
@@ -163,6 +265,14 @@ fn result_type(kind: Kind, angle: bool) -> Result<Ty, String> {
 /// `MyDouble`: functions drop the angle dimension except `abs`, `floor`,
 /// `ceil` and `round`; complex arguments are not supported.
 fn unary_type(op: Un, a: Ty) -> Result<Ty, String> {
+    if let Ty::List(e) = a {
+        // `MyList.apply`: element by element
+        return Ok(Ty::List(elem_of(scalar_unary_type(op, ty_of(e)?)?)));
+    }
+    scalar_unary_type(op, a)
+}
+
+fn scalar_unary_type(op: Un, a: Ty) -> Result<Ty, String> {
     if op == Un::Not {
         // `Operation.NOT`: `illegalBoolean` for anything else
         return match a {
@@ -179,13 +289,37 @@ fn unary_type(op: Un, a: Ty) -> Result<Ty, String> {
         // `MyDouble.asin(true)`: `makeAngle`
         (Un::AsinD | Un::AcosD | Un::AtanD, Ty::Num(_)) => Ok(Ty::Num(1)),
         (_, Ty::Num(_) | Ty::Bool) => Ok(Ty::Num(0)),
+        (_, Ty::List(_)) => Err("a list of lists cannot be used here".into()),
     }
 }
 
 /// `MyDouble.add`, `mult`, `div`, `pow` for the angle dimension; vectors
 /// add, scale and multiply to the scalar product.
 fn binary_type(op: Bin, a: Ty, b: Ty) -> Result<Ty, String> {
+    let list = |t: Ty| match t {
+        Ty::List(e) => ty_of(e).map(Some),
+        _ => Ok(None),
+    };
+    match (list(a)?, list(b)?) {
+        (None, None) => scalar_binary_type(op, a, b),
+        _ if op.is_comparison() || op.is_logic() => Err("comparing lists is not supported".into()),
+        // `MyList.apply`: element by element, or every element with the
+        // other operand
+        (la, lb) => {
+            let t = scalar_binary_type(op, la.unwrap_or(a), lb.unwrap_or(b))?;
+            if matches!(t, Ty::List(_)) {
+                return Err("arithmetic on lists of lists is not supported".into());
+            }
+            Ok(Ty::List(elem_of(t)))
+        }
+    }
+}
+
+fn scalar_binary_type(op: Bin, a: Ty, b: Ty) -> Result<Ty, String> {
     use Ty::{Num, Vec};
+    if matches!(a, Ty::List(_)) || matches!(b, Ty::List(_)) {
+        return Err("arithmetic on lists of lists is not supported".into());
+    }
     if op.is_logic() {
         // `Operation.AND` and the others: `IllegalBoolean` unless both are
         return match (a, b) {

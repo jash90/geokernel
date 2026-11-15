@@ -221,3 +221,73 @@ fn a_long_literal_recomputes_without_allocating() {
         load("A = (1, 2)\nc = 3.14159265358979323846264338327950288419716939937510 x(A)").unwrap();
     assert_eq!(drag(&mut c, "c"), 0);
 }
+
+/// A checksum of the elements of list `l`, to see that they changed.
+fn element_sum(c: &Construction, l: Id) -> f64 {
+    use geo_kernel::expr::Element;
+    let list = c.elements(l).expect("a defined list");
+    let mut sum = 0.0;
+    for e in list.iter() {
+        match e {
+            Element::Value(_, Value::Number(v)) => sum += v,
+            Element::Value(_, Value::Point { x, y }) => sum += x + y,
+            Element::List(inner) => {
+                for f in inner.iter() {
+                    if let Element::Value(_, Value::Number(v)) = f {
+                        sum += v;
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+    sum
+}
+
+/// Sets `a` back and forth 1000 times; every set must change list `watch`
+/// (its elements, not only its length). Returns the allocations.
+fn toggle_list(c: &mut Construction, watch: &str, a1: f64, a2: f64) -> u64 {
+    let (a, w) = (id(c, "a"), id(c, watch));
+    // warm up: the first sets establish the buffers' capacity
+    c.set_number(a, a2).unwrap();
+    c.set_number(a, a1).unwrap();
+    let mut changed = 0;
+    let n = allocations(|| {
+        for i in 0..1000 {
+            let before = element_sum(c, w);
+            let count = c.set_number(a, if i % 2 == 0 { a2 } else { a1 }).unwrap();
+            changed += usize::from(count > 0 && element_sum(c, w) != before);
+        }
+    });
+    assert_eq!(changed, 1000, "every set must recompute `{watch}`");
+    n
+}
+
+#[test]
+fn a_list_of_numbers_recomputes_without_allocating() {
+    let mut c = load(
+        "a = 2\nA = (1, 2)\nl = Sequence(k a, k, 1, 200)\nm = {a, 2 a, a^2, {a, 1}, A + (a, 0)}\n\
+         s = Sum(l)\nt = l(3) + Length(m)\nu = l + l",
+    )
+    .unwrap();
+    for watch in ["l", "m", "u"] {
+        assert_eq!(
+            toggle_list(&mut c, watch, 2.0, 3.0),
+            0,
+            "recomputing `{watch}`"
+        );
+    }
+}
+
+#[test]
+fn a_list_that_changes_length_recomputes_without_allocating_after_warm_up() {
+    // the longer list establishes the capacity; the shorter one reuses it
+    let mut c = load("a = 50\nl = Sequence(a)\nm = Sequence(k^2, k, 1, a)").unwrap();
+    for watch in ["l", "m"] {
+        assert_eq!(
+            toggle_list(&mut c, watch, 50.0, 80.0),
+            0,
+            "recomputing `{watch}`"
+        );
+    }
+}

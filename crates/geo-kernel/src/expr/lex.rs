@@ -19,6 +19,9 @@ pub(crate) enum Tok {
     },
     LParen,
     RParen,
+    /// `{` and `}` of a list.
+    LBrace,
+    RBrace,
     Comma,
     Semicolon,
     Plus,
@@ -141,6 +144,8 @@ pub(crate) fn tokens(src: &str) -> Result<Vec<Token>, String> {
             match ch {
                 '(' => Tok::LParen,
                 ')' => Tok::RParen,
+                '{' => Tok::LBrace,
+                '}' => Tok::RBrace,
                 ',' => Tok::Comma,
                 ';' => Tok::Semicolon,
                 '+' => Tok::Plus,

@@ -289,7 +289,7 @@ fn is_finite(v: &Value) -> bool {
         Value::Vector { x, y } => x.is_finite() && y.is_finite(),
         Value::Ray { x, y, a, b, c } => [x, y, a, b, c].iter().all(|v| v.is_finite()),
         Value::Bool(_) => true,
-        Value::Function => true,
+        Value::Function | Value::List { .. } => true,
         Value::Polygon { area } => area.is_finite(),
         Value::PolyLine { length } => length.is_finite(),
         Value::Undefined => false,

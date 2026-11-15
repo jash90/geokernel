@@ -157,13 +157,52 @@ pub fn first_non_finite(c: &Construction) -> Option<String> {
     })
 }
 
-pub fn values(c: &Construction) -> Vec<Value> {
-    c.ids().map(|id| c.value(id)).collect()
+/// The value of an object, with the elements of a list written out in
+/// order: a nested list as its `Value::List` followed by its elements.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Snap {
+    pub value: Value,
+    pub elements: Vec<Value>,
+}
+
+impl Snap {
+    pub fn is_defined(&self) -> bool {
+        self.value.is_defined()
+    }
+}
+
+fn write_elements(list: geo_kernel::expr::List<'_>, out: &mut Vec<Value>) {
+    for e in list.iter() {
+        match e {
+            geo_kernel::expr::Element::Value(_, v) => out.push(v),
+            geo_kernel::expr::Element::List(inner) => {
+                out.push(Value::List {
+                    len: inner.len() as u32,
+                });
+                write_elements(inner, out);
+            }
+        }
+    }
+}
+
+pub fn values(c: &Construction) -> Vec<Snap> {
+    c.ids()
+        .map(|id| {
+            let mut elements = Vec::new();
+            if let Some(list) = c.elements(id) {
+                write_elements(list, &mut elements);
+            }
+            Snap {
+                value: c.value(id),
+                elements,
+            }
+        })
+        .collect()
 }
 
 /// Describes the first difference between two value lists (`==` on `f64`,
 /// so `-0.0` and `0.0` are the same).
-pub fn first_difference(c: &Construction, a: &[Value], b: &[Value]) -> Option<String> {
+pub fn first_difference(c: &Construction, a: &[Snap], b: &[Snap]) -> Option<String> {
     if a.len() != b.len() {
         return Some(format!("{} objects against {}", a.len(), b.len()));
     }
@@ -601,6 +640,11 @@ pub struct Case {
     /// not always spread through an expression (`1 / (1 / a)` is 0 when `a`
     /// is 0, as in GeoGebra), so contagion is not checked on these.
     pub expr: Vec<bool>,
+    /// For each object, whether it may stay defined although an object it
+    /// reads is undefined: an `If` takes the next branch when a condition
+    /// cannot be decided, and a list holds an undefined element (one of
+    /// `Sequence(expr, k, a, b)` too, where only `a` and `b` must be defined).
+    pub lenient: Vec<bool>,
     pub free: Vec<Id>,
     /// Commands the generator tried with matching kinds that the script
     /// layer rejected.
@@ -615,6 +659,7 @@ pub fn generate(seed: u64, n_commands: usize, all_commands: bool) -> Case {
     let mut multi_lines = Vec::new();
     let mut deps: Vec<Vec<usize>> = Vec::new();
     let mut expr: Vec<bool> = Vec::new();
+    let mut lenient: Vec<bool> = Vec::new();
     let mut free = Vec::new();
     let mut rejected = Vec::new();
 
@@ -634,6 +679,7 @@ pub fn generate(seed: u64, n_commands: usize, all_commands: bool) -> Case {
         multi_lines.push(false);
         deps.push(Vec::new());
         expr.push(false);
+        lenient.push(false);
         free.push(id);
     }
     for name in NUMBER_NAMES.iter().take(n_numbers) {
@@ -646,6 +692,7 @@ pub fn generate(seed: u64, n_commands: usize, all_commands: bool) -> Case {
         multi_lines.push(false);
         deps.push(Vec::new());
         expr.push(false);
+        lenient.push(false);
         free.push(id);
     }
 
@@ -665,6 +712,7 @@ pub fn generate(seed: u64, n_commands: usize, all_commands: bool) -> Case {
                             .collect(),
                     );
                     expr.push(true);
+                    lenient.push(["If(", "{", "Sequence(jj"].iter().any(|t| line.contains(t)));
                     assert_eq!(id.index() + 1, c.len(), "an expression makes one object");
                     lines.push(line);
                     multi_lines.push(false);
@@ -695,6 +743,7 @@ pub fn generate(seed: u64, n_commands: usize, all_commands: bool) -> Case {
                 for _ in before..c.len() {
                     deps.push(arg_ids.clone());
                     expr.push(false);
+                    lenient.push(false);
                 }
                 lines.push(line);
                 multi_lines.push(call.multi);
@@ -711,6 +760,7 @@ pub fn generate(seed: u64, n_commands: usize, all_commands: bool) -> Case {
         multi_lines,
         deps,
         expr,
+        lenient,
         free,
         rejected,
     }
@@ -736,7 +786,7 @@ fn expression_line(rng: &mut Rng, c: &Construction, made: usize) -> Option<(Stri
     let m = rng.pick(&numbers).clone();
     let p = rng.pick(&points).clone();
     let q = rng.pick(&points).clone();
-    let pick = rng.below(14);
+    let pick = rng.below(20);
     let (label, rhs, used) = match pick {
         0 => (format!("o{made}"), format!("{n} * 2 + {m}"), vec![n, m]),
         1 => (
@@ -786,6 +836,36 @@ fn expression_line(rng: &mut Rng, c: &Construction, made: usize) -> Option<(Stri
             format!("v{made}"),
             format!("{p} - {q} + ({n}, {m}) * 2"),
             vec![p, q, n, m],
+        ),
+        13 => (
+            format!("o{made}"),
+            format!("If({n} < {m}, {n} + 1, x({p}) > {m}, x({p}), 2 {m})"),
+            vec![n, m, p],
+        ),
+        14 => (
+            format!("P{made}"),
+            format!("If({n} >= 0 && x({p}) != {m}, {p}, {q} + (1, 0))"),
+            vec![n, p, m, q],
+        ),
+        15 => (
+            format!("s{made}"),
+            format!("{{{n}, 2 {m}, {{{n}^2, 1 / {m}}}, x({p}) < {n}}}"),
+            vec![n, m, p],
+        ),
+        16 => (
+            format!("s{made}"),
+            format!("Sequence(jj {n} + x({p}), jj, {m}, {m} + 6)"),
+            vec![n, p, m],
+        ),
+        17 => (
+            format!("s{made}"),
+            format!("{{{p}, {q}}} + ({n}, 1) - 2 {{{n}, {m}}}"),
+            vec![p, q, n, m],
+        ),
+        18 => (
+            format!("o{made}"),
+            format!("Sum({{{n}, {m}, x({p})}}, {m}) + Length(Sequence({m})) - Sum({{x({p}), y({q})}}, 1)"),
+            vec![n, m, p, q],
         ),
         _ => {
             let body = if rng.chance(0.5) {

@@ -17,6 +17,12 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoVec2D.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDependentBoolean.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIf.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/MyList.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDependentList.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoSequence.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoSequenceRange.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoListElement.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoStats1D.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
@@ -43,16 +49,95 @@
 //! (`AlgoDependentFunction.expandFunctionDerivativeNodes`): its `x` stands
 //! for the argument's subtree, evaluated in place. Outside a function,
 //! `f(a)` evaluates `a` and samples `f` there.
+//!
+//! A list is built in a scratch buffer ([`Lists`]): its elements one after
+//! the other, a nested list's elements further on. What an element leaves
+//! behind is dropped before the next one, and the buffer is emptied for
+//! the next evaluation, so a recompute allocates nothing once it has grown.
 
 use super::decimal::Dec;
+use super::list::{copy_tree, Slot};
 use super::math::{self, PI_180};
 use super::twonum;
-use super::{Bin, Entry, IfMode, Node, Raw, Ty, Un, NONE};
+use super::{Bin, Entry, IfMode, ListOp, Node, Raw, Ty, Un, NONE};
 use crate::algo::intersect::Hint;
 use crate::kernel::{Construction, Def, Id, Kind, Value};
 use crate::tol::STANDARD_PRECISION;
 use std::borrow::Cow;
+use std::cell::{Cell, RefCell};
 use std::sync::OnceLock;
+
+/// Elements one evaluation may build in all; past it every list being built
+/// is undefined, so a `Sequence` with a huge range ends quickly.
+const MAX_ELEMENTS: u64 = 1 << 20;
+
+/// `Kernel.MIN_PRECISION`, the slack of the bounds of `Sequence`.
+const MIN_PRECISION: f64 = 1e-5;
+
+/// `MyMath.LARGEST_INTEGER`.
+const LARGEST_INTEGER: f64 = 9007199254740992.0;
+
+/// The scratch buffer of the lists of one evaluation (see the module
+/// documentation), and the elements built so far.
+pub(super) struct Lists {
+    arena: RefCell<Vec<Slot>>,
+    built: Cell<u64>,
+}
+
+impl Lists {
+    pub(super) fn new(mut arena: Vec<Slot>) -> Lists {
+        arena.clear();
+        Lists {
+            arena: RefCell::new(arena),
+            built: Cell::new(0),
+        }
+    }
+
+    pub(super) fn into_arena(self) -> Vec<Slot> {
+        self.arena.into_inner()
+    }
+
+    fn len(&self) -> u32 {
+        self.arena.borrow().len() as u32
+    }
+
+    fn truncate(&self, mark: u32) {
+        self.arena.borrow_mut().truncate(mark as usize);
+    }
+
+    fn get(&self, i: u32) -> Slot {
+        self.arena.borrow()[i as usize]
+    }
+
+    fn set(&self, i: u32, slot: Slot) {
+        self.arena.borrow_mut()[i as usize] = slot;
+    }
+
+    /// Counts `n` more elements; false past [`MAX_ELEMENTS`].
+    fn build(&self, n: u64) -> bool {
+        let built = self.built.get().saturating_add(n);
+        self.built.set(built);
+        built <= MAX_ELEMENTS
+    }
+
+    /// `n` undefined slots at the end, where they start.
+    fn reserve(&self, n: u32) -> Option<u32> {
+        if !self.build(u64::from(n)) {
+            return None;
+        }
+        let mut arena = self.arena.borrow_mut();
+        let start = arena.len();
+        arena.resize(start + n as usize, Slot::undefined(Kind::Number));
+        Some(start as u32)
+    }
+}
+
+/// The value of the variable of a `Sequence`, inside those around it.
+struct Local<'a> {
+    depth: u32,
+    value: f64,
+    up: Option<&'a Local<'a>>,
+}
 
 #[derive(Clone, Copy)]
 enum Val {
@@ -193,21 +278,40 @@ enum Env<'a> {
     Arg(&'a Ctx<'a>, u32),
 }
 
+#[derive(Clone, Copy)]
 struct Ctx<'a> {
     c: &'a Construction,
     e: &'a Entry,
     env: &'a Env<'a>,
+    /// The scratch of a tree with lists; `None` for a tree without.
+    lists: Option<&'a Lists>,
+    /// The variables of the `Sequence`s around the node being evaluated.
+    locals: Option<&'a Local<'a>>,
+}
+
+impl<'a> Ctx<'a> {
+    fn new(c: &'a Construction, e: &'a Entry, env: &'a Env<'a>) -> Ctx<'a> {
+        Ctx {
+            c,
+            e,
+            env,
+            lists: None,
+            locals: None,
+        }
+    }
 }
 
 /// Evaluates an entry's tree (full evaluation), with the exact decimal of
 /// a number result (`toDecimal`).
-pub(super) fn root(c: &Construction, e: &Entry) -> (Raw, Option<Exact>) {
+pub(super) fn root(c: &Construction, e: &Entry, lists: Option<&Lists>) -> (Raw, Option<Exact>) {
     let ctx = Ctx {
-        c,
-        e,
-        env: &Env::None,
+        lists,
+        ..Ctx::new(c, e, &Env::None)
     };
     let x = ctx.full(e.root);
+    if lists.is_some_and(|l| l.built.get() > MAX_ELEMENTS) {
+        return (Raw::Num(f64::NAN), None);
+    }
     match x.val {
         Val::N(v) => (Raw::Num(v), x.dec),
         Val::V(x, y) => (Raw::Vec(x, y), None),
@@ -215,25 +319,36 @@ pub(super) fn root(c: &Construction, e: &Entry) -> (Raw, Option<Exact>) {
     }
 }
 
+/// Evaluates an entry whose result is a list: its elements go to `out`,
+/// compacted (the top level first); its length, `None` when undefined.
+pub(super) fn root_list(
+    c: &Construction,
+    e: &Entry,
+    lists: &Lists,
+    out: &mut Vec<Slot>,
+) -> Option<u32> {
+    let ctx = Ctx {
+        lists: Some(lists),
+        ..Ctx::new(c, e, &Env::None)
+    };
+    let (start, len) = ctx.list(e.root)?;
+    if lists.built.get() > MAX_ELEMENTS {
+        return None;
+    }
+    out.clear();
+    copy_tree(&lists.arena.borrow(), start, len, out);
+    Some(len)
+}
+
 /// `Function.value`: a function entry at `x`.
 pub(super) fn sample(c: &Construction, e: &Entry, x: f64) -> f64 {
-    let ctx = Ctx {
-        c,
-        e,
-        env: &Env::Value(x),
-    };
-    ctx.fast(e.root)
+    Ctx::new(c, e, &Env::Value(x)).fast(e.root)
 }
 
 /// The value of the condition at `i` of an entry's `AlgoIf`, which reads
 /// no `x`.
 pub(super) fn condition(c: &Construction, e: &Entry, i: u32) -> bool {
-    let ctx = Ctx {
-        c,
-        e,
-        env: &Env::None,
-    };
-    matches!(ctx.full(i).val, Val::B(true, _))
+    matches!(Ctx::new(c, e, &Env::None).full(i).val, Val::B(true, _))
 }
 
 /// The tree of the function object `f`, when it is defined.
@@ -322,7 +437,17 @@ impl Ctx<'_> {
             }
             Node::Apply(f, a) => self.apply_full(f, a),
             Node::If(mode, cond, then, rest) => self.conditional(i, mode, cond, then, rest),
-            Node::FnName(_) => Ex::plain(N(f64::NAN)),
+            Node::Item(a) => self.full(a),
+            // the variable of a `Sequence` is a `GeoNumeric`
+            Node::Local(depth) => Ex {
+                obj: true,
+                ..Ex::plain(N(self.local(depth)))
+            },
+            Node::ListOp(op, l, n) => self.list_command(i, op, l, n),
+            // a list is only read through `list`
+            Node::FnName(_) | Node::List(..) | Node::Range(..) | Node::Seq(..) => {
+                Ex::plain(N(f64::NAN))
+            }
         }
     }
 
@@ -339,7 +464,7 @@ impl Ctx<'_> {
             Ty::Vec => Ex::plain(Val::V(f64::NAN, f64::NAN)),
             // `GeoBoolean.setUndefined` only sets false
             Ty::Bool => Ex::plain(Val::B(false, true)),
-            Ty::Num(_) => Ex::plain(Val::N(f64::NAN)),
+            Ty::Num(_) | Ty::List(_) => Ex::plain(Val::N(f64::NAN)),
         };
         if mode == IfMode::Else && !defined {
             return undefined();
@@ -387,7 +512,15 @@ impl Ctx<'_> {
     /// command; GeoGebra makes such an argument an independent number.
     fn is_constant(&self, i: u32) -> bool {
         match self.node(i) {
-            Node::Obj(_) | Node::Var | Node::Cmd(..) | Node::Apply(..) | Node::If(..) => false,
+            Node::Obj(_)
+            | Node::Var
+            | Node::Cmd(..)
+            | Node::Apply(..)
+            | Node::If(..)
+            | Node::Local(_)
+            | Node::ListOp(..)
+            | Node::Range(..)
+            | Node::Seq(..) => false,
             Node::Bin(op, ..) if op.is_command() => false,
             node => super::children(&node).all(|child| self.is_constant(child)),
         }
@@ -401,11 +534,7 @@ impl Ctx<'_> {
         };
         if self.e.function {
             let env = Env::Arg(self, a);
-            let inner = Ctx {
-                c: self.c,
-                e,
-                env: &env,
-            };
+            let inner = Ctx::new(self.c, e, &env);
             if fast {
                 inner.fast(e.root)
             } else {
@@ -426,12 +555,7 @@ impl Ctx<'_> {
             return Ex::plain(Val::N(f64::NAN));
         };
         let env = Env::Arg(self, a);
-        Ctx {
-            c: self.c,
-            e,
-            env: &env,
-        }
-        .full(e.root)
+        Ctx::new(self.c, e, &env).full(e.root)
     }
 
     fn full_number(&self, i: u32) -> f64 {
@@ -608,6 +732,436 @@ impl Ctx<'_> {
             _ => scalar(op, x, deg),
         };
         Ex::kept(special, v)
+    }
+}
+
+/// Lists: built in the scratch buffer, read by the list commands.
+impl Ctx<'_> {
+    /// The value of the variable of the `Sequence` of `depth`.
+    fn local(&self, depth: u32) -> f64 {
+        let mut local = self.locals;
+        while let Some(l) = local {
+            if l.depth == depth {
+                return l.value;
+            }
+            local = l.up;
+        }
+        f64::NAN
+    }
+
+    fn is_list(&self, i: u32) -> bool {
+        matches!(self.e.tys[i as usize], Ty::List(_))
+    }
+
+    /// Builds the list at `i` in the scratch buffer: where its elements
+    /// start and how many there are; `None` when it is undefined.
+    fn list(&self, i: u32) -> Option<(u32, u32)> {
+        let lists = self.lists?;
+        match self.node(i) {
+            // `AlgoDependentList`: one element per item
+            Node::List(first, len) => {
+                let start = lists.reserve(len)?;
+                for k in 0..len {
+                    let slot = self.element(first + k);
+                    lists.set(start + k, slot);
+                }
+                Some((start, len))
+            }
+            Node::Item(a) => self.list(a),
+            Node::Obj(id) => self.object_list(id),
+            Node::Bin(op, a, b) => self.list_binary(op, a, b),
+            Node::Un(op, a) => self.list_unary(op, a),
+            Node::Range(from, to, step) => self.range(from, to, step),
+            Node::Seq(e, from, to, step, depth) => self.sequence(e, from, to, step, depth),
+            // an element that is a list: its elements were built with the
+            // list it belongs to
+            Node::ListOp(op, l, n) => self.pick(op, l, n)?.run(),
+            _ => None,
+        }
+    }
+
+    /// One element of a list being built. A list element is built after
+    /// what is there and kept; anything else is evaluated, and what that
+    /// built is dropped.
+    fn element(&self, i: u32) -> Slot {
+        let i = match self.node(i) {
+            Node::Item(a) => a,
+            _ => i,
+        };
+        if self.is_list(i) {
+            return match self.list(i) {
+                Some((start, len)) => Slot::list(start, len),
+                None => Slot::undefined(Kind::List),
+            };
+        }
+        let mark = self.lists.map(Lists::len);
+        let x = self.full(i).val;
+        if let (Some(lists), Some(mark)) = (self.lists, mark) {
+            lists.truncate(mark);
+        }
+        match x {
+            Val::N(v) => Slot::number(v),
+            Val::V(x, y) => Slot::coords(self.vec_kind(i), x, y),
+            Val::B(b, _) => Slot::boolean(b),
+        }
+    }
+
+    /// Whether a point or vector element is a point or a vector: an object
+    /// or a command keeps its kind, coordinates are a point, and an
+    /// operation is a point when a point takes part.
+    fn vec_kind(&self, i: u32) -> Kind {
+        let kind = |k: Kind| {
+            if k == Kind::Vector {
+                Kind::Vector
+            } else {
+                Kind::Point
+            }
+        };
+        match self.node(i) {
+            Node::Obj(id) => kind(self.c.kind(id)),
+            Node::Cmd(def, _) => kind(def.kind()),
+            Node::Item(a) | Node::Un(_, a) | Node::If(_, _, a, _) => self.vec_kind(a),
+            Node::Bin(_, a, b) => {
+                let kinds = [a, b].map(|j| self.is_vec(j).then(|| self.vec_kind(j)));
+                if kinds.contains(&Some(Kind::Point)) || !kinds.contains(&Some(Kind::Vector)) {
+                    Kind::Point
+                } else {
+                    Kind::Vector
+                }
+            }
+            _ => Kind::Point,
+        }
+    }
+
+    /// The elements of a list object, copied to the scratch buffer.
+    fn object_list(&self, id: Id) -> Option<(u32, u32)> {
+        let lists = self.lists?;
+        let (Def::Expr(d), Value::List { len }) = (self.c.def(id), self.c.value(id)) else {
+            return None;
+        };
+        let items = &super::entry(self.c, d).items;
+        if !lists.build(items.len() as u64) {
+            return None;
+        }
+        let mut arena = lists.arena.borrow_mut();
+        let base = arena.len() as u32;
+        arena.extend(items.iter().map(|s| match s.run() {
+            Some((start, n)) => Slot::list(start + base, n),
+            None => *s,
+        }));
+        Some((base, len))
+    }
+
+    /// `MyList.apply` of a two-operand operation: element by element, or
+    /// every element with the other operand. Lists of unequal length give
+    /// an empty list; a point or vector result is a point.
+    fn list_binary(&self, op: Bin, a: u32, b: u32) -> Option<(u32, u32)> {
+        let lists = self.lists?;
+        // the operand that is no list first, so that what it builds goes
+        let scalar = |j: u32| {
+            let mark = lists.len();
+            let v = self.operand(j).val;
+            lists.truncate(mark);
+            v
+        };
+        let (la, lb) = (self.is_list(a), self.is_list(b));
+        let left = (!la).then(|| scalar(a));
+        let right = (!lb).then(|| scalar(b));
+        let ra = if la { Some(self.list(a)?) } else { None };
+        let rb = if lb { Some(self.list(b)?) } else { None };
+        let len = match (ra, rb) {
+            (Some((_, n)), Some((_, m))) if n != m => return Some((lists.len(), 0)),
+            (Some((_, n)), _) | (_, Some((_, n))) => n,
+            (None, None) => return None,
+        };
+        let start = lists.reserve(len)?;
+        for k in 0..len {
+            let x = left.unwrap_or_else(|| {
+                ra.map_or(Val::N(f64::NAN), |(s, _)| slot_val(lists.get(s + k)))
+            });
+            let y = right.unwrap_or_else(|| {
+                rb.map_or(Val::N(f64::NAN), |(s, _)| slot_val(lists.get(s + k)))
+            });
+            lists.set(start + k, combine(op, x, y));
+        }
+        Some((start, len))
+    }
+
+    /// `MyList.apply` of a one-operand operation.
+    fn list_unary(&self, op: Un, a: u32) -> Option<(u32, u32)> {
+        let lists = self.lists?;
+        let (s, n) = self.list(a)?;
+        let start = lists.reserve(n)?;
+        for k in 0..n {
+            let slot = match slot_val(lists.get(s + k)) {
+                Val::B(b, _) if op == Un::Not => Slot::boolean(!b),
+                Val::B(b, _) => Slot::number(scalar(op, bool_number(b), false)),
+                Val::N(x) => Slot::number(scalar(op, x, false)),
+                Val::V(x, y) => Slot::number(match op {
+                    Un::X => x,
+                    Un::Y => y,
+                    Un::Abs => complex_abs(x, y),
+                    _ => f64::NAN,
+                }),
+            };
+            lists.set(start + k, slot);
+        }
+        Some((start, n))
+    }
+
+    /// `AlgoSequenceRange`: `Sequence(n)` is 1 to `n` rounded; `Sequence(a,
+    /// b)` runs from `a` to `b` rounded, up or down; `Sequence(a, b, step)`
+    /// steps from `a`, on decimals when `a` and `step` have them and there
+    /// are at most 100 steps.
+    fn range(&self, from: u32, to: u32, step: u32) -> Option<(u32, u32)> {
+        let lists = self.lists?;
+        if from == NONE {
+            let n = u32::try_from(math::java_round(self.full_number(to)).max(0)).ok()?;
+            let start = lists.reserve(n)?;
+            for k in 0..n {
+                lists.set(start + k, Slot::number(f64::from(k) + 1.0));
+            }
+            return Some((start, n));
+        }
+        let f = self.full(from);
+        let s = (step != NONE).then(|| self.full(step));
+        let (mut a, mut b) = (f.num(), self.full_number(to));
+        if s.is_none() {
+            a = math::java_round(a) as f64;
+            b = math::java_round(b) as f64;
+        }
+        if a.abs() > LARGEST_INTEGER || b.abs() > LARGEST_INTEGER {
+            return None;
+        }
+        let sign = if b >= a { 1.0 } else { -1.0 };
+        let d = match &s {
+            Some(s) => {
+                let d = s.num();
+                if math::is_zero(d) || d * sign < 0.0 {
+                    return None;
+                }
+                d
+            }
+            None => sign,
+        };
+        let decimals = match (&f.dec, s.as_ref().and_then(|s| s.dec.as_ref())) {
+            (Some(x), Some(y)) if (b - a) / d <= 100.0 => x.get(a).zip(y.get(d)),
+            _ => None,
+        };
+        let decimals = decimals.as_ref().map(|(x, y)| (x.as_ref(), y.as_ref()));
+        let values = |emit: &mut dyn FnMut(f64) -> bool| {
+            if let Some((mut k, step)) = decimals.map(|(x, y)| (x.clone(), y)) {
+                while k.to_f64() * sign <= b * sign + MIN_PRECISION {
+                    if !emit(k.to_f64()) {
+                        return;
+                    }
+                    match k.add(step) {
+                        Some(next) => k = next,
+                        None => return,
+                    }
+                }
+                return;
+            }
+            let mut steps = 0.0;
+            let mut k = a;
+            while k * sign <= b * sign + MIN_PRECISION {
+                if math::is_integer(k) {
+                    k = math::java_round(k) as f64;
+                }
+                if !emit(k) {
+                    return;
+                }
+                steps += 1.0;
+                k = a + steps * d;
+            }
+        };
+        let n = count(values)?;
+        let start = lists.reserve(n)?;
+        let mut k = 0;
+        values(&mut |v| {
+            lists.set(start + k, Slot::number(v));
+            k += 1;
+            k < n
+        });
+        Some((start, n))
+    }
+
+    /// `AlgoSequence`: the expression at the variable's values from `from`
+    /// on by `step` while within `to` (and `MIN_PRECISION`); a value close
+    /// to a whole number is made whole.
+    fn sequence(&self, e: u32, from: u32, to: u32, step: u32, depth: u32) -> Option<(u32, u32)> {
+        let lists = self.lists?;
+        let (f, t) = (self.full_number(from), self.full_number(to));
+        let s = if step == NONE {
+            1.0
+        } else {
+            self.full_number(step)
+        };
+        if f.is_nan() || t.is_nan() || s.is_nan() {
+            return None;
+        }
+        if (t - f) * s <= -MIN_PRECISION {
+            return Some((lists.len(), 0));
+        }
+        if ((t - f) / s).is_infinite() {
+            return None;
+        }
+        let values = |emit: &mut dyn FnMut(f64) -> bool| {
+            let mut v = f;
+            while (s > 0.0 && v <= t + MIN_PRECISION) || (s < 0.0 && v >= t - MIN_PRECISION) {
+                if !emit(v) {
+                    return;
+                }
+                v += s;
+                if math::is_integer(v) {
+                    v = math::java_round(v) as f64;
+                }
+            }
+        };
+        let n = count(values)?;
+        let start = lists.reserve(n)?;
+        let mut k = 0;
+        values(&mut |v| {
+            let local = Local {
+                depth,
+                value: v,
+                up: self.locals,
+            };
+            let slot = Ctx {
+                locals: Some(&local),
+                ..*self
+            }
+            .element(e);
+            lists.set(start + k, slot);
+            k += 1;
+            k < n
+        });
+        Some((start, n))
+    }
+
+    /// The element `l(n)` or `Element(l, n)` picks, `None` when there is
+    /// none. Its list is built and stays in the scratch buffer.
+    fn pick(&self, op: ListOp, l: u32, n: u32) -> Option<Slot> {
+        let lists = self.lists?;
+        let mark = lists.len();
+        let index = self.full_number(n);
+        lists.truncate(mark);
+        let (start, len) = self.list(l)?;
+        let mut k = math::java_round(index) - 1;
+        if op == ListOp::Index && k < 0 {
+            k += i64::from(len) + 1;
+        }
+        (0..i64::from(len))
+            .contains(&k)
+            .then(|| lists.get(start + k as u32))
+    }
+
+    /// A list command that gives a number, a point or a boolean; the result
+    /// is a helper object, and what it built is dropped.
+    fn list_command(&self, i: u32, op: ListOp, l: u32, n: u32) -> Ex {
+        let Some(lists) = self.lists else {
+            return Ex::plain(Val::N(f64::NAN));
+        };
+        let mark = lists.len();
+        let val = match op {
+            ListOp::Length => Val::N(self.list(l).map_or(f64::NAN, |(_, len)| f64::from(len))),
+            ListOp::Sum => Val::N(self.sum(l, n)),
+            ListOp::Index | ListOp::Element => {
+                match (self.pick(op, l, n), self.e.tys[i as usize]) {
+                    (Some(slot), _) => slot_val(slot),
+                    (None, Ty::Vec) => Val::V(f64::NAN, f64::NAN),
+                    (None, Ty::Bool) => Val::B(false, true),
+                    (None, _) => Val::N(f64::NAN),
+                }
+            }
+        };
+        lists.truncate(mark);
+        Ex {
+            obj: true,
+            ..Ex::plain(val)
+        }
+    }
+
+    /// `AlgoStats1D` with `STATS_SIGMAX`: the sum of the first `n` (all by
+    /// default) elements as doubles; `n` is cut to a whole number, 0 gives
+    /// 0 and anything outside the list is undefined.
+    fn sum(&self, l: u32, n: u32) -> f64 {
+        let Some(lists) = self.lists else {
+            return f64::NAN;
+        };
+        let truncate = (n != NONE).then(|| self.full_number(n));
+        let Some((start, len)) = self.list(l) else {
+            return f64::NAN;
+        };
+        let mut size = len;
+        if let Some(t) = truncate {
+            if t.is_nan() {
+                return f64::NAN;
+            }
+            // Java's `(int)`: towards zero, saturating
+            let t = t as i32;
+            if t == 0 {
+                return 0.0;
+            }
+            match u32::try_from(t) {
+                Ok(t) if t <= len => size = t,
+                _ => return f64::NAN,
+            }
+        }
+        let mut sum = 0.0;
+        for k in 0..size {
+            let slot = lists.get(start + k);
+            sum += match (slot.kind, slot.value) {
+                (_, Value::Number(v)) => v,
+                (_, Value::Bool(b)) => bool_number(b),
+                (Kind::Number, _) => f64::NAN,
+                _ => return f64::NAN,
+            };
+        }
+        sum
+    }
+}
+
+/// How many values `values` gives, `None` past [`MAX_ELEMENTS`].
+fn count(values: impl Fn(&mut dyn FnMut(f64) -> bool)) -> Option<u32> {
+    let mut n: u64 = 0;
+    values(&mut |_| {
+        n += 1;
+        n <= MAX_ELEMENTS
+    });
+    (n <= MAX_ELEMENTS).then_some(n as u32)
+}
+
+/// An element as an operand.
+fn slot_val(s: Slot) -> Val {
+    match (s.kind, s.value) {
+        (_, Value::Number(v)) => Val::N(v),
+        (_, Value::Point { x, y } | Value::Vector { x, y }) => Val::V(x, y),
+        (_, Value::Bool(b)) => Val::B(b, true),
+        (Kind::Point | Kind::Vector, _) => Val::V(f64::NAN, f64::NAN),
+        (Kind::Boolean, _) => Val::B(false, true),
+        _ => Val::N(f64::NAN),
+    }
+}
+
+/// One element of `MyList.apply` of a two-operand operation.
+fn combine(op: Bin, x: Val, y: Val) -> Slot {
+    let number = |v: Val| match v {
+        Val::B(b, _) => Val::N(bool_number(b)),
+        v => v,
+    };
+    let (x, y) = (number(x), number(y));
+    let r = match (op, x, y) {
+        (Bin::Pow, Val::N(a), Val::N(e)) => Val::N(math::my_pow(a, e)),
+        (Bin::Pow, Val::V(a, b), Val::N(e)) => {
+            Val::N(if e == 2.0 { a * a + b * b } else { f64::NAN })
+        }
+        _ => binary(op, x, y, false),
+    };
+    match r {
+        Val::N(v) => Slot::number(v),
+        Val::V(a, b) => Slot::coords(Kind::Point, a, b),
+        Val::B(b, _) => Slot::boolean(b),
     }
 }
 
@@ -820,6 +1374,7 @@ fn object(c: &Construction, id: Id) -> Val {
         (Kind::Number | Kind::Vector, Def::Expr(d), _) => match super::raw(c, d) {
             Raw::Num(v) => Val::N(v),
             Raw::Vec(x, y) => Val::V(x, y),
+            Raw::List(_) => Val::N(nan),
         },
         (Kind::Number, _, Value::Number(v)) => Val::N(v),
         (Kind::Number, _, _) => Val::N(nan),

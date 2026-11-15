@@ -144,6 +144,8 @@ pub enum ExpectedData {
         vertices: Vec<Option<(f64, f64)>>,
         length: f64,
     },
+    /// The elements in order, each recorded like an object.
+    List(Vec<Expected>),
 }
 
 /// Where a function is sampled (`golden/SCHEMA.md`).
@@ -225,6 +227,7 @@ impl TryFrom<RawObject> for Expected {
             "function" => (Kind::Function, &[]),
             "polygon" => (Kind::Polygon, &["vertices", "area", "signed_area"]),
             "polyline" => (Kind::PolyLine, &["vertices", "length"]),
+            "list" => (Kind::List, &["elements"]),
             other => return Err(format!("unknown object type `{other}`")),
         };
         if raw.samples.is_some() && (kind != Kind::Function || !raw.defined) {
@@ -280,6 +283,18 @@ impl TryFrom<RawObject> for Expected {
                     vertices: vertices(&raw.fields["vertices"], true)?,
                     length: number("length", &raw.fields["length"])?,
                 }),
+            });
+        }
+        if kind == Kind::List {
+            let elements = raw.fields["elements"]
+                .as_array()
+                .ok_or("a list's `elements` must be an array")?
+                .iter()
+                .map(|e| Expected::deserialize(e).map_err(|err| format!("list element: {err}")))
+                .collect::<Result<Vec<_>, _>>()?;
+            return Ok(Expected {
+                kind,
+                data: Some(ExpectedData::List(elements)),
             });
         }
         let mut nums = BTreeMap::new();

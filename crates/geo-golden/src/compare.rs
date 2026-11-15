@@ -1,6 +1,7 @@
 //! The comparison rules of `golden/SCHEMA.md`.
 
 use crate::model::{Expected, ExpectedData, SAMPLE_XS};
+use geo_kernel::expr::{Element, List};
 use geo_kernel::{Kind, Value};
 
 /// Result of a successful comparison.
@@ -59,6 +60,39 @@ pub fn line_scale_agrees(expected: &Expected, actual: &Value) -> Option<bool> {
 /// without vertices and other than functions (see [`compare_object`]).
 pub fn compare(expected: &Expected, kind: Kind, actual: &Value) -> Result<Sign, String> {
     compare_sampled(expected, kind, actual, &[], None)
+}
+
+/// Compares a recorded list with the kernel's elements (`None` when the
+/// kernel's list is undefined): the same length, and each element compared
+/// like an object, a nested list in the same way.
+pub fn compare_list(expected: &Expected, kind: Kind, list: Option<List>) -> Result<Sign, String> {
+    if expected.kind != kind {
+        return Err(format!(
+            "type mismatch: expected {}, got {kind}",
+            expected.kind
+        ));
+    }
+    let (want, got) = match (&expected.data, list) {
+        (None, None) => return Ok(Sign::NotApplicable),
+        (None, Some(_)) => return Err("expected undefined, kernel has a value".into()),
+        (Some(ExpectedData::List(want)), Some(got)) => (want, got),
+        (Some(_), _) => return Err("expected a value, kernel is undefined".into()),
+    };
+    if want.len() != got.len() {
+        return Err(format!(
+            "expected {} elements, kernel has {}",
+            want.len(),
+            got.len()
+        ));
+    }
+    for (k, (w, g)) in want.iter().zip(got.iter()).enumerate() {
+        match g {
+            Element::List(inner) => compare_list(w, Kind::List, Some(inner)),
+            Element::Value(kind, value) => compare(w, kind, &value),
+        }
+        .map_err(|why| format!("element {}: {why}", k + 1))?;
+    }
+    Ok(Sign::NotApplicable)
 }
 
 /// Whether two lists of vertices agree: same length, and each vertex

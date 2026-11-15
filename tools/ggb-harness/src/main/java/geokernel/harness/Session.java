@@ -21,6 +21,7 @@ import org.geogebra.common.kernel.geos.GeoConic;
 import org.geogebra.common.kernel.geos.GeoElement;
 import org.geogebra.common.kernel.geos.GeoFunction;
 import org.geogebra.common.kernel.geos.GeoLine;
+import org.geogebra.common.kernel.geos.GeoList;
 import org.geogebra.common.kernel.geos.GeoBoolean;
 import org.geogebra.common.kernel.geos.GeoNumeric;
 import org.geogebra.common.kernel.geos.GeoPoint;
@@ -280,6 +281,7 @@ final class Session {
             case "number":
             case "function":
             case "boolean":
+            case "list":
                 return actual;
             case "point":
             case "vector":
@@ -378,6 +380,9 @@ final class Session {
 
     /** The schema type of a GeoGebra object; the class decides, not the state. */
     static String typeOf(GeoElement geo) {
+        if (geo instanceof GeoList) {
+            return "list";
+        }
         if (geo instanceof GeoPolygon) {
             return "polygon";
         }
@@ -613,6 +618,19 @@ final class Session {
                 obj.put("value", ((GeoBoolean) geo).getBoolean());
             } else {
                 obj.put("defined", false);
+            }
+            return obj;
+        }
+        if (geo instanceof GeoList) {
+            // the elements in order, each described like an object
+            GeoList list = (GeoList) geo;
+            obj.put("defined", list.isDefined());
+            if (list.isDefined()) {
+                List<Object> elements = new ArrayList<>();
+                for (int i = 0; i < list.size(); i++) {
+                    elements.add(describe(list.get(i)));
+                }
+                obj.put("elements", elements);
             }
             return obj;
         }

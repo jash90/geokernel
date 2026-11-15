@@ -614,6 +614,7 @@ fn rebuilt(orig: &Construction) -> Construction {
         };
         assert_eq!(added, Ok(id), "`{}`", orig.label(id));
         assert_eq!(fresh.value(id), orig.value(id), "`{}`", orig.label(id));
+        assert_eq!(flat(&fresh, id), flat(orig, id), "`{}`", orig.label(id));
     }
     fresh
 }
@@ -901,4 +902,326 @@ fn bad_if_lines_are_errors() {
     let mut c = load("b = If(1 < 2, 3, 4)").unwrap();
     assert_eq!(num(&c, "b"), 3.0);
     assert!(c.set_number(c.id("b").unwrap(), 2.0).is_err());
+}
+
+/// The elements of list `id` written out, nested lists in braces; `None`
+/// when `id` is not a defined list.
+fn flat(c: &Construction, id: crate::kernel::Id) -> Option<String> {
+    fn write(list: super::List<'_>, out: &mut String) {
+        out.push('{');
+        for (k, e) in list.iter().enumerate() {
+            if k > 0 {
+                out.push_str(", ");
+            }
+            match e {
+                super::Element::List(inner) => write(inner, out),
+                super::Element::Value(_, Value::Number(v)) => out.push_str(&format!("{v}")),
+                super::Element::Value(_, Value::Point { x, y }) => {
+                    out.push_str(&format!("({x}, {y})"));
+                }
+                super::Element::Value(_, Value::Vector { x, y }) => {
+                    out.push_str(&format!("v({x}, {y})"));
+                }
+                super::Element::Value(_, Value::Bool(b)) => out.push_str(&format!("{b}")),
+                super::Element::Value(kind, _) => out.push_str(&format!("?{kind}")),
+            }
+        }
+        out.push('}');
+    }
+    let list = c.elements(id)?;
+    let mut out = String::new();
+    write(list, &mut out);
+    Some(out)
+}
+
+fn elems(c: &Construction, label: &str) -> String {
+    flat(c, c.id(label).unwrap()).unwrap_or_else(|| "undefined".into())
+}
+
+#[test]
+fn list_literals_hold_numbers_points_booleans_and_lists() {
+    let mut c = load(
+        "a = 2\n\
+         A = (1, 2)\n\
+         v = (1, 1)\n\
+         l = {1, 2, 3}\n\
+         m = {}\n\
+         n = {0.1 + 0.2, 1 / 0, sqrt(-1)}\n\
+         p = {(1, 2), A, v, A + v, 2 v}\n\
+         q = {{1, 2}, {3}, {}}\n\
+         r = {a < 3, true}\n\
+         s = {a, 2 a, a^2}",
+    )
+    .unwrap();
+    for label in ["l", "m", "n", "p", "q", "r", "s"] {
+        assert_eq!(c.kind(c.id(label).unwrap()), Kind::List, "{label}");
+    }
+    assert_eq!(c.value(c.id("l").unwrap()), Value::List { len: 3 });
+    assert_eq!(elems(&c, "l"), "{1, 2, 3}");
+    assert_eq!(elems(&c, "m"), "{}");
+    // an element is computed with the exact decimals of its literals, then
+    // kept as a double; a value that is not finite is an undefined number
+    assert_eq!(elems(&c, "n"), "{0.3, ?number, ?number}");
+    // a tuple is a point; an object keeps its kind; an operation with a
+    // point in it is a point
+    assert_eq!(elems(&c, "p"), "{(1, 2), (1, 2), v(1, 1), (2, 3), v(2, 2)}");
+    assert_eq!(elems(&c, "q"), "{{1, 2}, {3}, {}}");
+    assert_eq!(elems(&c, "r"), "{true, true}");
+    assert_eq!(elems(&c, "s"), "{2, 4, 4}");
+    // a constant list is an expression that never changes
+    assert!(c.set_number(c.id("l").unwrap(), 1.0).is_err());
+    rebuilt(&c);
+}
+
+#[test]
+fn elements_are_picked_by_a_rounded_index() {
+    let mut c = load(
+        "n = 1\n\
+         l = {10, 20, 30}\n\
+         b = l(n)\n\
+         d = l(-n)\n\
+         g = Element(l, n)\n\
+         h = Element(l, -n)\n\
+         k = l(n) + 1\n\
+         q = {{1, 2}, {3}}\n\
+         r = q(n)\n\
+         s = Length(q(n))",
+    )
+    .unwrap();
+    let n = c.id("n").unwrap();
+    let pick = |c: &Construction| ["b", "d", "g", "h", "k"].map(|l| c.value(c.id(l).unwrap()));
+    let u = Value::Undefined;
+    let v = Value::Number;
+    assert_eq!(pick(&c), [v(10.0), v(30.0), v(10.0), u, v(11.0)]);
+    assert_eq!(elems(&c, "r"), "{1, 2}");
+    assert_eq!(num(&c, "s"), 2.0);
+    // `l(-1)` counts from the end; `Element` takes no negative index
+    c.set_number(n, -1.0).unwrap();
+    assert_eq!(pick(&c), [v(30.0), v(10.0), u, v(10.0), v(31.0)]);
+    // rounded half up
+    c.set_number(n, 2.5).unwrap();
+    assert_eq!(pick(&c), [v(30.0), v(20.0), v(30.0), u, v(31.0)]);
+    c.set_number(n, -2.5).unwrap();
+    assert_eq!(pick(&c)[0], v(20.0));
+    // 0 and past the end are undefined, and so is what depends on them
+    for bad in [0.0, 4.0, -4.0] {
+        c.set_number(n, bad).unwrap();
+        assert_eq!(pick(&c)[0], u, "{bad}");
+        assert_eq!(pick(&c)[4], u, "{bad}");
+    }
+    c.set_number(n, 2.0).unwrap();
+    assert_eq!(elems(&c, "r"), "{3}");
+    assert_eq!(num(&c, "s"), 1.0);
+    rebuilt(&c);
+    c.set_number(n, 1.0).unwrap();
+    assert_eq!(pick(&c), [v(10.0), v(30.0), v(10.0), u, v(11.0)]);
+}
+
+#[test]
+fn length_and_sum_read_the_elements_as_doubles() {
+    let mut c = load(
+        "n = 2\n\
+         a = 0.1\n\
+         l = {a, 0.2, 0.3}\n\
+         b = Length(l)\n\
+         d = Length({})\n\
+         g = Sum(l)\n\
+         h = Sum({})\n\
+         k = Sum(l, n)\n\
+         m = Sum({a < 1, true})\n\
+         p = Sum({1 / 0, 1})\n\
+         q = Length(Sequence(n))",
+    )
+    .unwrap();
+    assert_eq!(num(&c, "b"), 3.0);
+    assert_eq!(num(&c, "d"), 0.0);
+    // a plain sum of doubles: 0.1 + 0.2 + 0.3 is not 0.6
+    assert_eq!(num(&c, "g"), 0.1 + 0.2 + 0.3);
+    assert_eq!(num(&c, "h"), 0.0);
+    assert_eq!(num(&c, "k"), 0.1 + 0.2);
+    assert_eq!(num(&c, "m"), 2.0);
+    assert_eq!(c.value(c.id("p").unwrap()), Value::Undefined);
+    assert_eq!(num(&c, "q"), 2.0);
+    let n = c.id("n").unwrap();
+    // `Sum(l, n)` truncates `n`; 0 is an empty sum, past the end undefined
+    c.set_number(n, 1.7).unwrap();
+    assert_eq!(num(&c, "k"), 0.1);
+    c.set_number(n, 0.0).unwrap();
+    assert_eq!(num(&c, "k"), 0.0);
+    assert_eq!(num(&c, "q"), 0.0);
+    for bad in [4.0, -1.0] {
+        c.set_number(n, bad).unwrap();
+        assert_eq!(c.value(c.id("k").unwrap()), Value::Undefined, "{bad}");
+    }
+    c.set_number(c.id("a").unwrap(), 5.0).unwrap();
+    assert_eq!(num(&c, "m"), 1.0);
+    rebuilt(&c);
+}
+
+#[test]
+fn sequence_has_four_forms() {
+    let mut c = load(
+        "a = 1\n\
+         b = 4\n\
+         s = 0.5\n\
+         A = (1, 2)\n\
+         l = Sequence(b)\n\
+         m = Sequence(a, b)\n\
+         n = Sequence(a, b, s)\n\
+         p = Sequence(k^2, k, a, b)\n\
+         q = Sequence(k, k, a, b, s)\n\
+         r = Sequence(A + (k, 0), k, 0, b)\n\
+         t = Sequence(Sequence(j + k, j, 1, k), k, a, 3)\n\
+         u = Sequence(0.1, 1, 0.1)\n\
+         w = Sum(Sequence(k, k, 1, b))",
+    )
+    .unwrap();
+    assert_eq!(elems(&c, "l"), "{1, 2, 3, 4}");
+    assert_eq!(elems(&c, "m"), "{1, 2, 3, 4}");
+    assert_eq!(elems(&c, "n"), "{1, 1.5, 2, 2.5, 3, 3.5, 4}");
+    assert_eq!(elems(&c, "p"), "{1, 4, 9, 16}");
+    assert_eq!(elems(&c, "q"), "{1, 1.5, 2, 2.5, 3, 3.5, 4}");
+    assert_eq!(elems(&c, "r"), "{(1, 2), (2, 2), (3, 2), (4, 2), (5, 2)}");
+    assert_eq!(elems(&c, "t"), "{{2}, {3, 4}, {4, 5, 6}}");
+    // decimal steps are exact
+    assert_eq!(
+        elems(&c, "u"),
+        "{0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1}"
+    );
+    assert_eq!(num(&c, "w"), 10.0);
+    let (a, b, s) = (c.id("a").unwrap(), c.id("b").unwrap(), c.id("s").unwrap());
+    // a range counts down; a count below 1 is empty
+    c.set_number(a, 4.0).unwrap();
+    c.set_number(b, 1.5).unwrap();
+    assert_eq!(elems(&c, "m"), "{4, 3, 2}");
+    assert_eq!(elems(&c, "p"), "{}");
+    assert_eq!(elems(&c, "l"), "{1, 2}");
+    c.set_number(b, -3.0).unwrap();
+    assert_eq!(elems(&c, "l"), "{}");
+    // a step of the wrong sign: `AlgoSequenceRange` is undefined,
+    // `AlgoSequence` empty; a zero step is undefined in both
+    c.set_number(a, 1.0).unwrap();
+    c.set_number(b, 4.0).unwrap();
+    c.set_number(s, -0.5).unwrap();
+    assert_eq!(c.value(c.id("n").unwrap()), Value::Undefined);
+    assert_eq!(elems(&c, "q"), "{}");
+    c.set_number(s, 0.0).unwrap();
+    assert_eq!(c.value(c.id("n").unwrap()), Value::Undefined);
+    assert_eq!(c.value(c.id("q").unwrap()), Value::Undefined);
+    rebuilt(&c);
+    // and back
+    c.set_number(s, 0.5).unwrap();
+    assert_eq!(elems(&c, "q"), "{1, 1.5, 2, 2.5, 3, 3.5, 4}");
+    assert_eq!(elems(&c, "t"), "{{2}, {3, 4}, {4, 5, 6}}");
+}
+
+#[test]
+fn list_arithmetic_works_element_by_element() {
+    let mut c = load(
+        "a = 2\n\
+         A = (1, 2)\n\
+         B = (3, -1)\n\
+         v = (1, 1)\n\
+         l = {1, 2, 3}\n\
+         m = {a, 3, 1}\n\
+         b = l + m\n\
+         d = 2 l + 1\n\
+         g = l^2\n\
+         h = -l\n\
+         k = sin(l - l)\n\
+         n = l + {1, 2}\n\
+         p = {A, B} + v\n\
+         q = 2 {A, B}\n\
+         r = {v, 2 v} + v\n\
+         s = x({A, B})",
+    )
+    .unwrap();
+    assert_eq!(elems(&c, "b"), "{3, 5, 4}");
+    assert_eq!(elems(&c, "d"), "{3, 5, 7}");
+    assert_eq!(elems(&c, "g"), "{1, 4, 9}");
+    assert_eq!(elems(&c, "h"), "{-1, -2, -3}");
+    assert_eq!(elems(&c, "k"), "{0, 0, 0}");
+    // lists of unequal length give an empty list
+    assert_eq!(elems(&c, "n"), "{}");
+    assert_eq!(elems(&c, "p"), "{(2, 3), (4, 0)}");
+    assert_eq!(elems(&c, "q"), "{(2, 4), (6, -2)}");
+    // a vector result in a list is a point
+    assert_eq!(elems(&c, "r"), "{(2, 2), (3, 3)}");
+    assert_eq!(elems(&c, "s"), "{1, 3}");
+    c.set_number(c.id("a").unwrap(), 5.0).unwrap();
+    c.move_point(c.id("A").unwrap(), -2.0, 5.0).unwrap();
+    assert_eq!(elems(&c, "b"), "{6, 5, 4}");
+    assert_eq!(elems(&c, "p"), "{(-1, 6), (4, 0)}");
+    rebuilt(&c);
+    c.set_number(c.id("a").unwrap(), 2.0).unwrap();
+    c.move_point(c.id("A").unwrap(), 1.0, 2.0).unwrap();
+    assert_eq!(elems(&c, "b"), "{3, 5, 4}");
+    assert_eq!(elems(&c, "q"), "{(2, 4), (6, -2)}");
+}
+
+#[test]
+fn an_undefined_list_makes_its_dependents_undefined() {
+    let mut c = load(
+        "s = 1\n\
+         l = Sequence(k, k, 1, 3, s)\n\
+         m = l + 1\n\
+         b = Sum(l)\n\
+         d = l(1)\n\
+         g = {l, 1}\n\
+         h = Length(l)",
+    )
+    .unwrap();
+    assert_eq!(elems(&c, "m"), "{2, 3, 4}");
+    assert_eq!(elems(&c, "g"), "{{1, 2, 3}, 1}");
+    c.set_number(c.id("s").unwrap(), 0.0).unwrap();
+    for label in ["l", "m", "b", "d", "h"] {
+        assert_eq!(c.value(c.id(label).unwrap()), Value::Undefined, "{label}");
+    }
+    // an undefined list inside a literal is an undefined element
+    assert_eq!(elems(&c, "g"), "{?list, 1}");
+    rebuilt(&c);
+    c.set_number(c.id("s").unwrap(), 1.0).unwrap();
+    assert_eq!(num(&c, "b"), 6.0);
+    assert_eq!(elems(&c, "g"), "{{1, 2, 3}, 1}");
+}
+
+#[test]
+fn a_list_past_the_element_cap_is_undefined() {
+    let mut c = load("n = 3\nl = Sequence(n)\nm = Sequence(Sequence(n), k, 1, n)").unwrap();
+    let n = c.id("n").unwrap();
+    c.set_number(n, 2_000_000.0).unwrap();
+    assert_eq!(c.value(c.id("l").unwrap()), Value::Undefined);
+    // 1100 lists of 1100 elements: more than 2^20 elements in all
+    c.set_number(n, 1100.0).unwrap();
+    assert_eq!(c.value(c.id("m").unwrap()), Value::Undefined);
+    c.set_number(n, 3.0).unwrap();
+    assert_eq!(elems(&c, "l"), "{1, 2, 3}");
+    assert_eq!(elems(&c, "m"), "{{1, 2, 3}, {1, 2, 3}, {1, 2, 3}}");
+}
+
+#[test]
+fn misplaced_lists_are_errors() {
+    let base = "a = 2\nA = (1, 2)\nl = {1, 2}";
+    for line in [
+        "b = {1, 2",
+        "b = {1, , 2}",
+        "b = l < 3",
+        "b = l == l",
+        "b = {true} && true",
+        "f(x) = {x, 1}",
+        "f(x) = x + l(1)",
+        "f(x) = Sum({x})",
+        "b = (l, 1)",
+        "b = Sequence(k, k, 1)",
+        "b = Sequence(k, 2, 1, 3)",
+        "b = Sequence(k, k, 1, 2, 3, 4)",
+        "b = Sum(l, l)",
+        "b = Length(1, 2)",
+        "b = l(1, 2)",
+        "b = If(a < 3, l, 1)",
+    ] {
+        let mut c = load(base).unwrap();
+        assert!(exec(&mut c, line).is_err(), "`{line}` was accepted");
+        assert_eq!(c.len(), 3, "`{line}` left an object behind");
+    }
 }
