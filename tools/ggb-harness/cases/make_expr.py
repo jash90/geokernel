@@ -151,4 +151,81 @@ for v in (2.5, -2.5, 0.5, -0.5, 1.005, 2.675, -2.675, 1e-9, -3.0000000001):
                                "g = round(a, 2)", "h = round(a, -1)"],
          [setn("a", v), setn("a", -v), setn("a", 10 * v)])
 
+# ------------------------------------------------------- points
+topic("point")
+for rhs in ("(a, 2*a)", "(a + 1, a^2)", "A + (1, 2)", "(A + B) / 2", "A + u", "2A - B",
+            "A + a (B - A)", "(x(A), y(B))", "B - u", "A + u - v", "(A + B + C) / 3",
+            "a A", "A / a", "-A", "A + (a; pi / 3)", "(sqrt(a), y(A))", "A + 2u",
+            "(x(B) - x(A), a)", "A + (B - A) / abs(B - A)", "(A + B) / 2 + (C - A) / 2"):
+    A, B, C, u, v, a = rp(), rp(), rp(), rp(), rp(), r2(0.5, 4)
+    case("point", [pt("A", *A), pt("B", *B), pt("C", *C), pt("u", *u), pt("v", *v),
+                   num("a", a), f"P = {rhs}"],
+         [mv("A", *rp()), setn("a", r2(-4, 4)), mv("u", *rp()), mv("B", *A), setn("a", 0),
+          mv("v", 0, 0), mv("A", *A), setn("a", a)])
+
+# ------------------------------------------------------- vectors
+topic("vector")
+for rhs in ("u + 2*v", "u - v", "2u", "u / 2", "-u", "a u + v", "B - A", "(A + B) / 2",
+            "(a, 1)", "u + (1, -1)", "(u + v) / abs(u + v)", "(y(u), -x(u))",
+            "Vector(A, B) + u", "(2; a)", "u + (1; pi / 2)", "A - B + u"):
+    A, B, u, v, a = rp(), rp(), rp(), rp(), r2(0.5, 4)
+    case("vector", [pt("A", *A), pt("B", *B), pt("u", *u), pt("v", *v), num("a", a),
+                    f"w = {rhs}"],
+         [mv("u", *rp()), mv("v", *rp()), setn("a", r2(-4, 4)), mv("u", 0, 0), mv("B", *A),
+          mv("u", *u), mv("B", *rp()), setn("a", a)])
+# numbers made from points and vectors
+for rhs in ("u * v", "u v", "abs(v)", "abs(A)", "A * B", "x(u) + y(v)", "abs(u - v)",
+            "u * (A - B)", "u^2", "(u + v)^2", "abs(B - A) / 2", "x(A + u)",
+            "u * v / (abs(u) abs(v))"):
+    A, B, u, v = rp(), rp(), rp(), rp()
+    case("vector", [pt("A", *A), pt("B", *B), pt("u", *u), pt("v", *v), f"s = {rhs}"],
+         [mv("u", *rp()), mv("v", *rp()), mv("A", *rp()), mv("u", 0, 0), mv("B", *rp()),
+          mv("u", *u)])
+
+# ------------------------------------------------------- polar coordinates
+topic("polar")
+for rhs in ("(a; b)", "(a; b°)", "(2; a°)", "(a; pi / 4)", "A + (a; b°)",
+            "(abs(A); b°)", "(a; b) + (b; a)", "(-a; b)"):
+    case("polar", nums(a=2, b=30) + ["A = (1, 2)", f"P = {rhs}", f"p = {rhs}"],
+         [setn("a", 0), setn("b", 90), setn("a", -3), setn("b", 400), mv("A", -2, 5),
+          setn("a", 2), setn("b", 30)])
+
+# ------------------------------------------------------- undefined parts
+topic("ptundef")
+for rhs in ("(1 / a, 1)", "(sqrt(a), a)", "(a, ln(a))", "A + (0, 1 / a)", "a (1, 2) / a",
+            "(1, 2) / a", "A / a", "(tan(a), 0)"):
+    case("ptundef", nums(a=2) + ["A = (1, 2)", f"P = {rhs}", f"w = {rhs}", "Q = P + (1, 1)",
+                                 "d = Distance(P, A)"],
+         [setn("a", 0), setn("a", -1), setn("a", 3), setn("a", 0), setn("a", 2)])
+case("ptundef", ["A = (0, 0)", "B = (4, 1)", "C = (1, 3)", "D = (2, -2)", "l = Line(A, B)",
+                 "m = Line(C, D)", "S = Intersect(l, m)", "P = (S + A) / 2", "u = S - C",
+                 "n = abs(u)"],
+     [mv("D", 5, 4), mv("D", 3, -1), mv("C", 2, 2)])
+case("ptundef", ["A = (1, 1)", "B = (1, 1)", "u = Vector(A, B)", "w = u / abs(u)",
+                 "P = A + w"],
+     [mv("B", 4, 5), mv("A", 4, 5), mv("A", 0, 0)])
+
+# ------------------------------------------------------- the label decides point or vector
+topic("label")
+for rhs in ("(A + B) / 2", "A + u", "u + v", "(a, a^2)", "B - A", "2(u - A)"):
+    A, B, u, v = rp(), rp(), rp(), rp()
+    case("label", [pt("A", *A), pt("B", *B), pt("u", *u), pt("v", *v), num("a", r2(-3, 3)),
+                   f"P = {rhs}", f"p = {rhs}", "Q = P + p", "q = p + P"],
+         [mv("A", *rp()), mv("u", *rp()), setn("a", r2(-3, 3)), mv("B", *A)])
+
+# ------------------------------------------------------- commands in point and vector expressions
+topic("ptcmd")
+for extra, rhs in (([], "Midpoint(A, B) + u"), ([], "A + Vector(B, C)"),
+                   (["l = Line(A, B)", "m = Line(B, C)"], "Intersect(l, m) + (1, 0)"),
+                   ([], "(Distance(A, B); Angle(A, B, C))"), ([], "a UnitVector(u)"),
+                   ([], "Translate(A, u) - B"), ([], "(Midpoint(A, C) + Midpoint(B, C)) / 2"),
+                   ([], "A + OrthogonalVector(u)"), ([], "(Area(A, B, C), Distance(A, C))"),
+                   ([], "Vector(A, B) * Vector(B, C) u")):
+    A, B, C, u, a = rp(), rp(), rp(), rp(), r2(0.5, 4)
+    for label in ("P", "w"):
+        case("ptcmd", [pt("A", *A), pt("B", *B), pt("C", *C), pt("u", *u), num("a", a)]
+             + extra + [f"{label} = {rhs}"],
+             [mv("A", *rp()), mv("u", *rp()), mv("C", *rp()), mv("B", *A), mv("u", 0, 0),
+              setn("a", -a), mv("B", *B)])
+
 cases.write()
