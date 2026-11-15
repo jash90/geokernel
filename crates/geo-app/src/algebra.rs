@@ -23,6 +23,7 @@ struct Actions {
     toggle: Option<Id>,
     delete: Option<Id>,
     set_number: Option<(Id, f64)>,
+    number_drag: Option<bool>,
 }
 
 pub fn show(app: &mut App, ui: &mut Ui) {
@@ -54,8 +55,15 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     if let Some(id) = actions.delete {
         app.wb.delete(id);
     }
+    // A drag of a number field is one undo step.
+    if actions.number_drag == Some(true) {
+        app.wb.begin_gesture();
+    }
     if let Some((id, v)) = actions.set_number {
         app.wb.set_number(id, v);
+    }
+    if actions.number_drag == Some(false) {
+        app.wb.end_gesture();
     }
 }
 
@@ -139,6 +147,11 @@ fn paint_row(app: &App, ui: &mut Ui, row: &Row, actions: &mut Actions) {
                 format!("Wartość {}", row.label),
             )
         });
+        if response.drag_started() {
+            actions.number_drag = Some(true);
+        } else if response.drag_stopped() {
+            actions.number_drag = Some(false);
+        }
         if response.changed() {
             actions.set_number = Some((row.id, v));
         }

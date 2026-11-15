@@ -27,7 +27,6 @@ fn render(script: &str, name: &str, prepare: impl FnOnce(&mut App)) -> PathBuf {
             900.0 + 2.0 * MARGIN,
         ))
         .with_pixels_per_point(1.0)
-        .with_theme(eframe::egui::Theme::Light)
         .with_context_setup(crate::theme::apply)
         .wgpu()
         .build_ui(move |ui| app.show(ui));

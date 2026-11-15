@@ -7,7 +7,7 @@ use crate::labels::next_label;
 use crate::scriptlog::{normalize, Log};
 use crate::undo::Undo;
 use geo_kernel::kernel::{Construction, Def, Id, Kind, Value};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 /// What the algebra list shows for one object.
 #[derive(Clone, Debug, PartialEq)]
@@ -149,6 +149,8 @@ impl Workbench {
             .map(|id| self.construction.label(id).to_owned());
         let (c, kept) = log.rebuild();
         self.selected = selected.and_then(|l| c.id(&l));
+        // A label can be reused later; it must not come back hidden.
+        self.hidden.retain(|l| c.id(l).is_some());
         self.construction = c;
         self.log = kept;
         self.version += 1;
@@ -275,6 +277,7 @@ impl Workbench {
 
     fn rebuild_rows(&mut self) {
         let c = &self.construction;
+        let rhs: HashMap<&str, &str> = self.log.definitions().collect();
         self.rows.clear();
         self.rows.extend(c.ids().map(|id| {
             let value = c.value(id);
@@ -291,7 +294,7 @@ impl Workbench {
             } else if free {
                 (format!("{label} = {text}"), None)
             } else {
-                match self.log.rhs_of(&label) {
+                match rhs.get(label.as_str()).copied() {
                     Some(rhs) if kind == Kind::Point => (format!("{label} = {rhs}"), Some(text)),
                     Some(rhs) => (format!("{label}: {rhs}"), Some(text)),
                     None => (label.clone(), Some(text)),

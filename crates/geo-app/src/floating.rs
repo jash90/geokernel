@@ -31,12 +31,8 @@ pub fn round_button(
     tip: &str,
 ) -> Response {
     let rect = Rect::from_center_size(center, vec2(RADIUS * 2.0, RADIUS * 2.0));
-    let sense = if enabled {
-        Sense::click()
-    } else {
-        Sense::hover()
-    };
-    let response = ui.interact(rect, ui.scope_id().with(("floating", key)), sense);
+    // A disabled button still takes the click so it does not reach the drawing.
+    let response = ui.interact(rect, ui.scope_id().with(("floating", key)), Sense::click());
     let painter = ui.painter();
     soft_shadow(painter, rect, RADIUS);
     let fill = if enabled && response.hovered() {

@@ -256,3 +256,20 @@ fn load_script_resets_state_and_a_bad_script_changes_nothing() {
     assert!(!w.can_undo());
     assert_eq!(w.rows().len(), 1);
 }
+
+#[test]
+fn a_reused_label_is_not_born_hidden() {
+    let mut w = Workbench::from_script("A = (0, 0)\nB = (2, 0)\n").unwrap();
+    let b = w.construction().id("B").unwrap();
+    w.toggle_visible(b);
+    assert!(w.delete(b));
+    w.run_line("B = (5, 5)").unwrap();
+    let b = w.construction().id("B").unwrap();
+    assert!(w.is_visible(b));
+    // Same when the object disappears through undo.
+    w.toggle_visible(b);
+    assert!(w.undo());
+    w.run_line("B = (7, 7)").unwrap();
+    let b = w.construction().id("B").unwrap();
+    assert!(w.is_visible(b));
+}

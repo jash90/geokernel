@@ -42,6 +42,7 @@ pub fn apply(ctx: &egui::Context) {
     v.widgets.noninteractive.bg_stroke = egui::Stroke::new(1.0, SEPARATOR);
     v.widgets.hovered.weak_bg_fill = Color32::from_rgb(0xf0, 0xf0, 0xf0);
     v.widgets.hovered.bg_fill = Color32::from_rgb(0xf0, 0xf0, 0xf0);
+    ctx.set_visuals_of(egui::Theme::Dark, v.clone());
     ctx.set_visuals_of(egui::Theme::Light, v);
     ctx.all_styles_mut(|style| {
         style

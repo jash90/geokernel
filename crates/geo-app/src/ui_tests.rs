@@ -4,6 +4,7 @@ use crate::app::{App, Mode};
 use crate::tools::Tool;
 use crate::workbench::Workbench;
 use eframe::egui::{self, Event, Modifiers, PointerButton, Pos2};
+use egui_kittest::kittest::Queryable;
 use egui_kittest::Harness;
 use geo_kernel::kernel::Value;
 
@@ -225,10 +226,68 @@ fn the_input_row_shows_errors_in_polish() {
 }
 
 #[test]
-fn the_settings_button_opens_without_disturbing_the_drawing() {
+fn the_settings_menu_switches_grid_and_axes() {
     let mut h = harness("A = (0, 0)\n");
     // The gear is 30 px from the top right corner of the drawing area.
     click(&mut h, at(SIZE.0 - 30.0, 65.0 + 30.0));
-    assert!(h.state().decor.grid && h.state().decor.axes);
+    h.get_by_label("Siatka").click();
+    h.run();
+    assert!(!h.state().decor.grid && h.state().decor.axes);
+    // The menu closes after a choice; open it again.
+    click(&mut h, at(SIZE.0 - 30.0, 65.0 + 30.0));
+    h.get_by_label("Osie").click();
+    h.run();
+    assert!(!h.state().decor.grid && !h.state().decor.axes);
+    assert_eq!(labels(&h), ["A"]);
+}
+
+#[test]
+fn the_row_menu_deletes_the_object_and_its_dependents() {
+    let mut h = harness("A = (0, 0)\nB = (2, 0)\nf = Line(A, B)\n");
+    // The kebab of the first row: 28 px from the right edge of the side panel.
+    click(&mut h, at(72.0 + 324.0 - 28.0, 65.0 + 24.0));
+    h.get_by_label("Usuń").click();
+    h.run();
+    assert_eq!(labels(&h), ["B"]);
+    assert!(h.state_mut().wb.undo());
+    assert_eq!(labels(&h), ["A", "B", "f"]);
+}
+
+#[test]
+fn cmd_z_undoes_and_shift_cmd_z_redoes() {
+    let mut h = harness("A = (0, 0)\n");
+    h.state_mut().wb.run_line("B = (1, 1)").unwrap();
+    h.state_mut().wb.run_line("C = (2, 2)").unwrap();
+    h.key_press_modifiers(Modifiers::COMMAND, egui::Key::Z);
+    h.run();
+    assert_eq!(labels(&h), ["A", "B"]);
+    h.key_press_modifiers(Modifiers::COMMAND, egui::Key::Z);
+    h.run();
+    assert_eq!(labels(&h), ["A"]);
+    // Shift+Cmd+Z is a redo, not a second undo.
+    h.key_press_modifiers(Modifiers::COMMAND | Modifiers::SHIFT, egui::Key::Z);
+    h.run();
+    assert_eq!(labels(&h), ["A", "B"]);
+    h.key_press_modifiers(Modifiers::COMMAND | Modifiers::SHIFT, egui::Key::Z);
+    h.run();
+    assert_eq!(labels(&h), ["A", "B", "C"]);
+}
+
+#[test]
+fn the_object_under_the_pointer_is_hovered() {
+    let mut h = harness("A = (0, 0)\nB = (2, 0)\n");
+    moved(&mut h, world(2.0, 0.0));
+    let b = h.state().wb.construction().id("B").unwrap();
+    assert_eq!(h.state().hovered, Some(b));
+    moved(&mut h, world(-5.0, 4.0));
+    assert_eq!(h.state().hovered, None);
+}
+
+#[test]
+fn a_click_on_a_disabled_undo_button_does_not_place_a_point() {
+    let mut h = harness("A = (0, 0)\n");
+    h.state_mut().tool.set_tool(Tool::Point);
+    // The undo button is at the top left of the drawing area.
+    click(&mut h, at(72.0 + 324.0 + 34.0, 65.0 + 30.0));
     assert_eq!(labels(&h), ["A"]);
 }

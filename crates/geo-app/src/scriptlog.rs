@@ -64,7 +64,15 @@ impl Log {
         }
     }
 
+    /// Every label with the definition of the entry that created it.
+    pub fn definitions(&self) -> impl Iterator<Item = (&str, &str)> {
+        self.entries
+            .iter()
+            .flat_map(|e| e.labels.iter().map(move |l| (l.as_str(), e.rhs())))
+    }
+
     /// The definition text of the entry that created `label`.
+    #[cfg(test)]
     pub fn rhs_of(&self, label: &str) -> Option<&str> {
         self.entries
             .iter()
