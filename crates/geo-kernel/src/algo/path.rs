@@ -934,9 +934,13 @@ impl Group for PathDef {
 
     fn check(&self, c: &Construction) -> Result<(), Error> {
         match *self {
-            PathDef::On { path } => c.expect(path, PATH),
+            PathDef::On { path } => {
+                c.expect(path, PATH)?;
+                super::arc::expect_point_path(c, path)
+            }
             PathDef::OnParam { path, param } => {
                 c.expect(path, PATH)?;
+                super::arc::expect_point_path(c, path)?;
                 c.expect(param, NUMBER)
             }
             PathDef::Parameter { point } => c.expect(point, POINT),
@@ -957,8 +961,8 @@ impl Group for PathDef {
                 Ok(id)
             } else {
                 Err(format!(
-                    "`Point` needs a line, segment, ray, circle, polygon or polyline, \
-                     and `{label}` is a {}",
+                    "`Point` needs a line, segment, ray, circle, polygon, polyline, arc \
+                     or sector, and `{label}` is a {}",
                     c.kind(id)
                 ))
             }

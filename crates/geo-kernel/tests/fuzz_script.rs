@@ -39,6 +39,9 @@ const CONTEXT: &[&str] = &[
     "e = Ellipse(A, B, C)",
     "P = Point(k)",
     "Q = Point(s, r)",
+    "a = CircularArc(A, B, C)",
+    "b = CircumcircularSector(B, C, D)",
+    "R = Point(a)",
 ];
 
 /// At the time of writing: 697 case scripts and 21 README lines.
@@ -496,6 +499,16 @@ const TOKENS: &[&str] = &[
     "Parameter",
     "Point",
     "PathParameter",
+    "CircularArc",
+    "CircleSector",
+    "CircumcircularArc",
+    "Semicircle",
+    "Arc",
+    "Sector",
+    "Length",
+    "Perimeter",
+    "a",
+    "b",
     "Foo",
     "",
 ];

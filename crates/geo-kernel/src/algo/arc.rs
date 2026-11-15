@@ -40,7 +40,7 @@ use super::conic_nd::{my_length, ConicData, ConicType};
 use super::conic_path::{self, type_number};
 use super::path::{conic_parameter, line_path_changed, line_point_changed, PathState};
 use super::{join, Group, Parents, POINT};
-use crate::kernel::{Construction, Error, Id, Kind, Value};
+use crate::kernel::{Construction, Def, Error, Id, Kind, Value};
 use crate::script::object;
 use crate::tol::STANDARD_PRECISION;
 
@@ -51,8 +51,24 @@ type Hom = (f64, f64, f64);
 const PI_2: f64 = 2.0 * PI;
 
 const NUMBER: &[Kind] = &[Kind::Number];
-/// What `Arc` and `Sector` accept as the conic: a circle or a general conic.
+/// What `Arc` and `Sector` between two parameters accept as the conic: a
+/// circle or a general conic.
 const CONIC: &[Kind] = &[Kind::Circle, Kind::Conic];
+/// What `Arc` and `Sector` between two points accept: a circle only. On a
+/// general conic GeoGebra projects the points with the closest-point
+/// solvers of `GeoConicND.pointChanged`, which are not ported (see
+/// `DIFFERENCES.md`).
+const CIRCLE: &[Kind] = &[Kind::Circle];
+/// Checks that points can be put on the part `path`: not on a part of a
+/// general conic, whose points GeoGebra projects with the closest-point
+/// solvers of `GeoConicND.pointChangedUnlimited` (not ported, see
+/// `DIFFERENCES.md`). Reports the conic as not being a circle.
+pub(crate) fn expect_point_path(c: &Construction, path: Id) -> Result<(), Error> {
+    match c.def(path) {
+        Def::Arc(ArcDef::ConicParameters { conic, .. }) => c.expect(conic, CIRCLE),
+        _ => Ok(()),
+    }
+}
 /// Arcs and sectors.
 pub(crate) const PART: &[Kind] = &[Kind::Arc, Kind::Sector];
 
@@ -663,7 +679,7 @@ impl Group for ArcDef {
                 c.expect(b, POINT)
             }
             ArcDef::ConicPoints { conic, p, q, .. } => {
-                c.expect(conic, CONIC)?;
+                c.expect(conic, CIRCLE)?;
                 c.expect(p, POINT)?;
                 c.expect(q, POINT)
             }

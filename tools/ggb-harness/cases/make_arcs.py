@@ -167,4 +167,26 @@ case("chain", [pt("M", 0, 0), pt("A", 2, 0), pt("B", 0, 2), "a = CircularArc(M, 
                "ar = Area(b)"],
      [mv("P", 1, 2), mv("Q", 5, 5), mv("C", 3, 3), mv("A", -2, 0), mv("Q", 0, 0)])
 
+# --------------------------------------- points made on an undefined part
+topic("undefined")
+# `Point(part)` places the point without computing it, so it is not made
+# undefined with the part until the part changes
+case("undefined", [pt("M", 1, 1), pt("A", 1, 1), pt("B", 3, 4), "a = CircularArc(M, A, B)"] + on("a"),
+     [mv("P", 4, 4), mv("A", 3, 1), mv("P", 0, 0), mv("A", 1, 1), mv("P", 2, 2)])
+case("undefined", [pt("M", 1, 2), num("r", 0), "k = Circle(M, r)", num("s", 1), num("e", 2),
+                   "a = Sector(k, s, e)"] + on("a") + at("a", 0.5),
+     [mv("P", 4, 4), setn("r", 2), mv("P", 0, 0), setn("r", 0), mv("P", 3, 3)])
+case("undefined", [pt("A", 0, 0), pt("B", 2, 0), pt("C", 0, 1), pt("E", 2, 1), "g = Line(A, B)", "h = Line(C, E)",
+                   "D = Intersect(g, h)", "a = CircumcircularArc(A, C, D)"] + on("a"),
+     [mv("P", 3, 3), mv("E", 2, 3), mv("P", -1, 2), mv("E", 2, 1), mv("P", 1, 1)])
+case("undefined", [pt("A", 1, 1), pt("B", 1, 1), "a = Semicircle(A, B)"] + on("a") + at("a", 0.25),
+     [mv("P", 2, 2), mv("B", 3, 1), mv("P", 0, 0), mv("B", 1, 1), mv("P", 4, 4)])
+# `Arc(k, P, Q)` with an undefined point: `PathParameter.setT` ignores the
+# NaN parameter, so the part stays defined with the parameter the point had
+for cmd in ["Arc", "Sector"]:
+    case("undefined", [pt("M", 0, 0), num("r", 2), "k = Circle(M, r)", pt("A", 2, 2), pt("B", 0, 0), pt("C", 1, 1),
+                       pt("E", 0, 1), pt("F", 1, 2), "g = Line(B, C)", "h = Line(E, F)", "D = Intersect(g, h)",
+                       f"a = {cmd}(k, A, D)", f"b = {cmd}(k, D, A)"] + measures("a"),
+         [mv("F", 1, 3), mv("A", -2, 1), mv("F", 1, 2), mv("A", 1, -2)])
+
 cases.write()

@@ -8,6 +8,7 @@
 mod common;
 
 use common::*;
+use geo_kernel::algo::arc::ArcDef;
 use geo_kernel::algo::conic::ConicDef;
 use geo_kernel::algo::path::PathDef;
 use geo_kernel::script::exec;
@@ -162,8 +163,26 @@ fn check_contagion(case: &Case) -> Result<(), String> {
         // A point at a parameter keeps the parameter it had when the number
         // becomes undefined (`PathParameter.setT` ignores NaN).
         let kept_parameter = |p: Id| matches!(case.c.def(id), Def::Path(PathDef::OnParam { param, .. }) if param == p);
-        let undefined =
-            |p: Id| !case.c.value(p).is_defined() && !read_as_value(p) && !kept_parameter(p);
+        // A point on an arc or sector is placed, and moved, at its own
+        // coordinates while the part is undefined (`GeoConicPart.pointChanged`
+        // keeps them for a part that is no circle), and `AlgoPointOnPath`
+        // makes it undefined only when the part changes (golden topic
+        // `arcs-undefined`).
+        let on_part = |p: Id| {
+            matches!(case.c.def(id), Def::Path(PathDef::On { path } | PathDef::OnParam { path, .. }) if path == p)
+                && matches!(case.c.kind(p), Kind::Arc | Kind::Sector)
+        };
+        // `Arc(k, P, Q)` and `Sector(k, P, Q)` put an undefined point at the
+        // parameter it had before, `PathParameter.setT` ignoring NaN (golden
+        // topic `arcs-undefined`); the kernel keeps no history and uses 0.
+        let end_point = |p: Id| matches!(case.c.def(id), Def::Arc(ArcDef::ConicPoints { p: a, q: b, .. }) if a == p || b == p);
+        let undefined = |p: Id| {
+            !case.c.value(p).is_defined()
+                && !read_as_value(p)
+                && !kept_parameter(p)
+                && !on_part(p)
+                && !end_point(p)
+        };
         let broken = parents.iter().find(|&&p| undefined(id_at(&case.c, p)));
         if let Some(&p) = broken {
             let v = case.c.value(id);
@@ -1826,7 +1845,8 @@ fn misuse_of_the_api_is_an_error_and_changes_nothing() {
 fn world(points: [(f64, f64); 4], r: f64, q: f64) -> String {
     format!(
         "{}{}{}{}r = {r:?}\nq = {q:?}\nl = Line(A, B)\nm = Line(C, D)\ns = Segment(A, C)\n\
-         s2 = Segment(B, D)\nk = Circle(A, r)\nk2 = Circle(B, C)\nd = Distance(A, B)\n",
+         s2 = Segment(B, D)\nk = Circle(A, r)\nk2 = Circle(B, C)\nd = Distance(A, B)\n\
+         a = CircularArc(A, B, C)\nsc = CircumcircularSector(B, C, D)\n",
         p("A", points[0]),
         p("B", points[1]),
         p("C", points[2]),
@@ -1885,7 +1905,7 @@ fn every_command_with_every_argument_kind() {
                             return Some(1 + rng.below(2));
                         }
                         let candidates: Vec<usize> = (0..base)
-                            .filter(|&i| slot.iter().any(|k| k.fits(c.kind(id_at(&c, i)))))
+                            .filter(|&i| slot.iter().any(|k| k.fits_object(&c, id_at(&c, i))))
                             .collect();
                         (!candidates.is_empty()).then(|| *rng.pick(&candidates))
                     })
@@ -1916,18 +1936,13 @@ fn every_command_with_every_argument_kind() {
             }
             for (n, t) in tuples.iter().enumerate() {
                 let kinds: Vec<Kind> = t.iter().map(|&i| c.kind(id_at(&c, i))).collect();
-                let fits = cmd
-                    .slots
-                    .iter()
-                    .zip(t)
-                    .zip(&kinds)
-                    .all(|((slot, &i), &kind)| {
-                        if slot.contains(&K::Index) {
-                            i == 1 || i == 2
-                        } else {
-                            slot.iter().any(|k| k.fits(kind))
-                        }
-                    });
+                let fits = cmd.slots.iter().zip(t).zip(&kinds).all(|((slot, &i), _)| {
+                    if slot.contains(&K::Index) {
+                        i == 1 || i == 2
+                    } else {
+                        slot.iter().any(|k| k.fits_object(&c, id_at(&c, i)))
+                    }
+                });
                 let texts: Vec<String> = cmd
                     .slots
                     .iter()

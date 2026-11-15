@@ -218,3 +218,86 @@ fn a_point_keeps_its_parameter_through_an_undefined_path() {
     move_to(&mut c, "B", 4.0, 2.0);
     assert_eq!(c.value(t), before);
 }
+
+#[test]
+fn points_follow_an_arc_that_moves_at_the_same_length() {
+    // the arc's value, its length, stays the same bit for bit while its
+    // centre moves: the points on it must still follow the record
+    let script = |mx: f64, my: f64| {
+        format!(
+            "M = ({mx:?}, {my:?})\nA = M + (3, 0)\nB = M + (0, 3)\na = CircularArc(M, A, B)\n\
+             s = CircumcircularSector(A, M, B)\nu = 0.4\nU = Point(a, u)\nP = Point(a)\n\
+             t = PathParameter(P)\nQ = Point(s)\nm = Midpoint(P, U)\n"
+        )
+    };
+    let mut c = build(&script(0.0, 0.0));
+    move_to(&mut c, "P", 1.0, 5.0);
+    move_to(&mut c, "Q", -4.0, 4.0);
+    let a = c.id("a").unwrap();
+    let length = c.value(a);
+    let before = [
+        point(&c, "U"),
+        point(&c, "P"),
+        point(&c, "Q"),
+        point(&c, "m"),
+    ];
+    move_to(&mut c, "M", 2.0, -1.0);
+    assert_eq!(c.value(a), length, "the length was meant to stay the same");
+    let after = [
+        point(&c, "U"),
+        point(&c, "P"),
+        point(&c, "Q"),
+        point(&c, "m"),
+    ];
+    for (b, a) in before.iter().zip(&after) {
+        assert_ne!(b, a, "a point did not follow the arc");
+    }
+    assert_same_as_fresh(&c, &script(2.0, -1.0), "the arc moved");
+}
+
+#[test]
+fn the_arc_table_after_a_rollback_with_reused_indices() {
+    let base = "M = (0, 0)\nA = (3, 0)\nB = (0, 3)\na = CircularArc(M, A, B)\nP = Point(a)\n";
+    let mut c = build(base);
+    move_to(&mut c, "P", 1.0, 2.0);
+    let a = c.id("a").unwrap();
+    // `Debug` shows every field, with the sign of zero
+    let bits = |r: Option<geo_kernel::ArcData>| format!("{r:?}");
+    let record = bits(c.arc(a));
+    let at = c.checkpoint();
+    // two parts after the checkpoint, so that a record left behind would
+    // sit before the new one and the table would be out of order
+    exec(&mut c, "b = CircumcircularSector(A, B, M)").unwrap();
+    exec(&mut c, "d = Semicircle(A, B)").unwrap();
+    exec(&mut c, "R = Point(d)").unwrap();
+    let b = c.id("b").unwrap();
+    let d = c.id("d").unwrap();
+    // only objects added since the checkpoint may move before a rollback
+    move_to(&mut c, "R", 5.0, 1.0);
+    c.rollback(at).unwrap();
+    assert!(c.arc(b).is_none() && c.arc(d).is_none());
+    assert_eq!(bits(c.arc(a)), record, "the record of a changed");
+    // new objects at the indices `b` and `d` had: a part on other points,
+    // whose record a left-behind one would come after, and one without a
+    // record
+    exec(&mut c, "e = Semicircle(B, M)").unwrap();
+    exec(&mut c, "n = 2").unwrap();
+    exec(&mut c, "Q = Point(e)").unwrap();
+    assert_eq!(c.id("e"), Some(b), "the index was meant to be reused");
+    assert_eq!(c.id("n"), Some(d), "the index was meant to be reused");
+    assert!(c.arc(d).is_none(), "a number has a part record");
+    let full = |ax: f64| {
+        format!(
+            "M = (0, 0)\nA = ({ax:?}, 0)\nB = (0, 3)\na = CircularArc(M, A, B)\nP = Point(a)\n\
+             e = Semicircle(B, M)\nn = 2\nQ = Point(e)\n"
+        )
+    };
+    assert_same_as_fresh(&c, &full(3.0), "after the rollback");
+    let fresh = build(&full(3.0));
+    assert_eq!(bits(c.arc(b)), bits(fresh.arc(fresh.id("e").unwrap())));
+    // and the reused slot follows its own points from now on
+    move_to(&mut c, "A", 4.0, 0.0);
+    move_to(&mut c, "M", 0.0, -1.0);
+    let full = full(4.0).replace("M = (0, 0)", "M = (0.0, -1.0)");
+    assert_same_as_fresh(&c, &full, "after moving A and M");
+}

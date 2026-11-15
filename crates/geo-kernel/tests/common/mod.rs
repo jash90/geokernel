@@ -6,8 +6,9 @@
 //! Only the public API of the kernel is used.
 #![allow(dead_code)]
 
+use geo_kernel::algo::arc::ArcDef;
 use geo_kernel::script::exec;
-use geo_kernel::{ConicData, ConicType, Construction, Def, Id, Kind, PathState, Value};
+use geo_kernel::{ArcData, ConicData, ConicType, Construction, Def, Id, Kind, PathState, Value};
 use std::cell::{Cell, RefCell};
 use std::panic::{self, AssertUnwindSafe};
 use std::sync::mpsc;
@@ -167,6 +168,9 @@ pub struct Snap {
     /// The state of a point on a path (`Construction::path_state`),
     /// compared bit for bit.
     pub path: Option<PathState>,
+    /// The record of an arc or sector (`Construction::arc`), compared by
+    /// [`arc_bits`].
+    pub arc: Option<ArcData>,
 }
 
 impl Snap {
@@ -218,13 +222,32 @@ fn conic_bits(d: &ConicData) -> Vec<u64> {
     bits
 }
 
+/// The record of an arc or sector, bit for bit (but `-0.0` is `0.0`): its
+/// conic by [`conic_bits`], its kind, orientation and parameter range, its
+/// value and measures and the end points of a degenerate part.
+fn arc_bits(a: &ArcData) -> Vec<u64> {
+    let mut bits = conic_bits(&a.conic);
+    bits.extend([a.sector, a.positive, a.defined].map(u64::from));
+    let mut numbers = vec![a.start, a.end, a.extent, a.value, a.arc_length(), a.area()];
+    if let Some([p, q]) = a.segment() {
+        numbers.extend([p.0, p.1, q.0, q.1]);
+    }
+    bits.extend(
+        numbers
+            .iter()
+            .map(|&v| if v == 0.0 { 0 } else { v.to_bits() }),
+    );
+    bits
+}
+
 /// Values with `==` on `f64` (so `-0.0` and `0.0` are the same), conic
-/// records by [`conic_bits`].
+/// records by [`conic_bits`], arc records by [`arc_bits`].
 impl PartialEq for Snap {
     fn eq(&self, other: &Snap) -> bool {
         self.value == other.value
             && self.conic.as_ref().map(conic_bits) == other.conic.as_ref().map(conic_bits)
             && self.path == other.path
+            && self.arc.as_ref().map(arc_bits) == other.arc.as_ref().map(arc_bits)
     }
 }
 
@@ -233,6 +256,7 @@ pub fn snap(c: &Construction, id: Id) -> Snap {
         value: c.value(id),
         conic: c.conic(id),
         path: c.path_state(id),
+        arc: c.arc(id),
     }
 }
 
@@ -428,6 +452,11 @@ pub enum K {
     Circle,
     Conic,
     Number,
+    /// An arc or a sector.
+    Arc,
+    /// An arc or a sector that points can be put on: not a part of a
+    /// general conic (`Arc(conic, s, t)` with a `Conic`).
+    PointArc,
     /// A literal intersection index, `1` or `2`.
     Index,
 }
@@ -442,7 +471,14 @@ impl K {
                 | (K::Circle, Kind::Circle)
                 | (K::Conic, Kind::Conic)
                 | (K::Number, Kind::Number)
+                | (K::Arc | K::PointArc, Kind::Arc | Kind::Sector)
         )
+    }
+
+    /// Whether the object `id` of `c` can be this argument.
+    pub fn fits_object(self, c: &Construction, id: Id) -> bool {
+        let general_part = || matches!(c.def(id), Def::Arc(ArcDef::ConicParameters { conic, .. }) if c.kind(conic) == Kind::Conic);
+        self.fits(c.kind(id)) && !(self == K::PointArc && general_part())
     }
 }
 
@@ -455,6 +491,8 @@ const CI: Slot = &[K::Circle];
 const CO: Slot = &[K::Conic];
 const NU: Slot = &[K::Number];
 const IX: Slot = &[K::Index];
+const AR: Slot = &[K::Arc];
+const PA: Slot = &[K::PointArc];
 /// A line or a segment.
 const LL: Slot = &[K::Line, K::Segment];
 /// Everything a transformation accepts.
@@ -596,10 +634,11 @@ pub const COMMANDS: &[Cmd] = &[
     cmd("Diameter", &[LL, CO]),
 ];
 
-/// Points on paths and their parameters. [`generate`] adds them after the
-/// other commands, from a stream of their own, so that the objects before
-/// them are those of the same seed without them. Their state depends on the
-/// history of moves; a test that rebuilds a construction restores it
+/// Points on paths and their parameters, arcs and sectors and their
+/// measures. [`generate`] adds them after the other commands, from a stream
+/// of their own, so that the objects before them are those of the same
+/// seed without them. The state of a point on a path depends on the history
+/// of moves; a test that rebuilds a construction restores it
 /// (`Construction::restore_path_state`).
 pub const PATH_COMMANDS: &[Cmd] = &[
     cmd("Point", &[LL]),
@@ -607,6 +646,19 @@ pub const PATH_COMMANDS: &[Cmd] = &[
     cmd("Point", &[LL, NU]),
     cmd("Point", &[CI, NU]),
     cmd("PathParameter", &[PT]),
+    cmd("CircularArc", &[PT, PT, PT]),
+    cmd("CircularSector", &[PT, PT, PT]),
+    cmd("CircumcircularArc", &[PT, PT, PT]),
+    cmd("CircumcircleSector", &[PT, PT, PT]),
+    cmd("Semicircle", &[PT, PT]),
+    cmd("Arc", &[CI, PT, PT]),
+    cmd("Sector", &[CI, NU, NU]),
+    cmd("Arc", &[CO, NU, NU]),
+    cmd("Point", &[PA]),
+    cmd("Point", &[PA, NU]),
+    cmd("Length", &[AR]),
+    cmd("Area", &[AR]),
+    cmd("Perimeter", &[AR]),
 ];
 
 /// A command call, as script text and as the objects it reads.
@@ -630,7 +682,7 @@ pub fn pick_args(rng: &mut Rng, c: &Construction, cmd: &Cmd, limit: usize) -> Op
         let candidates: Vec<Id> = c
             .ids()
             .take(limit)
-            .filter(|&id| slot.iter().any(|k| k.fits(c.kind(id))))
+            .filter(|&id| slot.iter().any(|k| k.fits_object(c, id)))
             .collect();
         if candidates.is_empty() {
             return None;
@@ -824,7 +876,7 @@ pub fn generate(seed: u64, n_commands: usize, all_commands: bool) -> Case {
         }
     }
     let mut path_rng = Rng::new(seed ^ 0x5EED_0A7B_9A7B_0A7B);
-    for _ in 0..path_rng.below(5) {
+    for _ in 0..path_rng.below(8) {
         let cmd = path_rng.pick(PATH_COMMANDS);
         let Some(call) = pick_args(&mut path_rng, &c, cmd, usize::MAX) else {
             continue;
