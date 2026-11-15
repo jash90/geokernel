@@ -12,6 +12,7 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoTangentPoint.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoTangentLineND.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoTangentLine.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/TangentAlgo.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoPolarLine.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersectLineConic.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersect.java
@@ -658,6 +659,46 @@ fn tangent_points_of(g: (f64, f64, f64), a: &CircleMatrix) -> [Pt; 2] {
         }
     }
     sol
+}
+
+/// The point where the tangent `d` touches `circle`, as
+/// `TangentAlgo.getTangentPoint` gives it to `AlgoIntersectLineConic`:
+/// `None` when `d` is not a tangent of `circle`, `Some(None)` when the
+/// point is undefined.
+pub(crate) fn tangent_point_on(c: &Construction, d: LineDef, circle: Id) -> Option<Pt> {
+    match d {
+        LineDef::TangentPoint {
+            point,
+            circle: k,
+            which,
+        } if k == circle => Some((|| {
+            let (px, py) = c.point(point)?;
+            let (cx, cy, r) = c.circle(k)?;
+            let a = CircleMatrix::new(cx, cy, r);
+            if a.is_degenerate() {
+                return None;
+            }
+            if a.is_on(px, py, STANDARD_PRECISION) {
+                // the tangent points of a point on the circle are the point
+                return Some((px, py));
+            }
+            tangent_points_of(a.polar(px, py), &a)[which as usize]
+        })()),
+        LineDef::TangentLine {
+            line,
+            circle: k,
+            which,
+        } if k == circle => Some((|| {
+            let g = c.carrier(line)?;
+            let (cx, cy, r) = c.circle(k)?;
+            let a = CircleMatrix::new(cx, cy, r);
+            if a.is_degenerate() {
+                return None;
+            }
+            tangent_points_of(a.diameter(g.1, -g.0), &a)[which as usize]
+        })()),
+        _ => None,
+    }
 }
 
 /// `AlgoTangentPointND.compute` with `AlgoTangentPoint` for a circle.
