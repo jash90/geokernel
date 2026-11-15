@@ -21,6 +21,8 @@
 //! m = Circle(A, r)        # centre A, radius r
 //! P = Intersect(l, k, 2)  # second intersection (1 is the default)
 //! t = Tangent(P, k)       # two tangents t_{1} and t_{2} when both are defined at creation
+//! c = a + 2*b             # arithmetic (see `crate::expr`) where no form above applies
+//! f(x) = x^2 - a          # a function of x
 //! {t_{1}, t_{2}} = Tangent(P, k)   # the same, with the output labels stated
 //! {, g} = AngularBisector(l, m)    # only the second output is created, as `g`
 //! t_{1} = (1, 2)         # a label may have the indexed form `prefix_{letters, digits}`
@@ -92,9 +94,18 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
     }
     let (name, rhs) = line.split_once('=').ok_or("expected `name = definition`")?;
     let name = name.trim();
+    // `f(x) = ...`: a function of `x`
+    if let Some(f) = name.strip_suffix("(x)").map(str::trim_end) {
+        if !is_identifier(f) {
+            return Err(format!("`{f}` is not a valid object name"));
+        }
+        check_label(f)?;
+        return crate::expr::define_function(c, f, rhs.trim()).map(Some);
+    }
     if !is_output_label(name) {
         return Err(format!("`{name}` is not a valid object name"));
     }
+    check_label(name)?;
     let rhs = rhs.trim();
     if let Some(def) = parse_forced(rhs) {
         return c.add(name, def?).map(Some).map_err(|e| e.to_string());
@@ -102,14 +113,62 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
     if let Some(result) = crate::algo::polygon::exec(c, name, rhs) {
         return result;
     }
+    match define(c, name, rhs) {
+        Ok(id) => {
+            if matches!(c.def(id), Def::Number(_)) {
+                // a decimal literal keeps its exact decimal
+                crate::expr::record_literal(c, id, rhs);
+            }
+            Ok(Some(id))
+        }
+        // A call of a command keeps the command's own error.
+        Err(e) if is_single_call(c, rhs) => Err(e),
+        Err(_) => crate::expr::define(c, name, rhs, is_vector_label(name)).map(Some),
+    }
+}
+
+/// The forms of the module documentation other than arithmetic.
+fn define(c: &mut Construction, name: &str, rhs: &str) -> Result<Id, String> {
     if let Some(defs) = parse_multi(c, rhs) {
-        return add_outputs(c, name, defs?).map(Some);
+        return add_outputs(c, name, defs?);
     }
     let def = match parse_def(c, rhs)? {
         Def::FreePoint { x, y } if is_vector_label(name) => Def::Vector(VectorDef::Free { x, y }),
         def => def,
     };
-    c.add(name, def).map(Some).map_err(|e| e.to_string())
+    c.add(name, def).map_err(|e| e.to_string())
+}
+
+/// Whether `rhs` is exactly one call `Name(...)` of a command: the bracket
+/// after the name closes at the end, and the name is neither a built-in
+/// function nor an object.
+fn is_single_call(c: &Construction, rhs: &str) -> bool {
+    let Some(open) = rhs.find('(') else {
+        return false;
+    };
+    let name = rhs[..open].trim();
+    // `sin²(a)` is a power of a function, not a call of `sin²`
+    if !is_identifier(name)
+        || !name.chars().all(crate::expr::is_name_char)
+        || crate::expr::is_function_name(name)
+        || c.id(name).is_some()
+    {
+        return false;
+    }
+    let mut depth = 0usize;
+    for (i, ch) in rhs.char_indices().skip_while(|&(i, _)| i < open) {
+        match ch {
+            '(' => depth += 1,
+            ')' => {
+                depth -= 1;
+                if depth == 0 {
+                    return i + 1 == rhs.len();
+                }
+            }
+            _ => {}
+        }
+    }
+    false
 }
 
 /// `Name(args)` split into the name and the trimmed arguments; `None` for
@@ -229,6 +288,7 @@ fn is_finite(v: &Value) -> bool {
         Value::Vector { x, y } => x.is_finite() && y.is_finite(),
         Value::Ray { x, y, a, b, c } => [x, y, a, b, c].iter().all(|v| v.is_finite()),
         Value::Bool(_) => true,
+        Value::Function => true,
         Value::Polygon { area } => area.is_finite(),
         Value::PolyLine { length } => length.is_finite(),
         Value::Undefined => false,
@@ -287,7 +347,7 @@ fn is_identifier(s: &str) -> bool {
     chars.all(|ch| ch.is_alphanumeric() || ch == '_' || ch == '\'')
 }
 
-fn parse_def(c: &Construction, rhs: &str) -> Result<Def, String> {
+pub(crate) fn parse_def(c: &Construction, rhs: &str) -> Result<Def, String> {
     // (x, y)
     if let Some(inner) = rhs.strip_prefix('(').and_then(|s| s.strip_suffix(')')) {
         let parts: Vec<&str> = inner.split(',').map(str::trim).collect();
@@ -301,7 +361,7 @@ fn parse_def(c: &Construction, rhs: &str) -> Result<Def, String> {
     }
 
     // 3.5
-    if let Ok(v) = rhs.parse::<f64>() {
+    if let Some(v) = crate::expr::plain_number(rhs) {
         return Ok(Def::Number(v));
     }
 
@@ -428,8 +488,42 @@ pub(crate) fn object(c: &Construction, label: &str) -> Result<Id, String> {
 }
 
 fn parse_number(s: &str) -> Result<f64, String> {
-    s.parse::<f64>()
-        .map_err(|_| format!("`{s}` is not a number"))
+    crate::expr::plain_number(s).ok_or_else(|| format!("`{s}` is not a number"))
+}
+
+/// Names GeoGebra never gives to an object of these forms: `x = 5` and
+/// `pi = 3` are equations there, and `sin = 3` is renamed `sin_{1}` (all
+/// observed with the harness). Command names such as `Mod` and the letters
+/// `e` and `i` are ordinary labels. GeoGebra also reads `inf = ...`,
+/// `Infinity = ...`, `NaN = ...` and `Undefined = ...` as equations; here
+/// they stay labels, which the polygon forms rely on (see DIFFERENCES.md),
+/// while an expression still reads these words as `∞` and `?`.
+fn check_label(name: &str) -> Result<(), String> {
+    const RESERVED: &[&str] = &[
+        "x",
+        "y",
+        "z",
+        "pi",
+        "Pi",
+        "\u{3c0}",
+        "\u{212f}",
+        "euler_gamma",
+        "deg",
+        "rad",
+        "true",
+        "True",
+        "false",
+        "False",
+    ];
+    if RESERVED.contains(&name) || crate::expr::is_function_name(name) && !is_command_name(name) {
+        return Err(format!("`{name}` is a reserved name"));
+    }
+    Ok(())
+}
+
+/// Commands among the built-in names (`Mod`, `Max`, ...): upper case.
+fn is_command_name(name: &str) -> bool {
+    name.starts_with(|c: char| c.is_ascii_uppercase())
 }
 
 /// `$point(x, y)` and `$vector(x, y)`: a free point or a free vector whatever
@@ -556,6 +650,7 @@ fn exec_labelled(c: &mut Construction, line: &str) -> Result<Option<Id>, String>
         if !is_output_label(slot) {
             return Err(format!("`{slot}` is not a valid object name"));
         }
+        check_label(slot)?;
         if !seen.insert(*slot) {
             return Err(format!("the label `{slot}` is used twice"));
         }

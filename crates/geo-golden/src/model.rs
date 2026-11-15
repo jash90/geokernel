@@ -127,6 +127,11 @@ pub enum ExpectedData {
         b: f64,
         c: f64,
     },
+    /// The values at [`SAMPLE_XS`], in that order; `None` where GeoGebra's
+    /// value is not finite.
+    Function {
+        samples: Vec<Option<f64>>,
+    },
     /// Vertices in order, area (never negative) and signed area (positive
     /// counter-clockwise).
     Polygon {
@@ -141,11 +146,16 @@ pub enum ExpectedData {
     },
 }
 
+/// Where a function is sampled (`golden/SCHEMA.md`).
+pub const SAMPLE_XS: [f64; 11] = [-8.0, -4.0, -2.0, -1.0, -0.5, 0.0, 0.5, 1.0, 2.0, 4.0, 8.0];
+
 #[derive(Deserialize)]
 struct RawObject {
     #[serde(rename = "type")]
     ty: String,
     defined: bool,
+    /// Only for a function: `[x, y]` pairs, `y` null where not finite.
+    samples: Option<Vec<(f64, Option<f64>)>>,
     #[serde(flatten)]
     fields: BTreeMap<String, serde_json::Value>,
 }
@@ -176,6 +186,29 @@ fn vertices(v: &serde_json::Value, holes: bool) -> Result<Vec<Option<(f64, f64)>
         .collect()
 }
 
+/// The samples of a defined function: exactly one per [`SAMPLE_XS`], in order.
+fn function_samples(raw: &RawObject) -> Result<ExpectedData, String> {
+    if !raw.fields.is_empty() {
+        return Err("a function carries no numeric fields".into());
+    }
+    let pairs = raw
+        .samples
+        .as_ref()
+        .ok_or("defined function needs `samples`")?;
+    let xs: Vec<f64> = pairs.iter().map(|p| p.0).collect();
+    if xs != SAMPLE_XS {
+        return Err(format!(
+            "function samples must be at {SAMPLE_XS:?}, got {xs:?}"
+        ));
+    }
+    if pairs.iter().any(|p| p.1.is_some_and(|y| !y.is_finite())) {
+        return Err("function samples must be finite or null".into());
+    }
+    Ok(ExpectedData::Function {
+        samples: pairs.iter().map(|p| p.1).collect(),
+    })
+}
+
 impl TryFrom<RawObject> for Expected {
     type Error = String;
 
@@ -189,15 +222,28 @@ impl TryFrom<RawObject> for Expected {
             "vector" => (Kind::Vector, &["x", "y"]),
             "ray" => (Kind::Ray, &["x", "y", "a", "b", "c"]),
             "boolean" => (Kind::Boolean, &["value"]),
+            "function" => (Kind::Function, &[]),
             "polygon" => (Kind::Polygon, &["vertices", "area", "signed_area"]),
             "polyline" => (Kind::PolyLine, &["vertices", "length"]),
             other => return Err(format!("unknown object type `{other}`")),
         };
+        if raw.samples.is_some() && (kind != Kind::Function || !raw.defined) {
+            return Err(format!(
+                "only a defined function carries samples, not this {}",
+                raw.ty
+            ));
+        }
         if !raw.defined {
             if !raw.fields.is_empty() {
                 return Err(format!("undefined {} carries numeric fields", raw.ty));
             }
             return Ok(Expected { kind, data: None });
+        }
+        if kind == Kind::Function {
+            return Ok(Expected {
+                kind,
+                data: Some(function_samples(&raw)?),
+            });
         }
         let expected: BTreeSet<&str> = names.iter().copied().collect();
         let got: BTreeSet<&str> = raw.fields.keys().map(String::as_str).collect();
@@ -285,7 +331,8 @@ impl TryFrom<RawObject> for Expected {
     }
 }
 
-/// Labels created by a script: the text before the first `=` of each line.
+/// Labels created by a script: the text before the first `=` of each line,
+/// without the `(x)` of a function.
 pub fn script_labels(script: &[String]) -> BTreeSet<String> {
     script
         .iter()
@@ -293,9 +340,18 @@ pub fn script_labels(script: &[String]) -> BTreeSet<String> {
             l.split('#')
                 .next()?
                 .split_once('=')
-                .map(|(n, _)| n.trim().to_string())
+                .map(|(n, _)| line_label(n))
         })
         .collect()
+}
+
+/// The label of a script line's left-hand side: `f` for `f(x)`.
+pub fn line_label(lhs: &str) -> String {
+    let lhs = lhs.trim();
+    lhs.strip_suffix("(x)")
+        .unwrap_or(lhs)
+        .trim_end()
+        .to_string()
 }
 
 /// Parses and validates one file. `source` is only used in messages.
@@ -668,6 +724,45 @@ mod tests {
         // A ray needs its start point, a vector exactly x and y.
         assert!(parse(r#"{"type":"ray","defined":true,"a":-4.0,"b":3.0,"c":-2.0}"#).is_err());
         assert!(parse(r#"{"type":"vector","defined":true,"x":1.0,"y":2.0,"z":0.0}"#).is_err());
+    }
+
+    #[test]
+    fn functions_carry_their_samples() {
+        let parse = |json: &str| serde_json::from_str::<Expected>(json);
+        let pairs = |ys: &[&str]| -> String {
+            let xs = SAMPLE_XS
+                .iter()
+                .zip(ys)
+                .map(|(x, y)| format!("[{x:?}, {y}]"));
+            format!(
+                r#"{{"type":"function","defined":true,"samples":[{}]}}"#,
+                xs.collect::<Vec<_>>().join(",")
+            )
+        };
+        let mut ys = vec!["1.5"; 11];
+        ys[3] = "null";
+        let f = parse(&pairs(&ys)).unwrap();
+        assert_eq!(f.kind, Kind::Function);
+        let Some(ExpectedData::Function { samples }) = f.data else {
+            panic!("no samples");
+        };
+        assert_eq!(samples.len(), 11);
+        assert_eq!(samples[3], None);
+        assert_eq!(samples[4], Some(1.5));
+        let undefined = parse(r#"{"type":"function","defined":false}"#).unwrap();
+        assert_eq!((undefined.kind, undefined.data), (Kind::Function, None));
+        // exactly the sample points, in order
+        assert!(parse(&pairs(&ys[..10])).is_err());
+        let swapped = pairs(&ys).replacen("[-8.0", "[-7.0", 1);
+        assert!(parse(&swapped).is_err());
+        assert!(parse(r#"{"type":"function","defined":true}"#).is_err());
+        assert!(parse(r#"{"type":"function","defined":false,"samples":[]}"#).is_err());
+        assert!(parse(r#"{"type":"number","defined":true,"value":1.0,"samples":[]}"#).is_err());
+        assert!(parse(r#"{"type":"function","defined":true,"value":1.0}"#).is_err());
+        assert_eq!(
+            script_labels(&["f(x) = x^2".to_string(), "v = f(2)".to_string()]),
+            set(&["f", "v"])
+        );
     }
 
     fn check_keys_(keys: &BTreeSet<String>, labels: &BTreeSet<String>) -> Result<(), String> {

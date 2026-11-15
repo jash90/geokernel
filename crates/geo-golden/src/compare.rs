@@ -1,6 +1,6 @@
 //! The comparison rules of `golden/SCHEMA.md`.
 
-use crate::model::{Expected, ExpectedData};
+use crate::model::{Expected, ExpectedData, SAMPLE_XS};
 use geo_kernel::{Kind, Value};
 
 /// Result of a successful comparison.
@@ -56,9 +56,9 @@ pub fn line_scale_agrees(expected: &Expected, actual: &Value) -> Option<bool> {
 }
 
 /// Compares one recorded object with what the kernel holds, for objects
-/// without vertices (see [`compare_object`]).
+/// without vertices and other than functions (see [`compare_object`]).
 pub fn compare(expected: &Expected, kind: Kind, actual: &Value) -> Result<Sign, String> {
-    compare_object(expected, kind, actual, &[])
+    compare_sampled(expected, kind, actual, &[], None)
 }
 
 /// Whether two lists of vertices agree: same length, and each vertex
@@ -72,15 +72,34 @@ fn vertices_agree(expected: &[Option<(f64, f64)>], actual: &[Option<(f64, f64)>]
         })
 }
 
+/// The kernel's value of a function object at `x` (`Construction::function_value`).
+pub type Sampler<'a> = &'a dyn Fn(f64) -> Option<f64>;
+
 /// Compares one recorded object with what the kernel holds.
 /// `kind` is the kernel's kind of the object (valid even when undefined);
 /// `vertices` are the kernel's vertices of a polygon or polyline
-/// (`Construction::vertices`), empty for other objects.
+/// (`Construction::vertices`), empty for other objects. A defined function
+/// is never a match here; see [`compare_sampled`].
 pub fn compare_object(
     expected: &Expected,
     kind: Kind,
     actual: &Value,
     vertices: &[Option<(f64, f64)>],
+) -> Result<Sign, String> {
+    compare_sampled(expected, kind, actual, vertices, None)
+}
+
+/// [`compare_object`], with `sample` giving the kernel's values of a
+/// function. A defined function needs `sample`: each sample is compared like
+/// a number, and a `null` sample must meet a value that is not finite, and
+/// the other way round. Without `sample` a defined function is an error,
+/// never a match.
+pub fn compare_sampled(
+    expected: &Expected,
+    kind: Kind,
+    actual: &Value,
+    vertices: &[Option<(f64, f64)>],
+    sample: Option<Sampler>,
 ) -> Result<Sign, String> {
     if expected.kind != kind {
         return Err(format!(
@@ -175,6 +194,23 @@ pub fn compare_object(
             } else {
                 Err("ray lies on a different line".into())
             }
+        }
+        (ExpectedData::Function { samples }, Value::Function) => {
+            let Some(sample) = sample else {
+                return Err("a function is compared only through its samples".into());
+            };
+            for (&x, want) in SAMPLE_XS.iter().zip(samples) {
+                let got = sample(x).filter(|v| v.is_finite());
+                let agree = match (*want, got) {
+                    (None, None) => true,
+                    (Some(p), Some(q)) => numbers_agree(p, q),
+                    _ => false,
+                };
+                if !agree {
+                    return Err(format!("value at x = {x} differs: kernel has {got:?}"));
+                }
+            }
+            Ok(Sign::NotApplicable)
         }
         (
             ExpectedData::Polygon {
@@ -381,6 +417,36 @@ mod tests {
             line_scale_agrees(&line(0.0, 1.0, 0.0), &Value::Undefined),
             None
         );
+    }
+
+    #[test]
+    fn functions_are_compared_by_samples() {
+        let mut samples = vec![Some(1.0); 11];
+        samples[0] = None;
+        let e = Expected {
+            kind: Kind::Function,
+            data: Some(ExpectedData::Function { samples }),
+        };
+        let at = |f: fn(f64) -> f64| move |x: f64| Some(f(x));
+        let ok = at(|x| if x == -8.0 { f64::NAN } else { 1.0 + 1e-12 });
+        assert!(compare_sampled(&e, Kind::Function, &Value::Function, &[], Some(&ok)).is_ok());
+        let infinite = at(|x| if x == -8.0 { f64::INFINITY } else { 1.0 });
+        assert!(
+            compare_sampled(&e, Kind::Function, &Value::Function, &[], Some(&infinite)).is_ok()
+        );
+        // a value where GeoGebra has none, and the other way round
+        let value = at(|_| 1.0);
+        assert!(compare_sampled(&e, Kind::Function, &Value::Function, &[], Some(&value)).is_err());
+        let missing = at(|x| if x >= 0.0 { f64::NAN } else { 1.0 });
+        assert!(
+            compare_sampled(&e, Kind::Function, &Value::Function, &[], Some(&missing)).is_err()
+        );
+        let off = at(|x| if x == -8.0 { f64::NAN } else { 1.001 });
+        assert!(compare_sampled(&e, Kind::Function, &Value::Function, &[], Some(&off)).is_err());
+        assert!(compare_sampled(&e, Kind::Function, &Value::Undefined, &[], Some(&ok)).is_err());
+        assert!(compare(&e, Kind::Number, &Value::Number(1.0)).is_err());
+        // without its sampler a function never matches
+        assert!(compare(&e, Kind::Function, &Value::Function).is_err());
     }
 
     #[test]

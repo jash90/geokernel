@@ -81,6 +81,12 @@ PARTIAL = {
     "Centroid": "Centroid(polygon)",
     "Vertex": "Vertex(polygon); Vertex(polygon, index)",
     "InteriorAngles": "InteriorAngles(polygon)",
+    "Mod": "Mod(number, number)",
+    "Div": "Div(number, number)",
+    "GCD": "GCD(number, number)",
+    "LCM": "LCM(number, number)",
+    "Max": "Max(number, number)",
+    "Min": "Min(number, number)",
 }
 
 # Commands the first version of the kernel already had: priority P0.

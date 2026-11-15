@@ -113,6 +113,7 @@ carries no numeric fields. When it is `true` it carries exactly these:
 | `vector` | `x`, `y` | The vector's coordinates. Where GeoGebra draws it from (its start point) is not recorded. |
 | `ray` | `x`, `y`, `a`, `b`, `c` | Start point `(x, y)` and the raw GeoGebra coefficients of the line `a*x + b*y + c = 0` it lies on, not normalised. The ray points along `(b, -a)`. |
 | `boolean` | `value` | `true` or `false`, a JSON boolean. `defined` is `false` only for the prover-only "unknown" state. |
+| `function` | `samples` | The values at `x` = -8, -4, -2, -1, -0.5, 0, 0.5, 1, 2, 4, 8, as pairs `[x, y]` in this order: `{ "type": "function", "defined": true, "samples": [[-8.0, 82.0], [-4.0, 26.0], ..., [0.5, null], ...] }`. `y` is `null` where GeoGebra's value (`GeoFunction.value`) is not finite. An undefined function carries no `samples`. |
 | `polygon` | `vertices`, `area`, `signed_area` | `vertices` is the list of vertices in order, each `[x, y]`. `area` is GeoGebra's area (never negative), `signed_area` the area with its sign: positive when the vertices run counter-clockwise. |
 | `polyline` | `vertices`, `length` | `vertices` is the list of vertices in order, each `[x, y]`, or `null` for an undefined point (GeoGebra leaves a hole there). `length` is the sum of the lengths of the pieces between two defined points. |
 
@@ -139,6 +140,9 @@ These rules are applied by the Rust side (`crates/geo-golden`).
   component magnitude of the two triples, same sign) is also counted for the
   `ggb-harness` cases and reported per group and defining command; it does
   not fail the comparison.
+- Functions: every sample is compared like a number; a `null` sample must
+  meet a value that is not finite in `geo-kernel`, and a finite value a
+  finite one.
 - Segments are compared with their end points in order.
 - Vectors are compared by `x` and `y`.
 - Booleans are compared exactly.
@@ -162,6 +166,17 @@ added after the first golden files were written. The addition is backwards
 compatible: no existing file changes and the schema version stays 1.
 The same holds for the types `polygon` and `polyline`, the lists in their
 fields and the labels of the objects `Polygon` creates, added later still.
+
+Script lines may also be arithmetic expressions (group `expr`), such as
+`c = a + 2*b`, `d = Distance(A, B) / 2` or `M = (A + B) / 2`. An expression
+whose result is a coordinate pair is a vector when its label starts with a
+lower-case letter and a point otherwise, whatever its operands are, as in
+GeoGebra. An expression that reads no object (`c = 2 + 3`) is evaluated once
+and becomes a free number, point or vector, which steps may set or move.
+A line `f(x) = ...` defines a function of `x`, recorded under the label `f`;
+other lines may apply it (`v = f(2)`, `g(x) = f(x) + 1`).
+Expressions and the type `function` were added after the first golden files
+were written; no existing file changed and the schema version stays 1.
 
 ## Known gaps
 

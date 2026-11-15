@@ -40,6 +40,7 @@ use crate::algo::vector::VectorDef;
 use crate::algo::{
     self, check_index, join, line_through, Group, Parents, CIRCLE, LINE, LINE_LIKE, NUMBER, POINT,
 };
+use crate::expr::{self, ExprDef};
 use std::collections::HashMap;
 use std::fmt;
 
@@ -97,6 +98,8 @@ pub enum Kind {
     Ray,
     /// A true or false answer, such as the result of `AreCollinear`.
     Boolean,
+    /// A function of `x`, `f(x) = ...`; see [`Construction::function_value`].
+    Function,
     Polygon,
     PolyLine,
 }
@@ -112,6 +115,7 @@ impl fmt::Display for Kind {
             Kind::Vector => "vector",
             Kind::Ray => "ray",
             Kind::Boolean => "boolean",
+            Kind::Function => "function",
             Kind::Polygon => "polygon",
             Kind::PolyLine => "polyline",
         })
@@ -167,6 +171,9 @@ pub enum Value {
     /// prover's "unknown" answer, so the kernel reports `Undefined` only when
     /// a predicate cannot decide.
     Bool(bool),
+    /// A defined function; its values come from
+    /// [`Construction::function_value`].
+    Function,
     /// A polygon with its signed area: positive when the vertices run
     /// counter-clockwise. The vertices are not copied into the value; read
     /// them with [`Construction::vertices`].
@@ -214,7 +221,7 @@ impl Value {
             Value::Bool(_) => true,
             Value::Polygon { area } => area.is_finite(),
             Value::PolyLine { length } => length.is_finite(),
-            Value::Undefined => true,
+            Value::Function | Value::Undefined => true,
         }
     }
 }
@@ -230,6 +237,10 @@ pub enum Def {
     },
     /// A number the user can change (a slider).
     Number(f64),
+    /// A free angle in radians, such as `c = 30°`: a number the user can
+    /// change that `floor`, `ceil` and `round` treat in whole degrees
+    /// (GeoGebra's independent `GeoAngle`).
+    Angle(f64),
     /// Line through two points.
     Line(Id, Id),
     /// Segment between two points.
@@ -293,6 +304,10 @@ pub enum Def {
     Predicate(PredicateDef),
     /// Points from `ClosestPoint` and `Trilinear`.
     Point(PointDef),
+    /// An arithmetic expression; the tree is kept by the construction, so
+    /// this handle is valid only there. Rebuild it elsewhere with
+    /// [`Construction::expression`] and [`Construction::add_expression`].
+    Expr(ExprDef),
     /// Polygons, polylines and what is measured on them.
     Polygon(PolygonDef),
 }
@@ -308,7 +323,7 @@ impl Def {
             Def::Line(..) | Def::Perpendicular { .. } | Def::Parallel { .. } => Kind::Line,
             Def::Segment(..) => Kind::Segment,
             Def::CircleThrough { .. } | Def::CircleRadius { .. } => Kind::Circle,
-            Def::Number(_) | Def::Distance(..) => Kind::Number,
+            Def::Number(_) | Def::Angle(_) | Def::Distance(..) => Kind::Number,
             Def::Lines(d) => d.kind(),
             Def::Conic(d) => d.kind(),
             Def::Measure(d) => d.kind(),
@@ -316,6 +331,7 @@ impl Def {
             Def::Vector(d) => d.kind(),
             Def::Predicate(d) => d.kind(),
             Def::Point(d) => d.kind(),
+            Def::Expr(d) => d.kind(),
             Def::Polygon(d) => d.kind(),
         }
     }
@@ -340,14 +356,20 @@ impl Def {
     pub fn is_free(&self) -> bool {
         matches!(
             self,
-            Def::FreePoint { .. } | Def::Number(_) | Def::Vector(VectorDef::Free { .. })
+            Def::FreePoint { .. }
+                | Def::Number(_)
+                | Def::Angle(_)
+                | Def::Vector(VectorDef::Free { .. })
         )
     }
 
-    /// The objects this definition reads.
-    fn parents(&self) -> Parents {
+    /// The objects this definition reads. An expression reads the objects
+    /// of its tree, which [`expr::parents`] lists.
+    pub(crate) fn parents(&self) -> Parents {
         match *self {
-            Def::FreePoint { .. } | Def::Number(_) => Parents::none(),
+            Def::FreePoint { .. } | Def::Number(_) | Def::Angle(_) | Def::Expr(_) => {
+                Parents::none()
+            }
             Def::Line(p, q)
             | Def::Segment(p, q)
             | Def::Midpoint(p, q)
@@ -422,6 +444,7 @@ impl std::error::Error for Error {}
 pub(crate) struct Checkpoint {
     len: usize,
     lists: usize,
+    exprs: usize,
 }
 
 /// A geometric construction.
@@ -444,6 +467,8 @@ pub struct Construction {
     label_hints: std::sync::Mutex<HashMap<String, usize>>,
     // Scratch state for updates, kept to avoid allocating on every drag.
     dirty: DirtySet,
+    /// Trees of the expression objects.
+    pub(crate) exprs: expr::Table,
 }
 
 /// The objects waiting to be recomputed during an update; empty between
@@ -583,6 +608,27 @@ impl Construction {
         self.values[id.0]
     }
 
+    /// `±∞` when `id` is an expression number whose value is infinite.
+    /// [`Self::value`] reports such a number undefined, but GeoGebra counts
+    /// it as defined, and expressions that read it use the infinite value
+    /// (`1 / (r - a)` with `a = ∞` is `-0`).
+    pub fn infinite_number(&self, id: Id) -> Option<f64> {
+        match self.defs.get(id.0)? {
+            &Def::Expr(d) if d.kind() == Kind::Number => match expr::raw(self, d) {
+                expr::Raw::Num(v) if v.is_infinite() => Some(v),
+                _ => None,
+            },
+            _ => None,
+        }
+    }
+
+    /// The value of the function `id` at `x`, evaluated as GeoGebra's
+    /// `GeoFunction.value` does; it may be infinite or `NaN` where the
+    /// function is not defined. `None` when `id` is not a defined function.
+    pub fn function_value(&self, id: Id, x: f64) -> Option<f64> {
+        expr::function_value(self, id, x)
+    }
+
     /// The vertices of a polygon or polyline in order, `None` for a vertex
     /// that is undefined. Nothing for any other object, and nothing for a
     /// regular polygon that is undefined.
@@ -616,6 +662,7 @@ impl Construction {
         Checkpoint {
             len: self.defs.len(),
             lists: self.lists.len(),
+            exprs: self.exprs.len(),
         }
     }
 
@@ -659,6 +706,7 @@ impl Construction {
             }
         }
         self.lists.truncate(at.lists.min(self.lists.len()));
+        self.exprs.truncate(at.exprs, at.len);
         // Labels became free again, so the hints may be too high.
         self.label_hints
             .get_mut()
@@ -674,6 +722,7 @@ impl Construction {
         ids.extend(algo::vector::hidden_parents(self, def));
         ids.extend(algo::predicate::hidden_parents(self, def));
         ids.extend(algo::polygon::hidden_parents(self, def));
+        ids.extend(expr::parents(self, def));
         ids.extend_from_slice(def.parents().as_slice());
         if let Some(list) = def.list() {
             ids.extend_from_slice(self.list(list));
@@ -695,7 +744,15 @@ impl Construction {
         let id = Id(self.defs.len());
         // compute reads the hint of the new object from `hints`
         self.hints.push(algo::intersect::hint(self, &def));
-        let value = self.compute(def, id.0);
+        let value = match def {
+            Def::Expr(d) => {
+                let out = expr::evaluate(self, d);
+                let value = expr::value(d, out.raw);
+                expr::store(self, d, out);
+                value
+            }
+            _ => self.compute(def, id.0),
+        };
         // An object that is read twice is still one child.
         let mut parents = self.read_ids(&def);
         parents.sort_unstable();
@@ -709,6 +766,23 @@ impl Construction {
         self.children.push(Vec::new());
         self.by_label.insert(label.to_string(), id);
         Ok(id)
+    }
+
+    /// The tree of the expression object `id`, owned, so that it can be added
+    /// to another construction with [`Self::add_expression`]; `None` when
+    /// `id` is not an expression object. Its [`Def::Expr`] cannot be used
+    /// for that: the handle is valid only here (see [`expr`]). A free number
+    /// that still has the exact decimal of the literal or constant
+    /// expression it was made from is handed out too, with that decimal;
+    /// [`Self::add`] makes a free number without one.
+    pub fn expression(&self, id: Id) -> Option<expr::Expression> {
+        expr::expression(self, id)
+    }
+
+    /// Adds the expression `e` as `label`, checking its tree against this
+    /// construction; see [`expr::Expression`].
+    pub fn add_expression(&mut self, label: &str, e: &expr::Expression) -> Result<Id, Error> {
+        expr::add_expression(self, label, e)
     }
 
     /// Stores `ids` as a list of parents and adds the object that `make`
@@ -774,7 +848,9 @@ impl Construction {
         if !(x.is_finite() && y.is_finite()) {
             return Err(Error::NotFinite);
         }
-        if old == (x, y) {
+        // Bit equality, as in `set_number`: `0` to `-0` is a change.
+        let same = |a: f64, b: f64| a.to_bits() == b.to_bits();
+        if same(old.0, x) && same(old.1, y) {
             return Ok(0);
         }
         self.defs[id.0] = def;
@@ -785,19 +861,26 @@ impl Construction {
     /// Changes a free number and recomputes everything that depends on it.
     /// Returns how many dependent objects were recomputed.
     pub fn set_number(&mut self, id: Id, v: f64) -> Result<usize, Error> {
-        let def = self.defs.get(id.0).ok_or(Error::UnknownObject)?;
-        if !matches!(def, Def::Number(_)) {
-            return Err(Error::NotFree(self.labels[id.0].clone()));
-        }
+        let def = *self.defs.get(id.0).ok_or(Error::UnknownObject)?;
+        let new_def = match def {
+            Def::Number(_) => Def::Number(v),
+            Def::Angle(_) => Def::Angle(v),
+            _ => return Err(Error::NotFree(self.labels[id.0].clone())),
+        };
         if !v.is_finite() {
             return Err(Error::NotFinite);
         }
-        let new = Value::Number(v);
-        if self.values[id.0] == new {
+        // A changed number loses its exact decimal (`GeoNumeric.setValue`),
+        // which changes what reads it even when the value stays.
+        let had_decimal = expr::forget_decimal(self, id);
+        // Bit equality: `0` to `-0` is a change (`1/a` flips its sign).
+        if !had_decimal
+            && matches!(self.values[id.0], Value::Number(old) if old.to_bits() == v.to_bits())
+        {
             return Ok(0);
         }
-        self.defs[id.0] = Def::Number(v);
-        self.values[id.0] = new;
+        self.defs[id.0] = new_def;
+        self.values[id.0] = Value::Number(v);
         Ok(self.propagate(id))
     }
 
@@ -823,13 +906,20 @@ impl Construction {
         while let Some(i) = dirty.pop_first(from) {
             // children only add larger indices
             from = i + 1;
-            let new = self.compute(self.defs[i], i);
+            let def = self.defs[i];
             recomputed += 1;
-            if new == self.values[i] {
-                // Nothing downstream can change because of this object.
-                continue;
+            if let Def::Expr(d) = def {
+                if !self.update_expr(i, d) {
+                    continue;
+                }
+            } else {
+                let new = self.compute(def, i);
+                if new == self.values[i] {
+                    // Nothing downstream can change because of this object.
+                    continue;
+                }
+                self.values[i] = new;
             }
-            self.values[i] = new;
             for &child in &self.children[i] {
                 dirty.insert(child.0);
             }
@@ -839,7 +929,17 @@ impl Construction {
         recomputed
     }
 
-    fn check(&self, def: &Def) -> Result<(), Error> {
+    /// Recomputes the expression object `i`; tells whether its children
+    /// must follow. An expression compares its raw result, infinities kept.
+    /// Kept out of line so that the loop of [`Self::propagate`] stays small.
+    #[inline(never)]
+    fn update_expr(&mut self, i: usize, d: ExprDef) -> bool {
+        let out = expr::evaluate(self, d);
+        self.values[i] = expr::value(d, out.raw);
+        expr::store(self, d, out)
+    }
+
+    pub(crate) fn check(&self, def: &Def) -> Result<(), Error> {
         match *def {
             Def::FreePoint { x, y } => {
                 if x.is_finite() && y.is_finite() {
@@ -848,7 +948,7 @@ impl Construction {
                     Err(Error::NotFinite)
                 }
             }
-            Def::Number(v) => {
+            Def::Number(v) | Def::Angle(v) => {
                 if v.is_finite() {
                     Ok(())
                 } else {
@@ -896,6 +996,8 @@ impl Construction {
             Def::Vector(d) => d.check(self),
             Def::Predicate(d) => d.check(self),
             Def::Point(d) => d.check(self),
+            // the tree was checked when it was parsed or handed in
+            Def::Expr(d) => expr::check_handle(self, d),
             Def::Polygon(d) => d.check(self),
         }
     }
@@ -928,7 +1030,17 @@ impl Construction {
         }
     }
 
+    /// [`Self::try_compute`] for a command inside an expression. Out of
+    /// line, so that `try_compute` stays inlined in the update loop.
+    /// `hint` is the intersection hint taken when the expression was
+    /// parsed; it stands for the entry in `hints` that an object has.
+    #[inline(never)]
+    pub(crate) fn command_value(&self, def: Def, hint: algo::intersect::Hint) -> Option<Value> {
+        self.try_compute(def, |_| hint)
+    }
+
     /// `None` means the object is undefined for the current inputs.
+    #[inline(always)]
     fn try_compute(
         &self,
         def: Def,
@@ -936,7 +1048,7 @@ impl Construction {
     ) -> Option<Value> {
         match def {
             Def::FreePoint { x, y } => Some(Value::Point { x, y }),
-            Def::Number(v) => Some(Value::Number(v)),
+            Def::Number(v) | Def::Angle(v) => Some(Value::Number(v)),
             Def::Line(p, q) => algo::basic::line(self, p, q),
             Def::Segment(p, q) => algo::basic::segment(self, p, q),
             Def::Midpoint(p, q) => algo::basic::midpoint(self, p, q),
@@ -964,6 +1076,7 @@ impl Construction {
             Def::Vector(d) => d.compute(self),
             Def::Predicate(d) => d.compute(self),
             Def::Point(d) => d.compute(self),
+            Def::Expr(d) => Some(expr::current(self, d)),
             Def::Polygon(d) => d.compute(self),
         }
     }

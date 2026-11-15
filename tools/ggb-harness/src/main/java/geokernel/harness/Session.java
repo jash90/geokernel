@@ -1,6 +1,7 @@
 package geokernel.harness;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +19,7 @@ import org.geogebra.common.kernel.algos.AlgoRayPointVector;
 import org.geogebra.common.kernel.commands.AlgebraProcessor;
 import org.geogebra.common.kernel.geos.GeoConic;
 import org.geogebra.common.kernel.geos.GeoElement;
+import org.geogebra.common.kernel.geos.GeoFunction;
 import org.geogebra.common.kernel.geos.GeoLine;
 import org.geogebra.common.kernel.geos.GeoBoolean;
 import org.geogebra.common.kernel.geos.GeoNumeric;
@@ -43,10 +45,15 @@ import org.geogebra.common.util.StringUtil;
 final class Session {
 
     private static final Pattern LINE =
-            Pattern.compile("^([A-Za-z]+(?:_\\{[A-Za-z0-9]+\\})?) = (.+)$");
+            Pattern.compile("^([A-Za-z]+(?:_\\{[A-Za-z0-9]+\\})?)(\\(x\\))? = (.+)$");
+    /** A label as the script lines write it, to find the objects an expression reads. */
+    private static final Pattern LABEL = Pattern.compile("[A-Za-z]+(?:_\\{[A-Za-z0-9]+\\})?");
+    /** Where a function is sampled, in this order (see golden/SCHEMA.md). */
+    static final double[] SAMPLES = {-8, -4, -2, -1, -0.5, 0, 0.5, 1, 2, 4, 8};
     private static final Pattern NUMBER = Pattern.compile("^-?\\d+(\\.\\d+)?$");
     private static final Pattern POINT =
             Pattern.compile("^\\(-?\\d+(\\.\\d+)?, -?\\d+(\\.\\d+)?\\)$");
+    private static final Pattern CALL = Pattern.compile("(?<![A-Za-z0-9_])([A-Z][A-Za-z0-9]*)\\s*\\(");
     private static final Pattern COMMAND = Pattern.compile("^([A-Za-z]+)\\[?\\(.*\\)$");
 
     private final AppCommon app;
@@ -78,9 +85,11 @@ final class Session {
             throw new IllegalArgumentException("not of the form 'label = definition': " + line);
         }
         String label = m.group(1);
-        String definition = m.group(2).trim();
-        String transformed = transformedType(definition);
-        String expected = transformed != null ? transformed : expectedType(label, definition);
+        boolean functionLine = m.group(2) != null;
+        String definition = m.group(3).trim();
+        String transformed = functionLine ? null : transformedType(definition);
+        String expected = functionLine ? "function"
+                : transformed != null ? transformed : expectedType(label, definition);
         if (objects.containsKey(label) || kernel.lookupLabel(label) != null) {
             throw new IllegalArgumentException("label used twice: " + label);
         }
@@ -110,13 +119,19 @@ final class Session {
                     + geo.getLabelSimple());
         }
         String actual = typeOf(geo);
+        boolean expression = expected == null;
+        if (expression) {
+            expected = expressionType(label, actual, line);
+        }
         if (!expected.equals(actual)) {
             throw new IllegalStateException("expected a " + expected + " from '" + line
                     + "', got " + geo.getClass().getSimpleName());
         }
-        boolean free = (expected.equals("point") || expected.equals("vector"))
-                && POINT.matcher(m.group(2).trim()).matches()
-                || expected.equals("number") && NUMBER.matcher(m.group(2).trim()).matches();
+        boolean free = expression || functionLine
+                ? !readsObjects(definition) && !callsCommand(definition)
+                : (expected.equals("point") || expected.equals("vector"))
+                        && POINT.matcher(definition).matches()
+                        || expected.equals("number") && NUMBER.matcher(definition).matches();
         if (free != geo.isIndependent()) {
             throw new IllegalStateException("unexpected dependency state for: " + line);
         }
@@ -252,6 +267,74 @@ final class Session {
         return geo;
     }
 
+    /**
+     * The schema type an arithmetic expression must produce: a number, a
+     * function (it reads `x`), or a point or vector, which GeoGebra decides by
+     * the label (`AlgebraProcessor.isVectorLabel`) and not by the operands.
+     */
+    private static String expressionType(String label, String actual, String line) {
+        switch (actual) {
+            case "number":
+            case "function":
+                return actual;
+            case "point":
+            case "vector":
+                return StringUtil.isLowerCase(label.charAt(0)) ? "vector" : "point";
+            default:
+                throw new IllegalStateException("an expression made a " + actual + ": " + line);
+        }
+    }
+
+    /** Whether a definition names a scripted object (then GeoGebra makes it dependent). */
+    /**
+     * Whether the definition calls a command such as {@code Mod(7, 3)}: an
+     * upper-case name before a bracket that is not an object. The command
+     * makes a helper object, so the result is dependent even on constants.
+     */
+    private boolean callsCommand(String definition) {
+        Matcher m = CALL.matcher(definition);
+        while (m.find()) {
+            if (!objects.containsKey(m.group(1))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean readsObjects(String definition) {
+        Matcher m = LABEL.matcher(definition);
+        while (m.find()) {
+            if (objects.containsKey(m.group())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Whether the definition is exactly one call `Name(...)`: the bracket
+     * after the name closes at the end. `Distance(A, B) / (2)` is not.
+     */
+    private static boolean isSingleCall(String definition) {
+        Matcher m = COMMAND.matcher(definition);
+        if (!m.matches()) {
+            return false;
+        }
+        int depth = 0;
+        for (int i = m.group(1).length(); i < definition.length(); i++) {
+            char ch = definition.charAt(i);
+            if (ch == '(' || ch == '[') {
+                depth++;
+            } else if (ch == ')' || ch == ']') {
+                depth--;
+                if (depth == 0) {
+                    return i == definition.length() - 1;
+                }
+            }
+        }
+        return false;
+    }
+
     /** The schema type of a GeoGebra object; the class decides, not the state. */
     static String typeOf(GeoElement geo) {
         if (geo instanceof GeoPolygon) {
@@ -283,6 +366,9 @@ final class Session {
         }
         if (geo instanceof GeoVector) {
             return "vector";
+        }
+        if (geo instanceof GeoFunction && !((GeoFunction) geo).isBooleanFunction()) {
+            return "function";
         }
         throw new IllegalStateException("unsupported object " + geo.getClass().getSimpleName());
     }
@@ -390,7 +476,9 @@ final class Session {
      * The schema type a definition must produce; rejects unsupported input.
      * A coordinate pair is a vector when the first character of the label is
      * lower case by `StringUtil.isLowerCase` and a point otherwise
-     * (`AlgebraProcessor.isVectorLabel`).
+     * (`AlgebraProcessor.isVectorLabel`). Null for an arithmetic expression
+     * (anything that is not a literal or one call of a known command); its
+     * type is checked by `expressionType`.
      */
     private static String expectedType(String label, String definition) {
         if (POINT.matcher(definition).matches()) {
@@ -399,9 +487,12 @@ final class Session {
         if (NUMBER.matcher(definition).matches()) {
             return "number";
         }
+        if (!isSingleCall(definition)) {
+            return null;
+        }
         Matcher m = COMMAND.matcher(definition);
         if (!m.matches()) {
-            throw new IllegalArgumentException("unsupported definition: " + definition);
+            throw new IllegalStateException("not a call: " + definition);
         }
         switch (m.group(1)) {
             case "Line":
@@ -464,7 +555,8 @@ final class Session {
             case "Ray":
                 return "ray";
             default:
-                throw new IllegalArgumentException("unsupported command: " + definition);
+                // a mathematical function such as `sqrt(a)` or `x(A)`
+                return null;
         }
     }
 
@@ -480,6 +572,19 @@ final class Session {
                 obj.put("value", ((GeoBoolean) geo).getBoolean());
             } else {
                 obj.put("defined", false);
+            }
+            return obj;
+        }
+        if (type.equals("function")) {
+            GeoFunction f = (GeoFunction) geo;
+            obj.put("defined", f.isDefined());
+            if (f.isDefined()) {
+                List<Object> samples = new ArrayList<>();
+                for (double x : SAMPLES) {
+                    double v = f.value(x);
+                    samples.add(Arrays.asList(x, Double.isFinite(v) ? (Object) v : null));
+                }
+                obj.put("samples", samples);
             }
             return obj;
         }
