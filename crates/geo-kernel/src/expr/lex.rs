@@ -1,6 +1,7 @@
 // Parts of this file are translated from GeoGebra (https://github.com/geogebra/geogebra),
 // commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
 //   source/shared/common/src/main/javacc/org/geogebra/common/kernel/parser/Parser.jj
+//   source/shared/common/src/main/java/org/geogebra/common/util/ParserPreprocessor.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
@@ -18,6 +19,9 @@ pub(crate) enum Tok {
     },
     LParen,
     RParen,
+    /// `{` and `}` of a list.
+    LBrace,
+    RBrace,
     Comma,
     Semicolon,
     Plus,
@@ -35,6 +39,27 @@ pub(crate) enum Tok {
     Sqrt,
     Infinity,
     Undefined,
+    /// `¬`; a `!` before an operand is a negation too, decided by the
+    /// parser.
+    Not,
+    /// `||`, `∨`.
+    Or,
+    /// `&&`, `∧`.
+    And,
+    /// `⊻`, `⊕`.
+    Xor,
+    /// `->`, `→`.
+    Implies,
+    /// `==`, `≟`.
+    Equal,
+    /// `!=`, `≠`, `<>`.
+    NotEqual,
+    Less,
+    Greater,
+    /// `<=`, `≤`.
+    LessEqual,
+    /// `>=`, `≥`.
+    GreaterEqual,
 }
 
 /// A token and the byte range it covers in the source.
@@ -104,11 +129,13 @@ pub(crate) fn tokens(src: &str) -> Result<Vec<Token>, String> {
                 end,
             });
             continue;
-        } else if src[start..].starts_with("**") {
+        } else if let Some(tok) = two_char_operator(&src[start..]) {
+            // JavaCC takes the longest token: `a!=b` is `a != b`, never a
+            // factorial, and `<=` is one token
             chars.next();
             chars.next();
             out.push(Token {
-                tok: Tok::Caret,
+                tok,
                 start,
                 end: start + 2,
             });
@@ -117,6 +144,8 @@ pub(crate) fn tokens(src: &str) -> Result<Vec<Token>, String> {
             match ch {
                 '(' => Tok::LParen,
                 ')' => Tok::RParen,
+                '{' => Tok::LBrace,
+                '}' => Tok::RBrace,
                 ',' => Tok::Comma,
                 ';' => Tok::Semicolon,
                 '+' => Tok::Plus,
@@ -135,6 +164,17 @@ pub(crate) fn tokens(src: &str) -> Result<Vec<Token>, String> {
                 '\u{221a}' => Tok::Sqrt,
                 '\u{221e}' => Tok::Infinity,
                 '?' => Tok::Undefined,
+                '\u{ac}' => Tok::Not,
+                '\u{2228}' => Tok::Or,
+                '\u{2227}' => Tok::And,
+                '\u{22bb}' | '\u{2295}' => Tok::Xor,
+                '\u{2192}' => Tok::Implies,
+                '\u{225f}' => Tok::Equal,
+                '\u{2260}' => Tok::NotEqual,
+                '<' => Tok::Less,
+                '>' => Tok::Greater,
+                '\u{2264}' => Tok::LessEqual,
+                '\u{2265}' => Tok::GreaterEqual,
                 _ => return Err(format!("unexpected `{ch}`")),
             }
         };
@@ -146,6 +186,68 @@ pub(crate) fn tokens(src: &str) -> Result<Vec<Token>, String> {
         });
     }
     Ok(out)
+}
+
+/// The operators spelled with two ASCII characters.
+fn two_char_operator(rest: &str) -> Option<Tok> {
+    Some(match rest.get(..2)? {
+        "**" => Tok::Caret,
+        "||" => Tok::Or,
+        "&&" => Tok::And,
+        "->" => Tok::Implies,
+        "==" => Tok::Equal,
+        "!=" | "<>" => Tok::NotEqual,
+        "<=" => Tok::LessEqual,
+        ">=" => Tok::GreaterEqual,
+        _ => return None,
+    })
+}
+
+/// `ParserPreprocessor`'s treatment of `||`, which is the `OR` token unless
+/// a space goes between the bars: scanning forwards with the splitters
+/// `√ + - * / ^ =`, then backwards with `* / ^ =` and the superscripts, a
+/// bar gets a space after it when it is the first character, when an odd
+/// number of bars came before and two more follow, or when a bar follows
+/// and the last character that is not a space is a splitter. So
+/// `||a| - |b||` is a nesting of absolute values and `a || b` is an `OR`.
+pub(crate) fn split_bars(src: &str) -> std::borrow::Cow<'_, str> {
+    if !src.contains("||") {
+        return std::borrow::Cow::Borrowed(src);
+    }
+    let forward = scan_bars(src.chars(), &['\u{221a}', '+', '-', '*', '/', '^', '=']);
+    let backward = scan_bars(
+        forward.chars().rev(),
+        &[
+            '*', '/', '^', '=', '\u{2070}', '\u{b9}', '\u{b2}', '\u{b3}', '\u{2074}', '\u{2075}',
+            '\u{2076}', '\u{2077}', '\u{2078}', '\u{2079}', '\u{207b}',
+        ],
+    );
+    std::borrow::Cow::Owned(backward.chars().rev().collect())
+}
+
+fn scan_bars(chars: impl Iterator<Item = char>, splitters: &[char]) -> String {
+    let chars: Vec<char> = chars.collect();
+    let n = chars.len();
+    let mut out = String::with_capacity(n + 4);
+    let (mut bars, mut last) = (0usize, ' ');
+    for (i, &ch) in chars.iter().enumerate() {
+        out.push(ch);
+        if ch.is_whitespace() {
+            continue;
+        }
+        if ch == '|' {
+            let bar = |k: usize| chars.get(k) == Some(&'|');
+            if i == 0
+                || bars % 2 == 1 && bar(i + 1) && bar(i + 2)
+                || bar(i + 1) && splitters.contains(&last)
+            {
+                out.push(' ');
+            }
+            bars += 1;
+        }
+        last = ch;
+    }
+    out
 }
 
 /// End of a number literal starting at `start`: GeoGebra's `FLOAT`, a run

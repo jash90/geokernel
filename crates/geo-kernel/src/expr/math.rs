@@ -38,8 +38,18 @@ pub(crate) fn is_equal(a: f64, b: f64) -> bool {
     a == b || ((a - STANDARD_PRECISION) <= b && b <= (a + STANDARD_PRECISION))
 }
 
+/// `DoubleUtil.isGreater`.
+pub(crate) fn is_greater(a: f64, b: f64) -> bool {
+    a > b + STANDARD_PRECISION
+}
+
+/// `DoubleUtil.isGreaterEqual`.
+pub(crate) fn is_greater_equal(a: f64, b: f64) -> bool {
+    a + STANDARD_PRECISION > b
+}
+
 /// `DoubleUtil.isEqual(x, y, eps)`.
-fn is_equal_eps(x: f64, y: f64, eps: f64) -> bool {
+pub(crate) fn is_equal_eps(x: f64, y: f64, eps: f64) -> bool {
     x == y || ((x - eps) < y && y < (x + eps))
 }
 

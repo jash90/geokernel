@@ -241,7 +241,7 @@ pub fn render(c: &Construction, view: View, width: u32, height: u32) -> String {
                 let drawn = crate::plot::function::plot(&mut f, &frame);
                 write_paths(&mut segments, &drawn.paths);
             }
-            Value::Number(_) | Value::Bool(_) | Value::Undefined => {}
+            Value::Number(_) | Value::Bool(_) | Value::List { .. } | Value::Undefined => {}
         }
     }
 

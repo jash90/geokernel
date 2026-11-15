@@ -33,6 +33,9 @@ struct Totals {
     /// created (see `same_up_to_creation_state`). They are still compared,
     /// after `with_creation_state_of`.
     creation_state_differs: usize,
+    /// Pairs of expressions, one reading list or boolean objects and one
+    /// with their definitions written out (see `check_twins`).
+    twins: usize,
     rejected: Vec<String>,
 }
 
@@ -126,6 +129,9 @@ fn script_at_current_values(case: &Case) -> Vec<String> {
 /// undefined too.
 fn check_contagion(case: &Case) -> Result<(), String> {
     for id in case.c.ids() {
+        if case.lenient[id.index()] {
+            continue;
+        }
         let parents = &case.deps[id.index()];
         // An expression reads an infinite expression number as a value, as
         // GeoGebra does, which counts it as defined (`1 / (r - a)` with
@@ -142,6 +148,24 @@ fn check_contagion(case: &Case) -> Result<(), String> {
                     case.c.label(id_at(&case.c, p))
                 ));
             }
+        }
+    }
+    Ok(())
+}
+
+/// An expression that reads list or boolean objects has the value of the
+/// same expression with their definitions written in their place.
+fn check_twins(case: &Case) -> Result<(), String> {
+    for &(a, b) in &case.twins {
+        let (ia, ib) = (id_at(&case.c, a), id_at(&case.c, b));
+        let (sa, sb) = (snap(&case.c, ia), snap(&case.c, ib));
+        if sa != sb {
+            return Err(format!(
+                "`{}` = {sa:?} differs from `{}` = {sb:?}, which writes out the lists and \
+                 booleans it reads",
+                case.c.label(ia),
+                case.c.label(ib)
+            ));
         }
     }
     Ok(())
@@ -233,6 +257,10 @@ fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), St
     if let Err(e) = check_contagion(&case) {
         fail!("after creation: {e}");
     }
+    if let Err(e) = check_twins(&case) {
+        fail!("after creation: {e}");
+    }
+    totals.twins += case.twins.len();
 
     for step_no in 0..STEPS {
         totals.steps += 1;
@@ -274,6 +302,9 @@ fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), St
         }
         // 4. undefined is contagious
         if let Err(e) = check_contagion(&case) {
+            fail!("after move {step_no}: {e}");
+        }
+        if let Err(e) = check_twins(&case) {
             fail!("after move {step_no}: {e}");
         }
         // 3. moving to the current position recomputes nothing
@@ -376,9 +407,13 @@ fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), St
         let mut carried = Construction::new();
         for (f, o) in fresh.ids().zip(case.c.ids()) {
             let def = with_creation_state_of(fresh.def(f), case.c.def(o));
-            let added = match fresh.expression(f) {
-                Some(e) => carried.add_expression(fresh.label(f), &e),
-                None => carried.add(fresh.label(f), def),
+            let added = match (fresh.expression(f), def.list()) {
+                (Some(e), _) => carried.add_expression(fresh.label(f), &e),
+                // a list handle is valid only in its construction
+                (None, Some(list)) => {
+                    carried.add_with_list(fresh.label(f), fresh.list(list), |l| def.with_list(l))
+                }
+                (None, None) => carried.add(fresh.label(f), def),
             };
             if let Err(e) = added {
                 fail!(
@@ -416,7 +451,8 @@ fn random_constructions_and_moves() {
     });
     println!(
         "{} constructions, {} objects ({} from expressions), {} moves ({} undefined values seen), \
-         {} script rebuilds compared, {} skipped (multi-output layout), {} rejected commands",
+         {} script rebuilds compared, {} skipped (multi-output layout), {} rejected commands, \
+         {} expressions compared with their lists and booleans written out",
         totals.cases,
         totals.objects,
         totals.expressions,
@@ -424,7 +460,15 @@ fn random_constructions_and_moves() {
         totals.undefined_seen,
         totals.script_rebuilds,
         totals.script_rebuilds_skipped,
-        totals.rejected.len()
+        totals.rejected.len(),
+        totals.twins
+    );
+    // Readers of list and boolean objects take part.
+    assert!(
+        totals.twins >= totals.cases / 2,
+        "only {} expressions read list or boolean objects in {} constructions",
+        totals.twins,
+        totals.cases
     );
     // The commands are generated with arguments of the right kinds, so the
     // script layer must accept all of them.
@@ -1896,7 +1940,7 @@ fn every_command_with_every_argument_kind() {
                             || c.ids()
                                 .take(base)
                                 .map(|id| snap(&c, id))
-                                .ne(base_values.iter().copied())
+                                .ne(base_values.iter().cloned())
                         {
                             problems.push(format!(
                                 "[{world_name}] `{line}` failed ({e}) but changed the construction"

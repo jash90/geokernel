@@ -30,6 +30,8 @@ tools/ggb-harness/harness.sh chain    # time the bench() chain (optional: number
 python3 tools/ggb-harness/cases/make_cases.py   # rewrite cases/geometry.json
 python3 tools/ggb-harness/cases/make_lines.py   # rewrite cases/lines.json (one script per group)
 python3 tools/ggb-harness/cases/make_expr.py    # rewrite cases/expr.json
+python3 tools/ggb-harness/cases/make_logic.py   # rewrite cases/logic.json
+python3 tools/ggb-harness/cases/make_lists.py   # rewrite cases/lists.json
 ```
 
 `build` runs `gradlew -p source/shared :common-jre:ggbHarnessClasspath` with

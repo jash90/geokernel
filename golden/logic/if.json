@@ -1,0 +1,1915 @@
+{
+  "schema": 1,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "logic-if-001",
+      "group": "logic",
+      "script": [
+        "a = 2",
+        "b = 1",
+        "r = sqrt(a)",
+        "c = If(a < 3, 1, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "b", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 6.0 },
+        { "action": "set_number", "label": "b", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 0.7071067811865476 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "logic-if-002",
+      "group": "logic",
+      "script": [
+        "a = 2",
+        "b = 1",
+        "r = sqrt(a)",
+        "c = If(a < 3, 5)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "b", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 6.0 },
+        { "action": "set_number", "label": "b", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 5.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 0.7071067811865476 },
+          "c": { "type": "number", "defined": true, "value": 5.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": true, "value": 5.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 5.0 }
+        }
+      ]
+    },
+    {
+      "id": "logic-if-003",
+      "group": "logic",
+      "script": [
+        "a = 2",
+        "b = 1",
+        "r = sqrt(a)",
+        "c = If(a < 1, 10, a < 3, 20, 30)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "b", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 6.0 },
+        { "action": "set_number", "label": "b", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 20.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 0.7071067811865476 },
+          "c": { "type": "number", "defined": true, "value": 10.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 30.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": 30.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": 30.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": true, "value": 10.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": true, "value": 30.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": true, "value": 30.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 20.0 }
+        }
+      ]
+    },
+    {
+      "id": "logic-if-004",
+      "group": "logic",
+      "script": [
+        "a = 2",
+        "b = 1",
+        "r = sqrt(a)",
+        "c = If(a < 1, 10, a < 3, 20)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "b", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 6.0 },
+        { "action": "set_number", "label": "b", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 20.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 0.7071067811865476 },
+          "c": { "type": "number", "defined": true, "value": 10.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": true, "value": 10.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 20.0 }
+        }
+      ]
+    },
+    {
+      "id": "logic-if-005",
+      "group": "logic",
+      "script": [
+        "a = 2",
+        "b = 1",
+        "r = sqrt(a)",
+        "c = If(a < 3, b, -b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "b", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 6.0 },
+        { "action": "set_number", "label": "b", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 0.7071067811865476 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": -1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": -1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": -4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": true, "value": -4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": true, "value": -1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "logic-if-006",
+      "group": "logic",
+      "script": [
+        "a = 2",
+        "b = 1",
+        "r = sqrt(a)",
+        "c = If(a < b, a, b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "b", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 6.0 },
+        { "action": "set_number", "label": "b", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 0.7071067811865476 },
+          "c": { "type": "number", "defined": true, "value": 0.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": true, "value": -1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "logic-if-007",
+      "group": "logic",
+      "script": [
+        "a = 2",
+        "b = 1",
+        "r = sqrt(a)",
+        "c = 2 If(a < 3, a, -a) + 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "b", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 6.0 },
+        { "action": "set_number", "label": "b", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 5.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 0.7071067811865476 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": -7.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": -5.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": -5.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": true, "value": -1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": true, "value": -11.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": true, "value": -11.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 5.0 }
+        }
+      ]
+    },
+    {
+      "id": "logic-if-008",
+      "group": "logic",
+      "script": [
+        "a = 2",
+        "b = 1",
+        "r = sqrt(a)",
+        "c = 0.2 + If(a < 3, 0.1, 0.2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "b", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 6.0 },
+        { "action": "set_number", "label": "b", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 0.3 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 0.7071067811865476 },
+          "c": { "type": "number", "defined": true, "value": 0.3 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.4 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": 0.4 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": 0.4 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": true, "value": 0.3 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": true, "value": 0.4 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": true, "value": 0.4 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 0.3 }
+        }
+      ]
+    },
+    {
+      "id": "logic-if-009",
+      "group": "logic",
+      "script": [
+        "a = 2",
+        "b = 1",
+        "r = sqrt(a)",
+        "c = If(a < 3, 0.1, 0.2) + 0.2"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "b", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 6.0 },
+        { "action": "set_number", "label": "b", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 0.3 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 0.7071067811865476 },
+          "c": { "type": "number", "defined": true, "value": 0.3 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.4 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": 0.4 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": 0.4 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": true, "value": 0.3 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": true, "value": 0.4 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": true, "value": 0.4 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 0.3 }
+        }
+      ]
+    },
+    {
+      "id": "logic-if-010",
+      "group": "logic",
+      "script": [
+        "a = 2",
+        "b = 1",
+        "r = sqrt(a)",
+        "c = (If(a < 3, 0.1, 0.2) + 0.2 - 0.3) 1E20"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "b", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 6.0 },
+        { "action": "set_number", "label": "b", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 0.7071067811865476 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0E19 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": 1.0E19 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": 1.0E19 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": true, "value": 1.0E19 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": true, "value": 1.0E19 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "logic-if-011",
+      "group": "logic",
+      "script": [
+        "a = 2",
+        "b = 1",
+        "r = sqrt(a)",
+        "c = (0.2 + If(a < 3, 0.1, 0.2) - 0.3) 1E20"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "b", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 6.0 },
+        { "action": "set_number", "label": "b", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 0.7071067811865476 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0E19 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": 1.0E19 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": 1.0E19 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": true, "value": 1.0E19 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": true, "value": 1.0E19 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "logic-if-012",
+      "group": "logic",
+      "script": [
+        "a = 2",
+        "b = 1",
+        "r = sqrt(a)",
+        "c = If(a < 3, 1 / 0, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "b", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 6.0 },
+        { "action": "set_number", "label": "b", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 0.7071067811865476 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "logic-if-013",
+      "group": "logic",
+      "script": [
+        "a = 2",
+        "b = 1",
+        "r = sqrt(a)",
+        "c = 1 / If(a < 3, 1 / 0, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "b", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 6.0 },
+        { "action": "set_number", "label": "b", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 0.7071067811865476 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": 0.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": 0.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": true, "value": 0.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": true, "value": 0.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "logic-if-014",
+      "group": "logic",
+      "script": [
+        "a = 2",
+        "b = 1",
+        "r = sqrt(a)",
+        "c = If(r < 3, 1, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "b", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 6.0 },
+        { "action": "set_number", "label": "b", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 0.7071067811865476 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "logic-if-015",
+      "group": "logic",
+      "script": [
+        "a = 2",
+        "b = 1",
+        "r = sqrt(a)",
+        "c = If(a < 3, r, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "b", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 6.0 },
+        { "action": "set_number", "label": "b", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 1.4142135623730951 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 0.7071067811865476 },
+          "c": { "type": "number", "defined": true, "value": 0.7071067811865476 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 1.4142135623730951 }
+        }
+      ]
+    },
+    {
+      "id": "logic-if-016",
+      "group": "logic",
+      "script": [
+        "a = 2",
+        "b = 1",
+        "r = sqrt(a)",
+        "c = If(r != r, 7, 8)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "b", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 6.0 },
+        { "action": "set_number", "label": "b", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 8.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 0.7071067811865476 },
+          "c": { "type": "number", "defined": true, "value": 8.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 8.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": 8.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": 8.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": true, "value": 7.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": true, "value": 8.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": true, "value": 8.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 8.0 }
+        }
+      ]
+    },
+    {
+      "id": "logic-if-017",
+      "group": "logic",
+      "script": [
+        "a = 2",
+        "b = 1",
+        "r = sqrt(a)",
+        "c = If(true, a, b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "b", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 6.0 },
+        { "action": "set_number", "label": "b", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 0.7071067811865476 },
+          "c": { "type": "number", "defined": true, "value": 0.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": true, "value": -1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": true, "value": 6.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": true, "value": 6.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "logic-if-018",
+      "group": "logic",
+      "script": [
+        "a = 2",
+        "b = 1",
+        "r = sqrt(a)",
+        "c = If(a == b, 1, 0)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "b", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 6.0 },
+        { "action": "set_number", "label": "b", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 0.7071067811865476 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "logic-if-019",
+      "group": "logic",
+      "script": [
+        "a = 2",
+        "b = 1",
+        "r = sqrt(a)",
+        "c = If(a < 3 && b > 0, a b, 0)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "b", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 6.0 },
+        { "action": "set_number", "label": "b", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 0.7071067811865476 },
+          "c": { "type": "number", "defined": true, "value": 0.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": true, "value": -4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "logic-if-020",
+      "group": "logic",
+      "script": [
+        "a = 2",
+        "b = 1",
+        "r = sqrt(a)",
+        "c = If(a < 3, a, a < 5, -a)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "b", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 6.0 },
+        { "action": "set_number", "label": "b", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 0.7071067811865476 },
+          "c": { "type": "number", "defined": true, "value": 0.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": -4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": -3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": -3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": true, "value": -1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "logic-if-021",
+      "group": "logic",
+      "script": [
+        "a = 2",
+        "b = 1",
+        "r = sqrt(a)",
+        "c = If(a > 1, If(a > 3, 3, 1), 0)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "b", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 6.0 },
+        { "action": "set_number", "label": "b", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 0.7071067811865476 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "logic-if-022",
+      "group": "logic",
+      "script": [
+        "a = 2",
+        "b = 1",
+        "r = sqrt(a)",
+        "c = If(a < 3, 1, 2) + If(b < 3, 1, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "b", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 6.0 },
+        { "action": "set_number", "label": "b", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 0.7071067811865476 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "logic-if-023",
+      "group": "logic",
+      "script": [
+        "a = 2",
+        "b = 1",
+        "r = sqrt(a)",
+        "c = If(a < 3, a + 0.1, a - 0.1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "b", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 6.0 },
+        { "action": "set_number", "label": "b", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 2.1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 0.7071067811865476 },
+          "c": { "type": "number", "defined": true, "value": 0.6 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 3.9 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": 2.9 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": 2.9 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": true, "value": -0.9 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": true, "value": 5.9 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": true, "value": 5.9 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 2.1 }
+        }
+      ]
+    },
+    {
+      "id": "logic-if-024",
+      "group": "logic",
+      "script": [
+        "a = 2",
+        "b = 1",
+        "r = sqrt(a)",
+        "c = If(a < 3, sqrt(a), 0)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "b", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 6.0 },
+        { "action": "set_number", "label": "b", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 1.4142135623730951 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 0.7071067811865476 },
+          "c": { "type": "number", "defined": true, "value": 0.7071067811865476 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 1.7320508075688772 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.449489742783178 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "c": { "type": "number", "defined": true, "value": 1.4142135623730951 }
+        }
+      ]
+    },
+    {
+      "id": "logic-if-025",
+      "group": "logic",
+      "script": [
+        "c = If(1 < 2, 3, 4)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 3.0 }
+        }
+      ]
+    },
+    {
+      "id": "logic-if-026",
+      "group": "logic",
+      "script": [
+        "c = If(2 < 1, 3, 4)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 4.0 }
+        }
+      ]
+    },
+    {
+      "id": "logic-if-027",
+      "group": "logic",
+      "script": [
+        "c = If(2 < 1, 3)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "logic-if-028",
+      "group": "logic",
+      "script": [
+        "c = If(false, 1, true, 2, 3)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    }
+  ]
+}

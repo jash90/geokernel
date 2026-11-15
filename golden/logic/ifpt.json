@@ -1,0 +1,1063 @@
+{
+  "schema": 1,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "logic-ifpt-001",
+      "group": "logic",
+      "script": [
+        "a = 2",
+        "A = (1, 2)",
+        "B = (3, 4)",
+        "v = (1, 2)",
+        "w = (2, -1)",
+        "P = If(a < 3, A, B)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "move", "label": "A", "x": 5.0, "y": 1.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "move", "label": "B", "x": 5.0, "y": 1.0 },
+        { "action": "move", "label": "A", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "logic-ifpt-002",
+      "group": "logic",
+      "script": [
+        "a = 2",
+        "A = (1, 2)",
+        "B = (3, 4)",
+        "v = (1, 2)",
+        "w = (2, -1)",
+        "P = If(a < 3, A, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "move", "label": "A", "x": 5.0, "y": 1.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "move", "label": "B", "x": 5.0, "y": 1.0 },
+        { "action": "move", "label": "A", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "logic-ifpt-003",
+      "group": "logic",
+      "script": [
+        "a = 2",
+        "A = (1, 2)",
+        "B = (3, 4)",
+        "v = (1, 2)",
+        "w = (2, -1)",
+        "P = If(a < 3, 2, A)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "move", "label": "A", "x": 5.0, "y": 1.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "move", "label": "B", "x": 5.0, "y": 1.0 },
+        { "action": "move", "label": "A", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "logic-ifpt-004",
+      "group": "logic",
+      "script": [
+        "a = 2",
+        "A = (1, 2)",
+        "B = (3, 4)",
+        "v = (1, 2)",
+        "w = (2, -1)",
+        "P = If(a < 3, A)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "move", "label": "A", "x": 5.0, "y": 1.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "move", "label": "B", "x": 5.0, "y": 1.0 },
+        { "action": "move", "label": "A", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "logic-ifpt-005",
+      "group": "logic",
+      "script": [
+        "a = 2",
+        "A = (1, 2)",
+        "B = (3, 4)",
+        "v = (1, 2)",
+        "w = (2, -1)",
+        "P = If(a < 3, A + B, (1, 1))"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "move", "label": "A", "x": 5.0, "y": 1.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "move", "label": "B", "x": 5.0, "y": 1.0 },
+        { "action": "move", "label": "A", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 4.0, "y": 6.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 8.0, "y": 5.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 10.0, "y": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 6.0, "y": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 4.0, "y": 6.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 4.0, "y": 6.0 }
+        }
+      ]
+    },
+    {
+      "id": "logic-ifpt-006",
+      "group": "logic",
+      "script": [
+        "a = 2",
+        "A = (1, 2)",
+        "B = (3, 4)",
+        "v = (1, 2)",
+        "w = (2, -1)",
+        "P = If(x(A) < x(B), A, B)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "move", "label": "A", "x": 5.0, "y": 1.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "move", "label": "B", "x": 5.0, "y": 1.0 },
+        { "action": "move", "label": "A", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "logic-ifpt-007",
+      "group": "logic",
+      "script": [
+        "a = 2",
+        "A = (1, 2)",
+        "B = (3, 4)",
+        "v = (1, 2)",
+        "w = (2, -1)",
+        "u = If(a < 3, v, w)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "move", "label": "A", "x": 5.0, "y": 1.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "move", "label": "B", "x": 5.0, "y": 1.0 },
+        { "action": "move", "label": "A", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "u": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "u": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "logic-ifpt-008",
+      "group": "logic",
+      "script": [
+        "a = 2",
+        "A = (1, 2)",
+        "B = (3, 4)",
+        "v = (1, 2)",
+        "w = (2, -1)",
+        "u = If(a < 3, v, 2 w)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "move", "label": "A", "x": 5.0, "y": 1.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "move", "label": "B", "x": 5.0, "y": 1.0 },
+        { "action": "move", "label": "A", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "u": { "type": "vector", "defined": true, "x": 4.0, "y": -2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "u": { "type": "vector", "defined": true, "x": 4.0, "y": -2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "logic-ifpt-009",
+      "group": "logic",
+      "script": [
+        "a = 2",
+        "A = (1, 2)",
+        "B = (3, 4)",
+        "v = (1, 2)",
+        "w = (2, -1)",
+        "P = If(a < 3, Midpoint(A, B), B)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "move", "label": "A", "x": 5.0, "y": 1.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "move", "label": "B", "x": 5.0, "y": 1.0 },
+        { "action": "move", "label": "A", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 4.0, "y": 2.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 1.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 }
+        }
+      ]
+    },
+    {
+      "id": "logic-ifpt-010",
+      "group": "logic",
+      "script": [
+        "a = 2",
+        "A = (1, 2)",
+        "B = (3, 4)",
+        "v = (1, 2)",
+        "w = (2, -1)",
+        "P = If(a < 1, A, a < 3, B, (0, 0))"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "move", "label": "A", "x": 5.0, "y": 1.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "move", "label": "B", "x": 5.0, "y": 1.0 },
+        { "action": "move", "label": "A", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 }
+        }
+      ]
+    },
+    {
+      "id": "logic-ifpt-011",
+      "group": "logic",
+      "script": [
+        "a = 2",
+        "A = (1, 2)",
+        "B = (3, 4)",
+        "v = (1, 2)",
+        "w = (2, -1)",
+        "c = x(If(a < 3, A, B))"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "move", "label": "A", "x": 5.0, "y": 1.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "move", "label": "B", "x": 5.0, "y": 1.0 },
+        { "action": "move", "label": "A", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "c": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "c": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "c": { "type": "number", "defined": true, "value": 5.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "c": { "type": "number", "defined": true, "value": 5.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "logic-ifpt-012",
+      "group": "logic",
+      "script": [
+        "a = 2",
+        "A = (1, 2)",
+        "B = (3, 4)",
+        "v = (1, 2)",
+        "w = (2, -1)",
+        "P = If(A == B, A, (5, 5))"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "move", "label": "A", "x": 5.0, "y": 1.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "move", "label": "B", "x": 5.0, "y": 1.0 },
+        { "action": "move", "label": "A", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 }
+        }
+      ]
+    }
+  ]
+}
