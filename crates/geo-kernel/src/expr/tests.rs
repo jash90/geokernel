@@ -171,14 +171,16 @@ fn errors_leave_the_construction_unchanged() {
         "b = sin",
         "a = 2 + 2",
     ] {
-        let before = c.len();
+        let before = (c.len(), c.exprs.len());
         assert!(exec(&mut c, bad).is_err(), "{bad}");
-        assert_eq!(c.len(), before, "{bad}");
+        assert_eq!((c.len(), c.exprs.len()), before, "{bad}");
     }
+    let before = (c.len(), c.exprs.len());
     let deep = format!("b = {}1{}", "(".repeat(10_000), ")".repeat(10_000));
     assert!(exec(&mut c, &deep).is_err());
     let long = format!("b = 1{}", " + 1".repeat(100_000));
     assert!(exec(&mut c, &long).is_err());
+    assert_eq!((c.len(), c.exprs.len()), before);
 }
 
 fn sample(c: &Construction, label: &str, x: f64) -> Option<f64> {
@@ -255,14 +257,21 @@ fn bad_function_lines_are_rejected() {
     // each level reads `x` twice: the expansion doubles until it is too large
     exec(&mut c, "q(x) = x + x").unwrap();
     let mut prev = "q".to_string();
-    let mut failed = false;
+    let mut failure = None;
     for level in 0..40 {
-        let name = format!("q_{{{level}}}");
-        if exec(&mut c, &format!("{name}(x) = {prev}({prev}(x))")).is_err() {
-            failed = true;
-            break;
+        let name = format!("q{level}");
+        let before = (c.len(), c.exprs.len());
+        match exec(&mut c, &format!("{name}(x) = {prev}({prev}(x))")) {
+            Ok(_) => prev = name,
+            Err(e) => {
+                assert_eq!((c.len(), c.exprs.len()), before);
+                failure = Some((level, e));
+                break;
+            }
         }
-        prev = name;
     }
-    assert!(failed);
+    // The cost guard stops it, not the name or the depth: `x` is read
+    // 2^(2^(level + 1)) times, past MAX_COST at level 4.
+    let (level, e) = failure.expect("the cost guard never fired");
+    assert_eq!((level, e.as_str()), (4, "the expression is too large to evaluate"));
 }

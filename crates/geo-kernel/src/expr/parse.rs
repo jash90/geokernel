@@ -67,8 +67,11 @@ pub(crate) fn parse(c: &Construction, src: &str) -> Result<Parsed, String> {
     }
     let (tys, depth, cost, vars) = check(c, &p.nodes, root)?;
     let r = root as usize;
-    if depth[r] > MAX_DEPTH || cost[r] > MAX_COST {
-        return Err("the expression is too large".into());
+    if depth[r] > MAX_DEPTH {
+        return Err("the expression is nested too deeply".into());
+    }
+    if cost[r] > MAX_COST {
+        return Err("the expression is too large to evaluate".into());
     }
     Ok(Parsed {
         root,
