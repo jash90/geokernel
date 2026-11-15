@@ -15,9 +15,15 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 /// At the time of writing (see the assertions below for the exact counts).
-const MIN_FILES: usize = 1000;
-const MIN_ZIPS: usize = 10;
-const MIN_COMPARED: usize = 4000;
+const MIN_FILES: usize = 1151;
+const MIN_ZIPS: usize = 27;
+const MIN_COMPARED: usize = 7900;
+/// Objects the importer may skip in the whole corpus: the transformed ray of
+/// `vector-chain-002`, whose file writes `Vector[Translate[Direction[g], u]]`
+/// as an argument (an expression), and what depends on it.
+const MAX_SKIPPED: usize = 6;
+/// Outputs without a label: GeoGebra labels an object only once it is defined.
+const MAX_UNLABELLED: usize = 5;
 
 fn files(dir: &Path, extension: &str, out: &mut Vec<PathBuf>) {
     let Ok(entries) = fs::read_dir(dir) else {
@@ -229,6 +235,27 @@ fn imported_constructions_agree_with_the_golden_snapshots() {
         );
     }
     assert!(failures.is_empty(), "{}", failures.join("\n"));
+    assert!(
+        totals.objects_skipped <= MAX_SKIPPED,
+        "{} objects skipped, at most {MAX_SKIPPED} are documented",
+        totals.objects_skipped
+    );
+    for key in totals.skipped_by_reason.keys() {
+        assert!(
+            key.contains("is an expression") || key.contains("depends on a skipped object"),
+            "an undocumented reason for skipping: {key}"
+        );
+    }
+    assert_eq!(
+        totals.skipped_by_group.keys().collect::<Vec<_>>(),
+        ["vector"]
+    );
+    assert!(
+        totals.unlabelled <= MAX_UNLABELLED,
+        "{} unlabelled",
+        totals.unlabelled
+    );
+    assert_eq!(totals.unlabelled, totals.unlabelled_objects);
     let listed: BTreeSet<String> = import_gaps
         .iter()
         .flat_map(|(id, g)| g.mismatches.iter().map(move |m| format!("{id}:{m}")))

@@ -519,7 +519,11 @@ fn exec_labelled(c: &mut Construction, line: &str) -> Result<Option<Id>, String>
         return Err("no output is given a label".into());
     }
     let Some(defs) = parse_multi(c, rhs) else {
-        return Err("the command does not create several objects, write `name = ...`".into());
+        // An unknown command or a bad argument is the better message.
+        return Err(match parse_def(c, rhs) {
+            Err(e) => e,
+            Ok(_) => "the command does not create several objects, write `name = ...`".into(),
+        });
     };
     let defs = defs?;
     // A command can make fewer outputs than GeoGebra's algorithm has (the
@@ -738,6 +742,7 @@ mod tests {
             "{a, b} = (1, 2)",
             "{a, b} = Tangent(P, Z)",
             "{a, b} = Foo(P)",
+            "{a, b} = Polygon(A, A, A)",
             "{}",
             "{",
             "}{",
@@ -745,6 +750,10 @@ mod tests {
             assert!(exec(&mut c, line).is_err(), "{line}");
             assert_eq!(c.len(), n, "{line}");
         }
+        let e = exec(&mut c, "{a, b} = Foo(P)").unwrap_err();
+        assert!(e.contains("unknown command `Foo`"), "{e}");
+        let e = exec(&mut c, "{a, b} = Circle(A, r)").unwrap_err();
+        assert!(e.contains("does not create several"), "{e}");
     }
 
     #[test]
