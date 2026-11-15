@@ -1,0 +1,1259 @@
+{
+  "schema": 1,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "expr-decimal-001",
+      "group": "expr",
+      "script": [
+        "c = (1.0000000000000000000000000000000005 / 1 - 1) 1E40"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-decimal-002",
+      "group": "expr",
+      "script": [
+        "c = (1.0000000000000000000000000000000015 / 1 - 1) 1E40"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 2.0E7 }
+        }
+      ]
+    },
+    {
+      "id": "expr-decimal-003",
+      "group": "expr",
+      "script": [
+        "c = (1.0000000000000000000000000000000025 / 1 - 1) 1E40"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 2.0E7 }
+        }
+      ]
+    },
+    {
+      "id": "expr-decimal-004",
+      "group": "expr",
+      "script": [
+        "c = (-1.0000000000000000000000000000000025 / 1 + 1) 1E40"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": -2.0E7 }
+        }
+      ]
+    },
+    {
+      "id": "expr-decimal-005",
+      "group": "expr",
+      "script": [
+        "c = (2 / 3 - 0.6666666666666666666666666666666666) 1E40"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 1000000.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-decimal-006",
+      "group": "expr",
+      "script": [
+        "c = (1 / 7 - 0.142857142857142857142857142857142) 1E40"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 9000000.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-decimal-007",
+      "group": "expr",
+      "script": [
+        "c = (10 / 4 - 2.5) 1E40"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-decimal-008",
+      "group": "expr",
+      "script": [
+        "c = (1.0000000000000000001^999999 - 1.0000000000001) 1E40"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": -9.9999995000015E20 }
+        }
+      ]
+    },
+    {
+      "id": "expr-decimal-009",
+      "group": "expr",
+      "script": [
+        "c = (3.000000000000001^777 / 3^777 - 1) 1E30"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "expr-decimal-010",
+      "group": "expr",
+      "script": [
+        "c = (7^123 - 7^122 7) 1E-80"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": -2.0E-10 }
+        }
+      ]
+    },
+    {
+      "id": "expr-decimal-011",
+      "group": "expr",
+      "script": [
+        "c = (1.1^999 - 1.1^998 1.1) 1E-20"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 2.0E-13 }
+        }
+      ]
+    },
+    {
+      "id": "expr-decimal-012",
+      "group": "expr",
+      "script": [
+        "c = (0.99999999999^65536 - 0.9999993446) 1E40"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 4.021474504108966E29 }
+        }
+      ]
+    },
+    {
+      "id": "expr-decimal-013",
+      "group": "expr",
+      "script": [
+        "c = (1.5E-3 + 0.1 - 0.1015) 1E20"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-decimal-014",
+      "group": "expr",
+      "script": [
+        "c = (1E-20 + 1 - 1) 1E20"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-decimal-015",
+      "group": "expr",
+      "script": [
+        "c = (2.5E-7 3 - 7.5E-7) 1E25"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-decimal-016",
+      "group": "expr",
+      "script": [
+        "c = (0.1 + ?) 2"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "expr-decimal-017",
+      "group": "expr",
+      "script": [
+        "c = ? 0.1 + 0.2"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "expr-decimal-018",
+      "group": "expr",
+      "script": [
+        "c = (∞ - 0.1) + 0.2"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "expr-decimal-019",
+      "group": "expr",
+      "script": [
+        "c = 0.1 / 0 + 0.2"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "expr-decimal-020",
+      "group": "expr",
+      "script": [
+        "c = 1 / (-0.0 0.1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "expr-decimal-021",
+      "group": "expr",
+      "script": [
+        "c = 1 / (0.1 (-0))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "expr-decimal-022",
+      "group": "expr",
+      "script": [
+        "c = 1 / (-0.1 + 0.1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "expr-decimal-023",
+      "group": "expr",
+      "script": [
+        "c = 1 / (0 - 0.0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "expr-decimal-024",
+      "group": "expr",
+      "script": [
+        "c = 1 / (-(0.1) 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "expr-decimal-025",
+      "group": "expr",
+      "script": [
+        "c = ((1E-801 + 1) - 1 + 0.1 + 0.2 - 0.3) 1E20"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-decimal-026",
+      "group": "expr",
+      "script": [
+        "c = ((1E-5001 + 1) - 1 + 0.1 + 0.2 - 0.3) 1E20"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-decimal-027",
+      "group": "expr",
+      "script": [
+        "c = ((1E-100001 + 1) - 1 + 0.1 + 0.2 - 0.3) 1E20"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-decimal-028",
+      "group": "expr",
+      "script": [
+        "c = (1.0000000000000000000000000000000000000001^999 - 1.000000000000000000000000000000000000999) 1E40"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": -9990.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-decimal-029",
+      "group": "expr",
+      "script": [
+        "c = 1.00000000000000011102230246251565404236316680908203125 + 0",
+        "f(x) = (x - 1) 1E20",
+        "v = f(c)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -9.0E20],
+              [-4.0, -5.0E20],
+              [-2.0, -3.0E20],
+              [-1.0, -2.0E20],
+              [-0.5, -1.5E20],
+              [0.0, -1.0E20],
+              [0.5, -5.0E19],
+              [1.0, 0.0],
+              [2.0, 1.0E20],
+              [4.0, 3.0E20],
+              [8.0, 7.0E20]
+            ]
+          },
+          "v": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-decimal-030",
+      "group": "expr",
+      "script": [
+        "c = 1.000000000000000111022302462515654042363166809082031250001 + 0",
+        "f(x) = (x - 1) 1E20",
+        "v = f(c)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 1.0000000000000002 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -9.0E20],
+              [-4.0, -5.0E20],
+              [-2.0, -3.0E20],
+              [-1.0, -2.0E20],
+              [-0.5, -1.5E20],
+              [0.0, -1.0E20],
+              [0.5, -5.0E19],
+              [1.0, 0.0],
+              [2.0, 1.0E20],
+              [4.0, 3.0E20],
+              [8.0, 7.0E20]
+            ]
+          },
+          "v": { "type": "number", "defined": true, "value": 22204.46049250313 }
+        }
+      ]
+    },
+    {
+      "id": "expr-decimal-031",
+      "group": "expr",
+      "script": [
+        "c = 9007199254740992 + 1.0 + 0",
+        "f(x) = x - 9007199254740992",
+        "v = f(c)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 9.007199254740992E15 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -9.007199254741E15],
+              [-4.0, -9.007199254740996E15],
+              [-2.0, -9.007199254740994E15],
+              [-1.0, -9.007199254740992E15],
+              [-0.5, -9.007199254740992E15],
+              [0.0, -9.007199254740992E15],
+              [0.5, -9.007199254740992E15],
+              [1.0, -9.007199254740991E15],
+              [2.0, -9.00719925474099E15],
+              [4.0, -9.007199254740988E15],
+              [8.0, -9.007199254740984E15]
+            ]
+          },
+          "v": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-decimal-032",
+      "group": "expr",
+      "script": [
+        "c = 9007199254740992 + 3.0 + 0",
+        "f(x) = x - 9007199254740992",
+        "v = f(c)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 9.007199254740996E15 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -9.007199254741E15],
+              [-4.0, -9.007199254740996E15],
+              [-2.0, -9.007199254740994E15],
+              [-1.0, -9.007199254740992E15],
+              [-0.5, -9.007199254740992E15],
+              [0.0, -9.007199254740992E15],
+              [0.5, -9.007199254740992E15],
+              [1.0, -9.007199254740991E15],
+              [2.0, -9.00719925474099E15],
+              [4.0, -9.007199254740988E15],
+              [8.0, -9.007199254740984E15]
+            ]
+          },
+          "v": { "type": "number", "defined": true, "value": 4.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-decimal-033",
+      "group": "expr",
+      "script": [
+        "c = 4.9E-324 + 0",
+        "f(x) = x 1E330",
+        "v = f(c)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 4.9E-324 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, null],
+              [0.5, null],
+              [1.0, null],
+              [2.0, null],
+              [4.0, null],
+              [8.0, null]
+            ]
+          },
+          "v": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "expr-decimal-034",
+      "group": "expr",
+      "script": [
+        "c = 2.4703282292062327E-324 + 0",
+        "f(x) = x 1E330",
+        "v = f(c)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, null],
+              [0.5, null],
+              [1.0, null],
+              [2.0, null],
+              [4.0, null],
+              [8.0, null]
+            ]
+          },
+          "v": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "expr-decimal-035",
+      "group": "expr",
+      "script": [
+        "c = 2.4703282292062328E-324 + 0",
+        "f(x) = x 1E330",
+        "v = f(c)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 4.9E-324 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, null],
+              [0.5, null],
+              [1.0, null],
+              [2.0, null],
+              [4.0, null],
+              [8.0, null]
+            ]
+          },
+          "v": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "expr-decimal-036",
+      "group": "expr",
+      "script": [
+        "c = 2.2250738585072011E-308 + 0",
+        "f(x) = (x / 2.225073858507201E-308 - 1) 1E20",
+        "v = f(c)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 2.225073858507201E-308 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, -1.0E20],
+              [0.5, null],
+              [1.0, null],
+              [2.0, null],
+              [4.0, null],
+              [8.0, null]
+            ]
+          },
+          "v": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-decimal-037",
+      "group": "expr",
+      "script": [
+        "c = 1.7976931348623158E308 + 0",
+        "f(x) = x / 1E308",
+        "v = f(c)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 1.7976931348623157E308 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0E-308],
+              [-4.0, -4.0E-308],
+              [-2.0, -2.0E-308],
+              [-1.0, -1.0E-308],
+              [-0.5, -5.0E-309],
+              [0.0, 0.0],
+              [0.5, 5.0E-309],
+              [1.0, 1.0E-308],
+              [2.0, 2.0E-308],
+              [4.0, 4.0E-308],
+              [8.0, 8.0E-308]
+            ]
+          },
+          "v": { "type": "number", "defined": true, "value": 1.7976931348623157 }
+        }
+      ]
+    },
+    {
+      "id": "expr-decimal-038",
+      "group": "expr",
+      "script": [
+        "c = 1.7976931348623159E308 + 0",
+        "f(x) = x / 1E308",
+        "v = f(c)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0E-308],
+              [-4.0, -4.0E-308],
+              [-2.0, -2.0E-308],
+              [-1.0, -1.0E-308],
+              [-0.5, -5.0E-309],
+              [0.0, 0.0],
+              [0.5, 5.0E-309],
+              [1.0, 1.0E-308],
+              [2.0, 2.0E-308],
+              [4.0, 4.0E-308],
+              [8.0, 8.0E-308]
+            ]
+          },
+          "v": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "expr-decimal-039",
+      "group": "expr",
+      "script": [
+        "c = 0.1000000000000000055511151231257827021181583404541015625 + 0",
+        "f(x) = (x - 0.1) 1E20",
+        "v = f(c)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.1E20],
+              [-4.0, -4.0999999999999993E20],
+              [-2.0, -2.1E20],
+              [-1.0, -1.1000000000000002E20],
+              [-0.5, -6.0E19],
+              [0.0, -1.0E19],
+              [0.5, 4.0E19],
+              [1.0, 9.0E19],
+              [2.0, 1.9E20],
+              [4.0, 3.9E20],
+              [8.0, 7.9E20]
+            ]
+          },
+          "v": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-decimal-040",
+      "group": "expr",
+      "script": [
+        "c = 3.14159265358979323846264338327950288419716939937510 + 0",
+        "f(x) = (x - 3.141592653589793) 1E20",
+        "v = f(c)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 3.141592653589793 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -1.1141592653589793E21],
+              [-4.0, -7.141592653589793E20],
+              [-2.0, -5.1415926535897933E20],
+              [-1.0, -4.1415926535897933E20],
+              [-0.5, -3.6415926535897933E20],
+              [0.0, -3.1415926535897933E20],
+              [0.5, -2.641592653589793E20],
+              [1.0, -2.141592653589793E20],
+              [2.0, -1.1415926535897932E20],
+              [4.0, 8.584073464102068E19],
+              [8.0, 4.8584073464102067E20]
+            ]
+          },
+          "v": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-decimal-041",
+      "group": "expr",
+      "script": [
+        "c = 0.30000000000000001665334536937734810635447502136230468751 + 0",
+        "f(x) = (x - 0.3) 1E20",
+        "v = f(c)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.30000000000000004 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.300000000000001E20],
+              [-4.0, -4.3E20],
+              [-2.0, -2.2999999999999997E20],
+              [-1.0, -1.3E20],
+              [-0.5, -8.0E19],
+              [0.0, -3.0E19],
+              [0.5, 2.0E19],
+              [1.0, 6.999999999999999E19],
+              [2.0, 1.7E20],
+              [4.0, 3.7E20],
+              [8.0, 7.7E20]
+            ]
+          },
+          "v": { "type": "number", "defined": true, "value": 5551.115123125783 }
+        }
+      ]
+    },
+    {
+      "id": "expr-decimal-042",
+      "group": "expr",
+      "script": [
+        "f(x) = round(x 100)",
+        "g(x) = f(1.005) + x",
+        "v = f(1.005)",
+        "q(x) = f(1.005 + 0) + x",
+        "m(x) = x + f(1.005)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -800.0],
+              [-4.0, -400.0],
+              [-2.0, -200.0],
+              [-1.0, -100.0],
+              [-0.5, -50.0],
+              [0.0, 0.0],
+              [0.5, 50.0],
+              [1.0, 100.0],
+              [2.0, 200.0],
+              [4.0, 400.0],
+              [8.0, 800.0]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 93.0],
+              [-4.0, 97.0],
+              [-2.0, 99.0],
+              [-1.0, 100.0],
+              [-0.5, 100.5],
+              [0.0, 101.0],
+              [0.5, 101.5],
+              [1.0, 102.0],
+              [2.0, 103.0],
+              [4.0, 105.0],
+              [8.0, 109.0]
+            ]
+          },
+          "v": { "type": "number", "defined": true, "value": 100.0 },
+          "q": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 93.0],
+              [-4.0, 97.0],
+              [-2.0, 99.0],
+              [-1.0, 100.0],
+              [-0.5, 100.5],
+              [0.0, 101.0],
+              [0.5, 101.5],
+              [1.0, 102.0],
+              [2.0, 103.0],
+              [4.0, 105.0],
+              [8.0, 109.0]
+            ]
+          },
+          "m": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 93.0],
+              [-4.0, 97.0],
+              [-2.0, 99.0],
+              [-1.0, 100.0],
+              [-0.5, 100.5],
+              [0.0, 101.0],
+              [0.5, 101.5],
+              [1.0, 102.0],
+              [2.0, 103.0],
+              [4.0, 105.0],
+              [8.0, 109.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "expr-decimal-043",
+      "group": "expr",
+      "script": [
+        "f(x) = round(x 100)",
+        "b = 1.005",
+        "k(x) = f(b) + x",
+        "w = f(b)",
+        "h(x) = (f(b) - 100) 1E20 + x"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "value": 1.005 },
+        { "action": "set_number", "label": "b", "value": 2.675 },
+        { "action": "set_number", "label": "b", "value": 1.005 }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -800.0],
+              [-4.0, -400.0],
+              [-2.0, -200.0],
+              [-1.0, -100.0],
+              [-0.5, -50.0],
+              [0.0, 0.0],
+              [0.5, 50.0],
+              [1.0, 100.0],
+              [2.0, 200.0],
+              [4.0, 400.0],
+              [8.0, 800.0]
+            ]
+          },
+          "b": { "type": "number", "defined": true, "value": 1.005 },
+          "k": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 93.0],
+              [-4.0, 97.0],
+              [-2.0, 99.0],
+              [-1.0, 100.0],
+              [-0.5, 100.5],
+              [0.0, 101.0],
+              [0.5, 101.5],
+              [1.0, 102.0],
+              [2.0, 103.0],
+              [4.0, 105.0],
+              [8.0, 109.0]
+            ]
+          },
+          "w": { "type": "number", "defined": true, "value": 100.0 },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0E20],
+              [-4.0, 1.0E20],
+              [-2.0, 1.0E20],
+              [-1.0, 1.0E20],
+              [-0.5, 1.0E20],
+              [0.0, 1.0E20],
+              [0.5, 1.0E20],
+              [1.0, 1.0E20],
+              [2.0, 1.0E20],
+              [4.0, 1.0E20],
+              [8.0, 1.0E20]
+            ]
+          }
+        },
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -800.0],
+              [-4.0, -400.0],
+              [-2.0, -200.0],
+              [-1.0, -100.0],
+              [-0.5, -50.0],
+              [0.0, 0.0],
+              [0.5, 50.0],
+              [1.0, 100.0],
+              [2.0, 200.0],
+              [4.0, 400.0],
+              [8.0, 800.0]
+            ]
+          },
+          "b": { "type": "number", "defined": true, "value": 1.005 },
+          "k": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 92.0],
+              [-4.0, 96.0],
+              [-2.0, 98.0],
+              [-1.0, 99.0],
+              [-0.5, 99.5],
+              [0.0, 100.0],
+              [0.5, 100.5],
+              [1.0, 101.0],
+              [2.0, 102.0],
+              [4.0, 104.0],
+              [8.0, 108.0]
+            ]
+          },
+          "w": { "type": "number", "defined": true, "value": 100.0 },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0],
+              [-4.0, -4.0],
+              [-2.0, -2.0],
+              [-1.0, -1.0],
+              [-0.5, -0.5],
+              [0.0, 0.0],
+              [0.5, 0.5],
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [4.0, 4.0],
+              [8.0, 8.0]
+            ]
+          }
+        },
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -800.0],
+              [-4.0, -400.0],
+              [-2.0, -200.0],
+              [-1.0, -100.0],
+              [-0.5, -50.0],
+              [0.0, 0.0],
+              [0.5, 50.0],
+              [1.0, 100.0],
+              [2.0, 200.0],
+              [4.0, 400.0],
+              [8.0, 800.0]
+            ]
+          },
+          "b": { "type": "number", "defined": true, "value": 2.675 },
+          "k": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 260.0],
+              [-4.0, 264.0],
+              [-2.0, 266.0],
+              [-1.0, 267.0],
+              [-0.5, 267.5],
+              [0.0, 268.0],
+              [0.5, 268.5],
+              [1.0, 269.0],
+              [2.0, 270.0],
+              [4.0, 272.0],
+              [8.0, 276.0]
+            ]
+          },
+          "w": { "type": "number", "defined": true, "value": 268.0 },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.68E22],
+              [-4.0, 1.68E22],
+              [-2.0, 1.68E22],
+              [-1.0, 1.68E22],
+              [-0.5, 1.68E22],
+              [0.0, 1.68E22],
+              [0.5, 1.68E22],
+              [1.0, 1.68E22],
+              [2.0, 1.68E22],
+              [4.0, 1.68E22],
+              [8.0, 1.68E22]
+            ]
+          }
+        },
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -800.0],
+              [-4.0, -400.0],
+              [-2.0, -200.0],
+              [-1.0, -100.0],
+              [-0.5, -50.0],
+              [0.0, 0.0],
+              [0.5, 50.0],
+              [1.0, 100.0],
+              [2.0, 200.0],
+              [4.0, 400.0],
+              [8.0, 800.0]
+            ]
+          },
+          "b": { "type": "number", "defined": true, "value": 1.005 },
+          "k": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 92.0],
+              [-4.0, 96.0],
+              [-2.0, 98.0],
+              [-1.0, 99.0],
+              [-0.5, 99.5],
+              [0.0, 100.0],
+              [0.5, 100.5],
+              [1.0, 101.0],
+              [2.0, 102.0],
+              [4.0, 104.0],
+              [8.0, 108.0]
+            ]
+          },
+          "w": { "type": "number", "defined": true, "value": 100.0 },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0],
+              [-4.0, -4.0],
+              [-2.0, -2.0],
+              [-1.0, -1.0],
+              [-0.5, -0.5],
+              [0.0, 0.0],
+              [0.5, 0.5],
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [4.0, 4.0],
+              [8.0, 8.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "expr-decimal-044",
+      "group": "expr",
+      "script": [
+        "f(x) = (x + 0.2 - 0.3) 1E20",
+        "g(x) = f(0.1) + x",
+        "v = f(0.1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.1E20],
+              [-4.0, -4.0999999999999993E20],
+              [-2.0, -2.1E20],
+              [-1.0, -1.1000000000000002E20],
+              [-0.5, -6.0E19],
+              [0.0, -9.999999999999998E18],
+              [0.5, 4.0E19],
+              [1.0, 8.999999999999998E19],
+              [2.0, 1.9E20],
+              [4.0, 3.9000000000000007E20],
+              [8.0, 7.9E20]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 5543.115123125783],
+              [-4.0, 5547.115123125783],
+              [-2.0, 5549.115123125783],
+              [-1.0, 5550.115123125783],
+              [-0.5, 5550.615123125783],
+              [0.0, 5551.115123125783],
+              [0.5, 5551.615123125783],
+              [1.0, 5552.115123125783],
+              [2.0, 5553.115123125783],
+              [4.0, 5555.115123125783],
+              [8.0, 5559.115123125783]
+            ]
+          },
+          "v": { "type": "number", "defined": true, "value": 5551.115123125783 }
+        }
+      ]
+    }
+  ]
+}

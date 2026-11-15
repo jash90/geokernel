@@ -453,11 +453,16 @@ r = (0.1 + 0.2) 1E20",
     assert!(api.expression(x).is_none());
     // a hostile exponent falls back to doubles instead of growing
     let h = load(
-        "t = 1E-999999999 + 1
-u = 0.999^999999 + 0.5",
+        "t = 1E-999999999 + 1\nu = 0.999^999999 + 0.5\np = (1E-999999999)^3 + 1\n\
+         q = 1E-3000000000 + 1\nr = 1E-999999999 1E-999999999 + 1",
     )
     .unwrap();
     assert_eq!(num(&h, "t"), 1.0);
+    // GeoGebra rejects these three lines (exponent outside its `int` scale,
+    // out of memory); the kernel computes them with doubles
+    for name in ["p", "q", "r"] {
+        assert_eq!(num(&h, name), 1.0, "`{name}`");
+    }
     assert_eq!(num(&h, "u"), 0.5);
 }
 
