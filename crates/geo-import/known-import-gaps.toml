@@ -56,3 +56,14 @@ label = "e"
 golden = 0.526691643295513
 imported = 0.5884701140321686
 reason = "Distance(l, n) of two lines with raw coefficients near 1e-6; the file lists the lines in the opposite order"
+
+# Conics whose saved matrix GeoGebra classifies as another object when the
+# file is loaded. The live object is classified from the state of the conic it
+# was dilated from; the saved matrix is classified afresh. The imported value
+# must agree with the golden one, and the saved text is pinned exactly.
+
+[[reclassified]]
+id = "transform-dilate-032"
+label = "n"
+saved = "matrix [0.25, 0.25, 9.9999999936, 0, 0.5, -1.5]"
+reason = "n = Dilate(m, 2) of the single point m (a circle of radius 8e-5 that GeoGebra classifies as a point) is a single point of radius 0 in GeoGebra and in the kernel; the saved matrix, classified afresh, is a circle of radius 1.6e-4"

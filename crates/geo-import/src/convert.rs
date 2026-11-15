@@ -9,6 +9,7 @@
 
 use crate::xml::{Document, Element, Item};
 use crate::{ImportError, Imported, Mismatch, Skipped};
+use geo_kernel::algo::conic_nd::{ConicData, ConicType};
 use geo_kernel::script::{exec, is_vector_label, multi_output_count};
 use geo_kernel::{Construction, Value};
 use std::collections::{BTreeMap, BTreeSet};
@@ -640,6 +641,25 @@ fn saved_circle(el: &Element) -> Option<Option<SavedCircle>> {
         .or(Some(None))
 }
 
+/// Whether GeoGebra reads the saved matrix as a single point. Loading a file
+/// classifies the saved matrix again, and a circle whose squared radius is
+/// within the tolerance of the determinant test becomes a single point of
+/// radius 0, although the matrix itself still encodes the tiny radius (a
+/// circle of radius 4e-5 dilated by 2, for example). The kernel classifies
+/// such a matrix the same way.
+fn saved_single_point(el: &Element) -> bool {
+    let Some(m) = el.matrix.as_ref() else {
+        return false;
+    };
+    let a: Option<Vec<f64>> = m.iter().map(|t| num(t)).collect();
+    let Some(Ok(a)) = a.map(<[f64; 6]>::try_from) else {
+        return false;
+    };
+    let mut conic = ConicData::new();
+    conic.set_matrix(a);
+    conic.defined && conic.ty == ConicType::SinglePoint
+}
+
 /// Whether the saved element is defined, judged from its own data: `None`
 /// when the file saved nothing to judge by.
 fn saved_defined(el: &Element) -> Option<bool> {
@@ -703,7 +723,9 @@ fn cross_check(el: &Element, value: &Value) -> Option<(String, String)> {
             // matrix, not by 1e-9 of the (possibly tiny) radius.
             let rs = s.r2.max(0.0).sqrt();
             let r2_error = MATRIX_ULPS * f64::EPSILON * s.scale;
-            let radius_ok = close(r, rs) || (r * r - s.r2).abs() <= r2_error;
+            let radius_ok = close(r, rs)
+                || (r * r - s.r2).abs() <= r2_error
+                || (r == 0.0 && saved_single_point(el));
             close(cx, s.cx) && close(cy, s.cy) && radius_ok
         }),
         Value::Number(n) => el.value.as_deref().and_then(num).map(|s| close(n, s)),
