@@ -206,3 +206,13 @@ mismatches = ["0:d", "1:d", "2:d"]
 id = "vector-rawscale-002"
 reason = "GeoGebra applies OrthogonalVector to the raw coefficients of the mirrored line; the kernel stores lines normalised and does not rebuild the raw scale of lines from other groups, so the vector has the right sense but length 1"
 mismatches = ["0:o", "1:o", "2:o"]
+
+[[gap]]
+id = "vector-rawscale-003"
+reason = "raw scale of a line built by a chain of perpendicular lines"
+mismatches = ["1:d", "2:d"]
+
+[[gap]]
+id = "vector-rawscale-004"
+reason = "raw scale of a line built by a chain of perpendicular lines"
+mismatches = ["1:o", "2:o"]

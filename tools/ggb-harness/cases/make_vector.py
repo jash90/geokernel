@@ -243,5 +243,16 @@ case("rawscale", [pt("A", *rp()), pt("B", *rp()), "l = LineBisector(A, B)",
 case("rawscale", [pt("A", *rp()), pt("B", *rp()), pt("Q", *rp()), "l = Line(A, B)",
                   "m = Mirror(l, Q)", "o = OrthogonalVector(m)", "q = UnitOrthogonalVector(m)"],
      [mv("B", *rp()), mv("Q", *rp())])
+# a chain of perpendicular lines: the raw scale of n depends on P, which
+# moves m but leaves n where it is
+case("rawscale", [pt("A", 0, 0), pt("B", 0.001, 0), pt("P", 0, 0), pt("Q", 0, 3),
+                  "l = Line(A, B)", "m = PerpendicularLine(P, l)",
+                  "n = PerpendicularLine(Q, m)", "d = Direction(n)"],
+     [mv("P", 5, 0), mv("P", -2, 0), mv("B", 0.002, 0)])
+# the same through a parallel line
+case("rawscale", [pt("A", 0, 0), pt("B", 0.001, 0), pt("P", 0, 0), pt("Q", 0, 3),
+                  "l = Line(A, B)", "m = PerpendicularLine(P, l)", "n = Line(Q, m)",
+                  "o = OrthogonalVector(n)"],
+     [mv("P", 5, 0), mv("P", -2, 0), mv("B", 0.002, 0)])
 
 cases.write()

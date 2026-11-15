@@ -4,6 +4,7 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/Construction.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/AlgebraProcessor.java
 //   source/shared/common/src/main/java/org/geogebra/common/util/StringUtil.java
+//   source/shared/editor-base/src/main/java/org/geogebra/editor/share/input/Character.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
@@ -198,11 +199,46 @@ fn is_finite(v: &Value) -> bool {
 }
 
 /// GeoGebra's `AlgebraProcessor.isVectorLabel`: coordinates `(x, y)` make a
-/// vector when the label starts with a lower-case letter, a point otherwise.
+/// vector when the first UTF-16 code unit of the label is lower case by
+/// `StringUtil.isLowerCase`, a point otherwise. A label that starts outside
+/// the Basic Multilingual Plane starts with a surrogate, so it is a point.
 fn is_vector_label(name: &str) -> bool {
-    name.chars()
-        .next()
-        .is_some_and(|ch| ch.is_alphabetic() && ch.to_lowercase().eq([ch]))
+    name.encode_utf16().next().is_some_and(is_lower_case)
+}
+
+/// `StringUtil.isLowerCase`: a letter by [`is_letter`] that Java's
+/// `Character.toLowerCase(char)` leaves unchanged.
+fn is_lower_case(unit: u16) -> bool {
+    let Some(ch) = char::from_u32(u32::from(unit)) else {
+        return false;
+    };
+    let mut lower = ch.to_lowercase();
+    is_letter(unit) && lower.next() == Some(ch) && lower.next().is_none()
+}
+
+/// `Character.isLetter` of GeoGebra's editor (`org.geogebra.editor.share.input`),
+/// a fixed list of ranges of UTF-16 code units.
+fn is_letter(c: u16) -> bool {
+    matches!(c,
+        0x0041..=0x005a // upper case (A-Z)
+        | 0x0061..=0x007a // lower case (a-z)
+        | 0x00b7 // middle dot (for Catalan)
+        | 0x00c0..=0x00d6 // accentuated letters
+        | 0x00d8..=0x00f6
+        | 0x00f8..=0x01bf
+        | 0x01c4..=0x02a8
+        | 0x038e..=0x03f5 // Greek
+        | 0x0401..=0x0481 // Cyrillic
+        | 0x0490..=0x04f9
+        | 0x0531..=0x1ffc // Arabic, accentuated and others
+        | 0x212f // Euler number
+        | 0x3041..=0x3357 // Asian letters
+        | 0x4e00..=0xd7a3
+        | 0xf71d..=0xfa2d
+        | 0xfb13..=0xfdfb // Armenian, Hebrew, Arabic
+        | 0xfe80..=0xfefc // Arabic
+        | 0xff66..=0xff9d // Katakana
+        | 0xffa1..=0xffdc)
 }
 
 fn is_identifier(s: &str) -> bool {
@@ -357,6 +393,20 @@ fn parse_number(s: &str) -> Result<f64, String> {
 mod tests {
     use super::*;
     use crate::kernel::Value;
+
+    #[test]
+    fn vector_labels_follow_string_util_is_lower_case() {
+        assert!(is_vector_label("a_1"));
+        assert!(is_vector_label("\u{3b1}")); // Greek small alpha
+        assert!(is_vector_label("\u{142}k")); // Latin small l with stroke
+        assert!(is_vector_label("\u{b7}")); // a letter for GeoGebra, unchanged by lower case
+        assert!(!is_vector_label("A_1"));
+        assert!(!is_vector_label("_p"));
+        assert!(!is_vector_label("\u{141}")); // Latin capital L with stroke
+        assert!(!is_vector_label("\u{1d44e}")); // mathematical italic small a, outside the BMP
+        assert!(!is_vector_label("\u{2170}")); // small roman numeral one, a letter number
+        assert!(!is_vector_label(""));
+    }
 
     #[test]
     fn builds_a_construction_from_text() {

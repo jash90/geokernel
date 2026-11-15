@@ -32,7 +32,10 @@ const CONTEXT: &[&str] = &[
     "M = Midpoint(A, B)",
     "t = Tangent(B, k)",
     "A' = (1, 1)",
-    "x_1 = (2, 2)",
+    "X_1 = (2, 2)",
+    "u = (1, 2)",
+    "v = Vector(A, B)",
+    "g = Ray(A, B)",
 ];
 
 /// At the time of writing: 697 case scripts and 21 README lines.
@@ -390,7 +393,10 @@ const TOKENS: &[&str] = &[
     "M",
     "t_{1}",
     "A'",
-    "x_1",
+    "X_1",
+    "u",
+    "v",
+    "g",
     "(",
     ")",
     "(",
@@ -464,13 +470,19 @@ const TOKENS: &[&str] = &[
     "Length",
     "CrossRatio",
     "AffineRatio",
+    "Vector",
+    "Ray",
+    "Translate",
+    "Direction",
+    "UnitVector",
+    "OrthogonalVector",
     "Foo",
     "",
 ];
 
 const LABELS: &[&str] = &[
     "A", "B", "C", "D", "l", "m", "s", "k", "k2", "r", "q", "d", "M", "t_{1}", "t_{2}", "A'",
-    "x_1", "1", "2",
+    "X_1", "u", "v", "g", "1", "2",
 ];
 
 fn random_char(rng: &mut Rng) -> char {

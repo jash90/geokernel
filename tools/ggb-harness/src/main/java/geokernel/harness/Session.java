@@ -27,6 +27,7 @@ import org.geogebra.common.kernel.matrix.Coords;
 import org.geogebra.common.main.error.ErrorHandler;
 import org.geogebra.common.main.settings.config.AppConfigDefault;
 import org.geogebra.common.util.AsyncOperation;
+import org.geogebra.common.util.StringUtil;
 
 /**
  * One fresh headless GeoGebra app (Classic configuration) that runs script
@@ -305,12 +306,13 @@ final class Session {
 
     /**
      * The schema type a definition must produce; rejects unsupported input.
-     * A coordinate pair is a vector when the label starts with a lower-case
-     * letter and a point otherwise (`AlgebraProcessor.isVectorLabel`).
+     * A coordinate pair is a vector when the first character of the label is
+     * lower case by `StringUtil.isLowerCase` and a point otherwise
+     * (`AlgebraProcessor.isVectorLabel`).
      */
     private static String expectedType(String label, String definition) {
         if (POINT.matcher(definition).matches()) {
-            return Character.isLowerCase(label.charAt(0)) ? "vector" : "point";
+            return StringUtil.isLowerCase(label.charAt(0)) ? "vector" : "point";
         }
         if (NUMBER.matcher(definition).matches()) {
             return "number";

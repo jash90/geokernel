@@ -34,6 +34,10 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoRay.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoPoint.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoVector.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoSegment.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/LimitedPath.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/Transform.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/TransformTranslate.java
 //   source/shared/common/src/main/java/org/geogebra/common/util/DoubleUtil.java
 //   source/shared/common/src/main/java/org/geogebra/common/util/MyMath.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
