@@ -3,6 +3,7 @@
 //! that very frame, which must not move the drawing or the hit.
 
 use super::*;
+use crate::geom::ToEgui;
 
 /// Opens the keyboard the way a user does: a click in the input row, which
 /// starts `top` pixels below the toolbar.
@@ -20,7 +21,7 @@ fn top_left(h: &Harness<'_, App>) -> (f64, f64) {
 fn on_screen(h: &Harness<'_, App>, x: f64, y: f64) -> Pos2 {
     let (rect, t) = h.state().view.unwrap();
     let (sx, sy) = t.world_to_screen(x, y);
-    rect.min + egui::vec2(sx as f32, sy as f32)
+    rect.min.egui() + egui::vec2(sx as f32, sy as f32)
 }
 
 fn point(h: &Harness<'_, App>, label: &str) -> (f64, f64) {

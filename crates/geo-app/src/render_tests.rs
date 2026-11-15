@@ -38,7 +38,7 @@ fn render_sized(
         .with_pixels_per_point(1.0)
         .with_context_setup(crate::theme::apply)
         .wgpu()
-        .build_ui(move |ui| app.show(ui));
+        .build_ui(move |ui| crate::app::show(&mut app, ui));
     harness.run();
     let image = harness.render().expect("render");
     let path = out_dir().join(name);

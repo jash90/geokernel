@@ -7,6 +7,7 @@
 //! Draws the objects of a construction with `egui::Painter`.
 
 use crate::arc;
+use crate::geom::ToEgui;
 use crate::highlight::{self, Highlight};
 use crate::interact::ViewTransform;
 use crate::labelpos;
@@ -59,7 +60,7 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
     let screen = |x: f64, y: f64| t.world_to_screen(x, y);
     let in_rect = |s: (f64, f64)| s.0 >= 0.0 && s.0 <= w && s.1 >= 0.0 && s.1 <= h;
     let color = |id: Id| {
-        let c = style::color(c, id);
+        let c = style::color(c, id).egui();
         if (scene.ghost)(id) {
             c.gamma_multiply(0.3)
         } else {
@@ -89,13 +90,13 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
                     .iter()
                     .map(|&(x, y)| origin + vec2(x as f32, y as f32))
                     .collect();
-                let glow = Stroke::new(8.0, style::color(c, id).gamma_multiply(alpha));
+                let glow = Stroke::new(8.0, style::color(c, id).egui().gamma_multiply(alpha));
                 painter.add(Shape::closed_line(points, glow));
             }
             continue;
         }
         if let Some(hl) = highlight::of_value(&c.value(id), t, w, h) {
-            paint_highlight(painter, rect, hl, style::color(c, id), strong);
+            paint_highlight(painter, rect, hl, style::color(c, id).egui(), strong);
         }
     }
 

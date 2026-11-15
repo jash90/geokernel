@@ -4,17 +4,11 @@ use crate::interact::ViewTransform;
 use crate::theme;
 use crate::ticks;
 use eframe::egui::{vec2, Align2, FontId, Painter, Pos2, Rect, Stroke};
+use geo_app_core::app::Decor;
 
 const MIN_MAJOR_PX: f64 = 48.0;
 const MIN_MINOR_PX: f64 = 9.0;
 const TICK_FONT: f32 = 16.0;
-
-/// Which parts of the plane decoration are shown.
-#[derive(Clone, Copy, Debug)]
-pub struct Decor {
-    pub grid: bool,
-    pub axes: bool,
-}
 
 fn crisp(v: f64) -> f32 {
     (v.round() + 0.5) as f32

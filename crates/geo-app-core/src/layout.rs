@@ -3,7 +3,11 @@
 //! the on-screen keyboard across the bottom. Pure geometry, used by the
 //! window and by the tests.
 
-use eframe::egui::{pos2, Rect};
+use crate::geom::{Point, Rect};
+
+fn pos2(x: f32, y: f32) -> Point {
+    Point::new(x, y)
+}
 
 pub const TOOLBAR_HEIGHT: f32 = 52.0;
 pub const ALGEBRA_WIDTH: f32 = 380.0;

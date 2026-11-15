@@ -11,11 +11,10 @@ mod canvas;
 mod cli;
 mod draw;
 mod floating;
+mod geom;
 mod grid;
 mod icons;
 mod keyboard;
-mod layout;
-mod style;
 mod theme;
 mod tool_icons;
 mod toolbar;
@@ -31,14 +30,19 @@ use app::App;
 use eframe::egui;
 use geo_app_core::workbench::Workbench;
 use geo_app_core::{
-    arc, describe, errors, highlight, hit, interact, labelpos, shape, ticks, tools, view, workbench,
+    arc, describe, highlight, hit, interact, labelpos, layout, shape, style, ticks, tools, view,
+    workbench,
 };
 
 const SCRIPT: &str = include_str!("../../../examples/triangle.geo");
 
-impl eframe::App for App {
+/// The window around the application state (the state type lives in the
+/// core crate, so the eframe trait needs a local type).
+struct Window(App);
+
+impl eframe::App for Window {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
-        self.show(ui);
+        app::show(&mut self.0, ui);
     }
 }
 
@@ -80,7 +84,7 @@ fn main() -> eframe::Result {
         options,
         Box::new(|cc| {
             theme::apply(&cc.egui_ctx);
-            Ok(Box::new(App::new(wb, load_error)))
+            Ok(Box::new(Window(App::new(wb, load_error))))
         }),
     )
 }

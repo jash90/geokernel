@@ -1,6 +1,7 @@
 //! The algebra panel: one row per object, and the input row.
 
 use crate::app::App;
+use crate::geom::ToEgui;
 use crate::icons::{self, Icon};
 use crate::style;
 use crate::theme;
@@ -105,6 +106,7 @@ fn paint_row(app: &App, ui: &mut Ui, row: &Row, actions: &mut Actions) {
     let center = cell.center();
     let visible = app.wb.is_visible(row.id);
     let (fill, ring) = style::marker(app.wb.construction(), row.id);
+    let (fill, ring) = (fill.egui(), ring.egui());
     if visible {
         painter.circle(center, 10.0, fill, Stroke::new(1.5, ring));
     } else {

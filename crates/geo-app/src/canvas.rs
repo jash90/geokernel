@@ -4,6 +4,7 @@ use crate::app::{App, ViewRequest};
 use crate::describe;
 use crate::draw::{self, Scene};
 use crate::floating;
+use crate::geom::{ToCore, ToEgui};
 use crate::grid;
 use crate::hit;
 use crate::icons::Icon;
@@ -31,6 +32,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     // top left corner of the drawing in place, not its centre. A view
     // request is made for the new size, so it comes after.
     if let (Some(cam), Some((old, _))) = (app.camera, app.view) {
+        let old = old.egui();
         if old.size() != rect.size() {
             app.camera = Some(cam.resized((old.width() as f64, old.height() as f64), (w, h)));
         }
@@ -93,14 +95,14 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     if let Some(pos) = pressed {
         app.press_view = app
             .view
-            .filter(|(r, _)| r.contains(pos))
-            .or_else(|| rect.contains(pos).then_some((rect, t)));
+            .filter(|(r, _)| r.contains(pos.core()))
+            .or_else(|| rect.contains(pos).then_some((rect.core(), t)));
     }
     // A press position in the area as it was at the press, and that
     // transform.
     let at_press = |app: &App, pos: egui::Pos2| -> ((f64, f64), ViewTransform) {
-        let (r, pt) = app.press_view.unwrap_or((rect, t));
-        let d = pos - r.min;
+        let (r, pt) = app.press_view.unwrap_or((rect.core(), t));
+        let d = pos - r.min.egui();
         ((d.x as f64, d.y as f64), pt)
     };
 
@@ -212,7 +214,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     preview(app, &painter, rect, &t, response.hover_pos());
     overlay(app, ui, rect, w, h, &mut cam);
     app.camera = Some(cam);
-    app.view = Some((rect, cam.transform(w, h)));
+    app.view = Some((rect.core(), cam.transform(w, h)));
 }
 
 /// The position of the last primary press among this frame's events, and

@@ -27,7 +27,7 @@ fn harness(script: &str) -> Harness<'static, App> {
     let mut h = Harness::builder()
         .with_size(egui::vec2(SIZE.0 + 2.0 * MARGIN, SIZE.1 + 2.0 * MARGIN))
         .with_pixels_per_point(1.0)
-        .build_ui_state(|ui, app: &mut App| app.show(ui), app);
+        .build_ui_state(|ui, app: &mut App| crate::app::show(app, ui), app);
     h.run();
     h
 }
