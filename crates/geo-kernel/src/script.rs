@@ -2,6 +2,9 @@
 // commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/LabelManager.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/Construction.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/AlgebraProcessor.java
+//   source/shared/common/src/main/java/org/geogebra/common/util/StringUtil.java
+//   source/shared/editor-base/src/main/java/org/geogebra/editor/share/input/Character.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
@@ -9,6 +12,7 @@
 //!
 //! ```text
 //! A = (0, 0)              # free point
+//! v = (1, 2)              # free vector (the label starts with a lower-case letter)
 //! r = 3                   # free number
 //! l = Line(A, B)
 //! m = Line(P, l)          # GeoGebra form: parallel to l (a line or segment) through P
@@ -23,6 +27,7 @@ use crate::algo::conic::ConicDef;
 use crate::algo::lines::LineDef;
 use crate::algo::measure::MeasureDef;
 use crate::algo::transform::TransformDef;
+use crate::algo::vector::VectorDef;
 use crate::algo::Group;
 use crate::kernel::{Construction, Def, Id, Kind, Value};
 use std::fmt;
@@ -69,7 +74,10 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
     if let Some(defs) = parse_multi(c, rhs) {
         return add_outputs(c, name, defs?).map(Some);
     }
-    let def = parse_def(c, rhs)?;
+    let def = match parse_def(c, rhs)? {
+        Def::FreePoint { x, y } if is_vector_label(name) => Def::Vector(VectorDef::Free { x, y }),
+        def => def,
+    };
     c.add(name, def).map(Some).map_err(|e| e.to_string())
 }
 
@@ -184,8 +192,53 @@ fn is_finite(v: &Value) -> bool {
         }
         Value::Circle { cx, cy, r } => cx.is_finite() && cy.is_finite() && r.is_finite(),
         Value::Number(v) => v.is_finite(),
+        Value::Vector { x, y } => x.is_finite() && y.is_finite(),
+        Value::Ray { x, y, a, b, c } => [x, y, a, b, c].iter().all(|v| v.is_finite()),
         Value::Undefined => false,
     }
+}
+
+/// GeoGebra's `AlgebraProcessor.isVectorLabel`: coordinates `(x, y)` make a
+/// vector when the first UTF-16 code unit of the label is lower case by
+/// `StringUtil.isLowerCase`, a point otherwise. A label that starts outside
+/// the Basic Multilingual Plane starts with a surrogate, so it is a point.
+fn is_vector_label(name: &str) -> bool {
+    name.encode_utf16().next().is_some_and(is_lower_case)
+}
+
+/// `StringUtil.isLowerCase`: a letter by [`is_letter`] that Java's
+/// `Character.toLowerCase(char)` leaves unchanged.
+fn is_lower_case(unit: u16) -> bool {
+    let Some(ch) = char::from_u32(u32::from(unit)) else {
+        return false;
+    };
+    let mut lower = ch.to_lowercase();
+    is_letter(unit) && lower.next() == Some(ch) && lower.next().is_none()
+}
+
+/// `Character.isLetter` of GeoGebra's editor (`org.geogebra.editor.share.input`),
+/// a fixed list of ranges of UTF-16 code units.
+fn is_letter(c: u16) -> bool {
+    matches!(c,
+        0x0041..=0x005a // upper case (A-Z)
+        | 0x0061..=0x007a // lower case (a-z)
+        | 0x00b7 // middle dot (for Catalan)
+        | 0x00c0..=0x00d6 // accentuated letters
+        | 0x00d8..=0x00f6
+        | 0x00f8..=0x01bf
+        | 0x01c4..=0x02a8
+        | 0x038e..=0x03f5 // Greek
+        | 0x0401..=0x0481 // Cyrillic
+        | 0x0490..=0x04f9
+        | 0x0531..=0x1ffc // Arabic, accentuated and others
+        | 0x212f // Euler number
+        | 0x3041..=0x3357 // Asian letters
+        | 0x4e00..=0xd7a3
+        | 0xf71d..=0xfa2d
+        | 0xfb13..=0xfdfb // Armenian, Hebrew, Arabic
+        | 0xfe80..=0xfefc // Arabic
+        | 0xff66..=0xff9d // Katakana
+        | 0xffa1..=0xffdc)
 }
 
 fn is_identifier(s: &str) -> bool {
@@ -228,6 +281,9 @@ fn parse_def(c: &Construction, rhs: &str) -> Result<Def, String> {
 
     // Groups are asked first, so that a group can add a new form of a
     // built-in command (for example `Circle` with three points).
+    if let Some(def) = VectorDef::parse(c, func, &args) {
+        return def.map(Def::Vector);
+    }
     if let Some(def) = LineDef::parse(c, func, &args) {
         return def.map(Def::Lines);
     }
@@ -337,6 +393,20 @@ fn parse_number(s: &str) -> Result<f64, String> {
 mod tests {
     use super::*;
     use crate::kernel::Value;
+
+    #[test]
+    fn vector_labels_follow_string_util_is_lower_case() {
+        assert!(is_vector_label("a_1"));
+        assert!(is_vector_label("\u{3b1}")); // Greek small alpha
+        assert!(is_vector_label("\u{142}k")); // Latin small l with stroke
+        assert!(is_vector_label("\u{b7}")); // a letter for GeoGebra, unchanged by lower case
+        assert!(!is_vector_label("A_1"));
+        assert!(!is_vector_label("_p"));
+        assert!(!is_vector_label("\u{141}")); // Latin capital L with stroke
+        assert!(!is_vector_label("\u{1d44e}")); // mathematical italic small a, outside the BMP
+        assert!(!is_vector_label("\u{2170}")); // small roman numeral one, a letter number
+        assert!(!is_vector_label(""));
+    }
 
     #[test]
     fn builds_a_construction_from_text() {

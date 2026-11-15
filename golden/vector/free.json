@@ -1,0 +1,354 @@
+{
+  "schema": 1,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "vector-free-001",
+      "group": "vector",
+      "script": [
+        "u = (4.86, 2.57)",
+        "q = UnitVector(u)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "u", "x": 3.0, "y": -0.44 },
+        { "action": "move", "label": "u", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "u", "x": -1.72, "y": -4.28 },
+        { "action": "move", "label": "u", "x": -4.86, "y": -2.57 }
+      ],
+      "snapshots": [
+        {
+          "u": { "type": "vector", "defined": true, "x": 4.86, "y": 2.57 },
+          "q": { "type": "vector", "defined": true, "x": 0.8840090410443865, "y": 0.46746980153993273 }
+        },
+        {
+          "u": { "type": "vector", "defined": true, "x": 3.0, "y": -0.44 },
+          "q": { "type": "vector", "defined": true, "x": 0.9894149142837048, "y": -0.1451141874282767 }
+        },
+        {
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "q": { "type": "vector", "defined": false }
+        },
+        {
+          "u": { "type": "vector", "defined": true, "x": -1.72, "y": -4.28 },
+          "q": { "type": "vector", "defined": true, "x": -0.3728853244400136, "y": -0.9278774352344525 }
+        },
+        {
+          "u": { "type": "vector", "defined": true, "x": -4.86, "y": -2.57 },
+          "q": { "type": "vector", "defined": true, "x": -0.8840090410443865, "y": -0.46746980153993273 }
+        }
+      ]
+    },
+    {
+      "id": "vector-free-002",
+      "group": "vector",
+      "script": [
+        "u = (-4.29, 1.11)",
+        "q = OrthogonalVector(u)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "u", "x": 4.66, "y": 3.88 },
+        { "action": "move", "label": "u", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "u", "x": -3.25, "y": 3.41 },
+        { "action": "move", "label": "u", "x": 4.29, "y": -1.11 }
+      ],
+      "snapshots": [
+        {
+          "u": { "type": "vector", "defined": true, "x": -4.29, "y": 1.11 },
+          "q": { "type": "vector", "defined": true, "x": -1.11, "y": -4.29 }
+        },
+        {
+          "u": { "type": "vector", "defined": true, "x": 4.66, "y": 3.88 },
+          "q": { "type": "vector", "defined": true, "x": -3.88, "y": 4.66 }
+        },
+        {
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "q": { "type": "vector", "defined": true, "x": -0.0, "y": 0.0 }
+        },
+        {
+          "u": { "type": "vector", "defined": true, "x": -3.25, "y": 3.41 },
+          "q": { "type": "vector", "defined": true, "x": -3.41, "y": -3.25 }
+        },
+        {
+          "u": { "type": "vector", "defined": true, "x": 4.29, "y": -1.11 },
+          "q": { "type": "vector", "defined": true, "x": 1.11, "y": 4.29 }
+        }
+      ]
+    },
+    {
+      "id": "vector-free-003",
+      "group": "vector",
+      "script": [
+        "u = (1.87, 5.91)",
+        "q = PerpendicularVector(u)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "u", "x": -0.09, "y": 7.38 },
+        { "action": "move", "label": "u", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "u", "x": -6.66, "y": -3.46 },
+        { "action": "move", "label": "u", "x": -1.87, "y": -5.91 }
+      ],
+      "snapshots": [
+        {
+          "u": { "type": "vector", "defined": true, "x": 1.87, "y": 5.91 },
+          "q": { "type": "vector", "defined": true, "x": -5.91, "y": 1.87 }
+        },
+        {
+          "u": { "type": "vector", "defined": true, "x": -0.09, "y": 7.38 },
+          "q": { "type": "vector", "defined": true, "x": -7.38, "y": -0.09 }
+        },
+        {
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "q": { "type": "vector", "defined": true, "x": -0.0, "y": 0.0 }
+        },
+        {
+          "u": { "type": "vector", "defined": true, "x": -6.66, "y": -3.46 },
+          "q": { "type": "vector", "defined": true, "x": 3.46, "y": -6.66 }
+        },
+        {
+          "u": { "type": "vector", "defined": true, "x": -1.87, "y": -5.91 },
+          "q": { "type": "vector", "defined": true, "x": 5.91, "y": -1.87 }
+        }
+      ]
+    },
+    {
+      "id": "vector-free-004",
+      "group": "vector",
+      "script": [
+        "u = (0.33, 1.34)",
+        "q = UnitOrthogonalVector(u)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "u", "x": -6.56, "y": 5.28 },
+        { "action": "move", "label": "u", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "u", "x": 0.99, "y": 6.85 },
+        { "action": "move", "label": "u", "x": -0.33, "y": -1.34 }
+      ],
+      "snapshots": [
+        {
+          "u": { "type": "vector", "defined": true, "x": 0.33, "y": 1.34 },
+          "q": { "type": "vector", "defined": true, "x": -0.9709889997833053, "y": 0.2391241566630528 }
+        },
+        {
+          "u": { "type": "vector", "defined": true, "x": -6.56, "y": 5.28 },
+          "q": { "type": "vector", "defined": true, "x": -0.6270094052116179, "y": -0.7790116852629191 }
+        },
+        {
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "q": { "type": "vector", "defined": false }
+        },
+        {
+          "u": { "type": "vector", "defined": true, "x": 0.99, "y": 6.85 },
+          "q": { "type": "vector", "defined": true, "x": -0.9897169962709639, "y": 0.14303939070193494 }
+        },
+        {
+          "u": { "type": "vector", "defined": true, "x": -0.33, "y": -1.34 },
+          "q": { "type": "vector", "defined": true, "x": 0.9709889997833053, "y": -0.2391241566630528 }
+        }
+      ]
+    },
+    {
+      "id": "vector-free-005",
+      "group": "vector",
+      "script": [
+        "u = (-5.59, 1.77)",
+        "q = UnitPerpendicularVector(u)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "u", "x": -4.93, "y": 7.79 },
+        { "action": "move", "label": "u", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "u", "x": 4.94, "y": 4.44 },
+        { "action": "move", "label": "u", "x": 5.59, "y": -1.77 }
+      ],
+      "snapshots": [
+        {
+          "u": { "type": "vector", "defined": true, "x": -5.59, "y": 1.77 },
+          "q": { "type": "vector", "defined": true, "x": -0.30186587085120936, "y": -0.953350405682633 }
+        },
+        {
+          "u": { "type": "vector", "defined": true, "x": -4.93, "y": 7.79 },
+          "q": { "type": "vector", "defined": true, "x": -0.844998811366399, "y": -0.5347681822896466 }
+        },
+        {
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "q": { "type": "vector", "defined": false }
+        },
+        {
+          "u": { "type": "vector", "defined": true, "x": 4.94, "y": 4.44 },
+          "q": { "type": "vector", "defined": true, "x": -0.6684655025061235, "y": 0.743743149184741 }
+        },
+        {
+          "u": { "type": "vector", "defined": true, "x": 5.59, "y": -1.77 },
+          "q": { "type": "vector", "defined": true, "x": 0.30186587085120936, "y": 0.953350405682633 }
+        }
+      ]
+    },
+    {
+      "id": "vector-free-006",
+      "group": "vector",
+      "script": [
+        "u = (0.18, -6.26)",
+        "q = Length(u)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "u", "x": 7.62, "y": 2.62 },
+        { "action": "move", "label": "u", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "u", "x": -4.66, "y": -5.08 },
+        { "action": "move", "label": "u", "x": -0.18, "y": 6.26 }
+      ],
+      "snapshots": [
+        {
+          "u": { "type": "vector", "defined": true, "x": 0.18, "y": -6.26 },
+          "q": { "type": "number", "defined": true, "value": 6.26258732474047 }
+        },
+        {
+          "u": { "type": "vector", "defined": true, "x": 7.62, "y": 2.62 },
+          "q": { "type": "number", "defined": true, "value": 8.057840901879361 }
+        },
+        {
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "q": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "u": { "type": "vector", "defined": true, "x": -4.66, "y": -5.08 },
+          "q": { "type": "number", "defined": true, "value": 6.893620239032609 }
+        },
+        {
+          "u": { "type": "vector", "defined": true, "x": -0.18, "y": 6.26 },
+          "q": { "type": "number", "defined": true, "value": 6.26258732474047 }
+        }
+      ]
+    },
+    {
+      "id": "vector-free-007",
+      "group": "vector",
+      "script": [
+        "u = (0.82, -6.48)",
+        "v = (0.33, 6.95)",
+        "A = (-3.8, -7.29)",
+        "w = Translate(u, A)",
+        "t = Translate(u, v)",
+        "n = Length(t)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "u", "x": 7.96, "y": 7.42 },
+        { "action": "move", "label": "v", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "A", "x": -0.56, "y": -5.39 },
+        { "action": "move", "label": "u", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "u", "x": 7.3, "y": 7.64 }
+      ],
+      "snapshots": [
+        {
+          "u": { "type": "vector", "defined": true, "x": 0.82, "y": -6.48 },
+          "v": { "type": "vector", "defined": true, "x": 0.33, "y": 6.95 },
+          "A": { "type": "point", "defined": true, "x": -3.8, "y": -7.29 },
+          "w": { "type": "vector", "defined": true, "x": 0.82, "y": -6.48 },
+          "t": { "type": "vector", "defined": true, "x": 0.82, "y": -6.48 },
+          "n": { "type": "number", "defined": true, "value": 6.531676660705122 }
+        },
+        {
+          "u": { "type": "vector", "defined": true, "x": 7.96, "y": 7.42 },
+          "v": { "type": "vector", "defined": true, "x": 0.33, "y": 6.95 },
+          "A": { "type": "point", "defined": true, "x": -3.8, "y": -7.29 },
+          "w": { "type": "vector", "defined": true, "x": 7.96, "y": 7.42 },
+          "t": { "type": "vector", "defined": true, "x": 7.96, "y": 7.42 },
+          "n": { "type": "number", "defined": true, "value": 10.882003492004586 }
+        },
+        {
+          "u": { "type": "vector", "defined": true, "x": 7.96, "y": 7.42 },
+          "v": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": -3.8, "y": -7.29 },
+          "w": { "type": "vector", "defined": true, "x": 7.96, "y": 7.42 },
+          "t": { "type": "vector", "defined": true, "x": 7.96, "y": 7.42 },
+          "n": { "type": "number", "defined": true, "value": 10.882003492004586 }
+        },
+        {
+          "u": { "type": "vector", "defined": true, "x": 7.96, "y": 7.42 },
+          "v": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": -0.56, "y": -5.39 },
+          "w": { "type": "vector", "defined": true, "x": 7.96, "y": 7.42 },
+          "t": { "type": "vector", "defined": true, "x": 7.96, "y": 7.42 },
+          "n": { "type": "number", "defined": true, "value": 10.882003492004586 }
+        },
+        {
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": -0.56, "y": -5.39 },
+          "w": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "t": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "u": { "type": "vector", "defined": true, "x": 7.3, "y": 7.64 },
+          "v": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": -0.56, "y": -5.39 },
+          "w": { "type": "vector", "defined": true, "x": 7.3, "y": 7.64 },
+          "t": { "type": "vector", "defined": true, "x": 7.3, "y": 7.64 },
+          "n": { "type": "number", "defined": true, "value": 10.566910617583552 }
+        }
+      ]
+    },
+    {
+      "id": "vector-free-008",
+      "group": "vector",
+      "script": [
+        "u = (3, 4)",
+        "n = Length(u)",
+        "q = UnitVector(u)",
+        "o = OrthogonalVector(q)",
+        "k = UnitOrthogonalVector(o)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "u", "x": -3.0, "y": 4.0 },
+        { "action": "move", "label": "u", "x": 0.0, "y": -2.0 },
+        { "action": "move", "label": "u", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "u", "x": 1000000.0, "y": 0.001 }
+      ],
+      "snapshots": [
+        {
+          "u": { "type": "vector", "defined": true, "x": 3.0, "y": 4.0 },
+          "n": { "type": "number", "defined": true, "value": 5.0 },
+          "q": { "type": "vector", "defined": true, "x": 0.6, "y": 0.8 },
+          "o": { "type": "vector", "defined": true, "x": -0.8, "y": 0.6 },
+          "k": { "type": "vector", "defined": true, "x": -0.6, "y": -0.8 }
+        },
+        {
+          "u": { "type": "vector", "defined": true, "x": -3.0, "y": 4.0 },
+          "n": { "type": "number", "defined": true, "value": 5.0 },
+          "q": { "type": "vector", "defined": true, "x": -0.6, "y": 0.8 },
+          "o": { "type": "vector", "defined": true, "x": -0.8, "y": -0.6 },
+          "k": { "type": "vector", "defined": true, "x": 0.6, "y": -0.8 }
+        },
+        {
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": -2.0 },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "q": { "type": "vector", "defined": true, "x": 0.0, "y": -1.0 },
+          "o": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "k": { "type": "vector", "defined": true, "x": -0.0, "y": 1.0 }
+        },
+        {
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "q": { "type": "vector", "defined": false },
+          "o": { "type": "vector", "defined": false },
+          "k": { "type": "vector", "defined": false }
+        },
+        {
+          "u": { "type": "vector", "defined": true, "x": 1000000.0, "y": 0.001 },
+          "n": { "type": "number", "defined": true, "value": 1000000.0 },
+          "q": { "type": "vector", "defined": true, "x": 1.0, "y": 1.0E-9 },
+          "o": { "type": "vector", "defined": true, "x": -1.0E-9, "y": 1.0 },
+          "k": { "type": "vector", "defined": true, "x": -1.0, "y": -1.0E-9 }
+        }
+      ]
+    }
+  ]
+}

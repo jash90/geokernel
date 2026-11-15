@@ -10,18 +10,24 @@ import org.geogebra.common.jre.headless.AppCommon;
 import org.geogebra.common.jre.headless.LocalizationCommon;
 import org.geogebra.common.jre.headless.Utf8Control;
 import org.geogebra.common.kernel.Kernel;
+import org.geogebra.common.kernel.algos.AlgoElement;
+import org.geogebra.common.kernel.algos.AlgoJoinPointsRay;
+import org.geogebra.common.kernel.algos.AlgoRayPointVector;
 import org.geogebra.common.kernel.commands.AlgebraProcessor;
 import org.geogebra.common.kernel.geos.GeoConic;
 import org.geogebra.common.kernel.geos.GeoElement;
 import org.geogebra.common.kernel.geos.GeoLine;
 import org.geogebra.common.kernel.geos.GeoNumeric;
 import org.geogebra.common.kernel.geos.GeoPoint;
+import org.geogebra.common.kernel.geos.GeoRay;
 import org.geogebra.common.kernel.geos.GeoSegment;
+import org.geogebra.common.kernel.geos.GeoVector;
 import org.geogebra.common.kernel.kernelND.GeoElementND;
 import org.geogebra.common.kernel.matrix.Coords;
 import org.geogebra.common.main.error.ErrorHandler;
 import org.geogebra.common.main.settings.config.AppConfigDefault;
 import org.geogebra.common.util.AsyncOperation;
+import org.geogebra.common.util.StringUtil;
 
 /**
  * One fresh headless GeoGebra app (Classic configuration) that runs script
@@ -68,7 +74,7 @@ final class Session {
         String label = m.group(1);
         String definition = m.group(2).trim();
         String transformed = transformedType(definition);
-        String expected = transformed != null ? transformed : expectedType(definition);
+        String expected = transformed != null ? transformed : expectedType(label, definition);
         if (objects.containsKey(label) || kernel.lookupLabel(label) != null) {
             throw new IllegalArgumentException("label used twice: " + label);
         }
@@ -77,10 +83,10 @@ final class Session {
         if (out != null && out.length == 2 && isMultiOutput(definition)) {
             return runMulti(line, expected, out);
         }
-        // A transformed segment with labelled end points also creates the two
-        // image points; the segment is the first output. Any other object
-        // gives exactly one output.
-        if (out == null || out.length != ("segment".equals(transformed) ? 3 : 1)) {
+        // A transformed segment or ray with labelled end points also creates
+        // the image points (see `transformedOutputs`); the segment or ray is
+        // the first output. Any other object gives exactly one output.
+        if (out == null || out.length != transformedOutputs(transformed, definition)) {
             throw new IllegalStateException("unexpected number of objects from: " + line);
         }
         GeoElement geo = out[0].toGeoElement();
@@ -96,7 +102,8 @@ final class Session {
             throw new IllegalStateException("expected a " + expected + " from '" + line
                     + "', got " + geo.getClass().getSimpleName());
         }
-        boolean free = expected.equals("point") && POINT.matcher(m.group(2).trim()).matches()
+        boolean free = (expected.equals("point") || expected.equals("vector"))
+                && POINT.matcher(m.group(2).trim()).matches()
                 || expected.equals("number") && NUMBER.matcher(m.group(2).trim()).matches();
         if (free != geo.isIndependent()) {
             throw new IllegalStateException("unexpected dependency state for: " + line);
@@ -145,9 +152,15 @@ final class Session {
         return first;
     }
 
-    /** Moves a free point and updates everything that depends on it. */
+    /** Moves a free point or a free vector and updates everything that depends on it. */
     void move(String label, double x, double y) {
         GeoElement geo = lookup(label);
+        if (geo instanceof GeoVector && geo.isIndependent()) {
+            GeoVector v = (GeoVector) geo;
+            v.setCoords(x, y, 0.0);
+            v.updateCascade();
+            return;
+        }
         if (!(geo instanceof GeoPoint) || !geo.isIndependent()) {
             throw new IllegalArgumentException(label + " is not a free point");
         }
@@ -193,6 +206,9 @@ final class Session {
         if (geo instanceof GeoSegment) {
             return "segment";
         }
+        if (geo instanceof GeoRay) {
+            return "ray";
+        }
         if (geo instanceof GeoLine) {
             return "line";
         }
@@ -204,6 +220,9 @@ final class Session {
         }
         if (geo instanceof GeoNumeric) {
             return "number";
+        }
+        if (geo instanceof GeoVector) {
+            return "vector";
         }
         throw new IllegalStateException("unsupported object " + geo.getClass().getSimpleName());
     }
@@ -224,17 +243,45 @@ final class Session {
             case "Dilate":
             case "Shear":
             case "Stretch":
+            case "Translate":
                 break;
             default:
                 return null;
         }
+        return typeOf(transformedSource(definition));
+    }
+
+    /** The object a transformation command transforms: its first argument. */
+    private GeoElement transformedSource(String definition) {
         String inner = definition.substring(definition.indexOf('(') + 1);
         String first = inner.split("[,)]")[0].trim();
         GeoElement source = objects.get(first);
         if (source == null) {
             throw new IllegalArgumentException("unknown transformed object: " + definition);
         }
-        return typeOf(source);
+        return source;
+    }
+
+    /**
+     * How many objects a definition creates. A transformed segment creates
+     * the images of its two end points too; a transformed ray creates the
+     * images of the points it was made from: two for `Ray(A, B)`, one (the
+     * start point) for `Ray(A, v)`. Everything else creates one object.
+     */
+    private int transformedOutputs(String transformed, String definition) {
+        if ("segment".equals(transformed)) {
+            return 3;
+        }
+        if ("ray".equals(transformed)) {
+            AlgoElement parent = transformedSource(definition).getParentAlgorithm();
+            if (parent instanceof AlgoJoinPointsRay) {
+                return 3;
+            }
+            if (parent instanceof AlgoRayPointVector) {
+                return 2;
+            }
+        }
+        return 1;
     }
 
     /**
@@ -257,10 +304,15 @@ final class Session {
         }
     }
 
-    /** The schema type a definition must produce; rejects unsupported input. */
-    private static String expectedType(String definition) {
+    /**
+     * The schema type a definition must produce; rejects unsupported input.
+     * A coordinate pair is a vector when the first character of the label is
+     * lower case by `StringUtil.isLowerCase` and a point otherwise
+     * (`AlgebraProcessor.isVectorLabel`).
+     */
+    private static String expectedType(String label, String definition) {
         if (POINT.matcher(definition).matches()) {
-            return "point";
+            return StringUtil.isLowerCase(label.charAt(0)) ? "vector" : "point";
         }
         if (NUMBER.matcher(definition).matches()) {
             return "number";
@@ -301,6 +353,16 @@ final class Session {
             case "Circle":
             case "Incircle":
                 return "circle";
+            case "Vector":
+            case "Direction":
+            case "UnitVector":
+            case "OrthogonalVector":
+            case "PerpendicularVector":
+            case "UnitOrthogonalVector":
+            case "UnitPerpendicularVector":
+                return "vector";
+            case "Ray":
+                return "ray";
             default:
                 throw new IllegalArgumentException("unsupported command: " + definition);
         }
@@ -375,6 +437,25 @@ final class Session {
             case "number":
                 f.put("value", ((GeoNumeric) geo).getDouble());
                 return f;
+            case "vector": {
+                GeoVector v = (GeoVector) geo;
+                f.put("x", v.getX());
+                f.put("y", v.getY());
+                return f;
+            }
+            case "ray": {
+                GeoRay r = (GeoRay) geo;
+                GeoPoint p = r.getStartPoint();
+                if (p == null || p.isInfinite()) {
+                    return null;
+                }
+                f.put("x", p.getInhomX());
+                f.put("y", p.getInhomY());
+                f.put("a", r.x);
+                f.put("b", r.y);
+                f.put("c", r.z);
+                return f;
+            }
             default:
                 throw new IllegalStateException(type);
         }
