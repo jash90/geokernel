@@ -10,6 +10,7 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/kernelND/GeoQuadricND.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoPoint.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoVec3D.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoLine.java
 //   source/shared/common/src/main/java/org/geogebra/common/util/MyMath.java
 //   source/shared/common/src/main/java/org/geogebra/common/util/DoubleUtil.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
@@ -18,7 +19,7 @@
 //! Circles and their parts: circle through three points, circle with a
 //! segment as radius, incircle, centre, midpoint of a segment, diameter.
 
-use super::{length, Group, Parents, CIRCLE, LINE_LIKE, POINT};
+use super::{length, line_value, Group, Parents, CIRCLE, LINE_LIKE, POINT};
 use crate::kernel::{Construction, Error, Id, Kind, Value};
 use crate::script::object;
 use crate::tol::STANDARD_PRECISION;
@@ -274,16 +275,13 @@ impl Group for ConicDef {
                 _ => None,
             },
             ConicDef::Diameter { line, circle } => {
-                let (a, b, _) = c.carrier(line)?;
-                let (cx, cy, _) = c.circle(circle)?;
-                // Direction of the line, and the circle matrix row
+                // `GeoLine.getDirection` of the raw coefficients, then
+                // `GeoConicND.diameterLine` with the circle matrix
                 // (1, 1, cx^2 + cy^2 - r^2, 0, -cx, -cy).
+                let (a, b, _) = c.raw_carrier(line)?;
+                let (cx, cy, _) = c.circle(circle)?;
                 let (vx, vy) = (b, -a);
-                Some(Value::Line {
-                    a: vx,
-                    b: vy,
-                    c: -cx * vx + -cy * vy,
-                })
+                line_value(vx + 0.0 * vy, 0.0 * vx + vy, -cx * vx + -cy * vy)
             }
         }
     }
@@ -328,7 +326,8 @@ impl Group for ConicDef {
                 _ if func == "Midpoint" => None,
                 _ => count_error(),
             },
-            "Diameter" => match n {
+            // `ConjugateDiameter` is GeoGebra's alias of `Diameter`.
+            "Diameter" | "ConjugateDiameter" => match n {
                 2 => Some(object(c, args[0]).and_then(|line| {
                     let circle = object(c, args[1])?;
                     Ok(ConicDef::Diameter { line, circle })
@@ -384,6 +383,28 @@ mod tests {
             Def::Conic(ConicDef::SegmentRadius { .. })
         ));
         assert!(matches!(def("d"), Def::Conic(ConicDef::Diameter { .. })));
+    }
+
+    #[test]
+    fn conjugate_diameter_is_diameter() {
+        let c = load(&format!(
+            "{TRI}k = Circle(A, B, C)\nf = Line(A, C)\nd = Diameter(f, k)\n\
+             e = ConjugateDiameter(f, k)\n"
+        ))
+        .unwrap();
+        let (d, e) = (c.id("d").unwrap(), c.id("e").unwrap());
+        assert_eq!(c.def(d), c.def(e));
+        // f is (-3, 0, 0); the diameter through the centre (2, 1.5) has the
+        // direction (0, 3) of f as its normal.
+        assert_eq!(
+            c.value(e),
+            Value::Line {
+                a: 0.0,
+                b: 3.0,
+                c: -4.5
+            }
+        );
+        assert!(err(&format!("{TRI}k = ConjugateDiameter(A)\n")).contains("does not take 1"));
     }
 
     #[test]

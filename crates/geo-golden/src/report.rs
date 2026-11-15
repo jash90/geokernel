@@ -3,7 +3,7 @@
 use crate::gaps::Gaps;
 use crate::model::Case;
 use crate::replay::replay;
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
 #[derive(Debug, Default)]
 pub struct Report {
@@ -13,22 +13,37 @@ pub struct Report {
     pub known_gaps: usize,
     pub sign_agree: usize,
     pub sign_disagree: usize,
+    /// Defined lines of the ggb-harness cases whose raw coefficients equal
+    /// GeoGebra's.
+    pub scale_agree: usize,
+    /// Defined lines whose raw coefficients differ from GeoGebra's.
+    pub scale_disagree: usize,
+    /// `scale_disagree` split by group and by the command that defines the line.
+    pub scale_disagree_by: BTreeMap<(String, String), usize>,
     /// Human-readable failures; the test passes only when this is empty.
     pub failures: Vec<String>,
 }
 
 impl Report {
+    /// The result line, followed by one line per group and defining command
+    /// whose lines differ in scale from GeoGebra's.
     pub fn summary(&self) -> String {
-        format!(
+        let mut s = format!(
             "golden: {} cases loaded ({} from ggb-harness), {} agreed, {} known gaps, \
-             line signs: {} agree / {} disagree",
+             line signs: {} agree / {} disagree, line scale: {} agree / {} disagree",
             self.loaded,
             self.harness_cases,
             self.agreed,
             self.known_gaps,
             self.sign_agree,
-            self.sign_disagree
-        )
+            self.sign_disagree,
+            self.scale_agree,
+            self.scale_disagree
+        );
+        for ((group, command), n) in &self.scale_disagree_by {
+            s.push_str(&format!("\n  line scale disagrees: {group} {command}: {n}"));
+        }
+        s
     }
 }
 
@@ -50,6 +65,15 @@ pub fn evaluate(cases: &[Case], gaps: &Gaps) -> Report {
         let out = replay(case);
         r.sign_agree += out.sign_agree;
         r.sign_disagree += out.sign_disagree;
+        // Only values recorded from GeoGebra say what its raw coefficients are.
+        if case.generator == "ggb-harness" {
+            r.scale_agree += out.scale_agree;
+            r.scale_disagree += out.scale_disagree.len();
+            for label in &out.scale_disagree {
+                let key = (case.group.clone(), command_of(case, label));
+                *r.scale_disagree_by.entry(key).or_default() += 1;
+            }
+        }
         let listed = gaps.get(&case.id);
         match (out.mismatches.is_empty(), listed) {
             (true, None) => r.agreed += 1,
@@ -88,6 +112,28 @@ pub fn evaluate(cases: &[Case], gaps: &Gaps) -> Report {
         }
     }
     r
+}
+
+/// The command name of the script line that creates `label`; an output
+/// `p_{n}` of a command with several outputs belongs to the line whose label
+/// starts with `p` up to its first `_`. `?` when no line matches.
+fn command_of(case: &Case, label: &str) -> String {
+    let prefix = |l: &str| l.split('_').next().unwrap_or(l).to_string();
+    let wanted = label.split("_{").next().unwrap_or(label);
+    for line in &case.script {
+        let Some((lhs, rhs)) = line.split_once('=') else {
+            continue;
+        };
+        let lhs = lhs.trim();
+        if lhs == label || (wanted != label && prefix(lhs) == wanted) {
+            let rhs = rhs.trim();
+            return match rhs.split_once('(') {
+                Some((name, _)) if !name.trim().is_empty() => name.trim().to_string(),
+                _ => "?".to_string(),
+            };
+        }
+    }
+    "?".to_string()
 }
 
 #[cfg(test)]
@@ -149,6 +195,46 @@ mod tests {
         assert!(r.failures.iter().any(|f| f.contains("stale")));
         let unknown = listed("nope", "0:M");
         assert!(!evaluate(&case(SCRIPT, 1.0), &unknown).failures.is_empty());
+    }
+
+    fn line_case(raw: (f64, f64, f64)) -> Vec<Case> {
+        let json = format!(
+            r#"{{"schema":1,"generator":"ggb-harness","upstream_commit":"c","cases":[
+            {{"id":"c1","group":"g","script":["A = (0, 0)","B = (2, 0)","l = Line(A, B)"],
+            "steps":[{{"action":"initial"}}],"snapshots":[{{
+            "A":{{"type":"point","defined":true,"x":0.0,"y":0.0}},
+            "B":{{"type":"point","defined":true,"x":2.0,"y":0.0}},
+            "l":{{"type":"line","defined":true,"a":{},"b":{},"c":{}}}}}]}}]}}"#,
+            raw.0, raw.1, raw.2
+        );
+        parse_file(&json, "t").unwrap().cases
+    }
+
+    #[test]
+    fn line_scale_is_counted_but_does_not_fail() {
+        // Line(A, B) with A = (0, 0), B = (2, 0) is (0, 2, 0) in GeoGebra.
+        let r = evaluate(&line_case((0.0, 2.0, 0.0)), &gaps::Gaps::new());
+        assert!(r.failures.is_empty());
+        assert_eq!((r.scale_agree, r.scale_disagree), (1, 0));
+        assert!(r.summary().contains("line scale: 1 agree / 0 disagree"));
+
+        let r = evaluate(&line_case((0.0, 1.0, 0.0)), &gaps::Gaps::new());
+        assert!(r.failures.is_empty());
+        assert_eq!((r.scale_agree, r.scale_disagree), (0, 1));
+        let key = ("g".to_string(), "Line".to_string());
+        assert_eq!(r.scale_disagree_by.get(&key), Some(&1));
+        assert!(r.summary().contains("line scale disagrees: g Line: 1"));
+    }
+
+    #[test]
+    fn outputs_of_a_command_with_several_results_map_to_its_line() {
+        let mut c = line_case((0.0, 2.0, 0.0)).remove(0);
+        c.script.push("t_1 = Tangent(A, l)".into());
+        let c = &c;
+        assert_eq!(command_of(c, "l"), "Line");
+        assert_eq!(command_of(c, "t_{2}"), "Tangent");
+        assert_eq!(command_of(c, "A"), "?");
+        assert_eq!(command_of(c, "zz"), "?");
     }
 
     #[test]

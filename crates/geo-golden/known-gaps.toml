@@ -175,7 +175,7 @@ mismatches = ["2:P", "2:Q"]
 [[gap]]
 id = "geometry-ixlc-010"
 reason = "near-tangent intersection: the discriminant is rounding noise, so GeoGebra and the kernel differ by 1e-8 to 1e-7 in position and in whether a second point exists"
-mismatches = ["2:P", "2:Q"]
+mismatches = ["2:Q"]
 
 [[gap]]
 id = "geometry-ixlc-011"
@@ -241,7 +241,7 @@ mismatches = ["0:P", "1:P", "2:P"]
 
 [[gap]]
 id = "conic-diameter-007"
-reason = "GeoGebra computes Diameter from the circle matrix without checking that the circle is defined, so with a negative radius it returns the diameter from the stale matrix of the last defined circle; the kernel has no such state and reports the diameter of an undefined circle as undefined"
+reason = "intended difference, recorded in DIFFERENCES.md: GeoGebra keeps the diameter line of an undefined circle (negative radius) at its last value, computed from the stale matrix of the last defined circle; the kernel reports it undefined"
 mismatches = ["1:g", "4:g"]
 
 # transform
@@ -306,56 +306,6 @@ id = "transform-dilate-033"
 reason = "GeoGebra classifies a dilated circle from its conic matrix, whose scale is not part of the kernel's circle value"
 mismatches = ["0:m", "0:n", "0:p", "0:t", "0:u", "1:m", "1:n", "1:p", "1:t", "1:u", "2:m", "2:n", "2:p", "2:t", "2:u", "3:m", "3:n", "3:p", "3:t", "3:u"]
 
-[[gap]]
-id = "transform-dilate-036"
-reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
-mismatches = ["1:m", "2:m", "5:m"]
-
-[[gap]]
-id = "transform-dilate-037"
-reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
-mismatches = ["1:m", "2:m", "5:m"]
-
-[[gap]]
-id = "transform-dilate-038"
-reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
-mismatches = ["1:m", "2:m", "5:m"]
-
-[[gap]]
-id = "transform-dilate-039"
-reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
-mismatches = ["1:m", "2:m", "5:m"]
-
-[[gap]]
-id = "transform-dilate-042"
-reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
-mismatches = ["3:m", "4:m", "6:m"]
-
-[[gap]]
-id = "transform-dilate-043"
-reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
-mismatches = ["3:m", "4:m", "6:m"]
-
-[[gap]]
-id = "transform-shear-023"
-reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
-mismatches = ["0:m", "1:m", "2:m", "3:m", "4:m", "5:m", "6:m", "7:m"]
-
-[[gap]]
-id = "transform-shear-025"
-reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
-mismatches = ["0:m", "1:m", "5:m", "6:m", "7:m"]
-
-[[gap]]
-id = "transform-stretch-023"
-reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
-mismatches = ["0:m", "1:m", "3:m", "5:m", "6:m", "7:m"]
-
-[[gap]]
-id = "transform-stretch-025"
-reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
-mismatches = ["0:m", "1:m", "2:m", "3:m", "6:m", "7:m"]
-
 # lines
 
 [[gap]]
@@ -377,13 +327,3 @@ mismatches = ["3:t", "4:t", "5:t", "6:t", "7:t", "8:t"]
 id = "lines-oncircle-008"
 reason = "the point starts on the circle, so GeoGebra labels one tangent. With continuity off the tangent order is the fixed AlgoIntersectLineConic.permutation of the helper intersection (AlgoTangentPointND.algoIntersect). AlgoIntersectLineConic.firstIntersection stays true while both tangent points coincide, which keeps isPermutationNeeded true, and permutation is then set by a near-to match against the previous points D on the update after the one that clears firstIntersection. Which tangent t follows depends on the path; the kernel always follows the first (left) tangent"
 mismatches = ["2:t", "3:t", "4:t", "5:t", "6:t", "8:t"]
-
-# Long, nearly parallel lines: the raw cross product is above 1e-8 and the
-# unit-normal one below it, so GeoGebra intersects them far away and defines
-# both bisectors through that point, while the kernel treats them as
-# parallel (its b_{1} is the middle line, slightly off GeoGebra's, and its
-# b_{2} is undefined).
-[[gap]]
-id = "lines-anglelines-012"
-reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
-mismatches = ["2:b_{1}", "2:b_{2}", "3:b_{1}", "3:b_{2}", "4:b_{1}", "4:b_{2}", "6:b_{1}", "6:b_{2}"]

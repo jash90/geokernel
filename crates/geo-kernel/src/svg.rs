@@ -91,7 +91,10 @@ pub fn render(c: &Construction, view: View, width: u32, height: u32) -> String {
 
     for id in c.ids() {
         match c.value(id) {
-            Value::Line { a, b, c: k } => {
+            v @ Value::Line { .. } => {
+                let Some((a, b, k)) = v.unit_line() else {
+                    continue;
+                };
                 let d = a * mx + b * my + k;
                 let (fx, fy) = (mx - a * d, my - b * d);
                 let _ = writeln!(

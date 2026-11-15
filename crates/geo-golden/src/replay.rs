@@ -1,6 +1,6 @@
 //! Replays a golden case on `geo-kernel` and compares every snapshot.
 
-use crate::compare::{compare, Sign};
+use crate::compare::{compare, line_scale_agrees, Sign};
 use crate::model::{Case, Step};
 use geo_kernel::{script, Construction};
 
@@ -18,6 +18,12 @@ pub struct CaseOutcome {
     pub mismatches: Vec<Mismatch>,
     pub sign_agree: usize,
     pub sign_disagree: usize,
+    /// Defined lines whose raw coefficients equal GeoGebra's (see
+    /// [`line_scale_agrees`]); counted, never a failure.
+    pub scale_agree: usize,
+    /// Labels of the defined lines whose raw coefficients differ from
+    /// GeoGebra's, once per snapshot.
+    pub scale_disagree: Vec<String>,
 }
 
 fn failure(step: usize, label: &str, expected: &str, actual: String) -> Mismatch {
@@ -60,6 +66,11 @@ pub fn replay(case: &Case) -> CaseOutcome {
                 continue;
             };
             let actual = c.value(id);
+            match line_scale_agrees(expected, &actual) {
+                Some(true) => out.scale_agree += 1,
+                Some(false) => out.scale_disagree.push(label.clone()),
+                None => {}
+            }
             match compare(expected, c.kind(id), &actual) {
                 Ok(Sign::Agrees) => out.sign_agree += 1,
                 Ok(Sign::Flipped) => out.sign_disagree += 1,

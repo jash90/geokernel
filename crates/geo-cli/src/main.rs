@@ -93,8 +93,10 @@ fn print_objects(c: &Construction) {
 fn describe(v: Value) -> String {
     match v {
         Value::Point { x, y } => format!("({x:.4}, {y:.4})"),
-        // Adding 0.0 turns a negative zero into a plain zero for display.
-        Value::Line { a, b, c } => {
+        // Shown with (a, b) of unit length. Adding 0.0 turns a negative zero
+        // into a plain zero for display.
+        Value::Line { .. } => {
+            let (a, b, c) = v.unit_line().unwrap_or((f64::NAN, f64::NAN, f64::NAN));
             format!("{:.4}x + {:.4}y + {:.4} = 0", a + 0.0, b + 0.0, c + 0.0)
         }
         Value::Segment { x1, y1, x2, y2 } => {

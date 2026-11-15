@@ -367,12 +367,13 @@ mod tests {
         )
         .unwrap();
         let v = |n: &str| c.value(c.id(n).unwrap());
+        // GeoGebra's raw coefficients: those of l, (0, 4, 0), moved through P.
         assert_eq!(
             v("p"),
             Value::Line {
                 a: 0.0,
-                b: 1.0,
-                c: -3.0
+                b: 4.0,
+                c: -12.0
             }
         );
         assert_eq!(v("q"), v("p"));

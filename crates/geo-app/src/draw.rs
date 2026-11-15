@@ -35,7 +35,7 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform)
 
     // Draw in layers: lines, circles, segments, then points on top.
     for id in c.ids() {
-        if let Value::Line { a, b, c: k } = c.value(id) {
+        if let Some((a, b, k)) = c.value(id).unit_line() {
             let d = a * mx + b * my + k;
             let (fx, fy) = (mx - a * d, my - b * d);
             painter.line_segment(

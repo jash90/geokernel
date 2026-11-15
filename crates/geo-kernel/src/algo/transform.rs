@@ -41,7 +41,7 @@
 //! forms that need a vector (`Translate`, `Shear` and `Stretch` along a
 //! vector), and shear and stretch of a circle (the image is an ellipse).
 
-use super::{Group, Parents, CIRCLE, LINE, LINE_LIKE, NUMBER, POINT};
+use super::{line_value, Group, Parents, CIRCLE, LINE, LINE_LIKE, NUMBER, POINT};
 use crate::kernel::{Construction, Error, Id, Kind, Value};
 use crate::script::object;
 use crate::tol::STANDARD_PRECISION;
@@ -251,16 +251,8 @@ impl Map {
             }
             Value::Line { a, b, c } => {
                 let (a, b, c) = self.line(a, b, c);
-                // GeoGebra's `GeoLine.isDefined`: both coefficients zero.
-                if a.abs() < STANDARD_PRECISION && b.abs() < STANDARD_PRECISION {
-                    return None;
-                }
-                let len = (a * a + b * b).sqrt();
-                Some(Value::Line {
-                    a: a / len,
-                    b: b / len,
-                    c: c / len,
-                })
+                // undefined like `GeoLine.isDefined`
+                line_value(a, b, c)
             }
             Value::Circle { cx, cy, r } => {
                 let r = self.radius(r)?;
@@ -269,6 +261,22 @@ impl Map {
             }
             Value::Number(_) | Value::Undefined => None,
         }
+    }
+}
+
+/// `MyMath.length`: no overflow, no underflow.
+fn my_length(x: f64, y: f64) -> f64 {
+    let (ax, ay) = (x.abs(), y.abs());
+    if ax == 0.0 {
+        ay
+    } else if ay == 0.0 {
+        ax
+    } else if ax > ay {
+        let t = ay / ax;
+        ax * (1.0 + t * t).sqrt()
+    } else {
+        let t = ax / ay;
+        ay * (1.0 + t * t).sqrt()
     }
 }
 
@@ -389,7 +397,7 @@ impl Group for TransformDef {
                 (src, Map::Point { qx, qy })
             }
             TransformDef::MirrorLine { src, mirror, .. } => {
-                let (a, b, c) = c.carrier(mirror)?;
+                let (a, b, c) = c.raw_carrier(mirror)?;
                 (src, Map::Line { a, b, c })
             }
             TransformDef::ShearStretch {
@@ -399,7 +407,7 @@ impl Group for TransformDef {
                 shear,
                 ..
             } => {
-                let (la, lb, lc) = c.carrier(axis)?;
+                let (la, lb, lc) = c.raw_carrier(axis)?;
                 let n = c.number(ratio)?;
                 // `AlgoShearOrStretch.compute`: a point on the axis moves to
                 // the origin, then the matrix of the shear or stretch is applied.
@@ -408,7 +416,7 @@ impl Group for TransformDef {
                 } else {
                     (0.0, lc / lb)
                 };
-                let len = (la * la + lb * lb).sqrt();
+                let len = my_length(la, lb);
                 let (s, cos) = (-la / len, lb / len);
                 let m = if shear {
                     [
@@ -680,28 +688,29 @@ mod tests {
              m = Mirror(l, Q)\nd = Dilate(l, f)\nn = Mirror(l, l)\n",
         )
         .unwrap();
-        // l is y = 0 with normal (0, 1); the mirror in a point flips it.
+        // l is y = 0 with GeoGebra's raw coefficients (0, 4, 0); the mirror
+        // in a point flips it.
         assert_eq!(
             value(&c, "m"),
             Value::Line {
                 a: 0.0,
-                b: -1.0,
-                c: 2.0
+                b: -4.0,
+                c: 8.0
             }
         );
         assert_eq!(
             value(&c, "d"),
             Value::Line {
                 a: -0.0,
-                b: -1.0,
+                b: -4.0,
                 c: -0.0
             }
         );
-        // Mirroring a line in itself keeps the line and its orientation.
+        // Mirroring a line in itself keeps the line, its scale and its orientation.
         let Value::Line { a, b, c: z } = value(&c, "n") else {
             panic!()
         };
-        assert!(close(a, 0.0) && close(b, 1.0) && close(z, 0.0));
+        assert!(close(a, 0.0) && close(b, 4.0) && close(z, 0.0));
     }
 
     #[test]
