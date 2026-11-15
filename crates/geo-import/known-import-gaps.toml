@@ -5,7 +5,7 @@
 # when the golden value, the imported value or the reason for the disagreement
 # change, or when the object stops disagreeing.
 #
-# All four are `Distance(line, line)` of two lines whose raw coefficients are
+# All five are `Distance(line, line)` of two lines whose raw coefficients are
 # about 1e-6 (a line through points 1e-6 apart). `GeoLine.distance(GeoLine)`
 # returns 0 for lines that are not parallel, and tests "parallel" with
 # `isZero(g.x * y - g.y * x)` on the raw coefficients, where products of two

@@ -247,3 +247,66 @@ fn polygon_outputs_are_labelled_by_the_kernel() {
     assert_eq!(r.script[3], "p = Polygon(A, B, C)");
     assert_eq!(r.script[4], "ar = Area(p)");
 }
+
+fn circle_file(cx: &str, r: &str, matrix: &str) -> String {
+    free("A", cx, "0")
+        + &format!("<element type=\"numeric\" label=\"r\"><value val=\"{r}\"/></element>")
+        + "<command name=\"Circle\"><input a0=\"A\" a1=\"r\"/><output a0=\"k\"/></command>"
+        + &format!("<element type=\"conic\" label=\"k\"><matrix {matrix}/></element>")
+}
+
+#[test]
+fn a_circle_far_from_the_origin_is_compared_with_the_precision_of_its_matrix() {
+    // centre (2000, 0): A2 = 2000^2 - r^2
+    let m = |r2: f64| {
+        format!(
+            "A0=\"1\" A1=\"1\" A2=\"{}\" A3=\"0\" A4=\"-2000\" A5=\"0\"",
+            4_000_000.0 - r2
+        )
+    };
+    let same = ok(&circle_file("2000", "1", &m(1.0)));
+    assert!(same.mismatched.is_empty(), "{:?}", same.mismatched);
+    // r = 1.001 saved, r = 1 computed: reported, although the squared radius
+    // differs by 0.002 only, far below 1e-9 of the 4e6 in the matrix
+    let other = ok(&circle_file("2000", "1", &m(1.001 * 1.001)));
+    assert_eq!(other.mismatched.len(), 1);
+    assert_eq!(other.mismatched[0].label, "k");
+    // a wrong centre is reported
+    let moved = ok(&circle_file(
+        "2000",
+        "1",
+        "A0=\"1\" A1=\"1\" A2=\"3996001\" A3=\"0\" A4=\"-1999.999\" A5=\"0\"",
+    ));
+    assert_eq!(moved.mismatched.len(), 1);
+}
+
+#[test]
+fn defined_against_undefined_is_a_mismatch_both_ways() {
+    // the kernel gives an undefined circle for a negative radius; the file
+    // saved a defined one
+    let r = ok(&circle_file(
+        "0",
+        "-1",
+        "A0=\"1\" A1=\"1\" A2=\"-1\" A3=\"0\" A4=\"0\" A5=\"0\"",
+    ));
+    assert_eq!(r.mismatched.len(), 1, "{:?}", r.mismatched);
+    // the kernel gives a defined circle; the file saved an undefined one
+    let r = ok(&circle_file(
+        "0",
+        "1",
+        "A0=\"NaN\" A1=\"NaN\" A2=\"NaN\" A3=\"0\" A4=\"0\" A5=\"0\"",
+    ));
+    assert_eq!(r.mismatched.len(), 1, "{:?}", r.mismatched);
+    // a point at infinity saved, a finite midpoint computed
+    let r = ok(&(free("A", "0", "0")
+        + &free("B", "4", "2")
+        + "<command name=\"Midpoint\"><input a0=\"A\" a1=\"B\"/><output a0=\"M\"/></command>\
+           <element type=\"point\" label=\"M\"><coords x=\"1\" y=\"1\" z=\"0\"/></element>"));
+    assert_eq!(r.mismatched.len(), 1);
+    // nothing saved to judge by: no mismatch
+    let r = ok(&(free("A", "0", "0")
+        + &free("B", "4", "2")
+        + "<command name=\"Midpoint\"><input a0=\"A\" a1=\"B\"/><output a0=\"M\"/></command>\
+           <element type=\"point\" label=\"M\"/>"));
+    assert!(r.mismatched.is_empty());
+}

@@ -162,7 +162,7 @@ algebra processor (so `P = Intersect(f, k)` gives both points), applies the
 (`golden/ggb/saved/<id>.xml`) and what GeoGebra computes in that state
 (`<id>.snapshot`, golden field format, not read by the golden loader). A case
 may set `angle_unit` (`degree` or `radiant`). `crates/geo-import/tests/saved.rs`
-imports each file and compares it with its snapshot: this is the proof that the
+imports each file and compares it with its snapshot: this covers, for exactly the states the cases reach, that the
 n-th output slot of a saved `Intersect` or `Tangent` is the n-th object of the
 kernel after points were moved, and that angles do not depend on the angle unit.
 

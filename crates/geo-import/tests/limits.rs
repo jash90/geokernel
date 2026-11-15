@@ -233,11 +233,7 @@ fn a_wide_command_with_a_huge_argument_holds_memory_in_proportion_to_the_input()
     let arg = "1+".repeat(MAX_ATTRIBUTE_BYTES / 2);
     assert_eq!(arg.len(), MAX_ATTRIBUTE_BYTES);
     for name in ["Line", "Intersect"] {
-        let input = if name == "Line" {
-            format!("<input a0=\"{arg}\" a1=\"B\"/>")
-        } else {
-            format!("<input a0=\"{arg}\" a1=\"B\"/>")
-        };
+        let input = format!("<input a0=\"{arg}\" a1=\"B\"/>");
         let xml = wrap(&format!(
             "<command name=\"{name}\">{input}{}</command>",
             outputs(MAX_ARGUMENTS)

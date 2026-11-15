@@ -185,7 +185,8 @@ fn compare_case(
     }
     // What the kernel gives for the golden script itself.
     let direct = geo_kernel::script::load(&case.script.join("\n")).ok();
-    let mut unlabelled = 0;
+    // The command names of the outputs the file left without a label.
+    let mut unlabelled_kinds: Vec<String> = Vec::new();
     for s in &imported.skipped {
         if !s.label.is_empty() {
             totals
@@ -193,7 +194,7 @@ fn compare_case(
                 .insert(format!("{}:{}", case.id, s.label));
         }
         if s.label.is_empty() {
-            unlabelled += 1;
+            unlabelled_kinds.push(s.kind.clone());
             totals.unlabelled += 1;
             continue;
         }
@@ -211,7 +212,6 @@ fn compare_case(
         .iter()
         .map(|m| (m.label.clone(), m.saved.clone()))
         .collect();
-    let mut missing = 0;
     let gap = gaps.get(&case.id);
     for (label, expected) in &case.snapshots[0] {
         if skipped.contains_key(label.as_str()) {
@@ -224,8 +224,18 @@ fn compare_case(
         }
         let Some(id) = c.id(label) else {
             // The file has no label for it, so it must be undefined.
-            if expected.data.is_none() && missing < unlabelled {
-                missing += 1;
+            // It must match by command: the script line that defines the
+            // object (or, for a generated label such as `t_{1}`, the line of
+            // its prefix) names the command of an output-less entry.
+            let prefix = label.split("_{").next().unwrap_or(label);
+            let command = case.script.iter().find_map(|l| {
+                let (lhs, rhs) = l.split_once('=')?;
+                let lhs = lhs.trim();
+                (lhs == label || lhs == prefix).then(|| rhs.split('(').next().unwrap_or("").trim())
+            });
+            let slot = command.and_then(|name| unlabelled_kinds.iter().position(|k| k == name));
+            if let (true, Some(slot)) = (expected.data.is_none(), slot) {
+                unlabelled_kinds.remove(slot);
                 totals.unlabelled_objects += 1;
             } else {
                 failures.push(format!(
@@ -294,6 +304,30 @@ fn compare_case(
                     ));
                 }
             }
+        }
+    }
+    // Objects the import made that the snapshot does not have: only the
+    // sides and new vertices of a polygon and the like, which the kernel
+    // labels itself, and the image points of transformed segments, and only
+    // defined ones (GeoGebra labels no other).
+    for id in c.ids() {
+        let label = c.label(id);
+        if case.snapshots[0].contains_key(label) {
+            continue;
+        }
+        let polygon_family = case.script.iter().any(|l| {
+            ["Polygon(", "Vertex(", "InteriorAngles(", "Angle("]
+                .iter()
+                .any(|f| l.contains(f))
+        });
+        // the image points of a transformed segment or ray (`A'`, `B'`, or default
+        // labels such as `C`)
+        let image = matches!(case.group.as_str(), "transform" | "vector");
+        if !(polygon_family || image) || !c.value(id).is_defined() {
+            failures.push(format!(
+                "{}: the import made `{label}`, which the snapshot does not have",
+                case.id
+            ));
         }
     }
     imported.script

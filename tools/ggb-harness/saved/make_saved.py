@@ -107,6 +107,53 @@ for n in range(16):
     case("tangent", [pt("A", ax, ay), f"r = {fmt(r)}", "k = Circle(A, r)",
                      pt("P", px, py), "t = Tangent(P, k)"], steps)
 
+# The very first update after creation: GeoGebra fixes its permutation of the
+# two points then (AlgoIntersectLineConic / AlgoIntersectConics:
+# `isPermutationNeeded`), so the first move reverses the line's direction (C
+# past D), or swaps the two centres, and nothing else happens before saving.
+topic("firstmove")
+for n in range(12):
+    ax, ay, r = r2(-3, 3), r2(-3, 3), round(rng.uniform(1.5, 4), 2)
+    cx, cy = ax - 5, round(ay + rng.uniform(-0.5, 0.5), 2)
+    dx, dy = ax + 5, round(ay + rng.uniform(-0.5, 0.5), 2)
+    case("firstmove", [pt("A", ax, ay), f"r = {fmt(r)}", "k = Circle(A, r)",
+                       pt("C", cx, cy), pt("D", dx, dy), "f = Line(C, D)",
+                       "P = Intersect(f, k)"],
+         [mv("C", dx + 1, dy), mv("D", cx - 1, cy)] if n % 2 else [mv("C", dx + 1, dy)])
+for n in range(12):
+    ax, ay = r2(-3, 3), r2(-3, 3)
+    bx, by = round(ax + rng.uniform(2, 4), 2), round(ay + rng.uniform(-2, 2), 2)
+    r, s = round(rng.uniform(1.5, 3), 2), round(rng.uniform(1.5, 3), 2)
+    case("firstmove", [pt("A", ax, ay), f"r = {fmt(r)}", "k = Circle(A, r)",
+                       pt("B", bx, by), f"s = {fmt(s)}", "c = Circle(B, s)",
+                       "P = Intersect(k, c)"],
+         [mv("A", bx + 0.5, by)] if n % 2 else [mv("A", bx + 0.5, by), mv("B", ax - 0.5, ay)])
+
+# A labelled second output on a tangent point. `avoidDoubleTangentPoint` drops
+# the doubled point only when it is not labelled; `Intersect(f, k)` labels both
+# outputs, so GeoGebra keeps the second point (equal to the first) defined.
+# The line, or the second circle, is moved onto tangency, keeping the order.
+topic("doubletangent")
+# Whole numbers, so that the discriminant is exactly zero at tangency.
+for n in range(6):
+    ax, ay, r = rng.randint(-3, 3), rng.randint(-3, 3), rng.randint(2, 4)
+    cx, dx = ax - 5, ax + 5
+    y0 = ay + rng.randint(-1, 1)
+    top = ay + r if n % 2 == 0 else ay - r
+    case("doubletangent", [pt("A", ax, ay), f"r = {fmt(r)}", "k = Circle(A, r)",
+                           pt("C", cx, y0), pt("D", dx, y0), "f = Line(C, D)",
+                           "P = Intersect(f, k)"],
+         [mv("C", cx, top), mv("D", dx, top)])
+for n in range(6):
+    ax, ay = rng.randint(-3, 3), rng.randint(-3, 3)
+    r, s = rng.randint(2, 3), rng.randint(2, 3)
+    sign = 1 if n % 2 == 0 else -1
+    # externally tangent: centres r + s apart on the x axis through A
+    case("doubletangent", [pt("A", ax, ay), f"r = {fmt(r)}", "k = Circle(A, r)",
+                           pt("B", ax + sign * (r + s - 1), ay), f"s = {fmt(s)}",
+                           "c = Circle(B, s)", "P = Intersect(k, c)"],
+         [mv("B", ax + sign * (r + s), ay)])
+
 # Angles saved under each angle unit, after moving the points.
 topic("angle")
 for unit in ("degree", "radiant"):

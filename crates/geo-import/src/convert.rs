@@ -600,13 +600,89 @@ fn saved_text(el: &Element) -> String {
     parts.join(", ")
 }
 
+/// A circle read from a saved `<matrix A0..A5>`: centre, squared radius, and
+/// the scale of the terms the squared radius is the difference of.
+///
+/// GeoGebra writes `A0 x^2 + A1 y^2 + A2 + 2 A3 x y + 2 A4 x + 2 A5 y = 0`.
+struct SavedCircle {
+    cx: f64,
+    cy: f64,
+    r2: f64,
+    /// `cx^2 + cy^2 + |A2 / A0|`: `r2` is a difference of terms of this size,
+    /// so its rounding error is a few units of `1e-16` times it.
+    scale: f64,
+}
+
+/// How many units of `f64::EPSILON * scale` the squared radius recovered from
+/// a saved matrix may be off. The matrix elements are computed by GeoGebra
+/// from the centre and the radius with a handful of multiplications and
+/// additions (each at most one rounding error of a term of size `scale`), and
+/// the recovery subtracts terms of the same size: about ten roundings, with a
+/// safety factor of four.
+const MATRIX_ULPS: f64 = 40.0;
+
+fn saved_circle(el: &Element) -> Option<Option<SavedCircle>> {
+    let m = el.matrix.as_ref()?;
+    let a: Option<Vec<f64>> = m.iter().map(|t| num(t)).collect();
+    let Some(a) = a else {
+        return Some(None);
+    };
+    if a[0] == 0.0 || !close(a[0], a[1]) || a[3].abs() > TOLERANCE * a[0].abs() {
+        return Some(None);
+    }
+    let (cx, cy) = (-a[4] / a[0], -a[5] / a[0]);
+    let r2 = cx * cx + cy * cy - a[2] / a[0];
+    let scale = cx * cx + cy * cy + (a[2] / a[0]).abs();
+    // A radius below the rounding noise of the matrix is a single point;
+    // a clearly negative squared radius is no circle.
+    (r2 >= -MATRIX_ULPS * f64::EPSILON * scale)
+        .then_some(Some(SavedCircle { cx, cy, r2, scale }))
+        .or(Some(None))
+}
+
+/// Whether the saved element is defined, judged from its own data: `None`
+/// when the file saved nothing to judge by.
+fn saved_defined(el: &Element) -> Option<bool> {
+    match el.kind.as_str() {
+        "point" => el
+            .coords
+            .as_ref()
+            .map(|_| coords3(el).is_some_and(|[_, _, z]| z != 0.0)),
+        "vector" => el.coords.as_ref().map(|_| coords3(el).is_some()),
+        // A degenerate segment (equal end points) is a defined object whose
+        // saved line is (0, 0, 0).
+        "segment" => el.coords.as_ref().map(|_| coords3(el).is_some()),
+        "line" | "ray" => el
+            .coords
+            .as_ref()
+            .map(|_| coords3(el).is_some_and(|[a, b, _]| a != 0.0 || b != 0.0)),
+        "conic" => saved_circle(el).map(|c| c.is_some()),
+        "numeric" | "angle" => el.value.as_ref().map(|v| num(v).is_some()),
+        "boolean" => el
+            .value
+            .as_deref()
+            .map(|v| matches!(v.trim(), "true" | "false")),
+        _ => None,
+    }
+}
+
 /// Compares what the kernel computed with what the file saved for the same
-/// object. `Some((saved, computed))` for a disagreement, `None` when they
-/// agree or when the file saved nothing the kernel value can be compared with.
+/// object. `Some((saved, computed))` for a disagreement: a different value,
+/// or one side defined and the other not. `None` when they agree or when the
+/// file saved nothing to compare with (a polygon, a polyline: GeoGebra saves
+/// neither the vertices nor the area; a segment or a ray: only its line, the
+/// end points are the objects it was made from).
 fn cross_check(el: &Element, value: &Value) -> Option<(String, String)> {
+    let report = || Some((saved_text(el), format!("{value:?}")));
+    let saved_defined = saved_defined(el);
+    match (value.is_defined(), saved_defined) {
+        (false, Some(true)) | (true, Some(false)) => return report(),
+        (false, _) | (_, None) => return None,
+        (true, Some(true)) => {}
+    }
     let agrees: Option<bool> = match *value {
         Value::Point { x, y } => {
-            coords3(el).map(|[sx, sy, sz]| sz != 0.0 && close(x, sx / sz) && close(y, sy / sz))
+            coords3(el).map(|[sx, sy, sz]| close(x, sx / sz) && close(y, sy / sz))
         }
         Value::Vector { x, y } => coords3(el).map(|[sx, sy, _]| close(x, sx) && close(y, sy)),
         Value::Line { a, b, c } | Value::Ray { a, b, c, .. } => {
@@ -620,35 +696,22 @@ fn cross_check(el: &Element, value: &Value) -> Option<(String, String)> {
                 same_line([y1 - y2, x2 - x1, x1 * y2 - y1 * x2], saved)
             }
         }),
-        Value::Circle { cx, cy, r } => el.matrix.as_ref().and_then(|m| {
-            let a: Vec<f64> = m.iter().map(|t| num(t)).collect::<Option<_>>()?;
-            // A0 x^2 + A1 y^2 + A2 + 2 A3 x y + 2 A4 x + 2 A5 y = 0
-            if a[0] == 0.0 || !close(a[0], a[1]) || a[3].abs() > TOLERANCE * a[0].abs() {
-                return Some(false);
-            }
-            let (sx, sy) = (-a[4] / a[0], -a[5] / a[0]);
-            let r2 = sx * sx + sy * sy - a[2] / a[0];
-            // The saved radius is the difference of terms of the size of
-            // `sx^2 + sy^2`, so its error is relative to those terms, not to
-            // the (possibly tiny) radius.
-            let scale = 1.0_f64.max(sx * sx + sy * sy).max((a[2] / a[0]).abs());
-            Some(close(cx, sx) && close(cy, sy) && (r * r - r2).abs() <= TOLERANCE * scale)
+        Value::Circle { cx, cy, r } => saved_circle(el).flatten().map(|s| {
+            // Centre and radius at the golden rules. The saved radius comes
+            // from a difference of terms of size `scale`, so it is no more
+            // precise than that: its error is bounded by the rounding of the
+            // matrix, not by 1e-9 of the (possibly tiny) radius.
+            let rs = s.r2.max(0.0).sqrt();
+            let r2_error = MATRIX_ULPS * f64::EPSILON * s.scale;
+            let radius_ok = close(r, rs) || (r * r - s.r2).abs() <= r2_error;
+            close(cx, s.cx) && close(cy, s.cy) && radius_ok
         }),
         Value::Number(n) => el.value.as_deref().and_then(num).map(|s| close(n, s)),
         Value::Bool(b) => el
             .value
             .as_deref()
             .map(|v| v.trim() == if b { "true" } else { "false" }),
-        // The kernel has no value. The file disagrees when it saved a defined
-        // one: a point at infinity (z = 0) and a line with (a, b) = (0, 0)
-        // are undefined for the kernel, as in the golden snapshots.
-        Value::Undefined => match el.kind.as_str() {
-            "point" => coords3(el).map(|[_, _, z]| z == 0.0),
-            "line" | "segment" | "ray" => coords3(el).map(|[a, b, _]| a == 0.0 && b == 0.0),
-            "vector" => coords3(el).map(|_| false),
-            _ => el.value.as_deref().and_then(num).map(|_| false),
-        },
         _ => None,
     };
-    (agrees == Some(false)).then(|| (saved_text(el), format!("{value:?}")))
+    (agrees == Some(false)).then(report).flatten()
 }
