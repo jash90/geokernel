@@ -4,11 +4,24 @@
 #   GEOGEBRA_SRC=<path to a GeoGebra checkout> tools/ggb-harness/harness.sh build
 #   GEOGEBRA_SRC=<path to a GeoGebra checkout> tools/ggb-harness/harness.sh golden [group...]
 #   GEOGEBRA_SRC=<path to a GeoGebra checkout> tools/ggb-harness/harness.sh chain
+#   GEOGEBRA_SRC=<path to a GeoGebra checkout> tools/ggb-harness/harness.sh ggb [sample step [zip step]]
+#   GEOGEBRA_SRC=<path to a GeoGebra checkout> tools/ggb-harness/harness.sh saved
+#   GEOGEBRA_SRC=<path to a GeoGebra checkout> tools/ggb-harness/harness.sh reload <file.xml> <label>...
 #
 # `build`  builds GeoGebra's common-jre with its own Gradle wrapper, records the
 #          class path in build/classpath.txt and compiles the harness.
 # `golden` regenerates golden/<group>/*.json from every cases/<group>.json;
 #          `golden <group>...` regenerates only the named groups.
+# `ggb`    writes the construction file GeoGebra produces for every case, to
+#          golden/ggb/<group>/<case id>.xml (and .ggb for every zip step-th case);
+#          the sample step keeps every n-th case of each group (default 1).
+#          A partial run (sample step above 1) deletes nothing; a full run
+#          prunes files it did not produce and prints each one.
+# `saved`  writes construction files saved after the free points were moved,
+#          with GeoGebra's own values at that moment, to golden/ggb/saved/
+#          (<id>.xml and <id>.snapshot), from saved/saved.json.
+# `reload` loads a saved file into a fresh GeoGebra and prints the numbers it
+#          computes for the given labels.
 # `chain`  times the bench() chain (see README.md); extra arguments are passed on.
 set -euo pipefail
 
@@ -53,8 +66,24 @@ case "$cmd" in
     java "${java_opts[@]}" -cp "$build/classes:$(cat "$build/classpath.txt")" \
       geokernel.harness.ChainTiming "$@"
     ;;
+  ggb)
+    sample="${1:-1}"
+    zipstep="${2:-50}"
+    for file in "$here"/cases/*.json; do
+      java "${java_opts[@]}" -cp "$build/classes:$(cat "$build/classpath.txt")" \
+        geokernel.harness.GgbExporter "$file" "$repo/golden/ggb" "$sample" "$zipstep"
+    done
+    ;;
+  saved)
+    java "${java_opts[@]}" -cp "$build/classes:$(cat "$build/classpath.txt")" \
+      geokernel.harness.SavedExporter "$here/saved/saved.json" "$repo/golden/ggb/saved"
+    ;;
+  reload)
+    java "${java_opts[@]}" -cp "$build/classes:$(cat "$build/classpath.txt")" \
+      geokernel.harness.Reload "$@"
+    ;;
   *)
-    echo "usage: GEOGEBRA_SRC=<checkout> $0 build|golden|chain" >&2
+    echo "usage: GEOGEBRA_SRC=<checkout> $0 build|golden|chain|ggb|saved|reload" >&2
     exit 2
     ;;
 esac

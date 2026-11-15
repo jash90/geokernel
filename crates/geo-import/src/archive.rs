@@ -1,0 +1,216 @@
+//! Finds the XML text of a construction in the bytes of a file.
+//!
+//! A `.ggb` file is a zip archive. Only what GeoGebra's writer produces is
+//! read: the central directory, and entries that are stored (method 0) or
+//! deflated (method 8). Zip64, encryption, split archives and every other
+//! method are refused. All sizes are checked against the limits below before
+//! anything is allocated, and the decompressor is given the declared size as
+//! its output limit, so a deflate bomb stops at the limit.
+
+use crate::ImportError;
+use miniz_oxide::inflate::{decompress_to_vec_with_limit, TINFLStatus};
+use std::borrow::Cow;
+
+/// The most unpacked XML the importer reads (a guard against zip bombs).
+pub const MAX_XML_BYTES: u64 = 256 * 1024 * 1024;
+
+/// The most entries a zip archive may list. A `.ggb` file has a handful.
+pub const MAX_ZIP_ENTRIES: usize = 4096;
+
+/// The name of the construction in a `.ggb` archive.
+pub const XML_FILE: &str = "geogebra.xml";
+
+/// Whether `bytes` start like a zip archive.
+pub fn is_zip(bytes: &[u8]) -> bool {
+    bytes.starts_with(b"PK\x03\x04") || bytes.starts_with(b"PK\x05\x06")
+}
+
+/// The XML text of `bytes`: the entry `geogebra.xml` when the bytes are a zip
+/// archive, the bytes themselves otherwise. A bare file is borrowed, not
+/// copied.
+pub fn extract_xml(bytes: &[u8]) -> Result<Cow<'_, str>, ImportError> {
+    if is_zip(bytes) {
+        let mut text = String::from_utf8(unzip(bytes)?)
+            .map_err(|e| ImportError::Xml(format!("not UTF-8: {e}")))?;
+        if text.starts_with('\u{feff}') {
+            text.drain(..3);
+        }
+        return Ok(Cow::Owned(text));
+    }
+    if bytes.len() as u64 > MAX_XML_BYTES {
+        return Err(ImportError::TooLarge);
+    }
+    let raw = bytes.strip_prefix(b"\xEF\xBB\xBF").unwrap_or(bytes);
+    std::str::from_utf8(raw)
+        .map(Cow::Borrowed)
+        .map_err(|e| ImportError::Xml(format!("not UTF-8: {e}")))
+}
+
+fn zip_error(detail: &str) -> ImportError {
+    ImportError::Zip(detail.to_string())
+}
+
+fn u16_at(b: &[u8], at: usize) -> Result<usize, ImportError> {
+    at.checked_add(2)
+        .and_then(|end| b.get(at..end))
+        .map(|s| u16::from_le_bytes([s[0], s[1]]) as usize)
+        .ok_or_else(|| zip_error("truncated"))
+}
+
+fn u32_at(b: &[u8], at: usize) -> Result<u64, ImportError> {
+    at.checked_add(4)
+        .and_then(|end| b.get(at..end))
+        .map(|s| u32::from_le_bytes([s[0], s[1], s[2], s[3]]) as u64)
+        .ok_or_else(|| zip_error("truncated"))
+}
+
+const EOCD: u32 = 0x0605_4b50;
+const CENTRAL: u32 = 0x0201_4b50;
+const LOCAL: u32 = 0x0403_4b50;
+
+struct Entry {
+    method: usize,
+    crc: u32,
+    compressed: u64,
+    size: u64,
+    local_offset: u64,
+}
+
+/// The end-of-central-directory record: the offset and the entry count of the
+/// central directory.
+fn find_end(bytes: &[u8]) -> Result<(usize, usize), ImportError> {
+    let sig = EOCD.to_le_bytes();
+    let lowest = bytes.len().saturating_sub(22 + 0xFFFF);
+    let mut at = bytes
+        .len()
+        .checked_sub(22)
+        .ok_or_else(|| zip_error("truncated"))?;
+    loop {
+        if bytes[at..at + 4] == sig {
+            let comment = u16_at(bytes, at + 20)?;
+            if at + 22 + comment == bytes.len() {
+                let entries = u16_at(bytes, at + 10)?;
+                let offset = u32_at(bytes, at + 16)?;
+                if entries == 0xFFFF || offset == 0xFFFF_FFFF {
+                    return Err(zip_error("zip64 archives are not supported"));
+                }
+                if u16_at(bytes, at + 4)? != 0 || u16_at(bytes, at + 6)? != 0 {
+                    return Err(zip_error("split archives are not supported"));
+                }
+                return Ok((offset as usize, entries));
+            }
+        }
+        if at == lowest {
+            return Err(zip_error("no end-of-central-directory record"));
+        }
+        at -= 1;
+    }
+}
+
+/// The central-directory entry called [`XML_FILE`], if the archive has one.
+fn find_entry(bytes: &[u8]) -> Result<Option<Entry>, ImportError> {
+    let (mut at, count) = find_end(bytes)?;
+    if count > MAX_ZIP_ENTRIES {
+        return Err(ImportError::TooManyEntries(count));
+    }
+    for _ in 0..count {
+        if u32_at(bytes, at)? != CENTRAL as u64 {
+            return Err(zip_error("damaged central directory"));
+        }
+        let name_len = u16_at(bytes, at + 28)?;
+        let extra_len = u16_at(bytes, at + 30)?;
+        let comment_len = u16_at(bytes, at + 32)?;
+        let name = bytes
+            .get(at.saturating_add(46)..at.saturating_add(46).saturating_add(name_len))
+            .ok_or_else(|| zip_error("truncated"))?;
+        if name == XML_FILE.as_bytes() {
+            let flags = u16_at(bytes, at + 8)?;
+            if flags & 1 != 0 {
+                return Err(zip_error("encrypted entries are not supported"));
+            }
+            let entry = Entry {
+                method: u16_at(bytes, at + 10)?,
+                crc: u32_at(bytes, at + 16)? as u32,
+                compressed: u32_at(bytes, at + 20)?,
+                size: u32_at(bytes, at + 24)?,
+                local_offset: u32_at(bytes, at + 42)?,
+            };
+            // 0xFFFFFFFF in any of these means the real value is in a zip64
+            // extra field, which is not read.
+            if [entry.compressed, entry.size, entry.local_offset].contains(&0xFFFF_FFFF) {
+                return Err(zip_error("zip64 entries are not supported"));
+            }
+            return Ok(Some(entry));
+        }
+        at = at
+            .checked_add(46 + name_len + extra_len + comment_len)
+            .ok_or_else(|| zip_error("damaged central directory"))?;
+    }
+    Ok(None)
+}
+
+const CRC_TABLE: [u32; 256] = {
+    let mut table = [0u32; 256];
+    let mut n = 0;
+    while n < 256 {
+        let mut c = n as u32;
+        let mut k = 0;
+        while k < 8 {
+            c = if c & 1 != 0 {
+                0xEDB8_8320 ^ (c >> 1)
+            } else {
+                c >> 1
+            };
+            k += 1;
+        }
+        table[n] = c;
+        n += 1;
+    }
+    table
+};
+
+fn crc32(data: &[u8]) -> u32 {
+    !data.iter().fold(!0u32, |c, &b| {
+        CRC_TABLE[((c ^ b as u32) & 0xFF) as usize] ^ (c >> 8)
+    })
+}
+
+fn unzip(bytes: &[u8]) -> Result<Vec<u8>, ImportError> {
+    let entry = find_entry(bytes)?.ok_or(ImportError::MissingXml)?;
+    if entry.size > MAX_XML_BYTES {
+        return Err(ImportError::TooLarge);
+    }
+    let at = usize::try_from(entry.local_offset).map_err(|_| zip_error("bad offset"))?;
+    if u32_at(bytes, at)? != LOCAL as u64 {
+        return Err(zip_error("damaged local header"));
+    }
+    let start = at
+        .checked_add(30 + u16_at(bytes, at + 26)? + u16_at(bytes, at + 28)?)
+        .ok_or_else(|| zip_error("bad offset"))?;
+    let end = start
+        .checked_add(entry.compressed as usize)
+        .filter(|&e| e <= bytes.len())
+        .ok_or_else(|| zip_error("the entry runs past the end of the file"))?;
+    let data = &bytes[start..end];
+    let size = entry.size as usize;
+    let out = match entry.method {
+        0 => {
+            if data.len() != size {
+                return Err(zip_error("a stored entry whose sizes differ"));
+            }
+            data.to_vec()
+        }
+        8 => decompress_to_vec_with_limit(data, size).map_err(|e| match e.status {
+            TINFLStatus::HasMoreOutput => zip_error("the entry is larger than its declared size"),
+            _ => ImportError::Zip(format!("damaged deflate data: {:?}", e.status)),
+        })?,
+        other => return Err(ImportError::Zip(format!("compression method {other}"))),
+    };
+    if out.len() != size {
+        return Err(zip_error("the entry is smaller than its declared size"));
+    }
+    if crc32(&out) != entry.crc {
+        return Err(zip_error("the checksum of the entry does not match"));
+    }
+    Ok(out)
+}

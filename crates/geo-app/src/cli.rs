@@ -4,7 +4,7 @@ use crate::workbench::Workbench;
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 
-pub const USAGE: &str = "usage: geokernel-app [script.geo]";
+pub const USAGE: &str = "usage: geokernel-app [script.geo | file.ggb]";
 
 /// What the command line asked for.
 #[derive(Debug, PartialEq, Eq)]
@@ -40,10 +40,57 @@ fn file_name(path: &Path) -> String {
     )
 }
 
-/// Reads a script file into the workbench. Errors name the file.
+/// The text to show after a file was imported: what was left out (objects the
+/// kernel cannot make, objects that depend on them), objects whose value
+/// differs from the one saved in the file, and the notes of the importer.
+/// `None` when there is nothing to tell.
+pub fn import_notice(imported: &geo_import::Imported) -> Option<String> {
+    let dependents = imported
+        .skipped
+        .iter()
+        .filter(|s| s.reason.starts_with("depends on"))
+        .count();
+    let direct = imported.skipped.len() - dependents;
+    let mut parts = Vec::new();
+    if direct > 0 {
+        parts.push(format!(
+            "Pominięte obiekty: {direct} (jądro ich nie obsługuje)"
+        ));
+    }
+    if dependents > 0 {
+        parts.push(format!("zależne od nich: {dependents}"));
+    }
+    if !imported.mismatched.is_empty() {
+        parts.push(format!(
+            "wartości różne od zapisanych w pliku: {}",
+            imported.mismatched.len()
+        ));
+    }
+    if parts.is_empty() && imported.notes.is_empty() {
+        return None;
+    }
+    parts.push(format!("wczytane linie: {}", imported.script.len()));
+    let mut text = parts.join(", ");
+    if !imported.notes.is_empty() {
+        text.push_str(&format!(". Uwagi: {}", imported.notes.join("; ")));
+    }
+    Some(text)
+}
+
+/// Reads a script file, or a construction file saved by GeoGebra, into the
+/// workbench. A construction file is recognised by its content (a zip archive,
+/// or XML whose root is `geogebra`), not by its name. Errors name the file.
 pub fn load_into(wb: &mut Workbench, path: &Path) -> Result<(), String> {
     let name = file_name(path);
-    let src = std::fs::read_to_string(path).map_err(|e| format!("{name}: {e}"))?;
+    let bytes = std::fs::read(path).map_err(|e| format!("{name}: {e}"))?;
+    if geo_import::looks_like_construction(&bytes) {
+        let imported = geo_import::import(&bytes).map_err(|e| format!("{name}: {e}"))?;
+        let notice = import_notice(&imported);
+        return wb
+            .load_imported(&imported.script.join("\n"), &imported.hidden, notice)
+            .map_err(|e| format!("{name}: {e}"));
+    }
+    let src = String::from_utf8(bytes).map_err(|e| format!("{name}: {e}"))?;
     wb.load_script(&src).map_err(|e| format!("{name}: {e}"))
 }
 
@@ -100,6 +147,89 @@ mod tests {
         let mut wb = Workbench::default();
         let err = load_into(&mut wb, Path::new("definitely/missing/none.geo")).unwrap_err();
         assert!(err.starts_with("none.geo: "), "{err}");
+    }
+
+    #[test]
+    fn load_into_reads_a_construction_file() {
+        let dir = std::env::temp_dir().join(format!("geo-app-ggb-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let xml = "<geogebra><construction>\
+            <element type=\"point\" label=\"A\"><show object=\"false\"/><coords x=\"1\" y=\"2\" z=\"1\"/></element>\
+            <element type=\"point\" label=\"B\"><coords x=\"3\" y=\"4\" z=\"1\"/></element>\
+            <element type=\"text\" label=\"T\"/>\
+            </construction></geogebra>";
+        let path = dir.join("a.xml");
+        std::fs::write(&path, xml).unwrap();
+        let mut wb = Workbench::default();
+        load_into(&mut wb, &path).unwrap();
+        assert_eq!(wb.construction().len(), 2);
+        let a = wb.construction().id("A").unwrap();
+        let b = wb.construction().id("B").unwrap();
+        assert!(!wb.is_visible(a) && wb.is_visible(b));
+        assert!(wb
+            .notice
+            .as_deref()
+            .unwrap()
+            .contains("Pominięte obiekty: 1 (jądro ich nie obsługuje)"));
+        // a damaged file leaves the document alone and names the file
+        std::fs::write(&path, "<geogebra>").unwrap();
+        let err = load_into(&mut wb, &path).unwrap_err();
+        assert!(err.starts_with("a.xml: "), "{err}");
+        assert_eq!(wb.construction().len(), 2);
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn a_script_named_xml_is_still_a_script_and_a_construction_needs_no_extension() {
+        let dir = std::env::temp_dir().join(format!("geo-app-kind-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let mut wb = Workbench::default();
+        let script = dir.join("x.xml");
+        std::fs::write(&script, "A = (1, 2)\nB = (3, 4)\n").unwrap();
+        load_into(&mut wb, &script).unwrap();
+        assert_eq!(wb.construction().len(), 2);
+        let file = dir.join("saved.dat");
+        std::fs::write(
+            &file,
+            "<geogebra><construction><element type=\"point\" label=\"P\">\
+             <coords x=\"1\" y=\"1\" z=\"1\"/></element></construction></geogebra>",
+        )
+        .unwrap();
+        load_into(&mut wb, &file).unwrap();
+        assert!(wb.construction().id("P").is_some());
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn the_notice_counts_skipped_dependents_mismatches_and_notes() {
+        use geo_import::{Imported, Mismatch, Skipped};
+        let skipped = |label: &str, reason: &str| Skipped {
+            label: label.into(),
+            kind: "Ray".into(),
+            reason: reason.into(),
+        };
+        let none = Imported::default();
+        assert_eq!(import_notice(&none), None);
+        let imported = Imported {
+            script: vec!["A = (0, 0)".into(); 7],
+            skipped: vec![
+                skipped("a", "an expression"),
+                skipped("b", "depends on the skipped object `a`"),
+                skipped("c", "depends on the skipped object `a`"),
+            ],
+            mismatched: vec![Mismatch {
+                label: "d".into(),
+                saved: String::new(),
+                computed: String::new(),
+            }],
+            notes: vec!["continuity".into()],
+            ..Imported::default()
+        };
+        assert_eq!(
+            import_notice(&imported).unwrap(),
+            "Pominięte obiekty: 1 (jądro ich nie obsługuje), zależne od nich: 2, \
+             wartości różne od zapisanych w pliku: 1, wczytane linie: 7. Uwagi: continuity"
+        );
     }
 
     #[test]

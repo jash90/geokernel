@@ -9,6 +9,7 @@ geokernel: proof-of-concept dynamic-geometry kernel
 
 USAGE:
     geokernel run <script.geo> [out.svg]   build a construction from a script
+    geokernel run <file.ggb> [out.svg]     open a construction file saved by GeoGebra (any name)
     geokernel demo [out-dir]               triangle demo: draw, drag A, draw again
     geokernel bench [steps]                time dragging a point in a large construction
 ";
@@ -39,8 +40,56 @@ fn main() -> ExitCode {
     }
 }
 
+/// Imports a construction file into script text. What was left out is
+/// reported on stderr.
+fn import_file(path: &str, bytes: &[u8]) -> Result<String, String> {
+    let imported = geo_import::import(bytes).map_err(|e| format!("{path}: {e}"))?;
+    for note in &imported.notes {
+        eprintln!("note: {note}");
+    }
+    if !imported.skipped.is_empty() {
+        eprintln!("skipped {} objects:", imported.skipped.len());
+        for s in imported.skipped.iter().take(20) {
+            let label = if s.label.is_empty() {
+                "(no label)"
+            } else {
+                &s.label
+            };
+            eprintln!("  {label} ({}): {}", s.kind, s.reason);
+        }
+        if imported.skipped.len() > 20 {
+            eprintln!("  ... and {} more", imported.skipped.len() - 20);
+        }
+    }
+    if !imported.mismatched.is_empty() {
+        eprintln!(
+            "{} objects differ from the value saved in the file:",
+            imported.mismatched.len()
+        );
+        for m in imported.mismatched.iter().take(20) {
+            eprintln!("  {}: saved {}, computed {}", m.label, m.saved, m.computed);
+        }
+        if imported.mismatched.len() > 20 {
+            eprintln!("  ... and {} more", imported.mismatched.len() - 20);
+        }
+    }
+    if !imported.hidden.is_empty() {
+        eprintln!(
+            "{} objects are hidden in the file; SVG shows all",
+            imported.hidden.len()
+        );
+    }
+    Ok(imported.script.join("\n"))
+}
+
 fn run(path: &str, out: Option<&str>) -> Result<(), String> {
-    let src = std::fs::read_to_string(path).map_err(|e| format!("{path}: {e}"))?;
+    // A construction file is told from a script by its content, not its name.
+    let bytes = std::fs::read(path).map_err(|e| format!("{path}: {e}"))?;
+    let src = if geo_import::looks_like_construction(&bytes) {
+        import_file(path, &bytes)?
+    } else {
+        String::from_utf8(bytes).map_err(|e| format!("{path}: {e}"))?
+    };
     let c = script::load(&src).map_err(|e| format!("{path}: {e}"))?;
     print_objects(&c);
     if let Some(out) = out {
