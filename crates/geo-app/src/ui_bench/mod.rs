@@ -392,11 +392,18 @@ impl<'s> Runner<'s> {
     }
 
     fn settle_note(&mut self, notes: &mut BTreeSet<String>) {
-        match self.settle() {
-            Some(_) => {}
-            None => {
-                notes.insert("never settles: keeps asking for repaints".to_owned());
-            }
+        if self.settle().is_none() {
+            notes.insert("never settles: keeps asking for repaints".to_owned());
+        }
+    }
+
+    /// Runs one empty frame and notes why the frame before it asked for a
+    /// repaint (egui reports the causes one pass late).
+    fn note_causes(&mut self, notes: &mut BTreeSet<String>) {
+        self.step(Vec::new());
+        for c in self.ctx.repaint_causes() {
+            let file = c.file.rsplit(['/', '\\']).next().unwrap_or(c.file);
+            notes.insert(format!("repaint asked at {file}:{} {}", c.line, c.reason));
         }
     }
 

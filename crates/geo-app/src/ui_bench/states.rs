@@ -64,6 +64,11 @@ fn keyboard(r: &mut Runner, n: usize) {
         r.step(Vec::new());
     }
     r.settle_note(&mut notes);
+    let focused = r
+        .ctx
+        .memory(|m| m.has_focus(eframe::egui::Id::unique("algebra_input")));
+    let blink = r.ctx.global_style().visuals.text_cursor.blink;
+    notes.insert(format!("input row focused: {focused}, cursor blink: {blink}"));
     let frames = r.frames(
         n,
         |_, _| Vec::new(),
@@ -219,6 +224,8 @@ fn drag(r: &mut Runner, n: usize) {
 fn actions(r: &mut Runner) {
     let mut after_add = Vec::new();
     let mut after_undo = Vec::new();
+    let mut add_notes = BTreeSet::new();
+    let mut undo_notes = BTreeSet::new();
     let (a, b) = r.scene.midpoint.clone();
     for _ in 0..ACTION_REPEATS {
         let line = format!("Z = Midpoint({a}, {b})");
@@ -228,14 +235,16 @@ fn actions(r: &mut Runner) {
         let mut f = r.step(Vec::new());
         f.ok = r.app.wb.construction().id("Z").is_some();
         after_add.push(f);
-        r.settle();
+        r.note_causes(&mut add_notes);
+        r.settle_note(&mut add_notes);
 
         let (_, ns, al, by) = timed(|| r.app.wb.undo());
         r.sample("undo", ns, al, by);
         let mut f = r.step(Vec::new());
         f.ok = r.app.wb.construction().id("Z").is_none();
         after_undo.push(f);
-        r.settle();
+        r.note_causes(&mut undo_notes);
+        r.settle_note(&mut undo_notes);
 
         let (_, ns, al, by) = timed(|| r.app.wb.redo());
         r.sample("redo", ns, al, by);
@@ -270,8 +279,8 @@ fn actions(r: &mut Runner) {
         r.app.wb.undo();
         r.settle();
     }
-    r.record("after_add_object", after_add, BTreeSet::new());
-    r.record("after_undo", after_undo, BTreeSet::new());
+    r.record("after_add_object", after_add, add_notes);
+    r.record("after_undo", after_undo, undo_notes);
 }
 
 /// Per-object helpers timed alone, over the whole construction.
