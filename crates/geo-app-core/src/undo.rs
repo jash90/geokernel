@@ -70,6 +70,13 @@ impl<T> Undo<T> {
         self.past.clear();
         self.future.clear();
     }
+
+    /// Every state kept, undo steps then redo steps (for the tests that
+    /// measure what the history holds).
+    #[cfg(test)]
+    pub fn states(&self) -> impl Iterator<Item = &T> {
+        self.past.iter().chain(&self.future)
+    }
 }
 
 #[cfg(test)]

@@ -32,3 +32,6 @@ pub mod tools;
 pub mod undo;
 pub mod view;
 pub mod workbench;
+
+#[cfg(test)]
+mod perf_tests;
