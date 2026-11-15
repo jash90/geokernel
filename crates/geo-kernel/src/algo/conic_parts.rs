@@ -33,11 +33,11 @@
 //! axes, directrices, lengths and eccentricities).
 //!
 //! They read the conic's [`ConicData`] record through
-//! [`Construction::conic`]. Like GeoGebra's algorithms, most readers look at
-//! the record's type and fields only: a conic that became undefined keeps
+//! [`Construction::conic`]. An undefined parent makes every one of them
+//! undefined. GeoGebra differs there: a conic that became undefined keeps
 //! the type and the fields of its last classification, and `Vertex`, the
-//! axes and the numbers are read from them. `Center`, `Focus` and
-//! `Directrix` check that the conic is defined.
+//! axes, the numbers and the diameters are still read from them (see
+//! `DIFFERENCES.md`).
 
 use super::conic_nd::{ConicData, ConicType};
 use super::intersect::{helper_line_conic_points, on_general_conic_by_construction, Pt};
@@ -188,6 +188,17 @@ impl Group for ConicPartDef {
     }
 
     fn compute(&self, c: &Construction) -> Option<Value> {
+        // An undefined parent makes the object undefined, also where
+        // GeoGebra would still read the stale record of an undefined conic
+        // or take a point on both objects by construction.
+        if self
+            .parents()
+            .as_slice()
+            .iter()
+            .any(|&p| !c.value(p).is_defined())
+        {
+            return None;
+        }
         if let ConicPartDef::IntersectLine { line, conic, which } = *self {
             return super::intersect::line_general_conic(c, line, conic, which);
         }

@@ -348,6 +348,7 @@ pub enum K {
     Line,
     Segment,
     Circle,
+    Conic,
     Number,
     /// A literal intersection index, `1` or `2`.
     Index,
@@ -361,6 +362,7 @@ impl K {
                 | (K::Line, Kind::Line)
                 | (K::Segment, Kind::Segment)
                 | (K::Circle, Kind::Circle)
+                | (K::Conic, Kind::Conic)
                 | (K::Number, Kind::Number)
         )
     }
@@ -372,12 +374,13 @@ const PT: Slot = &[K::Point];
 const LN: Slot = &[K::Line];
 const SG: Slot = &[K::Segment];
 const CI: Slot = &[K::Circle];
+const CO: Slot = &[K::Conic];
 const NU: Slot = &[K::Number];
 const IX: Slot = &[K::Index];
 /// A line or a segment.
 const LL: Slot = &[K::Line, K::Segment];
 /// Everything a transformation accepts.
-const SRC: Slot = &[K::Point, K::Line, K::Segment, K::Circle];
+const SRC: Slot = &[K::Point, K::Line, K::Segment, K::Circle, K::Conic];
 /// What a shear or stretch accepts (a circle becomes an ellipse).
 const AFFINE: Slot = &[K::Point, K::Line, K::Segment];
 
@@ -488,6 +491,31 @@ pub const COMMANDS: &[Cmd] = &[
     cmd("Dilate", &[SRC, NU, PT]),
     cmd("Shear", &[AFFINE, LL, NU]),
     cmd("Stretch", &[AFFINE, LL, NU]),
+    // general conics
+    cmd("Conic", &[PT, PT, PT, PT, PT]),
+    cmd("Ellipse", &[PT, PT, PT]),
+    cmd("Hyperbola", &[PT, PT, PT]),
+    cmd("Ellipse", &[PT, PT, NU]),
+    cmd("Hyperbola", &[PT, PT, NU]),
+    cmd("Parabola", &[PT, LL]),
+    cmd("Intersect", &[LN, CO]),
+    cmd("Intersect", &[CO, LN, IX]),
+    cmd("Center", &[CO]),
+    multi("Focus", &[CO]),
+    multi("Vertex", &[CO]),
+    multi("Axes", &[CO]),
+    cmd("MajorAxis", &[CO]),
+    cmd("MinorAxis", &[CO]),
+    multi("Directrix", &[CO]),
+    cmd("FirstAxisLength", &[CO]),
+    cmd("SecondAxisLength", &[CO]),
+    cmd("Eccentricity", &[CO]),
+    cmd("LinearEccentricity", &[CO]),
+    cmd("Parameter", &[CO]),
+    multi("Tangent", &[PT, CO]),
+    multi("Tangent", &[LL, CO]),
+    cmd("Polar", &[PT, CO]),
+    cmd("Diameter", &[LL, CO]),
 ];
 
 /// A command call, as script text and as the objects it reads.
