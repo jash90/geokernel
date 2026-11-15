@@ -678,6 +678,17 @@ impl Construction {
         expr::function_value(self, id, x)
     }
 
+    /// Every object `id` reads directly: its parents, the objects its rule
+    /// also reads and its list. An object may appear more than once. A
+    /// drawing that caches what it made from `id` follows these to tell
+    /// whether `id` can have changed.
+    pub fn inputs(&self, id: Id) -> Vec<Id> {
+        match self.defs.get(id.0) {
+            Some(def) => self.read_ids(def),
+            None => Vec::new(),
+        }
+    }
+
     /// The vertices of a polygon or polyline in order, `None` for a vertex
     /// that is undefined. Nothing for any other object, and nothing for a
     /// regular polygon that is undefined.
