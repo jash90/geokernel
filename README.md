@@ -11,7 +11,8 @@ dropped silently.
 
 ## Status
 
-Early. The kernel covers points, lines, segments, rays, circles, vectors,
+Early. The kernel covers points, lines, segments, rays, circles, general
+conics (ellipse, hyperbola, parabola and the degenerate cases), vectors,
 polygons, polylines, numbers, booleans and functions of x, arithmetic
 expressions with GeoGebra's exact decimal arithmetic, incremental updates,
 a small script language and SVG output.
@@ -20,7 +21,9 @@ an input row with an on-screen keyboard, undo and redo, and lets you drag
 free points. The commands so far: lines,
 segments, rays, midpoints, perpendicular and parallel lines, bisectors,
 tangents and polars of circles, circles (centre and point, centre and
-radius, three points, incircle), intersections, measures (length, distance,
+radius, three points, incircle), conics (through five points, ellipse and
+hyperbola from foci, parabola from focus and directrix, their centre, foci,
+vertices, axes, directrix, eccentricity), intersections, measures (length, distance,
 radius, area, slope, angle, ratios), vectors (between points, direction,
 unit and orthogonal vectors), transformations (translation, reflection,
 rotation, dilation, shear, stretch), polygons (by vertices, regular, their
@@ -110,6 +113,8 @@ R = Rotate(A, a, B)     # A rotated by the angle a about B
 u = Vector(A, B)
 h = Ray(A, B)
 T = Translate(k, u)     # the circle k moved by the vector u
+w = Ellipse(A, B, C)    # foci A and B, through C; also Hyperbola, Parabola(A, l), Conic of five points
+F = Focus(w)            # creates F_{1} and F_{2}; also Center, Vertex, Axes, Eccentricity
 q = Polygon(A, B, C)    # also creates the sides, named as GeoGebra names them
 g = Polygon(A, B, 5)    # regular polygon on the side AB
 e = AreCollinear(A, B, C)    # a boolean
