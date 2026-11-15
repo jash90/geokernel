@@ -58,6 +58,15 @@ for _ in range(2):
                       "g = OrthogonalLine(P, s)"],
          [mv("P", *rp()), mv("B", a[0], a[1]), mv("B", *rp())])
 
+# segment end points 1e-6 apart, near the origin and far from it
+case("bisector", ["A = (2, 3)", "B = (5, -1)", "s = Segment(A, B)", "f = LineBisector(s)",
+                  "g = PerpendicularBisector(A, B)"],
+     [mv("B", 2.000001, 3), mv("B", 2, 3.000001), mv("B", 2.000001, 3.000001), mv("B", 2, 3),
+      mv("B", 1.999999, 3), mv("B", 5, -1)])
+case("bisector", ["A = (1000, -1000)", "B = (1003, -996)", "s = Segment(A, B)", "f = LineBisector(s)"],
+     [mv("B", 1000.000001, -1000), mv("B", 1000, -999.999999), mv("B", 1000, -1000),
+      mv("B", 1003, -996)])
+
 # ------------------------------------------------------------------ angle
 topic("angle")
 for _ in range(6):
@@ -101,6 +110,18 @@ case("angle", ["A = (0, 0)", "B = (6, 0)", "C = (2, 5)", "D = (-3, 4)", "M = Mid
 case("angle", ["A = (1, 1)", "B = (5, 2)", "C = (2, 6)", "s = Segment(A, B)", "M = Midpoint(s)",
                "N = Midpoint(A, C)", "f = AngularBisector(M, A, N)", "g = AngularBisector(N, M, B)"],
      [mv("C", 9, 3), mv("C", 5, 2), mv("B", 2, 6), mv("A", 2, 6), mv("A", -4, 0)])
+
+# each pair of points coincident, then all three; in and back out
+case("angle", ["A = (4, 1)", "B = (1, 2)", "C = (2, 5)", "f = AngularBisector(A, B, C)"],
+     [mv("A", 1, 2), mv("A", 4, 1),       # A on B
+      mv("C", 1, 2), mv("C", 2, 5),       # C on B
+      mv("C", 4, 1), mv("C", 2, 5),       # C on A
+      mv("A", 1, 2), mv("C", 1, 2),       # all three on B
+      mv("C", 2, 5), mv("A", 4, 1)])
+case("angle", ["A = (-3, 0)", "B = (0, 0)", "C = (0, 3)", "f = AngularBisector(A, B, C)",
+               "g = AngularBisector(C, A, B)"],
+     [mv("B", -3, 0), mv("B", 0, 0), mv("A", 0, 3), mv("A", -3, 0), mv("B", 0, 3), mv("A", 0, 3),
+      mv("A", -3, 0), mv("B", 0, 0), mv("A", 0.000001, 0), mv("A", -3, 0)])
 
 # ------------------------------------------------------------------ polar
 topic("polar")
@@ -213,6 +234,12 @@ case("anglelines", ["A = (-500, 0)", "B = (1500, 1)", "C = (-500, 3)", "D = (150
      [mv("D", 1500, 4.000001), mv("D", 1500, 4), mv("D", 1500, 3.999999), mv("C", -500, 2.999),
       mv("C", -500, 3)])
 
+# segments: parallel, opposite, collinear, sharing an end point, zero length
+case("anglelines", ["A = (0, 0)", "B = (4, 1)", "C = (1, 3)", "D = (3, -2)", "s = Segment(A, B)",
+                    "h = Segment(C, D)", "b = AngularBisector(s, h)", "w = AngleBisector(h, s)"],
+     [mv("D", 5, 4), mv("D", -3, 2), mv("D", 3, -2), mv("C", 8, 2), mv("D", 12, 3), mv("D", 3, -2),
+      mv("C", 0, 0), mv("C", 1, 3), mv("D", 1, 3), mv("D", 3, -2), mv("B", 0, 0), mv("B", 4, 1)])
+
 # ---------------------------------------------------------------- tangent
 topic("tangent")
 # exact positions: on the circle, inside, at the centre, back out
@@ -284,5 +311,29 @@ case("tangentline", ["A = (0, 0)", "B = (3, 4)", "M = (1, 2)", "N = (2, 2)", "s 
 case("tangentline", ["A = (-1, 2)", "B = (4, 2)", "M = (0, 0)", "r = 1", "l = Line(A, B)",
                      "c = Circle(M, r)", "t = Tangent(l, c)", "u = Tangent(l, c)"],
      [mv("B", -1, 7), mv("B", -6, 2), mv("B", -1, -3), mv("M", 4, 4)])
+
+# a segment: through the centre, zero length, vertical, touching the circle
+case("tangentline", ["A = (-2, -1)", "B = (3, 1)", "M = (0, 2)", "r = 1.5", "s = Segment(A, B)",
+                     "c = Circle(M, r)", "t = Tangent(s, c)"],
+     [mv("B", 2, 6), mv("B", -2, -1), mv("B", -2, 4), mv("A", -1.5, 0), mv("B", 1.5, 7),
+      mv("B", 3, 1), setn("r", 0), setn("r", 1.5)])
+
+# ------------------------------------------------------------ smallcircle
+# Circles with a tiny radius, set by number or by moving the through point
+# (moves are rounded to 6 decimals, so the centre itself carries the two
+# smallest radii in the last cases).
+topic("smallcircle")
+SMALL = (2e-4, 5e-5, 1e-5, 1e-6, 2e-8, 5e-9)
+REST = ["P = (4, 3)", "E = (-2, 5)", "F = (3, -1)", "l = Line(E, F)", "t = Tangent(P, c)",
+        "u = Tangent(l, c)", "p = Polar(P, c)"]
+case("smallcircle", ["A = (1, 2)", "r = 1", "c = Circle(A, r)"] + REST,
+     [setn("r", v) for v in SMALL] + [setn("r", -5e-9), setn("r", 0), setn("r", 1e-8),
+                                         setn("r", 1)])
+case("smallcircle", ["A = (1, 2)", "B = (2, 2)", "c = Circle(A, B)"] + REST,
+     [mv("B", 1.0002, 2), mv("B", 1, 2.00005), mv("B", 1.00001, 2), mv("B", 1.000001, 2),
+      mv("B", 1, 2), mv("B", 2, 2)])
+for centre in ("0.00000002", "0.000000005"):
+    case("smallcircle", [f"A = ({centre}, 0)", "B = (3, 0)", "c = Circle(A, B)"] + REST,
+         [mv("B", 0, 0), mv("B", 3, 0)])
 
 cases.write()

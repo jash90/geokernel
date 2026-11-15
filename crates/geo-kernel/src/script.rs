@@ -1,6 +1,6 @@
 // Parts of this file are translated from GeoGebra (https://github.com/geogebra/geogebra),
 // commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
-//   source/shared/common/src/main/java/org/geogebra/common/kernel/LabelManager.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/LabelManager.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/Construction.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
@@ -16,7 +16,7 @@
 //! k = Circle(A, B)        # centre A, through B
 //! m = Circle(A, r)        # centre A, radius r
 //! P = Intersect(l, k, 2)  # second intersection (1 is the default)
-//! t = Tangent(P, k)       # two tangents, labelled t_{1} and t_{2} as in GeoGebra
+//! t = Tangent(P, k)       # two tangents t_{1} and t_{2} when both are defined at creation
 //! ```
 
 use crate::algo::conic::ConicDef;
@@ -108,15 +108,17 @@ fn parse_multi(c: &Construction, rhs: &str) -> Option<Result<Vec<Def>, String>> 
     None
 }
 
-/// Adds the outputs of one command and labels them as GeoGebra's
-/// `LabelManager.setLabels` does for `name = Command(...)`: when two or more
-/// outputs are defined, every output gets the next free indexed label
-/// (`t_{1}`, `t_{2}`, ...); when only one is defined, it gets `name` and the
-/// others get no label, so they are not created here. When none is defined,
-/// GeoGebra gives no label yet and, going by `GeoElement.setLabel`, names
-/// the outputs as they become defined (the first takes `name`, the next
-/// renames it and takes `name` itself); this is not checked against GeoGebra.
-/// Here only the first is created, under `name`.
+/// Adds the outputs of one command `name = Command(...)`. The labels follow
+/// what GeoGebra's `LabelManager.setLabels` and `Construction.getIndexLabel`
+/// give at creation. The kernel's rule:
+///
+/// - two or more outputs defined at creation: every output is created and
+///   gets the next free indexed label (`t_{1}`, `t_{2}`, ...);
+/// - exactly one defined: only that output is created, labelled `name`;
+/// - none defined: only the first output is created, labelled `name`.
+///
+/// The set of created objects is fixed at creation: an output that was not
+/// created is not added later, even when it becomes defined.
 /// Returns the id of the first object created.
 fn add_outputs(c: &mut Construction, name: &str, defs: Vec<Def>) -> Result<Id, String> {
     if c.id(name).is_some() {

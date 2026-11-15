@@ -229,8 +229,9 @@ const SEGMENT: &[Kind] = &[Kind::Segment];
 
 /// The tangents from `point` to `circle`. As in the constructor of
 /// `AlgoTangentPointND`, when both tangents are the same line at creation
-/// (the point is on the circle) the second one is undefined from the start,
-/// so GeoGebra never labels it; it is left out.
+/// (the point is on the circle) the second one is made undefined. The
+/// kernel then creates only the first tangent, and does not add the second
+/// one later when the point leaves the circle.
 fn tangent_points(c: &Construction, point: Id, circle: Id) -> Vec<LineDef> {
     let defs: Vec<LineDef> = (0..2)
         .map(|which| LineDef::TangentPoint {
@@ -493,7 +494,9 @@ impl CircleMatrix {
     }
 
     /// A radius below the standard precision makes GeoGebra's circle a
-    /// single point, a degenerate conic without tangents.
+    /// single point, a degenerate conic without tangents. A circle built by
+    /// `Circle(...)` takes its type in `GeoQuadricND.setSphereNDMatrix`
+    /// from this test on the radius, not from the conic classification.
     fn is_degenerate(&self) -> bool {
         self.r < STANDARD_PRECISION
     }

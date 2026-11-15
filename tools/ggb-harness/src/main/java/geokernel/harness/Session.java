@@ -74,7 +74,7 @@ final class Session {
         }
         GeoElementND[] out = processor.processAlgebraCommandNoExceptionHandling(
                 line, false, new ThrowingErrorHandler(line), false, null);
-        if (out != null && out.length > 1 && transformed == null) {
+        if (out != null && out.length == 2 && isMultiOutput(definition)) {
             return runMulti(line, expected, out);
         }
         // A transformed segment with labelled end points also creates the two
@@ -235,6 +235,26 @@ final class Session {
             throw new IllegalArgumentException("unknown transformed object: " + definition);
         }
         return typeOf(source);
+    }
+
+    /**
+     * Whether the definition is a command that creates two lines by design:
+     * `Tangent` and `AngularBisector` (`AngleBisector`) of two lines. Any
+     * other command must create exactly one object (see `run`).
+     */
+    private static boolean isMultiOutput(String definition) {
+        Matcher m = COMMAND.matcher(definition);
+        if (!m.matches()) {
+            return false;
+        }
+        switch (m.group(1)) {
+            case "Tangent":
+            case "AngularBisector":
+            case "AngleBisector":
+                return true;
+            default:
+                return false;
+        }
     }
 
     /** The schema type a definition must produce; rejects unsupported input. */
