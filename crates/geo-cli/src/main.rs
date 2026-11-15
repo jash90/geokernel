@@ -294,7 +294,45 @@ fn bench(steps: usize) -> Result<(), String> {
         far / far_drags
     );
 
-    let undefined = count_undefined(&c);
+    // Drag E: 1000 expression objects depend on it, in four shapes (point,
+    // number from coordinates, number with a decimal literal times a free
+    // literal number, function value).
+    let mut x = Construction::new();
+    let lines = ["E = (1.5, 2.5)", "a = 0.1", "f(x) = x^2 + a"];
+    for line in lines {
+        script::exec(&mut x, line)?;
+    }
+    let exprs = 1000;
+    for i in 0..exprs / 4 {
+        for line in [
+            format!("M{i} = (E + ({i}, 1)) / 2"),
+            format!("c{i} = 0.5 x(E) + {i}"),
+            format!("d{i} = (a + 0.2) y(E) - {i}"),
+            format!("v{i} = f(x(E)) + {i}"),
+        ] {
+            script::exec(&mut x, &line)?;
+        }
+    }
+    let e_id = x.id("E").ok_or("no E")?;
+    let expr_drags = 2_000;
+    let mut expr_count = 0usize;
+    let start = Instant::now();
+    for i in 0..expr_drags {
+        let t = i as f64 * 0.01;
+        expr_count += x
+            .move_point(e_id, 1.5 + t.cos(), 2.5 + t.sin())
+            .map_err(e)?;
+    }
+    let expr_time = start.elapsed();
+    println!(
+        "expr drag (E):      {:.1} us per drag, {} expressions recomputed each time, {:.1} ns per expression",
+        expr_time.as_secs_f64() * 1e6 / expr_drags as f64,
+        expr_count / expr_drags,
+        expr_time.as_secs_f64() * 1e9 / expr_count.max(1) as f64
+    );
+    black_box(&x);
+
+    let undefined = count_undefined(&c) + count_undefined(&x);
     println!("undefined objects:  {undefined}");
     black_box(&c);
     if undefined != 0 {
