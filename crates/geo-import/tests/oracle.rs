@@ -55,9 +55,9 @@ struct ImportGap {
 }
 
 /// An object whose imported value is the golden one, but whose saved conic
-/// matrix GeoGebra reads as a different object when the file is loaded: the
-/// live object was classified from the state of the conic it was made from,
-/// the saved matrix is classified afresh.
+/// matrix, classified on a fresh record, is a different object: the live
+/// object kept the type of the conic it was made from (a dilated degenerate
+/// conic is not classified again), the saved matrix alone does not.
 #[derive(Deserialize)]
 struct Reclassified {
     id: String,
@@ -475,7 +475,7 @@ fn imported_constructions_agree_with_the_golden_snapshots() {
     );
     // Every disagreement with the saved value is documented: a pinned import
     // gap, a kernel gap at step 0 (whose golden value is the saved one), or a
-    // pinned saved matrix that GeoGebra reclassifies on loading (the imported
+    // pinned saved matrix that classifies afresh as another object (the imported
     // value agreed with the golden one above, or the test already failed).
     let mut undocumented = Vec::new();
     for key in totals.mismatched.keys() {

@@ -641,12 +641,12 @@ fn saved_circle(el: &Element) -> Option<Option<SavedCircle>> {
         .or(Some(None))
 }
 
-/// Whether GeoGebra reads the saved matrix as a single point. Loading a file
-/// classifies the saved matrix again, and a circle whose squared radius is
-/// within the tolerance of the determinant test becomes a single point of
-/// radius 0, although the matrix itself still encodes the tiny radius (a
-/// circle of radius 4e-5 dilated by 2, for example). The kernel classifies
-/// such a matrix the same way.
+/// Whether the saved matrix, classified on a fresh record the way GeoGebra
+/// classifies a conic (`ConicData::set_matrix`), is a single point. GeoGebra
+/// reports a circle whose squared radius is within the tolerance of that
+/// classification as a single point of radius 0, while the matrix it saves
+/// still encodes the tiny radius (a circle of radius 4e-5 dilated by 2, for
+/// example).
 fn saved_single_point(el: &Element) -> bool {
     let Some(m) = el.matrix.as_ref() else {
         return false;
