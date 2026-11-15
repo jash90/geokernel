@@ -1,6 +1,6 @@
 //! Command-line arguments and script file loading.
 
-use geo_kernel::kernel::Construction;
+use crate::workbench::Workbench;
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 
@@ -33,19 +33,18 @@ pub fn parse_args<I: IntoIterator<Item = OsString>>(args: I) -> Result<Command, 
     Ok(Command::Run { script })
 }
 
-/// Builds a construction from script text, with the error as one line.
-pub fn load_text(src: &str) -> Result<Construction, String> {
-    geo_kernel::script::load(src).map_err(|e| e.to_string())
-}
-
-/// Reads and runs a script file. The error names the file.
-pub fn load_file(path: &Path) -> Result<Construction, String> {
-    let name = path.file_name().map_or_else(
+fn file_name(path: &Path) -> String {
+    path.file_name().map_or_else(
         || path.display().to_string(),
         |n| n.to_string_lossy().into_owned(),
-    );
+    )
+}
+
+/// Reads a script file into the workbench. Errors name the file.
+pub fn load_into(wb: &mut Workbench, path: &Path) -> Result<(), String> {
+    let name = file_name(path);
     let src = std::fs::read_to_string(path).map_err(|e| format!("{name}: {e}"))?;
-    load_text(&src).map_err(|e| format!("{name}: {e}"))
+    wb.load_script(&src).map_err(|e| format!("{name}: {e}"))
 }
 
 #[cfg(test)]
@@ -97,33 +96,27 @@ mod tests {
     }
 
     #[test]
-    fn load_text_reports_the_line() {
-        let err = load_text("A = (0, 0)\nB = nonsense(")
-            .map(|_| ())
-            .unwrap_err();
-        assert!(err.starts_with("line 2:"), "{err}");
-        assert_eq!(load_text("A = (0, 0)").unwrap().len(), 1);
-    }
-
-    #[test]
-    fn load_file_names_the_file_on_failure() {
-        let err = load_file(Path::new("definitely/missing/none.geo"))
-            .map(|_| ())
-            .unwrap_err();
+    fn load_into_names_the_file_on_failure() {
+        let mut wb = Workbench::default();
+        let err = load_into(&mut wb, Path::new("definitely/missing/none.geo")).unwrap_err();
         assert!(err.starts_with("none.geo: "), "{err}");
     }
 
     #[test]
-    fn load_file_reads_a_script() {
+    fn load_into_reads_a_script() {
         let dir = std::env::temp_dir().join(format!("geo-app-cli-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
+        let mut wb = Workbench::default();
         let ok = dir.join("ok.geo");
         std::fs::write(&ok, "A = (1, 2)\nB = (3, 4)\n").unwrap();
-        assert_eq!(load_file(&ok).unwrap().len(), 2);
+        load_into(&mut wb, &ok).unwrap();
+        assert_eq!(wb.construction().len(), 2);
         let bad = dir.join("bad.geo");
         std::fs::write(&bad, "A = (1, 2)\nQ = Nope(A)\n").unwrap();
-        let err = load_file(&bad).map(|_| ()).unwrap_err();
+        let err = load_into(&mut wb, &bad).unwrap_err();
         assert!(err.starts_with("bad.geo: line 2:"), "{err}");
+        // A failed load leaves the previous document alone.
+        assert_eq!(wb.construction().len(), 2);
         std::fs::remove_dir_all(&dir).ok();
     }
 }
