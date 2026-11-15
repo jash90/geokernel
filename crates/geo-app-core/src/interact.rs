@@ -88,8 +88,8 @@ fn free_point(c: &Construction, id: Id) -> bool {
 /// input points (`GeoElement.hasMoveableInputPoints`, with
 /// `EuclidianController.isElementAllowedToMove`):
 ///
-/// - lines, segments, rays and circles through points: every input is a
-///   free point (`hasOnlyFreeInputPoints`);
+/// - lines, segments, rays, circles and conics through points: every input
+///   is a free point (`hasOnlyFreeInputPoints`);
 /// - a circle with a centre and a radius (`AlgoCirclePointRadiusInterface`),
 ///   polygons and polylines: at least one input is a free point, and only
 ///   those move;
@@ -109,7 +109,7 @@ fn moves_by_input_points(c: &Construction, id: Id) -> bool {
     let any_free = || c.inputs(id).any(|p| free_point(c, p));
     match c.kind(id) {
         Kind::Line | Kind::Segment | Kind::Ray => all_free(),
-        Kind::Circle => match def {
+        Kind::Circle | Kind::Conic => match def {
             Def::CircleRadius { .. } => any_free(),
             _ => all_free(),
         },
