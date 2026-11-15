@@ -233,6 +233,76 @@ fn a_press_on_a_side_takes_the_polygon() {
     assert_eq!(h.state().wb.selected, p);
 }
 
+/// A drag on a side moves the polygon (the owner's rule above, with
+/// `moveDependent`): every free vertex follows the pointer, as one undo
+/// step. The press at (3, 1) is a grid crossing, so the motion counts from
+/// there.
+#[test]
+fn a_drag_on_a_side_moves_the_polygon_as_one_undo_step() {
+    let mut h = harness("A = (1, 1)\nB = (5, 1)\nC = (1, 4)\np = Polygon(A, B, C)\n");
+    drag(
+        &mut h,
+        world(3.0, 1.0),
+        world(3.0, 1.0) + egui::vec2(60.0, -30.0),
+    );
+    let near = |a: (f64, f64), b: (f64, f64)| (a.0 - b.0).abs() < 1e-9 && (a.1 - b.1).abs() < 1e-9;
+    for (l, at) in [("A", (2.2, 1.6)), ("B", (6.2, 1.6)), ("C", (2.2, 4.6))] {
+        assert!(near(point(&h, l), at), "{l} at {:?}", point(&h, l));
+    }
+    assert_eq!(h.state().wb.selected, h.state().wb.construction().id("p"));
+    undo(&mut h);
+    assert_eq!(point(&h, "A"), (1.0, 1.0));
+    assert_eq!(point(&h, "C"), (1.0, 4.0));
+    assert!(!h.state().wb.can_undo(), "one step for the whole drag");
+}
+
+/// Escape during a drag of a line puts both its points back.
+#[test]
+fn escape_cancels_a_drag_of_a_line() {
+    let mut h = harness("A = (1, 1)\nB = (3, 2)\nf = Line(A, B)\n");
+    let start = world(2.0, 1.5);
+    moved(&mut h, start);
+    button(&mut h, start, true);
+    for i in 1..=8 {
+        moved(&mut h, start + egui::vec2(5.0 * i as f32, 5.0 * i as f32));
+    }
+    assert!(point_x(&h, "A") > 1.2 && point_x(&h, "B") > 3.2);
+    h.key_press(egui::Key::Escape);
+    h.run();
+    button(&mut h, start + egui::vec2(40.0, 40.0), false);
+    h.run();
+    assert_eq!((point(&h, "A"), point(&h, "B")), ((1.0, 1.0), (3.0, 2.0)));
+    assert!(!h.state().wb.can_undo());
+}
+
+/// `moveLabel`: a press on a point's label drags the label, not the point,
+/// selects nothing and makes no undo step; Escape puts it back.
+#[test]
+fn a_drag_on_a_label_moves_only_the_label() {
+    let mut h = harness("A = (1, 1)\n");
+    // The label starts 6 px right of and 6 px above the point.
+    let on_label = world(1.0, 1.0) + egui::vec2(10.0, -16.0);
+    drag(&mut h, on_label, on_label + egui::vec2(40.0, 30.0));
+    let a = h.state().wb.construction().id("A").unwrap();
+    assert_eq!(point(&h, "A"), (1.0, 1.0));
+    assert_eq!(h.state().wb.label_offset(a), Some((40.0, 30.0)));
+    assert_eq!(h.state().wb.selected, None);
+    assert!(!h.state().wb.can_undo());
+    // A second drag starts from the moved label; Escape restores it.
+    let on_label = on_label + egui::vec2(40.0, 30.0);
+    moved(&mut h, on_label);
+    button(&mut h, on_label, true);
+    for i in 1..=8 {
+        moved(&mut h, on_label + egui::vec2(-5.0 * i as f32, 0.0));
+    }
+    assert_ne!(h.state().wb.label_offset(a), Some((40.0, 30.0)));
+    h.key_press(egui::Key::Escape);
+    h.run();
+    button(&mut h, on_label + egui::vec2(-40.0, 0.0), false);
+    h.run();
+    assert_eq!(h.state().wb.label_offset(a), Some((40.0, 30.0)));
+}
+
 #[test]
 fn the_marker_toggles_visibility_and_clicking_the_body_selects() {
     let mut h = harness("A = (0, 0)\nB = (2, 0)\n");

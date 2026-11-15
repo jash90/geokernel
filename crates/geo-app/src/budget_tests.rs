@@ -179,8 +179,8 @@ impl Window {
         Pos2::new(rect.min.x + sx as f32, rect.min.y + sy as f32)
     }
 
-    /// A spot in the drawing that hits nothing: in the Move tool only a
-    /// press on nothing pans.
+    /// A spot in the drawing that hits nothing, no label either: in the
+    /// Move tool only a press on nothing pans.
     fn empty_spot(&self) -> Pos2 {
         let (rect, t) = self.app.view.unwrap();
         let c = self.app.wb.construction();
@@ -196,6 +196,7 @@ impl Window {
                 // (4 + 12, `DrawPoint.hit`) is hit.
                 let reach = crate::hit::Reach::square(4.0);
                 crate::hit::pick(c, &t, local, &reach, None, |_| true).is_none()
+                    && self.app.label_at(local).is_none()
             })
             .expect("an empty spot")
     }

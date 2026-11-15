@@ -119,6 +119,8 @@ fn object(h: &Headless, id: Id) -> Json {
         "defined": value.is_defined(),
         "visible": wb.is_visible(id),
         "free": free,
+        // How far the label was dragged from its place, in pixels.
+        "label_offset": wb.label_offset(id).map_or([0.0, 0.0], |(x, y)| [x, y]),
     });
     if let Some(raw) = raw {
         o["raw_value"] = json!(raw);

@@ -278,8 +278,9 @@ impl<'s> Runner<'s> {
             .count()
     }
 
-    /// A spot in the drawing area that hits nothing, searched outwards from
-    /// the middle: in the Move tool only a press on nothing pans.
+    /// A spot in the drawing area that hits nothing, no label either,
+    /// searched outwards from the middle: in the Move tool only a press on
+    /// nothing pans.
     fn empty_spot(&self) -> Pos2 {
         let r = self.canvas();
         let t = self.transform();
@@ -297,7 +298,7 @@ impl<'s> Runner<'s> {
                 // A point within 16 px (4 + 12, `DrawPoint.hit`) is hit.
                 let reach = crate::hit::Reach::square(4.0);
                 let hit = crate::hit::pick(c, &t, (d.x as f64, d.y as f64), &reach, None, |_| true);
-                if hit.is_none() {
+                if hit.is_none() && self.app.label_at((d.x as f64, d.y as f64)).is_none() {
                     return p;
                 }
             }

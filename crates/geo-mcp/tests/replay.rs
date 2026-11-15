@@ -29,7 +29,7 @@ const VIEW: (f64, f64) = (892.0, 747.0);
 const ZERO: (f64, f64) = (446.0, 373.5);
 const SCALE: f64 = 50.0;
 /// The parts of the pointer work that have landed: their scenarios must pass.
-const LANDED: &[u8] = &[1, 2, 3];
+const LANDED: &[u8] = &[1, 2, 3, 5];
 
 /// Why a scenario that encodes a behaviour the owner keeps our way does not
 /// apply.

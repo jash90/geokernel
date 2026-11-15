@@ -7,7 +7,7 @@
 //! Draws the objects of a construction with `egui::Painter`.
 
 use crate::arc;
-use crate::geom::ToEgui;
+use crate::geom::{ToCore, ToEgui};
 use crate::highlight::{self, Highlight};
 use crate::interact::ViewTransform;
 use crate::labelpos;
@@ -15,9 +15,11 @@ use crate::shape;
 use crate::style;
 use crate::theme;
 use eframe::egui::{vec2, Align2, Color32, FontId, Mesh, Painter, Pos2, Rect, Shape, Stroke};
+use geo_app_core::geom;
 use geo_kernel::algo::vector;
 use geo_kernel::kernel::{Construction, Id, Value};
 use std::borrow::Cow;
+use std::cell::RefCell;
 
 /// Point radii in pixels: point size 5 for free points, 4 for dependent ones.
 pub use crate::style::FREE_POINT_RADIUS;
@@ -39,6 +41,12 @@ pub struct Scene<'a> {
     /// Skip the objects that draw nothing in the area (see `near_view`).
     /// Off only in the tests that check that skipping changes nothing.
     pub cull: bool,
+    /// How far each label was moved from its place, in pixels.
+    pub label_offset: &'a dyn Fn(Id) -> Option<(f64, f64)>,
+    /// Where the painted labels went, in the area's coordinates, in the
+    /// order they were painted: what a press of the move tool tests first
+    /// (`EuclidianView.getLabelHit`). Cleared and filled by each paint.
+    pub label_rects: Option<&'a RefCell<Vec<(Id, geom::Rect)>>>,
 }
 
 /// How far outside the area, in pixels, an object's points may lie and
@@ -103,7 +111,7 @@ pub fn point_shape(painter: &Painter, at: Pos2, fill: Color32, radius: f32) {
 
 /// A label's text (borrowed from the construction where it is the bare
 /// label), its anchor in the area, colour and alignment.
-type Label<'c> = (Cow<'c, str>, (f64, f64), Color32, Align2);
+type Label<'c> = (Id, Cow<'c, str>, (f64, f64), Color32, Align2);
 
 pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform, scene: &Scene) {
     let (w, h) = (rect.width() as f64, rect.height() as f64);
@@ -132,7 +140,11 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
 
     let ids: Vec<Id> = c
         .ids()
-        .filter(|&id| (scene.visible)(id) && (!scene.cull || near_view(c, id, t, w, h)))
+        .filter(|&id| {
+            // A moved label may lie anywhere: its object is never skipped.
+            (scene.visible)(id)
+                && (!scene.cull || near_view(c, id, t, w, h) || (scene.label_offset)(id).is_some())
+        })
         .collect();
     let mut labels: Vec<Label> = Vec::new();
 
@@ -220,6 +232,7 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
             eframe::egui::Align::Center
         };
         labels.push((
+            id,
             Cow::Owned(format!(
                 "{} = {}",
                 c.label(id),
@@ -286,6 +299,7 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
             if let Some(entry) = labelpos::line_entry(screen(fx, fy), (b, a), w, h) {
                 let pos = labelpos::line_label(entry, w, h, 24.0, 12.0);
                 labels.push((
+                    id,
                     Cow::Borrowed(c.label(id)),
                     pos,
                     color(id),
@@ -317,6 +331,7 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
             if let Some(e) = entry {
                 let pos = labelpos::line_label(e, w, h, 24.0, 12.0);
                 labels.push((
+                    id,
                     Cow::Borrowed(c.label(id)),
                     pos,
                     color(id),
@@ -329,6 +344,7 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
         if let Value::Circle { cx, cy, r } = c.value(id) {
             paint_circle(painter, rect, t, (cx, cy, r), curve(id), &mut |pos| {
                 labels.push((
+                    id,
                     Cow::Borrowed(c.label(id)),
                     pos,
                     color(id),
@@ -345,6 +361,7 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
             painter.line_segment([p(x1, y1), p(x2, y2)], curve(id));
             let pos = labelpos::segment_label(screen(x1, y1), screen(x2, y2), 12.0);
             labels.push((
+                id,
                 Cow::Borrowed(c.label(id)),
                 pos,
                 color(id),
@@ -372,6 +389,7 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
         }
         let pos = labelpos::segment_label(screen(x0, y0), screen(x0 + x, y0 + y), 12.0);
         labels.push((
+            id,
             Cow::Borrowed(c.label(id)),
             pos,
             color(id),
@@ -391,6 +409,7 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
             point_shape(painter, p(x, y), color(id), radius);
             let (sx, sy) = screen(x, y);
             labels.push((
+                id,
                 Cow::Borrowed(c.label(id)),
                 (sx + 6.0, sy - 6.0),
                 color(id),
@@ -399,17 +418,30 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
         }
     }
     let font = FontId::proportional(LABEL_FONT);
-    for (text, (sx, sy), color, align) in labels {
+    let mut rects = scene.label_rects.map(|r| {
+        let mut r = r.borrow_mut();
+        r.clear();
+        r
+    });
+    for (id, text, (sx, sy), color, align) in labels {
+        // `labelOffsetX/Y` of the object, added to where its label goes.
+        let (sx, sy) = match (scene.label_offset)(id) {
+            Some((ox, oy)) => (sx + ox, sy + oy),
+            None => (sx, sy),
+        };
         if sx < -20.0 || sy < -20.0 || sx > w + 20.0 || sy > h + 20.0 {
             continue;
         }
-        painter.text(
+        let r = painter.text(
             origin + vec2(sx as f32, sy as f32),
             align,
             text,
             font.clone(),
             color,
         );
+        if let Some(rects) = rects.as_mut() {
+            rects.push((id, r.translate(-origin.to_vec2()).core()));
+        }
     }
 }
 
@@ -518,6 +550,8 @@ mod tests {
                 hovered: None,
                 palette: wb.palette(),
                 cull: true,
+                label_offset: &|_| None,
+                label_rects: None,
             };
             paint(ui.painter(), rect, c, &t, &scene);
         });

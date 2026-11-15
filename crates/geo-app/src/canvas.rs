@@ -8,7 +8,7 @@ use crate::gesture::{Button, Event as GestureEvent, Gesture, Grab, Intents, Touc
 use crate::grid;
 use crate::hit;
 use crate::icons::Icon;
-use crate::interact::{self, Drag, ViewTransform};
+use crate::interact::{self, Drag, Hold, Step, ViewTransform};
 use crate::theme;
 use crate::tools::{Pick, Tool};
 use crate::view::{self, Camera};
@@ -118,6 +118,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     if app.seen_rebuilds != app.wb.rebuilds() {
         app.seen_rebuilds = app.wb.rebuilds();
         app.drag = None;
+        app.label_rects.borrow_mut().clear();
         gesture.forget_target();
         app.tool.reset();
     }
@@ -224,18 +225,23 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     let at_press = |app: &App, pos: egui::Pos2| at_view(app.press_view, pos);
 
     // The move tool selects what a press takes hold of when the button goes
-    // down (`handleMousePressedForMoveMode`), whether it then drags or not.
+    // down (`handleMousePressedForMoveMode`), whether it then drags or not;
+    // a press on a label takes the label and selects nothing.
     if let (true, Some(pos)) = (move_tool, fed.owned) {
         let (local, pt) = at_press(app, pos);
-        if let Some(id) = target(app, &pt, local) {
-            app.wb.selected = Some(id);
+        if app.label_at(local).is_none() {
+            if let Some(id) = target(app, &pt, local) {
+                app.wb.selected = Some(id);
+            }
         }
     }
 
     // A drag that starts takes hold of what was under the pointer when the
-    // button went down. With the move tool: what the press chose, if it can
-    // move; a press on any object never pans, only one that hits nothing
-    // does (`hasNoHitsDisablingModeForShallMoveView`). The move-view tool
+    // button went down. With the move tool: a label first
+    // (`handleMousePressedForMoveMode` asks `getLabelHit` before anything
+    // else), then what the press chose, if it can move; a press on any
+    // object never pans, only one that hits nothing does
+    // (`hasNoHitsDisablingModeForShallMoveView`). The move-view tool
     // pans from anywhere. Other tools keep their rule until their own part
     // of the work: a press on a point does not pan.
     let mut grabbed = None;
@@ -244,10 +250,20 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         let ((sx, sy), pt) = at_press(app, origin.egui());
         let c = app.wb.construction();
         if move_tool {
+            if let Some(id) = app.label_at((sx, sy)) {
+                let old = app.wb.label_offset(id).unwrap_or((0.0, 0.0));
+                grabbed = Some(Drag::label(id, old, (sx, sy)));
+                return Grab::Point;
+            }
             let Some(id) = target(app, &pt, (sx, sy)) else {
                 return Grab::Pan;
             };
-            grabbed = Drag::begin(c, id);
+            // The press position, captured to the grid with no offset
+            // (`wrapMousePressed` calls `transformCoords`).
+            let press = app
+                .snap(pt.scale())
+                .capture(pt.screen_to_world(sx, sy), (0.0, 0.0));
+            grabbed = Drag::begin(c, id, press);
             if grabbed.is_some() {
                 return Grab::Point;
             }
@@ -282,13 +298,24 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         app.drag = grabbed;
         if let Some(drag) = grabbed {
             app.wb.begin_gesture();
-            app.wb.selected = Some(drag.id());
+            if !matches!(drag.hold(), Hold::Label { .. }) {
+                app.wb.selected = Some(drag.id());
+            }
         }
     }
-    if let (Some(pos), Some(drag)) = (intents.drag_to, app.drag) {
+    if let (Some(pos), Some(mut drag)) = (intents.drag_to, app.drag) {
         let (sx, sy) = to_local(pos.egui());
-        let (x, y) = drag.target(&t, &app.snap(t.scale()), sx, sy);
-        app.wb.move_point(drag.id(), x, y);
+        match drag.step(&t, &app.snap(t.scale()), sx, sy) {
+            Step::Point { x, y } => {
+                app.wb.move_point(drag.id(), x, y);
+            }
+            Step::Translate { dx, dy } => {
+                let points = interact::free_input_points(app.wb.construction(), drag.id());
+                app.wb.translate(&points, (dx, dy));
+            }
+            Step::Label { x, y } => app.wb.set_label_offset(drag.id(), (x, y)),
+        }
+        app.drag = Some(drag);
     }
     if let Some((dx, dy)) = intents.pan {
         cam.pan_pixels(dx as f64, dy as f64);
@@ -362,6 +389,8 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             hovered: app.hovered,
             palette: app.wb.palette(),
             cull: true,
+            label_offset: &|id| app.wb.label_offset(id),
+            label_rects: Some(&app.label_rects),
         },
     );
     preview(app, &painter, rect, &t, response.hover_pos());
@@ -372,8 +401,8 @@ pub fn show(app: &mut App, ui: &mut Ui) {
 
 /// Puts back or ends the drag that the automaton ended.
 fn end_drag(app: &mut App, intents: &Intents) {
-    if intents.cancel_drag && app.drag.take().is_some() {
-        app.wb.cancel_gesture();
+    if intents.cancel_drag {
+        app.cancel_drag();
     }
     if intents.end_drag {
         app.wb.end_gesture();

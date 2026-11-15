@@ -6,10 +6,12 @@ use crate::describe;
 use crate::history::History;
 use crate::labels::next_label;
 use crate::scriptlog::{normalize, Log, Setting};
+use crate::snap::check_decimal_fraction;
 use crate::style::{Palette, Sides};
 use crate::undo::Undo;
 pub use file::{import_notice, rejected_notice, SNAPSHOT_VERSION};
 use geo_kernel::kernel::{Construction, Id, Kind, Value};
+use std::collections::BTreeMap;
 use std::sync::OnceLock;
 
 /// What the algebra list shows for one object.
@@ -53,6 +55,12 @@ pub struct Workbench {
     gesture: Option<Gesture>,
     /// A problem to tell the user (for example a failed rebuild).
     pub notice: Option<String>,
+    /// The labels moved away from their place, by object label: the offset
+    /// in pixels (`GeoElement.labelOffsetX/Y`). A label drag is no undo step
+    /// (`moveLabel`), so they are kept outside the journal: undo leaves them,
+    /// and a label that goes away takes its offset along. Not written to
+    /// files yet.
+    label_offsets: BTreeMap<String, (f64, f64)>,
     /// The algebra rows, the values each was made from, and the state they
     /// were brought up to date with (see `rows.rs`).
     rows: Vec<Row>,
@@ -182,6 +190,7 @@ impl Workbench {
         self.construction = c;
         self.objects_changed();
         self.log = log;
+        self.label_offsets.clear();
         self.selected = None;
         self.undo.clear();
         self.gesture = None;
@@ -332,8 +341,10 @@ impl Workbench {
             .filter(|id| id.index() < self.construction.len())
             .map(|id| self.construction.label(id).to_owned());
         self.selected = selected.and_then(|l| c.id(&l));
-        // A label can be reused later; it must not come back hidden.
+        // A label can be reused later; it must not come back hidden, nor
+        // with its label moved.
         kept.hidden.retain(|l| c.id(l).is_some());
+        self.label_offsets.retain(|l, _| c.id(l).is_some());
         self.construction = c;
         self.objects_changed();
         self.log = kept;
@@ -493,6 +504,55 @@ impl Workbench {
         self.log.record_set(&label, Setting::Point(x, y));
         self.version += 1;
         true
+    }
+
+    /// Translates the free points `ids` by `(dx, dy)` within the drag in
+    /// progress (`GeoPoint.movePoint` without an end position: a coordinate
+    /// that moved by more than `Kernel.MIN_PRECISION` is cleaned at the
+    /// fifth decimal, `checkDecimalFraction`). Returns whether anything
+    /// moved.
+    pub fn translate(&mut self, ids: &[Id], (dx, dy): (f64, f64)) -> bool {
+        const MIN_PRECISION: f64 = 1e-5;
+        let mut moved = false;
+        for &id in ids {
+            if id.index() >= self.construction.len() {
+                continue;
+            }
+            let Value::Point { x, y } = self.construction.value(id) else {
+                continue;
+            };
+            let (mut x1, mut y1) = (x + dx, y + dy);
+            if dx.abs() > MIN_PRECISION {
+                x1 = check_decimal_fraction(x1);
+            }
+            if dy.abs() > MIN_PRECISION {
+                y1 = check_decimal_fraction(y1);
+            }
+            moved |= self.move_point(id, x1, y1);
+        }
+        moved
+    }
+
+    /// The offset of the label of `id` from its place, in pixels.
+    pub fn label_offset(&self, id: Id) -> Option<(f64, f64)> {
+        if self.label_offsets.is_empty() || id.index() >= self.construction.len() {
+            return None;
+        }
+        self.label_offsets.get(self.construction.label(id)).copied()
+    }
+
+    /// Moves the label of `id` to `offset` pixels from its place; no undo
+    /// step (`EuclidianController.moveLabel`).
+    pub fn set_label_offset(&mut self, id: Id, offset: (f64, f64)) {
+        if id.index() >= self.construction.len() {
+            return;
+        }
+        let label = self.construction.label(id).to_owned();
+        if offset == (0.0, 0.0) {
+            self.label_offsets.remove(&label);
+        } else {
+            self.label_offsets.insert(label, offset);
+        }
     }
 
     pub fn set_number(&mut self, id: Id, v: f64) -> bool {

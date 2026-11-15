@@ -95,17 +95,28 @@ impl Snap {
 
     /// The world position `(x, y)` captured to the grid, if close enough
     /// to a crossing, and cleaned (the cartesian branch of
-    /// `transformCoords`, then `checkDecimalFraction`).
-    pub fn apply(&self, (x, y): (f64, f64)) -> (f64, f64) {
-        let (mut x, mut y) = (x, y);
+    /// `transformCoords`, then `checkDecimalFraction`): where a new point
+    /// goes, and where a dragged free point goes.
+    pub fn apply(&self, p: (f64, f64)) -> (f64, f64) {
+        let (x, y) = self.capture(p, (0.0, 0.0));
+        (check_decimal_fraction(x), check_decimal_fraction(y))
+    }
+
+    /// The cartesian branch of `transformCoords` with the reference app's
+    /// `transformCoordsOffset`: the position plus `offset` is what is
+    /// captured (in a drag of a dependent object, the position its first
+    /// free input point would take), and the offset is taken off again in
+    /// both branches. No cleaning.
+    pub fn capture(&self, (x, y): (f64, f64), offset: (f64, f64)) -> (f64, f64) {
+        let (x, y) = (x + offset.0, y + offset.1);
         if let Some(step) = self.step {
             let (gx, gy) = (round_to_scale(x, step), round_to_scale(y, step));
             let box_half = step * self.fraction;
             if (gx - x).abs() < box_half && (gy - y).abs() < box_half {
-                (x, y) = (gx, gy);
+                return (gx - offset.0, gy - offset.1);
             }
         }
-        (check_decimal_fraction(x), check_decimal_fraction(y))
+        (x - offset.0, y - offset.1)
     }
 }
 
@@ -164,6 +175,20 @@ mod tests {
         // Captured to a step of 0.1: 7 * 0.1 is 0.7000000000000001.
         assert_eq!(round_to_scale(0.69, 0.1), 7.0 * 0.1);
         assert_eq!(check_decimal_fraction(round_to_scale(0.69, 0.1)), 0.7);
+    }
+
+    #[test]
+    fn an_offset_captures_the_shifted_position() {
+        // The first free point would land at (2.1, 0.9): captured to (2, 1),
+        // so the pointer position comes back shifted by (-0.1, 0.1).
+        let s = standard();
+        let (x, y) = s.capture((3.1, 1.4), (-1.0, -0.5));
+        assert!(
+            (x - 3.0).abs() < 1e-12 && (y - 1.5).abs() < 1e-12,
+            "{x} {y}"
+        );
+        // Not captured: the offset goes on and comes off again.
+        assert_eq!(s.capture((3.3, 1.4), (-1.0, -0.5)), (3.3, 1.4));
     }
 
     #[test]

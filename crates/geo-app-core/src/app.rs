@@ -5,7 +5,7 @@
 use crate::errors;
 use crate::geom::Rect;
 use crate::gesture::Gesture;
-use crate::interact::{Drag, ViewTransform};
+use crate::interact::{Drag, Hold, ViewTransform};
 use crate::keyboard::Keyboard;
 use crate::layout::{Overlays, Regions};
 use crate::metrics::Metrics;
@@ -14,6 +14,7 @@ use crate::tools::{Outcome, Tool, ToolState, GROUPS};
 use crate::view::Camera;
 use crate::workbench::Workbench;
 use geo_kernel::kernel::Id;
+use std::cell::RefCell;
 
 /// Which parts of the plane decoration are shown.
 #[derive(Clone, Copy, Debug)]
@@ -76,6 +77,9 @@ pub struct App {
     pub press_view: Option<(Rect, ViewTransform)>,
     /// A text field had the keyboard in the previous frame.
     pub was_typing: bool,
+    /// Where the labels were painted in the last frame, in the area's
+    /// coordinates and painting order (the buffer is reused).
+    pub label_rects: RefCell<Vec<(Id, Rect)>>,
 }
 
 impl App {
@@ -116,6 +120,31 @@ impl App {
             view: None,
             press_view: None,
             was_typing: false,
+            label_rects: RefCell::new(Vec::new()),
+        }
+    }
+
+    /// The object whose label was painted at `(sx, sy)` in the area in the
+    /// last frame, the first in painting order
+    /// (`EuclidianView.getLabelHit`: `labelRectangle.contains`, no
+    /// threshold).
+    pub fn label_at(&self, (sx, sy): (f64, f64)) -> Option<Id> {
+        let p = crate::geom::Point::new(sx as f32, sy as f32);
+        self.label_rects
+            .borrow()
+            .iter()
+            .find(|(id, r)| id.index() < self.wb.construction().len() && r.contains(p))
+            .map(|&(id, _)| id)
+    }
+
+    /// Abandons the drag in progress: the point or the object goes back, or
+    /// the label (whose drag is no undo step) gets its old offset back.
+    pub fn cancel_drag(&mut self) {
+        if let Some(drag) = self.drag.take() {
+            if let Hold::Label { old, .. } = drag.hold() {
+                self.wb.set_label_offset(drag.id(), old);
+            }
+            self.wb.cancel_gesture();
         }
     }
 
