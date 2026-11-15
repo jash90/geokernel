@@ -133,6 +133,8 @@ fn bench(steps: usize) -> Result<(), String> {
     let mut c = Construction::new();
     let a = c.add("A", Def::FreePoint { x: 0.3, y: 0.7 }).map_err(e)?;
     let b = c.add("B", Def::FreePoint { x: 10.0, y: 2.0 }).map_err(e)?;
+    // A free point whose only dependent is created last (see below).
+    let f = c.add("F", Def::FreePoint { x: -3.0, y: 1.0 }).map_err(e)?;
 
     let built = Instant::now();
     let mut p = b;
@@ -183,6 +185,7 @@ fn bench(steps: usize) -> Result<(), String> {
         .add("Z2", Def::FreePoint { x: 52.0, y: 51.0 })
         .map_err(e)?;
     c.add("Zm", Def::Midpoint(z1, z2)).map_err(e)?;
+    c.add("Fm", Def::Midpoint(f, b)).map_err(e)?;
 
     println!("objects:            {}", c.len());
     println!(
@@ -218,9 +221,25 @@ fn bench(steps: usize) -> Result<(), String> {
     }
     let local_time = start.elapsed();
     println!(
-        "local drag (Z1):    {:.0} ns per drag, {} object recomputed each time",
+        "local drag (Z1):    {:.1} ns per drag, {} object recomputed each time",
         local_time.as_secs_f64() * 1e9 / local_drags as f64,
         local / local_drags
+    );
+
+    // Drag F: its one dependent is the last object, far from F.
+    let far_drags = 1_000_000;
+    let mut far = 0usize;
+    let start = Instant::now();
+    for i in 0..far_drags {
+        far += c
+            .move_point(f, -3.0 + ((i % 1000) + 1) as f64 * 0.001, 1.0)
+            .map_err(e)?;
+    }
+    let far_time = start.elapsed();
+    println!(
+        "far drag (F):       {:.1} ns per drag, {} object recomputed each time",
+        far_time.as_secs_f64() * 1e9 / far_drags as f64,
+        far / far_drags
     );
 
     let undefined = count_undefined(&c);
