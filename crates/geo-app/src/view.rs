@@ -127,6 +127,18 @@ impl Camera {
     }
 
     /// The transform for an area of `width` x `height` pixels.
+    /// The camera after the area changed from `old` to `new` (width,
+    /// height in pixels), keeping the world point at the top left corner
+    /// where it is: opening the keyboard or resizing the window does not
+    /// move the drawing under the pointer.
+    pub fn resized(self, old: (f64, f64), new: (f64, f64)) -> Camera {
+        Camera {
+            cx: self.cx + 0.5 * (new.0 - old.0) / self.scale,
+            cy: self.cy - 0.5 * (new.1 - old.1) / self.scale,
+            ..self
+        }
+    }
+
     pub fn transform(&self, width: f64, height: f64) -> ViewTransform {
         let hw = 0.5 * width / self.scale;
         let hh = 0.5 * height / self.scale;
@@ -347,5 +359,27 @@ mod tests {
         assert!(close(cam.scale, 200.0 * 0.84 / 10.0));
         let cam = Camera::fit(Some(flat), 0.0, 0.0);
         assert!(cam.scale.is_finite() && cam.scale > 0.0);
+    }
+
+    #[test]
+    fn resizing_keeps_the_top_left_corner_in_place() {
+        let cam = Camera {
+            cx: 1.0,
+            cy: -2.0,
+            scale: 40.0,
+        };
+        let (old, new) = ((800.0, 600.0), (900.0, 378.0));
+        let a = cam.transform(old.0, old.1).screen_to_world(0.0, 0.0);
+        let moved = cam.resized(old, new);
+        let b = moved.transform(new.0, new.1).screen_to_world(0.0, 0.0);
+        assert!(
+            (a.0 - b.0).abs() < 1e-12 && (a.1 - b.1).abs() < 1e-12,
+            "{a:?} {b:?}"
+        );
+        assert_eq!(moved.scale, cam.scale);
+        // A point on screen stays at the same pixel.
+        let p = cam.transform(old.0, old.1).world_to_screen(2.0, 1.0);
+        let q = moved.transform(new.0, new.1).world_to_screen(2.0, 1.0);
+        assert!((p.0 - q.0).abs() < 1e-9 && (p.1 - q.1).abs() < 1e-9);
     }
 }

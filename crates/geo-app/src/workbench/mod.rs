@@ -6,6 +6,7 @@ use crate::history::History;
 use crate::labels::next_label;
 use crate::scriptlog::{normalize, Log, Setting};
 use crate::undo::Undo;
+use geo_kernel::algo::measure::MeasureDef;
 use geo_kernel::kernel::{Construction, Def, Id, Kind, Value};
 use std::collections::HashMap;
 
@@ -17,7 +18,7 @@ pub struct Row {
     pub kind: Kind,
     /// Free objects take one line: `A = (-5.64, 4.44)`.
     pub free: bool,
-    /// First line: `A = (1, 2)` or `f: Line(A, B)`. A free number's head
+    /// First line: `A = (1, 2)` or `f = Line(A, B)`. A free number's head
     /// ends at the `=`; its value is edited in place.
     pub head: String,
     /// Second line of a dependent object, without the leading `=`.
@@ -50,6 +51,9 @@ pub struct Workbench {
     rows: Vec<Row>,
     rows_version: Option<u64>,
     rows_built: u64,
+    /// Tests make every rebuild fail with this message while it is set.
+    #[cfg(test)]
+    pub fail_rebuilds: Option<String>,
 }
 
 impl Workbench {
@@ -66,6 +70,12 @@ impl Workbench {
     #[cfg(test)]
     pub fn version(&self) -> u64 {
         self.version
+    }
+
+    /// The definition of the line that created `label`.
+    #[cfg(test)]
+    pub fn definition(&self, label: &str) -> Option<&str> {
+        self.log.rhs_of(label)
     }
 
     /// See the field of the same name.
@@ -146,20 +156,27 @@ impl Workbench {
                 continue;
             }
             let before = self.construction.len();
-            let result = geo_kernel::script::exec(&mut self.construction, &line);
-            if self.construction.len() > before {
-                self.log.record(&self.construction, before, &line);
-            }
-            if let Err(e) = result {
-                failure = Some(e);
-                break;
+            // Only lines that succeeded go into the log: a failed one would
+            // fail again on every replay.
+            match geo_kernel::script::exec(&mut self.construction, &line) {
+                Ok(_) => {
+                    if self.construction.len() > before {
+                        self.log.record(&self.construction, before, &line);
+                    }
+                }
+                Err(e) => {
+                    failure = Some(e);
+                    break;
+                }
             }
         }
         let changed = self.construction.len() != n0;
         match failure {
             Some(e) => {
                 if changed {
-                    let _ = self.restore(snapshot);
+                    if let Err(why) = self.restore(snapshot) {
+                        self.keep_unrevertable(&why);
+                    }
                 }
                 Err(e)
             }
@@ -173,9 +190,36 @@ impl Workbench {
         }
     }
 
+    /// After a rollback that failed: the change stays and cannot be undone.
+    ///
+    /// A rollback replays lines that all ran before, yet the replay can still
+    /// fail: after a deletion an automatic label taken at the time may be free
+    /// again (so a line names its outputs differently), and a line whose
+    /// inputs are gone is skipped only when it made nothing. Replaying the
+    /// same log fails the same way every time, so the step is not offered for
+    /// undo (the older steps stay) and the redo steps, which no longer follow
+    /// from this state, are dropped. The log holds only lines that
+    /// succeeded; a failing command with several outputs may have left some
+    /// of them in the construction, so it is rebuilt from that log once more
+    /// (if that fails too, they stay until the document is reloaded).
+    fn keep_unrevertable(&mut self, why: &str) {
+        if self.construction.len() != self.log.rebuild().map_or(usize::MAX, |r| r.0.len()) {
+            let _ = self.restore(self.log.clone());
+        }
+        self.undo.clear_redo();
+        self.gesture = None;
+        self.version += 1;
+        self.notice = Some(format!("Nie można cofnąć ostatniej zmiany: {why}"));
+    }
+
     /// Replays `log` into a new construction, keeping the selection by label.
     /// If the replay fails the previous state stays and `notice` says why.
     fn restore(&mut self, log: Log) -> Result<(), String> {
+        #[cfg(test)]
+        if let Some(e) = self.fail_rebuilds.clone() {
+            self.notice = Some(format!("Nie można odtworzyć konstrukcji: {e}"));
+            return Err(e);
+        }
         let (c, mut kept) = match log.rebuild() {
             Ok(r) => r,
             Err(e) => {
@@ -268,8 +312,12 @@ impl Workbench {
             return;
         };
         if g.committed {
+            // The drag's undo step goes either way: on success the drag is
+            // gone, on failure it stays but could not be undone either.
             self.undo.discard_last();
-            let _ = self.restore(g.snapshot);
+            if let Err(why) = self.restore(g.snapshot) {
+                self.keep_unrevertable(&why);
+            }
         }
     }
 
@@ -361,7 +409,11 @@ impl Workbench {
             let label = c.label(id).to_owned();
             let kind = c.kind(id);
             let free = c.def(id).is_free();
-            let text = describe::value_text(&value);
+            let text = match (c.def(id), value) {
+                // Angles are kept in radians and shown in degrees.
+                (Def::Measure(MeasureDef::Angle(..)), Value::Number(n)) => describe::degrees(n),
+                _ => describe::value_text(&value),
+            };
             let free_number = match (c.def(id), value) {
                 (Def::Number(_), Value::Number(n)) => Some(n),
                 _ => None,
@@ -371,9 +423,22 @@ impl Workbench {
             } else if free {
                 (format!("{label} = {text}"), None)
             } else {
-                match rhs.get(label.as_str()).copied() {
-                    Some(rhs) if kind == Kind::Point => (format!("{label} = {rhs}"), Some(text)),
-                    Some(rhs) => (format!("{label}: {rhs}"), Some(text)),
+                // A side made by a polygon names the polygon, as in the
+                // reference: `a = Segment(A, B, q1)`.
+                let polygon = groups
+                    .iter()
+                    .find(|g| g.contains(&label) && g[0] != label)
+                    .map(|g| g[0].as_str())
+                    .filter(|&p| c.id(p).is_some_and(|p| c.kind(p) == Kind::Polygon));
+                let side = match (c.def(id), polygon) {
+                    (Def::Segment(p, q), Some(poly)) => {
+                        Some(format!("Segment({}, {}, {poly})", c.label(p), c.label(q)))
+                    }
+                    _ => None,
+                };
+                // `label = definition` for every kind, as in the reference.
+                match side.as_deref().or(rhs.get(label.as_str()).copied()) {
+                    Some(rhs) => (format!("{label} = {rhs}"), Some(text)),
                     None => (label.clone(), Some(text)),
                 }
             };

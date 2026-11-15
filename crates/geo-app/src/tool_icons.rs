@@ -1,19 +1,30 @@
-//! Icons of the construction tools, drawn with shapes (24 x 24 box).
+//! Icons of the tools, drawn with shapes in a 24 x 24 box: dark strokes,
+//! blue given points and red for what the tool creates.
 
 use crate::icons::Pen;
 use crate::theme;
 use crate::tools::Tool;
 use eframe::egui::{Color32, Painter, Pos2};
 
-pub fn paint(painter: &Painter, tool: Tool, c: Pos2, half: f32, color: Color32, accent: Color32) {
-    let pen = Pen {
+const INK: Color32 = Color32::from_rgb(0x40, 0x40, 0x40);
+const POINT: Color32 = theme::FREE_POINT;
+const RESULT: Color32 = Color32::from_rgb(0xe0, 0x30, 0x30);
+
+pub fn paint(painter: &Painter, tool: Tool, c: Pos2, half: f32) {
+    let u = half / 12.0;
+    let ink = Pen {
         painter,
         c,
-        u: half / 12.0,
-        color,
-        width: (half / 12.0 * 1.7).max(1.2),
+        u,
+        color: INK,
+        width: (u * 1.5).max(1.0),
     };
-    let dot = |x: f32, y: f32| pen.dot(x, y, 2.6, accent);
+    let red = Pen {
+        color: RESULT,
+        ..ink
+    };
+    let dot = |x: f32, y: f32| ink.dot(x, y, 2.4, POINT);
+    let new_dot = |x: f32, y: f32| ink.dot(x, y, 2.4, RESULT);
     match tool {
         Tool::Move => {
             let arrow = [
@@ -25,75 +36,207 @@ pub fn paint(painter: &Painter, tool: Tool, c: Pos2, half: f32, color: Color32, 
                 (1.2, 3.0),
                 (6.5, 3.0),
             ];
-            pen.fill_poly(&arrow, theme::WHITE);
-            pen.poly(&arrow, true);
+            ink.fill_poly(&arrow, theme::WHITE);
+            ink.poly(&arrow, true);
         }
         Tool::Point => {
-            pen.circle(0.0, 0.0, 8.0);
-            pen.dot(0.0, 0.0, 3.8, accent);
+            dot(-3.0, 3.0);
+            red.line((2.0, -10.0), (2.0, -4.0));
+            red.line((-1.0, -7.0), (5.0, -7.0));
+        }
+        Tool::Intersect => {
+            ink.line((-10.0, -8.0), (10.0, 8.0));
+            ink.line((-10.0, 8.0), (10.0, -8.0));
+            new_dot(0.0, 0.0);
+        }
+        Tool::Midpoint => {
+            ink.line((-10.0, 6.0), (10.0, -6.0));
+            dot(-10.0, 6.0);
+            dot(10.0, -6.0);
+            new_dot(0.0, 0.0);
         }
         Tool::Line => {
-            pen.line((-10.0, 8.0), (10.0, -8.0));
-            dot(-4.0, 4.0);
-            dot(4.0, -4.0);
+            ink.line((-11.0, 9.0), (11.0, -9.0));
+            dot(-5.0, 4.1);
+            dot(5.0, -4.1);
         }
         Tool::Segment => {
-            pen.line((-8.0, 6.0), (8.0, -6.0));
-            dot(-8.0, 6.0);
-            dot(8.0, -6.0);
+            ink.line((-8.0, 7.0), (8.0, -7.0));
+            dot(-8.0, 7.0);
+            dot(8.0, -7.0);
         }
         Tool::Ray => {
-            pen.line((-8.0, 6.0), (10.0, -7.0));
-            pen.poly(&[(4.0, -8.5), (10.0, -7.0), (6.5, -2.0)], false);
-            dot(-8.0, 6.0);
-            dot(0.0, 2.7);
+            ink.line((-8.0, 7.0), (11.0, -9.0));
+            dot(-8.0, 7.0);
+            dot(1.5, -1.0);
+        }
+        Tool::Vector => {
+            ink.line((-9.0, 7.0), (8.0, -6.0));
+            ink.fill_poly(&[(10.0, -8.0), (3.0, -6.5), (7.0, -1.5)], INK);
+            dot(-9.0, 7.0);
+        }
+        Tool::Perpendicular => {
+            ink.line((-11.0, 7.0), (11.0, 7.0));
+            red.line((0.0, -11.0), (0.0, 11.0));
+            dot(0.0, -5.0);
+        }
+        Tool::Parallel => {
+            ink.line((-11.0, 9.0), (11.0, 1.0));
+            red.line((-11.0, -1.0), (11.0, -9.0));
+            dot(0.0, -5.0);
+        }
+        Tool::Bisector => {
+            ink.line((-9.0, 6.0), (9.0, 6.0));
+            dot(-9.0, 6.0);
+            dot(9.0, 6.0);
+            red.line((0.0, -11.0), (0.0, 11.0));
+        }
+        Tool::AngleBisector => {
+            ink.line((-10.0, 9.0), (10.0, 9.0));
+            ink.line((-10.0, 9.0), (6.0, -9.0));
+            red.line((-10.0, 9.0), (11.0, -0.5));
+            dot(-10.0, 9.0);
+        }
+        Tool::Tangents => {
+            ink.circle(-2.0, 2.0, 7.0);
+            red.line((-11.0, -6.6), (11.0, -6.6));
+            red.line((-9.0, 9.0), (11.0, -6.6));
+            dot(11.0, -6.6);
+        }
+        Tool::Polar => {
+            ink.circle(-3.0, 0.0, 7.5);
+            red.line((2.0, -11.0), (2.0, 11.0));
+            dot(9.0, 0.0);
         }
         Tool::Circle => {
-            pen.circle(0.0, 0.0, 9.0);
+            ink.circle(0.0, 0.0, 9.0);
             dot(0.0, 0.0);
             dot(6.4, -6.4);
         }
-        Tool::Midpoint => {
-            pen.line((-9.0, 0.0), (9.0, 0.0));
+        Tool::CircleRadius => {
+            ink.circle(0.0, 0.0, 9.0);
+            red.line((0.0, 0.0), (9.0, 0.0));
+            dot(0.0, 0.0);
+        }
+        Tool::Circle3 => {
+            ink.circle(0.0, 0.0, 9.0);
             dot(-9.0, 0.0);
-            dot(9.0, 0.0);
-            pen.dot(0.0, 0.0, 3.0, theme::DEPENDENT_FILL);
+            dot(6.4, -6.4);
+            dot(4.5, 7.8);
         }
-        Tool::Perpendicular => {
-            pen.line((-10.0, 5.0), (10.0, 5.0));
-            pen.line((0.0, -10.0), (0.0, 10.0));
-            pen.poly(&[(-4.0, 5.0), (-4.0, 1.0), (0.0, 1.0)], false);
+        Tool::Polygon => {
+            let pts = [(-10.0, 6.0), (-3.0, -9.0), (10.0, -3.0), (5.0, 9.0)];
+            painter.add(eframe::egui::Shape::convex_polygon(
+                pts.iter()
+                    .map(|&(x, y)| c + eframe::egui::vec2(x, y) * u)
+                    .collect(),
+                crate::theme::POLYGON.gamma_multiply(0.15),
+                eframe::egui::Stroke::NONE,
+            ));
+            red.poly(&pts, true);
+            for (x, y) in pts {
+                dot(x, y);
+            }
         }
-        Tool::Parallel => {
-            pen.line((-10.0, 2.0), (10.0, -6.0));
-            pen.line((-10.0, 10.0), (10.0, 2.0));
-            dot(-2.0, -1.2);
+        Tool::RegularPolygon => {
+            let pts: Vec<(f32, f32)> = (0..5)
+                .map(|i| {
+                    let a = (i as f32 * 72.0 - 90.0).to_radians();
+                    (10.0 * a.cos(), 10.0 * a.sin())
+                })
+                .collect();
+            red.poly(&pts, true);
+            dot(pts[3].0, pts[3].1);
+            dot(pts[2].0, pts[2].1);
         }
-        Tool::Bisector => {
-            pen.line((-9.0, 6.0), (9.0, 6.0));
-            pen.line((0.0, -10.0), (0.0, 10.0));
-            pen.line((-4.5, 3.5), (-4.5, 8.5));
-            pen.line((4.5, 3.5), (4.5, 8.5));
-            dot(-9.0, 6.0);
-            dot(9.0, 6.0);
+        Tool::Angle => {
+            ink.line((-10.0, 8.0), (10.0, 8.0));
+            ink.line((-10.0, 8.0), (4.0, -9.0));
+            red.poly(&Pen::arc(-10.0, 8.0, 9.0, 0.0, 50.0), false);
+            dot(-10.0, 8.0);
         }
-        Tool::Intersect => {
-            pen.line((-9.0, -9.0), (9.0, 9.0));
-            pen.line((-9.0, 9.0), (9.0, -9.0));
-            pen.dot(0.0, 0.0, 3.2, theme::DEPENDENT_FILL);
+        Tool::Distance => {
+            ink.line((-10.0, 4.0), (10.0, 4.0));
+            ink.line((-10.0, 0.0), (-10.0, 8.0));
+            ink.line((10.0, 0.0), (10.0, 8.0));
+            red.line((-6.0, -6.0), (6.0, -6.0));
+            red.line((-6.0, -9.0), (-6.0, -3.0));
+            red.line((6.0, -9.0), (6.0, -3.0));
+        }
+        Tool::ReflectLine => {
+            ink.line((0.0, -11.0), (0.0, 11.0));
+            ink.fill_poly(&[(-10.0, 6.0), (-3.0, 6.0), (-3.0, -6.0)], POINT);
+            red.poly(&[(10.0, 6.0), (3.0, 6.0), (3.0, -6.0)], true);
+        }
+        Tool::ReflectPoint => {
+            ink.fill_poly(&[(-11.0, -2.0), (-4.0, -2.0), (-4.0, -9.0)], POINT);
+            red.poly(&[(11.0, 2.0), (4.0, 2.0), (4.0, 9.0)], true);
+            ink.dot(0.0, 0.0, 2.4, INK);
+        }
+        Tool::ReflectCircle => {
+            ink.circle(0.0, 0.0, 8.0);
+            dot(3.0, -1.5);
+            new_dot(10.5, -5.0);
+            ink.dot(0.0, 0.0, 1.6, INK);
+        }
+        Tool::Rotate => {
+            ink.fill_poly(&[(2.0, 9.0), (10.0, 9.0), (10.0, 2.0)], POINT);
+            red.poly(&Pen::arc(0.0, 0.0, 9.0, 10.0, 150.0), false);
+            red.fill_poly(&[(-9.5, -7.0), (-4.5, -9.0), (-9.0, -2.0)], RESULT);
+            ink.dot(0.0, 0.0, 2.2, INK);
+        }
+        Tool::Translate => {
+            ink.fill_poly(&[(-11.0, 10.0), (-4.0, 10.0), (-4.0, 3.0)], POINT);
+            red.poly(&[(3.0, -3.0), (10.0, -3.0), (10.0, -10.0)], true);
+            ink.line((-8.0, 1.0), (1.0, -7.0));
+            ink.fill_poly(&[(3.0, -9.0), (-2.5, -7.5), (1.0, -4.0)], INK);
+        }
+        Tool::Dilate => {
+            ink.fill_poly(&[(-4.0, 3.0), (1.0, 3.0), (1.0, -2.0)], POINT);
+            red.poly(&[(-4.0, 3.0), (11.0, 3.0), (11.0, -11.0)], true);
+            ink.dot(-10.0, 8.0, 2.2, INK);
+        }
+        Tool::MoveView => {
+            for (dx, dy) in [(1.0f32, 0.0f32), (-1.0, 0.0), (0.0, 1.0), (0.0, -1.0)] {
+                ink.line((0.0, 0.0), (dx * 10.0, dy * 10.0));
+                let (tx, ty) = (dx * 11.0, dy * 11.0);
+                let (nx, ny) = (-dy * 3.5, dx * 3.5);
+                ink.fill_poly(
+                    &[
+                        (tx, ty),
+                        (tx - dx * 5.0 + nx, ty - dy * 5.0 + ny),
+                        (tx - dx * 5.0 - nx, ty - dy * 5.0 - ny),
+                    ],
+                    INK,
+                );
+            }
+        }
+        Tool::ZoomIn | Tool::ZoomOut => {
+            ink.circle(-2.0, -2.0, 7.5);
+            ink.line((3.5, 3.5), (10.5, 10.5));
+            ink.line((-6.0, -2.0), (2.0, -2.0));
+            if tool == Tool::ZoomIn {
+                ink.line((-2.0, -6.0), (-2.0, 2.0));
+            }
+        }
+        Tool::ShowHide => {
+            let top = Pen::arc(0.0, 6.0, 12.0, 30.0, 150.0);
+            let bottom = Pen::arc(0.0, -6.0, 12.0, 210.0, 330.0);
+            ink.poly(&top, false);
+            ink.poly(&bottom, false);
+            ink.dot(0.0, 0.0, 3.2, POINT);
+            red.line((-10.0, 9.0), (10.0, -9.0));
         }
         Tool::Delete => {
-            pen.line((-8.0, -5.0), (8.0, -5.0));
-            pen.poly(
-                &[(-2.5, -5.0), (-2.5, -9.0), (2.5, -9.0), (2.5, -5.0)],
-                false,
+            ink.fill_poly(
+                &[(-9.0, 2.0), (1.0, -8.0), (9.0, 0.0), (-1.0, 10.0)],
+                theme::WHITE,
             );
-            pen.poly(
-                &[(-5.5, -3.0), (5.5, -3.0), (4.5, 10.0), (-4.5, 10.0)],
-                true,
+            ink.poly(&[(-9.0, 2.0), (1.0, -8.0), (9.0, 0.0), (-1.0, 10.0)], true);
+            red.fill_poly(
+                &[(-9.0, 2.0), (-4.0, -3.0), (4.0, 5.0), (-1.0, 10.0)],
+                RESULT,
             );
-            pen.line((-1.5, 0.0), (-1.5, 7.0));
-            pen.line((1.5, 0.0), (1.5, 7.0));
         }
     }
 }

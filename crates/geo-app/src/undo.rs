@@ -56,6 +56,11 @@ impl<T> Undo<T> {
         self.past.pop();
     }
 
+    /// Forgets the redo steps.
+    pub fn clear_redo(&mut self) {
+        self.future.clear();
+    }
+
     pub fn clear(&mut self) {
         self.past.clear();
         self.future.clear();
