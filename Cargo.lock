@@ -818,6 +818,7 @@ dependencies = [
  "miniz_oxide 0.9.1",
  "quick-xml 0.42.0",
  "serde",
+ "serde_json",
  "toml 0.8.23",
  "zip",
 ]

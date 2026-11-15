@@ -193,3 +193,27 @@ fn files_are_told_from_scripts_by_content() {
     assert!(!looks_like_construction(b""));
     assert!(!looks_like_construction(b"<?xml"));
 }
+
+#[test]
+fn polygon_outputs_are_labelled_by_the_kernel() {
+    let points = free("A", "0", "0") + &free("B", "4", "0") + &free("C", "0", "3");
+    let polygon = |outputs: &str| {
+        ok(&(points.clone()
+            + "<command name=\"Polygon\"><input a0=\"A\" a1=\"B\" a2=\"C\"/>"
+            + outputs
+            + "</command>\
+               <command name=\"Area\"><input a0=\"p\"/><output a0=\"ar\"/></command>"))
+    };
+    // the labels GeoGebra gives to the sides of a triangle
+    let r = polygon("<output a0=\"p\" a1=\"c\" a2=\"a\" a3=\"b\"/>");
+    assert!(r.skipped.is_empty(), "{:?}", r.skipped);
+    assert_eq!(r.script[3], "p = Polygon(A, B, C)");
+    assert_eq!(r.script[4], "ar = Area(p)");
+    // a side the user renamed has no counterpart: it is skipped, the rest stays
+    let r = polygon("<output a0=\"p\" a1=\"mine\" a2=\"a\" a3=\"b\"/>");
+    assert_eq!(r.skipped.len(), 1);
+    assert_eq!(r.skipped[0].label, "mine");
+    assert!(r.skipped[0].reason.contains("does not make"));
+    assert_eq!(r.script[3], "p = Polygon(A, B, C)");
+    assert_eq!(r.script[4], "ar = Area(p)");
+}

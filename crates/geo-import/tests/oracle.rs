@@ -4,7 +4,7 @@
 //! is compared with `snapshots[0]` of the same golden case under the rules of
 //! `golden/SCHEMA.md`, with the comparison of `geo-golden`.
 
-use geo_golden::compare::{compare, numbers_agree};
+use geo_golden::compare::{compare_object, numbers_agree};
 use geo_golden::model::ExpectedData;
 use geo_kernel::Value;
 use serde::Deserialize;
@@ -18,20 +18,27 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 /// At the time of writing (see the assertions below for the exact counts).
-const MIN_FILES: usize = 1151;
-const MIN_ZIPS: usize = 27;
-const MIN_COMPARED: usize = 7900;
+const MIN_FILES: usize = 1339;
+const MIN_ZIPS: usize = 31;
+const MIN_COMPARED: usize = 10390;
 /// Objects the importer may skip in the whole corpus (listed in `EXPECTED_SKIPPED`).
-const MAX_SKIPPED: usize = 6;
+const MAX_SKIPPED: usize = 10;
 /// Every object the importer may skip, as `case:label`. Three are a `Ray`
 /// whose file writes an expression as an argument (`ga` of `vector-chain-002`
 /// and `t` of `vector-translate-014` and `-015`); `gb`, `d` and `q` of
-/// `vector-chain-002` depend on them. Nothing else may be skipped.
+/// `vector-chain-002` depend on them. `polygon-small-001` is `Polygon(A)`
+/// of one point, which GeoGebra saves with the list `{A}` as its argument (an
+/// expression), and the three objects measured on it. Nothing else may be
+/// skipped.
 const EXPECTED_SKIPPED: &[&str] = &[
     "vector-chain-002:d",
     "vector-chain-002:ga",
     "vector-chain-002:gb",
     "vector-chain-002:q",
+    "polygon-small-001:p",
+    "polygon-small-001:ar",
+    "polygon-small-001:pe",
+    "polygon-small-001:M",
     "vector-translate-014:t",
     "vector-translate-015:t",
 ];
@@ -227,7 +234,8 @@ fn compare_case(
             }
             continue;
         };
-        match compare(expected, c.kind(id), &c.value(id)) {
+        let vertices: Vec<_> = c.vertices(id).collect();
+        match compare_object(expected, c.kind(id), &c.value(id), &vertices) {
             Ok(_) => totals.objects_compared += 1,
             Err(why) => {
                 let key = format!("0:{label}");
@@ -310,6 +318,9 @@ fn imported_constructions_agree_with_the_golden_snapshots() {
     let mut used_import_gaps = BTreeSet::new();
     let mut xml = Vec::new();
     files(&root.join("golden/ggb"), "xml", &mut xml);
+    // `saved/` holds files saved after moves, with their own snapshots
+    // (tests/saved.rs); they have no golden case.
+    xml.retain(|p| p.parent().and_then(|d| d.file_name()).is_none_or(|d| d != "saved"));
     xml.sort();
     let mut totals = Totals::default();
     let mut failures = Vec::new();
@@ -374,7 +385,7 @@ fn imported_constructions_agree_with_the_golden_snapshots() {
     }
     assert_eq!(
         totals.skipped_by_group.keys().collect::<Vec<_>>(),
-        ["vector"]
+        ["polygon", "vector"]
     );
     assert!(
         totals.unlabelled <= MAX_UNLABELLED,

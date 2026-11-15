@@ -110,6 +110,16 @@ struct Converter {
 struct Step {
     line: String,
     labels: Vec<String>,
+    /// The kernel chooses the labels of the objects this line makes (a
+    /// polygon and its sides, the vertices of a polygon, its angles); the
+    /// labels of the file are matched to them afterwards.
+    auto: bool,
+}
+
+/// Commands whose outputs the kernel labels itself, as GeoGebra does.
+fn labels_by_kernel(name: &str, args: &[String]) -> bool {
+    matches!(name, "Polygon" | "PolyLine" | "Vertex" | "InteriorAngles")
+        || (name == "Angle" && args.len() == 1)
 }
 
 impl Converter {
@@ -157,6 +167,26 @@ impl Converter {
         match steps {
             Ok(steps) => {
                 for step in steps {
+                    if step.auto {
+                        match self.run_auto(&step)? {
+                            Ok(unmatched) => {
+                                self.out.script.push(step.line);
+                                let reason = format!(
+                                    "the kernel does not make an object with this label for `{}`",
+                                    step.labels[0]
+                                );
+                                for label in unmatched {
+                                    self.skip(&label, name, reason.clone());
+                                }
+                            }
+                            Err(reason) => {
+                                for label in &step.labels {
+                                    self.skip(label, name, reason.clone());
+                                }
+                            }
+                        }
+                        continue;
+                    }
                     match self.run(&step.line, &step.labels)? {
                         Ok(()) => self.out.script.push(step.line),
                         Err(reason) => {
@@ -204,6 +234,45 @@ impl Converter {
         }
     }
 
+    /// Runs a line whose objects the kernel labels itself, as GeoGebra does.
+    /// Every label the file has for them must be one the kernel made; a file
+    /// label with no such object (a side the user renamed) is skipped with its
+    /// dependents, and everything else stays in the script. The
+    /// outer error is a bug.
+    fn run_auto(&mut self, step: &Step) -> Result<Result<Vec<String>, String>, ImportError> {
+        let before = self.kernel.len();
+        match exec(&mut self.kernel, &step.line) {
+            Err(e) if self.kernel.len() == before => return Ok(Err(e)),
+            Err(e) => {
+                return Err(ImportError::Internal(format!(
+                    "`{}` failed ({e}) after it had created objects",
+                    step.line
+                )))
+            }
+            Ok(_) => {}
+        }
+        let made: Vec<String> = self
+            .kernel
+            .ids()
+            .skip(before)
+            .map(|id| self.kernel.label(id).to_string())
+            .collect();
+        for label in &made {
+            // A name the file uses later for another object cannot be told
+            // from this one; the duplicate check of `claim` reports it.
+            self.seen.insert(label.clone());
+        }
+        // GeoGebra lists the outputs of `Polygon(A, B, n)` in another order
+        // than the kernel creates them, so only the sets are compared.
+        let unmatched = step
+            .labels
+            .iter()
+            .filter(|l| !made.contains(l))
+            .cloned()
+            .collect();
+        Ok(Ok(unmatched))
+    }
+
     /// The script lines of a command, or why there are none.
     fn steps(
         &self,
@@ -234,10 +303,19 @@ impl Converter {
                 .map(|(n, label)| Step {
                     line: format!("{label} = Intersect({}, {}, {})", args[0], args[1], n + 1),
                     labels: vec![label.clone()],
+                    auto: false,
                 })
                 .collect());
         }
         let call = format!("{name}({})", args.join(", "));
+        let labelled: Vec<String> = outputs.iter().filter(|l| !l.is_empty()).cloned().collect();
+        if outputs.len() > 1 && labels_by_kernel(name, inputs) {
+            return Ok(vec![Step {
+                line: format!("{} = {call}", labelled[0]),
+                labels: labelled,
+                auto: true,
+            }]);
+        }
         let line = match multi_output_count(&self.kernel, &call) {
             // A command that makes several objects: every output gets its label.
             Some(_) => format!("{{{}}} = {call}", outputs.join(", ")),
@@ -251,7 +329,8 @@ impl Converter {
         };
         Ok(vec![Step {
             line,
-            labels: outputs.iter().filter(|l| !l.is_empty()).cloned().collect(),
+            labels: labelled,
+            auto: false,
         }])
     }
 
