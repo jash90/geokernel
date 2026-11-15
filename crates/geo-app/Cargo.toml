@@ -16,6 +16,11 @@ path = "src/lib.rs"
 name = "geokernel-app"
 path = "src/main.rs"
 
+[features]
+# The window driven without a window (`geo_app::headless`), for the
+# `geokernel-mcp` server. Off by default: the desktop app does not compile it.
+headless = []
+
 [dependencies]
 geo-kernel = { path = "../geo-kernel" }
 geo-app-core = { path = "../geo-app-core" }

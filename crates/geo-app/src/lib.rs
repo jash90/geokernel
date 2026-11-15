@@ -22,6 +22,11 @@ mod toolbar;
 
 #[cfg(test)]
 mod frame_counts;
+// The window driven without a window, shared by the window tests, the frame
+// benchmark and the `geokernel-mcp` server. Only tests and the `headless`
+// feature compile it; the desktop build does not.
+#[cfg(any(test, feature = "headless"))]
+pub mod headless;
 #[cfg(test)]
 mod render_tests;
 #[cfg(test)]
@@ -53,15 +58,22 @@ impl Window {
         load_error: Option<String>,
         metrics: Metrics,
     ) -> Window {
-        theme::apply(&cc.egui_ctx);
-        cc.egui_ctx.options_mut(|o| {
-            o.input_options.max_click_dist = metrics.drag_slop;
-            o.input_options.max_click_duration = metrics.click_time;
-        });
+        configure(&cc.egui_ctx, &metrics);
         let mut app = App::new(wb, load_error);
         app.set_metrics(metrics);
         Window(app)
     }
+}
+
+/// Sets up the egui context of a window with the input profile `metrics`:
+/// the theme, and egui's own click rules (buttons, rows) following the
+/// profile (the desktop profile holds egui's defaults).
+fn configure(ctx: &egui::Context, metrics: &Metrics) {
+    theme::apply(ctx);
+    ctx.options_mut(|o| {
+        o.input_options.max_click_dist = metrics.drag_slop;
+        o.input_options.max_click_duration = metrics.click_time;
+    });
 }
 
 impl eframe::App for Window {
