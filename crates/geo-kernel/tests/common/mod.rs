@@ -712,7 +712,7 @@ pub fn generate(seed: u64, n_commands: usize, all_commands: bool) -> Case {
                             .collect(),
                     );
                     expr.push(true);
-                    lenient.push(["If(", "{", "Sequence(jj"].iter().any(|t| line.contains(t)));
+                    lenient.push(c.kind(id) == Kind::List || line.contains("If("));
                     assert_eq!(id.index() + 1, c.len(), "an expression makes one object");
                     lines.push(line);
                     multi_lines.push(false);
@@ -864,7 +864,9 @@ fn expression_line(rng: &mut Rng, c: &Construction, made: usize) -> Option<(Stri
         ),
         18 => (
             format!("o{made}"),
-            format!("Sum({{{n}, {m}, x({p})}}, {m}) + Length(Sequence({m})) - Sum({{x({p}), y({q})}}, 1)"),
+            format!(
+                "Sum({{{n}, {m}, x({p})}}, 3) + Length(Sequence({m})) - Sum({{x({p}), y({q})}})"
+            ),
             vec![n, m, p, q],
         ),
         _ => {
