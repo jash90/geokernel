@@ -1,16 +1,22 @@
 package geokernel.harness;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import org.geogebra.common.jre.io.MyXMLioJre;
+import org.geogebra.common.main.App;
 
 /**
  * Writes the construction file GeoGebra itself produces for every case of the
@@ -24,6 +30,11 @@ import org.geogebra.common.jre.io.MyXMLioJre;
  * the case is also written as {@code <case id>.ggb}, the zip archive of
  * {@code MyXMLioJre.writeGeoGebraFile} without a thumbnail. Nothing is edited
  * after GeoGebra has written it.
+ *
+ * <p>The zip writer stamps every entry with the current time, so a new archive
+ * is written only when its entries differ from the file that is already there;
+ * files of the group that this run did not produce are deleted. Running it
+ * twice therefore leaves every file byte-identical.
  */
 public final class GgbExporter {
 
@@ -46,6 +57,7 @@ public final class GgbExporter {
         int zips = 0;
         long bytes = 0;
         Map<String, Integer> perGroup = new TreeMap<>();
+        Map<Path, Set<String>> produced = new TreeMap<>();
         for (int n = 0; n < cases.size(); n++) {
             if (n % sampleStep != 0) {
                 continue;
@@ -63,18 +75,58 @@ public final class GgbExporter {
             }
             Path dir = outDir.resolve(group);
             Files.createDirectories(dir);
-            byte[] xml = session.app().getXML().getBytes(StandardCharsets.UTF_8);
+            Set<String> names = produced.computeIfAbsent(dir, d -> new HashSet<>());
+            App app = session.kernel().getApplication();
+            byte[] xml = app.getXML().getBytes(StandardCharsets.UTF_8);
             Files.write(dir.resolve(id + ".xml"), xml);
+            names.add(id + ".xml");
             bytes += xml.length;
             written++;
             perGroup.merge(group, 1, Integer::sum);
             if (n % zipStep == 0) {
                 ByteArrayOutputStream zip = new ByteArrayOutputStream();
-                ((MyXMLioJre) session.app().getXMLio()).writeGeoGebraFile(zip, false);
-                Files.write(dir.resolve(id + ".ggb"), zip.toByteArray());
+                ((MyXMLioJre) app.getXMLio()).writeGeoGebraFile(zip, false);
+                Path target = dir.resolve(id + ".ggb");
+                if (!Files.exists(target) || !sameEntries(Files.readAllBytes(target), zip.toByteArray())) {
+                    Files.write(target, zip.toByteArray());
+                }
+                names.add(id + ".ggb");
                 zips++;
             }
         }
+        for (Map.Entry<Path, Set<String>> e : produced.entrySet()) {
+            try (var files = Files.list(e.getKey())) {
+                for (Path file : (Iterable<Path>) files::iterator) {
+                    if (!e.getValue().contains(file.getFileName().toString())) {
+                        Files.delete(file);
+                    }
+                }
+            }
+        }
+        printSummary(casesFile, written, bytes, zips, perGroup);
+    }
+
+    /** The entries (name and content) of two zip archives are equal. */
+    private static boolean sameEntries(byte[] a, byte[] b) throws IOException {
+        return entries(a).equals(entries(b));
+    }
+
+    private static Map<String, List<Byte>> entries(byte[] zip) throws IOException {
+        Map<String, List<Byte>> out = new TreeMap<>();
+        try (ZipInputStream in = new ZipInputStream(new ByteArrayInputStream(zip))) {
+            for (ZipEntry e = in.getNextEntry(); e != null; e = in.getNextEntry()) {
+                List<Byte> bytes = new ArrayList<>();
+                for (byte x : in.readAllBytes()) {
+                    bytes.add(x);
+                }
+                out.put(e.getName(), bytes);
+            }
+        }
+        return out;
+    }
+
+    private static void printSummary(Path casesFile, int written, long bytes, int zips,
+            Map<String, Integer> perGroup) {
         System.out.printf("%s: %d xml files (%d bytes), %d zip files %s%n", casesFile.getFileName(),
                 written, bytes, zips, new ArrayList<>(perGroup.entrySet()));
     }

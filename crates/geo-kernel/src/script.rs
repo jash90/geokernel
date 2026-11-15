@@ -30,10 +30,13 @@
 //!
 //! `{label, label, ...} = Command(...)` names every output of a command that
 //! creates several objects, in GeoGebra's output order; an empty slot is an
-//! output that is not created (so is a missing one after the last slot: the
-//! second tangent from a point on the circle is never created). Which outputs are created no longer depends on
-//! which are defined when the line runs. It is what a saved construction
-//! needs, because GeoGebra writes the label of every output it created.
+//! output that is not created. Which outputs are created follows the labels,
+//! not which outputs are defined when the line runs. It is what a saved
+//! construction needs, because GeoGebra writes the label of every output it
+//! created. One limit: when both tangents from a point are the same line at
+//! creation (the point is on the circle) the kernel makes only the first, so a
+//! label for the second one is an error, and a missing or empty slot after the
+//! last output the kernel makes is accepted.
 //!
 //! `$vector(x, y)` is GeoGebra's own parser form and gives a free vector for
 //! any label. `$point(x, y)` gives a free point for any label; GeoGebra's
@@ -712,11 +715,16 @@ mod tests {
         // the labels do not depend on how many outputs are defined
         exec(&mut c, "{b1, b2} = AngularBisector(l, m)").unwrap();
         assert!(c.id("b1").is_some() && c.id("b2").is_some());
-        // the second tangent from a point on the circle is never created: its slot stays empty
+        // the second tangent from a point on the circle is never created: its slot stays empty;
+        // a label for it is an error (the limit stated at the top of this file)
         exec(&mut c, "T = (2, 0)").unwrap();
         exec(&mut c, "{o, } = Tangent(T, k)").unwrap();
         exec(&mut c, "T2 = (0, 2)").unwrap();
         exec(&mut c, "{o2, , } = Tangent(T2, k)").unwrap();
+        let n = c.len();
+        let e = exec(&mut c, "{o3, o4} = Tangent(T, k)").unwrap_err();
+        assert!(e.contains("creates 1 outputs, but 2 labels"), "{e}");
+        assert_eq!(c.len(), n);
         assert!(c.id("o").is_some() && c.id("o2").is_some());
         // an output that is undefined at creation is still created when it has a label
         exec(&mut c, "Q = (4, 1)").unwrap();

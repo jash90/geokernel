@@ -52,7 +52,7 @@ pub fn load_into(wb: &mut Workbench, path: &Path) -> Result<(), String> {
         let imported = geo_import::import(&bytes).map_err(|e| format!("{name}: {e}"))?;
         let notice = (!imported.skipped.is_empty()).then(|| {
             format!(
-                "Pominięto {} obiektów, których jądro nie obsługuje (wczytano {} linii)",
+                "Pominięte obiekty: {} (jądro ich nie obsługuje), wczytane linie: {}",
                 imported.skipped.len(),
                 imported.script.len()
             )
@@ -137,7 +137,11 @@ mod tests {
         let a = wb.construction().id("A").unwrap();
         let b = wb.construction().id("B").unwrap();
         assert!(!wb.is_visible(a) && wb.is_visible(b));
-        assert!(wb.notice.as_deref().unwrap().contains("Pominięto 1 "));
+        assert!(wb
+            .notice
+            .as_deref()
+            .unwrap()
+            .contains("Pominięte obiekty: 1 "));
         // a damaged file leaves the document alone and names the file
         std::fs::write(&path, "<geogebra>").unwrap();
         let err = load_into(&mut wb, &path).unwrap_err();

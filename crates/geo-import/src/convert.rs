@@ -99,19 +99,11 @@ impl Converter {
             None => self.command_line(name, inputs, outputs),
         };
         match line {
-            Ok(line) => match exec(&mut self.kernel, &line) {
-                Ok(_) if labelled.iter().all(|l| self.kernel.id(l).is_some()) => {
-                    self.out.script.push(line);
-                }
-                Ok(_) => {
-                    let reason = "the kernel names the outputs of this command differently";
+            Ok(line) => match self.run(&line, &labelled) {
+                Ok(()) => self.out.script.push(line),
+                Err(reason) => {
                     for label in labelled {
-                        self.skip(label, name, reason.to_string());
-                    }
-                }
-                Err(e) => {
-                    for label in labelled {
-                        self.skip(label, name, e.clone());
+                        self.skip(label, name, reason.clone());
                     }
                 }
             },
@@ -122,6 +114,37 @@ impl Converter {
             }
         }
         Ok(())
+    }
+
+    /// Runs a line on the scratch construction. The line is accepted only when
+    /// it creates exactly the objects the file has for it; otherwise the
+    /// scratch construction is rebuilt from the lines accepted so far.
+    fn run(&mut self, line: &str, expected: &[&String]) -> Result<(), String> {
+        let before = self.kernel.len();
+        let result = exec(&mut self.kernel, line);
+        let created: Vec<&str> = self
+            .kernel
+            .ids()
+            .skip(before)
+            .map(|id| self.kernel.label(id))
+            .collect();
+        let matches =
+            created.len() == expected.len() && created.iter().zip(expected).all(|(a, b)| a == b);
+        let outcome = match result {
+            Ok(_) if matches => return Ok(()),
+            Ok(_) => Err(format!(
+                "the kernel would create {created:?} for this command, the file has {:?}",
+                expected
+            )),
+            Err(e) => Err(e),
+        };
+        if self.kernel.len() != before {
+            self.kernel = Construction::new();
+            for accepted in &self.out.script {
+                exec(&mut self.kernel, accepted).expect("an accepted line runs again");
+            }
+        }
+        outcome
     }
 
     /// The script line of a command, or why there is none.
@@ -164,8 +187,8 @@ impl Converter {
         let expression = self.expressions.remove(&el.label);
         let (label, kind) = (el.label.clone(), el.kind.clone());
         match self.free_object(&el, expression.as_deref())? {
-            Ok(line) => match exec(&mut self.kernel, &line) {
-                Ok(_) => {
+            Ok(line) => match self.run(&line, &[&label]) {
+                Ok(()) => {
                     self.out.script.push(line);
                     if !el.shown {
                         self.out.hidden.push(label);

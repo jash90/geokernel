@@ -332,3 +332,27 @@ fn entities_in_labels() {
     let r = import(file("<element type=\"point\" label=\"A&bogus;\"/>").as_bytes());
     assert!(matches!(r, Err(ImportError::Xml(_))));
 }
+
+#[test]
+fn a_line_that_creates_other_objects_than_the_file_has_is_skipped() {
+    // The file names one output of a command that makes two; the kernel's rule
+    // would create `b_{1}` and `b_{2}`, so the line is not accepted, and the
+    // scratch construction is as before: the next line still works.
+    let body = point("A", "0", "0", "1")
+        + &point("B", "4", "0", "1")
+        + &point("C", "0", "1", "1")
+        + &line("f", "A", "B")
+        + &line("g", "A", "C")
+        + "<command name=\"AngularBisector\"><input a0=\"f\" a1=\"g\"/><output a0=\"b_{1}\"/></command>"
+        + &line("h", "B", "C");
+    let r = ok(&body);
+    assert_eq!(r.skipped.len(), 1);
+    assert!(
+        r.skipped[0].reason.contains("would create"),
+        "{:?}",
+        r.skipped[0]
+    );
+    assert_eq!(r.script.last().unwrap(), "h = Line(B, C)");
+    let c = geo_kernel::script::load(&r.script.join("\n")).unwrap();
+    assert!(c.id("b_{2}").is_none());
+}

@@ -7,7 +7,10 @@
 # AlgoDistanceLineLine.setInputOutput puts `h` before `g`. Reading the file
 # back, GeoGebra itself computes `g.distance(h)` the other way round, and the
 # distance of two lines that are not parallel depends on the order. The
-# importer follows what GeoGebra reads.
+# importer follows what GeoGebra reads. This was checked by loading the four
+# files back into a fresh GeoGebra (`getXMLio().processXMLString`): it gives the
+# importer's values (d = 1.7888543819998317 for conic-diameter-009), not the
+# golden ones.
 
 [[gap]]
 id = "conic-diameter-009"

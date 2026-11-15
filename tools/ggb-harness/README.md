@@ -120,3 +120,20 @@ point 100,000 times. The argument is the number of steps (default 15,000, as in
 the Rust bench). GeoGebra's memory grows with the square of the chain length,
 so the default does not fit in memory; see `docs/perf/geogebra-chain.md`, where
 the results are written up by hand.
+
+## Construction files
+
+```sh
+tools/ggb-harness/harness.sh ggb [sample step [zip step]]
+```
+
+writes, for every case of every `cases/<group>.json`, the construction file
+GeoGebra itself produces after the script (`app.getXML()`, the content of
+`geogebra.xml` in a saved file) to `golden/ggb/<group>/<case id>.xml`, and every
+`zip step`-th case (default 50) also as the `.ggb` archive of GeoGebra's own
+writer, without a thumbnail. `sample step` keeps every n-th case of each group
+(default 1). The class is `GgbExporter`. It uses only `Kernel.getApplication()`
+of a `Session`. Nothing is edited after GeoGebra has written it; the XML is
+byte-identical between runs, and an archive is rewritten only when its entries
+change (the zip writer stamps them with the current time). See
+`golden/SCHEMA.md`, "Stored construction files".

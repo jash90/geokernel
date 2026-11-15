@@ -60,7 +60,6 @@ case "$cmd" in
   ggb)
     sample="${1:-1}"
     zipstep="${2:-50}"
-    rm -rf "$repo/golden/ggb"
     for file in "$here"/cases/*.json; do
       java "${java_opts[@]}" -cp "$build/classes:$(cat "$build/classpath.txt")" \
         geokernel.harness.GgbExporter "$file" "$repo/golden/ggb" "$sample" "$zipstep"
