@@ -151,6 +151,7 @@ fn is_single_call(c: &Construction, rhs: &str) -> bool {
     if !is_identifier(name)
         || !name.chars().all(crate::expr::is_name_char)
         || crate::expr::is_function_name(name)
+        || crate::expr::is_expression_command(name)
         || c.id(name).is_some()
     {
         return false;

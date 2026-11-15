@@ -13,7 +13,7 @@
 //! `MyError` from `Operation`); the evaluation of a new object always runs,
 //! so rejecting the same trees here gives the same lines errors.
 
-use super::{Bin, Node, Ty, Un};
+use super::{Bin, IfMode, Node, Ty, Un, NONE};
 use crate::algo::measure::MeasureDef;
 use crate::kernel::{Construction, Def, Id, Kind};
 
@@ -88,6 +88,31 @@ pub(crate) fn check(
                     1 + depth[a].max(depth[b]),
                     1u64.saturating_add(cost[a]).saturating_add(cost[b]),
                     vars[a].saturating_add(vars[b]),
+                )
+            }
+            Node::If(mode, cond, then, rest) => {
+                let (cond, then) = (cond as usize, then as usize);
+                if tys[cond] != Ty::Bool {
+                    // `CmdIf`: `argErr` for a condition that is no boolean
+                    return Err("the condition of `If` must be a boolean".into());
+                }
+                let (ty, d, k, v) = if rest == NONE {
+                    (tys[then], 0, 0, 0)
+                } else {
+                    let r = rest as usize;
+                    (join(tys[then], tys[r])?, depth[r], cost[r], vars[r])
+                };
+                if mode != IfMode::Algo && !matches!(ty, Ty::Num(_)) {
+                    // `CmdIf.checkAdd`: the branches must be functions
+                    return Err("the branches of a function's `If` must be numbers".into());
+                }
+                (
+                    ty,
+                    1 + depth[cond].max(depth[then]).max(d),
+                    1u64.saturating_add(cost[cond])
+                        .saturating_add(cost[then])
+                        .saturating_add(k),
+                    vars[cond].saturating_add(vars[then]).saturating_add(v),
                 )
             }
             Node::Apply(f, a) => {
@@ -194,6 +219,18 @@ fn binary_type(op: Bin, a: Ty, b: Ty) -> Result<Ty, String> {
         (op, Num(_), Num(_)) if op.is_command() => Ok(Num(0)),
         (op, _, _) if op.is_command() => Err("the command takes two numbers".into()),
         _ => complex(),
+    }
+}
+
+/// The type of `AlgoIf`'s result: `GeoList.getGenericElement` keeps the
+/// first branch's type unless a later one can take it, which a point does
+/// for a number.
+fn join(a: Ty, b: Ty) -> Result<Ty, String> {
+    match (a, b) {
+        (Ty::Num(x), Ty::Num(_)) => Ok(Ty::Num(x)),
+        (Ty::Vec | Ty::Num(_), Ty::Vec) | (Ty::Vec, Ty::Num(_)) => Ok(Ty::Vec),
+        (Ty::Bool, Ty::Bool) => Ok(Ty::Bool),
+        _ => Err("the branches of `If` do not fit together".into()),
     }
 }
 

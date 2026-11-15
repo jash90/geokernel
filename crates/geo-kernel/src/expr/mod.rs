@@ -7,6 +7,8 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoFunction.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/AlgebraProcessor.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoNumeric.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDependentBoolean.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdIf.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
@@ -97,6 +99,33 @@ pub(crate) enum Node {
     FnName(Un),
     /// `true` or `false` (`MyBoolean`).
     Bool(bool),
+    /// `If(condition, then, rest)`: `rest` is the else branch, the next
+    /// condition of a longer `If` (another `If` node of the same mode), or
+    /// [`NONE`].
+    If(IfMode, u32, u32, u32),
+}
+
+/// No node: the missing else branch of an `If`.
+pub(crate) const NONE: u32 = u32::MAX;
+
+/// How an `If` decides (`CmdIf`).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum IfMode {
+    /// `AlgoIf`, the command of an expression that is not a function of
+    /// `x` in its conditions: the first true condition picks its branch;
+    /// an undefined condition is false; no true condition and no else
+    /// branch is undefined. The result has the most general type of the
+    /// branches: a number in a point result is the point `(v, 0)`.
+    Algo,
+    /// `Operation.IF_ELSE`, a function with one condition in `x` that
+    /// reads no object, and an else branch: an undefined condition gives
+    /// `NaN`. A condition that reads an object is a helper function whose
+    /// value is a defined boolean (`CmdIf.wrap`), so it is [`IfMode::List`].
+    Else,
+    /// `Operation.IF` and `IF_LIST`, a function with conditions in `x`:
+    /// the first true condition picks its branch, an undefined one is
+    /// skipped; otherwise the else branch or `NaN`.
+    List,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -258,6 +287,9 @@ pub(crate) struct Entry {
     parents: Vec<Id>,
     /// Whether this is a function of `x`.
     function: bool,
+    /// Whether a function's tree has an `If`, which changes what decides
+    /// whether it is defined (see [`inputs_defined`]).
+    has_if: bool,
     /// The objects named in the tree (a function's inputs).
     inputs: Vec<Id>,
     /// The last result; for a function, 0 when it is defined and `NaN`
@@ -273,7 +305,9 @@ pub(crate) struct Entry {
 
 impl Entry {
     fn new(p: parse::Parsed, function: bool) -> Self {
+        let has_if = function && p.nodes.iter().any(|n| matches!(n, Node::If(..)));
         Entry {
+            has_if,
             nodes: p.nodes,
             lits: p.lits,
             tys: p.tys,
@@ -355,12 +389,18 @@ pub(crate) fn is_function_name(name: &str) -> bool {
 
 /// The children of a node.
 pub(crate) fn children(node: &Node) -> impl Iterator<Item = u32> {
-    let (a, b) = match *node {
-        Node::Tuple(a, b) | Node::Polar(a, b) | Node::Bin(_, a, b) => (Some(a), Some(b)),
-        Node::Un(_, a) | Node::Apply(_, a) => (Some(a), None),
-        _ => (None, None),
+    let (a, b, c) = match *node {
+        Node::Tuple(a, b) | Node::Polar(a, b) | Node::Bin(_, a, b) => (Some(a), Some(b), None),
+        Node::Un(_, a) | Node::Apply(_, a) => (Some(a), None, None),
+        Node::If(_, cond, then, rest) => (Some(cond), Some(then), (rest != NONE).then_some(rest)),
+        _ => (None, None, None),
     };
-    a.into_iter().chain(b)
+    a.into_iter().chain(b).chain(c)
+}
+
+/// The commands that expressions compute themselves.
+pub(crate) fn is_expression_command(name: &str) -> bool {
+    name == "If"
 }
 
 fn entry(c: &Construction, d: ExprDef) -> &Entry {
@@ -590,18 +630,49 @@ pub(crate) fn evaluate(c: &Construction, d: ExprDef) -> Outcome {
 /// object it names is, and every command in it has a result. A number with
 /// an infinite raw value counts as defined, as in GeoGebra.
 fn inputs_defined(c: &Construction, e: &Entry) -> bool {
-    let objects = e.inputs.iter().all(|&id| match (c.kind(id), c.def(id)) {
-        (Kind::Number, Def::Expr(d)) => !matches!(raw(c, d), Raw::Num(v) if v.is_nan()),
-        _ => c.value(id).is_defined(),
-    });
-    objects
+    if e.has_if {
+        return defined_below(c, e, e.root);
+    }
+    e.inputs.iter().all(|&id| object_defined(c, id))
         && e.nodes.iter().all(|n| match *n {
-            Node::Cmd(def, hint) => match c.command_value(def, hint) {
-                Some(Value::Number(v)) => !v.is_nan(),
-                other => other.is_some(),
-            },
+            Node::Cmd(def, hint) => command_defined(c, def, hint),
             _ => true,
         })
+}
+
+fn object_defined(c: &Construction, id: Id) -> bool {
+    match (c.kind(id), c.def(id)) {
+        (Kind::Number, Def::Expr(d)) => !matches!(raw(c, d), Raw::Num(v) if v.is_nan()),
+        _ => c.value(id).is_defined(),
+    }
+}
+
+fn command_defined(c: &Construction, def: Def, hint: crate::algo::intersect::Hint) -> bool {
+    match c.command_value(def, hint) {
+        Some(Value::Number(v)) => !v.is_nan(),
+        other => other.is_some(),
+    }
+}
+
+/// `inputDefined` of a function with an `If`: the objects inside an `If`
+/// operation do not count (`ExpressionNode.getUnconditionalVars`); an
+/// `AlgoIf` (an `If` whose conditions do not read `x`) is a helper
+/// function, defined when a condition is true and the branch it picks is.
+fn defined_below(c: &Construction, e: &Entry, i: u32) -> bool {
+    match e.nodes[i as usize] {
+        Node::Obj(id) => object_defined(c, id),
+        Node::Apply(f, a) => object_defined(c, f) && defined_below(c, e, a),
+        Node::Cmd(def, hint) => command_defined(c, def, hint),
+        Node::If(IfMode::Algo, cond, then, rest) => {
+            if eval::condition(c, e, cond) {
+                defined_below(c, e, then)
+            } else {
+                rest != NONE && defined_below(c, e, rest)
+            }
+        }
+        Node::If(..) => true,
+        node => children(&node).all(|child| defined_below(c, e, child)),
+    }
 }
 
 /// The value of an expression object for the current values of its
@@ -705,10 +776,10 @@ fn add_parsed(
     // `AlgebraProcessor.processNumber`: independent unless it reads an
     // object; a command such as `Mod(7, 3)` makes a helper object, so an
     // expression with one is dependent even on constants.
-    let has_command = parsed
-        .nodes
-        .iter()
-        .any(|n| matches!(n, Node::Bin(op, ..) if op.is_command()) || matches!(n, Node::Cmd(..)));
+    let has_command = parsed.nodes.iter().any(|n| {
+        matches!(n, Node::Bin(op, ..) if op.is_command())
+            || matches!(n, Node::Cmd(..) | Node::If(IfMode::Algo, ..))
+    });
     // a constant boolean (`b = 1 < 2`) stays an expression: there is no
     // free boolean object
     let constant = parsed.parents.is_empty() && !function && !has_command && kind != Kind::Boolean;

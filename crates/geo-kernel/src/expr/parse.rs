@@ -5,6 +5,7 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/parser/function/ParserFunctionsFactory.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/ExpressionNode.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/MySpecialDouble.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdIf.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
@@ -23,7 +24,7 @@ use super::lex::{split_bars, tokens, Tok, Token};
 use super::math::{self, PI_180};
 use super::names::{binary_builtin, builtin_name, unary_builtin};
 use super::types::check;
-use super::{Bin, Lit, Node, Ty, Un};
+use super::{children, Bin, IfMode, Lit, Node, Ty, Un, NONE};
 use crate::algo::{intersect, vector};
 use crate::kernel::{Construction, Id, Kind};
 use std::f64::consts::{E, PI};
@@ -683,6 +684,9 @@ impl Parser<'_> {
             let arg = self.element()?;
             return Ok(self.push(Node::Bin(Bin::Mul, obj, arg)));
         }
+        if call && text == "If" {
+            return self.if_command();
+        }
         if coordinate.is_some() || builtin_name(text) {
             if !call {
                 return match unary_builtin(text) {
@@ -704,6 +708,51 @@ impl Parser<'_> {
             return self.command();
         }
         Err(format!("unknown object `{text}`"))
+    }
+
+    /// `If(c, a)`, `If(c, a, b)` and `If(c1, a1, c2, a2, ..., [else])`
+    /// (`CmdIf`). With `x` in a condition it is the operation of a
+    /// function (`IF`, `IF_ELSE`, `IF_LIST`); otherwise the command
+    /// `AlgoIf`.
+    fn if_command(&mut self) -> Result<u32, String> {
+        let args = self.arguments()?;
+        if args.len() < 2 {
+            return Err("`If` needs a condition and a value".into());
+        }
+        let pairs = args.len() / 2;
+        let conditions_read_x = (0..pairs).any(|k| self.reads(args[2 * k], true));
+        let mode = match (conditions_read_x, args.len()) {
+            (false, _) => IfMode::Algo,
+            (true, 3) if !self.reads(args[0], false) => IfMode::Else,
+            (true, _) => IfMode::List,
+        };
+        let mut rest = if args.len() % 2 == 1 {
+            args[args.len() - 1]
+        } else {
+            NONE
+        };
+        for k in (0..pairs).rev() {
+            rest = self.push(Node::If(mode, args[2 * k], args[2 * k + 1], rest));
+        }
+        Ok(rest)
+    }
+
+    /// Whether the subtree at `i` reads `x` (`variable`) or an object.
+    fn reads(&self, i: u32, variable: bool) -> bool {
+        let mut stack = vec![i];
+        while let Some(j) = stack.pop() {
+            let node = self.node(j);
+            let found = if variable {
+                matches!(node, Node::Var)
+            } else {
+                matches!(node, Node::Obj(_) | Node::Apply(..) | Node::Cmd(..))
+            };
+            if found {
+                return true;
+            }
+            stack.extend(children(&node));
+        }
+        false
     }
 
     /// `( expression, expression, ... )` after a function name.

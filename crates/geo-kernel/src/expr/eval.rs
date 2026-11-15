@@ -16,6 +16,7 @@
 //   source/shared/common/src/main/java/org/geogebra/common/util/DoubleUtil.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoVec2D.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDependentBoolean.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIf.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
@@ -46,7 +47,7 @@
 use super::decimal::Dec;
 use super::math::{self, PI_180};
 use super::twonum;
-use super::{Bin, Entry, Node, Raw, Ty, Un};
+use super::{Bin, Entry, IfMode, Node, Raw, Ty, Un, NONE};
 use crate::algo::intersect::Hint;
 use crate::kernel::{Construction, Def, Id, Kind, Value};
 use crate::tol::STANDARD_PRECISION;
@@ -224,6 +225,17 @@ pub(super) fn sample(c: &Construction, e: &Entry, x: f64) -> f64 {
     ctx.fast(e.root)
 }
 
+/// The value of the condition at `i` of an entry's `AlgoIf`, which reads
+/// no `x`.
+pub(super) fn condition(c: &Construction, e: &Entry, i: u32) -> bool {
+    let ctx = Ctx {
+        c,
+        e,
+        env: &Env::None,
+    };
+    matches!(ctx.full(i).val, Val::B(true, _))
+}
+
 /// The tree of the function object `f`, when it is defined.
 fn function_entry(c: &Construction, f: Id) -> Option<&Entry> {
     match (c.def(f), c.value(f)) {
@@ -309,7 +321,75 @@ impl Ctx<'_> {
                 }
             }
             Node::Apply(f, a) => self.apply_full(f, a),
+            Node::If(mode, cond, then, rest) => self.conditional(i, mode, cond, then, rest),
             Node::FnName(_) => Ex::plain(N(f64::NAN)),
+        }
+    }
+
+    /// `AlgoIf.compute` and `Operation.IF`, `IF_ELSE`, `IF_LIST` (see
+    /// [`IfMode`]). Only the chosen branch is evaluated: an untaken branch
+    /// changes no value.
+    fn conditional(&self, i: u32, mode: IfMode, cond: u32, then: u32, rest: u32) -> Ex {
+        let (value, defined) = match self.full(cond).val {
+            Val::B(v, d) => (v, d),
+            _ => (false, false),
+        };
+        let ty = self.e.tys[i as usize];
+        let undefined = || match ty {
+            Ty::Vec => Ex::plain(Val::V(f64::NAN, f64::NAN)),
+            // `GeoBoolean.setUndefined` only sets false
+            Ty::Bool => Ex::plain(Val::B(false, true)),
+            Ty::Num(_) => Ex::plain(Val::N(f64::NAN)),
+        };
+        if mode == IfMode::Else && !defined {
+            return undefined();
+        }
+        let chosen = if value {
+            then
+        } else if rest != NONE {
+            rest
+        } else {
+            return undefined();
+        };
+        let x = self.full(chosen);
+        if mode != IfMode::Algo {
+            // the operation hands on the branch's value itself
+            return x;
+        }
+        // `AlgoIf.setResult`: an undefined branch makes the result
+        // undefined; a number copies its value and exact decimal
+        // (`GeoNumeric.set`) into a helper number
+        match (ty, x.val) {
+            (_, Val::N(v)) if v.is_nan() => undefined(),
+            (Ty::Vec, Val::N(v)) => Ex::plain(Val::V(v, 0.0)),
+            (Ty::Num(_), Val::N(v)) => {
+                // `getNumber` keeps the decimal when the definition is
+                // constant (`reuseDefinition`): the branch is a literal, a
+                // constant expression or a free number that has its own
+                let special = x.dec.is_some()
+                    && match self.node(chosen) {
+                        Node::Obj(_) => x.special,
+                        _ => self.is_constant(chosen),
+                    };
+                Ex {
+                    val: Val::N(v),
+                    dec: x.dec,
+                    special,
+                    obj: true,
+                }
+            }
+            (_, Val::B(b, _)) => Ex::plain(Val::B(b, true)),
+            (_, val) => Ex::plain(val),
+        }
+    }
+
+    /// Whether the subtree at `i` is a constant: no object, no `x`, no
+    /// command; GeoGebra makes such an argument an independent number.
+    fn is_constant(&self, i: u32) -> bool {
+        match self.node(i) {
+            Node::Obj(_) | Node::Var | Node::Cmd(..) | Node::Apply(..) | Node::If(..) => false,
+            Node::Bin(op, ..) if op.is_command() => false,
+            node => super::children(&node).all(|child| self.is_constant(child)),
         }
     }
 

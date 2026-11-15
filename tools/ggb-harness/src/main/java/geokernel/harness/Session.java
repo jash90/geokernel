@@ -55,6 +55,8 @@ final class Session {
             Pattern.compile("^\\(-?\\d+(\\.\\d+)?, -?\\d+(\\.\\d+)?\\)$");
     private static final Pattern CALL = Pattern.compile("(?<![A-Za-z0-9_])([A-Z][A-Za-z0-9]*)\\s*\\(");
     private static final Pattern COMMAND = Pattern.compile("^([A-Za-z]+)\\[?\\(.*\\)$");
+    /** The variable `x` of a function: not part of a longer name, not a call. */
+    private static final Pattern VARIABLE_X = Pattern.compile("(?<![A-Za-z0-9_])x(?![A-Za-z0-9_(])");
 
     private final AppCommon app;
     private final Kernel kernel;
@@ -296,7 +298,44 @@ final class Session {
     private boolean callsCommand(String definition) {
         Matcher m = CALL.matcher(definition);
         while (m.find()) {
-            if (!objects.containsKey(m.group(1))) {
+            if (objects.containsKey(m.group(1))) {
+                continue;
+            }
+            if (m.group(1).equals("If") && conditionsReadX(definition, m.end())) {
+                // `CmdIf.specialFunction`: an operation of the function
+                continue;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Whether a condition of the `If` whose arguments start at `open` (the
+     * index after its bracket) reads the variable `x`: its arguments at
+     * even positions, except a trailing else branch.
+     */
+    private static boolean conditionsReadX(String definition, int open) {
+        List<String> args = new ArrayList<>();
+        int depth = 0;
+        int start = open;
+        for (int i = open; i < definition.length(); i++) {
+            char ch = definition.charAt(i);
+            if (ch == '(' || ch == '{' || ch == '[') {
+                depth++;
+            } else if (ch == ')' || ch == '}' || ch == ']') {
+                if (depth == 0) {
+                    args.add(definition.substring(start, i));
+                    break;
+                }
+                depth--;
+            } else if (ch == ',' && depth == 0) {
+                args.add(definition.substring(start, i));
+                start = i + 1;
+            }
+        }
+        for (int k = 0; k + 1 < args.size(); k += 2) {
+            if (VARIABLE_X.matcher(args.get(k)).find()) {
                 return true;
             }
         }

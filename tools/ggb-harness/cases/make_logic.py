@@ -119,4 +119,61 @@ for rhs in ("true", "false", "True", "False", "1 < 2", "¬false", "!true",
             "true && false || true", "true || false && false"):
     case("boolconst", [f"c = {rhs}"], [])
 
+# ------------------------------------------------------- If of numbers (AlgoIf)
+# The first true condition picks its branch; an undefined condition is false;
+# no true condition and no else branch is undefined.
+topic("if")
+for rhs in ("If(a < 3, 1, 2)", "If(a < 3, 5)", "If(a < 1, 10, a < 3, 20, 30)",
+            "If(a < 1, 10, a < 3, 20)", "If(a < 3, b, -b)", "If(a < b, a, b)",
+            "2 If(a < 3, a, -a) + 1", "0.2 + If(a < 3, 0.1, 0.2)", "If(a < 3, 0.1, 0.2) + 0.2",
+            "(If(a < 3, 0.1, 0.2) + 0.2 - 0.3) 1E20", "(0.2 + If(a < 3, 0.1, 0.2) - 0.3) 1E20",
+            "If(a < 3, 1 / 0, 2)", "1 / If(a < 3, 1 / 0, 2)", "If(r < 3, 1, 2)", "If(a < 3, r, 2)",
+            "If(r != r, 7, 8)", "If(true, a, b)", "If(a == b, 1, 0)", "If(a < 3 && b > 0, a b, 0)",
+            "If(a < 3, a, a < 5, -a)", "If(a > 1, If(a > 3, 3, 1), 0)", "If(a < 3, 1, 2) + If(b < 3, 1, 2)",
+            "If(a < 3, a + 0.1, a - 0.1)", "If(a < 3, sqrt(a), 0)"):
+    case("if", nums(a=2, b=1) + ["r = sqrt(a)", f"c = {rhs}"],
+         [setn("a", 0.5), setn("a", 4), setn("a", 3), setn("b", 4), setn("a", -1), setn("a", 6),
+          setn("b", 1), setn("a", 2)])
+for rhs in ("If(1 < 2, 3, 4)", "If(2 < 1, 3, 4)", "If(2 < 1, 3)", "If(false, 1, true, 2, 3)"):
+    case("if", [f"c = {rhs}"], [])
+
+# ------------------------------------------------------- If of points and vectors
+# The result has the most general type of the branches: a number in a point
+# result is the point (v, 0), whichever branch it is.
+topic("ifpt")
+for line in ("P = If(a < 3, A, B)", "P = If(a < 3, A, 2)", "P = If(a < 3, 2, A)", "P = If(a < 3, A)",
+             "P = If(a < 3, A + B, (1, 1))", "P = If(x(A) < x(B), A, B)", "u = If(a < 3, v, w)",
+             "u = If(a < 3, v, 2 w)", "P = If(a < 3, Midpoint(A, B), B)", "P = If(a < 1, A, a < 3, B, (0, 0))",
+             "c = x(If(a < 3, A, B))", "P = If(A == B, A, (5, 5))"):
+    case("ifpt", nums(a=2) + [pt("A", 1, 2), pt("B", 3, 4), "v = (1, 2)", "w = (2, -1)", line],
+         [setn("a", 4), mv("A", 5, 1), setn("a", 0.5), mv("B", 5, 1), mv("A", 1, 2), mv("B", 3, 4),
+          setn("a", 2)])
+
+# ------------------------------------------------------- If of booleans
+topic("ifbool")
+for rhs in ("If(a < 3, a > 0)", "If(a < 3, true, false)", "If(a < 1, a > 0, b > 0)",
+            "If(a < 1, a > 0, a < 3, b > 0, false)", "!If(a < 3, b > 0, true)"):
+    case("ifbool", nums(a=2, b=1) + [f"c = {rhs}"],
+         [setn("a", 0.5), setn("b", -1), setn("a", 4), setn("a", 2), setn("b", 1)])
+
+# ------------------------------------------------------- conditional functions
+# With x in a condition, If is an operation of the function: IF, IF_ELSE (an
+# undefined condition gives NaN) or IF_LIST. Only the objects outside every
+# If decide whether the function is defined.
+topic("iffn")
+for rhs in ("If(x < 0, -x, x)", "If(x < 0, x^2)", "If(x < -1, 1, x < 1, 2, 3)",
+            "If(x < -1, 1, x < 1, 2)", "If(x < a, x, a)", "If(x < r, 1, 2)", "If(x < 0, a, 2)",
+            "a + If(x < 0, 1, 2)", "If(x < 0, r, 2)", "r + If(x < 0, 1, 2)", "2 If(x < 0, -x, x) + 1",
+            "If(x > 0 && x < 2, x, 0)", "If(x <= 0, sin(x), cos(x))", "If(-1 < x < 1, x^3)",
+            "If(x == 0, 1, 1 / x)", "If(x < 0, 1 / r, r)", "If(x < r, x, x < 2 r, 2, 0)",
+            "If(x < 0.5, 0.1, 0.2) + 0.2", "If(x != 1, x, 5)", "If(x < 0, 1 / 0, 1)",
+            "If(a < 3, x, 2)", "If(a < 3, x^2)"):
+    case("iffn", nums(a=1) + ["r = sqrt(a)", f"f(x) = {rhs}"],
+         [setn("a", 4), setn("a", -1), setn("a", 0), setn("a", 1)])
+case("iffn", nums(a=1) + ["f(x) = If(x < 0, -x, x)", "v = f(a)", "g(x) = f(x) + 1", "w = f(-3)",
+                          "h(x) = f(f(x) - 2)", "k = f(a - 3) + f(0.5)"],
+     [setn("a", -2), setn("a", 3), setn("a", 1)])
+case("iffn", nums(a=1) + ["f(x) = If(x < a, x^2, x)", "v = f(2)", "g(x) = If(x < 0, f(x), -f(x))"],
+     [setn("a", 3), setn("a", -1), setn("a", 1)])
+
 cases.write()
