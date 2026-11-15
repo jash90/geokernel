@@ -530,3 +530,35 @@ fn an_applied_function_keeps_the_decimals_of_its_argument() {
     assert_eq!(num(&c, "v"), 100.0);
     assert_eq!(num(&c, "w"), 100.0);
 }
+
+/// Decimal operations done on this thread while `f` runs.
+fn decimal_ops(f: impl FnOnce()) -> u64 {
+    let before = super::decimal::OPS.with(std::cell::Cell::get);
+    f();
+    super::decimal::OPS.with(std::cell::Cell::get) - before
+}
+
+#[test]
+fn inputs_without_decimals_cost_no_decimal_arithmetic() {
+    let mut c = load(
+        "A = (1, 2)\nB = (3, 4)\nM = (A + B) / 2\na = 0.3\nc = 0.5 a + x(A)\n\
+         f(x) = x^2 + a\nv = f(x(A))\nd = round(x(A) 0.1, 2) + floor(y(A))",
+    )
+    .unwrap();
+    let (a, p) = (c.id("a").unwrap(), c.id("A").unwrap());
+    // setting `a` drops its decimal
+    c.set_number(a, 0.7).unwrap();
+    let f = c.id("f").unwrap();
+    let ops = decimal_ops(|| {
+        for i in 1..=100 {
+            let x = f64::from(i) * 0.01;
+            assert!(c.move_point(p, 1.0 + x, 2.0 - x).unwrap() > 0);
+            assert!(c.function_value(f, x).is_some());
+        }
+    });
+    assert_eq!(ops, 0);
+    // the counter is live: a literal times a literal number is exact
+    let mut exact = load("a = 0.1\nA = (1, 2)\nc = 0.5 a + x(A)").unwrap();
+    let p = exact.id("A").unwrap();
+    assert!(decimal_ops(|| assert!(exact.move_point(p, 3.0, 4.0).unwrap() > 0)) > 0);
+}

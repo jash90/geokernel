@@ -125,9 +125,9 @@ impl Ex {
 /// `MySpecialDouble.setPrecise`: a `MySpecialDouble` takes the exact
 /// decimal of a finite result.
 fn precise(special: bool, v: f64) -> Ex {
-    match Dec::from_f64(v) {
-        Some(d) if special => Ex::exact(d),
-        _ => Ex::kept(special, v),
+    match special.then(|| Dec::from_f64(v)).flatten() {
+        Some(d) => Ex::exact(d),
+        None => Ex::kept(special, v),
     }
 }
 
@@ -342,6 +342,7 @@ impl Ctx<'_> {
                 Env::Arg(caller, a) => caller.fast(a),
             },
             Node::Apply(f, a) if self.e.function => self.apply(f, a, true),
+            Node::Obj(id) => object(self.c, id).num(),
             _ => self.full_number(i),
         }
     }

@@ -17,6 +17,7 @@
 
 use crate::tol::STANDARD_PRECISION;
 use std::f64::consts::{E, PI};
+use std::fmt::Write;
 
 /// `Kernel.PI_180`: one degree in radians.
 pub(crate) const PI_180: f64 = PI / 180.0;
@@ -309,22 +310,30 @@ pub(crate) fn round_decimal(x: f64, scale: i32) -> f64 {
     if !x.is_finite() {
         return if x.is_infinite() { x } else { f64::NAN };
     }
-    let text = format!("{:e}", x.abs());
-    let Some((mantissa, exp)) = text.split_once('e') else {
+    // the shortest form, on the stack: at most 17 digits and a short exponent
+    let mut text = Stack::default();
+    if write!(text, "{:e}", x.abs()).is_err() {
+        return x;
+    }
+    let Some((mantissa, exp)) = text.as_str().split_once('e') else {
         return x;
     };
     let Ok(exp) = exp.parse::<i64>() else {
         return x;
     };
-    let digits: Vec<u8> = mantissa
-        .bytes()
-        .filter(u8::is_ascii_digit)
-        .map(|b| b - b'0')
-        .collect();
+    let mut digits = [0u8; 24];
+    let mut len = 0;
+    for b in mantissa.bytes().filter(u8::is_ascii_digit) {
+        if len == digits.len() {
+            return x;
+        }
+        digits[len] = b - b'0';
+        len += 1;
+    }
     // x = 0.d1 d2 d3 ... * 10^point
     let point = exp + 1;
     let keep = point + i64::from(scale);
-    if keep >= digits.len() as i64 {
+    if keep >= len as i64 {
         return x;
     }
     let magnitude = if keep < 0 {
@@ -335,15 +344,38 @@ pub(crate) fn round_decimal(x: f64, scale: i32) -> f64 {
         if digits[keep] >= 5 {
             n += 1;
         }
-        format!("{n}e{}", point - keep as i64)
-            .parse::<f64>()
-            .unwrap_or(f64::NAN)
+        super::decimal::to_f64_parts(u128::from(n), point - keep as i64)
     };
     let rounded = if x < 0.0 { -magnitude } else { magnitude };
     if rounded == 0.0 {
         0.0 * x
     } else {
         rounded
+    }
+}
+
+/// A short text written on the stack.
+#[derive(Default)]
+struct Stack {
+    buf: [u8; 32],
+    len: usize,
+}
+
+impl Stack {
+    fn as_str(&self) -> &str {
+        std::str::from_utf8(&self.buf[..self.len]).unwrap_or("")
+    }
+}
+
+impl std::fmt::Write for Stack {
+    fn write_str(&mut self, s: &str) -> std::fmt::Result {
+        let end = self.len + s.len();
+        if end > self.buf.len() {
+            return Err(std::fmt::Error);
+        }
+        self.buf[self.len..end].copy_from_slice(s.as_bytes());
+        self.len = end;
+        Ok(())
     }
 }
 

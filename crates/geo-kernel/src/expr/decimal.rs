@@ -6,47 +6,152 @@
 //!
 //! Written from the documented behaviour of those `BigDecimal` operations.
 //! Only values matter here, never the scale a `BigDecimal` would carry, so a
-//! number is kept in a canonical form. Sizes are capped: an operation whose
-//! result would need more than [`MAX_DIGITS`] digits gives `None`, and the
-//! caller falls back to `double` arithmetic (GeoGebra would carry on).
+//! number is kept in a canonical form: a coefficient without trailing zeros.
+//! A coefficient of up to 38 digits is kept inline in a `u128`, so the
+//! common small cases neither allocate nor loop over digits; longer ones
+//! use a digit vector.
+//!
+//! The work of one operation is bounded, not the size of the numbers
+//! GeoGebra would handle: a result may have up to [`MAX_DIGITS`] digits; a
+//! product may take up to [`MAX_WORK`] digit products; the exponent stays
+//! in the range of Java's `int` scale. An operation beyond these limits
+//! gives `None` and the caller computes with doubles from there on (where
+//! GeoGebra throws, runs out of memory or carries on, see `DIFFERENCES.md`).
 
 use std::cmp::Ordering;
 
-/// Most digits a decimal may have, and the largest shift that aligning two
-/// decimals for an addition may need.
-pub(crate) const MAX_DIGITS: usize = 800;
+/// Most digits a decimal may have.
+pub(crate) const MAX_DIGITS: usize = 100_000;
+
+/// Most digit products a multiplication or division may take.
+pub(crate) const MAX_WORK: usize = 10_000_000;
+
+/// Largest exponent magnitude: Java's `BigDecimal` scale is an `int`.
+const MAX_EXP: i64 = i32::MAX as i64;
 
 /// Significant digits of `MathContext.DECIMAL128`.
 const PRECISION: usize = 34;
 
-/// `sign · digits · 10^exp`, with the digits least significant first, no
-/// zero at either end; zero has no digits, exponent 0 and a plus sign.
+/// Digits that always fit a `u128` (`10^38 < 2^128`).
+const SMALL_DIGITS: usize = 38;
+
+const POW10: [u128; 39] = {
+    let mut t = [1u128; 39];
+    let mut i = 1;
+    while i < 39 {
+        t[i] = t[i - 1] * 10;
+        i += 1;
+    }
+    t
+};
+
+/// `sign · coefficient · 10^exp`; the coefficient has no trailing zero, and
+/// zero is `+0 · 10^0`. A coefficient of at most 38 digits is always
+/// [`Mag::Small`], a longer one [`Mag::Big`], so equal values compare equal.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct Dec {
     neg: bool,
+    exp: i64,
+    mag: Mag,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+enum Mag {
+    Small(u128),
+    /// Digits, least significant first, no zero at either end.
+    Big(Box<[u8]>),
+}
+
+/// An intermediate result before it is normalised.
+struct Raw {
+    neg: bool,
     digits: Vec<u8>,
     exp: i64,
+}
+
+#[derive(Clone, Copy, PartialEq)]
+enum Mode {
+    HalfEven,
+    HalfUp,
+}
+
+#[cfg(test)]
+thread_local! {
+    /// Decimal operations done on this thread (see the expression tests).
+    pub(crate) static OPS: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
+}
+
+fn count_op() {
+    #[cfg(test)]
+    OPS.with(|n| n.set(n.get() + 1));
+}
+
+fn digit_count(x: u128) -> usize {
+    POW10.iter().position(|&p| p > x).unwrap_or(39)
+}
+
+fn to_digits(mut x: u128) -> Vec<u8> {
+    let mut d = Vec::with_capacity(39);
+    while x > 0 {
+        d.push((x % 10) as u8);
+        x /= 10;
+    }
+    d
 }
 
 impl Dec {
     fn zero() -> Dec {
         Dec {
             neg: false,
-            digits: Vec::new(),
             exp: 0,
+            mag: Mag::Small(0),
         }
     }
 
-    fn one() -> Dec {
-        Dec {
-            neg: false,
-            digits: vec![1],
-            exp: 0,
+    fn is_zero(&self) -> bool {
+        match &self.mag {
+            Mag::Small(c) => *c == 0,
+            Mag::Big(d) => d.is_empty(),
         }
+    }
+
+    fn small_coef(&self) -> Option<u128> {
+        match self.mag {
+            Mag::Small(c) => Some(c),
+            Mag::Big(_) => None,
+        }
+    }
+
+    /// The canonical decimal `±coef · 10^exp`.
+    fn small(neg: bool, mut coef: u128, mut exp: i64) -> Option<Dec> {
+        if coef == 0 {
+            return Some(Dec::zero());
+        }
+        while coef.is_multiple_of(10) {
+            coef /= 10;
+            exp += 1;
+        }
+        if coef >= POW10[SMALL_DIGITS] {
+            return Dec::from_raw(Raw {
+                neg,
+                digits: to_digits(coef),
+                exp,
+            });
+        }
+        (exp.abs() <= MAX_EXP).then_some(Dec {
+            neg,
+            exp,
+            mag: Mag::Small(coef),
+        })
     }
 
     /// Normalises and checks the size.
-    fn make(neg: bool, mut digits: Vec<u8>, mut exp: i64) -> Option<Dec> {
+    fn from_raw(raw: Raw) -> Option<Dec> {
+        let Raw {
+            neg,
+            mut digits,
+            mut exp,
+        } = raw;
         while digits.last() == Some(&0) {
             digits.pop();
         }
@@ -56,14 +161,33 @@ impl Dec {
         if digits.is_empty() {
             return Some(Dec::zero());
         }
-        if digits.len() > MAX_DIGITS || exp.unsigned_abs() > 1 << 40 {
+        if digits.len() > MAX_DIGITS || exp.abs() > MAX_EXP {
             return None;
         }
-        Some(Dec { neg, digits, exp })
+        let mag = if digits.len() <= SMALL_DIGITS {
+            Mag::Small(digits.iter().rev().fold(0, |v, &d| v * 10 + u128::from(d)))
+        } else {
+            Mag::Big(digits.into_boxed_slice())
+        };
+        Some(Dec { neg, exp, mag })
     }
 
-    /// A decimal literal: `12`, `-0.5`, `.5`, `5.`, `1.5E-3` (the minus signs
-    /// `–` and `−` are accepted in the exponent, as the lexer does).
+    /// The digits, least significant first (allocates).
+    fn digits(&self) -> Vec<u8> {
+        match &self.mag {
+            Mag::Small(c) => to_digits(*c),
+            Mag::Big(d) => d.to_vec(),
+        }
+    }
+
+    fn len(&self) -> usize {
+        match &self.mag {
+            Mag::Small(c) => digit_count(*c),
+            Mag::Big(d) => d.len(),
+        }
+    }
+
+    /// A decimal literal: `12`, `-0.5`, `.5`, `5.`, `1.5E-3`.
     pub(crate) fn parse(text: &str) -> Option<Dec> {
         let (neg, rest) = match text.strip_prefix('-') {
             Some(r) => (true, r),
@@ -76,10 +200,9 @@ impl Dec {
         let mut exp: i64 = match exponent {
             None => 0,
             Some(e) => {
-                let (eneg, digits) = match e.chars().next() {
-                    Some('-') => (true, &e[1..]),
-                    Some('+') => (false, &e[1..]),
-                    _ => (false, e),
+                let (eneg, digits) = match e.strip_prefix('-') {
+                    Some(d) => (true, d),
+                    None => (false, e.strip_prefix('+').unwrap_or(e)),
                 };
                 if digits.is_empty() || !digits.bytes().all(|b| b.is_ascii_digit()) {
                     return None;
@@ -110,7 +233,11 @@ impl Dec {
             return None;
         }
         digits.reverse();
-        Dec::make(neg, digits, exp)
+        Dec::from_raw(Raw {
+            neg: neg && digits.iter().any(|&d| d != 0),
+            digits,
+            exp,
+        })
     }
 
     /// The exact value of a finite double (`new BigDecimal(double)`).
@@ -130,66 +257,58 @@ impl Dec {
         } else {
             (frac | (1 << 52), raw_exp - 1075)
         };
-        while m & 1 == 0 {
-            m >>= 1;
-            e += 1;
+        let zeros = m.trailing_zeros();
+        m >>= zeros;
+        e += i64::from(zeros);
+        let m = u128::from(m);
+        if (0..=74).contains(&e) {
+            return Dec::small(neg, m << e, 0);
         }
-        let mut digits: Vec<u8> = m.to_string().bytes().rev().map(|b| b - b'0').collect();
+        if (-31..0).contains(&e) {
+            // m · 2^e = m · 5^-e · 10^e, with m · 5^-e below 2^127
+            return Dec::small(neg, m * 5u128.pow((-e) as u32), e);
+        }
+        let mut digits = to_digits(m);
         if e >= 0 {
             for _ in 0..e {
                 mul_small(&mut digits, 2);
             }
-            Dec::make(neg, digits, 0)
+            Dec::from_raw(Raw {
+                neg,
+                digits,
+                exp: 0,
+            })
         } else {
-            // m · 2^e = m · 5^-e · 10^e
             for _ in 0..-e {
                 mul_small(&mut digits, 5);
             }
-            Dec::make(neg, digits, e)
+            Dec::from_raw(Raw {
+                neg,
+                digits,
+                exp: e,
+            })
         }
     }
 
-    /// The nearest double (`BigDecimal.doubleValue`).
+    /// The nearest double (`BigDecimal.doubleValue`), without allocating for
+    /// a small coefficient.
     pub(crate) fn to_f64(&self) -> f64 {
-        if self.digits.is_empty() {
-            return 0.0;
-        }
-        let mut s = String::with_capacity(self.digits.len() + 24);
+        let v = match self.mag {
+            Mag::Small(c) => to_f64_parts(c, self.exp),
+            Mag::Big(ref d) if d.is_empty() => 0.0,
+            Mag::Big(ref d) => {
+                let mut s = String::with_capacity(d.len() + 24);
+                s.extend(d.iter().rev().map(|&d| char::from(b'0' + d)));
+                s.push('e');
+                s.push_str(&self.exp.to_string());
+                s.parse().unwrap_or(f64::NAN)
+            }
+        };
         if self.neg {
-            s.push('-');
+            -v
+        } else {
+            v
         }
-        s.extend(self.digits.iter().rev().map(|&d| char::from(b'0' + d)));
-        s.push('e');
-        s.push_str(&self.exp.to_string());
-        s.parse().unwrap_or(f64::NAN)
-    }
-
-    fn is_zero(&self) -> bool {
-        self.digits.is_empty()
-    }
-
-    pub(crate) fn add(&self, other: &Dec) -> Option<Dec> {
-        if self.is_zero() {
-            return Some(other.clone());
-        }
-        if other.is_zero() {
-            return Some(self.clone());
-        }
-        let exp = self.exp.min(other.exp);
-        let a = shifted(&self.digits, self.exp - exp)?;
-        let b = shifted(&other.digits, other.exp - exp)?;
-        if self.neg == other.neg {
-            return Dec::make(self.neg, add_mag(&a, &b), exp);
-        }
-        match cmp_mag(&a, &b) {
-            Ordering::Equal => Some(Dec::zero()),
-            Ordering::Greater => Dec::make(self.neg, sub_mag(&a, &b), exp),
-            Ordering::Less => Dec::make(other.neg, sub_mag(&b, &a), exp),
-        }
-    }
-
-    pub(crate) fn sub(&self, other: &Dec) -> Option<Dec> {
-        self.add(&other.negated())
     }
 
     pub(crate) fn negated(&self) -> Dec {
@@ -198,35 +317,139 @@ impl Dec {
         d
     }
 
+    pub(crate) fn add(&self, other: &Dec) -> Option<Dec> {
+        count_op();
+        if self.is_zero() {
+            return Some(other.clone());
+        }
+        if other.is_zero() {
+            return Some(self.clone());
+        }
+        let exp = self.exp.min(other.exp);
+        if let (Some(a), Some(b)) = (self.small_coef(), other.small_coef()) {
+            let shift = |c: u128, by: i64| {
+                usize::try_from(by)
+                    .ok()
+                    .and_then(|by| POW10.get(by))
+                    .and_then(|&p| c.checked_mul(p))
+            };
+            if let (Some(a), Some(b)) = (shift(a, self.exp - exp), shift(b, other.exp - exp)) {
+                let sum = if self.neg == other.neg {
+                    a.checked_add(b).map(|s| (self.neg, s))
+                } else if a >= b {
+                    Some((self.neg, a - b))
+                } else {
+                    Some((other.neg, b - a))
+                };
+                if let Some((neg, s)) = sum {
+                    return Dec::small(neg, s, exp);
+                }
+            }
+        }
+        // aligning must not need more digits than a result may have
+        let (la, lb) = (self.len() as i64, other.len() as i64);
+        if (la + self.exp - exp).max(lb + other.exp - exp) > MAX_DIGITS as i64 + 1 {
+            return None;
+        }
+        let a = shifted(&self.digits(), (self.exp - exp) as usize);
+        let b = shifted(&other.digits(), (other.exp - exp) as usize);
+        let (neg, digits) = if self.neg == other.neg {
+            (self.neg, add_mag(&a, &b))
+        } else {
+            match cmp_mag(&a, &b) {
+                Ordering::Equal => return Some(Dec::zero()),
+                Ordering::Greater => (self.neg, sub_mag(&a, &b)),
+                Ordering::Less => (other.neg, sub_mag(&b, &a)),
+            }
+        };
+        Dec::from_raw(Raw { neg, digits, exp })
+    }
+
+    pub(crate) fn sub(&self, other: &Dec) -> Option<Dec> {
+        if other.is_zero() {
+            count_op();
+            return Some(self.clone());
+        }
+        match other.mag {
+            // negating a small decimal does not allocate
+            Mag::Small(c) => self.add(&Dec {
+                neg: !other.neg,
+                exp: other.exp,
+                mag: Mag::Small(c),
+            }),
+            Mag::Big(_) => self.add(&other.negated()),
+        }
+    }
+
     pub(crate) fn mul(&self, other: &Dec) -> Option<Dec> {
+        count_op();
         if self.is_zero() || other.is_zero() {
             return Some(Dec::zero());
         }
-        if self.digits.len() + other.digits.len() > MAX_DIGITS + 1 {
+        let neg = self.neg != other.neg;
+        let exp = self.exp + other.exp;
+        if let (Some(a), Some(b)) = (self.small_coef(), other.small_coef()) {
+            if let Some(p) = a.checked_mul(b) {
+                return Dec::small(neg, p, exp);
+            }
+        }
+        Dec::from_raw(self.mul_raw(other)?)
+    }
+
+    /// The exact product, before normalising; `None` beyond [`MAX_WORK`].
+    fn mul_raw(&self, other: &Dec) -> Option<Raw> {
+        let (a, b) = (self.digits(), other.digits());
+        if a.len() * b.len() > MAX_WORK {
             return None;
         }
-        Dec::make(
-            self.neg != other.neg,
-            mul_mag(&self.digits, &other.digits),
-            self.exp + other.exp,
-        )
+        Some(Raw {
+            neg: self.neg != other.neg,
+            digits: mul_mag(&a, &b),
+            exp: self.exp + other.exp,
+        })
     }
 
     /// `divide(other, DECIMAL128)`; `None` for a zero divisor.
     pub(crate) fn div(&self, other: &Dec) -> Option<Dec> {
+        count_op();
         if other.is_zero() {
             return None;
         }
         if self.is_zero() {
             return Some(Dec::zero());
         }
-        // enough digits for the rounding: at least PRECISION + 2
-        let shift = (PRECISION + 2 + other.digits.len()).saturating_sub(self.digits.len());
-        let num = shifted(&self.digits, shift as i64)?;
-        let (q, r) = div_mag(&num, &other.digits);
         let neg = self.neg != other.neg;
-        let exp = self.exp - other.exp - shift as i64;
-        round_digits(neg, q, exp, PRECISION, !r.is_empty(), Mode::HalfEven)
+        if let (Some(x), Some(y)) = (self.small_coef(), other.small_coef()) {
+            if y < POW10[37] {
+                return div_small(neg, x, y, self.exp - other.exp);
+            }
+        }
+        // the quotient needs PRECISION + 2 digits: more of the dividend
+        // only decide whether the remainder is zero
+        let (a, b) = (self.digits(), other.digits());
+        let want = PRECISION + 2 + b.len();
+        if b.len() * want > MAX_WORK {
+            return None;
+        }
+        let (num, exp, sticky) = if a.len() >= want {
+            let drop = a.len() - want;
+            let sticky = a[..drop].iter().any(|&d| d != 0);
+            (a[drop..].to_vec(), self.exp + drop as i64, sticky)
+        } else {
+            let pad = want - a.len();
+            (shifted(&a, pad), self.exp - pad as i64, false)
+        };
+        let (q, r) = div_mag(&num, &b);
+        round_raw(
+            Raw {
+                neg,
+                digits: q,
+                exp: exp - other.exp,
+            },
+            PRECISION,
+            sticky || !r.is_empty(),
+            Mode::HalfEven,
+        )
     }
 
     /// `pow(n, DECIMAL128)` for `0 <= n < 1e6`: repeated squaring into one
@@ -234,79 +457,194 @@ impl Dec {
     /// the result rounded to 34 digits (the algorithm `BigDecimal.pow`
     /// documents, from ANSI X3.274-1996).
     pub(crate) fn pow(&self, n: u32) -> Option<Dec> {
+        count_op();
         if n == 0 {
-            return Some(Dec::one());
+            return Dec::small(false, 1, 0);
         }
         let work = PRECISION + n.to_string().len() + 1;
-        let mut acc = Dec::one();
+        // nothing is rounded while every product stays within the working
+        // precision, so exact products of small coefficients are the result
+        if let Some(acc) = self.pow_small(n, POW10[work.min(SMALL_DIGITS)]) {
+            return round_dec(acc, PRECISION);
+        }
+        let mut acc = Raw {
+            neg: false,
+            digits: vec![1],
+            exp: 0,
+        };
         let mut seen = false;
         for bit in (0..32).rev() {
             if seen {
-                acc = acc.mul(&acc)?.rounded(work, Mode::HalfEven)?;
+                let a = Dec::from_raw_unchecked(&acc);
+                acc = round_raw_to(a.mul_raw(&a)?, work)?;
             }
             if (n >> bit) & 1 == 1 {
-                acc = acc.mul(self)?.rounded(work, Mode::HalfEven)?;
+                acc = round_raw_to(Dec::from_raw_unchecked(&acc).mul_raw(self)?, work)?;
                 seen = true;
             }
         }
-        acc.rounded(PRECISION, Mode::HalfEven)
+        round_raw(acc, PRECISION, false, Mode::HalfEven)
+    }
+
+    fn pow_small(&self, n: u32, limit: u128) -> Option<Dec> {
+        let base = self.small_coef()?;
+        let mut acc: u128 = 1;
+        let mut seen = false;
+        for bit in (0..32).rev() {
+            if seen {
+                acc = acc.checked_mul(acc).filter(|&a| a < limit)?;
+            }
+            if (n >> bit) & 1 == 1 {
+                acc = acc.checked_mul(base).filter(|&a| a < limit)?;
+                seen = true;
+            }
+        }
+        let exp = self.exp.checked_mul(i64::from(n))?;
+        Dec::small(self.neg && n % 2 == 1, acc, exp)
+    }
+
+    /// A [`Dec`] with the digits of an intermediate (which may be longer
+    /// than [`MAX_DIGITS`] for one step) for multiplying it.
+    fn from_raw_unchecked(raw: &Raw) -> Dec {
+        Dec {
+            neg: raw.neg,
+            exp: raw.exp,
+            mag: Mag::Big(raw.digits.clone().into_boxed_slice()),
+        }
     }
 
     /// `setScale(scale, HALF_UP)`: rounded to `scale` decimal places.
     pub(crate) fn set_scale_half_up(&self, scale: i64) -> Option<Dec> {
+        count_op();
         let drop = -scale - self.exp;
         if drop <= 0 {
             return Some(self.clone());
         }
-        let len = self.digits.len() as i64;
+        if let Some(c) = self.small_coef() {
+            let Some(&p) = usize::try_from(drop).ok().and_then(|d| POW10.get(d)) else {
+                // every digit goes and the first dropped one is a zero
+                return Some(Dec::zero());
+            };
+            let kept = c / p + u128::from(c % p >= p / 2);
+            return Dec::small(self.neg, kept, self.exp + drop);
+        }
+        let len = self.len() as i64;
         if drop > len {
-            // every digit goes and the first dropped one is a zero
             return Some(Dec::zero());
         }
-        let keep = (len - drop) as usize;
-        round_digits(
-            self.neg,
-            self.digits.clone(),
-            self.exp,
-            keep,
+        round_raw(
+            Raw {
+                neg: self.neg,
+                digits: self.digits(),
+                exp: self.exp,
+            },
+            (len - drop) as usize,
             false,
             Mode::HalfUp,
         )
     }
 
-    fn rounded(&self, precision: usize, mode: Mode) -> Option<Dec> {
-        round_digits(
-            self.neg,
-            self.digits.clone(),
-            self.exp,
-            precision,
-            false,
-            mode,
-        )
+    /// The same value with its coefficient as a digit vector, which sends
+    /// every operation down the general path.
+    #[cfg(test)]
+    fn forced_big(&self) -> Dec {
+        Dec {
+            neg: self.neg,
+            exp: self.exp,
+            mag: Mag::Big(self.digits().into_boxed_slice()),
+        }
     }
 }
 
-#[derive(Clone, Copy, PartialEq)]
-enum Mode {
-    HalfEven,
-    HalfUp,
+/// `x / y · 10^exp` rounded to 34 digits, half to even, for `y < 10^37`.
+fn div_small(neg: bool, x: u128, y: u128, mut exp: i64) -> Option<Dec> {
+    let mut q = x / y;
+    let mut r = x % y;
+    // `q < 10^35` keeps `q * 10 + 9` and `r * 10 < 10 y` inside a `u128`
+    while r != 0 && q < POW10[35] {
+        r *= 10;
+        q = q * 10 + r / y;
+        r %= y;
+        exp -= 1;
+    }
+    let (q, exp) = round_u128(q, exp, PRECISION, r != 0, Mode::HalfEven);
+    Dec::small(neg, q, exp)
+}
+
+/// `q · 10^exp` (plus a nonzero tail when `sticky`) rounded to `keep`
+/// significant digits.
+fn round_u128(q: u128, exp: i64, keep: usize, sticky: bool, mode: Mode) -> (u128, i64) {
+    let len = digit_count(q);
+    if len <= keep {
+        return (q, exp);
+    }
+    let drop = len - keep;
+    let p = POW10[drop];
+    let (kept, rest) = (q / p, q % p);
+    let half = p / 2;
+    let up = match rest.cmp(&half) {
+        Ordering::Greater => true,
+        Ordering::Less => false,
+        Ordering::Equal => {
+            sticky
+                || match mode {
+                    Mode::HalfUp => true,
+                    Mode::HalfEven => kept % 2 == 1,
+                }
+        }
+    };
+    (kept + u128::from(up), exp + drop as i64)
+}
+
+/// A decimal rounded to `keep` digits, half to even.
+fn round_dec(d: Dec, keep: usize) -> Option<Dec> {
+    match d.mag {
+        Mag::Small(c) => {
+            let (c, exp) = round_u128(c, d.exp, keep, false, Mode::HalfEven);
+            Dec::small(d.neg, c, exp)
+        }
+        Mag::Big(_) => {
+            let digits = d.digits();
+            round_raw(
+                Raw {
+                    neg: d.neg,
+                    digits,
+                    exp: d.exp,
+                },
+                keep,
+                false,
+                Mode::HalfEven,
+            )
+        }
+    }
+}
+
+/// An intermediate rounded to `keep` digits, half to even, still raw.
+fn round_raw_to(raw: Raw, keep: usize) -> Option<Raw> {
+    let d = round_raw(raw, keep, false, Mode::HalfEven)?;
+    Some(Raw {
+        neg: d.neg,
+        digits: d.digits(),
+        exp: d.exp,
+    })
 }
 
 /// `sign · digits · 10^exp` (plus a nonzero tail below the last digit when
 /// `sticky`) rounded to `keep` significant digits.
-fn round_digits(
-    neg: bool,
-    digits: Vec<u8>,
-    exp: i64,
-    keep: usize,
-    sticky: bool,
-    mode: Mode,
-) -> Option<Dec> {
+fn round_raw(raw: Raw, keep: usize, sticky: bool, mode: Mode) -> Option<Dec> {
+    let Raw {
+        neg,
+        mut digits,
+        exp,
+    } = raw;
+    while digits.last() == Some(&0) {
+        digits.pop();
+    }
     let len = digits.len();
     if len <= keep {
         // a tail below the digits only counts when there is room for it,
         // which never happens: callers give at least `keep + 2` digits
-        return Dec::make(neg, digits, exp);
+        return Dec::from_raw(Raw { neg, digits, exp });
     }
     let drop = len - keep;
     let first = digits[drop - 1];
@@ -329,17 +667,78 @@ fn round_digits(
         }
         add_small(&mut kept, 1);
     }
-    Dec::make(neg, kept, exp + drop as i64)
+    Dec::from_raw(Raw {
+        neg,
+        digits: kept,
+        exp: exp + drop as i64,
+    })
 }
 
-/// `digits · 10^by`; `None` when that is too long.
-fn shifted(digits: &[u8], by: i64) -> Option<Vec<u8>> {
-    if by < 0 || digits.len() as i64 + by > (2 * MAX_DIGITS) as i64 {
-        return None;
+/// The nearest double to `c · 10^exp`, without allocating.
+pub(crate) fn to_f64_parts(c: u128, exp: i64) -> f64 {
+    // both operands exact and one rounding: correctly rounded
+    if c < 1 << 53 && (-22..=22).contains(&exp) {
+        let p = 10f64.powi(exp.unsigned_abs() as i32);
+        if exp >= 0 {
+            c as f64 * p
+        } else {
+            c as f64 / p
+        }
+    } else if c == 0 {
+        0.0
+    } else {
+        small_to_f64(c, exp)
     }
-    let mut out = vec![0; by as usize];
+}
+
+/// The nearest double to `c · 10^exp`, through a decimal string on the
+/// stack.
+fn small_to_f64(mut c: u128, exp: i64) -> f64 {
+    let mut buf = [0u8; 64];
+    let mut digits = [0u8; 39];
+    let mut n = 0;
+    while c > 0 {
+        digits[n] = b'0' + (c % 10) as u8;
+        c /= 10;
+        n += 1;
+    }
+    let mut len = 0;
+    for &d in digits[..n].iter().rev() {
+        buf[len] = d;
+        len += 1;
+    }
+    buf[len] = b'e';
+    len += 1;
+    if exp < 0 {
+        buf[len] = b'-';
+        len += 1;
+    }
+    let mut e = exp.unsigned_abs();
+    let mut edigits = [0u8; 20];
+    let mut m = 0;
+    loop {
+        edigits[m] = b'0' + (e % 10) as u8;
+        e /= 10;
+        m += 1;
+        if e == 0 {
+            break;
+        }
+    }
+    for &d in edigits[..m].iter().rev() {
+        buf[len] = d;
+        len += 1;
+    }
+    std::str::from_utf8(&buf[..len])
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(f64::NAN)
+}
+
+/// `digits · 10^by`.
+fn shifted(digits: &[u8], by: usize) -> Vec<u8> {
+    let mut out = vec![0; by];
     out.extend_from_slice(digits);
-    Some(out)
+    out
 }
 
 fn mul_small(digits: &mut Vec<u8>, k: u8) {
@@ -482,10 +881,30 @@ mod tests {
             d("0.1000000000000000055511151231257827021181583404541015625")
         );
         assert_eq!(Dec::from_f64(-3.0).unwrap(), d("-3"));
-        assert_eq!(Dec::from_f64(1e300).unwrap().to_f64(), 1e300);
-        assert_eq!(Dec::from_f64(5e-324).unwrap().to_f64(), 5e-324);
+        assert_eq!(Dec::from_f64(0.375).unwrap(), d("0.375"));
+        assert_eq!(
+            Dec::from_f64(2f64.powi(70)).unwrap(),
+            d("1180591620717411303424")
+        );
+        for x in [
+            1e300,
+            5e-324,
+            2.2250738585072014e-308,
+            0.1,
+            123.456,
+            2f64.powi(100),
+        ] {
+            assert_eq!(Dec::from_f64(x).unwrap().to_f64(), x);
+            assert_eq!(Dec::from_f64(-x).unwrap().to_f64(), -x);
+        }
         assert_eq!(d("1E-400").to_f64(), 0.0);
         assert_eq!(d("1E400").to_f64(), f64::INFINITY);
+        // halfway between two doubles: ties to even
+        assert_eq!(d("9007199254740993").to_f64(), 9007199254740992.0);
+        assert_eq!(
+            d("1.00000000000000011102230246251565404236316680908203125").to_f64(),
+            1.0
+        );
     }
 
     #[test]
@@ -498,6 +917,10 @@ mod tests {
         assert_eq!(d("1.1").mul(&d("1.1")).unwrap(), d("1.21"));
         assert_eq!(d("-2.5").mul(&d("4")).unwrap(), d("-10"));
         assert_eq!(d("1").sub(&d("3")).unwrap(), d("-2"));
+        // past the inline size and back
+        let big = d("12345678901234567890123456789012345678901234567890");
+        assert_eq!(big.sub(&big).unwrap(), Dec::zero());
+        assert_eq!(big.add(&d("1")).unwrap().sub(&big).unwrap(), d("1"));
     }
 
     #[test]
@@ -527,6 +950,9 @@ mod tests {
             d("1000000000000000000000000000000002")
         );
         assert!(d("1").div(&Dec::zero()).is_none());
+        // a long dividend: only its leading digits and whether the rest is zero matter
+        let long = d(&format!("1{}1", "0".repeat(300)));
+        assert_eq!(long.div(&d("3")).unwrap().to_f64(), 1e301 / 3.0);
     }
 
     #[test]
@@ -534,7 +960,11 @@ mod tests {
         assert_eq!(d("0.1").pow(3).unwrap(), d("0.001"));
         assert_eq!(d("1.1").pow(2).unwrap(), d("1.21"));
         assert_eq!(d("7").pow(0).unwrap(), d("1"));
+        assert_eq!(d("-2").pow(3).unwrap(), d("-8"));
         assert_eq!(d("2").pow(200).unwrap().to_f64(), 2f64.powi(200));
+        // a base longer than the working precision still gives 34 digits
+        let long = d(&format!("1.{}1", "0".repeat(900)));
+        assert_eq!(long.pow(3).unwrap(), d("1"));
         assert_eq!(d("1.005").set_scale_half_up(2).unwrap(), d("1.01"));
         assert_eq!(d("-2.5").set_scale_half_up(0).unwrap(), d("-3"));
         assert_eq!(d("2.4").set_scale_half_up(0).unwrap(), d("2"));
@@ -546,9 +976,70 @@ mod tests {
     }
 
     #[test]
-    fn sizes_are_capped() {
-        assert!(d("1E-1000000").add(&d("1")).is_none());
-        let big = d(&"7".repeat(MAX_DIGITS));
+    fn work_is_bounded() {
+        // aligning `1E-999999999` with 1 needs a billion digits
+        assert!(d("1E-999999999").add(&d("1")).is_none());
+        // the exponent stays in the range of Java's `int` scale
+        assert!(d("1E-999999999").pow(3).is_none());
+        let big = d(&"7".repeat(5000));
         assert!(big.mul(&big).is_none());
+        // a chain through 5000 digits comes back to a small value
+        let tiny = d("1E-5001");
+        let back = tiny.add(&d("1")).unwrap().sub(&d("1")).unwrap();
+        assert_eq!(back, tiny);
+    }
+
+    /// A small random decimal from a linear congruential generator.
+    fn random(state: &mut u64) -> Dec {
+        let mut next = || {
+            *state = state
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
+            *state >> 11
+        };
+        let digits = (next() % 39) as u32;
+        let coef = (u128::from(next()) << 64 | u128::from(next())) % 10u128.pow(digits).max(1);
+        let exp = (next() % 81) as i64 - 40;
+        Dec::small(next() % 2 == 0, coef, exp).unwrap()
+    }
+
+    /// The canonical form of a result (an operation that returns an
+    /// operand unchanged keeps the forced digit form).
+    fn canon(d: Option<Dec>) -> Option<Dec> {
+        d.map(|d| {
+            Dec::from_raw(Raw {
+                neg: d.neg,
+                digits: d.digits(),
+                exp: d.exp,
+            })
+            .unwrap()
+        })
+    }
+
+    #[test]
+    fn the_inline_path_agrees_with_the_digit_path() {
+        let mut state = 7;
+        for _ in 0..5_000 {
+            let (a, b) = (random(&mut state), random(&mut state));
+            let (ab, bb) = (a.forced_big(), b.forced_big());
+            let n = (state % 40) as u32;
+            let scale = (state % 60) as i64 - 30;
+            let pairs = [
+                (a.add(&b), ab.add(&bb), "+"),
+                (a.sub(&b), ab.sub(&bb), "-"),
+                (a.mul(&b), ab.mul(&bb), "*"),
+                (a.div(&b), ab.div(&bb), "/"),
+                (a.pow(n), ab.pow(n), "^"),
+                (
+                    a.set_scale_half_up(scale),
+                    ab.set_scale_half_up(scale),
+                    "scale",
+                ),
+            ];
+            for (small, big, op) in pairs {
+                assert_eq!(small, canon(big), "{a:?} {op} {b:?} (n {n}, scale {scale})");
+            }
+            assert_eq!(a.to_f64(), ab.to_f64(), "{a:?}");
+        }
     }
 }

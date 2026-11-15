@@ -46,7 +46,6 @@ use crate::algo::intersect::Hint;
 use crate::algo::vector::VectorDef;
 use crate::kernel::{Construction, Def, Error, Id, Kind, Value};
 use decimal::Dec;
-use std::collections::BTreeMap;
 
 /// Handle of an expression object's tree, valid only in the construction
 /// that made it; see the module documentation.
@@ -257,7 +256,7 @@ pub(crate) struct Table {
     /// The exact decimals of free numbers that a decimal literal or a
     /// constant expression made and that were never changed since
     /// (`GeoNumeric.exactValue` with a constant definition), by object.
-    free: BTreeMap<usize, Dec>,
+    free: Vec<Option<Dec>>,
 }
 
 /// An expression object's tree, owned: what [`Construction::expression`]
@@ -298,7 +297,7 @@ impl Table {
     /// the objects from `objects` on (see `Construction::rollback`).
     pub(crate) fn truncate(&mut self, len: usize, objects: usize) {
         self.entries.truncate(len);
-        self.free.split_off(&objects);
+        self.free.truncate(objects);
     }
 }
 
@@ -334,21 +333,29 @@ pub(crate) fn check_handle(c: &Construction, d: ExprDef) -> Result<(), Error> {
 
 /// The exact decimal of the free number `id`, if it has one.
 pub(crate) fn free_decimal(c: &Construction, id: Id) -> Option<&Dec> {
-    c.exprs.free.get(&id.0)
+    c.exprs.free.get(id.0).and_then(Option::as_ref)
+}
+
+fn set_free_decimal(c: &mut Construction, id: Id, d: Dec) {
+    let free = &mut c.exprs.free;
+    if free.len() <= id.0 {
+        free.resize(id.0 + 1, None);
+    }
+    free[id.0] = Some(d);
 }
 
 /// Records the decimal of the free number `id` that a script line made from
 /// the decimal literal `text` (a `MySpecialDouble`).
 pub(crate) fn record_literal(c: &mut Construction, id: Id, text: &str) {
     if let (Some(_), Some(d)) = (plain_number(text), Dec::parse(text.trim())) {
-        c.exprs.free.insert(id.0, d);
+        set_free_decimal(c, id, d);
     }
 }
 
 /// Forgets the exact decimal of a free number that is being changed
 /// (`GeoNumeric.setValue`); whether it had one.
 pub(crate) fn forget_decimal(c: &mut Construction, id: Id) -> bool {
-    c.exprs.free.remove(&id.0).is_some()
+    c.exprs.free.get_mut(id.0).and_then(Option::take).is_some()
 }
 
 /// The tree of the expression object `id`, or the decimal of an exact free
@@ -393,7 +400,7 @@ pub(crate) fn add_expression(
         Form::Tree { nodes, lits, root } => (nodes, lits, *root),
         Form::Exact { def, dec } => {
             let id = c.add(name, *def)?;
-            c.exprs.free.insert(id.0, dec.clone());
+            set_free_decimal(c, id, dec.clone());
             return Ok(id);
         }
     };
@@ -663,7 +670,7 @@ fn add_parsed(
         if let Some(def) = free {
             let id = c.add(name, def)?;
             if let (Some(d), Kind::Number) = (dec, kind) {
-                c.exprs.free.insert(id.0, d);
+                set_free_decimal(c, id, d);
             }
             return Ok(id);
         }
