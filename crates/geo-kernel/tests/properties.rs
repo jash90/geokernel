@@ -26,7 +26,30 @@ struct Totals {
     undefined_seen: usize,
     script_rebuilds: usize,
     script_rebuilds_skipped: usize,
+    /// Fresh builds that differ only in state decided when an object was
+    /// created (see `same_up_to_creation_state`).
+    creation_state_differs: usize,
     rejected: Vec<String>,
+}
+
+/// Whether two definitions are equal up to the state an object takes when it
+/// is created: the `special` flag of a circle intersection, which GeoGebra
+/// decides once from the positions at creation (`AlgoIntersectConics`), so a
+/// build at other positions can decide it otherwise. The incremental update
+/// is still checked against a rebuild that keeps the flag after every move.
+fn same_up_to_creation_state(a: Def, b: Def) -> bool {
+    match (a, b) {
+        (
+            Def::IntersectCircles { c1, c2, which, .. },
+            Def::IntersectCircles {
+                c1: d1,
+                c2: d2,
+                which: w,
+                ..
+            },
+        ) => (c1, c2, which) == (d1, d2, w),
+        _ => a == b,
+    }
 }
 
 /// Builds a fresh construction from the definitions of `orig`: every free
@@ -78,12 +101,40 @@ fn check_contagion(case: &Case) -> Result<(), String> {
     Ok(())
 }
 
-fn dependents(case: &Case, start: Id) -> Vec<bool> {
+/// `case.deps` with the objects a rule reads besides its arguments, where
+/// they are not already ancestors: `Intersect(k, k)` reads the first point on
+/// `k` (GeoGebra's `getPointFrom1on2`), which can be an earlier intersection
+/// point of `k`. Every earlier intersection point of `k` is added, which is
+/// more than is read and only weakens the checks of which objects a move may
+/// change. Contagion of `Undefined` is still checked on the arguments only.
+fn reads(case: &Case) -> Vec<Vec<usize>> {
+    let mut reads = case.deps.clone();
+    let on = |d: Def, k: Id| match d {
+        Def::IntersectLineCircle { circle, .. } => circle == k,
+        Def::IntersectCircles { c1, c2, .. } => c1 == k || c2 == k,
+        _ => false,
+    };
+    for id in case.c.ids() {
+        if let Def::IntersectCircles { c1, c2, .. } = case.c.def(id) {
+            if c1 == c2 {
+                for s in case.c.ids().take(id.index()) {
+                    if on(case.c.def(s), c1) && !reads[id.index()].contains(&s.index()) {
+                        reads[id.index()].push(s.index());
+                    }
+                }
+            }
+        }
+    }
+    reads
+}
+
+/// The objects that depend on `start` through `reads` (see [`reads`]).
+fn dependents(case: &Case, reads: &[Vec<usize>], start: Id) -> Vec<bool> {
     let n = case.c.len();
     let mut reach = vec![false; n];
     reach[start.index()] = true;
     for i in start.index() + 1..n {
-        reach[i] = case.deps[i].iter().any(|&p| reach[p]);
+        reach[i] = reads[i].iter().any(|&p| reach[p]);
     }
     reach[start.index()] = false;
     reach
@@ -91,6 +142,7 @@ fn dependents(case: &Case, start: Id) -> Vec<bool> {
 
 fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), String> {
     let mut case = generate(seed, COMMANDS_PER_CASE, all_commands);
+    let reads = reads(&case);
     let mut moves: Vec<String> = Vec::new();
     let mut rng = Rng::new(seed ^ 0x5DEE_CE66_D1CE_5EED);
     totals.cases += 1;
@@ -133,7 +185,7 @@ fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), St
             fail!("non-finite value after move {step_no}: {bad}");
         }
         // 3. only dependents change, and no more are recomputed than exist
-        let reach = dependents(&case, moved);
+        let reach = dependents(&case, &reads, moved);
         let n_dependents = reach.iter().filter(|&&r| r).count();
         if count > n_dependents {
             fail!("move {step_no} recomputed {count} objects but only {n_dependents} depend on it");
@@ -217,6 +269,14 @@ fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), St
                 script_of(&script)
             );
         }
+    } else if ok
+        && fresh.len() == case.c.len()
+        && fresh.ids().zip(case.c.ids()).all(|(f, o)| {
+            fresh.label(f) == case.c.label(o)
+                && same_up_to_creation_state(fresh.def(f), case.c.def(o))
+        })
+    {
+        totals.creation_state_differs += 1;
     } else if case.multi_lines.iter().any(|&m| m) {
         // The objects a multi-output command creates are fixed when it runs
         // (see DIFFERENCES.md), so another set of positions can give another
@@ -1168,12 +1228,12 @@ fn a_line_through_far_points_is_not_the_zero_line() {
 }
 
 /// Random constructions that also use `Slope(line)`, `Distance(line, line)`
-/// and `Intersect(circle, circle)`. Constructions that intersect a circle
-/// with itself fail: a fresh build at the final values decides the `special`
-/// flag of `Def::IntersectCircles` differently (see the test below), and the
-/// incremental update can differ from a recompute.
+/// and `Intersect(circle, circle)`. A circle intersection keeps the `special`
+/// flag decided at its creation, as GeoGebra does, so a fresh build at the
+/// final values may decide it otherwise; such cases are counted, not
+/// compared (a circle intersected with itself after its circle was undefined
+/// or a single point at creation, or the reverse).
 #[test]
-#[ignore = "known defect: Intersect of a circle with itself depends on the history of moves"]
 fn random_constructions_with_all_commands() {
     let mut totals = Totals::default();
     for_seeds(
@@ -1181,6 +1241,22 @@ fn random_constructions_with_all_commands() {
         0x1112,
         CASES * 10,
         |rng| run_case(rng.state(), true, &mut totals),
+    );
+    println!(
+        "{} constructions, {} script rebuilds compared, {} skipped (multi-output layout), \
+         {} skipped (circle intersection decided otherwise at creation)",
+        totals.cases,
+        totals.script_rebuilds,
+        totals.script_rebuilds_skipped,
+        totals.creation_state_differs
+    );
+    // The skip for creation state must stay rare (19 of 4000 at the time of
+    // writing).
+    assert!(
+        totals.creation_state_differs * 100 <= totals.cases,
+        "{} of {} fresh builds differ in creation state",
+        totals.creation_state_differs,
+        totals.cases
     );
 }
 

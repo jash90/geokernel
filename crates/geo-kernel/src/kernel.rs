@@ -17,8 +17,7 @@ use crate::algo::vector::VectorDef;
 use crate::algo::{
     self, check_index, join, line_through, Group, Parents, CIRCLE, LINE, LINE_LIKE, NUMBER, POINT,
 };
-use std::cmp::Reverse;
-use std::collections::{BinaryHeap, HashMap};
+use std::collections::HashMap;
 use std::fmt;
 
 /// Handle of an object inside one [`Construction`].
@@ -318,11 +317,13 @@ pub struct Construction {
     labels: Vec<String>,
     /// For each object, the objects that read it directly.
     children: Vec<Vec<Id>>,
+    /// For each object, what its rule needs from the definitions of other
+    /// objects, decided when it is created (see [`algo::intersect::Hint`]).
+    hints: Vec<algo::intersect::Hint>,
     by_label: HashMap<String, Id>,
     // Scratch state for updates, kept to avoid allocating on every drag.
-    mark: Vec<u32>,
-    epoch: u32,
-    heap: BinaryHeap<Reverse<usize>>,
+    /// One bit per object: waiting to be recomputed. All zero between updates.
+    dirty: Vec<u64>,
 }
 
 impl Construction {
@@ -380,7 +381,8 @@ impl Construction {
         let def = algo::intersect::prepare(self, def);
 
         let id = Id(self.defs.len());
-        let value = self.compute(def);
+        let hint = algo::intersect::hint(self, &def);
+        let value = self.compute(def, hint);
         let parents = def.parents();
         // Objects the rule also reads, beyond its parents.
         let mut hidden = algo::intersect::hidden_parents(self, &def);
@@ -396,7 +398,8 @@ impl Construction {
         self.values.push(value);
         self.labels.push(label.to_string());
         self.children.push(Vec::new());
-        self.mark.push(0);
+        self.hints.push(hint);
+        self.dirty.resize(self.defs.len().div_ceil(64), 0);
         self.by_label.insert(label.to_string(), id);
         Ok(id)
     }
@@ -445,24 +448,34 @@ impl Construction {
 
     /// Recomputes the descendants of `start` in creation order.
     ///
-    /// A min-heap of dirty indices gives the order. Because children always
+    /// A bit set of dirty indices gives the order: it is scanned upwards from
+    /// `start`, one word of 64 objects at a time. Because children always
     /// have larger indices than their parents, by the time an object is
-    /// popped every parent that could still change has already been handled.
+    /// reached every parent that could still change has already been handled.
+    /// Unlike a heap, the scan touches 8 bytes per 64 objects however many
+    /// are dirty, which matters when a point has tens of thousands of
+    /// children.
     fn propagate(&mut self, start: Id) -> usize {
-        self.epoch = self.epoch.wrapping_add(1);
-        let epoch = self.epoch;
-        let mut heap = std::mem::take(&mut self.heap);
-
+        let mut dirty = std::mem::take(&mut self.dirty);
+        // the highest dirty index so far
+        let mut last = start.0;
         for &child in &self.children[start.0] {
-            if self.mark[child.0] != epoch {
-                self.mark[child.0] = epoch;
-                heap.push(Reverse(child.0));
-            }
+            dirty[child.0 / 64] |= 1 << (child.0 % 64);
+            last = last.max(child.0);
         }
 
         let mut recomputed = 0;
-        while let Some(Reverse(i)) = heap.pop() {
-            let new = self.compute(self.defs[i]);
+        let mut word = start.0 / 64;
+        while word <= last / 64 {
+            let bits = dirty[word];
+            if bits == 0 {
+                word += 1;
+                continue;
+            }
+            // clear the lowest set bit; children only set higher ones
+            dirty[word] = bits & (bits - 1);
+            let i = word * 64 + bits.trailing_zeros() as usize;
+            let new = self.compute(self.defs[i], self.hints[i]);
             recomputed += 1;
             if new == self.values[i] {
                 // Nothing downstream can change because of this object.
@@ -470,14 +483,12 @@ impl Construction {
             }
             self.values[i] = new;
             for &child in &self.children[i] {
-                if self.mark[child.0] != epoch {
-                    self.mark[child.0] = epoch;
-                    heap.push(Reverse(child.0));
-                }
+                dirty[child.0 / 64] |= 1 << (child.0 % 64);
+                last = last.max(child.0);
             }
         }
 
-        self.heap = heap;
+        self.dirty = dirty;
         recomputed
     }
 
@@ -553,15 +564,15 @@ impl Construction {
         }
     }
 
-    fn compute(&self, def: Def) -> Value {
-        match self.try_compute(def) {
+    fn compute(&self, def: Def, hint: algo::intersect::Hint) -> Value {
+        match self.try_compute(def, hint) {
             Some(v) if v.is_finite() => v,
             _ => Value::Undefined,
         }
     }
 
     /// `None` means the object is undefined for the current inputs.
-    fn try_compute(&self, def: Def) -> Option<Value> {
+    fn try_compute(&self, def: Def, hint: algo::intersect::Hint) -> Option<Value> {
         match def {
             Def::FreePoint { x, y } => Some(Value::Point { x, y }),
             Def::Number(v) => Some(Value::Number(v)),
@@ -578,13 +589,13 @@ impl Construction {
                 line,
                 circle,
                 which,
-            } => algo::intersect::line_circle(self, line, circle, which),
+            } => algo::intersect::line_circle(self, line, circle, which, hint),
             Def::IntersectCircles {
                 c1,
                 c2,
                 which,
                 special,
-            } => algo::intersect::circles(self, c1, c2, which, special == Some(true)),
+            } => algo::intersect::circles(self, c1, c2, which, special == Some(true), hint),
             Def::Lines(d) => d.compute(self),
             Def::Conic(d) => d.compute(self),
             Def::Measure(d) => d.compute(self),

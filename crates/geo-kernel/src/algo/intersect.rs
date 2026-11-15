@@ -86,7 +86,7 @@ pub(crate) fn prepare(c: &Construction, def: Def) -> Def {
         (Some((x1, y1, r1)), Some((x2, y2, r2))) => {
             let a = Conic::new(x1, y1, r1);
             let b = Conic::new(x2, y2, r2);
-            shared_circles_point(c, c1, c2, &a, &b).is_some()
+            shared_circles_point(c, c1, c2, &a, &b, Hint::Lookup).is_some()
         }
         _ => false,
     });
@@ -96,6 +96,67 @@ pub(crate) fn prepare(c: &Construction, def: Def) -> Def {
         which,
         special: Some(special),
     }
+}
+
+/// What an intersection needs from the definitions of other objects. It depends only on definitions, which keep their variant and
+/// their parents for good once created, so [`hint`] decides it once in
+/// [`Construction::add`] and every update reuses it instead of walking the
+/// definitions again.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub(crate) enum Hint {
+    /// Nothing to remember: not an intersection, or one without a tangent
+    /// and without a point on both by construction.
+    #[default]
+    None,
+    /// The line is a tangent of the circle (`isDefinedAsTangent`).
+    Tangent,
+    /// The point on both by construction that `handleSpecialCase` makes
+    /// intersection 1: for a line and a circle see
+    /// [`existing_line_circle_point`], for a circle with itself
+    /// [`first_point_on`].
+    Point(u32),
+    /// Decided on every update, for a point whose index does not fit `Point`.
+    Lookup,
+}
+
+/// Decides the [`Hint`] of a new object.
+pub(crate) fn hint(c: &Construction, def: &Def) -> Hint {
+    let existing = match *def {
+        Def::IntersectLineCircle { line, circle, .. } => {
+            let line_def = c.def(line);
+            if defined_as_tangent(line_def, circle) {
+                return Hint::Tangent;
+            }
+            existing_line_circle_point(c, line, line_def, circle)
+        }
+        Def::IntersectCircles { c1, c2, .. } if c1 == c2 => first_point_on(c, c1),
+        _ => None,
+    };
+    match existing {
+        None => Hint::None,
+        Some(s) => u32::try_from(s.index()).map_or(Hint::Lookup, Hint::Point),
+    }
+}
+
+/// The point a hint names; `None` for a hint that names no point, and the
+/// result of `lookup` for [`Hint::Lookup`].
+fn hinted_point(hint: Hint, lookup: impl FnOnce() -> Option<Id>) -> Option<Id> {
+    match hint {
+        Hint::Point(s) => Some(Id(s as usize)),
+        Hint::None | Hint::Tangent => None,
+        Hint::Lookup => lookup(),
+    }
+}
+
+/// Whether the line is a tangent of the circle, so that the intersection is
+/// the tangent's own point (`lines::tangent_point_on` gives `Some`).
+fn defined_as_tangent(line_def: Def, circle: Id) -> bool {
+    matches!(
+        line_def,
+        Def::Lines(
+            LineDef::TangentPoint { circle: k, .. } | LineDef::TangentLine { circle: k, .. }
+        ) if k == circle
+    )
 }
 
 /// Points that an intersection reads besides its line and circles.
@@ -130,6 +191,7 @@ pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
                 _ => {}
             }
         }
+        Def::IntersectCircles { c1, c2, .. } if c1 == c2 => push(first_point_on(c, c1)),
         Def::IntersectCircles { c1, c2, .. } => {
             for s in points_on_both(c, c1, c2) {
                 push(s);
@@ -184,21 +246,35 @@ fn is_epsilon(e: f64, x: f64, y: f64) -> bool {
 type Pt = Option<(f64, f64)>;
 
 /// `which` is 0 or 1: GeoGebra's intersection 1 or 2 (`AlgoIntersectLineConic`).
-pub(crate) fn line_circle(c: &Construction, line: Id, circle: Id, which: u8) -> Option<Value> {
-    let line_def = c.def(line);
-    if let Def::Lines(d) = line_def {
-        // A tangent of this circle has one point, the tangent algorithm's
-        // own (`isDefinedAsTangent`).
-        if let Some(t) = lines::tangent_point_on(c, d, circle) {
-            return if which == 0 { to_value(t) } else { None };
+/// `hint` is the intersection's [`Hint`].
+pub(crate) fn line_circle(
+    c: &Construction,
+    line: Id,
+    circle: Id,
+    which: u8,
+    hint: Hint,
+) -> Option<Value> {
+    let existing = match hint {
+        Hint::None => None,
+        Hint::Point(s) => Some(Id(s as usize)),
+        Hint::Tangent | Hint::Lookup => {
+            let line_def = c.def(line);
+            if let Def::Lines(d) = line_def {
+                // A tangent of this circle has one point, the tangent
+                // algorithm's own (`isDefinedAsTangent`).
+                if let Some(t) = lines::tangent_point_on(c, d, circle) {
+                    return if which == 0 { to_value(t) } else { None };
+                }
+            }
+            existing_line_circle_point(c, line, line_def, circle)
         }
-    }
+    };
     let (cx, cy, r) = c.circle(circle)?;
     let (a, b, cc) = c.raw_line(line)?;
     let g = [a, b, cc];
     let conic = Conic::new(cx, cy, r);
 
-    let p = match existing_line_circle_point(c, line, line_def, circle) {
+    let p = match existing {
         // A point on both by construction is intersection 1 (`handleSpecialCase`).
         Some(s) => {
             let first = c.point(s);
@@ -216,14 +292,22 @@ pub(crate) fn line_circle(c: &Construction, line: Id, circle: Id, which: u8) -> 
 
 /// `which` is 0 or 1: GeoGebra's intersection 1 or 2 (`AlgoIntersectConics`).
 /// `special` is the flag decided at creation (see [`prepare`]).
-pub(crate) fn circles(c: &Construction, c1: Id, c2: Id, which: u8, special: bool) -> Option<Value> {
+/// `hint` is the intersection's [`Hint`].
+pub(crate) fn circles(
+    c: &Construction,
+    c1: Id,
+    c2: Id,
+    which: u8,
+    special: bool,
+    hint: Hint,
+) -> Option<Value> {
     let (x1, y1, r1) = c.circle(c1)?;
     let (x2, y2, r2) = c.circle(c2)?;
     let a = Conic::new(x1, y1, r1);
     let b = Conic::new(x2, y2, r2);
 
     let shared = if special {
-        shared_circles_point(c, c1, c2, &a, &b)
+        shared_circles_point(c, c1, c2, &a, &b, hint)
     } else {
         None
     };
@@ -762,10 +846,33 @@ fn points_on_both(c: &Construction, a: Id, b: Id) -> [Option<Id>; 6] {
     out
 }
 
+/// The first labelled point of a circle's points on the conic, which
+/// `AlgoIntersectConics.getPointFrom1on2(A, A)` checks for a circle
+/// intersected with itself: every point on the circle has the circle in its
+/// incidence list. Those are the points the circle was drawn through, then
+/// the intersection points of the circle in creation order
+/// (`AlgoIntersectSingle` adds its point to the conic).
+fn first_point_on(c: &Construction, circle: Id) -> Option<Id> {
+    circle_points(c, circle)[0].or_else(|| {
+        c.children(circle)
+            .iter()
+            .copied()
+            .find(|&s| intersection_on_circle(c, s, circle))
+    })
+}
+
 /// The point that `AlgoIntersectConics.handleSpecialCase` makes
 /// intersection 1, for two circles (not single points) through a common
 /// point by construction.
-fn shared_circles_point(c: &Construction, c1: Id, c2: Id, a: &Conic, b: &Conic) -> Option<Id> {
+/// `hint` is the intersection's [`Hint`] (only used for a circle with itself).
+fn shared_circles_point(
+    c: &Construction,
+    c1: Id,
+    c2: Id,
+    a: &Conic,
+    b: &Conic,
+    hint: Hint,
+) -> Option<Id> {
     if !(a.is_circle() && b.is_circle()) {
         return None;
     }
@@ -775,6 +882,9 @@ fn shared_circles_point(c: &Construction, c1: Id, c2: Id, a: &Conic, b: &Conic) 
         (a.on_full_conic(p, STANDARD_PRECISION) && b.on_full_conic(p, STANDARD_PRECISION))
             .then_some(s)
     };
+    if c1 == c2 {
+        return hinted_point(hint, || first_point_on(c, c1)).and_then(check);
+    }
     let from = |x: Id, y: Id| points_on_both(c, x, y)[0].and_then(check);
     from(c1, c2).or_else(|| from(c2, c1))
 }
@@ -1063,6 +1173,48 @@ mod tests {
         assert_ne!(xy(&c, "P"), xy(&c, "S"));
         mv(&mut c, "B", -6.0, 1.0);
         assert_eq!(xy(&c, "P"), xy(&c, "R"));
+    }
+
+    #[test]
+    fn the_hint_gives_what_the_definitions_give() {
+        use super::{line_circle, Hint};
+        use crate::kernel::Def;
+        let scripts = [
+            LINE_CIRCLE,
+            "A = (0, 0)\nB = (3, 4)\nC = (-3, -4)\nk = Circle(A, B)\nf = Line(C, B)\n\
+             P = Intersect(f, k, 1)\nQ = Intersect(f, k, 2)\n",
+            "A = (3, 4)\nB = (-3, 4)\nC = (0, -5)\nk = Circle(A, B, C)\nD = (3, -4)\n\
+             f = Line(D, A)\nP = Intersect(f, k, 1)\nQ = Intersect(f, k, 2)\n",
+            "A = (0, 0)\nr = 5\nk = Circle(A, r)\nP = (0, 6.25)\nt = Tangent(P, k)\n\
+             X = Intersect(t_{1}, k, 1)\nY = Intersect(k, t_{2}, 1)\nZ = Intersect(t_{1}, k, 2)\n",
+            "A = (0, 0)\nr = 5\nk = Circle(A, r)\nB = (-1, 1)\nC = (1, 1)\ng = Line(B, C)\n\
+             t = Tangent(g, k)\nX = Intersect(t_{1}, k, 1)\nZ = Intersect(t_{1}, k, 2)\n",
+            "A = (-4, 3)\nB = (1, 1)\nC = (5, 4)\nM = (2, -3)\nk = Circle(M, B)\n\
+             f = AngularBisector(A, B, C)\nP = Intersect(f, k, 1)\nR = Intersect(k, f, 2)\n",
+            "A = (0, 0)\nB = (5, 0)\nk = Circle(A, B)\nG = (-9, 3)\nH = (9, 3)\n\
+             h = Line(G, H)\nS = Intersect(h, k, 1)\nT = (1, 7)\nm = Line(T, S)\n\
+             U = Intersect(m, k, 2)\n",
+        ];
+        let (mut checked, mut hinted) = (0, 0);
+        for script in scripts {
+            let c = load(script).unwrap();
+            for id in c.ids() {
+                if let Def::IntersectLineCircle {
+                    line,
+                    circle,
+                    which,
+                } = c.def(id)
+                {
+                    let hint = super::hint(&c, &c.def(id));
+                    let cached = line_circle(&c, line, circle, which, hint);
+                    let looked_up = line_circle(&c, line, circle, which, Hint::Lookup);
+                    assert_eq!(cached, looked_up, "{script}{}", c.label(id));
+                    checked += 1;
+                    hinted += usize::from(hint != Hint::None);
+                }
+            }
+        }
+        assert_eq!((checked, hinted), (15, 12));
     }
 
     #[test]
