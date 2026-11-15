@@ -90,7 +90,7 @@ fn coords(c: &Construction, id: Id) -> Json {
 /// that differs.
 fn value_texts(c: &Construction, id: Id) -> (String, Option<String>) {
     let value = c.value(id);
-    let raw = describe::value_text(&value);
+    let raw = describe::object_text(c, id);
     let shown = match (c.def(id), value) {
         (Def::Measure(MeasureDef::Angle(..)) | Def::Angle(_), Value::Number(n)) => {
             describe::degrees(n)
