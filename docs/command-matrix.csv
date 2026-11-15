@@ -1,8 +1,8 @@
 command,alias_of,group,priority,status,notes
 Mod,,algebra,P2,partial,"Mod(number, number)"
 Div,,algebra,P2,partial,"Div(number, number)"
-Min,,algebra,P2,partial,"Min(number, number)"
-Max,,algebra,P2,partial,"Max(number, number)"
+Min,,algebra,P2,partial,"Min(number, number); Min(list)"
+Max,,algebra,P2,partial,"Max(number, number); Max(list)"
 LCM,,algebra,P2,partial,"LCM(number, number)"
 GCD,,algebra,P2,partial,"GCD(number, number)"
 Expand,,algebra,P2,todo,
@@ -39,7 +39,7 @@ Intersect,,geometry,P0,partial,line/line; line/circle; circle/circle; line/conic
 IntersectPath,,geometry,P1,todo,
 IntersectRegion,,english,P2,todo,
 Distance,,geometry,P0,partial,"Distance(point, point); Distance(point, line or segment); Distance(line, line)"
-Length,,geometry,P1,partial,Length(segment); Length(vector)
+Length,,geometry,P1,partial,Length(segment); Length(vector); Length(list)
 Radius,,geometry,P1,partial,Radius(circle)
 Type,,geometry,P1,todo,
 CircleArc,,geometry,P1,todo,
@@ -99,7 +99,7 @@ Ordinal,,text,P2,todo,
 ContinuedFraction,,text,P2,todo,
 ReplaceAll,,text,P2,todo,
 Split,,text,P2,todo,
-If,,logical,P2,todo,
+If,,logical,P2,partial,"If(condition, then); If(condition, then, else); If(condition, value, condition, value, ..., else)"
 CountIf,,logical,P2,todo,
 IsInteger,,logical,P2,todo,
 KeepIf,,logical,P2,todo,
@@ -173,23 +173,23 @@ Polar,,conic,P1,partial,"Polar(point, circle or conic)"
 Excentricity,,conic,P1,partial,Excentricity(conic)
 Eccentricity,,conic,P1,partial,Eccentricity(conic)
 Axes,,conic,P1,partial,Axes(conic)
-Sort,,list,P2,todo,
-First,,list,P2,todo,
-Last,,list,P2,todo,
+Sort,,list,P2,partial,"Sort(list of numbers, booleans or points)"
+First,,list,P2,partial,"First(list); First(list, number of elements)"
+Last,,list,P2,partial,"Last(list); Last(list, number of elements)"
 Take,,list,P2,todo,
 RemoveUndefined,,list,P2,todo,
-Reverse,,list,P2,todo,
-Element,,list,P2,todo,
+Reverse,,list,P2,partial,Reverse(list)
+Element,,list,P2,partial,"Element(list, index)"
 IndexOf,,list,P2,todo,
-Append,,list,P2,todo,
-Join,,list,P2,todo,
+Append,,list,P2,partial,"Append(list, object); Append(object, list)"
+Join,,list,P2,partial,"Join(list, list, ...); Join(list of lists)"
 Flatten,,list,P2,todo,
 Insert,,list,P2,todo,
-Sequence,,list,P2,todo,
+Sequence,,list,P2,partial,"Sequence(end); Sequence(start, end); Sequence(start, end, step); Sequence(expression, variable, start, end); Sequence(expression, variable, start, end, step)"
 SelectedElement,,list,P2,todo,
 SelectedIndex,,list,P2,todo,
 RandomElement,,list,P2,todo,
-Product,,list,P2,todo,
+Product,,list,P2,partial,"Product(list); Product(list, number of elements)"
 Frequency,,list,P2,todo,
 Unique,,list,P2,todo,
 Classes,,list,P2,todo,
@@ -215,7 +215,7 @@ StepGraph,,charts,P2,todo,
 LineGraph,,charts,P2,todo,
 PieChart,,charts,P2,todo,
 ContingencyTable,,charts,P2,todo,
-Sum,,statistics,,out_of_scope,
+Sum,,statistics,P2,partial,"Sum(list); Sum(list, number of elements); numbers, points or vectors"
 Mean,mean,statistics,,out_of_scope,
 mean,,statistics,,out_of_scope,
 Variance,,statistics,,out_of_scope,
