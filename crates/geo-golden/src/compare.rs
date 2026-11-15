@@ -6,7 +6,8 @@ use geo_kernel::{Kind, Value};
 /// Result of a successful comparison.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Sign {
-    /// Not a line, or an undefined line.
+    /// Not a line, or an undefined line. Rays must agree in sign, so they
+    /// are not counted.
     NotApplicable,
     /// A line whose sign agrees with GeoGebra's.
     Agrees,
@@ -115,6 +116,33 @@ pub fn compare(expected: &Expected, kind: Kind, actual: &Value) -> Result<Sign, 
                 })
             } else {
                 Err("line differs even up to sign".into())
+            }
+        }
+        (ExpectedData::Vector { x, y }, Value::Vector { x: ax, y: ay }) => {
+            ok(all_agree(&[(*x, ax), (*y, ay)]))
+        }
+        (
+            ExpectedData::Ray { x, y, a, b, c },
+            Value::Ray {
+                x: ax,
+                y: ay,
+                a: aa,
+                b: ab,
+                c: ac,
+            },
+        ) => {
+            if !all_agree(&[(*x, ax), (*y, ay)]) {
+                return Err("ray start points differ".into());
+            }
+            let e = normalise(*a, *b, *c).ok_or("expected ray has a zero direction")?;
+            let k = normalise(aa, ab, ac).ok_or("kernel ray has a zero direction")?;
+            // A ray has a direction: no sign flip is accepted.
+            if all_agree(&[(e.0, k.0), (e.1, k.1), (e.2, k.2)]) {
+                Ok(Sign::NotApplicable)
+            } else if all_agree(&[(e.0, -k.0), (e.1, -k.1), (e.2, -k.2)]) {
+                Err("ray points the opposite way".into())
+            } else {
+                Err("ray lies on a different line".into())
             }
         }
         _ => Err("kernel value has a different shape than its kind".into()),
@@ -228,6 +256,62 @@ mod tests {
             line_scale_agrees(&line(0.0, 1.0, 0.0), &Value::Undefined),
             None
         );
+    }
+
+    #[test]
+    fn vectors_are_compared_by_coordinates() {
+        let e = Expected {
+            kind: Kind::Vector,
+            data: Some(ExpectedData::Vector { x: 3.0, y: -0.0 }),
+        };
+        assert!(compare(&e, Kind::Vector, &Value::Vector { x: 3.0, y: 0.0 }).is_ok());
+        assert!(compare(&e, Kind::Vector, &Value::Vector { x: -3.0, y: 0.0 }).is_err());
+        assert!(compare(&e, Kind::Point, &Value::Point { x: 3.0, y: 0.0 }).is_err());
+        let undefined = Expected {
+            kind: Kind::Vector,
+            data: None,
+        };
+        assert!(compare(&undefined, Kind::Vector, &Value::Undefined).is_ok());
+    }
+
+    #[test]
+    fn rays_need_the_start_point_and_the_same_direction() {
+        // From (1, 2) towards (4, 6): raw coefficients (-4, 3, -2).
+        let e = Expected {
+            kind: Kind::Ray,
+            data: Some(ExpectedData::Ray {
+                x: 1.0,
+                y: 2.0,
+                a: -4.0,
+                b: 3.0,
+                c: -2.0,
+            }),
+        };
+        let ray = |x: f64, s: f64| Value::Ray {
+            x,
+            y: 2.0,
+            a: s * -0.8,
+            b: s * 0.6,
+            c: s * -0.4,
+        };
+        assert_eq!(
+            compare(&e, Kind::Ray, &ray(1.0, 1.0)),
+            Ok(Sign::NotApplicable)
+        );
+        assert_eq!(
+            compare(&e, Kind::Ray, &ray(1.0, -1.0)),
+            Err("ray points the opposite way".into())
+        );
+        assert!(compare(&e, Kind::Ray, &ray(1.5, 1.0)).is_err());
+        let other = Value::Ray {
+            x: 1.0,
+            y: 2.0,
+            a: -0.8,
+            b: 0.6,
+            c: 0.0,
+        };
+        assert!(compare(&e, Kind::Ray, &other).is_err());
+        assert!(compare(&e, Kind::Line, &ray(1.0, 1.0)).is_err());
     }
 
     #[test]

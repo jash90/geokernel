@@ -2,6 +2,7 @@
 
 use crate::interact::ViewTransform;
 use eframe::egui::{Align2, Color32, FontId, Painter, Pos2, Rect, Stroke};
+use geo_kernel::algo::vector;
 use geo_kernel::kernel::{Construction, Value};
 
 const BACKGROUND: Color32 = Color32::from_rgb(0xff, 0xff, 0xff);
@@ -48,6 +49,16 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform)
         }
     }
     for id in c.ids() {
+        // A ray: a half-line from its start point along (b, -a).
+        if let Value::Ray { x, y, a, b, .. } = c.value(id) {
+            let far = (reach + (x - mx).hypot(y - my)) / a.hypot(b);
+            painter.line_segment(
+                [p(x, y), p(x + far * b, y - far * a)],
+                Stroke::new(1.0, LINE),
+            );
+        }
+    }
+    for id in c.ids() {
         if let Value::Circle { cx, cy, r } = c.value(id) {
             painter.circle_stroke(p(cx, cy), (r * t.scale()) as f32, Stroke::new(1.5, CIRCLE));
         }
@@ -55,6 +66,25 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform)
     for id in c.ids() {
         if let Value::Segment { x1, y1, x2, y2 } = c.value(id) {
             painter.line_segment([p(x1, y1), p(x2, y2)], Stroke::new(2.0, SEGMENT));
+        }
+    }
+    for id in c.ids() {
+        // A vector: an arrow from its start point (the origin if it has none).
+        let (Value::Vector { x, y }, Some((x0, y0))) = (c.value(id), vector::start(c, id)) else {
+            continue;
+        };
+        let (from, to) = (p(x0, y0), p(x0 + x, y0 + y));
+        painter.line_segment([from, to], Stroke::new(2.0, SEGMENT));
+        let d = to - from;
+        if d.length() > 0.0 {
+            let u = d / d.length();
+            let n = eframe::egui::vec2(-u.y, u.x);
+            let base = to - 10.0 * u;
+            painter.add(eframe::egui::Shape::convex_polygon(
+                vec![to, base + 4.0 * n, base - 4.0 * n],
+                SEGMENT,
+                Stroke::NONE,
+            ));
         }
     }
     for id in c.ids() {

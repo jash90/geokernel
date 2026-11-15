@@ -63,7 +63,7 @@ One JSON object per file, stored under `golden/<group>/`.
 | `action` | Other fields | Meaning |
 | --- | --- | --- |
 | `initial` | none | The state right after the script has run. |
-| `move` | `label`, `x`, `y` | Move the free point `label` to `(x, y)`. |
+| `move` | `label`, `x`, `y` | Move the free point `label` to `(x, y)`, or set the free vector `label` to `(x, y)`. |
 | `set_number` | `label`, `value` | Set the free number `label` to `value`. |
 
 ## Snapshot
@@ -88,6 +88,8 @@ carries no numeric fields. When it is `true` it carries exactly these:
 | `segment` | `x1`, `y1`, `x2`, `y2` | Start point and end point, in that order. |
 | `circle` | `cx`, `cy`, `r` | Centre and radius. |
 | `number` | `value` | The numeric value. |
+| `vector` | `x`, `y` | The vector's coordinates. Where GeoGebra draws it from (its start point) is not recorded. |
+| `ray` | `x`, `y`, `a`, `b`, `c` | Start point `(x, y)` and the raw GeoGebra coefficients of the line `a*x + b*y + c = 0` it lies on, not normalised. The ray points along `(b, -a)`. |
 
 All numbers are finite JSON numbers that round-trip to the same `f64`.
 A value that is not finite in GeoGebra is recorded as `defined: false`.
@@ -110,6 +112,19 @@ These rules are applied by the Rust side (`crates/geo-golden`).
   the two triples, same sign) is also counted for the `ggb-harness` cases and
   reported per group and defining command; it does not fail the comparison.
 - Segments are compared with their end points in order.
+- Vectors are compared by `x` and `y`.
+- Rays: the start points must agree, and the coefficients are normalised like
+  those of a line, but the sign must agree too: a ray with the opposite sign
+  points the other way and fails the comparison. Rays are not counted in the
+  line signs.
+
+Free vectors come from a script line `v = (x, y)` whose label starts with a
+lower-case letter; with an upper-case label the same line makes a point, as in
+GeoGebra.
+
+The types `vector` and `ray`, the moving of a free vector and these rules were
+added after the first golden files were written. The addition is backwards
+compatible: no existing file changes and the schema version stays 1.
 
 ## Known gaps
 

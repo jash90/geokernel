@@ -13,6 +13,7 @@ use crate::algo::conic::ConicDef;
 use crate::algo::lines::LineDef;
 use crate::algo::measure::MeasureDef;
 use crate::algo::transform::TransformDef;
+use crate::algo::vector::VectorDef;
 use crate::algo::{
     self, check_index, join, line_through, Group, Parents, CIRCLE, LINE, LINE_LIKE, NUMBER, POINT,
 };
@@ -38,6 +39,8 @@ pub enum Kind {
     Segment,
     Circle,
     Number,
+    Vector,
+    Ray,
 }
 
 impl fmt::Display for Kind {
@@ -48,6 +51,8 @@ impl fmt::Display for Kind {
             Kind::Segment => "segment",
             Kind::Circle => "circle",
             Kind::Number => "number",
+            Kind::Vector => "vector",
+            Kind::Ray => "ray",
         })
     }
 }
@@ -83,6 +88,19 @@ pub enum Value {
         r: f64,
     },
     Number(f64),
+    Vector {
+        x: f64,
+        y: f64,
+    },
+    /// A ray from the start point `(x, y)` along the line `a*x + b*y + c = 0`,
+    /// stored like [`Value::Line`]; it points along the direction `(b, -a)`.
+    Ray {
+        x: f64,
+        y: f64,
+        a: f64,
+        b: f64,
+        c: f64,
+    },
     /// The object does not exist for the current positions
     /// (for example two circles that no longer meet).
     Undefined,
@@ -114,6 +132,8 @@ impl Value {
             }
             Value::Circle { cx, cy, r } => cx.is_finite() && cy.is_finite() && r.is_finite(),
             Value::Number(v) => v.is_finite(),
+            Value::Vector { x, y } => x.is_finite() && y.is_finite(),
+            Value::Ray { x, y, a, b, c } => [x, y, a, b, c].iter().all(|v| v.is_finite()),
             Value::Undefined => true,
         }
     }
@@ -182,6 +202,8 @@ pub enum Def {
     Measure(MeasureDef),
     /// Reflections, rotations and dilations.
     Transform(TransformDef),
+    /// Vectors, rays and translations.
+    Vector(VectorDef),
 }
 
 impl Def {
@@ -200,11 +222,15 @@ impl Def {
             Def::Conic(d) => d.kind(),
             Def::Measure(d) => d.kind(),
             Def::Transform(d) => d.kind(),
+            Def::Vector(d) => d.kind(),
         }
     }
 
     pub fn is_free(&self) -> bool {
-        matches!(self, Def::FreePoint { .. } | Def::Number(_))
+        matches!(
+            self,
+            Def::FreePoint { .. } | Def::Number(_) | Def::Vector(VectorDef::Free { .. })
+        )
     }
 
     /// The objects this definition reads.
@@ -227,6 +253,7 @@ impl Def {
             Def::Conic(d) => d.parents(),
             Def::Measure(d) => d.parents(),
             Def::Transform(d) => d.parents(),
+            Def::Vector(d) => d.parents(),
         }
     }
 }
@@ -349,7 +376,8 @@ impl Construction {
         let value = self.compute(def);
         let parents = def.parents();
         // Objects the rule also reads, beyond its parents.
-        let hidden = algo::intersect::hidden_parents(self, &def);
+        let mut hidden = algo::intersect::hidden_parents(self, &def);
+        hidden.extend(algo::vector::hidden_parents(self, &def));
         let all = || parents.as_slice().iter().chain(&hidden);
         for (k, parent) in all().enumerate() {
             // An object that is read twice is still one child.
@@ -366,21 +394,25 @@ impl Construction {
         Ok(id)
     }
 
-    /// Moves a free point and recomputes everything that depends on it.
-    /// Returns how many dependent objects were recomputed.
+    /// Moves a free point or a free vector and recomputes everything that
+    /// depends on it. Returns how many dependent objects were recomputed.
     pub fn move_point(&mut self, id: Id, x: f64, y: f64) -> Result<usize, Error> {
         let def = self.defs.get(id.0).ok_or(Error::UnknownObject)?;
-        if !matches!(def, Def::FreePoint { .. }) {
-            return Err(Error::NotFree(self.labels[id.0].clone()));
-        }
+        let (def, new) = match def {
+            Def::FreePoint { .. } => (Def::FreePoint { x, y }, Value::Point { x, y }),
+            Def::Vector(VectorDef::Free { .. }) => (
+                Def::Vector(VectorDef::Free { x, y }),
+                Value::Vector { x, y },
+            ),
+            _ => return Err(Error::NotFree(self.labels[id.0].clone())),
+        };
         if !(x.is_finite() && y.is_finite()) {
             return Err(Error::NotFinite);
         }
-        let new = Value::Point { x, y };
         if self.values[id.0] == new {
             return Ok(0);
         }
-        self.defs[id.0] = Def::FreePoint { x, y };
+        self.defs[id.0] = def;
         self.values[id.0] = new;
         Ok(self.propagate(id))
     }
@@ -496,6 +528,7 @@ impl Construction {
             Def::Conic(d) => d.check(self),
             Def::Measure(d) => d.check(self),
             Def::Transform(d) => d.check(self),
+            Def::Vector(d) => d.check(self),
         }
     }
 
@@ -549,6 +582,7 @@ impl Construction {
             Def::Conic(d) => d.compute(self),
             Def::Measure(d) => d.compute(self),
             Def::Transform(d) => d.compute(self),
+            Def::Vector(d) => d.compute(self),
         }
     }
 

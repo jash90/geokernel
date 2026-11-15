@@ -1,5 +1,6 @@
 //! Draws a construction as an SVG image.
 
+use crate::algo::vector::start;
 use crate::kernel::{Construction, Value};
 use std::fmt::Write;
 
@@ -37,6 +38,13 @@ impl View {
                 Value::Circle { cx, cy, r } => {
                     grow(cx - r, cy - r);
                     grow(cx + r, cy + r);
+                }
+                Value::Ray { x, y, .. } => grow(x, y),
+                Value::Vector { x, y } => {
+                    if let Some((x0, y0)) = start(c, id) {
+                        grow(x0, y0);
+                        grow(x0 + x, y0 + y);
+                    }
                 }
                 _ => {}
             }
@@ -141,6 +149,44 @@ pub fn render(c: &Construction, view: View, width: u32, height: u32) -> String {
                     ty = sy(y) - 8.0,
                     label = escape(c.label(id)),
                 );
+            }
+            Value::Ray { x, y, a, b, .. } => {
+                // A half-line from the start point along (b, -a), long
+                // enough to leave the view.
+                let far = (reach + (x - mx).hypot(y - my)) / a.hypot(b);
+                let _ = writeln!(
+                    lines,
+                    r##"<line x1="{:.2}" y1="{:.2}" x2="{:.2}" y2="{:.2}"/>"##,
+                    sx(x),
+                    sy(y),
+                    sx(x + far * b),
+                    sy(y - far * a),
+                );
+            }
+            Value::Vector { x: vx, y: vy } => {
+                let Some((x0, y0)) = start(c, id) else {
+                    continue;
+                };
+                let (px, py) = (sx(x0), sy(y0));
+                let (qx, qy) = (sx(x0 + vx), sy(y0 + vy));
+                let _ = writeln!(
+                    segments,
+                    r##"<line x1="{px:.2}" y1="{py:.2}" x2="{qx:.2}" y2="{qy:.2}"/>"##,
+                );
+                // Arrow head at the end point, in pixels.
+                let len = (qx - px).hypot(qy - py);
+                if len > 0.0 {
+                    let (ux, uy) = ((qx - px) / len, (qy - py) / len);
+                    let (bx, by) = (qx - 10.0 * ux, qy - 10.0 * uy);
+                    let _ = writeln!(
+                        segments,
+                        r##"<polygon points="{qx:.2},{qy:.2} {:.2},{:.2} {:.2},{:.2}" fill="#202124"/>"##,
+                        bx - 4.0 * uy,
+                        by + 4.0 * ux,
+                        bx + 4.0 * uy,
+                        by - 4.0 * ux,
+                    );
+                }
             }
             Value::Number(_) | Value::Undefined => {}
         }

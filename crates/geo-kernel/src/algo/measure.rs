@@ -636,7 +636,7 @@ mod tests {
         let c = load(
             "A = (0, 0)\nB = (10000, 0)\nC = (0, 1)\nD = (10000, 1.000001)\n\
              l = Line(A, B)\nm = Line(C, D)\nd = Distance(l, m)\n\
-             far = (0.001, 1000000)\nv = Line(A, far)\nt = Slope(v)\n",
+             F = (0.001, 1000000)\nv = Line(A, F)\nt = Slope(v)\n",
         )
         .unwrap();
         close(num(&c, "d"), 0.0);
