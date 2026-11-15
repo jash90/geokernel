@@ -8,6 +8,9 @@ use crate::workbench::Row;
 use eframe::egui::Rect;
 use geo_kernel::kernel::Construction;
 
+/// A named piece of per-object work over the whole construction.
+pub type Work = (&'static str, fn(&Construction) -> u64);
+
 /// Which user interface this tree has.
 pub const TREE: &str = "rebuilt";
 
@@ -48,7 +51,7 @@ pub fn keyboard_open(app: &App) -> bool {
 
 /// Per-object work outside the kernel that this tree does in every frame,
 /// as `(name, work over all objects)`, timed separately.
-pub fn per_object_work() -> Vec<(&'static str, fn(&Construction) -> u64)> {
+pub fn per_object_work() -> Vec<Work> {
     vec![("style::color of every object", |c| {
         c.ids()
             .map(|id| u64::from(crate::style::color(c, id).r()))

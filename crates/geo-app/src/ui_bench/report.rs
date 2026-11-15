@@ -292,9 +292,9 @@ pub fn json(
                 s.max(|f| f.recomputed),
             ),
         ];
-        let _ = write!(
+        let _ = writeln!(
             j,
-            "    {{\"scene\": \"{}\", \"state\": \"{}\", \"objects\": {}, \"on_screen\": {}, \"frames\": {}, \"ok\": {},\n",
+            "    {{\"scene\": \"{}\", \"state\": \"{}\", \"objects\": {}, \"on_screen\": {}, \"frames\": {}, \"ok\": {},",
             esc(s.scene),
             s.state,
             s.objects,
@@ -302,9 +302,9 @@ pub fn json(
             s.frames.len(),
             s.ok()
         );
-        let _ = write!(
+        let _ = writeln!(
             j,
-            "     \"ui_ms\": {{\"min\": {:.4}, \"median\": {:.4}}}, \"tess_ms\": {{\"min\": {:.4}, \"median\": {:.4}}},\n",
+            "     \"ui_ms\": {{\"min\": {:.4}, \"median\": {:.4}}}, \"tess_ms\": {{\"min\": {:.4}, \"median\": {:.4}}},",
             ms(s.min(|f| f.ui_ns)),
             ms(s.med(|f| f.ui_ns)),
             ms(s.min(|f| f.tess_ns)),
