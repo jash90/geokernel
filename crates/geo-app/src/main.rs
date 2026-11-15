@@ -24,6 +24,8 @@ mod frame_counts;
 #[cfg(test)]
 mod render_tests;
 #[cfg(test)]
+mod ui_bench;
+#[cfg(test)]
 mod ui_tests;
 
 use app::App;
