@@ -71,6 +71,9 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
         return Err(format!("`{name}` is not a valid object name"));
     }
     let rhs = rhs.trim();
+    if let Some(result) = crate::algo::polygon::exec(c, name, rhs) {
+        return result;
+    }
     if let Some(defs) = parse_multi(c, rhs) {
         return add_outputs(c, name, defs?).map(Some);
     }
@@ -83,7 +86,7 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
 
 /// `Name(args)` split into the name and the trimmed arguments; `None` for
 /// anything else (a point literal, a number, a malformed line).
-fn split_call(rhs: &str) -> Option<(&str, Vec<&str>)> {
+pub(crate) fn split_call(rhs: &str) -> Option<(&str, Vec<&str>)> {
     if rhs.starts_with('(') {
         return None;
     }

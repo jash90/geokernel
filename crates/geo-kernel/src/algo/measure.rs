@@ -514,8 +514,8 @@ mod tests {
             ("d = Radius(k, k)", "`Radius` does not take 2 argument(s)"),
             ("d = Area(A, B)", "`Area` does not take 2 argument(s)"),
             (
-                "d = Area(A, B, P, C, A)",
-                "`Area` does not take 5 argument(s)",
+                "d = Area(A, B, P, C, k)",
+                "`k` is a circle, expected a point",
             ),
             ("d = Slope(l, l)", "`Slope` does not take 2 argument(s)"),
             ("d = AffineRatio(A, B)", "`AffineRatio` does not take 2"),
