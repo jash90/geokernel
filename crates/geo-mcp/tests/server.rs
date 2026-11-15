@@ -879,11 +879,10 @@ fn the_headless_feature_is_not_a_default_of_the_app() {
     }
 }
 
-/// The value field of a free number is put into the row with `ui.put`,
-/// which moves the list's cursor to the field's bottom: the next row starts
-/// 12 points early and covers the bottom of the number's row.
+/// The value field of a free number sits inside its row without moving the
+/// list's cursor: the next row starts where the number's row ends (with
+/// `ui.put` it started 12 points early and covered its bottom).
 #[test]
-#[ignore = "app bug: the row after a free number starts inside it (algebra.rs, ui.put of the value field)"]
 fn a_free_number_row_is_as_tall_as_it_is_painted() {
     let mut s = Server::new();
     call(&mut s, "reset", json!({"script": "r = 2\nA = (0, 0)\n"}));
@@ -897,6 +896,70 @@ fn a_free_number_row_is_as_tall_as_it_is_painted() {
         next[1],
         number[1] + number[3],
         "the next row starts inside it"
+    );
+}
+
+/// A list of 40 rows is taller than the panel: the rows in view are named
+/// by their objects at any scroll offset, and the rows outside it are
+/// listed too, where they would be, with `in_view: false`.
+#[test]
+fn rows_are_named_in_and_out_of_view_at_any_scroll_offset() {
+    let mut s = Server::new();
+    let script: String = (0..40).map(|i| format!("P_{{{i}}} = ({i}, 0)\n")).collect();
+    call(&mut s, "reset", json!({ "script": script }));
+    let names: Vec<String> = (0..40).map(|i| format!("P_{{{i}}}")).collect();
+    let rows = |s: &mut Server| -> Vec<Value> {
+        let list = call(s, "widgets", json!({}));
+        list["widgets"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|w| w["id"].as_str().unwrap().starts_with("row:"))
+            .cloned()
+            .collect()
+    };
+    let mut first_in_view = Vec::new();
+    for scroll in [0.0, -1100.0] {
+        if scroll != 0.0 {
+            let first = widget(&mut s, "row:P_{0}");
+            let p = at(first[0] + 100.0, 300.0);
+            let mut frames = vec![frame(vec![ev("move", p.clone())])];
+            let mut wheel = ev("wheel", p);
+            wheel["dy"] = json!(scroll);
+            frames.push(frame(vec![wheel]));
+            input(&mut s, frames, true);
+        }
+        let list = rows(&mut s);
+        let ids: Vec<&str> = list.iter().map(|w| w["id"].as_str().unwrap()).collect();
+        let expected: Vec<String> = names.iter().map(|n| format!("row:{n}")).collect();
+        assert_eq!(ids, expected, "scrolled by {scroll}: every row, in order");
+        for (w, n) in list.iter().zip(&names) {
+            assert_eq!(w["object"], json!(n));
+        }
+        let in_view: Vec<usize> = (0..40)
+            .filter(|&i| list[i].get("in_view").is_none())
+            .collect();
+        assert!(!in_view.is_empty() && in_view.len() < 40, "{in_view:?}");
+        // The rows in view follow one another; the others are flagged.
+        assert!(in_view.windows(2).all(|w| w[1] == w[0] + 1), "{in_view:?}");
+        for (i, w) in list.iter().enumerate() {
+            if !in_view.contains(&i) {
+                assert_eq!(w["in_view"], json!(false), "{w}");
+            }
+        }
+        // The algebra report names every row too.
+        let st = call(&mut s, "state", json!({"verbose": true}));
+        let algebra = st["algebra"].as_array().unwrap();
+        assert_eq!(algebra.len(), 40);
+        for (r, n) in algebra.iter().zip(&names) {
+            assert_eq!(r["name"], json!(n));
+            assert!(r["head"].is_string(), "{r}");
+        }
+        first_in_view.push(in_view[0]);
+    }
+    assert!(
+        first_in_view[1] > first_in_view[0] + 10,
+        "{first_in_view:?}"
     );
 }
 
