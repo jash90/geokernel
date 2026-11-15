@@ -291,9 +291,10 @@ impl Workbench {
         let Some(g) = self.gesture.take() else {
             return;
         };
-        if g.committed {
+        // If the state before the drag cannot be rebuilt, the drag stays
+        // as the undo step it already is and `restore` sets the notice.
+        if g.committed && self.restore(g.snapshot).is_ok() {
             self.undo.discard_last();
-            let _ = self.restore(g.snapshot);
         }
     }
 

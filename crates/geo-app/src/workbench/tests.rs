@@ -357,3 +357,21 @@ fn a_failed_rollback_is_told_and_kept_as_one_undo_step() {
     assert_eq!(labels(&w), ["A"]);
     assert!(w.notice.is_none() && !w.undo());
 }
+
+#[test]
+fn a_cancelled_drag_that_cannot_be_rolled_back_stays_undoable() {
+    let mut w = Workbench::from_script("A = (0, 0)\n").unwrap();
+    let a = w.construction().id("A").unwrap();
+    w.begin_gesture();
+    w.move_point(a, 2.0, 1.0);
+    w.fail_next_rebuild = Some("test".into());
+    w.cancel_gesture();
+    assert!(w.notice.is_some());
+    assert!(w.can_undo(), "the drag is still an undo step");
+    assert!(w.undo());
+    let a = w.construction().id("A").unwrap();
+    assert_eq!(
+        w.construction().value(a),
+        geo_kernel::kernel::Value::Point { x: 0.0, y: 0.0 }
+    );
+}

@@ -93,6 +93,17 @@ fn a_press_on_a_dependent_point_neither_moves_it_nor_pans() {
     drag(&mut h, from, to);
     assert!(close(top_left(&h), corner), "the view panned");
     assert!(close(point(&h, "A"), (0.0, 0.0)));
+    // The move-view tool pans even from a point.
+    h.state_mut().select_tool(Tool::MoveView);
+    let (from, to) = (on_screen(&h, 0.0, 0.0), on_screen(&h, 1.0, 0.0));
+    drag(&mut h, from, to);
+    assert!(close(point(&h, "A"), (0.0, 0.0)));
+    assert!(
+        !close(top_left(&h), corner),
+        "the move-view tool did not pan"
+    );
+    let corner = top_left(&h);
+    h.state_mut().select_tool(Tool::Line);
     // Away from points a drag still pans.
     let (from, to) = (on_screen(&h, -3.0, 3.0), on_screen(&h, -1.0, 3.0));
     drag(&mut h, from, to);
@@ -123,4 +134,22 @@ fn a_second_click_on_a_just_placed_point_hits_it_and_makes_no_second_point() {
     assert_eq!(h.state().tool.picks().len(), 1);
     click(&mut h, world(3.0, 1.0));
     assert_eq!(labels(&h), ["A", "B", "C", "c"]);
+}
+
+#[test]
+fn a_notice_shows_over_the_drawing_and_its_close_button_takes_the_click() {
+    let long = "Pominięte obiekty: 3 (jądro ich nie obsługuje), zależne od nich: 2, \
+                wartości różne od zapisanych w pliku: 1, wczytane linie: 40. \
+                Uwagi: a long note that has to wrap over more than one line";
+    for tool in [Tool::Move, Tool::Point] {
+        let mut h = harness("A = (0, 0)\n");
+        h.state_mut().select_tool(tool);
+        h.state_mut().wb.notice = Some(long.into());
+        h.run();
+        let _ = h.get_by_label(long);
+        h.get_by_label("Zamknij komunikat").click();
+        h.run();
+        assert!(h.state().wb.notice.is_none(), "{tool:?}");
+        assert_eq!(labels(&h), ["A"], "{tool:?}: the click reached the drawing");
+    }
 }

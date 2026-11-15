@@ -203,8 +203,9 @@ fn undo_in_the_middle_of_a_tool_removes_the_last_point_and_resets_the_picks() {
 
 #[test]
 fn a_regular_polygon_with_fewer_than_three_vertices_is_undefined() {
-    // As in the reference, the count is not checked by the dialog: the
-    // polygon is made and stays undefined while n < 3.
+    // As in the reference (the dialog does not check the count, and
+    // `AlgoPolygonRegularND.checkUnDefined` makes the polygon undefined
+    // below three vertices), the number and an undefined polygon are made.
     let mut h = with_clicks(Tool::RegularPolygon, &[(0.0, 2.0), (1.0, 2.0)]);
     assert!(h.state().tool.asking().is_some());
     h.state_mut().number_text = "2".into();

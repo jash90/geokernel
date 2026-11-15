@@ -132,7 +132,8 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             app.wb.begin_gesture();
             app.wb.selected = Some(drag.id());
         }
-        app.panning = app.drag.is_none() && !on_point;
+        // The move-view tool pans from anywhere.
+        app.panning = app.drag.is_none() && (!on_point || tool == Tool::MoveView);
     }
     if response.dragged() {
         if let Some(drag) = app.drag {
