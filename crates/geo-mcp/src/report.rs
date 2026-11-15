@@ -300,7 +300,14 @@ pub fn state(h: &Headless, verbose: bool) -> Json {
             "dragging": app.drag.map_or(Json::Null, |d| label_of(h, Some(d.id()))),
         });
         let hovered = label_of(h, app.hovered);
-        let decor = json!({"axes": app.decor.axes, "grid": app.decor.grid});
+        // The grid step new and dragged free points are captured to, or
+        // null while capturing is off.
+        let snap = app.view.map(|(_, t)| app.snap(t.scale()).step());
+        let decor = json!({
+            "axes": app.decor.axes,
+            "grid": app.decor.grid,
+            "snap_step": snap.flatten(),
+        });
         let style_bar = app.style_bar;
         let regions = app.regions;
         let region = |r: geo_app_core::geom::Rect| json!([r.min.x, r.min.y, r.width(), r.height()]);

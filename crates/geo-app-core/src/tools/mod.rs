@@ -16,7 +16,7 @@
 
 mod recipe;
 
-use crate::describe::fixed;
+use crate::describe::exact;
 use crate::labels::next_label;
 use geo_kernel::kernel::Kind;
 
@@ -271,10 +271,11 @@ impl ToolState {
     }
 
     /// Handles a click. `hit` is the existing object under the pointer that
-    /// the tool may use (see [`Self::accepts_object`]), `world` the pointer
-    /// position, `decimals` how many decimals a new point's coordinates get
-    /// (see `describe::click_decimals`), `is_taken` tells whether a label is
-    /// in use.
+    /// the tool may use (see [`Self::accepts_object`]), `world` the position
+    /// a new point takes (already captured to the grid, see `snap`), kept at
+    /// full precision (the reference app stores what `transformCoords` gives
+    /// and only prints two decimals), `is_taken` tells whether a label is in
+    /// use.
     ///
     /// A click that lands on an existing point never creates a new point: it
     /// picks the point if the tool can use it, and is ignored otherwise.
@@ -282,7 +283,6 @@ impl ToolState {
         &mut self,
         hit: Option<(&str, Kind)>,
         world: (f64, f64),
-        decimals: usize,
         is_taken: &dyn Fn(&str) -> bool,
     ) -> Outcome {
         match (self.tool, hit) {
@@ -309,11 +309,7 @@ impl ToolState {
             ),
             _ if self.accepts_new_point() && !matches!(hit, Some((_, Kind::Point))) => {
                 let label = next_label(Kind::Point, |l| is_taken(l) || self.picked(l));
-                let line = format!(
-                    "{label} = ({}, {})",
-                    fixed(world.0, decimals),
-                    fixed(world.1, decimals)
-                );
+                let line = format!("{label} = ({}, {})", exact(world.0), exact(world.1));
                 (
                     Pick::Object {
                         label,

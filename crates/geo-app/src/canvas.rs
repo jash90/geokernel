@@ -1,7 +1,6 @@
 //! The graphics view: camera, pointer interaction, tools, the buttons over it.
 
 use crate::app::{App, ViewRequest};
-use crate::describe;
 use crate::draw::{self, Scene};
 use crate::floating;
 use crate::geom::{ToCore, ToEgui};
@@ -288,7 +287,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     }
     if let (Some(pos), Some(drag)) = (intents.drag_to, app.drag) {
         let (sx, sy) = to_local(pos.egui());
-        let (x, y) = drag.target(&t, sx, sy);
+        let (x, y) = drag.target(&t, &app.snap(t.scale()), sx, sy);
         app.wb.move_point(drag.id(), x, y);
     }
     if let Some((dx, dy)) = intents.pan {
@@ -347,7 +346,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         app.press_view = None;
     }
     painter.rect_filled(rect, 0.0, theme::WHITE);
-    grid::paint(&painter, rect, &t, app.decor);
+    grid::paint(&painter, rect, &t, app.decor, app.metrics.numbering_px);
     let c = app.wb.construction();
     let visible = |id: Id| show_all || app.wb.is_visible(id);
     let ghost = |id: Id| show_all && !app.wb.is_visible(id);
@@ -472,7 +471,9 @@ fn click(app: &mut App, t: &ViewTransform, pos: (f64, f64), hit: Option<Id>) {
         app.style_bar = false;
         return;
     }
-    let world = t.screen_to_world(pos.0, pos.1);
+    // A new point takes the position captured to the grid
+    // (`transformCoords` in `updateNewPoint`).
+    let world = app.snap(t.scale()).apply(t.screen_to_world(pos.0, pos.1));
     let hit_owned: Option<(String, Kind)> = hit.map(|id| {
         let c = app.wb.construction();
         (c.label(id).to_owned(), c.kind(id))
@@ -482,7 +483,6 @@ fn click(app: &mut App, t: &ViewTransform, pos: (f64, f64), hit: Option<Id>) {
         app.tool.click(
             hit_owned.as_ref().map(|(l, k)| (l.as_str(), *k)),
             world,
-            describe::click_decimals(t.scale()),
             &|l| c.id(l).is_some(),
         )
     };

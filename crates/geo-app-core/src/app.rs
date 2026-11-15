@@ -9,6 +9,7 @@ use crate::interact::{Drag, ViewTransform};
 use crate::keyboard::Keyboard;
 use crate::layout::{Overlays, Regions};
 use crate::metrics::Metrics;
+use crate::snap::Snap;
 use crate::tools::{Outcome, Tool, ToolState, GROUPS};
 use crate::view::Camera;
 use crate::workbench::Workbench;
@@ -78,6 +79,12 @@ pub struct App {
 }
 
 impl App {
+    /// How new and dragged free points are captured to the grid at `scale`
+    /// pixels per unit (on while the grid or the axes are shown).
+    pub fn snap(&self, scale: f64) -> Snap {
+        Snap::new(&self.metrics, scale, self.decor.grid || self.decor.axes)
+    }
+
     pub fn new(wb: Workbench, load_error: Option<String>) -> Self {
         App {
             wb,

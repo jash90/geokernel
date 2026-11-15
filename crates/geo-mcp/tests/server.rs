@@ -997,7 +997,9 @@ fn the_drag_delay_and_the_click_threshold_decide_through_the_frame_loop() {
     );
     assert_eq!(objects(&state(&mut s)), ["A"], "a long press is a tap");
 
-    call(&mut s, "reset", json!({"script": "A = (0, 0)\n"}));
+    // A is off the grid and stays off it here: a free point near a grid
+    // crossing is captured to it (`transformCoords`).
+    call(&mut s, "reset", json!({"script": "A = (0.5, 0.5)\n"}));
     let delay = m.drag_delay;
     let threshold = m.drag_threshold as f64;
     // Presses A, moves it by `by` in `moves` steps `dt` apart, releases.
@@ -1025,14 +1027,14 @@ fn the_drag_delay_and_the_click_threshold_decide_through_the_frame_loop() {
     let st = press_and_move(&mut s, 30.0, 4, 0.2 * delay);
     assert_eq!(
         point(&st, "A"),
-        (0.0, 0.0),
+        (0.5, 0.5),
         "moves within the delay dragged"
     );
-    call(&mut s, "reset", json!({"script": "A = (0, 0)\n"}));
+    call(&mut s, "reset", json!({"script": "A = (0.5, 0.5)\n"}));
     let st = press_and_move(&mut s, threshold - 4.0, 2, delay + 0.05);
     let (x, k) = (point(&st, "A").0, st["view"]["scale"].as_f64().unwrap());
     assert!(
-        (x - (threshold - 4.0) / k).abs() < 1e-6,
+        (x - 0.5 - (threshold - 4.0) / k).abs() < 1e-6,
         "slop held back: {x}"
     );
     assert_eq!(

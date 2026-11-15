@@ -4,6 +4,7 @@
 //! the drawing area and the y axis pointing down. World coordinates have the
 //! y axis pointing up.
 
+use crate::snap::Snap;
 use geo_kernel::kernel::{Construction, Def, Id, Value};
 use geo_kernel::svg::View;
 
@@ -104,10 +105,12 @@ impl Drag {
 
     /// Where the held point goes for the pointer at `(sx, sy)`: under the
     /// pointer, wherever it was grabbed (`handleMovedElementFreePoint` sets
-    /// no grab offset, and `movePoint` takes the pointer's coordinates).
+    /// no grab offset, and `movePoint` takes the pointer's coordinates),
+    /// captured to the grid by `snap` (`wrapMouseDraggedND` calls
+    /// `transformCoords` before the point moves).
     #[inline]
-    pub fn target(&self, t: &ViewTransform, sx: f64, sy: f64) -> (f64, f64) {
-        t.screen_to_world(sx, sy)
+    pub fn target(&self, t: &ViewTransform, snap: &Snap, sx: f64, sy: f64) -> (f64, f64) {
+        snap.apply(t.screen_to_world(sx, sy))
     }
 }
 
@@ -182,7 +185,7 @@ mod tests {
         let before = c.value(mc);
         let (ax, ay) = screen_of(&c, &t, "A");
         let drag = Drag::begin(&c, c.id("A").unwrap()).expect("grab A");
-        let (tx, ty) = drag.target(&t, ax - 60.0, ay - 40.0);
+        let (tx, ty) = drag.target(&t, &Snap::OFF, ax - 60.0, ay - 40.0);
         let recomputed = c.move_point(drag.id(), tx, ty).unwrap();
         assert!(recomputed > 0);
         let (nx, ny) = screen_of(&c, &t, "A");
@@ -214,9 +217,24 @@ mod tests {
         let t = ViewTransform::fit(&c, 800.0, 600.0);
         let (ax, ay) = screen_of(&c, &t, "A");
         let drag = Drag::begin(&c, c.id("A").unwrap()).unwrap();
-        let (x, y) = drag.target(&t, ax + 3.0, ay - 2.0);
+        let (x, y) = drag.target(&t, &Snap::OFF, ax + 3.0, ay - 2.0);
         let (wx, wy) = t.screen_to_world(ax + 3.0, ay - 2.0);
         assert!((x - wx).abs() < 1e-12 && (y - wy).abs() < 1e-12);
         assert!(x.abs() > 1e-6, "not where A was");
+    }
+
+    /// `transformCoords` runs on every drag move: near a grid crossing the
+    /// point lands on it.
+    #[test]
+    fn the_target_is_captured_to_the_grid() {
+        let c = triangle();
+        let t = crate::view::Camera::STANDARD.transform(800.0, 600.0);
+        let drag = Drag::begin(&c, c.id("A").unwrap()).unwrap();
+        let snap = Snap::new(&crate::metrics::Metrics::desktop(), t.scale(), true);
+        let (sx, sy) = t.world_to_screen(3.0, 2.0);
+        assert_eq!(drag.target(&t, &snap, sx + 5.0, sy - 5.0), (3.0, 2.0));
+        // 8 px is outside the 6.25 px box.
+        let (x, _) = drag.target(&t, &snap, sx + 8.0, sy);
+        assert!((x - 3.16).abs() < 1e-9, "{x}");
     }
 }

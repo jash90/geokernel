@@ -8,6 +8,11 @@ const TOUCH_FACTOR: f64 = 3.0;
 /// `DrawPoint.SELECTION_RADIUS_MIN` (12 px).
 const SELECTION_RADIUS_MIN: f64 = 12.0;
 
+/// `EuclidianView.setAxesIntervals`: one axis number per `maxPix` (100 px).
+const AXIS_NUMBERING_PX: f64 = 100.0;
+/// `EuclidianStyleConstants.POINT_CAPTURING_GRID` (0.125).
+const POINT_CAPTURING_GRID: f64 = 0.125;
+
 /// `EuclidianConstants.DRAGGING_DELAY` (100 ms), the same for every pointer.
 const DRAGGING_DELAY: f64 = 0.1;
 /// `EuclidianController.DRAG_THRESHOLD` (10 pixels), the same for every
@@ -47,6 +52,15 @@ pub struct Metrics {
     /// A point is hit within the threshold plus this
     /// (`DrawPoint.SELECTION_RADIUS_MIN`, 12).
     pub point_selection_min: f64,
+    /// The axes carry at most one number per this many pixels, and the major
+    /// grid lines are the numbering step apart
+    /// (`EuclidianView.setAxesIntervals`, `maxPix` 100).
+    pub numbering_px: f64,
+    /// A new or dragged free point is captured to a major grid crossing less
+    /// than this fraction of the grid step away on both axes, while the grid
+    /// or the axes are shown (`EuclidianController.transformCoords`,
+    /// `POINT_CAPTURING_GRID` 0.125).
+    pub grid_capture: f64,
     /// The pointer can hover (a mouse). Without hover the window shows in
     /// the open what a mouse user finds by pointing, such as the hint of the
     /// move tool.
@@ -80,6 +94,8 @@ impl Metrics {
             touch_threshold: DEFAULT_THRESHOLD * TOUCH_FACTOR,
             touch_retry_factor: TOUCH_FACTOR,
             point_selection_min: SELECTION_RADIUS_MIN,
+            numbering_px: AXIS_NUMBERING_PX,
+            grid_capture: POINT_CAPTURING_GRID,
             hover: true,
             toolbar_height: 52.0,
             toolbar_button: 40.0,
@@ -103,6 +119,8 @@ impl Metrics {
             touch_threshold: DEFAULT_THRESHOLD * TOUCH_FACTOR,
             touch_retry_factor: TOUCH_FACTOR,
             point_selection_min: SELECTION_RADIUS_MIN,
+            numbering_px: AXIS_NUMBERING_PX,
+            grid_capture: POINT_CAPTURING_GRID,
             hover: false,
             toolbar_height: 60.0,
             toolbar_button: 48.0,
@@ -140,6 +158,11 @@ mod tests {
         // .DRAG_THRESHOLD`); the widgets keep egui's click rules.
         assert_eq!((d.drag_delay, d.drag_threshold), (0.1, 10.0));
         assert_eq!((d.widget_click_dist, d.widget_click_time), (6.0, 0.8));
+        // The grid and the capturing box follow the reference app: one axis
+        // number per 100 px (`EuclidianView.setAxesIntervals`; the grid
+        // drawing had a 1-2-5 step of at least 48 px) and a box of 0.125
+        // grid steps (`POINT_CAPTURING_GRID`; there was no capturing).
+        assert_eq!((d.numbering_px, d.grid_capture), (100.0, 0.125));
         assert_eq!(
             (d.toolbar_height, d.toolbar_button, d.toolbar_pitch),
             (52.0, 40.0, 45.0)
@@ -165,6 +188,10 @@ mod tests {
             (d.mouse_threshold, d.touch_threshold, d.point_selection_min)
         );
         assert!(d.touch_threshold > d.mouse_threshold);
+        assert_eq!(
+            (t.numbering_px, t.grid_capture),
+            (d.numbering_px, d.grid_capture)
+        );
         assert!(t.toolbar_button > d.toolbar_button && t.toolbar_pitch > t.toolbar_button);
         assert!(d.hover && !t.hover);
         assert_eq!(

@@ -1,20 +1,36 @@
-//! Grid and tick arithmetic with no UI types: 1-2-5 steps, tick positions and
-//! tick captions.
+// Parts of this file are translated from GeoGebra (https://github.com/geogebra/geogebra),
+// commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
+//   source/shared/common/src/main/java/org/geogebra/common/euclidian/EuclidianView.java
+// Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
+// Licensed by GeoGebra GmbH under the EUPL 1.2.
 
-/// The smallest 1-2-5 step (times a power of ten) that is at least `min_step`.
-pub fn nice_step(min_step: f64) -> f64 {
-    if !(min_step.is_finite() && min_step > 0.0) {
+//! Grid and tick arithmetic with no UI types: the numbering step, tick
+//! positions and tick captions.
+
+use crate::snap::check_decimal_fraction;
+
+/// The axis numbering step at `scale` pixels per unit, allowing one number
+/// per `max_pix` pixels (`EuclidianView.setAxesIntervals`, `maxPix` 100):
+/// with `units = max_pix / scale`, `pot` its power of ten and
+/// `n = units / pot`, the step is `5 pot` for `n > 5`, `2 pot` for `n > 2`
+/// and `pot` otherwise. The major grid step is the same
+/// (`DEFAULT_GRID_DIST_FACTOR` 1).
+pub fn numbering_step(scale: f64, max_pix: f64) -> f64 {
+    let units = max_pix / scale;
+    if !(units.is_finite() && units > 0.0) {
         return 1.0;
     }
-    let exp = min_step.log10().floor();
-    let base = 10f64.powf(exp);
-    let m = min_step / base;
-    // A little slack so that exact multiples such as 0.2 do not jump a step.
-    let mantissa = [1.0, 2.0, 5.0, 10.0]
-        .into_iter()
-        .find(|&s| m <= s * (1.0 + 1e-9))
-        .unwrap_or(10.0);
-    mantissa * base
+    let exp = units.log10().floor();
+    // "see #2682": both are cleaned of binary noise.
+    let pot = check_decimal_fraction(10f64.powf(exp));
+    let n = check_decimal_fraction(units / pot);
+    if n > 5.0 {
+        5.0 * pot
+    } else if n > 2.0 {
+        2.0 * pot
+    } else {
+        pot
+    }
 }
 
 /// The grid of one zoom level: a major step (with captions) and a minor step
@@ -25,10 +41,11 @@ pub struct GridSteps {
     pub minor: Option<f64>,
 }
 
-/// Picks the steps for `scale` pixels per world unit. Major lines are at least
-/// `min_major_px` apart; minor lines at least `min_minor_px`.
-pub fn grid_steps(scale: f64, min_major_px: f64, min_minor_px: f64) -> GridSteps {
-    let major = nice_step(min_major_px / scale);
+/// Picks the steps for `scale` pixels per world unit. Major lines are the
+/// axis numbering step apart (one number per `numbering_px`, see
+/// [`numbering_step`]); minor lines at least `min_minor_px`.
+pub fn grid_steps(scale: f64, numbering_px: f64, min_minor_px: f64) -> GridSteps {
+    let major = numbering_step(scale, numbering_px);
     // 1 and 5 split into five parts, 2 into four (0.5 steps).
     let lead = major / 10f64.powf(major.log10().floor());
     let parts = if (lead - 2.0).abs() < 1e-9 { 4.0 } else { 5.0 };
@@ -76,37 +93,45 @@ mod tests {
     use super::*;
 
     #[test]
-    fn steps_follow_one_two_five() {
-        assert_eq!(nice_step(0.8), 1.0);
-        assert_eq!(nice_step(1.0), 1.0);
-        assert_eq!(nice_step(1.1), 2.0);
-        assert_eq!(nice_step(2.1), 5.0);
-        assert_eq!(nice_step(5.1), 10.0);
-        assert!((nice_step(0.03) - 0.05).abs() < 1e-12);
-        assert!((nice_step(130.0) - 200.0).abs() < 1e-9);
-        assert_eq!(nice_step(f64::NAN), 1.0);
-        assert_eq!(nice_step(-1.0), 1.0);
+    fn the_numbering_step_follows_set_axes_intervals() {
+        // units = 100 / scale; n > 5 -> 5 pot, n > 2 -> 2 pot, else pot.
+        assert_eq!(numbering_step(50.0, 100.0), 1.0);
+        assert_eq!(numbering_step(112.5, 100.0), 0.5);
+        // units 5: n = 5 is not above 5 (a 1-2-5 step of at least 48 px,
+        // the rule before, gave 5).
+        assert_eq!(numbering_step(20.0, 100.0), 2.0);
+        assert_eq!(numbering_step(30.0, 100.0), 2.0);
+        assert_eq!(numbering_step(100.0, 100.0), 1.0);
+        assert_eq!(numbering_step(101.0, 100.0), 0.5);
+        // units 0.05: n = 5 after `checkDecimalFraction` (5.000000000000001
+        // before), so 2 pot.
+        assert_eq!(numbering_step(2000.0, 100.0), 0.02);
+        assert_eq!(numbering_step(1999.0, 100.0), 0.05);
+        assert_eq!(numbering_step(0.5, 100.0), 100.0);
+        assert_eq!(numbering_step(0.4, 100.0), 200.0);
+        assert_eq!(numbering_step(f64::NAN, 100.0), 1.0);
+        assert_eq!(numbering_step(-1.0, 100.0), 1.0);
     }
 
     #[test]
     fn standard_view_has_unit_major_and_fifth_minor_lines() {
-        let g = grid_steps(50.0, 40.0, 8.0);
+        let g = grid_steps(50.0, 100.0, 8.0);
         assert_eq!(g.major, 1.0);
         assert!((g.minor.unwrap() - 0.2).abs() < 1e-12);
     }
 
     #[test]
     fn step_two_splits_into_halves_and_dense_minor_lines_are_dropped() {
-        let g = grid_steps(25.0, 40.0, 8.0);
+        let g = grid_steps(25.0, 100.0, 8.0);
         assert_eq!(g.major, 2.0);
         assert!((g.minor.unwrap() - 0.5).abs() < 1e-12);
-        let g = grid_steps(5.0, 40.0, 8.0);
+        let g = grid_steps(5.0, 100.0, 8.0);
         assert_eq!(g.major, 10.0);
         assert_eq!(g.minor, Some(2.0));
-        let g = grid_steps(2.0, 40.0, 8.0);
+        let g = grid_steps(2.0, 100.0, 8.0);
         assert_eq!(g.major, 20.0);
         assert_eq!(g.minor, Some(5.0));
-        let g = grid_steps(50.0, 40.0, 11.0);
+        let g = grid_steps(50.0, 100.0, 11.0);
         assert_eq!(g.minor, None);
     }
 

@@ -6,7 +6,6 @@ use crate::ticks;
 use eframe::egui::{vec2, Align2, FontId, Painter, Pos2, Rect, Stroke};
 use geo_app_core::app::Decor;
 
-const MIN_MAJOR_PX: f64 = 48.0;
 const MIN_MINOR_PX: f64 = 9.0;
 const TICK_FONT: f32 = 16.0;
 
@@ -14,10 +13,12 @@ fn crisp(v: f64) -> f32 {
     (v.round() + 0.5) as f32
 }
 
-pub fn paint(painter: &Painter, rect: Rect, t: &ViewTransform, decor: Decor) {
+/// Paints the decoration; `numbering_px` is `Metrics::numbering_px` (the
+/// major lines are the axis numbering step apart).
+pub fn paint(painter: &Painter, rect: Rect, t: &ViewTransform, decor: Decor, numbering_px: f64) {
     let (w, h) = (rect.width() as f64, rect.height() as f64);
     let v = t.view();
-    let steps = ticks::grid_steps(t.scale(), MIN_MAJOR_PX, MIN_MINOR_PX);
+    let steps = ticks::grid_steps(t.scale(), numbering_px, MIN_MINOR_PX);
     let at = |sx: f64, sy: f64| -> Pos2 { rect.min + vec2(sx as f32, sy as f32) };
     let vline = |sx: f64, stroke: Stroke| {
         let x = crisp(sx);
