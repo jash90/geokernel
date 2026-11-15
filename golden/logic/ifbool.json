@@ -1,0 +1,252 @@
+{
+  "schema": 1,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "logic-ifbool-001",
+      "group": "logic",
+      "script": [
+        "a = 2",
+        "b = 1",
+        "c = If(a < 3, a > 0)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "b", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 },
+        { "action": "set_number", "label": "b", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "b": { "type": "number", "defined": true, "value": -1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": -1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": -1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "logic-ifbool-002",
+      "group": "logic",
+      "script": [
+        "a = 2",
+        "b = 1",
+        "c = If(a < 3, true, false)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "b", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 },
+        { "action": "set_number", "label": "b", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "b": { "type": "number", "defined": true, "value": -1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": -1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": -1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "logic-ifbool-003",
+      "group": "logic",
+      "script": [
+        "a = 2",
+        "b = 1",
+        "c = If(a < 1, a > 0, b > 0)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "b", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 },
+        { "action": "set_number", "label": "b", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "b": { "type": "number", "defined": true, "value": -1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": -1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": -1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "logic-ifbool-004",
+      "group": "logic",
+      "script": [
+        "a = 2",
+        "b = 1",
+        "c = If(a < 1, a > 0, a < 3, b > 0, false)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "b", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 },
+        { "action": "set_number", "label": "b", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "b": { "type": "number", "defined": true, "value": -1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": -1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": -1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "logic-ifbool-005",
+      "group": "logic",
+      "script": [
+        "a = 2",
+        "b = 1",
+        "c = !If(a < 3, b > 0, true)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "b", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 },
+        { "action": "set_number", "label": "b", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "b": { "type": "number", "defined": true, "value": -1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": -1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": -1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    }
+  ]
+}

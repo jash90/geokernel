@@ -1,8 +1,8 @@
 //! Replays a golden case on `geo-kernel` and compares every snapshot.
 
-use crate::compare::{compare_conic, compare_sampled, line_scale_agrees, Sign};
+use crate::compare::{compare_conic, compare_list, compare_sampled, line_scale_agrees, Sign};
 use crate::model::{Case, Step};
-use geo_kernel::{script, Construction};
+use geo_kernel::{script, Construction, Kind};
 
 /// One disagreement between GeoGebra and the kernel.
 #[derive(Debug, Clone, PartialEq)]
@@ -98,7 +98,12 @@ pub fn replay(case: &Case) -> CaseOutcome {
             }
             let vertices: Vec<_> = c.vertices(id).collect();
             let sample = |x| c.function_value(id, x);
-            match compare_sampled(expected, c.kind(id), &actual, &vertices, Some(&sample)) {
+            let outcome = if c.kind(id) == Kind::List {
+                compare_list(expected, Kind::List, c.elements(id))
+            } else {
+                compare_sampled(expected, c.kind(id), &actual, &vertices, Some(&sample))
+            };
+            match outcome {
                 Ok(Sign::Agrees) => out.sign_agree += 1,
                 Ok(Sign::Flipped) => out.sign_disagree += 1,
                 Ok(Sign::NotApplicable) => {}

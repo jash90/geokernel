@@ -89,6 +89,7 @@ fn only(kind: Kind) -> &'static [Kind] {
         Kind::Function => &[Kind::Function],
         Kind::Polygon => &[Kind::Polygon],
         Kind::PolyLine => &[Kind::PolyLine],
+        Kind::List => &[Kind::List],
         Kind::Conic => &[Kind::Conic],
     }
 }
@@ -388,6 +389,7 @@ fn translate(v: Value, dx: f64, dy: f64) -> Option<Value> {
         | Value::Polygon { .. }
         | Value::PolyLine { .. }
         | Value::Function
+        | Value::List { .. }
         | Value::Conic { .. }
         | Value::Undefined => return None,
     })

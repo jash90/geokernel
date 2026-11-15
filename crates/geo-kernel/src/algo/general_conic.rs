@@ -250,11 +250,14 @@ impl GeneralConicDef {
 
 /// `AlgoTransformation.setOutGeo`: the image starts as a copy of the
 /// source's record. Returns whether the copy is defined; the transformation
-/// stops when it is not.
+/// stops when it is not. A source whose record is defined but whose value
+/// is not (a part that is not finite) counts as undefined, so that the
+/// image of an undefined conic is undefined.
 fn set_out(c: &Construction, src: Id, d: &mut ConicData) -> bool {
     match c.conic(src) {
         Some(s) => {
             *d = s;
+            d.defined = s.defined && c.value(src).is_defined();
             d.defined
         }
         None => {
