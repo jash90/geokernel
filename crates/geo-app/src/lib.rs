@@ -21,7 +21,13 @@ mod tool_icons;
 mod toolbar;
 
 #[cfg(test)]
+mod budget_tests;
+#[cfg(test)]
+mod cull_tests;
+#[cfg(test)]
 mod frame_counts;
+#[cfg(test)]
+mod list_tests;
 // The window driven without a window, shared by the window tests, the frame
 // benchmark and the `geokernel-mcp` server. Compiled for tests and with the
 // `headless` feature. Cargo unifies features over one build invocation, so a

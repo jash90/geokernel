@@ -156,6 +156,7 @@ fn algebra_rows(h: &Headless) -> Vec<Json> {
         .filter(|w| w.kind == WidgetKind::Row)
         .collect();
     rows.sort_by(|a, b| a.rect.top().total_cmp(&b.rect.top()));
+    let model = h.app.wb.current_rows();
     rows.iter()
         .map(|row| {
             let mut inside: Vec<&(Rect, String)> = texts
@@ -181,17 +182,41 @@ fn algebra_rows(h: &Headless) -> Vec<Json> {
                     .unwrap_or(std::cmp::Ordering::Equal)
             });
             let inside: Vec<&(Rect, String)> = keyed.into_iter().map(|(_, _, t)| t).collect();
-            let head = inside.first().map(|(_, t)| t.clone());
+            let mut head = inside.first().map(|(_, t)| t.clone());
             let rest: Vec<&str> = inside
                 .iter()
                 .skip(1)
                 .map(|(_, t)| t.as_str())
                 .filter(|t| *t != "=")
                 .collect();
+            let mut value = (!rest.is_empty()).then(|| rest.join(" "));
+            // A row outside the list's viewport is not painted: its texts
+            // come from the row model, as the row would show them.
+            if head.is_none() && !row.visible {
+                if let Some(m) = model.iter().find(|m| Some(&m.label) == row.object.as_ref()) {
+                    head = Some(m.head.clone());
+                    value = m.value.clone().or_else(|| {
+                        m.free_number.map(|n| {
+                            let (n, suffix) = if m.angle {
+                                (n.to_degrees(), "°")
+                            } else {
+                                (n, "")
+                            };
+                            format!(
+                                "{}{suffix}",
+                                geo_app::headless::egui::emath::format_with_decimals_in_range(
+                                    n,
+                                    0..=2
+                                )
+                            )
+                        })
+                    });
+                }
+            }
             json!({
                 "name": row.object,
                 "head": head,
-                "value": (!rest.is_empty()).then(|| rest.join(" ")),
+                "value": value,
                 "in_view": row.visible,
             })
         })

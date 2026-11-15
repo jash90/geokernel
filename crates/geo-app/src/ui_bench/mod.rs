@@ -20,7 +20,7 @@
 //! Everything that depends on the app's layout is in `adapter.rs`.
 
 mod adapter;
-mod alloc;
+pub(crate) mod alloc;
 mod report;
 mod scene;
 

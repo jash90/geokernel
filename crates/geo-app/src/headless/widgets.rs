@@ -5,12 +5,13 @@
 //! (the algebra rows and the tool hint card). The window keeps no list of
 //! its own for this.
 
+use crate::algebra;
 use crate::app::App;
 use crate::geom::ToEgui;
-use crate::theme;
 use crate::tools::{Tool, GROUPS};
-use eframe::egui::{accesskit, pos2, Context, Rect, Role, WidgetRect};
+use eframe::egui::{accesskit, pos2, vec2, Context, Id, Rect, Role, WidgetRect};
 use geo_app_core::text::{self, Label};
+use std::collections::HashMap;
 
 /// What a widget is.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -65,8 +66,8 @@ pub struct Widget {
     pub object: Option<String>,
     /// The state of a toggle (a style bar button, a menu check box).
     pub checked: Option<bool>,
-    /// False for an algebra row scrolled out of the list's viewport: it is
-    /// laid out there, but a click on its rectangle does not reach it.
+    /// False for an algebra row scrolled out of the list's viewport: its
+    /// rectangle is where it would be, but a click there does not reach it.
     pub visible: bool,
 }
 
@@ -227,53 +228,35 @@ fn clickable(ctx: &Context) -> Vec<WidgetRect> {
 }
 
 /// The algebra rows: the click areas of each row's text, marker and menu
-/// button, which egui records with the scroll offset applied, for every row
-/// whether scrolled into view or not. Rows are matched to objects in
-/// display order; if the counts ever disagree the rectangles are still
-/// returned, without an object.
+/// button, for every object in display order. A row the list laid out is
+/// found by its widgets' ids, which derive from the object
+/// (`algebra::row_id`), with the rectangle egui recorded (scroll offset
+/// applied). The list lays out only the rows in its viewport, so a row
+/// outside it is placed from the row model and the list's geometry, as it
+/// would be laid out, and is not in view.
 fn rows(ctx: &Context, app: &App, out: &mut Vec<Widget>) {
-    let area = app.regions.algebra.egui();
-    let rects = clickable(ctx);
-    let in_column = |r: &Rect, left: f32| (r.left() - left).abs() < 0.5;
-    let mut bodies: Vec<&WidgetRect> = rects
-        .iter()
-        .filter(|w| {
-            in_column(&w.rect, area.left() + theme::MARKER_CELL) && w.rect.right() <= area.right()
-        })
-        .collect();
-    let mut markers: Vec<&WidgetRect> = rects
-        .iter()
-        .filter(|w| {
-            in_column(&w.rect, area.left()) && (w.rect.width() - theme::MARKER_CELL).abs() < 0.5
-        })
-        .collect();
-    bodies.sort_by(|a, b| a.rect.top().total_cmp(&b.rect.top()));
-    markers.sort_by(|a, b| a.rect.top().total_cmp(&b.rect.top()));
-    // One row per object, in construction order (`Workbench::rows`).
-    let c = app.wb.construction();
-    let labels: Vec<&str> = c.ids().map(|id| c.label(id)).collect();
-    let matched = bodies.len() == labels.len() && markers.len() == labels.len();
-    let object = |i: usize| matched.then(|| labels[i]);
-    let widget = |kind, i: usize, w: &WidgetRect| {
-        let mut out = Widget::new(kind, object(i).unwrap_or(""), w.rect);
-        out.object = object(i).map(str::to_owned);
-        out.visible = w.interact_rect.is_positive();
-        out
+    let Some(list) = algebra::geometry(ctx) else {
+        return;
     };
-    for (i, body) in bodies.iter().enumerate() {
-        out.push(widget(WidgetKind::Row, i, body));
-        // The menu button: 30 x 30, 28 points left of the row's right
-        // edge, centred on the first line.
-        if let Some(kebab) = rects.iter().find(|w| {
-            (w.rect.width() - 30.0).abs() < 0.5
-                && (w.rect.center().x - (body.rect.right() - 28.0)).abs() < 0.5
-                && body.rect.contains(w.rect.center())
-        }) {
-            out.push(widget(WidgetKind::RowMenu, i, kebab));
+    let rects = clickable(ctx);
+    let by_id: HashMap<Id, &WidgetRect> = rects.iter().map(|w| (w.id, w)).collect();
+    let mut top = list.origin.y;
+    for row in app.wb.current_rows() {
+        let height = algebra::row_height(row);
+        let rect = Rect::from_min_size(pos2(list.origin.x, top), vec2(list.width, height));
+        top += height;
+        let id = algebra::row_id(&row.label);
+        let kinds = [WidgetKind::Row, WidgetKind::RowMarker, WidgetKind::RowMenu];
+        for (kind, (salt, placed)) in kinds.into_iter().zip(algebra::row_parts(row, rect)) {
+            let (rect, visible) = match by_id.get(&id.with(salt)) {
+                Some(w) => (w.rect, w.interact_rect.is_positive()),
+                None => (placed, false),
+            };
+            let mut w = Widget::new(kind, &row.label, rect);
+            w.object = Some(row.label.clone());
+            w.visible = visible;
+            out.push(w);
         }
-    }
-    for (i, marker) in markers.iter().enumerate() {
-        out.push(widget(WidgetKind::RowMarker, i, marker));
     }
 }
 
