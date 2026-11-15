@@ -2,6 +2,8 @@
 // commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/LabelManager.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/Construction.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/AlgebraProcessor.java
+//   source/shared/common/src/main/java/org/geogebra/common/util/StringUtil.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
@@ -9,6 +11,7 @@
 //!
 //! ```text
 //! A = (0, 0)              # free point
+//! v = (1, 2)              # free vector (the label starts with a lower-case letter)
 //! r = 3                   # free number
 //! l = Line(A, B)
 //! m = Line(P, l)          # GeoGebra form: parallel to l (a line or segment) through P
@@ -23,6 +26,7 @@ use crate::algo::conic::ConicDef;
 use crate::algo::lines::LineDef;
 use crate::algo::measure::MeasureDef;
 use crate::algo::transform::TransformDef;
+use crate::algo::vector::VectorDef;
 use crate::algo::Group;
 use crate::kernel::{Construction, Def, Id, Kind, Value};
 use std::fmt;
@@ -69,7 +73,10 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
     if let Some(defs) = parse_multi(c, rhs) {
         return add_outputs(c, name, defs?).map(Some);
     }
-    let def = parse_def(c, rhs)?;
+    let def = match parse_def(c, rhs)? {
+        Def::FreePoint { x, y } if is_vector_label(name) => Def::Vector(VectorDef::Free { x, y }),
+        def => def,
+    };
     c.add(name, def).map(Some).map_err(|e| e.to_string())
 }
 
@@ -184,8 +191,18 @@ fn is_finite(v: &Value) -> bool {
         }
         Value::Circle { cx, cy, r } => cx.is_finite() && cy.is_finite() && r.is_finite(),
         Value::Number(v) => v.is_finite(),
+        Value::Vector { x, y } => x.is_finite() && y.is_finite(),
+        Value::Ray { x, y, a, b, c } => [x, y, a, b, c].iter().all(|v| v.is_finite()),
         Value::Undefined => false,
     }
+}
+
+/// GeoGebra's `AlgebraProcessor.isVectorLabel`: coordinates `(x, y)` make a
+/// vector when the label starts with a lower-case letter, a point otherwise.
+fn is_vector_label(name: &str) -> bool {
+    name.chars()
+        .next()
+        .is_some_and(|ch| ch.is_alphabetic() && ch.to_lowercase().eq([ch]))
 }
 
 fn is_identifier(s: &str) -> bool {
@@ -228,6 +245,9 @@ fn parse_def(c: &Construction, rhs: &str) -> Result<Def, String> {
 
     // Groups are asked first, so that a group can add a new form of a
     // built-in command (for example `Circle` with three points).
+    if let Some(def) = VectorDef::parse(c, func, &args) {
+        return def.map(Def::Vector);
+    }
     if let Some(def) = LineDef::parse(c, func, &args) {
         return def.map(Def::Lines);
     }

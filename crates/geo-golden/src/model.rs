@@ -92,11 +92,39 @@ pub struct Expected {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ExpectedData {
-    Point { x: f64, y: f64 },
-    Line { a: f64, b: f64, c: f64 },
-    Segment { x1: f64, y1: f64, x2: f64, y2: f64 },
-    Circle { cx: f64, cy: f64, r: f64 },
+    Point {
+        x: f64,
+        y: f64,
+    },
+    Line {
+        a: f64,
+        b: f64,
+        c: f64,
+    },
+    Segment {
+        x1: f64,
+        y1: f64,
+        x2: f64,
+        y2: f64,
+    },
+    Circle {
+        cx: f64,
+        cy: f64,
+        r: f64,
+    },
     Number(f64),
+    Vector {
+        x: f64,
+        y: f64,
+    },
+    /// Start point `(x, y)` and raw line coefficients.
+    Ray {
+        x: f64,
+        y: f64,
+        a: f64,
+        b: f64,
+        c: f64,
+    },
 }
 
 #[derive(Deserialize)]
@@ -118,6 +146,8 @@ impl TryFrom<RawObject> for Expected {
             "segment" => (Kind::Segment, &["x1", "y1", "x2", "y2"]),
             "circle" => (Kind::Circle, &["cx", "cy", "r"]),
             "number" => (Kind::Number, &["value"]),
+            "vector" => (Kind::Vector, &["x", "y"]),
+            "ray" => (Kind::Ray, &["x", "y", "a", "b", "c"]),
             other => return Err(format!("unknown object type `{other}`")),
         };
         if !raw.defined {
@@ -157,6 +187,17 @@ impl TryFrom<RawObject> for Expected {
                 r: f("r"),
             },
             Kind::Number => ExpectedData::Number(f("value")),
+            Kind::Vector => ExpectedData::Vector {
+                x: f("x"),
+                y: f("y"),
+            },
+            Kind::Ray => ExpectedData::Ray {
+                x: f("x"),
+                y: f("y"),
+                a: f("a"),
+                b: f("b"),
+                c: f("c"),
+            },
         };
         Ok(Expected {
             kind,
@@ -377,6 +418,33 @@ mod tests {
         ] {
             assert!(parse_file(bad, "t").is_err(), "accepted: {bad}");
         }
+    }
+
+    #[test]
+    fn vectors_and_rays_carry_their_fields() {
+        let parse = |json: &str| serde_json::from_str::<Expected>(json);
+        let v = parse(r#"{"type":"vector","defined":true,"x":1.0,"y":-2.0}"#).unwrap();
+        assert_eq!(v.kind, Kind::Vector);
+        assert_eq!(v.data, Some(ExpectedData::Vector { x: 1.0, y: -2.0 }));
+        let r = parse(r#"{"type":"ray","defined":true,"x":1.0,"y":2.0,"a":-4.0,"b":3.0,"c":-2.0}"#)
+            .unwrap();
+        assert_eq!(
+            r.data,
+            Some(ExpectedData::Ray {
+                x: 1.0,
+                y: 2.0,
+                a: -4.0,
+                b: 3.0,
+                c: -2.0
+            })
+        );
+        assert_eq!(
+            parse(r#"{"type":"ray","defined":false}"#).unwrap().kind,
+            Kind::Ray
+        );
+        // A ray needs its start point, a vector exactly x and y.
+        assert!(parse(r#"{"type":"ray","defined":true,"a":-4.0,"b":3.0,"c":-2.0}"#).is_err());
+        assert!(parse(r#"{"type":"vector","defined":true,"x":1.0,"y":2.0,"z":0.0}"#).is_err());
     }
 
     fn set(items: &[&str]) -> BTreeSet<String> {

@@ -65,7 +65,8 @@ For every case `GoldenGenerator`:
    `golden/SCHEMA.md`). A line where no output is defined at creation fails,
    because GeoGebra labels those outputs only later;
 3. records a snapshot, then applies each step and records a snapshot after it.
-   `move` calls `GeoPoint.setCoords(x, y, 1)` and `updateCascade()`;
+   `move` calls `GeoPoint.setCoords(x, y, 1)` (for a free vector
+   `GeoVector.setCoords(x, y, 0)`) and `updateCascade()`;
    `set_number` calls `GeoNumeric.setValue` (it fails if GeoGebra clamps the
    value) and `updateCascade()`.
 
@@ -78,6 +79,8 @@ Snapshot encoding:
 | `GeoSegment` | `segment` with its start point and end point |
 | `GeoConic` from `Circle` | `circle` with the midpoint and the first half-axis |
 | `GeoNumeric` | `number` |
+| `GeoVector` | `vector` with `x`, `y` |
+| `GeoRay` | `ray` with the inhomogeneous start point `x`, `y` and the raw fields `x`, `y`, `z` as `a`, `b`, `c`; a start point at infinity is undefined |
 
 `defined` is GeoGebra's `isDefined()` and, in addition, every recorded field
 must be finite. A circle of radius 0 is a single-point conic in GeoGebra; it is
@@ -97,7 +100,9 @@ gives.
   `PerpendicularLine(P, l)`, parallel `Line(P, l)`, `Circle(A, B)`,
   `Circle(A, r)` with `r` a number object, and `Intersect` of two lines, a
   line and a circle with an index, or two circles with an index.
-- Points have upper-case labels, everything else lower case. Labels avoid
+- Points have upper-case labels, everything else lower case. A coordinate
+  pair with a lower-case label is a free vector (GeoGebra's rule), so free
+  points must have upper-case labels. Labels avoid
   `e`, `i`, `x`, `y`, `z` and letter-digit names such as `A1` (spreadsheet
   cells).
 - GeoGebra gives an object that is undefined when it is created no label until

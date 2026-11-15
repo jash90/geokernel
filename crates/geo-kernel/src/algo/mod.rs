@@ -15,6 +15,7 @@ pub mod intersect;
 pub mod lines;
 pub mod measure;
 pub mod transform;
+pub mod vector;
 
 use crate::kernel::{Construction, Error, Id, Kind, Value};
 use crate::tol::EPS;
