@@ -263,4 +263,47 @@ case("readers", [pt("F", -3, 1), pt("G", 2, -1), pt("P", 0, 4), "k = Ellipse(F, 
                  "sn = SemiMinorAxisLength(k)", "ex = Excentricity(k)"],
      [mv("P", 4, 4), mv("P", 0.5, 0)])
 
+# ------------------------------------------------------ transformations
+topic("transform")
+SOURCES = [
+    five([(3, 0), (0, 2), (-3, 0), (0, -2), (1.8, 1.6)]),
+    [pt("F", -3, 1), pt("G", 2, -1), pt("P", 0, 4), "k = Hyperbola(F, G, P)"],
+    [pt("F", 1, 2), pt("A", -1, -1), pt("B", 3, 0), "d = Line(A, B)", "k = Parabola(F, d)"],
+    five([(0, 0), (1, 0), (2, 0), (0, 1), (1, 2)]),
+]
+MAPS = [
+    [pt("U", 1, 2), pt("V", 3, -1), "v = Vector(U, V)", "m = Translate(k, v)"],
+    [num("w", 0.7), "m = Rotate(k, w)"],
+    [num("w", -2.1), pt("Q", 2, -3), "m = Rotate(k, w, Q)"],
+    [num("f", 1.5), "m = Dilate(k, f)"],
+    [num("f", -0.5), pt("Q", -1, 4), "m = Dilate(k, f, Q)"],
+    [pt("Q", 2, 1), "m = Reflect(k, Q)"],
+    [pt("U", -2, -1), pt("V", 1, 3), "h = Line(U, V)", "m = Reflect(k, h)"],
+    [pt("U", -2, -1), pt("V", 1, 3), "h = Line(U, V)", "m = Mirror(k, h)"],
+]
+MOVES = {
+    "Translate": [mv("V", -2, 4), mv("U", 0, 0)],
+    "Rotate": [setn("w", 3.14159), setn("w", 0)],
+    "Dilate": [setn("f", 0), setn("f", -3), setn("f", 0.000001)],
+    "Reflect": [mv("Q", -4, 0)],
+    "Mirror": [mv("V", -2, -1)],
+}
+for src in SOURCES:
+    first = src[0].split(" = ")[0]
+    for m in MAPS:
+        cmd = m[-1].split(" = ")[1].split("(")[0]
+        steps = list(MOVES[cmd])
+        if cmd == "Reflect" and "h = Line(U, V)" in m:
+            steps = [mv("U", 3, -2), mv("V", 3, 5)]
+        steps += [mv(first, 0.5, -0.5), mv(first, *rp())]
+        case("transform", src + m, steps)
+# a transformation of a transformation, and readers of the image
+case("transform", SOURCES[0] + [num("w", 0.4), "m = Rotate(k, w)", pt("Q", 1, 1), "n = Reflect(m, Q)",
+                                "M = Center(n)", "W = Focus(n)", "la = FirstAxisLength(n)"],
+     [setn("w", 1.2), mv("Q", -2, 0), mv("A", 4, 0)])
+# a line through an image
+case("transform", SOURCES[1] + [num("f", 2), "m = Dilate(k, f)", pt("U", -9, -2), pt("V", 8, 3), "g = Line(U, V)",
+                                "S = Intersect(g, m, 1)", "T = Intersect(g, m, 2)"],
+     [setn("f", 0.5), mv("V", 8, -3), setn("f", 0), setn("f", 2)])
+
 cases.write()
