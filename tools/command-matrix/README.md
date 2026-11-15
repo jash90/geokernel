@@ -27,11 +27,13 @@ status and priority) so they can be compared with the project plan.
 
 1. Groups `3d`, `spreadsheet`, `probability`, `cas`, `scripting`,
    `statistics`: status `out_of_scope`, priority empty.
-2. Hand-listed exceptions the kernel already covers in part (`Line`,
-   `Segment`, `Midpoint`, `Distance`, `OrthogonalLine` and so its alias
-   `PerpendicularLine`, `Circle`, `Intersect`): status `partial`, priority
-   `P0`, `notes` lists the covered syntaxes. The list lives in `PARTIAL` in the
-   script and comes from `crates/geo-kernel/src/script.rs`. These win over rule 1.
+2. Hand-listed exceptions the kernel already covers in part: status
+   `partial`, `notes` lists the covered forms; an alias copies its target.
+   The list lives in `PARTIAL` in the script and comes from
+   `crates/geo-kernel/src/script.rs` and the group files in
+   `crates/geo-kernel/src/algo/`. The priority is `P0` for the commands of
+   the first kernel (`FIRST_KERNEL` in the script), otherwise the priority
+   of the group. These win over rule 1.
 3. Groups `geometry`, `conic`, `transformation`: status `todo`, priority `P1`.
 4. Everything else: status `todo`, priority `P2`. This includes groups the
    script cannot place confidently (currently `english`); the script

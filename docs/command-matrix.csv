@@ -22,25 +22,25 @@ NextPrime,,algebra,P2,todo,
 RightSide,,algebra,P2,todo,
 PreviousPrime,,algebra,P2,todo,
 IsFactored,,algebra,P2,todo,
-Line,,geometry,P0,partial,"Line(point, point); a line through a point parallel to a line exists only as script Parallel(point, line)"
+Line,,geometry,P0,partial,"Line(point, point); Line(point, line or segment)"
 Ray,,geometry,P1,todo,
-AngularBisector,,geometry,P1,todo,
-OrthogonalLine,,geometry,P0,partial,"point + line or segment; script spells it Perpendicular(point, line)"
-Tangent,,geometry,P1,todo,
+AngularBisector,,geometry,P1,partial,"AngularBisector(point, point, point); AngularBisector(line, line)"
+OrthogonalLine,,geometry,P0,partial,"OrthogonalLine(point, line or segment)"
+Tangent,,geometry,P1,partial,"Tangent(point, circle); Tangent(line or segment, circle)"
 Segment,,geometry,P0,partial,"Segment(point, point)"
-Slope,,geometry,P1,todo,
-Angle,,geometry,P1,todo,
+Slope,,geometry,P1,partial,Slope(line or segment)
+Angle,,geometry,P1,partial,"Angle(point, point, point)"
 InteriorAngles,,geometry,P1,todo,
 Direction,,geometry,P1,todo,
 Point,,geometry,P1,todo,
-Midpoint,,geometry,P0,partial,"Midpoint(point, point)"
-LineBisector,,geometry,P1,todo,
+Midpoint,,geometry,P0,partial,"Midpoint(point, point); Midpoint(segment); Midpoint(circle)"
+LineBisector,,geometry,P1,partial,"LineBisector(point, point); LineBisector(segment)"
 Intersect,,geometry,P0,partial,line/line; line/circle; circle/circle; optional index 1 or 2
 IntersectPath,,geometry,P1,todo,
 IntersectRegion,,english,P2,todo,
-Distance,,geometry,P0,partial,"Distance(point, point)"
-Length,,geometry,P1,todo,
-Radius,,geometry,P1,todo,
+Distance,,geometry,P0,partial,"Distance(point, point); Distance(point, line or segment); Distance(line, line)"
+Length,,geometry,P1,partial,Length(segment)
+Radius,,geometry,P1,partial,Radius(circle)
 Type,,geometry,P1,todo,
 CircleArc,,geometry,P1,todo,
 Arc,,geometry,P1,todo,
@@ -50,9 +50,9 @@ CircumcircleSector,,geometry,P1,todo,
 CircumcircleArc,,geometry,P1,todo,
 Polygon,,geometry,P1,todo,
 RigidPolygon,,geometry,P1,todo,
-Area,,geometry,P1,todo,
-Circumference,,geometry,P1,todo,
-Perimeter,,geometry,P1,todo,
+Area,,geometry,P1,partial,Area(circle); Area of three or four points
+Circumference,,geometry,P1,partial,Circumference(circle)
+Perimeter,,geometry,P1,partial,Perimeter(circle)
 Locus,,geometry,P1,todo,
 Centroid,,geometry,P1,todo,
 TriangleCenter,,geometry,P1,todo,
@@ -65,8 +65,8 @@ PolyLine,,geometry,P1,todo,
 PenStroke,,geometry,P1,todo,
 PenStrokeBezier,,english,P2,todo,
 PointIn,,geometry,P1,todo,
-AffineRatio,,geometry,P1,todo,
-CrossRatio,,geometry,P1,todo,
+AffineRatio,,geometry,P1,partial,"AffineRatio(point, point, point)"
+CrossRatio,,geometry,P1,partial,"CrossRatio(point, point, point, point)"
 ClosestPoint,,geometry,P1,todo,
 ClosestPointRegion,,geometry,P1,todo,
 Prove,,geometry,P1,todo,
@@ -158,18 +158,18 @@ Hyperbola,,conic,P1,todo,
 SecondAxisLength,,conic,P1,todo,
 SecondAxis,,conic,P1,todo,
 Directrix,,conic,P1,todo,
-Diameter,,conic,P1,todo,
+Diameter,,conic,P1,partial,"Diameter(line or segment, circle)"
 Conic,,conic,P1,todo,
 FirstAxis,,conic,P1,todo,
-Circle,,conic,P0,partial,"Circle(centre, point); Circle(centre, radius)"
-Incircle,,conic,P1,todo,
+Circle,,conic,P0,partial,"Circle(centre, point); Circle(centre, radius); Circle(centre, segment); Circle(point, point, point)"
+Incircle,,conic,P1,partial,"Incircle(point, point, point)"
 Semicircle,,conic,P1,todo,
 FirstAxisLength,,conic,P1,todo,
 Parabola,,conic,P1,todo,
 Focus,,conic,P1,todo,
 Parameter,,conic,P1,todo,
-Center,,conic,P1,todo,
-Polar,,conic,P1,todo,
+Center,,conic,P1,partial,Center(circle); Center(segment)
+Polar,,conic,P1,partial,"Polar(point, circle)"
 Excentricity,,conic,P1,todo,
 Eccentricity,,conic,P1,todo,
 Axes,,conic,P1,todo,
@@ -339,12 +339,12 @@ Determinant,,vector,P2,todo,
 Identity,,vector,P2,todo,
 Dimension,,vector,P2,todo,
 MatrixRank,,vector,P2,todo,
-Mirror,,transformation,P1,todo,
-Dilate,,transformation,P1,todo,
-Rotate,,transformation,P1,todo,
+Mirror,,transformation,P1,partial,"point, line, segment or circle in a point or a line; point in a circle"
+Dilate,,transformation,P1,partial,"point, line, segment or circle by a factor, from the origin or a point"
+Rotate,,transformation,P1,partial,"point, line, segment or circle by an angle, about the origin or a point"
 Translate,,transformation,P1,todo,
-Shear,,transformation,P1,todo,
-Stretch,,transformation,P1,todo,
+Shear,,transformation,P1,partial,"point, line or segment with a line and a ratio"
+Stretch,,transformation,P1,partial,"point, line or segment with a line and a ratio"
 CellRange,,spreadsheet,,out_of_scope,
 Row,,spreadsheet,,out_of_scope,
 Column,,spreadsheet,,out_of_scope,
@@ -438,11 +438,11 @@ ExportImage,,scripting,,out_of_scope,
 Curve,CurveCartesian,function,P2,todo,
 FormulaText,LaTeX,text,P2,todo,
 IsDefined,Defined,logical,P2,todo,
-ConjugateDiameter,Diameter,conic,P1,todo,
+ConjugateDiameter,Diameter,conic,P1,partial,
 LinearEccentricity,Excentricity,conic,P1,todo,
 MajorAxis,FirstAxis,conic,P1,todo,
 SemiMajorAxisLength,FirstAxisLength,conic,P1,todo,
-PerpendicularBisector,LineBisector,geometry,P1,todo,
+PerpendicularBisector,LineBisector,geometry,P1,partial,
 PerpendicularLine,OrthogonalLine,geometry,P0,partial,
 PerpendicularVector,OrthogonalVector,vector,P2,todo,
 MinorAxis,SecondAxis,conic,P1,todo,
@@ -453,7 +453,7 @@ FitLine,FitLineY,statistics,,out_of_scope,
 BinomialCoefficient,nCr,english,P2,todo,
 RandomBetween,Random,probability,,out_of_scope,
 TaylorPolynomial,TaylorSeries,function,P2,todo,
-AngleBisector,AngularBisector,geometry,P1,todo,
+AngleBisector,AngularBisector,geometry,P1,partial,
 CircumcircularSector,CircumcircleSector,geometry,P1,todo,
 CircumcircularArc,CircumcircleArc,geometry,P1,todo,
 CircularSector,CircleSector,geometry,P1,todo,
@@ -506,7 +506,7 @@ TurtleRight,,scripting,,out_of_scope,
 TurtleUp,,scripting,,out_of_scope,
 TurtleDown,,scripting,,out_of_scope,
 Polyhedron,,english,P2,todo,
-Reflect,Mirror,transformation,P1,todo,
+Reflect,Mirror,transformation,P1,partial,
 Assume,,cas,,out_of_scope,
 CFactor,,cas,,out_of_scope,
 CIFactor,,cas,,out_of_scope,

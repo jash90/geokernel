@@ -10,12 +10,20 @@ belong to GeoGebra GmbH.
 
 ## Status
 
-Early. The kernel covers points, lines, segments, circles and numbers with
-13 kinds of definitions, incremental updates, a small script language and
-SVG output, plus a desktop window in which free points can be dragged.
-See `docs/command-matrix.csv` for what is planned and done, and
+Early. The kernel covers points, lines, segments, circles and numbers,
+incremental updates, a small script language and SVG output, plus a desktop
+window in which free points can be dragged. The commands so far: lines,
+segments, midpoints, perpendicular and parallel lines, bisectors, tangents
+and polars of circles, circles (centre and point, centre and radius, three
+points, incircle), intersections, measures (length, distance, radius, area,
+slope, angle, ratios) and transformations (reflection, rotation, dilation,
+shear, stretch).
+
+Every command is checked against values recorded from GeoGebra. See
+`docs/command-matrix.csv` for what is planned and done,
 `crates/geo-golden/known-gaps.toml` for where the kernel still differs
-from GeoGebra.
+from GeoGebra, and [DIFFERENCES.md](DIFFERENCES.md) for the differences
+that are intended.
 
 ## Licence
 
@@ -64,21 +72,29 @@ cargo run --release -p geo-app                    # window with the triangle; dr
 
 ## Script syntax
 
+Commands use GeoGebra's English names and argument order.
+
 ```
 A = (0, 0)              # free point
 r = 3                   # free number (a slider)
 l = Line(A, B)
 s = Segment(A, B)
 M = Midpoint(A, B)
-p = Perpendicular(M, s)
-q = Parallel(M, l)
-u = PerpendicularLine(M, s)  # GeoGebra name for Perpendicular
-w = Line(M, l)          # GeoGebra form: parallel to a line or segment
+p = PerpendicularLine(M, s)  # also Perpendicular, OrthogonalLine
+q = Line(M, l)          # parallel to a line or segment; also Parallel(M, l)
 k = Circle(A, B)        # centre A, through B
 m = Circle(A, r)        # centre A, radius r
+n = Circle(A, B, C)     # through three points
 P = Intersect(l, k, 2)  # second intersection point (the first by default)
 d = Distance(A, B)
+b = LineBisector(A, B)
+t = Tangent(P, k)       # creates t_{1} and t_{2}, as GeoGebra does
+a = Angle(A, B, C)      # radians
+R = Rotate(A, a, B)     # A rotated by the angle a about B
 ```
+
+The group files in `crates/geo-kernel/src/algo/` list every command and
+form; `docs/command-matrix.csv` has the overview.
 
 ## Using the kernel as a library
 
