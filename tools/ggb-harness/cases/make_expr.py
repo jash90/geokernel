@@ -511,6 +511,13 @@ for rhs in (
     '((1E-5001 + 1) - 1 + 0.1 + 0.2 - 0.3) 1E20',
     '((1E-100001 + 1) - 1 + 0.1 + 0.2 - 0.3) 1E20',
     '(1.0000000000000000000000000000000000000001^999 - 1.000000000000000000000000000000000000999) 1E40',
+    '(round(1.5 sqrt(2), 2) 3 - 6.36) 1E20',
+    'round(round(1.5 sqrt(2), 3), 2)',
+    '(round(0.5 sqrt(2), 2) + 0.1 - 0.45) 1E20',
+    '(floor(1.5 sqrt(2) 100) 0.01 - 2.12) 1E20',
+    'round(2.675 sqrt(1), 2)',
+    '(round(2.675 sqrt(1), 3) + 0.1 - 2.775) 1E20',
+    '(round(1.5 sqrt(2), 2)^2 - 4.4944) 1E20',
 ):
     case("decimal", [f"c = {rhs}"], [])
 # the double a decimal becomes: a number sampling a function reads it as a double

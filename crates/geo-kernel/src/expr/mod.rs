@@ -218,7 +218,7 @@ pub(crate) struct Entry {
     raw: Raw,
     /// The exact decimal of the last result of a number
     /// (`GeoNumeric.exactValue`, set by `AlgoDependentNumber`).
-    dec: Option<Dec>,
+    dec: Option<eval::Exact>,
     depth: u32,
     cost: u64,
     vars: u64,
@@ -518,7 +518,7 @@ pub(crate) fn parents(c: &Construction, def: &Def) -> Vec<Id> {
 /// number.
 pub(crate) struct Outcome {
     pub(crate) raw: Raw,
-    dec: Option<Dec>,
+    dec: Option<eval::Exact>,
 }
 
 /// Evaluates an expression object for the current values of its parents.
@@ -669,8 +669,10 @@ fn add_parsed(
         };
         if let Some(def) = free {
             let id = c.add(name, def)?;
-            if let (Some(d), Kind::Number) = (dec, kind) {
-                set_free_decimal(c, id, d);
+            if let (Some(d), Kind::Number, Raw::Num(v)) = (dec, kind, raw) {
+                if let Some(d) = d.get(v) {
+                    set_free_decimal(c, id, d.into_owned());
+                }
             }
             return Ok(id);
         }

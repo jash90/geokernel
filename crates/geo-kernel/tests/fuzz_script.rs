@@ -621,6 +621,18 @@ fn number_lines() -> Vec<String> {
         lines.push(format!("r = {n} {n} - {n}^2"));
         lines.push(format!("r = ({n} + 1)^999999 / {n}"));
     }
+    // at the work bound of one operation: 3000-digit divisors and products,
+    // several per line, and alignments over 100000 digits
+    let long = format!("1.{}7", "3".repeat(2998));
+    lines.push(format!(
+        "r = 1 / {long} + 2 / {long} + 3 / {long} + q / {long}"
+    ));
+    lines.push(format!(
+        "r = {long} {long} + {long} {long} - {long} q {long}"
+    ));
+    lines.push(format!("r = ({long})^999 / ({long})^998"));
+    lines.push("r = (1E-99990 + 1) + (1E-99990 + 2) + (1E-99990 + 3) - 6".to_string());
+    lines.push("r = (1E-100001 + 1) (1E-100001 + q) - 1 + 0.1".to_string());
     for exponent in ["999999999", "-999999999", "99999999999999999999"] {
         lines.push(format!("r = 1E{exponent} + 1"));
         lines.push(format!("r = 1.5E{exponent} * 0.1^999999"));

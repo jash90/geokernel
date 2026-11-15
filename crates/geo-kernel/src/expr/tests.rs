@@ -567,3 +567,29 @@ fn inputs_without_decimals_cost_no_decimal_arithmetic() {
     let p = exact.id("A").unwrap();
     assert!(decimal_ops(|| assert!(exact.move_point(p, 3.0, 4.0).unwrap() > 0)) > 0);
 }
+
+#[test]
+fn an_exponent_with_a_unicode_minus_is_an_error_in_every_line() {
+    // GeoGebra's `StringUtil.parseDouble` stops at the dash: "Not a digit"
+    let mut c = load("a = 1").unwrap();
+    for line in [
+        "b = 1.5E\u{2212}3",
+        "b = 1E\u{2013}3",
+        "P = (1E\u{2212}3, 1)",
+        "c = 1.5E\u{2212}3 + 0",
+    ] {
+        assert!(exec(&mut c, line).is_err(), "`{line}`");
+    }
+    assert_eq!(c.len(), 1);
+}
+
+#[test]
+fn setting_a_decimal_number_without_dependents_recomputes_nothing() {
+    // The count alone cannot tell that the decimal was dropped: an app that
+    // logs sets must also log a set of a number that still had a decimal.
+    let mut c = load("a = 0.1").unwrap();
+    let a = c.id("a").unwrap();
+    assert!(c.expression(a).is_some());
+    assert_eq!(c.set_number(a, 0.1), Ok(0));
+    assert!(c.expression(a).is_none());
+}

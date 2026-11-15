@@ -45,6 +45,7 @@ use super::twonum;
 use super::{Bin, Entry, Node, Raw, Ty, Un};
 use crate::algo::intersect::Hint;
 use crate::kernel::{Construction, Def, Id, Kind, Value};
+use std::borrow::Cow;
 use std::sync::OnceLock;
 
 #[derive(Clone, Copy)]
@@ -71,7 +72,7 @@ impl Val {
 #[derive(Clone)]
 struct Ex {
     val: Val,
-    dec: Option<Dec>,
+    dec: Option<Exact>,
     special: bool,
     obj: bool,
 }
@@ -102,14 +103,14 @@ impl Ex {
         let v = d.to_f64();
         Ex {
             val: Val::N(v),
-            dec: v.is_finite().then_some(d),
+            dec: v.is_finite().then_some(Exact::Dec(d)),
             special: true,
             obj: false,
         }
     }
 
     /// `getNumber()`: the class and decimal of the copy an operation works on.
-    fn left(&self) -> (bool, Option<&Dec>) {
+    fn left(&self) -> (bool, Option<&Exact>) {
         if self.obj && !self.special {
             (false, None)
         } else {
@@ -122,9 +123,36 @@ impl Ex {
     }
 }
 
+/// The exact decimal of a number: a decimal, or the exact decimal of its
+/// double, which is only written out when an exact operation reads it (a
+/// double such as `12.35` has about 50 digits).
+#[derive(Clone, Debug, PartialEq)]
+pub(super) enum Exact {
+    Dec(Dec),
+    Double,
+}
+
+impl Exact {
+    /// The decimal of a number whose double is `v`.
+    pub(super) fn get(&self, v: f64) -> Option<Cow<'_, Dec>> {
+        match self {
+            Exact::Dec(d) => Some(Cow::Borrowed(d)),
+            Exact::Double => Dec::from_f64(v).map(Cow::Owned),
+        }
+    }
+}
+
 /// `MySpecialDouble.setPrecise`: a `MySpecialDouble` takes the exact
 /// decimal of a finite result.
 fn precise(special: bool, v: f64) -> Ex {
+    if special && v.is_finite() && v != 0.0 {
+        return Ex {
+            val: Val::N(v),
+            dec: Some(Exact::Double),
+            special: true,
+            obj: false,
+        };
+    }
     match special.then(|| Dec::from_f64(v)).flatten() {
         Some(d) => Ex::exact(d),
         None => Ex::kept(special, v),
@@ -153,7 +181,7 @@ struct Ctx<'a> {
 
 /// Evaluates an entry's tree (full evaluation), with the exact decimal of
 /// a number result (`toDecimal`).
-pub(super) fn root(c: &Construction, e: &Entry) -> (Raw, Option<Dec>) {
+pub(super) fn root(c: &Construction, e: &Entry) -> (Raw, Option<Exact>) {
     let ctx = Ctx {
         c,
         e,
@@ -204,7 +232,7 @@ impl Ctx<'_> {
                 let lit = &self.e.lits[i as usize];
                 Ex {
                     val: N(v),
-                    dec: lit.dec.clone(),
+                    dec: lit.dec.clone().map(Exact::Dec),
                     special: lit.special,
                     obj: false,
                 }
@@ -212,7 +240,7 @@ impl Ctx<'_> {
             Node::MinusOne => Ex::plain(N(-1.0)),
             Node::Degree => Ex {
                 val: N(PI_180),
-                dec: Some(degree().clone()),
+                dec: Some(Exact::Dec(degree().clone())),
                 special: true,
                 obj: false,
             },
@@ -380,7 +408,8 @@ impl Ctx<'_> {
                 }
                 if (0.0..1e6).contains(&e) && math::is_integer(e) && base.is_finite() {
                     if let (Some(x), Some(_)) = (dec, r.dec.as_ref()) {
-                        if let Some(d) = x.pow(math::java_round(e) as u32) {
+                        let d = x.get(base).and_then(|x| x.pow(math::java_round(e) as u32));
+                        if let Some(d) = d {
                             return Ex::exact(d);
                         }
                     }
@@ -522,6 +551,10 @@ fn arithmetic(op: Bin, l: &Ex, r: &Ex) -> Ex {
     };
     if !skip && a.is_finite() && b.is_finite() {
         if let (Some(x), Some(y)) = (ldec, r.dec.as_ref()) {
+            let (Some(x), Some(y)) = (x.get(a), y.get(b)) else {
+                return Ex::kept(special, double);
+            };
+            let (x, y) = (x.as_ref(), y.as_ref());
             let d = match op {
                 Bin::Add => x.add(y),
                 Bin::Sub => x.sub(y),
@@ -540,12 +573,12 @@ fn arithmetic(op: Bin, l: &Ex, r: &Ex) -> Ex {
 /// `NaN`; an angle in degrees rounds its degrees; a `MySpecialDouble` with a
 /// decimal uses `setScale(digits, HALF_UP)`; otherwise the double is
 /// rounded and, for a `MySpecialDouble`, made exact (`setPrecise`).
-fn round(special: bool, dec: Option<&Dec>, x: f64, digits: f64, deg: bool) -> Ex {
+fn round(special: bool, dec: Option<&Exact>, x: f64, digits: f64, deg: bool) -> Ex {
     let v = math::round(x, digits, deg);
     if deg || !math::is_integer(digits) {
         return Ex::kept(special, v);
     }
-    if let Some(d) = dec.filter(|_| special) {
+    if let Some(d) = dec.filter(|_| special).and_then(|d| d.get(x)) {
         if let Some(r) = d.set_scale_half_up(i64::from(digits as i32)) {
             return Ex::exact(r);
         }
@@ -562,12 +595,12 @@ fn object_ex(c: &Construction, id: Id) -> Ex {
     let (dec, special) = match c.def(id) {
         Def::Expr(d) => (super::entry(c, d).dec.clone(), false),
         Def::Number(_) => {
-            let d = super::free_decimal(c, id).cloned();
+            let d = super::free_decimal(c, id).cloned().map(Exact::Dec);
             let special = d.is_some();
             (d, special)
         }
         // `GeoAngle.getNumber()` is a plain number
-        Def::Angle(_) => (super::free_decimal(c, id).cloned(), false),
+        Def::Angle(_) => (super::free_decimal(c, id).cloned().map(Exact::Dec), false),
         _ => (None, false),
     };
     Ex {

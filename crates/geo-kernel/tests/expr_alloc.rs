@@ -144,3 +144,21 @@ fn sampling_a_function_does_not_allocate() {
     }
     assert!(matches!(c.value(id(&c, "a")), Value::Number(_)));
 }
+
+#[test]
+fn rounding_a_literal_product_recomputes_without_allocating() {
+    // the product of a literal and an object keeps the literal's class, so
+    // `round` makes its result exact (`setPrecise`)
+    let mut c =
+        load("a = 0.3\nA = (1.234, 2)\nc = round(0.5 x(A), 2)\nd = round(2.54 a x(A), 3)").unwrap();
+    c.set_number(id(&c, "a"), 0.7).unwrap();
+    assert_eq!(drag(&mut c, "c"), 0);
+    assert_eq!(drag(&mut c, "d"), 0);
+}
+
+#[test]
+fn a_long_literal_recomputes_without_allocating() {
+    let mut c =
+        load("A = (1, 2)\nc = 3.14159265358979323846264338327950288419716939937510 x(A)").unwrap();
+    assert_eq!(drag(&mut c, "c"), 0);
+}

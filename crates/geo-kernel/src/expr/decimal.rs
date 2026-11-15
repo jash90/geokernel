@@ -19,6 +19,7 @@
 //! GeoGebra throws, runs out of memory or carries on, see `DIFFERENCES.md`).
 
 use std::cmp::Ordering;
+use std::sync::Arc;
 
 /// Most digits a decimal may have.
 pub(crate) const MAX_DIGITS: usize = 100_000;
@@ -59,7 +60,7 @@ pub(crate) struct Dec {
 enum Mag {
     Small(u128),
     /// Digits, least significant first, no zero at either end.
-    Big(Box<[u8]>),
+    Big(Arc<[u8]>),
 }
 
 /// An intermediate result before it is normalised.
@@ -167,7 +168,7 @@ impl Dec {
         let mag = if digits.len() <= SMALL_DIGITS {
             Mag::Small(digits.iter().rev().fold(0, |v, &d| v * 10 + u128::from(d)))
         } else {
-            Mag::Big(digits.into_boxed_slice())
+            Mag::Big(digits.into())
         };
         Some(Dec { neg, exp, mag })
     }
@@ -242,6 +243,7 @@ impl Dec {
 
     /// The exact value of a finite double (`new BigDecimal(double)`).
     pub(crate) fn from_f64(x: f64) -> Option<Dec> {
+        count_op();
         if !x.is_finite() {
             return None;
         }
@@ -509,7 +511,7 @@ impl Dec {
         Dec {
             neg: raw.neg,
             exp: raw.exp,
-            mag: Mag::Big(raw.digits.clone().into_boxed_slice()),
+            mag: Mag::Big(raw.digits.clone().into()),
         }
     }
 
@@ -551,7 +553,7 @@ impl Dec {
         Dec {
             neg: self.neg,
             exp: self.exp,
-            mag: Mag::Big(self.digits().into_boxed_slice()),
+            mag: Mag::Big(self.digits().into()),
         }
     }
 }
