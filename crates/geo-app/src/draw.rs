@@ -17,6 +17,7 @@ use crate::theme;
 use eframe::egui::{vec2, Align2, Color32, FontId, Mesh, Painter, Pos2, Rect, Shape, Stroke};
 use geo_kernel::algo::vector;
 use geo_kernel::kernel::{Construction, Id, Value};
+use geo_kernel::ConicType;
 use std::borrow::Cow;
 
 /// Point radii in pixels: point size 5 for free points, 4 for dependent ones.
@@ -39,6 +40,9 @@ pub struct Scene<'a> {
     /// Skip the objects that draw nothing in the area (see `near_view`).
     /// Off only in the tests that check that skipping changes nothing.
     pub cull: bool,
+    /// How many times the construction was rebuilt (`Workbench::rebuilds`):
+    /// the drawings of conics and functions are kept while it stays.
+    pub generation: u64,
 }
 
 /// How far outside the area, in pixels, an object's points may lie and
@@ -53,7 +57,10 @@ const NEAR_ANGLE: f64 = 64.0;
 
 /// Whether `id` may draw something in the `w` x `h` area: false only when
 /// every shape and label of it certainly lies outside, so skipping it
-/// changes no pixel. Lines and rays are unbounded and always drawn;
+/// changes no pixel. An ellipse is tested by its bounding box, a conic
+/// that is one point by the point. Lines, rays, functions and the other
+/// conics are unbounded and always drawn (their drawing is kept between
+/// frames, see `curves`);
 /// anything this does not know, or with a coordinate that is not finite
 /// (the drawing code decides about those), too.
 fn near_view(c: &Construction, id: Id, t: &ViewTransform, w: f64, h: f64) -> bool {
@@ -84,6 +91,23 @@ fn near_view(c: &Construction, id: Id, t: &ViewTransform, w: f64, h: f64) -> boo
             None => true,
         },
         Value::Polygon { .. } | Value::PolyLine { .. } => near(&mut c.vertices(id).flatten(), NEAR),
+        Value::Conic { .. } => match c.conic(id) {
+            Some(d) if matches!(d.ty, ConicType::Ellipse | ConicType::Circle) => {
+                let ([a, b], [e0, e1], [mx, my]) = (d.half_axes, d.eigenvec, d.midpoint);
+                // Half the width and height of the box around the ellipse.
+                let ex = (a * e0[0]).hypot(b * e1[0]);
+                let ey = (a * e0[1]).hypot(b * e1[1]);
+                near(
+                    &mut [(mx - ex, my - ey), (mx + ex, my + ey)].into_iter(),
+                    NEAR,
+                )
+            }
+            Some(d) if d.ty == ConicType::SinglePoint => {
+                near(&mut std::iter::once((d.midpoint[0], d.midpoint[1])), NEAR)
+            }
+            Some(d) if d.ty == ConicType::Empty || !d.defined => false,
+            _ => true,
+        },
         _ => true,
     }
 }
@@ -135,6 +159,14 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
         .filter(|&id| (scene.visible)(id) && (!scene.cull || near_view(c, id, t, w, h)))
         .collect();
     let mut labels: Vec<Label> = Vec::new();
+    // Conics and functions, made when the frame has one.
+    let is_curve = |id: Id| matches!(c.value(id), Value::Conic { .. } | Value::Function);
+    let curves = (ids.iter().any(|&id| is_curve(id))
+        || [scene.hovered, scene.selected]
+            .into_iter()
+            .flatten()
+            .any(is_curve))
+    .then(|| crate::curves::Curves::new(painter, rect, t, scene.generation));
 
     // Highlights go under the objects, in the object's own colour.
     for (id, strong) in [(scene.hovered, false), (scene.selected, true)] {
@@ -150,6 +182,14 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
                     .collect();
                 let glow = Stroke::new(8.0, scene.palette.color(id).egui().gamma_multiply(alpha));
                 painter.add(Shape::closed_line(points, glow));
+            }
+            continue;
+        }
+        if let Some(drawn) = curves.as_ref().and_then(|k| k.get(c, id, color(id))) {
+            let alpha = if strong { 0.35 } else { 0.2 };
+            let glow = Stroke::new(8.0, scene.palette.color(id).egui().gamma_multiply(alpha));
+            for path in &drawn.paths {
+                painter.add(Shape::line(path.clone(), glow));
             }
             continue;
         }
@@ -337,6 +377,32 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
             });
         }
     }
+    if let Some(curves) = &curves {
+        for &id in &ids {
+            let Some(drawn) = curves.get(c, id, color(id)) else {
+                continue;
+            };
+            if !drawn.mesh.is_empty() {
+                painter.add(Shape::Mesh(drawn.mesh.clone()));
+            }
+            if let Some((sx, sy)) = drawn.point {
+                point_shape(
+                    painter,
+                    origin + vec2(sx as f32, sy as f32),
+                    color(id),
+                    DEPENDENT_POINT_RADIUS,
+                );
+            }
+            if let Some(pos) = drawn.label {
+                labels.push((
+                    Cow::Borrowed(c.label(id)),
+                    pos,
+                    color(id),
+                    Align2::LEFT_BOTTOM,
+                ));
+            }
+        }
+    }
     for &id in &ids {
         if let Value::Segment { x1, y1, x2, y2 } = c.value(id) {
             if ![x1, y1, x2, y2].iter().all(|v| v.is_finite()) {
@@ -518,6 +584,7 @@ mod tests {
                 hovered: None,
                 palette: wb.palette(),
                 cull: true,
+                generation: wb.rebuilds(),
             };
             paint(ui.painter(), rect, c, &t, &scene);
         });
@@ -542,8 +609,15 @@ mod tests {
     }
 
     #[test]
-    fn a_function_draws_nothing_yet() {
+    fn a_function_draws_its_graph_and_label() {
         let base = shapes("A = (5, 5)\n");
-        assert_eq!(shapes("A = (5, 5)\nf(x) = x^2\n"), base);
+        assert_eq!(shapes("A = (5, 5)\nf(x) = x^2\n"), base + 2);
+    }
+
+    #[test]
+    fn a_conic_draws_its_curve_and_label() {
+        let base = shapes("A = (0, 0)\nB = (2, 0)\nC = (1, 2)\n");
+        let with = shapes("A = (0, 0)\nB = (2, 0)\nC = (1, 2)\ne = Ellipse(A, B, C)\n");
+        assert_eq!(with, base + 2);
     }
 }

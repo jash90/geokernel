@@ -309,6 +309,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             hovered: app.hovered,
             palette: app.wb.palette(),
             cull: true,
+            generation: app.wb.rebuilds(),
         },
     );
     preview(app, &painter, rect, &t, response.hover_pos());

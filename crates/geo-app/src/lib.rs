@@ -10,6 +10,7 @@ mod algebra;
 mod app;
 mod canvas;
 pub mod cli;
+mod curves;
 mod draw;
 mod floating;
 mod geom;
@@ -24,6 +25,8 @@ mod toolbar;
 mod budget_tests;
 #[cfg(test)]
 mod cull_tests;
+#[cfg(test)]
+mod curve_tests;
 #[cfg(test)]
 mod frame_counts;
 #[cfg(test)]

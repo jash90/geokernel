@@ -92,11 +92,15 @@ fn leaves(shape: &Shape, c: &mut Counts) {
 impl Window {
     fn new(cells: usize) -> Window {
         let (script, mid) = grid(cells);
+        Window::with(&script, mid)
+    }
+
+    fn with(script: &str, mid: String) -> Window {
         let ctx = egui::Context::default();
         theme::apply(&ctx);
         let mut w = Window {
             ctx,
-            app: App::new(Workbench::from_script(&script).unwrap(), None),
+            app: App::new(Workbench::from_script(script).unwrap(), None),
             time: 0.0,
             mid,
         };
@@ -397,4 +401,133 @@ fn frame_counters_stay_within_the_budget() {
     assert!(get(&large, "drag_point").rows_formatted <= 12);
     // Zoomed in four times, a sixteenth of the area: the shapes follow.
     assert!(get(&large, "idle_zoomed_4x").shapes * 3 < get(&large, "idle").shapes);
+}
+
+/// The benchmark's grid of 45 cells (540 objects, with the triangles'
+/// sides) with 50 groups of three
+/// free points and four conics on them (two ellipses, two hyperbolas: 350
+/// objects, 200 conics) and 100 functions: 990 objects. The conics and the
+/// functions do not read the grid's points.
+fn curve_scene() -> (String, String) {
+    let (mut s, mid) = grid(45);
+    for j in 0..50 {
+        let (x, y) = ((j % 10) as f64 * 4.0 - 18.0, (j / 10) as f64 * 8.0 - 18.0);
+        let p = |n: &str| format!("{n}_{{{j}}}");
+        let (a, b, c) = (p("A"), p("B"), p("C"));
+        for line in [
+            format!("{a} = ({x}, {y})"),
+            format!("{b} = ({}, {y})", x + 1.5),
+            format!("{c} = ({}, {})", x + 0.5, y + 1.2),
+            format!("{} = Ellipse({a}, {b}, {c})", p("e")),
+            format!("{} = Ellipse({b}, {c}, {a})", p("E")),
+            format!("{} = Hyperbola({a}, {b}, {c})", p("h")),
+            format!("{} = Hyperbola({b}, {c}, {a})", p("H")),
+        ] {
+            s += &line;
+            s.push('\n');
+        }
+    }
+    for j in 1..=100 {
+        s += &format!("f{j}(x) = sin(x + {j}) + {} / 4\n", j as f64 - 50.0);
+    }
+    (s, mid)
+}
+
+/// What a frame of the curve scene does: its counts and how many curves it
+/// plotted and tessellated.
+fn curve_step(w: &mut Window, events: Vec<Event>) -> (Counts, u64) {
+    let made = crate::curves::curves_tessellated();
+    let start = std::time::Instant::now();
+    let c = w.step(events);
+    // Not asserted: printed to compare by hand (release builds only mean
+    // anything).
+    println!(
+        "curves frame: {:.2} ms",
+        start.elapsed().as_secs_f64() * 1e3
+    );
+    (c, crate::curves::curves_tessellated() - made)
+}
+
+#[test]
+fn curve_frames_stay_within_the_budget() {
+    let (script, mid) = curve_scene();
+    let mut w = Window::with(&script, mid);
+    let c = w.app.wb.construction();
+    assert_eq!(c.len(), 990);
+    assert_eq!(c.ids().filter(|&id| c.kind(id) == Kind::Conic).count(), 200);
+    assert_eq!(
+        c.ids().filter(|&id| c.kind(id) == Kind::Function).count(),
+        100
+    );
+    w.settled(1);
+    let (idle, idle_made) = curve_step(&mut w, Vec::new());
+
+    // A drag of a grid point: no conic or function reads it.
+    let p = w.point(&format!("P_{}", w.mid));
+    w.step(vec![Event::PointerMoved(p)]);
+    w.step(vec![press(p, true)]);
+    w.step(vec![Event::PointerMoved(p + vec2(14.0, 4.0))]);
+    w.step(vec![Event::PointerMoved(p + vec2(10.0, 4.0))]);
+    assert!(w.app.drag.is_some(), "no drag");
+    let (drag, drag_made) = curve_step(&mut w, vec![Event::PointerMoved(p + vec2(14.0, 4.0))]);
+    let (next, next_made) = curve_step(&mut w, vec![Event::PointerMoved(p + vec2(14.0, 4.0))]);
+    w.step(vec![press(p + vec2(14.0, 4.0), false)]);
+    w.frames(3);
+
+    // A pan: every curve on the view is plotted again.
+    let from = w.empty_spot();
+    w.step(vec![Event::PointerMoved(from)]);
+    w.step(vec![press(from, true)]);
+    w.step(vec![Event::PointerMoved(from + vec2(14.0, 4.0))]);
+    let (pan, pan_made) = curve_step(&mut w, vec![Event::PointerMoved(from + vec2(10.0, 4.0))]);
+    assert!(w.app.gesture.panning() && w.app.drag.is_none(), "no pan");
+    w.step(vec![press(from + vec2(10.0, 4.0), false)]);
+    w.step(vec![Event::PointerGone]);
+
+    // Zoomed in four times: the ellipses off the view are culled before
+    // they are plotted.
+    w.fit(4.0);
+    let (zoomed, zoomed_made) = curve_step(&mut w, Vec::new());
+
+    for (name, c, made) in [
+        ("idle", idle, idle_made),
+        ("drag_unrelated", drag, drag_made),
+        ("drag_unrelated_rows", next, next_made),
+        ("pan", pan, pan_made),
+        ("zoomed_4x", zoomed, zoomed_made),
+    ] {
+        println!("curves {name}: {c:?}, curves made {made}");
+    }
+    // Idle and a drag that no curve depends on: nothing plotted, no rows,
+    // no repaint asked for.
+    assert_eq!(idle_made, 0, "idle frame plotted curves");
+    assert!(!idle.immediate, "idle: immediate repaint");
+    assert_eq!((idle.rows_formatted, idle.rows_built), (0, 0));
+    assert_eq!(drag_made + next_made, 0, "an unrelated drag plotted curves");
+    assert!(
+        next.rows_formatted <= 12,
+        "{} rows made",
+        next.rows_formatted
+    );
+    // The pan plots the curves near the view: the hyperbolas and functions
+    // (unbounded) and the ellipses in it, at most every curve once.
+    assert!(pan_made > 100 && pan_made <= 300, "{pan_made} curves made");
+    // Zoomed in, most ellipses are skipped: fewer curves than at the fit.
+    assert!(
+        zoomed_made < pan_made,
+        "{zoomed_made} curves made zoomed in"
+    );
+    // Ceilings: the counts when they were set plus about 8%. An idle or
+    // drag frame keeps every curve's mesh, so it costs about what the plain
+    // grid does (n1000 idle: about 2700 allocations); a pan makes about 21
+    // allocations per curve it plots.
+    for (name, c, allocs, bytes) in [
+        ("idle", idle, 2_650, 545_000),
+        ("drag_unrelated", drag, 2_800, 555_000),
+        ("drag_unrelated_rows", next, 2_800, 555_000),
+        ("pan", pan, 9_600, 14_500_000),
+    ] {
+        assert!(c.allocs <= allocs, "{name}: {} allocations", c.allocs);
+        assert!(c.bytes <= bytes, "{name}: {} bytes", c.bytes);
+    }
 }
