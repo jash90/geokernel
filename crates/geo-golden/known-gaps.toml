@@ -131,6 +131,38 @@ id = "transform-stretch-025"
 reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
 mismatches = ["0:m", "1:m", "2:m", "3:m", "6:m", "7:m"]
 
+# lines
+
+[[gap]]
+id = "lines-oncircle-005"
+reason = "the point starts on the circle, so GeoGebra labels one tangent. With continuity off the tangent order is the fixed AlgoIntersectLineConic.permutation of the helper intersection (AlgoTangentPointND.algoIntersect). AlgoIntersectLineConic.firstIntersection stays true while both tangent points coincide, which keeps isPermutationNeeded true, and permutation is then set by a near-to match against the previous points D on the update after the one that clears firstIntersection. Which tangent t follows depends on the path; the kernel always follows the first (left) tangent"
+mismatches = ["4:t", "7:t", "8:t"]
+
+[[gap]]
+id = "lines-oncircle-006"
+reason = "the point starts on the circle, so GeoGebra labels one tangent. With continuity off the tangent order is the fixed AlgoIntersectLineConic.permutation of the helper intersection (AlgoTangentPointND.algoIntersect). AlgoIntersectLineConic.firstIntersection stays true while both tangent points coincide, which keeps isPermutationNeeded true, and permutation is then set by a near-to match against the previous points D on the update after the one that clears firstIntersection. Which tangent t follows depends on the path; the kernel always follows the first (left) tangent"
+mismatches = ["2:t", "3:t", "4:t", "6:t", "7:t"]
+
+[[gap]]
+id = "lines-oncircle-007"
+reason = "the point starts on the circle, so GeoGebra labels one tangent. With continuity off the tangent order is the fixed AlgoIntersectLineConic.permutation of the helper intersection (AlgoTangentPointND.algoIntersect). AlgoIntersectLineConic.firstIntersection stays true while both tangent points coincide, which keeps isPermutationNeeded true, and permutation is then set by a near-to match against the previous points D on the update after the one that clears firstIntersection. Which tangent t follows depends on the path; the kernel always follows the first (left) tangent"
+mismatches = ["3:t", "4:t", "5:t", "6:t", "7:t", "8:t"]
+
+[[gap]]
+id = "lines-oncircle-008"
+reason = "the point starts on the circle, so GeoGebra labels one tangent. With continuity off the tangent order is the fixed AlgoIntersectLineConic.permutation of the helper intersection (AlgoTangentPointND.algoIntersect). AlgoIntersectLineConic.firstIntersection stays true while both tangent points coincide, which keeps isPermutationNeeded true, and permutation is then set by a near-to match against the previous points D on the update after the one that clears firstIntersection. Which tangent t follows depends on the path; the kernel always follows the first (left) tangent"
+mismatches = ["2:t", "3:t", "4:t", "5:t", "6:t", "8:t"]
+
+# Long, nearly parallel lines: the raw cross product is above 1e-8 and the
+# unit-normal one below it, so GeoGebra intersects them far away and defines
+# both bisectors through that point, while the kernel treats them as
+# parallel (its b_{1} is the middle line, slightly off GeoGebra's, and its
+# b_{2} is undefined).
+[[gap]]
+id = "lines-anglelines-012"
+reason = "GeoGebra applies its zero test to raw line coefficients; the kernel stores lines normalised"
+mismatches = ["2:b_{1}", "2:b_{2}", "3:b_{1}", "3:b_{2}", "4:b_{1}", "4:b_{2}", "6:b_{1}", "6:b_{2}"]
+
 # intersect
 
 [[gap]]

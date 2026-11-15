@@ -77,6 +77,19 @@ pub(crate) trait Group: Copy {
     /// these arguments, so that another group or the built-in commands can
     /// try. Groups are asked before the built-in commands.
     fn parse(c: &Construction, func: &str, args: &[&str]) -> Option<Result<Self, String>>;
+
+    /// Parses a command that creates several objects, such as the two
+    /// tangents of `Tangent(P, c)`, into one definition per output in
+    /// GeoGebra's output order. The script layer gives them their labels.
+    ///
+    /// Returns `None` like [`Group::parse`]; it is asked before `parse`.
+    fn parse_multi(
+        _c: &Construction,
+        _func: &str,
+        _args: &[&str],
+    ) -> Option<Result<Vec<Self>, String>> {
+        None
+    }
 }
 
 /// Checks an intersection index: 0 is the first point, 1 the second.

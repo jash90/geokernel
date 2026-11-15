@@ -14,29 +14,30 @@ use super::length;
 use crate::kernel::{Construction, Id, Value};
 use crate::tol::STANDARD_PRECISION;
 
+/// The radius GeoGebra keeps: `GeoQuadricND.setSphereND` turns a radius
+/// that `DoubleUtil.isZero` accepts into 0, and `setSphereNDMatrix` makes a
+/// radius below `STANDARD_PRECISION` a single point with half-axes 0
+/// (`GeoConicND.singlePoint`). `None` for a negative radius.
+fn radius(r: f64) -> Option<f64> {
+    if -STANDARD_PRECISION < r && r < STANDARD_PRECISION {
+        Some(0.0)
+    } else if r < 0.0 {
+        None
+    } else {
+        Some(r)
+    }
+}
+
 pub(crate) fn through(c: &Construction, center: Id, through: Id) -> Option<Value> {
     let (cx, cy) = c.point(center)?;
     let (px, py) = c.point(through)?;
-    Some(Value::Circle {
-        cx,
-        cy,
-        r: length(px - cx, py - cy),
-    })
+    let r = radius(length(px - cx, py - cy))?;
+    Some(Value::Circle { cx, cy, r })
 }
 
-pub(crate) fn with_radius(c: &Construction, center: Id, radius: Id) -> Option<Value> {
+pub(crate) fn with_radius(c: &Construction, center: Id, radius_id: Id) -> Option<Value> {
     let (cx, cy) = c.point(center)?;
-    let r = c.number(radius)?;
-    // GeoQuadricND.setSphereND: a radius that is zero up to the standard
-    // precision becomes 0 (a single-point circle), any other negative radius
-    // makes the circle undefined.
-    let r = if -STANDARD_PRECISION < r && r < STANDARD_PRECISION {
-        0.0
-    } else if r < 0.0 {
-        return None;
-    } else {
-        r
-    };
+    let r = radius(c.number(radius_id)?)?;
     Some(Value::Circle { cx, cy, r })
 }
 

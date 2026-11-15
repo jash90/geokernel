@@ -1,3 +1,10 @@
+// Parts of this file are translated from GeoGebra (https://github.com/geogebra/geogebra),
+// commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/LabelManager.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/Construction.java
+// Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
+// Licensed by GeoGebra GmbH under the EUPL 1.2.
+
 //! A small input-bar style language, one definition per line:
 //!
 //! ```text
@@ -9,6 +16,7 @@
 //! k = Circle(A, B)        # centre A, through B
 //! m = Circle(A, r)        # centre A, radius r
 //! P = Intersect(l, k, 2)  # second intersection (1 is the default)
+//! t = Tangent(P, k)       # two tangents t_{1} and t_{2} when both are defined at creation
 //! ```
 
 use crate::algo::conic::ConicDef;
@@ -16,7 +24,7 @@ use crate::algo::lines::LineDef;
 use crate::algo::measure::MeasureDef;
 use crate::algo::transform::TransformDef;
 use crate::algo::Group;
-use crate::kernel::{Construction, Def, Id, Kind};
+use crate::kernel::{Construction, Def, Id, Kind, Value};
 use std::fmt;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -57,8 +65,127 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
     if !is_identifier(name) {
         return Err(format!("`{name}` is not a valid object name"));
     }
-    let def = parse_def(c, rhs.trim())?;
+    let rhs = rhs.trim();
+    if let Some(defs) = parse_multi(c, rhs) {
+        return add_outputs(c, name, defs?).map(Some);
+    }
+    let def = parse_def(c, rhs)?;
     c.add(name, def).map(Some).map_err(|e| e.to_string())
+}
+
+/// `Name(args)` split into the name and the trimmed arguments; `None` for
+/// anything else (a point literal, a number, a malformed line).
+fn split_call(rhs: &str) -> Option<(&str, Vec<&str>)> {
+    if rhs.starts_with('(') {
+        return None;
+    }
+    let open = rhs.find('(')?;
+    let inner = rhs[open + 1..].strip_suffix(')')?;
+    Some((
+        rhs[..open].trim(),
+        inner.split(',').map(str::trim).collect(),
+    ))
+}
+
+/// Asks the groups for a command that creates several objects.
+fn parse_multi(c: &Construction, rhs: &str) -> Option<Result<Vec<Def>, String>> {
+    fn wrap<G: Group>(r: Result<Vec<G>, String>, f: fn(G) -> Def) -> Result<Vec<Def>, String> {
+        r.map(|defs| defs.into_iter().map(f).collect())
+    }
+    let (func, args) = split_call(rhs)?;
+    if let Some(r) = LineDef::parse_multi(c, func, &args) {
+        return Some(wrap(r, Def::Lines));
+    }
+    if let Some(r) = ConicDef::parse_multi(c, func, &args) {
+        return Some(wrap(r, Def::Conic));
+    }
+    if let Some(r) = MeasureDef::parse_multi(c, func, &args) {
+        return Some(wrap(r, Def::Measure));
+    }
+    if let Some(r) = TransformDef::parse_multi(c, func, &args) {
+        return Some(wrap(r, Def::Transform));
+    }
+    None
+}
+
+/// Adds the outputs of one command `name = Command(...)`. The labels follow
+/// what GeoGebra's `LabelManager.setLabels` and `Construction.getIndexLabel`
+/// give at creation. The kernel's rule:
+///
+/// - two or more outputs defined at creation: every output is created and
+///   gets the next free indexed label (`t_{1}`, `t_{2}`, ...);
+/// - exactly one defined: only that output is created, labelled `name`;
+/// - none defined: only the first output is created, labelled `name`.
+///
+/// The set of created objects is fixed at creation: an output that was not
+/// created is not added later, even when it becomes defined.
+/// Returns the id of the first object created.
+fn add_outputs(c: &mut Construction, name: &str, defs: Vec<Def>) -> Result<Id, String> {
+    if c.id(name).is_some() {
+        return Err(format!("object `{name}` already exists"));
+    }
+    let mut defined = Vec::with_capacity(defs.len());
+    for def in &defs {
+        defined.push(probe(c, def)?);
+    }
+    let count = defined.iter().filter(|&&d| d).count();
+    if count < 2 {
+        let k = defined.iter().position(|&d| d).unwrap_or(0);
+        return c.add(name, defs[k]).map_err(|e| e.to_string());
+    }
+    // Construction.getIndexLabel: the prefix is the name up to the first `_`.
+    let prefix = match name.split('_').next() {
+        Some(p) if !p.is_empty() => p,
+        _ => "a",
+    };
+    let mut first = None;
+    for def in defs {
+        let label = index_label(c, prefix);
+        let id = c.add(&label, def).map_err(|e| e.to_string())?;
+        first.get_or_insert(id);
+    }
+    first.ok_or_else(|| "the command creates no object".into())
+}
+
+/// `Construction.buildIndexedLabel`: the first `p_{n}` that is free, where
+/// for `n < 10` the short form `p_n` must be free too.
+fn index_label(c: &Construction, prefix: &str) -> String {
+    let mut n = 1;
+    loop {
+        let long = format!("{prefix}_{{{n}}}");
+        if c.id(&long).is_none() && (n >= 10 || c.id(&format!("{prefix}_{n}")).is_none()) {
+            return long;
+        }
+        n += 1;
+    }
+}
+
+/// Checks a definition of a group and tells whether it is defined now.
+fn probe(c: &Construction, def: &Def) -> Result<bool, String> {
+    fn run<G: Group>(c: &Construction, d: &G) -> Result<bool, String> {
+        d.check(c).map_err(|e| e.to_string())?;
+        Ok(d.compute(c).is_some_and(|v| is_finite(&v)))
+    }
+    match def {
+        Def::Lines(d) => run(c, d),
+        Def::Conic(d) => run(c, d),
+        Def::Measure(d) => run(c, d),
+        Def::Transform(d) => run(c, d),
+        _ => Ok(true),
+    }
+}
+
+fn is_finite(v: &Value) -> bool {
+    match *v {
+        Value::Point { x, y } => x.is_finite() && y.is_finite(),
+        Value::Line { a, b, c } => a.is_finite() && b.is_finite() && c.is_finite(),
+        Value::Segment { x1, y1, x2, y2 } => {
+            x1.is_finite() && y1.is_finite() && x2.is_finite() && y2.is_finite()
+        }
+        Value::Circle { cx, cy, r } => cx.is_finite() && cy.is_finite() && r.is_finite(),
+        Value::Number(v) => v.is_finite(),
+        Value::Undefined => false,
+    }
 }
 
 fn is_identifier(s: &str) -> bool {
@@ -131,7 +258,7 @@ fn parse_def(c: &Construction, rhs: &str) -> Result<Def, String> {
         ("Segment", 2) => Ok(Def::Segment(obj(args[0])?, obj(args[1])?)),
         ("Midpoint", 2) => Ok(Def::Midpoint(obj(args[0])?, obj(args[1])?)),
         ("Distance", 2) => Ok(Def::Distance(obj(args[0])?, obj(args[1])?)),
-        ("Perpendicular" | "PerpendicularLine", 2) => Ok(Def::Perpendicular {
+        ("Perpendicular" | "PerpendicularLine" | "OrthogonalLine", 2) => Ok(Def::Perpendicular {
             through: obj(args[0])?,
             to: obj(args[1])?,
         }),
@@ -188,7 +315,7 @@ fn parse_def(c: &Construction, rhs: &str) -> Result<Def, String> {
         }
         (
             "Line" | "Segment" | "Midpoint" | "Distance" | "Perpendicular" | "PerpendicularLine"
-            | "Parallel" | "Circle" | "Intersect",
+            | "OrthogonalLine" | "Parallel" | "Circle" | "Intersect",
             n,
         ) => Err(format!("`{func}` does not take {n} argument(s)")),
         _ => Err(format!("unknown command `{func}`")),
@@ -276,5 +403,56 @@ mod tests {
 
         let err = load("A = (0, 0)\nB = (1, 1)\nl = Line(A)\n").err().unwrap();
         assert!(err.message.contains("does not take 1"));
+    }
+
+    #[test]
+    fn labels_several_outputs_like_geogebra() {
+        let mut c = load(
+            "A = (0, 0)\nr = 2\nk = Circle(A, r)\nP = (5, 1)\nB = (4, 0)\nC = (0, 1)\n\
+             l = Line(A, B)\nm = Line(A, C)\n",
+        )
+        .unwrap();
+        // two defined outputs: indexed labels, the plain name is not used
+        let first = exec(&mut c, "t = Tangent(P, k)").unwrap().unwrap();
+        assert_eq!(c.label(first), "t_{1}");
+        assert!(c.id("t_{2}").is_some() && c.id("t").is_none());
+        // the prefix is the name up to the first `_`
+        exec(&mut c, "w_7 = AngularBisector(l, m)").unwrap();
+        assert!(c.id("w_{1}").is_some() && c.id("w_{2}").is_some());
+        // a short label `b_1` blocks the index 1
+        exec(&mut c, "b_1 = (1, 1)").unwrap();
+        exec(&mut c, "b = AngularBisector(l, m)").unwrap();
+        assert!(c.id("b_{1}").is_none());
+        assert!(c.id("b_{2}").is_some() && c.id("b_{3}").is_some());
+        // an existing name is an error
+        let e = exec(&mut c, "k = Tangent(P, k)").unwrap_err();
+        assert!(e.contains("already exists"), "{e}");
+    }
+
+    #[test]
+    fn a_single_defined_output_gets_the_plain_label() {
+        let c = load(
+            "A = (0, 0)\nr = 5\nk = Circle(A, r)\nP = (3, 4)\nt = Tangent(P, k)\n\
+             B = (4, 0)\nC = (0, 2)\nD = (-4, 2)\nl = Line(A, B)\nm = Line(C, D)\n\
+             b = AngularBisector(l, m)\n",
+        )
+        .unwrap();
+        // P on the circle: GeoGebra labels only the first tangent
+        assert!(c.id("t").is_some() && c.id("t_{1}").is_none() && c.id("t_{2}").is_none());
+        // parallel lines with opposite directions: only the second bisector
+        // is defined, and it gets the plain label
+        let b = c.id("b").unwrap();
+        assert!(matches!(
+            c.def(b),
+            Def::Lines(crate::algo::lines::LineDef::AngleBisectorLines { which: 1, .. })
+        ));
+        assert_eq!(
+            c.value(b),
+            Value::Line {
+                a: 0.0,
+                b: 1.0,
+                c: -1.0
+            }
+        );
     }
 }

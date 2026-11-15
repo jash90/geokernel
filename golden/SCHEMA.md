@@ -70,6 +70,14 @@ One JSON object per file, stored under `golden/<group>/`.
 
 A JSON object that maps every label created by the script to an Object.
 
+A line whose command creates several objects is recorded under the labels
+GeoGebra gives them: `p_{1}`, `p_{2}`, … when two or more are defined at
+creation, the plain label `p` when only one is. Here `p` is the script label
+up to its first `_`, and each output takes the next free index `n`; for
+`n < 10` the short form `p_n` must be free too, so an existing `b_1` makes
+the outputs `b_{2}` and `b_{3}`. Every snapshot of a case has the same keys,
+and no key other than a script label or such an indexed label is allowed.
+
 Every Object has `type` and `defined`. When `defined` is `false` the object
 carries no numeric fields. When it is `true` it carries exactly these:
 
