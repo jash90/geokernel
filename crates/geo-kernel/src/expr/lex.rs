@@ -25,8 +25,10 @@ pub(crate) enum Tok {
     Star,
     Slash,
     Caret,
-    /// `²` or `³`, a power written as a superscript.
-    Square(u8),
+    /// A power written in superscript digits, `²` or `⁻¹²` (`POWERN`).
+    Power(f64),
+    /// `%` after a number literal: a percentage.
+    Percent,
     Bang,
     Bar,
     Degree,
@@ -53,27 +55,21 @@ pub(crate) fn tokens(src: &str) -> Result<Vec<Token>, String> {
             continue;
         }
         let tok = if ch.is_ascii_digit() || ch == '.' {
-            let end = number_end(bytes, start);
-            if end == start {
-                return Err(format!("unexpected `{ch}`"));
-            }
+            let end = number_end(src, start)?;
             while chars.peek().is_some_and(|&(i, _)| i < end) {
                 chars.next();
             }
-            let text = &src[start..end];
-            let v = text
-                .parse::<f64>()
-                .map_err(|_| format!("`{text}` is not a number"))?;
+            let v = literal_value(&src[start..end])?;
             out.push(Token {
                 tok: Tok::Num(v),
                 start,
                 end,
             });
             continue;
-        } else if ch.is_alphabetic() || ch == '_' {
+        } else if is_name_char(ch) && !ch.is_numeric() || ch == '_' {
             let mut end = start;
             while let Some(&(i, c)) = chars.peek() {
-                if c.is_alphanumeric() || c == '_' || c == '\'' {
+                if is_name_char(c) || c == '_' || c == '\'' {
                     chars.next();
                     end = i + c.len_utf8();
                     // a subscript in braces: `a_{12}`
@@ -98,6 +94,25 @@ pub(crate) fn tokens(src: &str) -> Result<Vec<Token>, String> {
                 end,
             });
             continue;
+        } else if let Some(end) = power_end(src, start) {
+            while chars.peek().is_some_and(|&(i, _)| i < end) {
+                chars.next();
+            }
+            out.push(Token {
+                tok: Tok::Power(superscript_value(&src[start..end])),
+                start,
+                end,
+            });
+            continue;
+        } else if src[start..].starts_with("**") {
+            chars.next();
+            chars.next();
+            out.push(Token {
+                tok: Tok::Caret,
+                start,
+                end: start + 2,
+            });
+            continue;
         } else {
             match ch {
                 '(' => Tok::LParen,
@@ -105,14 +120,17 @@ pub(crate) fn tokens(src: &str) -> Result<Vec<Token>, String> {
                 ',' => Tok::Comma,
                 ';' => Tok::Semicolon,
                 '+' => Tok::Plus,
-                '-' => Tok::Minus,
-                '*' => Tok::Star,
-                '/' => Tok::Slash,
-                '^' => Tok::Caret,
+                // `MINUS`: hyphen, en dash, minus sign
+                '-' | '\u{2013}' | '\u{2212}' => Tok::Minus,
+                // `MULTIPLY`: asterisk, dot operator, bullet operator, times
+                '*' | '\u{22c5}' | '\u{2219}' | '\u{d7}' => Tok::Star,
+                // `DIVIDE`: slash, division sign
+                '/' | '\u{f7}' => Tok::Slash,
+                // `POWER`: caret, modifier circumflex (`**` above)
+                '^' | '\u{2c6}' => Tok::Caret,
+                '%' => Tok::Percent,
                 '!' => Tok::Bang,
                 '|' => Tok::Bar,
-                '\u{b2}' => Tok::Square(2),
-                '\u{b3}' => Tok::Square(3),
                 '\u{b0}' | '\u{2da}' | '\u{ba}' => Tok::Degree,
                 '\u{221a}' => Tok::Sqrt,
                 '\u{221e}' => Tok::Infinity,
@@ -130,35 +148,116 @@ pub(crate) fn tokens(src: &str) -> Result<Vec<Token>, String> {
     Ok(out)
 }
 
-/// End of a number literal starting at `start`: digits with an optional
-/// fraction, then an optional exponent `E` or `e` that has digits after it.
-fn number_end(b: &[u8], start: usize) -> usize {
-    let digits = |mut i: usize| {
-        while b.get(i).is_some_and(u8::is_ascii_digit) {
-            i += 1;
+/// End of a number literal starting at `start`: GeoGebra's `FLOAT`, a run
+/// of digits and decimal points with exactly one point at most, then
+/// optionally `EFLOAT`'s exponent: an upper-case `E`, a sign and digits.
+/// A lower-case `e` never starts an exponent: `2e3` is `2` and the name
+/// `e3`. A run like `1.2.3` or `1..2` is an error, as upstream
+/// (`MyDouble.parseDouble`), and so is a lone `.`.
+fn number_end(src: &str, start: usize) -> Result<usize, String> {
+    let b = src.as_bytes();
+    let mut i = start;
+    let (mut digits, mut points) = (0, 0);
+    while let Some(&c) = b.get(i) {
+        match c {
+            b'0'..=b'9' => digits += 1,
+            b'.' => points += 1,
+            _ => break,
         }
-        i
+        i += 1;
+    }
+    if digits == 0 || points > 1 {
+        return Err(format!("`{}` is not a number", &src[start..i]));
+    }
+    if b.get(i) == Some(&b'E') {
+        let rest = &src[i + 1..];
+        let sign = rest
+            .chars()
+            .next()
+            .filter(|c| matches!(c, '+' | '-' | '\u{2013}' | '\u{2212}'))
+            .map_or(0, char::len_utf8);
+        let k = rest[sign..].bytes().take_while(u8::is_ascii_digit).count();
+        if k > 0 {
+            i += 1 + sign + k;
+        }
+    }
+    Ok(i)
+}
+
+/// A letter or digit of a name. The masculine ordinal `º` (a degree sign
+/// on some keyboards), the modifier circumflex `ˆ` (a power) and the
+/// superscript digits are letters or digits to Unicode but operators here.
+fn is_name_char(c: char) -> bool {
+    c.is_alphanumeric() && !matches!(c, '\u{ba}' | '\u{2c6}') && superscript_digit(c).is_none()
+}
+
+/// The value of a literal that [`number_end`] delimited.
+fn literal_value(text: &str) -> Result<f64, String> {
+    text.replace(['\u{2013}', '\u{2212}'], "-")
+        .parse::<f64>()
+        .map_err(|_| format!("`{text}` is not a number"))
+}
+
+/// A whole string that is one number literal, optionally after a `-`:
+/// the plain numbers of the script forms (`r = 3`, `A = (1, -2.5)`).
+/// Anything else (`1e3`, `+5`, `inf`) is left to the expression parser.
+pub(crate) fn plain_number(s: &str) -> Option<f64> {
+    let (negative, body) = match s.strip_prefix('-') {
+        Some(rest) => (true, rest),
+        None => (false, s),
     };
-    let mut i = digits(start);
-    let int_digits = i > start;
-    if b.get(i) == Some(&b'.') {
-        let j = digits(i + 1);
-        if !int_digits && j == i + 1 {
-            return start; // a lone `.`
-        }
-        i = j;
+    if !body.starts_with(|c: char| c.is_ascii_digit() || c == '.') {
+        return None;
     }
-    if matches!(b.get(i), Some(b'e' | b'E')) {
-        let mut j = i + 1;
-        if matches!(b.get(j), Some(b'+' | b'-')) {
-            j += 1;
+    match number_end(body, 0) {
+        Ok(end) if end == body.len() => {
+            let v = literal_value(body).ok()?;
+            Some(if negative { -v } else { v })
         }
-        let k = digits(j);
-        if k > j {
-            i = k;
-        }
+        _ => None,
     }
-    i
+}
+
+/// The value of a superscript digit (`INDEXDIGIT`).
+fn superscript_digit(c: char) -> Option<u32> {
+    match c {
+        '\u{2070}' => Some(0),
+        '\u{b9}' => Some(1),
+        '\u{b2}' => Some(2),
+        '\u{b3}' => Some(3),
+        '\u{2074}'..='\u{2079}' => Some(c as u32 - 0x2070),
+        _ => None,
+    }
+}
+
+/// End of `POWERN` at `start`: an optional superscript minus, then
+/// superscript digits.
+fn power_end(src: &str, start: usize) -> Option<usize> {
+    let rest = &src[start..];
+    let sign = if rest.starts_with('\u{207b}') {
+        '\u{207b}'.len_utf8()
+    } else {
+        0
+    };
+    let digits: usize = rest[sign..]
+        .chars()
+        .take_while(|&c| superscript_digit(c).is_some())
+        .map(char::len_utf8)
+        .sum();
+    (digits > 0).then_some(start + sign + digits)
+}
+
+/// `StringUtil.indexToNumber`: the integer a run of superscripts spells.
+fn superscript_value(text: &str) -> f64 {
+    let mut v = 0.0;
+    for d in text.chars().filter_map(superscript_digit) {
+        v = v * 10.0 + f64::from(d);
+    }
+    if text.starts_with('\u{207b}') {
+        -v
+    } else {
+        v
+    }
 }
 
 #[cfg(test)]
@@ -190,9 +289,68 @@ mod tests {
             ]
         );
         assert_eq!(kinds("2e"), vec![Tok::Num(2.0), name("e", false)]);
+        // only an upper-case `E` starts an exponent
+        assert_eq!(kinds("2e3"), vec![Tok::Num(2.0), name("e3", false)]);
+        assert_eq!(kinds("1.E\u{2212}3"), vec![Tok::Num(0.001)]);
+        assert_eq!(kinds("2E"), vec![Tok::Num(2.0), name("E", false)]);
         assert_eq!(kinds(".5°"), vec![Tok::Num(0.5), Tok::Degree]);
+        assert_eq!(kinds("5."), vec![Tok::Num(5.0)]);
         assert!(tokens("a # b").is_err());
         assert!(tokens(". 5").is_err());
         assert!(tokens("a_{1").is_err());
+        assert!(tokens("1.2.3").is_err());
+        assert!(tokens("1..2").is_err());
+        assert!(tokens("2 ** ..").is_err());
+    }
+
+    #[test]
+    fn operator_spellings_and_superscripts() {
+        assert_eq!(
+            kinds("2**3 \u{22c5} 4 \u{2219} 5 \u{d7} 6 \u{f7} 7 \u{2212} 8 \u{2013} 9 \u{2c6} 1"),
+            vec![
+                Tok::Num(2.0),
+                Tok::Caret,
+                Tok::Num(3.0),
+                Tok::Star,
+                Tok::Num(4.0),
+                Tok::Star,
+                Tok::Num(5.0),
+                Tok::Star,
+                Tok::Num(6.0),
+                Tok::Slash,
+                Tok::Num(7.0),
+                Tok::Minus,
+                Tok::Num(8.0),
+                Tok::Minus,
+                Tok::Num(9.0),
+                Tok::Caret,
+                Tok::Num(1.0)
+            ]
+        );
+        assert_eq!(
+            kinds("2\u{b3}\u{2074} 2\u{207b}\u{b9}\u{b2} 5%"),
+            vec![
+                Tok::Num(2.0),
+                Tok::Power(34.0),
+                Tok::Num(2.0),
+                Tok::Power(-12.0),
+                Tok::Num(5.0),
+                Tok::Percent
+            ]
+        );
+        assert!(tokens("2\u{207b}").is_err());
+    }
+
+    #[test]
+    fn plain_numbers_are_whole_literals() {
+        assert_eq!(plain_number("3"), Some(3.0));
+        assert_eq!(plain_number("-2.5"), Some(-2.5));
+        assert_eq!(plain_number("1E300"), Some(1e300));
+        assert_eq!(plain_number("-0.0").map(f64::is_sign_negative), Some(true));
+        for not_plain in [
+            "1e3", "+5", "inf", "nan", "infinity", "1.2.3", "1 + 1", "", "-", "--1",
+        ] {
+            assert_eq!(plain_number(not_plain), None, "{not_plain}");
+        }
     }
 }

@@ -110,7 +110,7 @@ pub(crate) fn check(
 /// dimension, which makes `floor`, `ceil` and `round` work in degrees.
 fn is_angle_def(c: &Construction, def: &Def) -> bool {
     match *def {
-        Def::Measure(MeasureDef::Angle(..)) => true,
+        Def::Measure(MeasureDef::Angle(..)) | Def::Angle(_) => true,
         Def::Expr(d) => super::is_angle(c, d),
         _ => false,
     }
@@ -137,6 +137,8 @@ fn unary_type(op: Un, a: Ty) -> Result<Ty, String> {
         (Un::Abs, Ty::Vec) => Ok(Ty::Num(0)),
         (_, Ty::Vec) => Err("complex numbers are not supported".into()),
         (Un::Abs | Un::Floor | Un::Ceil | Un::Round, Ty::Num(d)) => Ok(Ty::Num(d)),
+        // `MyDouble.asin(true)`: `makeAngle`
+        (Un::AsinD | Un::AcosD | Un::AtanD, Ty::Num(_)) => Ok(Ty::Num(1)),
         (_, Ty::Num(_)) => Ok(Ty::Num(0)),
     }
 }

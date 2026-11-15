@@ -237,6 +237,10 @@ pub enum Def {
     },
     /// A number the user can change (a slider).
     Number(f64),
+    /// A free angle in radians, such as `c = 30°`: a number the user can
+    /// change that `floor`, `ceil` and `round` treat in whole degrees
+    /// (GeoGebra's independent `GeoAngle`).
+    Angle(f64),
     /// Line through two points.
     Line(Id, Id),
     /// Segment between two points.
@@ -317,7 +321,7 @@ impl Def {
             Def::Line(..) | Def::Perpendicular { .. } | Def::Parallel { .. } => Kind::Line,
             Def::Segment(..) => Kind::Segment,
             Def::CircleThrough { .. } | Def::CircleRadius { .. } => Kind::Circle,
-            Def::Number(_) | Def::Distance(..) => Kind::Number,
+            Def::Number(_) | Def::Angle(_) | Def::Distance(..) => Kind::Number,
             Def::Lines(d) => d.kind(),
             Def::Conic(d) => d.kind(),
             Def::Measure(d) => d.kind(),
@@ -350,7 +354,10 @@ impl Def {
     pub fn is_free(&self) -> bool {
         matches!(
             self,
-            Def::FreePoint { .. } | Def::Number(_) | Def::Vector(VectorDef::Free { .. })
+            Def::FreePoint { .. }
+                | Def::Number(_)
+                | Def::Angle(_)
+                | Def::Vector(VectorDef::Free { .. })
         )
     }
 
@@ -358,7 +365,9 @@ impl Def {
     /// of its tree, which [`expr::parents`] lists.
     pub(crate) fn parents(&self) -> Parents {
         match *self {
-            Def::FreePoint { .. } | Def::Number(_) | Def::Expr(_) => Parents::none(),
+            Def::FreePoint { .. } | Def::Number(_) | Def::Angle(_) | Def::Expr(_) => {
+                Parents::none()
+            }
             Def::Line(p, q)
             | Def::Segment(p, q)
             | Def::Midpoint(p, q)
@@ -792,10 +801,12 @@ impl Construction {
     /// Changes a free number and recomputes everything that depends on it.
     /// Returns how many dependent objects were recomputed.
     pub fn set_number(&mut self, id: Id, v: f64) -> Result<usize, Error> {
-        let def = self.defs.get(id.0).ok_or(Error::UnknownObject)?;
-        if !matches!(def, Def::Number(_)) {
-            return Err(Error::NotFree(self.labels[id.0].clone()));
-        }
+        let def = *self.defs.get(id.0).ok_or(Error::UnknownObject)?;
+        let new_def = match def {
+            Def::Number(_) => Def::Number(v),
+            Def::Angle(_) => Def::Angle(v),
+            _ => return Err(Error::NotFree(self.labels[id.0].clone())),
+        };
         if !v.is_finite() {
             return Err(Error::NotFinite);
         }
@@ -803,7 +814,7 @@ impl Construction {
         if matches!(self.values[id.0], Value::Number(old) if old.to_bits() == v.to_bits()) {
             return Ok(0);
         }
-        self.defs[id.0] = Def::Number(v);
+        self.defs[id.0] = new_def;
         self.values[id.0] = Value::Number(v);
         Ok(self.propagate(id))
     }
@@ -872,7 +883,7 @@ impl Construction {
                     Err(Error::NotFinite)
                 }
             }
-            Def::Number(v) => {
+            Def::Number(v) | Def::Angle(v) => {
                 if v.is_finite() {
                     Ok(())
                 } else {
@@ -972,7 +983,7 @@ impl Construction {
     ) -> Option<Value> {
         match def {
             Def::FreePoint { x, y } => Some(Value::Point { x, y }),
-            Def::Number(v) => Some(Value::Number(v)),
+            Def::Number(v) | Def::Angle(v) => Some(Value::Number(v)),
             Def::Line(p, q) => algo::basic::line(self, p, q),
             Def::Segment(p, q) => algo::basic::segment(self, p, q),
             Def::Midpoint(p, q) => algo::basic::midpoint(self, p, q),

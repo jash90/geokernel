@@ -349,7 +349,7 @@ fn builtin_lines() -> Vec<String> {
         let mut rng = Rng::new(case_seed(0xC0DE, lines.len() as u64));
         let c = context();
         if let Some(call) = pick_args(&mut rng, &c, cmd, usize::MAX) {
-            lines.push(format!("z = {}", call.text));
+            lines.push(format!("zz = {}", call.text));
         }
     }
     lines

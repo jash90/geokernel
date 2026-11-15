@@ -164,7 +164,6 @@ fn errors_leave_the_construction_unchanged() {
         "b = Z + 1",
         "b = (a, A)",
         "b = sin(A)",
-        "b = x + 1",
         "b = ((((1",
         "b = 1 / Line(A, A)",
         "b = Distance(A, Midpoint(A, A))",
@@ -242,7 +241,6 @@ fn bad_function_lines_are_rejected() {
         "b = f + 1",
         "b = f(1, 2)",
         "g(x) = (x, 1)",
-        "b = x + 1",
         "g(x) = Line(A, B)",
         "1(x) = x",
         "f(x) = x",
@@ -273,5 +271,85 @@ fn bad_function_lines_are_rejected() {
     // The cost guard stops it, not the name or the depth: `x` is read
     // 2^(2^(level + 1)) times, past MAX_COST at level 4.
     let (level, e) = failure.expect("the cost guard never fired");
-    assert_eq!((level, e.as_str()), (4, "the expression is too large to evaluate"));
+    assert_eq!(
+        (level, e.as_str()),
+        (4, "the expression is too large to evaluate")
+    );
+}
+
+#[test]
+fn input_bar_spellings_are_accepted() {
+    let c = load(
+        "a = 2\n\
+         b = 2**3 \u{22c5} a \u{f7} a \u{2212} 1\n\
+         c = 7 % 3\n\
+         d = 2\u{207b}\u{b9}\u{b2}\n\
+         f(x) = sin^2 x\n\
+         g(x) = sin\u{b2}(x)\n\
+         h = sin^-1(0.5)\n\
+         k = floor(h)\n\
+         m = cot^-1(1)\n\
+         n = a(3)/a\n\
+         p = 1E3 + .5 + 5.\n\
+         q = x + a\n",
+    )
+    .unwrap();
+    assert_eq!(num(&c, "b"), 7.0);
+    assert!((num(&c, "c") - 0.21).abs() < 1e-15);
+    assert_eq!(num(&c, "d"), 2f64.powi(-12));
+    assert_eq!(sample(&c, "f", 1.0), sample(&c, "g", 1.0));
+    // `sin^-1` is an angle: `floor` works in whole degrees
+    assert!((num(&c, "k") - 30f64.to_radians()).abs() < 1e-12);
+    assert!((num(&c, "m") - std::f64::consts::FRAC_PI_4).abs() < 1e-15);
+    assert_eq!(num(&c, "n"), 3.0);
+    assert_eq!(num(&c, "p"), 1005.5);
+    // `x` outside `f(x) = ...` makes a function
+    assert_eq!(c.kind(c.id("q").unwrap()), Kind::Function);
+    assert_eq!(sample(&c, "q", 1.0), Some(3.0));
+}
+
+#[test]
+fn literals_names_and_commands_follow_the_input_bar() {
+    let mut c = load("a = 1\n").unwrap();
+    // `1e3` is `1·e3`, and `e3` does not exist; `1.2.3` is no number
+    for bad in [
+        "b = 1e3",
+        "b = 1.2.3",
+        "b = 1..2",
+        "x = 5",
+        "y = a",
+        "pi = 3",
+        "sin = 3",
+    ] {
+        assert!(exec(&mut c, bad).is_err(), "{bad}");
+    }
+    assert!(exec(&mut c, "sin(x) = x").is_err());
+    // the old forms keep working, and `+5` and `inf` go through expressions
+    for (line, label, def) in [
+        ("r = 3", "r", Some(Def::Number(3.0))),
+        ("s = -2.5", "s", Some(Def::Number(-2.5))),
+        ("t = +5", "t", Some(Def::Number(5.0))),
+        ("u = inf", "u", None),
+    ] {
+        exec(&mut c, line).unwrap();
+        if let Some(def) = def {
+            assert_eq!(c.def(c.id(label).unwrap()), def, "{line}");
+        }
+    }
+    assert_eq!(c.value(c.id("u").unwrap()), Value::Undefined);
+    // `e` and `Mod` are labels; `e` then wins over Euler's number
+    exec(&mut c, "e = 5").unwrap();
+    exec(&mut c, "b = 2e").unwrap();
+    assert_eq!(num(&c, "b"), 10.0);
+    // a command makes a constant expression dependent: it cannot be set
+    exec(&mut c, "m = Mod(7, 3)").unwrap();
+    exec(&mut c, "n = 2 + 3").unwrap();
+    assert!(c.set_number(c.id("m").unwrap(), 2.0).is_err());
+    assert!(c.set_number(c.id("n").unwrap(), 2.0).is_ok());
+    // digits that evaluate to `NaN` round to an integer, unless an object
+    exec(&mut c, "o = 0").unwrap();
+    exec(&mut c, "g = round(2.567, o/o)").unwrap();
+    exec(&mut c, "h = round(2.567, ∞)").unwrap();
+    assert_eq!(num(&c, "g"), 3.0);
+    assert_eq!(c.value(c.id("h").unwrap()), Value::Undefined);
 }

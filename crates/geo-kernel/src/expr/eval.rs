@@ -121,6 +121,7 @@ impl Ctx<'_> {
             }
             Node::Un(op, a) => self.unary(op, a),
             Node::Bin(Bin::Pow, a, b) => self.power(a, b),
+            Node::Bin(Bin::Round2, a, b) => self.round2(a, b),
             Node::Bin(op, a, b) => binary(op, self.full(a), self.full(b), self.is_angle(a)),
             Node::Apply(f, a) => N(self.apply(f, a, false)),
             Node::FnName(_) => N(f64::NAN),
@@ -201,6 +202,19 @@ impl Ctx<'_> {
         }
     }
 
+    /// `Operation.ROUND2`: digits that evaluate to `NaN` fall back to
+    /// rounding to an integer, unless they are an object.
+    fn round2(&self, a: u32, b: u32) -> Val {
+        let (x, digits) = (self.full(a), self.full(b));
+        let object = matches!(self.node(b), Node::Obj(_) | Node::Cmd(..));
+        match (x, digits) {
+            (Val::N(x), Val::N(d)) if d.is_nan() && !object => {
+                Val::N(math::round(x, 0.0, self.is_angle(a)))
+            }
+            (x, digits) => binary(Bin::Round2, x, digits, self.is_angle(a)),
+        }
+    }
+
     /// `ExpressionNodeEvaluator.handlePower`.
     fn power(&self, a: u32, b: u32) -> Val {
         match (self.full(a), self.full(b)) {
@@ -262,7 +276,7 @@ impl Ctx<'_> {
                 return Val::N(match op {
                     Un::X => x,
                     Un::Y => y,
-                    Un::Abs => length(x, y),
+                    Un::Abs => complex_abs(x, y),
                     _ => f64::NAN,
                 })
             }
@@ -282,9 +296,9 @@ impl Ctx<'_> {
             Un::Csch => math::csch(x),
             Un::Sech => 1.0 / x.cosh(),
             Un::Coth => 1.0 / x.tanh(),
-            Un::Asin => math::asin(x),
-            Un::Acos => math::acos(x),
-            Un::Atan => x.atan(),
+            Un::Asin | Un::AsinD => math::asin(x),
+            Un::Acos | Un::AcosD => math::acos(x),
+            Un::Atan | Un::AtanD => x.atan(),
             Un::Asinh => x.asinh(),
             Un::Acosh => x.acosh(),
             Un::Atanh => x.atanh(),
@@ -365,6 +379,19 @@ fn command(c: &Construction, def: Def, hint: Hint) -> Val {
         Some(Value::Point { x, y } | Value::Vector { x, y }) => Val::V(x, y),
         _ if def.kind() == Kind::Number => Val::N(nan),
         _ => Val::V(nan, nan),
+    }
+}
+
+/// `GeoVec2D.complexAbs`, the modulus of `x + iy` (Apache Commons Math's
+/// `Complex.abs`, which documents `NaN` when a part is `NaN`, else
+/// infinity when a part is infinite); finite parts give `MyMath.length`.
+fn complex_abs(x: f64, y: f64) -> f64 {
+    if x.is_nan() || y.is_nan() {
+        f64::NAN
+    } else if x.is_infinite() || y.is_infinite() {
+        f64::INFINITY
+    } else {
+        length(x, y)
     }
 }
 

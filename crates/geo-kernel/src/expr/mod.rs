@@ -26,6 +26,7 @@
 
 mod eval;
 mod lex;
+pub(crate) use lex::plain_number;
 pub(crate) mod math;
 mod names;
 mod parse;
@@ -96,6 +97,11 @@ pub(crate) enum Un {
     Asin,
     Acos,
     Atan,
+    /// `asind`, `acosd`, `atand`: the inverse functions that give an
+    /// angle (`sin^-1 x`).
+    AsinD,
+    AcosD,
+    AtanD,
     Asinh,
     Acosh,
     Atanh,
@@ -349,7 +355,8 @@ pub(crate) fn value(d: ExprDef, raw: Raw) -> Value {
 }
 
 /// Defines `name = rhs` as an expression. `vector_label` tells whether a
-/// coordinate result is a vector (lower-case label) or a point.
+/// coordinate result is a vector (lower-case label) or a point. An
+/// expression in `x` defines a function, as `b = x + 1` does in GeoGebra.
 pub(crate) fn define(
     c: &mut Construction,
     name: &str,
@@ -358,7 +365,7 @@ pub(crate) fn define(
 ) -> Result<Id, String> {
     let parsed = parse::parse(c, rhs)?;
     if parsed.uses_var {
-        return Err("`x` is only allowed in a function, `f(x) = ...`".into());
+        return function(c, name, parsed);
     }
     let kind = match parsed.tys[parsed.root as usize] {
         Ty::Num(_) => Kind::Number,
@@ -371,7 +378,10 @@ pub(crate) fn define(
 /// Defines the function `name(x) = rhs`. A function that reads no object
 /// (`f(x) = 3`) stays a function.
 pub(crate) fn define_function(c: &mut Construction, name: &str, rhs: &str) -> Result<Id, String> {
-    let parsed = parse::parse(c, rhs)?;
+    function(c, name, parse::parse(c, rhs)?)
+}
+
+fn function(c: &mut Construction, name: &str, parsed: parse::Parsed) -> Result<Id, String> {
     if parsed.tys[parsed.root as usize] == Ty::Vec {
         return Err("a function must give a number".into());
     }
@@ -380,12 +390,21 @@ pub(crate) fn define_function(c: &mut Construction, name: &str, rhs: &str) -> Re
 
 fn add(c: &mut Construction, name: &str, parsed: parse::Parsed, kind: Kind) -> Result<Id, String> {
     let function = kind == Kind::Function;
-    let constant = parsed.parents.is_empty() && !function;
+    // `AlgebraProcessor.processNumber`: independent unless it reads an
+    // object; a command such as `Mod(7, 3)` makes a helper object, so an
+    // expression with one is dependent even on constants.
+    let has_command = parsed
+        .nodes
+        .iter()
+        .any(|n| matches!(n, Node::Bin(op, ..) if op.is_command()) || matches!(n, Node::Cmd(..)));
+    let constant = parsed.parents.is_empty() && !function && !has_command;
     let vector_label = kind == Kind::Vector;
     let entry = Entry::new(parsed, function);
     if constant {
         // `AlgebraProcessor`: an expression without objects is free.
+        let angle = entry.root_ty() == Ty::Num(1);
         let free = match eval::root(c, &entry) {
+            Raw::Num(v) if v.is_finite() && angle => Some(Def::Angle(v)),
             Raw::Num(v) if v.is_finite() => Some(Def::Number(v)),
             Raw::Vec(x, y) if x.is_finite() && y.is_finite() => Some(if vector_label {
                 Def::Vector(VectorDef::Free { x, y })

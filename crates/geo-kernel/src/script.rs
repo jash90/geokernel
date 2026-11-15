@@ -76,11 +76,13 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
         if !is_identifier(f) {
             return Err(format!("`{f}` is not a valid object name"));
         }
+        check_label(f)?;
         return crate::expr::define_function(c, f, rhs.trim()).map(Some);
     }
     if !is_identifier(name) {
         return Err(format!("`{name}` is not a valid object name"));
     }
+    check_label(name)?;
     let rhs = rhs.trim();
     if let Some(result) = crate::algo::polygon::exec(c, name, rhs) {
         return result;
@@ -319,7 +321,7 @@ pub(crate) fn parse_def(c: &Construction, rhs: &str) -> Result<Def, String> {
     }
 
     // 3.5
-    if let Ok(v) = rhs.parse::<f64>() {
+    if let Some(v) = crate::expr::plain_number(rhs) {
         return Ok(Def::Number(v));
     }
 
@@ -446,8 +448,42 @@ pub(crate) fn object(c: &Construction, label: &str) -> Result<Id, String> {
 }
 
 fn parse_number(s: &str) -> Result<f64, String> {
-    s.parse::<f64>()
-        .map_err(|_| format!("`{s}` is not a number"))
+    crate::expr::plain_number(s).ok_or_else(|| format!("`{s}` is not a number"))
+}
+
+/// Names GeoGebra never gives to an object of these forms: `x = 5` and
+/// `pi = 3` are equations there, and `sin = 3` is renamed `sin_{1}` (all
+/// observed with the harness). Command names such as `Mod` and the letters
+/// `e` and `i` are ordinary labels. GeoGebra also reads `inf = ...`,
+/// `Infinity = ...`, `NaN = ...` and `Undefined = ...` as equations; here
+/// they stay labels, which the polygon forms rely on (see DIFFERENCES.md),
+/// while an expression still reads these words as `∞` and `?`.
+fn check_label(name: &str) -> Result<(), String> {
+    const RESERVED: &[&str] = &[
+        "x",
+        "y",
+        "z",
+        "pi",
+        "Pi",
+        "\u{3c0}",
+        "\u{212f}",
+        "euler_gamma",
+        "deg",
+        "rad",
+        "true",
+        "True",
+        "false",
+        "False",
+    ];
+    if RESERVED.contains(&name) || crate::expr::is_function_name(name) && !is_command_name(name) {
+        return Err(format!("`{name}` is a reserved name"));
+    }
+    Ok(())
+}
+
+/// Commands among the built-in names (`Mod`, `Max`, ...): upper case.
+fn is_command_name(name: &str) -> bool {
+    name.starts_with(|c: char| c.is_ascii_uppercase())
 }
 
 #[cfg(test)]

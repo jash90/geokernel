@@ -10,8 +10,8 @@ fn value(c: &Construction, label: &str) -> Value {
     c.value(c.id(label).expect("label exists"))
 }
 
-const BASE: &str = "rad = 2\nA = (0, 0)\nB = (4, 0)\nC = (0, 3)\nD = (4, 3)\n\
-l = Line(A, B)\nm = Line(C, D)\ns = Segment(A, B)\nk = Circle(A, rad)\nr = Ray(A, B)\nE = (2, 0)\nF = (1, 5)\nG = (9, 5)\nH = (-3, 2)\nJ = (0, 7)\nT1 = (2, 0)\nT2 = (2, 5)\nzero = 0\nZ = Circle(A, zero)\n";
+const BASE: &str = "rr = 2\nA = (0, 0)\nB = (4, 0)\nC = (0, 3)\nD = (4, 3)\n\
+l = Line(A, B)\nm = Line(C, D)\ns = Segment(A, B)\nk = Circle(A, rr)\nr = Ray(A, B)\nE = (2, 0)\nF = (1, 5)\nG = (9, 5)\nH = (-3, 2)\nJ = (0, 7)\nT1 = (2, 0)\nT2 = (2, 5)\nzero = 0\nZ = Circle(A, zero)\n";
 
 fn run(extra: &str) -> Construction {
     load(&format!("{BASE}{extra}")).expect("script loads")

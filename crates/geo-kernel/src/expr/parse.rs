@@ -13,7 +13,7 @@
 //! associative, `-2^2 = -4`), factorials, then elements.
 
 use super::lex::{tokens, Tok, Token};
-use super::math::PI_180;
+use super::math::{self, PI_180};
 use super::names::{binary_builtin, builtin_name, unary_builtin};
 use super::types::check;
 use super::{Bin, Node, Ty, Un};
@@ -227,12 +227,73 @@ impl Parser<'_> {
     fn multiply_special(&mut self, left: u32, right: u32, depth: u32) -> Option<u32> {
         match self.node(left) {
             Node::FnName(op) => Some(self.push(Node::Un(op, right))),
+            // `sin^2 x`, `sin²(x)`, `sin^-1 x`
+            Node::Bin(Bin::Pow, f, exponent) => match self.node(f) {
+                Node::FnName(op) => Some(self.inverse_or_power(op, right, exponent)),
+                _ => None,
+            },
             Node::Bin(Bin::Mul, a, b) if depth < MAX_NESTING => {
                 let special = self.multiply_special(b, right, depth + 1)?;
                 Some(self.push(Node::Bin(Bin::Mul, a, special)))
             }
             _ => None,
         }
+    }
+
+    /// `FunctionParser.inverseOrPower`: `op^e x` is `op(x)^e`, and with a
+    /// constant exponent -1 the inverse function (`minusFirstPower`).
+    fn inverse_or_power(&mut self, op: Un, arg: u32, exponent: u32) -> u32 {
+        let minus_one = match self.node(exponent) {
+            Node::Num(v) => math::is_equal(v, -1.0),
+            _ => false,
+        };
+        if minus_one {
+            return self.minus_first_power(op, arg);
+        }
+        let f = self.push(Node::Un(op, arg));
+        self.push(Node::Bin(Bin::Pow, f, exponent))
+    }
+
+    /// `FunctionParser.minusFirstPower`: `sin^-1 x` is the inverse
+    /// function, in degrees for the trigonometric ones; `sec^-1 x` is
+    /// `acos(1/x)`; any other function is raised to the power -1.
+    fn minus_first_power(&mut self, op: Un, arg: u32) -> u32 {
+        let inverse = match op {
+            Un::Sin => Some(Un::AsinD),
+            Un::Cos => Some(Un::AcosD),
+            Un::Tan => Some(Un::AtanD),
+            Un::Sinh => Some(Un::Asinh),
+            Un::Cosh => Some(Un::Acosh),
+            Un::Tanh => Some(Un::Atanh),
+            _ => None,
+        };
+        if let Some(inverse) = inverse {
+            return self.push(Node::Un(inverse, arg));
+        }
+        let of_reciprocal = match op {
+            Un::Sec => Some(Un::Acos),
+            Un::Csc => Some(Un::Asin),
+            Un::Sech => Some(Un::Acosh),
+            Un::Csch => Some(Un::Asinh),
+            Un::Coth => Some(Un::Atanh),
+            _ => None,
+        };
+        if let Some(inverse) = of_reciprocal {
+            let one = self.push(Node::Num(1.0));
+            let r = self.push(Node::Bin(Bin::Div, one, arg));
+            return self.push(Node::Un(inverse, r));
+        }
+        if op == Un::Cot {
+            // `π/2 - atan(x)`
+            let pi = self.push(Node::Num(PI));
+            let two = self.push(Node::Num(2.0));
+            let half = self.push(Node::Bin(Bin::Div, pi, two));
+            let atan = self.push(Node::Un(Un::Atan, arg));
+            return self.push(Node::Bin(Bin::Sub, half, atan));
+        }
+        let f = self.push(Node::Un(op, arg));
+        let m = self.push(Node::Num(-1.0));
+        self.push(Node::Bin(Bin::Pow, f, m))
     }
 
     /// `ExpressionNode.isConstantDouble(f, Kernel.PI_180)`.
@@ -294,9 +355,10 @@ impl Parser<'_> {
                     let f = self.factorial()?;
                     exponents.push(if minus { self.unary_minus(f, 0) } else { f });
                 }
-                Some(&Tok::Square(n)) => {
+                Some(&Tok::Power(n)) => {
+                    // `convertIndexToNumber`
                     self.pos += 1;
-                    let f = self.push(Node::Num(f64::from(n)));
+                    let f = self.push(Node::Num(n));
                     exponents.push(f);
                 }
                 _ => break,
@@ -343,6 +405,8 @@ impl Parser<'_> {
         self.pos += 1;
         match token.tok {
             Tok::Num(v) => {
+                // `50%` is a literal (`Parser.parseDouble`)
+                let v = if self.eat(&Tok::Percent) { v * 0.01 } else { v };
                 let n = self.push(Node::Num(v));
                 if self.eat(&Tok::Degree) {
                     // `30°` is `30 * °` (`Parser.myDouble`)
@@ -404,6 +468,18 @@ impl Parser<'_> {
         if let Some(node) = constant {
             return Ok(self.push(node));
         }
+        let coordinate = match text {
+            "x" => Some(Un::X),
+            "y" => Some(Un::Y),
+            _ => None,
+        };
+        if let (Some(op), true) = (coordinate, call) {
+            // `x(A)`: never an object, `x` and `y` are not labels
+            return match self.arguments()?[..] {
+                [a] => Ok(self.push(Node::Un(op, a))),
+                _ => Err(format!("`{text}` takes one argument")),
+            };
+        }
         if let Some(id) = self.c.id(text) {
             self.read(id, true);
             if self.c.kind(id) == Kind::Function {
@@ -415,14 +491,15 @@ impl Parser<'_> {
                     _ => Err(format!("the function `{text}` takes one argument")),
                 };
             }
-            // `a(b)` with a number `a` is a product: the bracket follows.
-            return Ok(self.push(Node::Obj(id)));
+            let obj = self.push(Node::Obj(id));
+            if !call {
+                return Ok(obj);
+            }
+            // `a(b)` with a number `a` is the product `a·b`, one element
+            // (`MULTIPLY_OR_FUNCTION`): `a(b)/c` is `(a·b)/c`.
+            let arg = self.element()?;
+            return Ok(self.push(Node::Bin(Bin::Mul, obj, arg)));
         }
-        let coordinate = match text {
-            "x" => Some(Un::X),
-            "y" => Some(Un::Y),
-            _ => None,
-        };
         if coordinate.is_some() || builtin_name(text) {
             if !call {
                 return match unary_builtin(text) {
@@ -431,7 +508,7 @@ impl Parser<'_> {
                 };
             }
             let args = self.arguments()?;
-            let node = match (coordinate.or_else(|| unary_builtin(text)), &args[..]) {
+            let node = match (unary_builtin(text), &args[..]) {
                 (Some(op), &[a]) => Node::Un(op, a),
                 _ => match (binary_builtin(text), &args[..]) {
                     (Some(op), &[a, b]) => Node::Bin(op, a, b),

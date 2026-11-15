@@ -265,8 +265,37 @@ pub fn script_of(lines: &[String]) -> String {
     lines.join("\n")
 }
 
+/// A number as a script literal. Rust prints `1e300`, but only an upper-case
+/// `E` starts an exponent in the script language (`1e300` is `1·e300`).
+pub fn lit(v: f64) -> String {
+    format!("{v:?}").replace('e', "E")
+}
+
+/// `src` with every exponent written as Rust prints it (`1e300`, `2.5e-7`)
+/// turned into a script literal (`1E300`).
+pub fn upper_exponents(src: &str) -> String {
+    let b: Vec<char> = src.chars().collect();
+    let mut out = String::with_capacity(src.len());
+    for (i, &ch) in b.iter().enumerate() {
+        let after_digit = i > 0 && b[i - 1].is_ascii_digit();
+        let before_exponent = match b.get(i + 1) {
+            Some('-') => b.get(i + 2).is_some_and(char::is_ascii_digit),
+            Some(c) => c.is_ascii_digit(),
+            None => false,
+        };
+        out.push(if ch == 'e' && after_digit && before_exponent {
+            'E'
+        } else {
+            ch
+        });
+    }
+    out
+}
+
 /// Builds a construction from script text; panics with the script on error.
+/// Exponents as Rust prints them are accepted (see [`upper_exponents`]).
 pub fn build(src: &str) -> Construction {
+    let src = &upper_exponents(src);
     match geo_kernel::script::load(src) {
         Ok(c) => c,
         Err(e) => panic!("script failed: {e}\n{src}"),
@@ -592,7 +621,7 @@ pub fn generate(seed: u64, n_commands: usize, all_commands: bool) -> Case {
         let y = random_coordinate(&mut rng, &xs);
         xs.push(x);
         xs.push(y);
-        let line = format!("{name} = ({x:?}, {y:?})");
+        let line = format!("{name} = ({}, {})", lit(x), lit(y));
         let id = exec(&mut c, &line)
             .expect("free point")
             .expect("free point is created");
@@ -603,7 +632,7 @@ pub fn generate(seed: u64, n_commands: usize, all_commands: bool) -> Case {
     }
     for name in NUMBER_NAMES.iter().take(n_numbers) {
         let v = random_number(&mut rng);
-        let line = format!("{name} = {v:?}");
+        let line = format!("{name} = {}", lit(v));
         let id = exec(&mut c, &line)
             .expect("free number")
             .expect("free number is created");

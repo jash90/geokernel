@@ -88,8 +88,8 @@ fn script_at_current_values(case: &Case) -> Vec<String> {
     for id in case.c.ids() {
         let label = case.c.label(id);
         match case.c.def(id) {
-            Def::FreePoint { x, y } => lines.push(format!("{label} = ({x:?}, {y:?})")),
-            Def::Number(v) => lines.push(format!("{label} = {v:?}")),
+            Def::FreePoint { x, y } => lines.push(format!("{label} = ({}, {})", lit(x), lit(y))),
+            Def::Number(v) => lines.push(format!("{label} = {}", lit(v))),
             _ => {}
         }
     }
@@ -951,7 +951,7 @@ fn measures_agree_with_direct_formulas() {
         let src = format!(
             "{}{}{}{}{}{}{}\
              s = Segment(A, B)\nl = Line(A, B)\nk = Circle(A, B)\npar = Line(P, l)\n\
-             dab = Distance(A, B)\nlen = Length(s)\nrad = Radius(k)\ncirc = Circumference(k)\n\
+             dab = Distance(A, B)\nlen = Length(s)\nrd = Radius(k)\ncirc = Circumference(k)\n\
              per = Perimeter(k)\nar = Area(k)\nar3 = Area(T0, T1, T2)\nar4 = Area(T0, T1, T2, D)\n\
              sl = Slope(l)\nsls = Slope(s)\ndpl = Distance(P, l)\ndlp = Distance(l, P)\n\
              dps = Distance(P, s)\ndll = Distance(l, par)\nang = Angle(T0, T1, T2)\n",
@@ -972,7 +972,7 @@ fn measures_agree_with_direct_formulas() {
                 let ab = dist(a, b);
                 expect_near("Distance", num(&c, "dab"), ab, sc)?;
                 expect_near("Length", num(&c, "len"), ab, sc)?;
-                expect_near("Radius", num(&c, "rad"), ab, sc)?;
+                expect_near("Radius", num(&c, "rd"), ab, sc)?;
                 expect_near("Circumference", num(&c, "circ"), 2.0 * PI * ab, sc)?;
                 expect_near("Perimeter", num(&c, "per"), 2.0 * PI * ab, sc)?;
                 expect_near("Area(circle)", num(&c, "ar"), PI * ab * ab, sc * sc)?;
