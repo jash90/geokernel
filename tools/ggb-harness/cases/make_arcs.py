@@ -189,4 +189,9 @@ for cmd in ["Arc", "Sector"]:
                        f"a = {cmd}(k, A, D)", f"b = {cmd}(k, D, A)"] + measures("a"),
          [mv("F", 1, 3), mv("A", -2, 1), mv("F", 1, 2), mv("A", 1, -2)])
 
+# the measures of a part whose circle degenerates to a segment or two rays
+case("undefined", [pt("A", 0, 0), pt("B", 1, 2), pt("C", 2, 0), "a = CircumcircularArc(A, B, C)"] + measures("a")
+     + ["s = CircumcircularSector(A, B, C)", "sar = Area(s)", "slen = Length(s)"],
+     [mv("B", 1, 0), mv("B", 3, 0), mv("B", 1, 1)])
+
 cases.write()
