@@ -115,7 +115,7 @@ fn circle_radius(c: &Construction, id: Id) -> Option<f64> {
 }
 
 /// Length of a segment; GeoGebra sets lengths below the tolerance to 0.
-fn segment_length(x1: f64, y1: f64, x2: f64, y2: f64) -> f64 {
+pub(crate) fn segment_length(x1: f64, y1: f64, x2: f64, y2: f64) -> f64 {
     let length = my_length(x2 - x1, y2 - y1);
     if is_zero(length) {
         0.0
@@ -182,6 +182,19 @@ fn polygon_area(pts: &[(f64, f64)]) -> f64 {
     }
     sum += pts[last].0 * pts[0].1 - pts[0].0 * pts[last].1;
     sum / 2.0
+}
+
+/// `AlgoAnglePoints`: the angle at `pb`, counter-clockwise from `pa - pb`
+/// to `pd - pb`, in `[0, 2 pi]`; `None` when either vector is zero.
+pub(crate) fn angle_of_points(pa: (f64, f64), pb: (f64, f64), pd: (f64, f64)) -> Option<f64> {
+    let (vx, vy) = (pa.0 - pb.0, pa.1 - pb.1);
+    let (wx, wy) = (pd.0 - pb.0, pd.1 - pb.1);
+    if (is_zero(vx) && is_zero(vy)) || (is_zero(wx) && is_zero(wy)) {
+        return None;
+    }
+    let det = vx * wy - vy * wx;
+    let prod = vx * wx + vy * wy;
+    Some(angle_value(det.atan2(prod)))
 }
 
 /// Distance of a point to a segment: to the closest point of the segment.
@@ -346,15 +359,7 @@ impl Group for MeasureDef {
                 number(affine_ratio(pb, pd, pe) / affine_ratio(pa, pd, pe))
             }
             MeasureDef::Angle(a, b, d) => {
-                let (pa, pb, pd) = (c.point(a)?, c.point(b)?, c.point(d)?);
-                let (vx, vy) = (pa.0 - pb.0, pa.1 - pb.1);
-                let (wx, wy) = (pd.0 - pb.0, pd.1 - pb.1);
-                if (is_zero(vx) && is_zero(vy)) || (is_zero(wx) && is_zero(wy)) {
-                    return None;
-                }
-                let det = vx * wy - vy * wx;
-                let prod = vx * wx + vy * wy;
-                number(angle_value(det.atan2(prod)))
+                number(angle_of_points(c.point(a)?, c.point(b)?, c.point(d)?)?)
             }
         }
     }
@@ -514,8 +519,8 @@ mod tests {
             ("d = Radius(k, k)", "`Radius` does not take 2 argument(s)"),
             ("d = Area(A, B)", "`Area` does not take 2 argument(s)"),
             (
-                "d = Area(A, B, P, C, A)",
-                "`Area` does not take 5 argument(s)",
+                "d = Area(A, B, P, C, k)",
+                "`k` is a circle, expected a point",
             ),
             ("d = Slope(l, l)", "`Slope` does not take 2 argument(s)"),
             ("d = AffineRatio(A, B)", "`AffineRatio` does not take 2"),

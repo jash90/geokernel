@@ -29,8 +29,8 @@ OrthogonalLine,,geometry,P0,partial,"OrthogonalLine(point, line or segment); Ort
 Tangent,,geometry,P1,partial,"Tangent(point, circle); Tangent(line or segment, circle)"
 Segment,,geometry,P0,partial,"Segment(point, point)"
 Slope,,geometry,P1,partial,Slope(line or segment)
-Angle,,geometry,P1,partial,"Angle(point, point, point)"
-InteriorAngles,,geometry,P1,todo,
+Angle,,geometry,P1,partial,"Angle(point, point, point); Angle(polygon)"
+InteriorAngles,,geometry,P1,partial,InteriorAngles(polygon)
 Direction,,geometry,P1,partial,"Direction(line, segment or ray)"
 Point,,geometry,P1,todo,
 Midpoint,,geometry,P0,partial,"Midpoint(point, point); Midpoint(segment); Midpoint(circle)"
@@ -48,20 +48,20 @@ Sector,,geometry,P1,todo,
 CircleSector,,geometry,P1,todo,
 CircumcircleSector,,geometry,P1,todo,
 CircumcircleArc,,geometry,P1,todo,
-Polygon,,geometry,P1,todo,
+Polygon,,geometry,P1,partial,"Polygon of three or more points; Polygon(point, point, number of vertices)"
 RigidPolygon,,geometry,P1,todo,
-Area,,geometry,P1,partial,Area(circle); Area of three or four points
+Area,,geometry,P1,partial,Area(circle); Area(polygon); Area of three or more points
 Circumference,,geometry,P1,partial,Circumference(circle)
-Perimeter,,geometry,P1,partial,Perimeter(circle)
+Perimeter,,geometry,P1,partial,Perimeter(circle); Perimeter(polygon)
 Locus,,geometry,P1,todo,
-Centroid,,geometry,P1,todo,
+Centroid,,geometry,P1,partial,Centroid(polygon)
 TriangleCenter,,geometry,P1,todo,
 Barycenter,,geometry,P1,todo,
 Trilinear,,geometry,P1,partial,"Trilinear(point, point, point, number, number, number)"
 Cubic,,geometry,P1,todo,
 TriangleCurve,,geometry,P1,todo,
-Vertex,,geometry,P1,todo,
-PolyLine,,geometry,P1,todo,
+Vertex,,geometry,P1,partial,"Vertex(polygon); Vertex(polygon, index)"
+PolyLine,,geometry,P1,partial,PolyLine of two or more points
 PenStroke,,geometry,P1,todo,
 PenStrokeBezier,,english,P2,todo,
 PointIn,,geometry,P1,todo,
@@ -458,7 +458,7 @@ CircumcircularSector,CircumcircleSector,geometry,P1,todo,
 CircumcircularArc,CircumcircleArc,geometry,P1,todo,
 CircularSector,CircleSector,geometry,P1,todo,
 CircularArc,CircleArc,geometry,P1,todo,
-Polyline,PolyLine,geometry,P1,todo,
+Polyline,PolyLine,geometry,P1,partial,
 Sxx,SXX,statistics,,out_of_scope,
 Syy,SYY,statistics,,out_of_scope,
 Sxy,SXY,statistics,,out_of_scope,

@@ -1,6 +1,8 @@
 package geokernel.harness;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -20,10 +22,13 @@ import org.geogebra.common.kernel.geos.GeoLine;
 import org.geogebra.common.kernel.geos.GeoBoolean;
 import org.geogebra.common.kernel.geos.GeoNumeric;
 import org.geogebra.common.kernel.geos.GeoPoint;
+import org.geogebra.common.kernel.geos.GeoPolyLine;
+import org.geogebra.common.kernel.geos.GeoPolygon;
 import org.geogebra.common.kernel.geos.GeoRay;
 import org.geogebra.common.kernel.geos.GeoSegment;
 import org.geogebra.common.kernel.geos.GeoVector;
 import org.geogebra.common.kernel.kernelND.GeoElementND;
+import org.geogebra.common.kernel.kernelND.GeoPointND;
 import org.geogebra.common.kernel.matrix.Coords;
 import org.geogebra.common.main.error.ErrorHandler;
 import org.geogebra.common.main.settings.config.AppConfigDefault;
@@ -83,6 +88,12 @@ final class Session {
                 line, false, new ThrowingErrorHandler(line), false, null);
         if (out != null && out.length == 2 && isMultiOutput(definition)) {
             return runMulti(line, expected, out);
+        }
+        if (out != null && out.length >= 1 && isPerVertex(definition)) {
+            return runMulti(line, expected, out);
+        }
+        if (out != null && out.length >= 1 && definition.startsWith("Polygon(")) {
+            return runPolygon(line, label, out);
         }
         // A transformed segment or ray with labelled end points also creates
         // the image points (see `transformedOutputs`); the segment or ray is
@@ -153,6 +164,45 @@ final class Session {
         return first;
     }
 
+    /**
+     * Records a polygon and the objects `Polygon` creates with it: its sides
+     * and, for a regular polygon, its new vertices, under the labels GeoGebra
+     * gave them. The polygon must get the script label, or be undefined and
+     * wait for it like any other object (see `run`). Outputs GeoGebra left
+     * unlabelled are not recorded; every labelled one must be a segment or a
+     * point.
+     */
+    private GeoElement runPolygon(String line, String label, GeoElementND[] out) {
+        GeoElement poly = out[0].toGeoElement();
+        boolean labelled = kernel.lookupLabel(label) == poly;
+        boolean waiting = !poly.isLabelSet() && !poly.isDefined()
+                && label.equals(poly.getLabelSimple());
+        if (!(poly instanceof GeoPolygon) || !labelled && !waiting) {
+            throw new IllegalStateException("'" + line + "' did not create polygon " + label);
+        }
+        objects.put(label, poly);
+        for (int i = 1; i < out.length; i++) {
+            GeoElement geo = out[i].toGeoElement();
+            if (!geo.isLabelSet()) {
+                continue;
+            }
+            String name = geo.getLabelSimple();
+            if (kernel.lookupLabel(name) != geo) {
+                throw new IllegalStateException("GeoGebra labelled an object of '" + line
+                        + "' as " + name + " but cannot look it up");
+            }
+            if (objects.containsKey(name)) {
+                throw new IllegalArgumentException("label used twice: " + name);
+            }
+            String type = typeOf(geo);
+            if (!type.equals("segment") && !type.equals("point")) {
+                throw new IllegalStateException("'" + line + "' created a " + type);
+            }
+            objects.put(name, geo);
+        }
+        return poly;
+    }
+
     /** Moves a free point or a free vector and updates everything that depends on it. */
     void move(String label, double x, double y) {
         GeoElement geo = lookup(label);
@@ -204,6 +254,12 @@ final class Session {
 
     /** The schema type of a GeoGebra object; the class decides, not the state. */
     static String typeOf(GeoElement geo) {
+        if (geo instanceof GeoPolygon) {
+            return "polygon";
+        }
+        if (geo instanceof GeoPolyLine) {
+            return "polyline";
+        }
         if (geo instanceof GeoSegment) {
             return "segment";
         }
@@ -309,6 +365,28 @@ final class Session {
     }
 
     /**
+     * Whether the definition creates one object per vertex of a polygon or
+     * polyline: `Vertex(p)`, `InteriorAngles(p)` and `Angle(p)` (one argument
+     * without a comma, a polygon for `Angle`). They are labelled like the
+     * outputs of `runMulti`.
+     */
+    private boolean isPerVertex(String definition) {
+        Matcher m = COMMAND.matcher(definition);
+        if (!m.matches() || definition.contains(",")) {
+            return false;
+        }
+        switch (m.group(1)) {
+            case "Vertex":
+            case "InteriorAngles":
+                return true;
+            case "Angle":
+                return transformedSource(definition) instanceof GeoPolygon;
+            default:
+                return false;
+        }
+    }
+
+    /**
      * The schema type a definition must produce; rejects unsupported input.
      * A coordinate pair is a vector when the first character of the label is
      * lower case by `StringUtil.isLowerCase` and a point otherwise
@@ -344,7 +422,13 @@ final class Session {
             case "Intersect":
             case "ClosestPoint":
             case "Trilinear":
+            case "Centroid":
+            case "Vertex":
                 return "point";
+            case "Polygon":
+                return "polygon";
+            case "PolyLine":
+                return "polyline";
             case "AreCollinear":
             case "AreParallel":
             case "ArePerpendicular":
@@ -364,6 +448,7 @@ final class Session {
             case "AffineRatio":
             case "CrossRatio":
             case "Angle":
+            case "InteriorAngles":
                 return "number";
             case "Circle":
             case "Incircle":
@@ -399,14 +484,36 @@ final class Session {
             return obj;
         }
         Map<String, Object> fields = geo.isDefined() ? fields(geo, type) : null;
-        if (fields != null && fields.values().stream()
-                .allMatch(v -> Double.isFinite((Double) v))) {
+        if (fields != null && fields.values().stream().allMatch(Session::finite)) {
             obj.put("defined", true);
             obj.putAll(fields);
         } else {
             obj.put("defined", false);
         }
         return obj;
+    }
+
+    /** Whether a field is finite: a number, or a list of finite fields or nulls. */
+    private static boolean finite(Object v) {
+        if (v == null) {
+            return true;
+        }
+        if (v instanceof List) {
+            return ((List<?>) v).stream().allMatch(Session::finite);
+        }
+        return Double.isFinite((Double) v);
+    }
+
+    /** A vertex `[x, y]`; null for an undefined point or a point at infinity. */
+    private static List<Object> vertex(GeoPointND p) {
+        GeoPoint q = (GeoPoint) p;
+        if (!q.isDefined() || q.isInfinite()) {
+            return null;
+        }
+        List<Object> v = new ArrayList<>();
+        v.add(q.getInhomX());
+        v.add(q.getInhomY());
+        return v;
     }
 
     /** Numeric fields of a defined object; null when GeoGebra has none. */
@@ -480,6 +587,31 @@ final class Session {
                 f.put("a", r.x);
                 f.put("b", r.y);
                 f.put("c", r.z);
+                return f;
+            }
+            case "polygon": {
+                GeoPolygon poly = (GeoPolygon) geo;
+                List<Object> vertices = new ArrayList<>();
+                for (GeoPointND p : poly.getPoints()) {
+                    List<Object> v = vertex(p);
+                    if (v == null) {
+                        return null;
+                    }
+                    vertices.add(v);
+                }
+                f.put("vertices", vertices);
+                f.put("area", poly.getArea());
+                f.put("signed_area", poly.getAreaWithSign());
+                return f;
+            }
+            case "polyline": {
+                GeoPolyLine poly = (GeoPolyLine) geo;
+                List<Object> vertices = new ArrayList<>();
+                for (GeoPointND p : poly.getPointsND()) {
+                    vertices.add(vertex(p));
+                }
+                f.put("vertices", vertices);
+                f.put("length", poly.getLength());
                 return f;
             }
             default:
