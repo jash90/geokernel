@@ -6,6 +6,7 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDependentFunction.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoFunction.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/AlgebraProcessor.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoNumeric.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 

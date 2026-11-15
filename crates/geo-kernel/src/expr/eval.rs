@@ -8,6 +8,10 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoVec2D.java
 //   source/shared/common/src/main/java/org/geogebra/common/plugin/Operation.java
 //   source/shared/common/src/main/java/org/geogebra/common/util/MyMath.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/DoubleOperation.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/MyDouble.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/MySpecialDouble.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoNumeric.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
@@ -432,47 +436,47 @@ impl Ctx<'_> {
                 return precise(special, v);
             }
             Un::Round => return round(special, dec, x, 0.0, deg),
-            _ => self.scalar(op, x, deg),
+            _ => scalar(op, x, deg),
         };
         Ex::kept(special, v)
     }
+}
 
-    /// A one-argument operation on a number.
-    fn scalar(&self, op: Un, x: f64, deg: bool) -> f64 {
-        match op {
-            Un::Factorial => math::factorial(x),
-            Un::Sin => math::sin(x),
-            Un::Cos => math::cos(x),
-            Un::Tan => math::tan(x),
-            Un::Csc => math::csc(x),
-            Un::Sec => math::sec(x),
-            Un::Cot => math::cot(x),
-            Un::Sinh => x.sinh(),
-            Un::Cosh => x.cosh(),
-            Un::Tanh => x.tanh(),
-            Un::Csch => math::csch(x),
-            Un::Sech => 1.0 / x.cosh(),
-            Un::Coth => 1.0 / x.tanh(),
-            Un::Asin | Un::AsinD => math::asin(x),
-            Un::Acos | Un::AcosD => math::acos(x),
-            Un::Atan | Un::AtanD => x.atan(),
-            Un::Asinh => x.asinh(),
-            Un::Acosh => x.acosh(),
-            Un::Atanh => x.atanh(),
-            Un::Sqrt => x.sqrt(),
-            Un::Cbrt => math::cbrt(x),
-            Un::Abs => x.abs(),
-            Un::Sgn => math::sgn(x),
-            Un::Floor => math::floor(x, deg),
-            Un::Ceil => math::ceil(x, deg),
-            Un::Round => math::round(x, 0.0, deg),
-            Un::Exp => x.exp(),
-            Un::Ln => x.ln(),
-            Un::Log10 => math::log10(x),
-            Un::Log2 => math::log2(x),
-            Un::Gamma => math::gamma(x),
-            Un::X | Un::Y => f64::NAN,
-        }
+/// A one-argument operation on a number (`deg`: the argument is an angle).
+pub(super) fn scalar(op: Un, x: f64, deg: bool) -> f64 {
+    match op {
+        Un::Factorial => math::factorial(x),
+        Un::Sin => math::sin(x),
+        Un::Cos => math::cos(x),
+        Un::Tan => math::tan(x),
+        Un::Csc => math::csc(x),
+        Un::Sec => math::sec(x),
+        Un::Cot => math::cot(x),
+        Un::Sinh => x.sinh(),
+        Un::Cosh => x.cosh(),
+        Un::Tanh => x.tanh(),
+        Un::Csch => math::csch(x),
+        Un::Sech => 1.0 / x.cosh(),
+        Un::Coth => 1.0 / x.tanh(),
+        Un::Asin | Un::AsinD => math::asin(x),
+        Un::Acos | Un::AcosD => math::acos(x),
+        Un::Atan | Un::AtanD => x.atan(),
+        Un::Asinh => x.asinh(),
+        Un::Acosh => x.acosh(),
+        Un::Atanh => x.atanh(),
+        Un::Sqrt => x.sqrt(),
+        Un::Cbrt => math::cbrt(x),
+        Un::Abs => x.abs(),
+        Un::Sgn => math::sgn(x),
+        Un::Floor => math::floor(x, deg),
+        Un::Ceil => math::ceil(x, deg),
+        Un::Round => math::round(x, 0.0, deg),
+        Un::Exp => x.exp(),
+        Un::Ln => x.ln(),
+        Un::Log10 => math::log10(x),
+        Un::Log2 => math::log2(x),
+        Un::Gamma => math::gamma(x),
+        Un::X | Un::Y => f64::NAN,
     }
 }
 

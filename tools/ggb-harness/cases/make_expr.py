@@ -436,6 +436,10 @@ case("syntax", nums(a=2) + ["b = a(a) / a", "c = a(a + 1) / 2", "d = a(2) / a"],
 case("syntax", nums(a=2, b=3) + ["u = (1 / a, 2)", "c = abs(u)", "v = (1 / a, 1 / b)",
                                  "d = abs(v)", "w = (1 / a, 0 / b)", "g = abs(w)"],
      [setn("a", 0), setn("b", 0), setn("a", 2), setn("b", 3)])
+# `inverseOrPower`: an outer power after a bracketed argument, constant exponents of -1
+for rhs in ("sin^2(a)^3", "sin^2 (a + 1)^3", "sin^2((a)^3)", "sin^(1 - 2)(a)",
+            "cos^(-1)(a)", "tan^(2 - 3)(a)^2", "sin^(a - a - 1)(a)"):
+    case("syntax", nums(a=0.5) + [f"c = {rhs}"], [setn("a", -0.25), setn("a", 0.5)])
 
 # ------------------------------------------------------- exact decimal arithmetic
 # GeoGebra adds, subtracts and multiplies decimal literals exactly, divides

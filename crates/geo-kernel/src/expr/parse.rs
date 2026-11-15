@@ -4,6 +4,7 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/parser/FunctionParser.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/parser/function/ParserFunctionsFactory.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/ExpressionNode.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/MySpecialDouble.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
@@ -13,6 +14,7 @@
 //! associative, `-2^2 = -4`), factorials, then elements.
 
 use super::decimal::Dec;
+use super::eval;
 use super::lex::{tokens, Tok, Token};
 use super::math::{self, PI_180};
 use super::names::{binary_builtin, builtin_name, unary_builtin};
@@ -62,6 +64,7 @@ pub(crate) fn parse(c: &Construction, src: &str) -> Result<Parsed, String> {
         nodes: Vec::new(),
         lits: Vec::new(),
         bare: Vec::new(),
+        brackets: Vec::new(),
         nesting: 0,
         parents: Vec::new(),
         inputs: Vec::new(),
@@ -106,7 +109,9 @@ struct Parser<'a> {
     /// Literals written as such, which `unaryMinus` negates in place
     /// (`-0.1`); a bracketed one (`-(0.1)`) or a letter constant (`-π`) is
     /// multiplied by -1 instead, which gives a plain number.
-    bare: Vec<u32>,
+    bare: Vec<bool>,
+    /// Whether each node was written in brackets (`hasBrackets`).
+    brackets: Vec<bool>,
     nesting: u32,
     parents: Vec<Id>,
     inputs: Vec<Id>,
@@ -138,6 +143,8 @@ impl Parser<'_> {
     fn push(&mut self, node: Node) -> u32 {
         self.nodes.push(node);
         self.lits.push(Lit::default());
+        self.bare.push(false);
+        self.brackets.push(false);
         (self.nodes.len() - 1) as u32
     }
 
@@ -267,12 +274,18 @@ impl Parser<'_> {
     }
 
     /// `FunctionParser.inverseOrPower`: `op^e x` is `op(x)^e`, and with a
-    /// constant exponent -1 the inverse function (`minusFirstPower`).
+    /// constant exponent -1 the inverse function (`minusFirstPower`). In
+    /// `sin^2(a)^3` the power belongs outside: `(sin(a)^2)^3`.
     fn inverse_or_power(&mut self, op: Un, arg: u32, exponent: u32) -> u32 {
-        let minus_one = match self.node(exponent) {
-            Node::Num(v) => math::is_equal(v, -1.0),
-            _ => false,
-        };
+        if let Node::Bin(Bin::Pow, base, outer) = self.node(arg) {
+            if !self.brackets[arg as usize] && self.brackets[base as usize] {
+                let inner = self.inverse_or_power(op, base, exponent);
+                return self.push(Node::Bin(Bin::Pow, inner, outer));
+            }
+        }
+        let minus_one = self
+            .constant_value(exponent, 0)
+            .is_some_and(|v| math::is_equal(v, -1.0));
         if minus_one {
             return self.minus_first_power(op, arg);
         }
@@ -322,6 +335,34 @@ impl Parser<'_> {
         self.push(Node::Bin(Bin::Pow, f, m))
     }
 
+    /// The value of a subtree that reads no object and no `x`
+    /// (`isConstant` and `evaluateDouble`); `None` otherwise, and for trees
+    /// nested too deep to look at.
+    fn constant_value(&self, i: u32, depth: u32) -> Option<f64> {
+        if depth > MAX_NESTING {
+            return None;
+        }
+        let value = |j: u32| self.constant_value(j, depth + 1);
+        Some(match self.node(i) {
+            Node::Num(v) => v,
+            Node::MinusOne => -1.0,
+            Node::Degree => PI_180,
+            Node::Un(op, a) => eval::scalar(op, value(a)?, false),
+            Node::Bin(op, a, b) => {
+                let (x, y) = (value(a)?, value(b)?);
+                match op {
+                    Bin::Add => x + y,
+                    Bin::Sub => x - y,
+                    Bin::Mul => x * y,
+                    Bin::Div => x / y,
+                    Bin::Pow => math::my_pow(x, y),
+                    _ => return None,
+                }
+            }
+            _ => return None,
+        })
+    }
+
     /// `ExpressionNode.isConstantDouble(f, Kernel.PI_180)`.
     fn is_degree(&self, i: u32) -> bool {
         match self.node(i) {
@@ -337,10 +378,10 @@ impl Parser<'_> {
         match self.node(e) {
             Node::Num(v) => {
                 let lit = &self.lits[e as usize];
-                if lit.special && self.bare.contains(&e) {
+                if lit.special && self.bare[e as usize] {
                     let dec = lit.dec.as_ref().map(Dec::negated);
                     let n = self.push_special(-v, dec);
-                    self.bare.push(n);
+                    self.bare[n as usize] = true;
                     n
                 } else {
                     self.push(Node::Num(-v))
@@ -452,7 +493,7 @@ impl Parser<'_> {
                     (v, dec)
                 };
                 let n = self.push_special(v, dec);
-                self.bare.push(n);
+                self.bare[n as usize] = true;
                 if self.eat(&Tok::Degree) {
                     // `30°` is `30 * °` (`Parser.myDouble`)
                     let d = self.push(Node::Degree);
@@ -479,7 +520,8 @@ impl Parser<'_> {
                     Some(n) => self.push(n),
                     None => {
                         // a bracketed literal is no longer negated in place
-                        self.bare.retain(|&b| b != first);
+                        self.bare[first as usize] = false;
+                        self.brackets[first as usize] = true;
                         first
                     }
                 })

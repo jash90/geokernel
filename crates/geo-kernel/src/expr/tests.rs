@@ -486,3 +486,12 @@ fn unsupported_syntax_is_an_error_and_leaves_nothing_behind() {
     assert!(matches!(c.value(c.id("b").unwrap()), Value::Undefined));
     assert_eq!(num(&c, "inf"), 3.0);
 }
+
+#[test]
+fn inverse_or_power_follows_the_brackets_and_constant_exponents() {
+    // values from GeoGebra: `(sin²(a))³` and `sin⁻¹(a)` in both cases
+    let c = load("a = 0.5\nb = sin^2(a)^3\nd = sin^(1-2)(a)\nk = sin^2((a)^3)").unwrap();
+    assert!((num(&c, "b") - 0.01214302779048423).abs() < 1e-15);
+    assert!((num(&c, "d") - std::f64::consts::FRAC_PI_6).abs() < 1e-15);
+    assert!((num(&c, "k") - 0.125f64.sin().powi(2)).abs() < 1e-15);
+}

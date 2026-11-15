@@ -617,6 +617,13 @@ fn number_lines() -> Vec<String> {
     for n in [nines, zeros] {
         lines.push(format!("P = ({n}, {n})"));
         lines.push(format!("r = {n}"));
+        // exact decimals of the size cap and beyond
+        lines.push(format!("r = {n} {n} - {n}^2"));
+        lines.push(format!("r = ({n} + 1)^999999 / {n}"));
+    }
+    for exponent in ["999999999", "-999999999", "99999999999999999999"] {
+        lines.push(format!("r = 1E{exponent} + 1"));
+        lines.push(format!("r = 1.5E{exponent} * 0.1^999999"));
     }
     lines
 }
@@ -628,6 +635,8 @@ fn size_lines() -> Vec<String> {
         let open = "(".repeat(n);
         let close = ")".repeat(n);
         lines.push(format!("A = {open}{close}"));
+        lines.push(format!("r = {}", vec!["(1)"; n].join(" + ")));
+        lines.push(format!("r = sin^2{}", "(1)^2".repeat(n)));
         lines.push(format!("A = {open}1, 2{close}"));
         lines.push(format!("A = Line({open}B{close})"));
         lines.push(format!("A = {}B{}", "Line(".repeat(n), close));
