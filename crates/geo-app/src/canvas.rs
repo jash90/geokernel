@@ -197,6 +197,8 @@ fn click(app: &mut App, t: &ViewTransform, pos: (f64, f64), hit: Option<Id>) {
         let c = app.wb.construction();
         (c.label(id).to_owned(), c.kind(id))
     });
+    // A click as near to a pending new point as to an existing one hits it.
+    app.tool.set_tolerance(POINT_RADIUS / t.scale());
     let outcome = {
         let c = app.wb.construction();
         app.tool.click(

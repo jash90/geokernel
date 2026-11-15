@@ -215,6 +215,9 @@ pub struct ToolState {
     picks: Vec<Pick>,
     /// Set while the dialog for the number is open.
     asking: Option<NumberRequest>,
+    /// How near (in world units) a click must be to a new point not made
+    /// yet to count as a click on it; the canvas sets it from the zoom.
+    tolerance: Option<f64>,
 }
 
 impl ToolState {
@@ -223,7 +226,13 @@ impl ToolState {
             tool,
             picks: Vec::new(),
             asking: None,
+            tolerance: None,
         }
+    }
+
+    /// Sets how near a click must be to a pending new point to land on it.
+    pub fn set_tolerance(&mut self, world: f64) {
+        self.tolerance = Some(world).filter(|t| t.is_finite() && *t > 0.0);
     }
 
     pub fn tool(&self) -> Tool {
@@ -346,9 +355,12 @@ impl ToolState {
         }
         if let Pick::New { x, y } = pick {
             // A second click on a new point that is not made yet (a double
-            // click) must not make a second point on top of it. The step of
-            // `decimals` is at most half a pixel, so this is a few pixels.
-            let near = 10.0 * 10f64.powi(-(decimals as i32));
+            // click) must not make a second point on top of it. Without a
+            // tolerance from the canvas, ten steps of `decimals` stand in
+            // (five pixels at the standard zoom).
+            let near = self
+                .tolerance
+                .unwrap_or(10.0 * 10f64.powi(-(decimals as i32)));
             let twice = self.picks.iter().any(|p| match p {
                 Pick::New { x: px, y: py } => (x - px).hypot(y - py) < near,
                 Pick::Object { .. } => false,

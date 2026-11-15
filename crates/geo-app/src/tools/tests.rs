@@ -356,7 +356,25 @@ fn a_regular_polygon_asks_for_the_number_of_vertices() {
     let Outcome::Run(lines) = s.finish_number(6.0, 2, &t) else {
         panic!("the count finishes it");
     };
-    assert_eq!(lines, ["a = 6", "h1 = Polygon(A, B, a)"]);
+    assert_eq!(lines, ["a = 6", "poly1 = Polygon(A, B, a)"]);
     w.run_lines(&lines).unwrap();
-    assert!(w.construction().id("h1").is_some());
+    assert!(w.construction().id("poly1").is_some());
+}
+
+#[test]
+fn closing_and_double_clicks_follow_the_canvas_tolerance_at_any_zoom() {
+    // Zoomed in, points get four decimals; the canvas says 0.01 units is near.
+    let mut s = ToolState::new(Tool::Polygon);
+    s.set_tolerance(0.01);
+    for p in [(0.0, 0.0), (0.2, 0.0), (0.1, 0.2)] {
+        assert!(matches!(s.click(None, p, 4, &none), Outcome::Pending));
+    }
+    assert!(matches!(
+        s.click(None, (0.1004, 0.2), 4, &none),
+        Outcome::Ignored
+    ));
+    let Outcome::Run(lines) = s.click(None, (0.005, 0.003), 4, &none) else {
+        panic!("a click near the first new point closes the polygon");
+    };
+    assert_eq!(lines.last().unwrap(), "t1 = Polygon(A, B, C)");
 }
