@@ -19,68 +19,6 @@ id = "conic-diameter-007"
 reason = "intended difference, recorded in DIFFERENCES.md: GeoGebra keeps the diameter line of an undefined circle (negative radius) at its last value, computed from the stale matrix of the last defined circle; the kernel reports it undefined"
 mismatches = ["1:g", "4:g"]
 
-# transform
-
-[[gap]]
-id = "transform-dilate-020"
-reason = "GeoGebra classifies a dilated circle from its conic matrix, whose scale is not part of the kernel's circle value"
-mismatches = ["0:m", "1:m"]
-
-[[gap]]
-id = "transform-dilate-021"
-reason = "GeoGebra classifies a dilated circle from its conic matrix, whose scale is not part of the kernel's circle value"
-mismatches = ["0:m", "1:m", "2:m", "3:m", "4:m", "5:m", "6:m"]
-
-[[gap]]
-id = "transform-dilate-022"
-reason = "GeoGebra classifies a dilated circle from its conic matrix, whose scale is not part of the kernel's circle value"
-mismatches = ["8:m", "9:m"]
-
-[[gap]]
-id = "transform-dilate-023"
-reason = "GeoGebra classifies a dilated circle from its conic matrix, whose scale is not part of the kernel's circle value"
-mismatches = ["0:m", "1:m", "2:m"]
-
-[[gap]]
-id = "transform-dilate-024"
-reason = "GeoGebra classifies a dilated circle from its conic matrix, whose scale is not part of the kernel's circle value"
-mismatches = ["0:m"]
-
-[[gap]]
-id = "transform-dilate-026"
-reason = "GeoGebra classifies a dilated circle from its conic matrix, whose scale is not part of the kernel's circle value"
-mismatches = ["0:m"]
-
-[[gap]]
-id = "transform-dilate-027"
-reason = "GeoGebra classifies a dilated circle from its conic matrix, whose scale is not part of the kernel's circle value"
-mismatches = ["0:m", "1:m", "3:m", "4:m", "5:m", "6:m"]
-
-[[gap]]
-id = "transform-dilate-028"
-reason = "GeoGebra classifies a dilated circle from its conic matrix, whose scale is not part of the kernel's circle value"
-mismatches = ["8:m", "9:m", "10:m"]
-
-[[gap]]
-id = "transform-dilate-029"
-reason = "GeoGebra classifies a dilated circle from its conic matrix, whose scale is not part of the kernel's circle value"
-mismatches = ["0:m", "1:m", "3:m"]
-
-[[gap]]
-id = "transform-dilate-030"
-reason = "GeoGebra classifies a dilated circle from its conic matrix, whose scale is not part of the kernel's circle value"
-mismatches = ["4:m"]
-
-[[gap]]
-id = "transform-dilate-032"
-reason = "GeoGebra classifies a dilated circle from its conic matrix, whose scale is not part of the kernel's circle value"
-mismatches = ["0:m", "0:n", "0:p", "0:t", "0:u", "1:m", "1:n", "1:p", "1:t", "1:u", "2:m", "2:n", "2:p", "2:t", "2:u", "3:m", "3:n", "3:p", "3:t", "3:u", "4:m", "4:n", "4:p", "4:t", "4:u"]
-
-[[gap]]
-id = "transform-dilate-033"
-reason = "GeoGebra classifies a dilated circle from its conic matrix, whose scale is not part of the kernel's circle value"
-mismatches = ["0:m", "0:n", "0:p", "0:t", "0:u", "1:m", "1:n", "1:p", "1:t", "1:u", "2:m", "2:n", "2:p", "2:t", "2:u", "3:m", "3:n", "3:p", "3:t", "3:u"]
-
 # lines
 
 [[gap]]

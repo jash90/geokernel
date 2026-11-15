@@ -46,6 +46,7 @@
 //! deliberate difference (see `DIFFERENCES.md`).
 
 use crate::algo::conic::ConicDef;
+use crate::algo::general_conic::GeneralConicDef;
 use crate::algo::lines::LineDef;
 use crate::algo::measure::MeasureDef;
 use crate::algo::point::PointDef;
@@ -111,6 +112,9 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
         return c.add(name, def?).map(Some).map_err(|e| e.to_string());
     }
     if let Some(result) = crate::algo::polygon::exec(c, name, rhs) {
+        return result;
+    }
+    if let Some(result) = crate::algo::general_conic::exec(c, name, rhs) {
         return result;
     }
     match define(c, name, rhs) {
@@ -291,6 +295,7 @@ fn is_finite(v: &Value) -> bool {
         Value::Function => true,
         Value::Polygon { area } => area.is_finite(),
         Value::PolyLine { length } => length.is_finite(),
+        Value::Conic { .. } => true,
         Value::Undefined => false,
     }
 }
@@ -377,7 +382,11 @@ pub(crate) fn parse_def(c: &Construction, rhs: &str) -> Result<Def, String> {
     let obj = |s: &str| object(c, s);
 
     // Groups are asked first, so that a group can add a new form of a
-    // built-in command (for example `Circle` with three points).
+    // built-in command (for example `Circle` with three points). General
+    // conics come first: they claim the transformations of conics.
+    if let Some(def) = GeneralConicDef::parse(c, func, &args) {
+        return def.map(Def::GeneralConic);
+    }
     if let Some(def) = VectorDef::parse(c, func, &args) {
         return def.map(Def::Vector);
     }

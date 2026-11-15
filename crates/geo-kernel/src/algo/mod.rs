@@ -19,6 +19,8 @@
 pub mod basic;
 pub mod circle;
 pub mod conic;
+pub mod conic_nd;
+pub mod general_conic;
 pub mod intersect;
 pub mod lines;
 pub mod measure;
