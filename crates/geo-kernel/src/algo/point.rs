@@ -2,6 +2,8 @@
 // commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/CmdClosestPoint.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoClosestPoint.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoClosestPointLines.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersectLines.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/barycentric/CmdTrilinear.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/barycentric/AlgoTrilinear.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoPoint.java
@@ -27,6 +29,7 @@ use crate::script::object;
 use crate::tol::STANDARD_PRECISION;
 
 const NUMBER: &[Kind] = &[Kind::Number];
+const LINE: &[Kind] = &[Kind::Line];
 /// The paths `ClosestPoint` accepts.
 const PATH: &[Kind] = &[Kind::Line, Kind::Segment, Kind::Ray, Kind::Circle];
 
@@ -35,6 +38,9 @@ const PATH: &[Kind] = &[Kind::Line, Kind::Segment, Kind::Ray, Kind::Circle];
 pub enum PointDef {
     /// `ClosestPoint(path, point)` in either order of the arguments.
     Closest { path: Id, point: Id },
+    /// `ClosestPoint(g, h)` of two lines: `AlgoClosestPointLines`, which is
+    /// `AlgoIntersectLines`.
+    LineIntersection { first: Id, second: Id },
     /// `Trilinear(A, B, C, a, b, c)`: the three points, then the three
     /// numbers. The handles are stored as `u32` to keep [`crate::Def`] small.
     Trilinear { ids: [u32; 6] },
@@ -207,6 +213,7 @@ impl Group for PointDef {
     fn parents(&self) -> Parents {
         match *self {
             PointDef::Closest { path, point } => Parents::of(&[path, point]),
+            PointDef::LineIntersection { first, second } => Parents::of(&[first, second]),
             PointDef::Trilinear { ids } => Parents::of(&ids.map(id_of)),
         }
     }
@@ -216,6 +223,10 @@ impl Group for PointDef {
             PointDef::Closest { path, point } => {
                 c.expect(path, PATH)?;
                 c.expect(point, POINT)
+            }
+            PointDef::LineIntersection { first, second } => {
+                c.expect(first, LINE)?;
+                c.expect(second, LINE)
             }
             PointDef::Trilinear { ids } => {
                 for &raw in &ids[..3] {
@@ -232,6 +243,9 @@ impl Group for PointDef {
     fn compute(&self, c: &Construction) -> Option<Value> {
         match *self {
             PointDef::Closest { path, point } => closest(c, path, point),
+            PointDef::LineIntersection { first, second } => {
+                super::intersect::lines(c, first, second)
+            }
             PointDef::Trilinear { ids } => trilinear(c, ids),
         }
     }
@@ -257,8 +271,13 @@ impl Group for PointDef {
                         path: second,
                         point: first,
                     }),
+                    // `AlgoClosestPointLines(g, h)` is made with the arguments swapped.
+                    (Kind::Line, Kind::Line) => Ok(PointDef::LineIntersection {
+                        first: second,
+                        second: first,
+                    }),
                     (_, _) if is_path(first) && is_path(second) => Err(format!(
-                        "`{func}` of two paths is not supported, give a path and a point"
+                        "`{func}` of two paths is only supported for two lines, give a path and a point"
                     )),
                     (_, Kind::Point) => Err(format!(
                         "`{}` is a {}, expected a line, segment, ray or circle",

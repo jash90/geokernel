@@ -172,4 +172,25 @@ case("trilinear", [pt("A", 0, 0), pt("B", 0.001, 0), pt("C", 0.0005, 0.001), num
                    num("v", 1), num("w", 1), "P = Trilinear(A, B, C, u, v, w)"],
      [mv("C", 0.0005, 1000), mv("B", 1000, 0), setn("u", 0.000001), setn("u", 100000)])
 
+# Weights whose sum is zero: the barycentric combination has weight 0.
+case("trilinear", [pt("A", 0, 0), pt("B", 4, 0), pt("C", 0, 3), num("u", 4), num("v", 0),
+                   num("w", -5), "P = Trilinear(A, B, C, u, v, w)"],
+     [setn("v", 0.000001), setn("v", 0), setn("w", -5.000001), setn("u", 0), setn("w", 0),
+      setn("u", 4), setn("w", -5)])
+case("trilinear", [pt("A", 0, 0), pt("B", 4, 0), pt("C", 0, 3), num("u", 3), num("v", 5),
+                   num("w", -7.5), "P = Trilinear(A, B, C, u, v, w)", "l = Line(A, B)",
+                   "Q = ClosestPoint(l, P)"],
+     [mv("C", 0, 6), setn("w", -7), setn("w", -7.5), mv("C", 0, 3)])
+
+# Points at infinity as inputs: the intersection of parallel lines.
+case("infinity", [pt("A", 0, 0), pt("B", 2, 1), pt("C", 0, 3), pt("D", 2, 4), pt("F", 5, 5),
+                  "l = Line(A, B)", "m = Line(C, D)", "S = Intersect(l, m)",
+                  "P = ClosestPoint(l, S)", "Q = ClosestPoint(S, l)", "k = Circle(A, B)",
+                  "R = ClosestPoint(k, S)"],
+     [mv("D", 2, 5), mv("D", 2, 4), mv("F", 0, 6)])
+# ClosestPoint of two lines.
+case("pathpair", [pt("A", 0, 0), pt("B", 2, 1), pt("C", 0, 3), pt("D", 2, 4), "l = Line(A, B)",
+                  "m = Line(C, D)", "P = ClosestPoint(l, m)"],
+     [mv("D", 4, 1), mv("D", 2, 4), mv("D", 2, 4.000001), mv("B", 2, 0), mv("D", 4, 3)])
+
 cases.write()

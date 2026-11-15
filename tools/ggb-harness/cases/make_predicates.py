@@ -505,4 +505,115 @@ case("perpendicular", [pt("A", 0, 0), pt("B", 6, 0), pt("C", 2, 4), "s = Segment
                        "v = ArePerpendicular(m, n)", "w = ArePerpendicular(s, t)"],
      [mv("C", 0, 4), mv("B", 6, 6), mv("C", 6, 6), mv("C", -2, 3), mv("B", 3, 0)])
 
+# ---------------------------------------- degenerate lines, rays and segments
+def vec(label, x, y):
+    return pt(label, x, y)
+
+
+topic("parallel")
+# Lines and rays made from a vector that becomes zero keep zero coefficients.
+case("parallel", [pt("A", 0, 0), pt("C", 0, 3), pt("D", 2, 4), vec("u", 1, 2), "l = Line(A, u)",
+                  "m = Line(C, D)", "r = Ray(A, u)", "s = Segment(C, D)", "t = AreParallel(l, m)",
+                  "n = AreParallel(m, l)", "o = AreParallel(r, s)", "p = AreParallel(s, r)"],
+     [mv("u", 0, 0), mv("u", 2, 1), mv("u", 0, 0), mv("u", 0.000001, 0), mv("u", 0, 0.000001),
+      mv("u", 1, 2)])
+case("parallel", [pt("A", 0, 0), pt("B", 4, 4), pt("C", 1, 5), vec("u", 3, 1),
+                  "l = Line(A, B)", "m = Line(C, u)", "k = Line(B, u)", "t = AreParallel(l, m)",
+                  "n = AreParallel(m, k)", "o = AreParallel(m, m)"],
+     [mv("u", 0, 0), mv("B", 0, 0), mv("u", 1, 1), mv("B", 4, 4), mv("u", 0, 0)])
+case("parallel", [pt("A", 0, 0), pt("B", 3, 0), pt("C", 1, 1), pt("D", 5, 3), "s = Segment(A, B)",
+                  "r = Ray(C, D)", "l = Line(C, D)", "t = AreParallel(s, l)",
+                  "n = AreParallel(r, s)", "o = AreParallel(l, r)"],
+     [mv("B", 0, 0), mv("D", 1, 1), mv("B", 3, 0), mv("D", 5, 3), mv("D", 1, 1)])
+
+topic("perpendicular")
+case("perpendicular", [pt("A", 0, 0), pt("B", 3, 1), pt("C", 1, 4), vec("u", 2, 1),
+                       "l = Line(A, B)", "p = PerpendicularLine(C, u)", "q = PerpendicularLine(C, l)",
+                       "r = Line(C, u)", "t = ArePerpendicular(p, r)", "n = ArePerpendicular(q, l)",
+                       "o = ArePerpendicular(p, q)", "w = AreParallel(p, q)"],
+     [mv("u", 0, 0), mv("B", 0, 0), mv("u", 1, 3), mv("B", 3, 1), mv("u", 0, 0), mv("B", 0, 0),
+      mv("u", 2, 1)])
+# A perpendicular to a tiny base line: GeoGebra scales the coefficients.
+case("perpendicular", [pt("A", 0, 0), pt("B", 0.000001, 0), pt("C", 1, 1), "l = Line(A, B)",
+                       "p = PerpendicularLine(C, l)", "m = Line(C, A)", "t = ArePerpendicular(p, l)",
+                       "n = AreParallel(p, m)", "o = ArePerpendicular(p, m)"],
+     [mv("B", 0.000002, 0), mv("B", 0, 0.000001), mv("B", 0.00000001, 0), mv("B", 0, 0),
+      mv("B", 1, 0), mv("A", 1, 0)])
+case("perpendicular", [pt("A", 0, 0), pt("B", 4, 2), pt("C", 1, 3), pt("D", 5, 1), "l = Line(A, B)",
+                       "m = Line(C, D)", "p = PerpendicularLine(C, l)", "q = Line(C, l)",
+                       "r = PerpendicularLine(D, q)", "t = ArePerpendicular(p, q)",
+                       "n = ArePerpendicular(r, p)", "o = AreParallel(r, p)"],
+     [mv("B", 0, 0), mv("B", 4, 2), mv("A", 4, 2), mv("A", 0, 0), mv("B", 0, 0)])
+
+topic("equal")
+case("equal", [pt("A", 0, 0), pt("B", 3, 1), pt("C", 2, 5), pt("D", 4, 4), vec("u", 1, 1),
+               "l = Line(A, u)", "m = Line(C, D)", "k = Line(B, u)", "t = AreEqual(l, k)",
+               "n = AreEqual(l, m)", "o = AreEqual(m, l)"],
+     [mv("u", 0, 0), mv("D", 2, 5), mv("D", 4, 4), mv("u", 1, 1), mv("D", 2, 5), mv("u", 0, 0)])
+# Rays that become degenerate keep their start point.
+case("equal", [pt("A", 0, 0), pt("B", 3, 1), pt("C", 0, 0), pt("D", 2, 2), pt("F", 5, 5),
+               "r = Ray(A, B)", "s = Ray(C, D)", "q = Ray(F, A)", "t = AreEqual(r, s)",
+               "n = AreEqual(r, q)", "o = AreEqual(s, q)", "p = AreEqual(r, r)"],
+     [mv("B", 0, 0), mv("D", 0, 0), mv("D", 2, 2), mv("C", 1, 1), mv("D", 1, 1), mv("B", 1, 1),
+      mv("F", 0, 0), mv("A", 0, 0)])
+case("equal", [pt("A", 0, 0), pt("B", 3, 1), pt("C", 0, 0), pt("D", 2, 2), vec("u", 1, 0),
+               "r = Ray(A, u)", "s = Ray(C, D)", "q = Ray(B, u)",
+               "t = AreEqual(r, s)", "n = AreEqual(r, q)", "o = AreEqual(s, q)"],
+     [mv("u", 0, 0), mv("D", 0, 0), mv("D", 2, 2), mv("u", 1, 0), mv("A", 1, 1)])
+case("equal", [pt("A", 0, 0), pt("B", 3, 1), pt("C", 4, 4), pt("D", 2, 2), "l = Line(A, B)",
+               "s = Segment(A, B)", "r = Ray(A, B)", "g = Segment(C, D)", "h = Ray(C, D)",
+               "t = AreEqual(l, s)", "n = AreEqual(l, r)", "o = AreEqual(s, r)",
+               "p = AreEqual(g, h)"],
+     [mv("B", 0, 0), mv("D", 4, 4), mv("B", 3, 1), mv("D", 2, 2), mv("C", 0, 0), mv("D", 0, 0)])
+# Translations of a line that degenerates.
+case("equal", [pt("A", 0, 0), pt("B", 3, 1), pt("C", 5, 5), pt("D", 6, 6), vec("u", 2, 2),
+               "l = Line(A, B)", "g = Translate(l, u)", "m = Line(C, D)",
+               "t = AreEqual(g, m)", "n = AreParallel(g, l)"],
+     [mv("B", 0, 0), mv("D", 5, 5), mv("u", 0, 0), mv("D", 6, 6), mv("B", 3, 1)])
+
+topic("congruent")
+case("congruent", [pt("A", 0, 0), pt("B", 3, 1), pt("C", 4, 4), pt("D", 2, 2), "s = Segment(A, B)",
+                   "g = Segment(C, D)", "r = Ray(A, B)", "h = Ray(C, D)", "l = Line(A, B)",
+                   "t = AreCongruent(s, g)", "n = AreCongruent(r, h)", "o = AreCongruent(l, r)",
+                   "p = AreCongruent(r, s)"],
+     [mv("B", 0, 0), mv("D", 4, 4), mv("B", 3, 1), mv("D", 2, 2), mv("D", 4.000001, 4),
+      mv("D", 4, 4)])
+
+topic("concurrent")
+case("concurrent", [pt("A", 0, 0), pt("B", 4, 4), pt("C", 0, 4), pt("D", 4, 0), pt("E", 1, 3),
+                    pt("F", 3, 1), "s = Segment(A, B)", "r = Ray(C, D)", "l = Line(E, F)",
+                    "t = AreConcurrent(s, r, l)", "n = AreConcurrent(l, s, s)"],
+     [mv("B", 0, 0), mv("D", 0, 4), mv("B", 4, 4), mv("D", 4, 0), mv("F", 1, 3), mv("E", 3, 1)])
+case("concurrent", [pt("A", 0, 0), pt("B", 4, 4), pt("C", 0, 4), pt("D", 4, 0), pt("E", 1, 3),
+                    vec("u", 1, 0), "l = Line(A, B)", "m = Line(C, D)", "k = Line(E, u)",
+                    "t = AreConcurrent(l, m, k)", "n = AreConcurrent(k, k, l)"],
+     [mv("u", 0, 0), mv("B", 0, 0), mv("u", 1, 1), mv("E", 2, 2), mv("u", 0, 0)])
+
+topic("tangent")
+case("tangent", [pt("O", 0, 0), pt("A", 2, 0), pt("B", 2, 5), pt("C", 3, 3), "k = Circle(O, A)",
+                 "s = Segment(A, B)", "r = Ray(A, B)",
+                 "t = IsTangent(s, k)", "n = IsTangent(r, k)"],
+     [mv("B", 2, 0), mv("B", 2, -5), mv("B", 0, 0), mv("B", 2, 5), mv("A", 0, 0)])
+case("tangent", [pt("O", 0, 0), pt("A", 2, 0), pt("B", 2, 5), vec("u", 0, 1), "k = Circle(O, A)",
+                 "l = Line(A, u)", "r = Ray(B, u)", "t = IsTangent(l, k)", "n = IsTangent(r, k)"],
+     [mv("u", 0, 0), mv("u", 1, 1), mv("u", 0, 1), mv("u", 0, 0), mv("A", 3, 0)])
+
+# --------------------------------------------- points at infinity as inputs
+topic("infinity")
+case("infinity", [pt("A", 0, 0), pt("B", 2, 1), pt("C", 0, 3), pt("D", 2, 4), pt("F", 5, 5),
+                  "l = Line(A, B)", "m = Line(C, D)", "S = Intersect(l, m)",
+                  "t = AreCollinear(A, B, S)", "n = AreCollinear(S, S, F)",
+                  "o = AreEqual(S, S)", "p = AreConcyclic(A, B, C, S)",
+                  "q = AreEqual(S, F)", "w = AreCongruent(S, F)"],
+     [mv("D", 2, 5), mv("D", 2, 4), mv("F", 0, 6)])
+# Computed points whose homogeneous weight is not 1.
+topic("homogeneous")
+case("homogeneous", [pt("A", 0, 0), pt("B", 4, 0), pt("C", 4, 4), pt("D", 0, 4), pt("E", 2, 6),
+                     pt("F", 6, 2), "l = Line(A, C)", "m = Line(B, D)", "n = Line(E, F)",
+                     "g = Line(A, B)", "S = Intersect(l, m)", "T = Intersect(m, n)",
+                     "U = Intersect(l, n)", "t = AreConcyclic(S, T, U, A)",
+                     "o = AreConcyclic(S, A, B, C)", "p = AreCollinear(S, T, U)",
+                     "q = AreCollinear(S, A, C)"],
+     [mv("E", 3, 7), mv("F", 5, 1), mv("D", 1, 5), mv("C", 6, 1)])
+
 cases.write()

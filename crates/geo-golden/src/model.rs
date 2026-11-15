@@ -453,6 +453,32 @@ mod tests {
     }
 
     #[test]
+    fn booleans_carry_one_truth_value() {
+        let parse = |json: &str| serde_json::from_str::<Expected>(json);
+        let t = parse(r#"{"type":"boolean","defined":true,"value":true}"#).unwrap();
+        assert_eq!(t.kind, Kind::Boolean);
+        assert_eq!(t.data, Some(ExpectedData::Bool(true)));
+        let f = parse(r#"{"type":"boolean","defined":true,"value":false}"#).unwrap();
+        assert_eq!(f.data, Some(ExpectedData::Bool(false)));
+        let u = parse(r#"{"type":"boolean","defined":false}"#).unwrap();
+        assert_eq!((u.kind, u.data), (Kind::Boolean, None));
+        for bad in [
+            // a number instead of a truth value
+            r#"{"type":"boolean","defined":true,"value":1.0}"#,
+            // an extra field
+            r#"{"type":"boolean","defined":true,"value":true,"x":1.0}"#,
+            // an undefined boolean carries no value
+            r#"{"type":"boolean","defined":false,"value":true}"#,
+            // the value is missing
+            r#"{"type":"boolean","defined":true}"#,
+            // a truth value in a numeric field
+            r#"{"type":"number","defined":true,"value":true}"#,
+        ] {
+            assert!(parse(bad).is_err(), "accepted: {bad}");
+        }
+    }
+
+    #[test]
     fn vectors_and_rays_carry_their_fields() {
         let parse = |json: &str| serde_json::from_str::<Expected>(json);
         let v = parse(r#"{"type":"vector","defined":true,"x":1.0,"y":-2.0}"#).unwrap();

@@ -64,16 +64,34 @@ fn predicate_argument_errors() {
 }
 
 #[test]
-fn degenerate_predicates_do_not_panic() {
+fn degenerate_predicates_have_the_golden_values() {
+    // Each configuration is also in the golden groups (`predicates-collinear`,
+    // `-concyclic`, `-equal`, `-parallel` and `-tangent-013`).
     let c = run(
         "t1 = AreCollinear(A, A, B)\nt2 = AreConcyclic(A, A, B, B)\n\
 t3 = AreEqual(l, l)\nt4 = AreParallel(l, l)\nt5 = IsTangent(l, Z)\n",
     );
-    assert_eq!(value(&c, "t1"), Value::Bool(true));
-    assert_eq!(value(&c, "t3"), Value::Bool(true));
-    for label in ["t2", "t4", "t5"] {
-        assert!(matches!(value(&c, label), Value::Bool(_)), "{label}");
+    for label in ["t1", "t2", "t3", "t4", "t5"] {
+        assert_eq!(value(&c, label), Value::Bool(true), "{label}");
     }
+}
+
+#[test]
+fn zero_vector_lines_keep_their_zero_coefficients() {
+    // GeoGebra: AreParallel(Line(A, v), l) is true for a zero vector v, and
+    // two degenerate rays that start at the same point are equal.
+    let mut c = run("v = (1, 2)\ng = Line(A, v)\nq = Ray(C, v)\nh = Ray(C, B)\n\
+t1 = AreParallel(g, m)\nt2 = AreEqual(q, h)\n");
+    assert_eq!(value(&c, "t1"), Value::Bool(false));
+    assert_eq!(value(&c, "t2"), Value::Bool(false));
+    let v = c.id("v").unwrap();
+    c.move_point(v, 0.0, 0.0).unwrap();
+    assert_eq!(value(&c, "g"), Value::Undefined);
+    assert_eq!(value(&c, "t1"), Value::Bool(true));
+    let b = c.id("B").unwrap();
+    c.move_point(b, 0.0, 3.0).unwrap();
+    assert_eq!(value(&c, "h"), Value::Undefined);
+    assert_eq!(value(&c, "t2"), Value::Bool(true));
 }
 
 #[test]
@@ -89,6 +107,18 @@ p6 = ClosestPoint(k, A)\n");
         Value::Point { x, y } => assert!(x.abs() < 1e-12 && (y - 2.0).abs() < 1e-12),
         other => panic!("{other:?}"),
     }
+    // The point at the centre goes to the point (r, 0), as in GeoGebra.
+    assert_eq!(value(&c, "p6"), Value::Point { x: 2.0, y: 0.0 });
+}
+
+#[test]
+fn closest_point_of_two_lines_is_their_intersection() {
+    let mut c = run("ac = Line(A, C)\nP = ClosestPoint(l, ac)\nQ = ClosestPoint(ac, l)\n");
+    assert_eq!(value(&c, "P"), Value::Point { x: 0.0, y: 0.0 });
+    assert_eq!(value(&c, "Q"), Value::Point { x: 0.0, y: 0.0 });
+    // Parallel lines have no intersection.
+    exec(&mut c, "R = ClosestPoint(l, m)").unwrap();
+    assert_eq!(value(&c, "R"), Value::Undefined);
 }
 
 #[test]
@@ -96,7 +126,7 @@ fn closest_point_errors() {
     let mut c = run("");
     for bad in [
         "p = ClosestPoint(l)",
-        "p = ClosestPoint(l, m)",
+        "p = ClosestPoint(s, l)",
         "p = ClosestPoint(A, B)",
         "p = ClosestPoint(l, 3)",
     ] {
@@ -106,7 +136,7 @@ fn closest_point_errors() {
 
 #[test]
 fn trilinear_forms() {
-    let mut c = run("n1 = 1\nnm = -1\nn0 = 0\n");
+    let mut c = run("n1 = 1\nn0 = 0\nn4 = 4\nnm = -5\n");
     // Equal trilinear coordinates give the incentre of the 3-4-5 triangle.
     exec(&mut c, "I = Trilinear(A, B, C, n1, n1, n1)").unwrap();
     match value(&c, "I") {
@@ -125,10 +155,8 @@ fn trilinear_forms() {
     ] {
         assert!(exec(&mut c, bad).is_err(), "{bad} must fail");
     }
-    // Weights summing to 0 give a point at infinity, which has no value.
-    exec(&mut c, "K = Trilinear(A, B, C, n1, nm, n0)").unwrap();
-    assert!(matches!(
-        value(&c, "K"),
-        Value::Point { .. } | Value::Undefined
-    ));
+    // Weights 5 * 4, 3 * 0 and 4 * -5 sum to 0: GeoGebra gives a point at
+    // infinity, which the kernel holds as undefined (`points-trilinear`).
+    exec(&mut c, "K = Trilinear(A, B, C, n4, n0, nm)").unwrap();
+    assert_eq!(value(&c, "K"), Value::Undefined);
 }

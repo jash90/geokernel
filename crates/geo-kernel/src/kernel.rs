@@ -399,6 +399,7 @@ impl Construction {
         // Objects the rule also reads, beyond its parents.
         let mut hidden = algo::intersect::hidden_parents(self, &def);
         hidden.extend(algo::vector::hidden_parents(self, &def));
+        hidden.extend(algo::predicate::hidden_parents(self, &def));
         let all = || parents.as_slice().iter().chain(&hidden);
         for (k, parent) in all().enumerate() {
             // An object that is read twice is still one child.

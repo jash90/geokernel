@@ -45,9 +45,8 @@
 //! an undefined object: NaN coordinates, so that every test fails, except a
 //! line that degenerated to all-zero coefficients (see [`raw_line`]).
 
-use super::lines::LineDef;
 use super::vector::VectorDef;
-use super::{join, normalized_coefficients, Group, Parents, CIRCLE, POINT};
+use super::{normalized_coefficients, Group, Parents, CIRCLE, POINT};
 use crate::kernel::{Construction, Def, Error, Id, Kind, Value};
 use crate::script::object;
 use crate::tol::{MIN_PRECISION, STANDARD_PRECISION};
@@ -139,40 +138,34 @@ fn point(c: &Construction, id: Id) -> (f64, f64) {
 /// the points and lines they are made from; any other undefined line has NaN
 /// coefficients.
 fn raw_line(c: &Construction, id: Id) -> Line3 {
-    if let Some(g) = c.raw_carrier(id) {
-        return g;
+    super::vector::raw_or_undefined(c, id).unwrap_or(NAN3)
+}
+
+/// The start point of a ray, also when the kernel holds the ray as
+/// undefined (`Ray(A, A)`): GeoGebra keeps the start point.
+fn ray_start(c: &Construction, id: Id) -> Option<(f64, f64)> {
+    if let Value::Ray { x, y, .. } = c.value(id) {
+        return Some((x, y));
     }
-    let through = |p: Id, q: Id| match (c.point(p), c.point(q)) {
-        (Some(p), Some(q)) => join(p, q),
-        _ => NAN3,
-    };
-    // `GeoVec3D.cross(P, v, g)` of the homogeneous point `(x, y, 1)` and `(vx, vy, 0)`.
-    let cross = |p: Id, vx: f64, vy: f64| match c.point(p) {
-        Some((px, py)) => (-vy, vx, px * vy - py * vx),
-        None => NAN3,
-    };
     match c.def(id) {
-        Def::Line(p, q) | Def::Vector(VectorDef::RayPoints(p, q)) => through(p, q),
-        // `AlgoLineBisector`.
-        Def::Lines(LineDef::BisectorPoints(p, q)) => match (c.point(p), c.point(q)) {
-            (Some(a), Some(b)) => {
-                let (gx, gy) = (a.0 - b.0, a.1 - b.1);
-                (gx, gy, -((a.0 + b.0) * gx + (a.1 + b.1) * gy) / 2.0)
-            }
-            _ => NAN3,
-        },
-        // `AlgoLinePointLine`: through `P` with the direction of `l`.
-        Def::Parallel { through: p, to } => {
-            let l = raw_line(c, to);
-            cross(p, l.1, -l.0)
-        }
-        // `AlgoOrthoLinePointLine`.
-        Def::Perpendicular { through: p, to } => {
-            let l = raw_line(c, to);
-            cross(p, l.0, l.1)
-        }
-        _ => NAN3,
+        Def::Vector(VectorDef::RayPoints(p, _) | VectorDef::RayVector(p, _)) => c.point(p),
+        _ => None,
     }
+}
+
+/// Objects that a predicate reads besides its arguments: for a line the
+/// kernel holds as undefined, the objects its zero coefficients come from.
+pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
+    let mut ids = Vec::new();
+    if let Def::Predicate(p) = *def {
+        let args: Vec<Id> = p.parents().as_slice().to_vec();
+        for id in args {
+            if LINE_LIKE.contains(&c.kind(id)) {
+                super::vector::line_hidden(c, id, &mut ids);
+            }
+        }
+    }
+    ids
 }
 
 /// `GeoPoint.collinearND`: the cross product of `A - B` and `A - C` vanishes.
@@ -351,14 +344,19 @@ fn equal(c: &Construction, a: Id, b: Id) -> bool {
             }
             _ => false,
         },
-        Kind::Ray => match (c.value(a), c.value(b)) {
-            (Value::Ray { x, y, .. }, Value::Ray { x: u, y: v, .. }) => {
+        // `GeoRay.isEqualExtended` has no check that the rays are defined.
+        Kind::Ray => {
+            kb == Kind::Ray && {
                 let (g, h) = (raw_line(c, a), raw_line(c, b));
                 // `GeoLine.isSameDirection`
-                h.0 * g.0 >= 0.0 && h.1 * g.1 >= 0.0 && parallel(g, h) && same_point((u, v), (x, y))
+                let same_direction = h.0 * g.0 >= 0.0 && h.1 * g.1 >= 0.0 && parallel(g, h);
+                same_direction
+                    && match (ray_start(c, a), ray_start(c, b)) {
+                        (Some(s), Some(t)) => same_point(t, s),
+                        _ => false,
+                    }
             }
-            _ => false,
-        },
+        }
         Kind::Circle => ka == kb && circles_equal(c, a, b),
         Kind::Vector => match (c.value(a), c.value(b)) {
             (Value::Vector { x, y }, Value::Vector { x: u, y: v }) => {
