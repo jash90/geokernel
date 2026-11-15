@@ -536,4 +536,42 @@ case("history2", [pt("A", 0, 0), num("r", 3), num("q", 2), "k = Circle(A, r)", p
                   "c = Circle(B, q)", "P = Intersect(k, c, 1)", "Q = Intersect(k, c, 2)"],
      [setn("q", 3), mv("B", -5, 0), mv("B", 0, 4), mv("B", 5, 0), setn("q", 2), setn("q", 2.5)])
 
+# ------------------------------------------- a circle intersected with itself
+topic("itself")
+# Intersect(k, k) goes through AlgoIntersectConics with both conics the same.
+# Its special case applies when a labelled point with k in its incidence list
+# lies on k: the points k was drawn through, then the intersection points of
+# k in creation order. That point is the first intersection; otherwise there
+# is none. The special case is decided once, at creation.
+for index in (1, 2):
+    case("itself", [pt("A", 1, 2), pt("B", 4, 6), "k = Circle(A, B)",
+                    f"P = Intersect(k, k, {index})"],
+         [mv("B", -2, 3), mv("A", -2, 3), mv("A", 0, 0), mv("B", 0, 5)])
+case("itself", [pt("A", 3, 4), pt("B", -3, 4), pt("C", 0, -5), "k = Circle(A, B, C)",
+                "P = Intersect(k, k, 1)", "Q = Intersect(k, k, 2)"],
+     [mv("A", 5, 0), mv("C", 1, 2), mv("C", 0, -5), mv("B", 5, 0), mv("B", -3, 4)])
+# A circle without points by construction: an intersection point of the
+# circle created earlier is the first point. That point is not an input of the
+# algorithm, so GeoGebra does not recompute the intersection when only the
+# point moves.
+case("itself", [pt("A", 0, 0), num("r", 3), "k = Circle(A, r)", pt("C", -5, 1), pt("D", 5, 2),
+                "f = Line(C, D)", "X = Intersect(f, k, 1)", "P = Intersect(k, k, 1)",
+                "Q = Intersect(k, k, 2)"],
+     [mv("C", -5, -1), setn("r", 4), mv("D", 5, 6), mv("D", 5, 2), mv("A", 1, 1)])
+case("itself", [pt("A", 0, 0), num("r", 3), "k = Circle(A, r)", pt("B", 4, 1), num("q", 2),
+                "c = Circle(B, q)", "X = Intersect(c, k, 2)", "P = Intersect(k, k, 1)",
+                "R = Intersect(c, c, 1)"],
+     [mv("B", 3, -2), setn("q", 3), mv("B", 9, 0), mv("B", 2, 3), setn("r", 2)])
+# Without such a point there is no intersection, even after one is created.
+case("itself", [pt("A", 0, 0), num("r", 3), "k = Circle(A, r)", "P = Intersect(k, k, 1)",
+                pt("C", -5, 1), pt("D", 5, 2), "f = Line(C, D)", "X = Intersect(f, k, 1)"],
+     [mv("C", -5, -1), setn("r", 4), mv("A", 1, 1)])
+# The drawn-through point comes before an intersection point.
+case("itself", [pt("A", 0, 0), pt("B", 3, 4), "k = Circle(A, B)", pt("C", -6, 1), pt("D", 6, 2),
+                "f = Line(C, D)", "X = Intersect(f, k, 1)", "P = Intersect(k, k, 1)"],
+     [mv("B", 0, 5), mv("C", -6, -2), mv("B", 1, 1), mv("B", 3, 4)])
+# Created with a radius of 0: the special case never applies afterwards.
+case("itself", [pt("A", 1, 2), pt("B", 1, 2), "k = Circle(A, B)", "P = Intersect(k, k, 1)"],
+     [mv("B", 4, 6), mv("A", -2, 0), mv("B", 1, 2)])
+
 cases.write()

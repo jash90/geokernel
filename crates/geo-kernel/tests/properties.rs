@@ -8,6 +8,7 @@
 mod common;
 
 use common::*;
+use geo_kernel::algo::conic::ConicDef;
 use geo_kernel::script::exec;
 use geo_kernel::{Construction, Def, Error, Id, Kind, Value};
 use std::f64::consts::PI;
@@ -26,7 +27,47 @@ struct Totals {
     undefined_seen: usize,
     script_rebuilds: usize,
     script_rebuilds_skipped: usize,
+    /// Script rebuilds that differ only in state decided when an object was
+    /// created (see `same_up_to_creation_state`). They are still compared,
+    /// after `with_creation_state_of`.
+    creation_state_differs: usize,
     rejected: Vec<String>,
+}
+
+/// Whether two definitions are equal up to the state an object takes when it
+/// is created: the `special` flag of a circle intersection (any pair of
+/// circles, a circle with itself included), which GeoGebra decides once from
+/// the positions at creation (`AlgoIntersectConics`), so a build at other
+/// positions can decide it otherwise. A script cannot state the flag.
+fn same_up_to_creation_state(a: Def, b: Def) -> bool {
+    match (a, b) {
+        (
+            Def::IntersectCircles { c1, c2, which, .. },
+            Def::IntersectCircles {
+                c1: d1,
+                c2: d2,
+                which: w,
+                ..
+            },
+        ) => (c1, c2, which) == (d1, d2, w),
+        _ => a == b,
+    }
+}
+
+/// `def` with the creation state (see `same_up_to_creation_state`) of
+/// `orig`.
+fn with_creation_state_of(def: Def, orig: Def) -> Def {
+    match (def, orig) {
+        (Def::IntersectCircles { c1, c2, which, .. }, Def::IntersectCircles { special, .. }) => {
+            Def::IntersectCircles {
+                c1,
+                c2,
+                which,
+                special,
+            }
+        }
+        _ => def,
+    }
 }
 
 /// Builds a fresh construction from the definitions of `orig`: every free
@@ -78,12 +119,52 @@ fn check_contagion(case: &Case) -> Result<(), String> {
     Ok(())
 }
 
-fn dependents(case: &Case, start: Id) -> Vec<bool> {
+/// `case.deps` with the objects a rule reads besides its arguments, where
+/// they are not already ancestors: `Intersect(k, k)` reads the first point on
+/// `k` by construction (GeoGebra's `getPointFrom1on2`). When `k` was not
+/// drawn through a point, that is the first intersection point of `k`
+/// created before it. Contagion of `Undefined` is still checked on the
+/// arguments only.
+fn reads(case: &Case) -> Vec<Vec<usize>> {
+    let mut reads = case.deps.clone();
+    let on = |d: Def, k: Id| match d {
+        Def::IntersectLineCircle { circle, .. } => circle == k,
+        Def::IntersectCircles { c1, c2, .. } => c1 == k || c2 == k,
+        _ => false,
+    };
+    for id in case.c.ids() {
+        let Def::IntersectCircles { c1: k, c2, .. } = case.c.def(id) else {
+            continue;
+        };
+        // a point that `k` is drawn through is a parent of `k`
+        let drawn_through = matches!(
+            case.c.def(k),
+            Def::CircleThrough { .. } | Def::Conic(ConicDef::ThroughThree(..))
+        );
+        if k != c2 || drawn_through {
+            continue;
+        }
+        let first = case
+            .c
+            .ids()
+            .take(id.index())
+            .find(|&s| on(case.c.def(s), k));
+        if let Some(s) = first {
+            if !reads[id.index()].contains(&s.index()) {
+                reads[id.index()].push(s.index());
+            }
+        }
+    }
+    reads
+}
+
+/// The objects that depend on `start` through `reads` (see [`reads`]).
+fn dependents(case: &Case, reads: &[Vec<usize>], start: Id) -> Vec<bool> {
     let n = case.c.len();
     let mut reach = vec![false; n];
     reach[start.index()] = true;
     for i in start.index() + 1..n {
-        reach[i] = case.deps[i].iter().any(|&p| reach[p]);
+        reach[i] = reads[i].iter().any(|&p| reach[p]);
     }
     reach[start.index()] = false;
     reach
@@ -91,6 +172,7 @@ fn dependents(case: &Case, start: Id) -> Vec<bool> {
 
 fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), String> {
     let mut case = generate(seed, COMMANDS_PER_CASE, all_commands);
+    let reads = reads(&case);
     let mut moves: Vec<String> = Vec::new();
     let mut rng = Rng::new(seed ^ 0x5DEE_CE66_D1CE_5EED);
     totals.cases += 1;
@@ -133,7 +215,7 @@ fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), St
             fail!("non-finite value after move {step_no}: {bad}");
         }
         // 3. only dependents change, and no more are recomputed than exist
-        let reach = dependents(&case, moved);
+        let reach = dependents(&case, &reads, moved);
         let n_dependents = reach.iter().filter(|&&r| r).count();
         if count > n_dependents {
             fail!("move {step_no} recomputed {count} objects but only {n_dependents} depend on it");
@@ -214,6 +296,35 @@ fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), St
         if let Some(d) = first_difference(&case.c, &values(&case.c), &values(&fresh)) {
             fail!(
                 "history differs from a fresh build at the final values: {d}\nfresh script:\n{}",
+                script_of(&script)
+            );
+        }
+    } else if ok
+        && fresh.len() == case.c.len()
+        && fresh.ids().zip(case.c.ids()).all(|(f, o)| {
+            fresh.label(f) == case.c.label(o)
+                && same_up_to_creation_state(fresh.def(f), case.c.def(o))
+        })
+    {
+        // The script decided a circle intersection's creation state
+        // otherwise. Rebuild its definitions with the original state, which
+        // the script cannot state, and compare as above.
+        totals.creation_state_differs += 1;
+        totals.script_rebuilds += 1;
+        let mut carried = Construction::new();
+        for (f, o) in fresh.ids().zip(case.c.ids()) {
+            let def = with_creation_state_of(fresh.def(f), case.c.def(o));
+            if let Err(e) = carried.add(fresh.label(f), def) {
+                fail!(
+                    "rebuilding `{}` with its creation state failed: {e}",
+                    fresh.label(f)
+                );
+            }
+        }
+        if let Some(d) = first_difference(&case.c, &values(&case.c), &values(&carried)) {
+            fail!(
+                "history differs from a fresh build at the final values with the original \
+                 creation state: {d}\nfresh script:\n{}",
                 script_of(&script)
             );
         }
@@ -1168,12 +1279,11 @@ fn a_line_through_far_points_is_not_the_zero_line() {
 }
 
 /// Random constructions that also use `Slope(line)`, `Distance(line, line)`
-/// and `Intersect(circle, circle)`. Constructions that intersect a circle
-/// with itself fail: a fresh build at the final values decides the `special`
-/// flag of `Def::IntersectCircles` differently (see the test below), and the
-/// incremental update can differ from a recompute.
+/// and `Intersect(circle, circle)`. A circle intersection keeps the `special`
+/// flag decided at its creation, as GeoGebra does, so a fresh build at the
+/// final values may decide it otherwise. Such cases are counted and compared
+/// against a rebuild that carries the original flags over.
 #[test]
-#[ignore = "known defect: Intersect of a circle with itself depends on the history of moves"]
 fn random_constructions_with_all_commands() {
     let mut totals = Totals::default();
     for_seeds(
@@ -1181,6 +1291,22 @@ fn random_constructions_with_all_commands() {
         0x1112,
         CASES * 10,
         |rng| run_case(rng.state(), true, &mut totals),
+    );
+    println!(
+        "{} constructions, {} script rebuilds compared, {} skipped (multi-output layout), \
+         {} with a circle intersection decided otherwise at creation",
+        totals.cases,
+        totals.script_rebuilds,
+        totals.script_rebuilds_skipped,
+        totals.creation_state_differs
+    );
+    // A differing creation state must stay rare: the default run prints 19
+    // of 4000 constructions, `GEO_TEST_SCALE=2` 49 of 8000.
+    assert!(
+        totals.creation_state_differs * 100 <= totals.cases,
+        "{} of {} fresh builds differ in creation state",
+        totals.creation_state_differs,
+        totals.cases
     );
 }
 
@@ -1298,13 +1424,12 @@ fn shear_stretch_and_ratios_match_closed_forms() {
 }
 
 /// Rebuilding a construction from its definitions (`add(label, def(id))` for
-/// every object) does not reproduce circle intersections: `add` recomputes
-/// the `special` flag of `Def::IntersectCircles` from the positions at that
-/// moment and ignores the one in the definition. With `M` moved to `(0, 0)`
+/// every object) reproduces circle intersections: the `special` flag of
+/// `Def::IntersectCircles` is state from the creation of the intersection,
+/// and `add` keeps a flag that is already decided. With `M` moved to `(0, 0)`
 /// after the intersection was created at `M = (2, 1)`, the intersection is
-/// not at `(2, 1)`; rebuilt from the definitions it is.
+/// not at `(2, 1)`, rebuilt from the definitions or not.
 #[test]
-#[ignore = "known defect: Intersect of two circles cannot be rebuilt from its definition"]
 fn circle_intersections_survive_a_rebuild_from_definitions() {
     let mut c = build(
         "M = (2, 1)\nA = (2, 1)\nN = (5, 5)\nk = Circle(M, A)\nc = Circle(N, A)\n\
@@ -1432,7 +1557,7 @@ fn misuse_of_the_api_is_an_error_and_changes_nothing() {
                 c1: k,
                 c2: k,
                 which: 255,
-                special: false
+                special: None
             }
         ),
         Err(Error::BadIndex(255))
@@ -1489,7 +1614,7 @@ fn misuse_of_the_api_is_an_error_and_changes_nothing() {
                 c1: i[0],
                 c2: i[1],
                 which: 1,
-                special: false,
+                special: None,
             }
         }),
     ];
