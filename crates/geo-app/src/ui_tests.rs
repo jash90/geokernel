@@ -192,3 +192,43 @@ fn the_rail_switches_between_the_object_list_and_the_tools() {
     click(&mut h, world(3.0, 3.0));
     assert_eq!(labels(&h), ["A", "B"]);
 }
+
+/// Types `text` into the input row below one 48 px object row and presses Enter.
+fn type_command(h: &mut Harness<'_, App>, rows: usize, text: &str) {
+    click(h, at(72.0 + 120.0, 65.0 + 48.0 * rows as f32 + 24.0));
+    h.input_mut().events.push(Event::Text(text.to_owned()));
+    h.step();
+    h.key_press(egui::Key::Enter);
+    h.run();
+}
+
+#[test]
+fn the_input_row_runs_commands_in_both_label_forms() {
+    let mut h = harness("A = (0, 0)\n");
+    type_command(&mut h, 1, "B = (2, 3)");
+    assert_eq!(labels(&h), ["A", "B"]);
+    type_command(&mut h, 2, "f: Line(A, B)");
+    assert_eq!(labels(&h), ["A", "B", "f"]);
+    assert_eq!(h.state().input_error, None);
+    assert!(h.state().input.is_empty());
+}
+
+#[test]
+fn the_input_row_shows_errors_in_polish() {
+    let mut h = harness("A = (0, 0)\n");
+    type_command(&mut h, 1, "f = Line(A, Z)");
+    assert_eq!(labels(&h), ["A"]);
+    assert_eq!(
+        h.state().input_error.as_deref(),
+        Some("Nieznany obiekt `Z`")
+    );
+}
+
+#[test]
+fn the_settings_button_opens_without_disturbing_the_drawing() {
+    let mut h = harness("A = (0, 0)\n");
+    // The gear is 30 px from the top right corner of the drawing area.
+    click(&mut h, at(SIZE.0 - 30.0, 65.0 + 30.0));
+    assert!(h.state().decor.grid && h.state().decor.axes);
+    assert_eq!(labels(&h), ["A"]);
+}

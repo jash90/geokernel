@@ -132,6 +132,13 @@ fn paint_row(app: &App, ui: &mut Ui, row: &Row, actions: &mut Actions) {
             vec2(84.0, 26.0),
         );
         let response = ui.put(r, egui::DragValue::new(&mut v).speed(speed).max_decimals(2));
+        response.widget_info(|| {
+            egui::WidgetInfo::labeled(
+                egui::Role::SpinButton,
+                true,
+                format!("Wartość {}", row.label),
+            )
+        });
         if response.changed() {
             actions.set_number = Some((row.id, v));
         }
@@ -233,6 +240,7 @@ fn input_row(app: &mut App, ui: &mut Ui) {
         egui::TextEdit::singleline(&mut app.input)
             .id(id)
             .hint_text("Wprowadź…")
+            .text_color(theme::TEXT)
             .frame(egui::Frame::NONE)
             .font(FontId::proportional(17.0))
             .align(egui::Align2::LEFT_CENTER)

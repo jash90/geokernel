@@ -27,6 +27,7 @@ fn render(script: &str, name: &str, prepare: impl FnOnce(&mut App)) -> PathBuf {
             900.0 + 2.0 * MARGIN,
         ))
         .with_pixels_per_point(1.0)
+        .with_theme(eframe::egui::Theme::Light)
         .with_context_setup(crate::theme::apply)
         .wgpu()
         .build_ui(move |ui| app.show(ui));
@@ -57,6 +58,56 @@ fn render_tools_panel() {
         include_str!("../../../examples/four-lines.geo"),
         "tools.png",
         |app| app.mode = crate::app::Mode::Tools,
+    );
+    println!("{}", path.display());
+}
+
+#[test]
+#[ignore = "needs a GPU adapter"]
+fn render_interaction_states() {
+    let path = render(
+        include_str!("../../../examples/four-lines.geo"),
+        "states.png",
+        |app| {
+            app.wb.selected = app.wb.construction().id("g");
+            let b = app.wb.construction().id("B").unwrap();
+            app.wb.toggle_visible(b);
+            app.input = "Line(A, Q)".into();
+            app.input_error = Some("Nieznany obiekt `Q`".into());
+            app.tool.set_tool(crate::tools::Tool::Line);
+            app.tool_error = Some("Tych obiektów nie można przeciąć".into());
+        },
+    );
+    println!("{}", path.display());
+}
+
+#[test]
+#[ignore = "needs a GPU adapter"]
+fn render_mixed_objects() {
+    let path = render(
+        "A = (-3, 1)\nB = (2, 2)\nr = 2.5\nc = Circle(A, r)\ns = Segment(A, B)\n\
+         M = Midpoint(A, B)\np = Perpendicular(M, s)\nR = Ray(B, A)\nv = (1, -2)\n\
+         k = Circle(B, A)\nP = Intersect(p, k)\n",
+        "mixed.png",
+        |app| app.wb.selected = app.wb.construction().id("c"),
+    );
+    println!("{}", path.display());
+}
+
+#[test]
+#[ignore = "needs a GPU adapter"]
+fn render_axes_out_of_view() {
+    let path = render(
+        include_str!("../../../examples/four-lines.geo"),
+        "far.png",
+        |app| {
+            app.view_request = None;
+            app.camera = Some(crate::view::Camera {
+                cx: 60.0,
+                cy: 40.0,
+                scale: 25.0,
+            });
+        },
     );
     println!("{}", path.display());
 }
