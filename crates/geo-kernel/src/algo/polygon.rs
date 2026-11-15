@@ -54,8 +54,9 @@
 use super::measure::{angle_of_points, segment_length};
 use super::{Group, Parents, NUMBER, POINT};
 use crate::kernel::{Construction, Def, Error, Id, IdList, Kind, Value};
-use crate::script::{index_label, object, split_call};
+use crate::script::{object, split_call};
 use crate::tol::STANDARD_PRECISION;
+use std::collections::BTreeSet;
 use std::f64::consts::PI;
 
 const POLYGON: &[Kind] = &[Kind::Polygon];
@@ -166,20 +167,22 @@ fn signed_area(c: &Construction, ids: &[Id]) -> Option<f64> {
     Some(sum / 2.0)
 }
 
-/// `Math.round` as `AlgoPolygonRegularND.compute` uses it, with NaN read as
-/// 2 and at least 2 vertices.
+/// `(int) Math.round(n)` in Java: rounds half up, saturates to a `long`
+/// (NaN gives 0), then keeps the low 32 bits, so 4294967299 gives 3.
+fn java_round_to_int(n: f64) -> i32 {
+    let f = n.floor();
+    // `n - f` is exact, so this is exactly `floor(n + 1/2)`.
+    let r = if n - f >= 0.5 { f + 1.0 } else { f };
+    // `as i64` saturates and maps NaN to 0, like Java's `(long)`; `as i32`
+    // then truncates to the low 32 bits, like Java's `(int)` of a `long`.
+    (r as i64) as i32
+}
+
+/// The vertex count `AlgoPolygonRegularND.compute` derives from `n`: NaN
+/// reads as 2, then `(int) Math.round(n)`, at least 2.
 fn vertex_count(n: f64) -> usize {
-    if n.is_nan() {
-        return 2;
-    }
-    let r = (n + 0.5).floor();
-    if r <= 2.0 {
-        2
-    } else if r > MAX_REGULAR_VERTICES as f64 {
-        MAX_REGULAR_VERTICES + 1
-    } else {
-        r as usize
-    }
+    let n = if n.is_nan() { 2 } else { java_round_to_int(n) };
+    n.max(2) as usize
 }
 
 /// `MyMath.cos`: a cosine of magnitude below 1e-16 is 0.
@@ -519,8 +522,10 @@ impl Group for PolygonDef {
                 if !poly_defined(c, poly) {
                     return None;
                 }
-                // `(int) Math.floor(index) - 1`; NaN reads as 0.
-                let i = index.value(c).floor() as i64 - 1;
+                // `(int) Math.floor(index) - 1`: `as i32` saturates and maps
+                // NaN to 0 like Java's `(int)`, and the subtraction wraps
+                // like Java's `int` arithmetic.
+                let i = (index.value(c).floor() as i32).wrapping_sub(1);
                 let shape = Shape::of(c, poly);
                 let i = usize::try_from(i).ok().filter(|&i| i < shape.len())?;
                 point(shape.vertex(c, i)?)
@@ -726,15 +731,19 @@ const RESERVED: &[&str] = &[
     "\u{212f}_\u{3b3}",
 ];
 
-/// `Construction.isFreeLabel`: not taken and not reserved.
-fn is_free(c: &Construction, label: &str) -> bool {
-    c.id(label).is_none() && !RESERVED.contains(&label)
+/// Labels already given to objects of the line being planned.
+type Taken = BTreeSet<String>;
+
+/// `Construction.isFreeLabel`: not taken (by the construction or by an
+/// earlier object of the same line) and not reserved.
+fn is_free(c: &Construction, taken: &Taken, label: &str) -> bool {
+    c.id(label).is_none() && !taken.contains(label) && !RESERVED.contains(&label)
 }
 
 /// `LabelManager.getNextIndexedLabel`: the first free label of `c0, c1,
 /// ..., c0_1, c1_1, ...` (the short form `c_1` below index 10, which needs
 /// `c_{1}` to be free too, and `c_{10}` from 10 on).
-fn next_indexed_label(c: &Construction, chars: &[char]) -> String {
+fn next_indexed_label(c: &Construction, taken: &Taken, chars: &[char]) -> String {
     let base = |ch: char| {
         // this Arabic letter is two Unicode chars
         if ch == '\u{647}' {
@@ -749,14 +758,14 @@ fn next_indexed_label(c: &Construction, chars: &[char]) -> String {
         let b = base(chars[r]);
         counter += 1;
         if q == 0 {
-            if is_free(c, &b) {
+            if is_free(c, taken, &b) {
                 return b;
             }
             continue;
         }
         let short = format!("{b}_{q}");
         let long = format!("{b}_{{{q}}}");
-        if is_free(c, &short) && is_free(c, &long) {
+        if is_free(c, taken, &short) && is_free(c, taken, &long) {
             return if q < 10 { short } else { long };
         }
     }
@@ -766,42 +775,136 @@ fn next_indexed_label(c: &Construction, chars: &[char]) -> String {
 /// the vertex `p`: the vertex label in lower case, with an index when that
 /// is a single character, or the next default label for segments when a
 /// longer lower-case label is taken.
-fn side_label(c: &Construction, p: Id) -> String {
+fn side_label(c: &Construction, taken: &Taken, p: Id) -> String {
     let lower = c.label(p).to_lowercase();
     let mut units = lower.encode_utf16();
     if let (Some(unit), None) = (units.next(), units.next()) {
         if let Some(ch) = char::from_u32(u32::from(unit)) {
-            return next_indexed_label(c, &[ch]);
+            return next_indexed_label(c, taken, &[ch]);
         }
     }
-    if is_free(c, &lower) {
+    if is_free(c, taken, &lower) {
         lower
     } else {
-        next_indexed_label(c, LINE_LABELS)
+        next_indexed_label(c, taken, LINE_LABELS)
+    }
+}
+
+/// `Construction.buildIndexedLabel` (as `script::index_label`), also skipping
+/// labels given earlier in the same line.
+fn planned_index_label(c: &Construction, taken: &Taken, prefix: &str) -> String {
+    let free = |label: &str| c.id(label).is_none() && !taken.contains(label);
+    let mut n = 1;
+    loop {
+        let long = format!("{prefix}_{{{n}}}");
+        if free(&long) && (n >= 10 || free(&format!("{prefix}_{n}"))) {
+            return long;
+        }
+        n += 1;
     }
 }
 
 // ----------------------------------------------------------------- scripts
 
+/// One object a line will create.
+enum Planned {
+    Def(Def),
+    /// A definition over a list of points, stored when it is added.
+    List(Vec<Id>, fn(IdList) -> PolygonDef),
+}
+
+/// The objects one line creates, with their labels, checked before the
+/// first one is added.
+#[derive(Default)]
+struct Plan {
+    items: Vec<(String, Planned)>,
+    taken: Taken,
+}
+
+impl Plan {
+    /// A plan whose first object is labelled `name`, which must be free.
+    fn new(c: &Construction, name: &str) -> Result<Plan, String> {
+        if name.is_empty() {
+            return Err(Error::EmptyLabel.to_string());
+        }
+        if c.id(name).is_some() {
+            return Err(Error::DuplicateLabel(name.to_string()).to_string());
+        }
+        let mut plan = Plan::default();
+        plan.taken.insert(name.to_string());
+        Ok(plan)
+    }
+
+    /// Plans `item` under `label`, a label chosen as free for this plan.
+    fn push(&mut self, label: String, item: Planned) {
+        self.taken.insert(label.clone());
+        self.items.push((label, item));
+    }
+
+    /// Plans the first object, under the name given to [`Plan::new`].
+    fn first(&mut self, name: &str, item: Planned) {
+        self.items.push((name.to_string(), item));
+    }
+
+    /// Adds every planned object, or none: each definition is checked first,
+    /// and if the construction still refuses one, everything added by this
+    /// call is removed again. Returns the first object.
+    fn commit(self, c: &mut Construction) -> Result<Id, String> {
+        for (_, item) in &self.items {
+            match item {
+                Planned::Def(def) => {
+                    c.evaluate(*def).map_err(|e| e.to_string())?;
+                }
+                Planned::List(ids, _) => {
+                    for &id in ids {
+                        c.expect(id, POINT).map_err(|e| e.to_string())?;
+                    }
+                }
+            }
+        }
+        let start = c.checkpoint();
+        let mut first = None;
+        for (label, item) in self.items {
+            let added = match item {
+                Planned::Def(def) => c.add(&label, def),
+                Planned::List(ids, make) => {
+                    c.add_with_list(&label, &ids, |list| Def::Polygon(make(list)))
+                }
+            };
+            match added {
+                Ok(id) => {
+                    first.get_or_insert(id);
+                }
+                Err(e) => {
+                    c.rollback(start);
+                    return Err(e.to_string());
+                }
+            }
+        }
+        first.ok_or_else(|| "the command creates no object".to_string())
+    }
+}
+
 /// Runs `name = rhs` when it is a command of this group. Returns `None` for
 /// every other line, so that the other groups and the built-in commands can
 /// try; otherwise what [`crate::script::exec`] returns: the first object
-/// created.
+/// created. A line creates all its objects or, when it fails, none.
 ///
 /// Objects created by one line, in this order:
 ///
-/// - `p = Polygon(A, B, C, ...)`: the polygon `p`, then its sides from each
-///   vertex to the next. A side is named after a vertex (`GeoPolygon`'s
-///   `defaultSegmentLabels`): for a triangle the side opposite the vertex,
-///   otherwise the side starting at it; the vertex label in lower case,
-///   `a`, then `a_1`, `a_2`, ... when taken (`a_{10}` from 10 on, and
-///   `x`, `y`, `z` are reserved); a longer label in lower case when it is
-///   free, else the next default segment label `f`, `g`, `h`, ...
-///   `Polygon(A)` creates no side.
-/// - `p = Polygon(A, B, n)`: the polygon, the new vertices from the third on
-///   with default point labels (the next free of `A`, `B`, ..., `Z`), then
-///   the sides with default segment labels. Their number is fixed by `n`
-///   when the line runs.
+/// - `p = Polygon(A, B, C, ...)`: the polygon `p`, then those of its sides
+///   from each vertex to the next that are defined when the line runs (as
+///   GeoGebra labels only those). A side is named after a vertex
+///   (`GeoPolygon`'s `defaultSegmentLabels`): for a triangle the side
+///   opposite the vertex, otherwise the side starting at it; the vertex
+///   label in lower case, `a`, then `a_1`, `a_2`, ... when taken (`a_{10}`
+///   from 10 on, and `x`, `y`, `z` are reserved); a longer label in lower
+///   case when it is free, else the next default segment label `f`, `g`,
+///   `h`, ... `Polygon(A)` creates no side.
+/// - `p = Polygon(A, B, n)`: the polygon and, when it is defined as the line
+///   runs, the new vertices from the third on with default point labels (the
+///   next free of `A`, `B`, ..., `Z`), then the sides with default segment
+///   labels. Their number is fixed by `n` when the line runs.
 /// - `V = Vertex(p)`, `w = InteriorAngles(p)`, `w = Angle(p)`: one object per
 ///   vertex at creation (one when the polygon is undefined then for
 ///   `Vertex`), labelled `V_{1}`, `V_{2}`, ... even when there is one.
@@ -845,7 +948,7 @@ pub(crate) fn exec(
         }
         _ => return None,
     };
-    Some(result)
+    Some(result.map(Some))
 }
 
 /// The number of arguments as GeoGebra counts them: `F()` has none.
@@ -857,18 +960,35 @@ fn arg_count(args: &[&str]) -> usize {
     }
 }
 
-/// A number argument: a literal or the label of a number object.
-fn count_arg(c: &Construction, arg: &str) -> Result<Count, String> {
-    if let Ok(v) = arg.parse::<f64>() {
-        return if v.is_finite() {
-            Ok(Count::Literal(v))
-        } else {
-            Err(Error::NotFinite.to_string())
-        };
+/// A plain decimal literal such as `5`, `-2` or `3.5`. Words such as `inf`
+/// or `nan` and exponents are not literals here.
+fn decimal(arg: &str) -> Option<f64> {
+    let digits = arg.strip_prefix('-').unwrap_or(arg);
+    let (whole, fraction) = digits.split_once('.').unwrap_or((digits, ""));
+    let all_digits = |s: &str| s.bytes().all(|b| b.is_ascii_digit());
+    let valid = !(whole.is_empty() && fraction.is_empty())
+        && all_digits(whole)
+        && all_digits(fraction)
+        && !(digits.ends_with('.'));
+    if valid {
+        arg.parse().ok()
+    } else {
+        None
     }
-    let id = object(c, arg)?;
-    c.expect(id, NUMBER).map_err(|e| e.to_string())?;
-    Ok(Count::Object(id))
+}
+
+/// A number argument: the label of a number object (an existing label
+/// wins) or a decimal literal.
+fn count_arg(c: &Construction, arg: &str) -> Result<Count, String> {
+    if let Some(id) = c.id(arg) {
+        c.expect(id, NUMBER).map_err(|e| e.to_string())?;
+        return Ok(Count::Object(id));
+    }
+    match decimal(arg) {
+        Some(v) if v.is_finite() => Ok(Count::Literal(v)),
+        Some(_) => Err(Error::NotFinite.to_string()),
+        None => Err(format!("unknown object `{arg}`")),
+    }
 }
 
 fn points(c: &Construction, args: &[&str]) -> Result<Vec<Id>, String> {
@@ -888,11 +1008,11 @@ fn points_line(
     name: &str,
     args: &[&str],
     make: fn(IdList) -> PolygonDef,
-) -> Result<Option<Id>, String> {
+) -> Result<Id, String> {
     let ids = points(c, args)?;
-    c.add_with_list(name, &ids, |list| Def::Polygon(make(list)))
-        .map(Some)
-        .map_err(|e| e.to_string())
+    let mut plan = Plan::new(c, name)?;
+    plan.first(name, Planned::List(ids, make));
+    plan.commit(c)
 }
 
 /// Adds a definition over one object named by `arg`.
@@ -901,55 +1021,69 @@ fn single(
     name: &str,
     arg: &str,
     make: fn(Id) -> PolygonDef,
-) -> Result<Option<Id>, String> {
+) -> Result<Id, String> {
     let id = object(c, arg)?;
-    c.add(name, Def::Polygon(make(id)))
-        .map(Some)
+    let mut plan = Plan::new(c, name)?;
+    plan.first(name, Planned::Def(Def::Polygon(make(id))));
+    plan.commit(c)
+}
+
+/// Whether `def` would be defined if it were added now.
+fn defined(c: &Construction, def: Def) -> Result<bool, String> {
+    c.evaluate(def)
+        .map(|v| v.is_defined())
         .map_err(|e| e.to_string())
 }
 
-fn add(c: &mut Construction, label: &str, def: PolygonDef) -> Result<Id, String> {
-    c.add(label, Def::Polygon(def)).map_err(|e| e.to_string())
-}
-
 /// `CmdPolygon`.
-fn polygon_line(c: &mut Construction, name: &str, args: &[&str]) -> Result<Option<Id>, String> {
+fn polygon_line(c: &mut Construction, name: &str, args: &[&str]) -> Result<Id, String> {
     let n = arg_count(args);
     if n == 0 {
         return Err("`Polygon` does not take 0 argument(s)".into());
     }
-    if c.id(name).is_some() {
-        return Err(format!("object `{name}` already exists"));
-    }
+    let mut plan = Plan::new(c, name)?;
     if n == 3 {
-        let is_point = |arg: &str| c.id(arg).is_some_and(|id| c.kind(id) == Kind::Point);
-        let is_number = |arg: &str| {
-            arg.parse::<f64>().is_ok() || c.id(arg).is_some_and(|id| c.kind(id) == Kind::Number)
+        // An existing label wins over a literal.
+        let kind = |arg: &str| c.id(arg).map(|id| c.kind(id));
+        let is_point = |arg: &str| kind(arg) == Some(Kind::Point);
+        let is_number = |arg: &str| match kind(arg) {
+            Some(k) => k == Kind::Number,
+            None => decimal(arg).is_some(),
         };
         if is_point(args[0]) && is_point(args[1]) && is_number(args[2]) {
-            return regular_line(c, name, args).map(Some);
+            plan_regular(c, &mut plan, name, args)?;
+            return plan.commit(c);
         }
     }
     let ids = points(c, args)?;
-    let poly = c
-        .add_with_list(name, &ids, |list| Def::Polygon(PolygonDef::Polygon(list)))
-        .map_err(|e| e.to_string())?;
+    plan.first(name, Planned::List(ids.clone(), PolygonDef::Polygon));
     // `Polygon(A)` makes a polygon from a list, which has no sides.
     if n >= 2 {
         for i in 0..n {
+            let side = Def::Segment(ids[i], ids[(i + 1) % n]);
+            // GeoGebra labels only the sides that are defined now.
+            if !defined(c, side)? {
+                continue;
+            }
             // `GeoPolygon.defaultSegmentLabels`
             let named_after = if n == 3 { ids[(i + 2) % 3] } else { ids[i] };
-            let label = side_label(c, named_after);
-            c.add(&label, Def::Segment(ids[i], ids[(i + 1) % n]))
-                .map_err(|e| e.to_string())?;
+            let label = side_label(c, &plan.taken, named_after);
+            plan.push(label, Planned::Def(side));
         }
     }
-    Ok(Some(poly))
+    plan.commit(c)
 }
 
-/// `Polygon(A, B, n)` (`AlgoPolygonRegularND`): the polygon, its new
-/// vertices and its sides, as many as `n` gives when the line runs.
-fn regular_line(c: &mut Construction, name: &str, args: &[&str]) -> Result<Id, String> {
+/// `Polygon(A, B, n)` (`AlgoPolygonRegularND`): the polygon and, when it is
+/// defined now, its new vertices and its sides, as many as `n` gives now.
+/// GeoGebra labels none of them while the polygon is undefined, also when
+/// `round(n) <= 2` (`updateOutput` returns before labelling).
+fn plan_regular(
+    c: &Construction,
+    plan: &mut Plan,
+    name: &str,
+    args: &[&str],
+) -> Result<(), String> {
     let (a, b) = (object(c, args[0])?, object(c, args[1])?);
     let n = count_arg(c, args[2])?;
     let count = vertex_count(n.value(c));
@@ -958,27 +1092,36 @@ fn regular_line(c: &mut Construction, name: &str, args: &[&str]) -> Result<Id, S
             "a regular polygon may have at most {MAX_REGULAR_VERTICES} vertices"
         ));
     }
-    let poly = add(c, name, PolygonDef::Regular { a, b, n })?;
+    let poly = Def::Polygon(PolygonDef::Regular { a, b, n });
+    plan.first(name, Planned::Def(poly));
+    if !defined(c, poly)? {
+        return Ok(());
+    }
     for k in 2..count as u32 {
-        let label = next_indexed_label(c, POINT_LABELS);
-        add(c, &label, PolygonDef::RegularVertex { a, b, n, k })?;
+        let label = next_indexed_label(c, &plan.taken, POINT_LABELS);
+        let def = PolygonDef::RegularVertex { a, b, n, k };
+        plan.push(label, Planned::Def(Def::Polygon(def)));
     }
     for k in 0..count as u32 {
-        let label = next_indexed_label(c, LINE_LABELS);
-        add(c, &label, PolygonDef::RegularSide { a, b, n, k })?;
+        let label = next_indexed_label(c, &plan.taken, LINE_LABELS);
+        let def = PolygonDef::RegularSide { a, b, n, k };
+        plan.push(label, Planned::Def(Def::Polygon(def)));
     }
-    Ok(poly)
+    Ok(())
 }
 
 /// `CmdVertex` for polygons and polylines.
-fn vertex_line(c: &mut Construction, name: &str, args: &[&str]) -> Result<Option<Id>, String> {
+fn vertex_line(c: &mut Construction, name: &str, args: &[&str]) -> Result<Id, String> {
     match arg_count(args) {
         1 => outputs_line(c, name, args[0], Outputs::Vertices),
         2 => {
             let poly = object(c, args[0])?;
             c.expect(poly, POLY).map_err(|e| e.to_string())?;
             let index = count_arg(c, args[1])?;
-            add(c, name, PolygonDef::Vertex { poly, index }).map(Some)
+            let mut plan = Plan::new(c, name)?;
+            let def = PolygonDef::Vertex { poly, index };
+            plan.first(name, Planned::Def(Def::Polygon(def)));
+            plan.commit(c)
         }
         n => Err(format!("`Vertex` does not take {n} argument(s)")),
     }
@@ -994,19 +1137,21 @@ enum Outputs {
 
 /// `Vertex(p)`, `InteriorAngles(p)` and `Angle(p)`: one output per vertex
 /// at creation, labelled through `OutputHandler.setLabelsMulti` with a
-/// single label, so always with an index.
-fn outputs_line(
-    c: &mut Construction,
-    name: &str,
-    arg: &str,
-    what: Outputs,
-) -> Result<Option<Id>, String> {
+/// single label, so always with an index. As for other commands with
+/// several results, `name` itself must be free.
+fn outputs_line(c: &mut Construction, name: &str, arg: &str, what: Outputs) -> Result<Id, String> {
     let poly = object(c, arg)?;
     let expected = match what {
         Outputs::Vertices => POLY,
         Outputs::Angles(_) => POLYGON,
     };
     c.expect(poly, expected).map_err(|e| e.to_string())?;
+    // `name` is not used itself, only its indexed forms are; but as for
+    // other commands with several results it must be free.
+    if c.id(name).is_some() {
+        return Err(Error::DuplicateLabel(name.to_string()).to_string());
+    }
+    let mut plan = Plan::default();
     let len = Shape::of(c, poly).len();
     let count = match what {
         // `AlgoVertexPolygon.compute`: grows from one output only when the
@@ -1020,17 +1165,15 @@ fn outputs_line(
         Some(p) if !p.is_empty() => p.to_string(),
         _ => "a".to_string(),
     };
-    let mut first = None;
     for k in 0..count as u32 {
         let def = match what {
             Outputs::Vertices => PolygonDef::VertexAt { poly, k },
             Outputs::Angles(internal) => PolygonDef::Angle { poly, k, internal },
         };
-        let label = index_label(c, &prefix);
-        let id = add(c, &label, def)?;
-        first.get_or_insert(id);
+        let label = planned_index_label(c, &plan.taken, &prefix);
+        plan.push(label, Planned::Def(Def::Polygon(def)));
     }
-    Ok(first)
+    plan.commit(c)
 }
 
 #[cfg(test)]
@@ -1101,11 +1244,177 @@ mod tests {
                 "`A` is a point, expected a polygon",
             ),
             ("p = Polygon(A, B, 5000)", "at most 1000"),
-            ("p = Polygon(A, B, inf)", "finite"),
+            ("p = Polygon(A, B, inf)", "unknown object `inf`"),
+            ("p = Polygon(A, B, 1e3)", "unknown object `1e3`"),
         ] {
             let e = run(&mut c, line).unwrap_err();
             assert!(e.contains(text), "{line}: {e}");
             assert_eq!(c.len(), before, "{line}");
+        }
+    }
+
+    #[test]
+    fn a_huge_literal_is_not_finite() {
+        let mut c = load("A = (0, 0)\nB = (4, 0)\n").unwrap();
+        let line = format!("p = Polygon(A, B, {})", "9".repeat(400));
+        let e = run(&mut c, &line).unwrap_err();
+        assert!(e.contains("finite"), "{e}");
+        assert_eq!(c.len(), 2);
+    }
+
+    /// The labels, edges and lists of a construction.
+    fn structure(c: &Construction) -> (Vec<String>, Vec<Vec<Id>>, usize) {
+        (
+            labels(c, 0),
+            c.ids().map(|id| c.children(id).to_vec()).collect(),
+            c.stored_ids(),
+        )
+    }
+
+    #[test]
+    fn a_failure_in_the_middle_of_a_line_removes_what_it_added() {
+        let mut c = load(
+            "A = (0, 0)\nB = (4, 0)\nC = (4, 3)\nD = (0, 3)\nE = (-1, 1)\n\
+             a = Area(A, B, C, D, E)\n",
+        )
+        .unwrap();
+        let before = structure(&c);
+        let ids: Vec<Id> = ["A", "B", "C", "D"].map(|l| c.id(l).unwrap()).to_vec();
+        // the second object reuses the first label: refused only when added
+        let mut plan = Plan::new(&c, "q").unwrap();
+        plan.first("q", Planned::List(ids.clone(), PolygonDef::Polygon));
+        plan.push("s".into(), Planned::Def(Def::Segment(ids[0], ids[1])));
+        plan.push("q".into(), Planned::Def(Def::Segment(ids[1], ids[2])));
+        let e = plan.commit(&mut c).unwrap_err();
+        assert!(e.contains("already exists"), "{e}");
+        assert_eq!(structure(&c), before);
+        assert_eq!(c.id("q"), None);
+        assert_eq!(c.id("s"), None);
+        // and the next line works as if nothing had happened
+        run(&mut c, "q = Polygon(A, B, C, D)").unwrap();
+        assert_eq!(labels(&c, 6), ["q", "a_1", "b", "c", "d"]);
+    }
+
+    #[test]
+    fn only_sides_defined_at_creation_are_created() {
+        let mut c = load(
+            "A = (0, 0)\nC = (4, 3)\nO = (10, 0)\nr = 1\nk = Circle(O, r)\n\
+             l = Line(A, C)\nX = Intersect(l, k)\n",
+        )
+        .unwrap();
+        let n = c.len();
+        // `x` is reserved: the side from C to A, named after X, is `x_1`
+        run(&mut c, "p = Polygon(A, X, C)").unwrap();
+        assert_eq!(labels(&c, n), ["p", "x_1"]);
+        assert_eq!(c.value(c.id("p").unwrap()), Value::Undefined);
+        run(&mut c, "q = Polygon(A, X)").unwrap();
+        assert_eq!(labels(&c, n + 2), ["q"]);
+        run(&mut c, "s = Polygon(A)").unwrap();
+        assert_eq!(labels(&c, n + 3), ["s"]);
+    }
+
+    #[test]
+    fn regular_polygons_undefined_at_creation_have_no_outputs() {
+        let src = "A = (0, 0)\nB = (4, 0)\nO = (10, 0)\nr = 1\nk = Circle(O, r)\n\
+                   P = (0, 5)\nQ = (1, 5)\nl = Line(P, Q)\nX = Intersect(l, k)\nm = 2\n";
+        for (rhs, vertices) in [
+            ("Polygon(A, B, 0)", 0),
+            ("Polygon(A, B, 1)", 0),
+            ("Polygon(A, B, 2)", 0),
+            ("Polygon(A, B, -3)", 0),
+            ("Polygon(A, B, 2.4)", 0),
+            ("Polygon(A, B, m)", 5),
+            ("Polygon(X, B, 4)", 0),
+            ("Polygon(A, X, 4)", 0),
+        ] {
+            let mut c = load(src).unwrap();
+            let n = c.len();
+            run(&mut c, &format!("p = {rhs}")).unwrap();
+            assert_eq!(labels(&c, n), ["p"], "{rhs}");
+            let p = c.id("p").unwrap();
+            assert_eq!(c.value(p), Value::Undefined, "{rhs}");
+            // the polygon follows later changes, without new objects
+            c.set_number(c.id("m").unwrap(), 5.0).unwrap();
+            assert_eq!(c.vertices(p).count(), vertices, "{rhs}");
+            assert_eq!(c.len(), n + 1);
+        }
+    }
+
+    #[test]
+    fn vertex_counts_wrap_like_java_ints() {
+        let mut c = load("A = (0, 0)\nB = (4, 0)\n").unwrap();
+        run(&mut c, "p = Polygon(A, B, 4294967299)").unwrap();
+        assert_eq!(labels(&c, 2), ["p", "C", "f", "g", "h"]);
+        run(&mut c, "q = Polygon(A, B, -4294967293)").unwrap();
+        assert_eq!(c.vertices(c.id("q").unwrap()).count(), 3);
+        run(&mut c, "s = Polygon(A, B, 4294967296)").unwrap();
+        assert_eq!(c.value(c.id("s").unwrap()), Value::Undefined);
+        assert_eq!(vertex_count(2.5), 3);
+        assert_eq!(vertex_count(-2.5), 2);
+        assert_eq!(vertex_count(f64::NAN), 2);
+        assert_eq!(vertex_count(1e20), 2);
+    }
+
+    #[test]
+    fn vertex_indices_wrap_like_java_ints() {
+        for (index, defined) in [
+            ("5", true),
+            ("1", true),
+            ("7", false),
+            ("0.99", false),
+            ("-0.5", false),
+            ("4294967298", false),
+            ("4294967297", false),
+            ("100000000000000000000", false),
+            ("-100000000000000000000", false),
+        ] {
+            let mut c = load("A = (0, 0)\nB = (4, 0)\np = Polygon(A, B, 5)\n").unwrap();
+            let id = run(&mut c, &format!("V = Vertex(p, {index})"))
+                .unwrap()
+                .unwrap();
+            assert_eq!(c.value(id).is_defined(), defined, "{index}");
+        }
+    }
+
+    #[test]
+    fn decimal_literals() {
+        for (arg, v) in [
+            ("5", Some(5.0)),
+            ("-2", Some(-2.0)),
+            ("3.5", Some(3.5)),
+            (".5", Some(0.5)),
+        ] {
+            assert_eq!(decimal(arg), v, "{arg}");
+        }
+        for arg in [
+            "", "-", ".", "5.", "1e3", "inf", "-inf", "nan", "NaN", "+1", "1.2.3", "0x10",
+        ] {
+            assert_eq!(decimal(arg), None, "{arg}");
+        }
+    }
+
+    #[test]
+    fn existing_labels_win_over_number_words() {
+        let mut c =
+            load("A = (0, 0)\nB = (4, 0)\nC = (4, 6)\ninf = Midpoint(A, C)\nnan = 4\n").unwrap();
+        let n = c.len();
+        run(&mut c, "p = Polygon(A, B, inf)").unwrap();
+        assert_eq!(c.kind(c.id("p").unwrap()), Kind::Polygon);
+        assert_eq!(c.vertices(c.id("p").unwrap()).count(), 3);
+        // `inf` is taken, so the side named after it is the next default
+        assert_eq!(labels(&c, n), ["p", "f", "a", "b"]);
+        run(&mut c, "q = Polygon(A, B, nan)").unwrap();
+        assert_eq!(c.vertices(c.id("q").unwrap()).count(), 4);
+    }
+
+    #[test]
+    fn outputs_need_a_free_name() {
+        let mut c = load("A = (0, 0)\nB = (4, 0)\nC = (4, 3)\np = Polygon(A, B, C)\n").unwrap();
+        let n = c.len();
+        for line in ["A = Vertex(p)", "B = InteriorAngles(p)", "p = Angle(p)"] {
+            let e = run(&mut c, line).unwrap_err();
+            assert!(e.contains("already exists"), "{line}: {e}");
+            assert_eq!(c.len(), n, "{line}");
         }
     }
 

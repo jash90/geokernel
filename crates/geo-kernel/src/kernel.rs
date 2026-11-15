@@ -55,8 +55,15 @@ impl Id {
 }
 
 /// Handle of a list of objects stored in one [`Construction`] (see
-/// [`Construction::add_with_list`]). It is only meaningful in the
-/// construction that stored the list.
+/// [`Construction::add_with_list`]).
+///
+/// A handle is only meaningful in the construction that stored the list. A
+/// construction checks only that a handle lies within its own lists:
+/// [`Construction::list`] reads a handle beyond them as an empty list, and
+/// adding a definition with such a handle fails. A handle from another
+/// construction that happens to lie within the lists reads whatever objects
+/// are stored there. Several definitions may share one handle; a list that
+/// no definition reads any more stays stored and does no harm.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct IdList {
     start: u32,
@@ -407,6 +414,13 @@ impl fmt::Display for Error {
 
 impl std::error::Error for Error {}
 
+/// A state to return to with [`Construction::rollback`].
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct Checkpoint {
+    len: usize,
+    lists: usize,
+}
+
 /// A geometric construction.
 #[derive(Default)]
 pub struct Construction {
@@ -469,9 +483,83 @@ impl Construction {
         algo::polygon::Vertices::of(self, id)
     }
 
+    /// How many ids the stored lists hold together.
+    #[cfg(test)]
+    pub(crate) fn stored_ids(&self) -> usize {
+        self.lists.len()
+    }
+
     /// The objects computed from `id`.
     pub(crate) fn children(&self, id: Id) -> &[Id] {
         &self.children[id.0]
+    }
+
+    /// Checks a definition and computes the value it would have if it were
+    /// added now, without adding it.
+    pub(crate) fn evaluate(&self, def: Def) -> Result<Value, Error> {
+        self.check(&def)?;
+        Ok(self.compute(algo::intersect::prepare(self, def)))
+    }
+
+    /// The current length of the construction and of its lists, to return to
+    /// with [`Construction::rollback`].
+    pub(crate) fn checkpoint(&self) -> Checkpoint {
+        Checkpoint {
+            len: self.defs.len(),
+            lists: self.lists.len(),
+        }
+    }
+
+    /// Removes every object added after `at`, newest first, together with
+    /// the edges from its parents and the lists stored since. No object may
+    /// have been moved in between.
+    pub(crate) fn rollback(&mut self, at: Checkpoint) {
+        while self.defs.len() > at.len {
+            let id = self.defs.len() - 1;
+            let def = self.defs[id];
+            for parent in self.read_ids(&def) {
+                // Children are linked in creation order: the newest are last.
+                let children = &mut self.children[parent.0];
+                while children.last().is_some_and(|c| c.0 >= id) {
+                    children.pop();
+                }
+            }
+            self.defs.pop();
+            self.values.pop();
+            self.children.pop();
+            self.mark.pop();
+            if let Some(label) = self.labels.pop() {
+                self.by_label.remove(&label);
+            }
+        }
+        self.lists.truncate(at.lists.min(self.lists.len()));
+    }
+
+    /// Every object `def` reads: its parents, the objects its rule also
+    /// reads (for example the line an intersection was prepared with), and
+    /// its list. An object may appear more than once.
+    fn read_ids(&self, def: &Def) -> Vec<Id> {
+        let mut ids = algo::intersect::hidden_parents(self, def);
+        ids.extend(algo::vector::hidden_parents(self, def));
+        ids.extend(algo::predicate::hidden_parents(self, def));
+        ids.extend(algo::polygon::hidden_parents(self, def));
+        ids.extend_from_slice(def.parents().as_slice());
+        if let Some(list) = def.list() {
+            ids.extend_from_slice(self.list(list));
+        }
+        ids
+    }
+
+    /// Starts a new epoch of the scratch marks. When the counter wraps, all
+    /// marks are cleared first: a mark left from long ago, or the 0 of a new
+    /// object, must never equal the current epoch.
+    fn next_epoch(&mut self) -> u32 {
+        self.epoch = self.epoch.wrapping_add(1);
+        if self.epoch == 0 {
+            self.mark.fill(0);
+            self.epoch = 1;
+        }
+        self.epoch
     }
 
     /// Adds an object and computes its value.
@@ -487,24 +575,11 @@ impl Construction {
 
         let id = Id(self.defs.len());
         let value = self.compute(def);
-        let parents = def.parents();
-        // Objects the rule also reads, beyond its parents.
-        let mut hidden = algo::intersect::hidden_parents(self, &def);
-        hidden.extend(algo::vector::hidden_parents(self, &def));
-        hidden.extend(algo::predicate::hidden_parents(self, &def));
-        hidden.extend(algo::polygon::hidden_parents(self, &def));
         // An object that is read twice is still one child: the scratch
         // marks tell which parents are linked already.
-        self.epoch = self.epoch.wrapping_add(1);
-        let epoch = self.epoch;
-        for &parent in parents.as_slice().iter().chain(&hidden) {
+        let epoch = self.next_epoch();
+        for parent in self.read_ids(&def) {
             self.link(parent, id, epoch);
-        }
-        if let Some(list) = def.list() {
-            for i in list.range() {
-                let parent = self.lists[i];
-                self.link(parent, id, epoch);
-            }
         }
         self.defs.push(def);
         self.values.push(value);
@@ -610,8 +685,7 @@ impl Construction {
     /// have larger indices than their parents, by the time an object is
     /// popped every parent that could still change has already been handled.
     fn propagate(&mut self, start: Id) -> usize {
-        self.epoch = self.epoch.wrapping_add(1);
-        let epoch = self.epoch;
+        let epoch = self.next_epoch();
         let mut heap = std::mem::take(&mut self.heap);
 
         for &child in &self.children[start.0] {
@@ -1222,5 +1296,110 @@ mod tests {
         assert_eq!(c.move_point(a, f64::NAN, 0.0), Err(Error::NotFinite));
         // A rejected object leaves the construction untouched.
         assert_eq!(c.len(), 4);
+    }
+
+    /// Everything a rejected line or a rollback must leave as it was.
+    #[derive(Debug, PartialEq)]
+    struct Snapshot {
+        labels: Vec<String>,
+        by_label: Vec<(String, Id)>,
+        children: Vec<Vec<Id>>,
+        lists: Vec<Id>,
+        values: Vec<Value>,
+    }
+
+    fn snapshot(c: &Construction) -> Snapshot {
+        let mut by_label: Vec<_> = c.by_label.iter().map(|(l, &id)| (l.clone(), id)).collect();
+        by_label.sort();
+        Snapshot {
+            labels: c.labels.clone(),
+            by_label,
+            children: c.children.clone(),
+            lists: c.lists.clone(),
+            values: c.values.clone(),
+        }
+    }
+
+    #[test]
+    fn rollback_removes_objects_edges_labels_and_lists() {
+        use crate::algo::polygon::PolygonDef;
+        let mut c = Construction::new();
+        let p: Vec<Id> = (0..5)
+            .map(|i| pt(&mut c, &format!("P{i}"), i as f64, (i * i) as f64))
+            .collect();
+        let area = |list| Def::Polygon(PolygonDef::AreaPoints(list));
+        c.add_with_list("a", &p, area).unwrap();
+        c.add("s", Def::Segment(p[0], p[1])).unwrap();
+        let before = snapshot(&c);
+        let at = c.checkpoint();
+        let poly = c
+            .add_with_list("q", &[p[0], p[2], p[4]], |l| {
+                Def::Polygon(PolygonDef::Polygon(l))
+            })
+            .unwrap();
+        c.add("t", Def::Segment(p[2], p[4])).unwrap();
+        c.add("r", Def::Polygon(PolygonDef::Area(poly))).unwrap();
+        c.add_with_list("b", &[p[1], p[1], p[3], p[4], p[0]], area)
+            .unwrap();
+        assert_ne!(snapshot(&c), before);
+        c.rollback(at);
+        assert_eq!(snapshot(&c), before);
+        assert_eq!(c.len(), 7);
+        assert_eq!(c.id("q"), None);
+        // the construction still works after a rollback
+        let t = c.add("t", Def::Segment(p[3], p[4])).unwrap();
+        assert_eq!(c.children(p[3]), &[c.id("a").unwrap(), t]);
+        assert_eq!(c.move_point(p[3], 1.0, 1.0).unwrap(), 2);
+    }
+
+    #[test]
+    fn a_rejected_line_with_several_objects_changes_nothing() {
+        use crate::script::{exec, load};
+        let mut c = load(
+            "A = (0, 0)\nB = (4, 0)\nC = (5, 3)\nD = (2, 5)\nE = (-1, 3)\n\
+             q = Polygon(A, B, C, D, E)\nV_1 = (9, 9)\nn = 4\n",
+        )
+        .unwrap();
+        assert!(!c.lists.is_empty());
+        let before = snapshot(&c);
+        for line in [
+            "A = Area(A, B, C, D, E)",
+            "q = Polygon(A, B, C)",
+            "q = Polygon(A, B, n)",
+            "n = Vertex(q)",
+            "V_1 = InteriorAngles(q)",
+            "A = Angle(q)",
+            "w = Polygon(A, B, 2000)",
+        ] {
+            assert!(exec(&mut c, line).is_err(), "{line}");
+            assert_eq!(snapshot(&c), before, "{line}");
+        }
+        // `V_1` is taken, so the vertices are `V_{2}`, ...
+        exec(&mut c, "V = Vertex(q)").unwrap();
+        assert_eq!(c.label(Id(c.len() - 5)), "V_{2}");
+    }
+
+    #[test]
+    fn epochs_survive_the_counter_wrapping() {
+        let mut c = Construction::new();
+        let a = pt(&mut c, "A", 0.0, 0.0);
+        let b = pt(&mut c, "B", 4.0, 0.0);
+        let m = c.add("M", Def::Midpoint(a, b)).unwrap();
+        let n = c.add("N", Def::Midpoint(m, b)).unwrap();
+        // marks from long ago that would equal the epoch after a plain wrap
+        c.mark.fill(1);
+        c.epoch = u32::MAX - 1;
+        for step in 1..=4 {
+            let x = f64::from(step);
+            assert_eq!(c.move_point(a, x, 0.0).unwrap(), 2, "step {step}");
+            assert!(close(xy(&c, n).0, (x + 4.0) / 4.0 + 2.0));
+            assert_ne!(c.epoch, 0);
+        }
+        assert!(c.epoch < 10);
+        // adding across a wrap still links every parent once
+        c.epoch = u32::MAX;
+        let s = c.add("s", Def::Segment(a, a)).unwrap();
+        assert_ne!(c.epoch, 0);
+        assert_eq!(c.children(a), &[m, s]);
     }
 }
