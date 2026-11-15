@@ -157,6 +157,7 @@ fn is_single_call(c: &Construction, rhs: &str) -> bool {
     if !is_identifier(name)
         || !name.chars().all(crate::expr::is_name_char)
         || crate::expr::is_function_name(name)
+        || crate::expr::is_expression_command(name)
         || c.id(name).is_some()
     {
         return false;
@@ -322,7 +323,7 @@ fn is_finite(v: &Value) -> bool {
         Value::Vector { x, y } => x.is_finite() && y.is_finite(),
         Value::Ray { x, y, a, b, c } => [x, y, a, b, c].iter().all(|v| v.is_finite()),
         Value::Bool(_) => true,
-        Value::Function => true,
+        Value::Function | Value::List { .. } => true,
         Value::Polygon { area } => area.is_finite(),
         Value::PolyLine { length } => length.is_finite(),
         Value::Conic { .. } => true,

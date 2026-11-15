@@ -65,6 +65,7 @@ fn of_kind(kind: Kind) -> &'static [Kind] {
         Kind::Function => &[Kind::Function],
         Kind::Polygon => &[Kind::Polygon],
         Kind::PolyLine => &[Kind::PolyLine],
+        Kind::List => &[Kind::List],
         Kind::Conic => &[Kind::Conic],
         Kind::Arc => &[Kind::Arc],
         Kind::Sector => &[Kind::Sector],
@@ -275,6 +276,7 @@ impl Map {
             | Value::Function
             | Value::Polygon { .. }
             | Value::PolyLine { .. }
+            | Value::List { .. }
             | Value::Conic { .. }
             | Value::Arc { .. }
             | Value::Sector { .. }
@@ -563,6 +565,7 @@ fn parse_transform(c: &Construction, func: &str, args: &[&str]) -> Result<Transf
             | Kind::Boolean
             | Kind::Polygon
             | Kind::PolyLine
+            | Kind::List
             | Kind::Conic
             | Kind::Arc
             | Kind::Sector

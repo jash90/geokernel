@@ -258,7 +258,11 @@ pub fn render(c: &Construction, view: View, width: u32, height: u32) -> String {
                 }
                 let _ = writeln!(segments, r##"<polyline points="{pts}" fill="none"/>"##);
             }
-            Value::Number(_) | Value::Bool(_) | Value::Function | Value::Undefined => {}
+            Value::Number(_)
+            | Value::Bool(_)
+            | Value::Function
+            | Value::List { .. }
+            | Value::Undefined => {}
         }
     }
 

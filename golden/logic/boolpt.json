@@ -1,0 +1,1192 @@
+{
+  "schema": 1,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "logic-boolpt-001",
+      "group": "logic",
+      "script": [
+        "A = (1, 2)",
+        "B = (3, 4)",
+        "u = (1, 2)",
+        "a = 1",
+        "c = A == B"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolpt-002",
+      "group": "logic",
+      "script": [
+        "A = (1, 2)",
+        "B = (3, 4)",
+        "u = (1, 2)",
+        "a = 1",
+        "c = A != B"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolpt-003",
+      "group": "logic",
+      "script": [
+        "A = (1, 2)",
+        "B = (3, 4)",
+        "u = (1, 2)",
+        "a = 1",
+        "c = A == u"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolpt-004",
+      "group": "logic",
+      "script": [
+        "A = (1, 2)",
+        "B = (3, 4)",
+        "u = (1, 2)",
+        "a = 1",
+        "c = B == u"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolpt-005",
+      "group": "logic",
+      "script": [
+        "A = (1, 2)",
+        "B = (3, 4)",
+        "u = (1, 2)",
+        "a = 1",
+        "c = A == (1, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolpt-006",
+      "group": "logic",
+      "script": [
+        "A = (1, 2)",
+        "B = (3, 4)",
+        "u = (1, 2)",
+        "a = 1",
+        "c = A == a"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolpt-007",
+      "group": "logic",
+      "script": [
+        "A = (1, 2)",
+        "B = (3, 4)",
+        "u = (1, 2)",
+        "a = 1",
+        "c = a == A"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolpt-008",
+      "group": "logic",
+      "script": [
+        "A = (1, 2)",
+        "B = (3, 4)",
+        "u = (1, 2)",
+        "a = 1",
+        "c = x(A) < y(B)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolpt-009",
+      "group": "logic",
+      "script": [
+        "A = (1, 2)",
+        "B = (3, 4)",
+        "u = (1, 2)",
+        "a = 1",
+        "c = A + u == B"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolpt-010",
+      "group": "logic",
+      "script": [
+        "A = (1, 2)",
+        "B = (3, 4)",
+        "u = (1, 2)",
+        "a = 1",
+        "c = A == B && a > 0"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolpt-011",
+      "group": "logic",
+      "script": [
+        "A = (1, 2)",
+        "B = (3, 4)",
+        "u = (1, 2)",
+        "a = 1",
+        "c = Distance(A, B) < 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolpt-012",
+      "group": "logic",
+      "script": [
+        "A = (1, 2)",
+        "B = (3, 4)",
+        "u = (1, 2)",
+        "a = 1",
+        "c = abs(u) >= 2"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolpt-013",
+      "group": "logic",
+      "script": [
+        "A = (1, 2)",
+        "B = (3, 4)",
+        "u = (1, 2)",
+        "a = 1",
+        "c = u == (1, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolpt-014",
+      "group": "logic",
+      "script": [
+        "A = (1, 2)",
+        "B = (3, 4)",
+        "u = (1, 2)",
+        "a = 1",
+        "c = A == (x(B), y(B) + 1E-9)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "logic-boolpt-015",
+      "group": "logic",
+      "script": [
+        "A = (1, 2)",
+        "B = (3, 4)",
+        "u = (1, 2)",
+        "a = 1",
+        "c = A == (x(B), y(B) + 1E-7)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    }
+  ]
+}

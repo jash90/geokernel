@@ -26,6 +26,7 @@ import org.geogebra.common.kernel.geos.GeoConicPart;
 import org.geogebra.common.kernel.geos.GeoElement;
 import org.geogebra.common.kernel.geos.GeoFunction;
 import org.geogebra.common.kernel.geos.GeoLine;
+import org.geogebra.common.kernel.geos.GeoList;
 import org.geogebra.common.kernel.geos.GeoBoolean;
 import org.geogebra.common.kernel.geos.GeoNumeric;
 import org.geogebra.common.kernel.geos.GeoPoint;
@@ -62,6 +63,8 @@ final class Session {
             Pattern.compile("^\\(-?\\d+(\\.\\d+)?, -?\\d+(\\.\\d+)?\\)$");
     private static final Pattern CALL = Pattern.compile("(?<![A-Za-z0-9_])([A-Z][A-Za-z0-9]*)\\s*\\(");
     private static final Pattern COMMAND = Pattern.compile("^([A-Za-z]+)\\[?\\(.*\\)$");
+    /** The variable `x` of a function: not part of a longer name, not a call. */
+    private static final Pattern VARIABLE_X = Pattern.compile("(?<![A-Za-z0-9_])x(?![A-Za-z0-9_(])");
 
     private final AppCommon app;
     private final Kernel kernel;
@@ -304,13 +307,16 @@ final class Session {
 
     /**
      * The schema type an arithmetic expression must produce: a number, a
-     * function (it reads `x`), or a point or vector, which GeoGebra decides by
-     * the label (`AlgebraProcessor.isVectorLabel`) and not by the operands.
+     * function (it reads `x`), a boolean, or a point or vector, which
+     * GeoGebra decides by the label (`AlgebraProcessor.isVectorLabel`) and
+     * not by the operands.
      */
     private static String expressionType(String label, String actual, String line) {
         switch (actual) {
             case "number":
             case "function":
+            case "boolean":
+            case "list":
                 return actual;
             case "point":
             case "vector":
@@ -329,7 +335,44 @@ final class Session {
     private boolean callsCommand(String definition) {
         Matcher m = CALL.matcher(definition);
         while (m.find()) {
-            if (!objects.containsKey(m.group(1))) {
+            if (objects.containsKey(m.group(1))) {
+                continue;
+            }
+            if (m.group(1).equals("If") && conditionsReadX(definition, m.end())) {
+                // `CmdIf.specialFunction`: an operation of the function
+                continue;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Whether a condition of the `If` whose arguments start at `open` (the
+     * index after its bracket) reads the variable `x`: its arguments at
+     * even positions, except a trailing else branch.
+     */
+    private static boolean conditionsReadX(String definition, int open) {
+        List<String> args = new ArrayList<>();
+        int depth = 0;
+        int start = open;
+        for (int i = open; i < definition.length(); i++) {
+            char ch = definition.charAt(i);
+            if (ch == '(' || ch == '{' || ch == '[') {
+                depth++;
+            } else if (ch == ')' || ch == '}' || ch == ']') {
+                if (depth == 0) {
+                    args.add(definition.substring(start, i));
+                    break;
+                }
+                depth--;
+            } else if (ch == ',' && depth == 0) {
+                args.add(definition.substring(start, i));
+                start = i + 1;
+            }
+        }
+        for (int k = 0; k + 1 < args.size(); k += 2) {
+            if (VARIABLE_X.matcher(args.get(k)).find()) {
                 return true;
             }
         }
@@ -377,6 +420,9 @@ final class Session {
 
     /** The schema type of a GeoGebra object; the class decides, not the state. */
     static String typeOf(GeoElement geo) {
+        if (geo instanceof GeoList) {
+            return "list";
+        }
         if (geo instanceof GeoPolygon) {
             return "polygon";
         }
@@ -656,6 +702,19 @@ final class Session {
                 obj.put("value", ((GeoBoolean) geo).getBoolean());
             } else {
                 obj.put("defined", false);
+            }
+            return obj;
+        }
+        if (geo instanceof GeoList) {
+            // the elements in order, each described like an object
+            GeoList list = (GeoList) geo;
+            obj.put("defined", list.isDefined());
+            if (list.isDefined()) {
+                List<Object> elements = new ArrayList<>();
+                for (int i = 0; i < list.size(); i++) {
+                    elements.add(describe(list.get(i), typeOf(list.get(i))));
+                }
+                obj.put("elements", elements);
             }
             return obj;
         }

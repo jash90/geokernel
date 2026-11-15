@@ -116,6 +116,7 @@ carries no numeric fields. When it is `true` it carries exactly these:
 | `function` | `samples` | The values at `x` = -8, -4, -2, -1, -0.5, 0, 0.5, 1, 2, 4, 8, as pairs `[x, y]` in this order: `{ "type": "function", "defined": true, "samples": [[-8.0, 82.0], [-4.0, 26.0], ..., [0.5, null], ...] }`. `y` is `null` where GeoGebra's value (`GeoFunction.value`) is not finite. An undefined function carries no `samples`. |
 | `polygon` | `vertices`, `area`, `signed_area` | `vertices` is the list of vertices in order, each `[x, y]`. `area` is GeoGebra's area (never negative), `signed_area` the area with its sign: positive when the vertices run counter-clockwise. |
 | `polyline` | `vertices`, `length` | `vertices` is the list of vertices in order, each `[x, y]`, or `null` for an undefined point (GeoGebra leaves a hole there). `length` is the sum of the lengths of the pieces between two defined points. |
+| `list` | `elements` | The elements in order, each an Object of its own (`number`, `point`, `vector`, `boolean` or `list`, defined or not): `{ "type": "list", "defined": true, "elements": [{ "type": "number", "defined": true, "value": 1.0 }, { "type": "list", "defined": true, "elements": [] }] }`. An element that is a point or vector carries `x` and `y` like an object. |
 | `conic` | `conic_type`, `matrix`, and the parts of the type (below) | A general conic: an object made by `Conic`, `Ellipse`, `Hyperbola` or `Parabola`, or the image of one under a transformation. Every other conic object of GeoGebra is a `circle`, an `arc` or a `sector`. |
 | `arc`, `sector` | `value`, `conic_type`, and further fields of the type (below) | A part of a circle or conic (GeoGebra's `GeoConicPart`), made by `CircularArc`, `CircumcircularArc`, `Semicircle` or `Arc` (an `arc`), or by `CircularSector`, `CircumcircularSector` or `Sector` (a `sector`). `value` is the length of an arc and the area of a sector. |
 
@@ -189,6 +190,9 @@ These rules are applied by the Rust side (`crates/geo-golden`).
   conic type and the orientation must be equal, and the further numbers of a
   part of a circle or an ellipse must agree with the kernel's record
   (`Construction::arc`), raw.
+- Lists: the number of elements must be equal, and each element is
+  compared like an object of its type, nested lists recursively
+  (`Construction::elements`).
 - Conics: `conic_type` must be equal, and every number of `matrix` and of
   the parts must agree, raw: the matrix with GeoGebra's scale, the
   eigenvectors with their signs and the two lines in GeoGebra's order.
@@ -220,6 +224,14 @@ were written; no existing file changed and the schema version stays 1.
 The type `conic` was added the same way, later still: no existing file
 changed and the schema version stays 1. So were the types `arc` and
 `sector` and the `move` of a point on a path, later again.
+
+Expressions may also compare and combine booleans and pick a branch with
+`If` (group `logic`), and build lists (group `lists`): literals such as
+`l = {1, 2, 3}` or `{A, B}`, element access `l(n)` and `Element(l, n)`,
+list commands such as `Length`, `Sum`, `Sort`, `Join` and `Sequence`, and
+element-wise arithmetic. A constant boolean
+or list is an object like any other but cannot be set. The type `list` was
+added the same way: no existing file changed and the schema version stays 1.
 
 ## Known gaps
 

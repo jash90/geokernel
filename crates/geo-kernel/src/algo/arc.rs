@@ -422,6 +422,13 @@ impl ArcData {
     }
 }
 
+/// Whether the conic `id` with record `d` is defined, as `conicPart.set`
+/// copies it: a conic whose value is undefined (the image under an
+/// undefined transformation) may still have a record.
+fn conic_defined(c: &Construction, id: Id, d: &ConicData) -> bool {
+    d.defined && c.value(id).is_defined()
+}
+
 /// `DoubleUtil.convertToAngleValue`: an angle in `[0, 2 pi]`.
 fn angle_value(val: f64) -> f64 {
     if val > STANDARD_PRECISION && val < PI_2 {
@@ -557,7 +564,7 @@ impl ArcDef {
                 let nan = (f64::NAN, f64::NAN);
                 let s = conic_parameter(&d, c.point(p).unwrap_or(nan), true);
                 let t = conic_parameter(&d, c.point(q).unwrap_or(nan), true);
-                a.set_parameters(d.defined, s, t, true);
+                a.set_parameters(conic_defined(c, conic, &d), s, t, true);
             }
             ArcDef::ConicParameters { conic, s, t, .. } => {
                 // `AlgoConicPartConicParameters` (`AlgoConicPart.compute`)
@@ -568,7 +575,7 @@ impl ArcDef {
                 a.conic = d;
                 let s = c.number(s).unwrap_or(f64::NAN);
                 let t = c.number(t).unwrap_or(f64::NAN);
-                a.set_parameters(d.defined, s, t, true);
+                a.set_parameters(conic_defined(c, conic, &d), s, t, true);
             }
             ArcDef::Length(_) | ArcDef::Area(_) | ArcDef::Perimeter(_) => a.set_undefined(),
         }
