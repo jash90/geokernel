@@ -27,17 +27,42 @@ KNOWN_GROUPS = OUT_OF_SCOPE_GROUPS | P1_GROUPS | {
 }
 
 # The only hand-listed exceptions: commands the kernel covers in part
-# (derived from crates/geo-kernel/src/script.rs and the `Def` enum).
+# (derived from crates/geo-kernel/src/script.rs and the group files in
+# crates/geo-kernel/src/algo/). The note lists the supported forms.
 PARTIAL = {
-    "Line": "Line(point, point); a line through a point parallel to a line exists only as script "
-            "Parallel(point, line)",
+    "Line": "Line(point, point); Line(point, line or segment)",
     "Segment": "Segment(point, point)",
-    "Midpoint": "Midpoint(point, point)",
-    "Distance": "Distance(point, point)",
-    "OrthogonalLine": "point + line or segment; script spells it Perpendicular(point, line)",
-    "Circle": "Circle(centre, point); Circle(centre, radius)",
+    "Midpoint": "Midpoint(point, point); Midpoint(segment); Midpoint(circle)",
+    "Distance": "Distance(point, point); Distance(point, line or segment); Distance(line, line)",
+    "OrthogonalLine": "OrthogonalLine(point, line or segment)",
+    "Circle": "Circle(centre, point); Circle(centre, radius); Circle(centre, segment); "
+              "Circle(point, point, point)",
     "Intersect": "line/line; line/circle; circle/circle; optional index 1 or 2",
+    "LineBisector": "LineBisector(point, point); LineBisector(segment)",
+    "AngularBisector": "AngularBisector(point, point, point); AngularBisector(line, line)",
+    "Tangent": "Tangent(point, circle); Tangent(line or segment, circle)",
+    "Polar": "Polar(point, circle)",
+    "Incircle": "Incircle(point, point, point)",
+    "Center": "Center(circle); Center(segment)",
+    "Diameter": "Diameter(line or segment, circle)",
+    "Length": "Length(segment)",
+    "Radius": "Radius(circle)",
+    "Circumference": "Circumference(circle)",
+    "Perimeter": "Perimeter(circle)",
+    "Area": "Area(circle); Area of three or four points",
+    "Slope": "Slope(line or segment)",
+    "AffineRatio": "AffineRatio(point, point, point)",
+    "CrossRatio": "CrossRatio(point, point, point, point)",
+    "Angle": "Angle(point, point, point)",
+    "Mirror": "point, line, segment or circle in a point or a line; point in a circle",
+    "Rotate": "point, line, segment or circle by an angle, about the origin or a point",
+    "Dilate": "point, line, segment or circle by a factor, from the origin or a point",
+    "Shear": "point, line or segment with a line and a ratio",
+    "Stretch": "point, line or segment with a line and a ratio",
 }
+
+# Commands the first version of the kernel already had: priority P0.
+FIRST_KERNEL = {"Line", "Segment", "Midpoint", "Distance", "OrthogonalLine", "Circle", "Intersect"}
 
 
 def strip_comments(text):
@@ -141,7 +166,11 @@ def resolve_aliases(aliases, names):
 def classify(group, command, alias_of):
     """Return (priority, status, notes) for a real command; aliases copy their target."""
     if command in PARTIAL and not alias_of:
-        return "P0", "partial", PARTIAL[command]
+        if command in FIRST_KERNEL:
+            priority = "P0"
+        else:
+            priority = "P1" if group in P1_GROUPS else "P2"
+        return priority, "partial", PARTIAL[command]
     if group in OUT_OF_SCOPE_GROUPS:
         return "", "out_of_scope", ""
     if group in P1_GROUPS:
