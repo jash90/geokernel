@@ -83,3 +83,24 @@ under unrelated load (load average about 7), so equally provisional:
 
 The two sides were not measured under the same load, so the ratio (roughly
 2.5 to 4.7 times at these sizes) is an indication only.
+
+### After the intersection port and raw line coefficients (PROVISIONAL)
+
+The table above was measured on the first version of the kernel. Since then
+the line-circle and circle-circle intersections follow GeoGebra's algorithms
+step by step and lines keep GeoGebra's raw coefficients, which costs time per
+object. Same machine, 15 November 2026:
+
+| Steps | Dependent objects | Per drag of `A` | Load average | Earlier figure |
+| ---: | ---: | ---: | ---: | ---: |
+| 250 | 1,750 | 0.092 ms | about 45 | 0.050 ms |
+| 500 | 3,500 | 0.194 ms | about 45 | 0.110 ms |
+| 1,000 | 7,000 | 0.423 to 0.796 ms | about 45 | 0.241 ms |
+| 15,000 | 105,000 | 6.8 ms | about 13 and about 45 | 4.721 ms |
+
+A binary built from the commit before the intersection port, run alternately
+with the current one at load average about 13, gave 4.8 to 5.4 ms against
+6.8 ms for 15,000 steps: about a third slower. The small chains suggest a
+larger cost per object, but they were measured under heavier load. None of
+this is a clean measurement; it has to be repeated on a quiet machine before
+the 10% regression gate can be applied.
