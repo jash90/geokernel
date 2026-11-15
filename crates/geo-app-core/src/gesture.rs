@@ -1,3 +1,10 @@
+// Parts of this file are translated from GeoGebra (https://github.com/geogebra/geogebra),
+// commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
+//   source/shared/common/src/main/java/org/geogebra/common/euclidian/EuclidianController.java
+//   source/shared/common/src/main/java/org/geogebra/common/euclidian/EuclidianConstants.java
+// Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
+// Licensed by GeoGebra GmbH under the EUPL 1.2.
+
 //! The pointer automaton of the graphics view: presses, moves and releases
 //! (and pinches) go in, intents (tap, start a drag, drag to, pan by, end or
 //! cancel the drag, zoom about) come out. It holds a few numbers and no
@@ -181,8 +188,6 @@ struct Press {
     button: Button,
     origin: Point,
     start: f64,
-    /// A finger made it (the platform reported its touch first).
-    touch: bool,
     /// The position of the last accepted move (the press at first): the
     /// threshold is checked against it before it is replaced.
     last: Point,
@@ -212,6 +217,8 @@ pub struct Gesture {
     drag_threshold: f32,
     time: f64,
     press: Option<Press>,
+    /// The latest press was a finger's.
+    touch_last: bool,
     /// What the press is doing once it is a drag (or a pinch).
     mode: Option<Mode>,
     /// A press that ended (released) with accepted moves before its drag
@@ -244,6 +251,7 @@ impl Gesture {
             drag_threshold: m.drag_threshold,
             time: 0.0,
             press: None,
+            touch_last: false,
             mode: None,
             unresolved: None,
             moved_to: None,
@@ -264,10 +272,11 @@ impl Gesture {
         self.press.is_some()
     }
 
-    /// The press held was made by a finger, not the mouse (a finger is
-    /// first reported as a touch, then as the mouse).
+    /// The latest press (held or just released) was made by a finger, not
+    /// the mouse (a finger is first reported as a touch, then as the
+    /// mouse).
     pub fn touch_press(&self) -> bool {
-        self.press.is_some_and(|p| p.touch)
+        self.touch_last
     }
 
     /// The held press went beyond the click threshold.
@@ -427,12 +436,12 @@ impl Gesture {
     fn begin(&mut self, pos: Point, id: PointerId, button: Button) {
         // `wrapMousePressed` sets `lastMousePressedTime`, and
         // `resetSelectionFlags` the start point of the threshold.
+        self.touch_last = id == MOUSE && self.primary_finger.is_some();
         self.press = Some(Press {
             id,
             button,
             origin: pos,
             start: self.time,
-            touch: id == MOUSE && self.primary_finger.is_some(),
             last: pos,
             beyond: false,
             moves: 0,
@@ -837,6 +846,7 @@ mod tests {
         g.touch(1, TouchPhase::End, true);
         g.event(up(0.0, 0.0));
         g.end_frame(|_| Grab::Point);
+        assert!(g.touch_press(), "still after the release");
         frame(&mut g, 0.2, &[down(0.0, 0.0)], Grab::Point);
         assert!(!g.touch_press());
     }

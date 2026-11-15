@@ -20,7 +20,7 @@ use crate::ui_bench::alloc;
 use crate::view::{self, Camera};
 use crate::workbench::Workbench;
 use eframe::egui::{self, epaint, vec2, Event, Modifiers, PointerButton, Pos2, Rect, Shape};
-use geo_kernel::kernel::{Kind, Value};
+use geo_kernel::kernel::Value;
 
 const SCREEN: (f32, f32) = (1400.0, 900.0);
 const DT: f64 = 1.0 / 60.0;
@@ -179,7 +179,8 @@ impl Window {
         Pos2::new(rect.min.x + sx as f32, rect.min.y + sy as f32)
     }
 
-    /// A spot in the drawing with no point near it.
+    /// A spot in the drawing that hits nothing: in the Move tool only a
+    /// press on nothing pans.
     fn empty_spot(&self) -> Pos2 {
         let (rect, t) = self.app.view.unwrap();
         let c = self.app.wb.construction();
@@ -191,7 +192,10 @@ impl Window {
             .map(|i| center + 3.0 * i as f32 * vec2((i as f32).cos(), (i as f32).sin()))
             .find(|p| {
                 let local = ((p.x - rect.min.x) as f64, (p.y - rect.min.y) as f64);
-                crate::hit::pick(c, &t, local, 16.0, 12.0, |id| c.kind(id) == Kind::Point).is_none()
+                // Wider than the mouse's 3 px square: a point within 16 px
+                // (4 + 12, `DrawPoint.hit`) is hit.
+                let reach = crate::hit::Reach::square(4.0);
+                crate::hit::pick(c, &t, local, &reach, None, |_| true).is_none()
             })
             .expect("an empty spot")
     }

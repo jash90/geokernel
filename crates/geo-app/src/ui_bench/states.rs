@@ -200,7 +200,7 @@ fn press_and_drag(
 }
 
 fn pan(r: &mut Runner, n: usize) {
-    let from = r.empty_spot(true);
+    let from = r.empty_spot();
     let frames = press_and_drag(r, n, from, |r, f| {
         f.ok = adapter::panning(&r.app) && r.app.drag.is_none();
     });
@@ -277,7 +277,7 @@ fn actions(r: &mut Runner) {
         // One step of the point tool through the window: the click frame.
         adapter::select_tool(&mut r.app, Tool::Point);
         r.settle();
-        let spot = r.empty_spot(false);
+        let spot = r.empty_spot();
         let before = r.app.wb.construction().len();
         let f = press_release(r, spot);
         assert_eq!(r.app.wb.construction().len(), before + 1, "no point made");
@@ -303,7 +303,10 @@ fn helpers(r: &mut Runner) {
         let c = r.app.wb.construction();
         let mid = (canvas.width() as f64 / 2.0, canvas.height() as f64 / 2.0);
         let mut done = Vec::new();
-        let (_, ns, al, by) = timed(|| crate::hit::pick(c, &t, mid, 11.0, 7.0, |_| true));
+        let (_, ns, al, by) = timed(|| {
+            let reach = crate::hit::Reach::of(&r.app.metrics, false);
+            crate::hit::pick(c, &t, mid, &reach, None, |_| true)
+        });
         done.push(("hit::pick (one pointer event)", ns, al, by));
         let (_, ns, al, by) = timed(|| crate::view::content_bounds(c));
         done.push(("view::content_bounds", ns, al, by));

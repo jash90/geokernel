@@ -29,7 +29,7 @@ const VIEW: (f64, f64) = (892.0, 747.0);
 const ZERO: (f64, f64) = (446.0, 373.5);
 const SCALE: f64 = 50.0;
 /// The parts of the pointer work that have landed: their scenarios must pass.
-const LANDED: &[u8] = &[1];
+const LANDED: &[u8] = &[1, 2];
 
 /// Why a scenario that encodes a behaviour the owner keeps our way does not
 /// apply.
@@ -61,11 +61,14 @@ fn part(name: &str) -> Result<u8, &'static str> {
         "drag_free_point_centre"
         | "drag_free_point_offset_grab_jumps_to_pointer"
         | "drag_line_translates_both_parents"
-        | "free_equation_line_not_draggable"
         | "drag_circle_translates_centre_and_point"
         | "drag_segment"
         | "drag_polygon_interior"
         | "drag_on_label_moves_label_only" => 5,
+        "free_equation_line_not_draggable" => {
+            return Err("the kernel has no lines typed as equations (`f: y=c`); \
+                        a line with free points would rightly move")
+        }
         "drag_point_on_line_slides" => {
             return Err("group 6: needs points on objects (a point on a line slides along it)")
         }
@@ -233,16 +236,33 @@ fn frame_events(w: &Window, e: &Value) -> Result<Vec<Value>, String> {
     })
 }
 
+/// The kernel has no lines typed as equations: `f: y=c` becomes the line
+/// through two points of it near the edges of the view (where no press
+/// lands; points outside it would make the first frame fit the view).
+/// It stands in only where the line is not what the scenario drags.
+fn equation_line(line: &str) -> String {
+    match line.split_once(": y=") {
+        Some((name, c)) => {
+            format!(
+                "{name}_{{a}} = $point(-8, {c})\n{name}_{{b}} = $point(8, {c})\n\
+                 {name} = Line({name}_{{a}}, {name}_{{b}})"
+            )
+        }
+        None => line.to_owned(),
+    }
+}
+
 /// Runs the scenario; `idle` adds empty frames at 1/60 s between events.
 /// Returns the differences from the observed outcome.
 fn replay(s: &Value, idle: bool) -> Result<Vec<String>, String> {
-    let script: Vec<&str> = s["initial_script"]
+    let script: Vec<String> = s["initial_script"]
         .as_array()
         .unwrap()
         .iter()
         .filter_map(Value::as_str)
         // Every label is shown here: the command that shows one is moot.
         .filter(|l| !l.starts_with("ShowLabel("))
+        .map(equation_line)
         .collect();
     let touch = s["events"]
         .as_array()

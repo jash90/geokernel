@@ -442,6 +442,21 @@ impl Workbench {
         }
     }
 
+    /// The polygon whose command also made the segment `id` (one of its
+    /// sides, `Segment(A, B, poly)` in the reference), if any.
+    pub fn polygon_of_side(&self, id: Id) -> Option<Id> {
+        let c = &self.construction;
+        if id.index() >= c.len() || c.kind(id) != Kind::Segment {
+            return None;
+        }
+        let label = c.label(id);
+        self.log
+            .multi_output()
+            .find(|g| g[0] != label && g.iter().any(|l| l == label))
+            .and_then(|g| c.id(&g[0]))
+            .filter(|&p| c.kind(p) == Kind::Polygon)
+    }
+
     pub fn is_visible(&self, id: Id) -> bool {
         id.index() >= self.construction.len()
             || !self.log.hidden.contains(self.construction.label(id))

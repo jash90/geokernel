@@ -1,4 +1,4 @@
-//! Dragging logic with no UI types: view transform, hit test and drag.
+//! Dragging logic with no UI types: view transform, what can move, drag.
 //!
 //! Screen coordinates are in pixels with the origin at the top-left corner of
 //! the drawing area and the y axis pointing down. World coordinates have the
@@ -68,75 +68,46 @@ impl ViewTransform {
     }
 }
 
-/// The free point nearest to the screen position, if it lies within `radius` pixels.
-/// Dependent points, numbers and undefined points are never returned.
-pub fn hit_test(
-    c: &Construction,
-    t: &ViewTransform,
-    sx: f64,
-    sy: f64,
-    radius: f64,
-    visible: impl Fn(Id) -> bool,
-) -> Option<Id> {
-    let mut best: Option<(Id, f64)> = None;
-    for id in c.ids() {
-        if !matches!(c.def(id), Def::FreePoint { .. }) || !visible(id) {
-            continue;
-        }
-        let Value::Point { x, y } = c.value(id) else {
-            continue;
-        };
-        let (px, py) = t.world_to_screen(x, y);
-        let d = (px - sx).hypot(py - sy);
-        if d <= radius && best.is_none_or(|(_, bd)| d < bd) {
-            best = Some((id, d));
-        }
-    }
-    best.map(|(id, _)| id)
+/// Whether the move tool can drag the object `id`: a free point
+/// (`EuclidianController.handleMovedElement` moves a free point as
+/// `MoveMode.POINT`). What the press takes hold of is chosen by
+/// `hit::pick`; an object it chose that cannot move is refused.
+pub fn movable(c: &Construction, id: Id) -> bool {
+    id.index() < c.len()
+        && matches!(c.def(id), Def::FreePoint { .. })
+        && matches!(c.value(id), Value::Point { .. })
 }
 
-/// A drag in progress: which point is held and where it was grabbed.
+/// The owner's choice where the reference app is not followed (it refuses
+/// such a drag without a word, `isElementAllowedToMove`): a drag of a point
+/// that depends on other objects shows a short notice, once per press, and
+/// does not pan. `false` would refuse silently.
+pub const REFUSED_DRAG_NOTICE: bool = true;
+
+/// A drag in progress: which object is held.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Drag {
     id: Id,
-    /// World offset from the cursor to the point, so the point does not jump.
-    dx: f64,
-    dy: f64,
 }
 
 impl Drag {
-    /// Starts dragging the free point under the cursor, if there is one.
-    pub fn begin(
-        c: &Construction,
-        t: &ViewTransform,
-        sx: f64,
-        sy: f64,
-        radius: f64,
-        visible: impl Fn(Id) -> bool,
-    ) -> Option<Drag> {
-        let id = hit_test(c, t, sx, sy, radius, visible)?;
-        let Value::Point { x, y } = c.value(id) else {
-            return None;
-        };
-        let (wx, wy) = t.screen_to_world(sx, sy);
-        Some(Drag {
-            id,
-            dx: x - wx,
-            dy: y - wy,
-        })
+    /// Starts dragging `id`, when the move tool can drag it.
+    pub fn begin(c: &Construction, id: Id) -> Option<Drag> {
+        movable(c, id).then_some(Drag { id })
     }
 
-    /// The point being dragged.
+    /// The object being dragged.
     #[inline]
     pub fn id(&self) -> Id {
         self.id
     }
 
-    /// Where the held point should be for the cursor at `(sx, sy)`.
+    /// Where the held point goes for the pointer at `(sx, sy)`: under the
+    /// pointer, wherever it was grabbed (`handleMovedElementFreePoint` sets
+    /// no grab offset, and `movePoint` takes the pointer's coordinates).
     #[inline]
     pub fn target(&self, t: &ViewTransform, sx: f64, sy: f64) -> (f64, f64) {
-        let (wx, wy) = t.screen_to_world(sx, sy);
-        (wx + self.dx, wy + self.dy)
+        t.screen_to_world(sx, sy)
     }
 }
 
@@ -195,31 +166,12 @@ mod tests {
     }
 
     #[test]
-    fn hit_test_picks_nearest_free_point() {
+    fn free_points_are_movable_and_dependent_points_are_not() {
         let c = triangle();
-        let t = ViewTransform::fit(&c, 800.0, 600.0);
-        let (ax, ay) = screen_of(&c, &t, "A");
-        assert_eq!(
-            hit_test(&c, &t, ax + 3.0, ay - 2.0, 10.0, |_| true),
-            c.id("A")
-        );
-        let (bx, by) = screen_of(&c, &t, "B");
-        assert_eq!(hit_test(&c, &t, bx, by, 10.0, |_| true), c.id("B"));
-        assert_eq!(
-            hit_test(&c, &t, ax + 200.0, ay - 200.0, 10.0, |_| true),
-            None
-        );
-    }
-
-    #[test]
-    fn hit_test_ignores_dependent_points() {
-        let c = triangle();
-        let t = ViewTransform::fit(&c, 800.0, 600.0);
-        let (ox, oy) = screen_of(&c, &t, "O");
+        assert!(movable(&c, c.id("A").unwrap()));
         assert!(!c.def(c.id("O").unwrap()).is_free());
-        assert!(hit_test(&c, &t, ox, oy, 4.0, |_| true).is_none());
-        let (mx, my) = screen_of(&c, &t, "Mc");
-        assert_eq!(hit_test(&c, &t, mx, my, 4.0, |_| true), None);
+        assert!(!movable(&c, c.id("O").unwrap()));
+        assert!(!movable(&c, c.id("Mc").unwrap()));
     }
 
     #[test]
@@ -229,12 +181,10 @@ mod tests {
         let mc = c.id("Mc").unwrap();
         let before = c.value(mc);
         let (ax, ay) = screen_of(&c, &t, "A");
-        let drag = Drag::begin(&c, &t, ax + 2.0, ay + 1.0, 10.0, |_| true).expect("grab A");
-        assert_eq!(Some(drag.id()), c.id("A"));
-        let (tx, ty) = drag.target(&t, ax + 2.0 - 60.0, ay + 1.0 - 40.0);
+        let drag = Drag::begin(&c, c.id("A").unwrap()).expect("grab A");
+        let (tx, ty) = drag.target(&t, ax - 60.0, ay - 40.0);
         let recomputed = c.move_point(drag.id(), tx, ty).unwrap();
         assert!(recomputed > 0);
-        // The point keeps its offset from the cursor: it moved by the cursor delta.
         let (nx, ny) = screen_of(&c, &t, "A");
         assert!((nx - (ax - 60.0)).abs() < 1e-6 && (ny - (ay - 40.0)).abs() < 1e-6);
         assert_ne!(c.value(mc), before);
@@ -251,21 +201,22 @@ mod tests {
     }
 
     #[test]
-    fn drag_does_not_start_on_empty_space_or_dependent_point() {
+    fn drag_does_not_start_on_a_dependent_point() {
         let c = triangle();
-        let t = ViewTransform::fit(&c, 800.0, 600.0);
-        let (ox, oy) = screen_of(&c, &t, "O");
-        assert!(Drag::begin(&c, &t, ox, oy, 4.0, |_| true).is_none());
+        assert!(Drag::begin(&c, c.id("O").unwrap()).is_none());
     }
 
+    /// Was `target_keeps_the_grab_offset`: the point jumps to the pointer
+    /// (`handleMovedElementFreePoint`, no grab offset).
     #[test]
-    fn target_keeps_the_grab_offset() {
+    fn the_target_is_under_the_pointer() {
         let c = triangle();
         let t = ViewTransform::fit(&c, 800.0, 600.0);
         let (ax, ay) = screen_of(&c, &t, "A");
-        let drag = Drag::begin(&c, &t, ax + 3.0, ay - 2.0, 10.0, |_| true).unwrap();
-        // Releasing without moving leaves the point where it was.
+        let drag = Drag::begin(&c, c.id("A").unwrap()).unwrap();
         let (x, y) = drag.target(&t, ax + 3.0, ay - 2.0);
-        assert!(x.abs() < 1e-9 && y.abs() < 1e-9);
+        let (wx, wy) = t.screen_to_world(ax + 3.0, ay - 2.0);
+        assert!((x - wx).abs() < 1e-12 && (y - wy).abs() < 1e-12);
+        assert!(x.abs() > 1e-6, "not where A was");
     }
 }

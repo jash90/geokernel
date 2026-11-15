@@ -2,7 +2,11 @@
 //! hovers, a finger is wide and does not. One profile is chosen when the
 //! window starts and read by reference afterwards.
 
-use crate::style;
+/// `App.DEFAULT_THRESHOLD` (3 px) and `App.TOUCH_FACTOR` (3).
+const DEFAULT_THRESHOLD: f64 = 3.0;
+const TOUCH_FACTOR: f64 = 3.0;
+/// `DrawPoint.SELECTION_RADIUS_MIN` (12 px).
+const SELECTION_RADIUS_MIN: f64 = 12.0;
 
 /// `EuclidianConstants.DRAGGING_DELAY` (100 ms), the same for every pointer.
 const DRAGGING_DELAY: f64 = 0.1;
@@ -30,12 +34,19 @@ pub struct Metrics {
     /// a press may move and how long it may last and still click a widget.
     pub widget_click_dist: f32,
     pub widget_click_time: f64,
-    /// How far from a point a press still picks it.
-    pub point_radius: f64,
-    /// How far from a line or curve a press still picks it.
-    pub curve_radius: f64,
-    /// How far from a free point a press still grabs it for a drag.
-    pub grab_radius: f64,
+    /// The half-width of the square around the pointer that an object must
+    /// meet to be hit, for the mouse and for a finger
+    /// (`App.getCapturingThreshold`: `DEFAULT_THRESHOLD` 3, times
+    /// `TOUCH_FACTOR` 3 for touch). It follows the pointer of each press,
+    /// not the profile, so both profiles hold the same numbers.
+    pub mouse_threshold: f64,
+    pub touch_threshold: f64,
+    /// A finger that hits nothing tries again with its threshold times this
+    /// (`HitDetector.setHits(GPoint, PointerEventType)`: 3 x 9 = 27).
+    pub touch_retry_factor: f64,
+    /// A point is hit within the threshold plus this
+    /// (`DrawPoint.SELECTION_RADIUS_MIN`, 12).
+    pub point_selection_min: f64,
     /// The pointer can hover (a mouse). Without hover the window shows in
     /// the open what a mouse user finds by pointing, such as the hint of the
     /// move tool.
@@ -65,9 +76,10 @@ impl Metrics {
             drag_threshold: DRAG_THRESHOLD,
             widget_click_dist: 6.0,
             widget_click_time: 0.8,
-            point_radius: 11.0,
-            curve_radius: 7.0,
-            grab_radius: style::FREE_POINT_RADIUS as f64 + 6.0,
+            mouse_threshold: DEFAULT_THRESHOLD,
+            touch_threshold: DEFAULT_THRESHOLD * TOUCH_FACTOR,
+            touch_retry_factor: TOUCH_FACTOR,
+            point_selection_min: SELECTION_RADIUS_MIN,
             hover: true,
             toolbar_height: 52.0,
             toolbar_button: 40.0,
@@ -87,9 +99,10 @@ impl Metrics {
             drag_threshold: DRAG_THRESHOLD,
             widget_click_dist: 12.0,
             widget_click_time: 0.8,
-            point_radius: 22.0,
-            curve_radius: 16.0,
-            grab_radius: 24.0,
+            mouse_threshold: DEFAULT_THRESHOLD,
+            touch_threshold: DEFAULT_THRESHOLD * TOUCH_FACTOR,
+            touch_retry_factor: TOUCH_FACTOR,
+            point_selection_min: SELECTION_RADIUS_MIN,
             hover: false,
             toolbar_height: 60.0,
             toolbar_button: 48.0,
@@ -114,10 +127,13 @@ mod tests {
     #[test]
     fn the_desktop_profile_keeps_the_sizes_the_window_always_had() {
         let d = Metrics::desktop();
-        assert_eq!(
-            (d.point_radius, d.curve_radius, d.grab_radius),
-            (11.0, 7.0, 11.0)
-        );
+        // Hit testing follows the reference app (was point 11, curve 7 and
+        // grab 11 px radii): a 3 px square around the mouse, 9 px around a
+        // finger with a retry at 27 (`App.getCapturingThreshold`,
+        // `HitDetector.setHits`), points within the threshold plus 12
+        // (`DrawPoint.SELECTION_RADIUS_MIN`).
+        assert_eq!((d.mouse_threshold, d.touch_threshold), (3.0, 9.0));
+        assert_eq!((d.touch_retry_factor, d.point_selection_min), (3.0, 12.0));
         // The drawing's gestures follow the reference app: a 100 ms delay
         // before the first move counts (`EuclidianConstants.DRAGGING_DELAY`)
         // and a 10 pixel click threshold (`EuclidianController
@@ -141,8 +157,14 @@ mod tests {
             (t.drag_delay, t.drag_threshold),
             (d.drag_delay, d.drag_threshold)
         );
-        assert!(t.widget_click_dist > d.widget_click_dist && t.point_radius > d.point_radius);
-        assert!(t.curve_radius > d.curve_radius && t.grab_radius > d.grab_radius);
+        assert!(t.widget_click_dist > d.widget_click_dist);
+        // The hit thresholds follow the pointer of each press, not the
+        // profile (`App.getCapturingThreshold(PointerEventType)`).
+        assert_eq!(
+            (t.mouse_threshold, t.touch_threshold, t.point_selection_min),
+            (d.mouse_threshold, d.touch_threshold, d.point_selection_min)
+        );
+        assert!(d.touch_threshold > d.mouse_threshold);
         assert!(t.toolbar_button > d.toolbar_button && t.toolbar_pitch > t.toolbar_button);
         assert!(d.hover && !t.hover);
         assert_eq!(

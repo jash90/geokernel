@@ -195,6 +195,44 @@ fn dragging_empty_space_pans_instead_of_moving_points() {
     );
 }
 
+/// The owner's rule `interact::REFUSED_DRAG_NOTICE`: a drag of a point that
+/// depends on others moves nothing and pans nothing (the reference app's
+/// press on an object never pans, `hasNoHitsDisablingModeForShallMoveView`)
+/// and says why in Polish, where the reference app stays silent.
+#[test]
+fn a_refused_drag_of_a_dependent_point_says_why_and_does_not_pan() {
+    let mut h = harness("A = (1, 1)\nB = (5, 1)\nM = Midpoint(A, B)\n");
+    drag(
+        &mut h,
+        world(3.0, 1.0),
+        world(3.0, 1.0) + egui::vec2(60.0, -30.0),
+    );
+    assert_eq!(point(&h, "M"), (3.0, 1.0));
+    let app = h.state();
+    assert!(!app.wb.can_undo());
+    let cam = app.camera.unwrap();
+    assert!(cam.cx.abs() < 1e-9 && cam.cy.abs() < 1e-9, "panned");
+    assert_eq!(app.wb.selected, app.wb.construction().id("M"));
+    assert_eq!(
+        app.wb.notice.as_deref(),
+        Some(geo_app_core::text::label(
+            geo_app_core::text::Label::PointDependsOnOthers
+        ))
+    );
+}
+
+/// The owner's rule `hit::SIDE_TAKES_THE_POLYGON`: a press on a side of a
+/// polygon takes the polygon, where the reference app takes the segment
+/// (`chooseGeo` prefers segments to polygons).
+#[test]
+fn a_press_on_a_side_takes_the_polygon() {
+    let mut h = harness("A = (1, 1)\nB = (5, 1)\nC = (1, 4)\np = Polygon(A, B, C)\n");
+    click(&mut h, world(3.0, 1.0));
+    let p = h.state().wb.construction().id("p");
+    assert!(p.is_some());
+    assert_eq!(h.state().wb.selected, p);
+}
+
 #[test]
 fn the_marker_toggles_visibility_and_clicking_the_body_selects() {
     let mut h = harness("A = (0, 0)\nB = (2, 0)\n");

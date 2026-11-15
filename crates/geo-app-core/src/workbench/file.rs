@@ -599,7 +599,11 @@ mod tests {
         // Presses on the parabola find nothing.
         for (x, y) in [(0.0, 0.0), (1.0, 1.0), (2.0, 4.0)] {
             let at = t.world_to_screen(x, y);
-            assert_eq!(crate::hit::pick(c, &t, at, 30.0, 30.0, |_| true), None);
+            let reach = crate::hit::Reach::square(30.0);
+            assert_eq!(
+                crate::hit::pick(c, &t, at, &reach, None, |id| id == f),
+                None
+            );
         }
         let rows = wb.rows();
         assert_eq!(rows.len(), 2);

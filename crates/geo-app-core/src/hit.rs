@@ -1,69 +1,259 @@
-//! Hit testing of any visible object under a screen position, with no UI types.
+// Parts of this file are translated from GeoGebra (https://github.com/geogebra/geogebra),
+// commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
+//   source/shared/common/src/main/java/org/geogebra/common/euclidian/HitDetector.java
+//   source/shared/common/src/main/java/org/geogebra/common/euclidian/Hits.java
+//   source/shared/common/src/main/java/org/geogebra/common/euclidian/EuclidianController.java
+//   source/shared/common/src/main/java/org/geogebra/common/euclidian/draw/DrawPoint.java
+//   source/shared/common/src/main/java/org/geogebra/common/euclidian/draw/DrawLine.java
+//   source/shared/common/src/main/java/org/geogebra/common/euclidian/draw/DrawSegment.java
+//   source/shared/common/src/main/java/org/geogebra/common/euclidian/draw/DrawRay.java
+//   source/shared/common/src/main/java/org/geogebra/common/euclidian/draw/DrawVector.java
+//   source/shared/common/src/main/java/org/geogebra/common/euclidian/draw/DrawConic.java
+//   source/shared/common/src/main/java/org/geogebra/common/euclidian/draw/DrawPolygon.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/DefaultGeoPriorityComparator.java
+//   source/shared/common/src/main/java/org/geogebra/common/plugin/GeoClass.java
+//   source/shared/common/src/main/java/org/geogebra/common/main/App.java
+// Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
+// Licensed by GeoGebra GmbH under the EUPL 1.2.
+
+//! Hit testing of the visible objects under a screen position, with no UI
+//! types, following the reference app:
+//!
+//! - every object is tested against a square of half-width `threshold`
+//!   around the pointer (`App.getCapturingThreshold`: 3 px for the mouse,
+//!   9 px for a finger; a finger that hits nothing tries again at 27 px,
+//!   `HitDetector.setHits(GPoint, PointerEventType)`);
+//! - a point is hit within `r = max(size, threshold + 12)`
+//!   (`DrawPoint.hit`, `SELECTION_RADIUS_MIN`); a line, segment, ray or
+//!   vector when its line crosses the square (`Line2D.intersects`); a circle
+//!   when its stroked outline crosses the square (`DrawConic.hit`; circles
+//!   are not filled, so their inside is never hit); a polygon when the
+//!   square crosses its outline, or lies inside it (it is filled; for a
+//!   filled polygon wider than 20 px the square is the mouse's,
+//!   `DrawPolygon.hit`, `getFillingHitThreshold`);
+//! - of the objects hit, one is chosen (`EuclidianController.chooseGeo` on
+//!   `Hits.getTopHits` with the polygons removed when anything else is hit,
+//!   as `handleMousePressedForMoveMode` does): a single selected object that
+//!   is hit stays chosen; points win over everything (the free point made
+//!   last, else a single point, else the point made first); then a segment
+//!   (the one made first); then the object drawn on top (outlines before
+//!   fillings, then the type's drawing priority, then the one made last).
+//!
+//! Choosing streams over the objects once with a few numbers, so a hit test
+//! allocates nothing (the window asks it for the hover every frame).
 
 use crate::interact::ViewTransform;
+use crate::metrics::Metrics;
 use geo_kernel::algo::vector;
-use geo_kernel::kernel::{Construction, Id, Value};
+use geo_kernel::kernel::{Construction, Id, Kind, Value};
 
-/// Distance from `p` to the segment `a`-`b`, all in screen pixels.
-fn dist_segment(p: (f64, f64), a: (f64, f64), b: (f64, f64)) -> f64 {
-    let (dx, dy) = (b.0 - a.0, b.1 - a.1);
-    let len2 = dx * dx + dy * dy;
-    let t = if len2 > 0.0 {
-        (((p.0 - a.0) * dx + (p.1 - a.1) * dy) / len2).clamp(0.0, 1.0)
-    } else {
-        0.0
-    };
-    (p.0 - (a.0 + t * dx)).hypot(p.1 - (a.1 + t * dy))
+/// The width the window draws curves with (`draw::CURVE_WIDTH` in the
+/// window), which is part of a circle's stroked outline.
+pub const CURVE_STROKE: f64 = 2.5;
+
+/// `DrawPolygon.MIN_HITTING_SIZE`: a filled polygon wider than this is hit
+/// with the mouse's square whatever the pointer.
+const MIN_HITTING_SIZE: f64 = 20.0;
+
+/// The owner's choice where the reference app is not followed (its "press
+/// on a polygon's edge does nothing", whose source path was never found):
+/// a press on a side of a polygon takes hold of the polygon. `false` would
+/// leave the side chosen, as `chooseGeo` does.
+pub const SIDE_TAKES_THE_POLYGON: bool = true;
+
+/// How far from the pointer an object is still hit, for one press.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Reach {
+    /// The half-width of the square around the pointer.
+    pub threshold: f64,
+    /// A second, larger square when the first one hits nothing (a finger).
+    pub retry: Option<f64>,
+    /// Added to the threshold for the radius of a point.
+    pub point_min: f64,
+    /// The mouse's threshold (big filled polygons use it for any pointer).
+    pub mouse: f64,
 }
 
-/// Distance in screen pixels from `p` to the object's drawn shape, or `None`
-/// for objects that are not drawn (numbers, undefined, unknown kinds).
-fn distance(c: &Construction, id: Id, t: &ViewTransform, p: (f64, f64)) -> Option<f64> {
-    let to_screen = |x: f64, y: f64| t.world_to_screen(x, y);
+impl Reach {
+    /// The reach of a press by a finger (`touch`) or the mouse, from the
+    /// profile's numbers (`App.getCapturingThreshold`).
+    pub fn of(m: &Metrics, touch: bool) -> Reach {
+        let threshold = if touch {
+            m.touch_threshold
+        } else {
+            m.mouse_threshold
+        };
+        Reach {
+            threshold,
+            retry: touch.then_some(threshold * m.touch_retry_factor),
+            point_min: m.point_selection_min,
+            mouse: m.mouse_threshold,
+        }
+    }
+
+    /// A square of half-width `threshold`, without a retry.
+    pub fn square(threshold: f64) -> Reach {
+        Reach {
+            threshold,
+            retry: None,
+            point_min: Metrics::desktop().point_selection_min,
+            mouse: threshold,
+        }
+    }
+}
+
+/// How an object is hit (`GeoElement.HitType`).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum HitType {
+    /// Its inside (a polygon is always hit this way, `GeoPolygon
+    /// .getLastHitType`).
+    Filling,
+    /// A point, or the outline of a curve.
+    Boundary,
+}
+
+/// Whether the closed square of half-width `t` around `p` meets the segment
+/// `a`-`b` (Liang-Barsky clipping).
+fn segment_meets_square(a: (f64, f64), b: (f64, f64), p: (f64, f64), t: f64) -> bool {
+    let (dx, dy) = (b.0 - a.0, b.1 - a.1);
+    let (mut lo, mut hi) = (0.0f64, 1.0f64);
+    for (q, d) in [
+        (a.0 - (p.0 - t), -dx),
+        ((p.0 + t) - a.0, dx),
+        (a.1 - (p.1 - t), -dy),
+        ((p.1 + t) - a.1, dy),
+    ] {
+        if d == 0.0 {
+            if q < 0.0 {
+                return false;
+            }
+        } else {
+            let r = q / d;
+            if d < 0.0 {
+                lo = lo.max(r);
+            } else {
+                hi = hi.min(r);
+            }
+        }
+    }
+    lo <= hi
+}
+
+/// Whether the infinite line through `a` and `b` meets the square of
+/// half-width `t` around `p`: the line's distance to the centre, measured
+/// along its normal, is at most the square's extent along it.
+fn line_meets_square(a: (f64, f64), b: (f64, f64), p: (f64, f64), t: f64) -> bool {
+    let (nx, ny) = (a.1 - b.1, b.0 - a.0);
+    if nx == 0.0 && ny == 0.0 {
+        return false;
+    }
+    (nx * (p.0 - a.0) + ny * (p.1 - a.1)).abs() <= t * (nx.abs() + ny.abs())
+}
+
+/// How the object `id` is hit by the square of half-width `t` around `p`
+/// (`mouse` is the mouse's threshold), or `None`.
+pub fn hit(
+    c: &Construction,
+    id: Id,
+    tr: &ViewTransform,
+    p: (f64, f64),
+    t: f64,
+    reach: &Reach,
+) -> Option<HitType> {
+    let to_screen = |x: f64, y: f64| tr.world_to_screen(x, y);
+    let boundary = |hit: bool| hit.then_some(HitType::Boundary);
     match c.value(id) {
         Value::Point { x, y } => {
+            // `DrawPoint.hit`: r = max(pointSize, threshold + 12); the
+            // window's points are never larger than that.
             let s = to_screen(x, y);
-            Some((s.0 - p.0).hypot(s.1 - p.1))
+            let r = t + reach.point_min;
+            let (dx, dy) = (s.0 - p.0, s.1 - p.1);
+            boundary(dx.abs() < r && dx * dx + dy * dy <= r * r)
         }
         v @ Value::Line { .. } => {
             let (a, b, k) = v.unit_line()?;
-            let (wx, wy) = t.screen_to_world(p.0, p.1);
-            Some((a * wx + b * wy + k).abs() * t.scale())
+            // Two points of the line, a unit apart, on the screen.
+            let (x0, y0) = (-a * k, -b * k);
+            let s0 = to_screen(x0, y0);
+            let s1 = to_screen(x0 - b, y0 + a);
+            boundary(line_meets_square(s0, s1, p, t))
         }
-        Value::Segment { x1, y1, x2, y2 } => {
-            Some(dist_segment(p, to_screen(x1, y1), to_screen(x2, y2)))
-        }
+        Value::Segment { x1, y1, x2, y2 } => boundary(segment_meets_square(
+            to_screen(x1, y1),
+            to_screen(x2, y2),
+            p,
+            t,
+        )),
         Value::Ray { x, y, a, b, .. } => {
             let len = a.hypot(b);
             if len == 0.0 {
                 return None;
             }
-            let start = to_screen(x, y);
             // A point far along the ray stands in for infinity.
-            let far = 1e7 / t.scale().max(1e-9);
+            let far = 1e7 / tr.scale().max(1e-9);
             let end = to_screen(x + far * b / len, y - far * a / len);
-            Some(dist_segment(p, start, end))
-        }
-        Value::Circle { cx, cy, r } => {
-            let s = to_screen(cx, cy);
-            Some(((s.0 - p.0).hypot(s.1 - p.1) - r * t.scale()).abs())
+            boundary(segment_meets_square(to_screen(x, y), end, p, t))
         }
         Value::Vector { x, y } => {
             let (x0, y0) = vector::start(c, id)?;
-            Some(dist_segment(
-                p,
+            boundary(segment_meets_square(
                 to_screen(x0, y0),
                 to_screen(x0 + x, y0 + y),
+                p,
+                t,
             ))
         }
-        Value::Polygon { .. } | Value::PolyLine { .. } => {
-            let closed = matches!(c.value(id), Value::Polygon { .. });
-            let pts = screen_vertices(c, id, t)?;
+        Value::Circle { cx, cy, r } => {
+            // The stroked outline (`DrawConic.hit`): the ring between the
+            // radii r - w/2 and r + w/2 meets the square when the square's
+            // nearest point is inside the outer circle and its farthest
+            // corner outside the inner one.
+            let s = to_screen(cx, cy);
+            let rad = r * tr.scale();
+            let (dx, dy) = ((s.0 - p.0).abs(), (s.1 - p.1).abs());
+            let near = (dx - t).max(0.0).hypot((dy - t).max(0.0));
+            let far = (dx + t).hypot(dy + t);
+            let w = 0.5 * CURVE_STROKE;
+            boundary(near <= rad + w && far >= rad - w)
+        }
+        Value::Polygon { .. } => {
+            let pts = screen_vertices(c, id, tr)?;
+            // `DrawPolygon.hit`: polygons are drawn filled.
+            let (mut xmin, mut xmax) = (f64::INFINITY, f64::NEG_INFINITY);
+            for q in &pts {
+                xmin = xmin.min(q.0);
+                xmax = xmax.max(q.0);
+            }
+            let eps = if xmax - xmin > MIN_HITTING_SIZE {
+                reach.mouse
+            } else {
+                t
+            };
             let n = pts.len();
-            let edges = if closed { n } else { n.saturating_sub(1) };
-            (0..edges)
-                .map(|i| dist_segment(p, pts[i], pts[(i + 1) % n]))
-                .min_by(f64::total_cmp)
+            let edge = (0..n).any(|i| segment_meets_square(pts[i], pts[(i + 1) % n], p, eps));
+            let corners = [
+                (p.0 - eps, p.1 - eps),
+                (p.0 + eps, p.1 - eps),
+                (p.0 + eps, p.1 + eps),
+                (p.0 - eps, p.1 + eps),
+            ];
+            let inside = corners
+                .iter()
+                .filter(|&&q| crate::shape::contains(&pts, q))
+                .count();
+            let contains = inside == 4 && !edge;
+            let intersects = inside > 0 || edge;
+            // Filled and the square inside: hit; else the square crosses
+            // the outline. Either way a polygon counts as a filling.
+            (contains || intersects).then_some(HitType::Filling)
+        }
+        Value::PolyLine { .. } => {
+            let pts = screen_vertices(c, id, tr)?;
+            boundary(
+                pts.windows(2)
+                    .any(|e| segment_meets_square(e[0], e[1], p, t)),
+            )
         }
         _ => None,
     }
@@ -79,45 +269,149 @@ pub fn screen_vertices(c: &Construction, id: Id, t: &ViewTransform) -> Option<Ve
     pts.filter(|p| p.len() >= 2)
 }
 
-/// The object under the screen position `(sx, sy)` that `accept` allows.
-/// Points win over curves when one is within `point_radius`; otherwise the
-/// nearest curve within `curve_radius` (both in pixels) is returned, and
-/// failing that a polygon whose inside holds the position.
+/// `GeoClass` drawing priorities (higher is drawn on top), used by
+/// `DefaultGeoPriorityComparator`.
+fn type_priority(kind: Kind) -> u8 {
+    match kind {
+        Kind::Point => 140,
+        Kind::Vector => 120,
+        Kind::Segment | Kind::Ray => 110,
+        Kind::Line => 100,
+        Kind::Circle => 70,
+        Kind::PolyLine => 51,
+        Kind::Polygon => 50,
+        _ => 0,
+    }
+}
+
+/// What `pick` keeps of the hits while it streams over the objects.
+#[derive(Default)]
+struct Choice {
+    points: u32,
+    /// The free point made last, and the point made first.
+    last_free: Option<Id>,
+    first_point: Option<Id>,
+    /// Hits that are neither points nor polygons, and polygons.
+    others: u32,
+    polygons: u32,
+    the_other: Option<Id>,
+    the_polygon: Option<Id>,
+    /// The segment made first.
+    first_segment: Option<Id>,
+    /// The object drawn on top among the others, and among the polygons.
+    top_other: Option<((HitType, u8, usize), Id)>,
+    top_polygon: Option<((HitType, u8, usize), Id)>,
+    /// How the selected object was hit, if it was.
+    selected: Option<Kind>,
+}
+
+impl Choice {
+    fn add(&mut self, c: &Construction, id: Id, index: usize, how: HitType, selected: bool) {
+        let kind = c.kind(id);
+        if selected {
+            self.selected = Some(kind);
+        }
+        let key = (how, type_priority(kind), index);
+        match kind {
+            Kind::Point => {
+                self.points += 1;
+                self.first_point.get_or_insert(id);
+                if c.def(id).is_free() {
+                    self.last_free = Some(id);
+                }
+            }
+            Kind::Polygon => {
+                self.polygons += 1;
+                self.the_polygon = Some(id);
+                if self.top_polygon.is_none_or(|(k, _)| key > k) {
+                    self.top_polygon = Some((key, id));
+                }
+            }
+            _ => {
+                self.others += 1;
+                self.the_other = Some(id);
+                if kind == Kind::Segment {
+                    self.first_segment.get_or_insert(id);
+                }
+                if self.top_other.is_none_or(|(k, _)| key > k) {
+                    self.top_other = Some((key, id));
+                }
+            }
+        }
+    }
+
+    fn hits(&self) -> bool {
+        self.points + self.others + self.polygons > 0
+    }
+
+    /// `handleMousePressedForMoveMode`: the top hits (only the points when a
+    /// point is hit, `Hits.getTopHits`), without the polygons when anything
+    /// else is left (`removePolygonsIfNotOnlyCS2D`); the selected object if
+    /// it is among them; else `chooseGeo`. All objects are in one layer, so
+    /// its layer rules choose nothing, and nothing is fixed or on a path.
+    fn choose(&self, selected: Option<Id>) -> Option<Id> {
+        let kept = |k: Kind| -> bool {
+            if self.points > 0 {
+                k == Kind::Point
+            } else if self.others > 0 {
+                k != Kind::Polygon
+            } else {
+                k == Kind::Polygon
+            }
+        };
+        if let (Some(id), Some(k)) = (selected, self.selected) {
+            if kept(k) {
+                return Some(id);
+            }
+        }
+        if self.points > 0 {
+            // A free point (the one made last), else a single point, else
+            // the point made first (`chooseGeo` returns `retIndex`, the
+            // lowest construction index, though its comment says the
+            // most recent).
+            return self.last_free.or(self.first_point);
+        }
+        if self.others > 0 {
+            if self.others == 1 {
+                return self.the_other;
+            }
+            // Segments first: in one layer, the one made first.
+            return self.first_segment.or(self.top_other.map(|(_, id)| id));
+        }
+        if self.polygons == 1 {
+            return self.the_polygon;
+        }
+        self.top_polygon.map(|(_, id)| id)
+    }
+}
+
+/// The object a press at `(sx, sy)` takes hold of, among those `accept`
+/// allows; `selected` is the selected object (kept when it is hit).
 pub fn pick(
     c: &Construction,
     t: &ViewTransform,
     (sx, sy): (f64, f64),
-    point_radius: f64,
-    curve_radius: f64,
+    reach: &Reach,
+    selected: Option<Id>,
     accept: impl Fn(Id) -> bool,
 ) -> Option<Id> {
-    let mut best_point: Option<(Id, f64)> = None;
-    let mut best_curve: Option<(Id, f64)> = None;
-    // The last polygon whose inside holds the position, as the one drawn on top.
-    let mut inside: Option<Id> = None;
-    for id in c.ids() {
-        if !accept(id) {
-            continue;
+    let pass = |threshold: f64| {
+        let mut choice = Choice::default();
+        for (index, id) in c.ids().enumerate() {
+            if !accept(id) {
+                continue;
+            }
+            if let Some(how) = hit(c, id, t, (sx, sy), threshold, reach) {
+                choice.add(c, id, index, how, Some(id) == selected);
+            }
         }
-        if matches!(c.value(id), Value::Polygon { .. })
-            && screen_vertices(c, id, t).is_some_and(|pts| crate::shape::contains(&pts, (sx, sy)))
-        {
-            inside = Some(id);
-        }
-        let Some(d) = distance(c, id, t, (sx, sy)) else {
-            continue;
-        };
-        let is_point = matches!(c.value(id), Value::Point { .. });
-        let (best, limit) = if is_point {
-            (&mut best_point, point_radius)
-        } else {
-            (&mut best_curve, curve_radius)
-        };
-        if d <= limit && best.is_none_or(|(_, bd)| d < bd) {
-            *best = Some((id, d));
-        }
+        choice
+    };
+    let mut choice = pass(reach.threshold);
+    if let (false, Some(retry)) = (choice.hits(), reach.retry) {
+        choice = pass(retry);
     }
-    best_point.or(best_curve).map(|(id, _)| id).or(inside)
+    choice.choose(selected)
 }
 
 #[cfg(test)]
@@ -148,57 +442,153 @@ mod tests {
         id.map(|i| c.label(i).to_owned())
     }
 
+    fn mouse() -> Reach {
+        Reach::of(&Metrics::desktop(), false)
+    }
+
+    fn touch() -> Reach {
+        Reach::of(&Metrics::touch(), true)
+    }
+
+    fn only<'a>(c: &'a Construction, name: &'a str) -> impl Fn(Id) -> bool + 'a {
+        move |id| c.label(id) == name
+    }
+
     #[test]
     fn a_point_wins_over_curves_through_it() {
         let (c, t) = setup();
         let (sx, sy) = t.world_to_screen(0.0, 0.0);
-        let id = pick(&c, &t, (sx + 2.0, sy), 8.0, 6.0, |_| true);
+        let id = pick(&c, &t, (sx + 2.0, sy), &mouse(), None, |_| true);
         assert_eq!(label(&c, id).as_deref(), Some("A"));
     }
 
+    /// `DrawPoint.hit`: r = 3 + 12 = 15 for the mouse, `abs(dx) < r`.
     #[test]
-    fn curves_are_found_within_the_radius() {
+    fn a_point_is_hit_within_the_selection_radius() {
         let (c, t) = setup();
-        // Just above the line f (y = 0) between A and B, outside both points.
+        let (sx, sy) = t.world_to_screen(0.0, 0.0);
+        let at = |dx: f64, dy: f64, reach: &Reach| {
+            pick(&c, &t, (sx + dx, sy + dy), reach, None, only(&c, "A")).is_some()
+        };
+        assert!(at(-14.0, 0.0, &mouse()) && !at(-15.0, 0.0, &mouse()));
+        assert!(at(0.0, -15.0, &mouse()) && !at(0.0, -15.5, &mouse()));
+        // A finger: 9 + 12, then the retry at 27 + 12.
+        assert!(at(-38.0, 0.0, &touch()) && !at(-39.0, 0.0, &touch()));
+    }
+
+    /// `Line2D.intersects` with the square of half-width 3 (mouse) or 9
+    /// then 27 (touch).
+    #[test]
+    fn curves_are_hit_within_the_square() {
+        let (c, t) = setup();
+        // Above the line f (y = 0) between A and B.
         let (sx, sy) = t.world_to_screen(2.0, 0.0);
-        let on_line = pick(&c, &t, (sx, sy - 3.0), 8.0, 6.0, |id| c.label(id) == "f");
-        assert_eq!(label(&c, on_line).as_deref(), Some("f"));
-        let too_far = pick(&c, &t, (sx, sy - 9.0), 8.0, 6.0, |id| c.label(id) == "f");
-        assert_eq!(too_far, None);
-        // The circle of radius 4 around the origin.
+        let line = |dy: f64, reach: &Reach| {
+            pick(&c, &t, (sx, sy + dy), reach, None, only(&c, "f")).is_some()
+        };
+        assert!(line(-3.0, &mouse()) && !line(-4.0, &mouse()));
+        assert!(line(-27.0, &touch()) && !line(-28.0, &touch()));
+        // The circle of radius 4 around the origin: its outline is 2.5 wide.
         let (cx, cy) = t.world_to_screen(0.0, 4.0);
-        let on_circle = pick(&c, &t, (cx + 1.0, cy), 8.0, 6.0, |id| c.label(id) == "k");
-        assert_eq!(label(&c, on_circle).as_deref(), Some("k"));
+        let circle = |dy: f64| pick(&c, &t, (cx, cy + dy), &mouse(), None, only(&c, "k"));
+        assert!(circle(-4.0).is_some() && circle(4.0).is_some());
+        assert!(circle(-4.5).is_none() && circle(4.5).is_none());
     }
 
     #[test]
     fn segments_end_at_their_end_points() {
         let (c, t) = setup();
         let (sx, sy) = t.world_to_screen(4.0, 0.0);
-        let beyond = pick(&c, &t, (sx + 10.0, sy), 2.0, 6.0, |id| c.label(id) == "s");
+        let beyond = pick(&c, &t, (sx + 4.0, sy), &mouse(), None, only(&c, "s"));
         assert_eq!(beyond, None);
-        let inside = pick(&c, &t, (sx - 10.0, sy), 2.0, 6.0, |id| c.label(id) == "s");
-        assert_eq!(label(&c, inside).as_deref(), Some("s"));
+        let near = pick(&c, &t, (sx + 3.0, sy), &mouse(), None, only(&c, "s"));
+        assert_eq!(label(&c, near).as_deref(), Some("s"));
     }
 
     #[test]
     fn accept_filters_and_numbers_are_never_hit() {
         let (c, t) = setup();
         let (sx, sy) = t.world_to_screen(0.0, 0.0);
-        assert_eq!(pick(&c, &t, (sx, sy), 8.0, 6.0, |_| false), None);
-        let id = pick(&c, &t, (sx, sy), 8.0, 6.0, |id| c.label(id) == "N");
-        assert_eq!(id, None);
+        assert_eq!(pick(&c, &t, (sx, sy), &mouse(), None, |_| false), None);
+        assert_eq!(pick(&c, &t, (sx, sy), &mouse(), None, only(&c, "N")), None);
+    }
+
+    /// Was `the_nearest_curve_wins`: `chooseGeo` does not measure distances.
+    /// Of a line and a circle both hit, the line is drawn on top
+    /// (`GeoClass` priorities), and a segment wins over both.
+    #[test]
+    fn a_segment_then_the_object_drawn_on_top_wins() {
+        let (c, t) = setup();
+        let (sx, sy) = t.world_to_screen(-4.0, 0.0);
+        let pick_of = |names: &[&str]| {
+            label(
+                &c,
+                pick(&c, &t, (sx, sy + 1.0), &mouse(), None, |id| {
+                    names.contains(&c.label(id))
+                }),
+            )
+        };
+        assert_eq!(pick_of(&["f", "k"]).as_deref(), Some("f"));
+        let (sx, sy) = t.world_to_screen(2.0, 0.0);
+        let id = pick(&c, &t, (sx, sy), &mouse(), None, |id| {
+            matches!(c.label(id), "f" | "s")
+        });
+        assert_eq!(label(&c, id).as_deref(), Some("s"));
+    }
+
+    /// `chooseGeo`: of several free points, the one made last; of
+    /// dependent points only, the one made first.
+    #[test]
+    fn of_several_points_the_free_one_made_last_wins() {
+        let c = geo_kernel::script::load(
+            "A = (0, 0)\nB = (0.1, 0)\nC = (4, 0)\nM = Midpoint(A, C)\nN = Midpoint(A, C)\n",
+        )
+        .unwrap();
+        let (_, t) = setup();
+        let (sx, sy) = t.world_to_screen(0.0, 0.0);
+        let id = pick(&c, &t, (sx, sy), &mouse(), None, |_| true);
+        assert_eq!(label(&c, id).as_deref(), Some("B"), "not the nearest, A");
+        let (mx, my) = t.world_to_screen(2.0, 0.0);
+        let id = pick(&c, &t, (mx, my), &mouse(), None, |id| c.label(id) != "C");
+        assert_eq!(label(&c, id).as_deref(), Some("M"));
+        // The selected object stays chosen while it is hit.
+        let id = pick(&c, &t, (sx, sy), &mouse(), c.id("A"), |_| true);
+        assert_eq!(label(&c, id).as_deref(), Some("A"));
+    }
+
+    /// `DrawConic.hit`: an unfilled circle's inside is not hit;
+    /// `DrawPolygon.hit`: a filled polygon's inside is; a polygon is
+    /// dropped when anything else is hit (`removePolygonsIfNotOnlyCS2D`).
+    #[test]
+    fn fillings_count_only_for_polygons_and_lose_to_anything_else() {
+        let c = geo_kernel::script::load(
+            "A = (-3, -3)\nB = (3, -3)\nC = (0, 3)\nq = Polygon(A, B, C)\nO = (-4, 4)\nr = 3\nk = Circle(O, r)\n",
+        )
+        .unwrap();
+        let (_, t) = setup();
+        let centre = t.world_to_screen(0.0, -0.5);
+        let id = pick(&c, &t, centre, &mouse(), None, |_| true);
+        assert_eq!(label(&c, id).as_deref(), Some("q"));
+        let outside = t.world_to_screen(4.0, 4.0);
+        assert_eq!(pick(&c, &t, outside, &mouse(), None, |_| true), None);
+        // Inside the circle, away from its centre point: nothing.
+        let inside_circle = t.world_to_screen(-4.0, 2.0);
+        assert_eq!(pick(&c, &t, inside_circle, &mouse(), None, |_| true), None);
+        let on_circle = t.world_to_screen(-4.0, 1.0);
+        let id = pick(&c, &t, on_circle, &mouse(), None, |_| true);
+        assert_eq!(label(&c, id).as_deref(), Some("k"));
     }
 
     #[test]
-    fn the_nearest_curve_wins() {
+    fn a_finger_retries_with_a_larger_square_only_when_nothing_is_hit() {
         let (c, t) = setup();
-        // Near the crossing of f and s the closer one is chosen: put the
-        // pointer 1 px from the line and 5 px from the circle.
-        let (sx, sy) = t.world_to_screen(-4.5, 0.0);
-        let id = pick(&c, &t, (sx, sy + 1.0), 2.0, 6.0, |id| {
-            matches!(c.label(id), "f" | "k")
-        });
+        let (sx, sy) = t.world_to_screen(2.0, 0.0);
+        // 20 px above f: beyond 9, within 27.
+        let id = pick(&c, &t, (sx, sy - 20.0), &touch(), None, only(&c, "f"));
         assert_eq!(label(&c, id).as_deref(), Some("f"));
+        assert_eq!(
+            pick(&c, &t, (sx, sy - 20.0), &mouse(), None, only(&c, "f")),
+            None
+        );
     }
 }
