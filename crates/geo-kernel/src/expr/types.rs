@@ -73,6 +73,10 @@ pub(crate) fn check(
             }
             Node::Bin(op, a, b) => {
                 let (a, b) = (a as usize, b as usize);
+                if op.is_command() && vars[a].saturating_add(vars[b]) > 0 {
+                    // GeoGebra rejects `Mod(x, 3)` in a function
+                    return Err("a command cannot take `x`".into());
+                }
                 (
                     binary_type(op, tys[a], tys[b])?,
                     1 + depth[a].max(depth[b]),
@@ -154,6 +158,8 @@ fn binary_type(op: Bin, a: Ty, b: Ty) -> Result<Ty, String> {
         (Bin::Pow, Vec, Num(_)) => Ok(Num(0)),
         (Bin::Round2, Num(x), Num(_)) => Ok(Num(x)),
         (Bin::Atan2 | Bin::LogB, Num(_), Num(_)) => Ok(Num(0)),
+        (op, Num(_), Num(_)) if op.is_command() => Ok(Num(0)),
+        (op, _, _) if op.is_command() => Err("the command takes two numbers".into()),
         _ => complex(),
     }
 }

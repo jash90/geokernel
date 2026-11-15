@@ -51,7 +51,7 @@ pub(crate) fn java_round(x: f64) -> i64 {
 }
 
 /// `DoubleUtil.isInteger`.
-fn is_integer(x: f64) -> bool {
+pub(crate) fn is_integer(x: f64) -> bool {
     if !x.is_finite() {
         return false;
     }
@@ -63,7 +63,7 @@ fn is_integer(x: f64) -> bool {
 
 /// `DoubleUtil.checkInteger`: snaps to the nearest integer within the
 /// standard precision.
-fn check_integer(x: f64) -> f64 {
+pub(crate) fn check_integer(x: f64) -> f64 {
     let r = java_round(x) as f64;
     if (x - r).abs() < STANDARD_PRECISION {
         r

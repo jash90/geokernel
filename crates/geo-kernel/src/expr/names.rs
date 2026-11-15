@@ -55,12 +55,20 @@ pub(crate) fn unary_builtin(name: &str) -> Option<Un> {
     })
 }
 
-/// Two-argument functions of `ParserFunctionsFactory`.
+/// Two-argument functions of `ParserFunctionsFactory`, and the commands of
+/// two numbers that expressions support.
 pub(crate) fn binary_builtin(name: &str) -> Option<Bin> {
     Some(match name {
         "atan2" | "arctan2" => Bin::Atan2,
         "log" | "ln" => Bin::LogB,
         "round" => Bin::Round2,
+        // commands of two numbers, computed in place
+        "Mod" => Bin::Mod,
+        "Div" => Bin::IntDiv,
+        "GCD" => Bin::Gcd,
+        "LCM" => Bin::Lcm,
+        "Max" => Bin::Max,
+        "Min" => Bin::Min,
         _ => return None,
     })
 }

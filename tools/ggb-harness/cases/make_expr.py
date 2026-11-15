@@ -321,4 +321,22 @@ case("fnundef", ["u = (1, 2)", "A = (1, 1)", "B = (1, 1)", "w = Vector(A, B)",
                  "f(x) = x(u) x + abs(w)", "g(x) = x / abs(w)"],
      [mv("B", 2, 2), mv("u", 0, 0), mv("A", 2, 2), mv("A", 1, 1)])
 
+# ------------------------------------------------------- commands of two numbers
+topic("twonum")
+edges = [setn("a", -7), setn("b", -3), setn("b", 0), setn("a", 7.5), setn("a", 0),
+         setn("b", 1e-9), setn("a", 1e16), setn("b", 3), setn("a", 12), setn("b", 18)]
+for rhs in ("Mod(a, b)", "Div(a, b)", "GCD(a, b)", "LCM(a, b)", "Max(a, b)", "Min(a, b)",
+            "Mod(a, b) + Div(a, b) * b", "Max(a, b) - Min(a, b)", "GCD(a, b) LCM(a, b)",
+            "Mod(a^2, b + 1)", "Div(a, 2) + Mod(b, 2)", "Max(Min(a, b), 0)",
+            "Mod(-a, b)", "LCM(a, 2b)", "GCD(a / 2, b)"):
+    case("twonum", nums(a=7, b=3) + [f"c = {rhs}"], edges)
+case("twonum", ["A = (1, 2)", "B = (4, 6)", "c = Mod(Distance(A, B), 2)",
+                "d = Max(x(A), y(B))", "m = Div(x(B), x(A))"],
+     [mv("A", 3, 0), mv("B", -2, 9), mv("A", -2, 9), mv("A", 1, 2)])
+case("twonum", nums(a=2, b=5) + ["f(x) = x^2 - a", "c = Mod(f(b), 7)", "g(x) = x + Max(a, b)",
+                                 "d = GCD(f(4), b)"],
+     [setn("a", 1), setn("b", -3), setn("a", 0), setn("b", 5)])
+case("twonum", nums(a=2) + ["P = (Mod(a, 3), Div(a, 3))", "u = (Max(a, 0); Min(a, 1))"],
+     [setn("a", -4), setn("a", 9.5), setn("a", 2)])
+
 cases.write()

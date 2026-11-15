@@ -29,6 +29,7 @@ mod lex;
 pub(crate) mod math;
 mod names;
 mod parse;
+mod twonum;
 mod types;
 
 use crate::algo::vector::VectorDef;
@@ -123,6 +124,24 @@ pub(crate) enum Bin {
     /// `log(b, x)`: the base comes first.
     LogB,
     Round2,
+    /// The commands of two numbers (see [`twonum`]).
+    Mod,
+    /// `Div`, the integer quotient.
+    IntDiv,
+    Gcd,
+    Lcm,
+    Max,
+    Min,
+}
+
+impl Bin {
+    /// Whether this is one of the commands of two numbers.
+    fn is_command(self) -> bool {
+        matches!(
+            self,
+            Bin::Mod | Bin::IntDiv | Bin::Gcd | Bin::Lcm | Bin::Max | Bin::Min
+        )
+    }
 }
 
 /// Static type of a node: a number with its angle dimension (GeoGebra's

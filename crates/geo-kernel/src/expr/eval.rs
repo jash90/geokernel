@@ -31,6 +31,7 @@
 //! `f(a)` evaluates `a` and samples `f` there.
 
 use super::math::{self, PI_180};
+use super::twonum;
 use super::{Bin, Entry, Node, Raw, Ty, Un};
 use crate::kernel::{Construction, Def, Id, Kind, Value};
 
@@ -326,6 +327,12 @@ fn binary(op: Bin, l: Val, r: Val, left_angle: bool) -> Val {
         // `MyDouble.log(base)`
         (Bin::LogB, N(base), N(x)) => N(x.ln() / base.ln()),
         (Bin::Round2, N(x), N(digits)) => N(math::round(x, digits, left_angle)),
+        (Bin::Mod, N(a), N(b)) => N(twonum::modulo(a, b)),
+        (Bin::IntDiv, N(a), N(b)) => N(twonum::div(a, b)),
+        (Bin::Gcd, N(a), N(b)) => N(twonum::gcd_of(a, b)),
+        (Bin::Lcm, N(a), N(b)) => N(twonum::lcm_of(a, b)),
+        (Bin::Max, N(a), N(b)) => N(twonum::max(a, b)),
+        (Bin::Min, N(a), N(b)) => N(twonum::min(a, b)),
         _ => N(f64::NAN),
     }
 }

@@ -239,6 +239,9 @@ fn bad_function_lines_are_rejected() {
         "g(x) = Line(A, B)",
         "1(x) = x",
         "f(x) = x",
+        "g(x) = Mod(x, 3)",
+        "b = Max(a, f)",
+        "b = GCD((1, 2), a)",
     ] {
         let before = c.len();
         assert!(exec(&mut c, bad).is_err(), "{bad}");
