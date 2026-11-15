@@ -56,6 +56,7 @@
 //! `Direction(l)` is `(y, -x)` and `OrthogonalVector(l)` is `(x, y)` of the
 //! raw coefficients, so their length depends on the raw scale.
 
+use super::lines::LineDef;
 use super::{normalized_coefficients, Group, Parents, POINT};
 use crate::kernel::{Construction, Def, Error, Id, Kind, Value};
 use crate::script::object;
@@ -84,6 +85,7 @@ fn only(kind: Kind) -> &'static [Kind] {
         Kind::Number => &[Kind::Number],
         Kind::Vector => &[Kind::Vector],
         Kind::Ray => &[Kind::Ray],
+        Kind::Boolean => &[Kind::Boolean],
     }
 }
 
@@ -189,7 +191,7 @@ fn normal_of(c: &Construction, id: Id) -> Option<(f64, f64)> {
     Some((x, y))
 }
 
-fn raw_or_undefined(c: &Construction, id: Id) -> Option<(f64, f64, f64)> {
+pub(crate) fn raw_or_undefined(c: &Construction, id: Id) -> Option<(f64, f64, f64)> {
     c.raw_carrier(id).or_else(|| undefined_raw(c, id))
 }
 
@@ -216,6 +218,12 @@ fn undefined_raw(c: &Construction, id: Id) -> Option<(f64, f64, f64)> {
         }
         Def::Vector(VectorDef::OrthoLineVector(p, v)) => {
             Some(raw_ortho(point(c, p)?, vector(c, v)?))
+        }
+        Def::Lines(LineDef::BisectorPoints(p, q)) => {
+            // `AlgoLineBisector`.
+            let (a, b) = (point(c, p)?, point(c, q)?);
+            let (gx, gy) = (a.0 - b.0, a.1 - b.1);
+            Some((gx, gy, -((a.0 + b.0) * gx + (a.1 + b.1) * gy) / 2.0))
         }
         Def::Parallel { through, to } => {
             // `AlgoLinePointLine`: `GeoVec3D.cross(P, l.y, -l.x, 0)`.
@@ -253,15 +261,20 @@ fn undefined_raw(c: &Construction, id: Id) -> Option<(f64, f64, f64)> {
 /// the vector must be recomputed from them directly.
 pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
     let mut ids = Vec::new();
-    let Def::Vector(
+    if let Def::Vector(
         VectorDef::Direction(l)
         | VectorDef::Unit(l)
         | VectorDef::Ortho(l)
         | VectorDef::UnitOrtho(l),
     ) = *def
-    else {
-        return ids;
-    };
+    {
+        line_hidden(c, l, &mut ids);
+    }
+    ids
+}
+
+/// The objects [`undefined_raw`] reads for the line `l`, added to `ids`.
+pub(crate) fn line_hidden(c: &Construction, l: Id, ids: &mut Vec<Id>) {
     let mut push = |s: Id| {
         if !ids.contains(&s) {
             ids.push(s);
@@ -271,6 +284,7 @@ pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
     loop {
         match c.def(id) {
             Def::Line(p, q)
+            | Def::Lines(LineDef::BisectorPoints(p, q))
             | Def::Vector(
                 VectorDef::RayPoints(p, q)
                 | VectorDef::RayVector(p, q)
@@ -279,7 +293,7 @@ pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
             ) => {
                 push(p);
                 push(q);
-                return ids;
+                return;
             }
             Def::Parallel { through, to } | Def::Perpendicular { through, to } => {
                 push(through);
@@ -291,7 +305,7 @@ pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
                 push(src);
                 id = src;
             }
-            _ => return ids,
+            _ => return,
         }
     }
 }
@@ -365,7 +379,7 @@ fn translate(v: Value, dx: f64, dy: f64) -> Option<Value> {
             c: c - (a * dx + b * dy),
         },
         Value::Vector { .. } => v,
-        Value::Number(_) | Value::Undefined => return None,
+        Value::Number(_) | Value::Bool(_) | Value::Undefined => return None,
     })
 }
 

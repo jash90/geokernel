@@ -26,6 +26,8 @@
 use crate::algo::conic::ConicDef;
 use crate::algo::lines::LineDef;
 use crate::algo::measure::MeasureDef;
+use crate::algo::point::PointDef;
+use crate::algo::predicate::PredicateDef;
 use crate::algo::transform::TransformDef;
 use crate::algo::vector::VectorDef;
 use crate::algo::Group;
@@ -194,6 +196,7 @@ fn is_finite(v: &Value) -> bool {
         Value::Number(v) => v.is_finite(),
         Value::Vector { x, y } => x.is_finite() && y.is_finite(),
         Value::Ray { x, y, a, b, c } => [x, y, a, b, c].iter().all(|v| v.is_finite()),
+        Value::Bool(_) => true,
         Value::Undefined => false,
     }
 }
@@ -295,6 +298,12 @@ fn parse_def(c: &Construction, rhs: &str) -> Result<Def, String> {
     }
     if let Some(def) = TransformDef::parse(c, func, &args) {
         return def.map(Def::Transform);
+    }
+    if let Some(def) = PredicateDef::parse(c, func, &args) {
+        return def.map(Def::Predicate);
+    }
+    if let Some(def) = PointDef::parse(c, func, &args) {
+        return def.map(Def::Point);
     }
 
     match (func, args.len()) {

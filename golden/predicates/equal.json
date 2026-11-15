@@ -1,0 +1,2768 @@
+{
+  "schema": 1,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "predicates-equal-001",
+      "group": "predicates",
+      "script": [
+        "A = (1, 2)",
+        "B = (1, 2)",
+        "C = (1, 2.000001)",
+        "t = AreEqual(A, B)",
+        "u = AreEqual(A, C)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 1.000001, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 1.0, "y": 3.0 },
+        { "action": "move", "label": "C", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "A", "x": 5.0, "y": 5.0 },
+        { "action": "move", "label": "B", "x": 5.0, "y": 5.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.000001 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.000001, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.000001 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 3.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.000001 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 3.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 3.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "predicates-equal-002",
+      "group": "predicates",
+      "script": [
+        "A = (0, 0)",
+        "B = (4, 6)",
+        "M = Midpoint(A, B)",
+        "C = (2, 3)",
+        "t = AreEqual(M, C)",
+        "u = AreEqual(C, M)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 4.000002, "y": 6.0 },
+        { "action": "move", "label": "B", "x": 4.0, "y": 6.0 },
+        { "action": "move", "label": "C", "x": 2.000001, "y": 3.0 },
+        { "action": "move", "label": "A", "x": 1.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 6.0 },
+          "M": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.000002, "y": 6.0 },
+          "M": { "type": "point", "defined": true, "x": 2.000001, "y": 3.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 6.0 },
+          "M": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 6.0 },
+          "M": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "C": { "type": "point", "defined": true, "x": 2.000001, "y": 3.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 6.0 },
+          "M": { "type": "point", "defined": true, "x": 2.5, "y": 3.5 },
+          "C": { "type": "point", "defined": true, "x": 2.000001, "y": 3.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "predicates-equal-003",
+      "group": "predicates",
+      "script": [
+        "A = (0, 0)",
+        "B = (1, 0)",
+        "C = (0, 1)",
+        "D = (0.001, 0)",
+        "E = (0, 0.01)",
+        "p = Area(A, D, E)",
+        "q = Area(A, B, C)",
+        "zz = 0",
+        "t = AreEqual(p, zz)",
+        "u = AreEqual(p, q)",
+        "v = AreEqual(q, q)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "D", "x": 0.002, "y": 0.0 },
+        { "action": "move", "label": "D", "x": 0.003, "y": 0.0 },
+        { "action": "move", "label": "E", "x": 0.0, "y": 0.001 },
+        { "action": "move", "label": "E", "x": 0.0, "y": 1.0E-5 },
+        { "action": "move", "label": "D", "x": 1.0E-5, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 2.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 0.001, "y": 0.0 },
+          "E": { "type": "point", "defined": true, "x": 0.0, "y": 0.01 },
+          "p": { "type": "number", "defined": true, "value": 5.0E-6 },
+          "q": { "type": "number", "defined": true, "value": 0.5 },
+          "zz": { "type": "number", "defined": true, "value": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 0.002, "y": 0.0 },
+          "E": { "type": "point", "defined": true, "x": 0.0, "y": 0.01 },
+          "p": { "type": "number", "defined": true, "value": 1.0E-5 },
+          "q": { "type": "number", "defined": true, "value": 0.5 },
+          "zz": { "type": "number", "defined": true, "value": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 0.003, "y": 0.0 },
+          "E": { "type": "point", "defined": true, "x": 0.0, "y": 0.01 },
+          "p": { "type": "number", "defined": true, "value": 1.5E-5 },
+          "q": { "type": "number", "defined": true, "value": 0.5 },
+          "zz": { "type": "number", "defined": true, "value": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 0.003, "y": 0.0 },
+          "E": { "type": "point", "defined": true, "x": 0.0, "y": 0.001 },
+          "p": { "type": "number", "defined": true, "value": 1.5E-6 },
+          "q": { "type": "number", "defined": true, "value": 0.5 },
+          "zz": { "type": "number", "defined": true, "value": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 0.003, "y": 0.0 },
+          "E": { "type": "point", "defined": true, "x": 0.0, "y": 1.0E-5 },
+          "p": { "type": "number", "defined": true, "value": 1.5000000000000002E-8 },
+          "q": { "type": "number", "defined": true, "value": 0.5 },
+          "zz": { "type": "number", "defined": true, "value": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0E-5, "y": 0.0 },
+          "E": { "type": "point", "defined": true, "x": 0.0, "y": 1.0E-5 },
+          "p": { "type": "number", "defined": true, "value": 5.000000000000001E-11 },
+          "q": { "type": "number", "defined": true, "value": 0.5 },
+          "zz": { "type": "number", "defined": true, "value": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0E-5, "y": 0.0 },
+          "E": { "type": "point", "defined": true, "x": 0.0, "y": 1.0E-5 },
+          "p": { "type": "number", "defined": true, "value": 5.000000000000001E-11 },
+          "q": { "type": "number", "defined": true, "value": 1.0 },
+          "zz": { "type": "number", "defined": true, "value": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "predicates-equal-004",
+      "group": "predicates",
+      "script": [
+        "A = (0, 0)",
+        "B = (0.002, 0)",
+        "C = (0, 0.003)",
+        "D = (0.004, 0)",
+        "E = (0, 0.006)",
+        "p = Area(A, B, C)",
+        "q = Area(A, D, E)",
+        "r = Area(A, B, E)",
+        "t = AreEqual(p, q)",
+        "u = AreEqual(p, r)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "E", "x": 0.0, "y": 0.006 },
+        { "action": "move", "label": "E", "x": 0.0, "y": 0.0061 },
+        { "action": "move", "label": "E", "x": 0.0, "y": 0.0059 },
+        { "action": "move", "label": "D", "x": 0.004001, "y": 0.0 },
+        { "action": "move", "label": "D", "x": 4.0E-4, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.002, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.003 },
+          "D": { "type": "point", "defined": true, "x": 0.004, "y": 0.0 },
+          "E": { "type": "point", "defined": true, "x": 0.0, "y": 0.006 },
+          "p": { "type": "number", "defined": true, "value": 3.0E-6 },
+          "q": { "type": "number", "defined": true, "value": 1.2E-5 },
+          "r": { "type": "number", "defined": true, "value": 6.0E-6 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.002, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.003 },
+          "D": { "type": "point", "defined": true, "x": 0.004, "y": 0.0 },
+          "E": { "type": "point", "defined": true, "x": 0.0, "y": 0.006 },
+          "p": { "type": "number", "defined": true, "value": 3.0E-6 },
+          "q": { "type": "number", "defined": true, "value": 1.2E-5 },
+          "r": { "type": "number", "defined": true, "value": 6.0E-6 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.002, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.003 },
+          "D": { "type": "point", "defined": true, "x": 0.004, "y": 0.0 },
+          "E": { "type": "point", "defined": true, "x": 0.0, "y": 0.0061 },
+          "p": { "type": "number", "defined": true, "value": 3.0E-6 },
+          "q": { "type": "number", "defined": true, "value": 1.2200000000000002E-5 },
+          "r": { "type": "number", "defined": true, "value": 6.100000000000001E-6 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.002, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.003 },
+          "D": { "type": "point", "defined": true, "x": 0.004, "y": 0.0 },
+          "E": { "type": "point", "defined": true, "x": 0.0, "y": 0.0059 },
+          "p": { "type": "number", "defined": true, "value": 3.0E-6 },
+          "q": { "type": "number", "defined": true, "value": 1.18E-5 },
+          "r": { "type": "number", "defined": true, "value": 5.9E-6 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.002, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.003 },
+          "D": { "type": "point", "defined": true, "x": 0.004001, "y": 0.0 },
+          "E": { "type": "point", "defined": true, "x": 0.0, "y": 0.0059 },
+          "p": { "type": "number", "defined": true, "value": 3.0E-6 },
+          "q": { "type": "number", "defined": true, "value": 1.180295E-5 },
+          "r": { "type": "number", "defined": true, "value": 5.9E-6 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.002, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.003 },
+          "D": { "type": "point", "defined": true, "x": 4.0E-4, "y": 0.0 },
+          "E": { "type": "point", "defined": true, "x": 0.0, "y": 0.0059 },
+          "p": { "type": "number", "defined": true, "value": 3.0E-6 },
+          "q": { "type": "number", "defined": true, "value": 1.18E-6 },
+          "r": { "type": "number", "defined": true, "value": 5.9E-6 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "predicates-equal-005",
+      "group": "predicates",
+      "script": [
+        "a = 1",
+        "b = 1",
+        "c = 1",
+        "t = AreEqual(a, b)",
+        "u = AreEqual(a, c)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 2.0 },
+        { "action": "set_number", "label": "b", "value": 2.0 },
+        { "action": "set_number", "label": "c", "value": 2.0 },
+        { "action": "set_number", "label": "c", "value": 2.000001 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "b", "value": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 2.000001 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 2.000001 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 2.000001 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "predicates-equal-006",
+      "group": "predicates",
+      "script": [
+        "A = (0, 0)",
+        "B = (3, 4)",
+        "C = (0, 0)",
+        "D = (6, 8)",
+        "n = 5",
+        "p = Distance(A, B)",
+        "q = Distance(C, D)",
+        "t = AreEqual(p, n)",
+        "u = AreEqual(p, q)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "D", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "D", "x": 3.0, "y": 4.000001 },
+        { "action": "move", "label": "D", "x": 3.000001, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 1.0, "y": 1.0 },
+        { "action": "set_number", "label": "n", "value": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 6.0, "y": 8.0 },
+          "n": { "type": "number", "defined": true, "value": 5.0 },
+          "p": { "type": "number", "defined": true, "value": 5.0 },
+          "q": { "type": "number", "defined": true, "value": 10.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "n": { "type": "number", "defined": true, "value": 5.0 },
+          "p": { "type": "number", "defined": true, "value": 5.0 },
+          "q": { "type": "number", "defined": true, "value": 5.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 3.0, "y": 4.000001 },
+          "n": { "type": "number", "defined": true, "value": 5.0 },
+          "p": { "type": "number", "defined": true, "value": 5.0 },
+          "q": { "type": "number", "defined": true, "value": 5.000000800000036 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 3.000001, "y": 4.0 },
+          "n": { "type": "number", "defined": true, "value": 5.0 },
+          "p": { "type": "number", "defined": true, "value": 5.0 },
+          "q": { "type": "number", "defined": true, "value": 5.000000600000064 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 3.000001, "y": 4.0 },
+          "n": { "type": "number", "defined": true, "value": 5.0 },
+          "p": { "type": "number", "defined": true, "value": 3.605551275463989 },
+          "q": { "type": "number", "defined": true, "value": 5.000000600000064 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 3.000001, "y": 4.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "p": { "type": "number", "defined": true, "value": 3.605551275463989 },
+          "q": { "type": "number", "defined": true, "value": 5.000000600000064 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "predicates-equal-007",
+      "group": "predicates",
+      "script": [
+        "A = (1, 2)",
+        "a = 1",
+        "v = (1, 2)",
+        "k = Circle(A, a)",
+        "t = AreEqual(A, a)",
+        "u = AreEqual(a, A)",
+        "w = AreEqual(A, v)",
+        "xx = AreEqual(v, A)",
+        "yy = AreEqual(k, A)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": 1.0, "y": 1.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 1.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "w": { "type": "boolean", "defined": true, "value": false },
+          "xx": { "type": "boolean", "defined": true, "value": false },
+          "yy": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 1.0, "r": 1.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "w": { "type": "boolean", "defined": true, "value": false },
+          "xx": { "type": "boolean", "defined": true, "value": false },
+          "yy": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 1.0, "r": 3.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "w": { "type": "boolean", "defined": true, "value": false },
+          "xx": { "type": "boolean", "defined": true, "value": false },
+          "yy": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "predicates-equal-008",
+      "group": "predicates",
+      "script": [
+        "A = (0, 0)",
+        "B = (2, 2)",
+        "C = (1, 1)",
+        "D = (5, 5)",
+        "E = (0, 1)",
+        "F = (2, 3)",
+        "l = Line(A, B)",
+        "m = Line(C, D)",
+        "n = Line(E, F)",
+        "t = AreEqual(l, m)",
+        "u = AreEqual(l, n)",
+        "v = AreEqual(l, l)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "D", "x": 5.0, "y": 5.000001 },
+        { "action": "move", "label": "D", "x": 5.0, "y": 5.00001 },
+        { "action": "move", "label": "D", "x": 3.0, "y": 3.0 },
+        { "action": "move", "label": "F", "x": 2.0, "y": 2.0 },
+        { "action": "move", "label": "E", "x": 1.0, "y": 0.0 },
+        { "action": "move", "label": "E", "x": 9.0, "y": 9.0 },
+        { "action": "move", "label": "B", "x": 1.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "E": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "F": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "l": { "type": "line", "defined": true, "a": -2.0, "b": 2.0, "c": 0.0 },
+          "m": { "type": "line", "defined": true, "a": -4.0, "b": 4.0, "c": 0.0 },
+          "n": { "type": "line", "defined": true, "a": -2.0, "b": 2.0, "c": -2.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 5.0, "y": 5.000001 },
+          "E": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "F": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "l": { "type": "line", "defined": true, "a": -2.0, "b": 2.0, "c": 0.0 },
+          "m": { "type": "line", "defined": true, "a": -4.000001, "b": 4.0, "c": 1.000000000139778E-6 },
+          "n": { "type": "line", "defined": true, "a": -2.0, "b": 2.0, "c": -2.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 5.0, "y": 5.00001 },
+          "E": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "F": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "l": { "type": "line", "defined": true, "a": -2.0, "b": 2.0, "c": 0.0 },
+          "m": { "type": "line", "defined": true, "a": -4.00001, "b": 4.0, "c": 9.999999999621423E-6 },
+          "n": { "type": "line", "defined": true, "a": -2.0, "b": 2.0, "c": -2.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "E": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "F": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "l": { "type": "line", "defined": true, "a": -2.0, "b": 2.0, "c": 0.0 },
+          "m": { "type": "line", "defined": true, "a": -2.0, "b": 2.0, "c": 0.0 },
+          "n": { "type": "line", "defined": true, "a": -2.0, "b": 2.0, "c": -2.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "E": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "F": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "l": { "type": "line", "defined": true, "a": -2.0, "b": 2.0, "c": 0.0 },
+          "m": { "type": "line", "defined": true, "a": -2.0, "b": 2.0, "c": 0.0 },
+          "n": { "type": "line", "defined": true, "a": -1.0, "b": 2.0, "c": -2.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "E": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "F": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "l": { "type": "line", "defined": true, "a": -2.0, "b": 2.0, "c": 0.0 },
+          "m": { "type": "line", "defined": true, "a": -2.0, "b": 2.0, "c": 0.0 },
+          "n": { "type": "line", "defined": true, "a": -2.0, "b": 1.0, "c": 2.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "E": { "type": "point", "defined": true, "x": 9.0, "y": 9.0 },
+          "F": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "l": { "type": "line", "defined": true, "a": -2.0, "b": 2.0, "c": 0.0 },
+          "m": { "type": "line", "defined": true, "a": -2.0, "b": 2.0, "c": 0.0 },
+          "n": { "type": "line", "defined": true, "a": 7.0, "b": -7.0, "c": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "E": { "type": "point", "defined": true, "x": 9.0, "y": 9.0 },
+          "F": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "l": { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": 0.0 },
+          "m": { "type": "line", "defined": true, "a": -2.0, "b": 2.0, "c": 0.0 },
+          "n": { "type": "line", "defined": true, "a": 7.0, "b": -7.0, "c": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "predicates-equal-009",
+      "group": "predicates",
+      "script": [
+        "A = (-7.14, 1.94)",
+        "B = (-7, -4.28)",
+        "C = (-6.42, -2.34)",
+        "l = Line(A, B)",
+        "m = Line(B, A)",
+        "n = Line(C, l)",
+        "k = Line(A, B)",
+        "t = AreEqual(l, m)",
+        "u = AreEqual(l, n)",
+        "v = AreEqual(l, k)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": -5.97, "y": 3.62 },
+        { "action": "move", "label": "B", "x": -3.92, "y": 1.04 },
+        { "action": "move", "label": "A", "x": -7.0, "y": -4.28 },
+        { "action": "move", "label": "A", "x": -4.58, "y": 3.05 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -7.14, "y": 1.94 },
+          "B": { "type": "point", "defined": true, "x": -7.0, "y": -4.28 },
+          "C": { "type": "point", "defined": true, "x": -6.42, "y": -2.34 },
+          "l": { "type": "line", "defined": true, "a": 6.220000000000001, "b": 0.13999999999999968, "c": 44.1392 },
+          "m": { "type": "line", "defined": true, "a": -6.220000000000001, "b": -0.13999999999999968, "c": -44.1392 },
+          "n": { "type": "line", "defined": true, "a": 6.220000000000001, "b": 0.13999999999999968, "c": 40.26 },
+          "k": { "type": "line", "defined": true, "a": 6.220000000000001, "b": 0.13999999999999968, "c": 44.1392 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.14, "y": 1.94 },
+          "B": { "type": "point", "defined": true, "x": -7.0, "y": -4.28 },
+          "C": { "type": "point", "defined": true, "x": -5.97, "y": 3.62 },
+          "l": { "type": "line", "defined": true, "a": 6.220000000000001, "b": 0.13999999999999968, "c": 44.1392 },
+          "m": { "type": "line", "defined": true, "a": -6.220000000000001, "b": -0.13999999999999968, "c": -44.1392 },
+          "n": { "type": "line", "defined": true, "a": 6.220000000000001, "b": 0.13999999999999968, "c": 36.6266 },
+          "k": { "type": "line", "defined": true, "a": 6.220000000000001, "b": 0.13999999999999968, "c": 44.1392 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.14, "y": 1.94 },
+          "B": { "type": "point", "defined": true, "x": -3.92, "y": 1.04 },
+          "C": { "type": "point", "defined": true, "x": -5.97, "y": 3.62 },
+          "l": { "type": "line", "defined": true, "a": 0.8999999999999999, "b": 3.2199999999999998, "c": 0.1791999999999998 },
+          "m": { "type": "line", "defined": true, "a": -0.8999999999999999, "b": -3.2199999999999998, "c": -0.1791999999999998 },
+          "n": { "type": "line", "defined": true, "a": 0.8999999999999999, "b": 3.2199999999999998, "c": -6.2834 },
+          "k": { "type": "line", "defined": true, "a": 0.8999999999999999, "b": 3.2199999999999998, "c": 0.1791999999999998 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.0, "y": -4.28 },
+          "B": { "type": "point", "defined": true, "x": -3.92, "y": 1.04 },
+          "C": { "type": "point", "defined": true, "x": -5.97, "y": 3.62 },
+          "l": { "type": "line", "defined": true, "a": -5.32, "b": 3.08, "c": -24.0576 },
+          "m": { "type": "line", "defined": true, "a": 5.32, "b": -3.08, "c": 24.0576 },
+          "n": { "type": "line", "defined": true, "a": -5.32, "b": 3.08, "c": -42.910000000000004 },
+          "k": { "type": "line", "defined": true, "a": -5.32, "b": 3.08, "c": -24.0576 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -4.58, "y": 3.05 },
+          "B": { "type": "point", "defined": true, "x": -3.92, "y": 1.04 },
+          "C": { "type": "point", "defined": true, "x": -5.97, "y": 3.62 },
+          "l": { "type": "line", "defined": true, "a": 2.01, "b": 0.6600000000000001, "c": 7.192799999999999 },
+          "m": { "type": "line", "defined": true, "a": -2.01, "b": -0.6600000000000001, "c": -7.192799999999999 },
+          "n": { "type": "line", "defined": true, "a": 2.01, "b": 0.6600000000000001, "c": 9.610499999999998 },
+          "k": { "type": "line", "defined": true, "a": 2.01, "b": 0.6600000000000001, "c": 7.192799999999999 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "predicates-equal-010",
+      "group": "predicates",
+      "script": [
+        "A = (3.66, 2.39)",
+        "B = (4.88, -0.79)",
+        "C = (2.43, -0.32)",
+        "l = Line(A, B)",
+        "m = Line(B, A)",
+        "n = Line(C, l)",
+        "k = Line(A, B)",
+        "t = AreEqual(l, m)",
+        "u = AreEqual(l, n)",
+        "v = AreEqual(l, k)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": -4.07, "y": 3.39 },
+        { "action": "move", "label": "B", "x": -4.75, "y": -0.13 },
+        { "action": "move", "label": "A", "x": 4.88, "y": -0.79 },
+        { "action": "move", "label": "A", "x": -5.72, "y": -0.83 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 3.66, "y": 2.39 },
+          "B": { "type": "point", "defined": true, "x": 4.88, "y": -0.79 },
+          "C": { "type": "point", "defined": true, "x": 2.43, "y": -0.32 },
+          "l": { "type": "line", "defined": true, "a": 3.18, "b": 1.2199999999999998, "c": -14.5546 },
+          "m": { "type": "line", "defined": true, "a": -3.18, "b": -1.2199999999999998, "c": 14.5546 },
+          "n": { "type": "line", "defined": true, "a": 3.18, "b": 1.2199999999999998, "c": -7.3370000000000015 },
+          "k": { "type": "line", "defined": true, "a": 3.18, "b": 1.2199999999999998, "c": -14.5546 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.66, "y": 2.39 },
+          "B": { "type": "point", "defined": true, "x": 4.88, "y": -0.79 },
+          "C": { "type": "point", "defined": true, "x": -4.07, "y": 3.39 },
+          "l": { "type": "line", "defined": true, "a": 3.18, "b": 1.2199999999999998, "c": -14.5546 },
+          "m": { "type": "line", "defined": true, "a": -3.18, "b": -1.2199999999999998, "c": 14.5546 },
+          "n": { "type": "line", "defined": true, "a": 3.18, "b": 1.2199999999999998, "c": 8.806800000000003 },
+          "k": { "type": "line", "defined": true, "a": 3.18, "b": 1.2199999999999998, "c": -14.5546 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.66, "y": 2.39 },
+          "B": { "type": "point", "defined": true, "x": -4.75, "y": -0.13 },
+          "C": { "type": "point", "defined": true, "x": -4.07, "y": 3.39 },
+          "l": { "type": "line", "defined": true, "a": 2.52, "b": -8.41, "c": 10.876700000000001 },
+          "m": { "type": "line", "defined": true, "a": -2.52, "b": 8.41, "c": -10.876700000000001 },
+          "n": { "type": "line", "defined": true, "a": 2.52, "b": -8.41, "c": 38.7663 },
+          "k": { "type": "line", "defined": true, "a": 2.52, "b": -8.41, "c": 10.876700000000001 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 4.88, "y": -0.79 },
+          "B": { "type": "point", "defined": true, "x": -4.75, "y": -0.13 },
+          "C": { "type": "point", "defined": true, "x": -4.07, "y": 3.39 },
+          "l": { "type": "line", "defined": true, "a": -0.66, "b": -9.629999999999999, "c": -4.386900000000001 },
+          "m": { "type": "line", "defined": true, "a": 0.66, "b": 9.629999999999999, "c": 4.386900000000001 },
+          "n": { "type": "line", "defined": true, "a": -0.66, "b": -9.629999999999999, "c": 29.9595 },
+          "k": { "type": "line", "defined": true, "a": -0.66, "b": -9.629999999999999, "c": -4.386900000000001 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -5.72, "y": -0.83 },
+          "B": { "type": "point", "defined": true, "x": -4.75, "y": -0.13 },
+          "C": { "type": "point", "defined": true, "x": -4.07, "y": 3.39 },
+          "l": { "type": "line", "defined": true, "a": -0.7, "b": 0.9699999999999998, "c": -3.1989 },
+          "m": { "type": "line", "defined": true, "a": 0.7, "b": -0.9699999999999998, "c": 3.1989 },
+          "n": { "type": "line", "defined": true, "a": -0.7, "b": 0.9699999999999998, "c": -6.1373 },
+          "k": { "type": "line", "defined": true, "a": -0.7, "b": 0.9699999999999998, "c": -3.1989 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "predicates-equal-011",
+      "group": "predicates",
+      "script": [
+        "A = (0, 0)",
+        "B = (0.001, 0)",
+        "C = (0, 0)",
+        "D = (0.001, 0.000004)",
+        "l = Line(A, B)",
+        "m = Line(C, D)",
+        "t = AreEqual(l, m)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "D", "x": 0.001, "y": 9.0E-6 },
+        { "action": "move", "label": "D", "x": 0.001, "y": 1.0E-5 },
+        { "action": "move", "label": "D", "x": 0.001, "y": 2.0E-5 },
+        { "action": "move", "label": "D", "x": 0.001, "y": 0.0 },
+        { "action": "move", "label": "D", "x": 1.0, "y": 1.0E-5 },
+        { "action": "move", "label": "D", "x": 1000.0, "y": 0.01 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.001, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.001, "y": 4.0E-6 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 0.001, "c": 0.0 },
+          "m": { "type": "line", "defined": true, "a": -4.0E-6, "b": 0.001, "c": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.001, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.001, "y": 9.0E-6 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 0.001, "c": 0.0 },
+          "m": { "type": "line", "defined": true, "a": -9.0E-6, "b": 0.001, "c": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.001, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.001, "y": 1.0E-5 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 0.001, "c": 0.0 },
+          "m": { "type": "line", "defined": true, "a": -1.0E-5, "b": 0.001, "c": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.001, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.001, "y": 2.0E-5 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 0.001, "c": 0.0 },
+          "m": { "type": "line", "defined": true, "a": -2.0E-5, "b": 0.001, "c": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.001, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.001, "y": 0.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 0.001, "c": 0.0 },
+          "m": { "type": "line", "defined": true, "a": 0.0, "b": 0.001, "c": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.001, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 1.0E-5 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 0.001, "c": 0.0 },
+          "m": { "type": "line", "defined": true, "a": -1.0E-5, "b": 1.0, "c": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.001, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 1000.0, "y": 0.01 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 0.001, "c": 0.0 },
+          "m": { "type": "line", "defined": true, "a": -0.01, "b": 1000.0, "c": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "predicates-equal-012",
+      "group": "predicates",
+      "script": [
+        "A = (0, 0)",
+        "B = (1, 0)",
+        "C = (0, 0)",
+        "D = (1, 0)",
+        "l = Line(A, B)",
+        "m = Line(C, D)",
+        "n = Line(A, D)",
+        "t = AreEqual(l, m)",
+        "u = AreEqual(l, n)",
+        "v = AreEqual(n, l)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "D", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "D", "x": 5.0, "y": 5.0 },
+        { "action": "move", "label": "C", "x": 5.0, "y": 5.0 },
+        { "action": "move", "label": "B", "x": 5.0, "y": 5.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "m": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "n": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "l": { "type": "line", "defined": false },
+          "m": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "n": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "l": { "type": "line", "defined": false },
+          "m": { "type": "line", "defined": false },
+          "n": { "type": "line", "defined": false },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "l": { "type": "line", "defined": false },
+          "m": { "type": "line", "defined": true, "a": -5.0, "b": 5.0, "c": 0.0 },
+          "n": { "type": "line", "defined": true, "a": -5.0, "b": 5.0, "c": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "l": { "type": "line", "defined": false },
+          "m": { "type": "line", "defined": false },
+          "n": { "type": "line", "defined": true, "a": -5.0, "b": 5.0, "c": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "C": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "l": { "type": "line", "defined": true, "a": -5.0, "b": 5.0, "c": 0.0 },
+          "m": { "type": "line", "defined": false },
+          "n": { "type": "line", "defined": true, "a": -5.0, "b": 5.0, "c": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "predicates-equal-013",
+      "group": "predicates",
+      "script": [
+        "A = (0, 0)",
+        "B = (2, 2)",
+        "l = Line(A, B)",
+        "s = Segment(A, B)",
+        "r = Ray(A, B)",
+        "t = AreEqual(l, s)",
+        "u = AreEqual(s, l)",
+        "v = AreEqual(l, r)",
+        "w = AreEqual(r, l)",
+        "xx = AreEqual(s, r)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 3.0, "y": 1.0 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "l": { "type": "line", "defined": true, "a": -2.0, "b": 2.0, "c": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 2.0, "y2": 2.0 },
+          "r": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -2.0, "b": 2.0, "c": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": false },
+          "w": { "type": "boolean", "defined": true, "value": false },
+          "xx": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "l": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 1.0 },
+          "r": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -1.0, "b": 3.0, "c": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": false },
+          "w": { "type": "boolean", "defined": true, "value": false },
+          "xx": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "l": { "type": "line", "defined": false },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 },
+          "r": { "type": "ray", "defined": false },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": true },
+          "w": { "type": "boolean", "defined": true, "value": false },
+          "xx": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "predicates-equal-014",
+      "group": "predicates",
+      "script": [
+        "A = (0, 0)",
+        "B = (3, 1)",
+        "C = (3, 1)",
+        "D = (0, 0)",
+        "E = (0, 0)",
+        "F = (3, 1.000001)",
+        "s = Segment(A, B)",
+        "r = Segment(C, D)",
+        "q = Segment(E, B)",
+        "p = Segment(E, F)",
+        "t = AreEqual(s, r)",
+        "u = AreEqual(s, q)",
+        "v = AreEqual(s, p)",
+        "w = AreEqual(s, s)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "F", "x": 3.0, "y": 1.0 },
+        { "action": "move", "label": "D", "x": 1.0E-6, "y": 0.0 },
+        { "action": "move", "label": "D", "x": 1.0E-5, "y": 0.0 },
+        { "action": "move", "label": "C", "x": 4.0, "y": 4.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "E": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "F": { "type": "point", "defined": true, "x": 3.0, "y": 1.000001 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 1.0 },
+          "r": { "type": "segment", "defined": true, "x1": 3.0, "y1": 1.0, "x2": 0.0, "y2": 0.0 },
+          "q": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 1.0 },
+          "p": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 1.000001 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": false },
+          "w": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "E": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "F": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 1.0 },
+          "r": { "type": "segment", "defined": true, "x1": 3.0, "y1": 1.0, "x2": 0.0, "y2": 0.0 },
+          "q": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 1.0 },
+          "p": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 1.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true },
+          "w": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0E-6, "y": 0.0 },
+          "E": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "F": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 1.0 },
+          "r": { "type": "segment", "defined": true, "x1": 3.0, "y1": 1.0, "x2": 1.0E-6, "y2": 0.0 },
+          "q": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 1.0 },
+          "p": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 1.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true },
+          "w": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0E-5, "y": 0.0 },
+          "E": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "F": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 1.0 },
+          "r": { "type": "segment", "defined": true, "x1": 3.0, "y1": 1.0, "x2": 1.0E-5, "y2": 0.0 },
+          "q": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 1.0 },
+          "p": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 1.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true },
+          "w": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0E-5, "y": 0.0 },
+          "E": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "F": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 1.0 },
+          "r": { "type": "segment", "defined": true, "x1": 4.0, "y1": 4.0, "x2": 1.0E-5, "y2": 0.0 },
+          "q": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 1.0 },
+          "p": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 1.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true },
+          "w": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0E-5, "y": 0.0 },
+          "E": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "F": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 2.0 },
+          "r": { "type": "segment", "defined": true, "x1": 4.0, "y1": 4.0, "x2": 1.0E-5, "y2": 0.0 },
+          "q": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 2.0 },
+          "p": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 1.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": false },
+          "w": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0E-5, "y": 0.0 },
+          "E": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "F": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 },
+          "r": { "type": "segment", "defined": true, "x1": 4.0, "y1": 4.0, "x2": 1.0E-5, "y2": 0.0 },
+          "q": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 },
+          "p": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 1.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": false },
+          "w": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "predicates-equal-015",
+      "group": "predicates",
+      "script": [
+        "A = (0, 0)",
+        "B = (2, 1)",
+        "C = (0, 0)",
+        "D = (4, 2)",
+        "E = (0, 0)",
+        "F = (-2, -1)",
+        "G = (1, 0.5)",
+        "r = Ray(A, B)",
+        "s = Ray(C, D)",
+        "q = Ray(E, F)",
+        "p = Ray(G, D)",
+        "t = AreEqual(r, s)",
+        "u = AreEqual(r, q)",
+        "v = AreEqual(r, p)",
+        "w = AreEqual(r, r)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "D", "x": 4.0, "y": 2.000001 },
+        { "action": "move", "label": "D", "x": 4.0, "y": 2.00001 },
+        { "action": "move", "label": "F", "x": 2.0, "y": 1.0 },
+        { "action": "move", "label": "G", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "C", "x": 1.0, "y": 1.0 },
+        { "action": "move", "label": "A", "x": 1.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 4.0, "y": 2.0 },
+          "E": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "F": { "type": "point", "defined": true, "x": -2.0, "y": -1.0 },
+          "G": { "type": "point", "defined": true, "x": 1.0, "y": 0.5 },
+          "r": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -1.0, "b": 2.0, "c": 0.0 },
+          "s": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -2.0, "b": 4.0, "c": 0.0 },
+          "q": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": 1.0, "b": -2.0, "c": 0.0 },
+          "p": { "type": "ray", "defined": true, "x": 1.0, "y": 0.5, "a": -1.5, "b": 3.0, "c": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": false },
+          "w": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 4.0, "y": 2.000001 },
+          "E": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "F": { "type": "point", "defined": true, "x": -2.0, "y": -1.0 },
+          "G": { "type": "point", "defined": true, "x": 1.0, "y": 0.5 },
+          "r": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -1.0, "b": 2.0, "c": 0.0 },
+          "s": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -2.000001, "b": 4.0, "c": 0.0 },
+          "q": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": 1.0, "b": -2.0, "c": 0.0 },
+          "p": { "type": "ray", "defined": true, "x": 1.0, "y": 0.5, "a": -1.5000010000000001, "b": 3.0, "c": 1.000000000139778E-6 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": false },
+          "w": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 4.0, "y": 2.00001 },
+          "E": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "F": { "type": "point", "defined": true, "x": -2.0, "y": -1.0 },
+          "G": { "type": "point", "defined": true, "x": 1.0, "y": 0.5 },
+          "r": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -1.0, "b": 2.0, "c": 0.0 },
+          "s": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -2.00001, "b": 4.0, "c": 0.0 },
+          "q": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": 1.0, "b": -2.0, "c": 0.0 },
+          "p": { "type": "ray", "defined": true, "x": 1.0, "y": 0.5, "a": -1.50001, "b": 3.0, "c": 1.0000000000065512E-5 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": false },
+          "w": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 4.0, "y": 2.00001 },
+          "E": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "F": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "G": { "type": "point", "defined": true, "x": 1.0, "y": 0.5 },
+          "r": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -1.0, "b": 2.0, "c": 0.0 },
+          "s": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -2.00001, "b": 4.0, "c": 0.0 },
+          "q": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -1.0, "b": 2.0, "c": 0.0 },
+          "p": { "type": "ray", "defined": true, "x": 1.0, "y": 0.5, "a": -1.50001, "b": 3.0, "c": 1.0000000000065512E-5 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": false },
+          "w": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 4.0, "y": 2.00001 },
+          "E": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "F": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -1.0, "b": 2.0, "c": 0.0 },
+          "s": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -2.00001, "b": 4.0, "c": 0.0 },
+          "q": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -1.0, "b": 2.0, "c": 0.0 },
+          "p": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -2.00001, "b": 4.0, "c": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": false },
+          "w": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 4.0, "y": 2.00001 },
+          "E": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "F": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -1.0, "b": 2.0, "c": 0.0 },
+          "s": { "type": "ray", "defined": true, "x": 1.0, "y": 1.0, "a": -1.00001, "b": 3.0, "c": -1.99999 },
+          "q": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -1.0, "b": 2.0, "c": 0.0 },
+          "p": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -2.00001, "b": 4.0, "c": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": false },
+          "w": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 4.0, "y": 2.00001 },
+          "E": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "F": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "ray", "defined": true, "x": 1.0, "y": 1.0, "a": 0.0, "b": 1.0, "c": -1.0 },
+          "s": { "type": "ray", "defined": true, "x": 1.0, "y": 1.0, "a": -1.00001, "b": 3.0, "c": -1.99999 },
+          "q": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -1.0, "b": 2.0, "c": 0.0 },
+          "p": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -2.00001, "b": 4.0, "c": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": false },
+          "w": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "predicates-equal-016",
+      "group": "predicates",
+      "script": [
+        "A = (0, 0)",
+        "B = (3, 4)",
+        "C = (0, 0)",
+        "r = 5",
+        "c = Circle(A, B)",
+        "d = Circle(C, r)",
+        "e = Circle(B, A)",
+        "t = AreEqual(c, d)",
+        "u = AreEqual(c, e)",
+        "v = AreEqual(c, c)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "r", "value": 5.000001 },
+        { "action": "set_number", "label": "r", "value": 5.0000001 },
+        { "action": "set_number", "label": "r", "value": 4.0 },
+        { "action": "move", "label": "C", "x": 1.0E-6, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 4.0, "y": 3.0 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 },
+        { "action": "set_number", "label": "r", "value": 0.0 },
+        { "action": "set_number", "label": "r", "value": -1.0 },
+        { "action": "set_number", "label": "r", "value": 5.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "d": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "e": { "type": "circle", "defined": true, "cx": 3.0, "cy": 4.0, "r": 5.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 5.000001 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "d": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.000001 },
+          "e": { "type": "circle", "defined": true, "cx": 3.0, "cy": 4.0, "r": 5.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0000001 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "d": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0000001 },
+          "e": { "type": "circle", "defined": true, "cx": 3.0, "cy": 4.0, "r": 5.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "d": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 4.0 },
+          "e": { "type": "circle", "defined": true, "cx": 3.0, "cy": 4.0, "r": 5.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0E-6, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "d": { "type": "circle", "defined": true, "cx": 1.0E-6, "cy": 0.0, "r": 4.0 },
+          "e": { "type": "circle", "defined": true, "cx": 3.0, "cy": 4.0, "r": 5.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0E-6, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "d": { "type": "circle", "defined": true, "cx": 1.0E-6, "cy": 0.0, "r": 4.0 },
+          "e": { "type": "circle", "defined": true, "cx": 4.0, "cy": 3.0, "r": 5.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0E-6, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.0 },
+          "d": { "type": "circle", "defined": true, "cx": 1.0E-6, "cy": 0.0, "r": 4.0 },
+          "e": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0E-6, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.0 },
+          "d": { "type": "circle", "defined": true, "cx": 1.0E-6, "cy": 0.0, "r": 0.0 },
+          "e": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0E-6, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": -1.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.0 },
+          "d": { "type": "circle", "defined": false },
+          "e": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0E-6, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.0 },
+          "d": { "type": "circle", "defined": true, "cx": 1.0E-6, "cy": 0.0, "r": 5.0 },
+          "e": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "predicates-equal-017",
+      "group": "predicates",
+      "script": [
+        "A = (1, 1)",
+        "r = 0.00001",
+        "s = 0.000001",
+        "c = Circle(A, r)",
+        "d = Circle(A, s)",
+        "t = AreEqual(c, d)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "s", "value": 1.0E-5 },
+        { "action": "set_number", "label": "r", "value": 0.0 },
+        { "action": "set_number", "label": "s", "value": 0.0 },
+        { "action": "set_number", "label": "r", "value": -1.0 },
+        { "action": "set_number", "label": "s", "value": -2.0 },
+        { "action": "set_number", "label": "r", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0E-5 },
+          "s": { "type": "number", "defined": true, "value": 1.0E-6 },
+          "c": { "type": "circle", "defined": true, "cx": 1.0, "cy": 1.0, "r": 1.0E-5 },
+          "d": { "type": "circle", "defined": true, "cx": 1.0, "cy": 1.0, "r": 1.0E-6 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0E-5 },
+          "s": { "type": "number", "defined": true, "value": 1.0E-5 },
+          "c": { "type": "circle", "defined": true, "cx": 1.0, "cy": 1.0, "r": 1.0E-5 },
+          "d": { "type": "circle", "defined": true, "cx": 1.0, "cy": 1.0, "r": 1.0E-5 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "s": { "type": "number", "defined": true, "value": 1.0E-5 },
+          "c": { "type": "circle", "defined": true, "cx": 1.0, "cy": 1.0, "r": 0.0 },
+          "d": { "type": "circle", "defined": true, "cx": 1.0, "cy": 1.0, "r": 1.0E-5 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "s": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 1.0, "cy": 1.0, "r": 0.0 },
+          "d": { "type": "circle", "defined": true, "cx": 1.0, "cy": 1.0, "r": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "r": { "type": "number", "defined": true, "value": -1.0 },
+          "s": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "circle", "defined": false },
+          "d": { "type": "circle", "defined": true, "cx": 1.0, "cy": 1.0, "r": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "r": { "type": "number", "defined": true, "value": -1.0 },
+          "s": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "circle", "defined": false },
+          "d": { "type": "circle", "defined": false },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 3.0 },
+          "s": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "circle", "defined": true, "cx": 1.0, "cy": 1.0, "r": 3.0 },
+          "d": { "type": "circle", "defined": false },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "predicates-equal-018",
+      "group": "predicates",
+      "script": [
+        "A = (0, 0)",
+        "B = (3, 4)",
+        "v = (3, 4)",
+        "w = (3, 4.000001)",
+        "k = Vector(A, B)",
+        "t = AreEqual(v, w)",
+        "u = AreEqual(v, k)",
+        "yy = AreEqual(k, k)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "w", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "v", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "w", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "v", "x": 3.0, "y": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 3.0, "y": 4.0 },
+          "w": { "type": "vector", "defined": true, "x": 3.0, "y": 4.000001 },
+          "k": { "type": "vector", "defined": true, "x": 3.0, "y": 4.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "yy": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 3.0, "y": 4.0 },
+          "w": { "type": "vector", "defined": true, "x": 3.0, "y": 4.0 },
+          "k": { "type": "vector", "defined": true, "x": 3.0, "y": 4.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "yy": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "w": { "type": "vector", "defined": true, "x": 3.0, "y": 4.0 },
+          "k": { "type": "vector", "defined": true, "x": 3.0, "y": 4.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "yy": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "w": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "k": { "type": "vector", "defined": true, "x": 3.0, "y": 4.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "yy": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "w": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "k": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "yy": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 3.0, "y": 4.0 },
+          "w": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "k": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "yy": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "predicates-equal-019",
+      "group": "predicates",
+      "script": [
+        "A = (0, 0)",
+        "B = (1, 1)",
+        "C = (2, 2)",
+        "D = (3, 4)",
+        "p = AreCollinear(A, B, C)",
+        "q = AreCollinear(A, B, D)",
+        "r = AreCollinear(A, C, B)",
+        "t = AreEqual(p, q)",
+        "u = AreEqual(p, r)",
+        "v = AreEqual(q, q)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "D", "x": 3.0, "y": 3.0 },
+        { "action": "move", "label": "C", "x": 2.0, "y": 3.0 },
+        { "action": "move", "label": "D", "x": 5.0, "y": 5.0 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": { "type": "boolean", "defined": true, "value": false },
+          "r": { "type": "boolean", "defined": true, "value": true },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": { "type": "boolean", "defined": true, "value": true },
+          "r": { "type": "boolean", "defined": true, "value": true },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "q": { "type": "boolean", "defined": true, "value": true },
+          "r": { "type": "boolean", "defined": true, "value": false },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "q": { "type": "boolean", "defined": true, "value": true },
+          "r": { "type": "boolean", "defined": true, "value": false },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": { "type": "boolean", "defined": true, "value": true },
+          "r": { "type": "boolean", "defined": true, "value": true },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "predicates-equal-020",
+      "group": "predicates",
+      "script": [
+        "A = (0, 0)",
+        "B = (1, 1)",
+        "a = 1",
+        "p = AreCollinear(A, B, B)",
+        "t = AreEqual(p, a)",
+        "u = AreEqual(a, p)",
+        "v = AreEqual(p, A)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "move", "label": "B", "x": 2.0, "y": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "predicates-equal-021",
+      "group": "predicates",
+      "script": [
+        "A = (0, 0)",
+        "B = (1, 0)",
+        "r = 1",
+        "E = (1.5, 0)",
+        "c = Circle(A, r)",
+        "d = Circle(E, r)",
+        "P = Intersect(c, d, 1)",
+        "Q = Intersect(c, d, 1)",
+        "t = AreEqual(P, Q)",
+        "u = AreEqual(P, A)",
+        "v = AreEqual(P, P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "r", "value": 0.5 },
+        { "action": "set_number", "label": "r", "value": 5.0 },
+        { "action": "move", "label": "E", "x": 20.0, "y": 0.0 },
+        { "action": "move", "label": "E", "x": 1.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "E": { "type": "point", "defined": true, "x": 1.5, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 1.0 },
+          "d": { "type": "circle", "defined": true, "cx": 1.5, "cy": 0.0, "r": 1.0 },
+          "P": { "type": "point", "defined": true, "x": 0.75, "y": 0.6614378277661477 },
+          "Q": { "type": "point", "defined": true, "x": 0.75, "y": 0.6614378277661477 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 0.5 },
+          "E": { "type": "point", "defined": true, "x": 1.5, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.5 },
+          "d": { "type": "circle", "defined": true, "cx": 1.5, "cy": 0.0, "r": 0.5 },
+          "P": { "type": "point", "defined": false },
+          "Q": { "type": "point", "defined": false },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "E": { "type": "point", "defined": true, "x": 1.5, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "d": { "type": "circle", "defined": true, "cx": 1.5, "cy": 0.0, "r": 5.0 },
+          "P": { "type": "point", "defined": true, "x": 0.75, "y": 4.9434299833212965 },
+          "Q": { "type": "point", "defined": true, "x": 0.75, "y": 4.9434299833212965 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "E": { "type": "point", "defined": true, "x": 20.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "d": { "type": "circle", "defined": true, "cx": 20.0, "cy": 0.0, "r": 5.0 },
+          "P": { "type": "point", "defined": false },
+          "Q": { "type": "point", "defined": false },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "E": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "d": { "type": "circle", "defined": true, "cx": 1.0, "cy": 0.0, "r": 5.0 },
+          "P": { "type": "point", "defined": true, "x": 0.5, "y": 4.9749371855331 },
+          "Q": { "type": "point", "defined": true, "x": 0.5, "y": 4.9749371855331 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "predicates-equal-022",
+      "group": "predicates",
+      "script": [
+        "A = (0, 0)",
+        "B = (4, 2)",
+        "C = (0, 4)",
+        "D = (4, 0)",
+        "l = Line(A, B)",
+        "m = Line(C, D)",
+        "P = Intersect(l, m)",
+        "Q = (2, 2)",
+        "t = AreEqual(P, Q)",
+        "u = AreEqual(Q, P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "Q", "x": 2.000001, "y": 2.0 },
+        { "action": "move", "label": "Q", "x": 2.00001, "y": 2.0 },
+        { "action": "move", "label": "D", "x": 4.0, "y": 1.0 },
+        { "action": "move", "label": "D", "x": 5.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "l": { "type": "line", "defined": true, "a": -2.0, "b": 4.0, "c": 0.0 },
+          "m": { "type": "line", "defined": true, "a": 4.0, "b": 4.0, "c": -16.0 },
+          "P": { "type": "point", "defined": true, "x": 2.6666666666666665, "y": 1.3333333333333333 },
+          "Q": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "l": { "type": "line", "defined": true, "a": -2.0, "b": 4.0, "c": 0.0 },
+          "m": { "type": "line", "defined": true, "a": 4.0, "b": 4.0, "c": -16.0 },
+          "P": { "type": "point", "defined": true, "x": 2.6666666666666665, "y": 1.3333333333333333 },
+          "Q": { "type": "point", "defined": true, "x": 2.000001, "y": 2.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "l": { "type": "line", "defined": true, "a": -2.0, "b": 4.0, "c": 0.0 },
+          "m": { "type": "line", "defined": true, "a": 4.0, "b": 4.0, "c": -16.0 },
+          "P": { "type": "point", "defined": true, "x": 2.6666666666666665, "y": 1.3333333333333333 },
+          "Q": { "type": "point", "defined": true, "x": 2.00001, "y": 2.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 4.0, "y": 1.0 },
+          "l": { "type": "line", "defined": true, "a": -2.0, "b": 4.0, "c": 0.0 },
+          "m": { "type": "line", "defined": true, "a": 3.0, "b": 4.0, "c": -16.0 },
+          "P": { "type": "point", "defined": true, "x": 3.2, "y": 1.6 },
+          "Q": { "type": "point", "defined": true, "x": 2.00001, "y": 2.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 },
+          "l": { "type": "line", "defined": true, "a": -2.0, "b": 4.0, "c": 0.0 },
+          "m": { "type": "line", "defined": true, "a": 4.0, "b": 5.0, "c": -20.0 },
+          "P": { "type": "point", "defined": true, "x": 3.076923076923077, "y": 1.5384615384615385 },
+          "Q": { "type": "point", "defined": true, "x": 2.00001, "y": 2.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 },
+          "l": { "type": "line", "defined": true, "a": -3.0, "b": 3.0, "c": 0.0 },
+          "m": { "type": "line", "defined": true, "a": 4.0, "b": 5.0, "c": -20.0 },
+          "P": { "type": "point", "defined": true, "x": 2.2222222222222223, "y": 2.2222222222222223 },
+          "Q": { "type": "point", "defined": true, "x": 2.00001, "y": 2.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "predicates-equal-023",
+      "group": "predicates",
+      "script": [
+        "A = (0, 0)",
+        "B = (0, 5)",
+        "C = (5, 0)",
+        "c = Circle(A, B)",
+        "d = Circle(A, C)",
+        "s = Segment(A, B)",
+        "r = Radius(c)",
+        "q = Length(s)",
+        "t = AreEqual(c, d)",
+        "u = AreEqual(r, q)",
+        "v = AreEqual(r, r)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 5.000001, "y": 0.0 },
+        { "action": "move", "label": "C", "x": 0.0, "y": 5.0 },
+        { "action": "move", "label": "C", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 1.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 },
+          "C": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "d": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 0.0, "y2": 5.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "q": { "type": "number", "defined": true, "value": 5.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 },
+          "C": { "type": "point", "defined": true, "x": 5.000001, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "d": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.000001 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 0.0, "y2": 5.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "q": { "type": "number", "defined": true, "value": 5.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "d": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 0.0, "y2": 5.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "q": { "type": "number", "defined": true, "value": 5.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "d": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 0.0, "y2": 5.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "q": { "type": "number", "defined": true, "value": 5.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "d": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "q": { "type": "number", "defined": true, "value": 5.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "c": { "type": "circle", "defined": true, "cx": 1.0, "cy": 1.0, "r": 3.6055512754639896 },
+          "d": { "type": "circle", "defined": true, "cx": 1.0, "cy": 1.0, "r": 3.6055512754639896 },
+          "s": { "type": "segment", "defined": true, "x1": 1.0, "y1": 1.0, "x2": 3.0, "y2": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 3.6055512754639896 },
+          "q": { "type": "number", "defined": true, "value": 3.6055512754639896 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "predicates-equal-024",
+      "group": "predicates",
+      "script": [
+        "A = (0, 0)",
+        "B = (3, 1)",
+        "C = (2, 5)",
+        "D = (4, 4)",
+        "u = (1, 1)",
+        "l = Line(A, u)",
+        "m = Line(C, D)",
+        "k = Line(B, u)",
+        "t = AreEqual(l, k)",
+        "n = AreEqual(l, m)",
+        "o = AreEqual(m, l)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "u", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "D", "x": 2.0, "y": 5.0 },
+        { "action": "move", "label": "D", "x": 4.0, "y": 4.0 },
+        { "action": "move", "label": "u", "x": 1.0, "y": 1.0 },
+        { "action": "move", "label": "D", "x": 2.0, "y": 5.0 },
+        { "action": "move", "label": "u", "x": 0.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 1.0 },
+          "l": { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": 0.0 },
+          "m": { "type": "line", "defined": true, "a": 1.0, "b": 2.0, "c": -12.0 },
+          "k": { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": 2.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "n": { "type": "boolean", "defined": true, "value": false },
+          "o": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "l": { "type": "line", "defined": false },
+          "m": { "type": "line", "defined": true, "a": 1.0, "b": 2.0, "c": -12.0 },
+          "k": { "type": "line", "defined": false },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "n": { "type": "boolean", "defined": true, "value": false },
+          "o": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 2.0, "y": 5.0 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "l": { "type": "line", "defined": false },
+          "m": { "type": "line", "defined": false },
+          "k": { "type": "line", "defined": false },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "n": { "type": "boolean", "defined": true, "value": true },
+          "o": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "l": { "type": "line", "defined": false },
+          "m": { "type": "line", "defined": true, "a": 1.0, "b": 2.0, "c": -12.0 },
+          "k": { "type": "line", "defined": false },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "n": { "type": "boolean", "defined": true, "value": false },
+          "o": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 1.0 },
+          "l": { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": 0.0 },
+          "m": { "type": "line", "defined": true, "a": 1.0, "b": 2.0, "c": -12.0 },
+          "k": { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": 2.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "n": { "type": "boolean", "defined": true, "value": false },
+          "o": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 2.0, "y": 5.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 1.0 },
+          "l": { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": 0.0 },
+          "m": { "type": "line", "defined": false },
+          "k": { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": 2.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "n": { "type": "boolean", "defined": true, "value": false },
+          "o": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 2.0, "y": 5.0 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "l": { "type": "line", "defined": false },
+          "m": { "type": "line", "defined": false },
+          "k": { "type": "line", "defined": false },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "n": { "type": "boolean", "defined": true, "value": true },
+          "o": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "predicates-equal-025",
+      "group": "predicates",
+      "script": [
+        "A = (0, 0)",
+        "B = (3, 1)",
+        "C = (0, 0)",
+        "D = (2, 2)",
+        "F = (5, 5)",
+        "r = Ray(A, B)",
+        "s = Ray(C, D)",
+        "q = Ray(F, A)",
+        "t = AreEqual(r, s)",
+        "n = AreEqual(r, q)",
+        "o = AreEqual(s, q)",
+        "p = AreEqual(r, r)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "D", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "D", "x": 2.0, "y": 2.0 },
+        { "action": "move", "label": "C", "x": 1.0, "y": 1.0 },
+        { "action": "move", "label": "D", "x": 1.0, "y": 1.0 },
+        { "action": "move", "label": "B", "x": 1.0, "y": 1.0 },
+        { "action": "move", "label": "F", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "A", "x": 0.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "F": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "r": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -1.0, "b": 3.0, "c": 0.0 },
+          "s": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -2.0, "b": 2.0, "c": 0.0 },
+          "q": { "type": "ray", "defined": true, "x": 5.0, "y": 5.0, "a": 5.0, "b": -5.0, "c": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "n": { "type": "boolean", "defined": true, "value": false },
+          "o": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "F": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "r": { "type": "ray", "defined": false },
+          "s": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -2.0, "b": 2.0, "c": 0.0 },
+          "q": { "type": "ray", "defined": true, "x": 5.0, "y": 5.0, "a": 5.0, "b": -5.0, "c": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "n": { "type": "boolean", "defined": true, "value": false },
+          "o": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "F": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "r": { "type": "ray", "defined": false },
+          "s": { "type": "ray", "defined": false },
+          "q": { "type": "ray", "defined": true, "x": 5.0, "y": 5.0, "a": 5.0, "b": -5.0, "c": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "n": { "type": "boolean", "defined": true, "value": false },
+          "o": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "F": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "r": { "type": "ray", "defined": false },
+          "s": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -2.0, "b": 2.0, "c": 0.0 },
+          "q": { "type": "ray", "defined": true, "x": 5.0, "y": 5.0, "a": 5.0, "b": -5.0, "c": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "n": { "type": "boolean", "defined": true, "value": false },
+          "o": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "F": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "r": { "type": "ray", "defined": false },
+          "s": { "type": "ray", "defined": true, "x": 1.0, "y": 1.0, "a": -1.0, "b": 1.0, "c": 0.0 },
+          "q": { "type": "ray", "defined": true, "x": 5.0, "y": 5.0, "a": 5.0, "b": -5.0, "c": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "n": { "type": "boolean", "defined": true, "value": false },
+          "o": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "F": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "r": { "type": "ray", "defined": false },
+          "s": { "type": "ray", "defined": false },
+          "q": { "type": "ray", "defined": true, "x": 5.0, "y": 5.0, "a": 5.0, "b": -5.0, "c": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "n": { "type": "boolean", "defined": true, "value": false },
+          "o": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "F": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "r": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -1.0, "b": 1.0, "c": 0.0 },
+          "s": { "type": "ray", "defined": false },
+          "q": { "type": "ray", "defined": true, "x": 5.0, "y": 5.0, "a": 5.0, "b": -5.0, "c": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "n": { "type": "boolean", "defined": true, "value": false },
+          "o": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "F": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -1.0, "b": 1.0, "c": 0.0 },
+          "s": { "type": "ray", "defined": false },
+          "q": { "type": "ray", "defined": false },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "n": { "type": "boolean", "defined": true, "value": true },
+          "o": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "F": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -1.0, "b": 1.0, "c": 0.0 },
+          "s": { "type": "ray", "defined": false },
+          "q": { "type": "ray", "defined": false },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "n": { "type": "boolean", "defined": true, "value": true },
+          "o": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "predicates-equal-026",
+      "group": "predicates",
+      "script": [
+        "A = (0, 0)",
+        "B = (3, 1)",
+        "C = (0, 0)",
+        "D = (2, 2)",
+        "u = (1, 0)",
+        "r = Ray(A, u)",
+        "s = Ray(C, D)",
+        "q = Ray(B, u)",
+        "t = AreEqual(r, s)",
+        "n = AreEqual(r, q)",
+        "o = AreEqual(s, q)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "u", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "D", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "D", "x": 2.0, "y": 2.0 },
+        { "action": "move", "label": "u", "x": 1.0, "y": 0.0 },
+        { "action": "move", "label": "A", "x": 1.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "r": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -0.0, "b": 1.0, "c": 0.0 },
+          "s": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -2.0, "b": 2.0, "c": 0.0 },
+          "q": { "type": "ray", "defined": true, "x": 3.0, "y": 1.0, "a": -0.0, "b": 1.0, "c": -1.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "n": { "type": "boolean", "defined": true, "value": false },
+          "o": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "ray", "defined": false },
+          "s": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -2.0, "b": 2.0, "c": 0.0 },
+          "q": { "type": "ray", "defined": false },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "n": { "type": "boolean", "defined": true, "value": false },
+          "o": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "ray", "defined": false },
+          "s": { "type": "ray", "defined": false },
+          "q": { "type": "ray", "defined": false },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "n": { "type": "boolean", "defined": true, "value": false },
+          "o": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "ray", "defined": false },
+          "s": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -2.0, "b": 2.0, "c": 0.0 },
+          "q": { "type": "ray", "defined": false },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "n": { "type": "boolean", "defined": true, "value": false },
+          "o": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "r": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -0.0, "b": 1.0, "c": 0.0 },
+          "s": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -2.0, "b": 2.0, "c": 0.0 },
+          "q": { "type": "ray", "defined": true, "x": 3.0, "y": 1.0, "a": -0.0, "b": 1.0, "c": -1.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "n": { "type": "boolean", "defined": true, "value": false },
+          "o": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "r": { "type": "ray", "defined": true, "x": 1.0, "y": 1.0, "a": -0.0, "b": 1.0, "c": -1.0 },
+          "s": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -2.0, "b": 2.0, "c": 0.0 },
+          "q": { "type": "ray", "defined": true, "x": 3.0, "y": 1.0, "a": -0.0, "b": 1.0, "c": -1.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "n": { "type": "boolean", "defined": true, "value": false },
+          "o": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "predicates-equal-027",
+      "group": "predicates",
+      "script": [
+        "A = (0, 0)",
+        "B = (3, 1)",
+        "C = (4, 4)",
+        "D = (2, 2)",
+        "l = Line(A, B)",
+        "s = Segment(A, B)",
+        "r = Ray(A, B)",
+        "g = Segment(C, D)",
+        "h = Ray(C, D)",
+        "t = AreEqual(l, s)",
+        "n = AreEqual(l, r)",
+        "o = AreEqual(s, r)",
+        "p = AreEqual(g, h)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "D", "x": 4.0, "y": 4.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 1.0 },
+        { "action": "move", "label": "D", "x": 2.0, "y": 2.0 },
+        { "action": "move", "label": "C", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "D", "x": 0.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "l": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 1.0 },
+          "r": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -1.0, "b": 3.0, "c": 0.0 },
+          "g": { "type": "segment", "defined": true, "x1": 4.0, "y1": 4.0, "x2": 2.0, "y2": 2.0 },
+          "h": { "type": "ray", "defined": true, "x": 4.0, "y": 4.0, "a": 2.0, "b": -2.0, "c": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "n": { "type": "boolean", "defined": true, "value": false },
+          "o": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "l": { "type": "line", "defined": false },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 },
+          "r": { "type": "ray", "defined": false },
+          "g": { "type": "segment", "defined": true, "x1": 4.0, "y1": 4.0, "x2": 2.0, "y2": 2.0 },
+          "h": { "type": "ray", "defined": true, "x": 4.0, "y": 4.0, "a": 2.0, "b": -2.0, "c": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "n": { "type": "boolean", "defined": true, "value": true },
+          "o": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 },
+          "l": { "type": "line", "defined": false },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 },
+          "r": { "type": "ray", "defined": false },
+          "g": { "type": "segment", "defined": true, "x1": 4.0, "y1": 4.0, "x2": 4.0, "y2": 4.0 },
+          "h": { "type": "ray", "defined": false },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "n": { "type": "boolean", "defined": true, "value": true },
+          "o": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 },
+          "l": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 1.0 },
+          "r": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -1.0, "b": 3.0, "c": 0.0 },
+          "g": { "type": "segment", "defined": true, "x1": 4.0, "y1": 4.0, "x2": 4.0, "y2": 4.0 },
+          "h": { "type": "ray", "defined": false },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "n": { "type": "boolean", "defined": true, "value": false },
+          "o": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "l": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 1.0 },
+          "r": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -1.0, "b": 3.0, "c": 0.0 },
+          "g": { "type": "segment", "defined": true, "x1": 4.0, "y1": 4.0, "x2": 2.0, "y2": 2.0 },
+          "h": { "type": "ray", "defined": true, "x": 4.0, "y": 4.0, "a": 2.0, "b": -2.0, "c": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "n": { "type": "boolean", "defined": true, "value": false },
+          "o": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "l": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 1.0 },
+          "r": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -1.0, "b": 3.0, "c": 0.0 },
+          "g": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 2.0, "y2": 2.0 },
+          "h": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -2.0, "b": 2.0, "c": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "n": { "type": "boolean", "defined": true, "value": false },
+          "o": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "l": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 1.0 },
+          "r": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -1.0, "b": 3.0, "c": 0.0 },
+          "g": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 },
+          "h": { "type": "ray", "defined": false },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "n": { "type": "boolean", "defined": true, "value": false },
+          "o": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "predicates-equal-028",
+      "group": "predicates",
+      "script": [
+        "A = (0, 0)",
+        "B = (3, 1)",
+        "C = (5, 5)",
+        "D = (6, 6)",
+        "u = (2, 2)",
+        "l = Line(A, B)",
+        "g = Translate(l, u)",
+        "m = Line(C, D)",
+        "t = AreEqual(g, m)",
+        "n = AreParallel(g, l)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "D", "x": 5.0, "y": 5.0 },
+        { "action": "move", "label": "u", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "D", "x": 6.0, "y": 6.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 6.0, "y": 6.0 },
+          "u": { "type": "vector", "defined": true, "x": 2.0, "y": 2.0 },
+          "l": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": 0.0 },
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -4.0 },
+          "m": { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "n": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 6.0, "y": 6.0 },
+          "u": { "type": "vector", "defined": true, "x": 2.0, "y": 2.0 },
+          "l": { "type": "line", "defined": false },
+          "g": { "type": "line", "defined": false },
+          "m": { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "n": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "u": { "type": "vector", "defined": true, "x": 2.0, "y": 2.0 },
+          "l": { "type": "line", "defined": false },
+          "g": { "type": "line", "defined": false },
+          "m": { "type": "line", "defined": false },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "n": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "l": { "type": "line", "defined": false },
+          "g": { "type": "line", "defined": false },
+          "m": { "type": "line", "defined": false },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "n": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 6.0, "y": 6.0 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "l": { "type": "line", "defined": false },
+          "g": { "type": "line", "defined": false },
+          "m": { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "n": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 6.0, "y": 6.0 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "l": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": 0.0 },
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": 0.0 },
+          "m": { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "n": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    }
+  ]
+}

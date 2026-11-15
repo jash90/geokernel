@@ -66,6 +66,16 @@ PARTIAL = {
     "UnitVector": "UnitVector(vector, line, segment or ray)",
     "OrthogonalVector": "OrthogonalVector(vector, line, segment or ray)",
     "UnitOrthogonalVector": "UnitOrthogonalVector(vector, line, segment or ray)",
+    "AreCollinear": "AreCollinear(point, point, point)",
+    "AreParallel": "AreParallel of two lines, segments or rays",
+    "ArePerpendicular": "ArePerpendicular of two lines, segments or rays",
+    "AreConcurrent": "AreConcurrent of three lines, segments or rays",
+    "AreConcyclic": "AreConcyclic(point, point, point, point)",
+    "AreEqual": "AreEqual of two objects of any kind the kernel has",
+    "AreCongruent": "AreCongruent of two objects of any kind the kernel has",
+    "IsTangent": "IsTangent(line, segment or ray, circle)",
+    "ClosestPoint": "ClosestPoint(line, segment, ray or circle, point); ClosestPoint(line, line)",
+    "Trilinear": "Trilinear(point, point, point, number, number, number)",
 }
 
 # Commands the first version of the kernel already had: priority P0.

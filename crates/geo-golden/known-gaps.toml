@@ -141,3 +141,35 @@ mismatches = ["0:d", "0:e", "1:d", "1:e", "2:d", "2:e", "3:d", "3:e", "4:d", "4:
 id = "vector-rawscale-009"
 reason = "points carry no homogeneous weight"
 mismatches = ["0:o", "1:o", "2:o", "3:o", "4:o"]
+
+# predicates
+
+# An undefined circle (radius below 0) keeps the conic matrix it had while it
+# was last defined in GeoGebra, so a predicate on it still answers from that
+# stale matrix. The kernel has no value for an undefined circle.
+[[gap]]
+id = "predicates-equal-017"
+reason = "GeoGebra compares the stale conic matrix an undefined circle keeps from its last defined state; the kernel has no value for the circle"
+mismatches = ["4:t"]
+
+[[gap]]
+id = "predicates-tangent-013"
+reason = "GeoGebra tests tangency against the stale conic matrix an undefined circle keeps from its last defined state; the kernel has no value for the circle"
+mismatches = ["5:t"]
+
+[[gap]]
+id = "predicates-infinity-001"
+reason = "GeoGebra keeps the intersection of parallel lines as a point at infinity, equal to itself; the kernel has no points at infinity, so S is undefined and AreEqual(S, S) is false"
+mismatches = ["0:o", "2:o", "3:o"]
+
+[[gap]]
+id = "predicates-homogeneous-001"
+reason = "AreConcyclic reads the homogeneous coordinates of intersection points, whose weight is the raw cross product of the lines; the kernel assumes weight 1, and Ptolemy's test on the scaled coordinates gives another answer"
+mismatches = ["0:t"]
+
+# points
+
+[[gap]]
+id = "points-infinity-001"
+reason = "ClosestPoint(circle, S) with S a point at infinity: GeoGebra projects the direction of S, the kernel has no points at infinity and S is undefined"
+mismatches = ["0:R", "2:R", "3:R"]

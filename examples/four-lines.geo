@@ -1,0 +1,10 @@
+# Four lines through four points, and the intersection of two of them.
+A = (-5.64, 4.44)
+B = (3.3, 3.34)
+f = Line(A, B)
+C = (-5.62, -4.66)
+g = Line(A, C)
+D = (4.92, -2.14)
+h = Line(D, B)
+i = Line(C, D)
+E = Intersect(h, i)
