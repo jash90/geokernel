@@ -298,6 +298,12 @@ pub fn compare_conic(
         (Some(_), Value::Undefined, _) | (Some(_), _, None) => {
             return (Err("expected a value, kernel is undefined".into()), None)
         }
+        (Some(_), _, Some(d)) if !d.defined => {
+            return (
+                Err("expected a value, kernel's record is undefined".into()),
+                None,
+            )
+        }
         (
             Some(ExpectedData::Conic {
                 conic_type,
@@ -363,6 +369,7 @@ pub fn compare_conic(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use geo_kernel::algo::conic_nd::ConicType;
 
     fn num(v: f64) -> Expected {
         Expected {
@@ -684,6 +691,209 @@ mod tests {
         assert!(compare_object(&e, Kind::PolyLine, &line, &filled).is_err());
         let longer = Value::PolyLine { length: 5.0 };
         assert!(compare_object(&e, Kind::PolyLine, &longer, &holed).is_err());
+    }
+
+    /// A record written by hand, independent of the kernel's computations.
+    fn record(ty: ConicType, matrix: [f64; 6]) -> ConicData {
+        let mut d = ConicData::new();
+        d.ty = ty;
+        d.defined = true;
+        d.matrix = matrix;
+        d
+    }
+
+    fn conic(conic_type: &str, matrix: [f64; 6], parts: ConicParts) -> Expected {
+        Expected {
+            kind: Kind::Conic,
+            data: Some(ExpectedData::Conic {
+                conic_type: conic_type.into(),
+                matrix,
+                parts,
+            }),
+        }
+    }
+
+    fn conic_result(e: &Expected, d: &ConicData) -> Result<Sign, String> {
+        let value = if d.defined {
+            Value::Conic { ty: d.ty }
+        } else {
+            Value::Undefined
+        };
+        compare_conic(e, Kind::Conic, &value, Some(d)).0
+    }
+
+    /// Every way a conic can differ from its expectation is reported, one
+    /// part at a time, for every kind of parts.
+    #[test]
+    fn conics_report_each_wrong_part() {
+        // x^2/25 + y^2/16 = 1 around (1, 2)
+        let ellipse_matrix = [16.0, 25.0, -284.0, 0.0, -16.0, -50.0];
+        let mut ellipse = record(ConicType::Ellipse, ellipse_matrix);
+        ellipse.midpoint = [1.0, 2.0];
+        ellipse.half_axes = [5.0, 4.0];
+        ellipse.eigenvec = [[1.0, 0.0], [0.0, 1.0]];
+        let e_ellipse = conic(
+            "ellipse",
+            ellipse_matrix,
+            ConicParts::Central {
+                midpoint: (1.0, 2.0),
+                half_axes: (5.0, 4.0),
+                eigenvectors: [(1.0, 0.0), (0.0, 1.0)],
+            },
+        );
+        assert_eq!(conic_result(&e_ellipse, &ellipse), Ok(Sign::NotApplicable));
+        let central: [fn(&mut ConicData); 5] = [
+            |d| d.midpoint[1] += 0.5,
+            |d| d.half_axes[0] = 5.5,
+            |d| d.half_axes[1] = 3.0,
+            |d| d.eigenvec[0] = [0.0, 1.0],
+            |d| d.eigenvec[1] = [0.0, -1.0],
+        ];
+        for (i, wrong) in central.iter().enumerate() {
+            let mut d = ellipse;
+            wrong(&mut d);
+            let r = conic_result(&e_ellipse, &d);
+            assert!(
+                matches!(&r, Err(m) if m.starts_with("parts differ")),
+                "central part {i}: {r:?}"
+            );
+        }
+
+        // y = x^2 / 4: focus (0, 1), vertex (0, 0), p = 2
+        let parabola_matrix = [1.0, 0.0, 0.0, 0.0, 0.0, -2.0];
+        let mut parabola = record(ConicType::Parabola, parabola_matrix);
+        parabola.midpoint = [0.0, 0.0];
+        parabola.p = 2.0;
+        parabola.eigenvec = [[0.0, 1.0], [-1.0, 0.0]];
+        let e_parabola = conic(
+            "parabola",
+            parabola_matrix,
+            ConicParts::Parabola {
+                vertex: (0.0, 0.0),
+                p: 2.0,
+                eigenvectors: [(0.0, 1.0), (-1.0, 0.0)],
+            },
+        );
+        assert_eq!(
+            conic_result(&e_parabola, &parabola),
+            Ok(Sign::NotApplicable)
+        );
+        let parabolic: [fn(&mut ConicData); 4] = [
+            |d| d.midpoint[0] = 0.25,
+            |d| d.p = 1.0,
+            |d| d.eigenvec[0] = [0.0, -1.0],
+            |d| d.eigenvec[1] = [1.0, 0.0],
+        ];
+        for (i, wrong) in parabolic.iter().enumerate() {
+            let mut d = parabola;
+            wrong(&mut d);
+            let r = conic_result(&e_parabola, &d);
+            assert!(
+                matches!(&r, Err(m) if m.starts_with("parts differ")),
+                "parabola part {i}: {r:?}"
+            );
+        }
+
+        // the single point (3, -1): (x - 3)^2 + (y + 1)^2 = 0
+        let point_matrix = [1.0, 1.0, 10.0, 0.0, -3.0, 1.0];
+        let mut point = record(ConicType::SinglePoint, point_matrix);
+        point.midpoint = [3.0, -1.0];
+        let e_point = conic(
+            "single_point",
+            point_matrix,
+            ConicParts::SinglePoint { point: (3.0, -1.0) },
+        );
+        assert_eq!(conic_result(&e_point, &point), Ok(Sign::NotApplicable));
+        let mut moved = point;
+        moved.midpoint = [3.0, -1.5];
+        assert!(matches!(conic_result(&e_point, &moved), Err(m) if m.starts_with("parts differ")));
+
+        // the lines x = 0 and y = 0: x y = 0
+        let pair_matrix = [0.0, 0.0, 0.0, 0.5, 0.0, 0.0];
+        let mut pair = record(ConicType::IntersectingLines, pair_matrix);
+        pair.lines = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]];
+        let e_pair = conic(
+            "intersecting_lines",
+            pair_matrix,
+            ConicParts::Lines {
+                lines: [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]],
+            },
+        );
+        assert_eq!(conic_result(&e_pair, &pair), Ok(Sign::NotApplicable));
+        for wrong in [[0.0, 1.0, 1.0], [0.0, -1.0, 0.0], [1.0, 0.0, 0.0]] {
+            let mut d = pair;
+            d.lines[1] = wrong;
+            let r = conic_result(&e_pair, &d);
+            assert!(
+                matches!(&r, Err(m) if m.starts_with("parts differ")),
+                "second line {wrong:?}: {r:?}"
+            );
+        }
+        // the lines in the other order
+        let mut swapped = pair;
+        swapped.lines = [pair.lines[1], pair.lines[0]];
+        assert!(conic_result(&e_pair, &swapped).is_err());
+
+        // a wrong type with the same matrix and parts
+        let mut circle = ellipse;
+        circle.ty = ConicType::Circle;
+        let r = conic_result(&e_ellipse, &circle);
+        assert!(
+            matches!(&r, Err(m) if m.starts_with("conic type differs")),
+            "{r:?}"
+        );
+        let mut hyperbola = ellipse;
+        hyperbola.ty = ConicType::Hyperbola;
+        assert!(conic_result(&e_ellipse, &hyperbola).is_err());
+
+        // a zero matrix on either side, and a NaN entry
+        let mut zero = ellipse;
+        zero.matrix = [0.0; 6];
+        assert!(
+            matches!(conic_result(&e_ellipse, &zero), Err(m) if m.starts_with("matrix differs"))
+        );
+        let e_zero = conic(
+            "ellipse",
+            [0.0; 6],
+            ConicParts::Central {
+                midpoint: (1.0, 2.0),
+                half_axes: (5.0, 4.0),
+                eigenvectors: [(1.0, 0.0), (0.0, 1.0)],
+            },
+        );
+        assert!(
+            matches!(conic_result(&e_zero, &ellipse), Err(m) if m.starts_with("matrix differs"))
+        );
+        let mut nan = ellipse;
+        nan.matrix[2] = f64::NAN;
+        assert!(
+            matches!(conic_result(&e_ellipse, &nan), Err(m) if m.starts_with("matrix differs"))
+        );
+        let mut nan_part = ellipse;
+        nan_part.half_axes[1] = f64::NAN;
+        assert!(conic_result(&e_ellipse, &nan_part).is_err());
+
+        // defined flipped either way
+        let mut undefined = ellipse;
+        undefined.defined = false;
+        assert!(conic_result(&e_ellipse, &undefined).is_err());
+        // the record says undefined although the value claims a conic
+        let r = compare_conic(
+            &e_ellipse,
+            Kind::Conic,
+            &Value::Conic {
+                ty: ConicType::Ellipse,
+            },
+            Some(&undefined),
+        )
+        .0;
+        assert!(r.is_err(), "{r:?}");
+        let none = Expected {
+            kind: Kind::Conic,
+            data: None,
+        };
+        assert!(conic_result(&none, &ellipse).is_err());
+        assert_eq!(conic_result(&none, &undefined), Ok(Sign::NotApplicable));
     }
 
     #[test]
