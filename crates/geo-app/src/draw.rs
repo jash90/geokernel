@@ -121,12 +121,30 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
             }));
             painter.add(Shape::line(pts[1..].to_vec(), Stroke::new(1.5, col)));
         }
-        let mid = at(start + sweep / 2.0, ANGLE_RADIUS + 14.0) - origin;
+        // The label sits outside the sector, on its bisector, and grows away
+        // from the vertex.
+        let half = start + sweep / 2.0;
+        let mid = at(half, ANGLE_RADIUS + 6.0) - origin;
+        let (dx, dy) = (half.cos(), half.sin());
+        let h = if dx > 0.3 {
+            eframe::egui::Align::Min
+        } else if dx < -0.3 {
+            eframe::egui::Align::Max
+        } else {
+            eframe::egui::Align::Center
+        };
+        let v = if dy > 0.3 {
+            eframe::egui::Align::Min
+        } else if dy < -0.3 {
+            eframe::egui::Align::Max
+        } else {
+            eframe::egui::Align::Center
+        };
         labels.push((
             format!("{} = {}", c.label(id), crate::describe::degrees(angle)),
             (mid.x as f64, mid.y as f64),
             col,
-            Align2::CENTER_CENTER,
+            Align2([h, v]),
         ));
     }
 

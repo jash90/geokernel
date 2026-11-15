@@ -14,7 +14,7 @@ use geo_kernel::kernel::Id;
 /// Row heights: one line for a free object, two for a dependent one.
 const ROW_FREE: f32 = 50.0;
 const ROW_DEPENDENT: f32 = 102.0;
-const FONT: f32 = 20.0;
+const FONT: f32 = 22.0;
 const TEXT_X: f32 = theme::MARKER_CELL + 13.0;
 
 /// What the user did in the list this frame.

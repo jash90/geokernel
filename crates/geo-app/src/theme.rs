@@ -67,5 +67,7 @@ pub fn apply(ctx: &egui::Context) {
             FontId::new(11.0, FontFamily::Proportional),
         );
         style.spacing.item_spacing = egui::vec2(6.0, 4.0);
+        // The fade takes its colour from the parent, which our regions do not set.
+        style.spacing.scroll.fade.strength = 0.0;
     });
 }
