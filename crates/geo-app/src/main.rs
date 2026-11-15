@@ -25,6 +25,7 @@ mod labelpos;
 mod labels;
 mod layout;
 mod scriptlog;
+mod shape;
 mod style;
 mod theme;
 mod ticks;

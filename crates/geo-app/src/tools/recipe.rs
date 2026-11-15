@@ -2,7 +2,7 @@
 
 use super::{NumberRequest, Pick, Tool};
 use crate::describe::fixed;
-use crate::labels::{next_greek, next_label, primed};
+use crate::labels::{next_greek, next_label, polygon_label, primed};
 use geo_kernel::kernel::Kind;
 
 fn point(k: Option<Kind>) -> bool {
@@ -54,6 +54,9 @@ pub(super) fn accepts(tool: Tool, picks: &[Kind], cand: Option<Kind>) -> bool {
             _ => false,
         },
         Tool::Circle3 => n < 3 && point(cand),
+        // Closing on the first vertex is handled by the tool state.
+        Tool::Polygon => point(cand),
+        Tool::RegularPolygon => n < 2 && point(cand),
         Tool::CircleRadius => n == 0 && point(cand),
         Tool::Perpendicular | Tool::Parallel => {
             n < 2 && ((point(cand) && !has(point)) || (line_like(cand) && !has(line_like)))
@@ -132,6 +135,16 @@ pub(super) fn finish(tool: Tool, picks: &[Kind]) -> Option<Finish> {
                 title: "Okrąg: środek i promień",
                 prompt: "Promień",
                 default: 2.0,
+                degrees: false,
+            }))
+        }
+        // A polygon is finished by clicking its first vertex again.
+        Tool::Polygon => false,
+        Tool::RegularPolygon => {
+            return (n == 2).then_some(Finish::Ask(NumberRequest {
+                title: "Wielokąt foremny",
+                prompt: "Liczba wierzchołków",
+                default: 4.0,
                 degrees: false,
             }))
         }
@@ -216,6 +229,8 @@ pub(super) fn build(
     };
     enum Name {
         Fresh(Kind),
+        /// `t1`, `q1`, ... by the number of vertices.
+        Polygon(usize),
         Greek,
         Prime,
     }
@@ -278,6 +293,14 @@ pub(super) fn build(
             format!("Polar({})", circle_last(&args)),
             Name::Fresh(Kind::Line),
         ),
+        Tool::Polygon => (
+            format!("Polygon({})", args.join(", ")),
+            Name::Polygon(args.len()),
+        ),
+        Tool::RegularPolygon => (
+            format!("Polygon({}, {}, {num})", a(0), a(1)),
+            Name::Polygon(number.map_or(0, |n| n.round().max(0.0) as usize)),
+        ),
         Tool::Angle => (format!("Angle({})", args.join(", ")), Name::Greek),
         Tool::Distance => match kinds.as_slice() {
             [Kind::Segment] => (format!("Length({})", a(0)), Name::Fresh(Kind::Number)),
@@ -306,6 +329,7 @@ pub(super) fn build(
     let label = match name {
         Name::Fresh(kind) => next_label(kind, |l| taken(l, &allocated)),
         Name::Greek => next_greek(|l| taken(l, &allocated)),
+        Name::Polygon(n) => polygon_label(n, |l| taken(l, &allocated)),
         Name::Prime => primed(a(0), kinds[0], |l| taken(l, &allocated)),
     };
     lines.push(format!("{label} = {rhs}"));
@@ -349,6 +373,11 @@ pub(super) fn hint(tool: Tool, picks: &[Kind]) -> &'static str {
         (Tool::Circle, _) => "Kliknij punkt na okręgu",
         (Tool::CircleRadius, _) => "Kliknij środek okręgu",
         (Tool::Circle3, _) => "Kliknij trzy punkty okręgu",
+        (Tool::Polygon, 0) => "Kliknij pierwszy wierzchołek",
+        (Tool::Polygon, 1 | 2) => "Kliknij kolejny wierzchołek",
+        (Tool::Polygon, _) => "Kliknij kolejny wierzchołek albo pierwszy, aby zamknąć",
+        (Tool::RegularPolygon, 0) => "Kliknij pierwszy wierzchołek",
+        (Tool::RegularPolygon, _) => "Kliknij drugi wierzchołek",
         (Tool::Angle, 0) => "Kliknij punkt na pierwszym ramieniu",
         (Tool::Angle, 1) => "Kliknij wierzchołek kąta",
         (Tool::Angle, _) => "Kliknij punkt na drugim ramieniu",

@@ -4,9 +4,10 @@ use crate::arc;
 use crate::highlight::{self, Highlight};
 use crate::interact::ViewTransform;
 use crate::labelpos;
+use crate::shape;
 use crate::style;
 use crate::theme;
-use eframe::egui::{vec2, Align2, Color32, FontId, Painter, Pos2, Rect, Shape, Stroke};
+use eframe::egui::{vec2, Align2, Color32, FontId, Mesh, Painter, Pos2, Rect, Shape, Stroke};
 use geo_kernel::algo::vector;
 use geo_kernel::kernel::{Construction, Id, Value};
 
@@ -75,6 +76,18 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
         let Some(id) = id.filter(|i| (scene.visible)(*i)) else {
             continue;
         };
+        if matches!(c.value(id), Value::Polygon { .. }) {
+            if let Some(pts) = crate::hit::screen_vertices(c, id, t) {
+                let alpha = if strong { 0.35 } else { 0.2 };
+                let points = pts
+                    .iter()
+                    .map(|&(x, y)| origin + vec2(x as f32, y as f32))
+                    .collect();
+                let glow = Stroke::new(8.0, style::color(c, id).gamma_multiply(alpha));
+                painter.add(Shape::closed_line(points, glow));
+            }
+            continue;
+        }
         if let Some(hl) = highlight::of_value(&c.value(id), t, w, h) {
             paint_highlight(painter, rect, hl, style::color(c, id), strong);
         }
@@ -148,8 +161,46 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
         ));
     }
 
-    // Polygons: their translucent fill and sides go here, under the lines,
-    // once the kernel has polygons (pull request #17).
+    // Polygons: a translucent fill and an outline, under the lines. Their
+    // sides are segments of their own, drawn with the other segments.
+    for &id in &ids {
+        let closed = match c.value(id) {
+            Value::Polygon { .. } => true,
+            Value::PolyLine { .. } => false,
+            _ => continue,
+        };
+        let col = color(id);
+        if closed {
+            let Some(pts) = crate::hit::screen_vertices(c, id, t) else {
+                continue;
+            };
+            let points: Vec<Pos2> = pts
+                .iter()
+                .map(|&(x, y)| origin + vec2(x as f32, y as f32))
+                .collect();
+            let mut mesh = Mesh::default();
+            for &p in &points {
+                mesh.colored_vertex(p, col.gamma_multiply(0.1));
+            }
+            for [a, b, d] in shape::triangulate(&pts) {
+                mesh.add_triangle(a as u32, b as u32, d as u32);
+            }
+            painter.add(Shape::mesh(mesh));
+            painter.add(Shape::closed_line(points, Stroke::new(CURVE_WIDTH, col)));
+        } else {
+            // An undefined vertex leaves a gap.
+            let mut run: Vec<Pos2> = Vec::new();
+            for v in c.vertices(id).chain([None]) {
+                match v {
+                    Some((x, y)) => run.push(p(x, y)),
+                    None if run.len() >= 2 => {
+                        painter.add(Shape::line(std::mem::take(&mut run), curve(id)));
+                    }
+                    None => run.clear(),
+                }
+            }
+        }
+    }
 
     for &id in &ids {
         if let Some((a, b, k)) = c.value(id).unit_line() {

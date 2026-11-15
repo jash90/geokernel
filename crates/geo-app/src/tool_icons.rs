@@ -124,6 +124,31 @@ pub fn paint(painter: &Painter, tool: Tool, c: Pos2, half: f32) {
             dot(6.4, -6.4);
             dot(4.5, 7.8);
         }
+        Tool::Polygon => {
+            let pts = [(-10.0, 6.0), (-3.0, -9.0), (10.0, -3.0), (5.0, 9.0)];
+            painter.add(eframe::egui::Shape::convex_polygon(
+                pts.iter()
+                    .map(|&(x, y)| c + eframe::egui::vec2(x, y) * u)
+                    .collect(),
+                crate::theme::POLYGON.gamma_multiply(0.15),
+                eframe::egui::Stroke::NONE,
+            ));
+            red.poly(&pts, true);
+            for (x, y) in pts {
+                dot(x, y);
+            }
+        }
+        Tool::RegularPolygon => {
+            let pts: Vec<(f32, f32)> = (0..5)
+                .map(|i| {
+                    let a = (i as f32 * 72.0 - 90.0).to_radians();
+                    (10.0 * a.cos(), 10.0 * a.sin())
+                })
+                .collect();
+            red.poly(&pts, true);
+            dot(pts[3].0, pts[3].1);
+            dot(pts[2].0, pts[2].1);
+        }
         Tool::Angle => {
             ink.line((-10.0, 8.0), (10.0, 8.0));
             ink.line((-10.0, 8.0), (4.0, -9.0));

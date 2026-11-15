@@ -56,13 +56,33 @@ fn distance(c: &Construction, id: Id, t: &ViewTransform, p: (f64, f64)) -> Optio
                 to_screen(x0 + x, y0 + y),
             ))
         }
+        Value::Polygon { .. } | Value::PolyLine { .. } => {
+            let closed = matches!(c.value(id), Value::Polygon { .. });
+            let pts = screen_vertices(c, id, t)?;
+            let n = pts.len();
+            let edges = if closed { n } else { n.saturating_sub(1) };
+            (0..edges)
+                .map(|i| dist_segment(p, pts[i], pts[(i + 1) % n]))
+                .min_by(f64::total_cmp)
+        }
         _ => None,
     }
 }
 
+/// The vertices of a polygon or polyline on the screen, `None` when one of
+/// them is undefined.
+pub fn screen_vertices(c: &Construction, id: Id, t: &ViewTransform) -> Option<Vec<(f64, f64)>> {
+    let pts: Option<Vec<(f64, f64)>> = c
+        .vertices(id)
+        .map(|v| v.map(|(x, y)| t.world_to_screen(x, y)))
+        .collect();
+    pts.filter(|p| p.len() >= 2)
+}
+
 /// The object under the screen position `(sx, sy)` that `accept` allows.
 /// Points win over curves when one is within `point_radius`; otherwise the
-/// nearest curve within `curve_radius` (both in pixels) is returned.
+/// nearest curve within `curve_radius` (both in pixels) is returned, and
+/// failing that a polygon whose inside holds the position.
 pub fn pick(
     c: &Construction,
     t: &ViewTransform,
@@ -73,9 +93,16 @@ pub fn pick(
 ) -> Option<Id> {
     let mut best_point: Option<(Id, f64)> = None;
     let mut best_curve: Option<(Id, f64)> = None;
+    // The last polygon whose inside holds the position, as the one drawn on top.
+    let mut inside: Option<Id> = None;
     for id in c.ids() {
         if !accept(id) {
             continue;
+        }
+        if matches!(c.value(id), Value::Polygon { .. })
+            && screen_vertices(c, id, t).is_some_and(|pts| crate::shape::contains(&pts, (sx, sy)))
+        {
+            inside = Some(id);
         }
         let Some(d) = distance(c, id, t, (sx, sy)) else {
             continue;
@@ -90,7 +117,7 @@ pub fn pick(
             *best = Some((id, d));
         }
     }
-    best_point.or(best_curve).map(|(id, _)| id)
+    best_point.or(best_curve).map(|(id, _)| id).or(inside)
 }
 
 #[cfg(test)]

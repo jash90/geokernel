@@ -358,8 +358,21 @@ impl Workbench {
             } else if free {
                 (format!("{label} = {text}"), None)
             } else {
+                // A side made by a polygon names the polygon, as in the
+                // reference: `a = Segment(A, B, q1)`.
+                let polygon = groups
+                    .iter()
+                    .find(|g| g.contains(&label) && g[0] != label)
+                    .map(|g| g[0].as_str())
+                    .filter(|&p| c.id(p).is_some_and(|p| c.kind(p) == Kind::Polygon));
+                let side = match (c.def(id), polygon) {
+                    (Def::Segment(p, q), Some(poly)) => {
+                        Some(format!("Segment({}, {}, {poly})", c.label(p), c.label(q)))
+                    }
+                    _ => None,
+                };
                 // `label = definition` for every kind, as in the reference.
-                match rhs.get(label.as_str()).copied() {
+                match side.as_deref().or(rhs.get(label.as_str()).copied()) {
                     Some(rhs) => (format!("{label} = {rhs}"), Some(text)),
                     None => (label.clone(), Some(text)),
                 }

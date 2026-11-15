@@ -110,6 +110,9 @@ pub fn value_text(v: &Value) -> String {
         Value::Line { a, b, c } | Value::Ray { a, b, c, .. } => line_equation(a, b, c),
         Value::Segment { x1, y1, x2, y2 } => n2((x2 - x1).hypot(y2 - y1)),
         Value::Circle { cx, cy, r } => circle_equation(cx, cy, r),
+        // A polygon shows its area, a polyline its length.
+        Value::Polygon { area } => n2(area.abs()),
+        Value::PolyLine { length } => n2(length),
         // A kind added to the kernel later still shows as plain text.
         #[allow(unreachable_patterns)]
         other => format!("{other:?}"),

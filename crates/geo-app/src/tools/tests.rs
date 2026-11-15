@@ -248,7 +248,8 @@ fn every_offered_tool_combination_runs_in_the_kernel() {
         failures.len(),
         failures.join("\n")
     );
-    for tool in Tool::all().filter(|t| !t.is_direct()) {
+    // A polygon needs a fourth click to close; it has its own test.
+    for tool in Tool::all().filter(|t| !t.is_direct() && *t != Tool::Polygon) {
         assert!(
             ran.get(&tool).copied().unwrap_or(0) > 0,
             "{tool:?} never finished"
@@ -287,4 +288,75 @@ fn a_double_click_on_empty_space_makes_one_new_point() {
         panic!("the second distinct click finishes the circle");
     };
     assert_eq!(lines.len(), 3, "{lines:?}");
+}
+
+#[test]
+fn a_polygon_closes_on_its_first_vertex_and_runs_in_the_kernel() {
+    use crate::workbench::Workbench;
+    let mut w = Workbench::from_script("A = (0, 0)\nB = (4, 0)\n").unwrap();
+    let names = ["A", "B"];
+    let t = |l: &str| names.contains(&l);
+    let mut s = ToolState::new(Tool::Polygon);
+    assert!(matches!(
+        s.click(obj("A", Kind::Point), (0.0, 0.0), 2, &t),
+        Outcome::Pending
+    ));
+    assert!(matches!(
+        s.click(obj("B", Kind::Point), (4.0, 0.0), 2, &t),
+        Outcome::Pending
+    ));
+    // The first vertex cannot close a polygon of two vertices.
+    assert!(!s.accepts_object("A", Kind::Point));
+    assert!(matches!(s.click(None, (4.0, 3.0), 2, &t), Outcome::Pending));
+    assert!(matches!(s.click(None, (1.0, 3.0), 2, &t), Outcome::Pending));
+    assert!(s.accepts_object("A", Kind::Point));
+    assert!(
+        !s.accepts_object("B", Kind::Point),
+        "only the first vertex closes"
+    );
+    let Outcome::Run(lines) = s.click(obj("A", Kind::Point), (0.0, 0.0), 2, &t) else {
+        panic!("clicking A again closes the polygon");
+    };
+    assert_eq!(
+        lines,
+        ["C = (4, 3)", "D = (1, 3)", "q1 = Polygon(A, B, C, D)"]
+    );
+    w.run_lines(&lines).unwrap();
+    let c = w.construction();
+    assert!(matches!(
+        c.value(c.id("q1").unwrap()),
+        geo_kernel::kernel::Value::Polygon { .. }
+    ));
+    // Its four sides came with it.
+    assert_eq!(c.len(), 4 + 1 + 4);
+
+    // New points only: a click on the first new point closes.
+    let mut s = ToolState::new(Tool::Polygon);
+    for p in [(0.0, 0.0), (2.0, 0.0), (1.0, 2.0)] {
+        assert!(matches!(s.click(None, p, 2, &none), Outcome::Pending));
+    }
+    let Outcome::Run(lines) = s.click(None, (0.001, 0.0), 2, &none) else {
+        panic!("a click on the first new point closes the polygon");
+    };
+    assert_eq!(lines.last().unwrap(), "t1 = Polygon(A, B, C)");
+}
+
+#[test]
+fn a_regular_polygon_asks_for_the_number_of_vertices() {
+    use crate::workbench::Workbench;
+    let mut w = Workbench::from_script("A = (0, 0)\nB = (2, 0)\n").unwrap();
+    let names = ["A", "B"];
+    let t = |l: &str| names.contains(&l);
+    let mut s = ToolState::new(Tool::RegularPolygon);
+    s.click(obj("A", Kind::Point), (0.0, 0.0), 2, &t);
+    let Outcome::AskNumber(request) = s.click(obj("B", Kind::Point), (2.0, 0.0), 2, &t) else {
+        panic!("two vertices ask for the count");
+    };
+    assert_eq!(request.default, 4.0);
+    let Outcome::Run(lines) = s.finish_number(6.0, 2, &t) else {
+        panic!("the count finishes it");
+    };
+    assert_eq!(lines, ["a = 6", "h1 = Polygon(A, B, a)"]);
+    w.run_lines(&lines).unwrap();
+    assert!(w.construction().id("h1").is_some());
 }

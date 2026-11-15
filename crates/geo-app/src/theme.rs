@@ -30,8 +30,6 @@ pub const FREE_POINT: Color32 = Color32::from_rgb(77, 77, 255);
 pub const DEPENDENT_POINT: Color32 = Color32::from_rgb(0x6e, 0x6d, 0x73);
 pub const POINT_RING: Color32 = Color32::from_rgb(0x1c, 0x1c, 0x1f);
 pub const CURVE: Color32 = Color32::from_rgb(0x1c, 0x1c, 0x1f);
-/// For polygons, once the kernel has them (pull request #17).
-#[allow(dead_code)]
 pub const POLYGON: Color32 = Color32::from_rgb(153, 51, 0);
 pub const ANGLE: Color32 = Color32::from_rgb(0, 100, 0);
 

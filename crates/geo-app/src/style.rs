@@ -4,17 +4,34 @@
 use crate::theme;
 use eframe::egui::Color32;
 use geo_kernel::algo::measure::MeasureDef;
+use geo_kernel::algo::polygon::PolygonDef;
 use geo_kernel::kernel::{Construction, Def, Id, Value};
 
 /// The default colour of an object: blue free points, grey dependent
-/// points, green angles, near-black lines and circles.
+/// points, green angles, brown polygons and their sides, near-black lines
+/// and circles.
 pub fn color(c: &Construction, id: Id) -> Color32 {
     match (c.value(id), c.def(id)) {
         (Value::Point { .. }, def) if def.is_free() => theme::FREE_POINT,
         (Value::Point { .. }, _) => theme::DEPENDENT_POINT,
         (_, Def::Measure(MeasureDef::Angle(..))) => theme::ANGLE,
+        (Value::Polygon { .. }, _) => theme::POLYGON,
+        (_, Def::Polygon(PolygonDef::RegularSide { .. })) => theme::POLYGON,
+        (_, Def::Segment(a, b)) if is_side(c, a, b) => theme::POLYGON,
         _ => theme::CURVE,
     }
+}
+
+/// Whether the segment from `a` to `b` is a side of a `Polygon(...)`.
+fn is_side(c: &Construction, a: Id, b: Id) -> bool {
+    c.ids().any(|p| match c.def(p) {
+        Def::Polygon(PolygonDef::Polygon(list)) => {
+            let v = c.list(list);
+            let n = v.len();
+            n >= 3 && (0..n).any(|i| v[i] == a && v[(i + 1) % n] == b)
+        }
+        _ => false,
+    })
 }
 
 /// `color` laid over white with opacity `alpha`.
@@ -111,5 +128,23 @@ mod tests {
         );
         assert_eq!(color(&c, alpha), theme::ANGLE);
         assert_eq!(angle_points(&c, c.id("d").unwrap()), None);
+    }
+
+    #[test]
+    fn polygons_and_their_sides_are_brown_other_segments_are_not() {
+        let c = geo_kernel::script::load(
+            "A = (0, 0)\nB = (4, 0)\nC = (1, 3)\nq = Polygon(A, B, C)\nD = (5, 5)\ns = Segment(C, D)\n\
+             n = 4\nr = Polygon(A, B, n)\n",
+        )
+        .unwrap();
+        let brown: Vec<&str> = c
+            .ids()
+            .filter(|&id| color(&c, id) == theme::POLYGON)
+            .map(|id| c.label(id))
+            .collect();
+        assert!(brown.contains(&"q") && brown.contains(&"r"), "{brown:?}");
+        // The three sides of q and the four of r.
+        assert_eq!(brown.len(), 2 + 3 + 4, "{brown:?}");
+        assert_eq!(color(&c, c.id("s").unwrap()), theme::CURVE);
     }
 }

@@ -23,6 +23,8 @@ fn every_tool_works_with_real_clicks() {
             Tool::Circle3 => vec![a, b, c],
             Tool::ReflectPoint | Tool::Rotate | Tool::Dilate => vec![c, a],
             Tool::Translate => vec![c, u],
+            Tool::Polygon => vec![a, b, c, a],
+            Tool::RegularPolygon => vec![a, b],
             _ => vec![a, c],
         }
     };

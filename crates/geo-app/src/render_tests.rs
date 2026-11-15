@@ -86,14 +86,13 @@ fn render_empty_reference_size() {
 #[test]
 #[ignore = "needs a GPU adapter"]
 fn render_quadrilateral_reference_size() {
-    // The four sides stand in for a polygon until the kernel has polygons.
+    // The scene of the reference snapshot: a quadrilateral with its sides.
     let path = render_sized(
-        "A = (-8.82, 7.97)\nB = (-3.5, 2.2)\nC = (2.4, 4.1)\nD = (-1.6, 9.3)\n\
-         a = Segment(A, B)\nb = Segment(B, C)\nc = Segment(C, D)\nd = Segment(D, A)\n\
-         α = Angle(B, A, D)\n",
+        "A = (-8.82, 7.97)\nB = (-4.56, 6.63)\nC = (-10.46, 1.45)\nD = (-12.16, 4.93)\n\
+         q1 = Polygon(A, B, C, D)\n",
         "quadrilateral.png",
-        (1728, 1050),
-        |_| {},
+        (1920, 1050),
+        |app| app.wb.selected = app.wb.construction().id("B"),
     );
     println!("{}", path.display());
 }

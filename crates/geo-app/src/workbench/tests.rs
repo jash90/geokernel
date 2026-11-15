@@ -318,3 +318,16 @@ fn a_number_set_to_any_value_keeps_the_tangent_labels_through_undo_and_redo() {
     assert_eq!(labels(&w), ["A", "r", "k", "P", "t_{1}", "t_{2}"]);
     assert!(w.notice.is_none());
 }
+
+#[test]
+fn the_sides_of_a_polygon_name_the_polygon() {
+    let mut w =
+        Workbench::from_script("A = (0, 0)\nB = (4, 0)\nC = (1, 3)\nt1 = Polygon(A, B, C)\n")
+            .unwrap();
+    let rows = w.rows().to_vec();
+    let heads: Vec<&str> = rows.iter().map(|r| r.head.as_str()).collect();
+    assert!(heads.contains(&"t1 = Polygon(A, B, C)"), "{heads:?}");
+    assert!(heads.contains(&"a = Segment(B, C, t1)"), "{heads:?}");
+    let t1 = rows.iter().find(|r| r.label == "t1").unwrap();
+    assert_eq!(t1.value.as_deref(), Some("6"));
+}

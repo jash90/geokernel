@@ -26,6 +26,23 @@ pub fn next_label(kind: Kind, is_taken: impl Fn(&str) -> bool) -> String {
     next_from(alphabet(kind), is_taken)
 }
 
+/// A polygon with `vertices` vertices is named by its shape and the first
+/// free index: `t1` for a triangle, `q1` for a quadrilateral, `p1` and `h1`
+/// for five and six vertices, `poly1` for any other count.
+pub fn polygon_label(vertices: usize, is_taken: impl Fn(&str) -> bool) -> String {
+    let prefix = match vertices {
+        3 => "t",
+        4 => "q",
+        5 => "p",
+        6 => "h",
+        _ => "poly",
+    };
+    (1..)
+        .map(|i| format!("{prefix}{i}"))
+        .find(|l| !is_taken(l))
+        .unwrap_or_default()
+}
+
 /// Angles are named with Greek letters: `α`, `β`, `γ`, ...
 pub fn next_greek(is_taken: impl Fn(&str) -> bool) -> String {
     next_from("αβγδεζηθικλμνξοπρστυφχψω", is_taken)

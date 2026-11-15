@@ -27,6 +27,8 @@ pub enum Tool {
     AngleBisector,
     Tangents,
     Polar,
+    Polygon,
+    RegularPolygon,
     Circle,
     CircleRadius,
     Circle3,
@@ -46,9 +48,8 @@ pub enum Tool {
 }
 
 /// The tool groups of the toolbar, in the order of the reference toolbar.
-/// Groups whose tools the kernel cannot serve yet (polygons, conics, sliders
-/// and texts) are left out; the polygon group goes between the special lines
-/// and the circles once the kernel has polygons.
+/// Groups whose tools the kernel cannot serve yet (conics, sliders and
+/// texts) are left out.
 pub const GROUPS: &[&[Tool]] = &[
     &[Tool::Move],
     &[Tool::Point, Tool::Intersect, Tool::Midpoint],
@@ -61,6 +62,7 @@ pub const GROUPS: &[&[Tool]] = &[
         Tool::Tangents,
         Tool::Polar,
     ],
+    &[Tool::Polygon, Tool::RegularPolygon],
     &[Tool::Circle, Tool::CircleRadius, Tool::Circle3],
     &[Tool::Angle, Tool::Distance],
     &[
@@ -115,6 +117,8 @@ impl Tool {
             Tool::Circle => "Okrąg: środek i punkt",
             Tool::CircleRadius => "Okrąg: środek i promień",
             Tool::Circle3 => "Okrąg przez trzy punkty",
+            Tool::Polygon => "Wielokąt",
+            Tool::RegularPolygon => "Wielokąt foremny",
             Tool::Angle => "Kąt",
             Tool::Distance => "Odległość lub długość",
             Tool::ReflectLine => "Symetria osiowa",
@@ -248,6 +252,20 @@ impl ToolState {
             .any(|p| matches!(p, Pick::Object { label: l, .. } if l == label))
     }
 
+    /// Whether picking `label` now closes the polygon being drawn.
+    fn closes_on(&self, label: &str) -> bool {
+        self.tool == Tool::Polygon
+            && self.picks.len() >= 3
+            && matches!(self.picks.first(), Some(Pick::Object { label: l, .. }) if l == label)
+    }
+
+    /// The polygon through the picks so far, closed by the last click.
+    fn close_polygon(&mut self, decimals: usize, is_taken: &dyn Fn(&str) -> bool) -> Outcome {
+        let lines = recipe::build(self.tool, &self.picks, None, decimals, is_taken);
+        self.picks.clear();
+        Outcome::Run(lines)
+    }
+
     fn kinds(&self) -> Vec<Kind> {
         self.picks.iter().map(Pick::kind).collect()
     }
@@ -258,7 +276,10 @@ impl ToolState {
         match self.tool {
             Tool::Move | Tool::MoveView | Tool::ZoomIn | Tool::ZoomOut => false,
             Tool::Delete | Tool::ShowHide => true,
-            _ if self.asking.is_some() || self.picked(label) => false,
+            _ if self.asking.is_some() => false,
+            // The first vertex again closes the polygon.
+            Tool::Polygon if self.closes_on(label) => true,
+            _ if self.picked(label) => false,
             tool => recipe::accepts(tool, &self.kinds(), Some(kind)),
         }
     }
@@ -320,6 +341,9 @@ impl ToolState {
             },
             _ => return Outcome::Ignored,
         };
+        if matches!(&pick, Pick::Object { label, .. } if self.closes_on(label)) {
+            return self.close_polygon(decimals, is_taken);
+        }
         if let Pick::New { x, y } = pick {
             // A second click on a new point that is not made yet (a double
             // click) must not make a second point on top of it. The step of
@@ -329,6 +353,11 @@ impl ToolState {
                 Pick::New { x: px, y: py } => (x - px).hypot(y - py) < near,
                 Pick::Object { .. } => false,
             });
+            let on_first = matches!(self.picks.first(), Some(Pick::New { x: px, y: py })
+                if (x - px).hypot(y - py) < near);
+            if self.tool == Tool::Polygon && self.picks.len() >= 3 && on_first {
+                return self.close_polygon(decimals, is_taken);
+            }
             if twice {
                 return Outcome::Ignored;
             }
