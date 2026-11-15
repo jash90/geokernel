@@ -247,6 +247,28 @@ fn preview(
             );
         }
     }
+    if app.tool.tool() == Tool::Polygon && !picks.is_empty() {
+        // The sides so far and the one following the pointer, lightly filled.
+        let mut pts: Vec<egui::Pos2> = picks
+            .iter()
+            .filter_map(|p| pick_position(app, p).map(screen))
+            .collect();
+        pts.extend(pointer.filter(|p| rect.contains(*p)));
+        if pts.len() >= 3 {
+            let tris: Vec<(f64, f64)> = pts.iter().map(|p| (p.x as f64, p.y as f64)).collect();
+            let mut mesh = egui::Mesh::default();
+            for &p in &pts {
+                mesh.colored_vertex(p, theme::POLYGON.gamma_multiply(0.1));
+            }
+            for [a, b, c] in crate::shape::triangulate(&tris) {
+                mesh.add_triangle(a as u32, b as u32, c as u32);
+            }
+            painter.add(egui::Shape::mesh(mesh));
+        }
+        let stroke = Stroke::new(draw::CURVE_WIDTH, theme::POLYGON.gamma_multiply(0.6));
+        painter.add(egui::Shape::line(pts, stroke));
+        return;
+    }
     let (Some(to), [first]) = (pointer.filter(|p| rect.contains(*p)), picks) else {
         return;
     };
