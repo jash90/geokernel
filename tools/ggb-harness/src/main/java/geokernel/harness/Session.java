@@ -19,6 +19,7 @@ import org.geogebra.common.kernel.commands.AlgebraProcessor;
 import org.geogebra.common.kernel.geos.GeoConic;
 import org.geogebra.common.kernel.geos.GeoElement;
 import org.geogebra.common.kernel.geos.GeoLine;
+import org.geogebra.common.kernel.geos.GeoBoolean;
 import org.geogebra.common.kernel.geos.GeoNumeric;
 import org.geogebra.common.kernel.geos.GeoPoint;
 import org.geogebra.common.kernel.geos.GeoPolyLine;
@@ -268,6 +269,9 @@ final class Session {
         if (geo instanceof GeoNumeric) {
             return "number";
         }
+        if (geo instanceof GeoBoolean) {
+            return "boolean";
+        }
         if (geo instanceof GeoVector) {
             return "vector";
         }
@@ -407,6 +411,8 @@ final class Session {
             case "Midpoint":
             case "Center":
             case "Intersect":
+            case "ClosestPoint":
+            case "Trilinear":
             case "Centroid":
             case "Vertex":
                 return "point";
@@ -414,6 +420,15 @@ final class Session {
                 return "polygon";
             case "PolyLine":
                 return "polyline";
+            case "AreCollinear":
+            case "AreParallel":
+            case "ArePerpendicular":
+            case "AreConcurrent":
+            case "AreConcyclic":
+            case "AreEqual":
+            case "AreCongruent":
+            case "IsTangent":
+                return "boolean";
             case "Distance":
             case "Length":
             case "Radius":
@@ -448,6 +463,17 @@ final class Session {
         String type = typeOf(geo);
         Map<String, Object> obj = new LinkedHashMap<>();
         obj.put("type", type);
+        if (geo instanceof GeoBoolean) {
+            // GeoBoolean.isDefined is false only for the prover's "unknown"
+            // answer of AreCongruent; a boolean has no numeric fields.
+            if (geo.isDefined()) {
+                obj.put("defined", true);
+                obj.put("value", ((GeoBoolean) geo).getBoolean());
+            } else {
+                obj.put("defined", false);
+            }
+            return obj;
+        }
         Map<String, Object> fields = geo.isDefined() ? fields(geo, type) : null;
         if (fields != null && fields.values().stream().allMatch(Session::finite)) {
             obj.put("defined", true);

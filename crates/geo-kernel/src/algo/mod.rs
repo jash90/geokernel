@@ -22,7 +22,9 @@ pub mod conic;
 pub mod intersect;
 pub mod lines;
 pub mod measure;
+pub mod point;
 pub mod polygon;
+pub mod predicate;
 pub mod transform;
 pub mod vector;
 
@@ -36,7 +38,7 @@ pub(crate) const CIRCLE: &[Kind] = &[Kind::Circle];
 pub(crate) const NUMBER: &[Kind] = &[Kind::Number];
 
 /// The most objects one definition can read.
-pub(crate) const MAX_PARENTS: usize = 4;
+pub(crate) const MAX_PARENTS: usize = 6;
 
 /// The objects a definition reads, without allocating.
 #[derive(Clone, Copy, Debug)]

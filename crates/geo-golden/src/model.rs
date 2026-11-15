@@ -117,6 +117,8 @@ pub enum ExpectedData {
         x: f64,
         y: f64,
     },
+    /// The value of a boolean.
+    Bool(bool),
     /// Start point `(x, y)` and raw line coefficients.
     Ray {
         x: f64,
@@ -186,6 +188,7 @@ impl TryFrom<RawObject> for Expected {
             "number" => (Kind::Number, &["value"]),
             "vector" => (Kind::Vector, &["x", "y"]),
             "ray" => (Kind::Ray, &["x", "y", "a", "b", "c"]),
+            "boolean" => (Kind::Boolean, &["value"]),
             "polygon" => (Kind::Polygon, &["vertices", "area", "signed_area"]),
             "polyline" => (Kind::PolyLine, &["vertices", "length"]),
             other => return Err(format!("unknown object type `{other}`")),
@@ -203,6 +206,15 @@ impl TryFrom<RawObject> for Expected {
                 "defined {} must carry exactly {names:?}, got {got:?}",
                 raw.ty
             ));
+        }
+        if kind == Kind::Boolean {
+            return match raw.fields["value"].as_bool() {
+                Some(b) => Ok(Expected {
+                    kind,
+                    data: Some(ExpectedData::Bool(b)),
+                }),
+                None => Err("a boolean's `value` must be true or false".to_string()),
+            };
         }
         if kind == Kind::Polygon {
             let vertices = vertices(&raw.fields["vertices"], false)?;
@@ -262,6 +274,7 @@ impl TryFrom<RawObject> for Expected {
                 b: f("b"),
                 c: f("c"),
             },
+            Kind::Boolean => unreachable!("handled above"),
             // `Kind` is non-exhaustive: a kind without a golden type yet.
             other => return Err(format!("no golden data format for {other:?}")),
         };
@@ -525,6 +538,32 @@ mod tests {
             ),
         ] {
             assert!(parse_file(bad, "t").is_err(), "accepted: {bad}");
+        }
+    }
+
+    #[test]
+    fn booleans_carry_one_truth_value() {
+        let parse = |json: &str| serde_json::from_str::<Expected>(json);
+        let t = parse(r#"{"type":"boolean","defined":true,"value":true}"#).unwrap();
+        assert_eq!(t.kind, Kind::Boolean);
+        assert_eq!(t.data, Some(ExpectedData::Bool(true)));
+        let f = parse(r#"{"type":"boolean","defined":true,"value":false}"#).unwrap();
+        assert_eq!(f.data, Some(ExpectedData::Bool(false)));
+        let u = parse(r#"{"type":"boolean","defined":false}"#).unwrap();
+        assert_eq!((u.kind, u.data), (Kind::Boolean, None));
+        for bad in [
+            // a number instead of a truth value
+            r#"{"type":"boolean","defined":true,"value":1.0}"#,
+            // an extra field
+            r#"{"type":"boolean","defined":true,"value":true,"x":1.0}"#,
+            // an undefined boolean carries no value
+            r#"{"type":"boolean","defined":false,"value":true}"#,
+            // the value is missing
+            r#"{"type":"boolean","defined":true}"#,
+            // a truth value in a numeric field
+            r#"{"type":"number","defined":true,"value":true}"#,
+        ] {
+            assert!(parse(bad).is_err(), "accepted: {bad}");
         }
     }
 

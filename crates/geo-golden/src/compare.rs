@@ -106,6 +106,7 @@ pub fn compare_object(
             ok(all_agree(&[(*x, ax), (*y, ay)]))
         }
         (ExpectedData::Number(v), Value::Number(av)) => ok(numbers_agree(*v, av)),
+        (ExpectedData::Bool(b), Value::Bool(ab)) => ok(*b == ab),
         (
             ExpectedData::Circle { cx, cy, r },
             Value::Circle {
@@ -258,6 +259,48 @@ mod tests {
         assert!(compare(&undefined, Kind::Point, &Value::Point { x: 1.0, y: 2.0 }).is_err());
         assert!(compare(&defined, Kind::Point, &Value::Undefined).is_err());
         assert!(compare(&defined, Kind::Point, &Value::Point { x: 1.0, y: 2.0 }).is_ok());
+    }
+
+    fn boolean(b: bool) -> Expected {
+        Expected {
+            kind: Kind::Boolean,
+            data: Some(ExpectedData::Bool(b)),
+        }
+    }
+
+    #[test]
+    fn booleans_are_compared_exactly() {
+        let cmp = |e: &Expected, b: bool| compare(e, Kind::Boolean, &Value::Bool(b));
+        assert!(cmp(&boolean(true), true).is_ok());
+        assert!(cmp(&boolean(false), false).is_ok());
+        assert!(cmp(&boolean(true), false).is_err());
+        assert!(cmp(&boolean(false), true).is_err());
+    }
+
+    #[test]
+    fn a_boolean_defined_on_one_side_only_fails() {
+        let undefined = Expected {
+            kind: Kind::Boolean,
+            data: None,
+        };
+        assert!(compare(&undefined, Kind::Boolean, &Value::Undefined).is_ok());
+        assert!(compare(&undefined, Kind::Boolean, &Value::Bool(false)).is_err());
+        assert!(compare(&boolean(false), Kind::Boolean, &Value::Undefined).is_err());
+        assert!(compare(&boolean(true), Kind::Boolean, &Value::Undefined).is_err());
+    }
+
+    #[test]
+    fn a_boolean_is_not_another_kind() {
+        assert!(compare(&boolean(true), Kind::Number, &Value::Number(1.0)).is_err());
+        assert!(compare(&num(1.0), Kind::Boolean, &Value::Bool(true)).is_err());
+        assert!(compare(
+            &boolean(true),
+            Kind::Point,
+            &Value::Point { x: 1.0, y: 0.0 }
+        )
+        .is_err());
+        // The kinds agree but the value is of another type.
+        assert!(compare(&boolean(true), Kind::Boolean, &Value::Number(1.0)).is_err());
     }
 
     #[test]
