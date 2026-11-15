@@ -31,6 +31,7 @@
 
 use crate::algo::conic::ConicDef;
 use crate::algo::conic_nd::{ConicData, ConicType};
+use crate::algo::conic_parts::ConicPartDef;
 use crate::algo::general_conic::GeneralConicDef;
 use crate::algo::lines::LineDef;
 use crate::algo::measure::MeasureDef;
@@ -324,6 +325,9 @@ pub enum Def {
     /// General conics and transformations of conics; the construction keeps
     /// a [`ConicData`] record for each (see [`Construction::conic`]).
     GeneralConic(GeneralConicDef),
+    /// Objects computed from a general conic, such as its intersection
+    /// points with a line.
+    ConicPart(ConicPartDef),
 }
 
 impl Def {
@@ -348,6 +352,7 @@ impl Def {
             Def::Expr(d) => d.kind(),
             Def::Polygon(d) => d.kind(),
             Def::GeneralConic(d) => d.kind(),
+            Def::ConicPart(d) => d.kind(),
         }
     }
 
@@ -408,6 +413,7 @@ impl Def {
             Def::Point(d) => d.parents(),
             Def::Polygon(d) => d.parents(),
             Def::GeneralConic(d) => d.parents(),
+            Def::ConicPart(d) => d.parents(),
         }
     }
 }
@@ -1136,6 +1142,7 @@ impl Construction {
             Def::Expr(d) => expr::check_handle(self, d),
             Def::Polygon(d) => d.check(self),
             Def::GeneralConic(d) => d.check(self),
+            Def::ConicPart(d) => d.check(self),
         }
     }
 
@@ -1216,6 +1223,7 @@ impl Construction {
             Def::Expr(d) => Some(expr::current(self, d)),
             Def::Polygon(d) => d.compute(self),
             Def::GeneralConic(d) => d.compute(self),
+            Def::ConicPart(d) => d.compute(self),
         }
     }
 

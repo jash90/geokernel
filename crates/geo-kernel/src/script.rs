@@ -46,6 +46,7 @@
 //! deliberate difference (see `DIFFERENCES.md`).
 
 use crate::algo::conic::ConicDef;
+use crate::algo::conic_parts::ConicPartDef;
 use crate::algo::general_conic::GeneralConicDef;
 use crate::algo::lines::LineDef;
 use crate::algo::measure::MeasureDef;
@@ -386,6 +387,9 @@ pub(crate) fn parse_def(c: &Construction, rhs: &str) -> Result<Def, String> {
     // conics come first: they claim the transformations of conics.
     if let Some(def) = GeneralConicDef::parse(c, func, &args) {
         return def.map(Def::GeneralConic);
+    }
+    if let Some(def) = ConicPartDef::parse(c, func, &args) {
+        return def.map(Def::ConicPart);
     }
     if let Some(def) = VectorDef::parse(c, func, &args) {
         return def.map(Def::Vector);

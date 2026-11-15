@@ -19,6 +19,23 @@ id = "conic-diameter-007"
 reason = "intended difference, recorded in DIFFERENCES.md: GeoGebra keeps the diameter line of an undefined circle (negative radius) at its last value, computed from the stale matrix of the last defined circle; the kernel reports it undefined"
 mismatches = ["1:g", "4:g"]
 
+# conics
+
+[[gap]]
+id = "conics-intersection-010"
+reason = "a line parallel to the axis of a parabola meets it once, at index 1 or 2 of intersectLineConic depending on the sign of d. GeoGebra moves the defined point to intersection 1 only while AlgoIntersectLineConic.firstIntersection is true, which an update with two distinct points clears for good; afterwards the fixed permutation keeps the point at intersection 2. The kernel keeps no such history and always puts the single point first, which agrees at creation and until two points have been seen"
+mismatches = ["4:S", "4:T"]
+
+[[gap]]
+id = "conics-intersection-011"
+reason = "a line parallel to the axis of a parabola meets it once, at index 1 or 2 of intersectLineConic depending on the sign of d. GeoGebra moves the defined point to intersection 1 only while AlgoIntersectLineConic.firstIntersection is true, which an update with two distinct points clears for good; afterwards the fixed permutation keeps the point at intersection 2. The kernel keeps no such history and always puts the single point first, which agrees at creation and until two points have been seen"
+mismatches = ["2:S", "2:T"]
+
+[[gap]]
+id = "conics-intersection-012"
+reason = "a line parallel to the axis of a parabola meets it once, at index 1 or 2 of intersectLineConic depending on the sign of d. GeoGebra moves the defined point to intersection 1 only while AlgoIntersectLineConic.firstIntersection is true, which an update with two distinct points clears for good; afterwards the fixed permutation keeps the point at intersection 2. The kernel keeps no such history and always puts the single point first, which agrees at creation and until two points have been seen"
+mismatches = ["2:S", "2:T"]
+
 # lines
 
 [[gap]]

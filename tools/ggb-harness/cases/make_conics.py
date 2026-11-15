@@ -152,4 +152,67 @@ case("parabola", [pt("F", 500, 300), pt("A", -400, -100), pt("B", 600, -200), "g
                   "p = Parabola(F, g)"],
      [mv("F", 0.001, 0.002), mv("A", 0, 0), mv("B", 0.001, 0)])
 
+# ------------------------------------------------- a line and a conic
+topic("intersection")
+LINE = [pt("U", -7, -2), pt("V", 6, 3), "g = Line(U, V)"]
+BOTH = ["S = Intersect(g, k, 1)", "T = Intersect(k, g, 2)"]
+CONICS = [
+    five([(3, 0), (0, 2), (-3, 0), (0, -2), (1.8, 1.6)]),
+    [pt("F", -3, 0), pt("G", 3, 0), pt("P", 0, 4), "k = Ellipse(F, G, P)"],
+    [pt("F", -3, 0), pt("G", 3, 0), pt("P", 2, 1), "k = Hyperbola(F, G, P)"],
+    [pt("F", 0, 1), pt("A", -1, -1), pt("B", 1, -1), "d = Line(A, B)", "k = Parabola(F, d)"],
+]
+# random lines through each kind of conic
+for conic in CONICS:
+    for _ in range(2):
+        script = conic + [pt("U", *rp()), pt("V", *rp()), "g = Line(U, V)"] + BOTH
+        case("intersection", script, [mv("U", *rp()), mv("V", *rp()), mv("U", *rp())])
+# a tangent of the ellipse, then a passing line and a secant
+case("intersection", CONICS[1] + [pt("U", -1, 4), pt("V", 1, 4), "g = Line(U, V)"] + BOTH,
+     [mv("V", 1, 4.000001), mv("U", -1, 4.000001), mv("U", -1, 5), mv("V", 1, 5), mv("U", -1, 3),
+      mv("V", 1, 3), mv("U", -1, 4), mv("V", 1, 4)])
+# lines parallel to the axis of the parabola, in both directions, and through it
+case("intersection", CONICS[3] + [pt("U", 2, 0), pt("V", 2, 5), "g = Line(U, V)"] + BOTH,
+     [mv("V", 2, -5), mv("V", 2.5, 5), mv("V", 2, 5), mv("U", 2, 9)])
+case("intersection", CONICS[3] + [pt("U", 2, 5), pt("V", 2, 0), "g = Line(U, V)"] + BOTH,
+     [mv("U", 3, 5), mv("U", 2, 5), mv("V", 2, 9)])
+# created with two points, then parallel to the axis
+case("intersection", CONICS[3] + [pt("U", -3, 0), pt("V", 3, 4), "g = Line(U, V)"] + BOTH,
+     [mv("U", 3, 0), mv("U", 3, 9), mv("U", -3, 0)])
+# lines parallel to an asymptote of x^2 - y^2 = 1 and the asymptote itself
+case("intersection", five([(1, 0), (-1, 0), (2, 1.732051), (2, -1.732051), (-3, 2.828427)])
+     + [pt("U", 0, 1), pt("V", 1, 2), "g = Line(U, V)"] + BOTH,
+     [mv("U", 0, -1), mv("U", 0, 0), mv("V", 1, 1), mv("V", 1, 2.000001), mv("U", 0, 1)])
+# a double line, and a line along it
+case("intersection", [pt("F", -3, 0), pt("G", 3, 0), num("a", 3), "k = Ellipse(F, G, a)",
+                      pt("U", 1, -2), pt("V", 2, 3), "g = Line(U, V)"] + BOTH,
+     [setn("a", 3.000001), setn("a", 5), setn("a", 3), mv("U", -5, 0), mv("V", 5, 0), mv("V", 5, 1)])
+# a pair of lines through three collinear points
+case("intersection", five([(0, 0), (1, 0), (2, 0), (0, 1), (1, 2)]) + LINE + BOTH,
+     [mv("U", -7, 5), mv("V", 6, -4), mv("C", 2, 0.5), mv("C", 2, 0)])
+# parallel lines and a single point
+case("intersection", five([(0, 0), (1, 0), (0, 2), (1, 2), (3, 0)]) + LINE + BOTH,
+     [mv("V", 6, 0), mv("E", 3, 1), mv("E", 3, 0)])
+case("intersection", [pt("F", 2, 1), num("a", 0), "k = Ellipse(F, F, a)",
+                      pt("U", 0, 0), pt("V", 4, 2), "g = Line(U, V)"] + BOTH,
+     [mv("V", 4, 3), mv("V", 4, 2), setn("a", 1), setn("a", 0)])
+# a line through a point of the conic by construction: that point comes first
+case("intersection", five([(3, 0), (0, 2), (-3, 0), (0, -2), (1.8, 1.6)])
+     + [pt("U", -5, 1), "g = Line(U, A)"] + BOTH,
+     [mv("U", -5, -1), mv("A", 4, 0), mv("U", 7, 3), mv("A", 3, 0)])
+case("intersection", five([(3, 0), (0, 2), (-3, 0), (0, -2), (1.8, 1.6)])
+     + [pt("U", -5, 1), "g = Line(E, U)"] + BOTH,
+     [mv("U", 0, -4), mv("E", 2, 2), mv("U", -5, 1)])
+case("intersection", CONICS[1] + [pt("U", 4, -3), "g = Line(U, P)"] + BOTH,
+     [mv("U", -4, -3), mv("P", 1, 5), mv("U", 0, 9)])
+case("intersection", CONICS[2] + [pt("U", 4, -3), "g = Line(P, U)"] + BOTH,
+     [mv("U", -4, 3), mv("P", 4, 2)])
+# the conic becomes undefined and defined again
+case("intersection", CONICS[3] + LINE + BOTH,
+     [mv("B", -1, -1), mv("B", 1, -1), mv("F", 0, -1), mv("F", 0, 1)])
+# large coordinates
+case("intersection", [pt("F", -3000, 0), pt("G", 3000, 0), pt("P", 0, 4000), "k = Ellipse(F, G, P)",
+                      pt("U", -7000, -2000), pt("V", 6000, 3000), "g = Line(U, V)"] + BOTH,
+     [mv("V", 6000, 30000), mv("U", 0.001, 0)])
+
 cases.write()
