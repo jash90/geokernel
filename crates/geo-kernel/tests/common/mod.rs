@@ -410,8 +410,8 @@ pub const COMMANDS: &[Cmd] = &[
     cmd("Intersect", &[LN, LN, IX]),
     cmd("Intersect", &[LN, CI]),
     cmd("Intersect", &[CI, LN, IX]),
-    cmd("Intersect", &[CI, CI]),
-    cmd("Intersect", &[CI, CI, IX]),
+    history_dependent("Intersect", &[CI, CI]),
+    history_dependent("Intersect", &[CI, CI, IX]),
     // lines
     cmd("LineBisector", &[PT, PT]),
     cmd("PerpendicularBisector", &[PT, PT]),

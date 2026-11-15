@@ -1163,8 +1163,9 @@ fn a_line_through_far_points_is_not_the_zero_line() {
     }
 }
 
-/// Random constructions that also use `Slope(line)` and `Distance(line,
-/// line)` fail the history checks (see the two tests above).
+/// Random constructions that also use `Slope(line)`, `Distance(line, line)`
+/// and `Intersect(circle, circle)` fail the history or recompute checks (see
+/// the tests above and below).
 #[test]
 #[ignore = "known defect: see slope_of_a_line_depends_on_the_history_of_moves"]
 fn random_constructions_with_all_commands() {
@@ -1290,6 +1291,30 @@ fn shear_stretch_and_ratios_match_closed_forms() {
     });
 }
 
+/// Rebuilding a construction from its definitions (`add(label, def(id))` for
+/// every object) does not reproduce circle intersections: `add` recomputes
+/// the `special` flag of `Def::IntersectCircles` from the positions at that
+/// moment and ignores the one in the definition. With `M` moved to `(0, 0)`
+/// after the intersection was created at `M = (2, 1)`, the intersection is
+/// not at `(2, 1)`; rebuilt from the definitions it is.
+#[test]
+#[ignore = "known defect: Intersect of two circles cannot be rebuilt from its definition"]
+fn circle_intersections_survive_a_rebuild_from_definitions() {
+    let mut c = build(
+        "M = (2, 1)\nA = (2, 1)\nN = (5, 5)\nk = Circle(M, A)\nc = Circle(N, A)\n\
+         P = Intersect(k, c, 1)\n",
+    );
+    let m = c.id("M").unwrap();
+    c.move_point(m, 0.0, 0.0).unwrap();
+    let mut rebuilt = Construction::new();
+    for id in c.ids() {
+        rebuilt.add(c.label(id), c.def(id)).unwrap();
+    }
+    if let Some(d) = first_difference(&c, &values(&c), &values(&rebuilt)) {
+        panic!("rebuilding from the definitions changed a value: {d}");
+    }
+}
+
 // ----------------------------------------------------- API robustness
 
 struct Snapshot {
@@ -1400,7 +1425,8 @@ fn misuse_of_the_api_is_an_error_and_changes_nothing() {
             Def::IntersectCircles {
                 c1: k,
                 c2: k,
-                which: 255
+                which: 255,
+                special: false
             }
         ),
         Err(Error::BadIndex(255))
@@ -1457,6 +1483,7 @@ fn misuse_of_the_api_is_an_error_and_changes_nothing() {
                 c1: i[0],
                 c2: i[1],
                 which: 1,
+                special: false,
             }
         }),
     ];
