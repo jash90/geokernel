@@ -19,6 +19,8 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoJoinPoints.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoLinePointLine.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoOrthoLinePointLine.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoTangentLineND.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoTangentPointND.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/Kernel.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoLine.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoPoint.java
@@ -31,6 +33,7 @@
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
 use crate::algo::conic::ConicDef;
+use crate::algo::lines;
 use crate::kernel::{Construction, Def, Id, Value};
 use crate::tol::{EPS, MAX_PRECISION, MIN_PRECISION, STANDARD_PRECISION};
 
@@ -135,8 +138,15 @@ type Pt = Option<(f64, f64)>;
 
 /// `which` is 0 or 1: GeoGebra's intersection 1 or 2 (`AlgoIntersectLineConic`).
 pub(crate) fn line_circle(c: &Construction, line: Id, circle: Id, which: u8) -> Option<Value> {
-    let (cx, cy, r) = c.circle(circle)?;
     let line_def = c.def(line);
+    if let Def::Lines(d) = line_def {
+        // A tangent of this circle has one point, the tangent algorithm's
+        // own (`isDefinedAsTangent`).
+        if let Some(t) = lines::tangent_point_on(c, d, circle) {
+            return if which == 0 { to_value(t) } else { None };
+        }
+    }
+    let (cx, cy, r) = c.circle(circle)?;
     let g = raw_line(c, line, line_def)?;
     let conic = Conic::new(cx, cy, r);
 
@@ -922,5 +932,19 @@ mod tests {
         assert!(!close(xy(&late, "P"), 2.0, 1.0));
         mv(&mut early, "M", 4.0, -3.0);
         assert!(close(xy(&early, "P"), 2.0, 1.0));
+    }
+
+    #[test]
+    fn a_tangent_of_the_circle_has_only_its_tangent_point() {
+        let mut c = load(
+            "A = (0, 0)\nr = 5\nk = Circle(A, r)\nP = (0, 6.25)\nt = Tangent(P, k)\n\
+             X = Intersect(t_{1}, k, 1)\nY = Intersect(k, t_{2}, 1)\nZ = Intersect(t_{1}, k, 2)\n",
+        )
+        .unwrap();
+        assert!(close(xy(&c, "X"), -3.0, 4.0) || close(xy(&c, "X"), 3.0, 4.0));
+        assert!(close(xy(&c, "Y"), -xy(&c, "X").unwrap().0, 4.0));
+        assert_eq!(xy(&c, "Z"), None);
+        mv(&mut c, "P", 1.0, 1.0);
+        assert_eq!(xy(&c, "X"), None);
     }
 }

@@ -435,4 +435,78 @@ case("rawline", [pt("C", -400, 0), pt("D", 400, 0), "f = Line(C, D)", pt("A", 0,
      [setn("r", 4)] + [setn("r", v + 1) for v in (2.9999999, 2.99999, 3.0000001, 2.99999999)]
      + [setn("r", 3)])
 
+# ------------------------------------- lines defined as tangents of the circle
+topic("deftangent")
+# AlgoIntersectLineConic takes the point of a tangent line of the same conic
+# from the tangent algorithm (isDefinedAsTangent) and has only one point.
+TK = [pt("A", 0, 0), num("r", 3), "k = Circle(A, r)"]
+TMOVES = [mv("P", 0, 6), mv("P", -5, -2), mv("P", 3, 0), mv("P", 1, 0.5), mv("P", 6, 2),
+          setn("r", 1), setn("r", 0), setn("r", 4), mv("P", 2.4, 3.2), mv("P", 5, 1), setn("r", 3)]
+case("deftangent", TK + [pt("P", 5, 1), "t = Tangent(P, k)", "X = Intersect(t_{1}, k, 1)",
+                         "Y = Intersect(t_{2}, k, 1)", "Z = Intersect(k, t_{2}, 1)"], TMOVES)
+case("deftangent", TK + [pt("P", 5, 1), "t = Tangent(P, k)", "X = Intersect(t_{1}, k, 2)"],
+     TMOVES)
+case("deftangent", TK + [pt("P", 5, 1), "t = Tangent(P, k)", "X = Intersect(t_{2}, k, 2)",
+                         "Y = Intersect(t_{1}, k)"], TMOVES)
+# The point starts on the circle: one tangent `t`.
+case("deftangent", TK + [pt("P", 3, 0), "t = Tangent(P, k)", "X = Intersect(t, k, 1)"],
+     [mv("P", 0, 3), mv("P", 5, 1), mv("P", 0, -3), mv("P", 1, 1), setn("r", 5), mv("P", 3, 4)])
+# Tangents parallel to a line.
+case("deftangent", TK + [pt("B", -4, -1), pt("C", 4, 2), "g = Line(B, C)", "t = Tangent(g, k)",
+                         "X = Intersect(t_{1}, k, 1)", "Y = Intersect(k, t_{2}, 1)",
+                         "Z = Intersect(t_{2}, k, 2)"],
+     [mv("C", 4, -3), mv("B", 1, 5), mv("A", 2, 1), setn("r", 0), setn("r", 2), mv("C", -4, 7)])
+# A tangent of another circle is an ordinary line for this circle.
+case("deftangent", TK + [pt("P", 5, 1), "t = Tangent(P, k)", pt("M", 4, 3), num("q", 2.5),
+                         "c = Circle(M, q)", "X = Intersect(t_{1}, c, 1)",
+                         "Y = Intersect(t_{1}, c, 2)"],
+     [mv("P", 6, 3), mv("M", 2, 4), setn("q", 4), mv("P", 3, 0), mv("P", 0, 5)])
+# The polar of a point is not a tangent algorithm.
+case("deftangent", TK + [pt("P", 1, 1), "p = Polar(P, k)", "X = Intersect(p, k, 1)",
+                         "Y = Intersect(p, k, 2)"],
+     [mv("P", 2, -1), mv("P", 3, 0), mv("P", 5, 0), mv("P", 0.5, 0.25), setn("r", 1)])
+
+# Large and odd scales, where the rounding of the tangent line can make the
+# line cut the circle in two close points.
+for a, r, p0, moves in (((0, 0), 100000, (300000, 123457), [(-250001, 77777), (0, 1000001), (99999.5, -3000)]),
+                        ((12345.678, -9876.543), 777.777, (13500.1, -9000.3), [(11000.7, -9100.9), (12345.678, -9000), (14000.123, -11000.456)]),
+                        ((0.3, 0.7), 0.0123, (0.35, 0.69), [(0.31, 0.75), (0.2, 0.6), (0.3123, 0.7)]),
+                        ((-7.1, 3.3), 2.9, (1000000.5, 999999.25), [(-1000000, 3.3), (5, -999999), (-7.1, 1234567)])):
+    case("deftangent", [pt("A", *a), num("r", r), "k = Circle(A, r)", pt("P", *p0),
+                        "t = Tangent(P, k)", "X = Intersect(t_{1}, k, 1)", "Y = Intersect(t_{2}, k, 1)",
+                        "U = Intersect(t_{1}, k, 2)", "V = Intersect(k, t_{2}, 2)"],
+         [mv("P", *m) for m in moves])
+    case("deftangent", [pt("A", *a), num("r", r), "k = Circle(A, r)", pt("B", *p0), pt("C", a[0] + 3 * r, a[1] - 7 * r),
+                        "g = Line(B, C)", "t = Tangent(g, k)", "X = Intersect(t_{1}, k, 1)",
+                        "Y = Intersect(t_{2}, k, 1)", "U = Intersect(t_{1}, k, 2)", "V = Intersect(t_{2}, k, 2)"],
+         [mv("B", *m) for m in moves])
+
+# --------------------------- lines and circles from the other groups
+topic("groups")
+# Lines built by the lines and transform groups, with a circle.
+GK = [pt("A", 0, 0), num("r", 4), "k = Circle(A, r)", pt("B", -5, 1), pt("C", 3, 2),
+      pt("D", 1, -3), num("t", 0.7), num("s", 1.5)]
+GMOVES = [mv("B", -3, 4), mv("C", 6, -1), mv("D", -2, -2), setn("t", 2.1), setn("s", -0.5),
+          setn("r", 2), mv("A", 1, 1)]
+for line in ("f = LineBisector(B, C)", "f = AngularBisector(B, D, C)", "g = Line(B, C)\nf = Reflect(g, D)",
+             "g = Line(B, C)\nf = Rotate(g, t, D)", "g = Line(B, C)\nf = Dilate(g, s, D)",
+             "f = Polar(B, k)", "g = Line(B, C)\nh = Line(C, D)\nf = AngularBisector(g, h)"):
+    script = GK + line.split("\n") + LC
+    if "AngularBisector(g, h)" in line:
+        script = GK + line.split("\n")[:2] + ["f = AngularBisector(g, h)"] + [
+            "P = Intersect(f_{1}, k, 1)", "Q = Intersect(f_{2}, k, 2)"]
+    case("groups", script, GMOVES)
+
+# Circles built by the conic and transform groups, with a line and a circle.
+GC = [pt("A", 0, 0), pt("B", 4, 1), pt("C", 1, 5), pt("D", -3, -1), pt("E", 6, -2),
+      num("t", 0.9), num("s", 1.25)]
+CMOVES = [mv("D", -1, -4), mv("B", 5, 3), mv("E", 2, 6), setn("t", 2.4), setn("s", 0.6),
+          mv("C", -2, 4), setn("s", -1.5)]
+for circle in ("k = Circle(A, B, C)", "k = Incircle(A, B, C)", "u = Segment(A, B)\nk = Circle(C, u)",
+               "m = Circle(A, B)\nk = Reflect(m, D)", "m = Circle(A, B)\nl = Line(C, D)\nk = Reflect(m, l)",
+               "m = Circle(A, B)\nk = Rotate(m, t, D)", "m = Circle(A, B)\nk = Dilate(m, s, D)"):
+    cl = circle.split("\n")
+    case("groups", GC + cl + ["f = Line(D, E)"] + LC, CMOVES)
+    case("groups", GC + cl + ["c = Circle(E, D)"] + CC, CMOVES)
+
 cases.write()
