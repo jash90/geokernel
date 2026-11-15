@@ -112,3 +112,15 @@ fn a_placed_point_survives_a_failed_final_step() {
     assert!(h.state().tool_error.is_some());
     assert!(h.state().tool.picks().is_empty());
 }
+
+#[test]
+fn a_second_click_on_a_just_placed_point_hits_it_and_makes_no_second_point() {
+    let mut h = harness("A = (-3, -3)\n");
+    h.state_mut().select_tool(Tool::Circle);
+    click(&mut h, world(1.0, 1.0));
+    click(&mut h, world(1.0, 1.0));
+    assert_eq!(labels(&h), ["A", "B"], "no zero-radius circle");
+    assert_eq!(h.state().tool.picks().len(), 1);
+    click(&mut h, world(3.0, 1.0));
+    assert_eq!(labels(&h), ["A", "B", "C", "c"]);
+}

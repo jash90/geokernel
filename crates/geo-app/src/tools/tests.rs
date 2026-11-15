@@ -293,9 +293,10 @@ fn new_points_keep_the_precision_the_zoom_asks_for() {
 }
 
 #[test]
-fn a_second_click_at_the_same_place_is_a_second_point() {
-    // No distance guard: every click on empty space places a point, each
-    // its own change (two clicks are two points, as in the reference).
+fn a_click_that_hits_nothing_always_places_a_point() {
+    // No distance guard: what a click lands on is decided by the canvas hit
+    // test alone. A click on a point placed a moment ago hits that point
+    // (see `ui_tests::pointer`); a click that hits nothing is a new point.
     let mut s = ToolState::new(Tool::Circle);
     assert_eq!(
         s.click(None, (1.0, 1.0), 2, &none),
