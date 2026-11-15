@@ -111,15 +111,17 @@ fn a_press_on_a_dependent_point_neither_moves_it_nor_pans() {
 }
 
 #[test]
-fn a_placed_point_survives_a_failed_final_step() {
-    let mut h = harness("A = (0, 0)\n");
-    h.state_mut().select_tool(Tool::Segment);
-    h.state_mut().apply_outcome(Outcome::Place {
-        line: "B = (1, 1)".into(),
-        then: Box::new(Outcome::Run(vec!["f = Segment(B, Nope)".into()])),
-    });
+fn placed_points_survive_a_failed_final_step() {
+    // The kernel refuses a regular polygon of a million vertices.
+    let mut h = harness("A = (-3, -3)\n");
+    h.state_mut().select_tool(Tool::RegularPolygon);
+    click(&mut h, world(0.0, 2.0));
+    click(&mut h, world(1.0, 2.0));
+    assert!(h.state().tool.asking().is_some());
+    h.state_mut().number_text = "1000000".into();
+    h.key_press(egui::Key::Enter);
     h.run();
-    assert_eq!(labels(&h), ["A", "B"]);
+    assert_eq!(labels(&h), ["A", "B", "C"], "the points stay, nothing else");
     assert!(h.state().tool_error.is_some());
     assert!(h.state().tool.picks().is_empty());
 }
@@ -134,6 +136,74 @@ fn a_second_click_on_a_just_placed_point_hits_it_and_makes_no_second_point() {
     assert_eq!(h.state().tool.picks().len(), 1);
     click(&mut h, world(3.0, 1.0));
     assert_eq!(labels(&h), ["A", "B", "C", "c"]);
+}
+
+/// A press and its release in one frame, as a touch tap or a frame hitch
+/// delivers them (egui then keeps no press origin).
+fn tap(h: &mut Harness<'_, App>, pos: Pos2) {
+    for event in [
+        Event::PointerMoved(pos),
+        Event::PointerButton {
+            pos,
+            button: PointerButton::Primary,
+            pressed: true,
+            modifiers: Modifiers::NONE,
+        },
+        Event::PointerButton {
+            pos,
+            button: PointerButton::Primary,
+            pressed: false,
+            modifiers: Modifiers::NONE,
+        },
+    ] {
+        h.input_mut().events.push(event);
+    }
+    h.run();
+}
+
+#[test]
+fn a_one_frame_tap_after_a_zoom_button_hits_the_zoomed_drawing() {
+    let mut h = harness("A = (2, 1)\n");
+    h.state_mut().select_tool(Tool::Segment);
+    h.get_by_label("Powiększ").click();
+    h.run();
+    // A is drawn somewhere else now; tap it there.
+    let at = on_screen(&h, 2.0, 1.0);
+    assert!((at - world(2.0, 1.0)).length() > 20.0, "the zoom moved A");
+    tap(&mut h, at);
+    assert_eq!(labels(&h), ["A"], "the tap hit A, no new point");
+    assert_eq!(h.state().tool.picks().len(), 1);
+}
+
+#[test]
+fn a_tap_is_hit_tested_with_the_view_on_screen_not_one_changed_in_its_frame() {
+    // The standard view comes in the same frame as the tap: the tap is
+    // meant for what was on screen when it happened.
+    let mut h = harness("A = (2, 1)\n");
+    h.state_mut().camera.as_mut().unwrap().cx = 3.0;
+    h.run();
+    h.state_mut().select_tool(Tool::Segment);
+    let at = on_screen(&h, 2.0, 1.0);
+    h.state_mut().view_request = Some(crate::app::ViewRequest::Standard);
+    tap(&mut h, at);
+    assert_eq!(labels(&h), ["A"]);
+    assert_eq!(h.state().tool.picks().len(), 1, "A was picked");
+}
+
+#[test]
+fn the_notice_card_takes_clicks_on_its_text_and_drags_from_its_button() {
+    let mut h = harness("A = (0, 0)\n");
+    h.state_mut().select_tool(Tool::Point);
+    h.state_mut().wb.notice = Some("Pominięte obiekty: 1".into());
+    h.run();
+    let text = h.get_by_label("Pominięte obiekty: 1").rect().center();
+    let text = Pos2::new(text.x - 30.0, text.y);
+    click(&mut h, text);
+    assert_eq!(labels(&h), ["A"], "a click on the text made a point");
+    let corner = top_left(&h);
+    let button = h.get_by_label("Zamknij komunikat").rect().center();
+    drag(&mut h, button, button + egui::vec2(-120.0, -80.0));
+    assert!(close(top_left(&h), corner), "a drag from the button panned");
 }
 
 #[test]

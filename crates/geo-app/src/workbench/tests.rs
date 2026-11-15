@@ -333,23 +333,32 @@ fn the_sides_of_a_polygon_name_the_polygon() {
 }
 
 #[test]
-fn a_failed_rollback_is_told_and_kept_as_one_undo_step() {
+fn a_failed_rollback_keeps_the_change_without_pretending_it_can_be_undone() {
     let mut w = Workbench::from_script("A = (0, 0)\n").unwrap();
-    w.fail_next_rebuild = Some("test".into());
+    w.run_line("C = (5, 5)").unwrap();
+    w.run_line("D = (6, 6)").unwrap();
+    assert!(w.undo() && w.can_redo());
+    // Every rebuild fails from now on, as a real one would on each replay.
+    w.fail_rebuilds = Some("test".into());
     let lines = ["B = (1, 1)".to_owned(), "f = Line(B, Nope)".to_owned()];
     assert!(w.run_lines(&lines).is_err());
     assert_eq!(
         w.notice.as_deref(),
-        Some("Nie można odtworzyć konstrukcji: test")
+        Some("Nie można cofnąć ostatniej zmiany: test")
     );
-    // The objects made before the error stay, consistent with the log.
-    assert_eq!(labels(&w), ["A", "B"]);
+    assert_eq!(labels(&w), ["A", "C", "B"]);
+    assert!(!w.can_redo(), "the redo steps no longer follow");
+    // The log holds only the line that succeeded and matches the
+    // construction.
+    w.fail_rebuilds = None;
     let replayed = w.log.rebuild().unwrap().0;
-    assert_eq!(replayed.len(), w.construction().len());
-    // One undo takes the partial change back.
+    let replayed: Vec<&str> = replayed.ids().map(|id| replayed.label(id)).collect();
+    assert_eq!(replayed, ["A", "C", "B"]);
+    // The kept change is not an undo step; the step before it still is.
+    assert!(w.can_undo());
     assert!(w.undo());
-    assert_eq!(labels(&w), ["A"]);
-    assert!(w.notice.is_none());
+    assert_eq!(labels(&w), ["A"], "undo went to the state before C");
+    assert!(!w.can_undo());
 
     // Normally the rollback succeeds and nothing stays.
     let mut w = Workbench::from_script("A = (0, 0)\n").unwrap();
@@ -359,19 +368,28 @@ fn a_failed_rollback_is_told_and_kept_as_one_undo_step() {
 }
 
 #[test]
-fn a_cancelled_drag_that_cannot_be_rolled_back_stays_undoable() {
+fn a_cancelled_drag_that_cannot_be_rolled_back_stays_but_is_not_an_undo_step() {
     let mut w = Workbench::from_script("A = (0, 0)\n").unwrap();
     let a = w.construction().id("A").unwrap();
     w.begin_gesture();
     w.move_point(a, 2.0, 1.0);
-    w.fail_next_rebuild = Some("test".into());
+    w.fail_rebuilds = Some("test".into());
     w.cancel_gesture();
-    assert!(w.notice.is_some());
-    assert!(w.can_undo(), "the drag is still an undo step");
-    assert!(w.undo());
+    assert_eq!(
+        w.notice.as_deref(),
+        Some("Nie można cofnąć ostatniej zmiany: test")
+    );
+    assert!(!w.can_undo());
     let a = w.construction().id("A").unwrap();
     assert_eq!(
         w.construction().value(a),
-        geo_kernel::kernel::Value::Point { x: 0.0, y: 0.0 }
+        geo_kernel::kernel::Value::Point { x: 2.0, y: 1.0 }
+    );
+    w.fail_rebuilds = None;
+    let (replayed, _) = w.log.rebuild().unwrap();
+    assert_eq!(
+        replayed.value(replayed.id("A").unwrap()),
+        geo_kernel::kernel::Value::Point { x: 2.0, y: 1.0 },
+        "the log has the move"
     );
 }

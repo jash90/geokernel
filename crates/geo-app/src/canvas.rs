@@ -27,6 +27,14 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     if w < 1.0 || h < 1.0 {
         return;
     }
+    // Opening or closing the keyboard, or resizing the window, keeps the
+    // top left corner of the drawing in place, not its centre. A view
+    // request is made for the new size, so it comes after.
+    if let (Some(cam), Some((old, _))) = (app.camera, app.view) {
+        if old.size() != rect.size() {
+            app.camera = Some(cam.resized((old.width() as f64, old.height() as f64), (w, h)));
+        }
+    }
     let bounds = view::content_bounds(app.wb.construction());
     let request = app.view_request.take();
     if app.camera.is_none() || request.is_some() {
@@ -45,11 +53,6 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         app.tool.reset();
     }
     let mut cam = app.camera.unwrap_or(Camera::STANDARD);
-    // Opening or closing the keyboard, or resizing the window, keeps the
-    // top left corner of the drawing in place, not its centre.
-    if let Some((old, _)) = app.view.filter(|(old, _)| old.size() != rect.size()) {
-        cam = cam.resized((old.width() as f64, old.height() as f64), (w, h));
-    }
     let to_local = |pos: egui::Pos2| {
         let d = pos - rect.min;
         (d.x as f64, d.y as f64)
@@ -83,13 +86,10 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     app.hovered = response.hover_pos().and_then(|p| pick_at(app, to_local(p)));
 
     // Remember what the user saw when the button went down (the area may
-    // change in this very frame, e.g. the keyboard closes on a press).
-    let pressed = ui.input(|i| {
-        i.pointer
-            .primary_pressed()
-            .then(|| i.pointer.press_origin())
-            .flatten()
-    });
+    // change in this very frame, e.g. the keyboard closes on a press). The
+    // press is read from this frame's events: when press and release come
+    // in one frame (a touch tap) egui keeps no press origin.
+    let (pressed, released) = primary_events(ui);
     if let Some(pos) = pressed {
         app.press_view = app
             .view
@@ -187,7 +187,9 @@ pub fn show(app: &mut App, ui: &mut Ui) {
 
     app.camera = Some(cam);
     let t = cam.transform(w, h);
-    if response.drag_stopped() || response.clicked() {
+    // Whoever got the press (this area, a button over it, a dialog), it
+    // ends with the release.
+    if released {
         app.press_view = None;
     }
     painter.rect_filled(rect, 0.0, theme::WHITE);
@@ -211,6 +213,30 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     overlay(app, ui, rect, w, h, &mut cam);
     app.camera = Some(cam);
     app.view = Some((rect, cam.transform(w, h)));
+}
+
+/// The position of the last primary press among this frame's events, and
+/// whether the last primary button event was a release.
+fn primary_events(ui: &Ui) -> (Option<egui::Pos2>, bool) {
+    ui.input(|i| {
+        let mut pressed = None;
+        let mut released = false;
+        for event in &i.events {
+            if let egui::Event::PointerButton {
+                pos,
+                button: egui::PointerButton::Primary,
+                pressed: down,
+                ..
+            } = event
+            {
+                if *down {
+                    pressed = Some(*pos);
+                }
+                released = !*down;
+            }
+        }
+        (pressed, released)
+    })
 }
 
 fn hit_free_point(app: &App, t: &ViewTransform, pos: (f64, f64), radius: f64) -> bool {

@@ -106,7 +106,12 @@ pub fn snackbar(ui: &mut Ui, area: Rect, text: &str, lift: f32) -> bool {
         vec2(close_galley.size().x, height),
     )
     .expand2(vec2(PAD / 2.0, 0.0));
-    let notice = ui.interact(rect, ui.scope_id().with("snackbar"), Sense::hover());
+    // The whole card takes clicks and drags, so none reach the drawing.
+    let notice = ui.interact(
+        rect,
+        ui.scope_id().with("snackbar"),
+        Sense::click_and_drag(),
+    );
     notice.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Label, true, text));
     let close = ui
         .interact(
