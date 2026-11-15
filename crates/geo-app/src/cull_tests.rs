@@ -125,6 +125,8 @@ fn picture_with(
             palette: wb.palette(),
             cull,
             generation: wb.rebuilds(),
+            label_offset: &|_| None,
+            label_rects: None,
         };
         draw::paint(&painter, rect, wb.construction(), t, &scene);
     });
@@ -204,6 +206,8 @@ fn shapes_text(
             palette: wb.palette(),
             cull,
             generation: wb.rebuilds(),
+            label_offset: &|_| None,
+            label_rects: None,
         };
         draw::paint(&ui.painter_at(rect), rect, wb.construction(), t, &scene);
     });

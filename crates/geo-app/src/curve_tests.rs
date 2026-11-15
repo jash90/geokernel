@@ -50,6 +50,8 @@ fn stroke_triangles(
             palette: wb.palette(),
             cull: true,
             generation: wb.rebuilds(),
+            label_offset: &|_| None,
+            label_rects: None,
         };
         draw::paint(&ui.painter_at(rect), rect, wb.construction(), t, &scene);
     });

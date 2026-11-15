@@ -15,6 +15,7 @@ use geo_app::headless::egui::{
 };
 use geo_app::headless::{self, Headless, Profile, WidgetKind, DT, SCALES};
 use geo_app::Workbench;
+use geo_app_core::app::OwnerRules;
 use geo_app_core::view::Camera;
 use serde_json::{json, Map, Value as Json};
 use std::path::{Path, PathBuf};
@@ -363,6 +364,11 @@ impl Session {
             Some("touch") => Profile::Touch,
             Some(p) => return Err(format!("unknown profile `{p}` (desktop or touch)")),
         };
+        let rules = match text(args, "rules")? {
+            None | Some("ours") => OwnerRules::OURS,
+            Some("reference") => OwnerRules::REFERENCE,
+            Some(r) => return Err(format!("unknown rules `{r}` (ours or reference)")),
+        };
         let wb = match text(args, "script")? {
             Some(src) if src.len() as u64 > MAX_DOCUMENT => {
                 return Err(format!("`script` is larger than {MAX_DOCUMENT} bytes"))
@@ -371,6 +377,7 @@ impl Session {
             None => Workbench::default(),
         };
         self.h = Headless::new(wb, None, profile, size, scale as f32);
+        self.h.app.rules = rules;
         // The renderer's textures belong to the old context.
         self.renderer = None;
         self.settle();

@@ -2,24 +2,65 @@
 //! hovers, a finger is wide and does not. One profile is chosen when the
 //! window starts and read by reference afterwards.
 
-use crate::style;
+/// `App.DEFAULT_THRESHOLD` (3 px) and `App.TOUCH_FACTOR` (3).
+const DEFAULT_THRESHOLD: f64 = 3.0;
+const TOUCH_FACTOR: f64 = 3.0;
+/// `DrawPoint.SELECTION_RADIUS_MIN` (12 px).
+const SELECTION_RADIUS_MIN: f64 = 12.0;
+
+/// `EuclidianView.setAxesIntervals`: one axis number per `maxPix` (100 px).
+const AXIS_NUMBERING_PX: f64 = 100.0;
+/// `EuclidianStyleConstants.POINT_CAPTURING_GRID` (0.125).
+const POINT_CAPTURING_GRID: f64 = 0.125;
+
+/// `EuclidianConstants.DRAGGING_DELAY` (100 ms), the same for every pointer.
+const DRAGGING_DELAY: f64 = 0.1;
+/// `EuclidianController.DRAG_THRESHOLD` (10 pixels), the same for every
+/// pointer.
+const DRAG_THRESHOLD: f32 = 10.0;
 
 /// The sizes of one input profile, in points (egui's unit, about one
 /// density-independent pixel on a phone).
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Metrics {
-    /// How far the pointer may move from the press before the press becomes
-    /// a drag; a release within it is a tap.
-    pub drag_slop: f32,
-    /// A press held longer than this, in seconds, is no longer a tap: it
-    /// becomes a drag where it is.
-    pub click_time: f64,
-    /// How far from a point a press still picks it.
-    pub point_radius: f64,
-    /// How far from a line or curve a press still picks it.
-    pub curve_radius: f64,
-    /// How far from a free point a press still grabs it for a drag.
-    pub grab_radius: f64,
+    /// Moves of the pointer that come less than this many seconds after the
+    /// press are dropped (`EuclidianController.shouldCancelDrag` with
+    /// `EuclidianConstants.DRAGGING_DELAY`, 100 ms). There is no distance a
+    /// drag must go first: the first move after this delay takes the dragged
+    /// object straight to the pointer.
+    pub drag_delay: f64,
+    /// A release whose drag went no further than this from the press, on
+    /// either axis, is a click (`EuclidianController.DRAG_THRESHOLD`, 10
+    /// pixels, checked in `isDraggingBeyondThreshold`). It decides only the
+    /// click; the motion is applied either way.
+    pub drag_threshold: f32,
+    /// egui's own click rules for the widgets around the drawing (buttons,
+    /// rows, menus), which never take part in the drawing's gestures: how far
+    /// a press may move and how long it may last and still click a widget.
+    pub widget_click_dist: f32,
+    pub widget_click_time: f64,
+    /// The half-width of the square around the pointer that an object must
+    /// meet to be hit, for the mouse and for a finger
+    /// (`App.getCapturingThreshold`: `DEFAULT_THRESHOLD` 3, times
+    /// `TOUCH_FACTOR` 3 for touch). It follows the pointer of each press,
+    /// not the profile, so both profiles hold the same numbers.
+    pub mouse_threshold: f64,
+    pub touch_threshold: f64,
+    /// A finger that hits nothing tries again with its threshold times this
+    /// (`HitDetector.setHits(GPoint, PointerEventType)`: 3 x 9 = 27).
+    pub touch_retry_factor: f64,
+    /// A point is hit within the threshold plus this
+    /// (`DrawPoint.SELECTION_RADIUS_MIN`, 12).
+    pub point_selection_min: f64,
+    /// The axes carry at most one number per this many pixels, and the major
+    /// grid lines are the numbering step apart
+    /// (`EuclidianView.setAxesIntervals`, `maxPix` 100).
+    pub numbering_px: f64,
+    /// A new or dragged free point is captured to a major grid crossing less
+    /// than this fraction of the grid step away on both axes, while the grid
+    /// or the axes are shown (`EuclidianController.transformCoords`,
+    /// `POINT_CAPTURING_GRID` 0.125).
+    pub grid_capture: f64,
     /// The pointer can hover (a mouse). Without hover the window shows in
     /// the open what a mouse user finds by pointing, such as the hint of the
     /// move tool.
@@ -40,15 +81,21 @@ pub struct Metrics {
 }
 
 impl Metrics {
-    /// The mouse profile: exactly the sizes the window always had (egui's
-    /// click distance and time, the window's own hit radii and layout).
+    /// The mouse profile: the drawing's gesture rules of the reference app,
+    /// egui's click distance and time for the widgets, the window's own hit
+    /// radii and layout.
     pub const fn desktop() -> Metrics {
         Metrics {
-            drag_slop: 6.0,
-            click_time: 0.8,
-            point_radius: 11.0,
-            curve_radius: 7.0,
-            grab_radius: style::FREE_POINT_RADIUS as f64 + 6.0,
+            drag_delay: DRAGGING_DELAY,
+            drag_threshold: DRAG_THRESHOLD,
+            widget_click_dist: 6.0,
+            widget_click_time: 0.8,
+            mouse_threshold: DEFAULT_THRESHOLD,
+            touch_threshold: DEFAULT_THRESHOLD * TOUCH_FACTOR,
+            touch_retry_factor: TOUCH_FACTOR,
+            point_selection_min: SELECTION_RADIUS_MIN,
+            numbering_px: AXIS_NUMBERING_PX,
+            grid_capture: POINT_CAPTURING_GRID,
             hover: true,
             toolbar_height: 52.0,
             toolbar_button: 40.0,
@@ -64,11 +111,16 @@ impl Metrics {
     /// touch target and have not been tuned on a device yet.
     pub const fn touch() -> Metrics {
         Metrics {
-            drag_slop: 12.0,
-            click_time: 0.8,
-            point_radius: 22.0,
-            curve_radius: 16.0,
-            grab_radius: 24.0,
+            drag_delay: DRAGGING_DELAY,
+            drag_threshold: DRAG_THRESHOLD,
+            widget_click_dist: 12.0,
+            widget_click_time: 0.8,
+            mouse_threshold: DEFAULT_THRESHOLD,
+            touch_threshold: DEFAULT_THRESHOLD * TOUCH_FACTOR,
+            touch_retry_factor: TOUCH_FACTOR,
+            point_selection_min: SELECTION_RADIUS_MIN,
+            numbering_px: AXIS_NUMBERING_PX,
+            grid_capture: POINT_CAPTURING_GRID,
             hover: false,
             toolbar_height: 60.0,
             toolbar_button: 48.0,
@@ -93,11 +145,24 @@ mod tests {
     #[test]
     fn the_desktop_profile_keeps_the_sizes_the_window_always_had() {
         let d = Metrics::desktop();
-        assert_eq!(
-            (d.point_radius, d.curve_radius, d.grab_radius),
-            (11.0, 7.0, 11.0)
-        );
-        assert_eq!((d.drag_slop, d.click_time), (6.0, 0.8));
+        // Hit testing follows the reference app (was point 11, curve 7 and
+        // grab 11 px radii): a 3 px square around the mouse, 9 px around a
+        // finger with a retry at 27 (`App.getCapturingThreshold`,
+        // `HitDetector.setHits`), points within the threshold plus 12
+        // (`DrawPoint.SELECTION_RADIUS_MIN`).
+        assert_eq!((d.mouse_threshold, d.touch_threshold), (3.0, 9.0));
+        assert_eq!((d.touch_retry_factor, d.point_selection_min), (3.0, 12.0));
+        // The drawing's gestures follow the reference app: a 100 ms delay
+        // before the first move counts (`EuclidianConstants.DRAGGING_DELAY`)
+        // and a 10 pixel click threshold (`EuclidianController
+        // .DRAG_THRESHOLD`); the widgets keep egui's click rules.
+        assert_eq!((d.drag_delay, d.drag_threshold), (0.1, 10.0));
+        assert_eq!((d.widget_click_dist, d.widget_click_time), (6.0, 0.8));
+        // The grid and the capturing box follow the reference app: one axis
+        // number per 100 px (`EuclidianView.setAxesIntervals`; the grid
+        // drawing had a 1-2-5 step of at least 48 px) and a box of 0.125
+        // grid steps (`POINT_CAPTURING_GRID`; there was no capturing).
+        assert_eq!((d.numbering_px, d.grid_capture), (100.0, 0.125));
         assert_eq!(
             (d.toolbar_height, d.toolbar_button, d.toolbar_pitch),
             (52.0, 40.0, 45.0)
@@ -109,8 +174,24 @@ mod tests {
     #[test]
     fn touch_targets_are_larger_than_mouse_ones() {
         let (d, t) = (Metrics::desktop(), Metrics::touch());
-        assert!(t.drag_slop > d.drag_slop && t.point_radius > d.point_radius);
-        assert!(t.curve_radius > d.curve_radius && t.grab_radius > d.grab_radius);
+        // The reference app uses one delay and one click threshold for every
+        // pointer; only egui's widget clicks allow a wider wobble.
+        assert_eq!(
+            (t.drag_delay, t.drag_threshold),
+            (d.drag_delay, d.drag_threshold)
+        );
+        assert!(t.widget_click_dist > d.widget_click_dist);
+        // The hit thresholds follow the pointer of each press, not the
+        // profile (`App.getCapturingThreshold(PointerEventType)`).
+        assert_eq!(
+            (t.mouse_threshold, t.touch_threshold, t.point_selection_min),
+            (d.mouse_threshold, d.touch_threshold, d.point_selection_min)
+        );
+        assert!(d.touch_threshold > d.mouse_threshold);
+        assert_eq!(
+            (t.numbering_px, t.grid_capture),
+            (d.numbering_px, d.grid_capture)
+        );
         assert!(t.toolbar_button > d.toolbar_button && t.toolbar_pitch > t.toolbar_button);
         assert!(d.hover && !t.hover);
         assert_eq!(

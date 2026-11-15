@@ -32,7 +32,7 @@ use crate::theme;
 use crate::view::{self, Camera};
 use crate::workbench::Workbench;
 use eframe::egui::{self, vec2, Event, Key, Modifiers, PointerButton, Pos2, Rect, Shape};
-use geo_kernel::kernel::{Kind, Value};
+use geo_kernel::kernel::Value;
 use scene::Scene;
 use std::collections::{BTreeSet, HashSet};
 use std::time::Instant;
@@ -278,9 +278,10 @@ impl<'s> Runner<'s> {
             .count()
     }
 
-    /// A spot in the drawing area with nothing (`points_only`: no point)
-    /// near it, searched outwards from the middle.
-    fn empty_spot(&self, points_only: bool) -> Pos2 {
+    /// A spot in the drawing area that hits nothing, no label either,
+    /// searched outwards from the middle: in the Move tool only a press on
+    /// nothing pans.
+    fn empty_spot(&self) -> Pos2 {
         let r = self.canvas();
         let t = self.transform();
         let c = self.app.wb.construction();
@@ -294,10 +295,10 @@ impl<'s> Runner<'s> {
                     continue;
                 }
                 let d = p - r.min;
-                let hit = crate::hit::pick(c, &t, (d.x as f64, d.y as f64), 16.0, 12.0, |id| {
-                    !points_only || c.kind(id) == Kind::Point
-                });
-                if hit.is_none() {
+                // A point within 16 px (4 + 12, `DrawPoint.hit`) is hit.
+                let reach = crate::hit::Reach::square(4.0);
+                let hit = crate::hit::pick(c, &t, (d.x as f64, d.y as f64), &reach, None, |_| true);
+                if hit.is_none() && self.app.label_at((d.x as f64, d.y as f64)).is_none() {
                     return p;
                 }
             }

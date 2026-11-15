@@ -221,11 +221,11 @@ impl Curves {
 fn closure(c: &Construction, id: Id) -> Vec<Id> {
     let mut seen = std::collections::HashSet::new();
     let mut out = Vec::new();
-    let mut stack = c.inputs(id);
+    let mut stack = c.reads(id);
     while let Some(a) = stack.pop() {
         if a != id && seen.insert(a) {
             out.push(a);
-            stack.extend(c.inputs(a));
+            stack.extend(c.reads(a));
         }
     }
     out

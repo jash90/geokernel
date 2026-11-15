@@ -7,6 +7,7 @@ use crate::workbench::Workbench;
 use eframe::egui::{self, Event, Modifiers, PointerButton, Pos2};
 use egui_kittest::kittest::Queryable;
 use egui_kittest::Harness;
+use geo_app_core::app::OwnerRules;
 use geo_app_core::metrics::Metrics;
 use geo_kernel::kernel::Value;
 
@@ -193,6 +194,143 @@ fn dragging_empty_space_pans_instead_of_moving_points() {
         "camera moved left: {}",
         cam.cx
     );
+}
+
+/// The owner's rule `interact::REFUSED_DRAG_NOTICE`, under both settings
+/// (`App::rules`): a drag of a point that depends on others moves nothing
+/// and pans nothing (the reference app's press on an object never pans,
+/// `hasNoHitsDisablingModeForShallMoveView`) and selects the point. Ours
+/// says why in Polish; the reference app stays silent. Fails if the switch
+/// is ignored either way.
+#[test]
+fn a_refused_drag_of_a_dependent_point_says_why_and_does_not_pan() {
+    for rules in [OwnerRules::OURS, OwnerRules::REFERENCE] {
+        let mut h = harness("A = (1, 1)\nB = (5, 1)\nM = Midpoint(A, B)\n");
+        h.state_mut().rules = rules;
+        drag(
+            &mut h,
+            world(3.0, 1.0),
+            world(3.0, 1.0) + egui::vec2(60.0, -30.0),
+        );
+        assert_eq!(point(&h, "M"), (3.0, 1.0));
+        let app = h.state();
+        assert!(!app.wb.can_undo());
+        let cam = app.camera.unwrap();
+        assert!(cam.cx.abs() < 1e-9 && cam.cy.abs() < 1e-9, "panned");
+        assert_eq!(app.wb.selected, app.wb.construction().id("M"));
+        let notice = geo_app_core::text::label(geo_app_core::text::Label::PointDependsOnOthers);
+        let want = rules.refused_drag_notice.then_some(notice);
+        assert_eq!(app.wb.notice.as_deref(), want, "{rules:?}");
+    }
+}
+
+/// A press on a side of a polygon under both settings of the owner's rule
+/// `hit::SIDE_TAKES_THE_POLYGON` (`App::rules`). Ours takes the polygon (a
+/// side is a segment of free points, so the side itself would drag two
+/// vertices and deform the polygon). The reference app, as observed in
+/// scenario `press_on_polygon_edge_does_nothing`, selects nothing, moves
+/// nothing and does not pan, for a click and for a drag. Fails if the
+/// switch is ignored either way.
+#[test]
+fn a_press_on_a_side_takes_the_polygon() {
+    for rules in [OwnerRules::OURS, OwnerRules::REFERENCE] {
+        let mut h = harness("A = (1, 1)\nB = (5, 1)\nC = (1, 4)\np = Polygon(A, B, C)\n");
+        h.state_mut().rules = rules;
+        let p = h.state().wb.construction().id("p");
+        assert!(p.is_some());
+        click(&mut h, world(3.0, 1.0));
+        let want = if rules.side_takes_the_polygon {
+            p
+        } else {
+            None
+        };
+        assert_eq!(h.state().wb.selected, want, "{rules:?}: the click");
+        h.state_mut().wb.selected = None;
+        let cam = h.state().camera.unwrap();
+        drag(
+            &mut h,
+            world(3.0, 1.0),
+            world(3.0, 1.0) + egui::vec2(60.0, -30.0),
+        );
+        assert_eq!(h.state().wb.selected, want, "{rules:?}: the drag");
+        let moved = point(&h, "A") != (1.0, 1.0);
+        assert_eq!(moved, rules.side_takes_the_polygon, "{rules:?}");
+        if !rules.side_takes_the_polygon {
+            assert_eq!((point(&h, "B"), point(&h, "C")), ((5.0, 1.0), (1.0, 4.0)));
+            assert_eq!(h.state().camera.unwrap(), cam, "the press panned");
+            assert!(!h.state().wb.can_undo());
+        }
+    }
+}
+
+/// A drag on a side moves the polygon (the owner's rule above, with
+/// `moveDependent`): every free vertex follows the pointer, as one undo
+/// step. The press at (3, 1) is a grid crossing, so the motion counts from
+/// there.
+#[test]
+fn a_drag_on_a_side_moves_the_polygon_as_one_undo_step() {
+    let mut h = harness("A = (1, 1)\nB = (5, 1)\nC = (1, 4)\np = Polygon(A, B, C)\n");
+    drag(
+        &mut h,
+        world(3.0, 1.0),
+        world(3.0, 1.0) + egui::vec2(60.0, -30.0),
+    );
+    let near = |a: (f64, f64), b: (f64, f64)| (a.0 - b.0).abs() < 1e-9 && (a.1 - b.1).abs() < 1e-9;
+    for (l, at) in [("A", (2.2, 1.6)), ("B", (6.2, 1.6)), ("C", (2.2, 4.6))] {
+        assert!(near(point(&h, l), at), "{l} at {:?}", point(&h, l));
+    }
+    assert_eq!(h.state().wb.selected, h.state().wb.construction().id("p"));
+    undo(&mut h);
+    assert_eq!(point(&h, "A"), (1.0, 1.0));
+    assert_eq!(point(&h, "C"), (1.0, 4.0));
+    assert!(!h.state().wb.can_undo(), "one step for the whole drag");
+}
+
+/// Escape during a drag of a line puts both its points back.
+#[test]
+fn escape_cancels_a_drag_of_a_line() {
+    let mut h = harness("A = (1, 1)\nB = (3, 2)\nf = Line(A, B)\n");
+    let start = world(2.0, 1.5);
+    moved(&mut h, start);
+    button(&mut h, start, true);
+    for i in 1..=8 {
+        moved(&mut h, start + egui::vec2(5.0 * i as f32, 5.0 * i as f32));
+    }
+    assert!(point_x(&h, "A") > 1.2 && point_x(&h, "B") > 3.2);
+    h.key_press(egui::Key::Escape);
+    h.run();
+    button(&mut h, start + egui::vec2(40.0, 40.0), false);
+    h.run();
+    assert_eq!((point(&h, "A"), point(&h, "B")), ((1.0, 1.0), (3.0, 2.0)));
+    assert!(!h.state().wb.can_undo());
+}
+
+/// `moveLabel`: a press on a point's label drags the label, not the point,
+/// selects nothing and makes no undo step; Escape puts it back.
+#[test]
+fn a_drag_on_a_label_moves_only_the_label() {
+    let mut h = harness("A = (1, 1)\n");
+    // The label starts 6 px right of and 6 px above the point.
+    let on_label = world(1.0, 1.0) + egui::vec2(10.0, -16.0);
+    drag(&mut h, on_label, on_label + egui::vec2(40.0, 30.0));
+    let a = h.state().wb.construction().id("A").unwrap();
+    assert_eq!(point(&h, "A"), (1.0, 1.0));
+    assert_eq!(h.state().wb.label_offset(a), Some((40.0, 30.0)));
+    assert_eq!(h.state().wb.selected, None);
+    assert!(!h.state().wb.can_undo());
+    // A second drag starts from the moved label; Escape restores it.
+    let on_label = on_label + egui::vec2(40.0, 30.0);
+    moved(&mut h, on_label);
+    button(&mut h, on_label, true);
+    for i in 1..=8 {
+        moved(&mut h, on_label + egui::vec2(-5.0 * i as f32, 0.0));
+    }
+    assert_ne!(h.state().wb.label_offset(a), Some((40.0, 30.0)));
+    h.key_press(egui::Key::Escape);
+    h.run();
+    button(&mut h, on_label + egui::vec2(-40.0, 0.0), false);
+    h.run();
+    assert_eq!(h.state().wb.label_offset(a), Some((40.0, 30.0)));
 }
 
 #[test]

@@ -183,7 +183,8 @@ impl Window {
         Pos2::new(rect.min.x + sx as f32, rect.min.y + sy as f32)
     }
 
-    /// A spot in the drawing with no point near it.
+    /// A spot in the drawing that hits nothing, no label either: in the
+    /// Move tool only a press on nothing pans.
     fn empty_spot(&self) -> Pos2 {
         let (rect, t) = self.app.view.unwrap();
         let c = self.app.wb.construction();
@@ -195,7 +196,11 @@ impl Window {
             .map(|i| center + 3.0 * i as f32 * vec2((i as f32).cos(), (i as f32).sin()))
             .find(|p| {
                 let local = ((p.x - rect.min.x) as f64, (p.y - rect.min.y) as f64);
-                crate::hit::pick(c, &t, local, 16.0, 12.0, |id| c.kind(id) == Kind::Point).is_none()
+                // Wider than the mouse's 3 px square: a point within 16 px
+                // (4 + 12, `DrawPoint.hit`) is hit.
+                let reach = crate::hit::Reach::square(4.0);
+                crate::hit::pick(c, &t, local, &reach, None, |_| true).is_none()
+                    && self.app.label_at(local).is_none()
             })
             .expect("an empty spot")
     }
@@ -250,6 +255,9 @@ fn states(cells: usize) -> Vec<(&'static str, Counts)> {
     let from = w.empty_spot();
     w.step(vec![Event::PointerMoved(from)]);
     w.step(vec![press(from, true)]);
+    // Moves within the drag delay after a press are dropped.
+    let wait = (w.app.metrics.drag_delay / DT).ceil() as usize + 1;
+    w.frames(wait);
     w.step(vec![Event::PointerMoved(from + vec2(14.0, 4.0))]);
     let pan = w.step(vec![Event::PointerMoved(from + vec2(10.0, 4.0))]);
     assert!(w.app.gesture.panning() && w.app.drag.is_none(), "no pan");
@@ -262,6 +270,7 @@ fn states(cells: usize) -> Vec<(&'static str, Counts)> {
     let p = w.point(&format!("P_{}", w.mid));
     w.step(vec![Event::PointerMoved(p)]);
     w.step(vec![press(p, true)]);
+    w.frames(wait);
     w.step(vec![Event::PointerMoved(p + vec2(14.0, 4.0))]);
     w.step(vec![Event::PointerMoved(p + vec2(10.0, 4.0))]);
     assert!(w.app.drag.is_some(), "no drag");
@@ -462,22 +471,47 @@ fn curve_frames_stay_within_the_budget() {
     w.settled(1);
     let (idle, idle_made) = curve_step(&mut w, Vec::new());
 
-    // A drag of a grid point: no conic or function reads it.
-    let p = w.point(&format!("P_{}", w.mid));
+    // A drag of a grid point: no conic or function reads it. Moves within
+    // the drag delay after a press are dropped.
+    let wait = (w.app.metrics.drag_delay / DT).ceil() as usize + 1;
+    // A grid point no label covers: a press on a label drags the label.
+    let (rect, _) = w.app.view.unwrap();
+    let mid: usize = w
+        .mid
+        .trim_matches(|ch| ch == '{' || ch == '}')
+        .parse()
+        .unwrap();
+    let name = (mid..)
+        .map(|k| format!("P_{{{k}}}"))
+        .find(|n| {
+            let q = w.point(n);
+            w.app
+                .label_at(((q.x - rect.min.x) as f64, (q.y - rect.min.y) as f64))
+                .is_none()
+        })
+        .unwrap();
+    let p = w.point(&name);
     w.step(vec![Event::PointerMoved(p)]);
     w.step(vec![press(p, true)]);
+    w.frames(wait);
+    // Steps of a grid cell or more: grid snapping must not keep the point
+    // where it was.
     w.step(vec![Event::PointerMoved(p + vec2(14.0, 4.0))]);
-    w.step(vec![Event::PointerMoved(p + vec2(10.0, 4.0))]);
+    w.step(vec![Event::PointerMoved(p + vec2(40.0, 4.0))]);
     assert!(w.app.drag.is_some(), "no drag");
-    let (drag, drag_made) = curve_step(&mut w, vec![Event::PointerMoved(p + vec2(14.0, 4.0))]);
-    let (next, next_made) = curve_step(&mut w, vec![Event::PointerMoved(p + vec2(14.0, 4.0))]);
-    w.step(vec![press(p + vec2(14.0, 4.0), false)]);
+    let before = w.point(&name);
+    let (drag, drag_made) = curve_step(&mut w, vec![Event::PointerMoved(p + vec2(90.0, 4.0))]);
+    let after = w.point(&name);
+    assert!((after - before).length() > 20.0, "the point did not move");
+    let (next, next_made) = curve_step(&mut w, vec![Event::PointerMoved(p + vec2(90.0, 4.0))]);
+    w.step(vec![press(p + vec2(90.0, 4.0), false)]);
     w.frames(3);
 
     // A pan: every curve on the view is plotted again.
     let from = w.empty_spot();
     w.step(vec![Event::PointerMoved(from)]);
     w.step(vec![press(from, true)]);
+    w.frames(wait);
     w.step(vec![Event::PointerMoved(from + vec2(14.0, 4.0))]);
     let (pan, pan_made) = curve_step(&mut w, vec![Event::PointerMoved(from + vec2(10.0, 4.0))]);
     assert!(w.app.gesture.panning() && w.app.drag.is_none(), "no pan");

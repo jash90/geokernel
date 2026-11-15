@@ -688,10 +688,10 @@ impl Construction {
     }
 
     /// Every object `id` reads directly: its parents, the objects its rule
-    /// also reads and its list. An object may appear more than once. A
-    /// drawing that caches what it made from `id` follows these to tell
-    /// whether `id` can have changed.
-    pub fn inputs(&self, id: Id) -> Vec<Id> {
+    /// or expression also reads and its list (wider than `inputs`). An
+    /// object may appear more than once. A drawing that caches what it made
+    /// from `id` follows these to tell whether `id` can have changed.
+    pub fn reads(&self, id: Id) -> Vec<Id> {
         match self.defs.get(id.0) {
             Some(def) => self.read_ids(def),
             None => Vec::new(),
@@ -927,6 +927,20 @@ impl Construction {
     /// give out reads as an empty list.
     pub fn list(&self, list: IdList) -> &[Id] {
         self.lists.get(list.range()).unwrap_or(&[])
+    }
+
+    /// The objects the definition of `id` takes as its inputs, in the order
+    /// of the command: its parents, then its stored list (a polygon's
+    /// vertices). An expression has none, and the objects a rule only reads
+    /// on the side (such as the line an intersection was prepared with) are
+    /// not inputs. An unknown id has none.
+    pub fn inputs(&self, id: Id) -> impl Iterator<Item = Id> + '_ {
+        let def = self.defs.get(id.0);
+        let parents = def.map_or_else(Parents::none, Def::parents);
+        let list = def.and_then(Def::list).map_or(&[][..], |l| self.list(l));
+        (0..parents.as_slice().len())
+            .map(move |i| parents.as_slice()[i])
+            .chain(list.iter().copied())
     }
 
     /// Checks that `list` was stored here and that every object in it exists

@@ -206,3 +206,23 @@ fn value_and_def_keep_their_size() {
     assert_eq!(std::mem::size_of::<Def>(), 48);
     assert_eq!(std::mem::size_of::<geo_kernel::Kind>(), 1);
 }
+
+/// `Construction::inputs`: the parents in command order, then the list; an
+/// expression and a free object have none.
+#[test]
+fn inputs_are_the_parents_then_the_list() {
+    let c = script::load(
+        "A = (0, 0)\nB = (4, 0)\nC = (0, 3)\nf = Line(A, B)\np = Polygon(A, B, C)\n\
+         r = 2\nk = Circle(C, r)\nq = Polygon(A, B, 5)\nd = r + 1\n",
+    )
+    .unwrap();
+    let ids = |labels: &[&str]| -> Vec<Id> { labels.iter().map(|l| c.id(l).unwrap()).collect() };
+    let of = |l: &str| c.inputs(c.id(l).unwrap()).collect::<Vec<Id>>();
+    assert_eq!(of("f"), ids(&["A", "B"]));
+    assert_eq!(of("p"), ids(&["A", "B", "C"]));
+    assert_eq!(of("k"), ids(&["C", "r"]));
+    assert_eq!(of("A"), Vec::<Id>::new());
+    assert_eq!(of("d"), Vec::<Id>::new());
+    let q = of("q");
+    assert_eq!(q[..2], ids(&["A", "B"])[..]);
+}

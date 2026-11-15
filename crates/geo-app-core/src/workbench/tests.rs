@@ -436,3 +436,44 @@ fn every_kind_of_the_kernel_is_known_listed_and_described() {
         .iter()
         .all(|r| r.value.as_deref() != Some(describe::NOT_DRAWN_YET)));
 }
+
+/// `GeoPoint.movePoint` without an end position: free points translated
+/// together, each coordinate cleaned at the fifth decimal, all in one undo
+/// step of the drag.
+#[test]
+fn translating_points_in_a_drag_is_one_undo_step() {
+    let mut w = Workbench::from_script("A = (0.1, 1)\nB = (3, 2)\nf = Line(A, B)\n").unwrap();
+    let (a, b) = (
+        w.construction().id("A").unwrap(),
+        w.construction().id("B").unwrap(),
+    );
+    w.begin_gesture();
+    assert!(w.translate(&[a, b], (0.2, 0.0)));
+    assert!(w.translate(&[a, b], (0.0, -0.5)));
+    w.end_gesture();
+    // 0.1 + 0.2 is 0.30000000000000004 before the cleaning.
+    assert_eq!(w.construction().value(a), Value::Point { x: 0.3, y: 0.5 });
+    assert_eq!(w.construction().value(b), Value::Point { x: 3.2, y: 1.5 });
+    assert!(w.undo());
+    let a = w.construction().id("A").unwrap();
+    assert_eq!(w.construction().value(a), Value::Point { x: 0.1, y: 1.0 });
+    assert!(!w.can_undo(), "one step for the whole drag");
+}
+
+/// A label offset is no undo step and survives undo; it goes with its
+/// object, so a later object of the same label starts in place.
+#[test]
+fn label_offsets_stay_out_of_undo_and_go_with_their_object() {
+    let mut w = Workbench::from_script("A = (0, 0)\nB = (1, 1)\n").unwrap();
+    let b = w.construction().id("B").unwrap();
+    w.set_label_offset(b, (40.0, 30.0));
+    assert!(!w.can_undo());
+    assert!(w.move_point(w.construction().id("A").unwrap(), 2.0, 0.0));
+    assert!(w.undo());
+    let b = w.construction().id("B").unwrap();
+    assert_eq!(w.label_offset(b), Some((40.0, 30.0)));
+    assert!(w.delete(b));
+    w.run_line("B = (5, 5)").unwrap();
+    let b = w.construction().id("B").unwrap();
+    assert_eq!(w.label_offset(b), None);
+}
