@@ -4,7 +4,7 @@
 //! the drawing area and the y axis pointing down. World coordinates have the
 //! y axis pointing up.
 
-use geo_kernel::kernel::{Construction, Def, Error, Id, Value};
+use geo_kernel::kernel::{Construction, Def, Id, Value};
 use geo_kernel::svg::View;
 
 /// Maps between world and screen coordinates with one uniform scale.
@@ -33,6 +33,7 @@ impl ViewTransform {
     }
 
     /// A transform fitted to the whole construction, with a margin.
+    #[cfg(test)]
     pub fn fit(c: &Construction, width: f64, height: f64) -> Self {
         Self::new(View::fit(c), width, height)
     }
@@ -113,22 +114,14 @@ impl Drag {
     }
 
     /// The point being dragged.
-    #[cfg(test)]
     pub fn id(&self) -> Id {
         self.id
     }
 
-    /// Moves the held point to follow the cursor. Returns how many dependent
-    /// objects were recomputed.
-    pub fn apply(
-        &self,
-        c: &mut Construction,
-        t: &ViewTransform,
-        sx: f64,
-        sy: f64,
-    ) -> Result<usize, Error> {
+    /// Where the held point should be for the cursor at `(sx, sy)`.
+    pub fn target(&self, t: &ViewTransform, sx: f64, sy: f64) -> (f64, f64) {
         let (wx, wy) = t.screen_to_world(sx, sy);
-        c.move_point(self.id, wx + self.dx, wy + self.dy)
+        (wx + self.dx, wy + self.dy)
     }
 }
 
@@ -217,9 +210,8 @@ mod tests {
         let (ax, ay) = screen_of(&c, &t, "A");
         let drag = Drag::begin(&c, &t, ax + 2.0, ay + 1.0, 10.0).expect("grab A");
         assert_eq!(Some(drag.id()), c.id("A"));
-        let recomputed = drag
-            .apply(&mut c, &t, ax + 2.0 - 60.0, ay + 1.0 - 40.0)
-            .unwrap();
+        let (tx, ty) = drag.target(&t, ax + 2.0 - 60.0, ay + 1.0 - 40.0);
+        let recomputed = c.move_point(drag.id(), tx, ty).unwrap();
         assert!(recomputed > 0);
         // The point keeps its offset from the cursor: it moved by the cursor delta.
         let (nx, ny) = screen_of(&c, &t, "A");
@@ -243,5 +235,16 @@ mod tests {
         let t = ViewTransform::fit(&c, 800.0, 600.0);
         let (ox, oy) = screen_of(&c, &t, "O");
         assert!(Drag::begin(&c, &t, ox, oy, 4.0).is_none());
+    }
+
+    #[test]
+    fn target_keeps_the_grab_offset() {
+        let c = triangle();
+        let t = ViewTransform::fit(&c, 800.0, 600.0);
+        let (ax, ay) = screen_of(&c, &t, "A");
+        let drag = Drag::begin(&c, &t, ax + 3.0, ay - 2.0, 10.0).unwrap();
+        // Releasing without moving leaves the point where it was.
+        let (x, y) = drag.target(&t, ax + 3.0, ay - 2.0);
+        assert!(x.abs() < 1e-9 && y.abs() < 1e-9);
     }
 }
