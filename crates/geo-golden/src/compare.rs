@@ -32,15 +32,21 @@ fn normalise(a: f64, b: f64, c: f64) -> Option<(f64, f64, f64)> {
     (n > 0.0 && n.is_finite()).then(|| (a / n, b / n, c / n))
 }
 
-/// Whether a defined line holds GeoGebra's raw coefficients, scale and sign
-/// included: every component agrees within `1e-9` times the largest
+/// Whether a defined line or ray holds GeoGebra's raw coefficients, scale
+/// and sign included: every component agrees within `1e-9` times the largest
 /// component magnitude of the two triples. `None` when either side is not a
-/// defined line. This is reported next to the comparison and never fails it.
+/// defined line or ray. This is reported next to the comparison and never
+/// fails it.
 pub fn line_scale_agrees(expected: &Expected, actual: &Value) -> Option<bool> {
-    let (Some(ExpectedData::Line { a, b, c }), Value::Line { a: x, b: y, c: z }) =
-        (&expected.data, *actual)
-    else {
-        return None;
+    let ((a, b, c), (x, y, z)) = match (&expected.data, *actual) {
+        (Some(ExpectedData::Line { a, b, c }), Value::Line { a: x, b: y, c: z })
+        | (
+            Some(ExpectedData::Ray { a, b, c, .. }),
+            Value::Ray {
+                a: x, b: y, c: z, ..
+            },
+        ) => ((a, b, c), (x, y, z)),
+        _ => return None,
     };
     let scale = [*a, *b, *c, x, y, z]
         .iter()
@@ -250,6 +256,26 @@ mod tests {
         };
         assert_eq!(line_scale_agrees(&line(1e6, 0.0, 3.0), &big), Some(true));
         assert_eq!(line_scale_agrees(&line(1e6, 0.0, 3.01), &big), Some(false));
+        // Rays count too.
+        let e = Expected {
+            kind: Kind::Ray,
+            data: Some(ExpectedData::Ray {
+                x: 1.0,
+                y: 2.0,
+                a: -4.0,
+                b: 3.0,
+                c: -2.0,
+            }),
+        };
+        let ray = |s: f64| Value::Ray {
+            x: 1.0,
+            y: 2.0,
+            a: -4.0 * s,
+            b: 3.0 * s,
+            c: -2.0 * s,
+        };
+        assert_eq!(line_scale_agrees(&e, &ray(1.0)), Some(true));
+        assert_eq!(line_scale_agrees(&e, &ray(0.2)), Some(false));
         // Not applicable to other objects or undefined lines.
         assert_eq!(line_scale_agrees(&num(1.0), &Value::Number(1.0)), None);
         assert_eq!(

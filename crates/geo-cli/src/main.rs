@@ -108,12 +108,15 @@ fn describe(v: Value) -> String {
         Value::Circle { cx, cy, r } => format!("centre ({cx:.4}, {cy:.4}), radius {r:.4}"),
         Value::Number(n) => format!("{n:.4}"),
         Value::Vector { x, y } => format!("({x:.4}, {y:.4})"),
-        Value::Ray { x, y, a, b, c } => format!(
-            "from ({x:.4}, {y:.4}) on {:.4}x + {:.4}y + {:.4} = 0",
-            a + 0.0,
-            b + 0.0,
-            c + 0.0
-        ),
+        Value::Ray { x, y, a, b, c } => {
+            let n = a.hypot(b);
+            format!(
+                "from ({x:.4}, {y:.4}) on {:.4}x + {:.4}y + {:.4} = 0",
+                a / n + 0.0,
+                b / n + 0.0,
+                c / n + 0.0
+            )
+        }
         Value::Undefined => "undefined".to_string(),
     }
 }
