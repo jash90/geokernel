@@ -12,8 +12,9 @@ dropped silently.
 ## Status
 
 Early. The kernel covers points, lines, segments, rays, circles, vectors,
-polygons, polylines, numbers and booleans, incremental updates, a small
-script language and SVG output.
+polygons, polylines, numbers, booleans and functions of x, arithmetic
+expressions with GeoGebra's exact decimal arithmetic, incremental updates,
+a small script language and SVG output.
 The desktop window has a toolbar with construction tools, an algebra view,
 an input row with an on-screen keyboard, undo and redo, and lets you drag
 free points. The commands so far: lines,
@@ -108,6 +109,9 @@ T = Translate(k, u)     # the circle k moved by the vector u
 q = Polygon(A, B, C)    # also creates the sides, named as GeoGebra names them
 g = Polygon(A, B, 5)    # regular polygon on the side AB
 e = AreCollinear(A, B, C)    # a boolean
+c = 2 r + sqrt(x(A)^2 + y(A)^2)   # an expression; recomputed when r or A change
+N = (A + B) / 2         # points and vectors in expressions
+f(x) = x^2 + r          # a function of x; f(2) in other expressions
 ```
 
 The group files in `crates/geo-kernel/src/algo/` list every command and

@@ -1,10 +1,10 @@
 command,alias_of,group,priority,status,notes
-Mod,,algebra,P2,todo,
-Div,,algebra,P2,todo,
-Min,,algebra,P2,todo,
-Max,,algebra,P2,todo,
-LCM,,algebra,P2,todo,
-GCD,,algebra,P2,todo,
+Mod,,algebra,P2,partial,"Mod(number, number)"
+Div,,algebra,P2,partial,"Div(number, number)"
+Min,,algebra,P2,partial,"Min(number, number)"
+Max,,algebra,P2,partial,"Max(number, number)"
+LCM,,algebra,P2,partial,"LCM(number, number)"
+GCD,,algebra,P2,partial,"GCD(number, number)"
 Expand,,algebra,P2,todo,
 Factor,,algebra,P2,todo,
 Simplify,,algebra,P2,todo,
