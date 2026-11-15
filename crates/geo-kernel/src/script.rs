@@ -46,6 +46,8 @@
 //! deliberate difference (see `DIFFERENCES.md`).
 
 use crate::algo::conic::ConicDef;
+use crate::algo::conic_parts::ConicPartDef;
+use crate::algo::general_conic::GeneralConicDef;
 use crate::algo::lines::LineDef;
 use crate::algo::measure::MeasureDef;
 use crate::algo::point::PointDef;
@@ -111,6 +113,9 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
         return c.add(name, def?).map(Some).map_err(|e| e.to_string());
     }
     if let Some(result) = crate::algo::polygon::exec(c, name, rhs) {
+        return result;
+    }
+    if let Some(result) = crate::algo::general_conic::exec(c, name, rhs) {
         return result;
     }
     match define(c, name, rhs) {
@@ -191,6 +196,10 @@ fn parse_multi(c: &Construction, rhs: &str) -> Option<Result<Vec<Def>, String>> 
         r.map(|defs| defs.into_iter().map(f).collect())
     }
     let (func, args) = split_call(rhs)?;
+    // asked first: `Tangent` of a conic is not a circle tangent
+    if let Some(r) = ConicPartDef::parse_multi(c, func, &args) {
+        return Some(wrap(r, Def::ConicPart));
+    }
     if let Some(r) = LineDef::parse_multi(c, func, &args) {
         return Some(wrap(r, Def::Lines));
     }
@@ -210,8 +219,9 @@ fn parse_multi(c: &Construction, rhs: &str) -> Option<Result<Vec<Def>, String>> 
 /// what GeoGebra's `LabelManager.setLabels` and `Construction.getIndexLabel`
 /// give at creation. The kernel's rule:
 ///
-/// - two or more outputs defined at creation: every output is created and
-///   gets the next free indexed label (`t_{1}`, `t_{2}`, ...);
+/// - two or more outputs defined at creation: every defined output is
+///   created and gets the next free indexed label (`t_{1}`, `t_{2}`, ...);
+///   `Vertex` of a hyperbola labels its two defined vertices only;
 /// - exactly one defined: only that output is created, labelled `name`;
 /// - none defined: only the first output is created, labelled `name`.
 ///
@@ -226,6 +236,26 @@ fn add_outputs(c: &mut Construction, name: &str, defs: Vec<Def>) -> Result<Id, S
     for def in &defs {
         defined.push(probe(c, def)?);
     }
+    if let [first @ Def::ConicPart(ConicPartDef::Directrix { .. }), second] = defs[..] {
+        // `AlgoDirectrix` gives both directrices the same label: with both
+        // defined the first keeps `name` and the second gets the next free
+        // indexed label (observed with the harness).
+        return match (defined[0], defined[1]) {
+            (true, true) => {
+                let id = c.add(name, first).map_err(|e| e.to_string())?;
+                let prefix = name
+                    .split('_')
+                    .next()
+                    .filter(|p| !p.is_empty())
+                    .unwrap_or("a");
+                let label = index_label(c, prefix);
+                c.add(&label, second).map_err(|e| e.to_string())?;
+                Ok(id)
+            }
+            (false, true) => c.add(name, second).map_err(|e| e.to_string()),
+            _ => c.add(name, first).map_err(|e| e.to_string()),
+        };
+    }
     let count = defined.iter().filter(|&&d| d).count();
     if count < 2 {
         let k = defined.iter().position(|&d| d).unwrap_or(0);
@@ -237,7 +267,7 @@ fn add_outputs(c: &mut Construction, name: &str, defs: Vec<Def>) -> Result<Id, S
         _ => "a",
     };
     let mut first = None;
-    for def in defs {
+    for (def, _) in defs.into_iter().zip(defined).filter(|&(_, d)| d) {
         let label = index_label(c, prefix);
         let id = c.add(&label, def).map_err(|e| e.to_string())?;
         first.get_or_insert(id);
@@ -272,6 +302,7 @@ fn probe(c: &Construction, def: &Def) -> Result<bool, String> {
         Def::Conic(d) => run(c, d),
         Def::Measure(d) => run(c, d),
         Def::Transform(d) => run(c, d),
+        Def::ConicPart(d) => run(c, d),
         _ => Ok(true),
     }
 }
@@ -291,6 +322,7 @@ fn is_finite(v: &Value) -> bool {
         Value::Function => true,
         Value::Polygon { area } => area.is_finite(),
         Value::PolyLine { length } => length.is_finite(),
+        Value::Conic { .. } => true,
         Value::Undefined => false,
     }
 }
@@ -377,7 +409,14 @@ pub(crate) fn parse_def(c: &Construction, rhs: &str) -> Result<Def, String> {
     let obj = |s: &str| object(c, s);
 
     // Groups are asked first, so that a group can add a new form of a
-    // built-in command (for example `Circle` with three points).
+    // built-in command (for example `Circle` with three points). General
+    // conics come first: they claim the transformations of conics.
+    if let Some(def) = GeneralConicDef::parse(c, func, &args) {
+        return def.map(Def::GeneralConic);
+    }
+    if let Some(def) = ConicPartDef::parse(c, func, &args) {
+        return def.map(Def::ConicPart);
+    }
     if let Some(def) = VectorDef::parse(c, func, &args) {
         return def.map(Def::Vector);
     }

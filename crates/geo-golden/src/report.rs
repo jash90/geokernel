@@ -20,6 +20,11 @@ pub struct Report {
     pub scale_disagree: usize,
     /// `scale_disagree` split by group and by the command that defines the line.
     pub scale_disagree_by: BTreeMap<(String, String), usize>,
+    /// Defined conics compared, and how many agree in the raw matrix and up
+    /// to a factor (the raw matrix decides the comparison).
+    pub conic_compared: usize,
+    pub conic_raw_agree: usize,
+    pub conic_scaled_agree: usize,
     /// Human-readable failures; the test passes only when this is empty.
     pub failures: Vec<String>,
 }
@@ -40,6 +45,10 @@ impl Report {
             self.scale_agree,
             self.scale_disagree
         );
+        s.push_str(&format!(
+            ", conic matrices: {} compared, {} agree raw, {} agree up to scale",
+            self.conic_compared, self.conic_raw_agree, self.conic_scaled_agree
+        ));
         for ((group, command), n) in &self.scale_disagree_by {
             s.push_str(&format!("\n  line scale disagrees: {group} {command}: {n}"));
         }
@@ -65,6 +74,9 @@ pub fn evaluate(cases: &[Case], gaps: &Gaps) -> Report {
         let out = replay(case);
         r.sign_agree += out.sign_agree;
         r.sign_disagree += out.sign_disagree;
+        r.conic_compared += out.conic_compared;
+        r.conic_raw_agree += out.conic_raw_agree;
+        r.conic_scaled_agree += out.conic_scaled_agree;
         // Only values recorded from GeoGebra say what its raw coefficients are.
         if case.generator == "ggb-harness" {
             r.scale_agree += out.scale_agree;

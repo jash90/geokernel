@@ -7,7 +7,7 @@
 #![allow(dead_code)]
 
 use geo_kernel::script::exec;
-use geo_kernel::{Construction, Def, Id, Kind, Value};
+use geo_kernel::{ConicData, ConicType, Construction, Def, Id, Kind, Value};
 use std::cell::{Cell, RefCell};
 use std::panic::{self, AssertUnwindSafe};
 use std::sync::mpsc;
@@ -157,13 +157,86 @@ pub fn first_non_finite(c: &Construction) -> Option<String> {
     })
 }
 
-pub fn values(c: &Construction) -> Vec<Value> {
-    c.ids().map(|id| c.value(id)).collect()
+/// The value of an object together with its conic record
+/// (`Construction::conic`), so that comparisons also see the matrix and the
+/// parts of a conic, which [`Value::Conic`] does not hold.
+#[derive(Clone, Copy, Debug)]
+pub struct Snap {
+    pub value: Value,
+    pub conic: Option<ConicData>,
 }
 
-/// Describes the first difference between two value lists (`==` on `f64`,
-/// so `-0.0` and `0.0` are the same).
-pub fn first_difference(c: &Construction, a: &[Value], b: &[Value]) -> Option<String> {
+impl Snap {
+    pub fn is_defined(&self) -> bool {
+        self.value.is_defined()
+    }
+}
+
+/// The matrix, type and parts of a defined conic record, bit for bit (but
+/// `-0.0` is `0.0`): the
+/// parts the golden files record for its type (`golden/SCHEMA.md`). The
+/// other fields of a record keep what an earlier type left in them, as in
+/// GeoGebra's `GeoConic`, so they depend on the history of moves and are not
+/// part of the conic. An undefined record is compared only as undefined, for
+/// the same reason.
+fn conic_bits(d: &ConicData) -> Vec<u64> {
+    if !d.defined {
+        return vec![0];
+    }
+    let mut numbers: Vec<f64> = d.matrix.to_vec();
+    let eigenvectors = d.eigenvec.iter().flatten().copied();
+    match d.ty {
+        ConicType::Circle | ConicType::Ellipse | ConicType::Hyperbola => {
+            numbers.extend(d.midpoint.iter().chain(&d.half_axes));
+            numbers.extend(eigenvectors);
+        }
+        ConicType::Parabola => {
+            numbers.extend(d.midpoint.iter().chain([&d.p]));
+            numbers.extend(eigenvectors);
+        }
+        ConicType::SinglePoint => numbers.extend(d.midpoint),
+        ConicType::IntersectingLines | ConicType::ParallelLines | ConicType::DoubleLine => {
+            // The order of the two lines follows the order they had before
+            // (GeoGebra keeps the line nearer the previous first line first),
+            // so it depends on the history: compare them as a pair.
+            let mut lines = d.lines;
+            lines.sort_by_key(|l| l.map(f64::to_bits));
+            numbers.extend(lines.iter().flatten())
+        }
+        ConicType::Empty | ConicType::NotClassified => {}
+    }
+    let mut bits = vec![1, d.ty as u64];
+    // `-0.0` and `0.0` are the same, as in the comparison of values.
+    bits.extend(
+        numbers
+            .iter()
+            .map(|&v| if v == 0.0 { 0 } else { v.to_bits() }),
+    );
+    bits
+}
+
+/// Values with `==` on `f64` (so `-0.0` and `0.0` are the same), conic
+/// records by [`conic_bits`].
+impl PartialEq for Snap {
+    fn eq(&self, other: &Snap) -> bool {
+        self.value == other.value
+            && self.conic.as_ref().map(conic_bits) == other.conic.as_ref().map(conic_bits)
+    }
+}
+
+pub fn snap(c: &Construction, id: Id) -> Snap {
+    Snap {
+        value: c.value(id),
+        conic: c.conic(id),
+    }
+}
+
+pub fn values(c: &Construction) -> Vec<Snap> {
+    c.ids().map(|id| snap(c, id)).collect()
+}
+
+/// Describes the first difference between two value lists (see [`Snap`]).
+pub fn first_difference(c: &Construction, a: &[Snap], b: &[Snap]) -> Option<String> {
     if a.len() != b.len() {
         return Some(format!("{} objects against {}", a.len(), b.len()));
     }
@@ -348,6 +421,7 @@ pub enum K {
     Line,
     Segment,
     Circle,
+    Conic,
     Number,
     /// A literal intersection index, `1` or `2`.
     Index,
@@ -361,6 +435,7 @@ impl K {
                 | (K::Line, Kind::Line)
                 | (K::Segment, Kind::Segment)
                 | (K::Circle, Kind::Circle)
+                | (K::Conic, Kind::Conic)
                 | (K::Number, Kind::Number)
         )
     }
@@ -372,12 +447,13 @@ const PT: Slot = &[K::Point];
 const LN: Slot = &[K::Line];
 const SG: Slot = &[K::Segment];
 const CI: Slot = &[K::Circle];
+const CO: Slot = &[K::Conic];
 const NU: Slot = &[K::Number];
 const IX: Slot = &[K::Index];
 /// A line or a segment.
 const LL: Slot = &[K::Line, K::Segment];
 /// Everything a transformation accepts.
-const SRC: Slot = &[K::Point, K::Line, K::Segment, K::Circle];
+const SRC: Slot = &[K::Point, K::Line, K::Segment, K::Circle, K::Conic];
 /// What a shear or stretch accepts (a circle becomes an ellipse).
 const AFFINE: Slot = &[K::Point, K::Line, K::Segment];
 
@@ -488,6 +564,31 @@ pub const COMMANDS: &[Cmd] = &[
     cmd("Dilate", &[SRC, NU, PT]),
     cmd("Shear", &[AFFINE, LL, NU]),
     cmd("Stretch", &[AFFINE, LL, NU]),
+    // general conics
+    cmd("Conic", &[PT, PT, PT, PT, PT]),
+    cmd("Ellipse", &[PT, PT, PT]),
+    cmd("Hyperbola", &[PT, PT, PT]),
+    cmd("Ellipse", &[PT, PT, NU]),
+    cmd("Hyperbola", &[PT, PT, NU]),
+    cmd("Parabola", &[PT, LL]),
+    cmd("Intersect", &[LN, CO]),
+    cmd("Intersect", &[CO, LN, IX]),
+    cmd("Center", &[CO]),
+    multi("Focus", &[CO]),
+    multi("Vertex", &[CO]),
+    multi("Axes", &[CO]),
+    cmd("MajorAxis", &[CO]),
+    cmd("MinorAxis", &[CO]),
+    multi("Directrix", &[CO]),
+    cmd("FirstAxisLength", &[CO]),
+    cmd("SecondAxisLength", &[CO]),
+    cmd("Eccentricity", &[CO]),
+    cmd("LinearEccentricity", &[CO]),
+    cmd("Parameter", &[CO]),
+    multi("Tangent", &[PT, CO]),
+    multi("Tangent", &[LL, CO]),
+    cmd("Polar", &[PT, CO]),
+    cmd("Diameter", &[LL, CO]),
 ];
 
 /// A command call, as script text and as the objects it reads.
