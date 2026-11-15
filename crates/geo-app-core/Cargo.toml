@@ -11,3 +11,4 @@ publish = false
 # logic usable by another front end (for example a phone build).
 [dependencies]
 geo-kernel = { path = "../geo-kernel" }
+geo-import = { path = "../geo-import" }

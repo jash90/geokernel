@@ -6,6 +6,7 @@ use crate::history::History;
 use crate::labels::next_label;
 use crate::scriptlog::{normalize, Log, Setting};
 use crate::undo::Undo;
+pub use file::import_notice;
 use geo_kernel::algo::measure::MeasureDef;
 use geo_kernel::kernel::{Construction, Def, Id, Kind, Value};
 use std::collections::HashMap;
@@ -463,5 +464,6 @@ impl Workbench {
     }
 }
 
+mod file;
 #[cfg(test)]
 mod tests;

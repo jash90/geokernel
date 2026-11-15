@@ -4,6 +4,12 @@
 //! keeps the normalised script lines. Deleting, undo and redo rebuild a
 //! `Construction` from them; a line whose inputs are gone fails to run and is
 //! dropped, which deletes everything that depended on the removed object.
+//!
+//! As text the journal is a script: the definition lines, plus the moves and
+//! the hidden objects as `SetCoords(A, x, y)`, `SetValue(n, v)` and
+//! `SetVisibleInView(A, 1, false)` (the script commands of the same meaning
+//! in GeoGebra scripts). These directives are read here, not by the kernel:
+//! they change the state of objects the script already made.
 
 use geo_kernel::kernel::Construction;
 use std::collections::BTreeSet;
@@ -49,6 +55,40 @@ pub fn normalize(input: &str) -> String {
         }
         _ => line.to_owned(),
     }
+}
+
+/// A script line that sets the state of an object instead of defining one.
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum Directive<'a> {
+    Coords(&'a str, f64, f64),
+    Value(&'a str, f64),
+    Visible(&'a str, bool),
+}
+
+/// The directive on a normalised line, if it is one (a definition always has
+/// an `=`).
+fn directive(line: &str) -> Option<Result<Directive<'_>, String>> {
+    if line.contains('=') {
+        return None;
+    }
+    let (name, rest) = line.split_once('(')?;
+    let name = name.trim();
+    if !matches!(name, "SetCoords" | "SetValue" | "SetVisibleInView") {
+        return None;
+    }
+    let parse = || -> Option<Directive<'_>> {
+        let args: Vec<&str> = rest.strip_suffix(')')?.split(',').map(str::trim).collect();
+        let num = |s: &str| s.parse::<f64>().ok();
+        match (name, args.as_slice()) {
+            ("SetCoords", [l, x, y]) => Some(Directive::Coords(l, num(x)?, num(y)?)),
+            ("SetValue", [l, v]) => Some(Directive::Value(l, num(v)?)),
+            ("SetVisibleInView", [l, "1", shown]) => {
+                Some(Directive::Visible(l, shown.parse().ok()?))
+            }
+            _ => None,
+        }
+    };
+    Some(parse().ok_or_else(|| format!("cannot read `{line}`")))
 }
 
 /// The identifiers of a script line.
@@ -203,6 +243,58 @@ impl Log {
         Ok((c, kept))
     }
 
+    /// The journal as a script that `load` reads back into the same
+    /// construction and an equal log: every definition line and every move
+    /// in their order, then the hidden objects. Numbers are written with
+    /// Rust's shortest exact form, so they read back bit for bit.
+    ///
+    /// It walks the whole journal: call it to save, not on every change.
+    pub fn to_script(&self) -> String {
+        use std::fmt::Write;
+        let mut out = String::new();
+        for op in &self.ops {
+            // Writing to a `String` cannot fail.
+            let _ = match op {
+                Op::Define(e) => writeln!(out, "{}", e.line),
+                Op::Set {
+                    label,
+                    to: Setting::Point(x, y),
+                } => writeln!(out, "SetCoords({label}, {x}, {y})"),
+                Op::Set {
+                    label,
+                    to: Setting::Number(v),
+                } => writeln!(out, "SetValue({label}, {v})"),
+            };
+        }
+        for label in &self.hidden {
+            let _ = writeln!(out, "SetVisibleInView({label}, 1, false)");
+        }
+        out
+    }
+
+    /// Applies a directive line to `c` and records it.
+    fn apply(&mut self, c: &mut Construction, d: Directive) -> Result<(), String> {
+        let label = match d {
+            Directive::Coords(l, ..) | Directive::Value(l, _) | Directive::Visible(l, _) => l,
+        };
+        let id = c.id(label).ok_or_else(|| format!("`{label}` is missing"))?;
+        let result = match d {
+            Directive::Coords(_, x, y) => c.move_point(id, x, y).map(|_| Setting::Point(x, y)),
+            Directive::Value(_, v) => c.set_number(id, v).map(|_| Setting::Number(v)),
+            Directive::Visible(_, shown) => {
+                if shown {
+                    self.hidden.remove(label);
+                } else {
+                    self.hidden.insert(label.to_owned());
+                }
+                return Ok(());
+            }
+        };
+        let to = result.map_err(|e| format!("`{label}`: {e}"))?;
+        self.record_set(label, to);
+        Ok(())
+    }
+
     /// Builds a log and construction from a whole script. The error carries
     /// the 1-based line number like `script::load`.
     pub fn load(src: &str) -> Result<(Construction, Log), String> {
@@ -211,6 +303,11 @@ impl Log {
         for (i, raw) in src.lines().enumerate() {
             let line = normalize(raw);
             if line.is_empty() {
+                continue;
+            }
+            let at = |e: String| format!("line {}: {e}", i + 1);
+            if let Some(d) = directive(&line) {
+                log.apply(&mut c, d.map_err(at)?).map_err(at)?;
                 continue;
             }
             let before = c.len();
@@ -297,6 +394,49 @@ mod tests {
         let (c2, log2) = log.rebuild().unwrap();
         assert_eq!(log, log2);
         assert_eq!(c1.len(), c2.len());
+    }
+
+    #[test]
+    fn the_script_of_a_log_reads_back_to_the_same_state() {
+        let (mut c, mut log) = sample();
+        let a = c.id("A").unwrap();
+        c.move_point(a, 0.1 + 0.2, 1e-7).unwrap();
+        log.record_set("A", Setting::Point(0.1 + 0.2, 1e-7));
+        log.hidden.insert("M".into());
+        let text = log.to_script();
+        assert!(
+            text.contains("SetCoords(A, 0.30000000000000004, 0.0000001)\n"),
+            "{text}"
+        );
+        assert!(text.ends_with("SetVisibleInView(M, 1, false)\n"), "{text}");
+        let (c2, log2) = Log::load(&text).unwrap();
+        assert_eq!(log2, log);
+        let values = |c: &Construction| c.ids().map(|id| c.value(id)).collect::<Vec<_>>();
+        assert_eq!(values(&c2), values(&c));
+    }
+
+    #[test]
+    fn directives_are_checked() {
+        for (src, err) in [
+            ("SetCoords(A, 1)\n", "line 1: cannot read `SetCoords(A, 1)`"),
+            ("SetCoords(A, 1, 2)\n", "line 1: `A` is missing"),
+            (
+                "A = (0, 0)\nSetVisibleInView(A, 2, false)\n",
+                "line 2: cannot read",
+            ),
+            (
+                "A = (0, 0)\nB = (1, 1)\nM = Midpoint(A, B)\nSetCoords(M, 1, 2)\n",
+                "line 4: `M`",
+            ),
+            ("n = 2\nSetValue(n, x)\n", "line 2: cannot read"),
+        ] {
+            let e = Log::load(src).err().unwrap();
+            assert!(e.starts_with(err), "{src:?}: {e}");
+        }
+        let (_, log) =
+            Log::load("A = (0, 0)\nSetVisibleInView(A, 1, false)\nSetVisibleInView(A, 1, true)\n")
+                .unwrap();
+        assert!(log.hidden.is_empty());
     }
 
     #[test]

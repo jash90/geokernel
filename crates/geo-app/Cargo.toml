@@ -13,7 +13,6 @@ path = "src/main.rs"
 [dependencies]
 geo-kernel = { path = "../geo-kernel" }
 geo-app-core = { path = "../geo-app-core" }
-geo-import = { path = "../geo-import" }
 # Default features are off to avoid pulling in glow, accesskit and the web
 # helpers. We want the wgpu renderer, the bundled fonts and both Linux
 # window systems.
