@@ -197,6 +197,19 @@ fn bool_number(b: bool) -> f64 {
     }
 }
 
+/// A boolean operand of a numeric operation is the plain number 1 or 0
+/// (`MyBoolean.getNumber`). A boolean result never carries a decimal, so
+/// only its value and flags change, and nothing is dropped.
+#[inline(always)]
+fn as_number(x: &mut Ex) {
+    if let Val::B(b, _) = x.val {
+        debug_assert!(x.dec.is_none());
+        x.val = Val::N(bool_number(b));
+        x.special = false;
+        x.obj = false;
+    }
+}
+
 /// A result of the full evaluation with what GeoGebra's value object knows
 /// besides its value: whether it is a `MySpecialDouble` (`special`), which
 /// keeps a decimal, and that decimal (`toDecimal`). An object operand
@@ -332,6 +345,7 @@ impl<'a> Ctx<'a> {
 
 /// Evaluates an entry's tree (full evaluation), with the exact decimal of
 /// a number result (`toDecimal`).
+#[inline]
 pub(super) fn root(c: &Construction, e: &Entry, lists: Option<&Lists>) -> (Raw, Option<Exact>) {
     let ctx = Ctx {
         lists,
@@ -415,12 +429,9 @@ impl Ctx<'_> {
             }
             Node::MinusOne => Ex::plain(N(-1.0)),
             Node::Bool(b) => Ex::plain(Val::B(b, true)),
-            Node::Un(Un::Not, a) => Ex::plain(match self.full(a).val {
-                Val::B(b, defined) => Val::B(!b, defined),
-                _ => Val::B(false, false),
-            }),
+            Node::Un(Un::Not, a) => Ex::plain(self.not(a)),
             Node::Bin(op, a, b) if op.is_comparison() || op.is_logic() => {
-                Ex::plain(logic(op, self.full(a).val, self.full(b).val))
+                Ex::plain(self.logic(op, a, b))
             }
             Node::Degree => Ex {
                 val: N(PI_180),
@@ -449,8 +460,11 @@ impl Ctx<'_> {
             Node::Un(op, a) => self.unary(op, a),
             Node::Bin(Bin::Pow, a, b) => self.power(a, b),
             Node::Bin(Bin::Round2, a, b) => self.round2(a, b),
+            // only a tree with lists has a list operand
             Node::Bin(Bin::Sub, a, b)
-                if self.is_list(a) != self.is_list(b) && (self.is_vec(a) || self.is_vec(b)) =>
+                if self.lists.is_some()
+                    && self.is_list(a) != self.is_list(b)
+                    && (self.is_vec(a) || self.is_vec(b)) =>
             {
                 Ex::plain(self.list_minus_vector(a, b))
             }
@@ -485,9 +499,25 @@ impl Ctx<'_> {
         }
     }
 
+    /// `¬a`; anything but a boolean gives an undefined false.
+    #[inline(never)]
+    fn not(&self, a: u32) -> Val {
+        match self.full(a).val {
+            Val::B(b, defined) => Val::B(!b, defined),
+            _ => Val::B(false, false),
+        }
+    }
+
+    /// A comparison or a logical operation, by the function `logic`.
+    #[inline(never)]
+    fn logic(&self, op: Bin, a: u32, b: u32) -> Val {
+        logic(op, self.full(a).val, self.full(b).val)
+    }
+
     /// `AlgoIf.compute` and `Operation.IF`, `IF_ELSE`, `IF_LIST` (see
     /// [`IfMode`]). Only the chosen branch is evaluated: an untaken branch
     /// changes no value.
+    #[inline(never)]
     fn conditional(&self, i: u32, mode: IfMode, cond: u32, then: u32, rest: u32) -> Ex {
         let (value, defined) = match self.full(cond).val {
             Val::B(v, d) => (v, d),
@@ -596,14 +626,13 @@ impl Ctx<'_> {
         self.full(i).num()
     }
 
-    /// The full evaluation of an operand of a numeric operation: a boolean
-    /// is the plain number 1 or 0 (`MyBoolean.getNumber`).
+    /// The full evaluation of an operand of a numeric operation (see
+    /// [`as_number`]).
+    #[inline(always)]
     fn operand(&self, i: u32) -> Ex {
-        let x = self.full(i);
-        match x.val {
-            Val::B(b, _) => Ex::plain(Val::N(bool_number(b))),
-            _ => x,
-        }
+        let mut x = self.full(i);
+        as_number(&mut x);
+        x
     }
 
     /// `ExpressionNode.evaluateDouble`.
@@ -772,6 +801,7 @@ impl Ctx<'_> {
 /// Lists: built in the scratch buffer, read by the list commands.
 impl Ctx<'_> {
     /// The value of the variable of the `Sequence` of `depth`.
+    #[inline(never)]
     fn local(&self, depth: u32) -> f64 {
         let mut local = self.locals;
         while let Some(l) = local {
@@ -945,6 +975,7 @@ impl Ctx<'_> {
     /// reads a list of two elements as `(x, y)` (`evaluateDouble`: a
     /// boolean is 0 or 1, a point or a list not a number); a list of any
     /// other length gives an undefined result.
+    #[inline(never)]
     fn list_minus_vector(&self, a: u32, b: u32) -> Val {
         use Val::{N, V};
         let undefined = V(f64::NAN, f64::NAN);
@@ -1147,6 +1178,7 @@ impl Ctx<'_> {
 
     /// A list command that gives a number, a point or a boolean; the result
     /// is a helper object, and what it built is dropped.
+    #[inline(never)]
     fn list_command(&self, i: u32, op: ListOp, l: u32, n: u32) -> Ex {
         let Some(lists) = self.lists else {
             return Ex::plain(Val::N(f64::NAN));

@@ -774,47 +774,67 @@ pub(crate) struct Outcome {
     dec: Option<eval::Exact>,
 }
 
-/// Evaluates an expression object for the current values of its parents;
-/// the elements of a list result go to `out`. `lists` is the scratch of a
-/// tree with lists.
-fn evaluate(
-    c: &Construction,
-    d: ExprDef,
-    lists: Option<&eval::Lists>,
-    out: &mut Vec<Slot>,
-) -> Outcome {
+/// Evaluates an expression object without lists for the current values of
+/// its parents.
+pub(crate) fn evaluate(c: &Construction, d: ExprDef) -> Outcome {
     let e = entry(c, d);
     if e.function {
         let raw = Raw::Num(if inputs_defined(c, e) { 0.0 } else { f64::NAN });
         Outcome { raw, dec: None }
-    } else if let (Ty::List(_), Some(lists)) = (e.root_ty(), lists) {
-        let raw = match eval::root_list(c, e, lists, out) {
+    } else {
+        let (raw, dec) = eval::root(c, e, None);
+        Outcome { raw, dec }
+    }
+}
+
+/// Evaluates an expression object with lists, which builds them in the
+/// scratch `lists`; the elements of a list result go to `out`.
+fn evaluate_lists(
+    c: &Construction,
+    d: ExprDef,
+    lists: &eval::Lists,
+    out: &mut Vec<Slot>,
+) -> Outcome {
+    let e = entry(c, d);
+    let raw = if let Ty::List(_) = e.root_ty() {
+        match eval::root_list(c, e, lists, out) {
             Some(len) => Raw::List(len),
             None => {
                 out.clear();
                 Raw::Num(f64::NAN)
             }
-        };
-        Outcome { raw, dec: None }
+        }
     } else {
-        let (raw, dec) = eval::root(c, e, lists);
-        Outcome { raw, dec }
-    }
+        let (raw, dec) = eval::root(c, e, Some(lists));
+        return Outcome { raw, dec };
+    };
+    Outcome { raw, dec: None }
+}
+
+/// Whether the tree of `d` has lists, which [`update_lists`] recomputes.
+pub(crate) fn has_lists(c: &Construction, d: ExprDef) -> bool {
+    entry(c, d).lists
 }
 
 /// Recomputes the expression object `d` and keeps its result; its value,
-/// and whether it changed (see [`store`]). The scratch buffers of a tree
-/// with lists are taken from the table and given back, so a recompute
-/// allocates nothing once they have grown.
+/// and whether it changed (see [`store`]).
 pub(crate) fn update(c: &mut Construction, d: ExprDef) -> (Value, bool) {
-    if !entry(c, d).lists {
-        let out = evaluate(c, d, None, &mut Vec::new());
-        return (value(d, out.raw), store(c, d, out));
+    if entry(c, d).lists {
+        return update_lists(c, d);
     }
+    let out = evaluate(c, d);
+    (value(d, out.raw), store(c, d, out))
+}
+
+/// [`update`] of a tree with lists. The scratch buffers are taken from the
+/// table and given back, so a recompute allocates nothing once they have
+/// grown.
+#[inline(never)]
+pub(crate) fn update_lists(c: &mut Construction, d: ExprDef) -> (Value, bool) {
     let lists = eval::Lists::new(std::mem::take(&mut c.exprs.arena));
     let mut items = std::mem::take(&mut c.exprs.out);
     items.clear();
-    let out = evaluate(c, d, Some(&lists), &mut items);
+    let out = evaluate_lists(c, d, &lists, &mut items);
     c.exprs.arena = lists.into_arena();
     let e = &mut c.exprs.entries[d.index as usize];
     let items_changed = !list::same_slots(&e.items, &items);
@@ -881,8 +901,12 @@ fn defined_below(c: &Construction, e: &Entry, i: u32) -> bool {
 /// parents, without storing it.
 #[inline(never)]
 pub(crate) fn current(c: &Construction, d: ExprDef) -> Value {
-    let lists = entry(c, d).lists.then(|| eval::Lists::new(Vec::new()));
-    value(d, evaluate(c, d, lists.as_ref(), &mut Vec::new()).raw)
+    let raw = if entry(c, d).lists {
+        evaluate_lists(c, d, &eval::Lists::new(Vec::new()), &mut Vec::new()).raw
+    } else {
+        evaluate(c, d).raw
+    };
+    value(d, raw)
 }
 
 /// The elements of the list object `id`, when it is a defined list.

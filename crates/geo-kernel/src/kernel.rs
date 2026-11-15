@@ -1047,9 +1047,14 @@ impl Construction {
     /// Kept out of line so that the loop of [`Self::propagate`] stays small.
     #[inline(never)]
     fn update_expr(&mut self, i: usize, d: ExprDef) -> bool {
-        let (value, changed) = expr::update(self, d);
-        self.values[i] = value;
-        changed
+        if expr::has_lists(self, d) {
+            let (value, changed) = expr::update_lists(self, d);
+            self.values[i] = value;
+            return changed;
+        }
+        let out = expr::evaluate(self, d);
+        self.values[i] = expr::value(d, out.raw);
+        expr::store(self, d, out)
     }
 
     /// Recomputes the conic record of object `i` from its previous record;
