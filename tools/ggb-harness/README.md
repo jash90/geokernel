@@ -29,6 +29,7 @@ tools/ggb-harness/harness.sh golden lines   # rewrite one group only
 tools/ggb-harness/harness.sh chain    # time the bench() chain (optional: number of steps)
 python3 tools/ggb-harness/cases/make_cases.py   # rewrite cases/geometry.json
 python3 tools/ggb-harness/cases/make_lines.py   # rewrite cases/lines.json (one script per group)
+python3 tools/ggb-harness/cases/make_expr.py    # rewrite cases/expr.json
 ```
 
 `build` runs `gradlew -p source/shared :common-jre:ggbHarnessClasspath` with
@@ -100,6 +101,13 @@ gives.
   `PerpendicularLine(P, l)`, parallel `Line(P, l)`, `Circle(A, B)`,
   `Circle(A, r)` with `r` a number object, and `Intersect` of two lines, a
   line and a circle with an index, or two circles with an index.
+- Arithmetic expressions over these objects (`c = a + 2*b`,
+  `d = Distance(A, B) / 2`, `M = (A + B) / 2`, `k = x(A) + sin(a)`). A line
+  that is not a literal or a single call of a known command is an expression:
+  the harness accepts a number, a point or a vector from it (a point or a
+  vector by the case of the label) and checks that it is free exactly when it
+  names no scripted object. A command inside the arguments of another command
+  (`Slope(Line(A, B))`) is accepted by GeoGebra but not by `geo-kernel`.
 - Points have upper-case labels, everything else lower case. A coordinate
   pair with a lower-case label is a free vector (GeoGebra's rule), so free
   points must have upper-case labels. Labels avoid

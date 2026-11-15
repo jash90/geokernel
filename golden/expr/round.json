@@ -1,0 +1,475 @@
+{
+  "schema": 1,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "expr-round-001",
+      "group": "expr",
+      "script": [
+        "a = 1",
+        "c = round(a)",
+        "d = floor(a)",
+        "f = ceil(a)",
+        "g = round(a, 2)",
+        "h = round(a, -1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 2.5 },
+        { "action": "set_number", "label": "a", "value": -2.5 },
+        { "action": "set_number", "label": "a", "value": 25.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "f": { "type": "number", "defined": true, "value": 1.0 },
+          "g": { "type": "number", "defined": true, "value": 1.0 },
+          "h": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.5 },
+          "c": { "type": "number", "defined": true, "value": 3.0 },
+          "d": { "type": "number", "defined": true, "value": 2.0 },
+          "f": { "type": "number", "defined": true, "value": 3.0 },
+          "g": { "type": "number", "defined": true, "value": 2.5 },
+          "h": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.5 },
+          "c": { "type": "number", "defined": true, "value": -3.0 },
+          "d": { "type": "number", "defined": true, "value": -3.0 },
+          "f": { "type": "number", "defined": true, "value": -2.0 },
+          "g": { "type": "number", "defined": true, "value": -2.5 },
+          "h": { "type": "number", "defined": true, "value": -0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 25.0 },
+          "c": { "type": "number", "defined": true, "value": 25.0 },
+          "d": { "type": "number", "defined": true, "value": 25.0 },
+          "f": { "type": "number", "defined": true, "value": 25.0 },
+          "g": { "type": "number", "defined": true, "value": 25.0 },
+          "h": { "type": "number", "defined": true, "value": 30.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-round-002",
+      "group": "expr",
+      "script": [
+        "a = 1",
+        "c = round(a)",
+        "d = floor(a)",
+        "f = ceil(a)",
+        "g = round(a, 2)",
+        "h = round(a, -1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -2.5 },
+        { "action": "set_number", "label": "a", "value": 2.5 },
+        { "action": "set_number", "label": "a", "value": -25.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "f": { "type": "number", "defined": true, "value": 1.0 },
+          "g": { "type": "number", "defined": true, "value": 1.0 },
+          "h": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.5 },
+          "c": { "type": "number", "defined": true, "value": -3.0 },
+          "d": { "type": "number", "defined": true, "value": -3.0 },
+          "f": { "type": "number", "defined": true, "value": -2.0 },
+          "g": { "type": "number", "defined": true, "value": -2.5 },
+          "h": { "type": "number", "defined": true, "value": -0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.5 },
+          "c": { "type": "number", "defined": true, "value": 3.0 },
+          "d": { "type": "number", "defined": true, "value": 2.0 },
+          "f": { "type": "number", "defined": true, "value": 3.0 },
+          "g": { "type": "number", "defined": true, "value": 2.5 },
+          "h": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -25.0 },
+          "c": { "type": "number", "defined": true, "value": -25.0 },
+          "d": { "type": "number", "defined": true, "value": -25.0 },
+          "f": { "type": "number", "defined": true, "value": -25.0 },
+          "g": { "type": "number", "defined": true, "value": -25.0 },
+          "h": { "type": "number", "defined": true, "value": -30.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-round-003",
+      "group": "expr",
+      "script": [
+        "a = 1",
+        "c = round(a)",
+        "d = floor(a)",
+        "f = ceil(a)",
+        "g = round(a, 2)",
+        "h = round(a, -1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": -0.5 },
+        { "action": "set_number", "label": "a", "value": 5.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "f": { "type": "number", "defined": true, "value": 1.0 },
+          "g": { "type": "number", "defined": true, "value": 1.0 },
+          "h": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "f": { "type": "number", "defined": true, "value": 1.0 },
+          "g": { "type": "number", "defined": true, "value": 0.5 },
+          "h": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -0.5 },
+          "c": { "type": "number", "defined": true, "value": -1.0 },
+          "d": { "type": "number", "defined": true, "value": -1.0 },
+          "f": { "type": "number", "defined": true, "value": -0.0 },
+          "g": { "type": "number", "defined": true, "value": -0.5 },
+          "h": { "type": "number", "defined": true, "value": -0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 5.0 },
+          "c": { "type": "number", "defined": true, "value": 5.0 },
+          "d": { "type": "number", "defined": true, "value": 5.0 },
+          "f": { "type": "number", "defined": true, "value": 5.0 },
+          "g": { "type": "number", "defined": true, "value": 5.0 },
+          "h": { "type": "number", "defined": true, "value": 10.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-round-004",
+      "group": "expr",
+      "script": [
+        "a = 1",
+        "c = round(a)",
+        "d = floor(a)",
+        "f = ceil(a)",
+        "g = round(a, 2)",
+        "h = round(a, -1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -0.5 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": -5.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "f": { "type": "number", "defined": true, "value": 1.0 },
+          "g": { "type": "number", "defined": true, "value": 1.0 },
+          "h": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -0.5 },
+          "c": { "type": "number", "defined": true, "value": -1.0 },
+          "d": { "type": "number", "defined": true, "value": -1.0 },
+          "f": { "type": "number", "defined": true, "value": -0.0 },
+          "g": { "type": "number", "defined": true, "value": -0.5 },
+          "h": { "type": "number", "defined": true, "value": -0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "f": { "type": "number", "defined": true, "value": 1.0 },
+          "g": { "type": "number", "defined": true, "value": 0.5 },
+          "h": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -5.0 },
+          "c": { "type": "number", "defined": true, "value": -5.0 },
+          "d": { "type": "number", "defined": true, "value": -5.0 },
+          "f": { "type": "number", "defined": true, "value": -5.0 },
+          "g": { "type": "number", "defined": true, "value": -5.0 },
+          "h": { "type": "number", "defined": true, "value": -10.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-round-005",
+      "group": "expr",
+      "script": [
+        "a = 1",
+        "c = round(a)",
+        "d = floor(a)",
+        "f = ceil(a)",
+        "g = round(a, 2)",
+        "h = round(a, -1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 1.005 },
+        { "action": "set_number", "label": "a", "value": -1.005 },
+        { "action": "set_number", "label": "a", "value": 10.049999999999999 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "f": { "type": "number", "defined": true, "value": 1.0 },
+          "g": { "type": "number", "defined": true, "value": 1.0 },
+          "h": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.005 },
+          "c": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "f": { "type": "number", "defined": true, "value": 2.0 },
+          "g": { "type": "number", "defined": true, "value": 1.01 },
+          "h": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.005 },
+          "c": { "type": "number", "defined": true, "value": -1.0 },
+          "d": { "type": "number", "defined": true, "value": -2.0 },
+          "f": { "type": "number", "defined": true, "value": -1.0 },
+          "g": { "type": "number", "defined": true, "value": -1.01 },
+          "h": { "type": "number", "defined": true, "value": -0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 10.049999999999999 },
+          "c": { "type": "number", "defined": true, "value": 10.0 },
+          "d": { "type": "number", "defined": true, "value": 10.0 },
+          "f": { "type": "number", "defined": true, "value": 11.0 },
+          "g": { "type": "number", "defined": true, "value": 10.05 },
+          "h": { "type": "number", "defined": true, "value": 10.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-round-006",
+      "group": "expr",
+      "script": [
+        "a = 1",
+        "c = round(a)",
+        "d = floor(a)",
+        "f = ceil(a)",
+        "g = round(a, 2)",
+        "h = round(a, -1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 2.675 },
+        { "action": "set_number", "label": "a", "value": -2.675 },
+        { "action": "set_number", "label": "a", "value": 26.75 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "f": { "type": "number", "defined": true, "value": 1.0 },
+          "g": { "type": "number", "defined": true, "value": 1.0 },
+          "h": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.675 },
+          "c": { "type": "number", "defined": true, "value": 3.0 },
+          "d": { "type": "number", "defined": true, "value": 2.0 },
+          "f": { "type": "number", "defined": true, "value": 3.0 },
+          "g": { "type": "number", "defined": true, "value": 2.68 },
+          "h": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.675 },
+          "c": { "type": "number", "defined": true, "value": -3.0 },
+          "d": { "type": "number", "defined": true, "value": -3.0 },
+          "f": { "type": "number", "defined": true, "value": -2.0 },
+          "g": { "type": "number", "defined": true, "value": -2.68 },
+          "h": { "type": "number", "defined": true, "value": -0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 26.75 },
+          "c": { "type": "number", "defined": true, "value": 27.0 },
+          "d": { "type": "number", "defined": true, "value": 26.0 },
+          "f": { "type": "number", "defined": true, "value": 27.0 },
+          "g": { "type": "number", "defined": true, "value": 26.75 },
+          "h": { "type": "number", "defined": true, "value": 30.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-round-007",
+      "group": "expr",
+      "script": [
+        "a = 1",
+        "c = round(a)",
+        "d = floor(a)",
+        "f = ceil(a)",
+        "g = round(a, 2)",
+        "h = round(a, -1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -2.675 },
+        { "action": "set_number", "label": "a", "value": 2.675 },
+        { "action": "set_number", "label": "a", "value": -26.75 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "f": { "type": "number", "defined": true, "value": 1.0 },
+          "g": { "type": "number", "defined": true, "value": 1.0 },
+          "h": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.675 },
+          "c": { "type": "number", "defined": true, "value": -3.0 },
+          "d": { "type": "number", "defined": true, "value": -3.0 },
+          "f": { "type": "number", "defined": true, "value": -2.0 },
+          "g": { "type": "number", "defined": true, "value": -2.68 },
+          "h": { "type": "number", "defined": true, "value": -0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.675 },
+          "c": { "type": "number", "defined": true, "value": 3.0 },
+          "d": { "type": "number", "defined": true, "value": 2.0 },
+          "f": { "type": "number", "defined": true, "value": 3.0 },
+          "g": { "type": "number", "defined": true, "value": 2.68 },
+          "h": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -26.75 },
+          "c": { "type": "number", "defined": true, "value": -27.0 },
+          "d": { "type": "number", "defined": true, "value": -27.0 },
+          "f": { "type": "number", "defined": true, "value": -26.0 },
+          "g": { "type": "number", "defined": true, "value": -26.75 },
+          "h": { "type": "number", "defined": true, "value": -30.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-round-008",
+      "group": "expr",
+      "script": [
+        "a = 1",
+        "c = round(a)",
+        "d = floor(a)",
+        "f = ceil(a)",
+        "g = round(a, 2)",
+        "h = round(a, -1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 1.0E-9 },
+        { "action": "set_number", "label": "a", "value": -1.0E-9 },
+        { "action": "set_number", "label": "a", "value": 1.0E-8 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "f": { "type": "number", "defined": true, "value": 1.0 },
+          "g": { "type": "number", "defined": true, "value": 1.0 },
+          "h": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E-9 },
+          "c": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "f": { "type": "number", "defined": true, "value": 0.0 },
+          "g": { "type": "number", "defined": true, "value": 0.0 },
+          "h": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0E-9 },
+          "c": { "type": "number", "defined": true, "value": -0.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "f": { "type": "number", "defined": true, "value": 0.0 },
+          "g": { "type": "number", "defined": true, "value": -0.0 },
+          "h": { "type": "number", "defined": true, "value": -0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E-8 },
+          "c": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "f": { "type": "number", "defined": true, "value": 1.0 },
+          "g": { "type": "number", "defined": true, "value": 0.0 },
+          "h": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-round-009",
+      "group": "expr",
+      "script": [
+        "a = 1",
+        "c = round(a)",
+        "d = floor(a)",
+        "f = ceil(a)",
+        "g = round(a, 2)",
+        "h = round(a, -1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -3.0000000001 },
+        { "action": "set_number", "label": "a", "value": 3.0000000001 },
+        { "action": "set_number", "label": "a", "value": -30.000000001 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "f": { "type": "number", "defined": true, "value": 1.0 },
+          "g": { "type": "number", "defined": true, "value": 1.0 },
+          "h": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -3.0000000001 },
+          "c": { "type": "number", "defined": true, "value": -3.0 },
+          "d": { "type": "number", "defined": true, "value": -3.0 },
+          "f": { "type": "number", "defined": true, "value": -3.0 },
+          "g": { "type": "number", "defined": true, "value": -3.0 },
+          "h": { "type": "number", "defined": true, "value": -0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0000000001 },
+          "c": { "type": "number", "defined": true, "value": 3.0 },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "f": { "type": "number", "defined": true, "value": 3.0 },
+          "g": { "type": "number", "defined": true, "value": 3.0 },
+          "h": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -30.000000001 },
+          "c": { "type": "number", "defined": true, "value": -30.0 },
+          "d": { "type": "number", "defined": true, "value": -30.0 },
+          "f": { "type": "number", "defined": true, "value": -30.0 },
+          "g": { "type": "number", "defined": true, "value": -30.0 },
+          "h": { "type": "number", "defined": true, "value": -30.0 }
+        }
+      ]
+    }
+  ]
+}

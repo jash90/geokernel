@@ -21,6 +21,7 @@
 //! m = Circle(A, r)        # centre A, radius r
 //! P = Intersect(l, k, 2)  # second intersection (1 is the default)
 //! t = Tangent(P, k)       # two tangents t_{1} and t_{2} when both are defined at creation
+//! c = a + 2*b             # arithmetic (see `crate::expr`) where no form above applies
 //! ```
 
 use crate::algo::conic::ConicDef;
@@ -71,14 +72,51 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
         return Err(format!("`{name}` is not a valid object name"));
     }
     let rhs = rhs.trim();
+    match define(c, name, rhs) {
+        Ok(id) => Ok(Some(id)),
+        // A call of a command keeps the command's own error.
+        Err(e) if is_single_call(c, rhs) => Err(e),
+        Err(_) => crate::expr::define(c, name, rhs, is_vector_label(name)).map(Some),
+    }
+}
+
+/// The forms of the module documentation other than arithmetic.
+fn define(c: &mut Construction, name: &str, rhs: &str) -> Result<Id, String> {
     if let Some(defs) = parse_multi(c, rhs) {
-        return add_outputs(c, name, defs?).map(Some);
+        return add_outputs(c, name, defs?);
     }
     let def = match parse_def(c, rhs)? {
         Def::FreePoint { x, y } if is_vector_label(name) => Def::Vector(VectorDef::Free { x, y }),
         def => def,
     };
-    c.add(name, def).map(Some).map_err(|e| e.to_string())
+    c.add(name, def).map_err(|e| e.to_string())
+}
+
+/// Whether `rhs` is exactly one call `Name(...)` of a command: the bracket
+/// after the name closes at the end, and the name is neither a built-in
+/// function nor an object.
+fn is_single_call(c: &Construction, rhs: &str) -> bool {
+    let Some(open) = rhs.find('(') else {
+        return false;
+    };
+    let name = rhs[..open].trim();
+    if !is_identifier(name) || crate::expr::is_function_name(name) || c.id(name).is_some() {
+        return false;
+    }
+    let mut depth = 0usize;
+    for (i, ch) in rhs.char_indices().skip_while(|&(i, _)| i < open) {
+        match ch {
+            '(' => depth += 1,
+            ')' => {
+                depth -= 1;
+                if depth == 0 {
+                    return i + 1 == rhs.len();
+                }
+            }
+            _ => {}
+        }
+    }
+    false
 }
 
 /// `Name(args)` split into the name and the trimmed arguments; `None` for
@@ -250,7 +288,7 @@ fn is_identifier(s: &str) -> bool {
     chars.all(|ch| ch.is_alphanumeric() || ch == '_' || ch == '\'')
 }
 
-fn parse_def(c: &Construction, rhs: &str) -> Result<Def, String> {
+pub(crate) fn parse_def(c: &Construction, rhs: &str) -> Result<Def, String> {
     // (x, y)
     if let Some(inner) = rhs.strip_prefix('(').and_then(|s| s.strip_suffix(')')) {
         let parts: Vec<&str> = inner.split(',').map(str::trim).collect();

@@ -1,0 +1,438 @@
+{
+  "schema": 1,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "expr-const-001",
+      "group": "expr",
+      "script": [
+        "a = 1.5",
+        "c = a pi"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.25 },
+        { "action": "set_number", "label": "a", "value": 1.5 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 4.71238898038469 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -6.283185307179586 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.25 },
+          "c": { "type": "number", "defined": true, "value": 0.7853981633974483 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 4.71238898038469 }
+        }
+      ]
+    },
+    {
+      "id": "expr-const-002",
+      "group": "expr",
+      "script": [
+        "a = 1.5",
+        "c = 2pi a"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.25 },
+        { "action": "set_number", "label": "a", "value": 1.5 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 9.42477796076938 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -12.566370614359172 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.25 },
+          "c": { "type": "number", "defined": true, "value": 1.5707963267948966 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 9.42477796076938 }
+        }
+      ]
+    },
+    {
+      "id": "expr-const-003",
+      "group": "expr",
+      "script": [
+        "a = 1.5",
+        "c = π a"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.25 },
+        { "action": "set_number", "label": "a", "value": 1.5 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 4.71238898038469 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -6.283185307179586 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.25 },
+          "c": { "type": "number", "defined": true, "value": 0.7853981633974483 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 4.71238898038469 }
+        }
+      ]
+    },
+    {
+      "id": "expr-const-004",
+      "group": "expr",
+      "script": [
+        "a = 1.5",
+        "c = e^a"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.25 },
+        { "action": "set_number", "label": "a", "value": 1.5 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 4.4816890703380645 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.1353352832366127 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.25 },
+          "c": { "type": "number", "defined": true, "value": 1.2840254166877414 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 4.4816890703380645 }
+        }
+      ]
+    },
+    {
+      "id": "expr-const-005",
+      "group": "expr",
+      "script": [
+        "a = 1.5",
+        "c = a e"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.25 },
+        { "action": "set_number", "label": "a", "value": 1.5 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 4.077422742688568 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -5.43656365691809 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.25 },
+          "c": { "type": "number", "defined": true, "value": 0.6795704571147613 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 4.077422742688568 }
+        }
+      ]
+    },
+    {
+      "id": "expr-const-006",
+      "group": "expr",
+      "script": [
+        "a = 1.5",
+        "c = pi / a"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.25 },
+        { "action": "set_number", "label": "a", "value": 1.5 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0943951023931957 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -1.5707963267948966 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.25 },
+          "c": { "type": "number", "defined": true, "value": 12.566370614359172 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0943951023931953 }
+        }
+      ]
+    },
+    {
+      "id": "expr-const-007",
+      "group": "expr",
+      "script": [
+        "a = 1.5",
+        "c = a + Infinity"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.25 },
+        { "action": "set_number", "label": "a", "value": 1.5 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.25 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "expr-const-008",
+      "group": "expr",
+      "script": [
+        "a = 1.5",
+        "c = a / ∞"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.25 },
+        { "action": "set_number", "label": "a", "value": 1.5 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.25 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-const-009",
+      "group": "expr",
+      "script": [
+        "c = 2 + 3",
+        "d = c + 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "c", "value": 2.0 },
+        { "action": "set_number", "label": "c", "value": -0.5 }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 5.0 },
+          "d": { "type": "number", "defined": true, "value": 6.0 }
+        },
+        {
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 0.5 }
+        }
+      ]
+    },
+    {
+      "id": "expr-const-010",
+      "group": "expr",
+      "script": [
+        "c = 2^10 / 4",
+        "d = c + 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "c", "value": 2.0 },
+        { "action": "set_number", "label": "c", "value": -0.5 }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 256.0 },
+          "d": { "type": "number", "defined": true, "value": 257.0 }
+        },
+        {
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 0.5 }
+        }
+      ]
+    },
+    {
+      "id": "expr-const-011",
+      "group": "expr",
+      "script": [
+        "c = sqrt(2)",
+        "d = c + 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "c", "value": 2.0 },
+        { "action": "set_number", "label": "c", "value": -0.5 }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "d": { "type": "number", "defined": true, "value": 2.414213562373095 }
+        },
+        {
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 0.5 }
+        }
+      ]
+    },
+    {
+      "id": "expr-const-012",
+      "group": "expr",
+      "script": [
+        "c = pi / 4",
+        "d = c + 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "c", "value": 2.0 },
+        { "action": "set_number", "label": "c", "value": -0.5 }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.7853981633974483 },
+          "d": { "type": "number", "defined": true, "value": 1.7853981633974483 }
+        },
+        {
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 0.5 }
+        }
+      ]
+    },
+    {
+      "id": "expr-const-013",
+      "group": "expr",
+      "script": [
+        "c = 3!",
+        "d = c + 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "c", "value": 2.0 },
+        { "action": "set_number", "label": "c", "value": -0.5 }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 6.0 },
+          "d": { "type": "number", "defined": true, "value": 7.0 }
+        },
+        {
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 0.5 }
+        }
+      ]
+    }
+  ]
+}

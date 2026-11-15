@@ -261,6 +261,16 @@ final class Json {
             sb.append("[]");
             return;
         }
+        // An array of numbers (a function sample `[x, y]`) stays on one line.
+        if (list.stream().allMatch(v -> v == null || v instanceof Double)) {
+            sb.append('[');
+            for (int i = 0; i < list.size(); i++) {
+                writeScalar(sb, list.get(i));
+                sb.append(i + 1 < list.size() ? ", " : "");
+            }
+            sb.append(']');
+            return;
+        }
         sb.append("[\n");
         for (int i = 0; i < list.size(); i++) {
             pad(sb, indent + 1);

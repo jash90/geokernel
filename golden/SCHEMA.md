@@ -127,6 +127,15 @@ The types `vector` and `ray`, the moving of a free vector and these rules were
 added after the first golden files were written. The addition is backwards
 compatible: no existing file changes and the schema version stays 1.
 
+Script lines may also be arithmetic expressions (group `expr`), such as
+`c = a + 2*b`, `d = Distance(A, B) / 2` or `M = (A + B) / 2`. An expression
+whose result is a coordinate pair is a vector when its label starts with a
+lower-case letter and a point otherwise, whatever its operands are, as in
+GeoGebra. An expression that reads no object (`c = 2 + 3`) is evaluated once
+and becomes a free number, point or vector, which steps may set or move.
+Expressions were added after the first golden files were written; no
+existing file changed and the schema version stays 1.
+
 ## Known gaps
 
 A case that `geo-kernel` cannot reproduce yet is listed in

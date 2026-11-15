@@ -17,6 +17,7 @@ use crate::algo::vector::VectorDef;
 use crate::algo::{
     self, check_index, join, line_through, Group, Parents, CIRCLE, LINE, LINE_LIKE, NUMBER, POINT,
 };
+use crate::expr::{self, ExprDef};
 use std::cmp::Reverse;
 use std::collections::{BinaryHeap, HashMap};
 use std::fmt;
@@ -207,6 +208,8 @@ pub enum Def {
     Transform(TransformDef),
     /// Vectors, rays and translations.
     Vector(VectorDef),
+    /// An arithmetic expression; the tree is kept by the construction.
+    Expr(ExprDef),
 }
 
 impl Def {
@@ -226,6 +229,7 @@ impl Def {
             Def::Measure(d) => d.kind(),
             Def::Transform(d) => d.kind(),
             Def::Vector(d) => d.kind(),
+            Def::Expr(d) => d.kind(),
         }
     }
 
@@ -236,10 +240,11 @@ impl Def {
         )
     }
 
-    /// The objects this definition reads.
-    fn parents(&self) -> Parents {
+    /// The objects this definition reads. An expression reads the objects
+    /// of its tree, which [`expr::parents`] lists.
+    pub(crate) fn parents(&self) -> Parents {
         match *self {
-            Def::FreePoint { .. } | Def::Number(_) => Parents::none(),
+            Def::FreePoint { .. } | Def::Number(_) | Def::Expr(_) => Parents::none(),
             Def::Line(p, q)
             | Def::Segment(p, q)
             | Def::Midpoint(p, q)
@@ -319,6 +324,8 @@ pub struct Construction {
     mark: Vec<u32>,
     epoch: u32,
     heap: BinaryHeap<Reverse<usize>>,
+    /// Trees of the expression objects.
+    pub(crate) exprs: expr::Table,
 }
 
 impl Construction {
@@ -376,11 +383,19 @@ impl Construction {
         let def = algo::intersect::prepare(self, def);
 
         let id = Id(self.defs.len());
-        let value = self.compute(def);
+        let value = match def {
+            Def::Expr(d) => {
+                let raw = expr::evaluate(self, d);
+                expr::store(self, d, raw);
+                expr::value(d, raw)
+            }
+            _ => self.compute(def),
+        };
         let parents = def.parents();
         // Objects the rule also reads, beyond its parents.
         let mut hidden = algo::intersect::hidden_parents(self, &def);
         hidden.extend(algo::vector::hidden_parents(self, &def));
+        hidden.extend(expr::parents(self, &def));
         let all = || parents.as_slice().iter().chain(&hidden);
         for (k, parent) in all().enumerate() {
             // An object that is read twice is still one child.
@@ -430,12 +445,12 @@ impl Construction {
         if !v.is_finite() {
             return Err(Error::NotFinite);
         }
-        let new = Value::Number(v);
-        if self.values[id.0] == new {
+        // Bit equality: `0` to `-0` is a change (`1/a` flips its sign).
+        if matches!(self.values[id.0], Value::Number(old) if old.to_bits() == v.to_bits()) {
             return Ok(0);
         }
         self.defs[id.0] = Def::Number(v);
-        self.values[id.0] = new;
+        self.values[id.0] = Value::Number(v);
         Ok(self.propagate(id))
     }
 
@@ -458,13 +473,23 @@ impl Construction {
 
         let mut recomputed = 0;
         while let Some(Reverse(i)) = heap.pop() {
-            let new = self.compute(self.defs[i]);
+            let def = self.defs[i];
             recomputed += 1;
-            if new == self.values[i] {
-                // Nothing downstream can change because of this object.
-                continue;
+            if let Def::Expr(d) = def {
+                // An expression compares its raw result, infinities kept.
+                let raw = expr::evaluate(self, d);
+                self.values[i] = expr::value(d, raw);
+                if !expr::store(self, d, raw) {
+                    continue;
+                }
+            } else {
+                let new = self.compute(def);
+                if new == self.values[i] {
+                    // Nothing downstream can change because of this object.
+                    continue;
+                }
+                self.values[i] = new;
             }
-            self.values[i] = new;
             for &child in &self.children[i] {
                 if self.mark[child.0] != epoch {
                     self.mark[child.0] = epoch;
@@ -477,7 +502,7 @@ impl Construction {
         recomputed
     }
 
-    fn check(&self, def: &Def) -> Result<(), Error> {
+    pub(crate) fn check(&self, def: &Def) -> Result<(), Error> {
         match *def {
             Def::FreePoint { x, y } => {
                 if x.is_finite() && y.is_finite() {
@@ -532,6 +557,8 @@ impl Construction {
             Def::Measure(d) => d.check(self),
             Def::Transform(d) => d.check(self),
             Def::Vector(d) => d.check(self),
+            // checked when the expression was parsed
+            Def::Expr(_) => Ok(()),
         }
     }
 
@@ -557,7 +584,7 @@ impl Construction {
     }
 
     /// `None` means the object is undefined for the current inputs.
-    fn try_compute(&self, def: Def) -> Option<Value> {
+    pub(crate) fn try_compute(&self, def: Def) -> Option<Value> {
         match def {
             Def::FreePoint { x, y } => Some(Value::Point { x, y }),
             Def::Number(v) => Some(Value::Number(v)),
@@ -586,6 +613,7 @@ impl Construction {
             Def::Measure(d) => d.compute(self),
             Def::Transform(d) => d.compute(self),
             Def::Vector(d) => d.compute(self),
+            Def::Expr(d) => Some(expr::value(d, expr::evaluate(self, d))),
         }
     }
 
