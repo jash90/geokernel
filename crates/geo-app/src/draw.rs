@@ -109,9 +109,21 @@ pub fn point_shape(painter: &Painter, at: Pos2, fill: Color32, radius: f32) {
     );
 }
 
-/// A label's text (borrowed from the construction where it is the bare
-/// label), its anchor in the area, colour and alignment.
-type Label<'c> = (Id, Cow<'c, str>, (f64, f64), Color32, Align2);
+/// A label's object, text (borrowed from the construction where it is the
+/// bare label), anchor in the area, colour and alignment. The anchor is
+/// kept in `f32`, as painted, which keeps the buffer of a frame's labels
+/// the size it had before it carried the object.
+type Label<'c> = (Id, Cow<'c, str>, (f32, f32), Color32, Align2);
+
+fn label(
+    id: Id,
+    text: Cow<'_, str>,
+    (x, y): (f64, f64),
+    color: Color32,
+    align: Align2,
+) -> Label<'_> {
+    (id, text, (x as f32, y as f32), color, align)
+}
 
 pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform, scene: &Scene) {
     let (w, h) = (rect.width() as f64, rect.height() as f64);
@@ -231,7 +243,7 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
         } else {
             eframe::egui::Align::Center
         };
-        labels.push((
+        labels.push(label(
             id,
             Cow::Owned(format!(
                 "{} = {}",
@@ -298,7 +310,7 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
             );
             if let Some(entry) = labelpos::line_entry(screen(fx, fy), (b, a), w, h) {
                 let pos = labelpos::line_label(entry, w, h, 24.0, 12.0);
-                labels.push((
+                labels.push(label(
                     id,
                     Cow::Borrowed(c.label(id)),
                     pos,
@@ -330,7 +342,7 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
             };
             if let Some(e) = entry {
                 let pos = labelpos::line_label(e, w, h, 24.0, 12.0);
-                labels.push((
+                labels.push(label(
                     id,
                     Cow::Borrowed(c.label(id)),
                     pos,
@@ -343,7 +355,7 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
     for &id in &ids {
         if let Value::Circle { cx, cy, r } = c.value(id) {
             paint_circle(painter, rect, t, (cx, cy, r), curve(id), &mut |pos| {
-                labels.push((
+                labels.push(label(
                     id,
                     Cow::Borrowed(c.label(id)),
                     pos,
@@ -360,7 +372,7 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
             }
             painter.line_segment([p(x1, y1), p(x2, y2)], curve(id));
             let pos = labelpos::segment_label(screen(x1, y1), screen(x2, y2), 12.0);
-            labels.push((
+            labels.push(label(
                 id,
                 Cow::Borrowed(c.label(id)),
                 pos,
@@ -388,7 +400,7 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
             ));
         }
         let pos = labelpos::segment_label(screen(x0, y0), screen(x0 + x, y0 + y), 12.0);
-        labels.push((
+        labels.push(label(
             id,
             Cow::Borrowed(c.label(id)),
             pos,
@@ -408,7 +420,7 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
             };
             point_shape(painter, p(x, y), color(id), radius);
             let (sx, sy) = screen(x, y);
-            labels.push((
+            labels.push(label(
                 id,
                 Cow::Borrowed(c.label(id)),
                 (sx + 6.0, sy - 6.0),
@@ -426,19 +438,14 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
     for (id, text, (sx, sy), color, align) in labels {
         // `labelOffsetX/Y` of the object, added to where its label goes.
         let (sx, sy) = match (scene.label_offset)(id) {
-            Some((ox, oy)) => (sx + ox, sy + oy),
+            Some((ox, oy)) => (sx + ox as f32, sy + oy as f32),
             None => (sx, sy),
         };
-        if sx < -20.0 || sy < -20.0 || sx > w + 20.0 || sy > h + 20.0 {
+        let (wf, hf) = (w as f32, h as f32);
+        if sx < -20.0 || sy < -20.0 || sx > wf + 20.0 || sy > hf + 20.0 {
             continue;
         }
-        let r = painter.text(
-            origin + vec2(sx as f32, sy as f32),
-            align,
-            text,
-            font.clone(),
-            color,
-        );
+        let r = painter.text(origin + vec2(sx, sy), align, text, font.clone(), color);
         if let Some(rects) = rects.as_mut() {
             rects.push((id, r.translate(-origin.to_vec2()).core()));
         }
