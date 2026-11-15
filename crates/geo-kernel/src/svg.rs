@@ -40,6 +40,11 @@ impl View {
                     grow(cx + r, cy + r);
                 }
                 Value::Ray { x, y, .. } => grow(x, y),
+                Value::Polygon { .. } | Value::PolyLine { .. } => {
+                    for (x, y) in c.vertices(id).flatten() {
+                        grow(x, y);
+                    }
+                }
                 Value::Vector { x, y } => {
                     if let Some((x0, y0)) = start(c, id) {
                         grow(x0, y0);
@@ -89,6 +94,7 @@ pub fn render(c: &Construction, view: View, width: u32, height: u32) -> String {
     let sy = |y: f64| h - oy - (y - view.ymin) * scale;
 
     let mut lines = String::new();
+    let mut polygons = String::new();
     let mut segments = String::new();
     let mut circles = String::new();
     let mut points = String::new();
@@ -188,6 +194,33 @@ pub fn render(c: &Construction, view: View, width: u32, height: u32) -> String {
                     );
                 }
             }
+            Value::Polygon { .. } => {
+                let mut pts = String::new();
+                for (x, y) in c.vertices(id).flatten() {
+                    let _ = write!(pts, "{:.2},{:.2} ", sx(x), sy(y));
+                }
+                let _ = writeln!(polygons, r##"<polygon points="{}"/>"##, pts.trim_end());
+            }
+            Value::PolyLine { .. } => {
+                // An undefined point leaves a hole, as in GeoGebra's drawing.
+                let mut pts = String::new();
+                for v in c.vertices(id).chain([None]) {
+                    match v {
+                        Some((x, y)) => {
+                            let _ = write!(pts, "{:.2},{:.2} ", sx(x), sy(y));
+                        }
+                        None if !pts.is_empty() => {
+                            let _ = writeln!(
+                                segments,
+                                r##"<polyline points="{}" fill="none"/>"##,
+                                pts.trim_end()
+                            );
+                            pts.clear();
+                        }
+                        None => {}
+                    }
+                }
+            }
             Value::Number(_) | Value::Bool(_) | Value::Function | Value::Undefined => {}
         }
     }
@@ -201,6 +234,12 @@ pub fn render(c: &Construction, view: View, width: u32, height: u32) -> String {
         out,
         r##"<rect width="100%" height="100%" fill="#ffffff"/>"##
     );
+    let _ = writeln!(
+        out,
+        r##"<g fill="#8b5a2b" fill-opacity="0.1" stroke="none">"##
+    );
+    out.push_str(&polygons);
+    let _ = writeln!(out, "</g>");
     let _ = writeln!(out, r##"<g stroke="#9aa0a6" stroke-width="1">"##);
     out.push_str(&lines);
     let _ = writeln!(out, "</g>");

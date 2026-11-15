@@ -48,12 +48,12 @@ PARTIAL = {
     "Length": "Length(segment); Length(vector)",
     "Radius": "Radius(circle)",
     "Circumference": "Circumference(circle)",
-    "Perimeter": "Perimeter(circle)",
-    "Area": "Area(circle); Area of three or four points",
+    "Perimeter": "Perimeter(circle); Perimeter(polygon)",
+    "Area": "Area(circle); Area(polygon); Area of three or more points",
     "Slope": "Slope(line or segment)",
     "AffineRatio": "AffineRatio(point, point, point)",
     "CrossRatio": "CrossRatio(point, point, point, point)",
-    "Angle": "Angle(point, point, point)",
+    "Angle": "Angle(point, point, point); Angle(polygon)",
     "Mirror": "point, line, segment or circle in a point or a line; point in a circle",
     "Rotate": "point, line, segment or circle by an angle, about the origin or a point",
     "Dilate": "point, line, segment or circle by a factor, from the origin or a point",
@@ -76,6 +76,11 @@ PARTIAL = {
     "IsTangent": "IsTangent(line, segment or ray, circle)",
     "ClosestPoint": "ClosestPoint(line, segment, ray or circle, point); ClosestPoint(line, line)",
     "Trilinear": "Trilinear(point, point, point, number, number, number)",
+    "Polygon": "Polygon of three or more points; Polygon(point, point, number of vertices)",
+    "PolyLine": "PolyLine of two or more points",
+    "Centroid": "Centroid(polygon)",
+    "Vertex": "Vertex(polygon); Vertex(polygon, index)",
+    "InteriorAngles": "InteriorAngles(polygon)",
 }
 
 # Commands the first version of the kernel already had: priority P0.

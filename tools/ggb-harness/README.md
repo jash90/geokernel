@@ -64,7 +64,12 @@ For every case `GoldenGenerator`:
    outputs: `t_{1}`, `t_{2}` when two or more are defined at creation, the
    plain label when only one is; unlabelled outputs are not recorded (see
    `golden/SCHEMA.md`). A line where no output is defined at creation fails,
-   because GeoGebra labels those outputs only later;
+   because GeoGebra labels those outputs only later. `Vertex(p)`,
+   `InteriorAngles(p)` and `Angle(p)` of a polygon are recorded the same way
+   (`V_{1}`, `V_{2}`, ...). `p = Polygon(...)` must create the polygon `p`;
+   its sides and the new vertices of a regular polygon are recorded under the
+   labels GeoGebra gives them, and every one of them must be labelled, so the
+   polygon must be defined when it is created;
 3. records a snapshot, then applies each step and records a snapshot after it.
    `move` calls `GeoPoint.setCoords(x, y, 1)` (for a free vector
    `GeoVector.setCoords(x, y, 0)`) and `updateCascade()`;
@@ -83,6 +88,8 @@ Snapshot encoding:
 | `GeoVector` | `vector` with `x`, `y` |
 | `GeoRay` | `ray` with the inhomogeneous start point `x`, `y` and the raw fields `x`, `y`, `z` as `a`, `b`, `c`; a start point at infinity is undefined |
 | `GeoFunction` | `function` with `samples`, the values of `GeoFunction.value` at the sample points (`null` where not finite) |
+| `GeoPolygon` | `polygon` with `getPoints()` as `vertices`, `getArea()` as `area` and `getAreaWithSign()` as `signed_area`; a vertex that is undefined or at infinity makes it undefined |
+| `GeoPolyLine` | `polyline` with `getPointsND()` as `vertices` (`null` for an undefined point or a point at infinity) and `getLength()` as `length` |
 
 `defined` is GeoGebra's `isDefined()` and, in addition, every recorded field
 must be finite. A circle of radius 0 is a single-point conic in GeoGebra; it is

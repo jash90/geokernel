@@ -261,12 +261,16 @@ final class Json {
             sb.append("[]");
             return;
         }
-        // An array of numbers (a function sample `[x, y]`) stays on one line.
-        if (list.stream().allMatch(v -> v == null || v instanceof Double)) {
+        // A list of numbers (a vertex `[x, y]`, or a function sample `[x, y]`
+        // whose `y` may be null) stays on one line.
+        if (list.stream().allMatch(v -> v == null || v instanceof Double)
+                && list.stream().anyMatch(v -> v instanceof Double)) {
             sb.append('[');
             for (int i = 0; i < list.size(); i++) {
+                if (i > 0) {
+                    sb.append(", ");
+                }
                 writeScalar(sb, list.get(i));
-                sb.append(i + 1 < list.size() ? ", " : "");
             }
             sb.append(']');
             return;

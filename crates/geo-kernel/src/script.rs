@@ -82,6 +82,9 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
         return Err(format!("`{name}` is not a valid object name"));
     }
     let rhs = rhs.trim();
+    if let Some(result) = crate::algo::polygon::exec(c, name, rhs) {
+        return result;
+    }
     match define(c, name, rhs) {
         Ok(id) => Ok(Some(id)),
         // A call of a command keeps the command's own error.
@@ -131,7 +134,7 @@ fn is_single_call(c: &Construction, rhs: &str) -> bool {
 
 /// `Name(args)` split into the name and the trimmed arguments; `None` for
 /// anything else (a point literal, a number, a malformed line).
-fn split_call(rhs: &str) -> Option<(&str, Vec<&str>)> {
+pub(crate) fn split_call(rhs: &str) -> Option<(&str, Vec<&str>)> {
     if rhs.starts_with('(') {
         return None;
     }
@@ -205,7 +208,7 @@ fn add_outputs(c: &mut Construction, name: &str, defs: Vec<Def>) -> Result<Id, S
 
 /// `Construction.buildIndexedLabel`: the first `p_{n}` that is free, where
 /// for `n < 10` the short form `p_n` must be free too.
-fn index_label(c: &Construction, prefix: &str) -> String {
+pub(crate) fn index_label(c: &Construction, prefix: &str) -> String {
     let mut n = 1;
     loop {
         let long = format!("{prefix}_{{{n}}}");
@@ -244,6 +247,8 @@ fn is_finite(v: &Value) -> bool {
         Value::Ray { x, y, a, b, c } => [x, y, a, b, c].iter().all(|v| v.is_finite()),
         Value::Bool(_) => true,
         Value::Function => true,
+        Value::Polygon { area } => area.is_finite(),
+        Value::PolyLine { length } => length.is_finite(),
         Value::Undefined => false,
     }
 }

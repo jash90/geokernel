@@ -221,6 +221,18 @@ pub(crate) struct Table {
     entries: Vec<Entry>,
 }
 
+impl Table {
+    pub(crate) fn len(&self) -> usize {
+        self.entries.len()
+    }
+
+    /// Drops the trees added after the first `len` (see
+    /// `Construction::rollback`).
+    pub(crate) fn truncate(&mut self, len: usize) {
+        self.entries.truncate(len);
+    }
+}
+
 /// Whether `name` is a built-in function such as `sqrt` or `x`.
 pub(crate) fn is_function_name(name: &str) -> bool {
     names::is_builtin(name)

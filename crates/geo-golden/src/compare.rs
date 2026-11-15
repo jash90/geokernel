@@ -55,21 +55,39 @@ pub fn line_scale_agrees(expected: &Expected, actual: &Value) -> Option<bool> {
     Some(close(*a, x) && close(*b, y) && close(*c, z))
 }
 
-/// Compares one recorded object with what the kernel holds.
-/// `kind` is the kernel's kind of the object (valid even when undefined).
-/// A function is compared by [`compare_sampled`].
+/// Compares one recorded object with what the kernel holds, for objects
+/// without vertices and other than functions (see [`compare_object`]).
 pub fn compare(expected: &Expected, kind: Kind, actual: &Value) -> Result<Sign, String> {
-    compare_sampled(expected, kind, actual, &|_| None)
+    compare_object(expected, kind, actual, &[], None)
 }
 
-/// [`compare`], with `sample` giving the kernel's value of the object at `x`
-/// when it is a function. Each sample is compared like a number; a `null`
+/// Whether two lists of vertices agree: same length, and each vertex
+/// undefined on both sides or agreeing in both coordinates.
+fn vertices_agree(expected: &[Option<(f64, f64)>], actual: &[Option<(f64, f64)>]) -> bool {
+    expected.len() == actual.len()
+        && expected.iter().zip(actual).all(|(e, a)| match (e, a) {
+            (None, None) => true,
+            (Some((x, y)), Some((ax, ay))) => all_agree(&[(*x, *ax), (*y, *ay)]),
+            _ => false,
+        })
+}
+
+/// The kernel's value of a function object at `x` (`Construction::function_value`).
+pub type Sampler<'a> = &'a dyn Fn(f64) -> Option<f64>;
+
+/// Compares one recorded object with what the kernel holds.
+/// `kind` is the kernel's kind of the object (valid even when undefined);
+/// `vertices` are the kernel's vertices of a polygon or polyline
+/// (`Construction::vertices`), empty for other objects. A defined function
+/// needs `sample`: each sample is compared like a number, and a `null`
 /// sample must meet a value that is not finite, and the other way round.
-pub fn compare_sampled(
+/// Without `sample` a defined function is an error, never a match.
+pub fn compare_object(
     expected: &Expected,
     kind: Kind,
     actual: &Value,
-    sample: &dyn Fn(f64) -> Option<f64>,
+    vertices: &[Option<(f64, f64)>],
+    sample: Option<Sampler>,
 ) -> Result<Sign, String> {
     if expected.kind != kind {
         return Err(format!(
@@ -166,6 +184,9 @@ pub fn compare_sampled(
             }
         }
         (ExpectedData::Function { samples }, Value::Function) => {
+            let Some(sample) = sample else {
+                return Err("a function is compared only through its samples".into());
+            };
             for (&x, want) in SAMPLE_XS.iter().zip(samples) {
                 let got = sample(x).filter(|v| v.is_finite());
                 let agree = match (*want, got) {
@@ -178,6 +199,38 @@ pub fn compare_sampled(
                 }
             }
             Ok(Sign::NotApplicable)
+        }
+        (
+            ExpectedData::Polygon {
+                vertices: ev,
+                area,
+                signed_area,
+            },
+            Value::Polygon { area: signed },
+        ) => {
+            let ev: Vec<_> = ev.iter().copied().map(Some).collect();
+            if !all_agree(&[(*area, signed.abs()), (*signed_area, signed)]) {
+                Err("areas differ".into())
+            } else if !vertices_agree(&ev, vertices) {
+                Err(format!("vertices differ: kernel has {vertices:?}"))
+            } else {
+                Ok(Sign::NotApplicable)
+            }
+        }
+        (
+            ExpectedData::PolyLine {
+                vertices: ev,
+                length,
+            },
+            Value::PolyLine { length: al },
+        ) => {
+            if !numbers_agree(*length, al) {
+                Err("lengths differ".into())
+            } else if !vertices_agree(ev, vertices) {
+                Err(format!("vertices differ: kernel has {vertices:?}"))
+            } else {
+                Ok(Sign::NotApplicable)
+            }
         }
         _ => Err("kernel value has a different shape than its kind".into()),
     }
@@ -364,18 +417,20 @@ mod tests {
         };
         let at = |f: fn(f64) -> f64| move |x: f64| Some(f(x));
         let ok = at(|x| if x == -8.0 { f64::NAN } else { 1.0 + 1e-12 });
-        assert!(compare_sampled(&e, Kind::Function, &Value::Function, &ok).is_ok());
+        assert!(compare_object(&e, Kind::Function, &Value::Function, &[], Some(&ok)).is_ok());
         let infinite = at(|x| if x == -8.0 { f64::INFINITY } else { 1.0 });
-        assert!(compare_sampled(&e, Kind::Function, &Value::Function, &infinite).is_ok());
+        assert!(compare_object(&e, Kind::Function, &Value::Function, &[], Some(&infinite)).is_ok());
         // a value where GeoGebra has none, and the other way round
         let value = at(|_| 1.0);
-        assert!(compare_sampled(&e, Kind::Function, &Value::Function, &value).is_err());
+        assert!(compare_object(&e, Kind::Function, &Value::Function, &[], Some(&value)).is_err());
         let missing = at(|x| if x >= 0.0 { f64::NAN } else { 1.0 });
-        assert!(compare_sampled(&e, Kind::Function, &Value::Function, &missing).is_err());
+        assert!(compare_object(&e, Kind::Function, &Value::Function, &[], Some(&missing)).is_err());
         let off = at(|x| if x == -8.0 { f64::NAN } else { 1.001 });
-        assert!(compare_sampled(&e, Kind::Function, &Value::Function, &off).is_err());
-        assert!(compare_sampled(&e, Kind::Function, &Value::Undefined, &ok).is_err());
+        assert!(compare_object(&e, Kind::Function, &Value::Function, &[], Some(&off)).is_err());
+        assert!(compare_object(&e, Kind::Function, &Value::Undefined, &[], Some(&ok)).is_err());
         assert!(compare(&e, Kind::Number, &Value::Number(1.0)).is_err());
+        // without its sampler a function never matches
+        assert!(compare(&e, Kind::Function, &Value::Function).is_err());
     }
 
     #[test]
@@ -459,5 +514,47 @@ mod tests {
         };
         assert!(compare(&e, Kind::Segment, &same).is_ok());
         assert!(compare(&e, Kind::Segment, &swapped).is_err());
+    }
+
+    #[test]
+    fn polygons_compare_areas_and_vertices_in_order() {
+        let e = Expected {
+            kind: Kind::Polygon,
+            data: Some(ExpectedData::Polygon {
+                vertices: vec![(0.0, 0.0), (4.0, 0.0), (0.0, 3.0)],
+                area: 6.0,
+                signed_area: 6.0,
+            }),
+        };
+        let v = |pts: &[(f64, f64)]| pts.iter().copied().map(Some).collect::<Vec<_>>();
+        let ccw = v(&[(0.0, 0.0), (4.0, 0.0), (0.0, 3.0)]);
+        let poly = |area| Value::Polygon { area };
+        assert!(compare_object(&e, Kind::Polygon, &poly(6.0), &ccw, None).is_ok());
+        // the sign of the area counts
+        assert!(compare_object(&e, Kind::Polygon, &poly(-6.0), &ccw, None).is_err());
+        // order and number of the vertices count
+        let turned = v(&[(4.0, 0.0), (0.0, 3.0), (0.0, 0.0)]);
+        assert!(compare_object(&e, Kind::Polygon, &poly(6.0), &turned, None).is_err());
+        assert!(compare_object(&e, Kind::Polygon, &poly(6.0), &ccw[..2], None).is_err());
+        // without vertices, a polygon never agrees
+        assert!(compare(&e, Kind::Polygon, &poly(6.0)).is_err());
+    }
+
+    #[test]
+    fn polylines_compare_holes() {
+        let e = Expected {
+            kind: Kind::PolyLine,
+            data: Some(ExpectedData::PolyLine {
+                vertices: vec![Some((0.0, 0.0)), None, Some((3.0, 4.0))],
+                length: 0.0,
+            }),
+        };
+        let line = Value::PolyLine { length: 0.0 };
+        let holed = [Some((0.0, 0.0)), None, Some((3.0, 4.0))];
+        let filled = [Some((0.0, 0.0)), Some((1.0, 1.0)), Some((3.0, 4.0))];
+        assert!(compare_object(&e, Kind::PolyLine, &line, &holed, None).is_ok());
+        assert!(compare_object(&e, Kind::PolyLine, &line, &filled, None).is_err());
+        let longer = Value::PolyLine { length: 5.0 };
+        assert!(compare_object(&e, Kind::PolyLine, &longer, &holed, None).is_err());
     }
 }

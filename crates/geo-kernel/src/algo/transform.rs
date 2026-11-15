@@ -63,6 +63,8 @@ fn of_kind(kind: Kind) -> &'static [Kind] {
         Kind::Ray => &[Kind::Ray],
         Kind::Boolean => &[Kind::Boolean],
         Kind::Function => &[Kind::Function],
+        Kind::Polygon => &[Kind::Polygon],
+        Kind::PolyLine => &[Kind::PolyLine],
     }
 }
 
@@ -268,6 +270,8 @@ impl Map {
             | Value::Ray { .. }
             | Value::Bool(_)
             | Value::Function
+            | Value::Polygon { .. }
+            | Value::PolyLine { .. }
             | Value::Undefined => None,
         }
     }
@@ -547,9 +551,16 @@ fn parse_transform(c: &Construction, func: &str, args: &[&str]) -> Result<Transf
             Kind::Circle => Err(format!(
                 "inversion of a {kind} in a circle is not supported (only a point can be inverted)"
             )),
-            Kind::Number | Kind::Vector | Kind::Ray | Kind::Boolean | Kind::Function => Err(
-                format!("`{}` is a {second_kind}, expected a mirror", args[1]),
-            ),
+            Kind::Number
+            | Kind::Vector
+            | Kind::Ray
+            | Kind::Boolean
+            | Kind::Polygon
+            | Kind::PolyLine
+            | Kind::Function => Err(format!(
+                "`{}` is a {second_kind}, expected a mirror",
+                args[1]
+            )),
         };
     }
 
