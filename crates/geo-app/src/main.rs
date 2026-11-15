@@ -310,7 +310,14 @@ impl eframe::App for App {
         {
             self.open(&path);
         }
-        if !ctx.egui_wants_keyboard_input() && ctx.input(|i| i.key_pressed(egui::Key::F)) {
+        if !ctx.egui_wants_keyboard_input()
+            && ctx.input(|i| {
+                i.key_pressed(egui::Key::F)
+                    && !i.modifiers.ctrl
+                    && !i.modifiers.command
+                    && !i.modifiers.alt
+            })
+        {
             self.fit_requested = true;
         }
 
@@ -342,7 +349,7 @@ impl eframe::App for App {
 }
 
 fn main() -> eframe::Result {
-    let command = match cli::parse_args(std::env::args().skip(1)) {
+    let command = match cli::parse_args(std::env::args_os().skip(1)) {
         Ok(c) => c,
         Err(e) => {
             eprintln!("{e}\n{}", cli::USAGE);

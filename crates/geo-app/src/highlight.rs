@@ -36,6 +36,30 @@ pub enum Highlight {
 /// extended past its edges. Line coefficients need not be normalised.
 pub fn of_value(value: &Value, t: &ViewTransform, width: f64, height: f64) -> Option<Highlight> {
     let finite = |vs: &[f64]| vs.iter().all(|v| v.is_finite());
+    let h = of_value_unchecked(value, t, width, height)?;
+    // The painter takes f32: anything that overflows there is dropped.
+    let ok = match h {
+        Highlight::Point { x, y } => finite(&[x as f32 as f64, y as f32 as f64]),
+        Highlight::Stroke { x1, y1, x2, y2 } => finite(&[
+            x1 as f32 as f64,
+            y1 as f32 as f64,
+            x2 as f32 as f64,
+            y2 as f32 as f64,
+        ]),
+        Highlight::Circle { x, y, r } => {
+            finite(&[x as f32 as f64, y as f32 as f64, r as f32 as f64])
+        }
+    };
+    ok.then_some(h)
+}
+
+fn of_value_unchecked(
+    value: &Value,
+    t: &ViewTransform,
+    width: f64,
+    height: f64,
+) -> Option<Highlight> {
+    let finite = |vs: &[f64]| vs.iter().all(|v| v.is_finite());
     match *value {
         Value::Point { x, y } if finite(&[x, y]) => {
             let (x, y) = t.world_to_screen(x, y);
@@ -144,6 +168,33 @@ mod tests {
             panic!("expected a stroke");
         };
         assert!(x1.min(x2) < 0.0 && x1.max(x2) > 200.0);
+    }
+
+    #[test]
+    fn values_that_overflow_f32_are_skipped() {
+        let t = t();
+        let huge_circle = Value::Circle {
+            cx: 0.0,
+            cy: 0.0,
+            r: 1e300,
+        };
+        assert_eq!(of_value(&huge_circle, &t, 200.0, 100.0), None);
+        let far_point = Value::Point { x: 1e300, y: 0.0 };
+        assert_eq!(of_value(&far_point, &t, 200.0, 100.0), None);
+        let far_segment = Value::Segment {
+            x1: 0.0,
+            y1: 0.0,
+            x2: 0.0,
+            y2: -1e300,
+        };
+        assert_eq!(of_value(&far_segment, &t, 200.0, 100.0), None);
+        // A line whose offset is so large that its ends overflow.
+        let far_line = Value::Line {
+            a: 0.0,
+            b: 1.0,
+            c: -1e300,
+        };
+        assert_eq!(of_value(&far_line, &t, 200.0, 100.0), None);
     }
 
     #[test]

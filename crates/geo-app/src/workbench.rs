@@ -67,20 +67,31 @@ impl Workbench {
     /// Runs one input line. On success the objects added are the recomputed
     /// count (the kernel does not report more for a new object).
     pub fn run_line(&mut self, line: &str) -> Result<(), String> {
+        self.run_with(line, |c| geo_kernel::script::exec(c, line).map(|_| ()))
+    }
+
+    /// Runs `exec` on the construction. The caches are invalidated whenever
+    /// the object count changed, also when `exec` failed after adding some
+    /// objects.
+    fn run_with(
+        &mut self,
+        line: &str,
+        exec: impl FnOnce(&mut Construction) -> Result<(), String>,
+    ) -> Result<(), String> {
         let before = self.construction.len();
         let start = Instant::now();
-        let result = geo_kernel::script::exec(&mut self.construction, line);
+        let result = exec(&mut self.construction);
         let elapsed = start.elapsed();
-        result?;
-        self.history.push(line);
-        let added = self.construction.len() - before;
-        if added > 0 {
+        let added = self.construction.len().saturating_sub(before);
+        if self.construction.len() != before {
             self.version += 1;
             self.stats = Stats {
                 recomputed: added,
                 elapsed,
             };
         }
+        result?;
+        self.history.push(line);
         Ok(())
     }
 
@@ -187,6 +198,26 @@ mod tests {
         assert_eq!(w.history.len(), 0);
         // Duplicate name is also an error.
         assert!(w.run_line("A = (9, 9)").is_err());
+    }
+
+    #[test]
+    fn partial_failure_still_invalidates_caches() {
+        let mut w = triangle();
+        w.rows();
+        let (n, v) = (w.construction().len(), w.version());
+        let err = w
+            .run_with("two outputs", |c| {
+                geo_kernel::script::exec(c, "Z1 = Midpoint(A, B)")?;
+                geo_kernel::script::exec(c, "Z2 = Midpoint(A, C)")?;
+                Err("third output failed".into())
+            })
+            .unwrap_err();
+        assert_eq!(err, "third output failed");
+        assert_eq!(w.construction().len(), n + 2);
+        assert!(w.version() > v);
+        assert_eq!(w.stats.recomputed, 2);
+        assert_eq!(w.rows().len(), n + 2);
+        assert_eq!(w.history.len(), 0);
     }
 
     #[test]

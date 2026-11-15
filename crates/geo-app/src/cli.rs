@@ -1,6 +1,7 @@
 //! Command-line arguments and script file loading.
 
 use geo_kernel::kernel::Construction;
+use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 
 pub const USAGE: &str = "usage: geokernel-app [script.geo]";
@@ -15,13 +16,14 @@ pub enum Command {
     Help,
 }
 
-/// Parses the arguments after the program name.
-pub fn parse_args<I: IntoIterator<Item = String>>(args: I) -> Result<Command, String> {
+/// Parses the arguments after the program name. A path need not be valid
+/// Unicode.
+pub fn parse_args<I: IntoIterator<Item = OsString>>(args: I) -> Result<Command, String> {
     let mut script = None;
     for arg in args {
-        match arg.as_str() {
-            "-h" | "--help" => return Ok(Command::Help),
-            a if a.starts_with('-') && a.len() > 1 => {
+        match arg.to_str() {
+            Some("-h" | "--help") => return Ok(Command::Help),
+            Some(a) if a.starts_with('-') && a.len() > 1 => {
                 return Err(format!("unknown option `{a}`"));
             }
             _ if script.is_some() => return Err("expected at most one script path".into()),
@@ -51,7 +53,7 @@ mod tests {
     use super::*;
 
     fn parse(args: &[&str]) -> Result<Command, String> {
-        parse_args(args.iter().map(|s| s.to_string()))
+        parse_args(args.iter().map(OsString::from))
     }
 
     #[test]
@@ -65,6 +67,19 @@ mod tests {
             parse(&["a.geo"]),
             Ok(Command::Run {
                 script: Some(PathBuf::from("a.geo"))
+            })
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn non_utf8_path_is_accepted() {
+        use std::os::unix::ffi::OsStringExt;
+        let raw = OsString::from_vec(vec![b'a', 0xff, b'.', b'g', b'e', b'o']);
+        assert_eq!(
+            parse_args([raw.clone()]),
+            Ok(Command::Run {
+                script: Some(PathBuf::from(raw))
             })
         );
     }
