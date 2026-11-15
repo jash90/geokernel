@@ -10,6 +10,7 @@ use egui_kittest::Harness;
 use geo_kernel::kernel::Value;
 
 mod chrome;
+mod gestures;
 mod pointer;
 mod tangents;
 mod tools;

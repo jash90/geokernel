@@ -37,6 +37,8 @@ mod view;
 mod workbench;
 
 #[cfg(test)]
+mod frame_counts;
+#[cfg(test)]
 mod render_tests;
 #[cfg(test)]
 mod ui_tests;
