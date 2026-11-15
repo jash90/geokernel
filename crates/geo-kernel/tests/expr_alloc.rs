@@ -157,6 +157,14 @@ fn rounding_a_literal_product_recomputes_without_allocating() {
 }
 
 #[test]
+fn an_exact_power_recomputes_without_allocating() {
+    // the working precision of `1.5^2` depends on the digits of the exponent
+    let mut c = load("A = (1, 2)\nc = 1.5^2 + x(A)\nd = 0.3^12 + y(A)").unwrap();
+    assert_eq!(drag(&mut c, "c"), 0);
+    assert_eq!(drag(&mut c, "d"), 0);
+}
+
+#[test]
 fn a_long_literal_recomputes_without_allocating() {
     let mut c =
         load("A = (1, 2)\nc = 3.14159265358979323846264338327950288419716939937510 x(A)").unwrap();

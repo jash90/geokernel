@@ -91,6 +91,18 @@ fn digit_count(x: u128) -> usize {
     POW10.iter().position(|&p| p > x).unwrap_or(39)
 }
 
+/// How many decimal digits `n` has (`n.to_string().len()`), without
+/// allocating.
+fn decimal_digits(n: u32) -> usize {
+    let mut digits = 1;
+    let mut rest = n / 10;
+    while rest > 0 {
+        digits += 1;
+        rest /= 10;
+    }
+    digits
+}
+
 fn to_digits(mut x: u128) -> Vec<u8> {
     let mut d = Vec::with_capacity(39);
     while x > 0 {
@@ -463,7 +475,7 @@ impl Dec {
         if n == 0 {
             return Dec::small(false, 1, 0);
         }
-        let work = PRECISION + n.to_string().len() + 1;
+        let work = PRECISION + decimal_digits(n) + 1;
         // nothing is rounded while every product stays within the working
         // precision, so exact products of small coefficients are the result
         if let Some(acc) = self.pow_small(n, POW10[work.min(SMALL_DIGITS)]) {
@@ -955,6 +967,13 @@ mod tests {
         // a long dividend: only its leading digits and whether the rest is zero matter
         let long = d(&format!("1{}1", "0".repeat(300)));
         assert_eq!(long.div(&d("3")).unwrap().to_f64(), 1e301 / 3.0);
+    }
+
+    #[test]
+    fn decimal_digits_count_like_to_string() {
+        for n in [0, 1, 9, 10, 99, 100, 999_999, 1_000_000, u32::MAX] {
+            assert_eq!(decimal_digits(n), n.to_string().len(), "{n}");
+        }
     }
 
     #[test]
