@@ -82,12 +82,23 @@ except for the objects `Polygon` creates:
 A line `p = Polygon(...)` also creates the sides of the polygon and, for
 `Polygon(A, B, n)`, its new vertices. They are recorded under the labels
 GeoGebra gives them (for example `c`, `a`, `b` for `Polygon(A, B, C)`, or
-`C`, `D`, `f`, `g`, `h`, `i` for `Polygon(A, B, 4)`). So when a script has a
-line whose definition starts with `Polygon(`, a key that is not a script
-label is also allowed when it is of type `point` or `segment` and has the
-form of a label GeoGebra gives on its own: letters, optionally followed by
-`_<digits>` or `_{<digits>}`. The comparison then checks that `geo-kernel`
-gave the object the same label.
+`C`, `D`, `f`, `g`, `h`, `i` for `Polygon(A, B, 4)`). A key that is not a
+script label is also allowed when it is one of the labels a `Polygon(...)`
+line of the script can give, with the right type:
+
+- `Polygon(A, B, n)`, where `A` and `B` are recorded as points and `n` is
+  a number literal or recorded as a number: points labelled from `A`, ...,
+  `W`, `Z`, and segments labelled from `f`, `g`, `h`, `i`, `j`, `k`, `l`,
+  `m`, `n`, `p`, `q`, `r`, `s`, `t`, `a`, `b`, `c`, `d`, `e`;
+- any other `Polygon(...)` with two or more arguments: segments labelled
+  after a vertex, the vertex label in lower case; for a one-character
+  vertex label also indexed, and for a longer one also the segment labels
+  above.
+
+"Labelled from" a letter means the letter itself, or the letter followed
+by `_<n>` or `_{<n>}` with `n` a positive integer without leading zeros.
+The comparison then checks that `geo-kernel` gave the object the same
+label.
 
 Every Object has `type` and `defined`. When `defined` is `false` the object
 carries no numeric fields. When it is `true` it carries exactly these:

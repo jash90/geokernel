@@ -333,7 +333,6 @@ fn validate_case(case: &Case) -> Result<(), String> {
     if labels.len() != case.script.len() {
         return Err("script lines must each define a distinct `label = ...`".into());
     }
-    let polygon = has_polygon_line(&case.script);
     let mut first: Option<BTreeSet<String>> = None;
     for (i, snap) in case.snapshots.iter().enumerate() {
         let keys: BTreeSet<String> = snap.keys().cloned().collect();
@@ -341,10 +340,13 @@ fn validate_case(case: &Case) -> Result<(), String> {
             None => {
                 // The sides and new vertices of a polygon get labels of
                 // their own (see `golden/SCHEMA.md`).
-                let created = |key: &str| {
-                    polygon
-                        && is_plain_label(key)
-                        && matches!(snap[key].kind, Kind::Point | Kind::Segment)
+                let names = PolygonNames::of(&case.script, |label| {
+                    snap.get(label).map(|object| object.kind)
+                });
+                let created = |key: &str| match snap[key].kind {
+                    Kind::Point => names.point(key),
+                    Kind::Segment => names.segment(key),
+                    _ => false,
                 };
                 check_keys(&keys, &labels, created).map_err(|e| format!("snapshot {i}: {e}"))?;
                 first = Some(keys);
@@ -373,32 +375,106 @@ fn indexed_prefix(key: &str) -> Option<&str> {
     (digits && !n.starts_with('0') && !prefix.is_empty() && !prefix.contains('_')).then_some(prefix)
 }
 
-/// Whether a script line runs `Polygon(...)`, which also creates objects
-/// with labels of their own: the sides, and the new vertices of a regular
-/// polygon.
-fn has_polygon_line(script: &[String]) -> bool {
-    script.iter().any(|l| {
-        l.split_once('=')
-            .is_some_and(|(_, rhs)| rhs.trim_start().starts_with("Polygon("))
-    })
+/// `LabelType.pointLabels`: the default labels of new points.
+const POINT_LABELS: &[&str] = &[
+    "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S",
+    "T", "U", "V", "W", "Z",
+];
+
+/// `LabelType.lineLabels`: the default labels of new segments.
+const LINE_LABELS: &[&str] = &[
+    "f", "g", "h", "i", "j", "k", "l", "m", "n", "p", "q", "r", "s", "t", "a", "b", "c", "d", "e",
+];
+
+/// The labels the `Polygon(...)` lines of a script can give to the objects
+/// they create on their own:
+///
+/// - `Polygon(A, B, n)` with `n` a number (a literal, or a label recorded
+///   as a number): new vertices from the default point labels and sides
+///   from the default segment labels, each optionally indexed;
+/// - any other `Polygon(...)`: sides named after a vertex, the vertex label
+///   in lower case, indexed when it is one character, else the default
+///   segment labels.
+#[derive(Default)]
+struct PolygonNames {
+    points: BTreeSet<String>,
+    segments: BTreeSet<String>,
+    /// Bases that also take `_<digits>` or `_{<digits>}`.
+    indexed_points: BTreeSet<String>,
+    indexed_segments: BTreeSet<String>,
 }
 
-/// A label GeoGebra gives on its own: letters, optionally followed by
-/// `_<digits>` or `_{<digits>}`.
-fn is_plain_label(key: &str) -> bool {
-    let (name, index) = match key.split_once('_') {
-        Some((n, i)) => (n, Some(i)),
-        None => (key, None),
+impl PolygonNames {
+    fn of(script: &[String], kind: impl Fn(&str) -> Option<Kind>) -> PolygonNames {
+        let mut names = PolygonNames::default();
+        for line in script {
+            let Some(args) = polygon_args(line) else {
+                continue;
+            };
+            let number = |arg: &str| match kind(arg) {
+                Some(k) => k == Kind::Number,
+                None => arg.parse::<f64>().is_ok(),
+            };
+            let point = |arg: &str| kind(arg) == Some(Kind::Point);
+            if args.len() == 3 && point(args[0]) && point(args[1]) && number(args[2]) {
+                names
+                    .indexed_points
+                    .extend(POINT_LABELS.iter().map(|l| l.to_string()));
+                names.default_segments();
+                continue;
+            }
+            if args.len() < 2 {
+                continue;
+            }
+            for vertex in &args {
+                let lower = vertex.to_lowercase();
+                if lower.encode_utf16().count() == 1 {
+                    names.indexed_segments.insert(lower);
+                } else {
+                    names.segments.insert(lower);
+                    names.default_segments();
+                }
+            }
+        }
+        names
+    }
+
+    fn default_segments(&mut self) {
+        self.indexed_segments
+            .extend(LINE_LABELS.iter().map(|l| l.to_string()));
+    }
+
+    fn point(&self, key: &str) -> bool {
+        self.points.contains(key) || matches_indexed(key, &self.indexed_points)
+    }
+
+    fn segment(&self, key: &str) -> bool {
+        self.segments.contains(key) || matches_indexed(key, &self.indexed_segments)
+    }
+}
+
+/// Whether `key` is one of `bases`, or one of them followed by `_<n>` or
+/// `_{<n>}` with `n` a positive integer without leading zeros.
+fn matches_indexed(key: &str, bases: &BTreeSet<String>) -> bool {
+    if bases.contains(key) {
+        return true;
+    }
+    let Some((base, index)) = key.split_once('_') else {
+        return false;
     };
-    let digits = |s: &str| !s.is_empty() && s.bytes().all(|b| b.is_ascii_digit());
-    !name.is_empty()
-        && name.chars().all(char::is_alphabetic)
-        && index.is_none_or(|i| {
-            digits(i)
-                || i.strip_prefix('{')
-                    .and_then(|i| i.strip_suffix('}'))
-                    .is_some_and(digits)
-        })
+    let n = index
+        .strip_prefix('{')
+        .and_then(|i| i.strip_suffix('}'))
+        .unwrap_or(index);
+    let digits = !n.is_empty() && n.bytes().all(|b| b.is_ascii_digit()) && !n.starts_with('0');
+    digits && bases.contains(base)
+}
+
+/// The arguments of a script line `name = Polygon(a, b, ...)`.
+fn polygon_args(line: &str) -> Option<Vec<&str>> {
+    let (_, rhs) = line.split('#').next()?.split_once('=')?;
+    let inner = rhs.trim().strip_prefix("Polygon(")?.strip_suffix(')')?;
+    Some(inner.split(',').map(str::trim).collect())
 }
 
 /// Snapshot keys must match the script labels: each label is either a key
@@ -659,9 +735,17 @@ mod tests {
         let number = r#""n":{"type":"number","defined":false}"#;
         let odd = r#""a_x":{"type":"segment","defined":false}"#;
         let polygon = r#""p = Polygon(A, A)""#;
+        let regular = r#""p = Polygon(A, A, 4)""#;
         let other = r#""p = PolyLine(A, A)""#;
         assert!(parse_file(&file(polygon, side), "t").is_ok());
-        assert!(parse_file(&file(polygon, point), "t").is_ok());
+        // a polygon from points creates no point, a regular one may
+        assert!(parse_file(&file(polygon, point), "t").is_err());
+        assert!(parse_file(&file(regular, point), "t").is_ok());
+        // `x_1` is not a default segment label, and no vertex is `X`
+        let x_side = r#""x_1":{"type":"segment","defined":false}"#;
+        assert!(parse_file(&file(regular, side), "t").is_ok());
+        assert!(parse_file(&file(regular, x_side), "t").is_err());
+        assert!(parse_file(&file(polygon, x_side), "t").is_err());
         assert!(parse_file(&file(polygon, number), "t").is_err());
         assert!(parse_file(&file(polygon, odd), "t").is_err());
         assert!(parse_file(&file(other, side), "t").is_err());
@@ -706,6 +790,52 @@ mod tests {
                 "accepted {keys:?}"
             );
         }
+    }
+
+    #[test]
+    fn polygon_lines_allow_only_the_labels_they_can_give() {
+        let script = |lines: &[&str]| lines.iter().map(|l| l.to_string()).collect::<Vec<_>>();
+        let kinds = |label: &str| match label {
+            "A" | "B" | "C" | "Pa" | "inf" => Some(Kind::Point),
+            "n" => Some(Kind::Number),
+            _ => None,
+        };
+        // a polygon from points: sides named after its vertices
+        let names = PolygonNames::of(&script(&["p = Polygon(A, B, C)"]), kinds);
+        for key in ["a", "b", "c", "a_1", "c_{12}"] {
+            assert!(names.segment(key), "{key}");
+        }
+        for key in ["f", "d", "a_0", "a_{01}", "ab", "a_x"] {
+            assert!(!names.segment(key), "{key}");
+        }
+        assert!(!names.point("D"));
+        // a longer vertex label: itself in lower case, or a default label
+        let names = PolygonNames::of(&script(&["p = Polygon(Pa, B)"]), kinds);
+        for key in ["pa", "b_1", "f", "e_2"] {
+            assert!(names.segment(key), "{key}");
+        }
+        assert!(!names.segment("pa_1") && !names.segment("u"));
+        // a regular polygon: default point and segment labels
+        for line in [
+            "p = Polygon(A, B, 4)",
+            "p = Polygon(A, B, n)",
+            "p = Polygon(A, B, -2.5)",
+        ] {
+            let names = PolygonNames::of(&script(&[line]), kinds);
+            for key in ["C", "Z", "D_1", "W_{10}"] {
+                assert!(names.point(key), "{line}: {key}");
+            }
+            assert!(!names.point("X") && !names.point("Y"), "{line}");
+            assert!(names.segment("f") && names.segment("e_{3}"), "{line}");
+            assert!(!names.segment("o") && !names.segment("u"), "{line}");
+        }
+        // a recorded label wins over a number word
+        let names = PolygonNames::of(&script(&["p = Polygon(A, B, inf)"]), kinds);
+        assert!(!names.point("C") && names.segment("inf") && names.segment("f"));
+        assert!(!names.segment("u_1") && !names.segment("in"));
+        // `Polygon(A)` and other commands create nothing
+        let names = PolygonNames::of(&script(&["p = Polygon(A)", "s = Segment(A, B)"]), kinds);
+        assert!(!names.segment("a") && !names.segment("f"));
     }
 
     #[test]
