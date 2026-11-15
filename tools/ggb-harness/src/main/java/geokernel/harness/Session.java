@@ -451,9 +451,10 @@ final class Session {
     }
 
     /**
-     * Whether the definition is a command that creates two lines by design:
-     * `Tangent` and `AngularBisector` (`AngleBisector`) of two lines. Any
-     * other command must create exactly one object (see `run`).
+     * Whether the definition is a command that creates two objects by design:
+     * `Tangent` and `AngularBisector` (`AngleBisector`) of two lines, and
+     * `Focus`, `Axes` and `Directrix` of a conic. Any other command must
+     * create exactly one object (see `run`).
      */
     private static boolean isMultiOutput(String definition) {
         Matcher m = COMMAND.matcher(definition);
@@ -464,6 +465,9 @@ final class Session {
             case "Tangent":
             case "AngularBisector":
             case "AngleBisector":
+            case "Focus":
+            case "Axes":
+            case "Directrix":
                 return true;
             default:
                 return false;
@@ -525,6 +529,12 @@ final class Session {
             case "AngleBisector":
             case "Tangent":
             case "Polar":
+            case "Axes":
+            case "MajorAxis":
+            case "FirstAxis":
+            case "MinorAxis":
+            case "SecondAxis":
+            case "Directrix":
                 return "line";
             case "Segment":
                 return "segment";
@@ -535,6 +545,7 @@ final class Session {
             case "Trilinear":
             case "Centroid":
             case "Vertex":
+            case "Focus":
                 return "point";
             case "Polygon":
                 return "polygon";
@@ -560,6 +571,14 @@ final class Session {
             case "CrossRatio":
             case "Angle":
             case "InteriorAngles":
+            case "FirstAxisLength":
+            case "SemiMajorAxisLength":
+            case "SecondAxisLength":
+            case "SemiMinorAxisLength":
+            case "Eccentricity":
+            case "LinearEccentricity":
+            case "Excentricity":
+            case "Parameter":
                 return "number";
             case "Circle":
             case "Incircle":

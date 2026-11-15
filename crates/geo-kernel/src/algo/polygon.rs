@@ -972,7 +972,10 @@ pub(crate) fn exec(
         }
         "Centroid" if n == 1 => single(c, name, args[0], PolygonDef::Centroid),
         "Centroid" => Err(format!("`Centroid` does not take {n} argument(s)")),
-        "Vertex" => vertex_line(c, name, &args),
+        // `Vertex(k)` of a general conic belongs to the conic readers
+        "Vertex" if !(n == 1 && kind_of(c, args[0]) == Some(Kind::Conic)) => {
+            vertex_line(c, name, &args)
+        }
         "InteriorAngles" if n == 1 => outputs_line(c, name, args[0], Outputs::Angles(true)),
         "InteriorAngles" => Err(format!("`InteriorAngles` does not take {n} argument(s)")),
         "Angle" if n == 1 && kind_of(c, args[0]) == Some(Kind::Polygon) => {

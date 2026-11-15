@@ -215,4 +215,52 @@ case("intersection", [pt("F", -3000, 0), pt("G", 3000, 0), pt("P", 0, 4000), "k 
                       pt("U", -7000, -2000), pt("V", 6000, 3000), "g = Line(U, V)"] + BOTH,
      [mv("V", 6000, 30000), mv("U", 0.001, 0)])
 
+# ------------------------------------------------------------- readers
+topic("readers")
+READERS = ["M = Center(k)", "N = Midpoint(k)", "W = Focus(k)", "X = Vertex(k)", "ax = Axes(k)",
+           "maj = MajorAxis(k)", "mnr = MinorAxis(k)", "dir = Directrix(k)",
+           "la = FirstAxisLength(k)", "lb = SecondAxisLength(k)", "ecc = Eccentricity(k)",
+           "lin = LinearEccentricity(k)", "par = Parameter(k)"]
+SINGLE = [r for r in READERS if not r.split(" = ")[1].startswith(("Focus", "Vertex", "Axes", "Directrix"))]
+# random ellipses, hyperbolas and parabolas
+for _ in range(2):
+    case("readers", [pt("F", *rp()), pt("G", *rp()), pt("P", *rp()), "k = Ellipse(F, G, P)"] + READERS,
+         [mv("P", *rp()), mv("F", *rp()), mv("G", *rp())])
+    case("readers", [pt("F", *rp()), pt("G", *rp()), pt("P", *rp()), "k = Hyperbola(F, G, P)"] + READERS,
+         [mv("P", *rp()), mv("F", *rp()), mv("G", *rp())])
+    case("readers", [pt("F", *rp()), pt("A", *rp()), pt("B", *rp()), "g = Line(A, B)", "k = Parabola(F, g)"]
+         + READERS, [mv("F", *rp()), mv("A", *rp()), mv("B", *rp())])
+# an ellipse through a double line, a circle and back
+case("readers", [pt("F", -3, 0), pt("G", 3, 0), pt("P", 0, 4), "k = Ellipse(F, G, P)"] + READERS,
+     [mv("P", 1, 0), mv("P", 0, 4), mv("G", -3, 0), mv("G", 3, 0), mv("P", 5, 0)])
+# a hyperbola through a double line and semi-major axis 0
+case("readers", [pt("F", -3, 0), pt("G", 3, 0), pt("P", 2, 1), "k = Hyperbola(F, G, P)"] + READERS,
+     [mv("P", 4, 0), mv("P", 2, 1), mv("P", 0, 2), mv("P", -2, 1)])
+# foci and a length: ellipse, double line, hyperbola, undefined and back
+case("readers", [pt("F", -1, -2), pt("G", 2, 2), num("a", 4), "k = Ellipse(F, G, a)"] + READERS,
+     [setn("a", 2.5), setn("a", 1), setn("a", -1), setn("a", 4), setn("a", 3)])
+# coincident foci: a circle and a single point
+case("readers", [pt("F", 2, 1), pt("G", 2, 1), num("a", 2), "k = Ellipse(F, G, a)"] + SINGLE
+     + ["X = Vertex(k)", "ax = Axes(k)"],
+     [setn("a", 0), setn("a", 3), mv("G", 3, 1), mv("G", 2, 1)])
+# a parabola whose focus moves onto its directrix and back
+case("readers", [pt("F", 1, 2), pt("A", -1, 0), pt("B", 3, 1), "g = Line(A, B)", "k = Parabola(F, g)"]
+     + READERS, [mv("F", 1, 0.5), mv("F", 1, 2), mv("F", -2, -3)])
+# five points: circle, ellipse, hyperbola and degenerate conics
+case("readers", five([(-2, 0), (2, 0), (0, 1), (0, -1), (1, 0.8)]) + READERS,
+     [mv("E", 1, 0.9), mv("E", 1, 1), mv("E", 1, 2), mv("E", 1, 0.8)])
+case("readers", five([(0, 0), (1, 0), (2, 0), (0, 1), (1, 2)]) + SINGLE + ["X = Vertex(k)", "ax = Axes(k)"],
+     [mv("C", 2, 0.5), mv("C", 2, 0), mv("E", 2, 4)])
+case("readers", five([(0, 0), (1, 0), (0, 2), (1, 2), (3, 0)]) + SINGLE + ["X = Vertex(k)", "ax = Axes(k)"],
+     [mv("E", 3, 1), mv("E", 3, 2), mv("E", 3, 0)])
+# a circle has no directrix: GeoGebra labels neither output
+case("readers", five([(1, 0), (0, 1), (-1, 0), (0, -1), (0.6, 0.8)]) + SINGLE
+     + ["W = Focus(k)", "X = Vertex(k)", "ax = Axes(k)"],
+     [mv("E", 2, 2), mv("E", 0.6, 0.8)])
+# the other names of the commands
+case("readers", [pt("F", -3, 1), pt("G", 2, -1), pt("P", 0, 4), "k = Ellipse(F, G, P)",
+                 "fa = FirstAxis(k)", "sa = SecondAxis(k)", "sm = SemiMajorAxisLength(k)",
+                 "sn = SemiMinorAxisLength(k)", "ex = Excentricity(k)"],
+     [mv("P", 4, 4), mv("P", 0.5, 0)])
+
 cases.write()

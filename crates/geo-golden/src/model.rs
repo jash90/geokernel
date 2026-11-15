@@ -518,9 +518,13 @@ fn validate_case(case: &Case) -> Result<(), String> {
                 let names = PolygonNames::of(&case.script, |label| {
                     snap.get(label).map(|object| object.kind)
                 });
+                let directrices = directrix_labels(&case.script);
                 let created = |key: &str| match snap[key].kind {
                     Kind::Point => names.point(key),
                     Kind::Segment => names.segment(key),
+                    // `Directrix` gives both lines the script label, so the
+                    // second one gets an index of it.
+                    Kind::Line => indexed_prefix(key).is_some_and(|p| directrices.contains(p)),
                     _ => false,
                 };
                 check_keys(&keys, &labels, created).map_err(|e| format!("snapshot {i}: {e}"))?;
@@ -643,6 +647,17 @@ fn matches_indexed(key: &str, bases: &BTreeSet<String>) -> bool {
         .unwrap_or(index);
     let digits = !n.is_empty() && n.bytes().all(|b| b.is_ascii_digit()) && !n.starts_with('0');
     digits && bases.contains(base)
+}
+
+/// The labels of the script lines `name = Directrix(...)`.
+fn directrix_labels(script: &[String]) -> BTreeSet<&str> {
+    script
+        .iter()
+        .filter_map(|line| {
+            let (label, rhs) = line.split('#').next()?.split_once('=')?;
+            rhs.trim().starts_with("Directrix(").then_some(label.trim())
+        })
+        .collect()
 }
 
 /// The arguments of a script line `name = Polygon(a, b, ...)`.

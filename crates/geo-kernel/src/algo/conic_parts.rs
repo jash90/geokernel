@@ -2,17 +2,35 @@
 // commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersectLineConic.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersectSingle.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoCenterConic.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoCenterQuadricND.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoFocus.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoVertexConic.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoAxes.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoAxis.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoAxisLength.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoEccentricity.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoExcentricity.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoDirectrix.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoParabolaParameter.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdIntersect.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/Commands.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
 //! Objects computed from a general conic ([`Kind::Conic`]): its
-//! intersection points with a line.
+//! intersection points with a line, and what is read off its record
+//! (centre, foci, vertices, axes, directrices, lengths and eccentricities).
 //!
-//! They read the conic's [`ConicData`](super::conic_nd::ConicData) record through
-//! [`Construction::conic`], so they work on every object that has one.
+//! They read the conic's [`ConicData`] record through
+//! [`Construction::conic`]. Like GeoGebra's algorithms, most readers look at
+//! the record's type and fields only: a conic that became undefined keeps
+//! the type and the fields of its last classification, and `Vertex`, the
+//! axes and the numbers are read from them. `Center`, `Focus` and
+//! `Directrix` check that the conic is defined.
 
-use super::{check_index, Group, Parents, LINE};
+use super::conic_nd::{ConicData, ConicType};
+use super::{line_value, Group, Parents, LINE};
 use crate::kernel::{Construction, Error, Id, Kind, Value};
 
 const CONIC: &[Kind] = &[Kind::Conic];
@@ -23,59 +41,306 @@ pub enum ConicPartDef {
     /// `Intersect(g, k, n)` and `Intersect(k, g, n)`: `which` is 0 or 1,
     /// GeoGebra's intersection 1 or 2 of a line and a conic.
     IntersectLine { line: Id, conic: Id, which: u8 },
+    /// `Center(k)` and `Midpoint(k)`.
+    Center(Id),
+    /// Output `which` (0 or 1) of `Focus(k)`.
+    Focus { conic: Id, which: u8 },
+    /// Output `which` (0 to 3) of `Vertex(k)`.
+    Vertex { conic: Id, which: u8 },
+    /// Output `which` of `Axes(k)`; `MajorAxis(k)` (`FirstAxis`) is axis 0
+    /// and `MinorAxis(k)` (`SecondAxis`) axis 1.
+    Axis { conic: Id, which: u8 },
+    /// Output `which` (0 or 1) of `Directrix(k)`.
+    Directrix { conic: Id, which: u8 },
+    /// `FirstAxisLength(k)` (`SemiMajorAxisLength`) for 0,
+    /// `SecondAxisLength(k)` (`SemiMinorAxisLength`) for 1.
+    AxisLength { conic: Id, which: u8 },
+    /// `Eccentricity(k)`.
+    Eccentricity(Id),
+    /// `LinearEccentricity(k)` (`Excentricity`).
+    LinearEccentricity(Id),
+    /// `Parameter(k)` of a parabola.
+    Parameter(Id),
+}
+
+impl ConicPartDef {
+    fn conic(&self) -> Id {
+        match *self {
+            ConicPartDef::IntersectLine { conic, .. }
+            | ConicPartDef::Focus { conic, .. }
+            | ConicPartDef::Vertex { conic, .. }
+            | ConicPartDef::Axis { conic, .. }
+            | ConicPartDef::Directrix { conic, .. }
+            | ConicPartDef::AxisLength { conic, .. } => conic,
+            ConicPartDef::Center(conic)
+            | ConicPartDef::Eccentricity(conic)
+            | ConicPartDef::LinearEccentricity(conic)
+            | ConicPartDef::Parameter(conic) => conic,
+        }
+    }
+
+    /// The number of outputs of the command, and the largest valid `which`.
+    fn outputs(&self) -> u8 {
+        match self {
+            ConicPartDef::IntersectLine { .. }
+            | ConicPartDef::Focus { .. }
+            | ConicPartDef::Axis { .. }
+            | ConicPartDef::Directrix { .. }
+            | ConicPartDef::AxisLength { .. } => 2,
+            ConicPartDef::Vertex { .. } => 4,
+            _ => 1,
+        }
+    }
+
+    fn which(&self) -> u8 {
+        match *self {
+            ConicPartDef::IntersectLine { which, .. }
+            | ConicPartDef::Focus { which, .. }
+            | ConicPartDef::Vertex { which, .. }
+            | ConicPartDef::Axis { which, .. }
+            | ConicPartDef::Directrix { which, .. }
+            | ConicPartDef::AxisLength { which, .. } => which,
+            _ => 0,
+        }
+    }
 }
 
 impl Group for ConicPartDef {
     fn kind(&self) -> Kind {
         match self {
-            ConicPartDef::IntersectLine { .. } => Kind::Point,
+            ConicPartDef::IntersectLine { .. }
+            | ConicPartDef::Center(_)
+            | ConicPartDef::Focus { .. }
+            | ConicPartDef::Vertex { .. } => Kind::Point,
+            ConicPartDef::Axis { .. } | ConicPartDef::Directrix { .. } => Kind::Line,
+            ConicPartDef::AxisLength { .. }
+            | ConicPartDef::Eccentricity(_)
+            | ConicPartDef::LinearEccentricity(_)
+            | ConicPartDef::Parameter(_) => Kind::Number,
         }
     }
 
     fn parents(&self) -> Parents {
         match *self {
             ConicPartDef::IntersectLine { line, conic, .. } => Parents::of(&[line, conic]),
+            other => Parents::of(&[other.conic()]),
         }
     }
 
     fn check(&self, c: &Construction) -> Result<(), Error> {
-        match *self {
-            ConicPartDef::IntersectLine { line, conic, which } => {
-                c.expect(line, LINE)?;
-                c.expect(conic, CONIC)?;
-                check_index(which)
-            }
+        if let ConicPartDef::IntersectLine { line, .. } = *self {
+            c.expect(line, LINE)?;
+        }
+        c.expect(self.conic(), CONIC)?;
+        if self.which() < self.outputs() {
+            Ok(())
+        } else {
+            Err(Error::BadIndex(self.which()))
         }
     }
 
     fn compute(&self, c: &Construction) -> Option<Value> {
+        if let ConicPartDef::IntersectLine { line, conic, which } = *self {
+            return super::intersect::line_general_conic(c, line, conic, which);
+        }
+        let d = c.conic(self.conic())?;
         match *self {
-            ConicPartDef::IntersectLine { line, conic, which } => {
-                super::intersect::line_general_conic(c, line, conic, which)
-            }
+            ConicPartDef::IntersectLine { .. } => None,
+            ConicPartDef::Center(_) => center(&d),
+            ConicPartDef::Focus { which, .. } => focus(&d, which),
+            ConicPartDef::Vertex { which, .. } => vertex(&d, which),
+            ConicPartDef::Axis { which, .. } => axis(&d, which),
+            ConicPartDef::Directrix { which, .. } => directrix(&d, which),
+            ConicPartDef::AxisLength { which, .. } => match d.ty {
+                ConicType::Circle | ConicType::Hyperbola | ConicType::Ellipse => {
+                    number(d.half_axes[usize::from(which)])
+                }
+                _ => None,
+            },
+            ConicPartDef::Eccentricity(_) => match d.ty {
+                ConicType::Circle => number(0.0),
+                ConicType::Parabola => number(1.0),
+                ConicType::Hyperbola | ConicType::Ellipse => number(d.eccentricity),
+                _ => None,
+            },
+            ConicPartDef::LinearEccentricity(_) => match d.ty {
+                ConicType::Circle => number(0.0),
+                ConicType::Hyperbola | ConicType::Ellipse | ConicType::Parabola => {
+                    number(d.linear_eccentricity)
+                }
+                _ => None,
+            },
+            ConicPartDef::Parameter(_) => match d.ty {
+                ConicType::Parabola => number(d.p),
+                _ => None,
+            },
         }
     }
 
     fn parse(c: &Construction, func: &str, args: &[&str]) -> Option<Result<Self, String>> {
-        match (func, args.len()) {
-            ("Intersect", 2 | 3) => {
-                let first = c.id(args[0])?;
-                let second = c.id(args[1])?;
-                let (line, conic) = match (c.kind(first), c.kind(second)) {
-                    (Kind::Line, Kind::Conic) => (first, second),
-                    (Kind::Conic, Kind::Line) => (second, first),
-                    _ => return None,
-                };
-                Some(
-                    parse_index(args.get(2).copied()).map(|which| ConicPartDef::IntersectLine {
-                        line,
-                        conic,
-                        which,
-                    }),
-                )
-            }
-            _ => None,
+        if let ("Intersect", 2 | 3) = (func, args.len()) {
+            let first = c.id(args[0])?;
+            let second = c.id(args[1])?;
+            let (line, conic) = match (c.kind(first), c.kind(second)) {
+                (Kind::Line, Kind::Conic) => (first, second),
+                (Kind::Conic, Kind::Line) => (second, first),
+                _ => return None,
+            };
+            return Some(
+                parse_index(args.get(2).copied()).map(|which| ConicPartDef::IntersectLine {
+                    line,
+                    conic,
+                    which,
+                }),
+            );
         }
+        let [arg] = args else { return None };
+        let conic = c.id(arg).filter(|&k| c.kind(k) == Kind::Conic)?;
+        let def = match func {
+            "Center" | "Midpoint" => ConicPartDef::Center(conic),
+            "MajorAxis" | "FirstAxis" => ConicPartDef::Axis { conic, which: 0 },
+            "MinorAxis" | "SecondAxis" => ConicPartDef::Axis { conic, which: 1 },
+            "FirstAxisLength" | "SemiMajorAxisLength" => {
+                ConicPartDef::AxisLength { conic, which: 0 }
+            }
+            "SecondAxisLength" | "SemiMinorAxisLength" => {
+                ConicPartDef::AxisLength { conic, which: 1 }
+            }
+            "Eccentricity" => ConicPartDef::Eccentricity(conic),
+            "LinearEccentricity" | "Excentricity" => ConicPartDef::LinearEccentricity(conic),
+            "Parameter" => ConicPartDef::Parameter(conic),
+            _ => return None,
+        };
+        Some(Ok(def))
+    }
+
+    fn parse_multi(
+        c: &Construction,
+        func: &str,
+        args: &[&str],
+    ) -> Option<Result<Vec<Self>, String>> {
+        let [arg] = args else { return None };
+        let conic = c.id(arg).filter(|&k| c.kind(k) == Kind::Conic)?;
+        let (n, make): (u8, fn(Id, u8) -> Self) = match func {
+            "Focus" => (2, |conic, which| ConicPartDef::Focus { conic, which }),
+            "Vertex" => (4, |conic, which| ConicPartDef::Vertex { conic, which }),
+            "Axes" => (2, |conic, which| ConicPartDef::Axis { conic, which }),
+            "Directrix" => (2, |conic, which| ConicPartDef::Directrix { conic, which }),
+            _ => return None,
+        };
+        Some(Ok((0..n).map(|which| make(conic, which)).collect()))
+    }
+}
+
+fn number(v: f64) -> Option<Value> {
+    Some(Value::Number(v))
+}
+
+fn point(x: f64, y: f64) -> Option<Value> {
+    Some(Value::Point { x, y })
+}
+
+/// `AlgoCenterConic`: the midpoint of a central conic.
+fn center(d: &ConicData) -> Option<Value> {
+    if !d.defined {
+        return None;
+    }
+    match d.ty {
+        ConicType::Circle
+        | ConicType::Ellipse
+        | ConicType::Hyperbola
+        | ConicType::SinglePoint
+        | ConicType::IntersectingLines => point(d.midpoint[0], d.midpoint[1]),
+        _ => None,
+    }
+}
+
+/// `AlgoFocus`.
+fn focus(d: &ConicData, which: u8) -> Option<Value> {
+    if !d.defined {
+        return None;
+    }
+    let [bx, by] = d.midpoint;
+    let e0 = d.eigenvec[0];
+    match d.ty {
+        ConicType::Circle => point(bx, by),
+        ConicType::Ellipse | ConicType::Hyperbola => {
+            let temp1 = d.linear_eccentricity * e0[0];
+            let temp2 = d.linear_eccentricity * e0[1];
+            if which == 0 {
+                point(bx - temp1, by - temp2)
+            } else {
+                point(bx + temp1, by + temp2)
+            }
+        }
+        ConicType::Parabola if which == 0 => {
+            let temp1 = d.p / 2.0;
+            point(bx + temp1 * e0[0], by + temp1 * e0[1])
+        }
+        _ => None,
+    }
+}
+
+/// `AlgoVertexConic`; it does not check whether the conic is defined.
+fn vertex(d: &ConicData, which: u8) -> Option<Value> {
+    let [bx, by] = d.midpoint;
+    let along = |axis: usize, sign: f64| {
+        let e = d.eigenvec[axis];
+        let temp1 = d.half_axes[axis] * e[0];
+        let temp2 = d.half_axes[axis] * e[1];
+        if sign < 0.0 {
+            point(bx - temp1, by - temp2)
+        } else {
+            point(bx + temp1, by + temp2)
+        }
+    };
+    match (d.ty, which) {
+        (ConicType::Circle | ConicType::Ellipse, _) | (ConicType::Hyperbola, 0 | 1) => along(
+            usize::from(which / 2),
+            if which.is_multiple_of(2) { -1.0 } else { 1.0 },
+        ),
+        (ConicType::Parabola | ConicType::ParallelLines | ConicType::DoubleLine, 0) => {
+            point(bx, by)
+        }
+        _ => None,
+    }
+}
+
+/// `AlgoAxes` and `AlgoAxis`: the line through the midpoint along an
+/// eigenvector; it does not check whether the conic is defined.
+fn axis(d: &ConicData, which: u8) -> Option<Value> {
+    let e = d.eigenvec[usize::from(which)];
+    let [bx, by] = d.midpoint;
+    let (x, y) = (-e[1], e[0]);
+    line_value(x, y, -(x * bx + y * by))
+}
+
+/// `AlgoDirectrix`: one directrix of a parabola, two of an ellipse or a
+/// hyperbola.
+fn directrix(d: &ConicData, which: u8) -> Option<Value> {
+    if !d.defined {
+        return None;
+    }
+    let [bx, by] = d.midpoint;
+    let [e0, e1] = d.eigenvec;
+    let (x, y) = (-e1[1], e1[0]);
+    match d.ty {
+        ConicType::Parabola if which == 0 => {
+            let px = bx - d.p / 2.0 * e0[0];
+            let py = by - d.p / 2.0 * e0[1];
+            line_value(x, y, -(x * px + y * py))
+        }
+        ConicType::Ellipse | ConicType::Hyperbola => {
+            let e = d.eccentricity;
+            let a = d.half_axes[0];
+            let (px, py) = if which == 0 {
+                (bx + e0[0] * a / e, by + e0[1] * a / e)
+            } else {
+                (bx - e0[0] * a / e, by - e0[1] * a / e)
+            };
+            line_value(x, y, -(x * px + y * py))
+        }
+        _ => None,
     }
 }
 
@@ -200,5 +465,56 @@ mod tests {
         assert_eq!(xy(&c, "S"), None);
         c.set_number(f, 2.0).unwrap();
         assert!(xy(&c, "S").is_some());
+    }
+
+    fn num(c: &Construction, label: &str) -> Option<f64> {
+        match c.value(c.id(label).unwrap()) {
+            Value::Number(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    #[test]
+    fn an_ellipse_has_its_centre_foci_vertices_and_numbers() {
+        let c = load(&format!(
+            "{ELLIPSE}M = Center(e)\nW = Focus(e)\nX = Vertex(e)\nla = FirstAxisLength(e)\nlb = SecondAxisLength(e)\nec = Eccentricity(e)\nli = LinearEccentricity(e)\npa = Parameter(e)\ndir = Directrix(e)\n"
+        ))
+        .unwrap();
+        assert!(close(xy(&c, "M"), 0.0, 0.0));
+        let foci = [xy(&c, "W_{1}"), xy(&c, "W_{2}")];
+        assert!(
+            foci.iter().any(|&p| close(p, -3.0, 0.0)) && foci.iter().any(|&p| close(p, 3.0, 0.0))
+        );
+        for label in ["X_{1}", "X_{2}", "X_{3}", "X_{4}"] {
+            assert!(xy(&c, label).is_some(), "{label}");
+        }
+        assert_eq!(num(&c, "la"), Some(5.0));
+        assert_eq!(num(&c, "lb"), Some(4.0));
+        assert!((num(&c, "ec").unwrap() - 0.6).abs() < 1e-12);
+        assert!((num(&c, "li").unwrap() - 3.0).abs() < 1e-12);
+        assert_eq!(num(&c, "pa"), None);
+        // the directrices x = +-25/3
+        for label in ["dir", "dir_{1}"] {
+            let Value::Line { a, b, c: cc } = c.value(c.id(label).unwrap()) else {
+                panic!("{label}")
+            };
+            assert!(
+                b.abs() < 1e-12 && ((cc / a).abs() - 25.0 / 3.0).abs() < 1e-9,
+                "{label}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_hyperbola_labels_its_two_vertices_and_a_parabola_one_focus() {
+        let c = load(
+            "F = (-3, 0)\nG = (3, 0)\nP = (2, 1)\nh = Hyperbola(F, G, P)\nX = Vertex(h)\nQ = (0, 1)\nA = (0, -1)\nB = (1, -1)\nd = Line(A, B)\np = Parabola(Q, d)\nW = Focus(p)\nV = Vertex(p)\nr = Parameter(p)\n",
+        )
+        .unwrap();
+        assert!(xy(&c, "X_{1}").is_some() && xy(&c, "X_{2}").is_some());
+        assert!(c.id("X_{3}").is_none());
+        assert!(close(xy(&c, "W"), 0.0, 1.0));
+        assert!(close(xy(&c, "V"), 0.0, 0.0));
+        assert_eq!(num(&c, "r"), Some(2.0));
     }
 }

@@ -208,6 +208,9 @@ fn parse_multi(c: &Construction, rhs: &str) -> Option<Result<Vec<Def>, String>> 
     if let Some(r) = TransformDef::parse_multi(c, func, &args) {
         return Some(wrap(r, Def::Transform));
     }
+    if let Some(r) = ConicPartDef::parse_multi(c, func, &args) {
+        return Some(wrap(r, Def::ConicPart));
+    }
     None
 }
 
@@ -215,8 +218,9 @@ fn parse_multi(c: &Construction, rhs: &str) -> Option<Result<Vec<Def>, String>> 
 /// what GeoGebra's `LabelManager.setLabels` and `Construction.getIndexLabel`
 /// give at creation. The kernel's rule:
 ///
-/// - two or more outputs defined at creation: every output is created and
-///   gets the next free indexed label (`t_{1}`, `t_{2}`, ...);
+/// - two or more outputs defined at creation: every defined output is
+///   created and gets the next free indexed label (`t_{1}`, `t_{2}`, ...);
+///   `Vertex` of a hyperbola labels its two defined vertices only;
 /// - exactly one defined: only that output is created, labelled `name`;
 /// - none defined: only the first output is created, labelled `name`.
 ///
@@ -231,6 +235,26 @@ fn add_outputs(c: &mut Construction, name: &str, defs: Vec<Def>) -> Result<Id, S
     for def in &defs {
         defined.push(probe(c, def)?);
     }
+    if let [first @ Def::ConicPart(ConicPartDef::Directrix { .. }), second] = defs[..] {
+        // `AlgoDirectrix` gives both directrices the same label: with both
+        // defined the first keeps `name` and the second gets the next free
+        // indexed label (observed with the harness).
+        return match (defined[0], defined[1]) {
+            (true, true) => {
+                let id = c.add(name, first).map_err(|e| e.to_string())?;
+                let prefix = name
+                    .split('_')
+                    .next()
+                    .filter(|p| !p.is_empty())
+                    .unwrap_or("a");
+                let label = index_label(c, prefix);
+                c.add(&label, second).map_err(|e| e.to_string())?;
+                Ok(id)
+            }
+            (false, true) => c.add(name, second).map_err(|e| e.to_string()),
+            _ => c.add(name, first).map_err(|e| e.to_string()),
+        };
+    }
     let count = defined.iter().filter(|&&d| d).count();
     if count < 2 {
         let k = defined.iter().position(|&d| d).unwrap_or(0);
@@ -242,7 +266,7 @@ fn add_outputs(c: &mut Construction, name: &str, defs: Vec<Def>) -> Result<Id, S
         _ => "a",
     };
     let mut first = None;
-    for def in defs {
+    for (def, _) in defs.into_iter().zip(defined).filter(|&(_, d)| d) {
         let label = index_label(c, prefix);
         let id = c.add(&label, def).map_err(|e| e.to_string())?;
         first.get_or_insert(id);
@@ -277,6 +301,7 @@ fn probe(c: &Construction, def: &Def) -> Result<bool, String> {
         Def::Conic(d) => run(c, d),
         Def::Measure(d) => run(c, d),
         Def::Transform(d) => run(c, d),
+        Def::ConicPart(d) => run(c, d),
         _ => Ok(true),
     }
 }
