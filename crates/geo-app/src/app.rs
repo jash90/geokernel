@@ -5,7 +5,7 @@ use crate::algebra;
 use crate::canvas;
 use crate::errors;
 use crate::grid::Decor;
-use crate::interact::Drag;
+use crate::interact::{Drag, ViewTransform};
 use crate::keyboard::{self, Keyboard};
 use crate::layout::Regions;
 use crate::theme;
@@ -59,6 +59,11 @@ pub struct App {
     pub regions: Regions,
     /// `Workbench::rebuilds` as the drawing last saw it.
     pub seen_rebuilds: u64,
+    /// The drawing area and its transform as last painted, and as they were
+    /// when the primary button went down: a press is hit-tested against
+    /// what the user saw, even if the area changes in that frame.
+    pub view: Option<(egui::Rect, ViewTransform)>,
+    pub press_view: Option<(egui::Rect, ViewTransform)>,
     /// A text field had the keyboard in the previous frame.
     was_typing: bool,
 }
@@ -90,6 +95,8 @@ impl App {
             number_text: String::new(),
             regions: Regions::new(Rect::ZERO, false),
             seen_rebuilds: 0,
+            view: None,
+            press_view: None,
             was_typing: false,
         }
     }
@@ -129,6 +136,17 @@ impl App {
     /// Runs what a finished tool asks for.
     pub fn apply_outcome(&mut self, outcome: Outcome) {
         match outcome {
+            Outcome::Place { line, then } => match self.wb.run_lines(&[line]) {
+                Ok(()) => {
+                    self.tool_error = None;
+                    self.wb.selected = self.wb.construction().ids().last();
+                    self.apply_outcome(*then);
+                }
+                Err(e) => {
+                    self.tool_error = Some(errors::polish(&e));
+                    self.tool.reset();
+                }
+            },
             Outcome::Run(lines) => match self.wb.run_lines(&lines) {
                 Ok(()) => {
                     self.tool_error = None;
@@ -329,10 +347,7 @@ impl App {
             Some(Some(v)) => {
                 let outcome = {
                     let c = self.wb.construction();
-                    let decimals = self
-                        .camera
-                        .map_or(2, |cam| crate::describe::click_decimals(cam.scale));
-                    self.tool.finish_number(v, decimals, &|l| c.id(l).is_some())
+                    self.tool.finish_number(v, &|l| c.id(l).is_some())
                 };
                 self.apply_outcome(outcome);
             }

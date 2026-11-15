@@ -8,13 +8,39 @@ fn obj(label: &str, kind: Kind) -> Option<(&str, Kind)> {
     Some((label, kind))
 }
 
+fn place(line: &str, then: Outcome) -> Outcome {
+    Outcome::Place {
+        line: line.into(),
+        then: Box::new(then),
+    }
+}
+
+/// The points an outcome places first, and what comes after them.
+fn unwrap_places(mut outcome: Outcome) -> (Vec<String>, Outcome) {
+    let mut placed = Vec::new();
+    while let Outcome::Place { line, then } = outcome {
+        placed.push(line);
+        outcome = *then;
+    }
+    (placed, outcome)
+}
+
+/// All the lines an outcome runs, placed points first.
+fn all_lines(outcome: Outcome) -> Vec<String> {
+    let (mut lines, rest) = unwrap_places(outcome);
+    if let Outcome::Run(more) = rest {
+        lines.extend(more);
+    }
+    lines
+}
+
 #[test]
 fn point_tool_creates_a_labelled_free_point() {
     let mut s = ToolState::new(Tool::Point);
     let taken = |l: &str| l == "A";
     assert_eq!(
         s.click(None, (1.234, -0.001), 2, &taken),
-        Outcome::Run(vec!["B = (1.23, 0)".into()])
+        place("B = (1.23, 0)", Outcome::Pending)
     );
     // Clicking an existing point selects it and never creates a second one.
     assert_eq!(
@@ -26,16 +52,16 @@ fn point_tool_creates_a_labelled_free_point() {
 #[test]
 fn line_tool_over_two_new_points_runs_three_lines() {
     let mut s = ToolState::new(Tool::Line);
-    assert_eq!(s.click(None, (0.0, 0.0), 2, &none), Outcome::Pending);
+    // Each new point is a change of its own, made at once.
+    assert_eq!(
+        s.click(None, (0.0, 0.0), 2, &none),
+        place("A = (0, 0)", Outcome::Pending)
+    );
     assert_eq!(s.hint(), "Kliknij drugi punkt prostej");
     let out = s.click(None, (3.0, 4.0), 2, &none);
     assert_eq!(
         out,
-        Outcome::Run(vec![
-            "A = (0, 0)".into(),
-            "B = (3, 4)".into(),
-            "f = Line(A, B)".into()
-        ])
+        place("B = (3, 4)", Outcome::Run(vec!["f = Line(A, B)".into()]))
     );
     assert!(s.picks().is_empty());
     assert_eq!(s.hint(), "Kliknij pierwszy punkt prostej");
@@ -67,10 +93,7 @@ fn circle_tool_uses_a_circle_label() {
     let mut s = ToolState::new(Tool::Circle);
     s.click(obj("A", Kind::Point), (0.0, 0.0), 2, &|l| l == "A");
     let out = s.click(None, (2.0, 0.0), 2, &|l| l == "A");
-    assert_eq!(
-        out,
-        Outcome::Run(vec!["B = (2, 0)".into(), "c = Circle(A, B)".into()])
-    );
+    assert_eq!(all_lines(out), ["B = (2, 0)", "c = Circle(A, B)"]);
 }
 
 #[test]
@@ -97,10 +120,7 @@ fn perpendicular_with_a_new_point_after_the_line() {
     let mut s = ToolState::new(Tool::Perpendicular);
     s.click(obj("f", Kind::Line), (0.0, 0.0), 2, &|l| l == "f");
     let out = s.click(None, (1.0, 2.0), 2, &|l| l == "f");
-    assert_eq!(
-        out,
-        Outcome::Run(vec!["A = (1, 2)".into(), "g = Perpendicular(A, f)".into()])
-    );
+    assert_eq!(all_lines(out), ["A = (1, 2)", "g = Perpendicular(A, f)"]);
 }
 
 #[test]
@@ -139,8 +159,8 @@ fn intersect_needs_two_distinct_objects_and_makes_a_point() {
 fn clicking_a_line_with_the_line_tool_places_a_new_point() {
     let mut s = ToolState::new(Tool::Line);
     let out = s.click(obj("f", Kind::Line), (2.0, 1.0), 2, &none);
-    assert_eq!(out, Outcome::Pending);
-    assert_eq!(s.picks()[0], Pick::New { x: 2.0, y: 1.0 });
+    assert_eq!(out, place("A = (2, 1)", Outcome::Pending));
+    assert_eq!(s.picks()[0].label(), "A");
 }
 
 #[test]
@@ -170,12 +190,8 @@ fn labels_allocated_inside_one_run_do_not_collide() {
     s.click(None, (0.0, 0.0), 2, &|l| l == "A");
     let out = s.click(None, (1.0, 0.0), 2, &|l| l == "A");
     assert_eq!(
-        out,
-        Outcome::Run(vec![
-            "B = (0, 0)".into(),
-            "C = (1, 0)".into(),
-            "f = PerpendicularBisector(B, C)".into()
-        ])
+        all_lines(out),
+        ["C = (1, 0)", "f = PerpendicularBisector(B, C)"]
     );
 }
 
@@ -209,9 +225,11 @@ fn every_offered_tool_combination_runs_in_the_kernel() {
             let w = Workbench::from_script(SCRIPT).unwrap();
             let is_taken = |l: &str| w.construction().id(l).is_some();
             let mut outcome = Outcome::Ignored;
+            let mut placed = Vec::new();
             let mut used = 0;
             for pick in picks {
-                if !matches!(outcome, Outcome::Ignored | Outcome::Pending) {
+                let point_done = tool == Tool::Point && !placed.is_empty();
+                if point_done || !matches!(outcome, Outcome::Ignored | Outcome::Pending) {
                     break;
                 }
                 let hit = pick.as_ref().map(|(l, k)| (l.as_str(), *k));
@@ -223,18 +241,25 @@ fn every_offered_tool_combination_runs_in_the_kernel() {
                     break;
                 }
                 used += 1;
-                outcome = state.click(hit, (1.5, -2.5), 2, &is_taken);
+                let (more, rest) = unwrap_places(state.click(hit, (1.5, -2.5), 2, &is_taken));
+                placed.extend(more);
+                outcome = rest;
             }
             // Count each distinct sequence once: the unused tail varies.
             if code % n.pow(used) != code {
                 continue;
             }
             if let Outcome::AskNumber(request) = outcome {
-                outcome = state.finish_number(request.default, 2, &is_taken);
+                outcome = state.finish_number(request.default, &is_taken);
             }
-            let Outcome::Run(lines) = outcome else {
-                continue;
+            let more = match outcome {
+                Outcome::Run(more) => more,
+                // The point tool is done once its point is placed.
+                Outcome::Pending if tool == Tool::Point && !placed.is_empty() => Vec::new(),
+                _ => continue,
             };
+            let mut lines = placed;
+            lines.extend(more);
             let mut w = w;
             *ran.entry(tool).or_insert(0) += 1;
             if let Err(e) = w.run_lines(&lines) {
@@ -261,33 +286,25 @@ fn every_offered_tool_combination_runs_in_the_kernel() {
 fn new_points_keep_the_precision_the_zoom_asks_for() {
     let mut s = ToolState::new(Tool::Point);
     let out = s.click(None, (1.23456789, -0.000049), 6, &none);
-    assert_eq!(out, Outcome::Run(vec!["A = (1.234568, -0.000049)".into()]));
+    assert_eq!(all_lines(out), ["A = (1.234568, -0.000049)"]);
     s.set_tool(Tool::Line);
-    s.click(None, (1.23456789, 0.0), 6, &none);
-    assert_eq!(
-        s.picks()[0],
-        Pick::New {
-            x: 1.234568,
-            y: 0.0
-        }
-    );
+    let out = s.click(None, (1.23456789, 0.0), 6, &none);
+    assert_eq!(all_lines(out), ["A = (1.234568, 0)"]);
 }
 
 #[test]
-fn a_double_click_on_empty_space_makes_one_new_point() {
+fn a_second_click_at_the_same_place_is_a_second_point() {
+    // No distance guard: every click on empty space places a point, each
+    // its own change (two clicks are two points, as in the reference).
     let mut s = ToolState::new(Tool::Circle);
-    assert!(matches!(
+    assert_eq!(
         s.click(None, (1.0, 1.0), 2, &none),
-        Outcome::Pending
-    ));
-    assert!(matches!(
-        s.click(None, (1.004, 1.0), 2, &none),
-        Outcome::Ignored
-    ));
-    let Outcome::Run(lines) = s.click(None, (3.0, 1.0), 2, &none) else {
-        panic!("the second distinct click finishes the circle");
-    };
-    assert_eq!(lines.len(), 3, "{lines:?}");
+        place("A = (1, 1)", Outcome::Pending)
+    );
+    assert_eq!(
+        all_lines(s.click(None, (1.004, 1.0), 2, &none)),
+        ["B = (1, 1)", "c = Circle(A, B)"]
+    );
 }
 
 #[test]
@@ -307,8 +324,15 @@ fn a_polygon_closes_on_its_first_vertex_and_runs_in_the_kernel() {
     ));
     // The first vertex cannot close a polygon of two vertices.
     assert!(!s.accepts_object("A", Kind::Point));
-    assert!(matches!(s.click(None, (4.0, 3.0), 2, &t), Outcome::Pending));
-    assert!(matches!(s.click(None, (1.0, 3.0), 2, &t), Outcome::Pending));
+    assert_eq!(
+        s.click(None, (4.0, 3.0), 2, &t),
+        place("C = (4, 3)", Outcome::Pending)
+    );
+    assert_eq!(
+        s.click(None, (1.0, 3.0), 2, &t),
+        place("D = (1, 3)", Outcome::Pending)
+    );
+    let t = |l: &str| ["A", "B", "C", "D"].contains(&l);
     assert!(s.accepts_object("A", Kind::Point));
     assert!(
         !s.accepts_object("B", Kind::Point),
@@ -317,10 +341,9 @@ fn a_polygon_closes_on_its_first_vertex_and_runs_in_the_kernel() {
     let Outcome::Run(lines) = s.click(obj("A", Kind::Point), (0.0, 0.0), 2, &t) else {
         panic!("clicking A again closes the polygon");
     };
-    assert_eq!(
-        lines,
-        ["C = (4, 3)", "D = (1, 3)", "q1 = Polygon(A, B, C, D)"]
-    );
+    assert_eq!(lines, ["q1 = Polygon(A, B, C, D)"]);
+    w.run_lines(&["C = (4, 3)".into(), "D = (1, 3)".into()])
+        .unwrap();
     w.run_lines(&lines).unwrap();
     let c = w.construction();
     assert!(matches!(
@@ -330,15 +353,15 @@ fn a_polygon_closes_on_its_first_vertex_and_runs_in_the_kernel() {
     // Its four sides came with it.
     assert_eq!(c.len(), 4 + 1 + 4);
 
-    // New points only: a click on the first new point closes.
+    // Placed points are objects: the first of them closes the polygon.
     let mut s = ToolState::new(Tool::Polygon);
     for p in [(0.0, 0.0), (2.0, 0.0), (1.0, 2.0)] {
-        assert!(matches!(s.click(None, p, 2, &none), Outcome::Pending));
+        assert!(matches!(s.click(None, p, 2, &none), Outcome::Place { .. }));
     }
-    let Outcome::Run(lines) = s.click(None, (0.001, 0.0), 2, &none) else {
-        panic!("a click on the first new point closes the polygon");
+    let Outcome::Run(lines) = s.click(obj("A", Kind::Point), (0.0, 0.0), 2, &none) else {
+        panic!("a click on the first placed point closes the polygon");
     };
-    assert_eq!(lines.last().unwrap(), "t1 = Polygon(A, B, C)");
+    assert_eq!(lines, ["t1 = Polygon(A, B, C)"]);
 }
 
 #[test]
@@ -353,7 +376,7 @@ fn a_regular_polygon_asks_for_the_number_of_vertices() {
         panic!("two vertices ask for the count");
     };
     assert_eq!(request.default, 4.0);
-    let Outcome::Run(lines) = s.finish_number(6.0, 2, &t) else {
+    let Outcome::Run(lines) = s.finish_number(6.0, &t) else {
         panic!("the count finishes it");
     };
     assert_eq!(lines, ["a = 6", "poly1 = Polygon(A, B, a)"]);
@@ -362,19 +385,14 @@ fn a_regular_polygon_asks_for_the_number_of_vertices() {
 }
 
 #[test]
-fn closing_and_double_clicks_follow_the_canvas_tolerance_at_any_zoom() {
-    // Zoomed in, points get four decimals; the canvas says 0.01 units is near.
-    let mut s = ToolState::new(Tool::Polygon);
-    s.set_tolerance(0.01);
-    for p in [(0.0, 0.0), (0.2, 0.0), (0.1, 0.2)] {
-        assert!(matches!(s.click(None, p, 4, &none), Outcome::Pending));
-    }
+fn cancelling_keeps_the_placed_points_out_of_the_tool_only() {
+    let mut s = ToolState::new(Tool::Segment);
     assert!(matches!(
-        s.click(None, (0.1004, 0.2), 4, &none),
-        Outcome::Ignored
+        s.click(None, (0.0, 0.0), 2, &none),
+        Outcome::Place { .. }
     ));
-    let Outcome::Run(lines) = s.click(None, (0.005, 0.003), 4, &none) else {
-        panic!("a click near the first new point closes the polygon");
-    };
-    assert_eq!(lines.last().unwrap(), "t1 = Polygon(A, B, C)");
+    // The point is already in the construction; the tool just forgets it.
+    s.reset();
+    assert!(s.picks().is_empty());
+    assert_eq!(s.hint(), recipe::hint(Tool::Segment, &[]));
 }

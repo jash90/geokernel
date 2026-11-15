@@ -2,13 +2,16 @@
 //!
 //! A click on the drawing area is reported as [`ToolState::click`]. The state
 //! remembers the objects picked so far; after the last pick it returns the
-//! script lines to run, exactly as if the user had typed them. Tools that need
+//! script lines to run, exactly as if the user had typed them. A click on
+//! empty space places a free point first, as a change of its own
+//! ([`Outcome::Place`]). Tools that need
 //! a number (a radius, an angle, a factor) first return
 //! [`Outcome::AskNumber`]; the answer goes to [`ToolState::finish_number`].
 
 mod recipe;
 
 use crate::describe::fixed;
+use crate::labels::next_label;
 use geo_kernel::kernel::Kind;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -150,26 +153,22 @@ impl Tool {
     }
 }
 
-/// One click's contribution to a tool.
+/// One click's contribution to a tool: an object of the construction (a
+/// point placed by the click is added before it is picked).
 #[derive(Clone, Debug, PartialEq)]
 pub enum Pick {
-    Object {
-        label: String,
-        kind: Kind,
-    },
-    /// A free point to be created at these world coordinates.
-    New {
-        x: f64,
-        y: f64,
-    },
+    Object { label: String, kind: Kind },
 }
 
 impl Pick {
     fn kind(&self) -> Kind {
-        match self {
-            Pick::Object { kind, .. } => *kind,
-            Pick::New { .. } => Kind::Point,
-        }
+        let Pick::Object { kind, .. } = self;
+        *kind
+    }
+
+    pub fn label(&self) -> &str {
+        let Pick::Object { label, .. } = self;
+        label
     }
 }
 
@@ -192,6 +191,8 @@ pub enum Outcome {
     Pending,
     /// Run these script lines as one change.
     Run(Vec<String>),
+    /// Add this free point as its own change, then go on with `then`.
+    Place { line: String, then: Box<Outcome> },
     /// The picks are complete; ask for a number, then call
     /// [`ToolState::finish_number`].
     AskNumber(NumberRequest),
@@ -205,19 +206,12 @@ pub enum Outcome {
     Ignored,
 }
 
-fn rounded(v: f64, decimals: usize) -> f64 {
-    fixed(v, decimals).parse().unwrap_or(v)
-}
-
 #[derive(Clone, Debug)]
 pub struct ToolState {
     tool: Tool,
     picks: Vec<Pick>,
     /// Set while the dialog for the number is open.
     asking: Option<NumberRequest>,
-    /// How near (in world units) a click must be to a new point not made
-    /// yet to count as a click on it; the canvas sets it from the zoom.
-    tolerance: Option<f64>,
 }
 
 impl ToolState {
@@ -226,13 +220,7 @@ impl ToolState {
             tool,
             picks: Vec::new(),
             asking: None,
-            tolerance: None,
         }
-    }
-
-    /// Sets how near a click must be to a pending new point to land on it.
-    pub fn set_tolerance(&mut self, world: f64) {
-        self.tolerance = Some(world).filter(|t| t.is_finite() && *t > 0.0);
     }
 
     pub fn tool(&self) -> Tool {
@@ -269,10 +257,8 @@ impl ToolState {
     }
 
     /// The polygon through the picks so far, closed by the last click.
-    fn close_polygon(&mut self, decimals: usize, is_taken: &dyn Fn(&str) -> bool) -> Outcome {
-        let lines = recipe::build(self.tool, &self.picks, None, decimals, is_taken);
-        self.picks.clear();
-        Outcome::Run(lines)
+    fn close_polygon(&mut self, is_taken: &dyn Fn(&str) -> bool) -> Outcome {
+        self.build(None, is_taken)
     }
 
     fn kinds(&self) -> Vec<Kind> {
@@ -337,67 +323,76 @@ impl ToolState {
             _ if self.asking.is_some() => return Outcome::Ignored,
             _ => {}
         }
-        let pick = match hit {
-            Some((label, kind)) if self.accepts_object(label, kind) => Pick::Object {
-                label: label.to_owned(),
-                kind,
-            },
-            // The tool wants a point but the click landed on something else
-            // (or on an object it cannot take): place a new point there.
-            _ if self.accepts_new_point() && !matches!(hit, Some((_, Kind::Point))) => Pick::New {
-                x: rounded(world.0, decimals),
-                y: rounded(world.1, decimals),
-            },
+        // A point placed on empty space (or on an object the tool cannot
+        // take) is added to the construction at once, as its own step, as in
+        // the reference: cancelling the tool later keeps it.
+        let (pick, place) = match hit {
+            Some((label, kind)) if self.accepts_object(label, kind) => (
+                Pick::Object {
+                    label: label.to_owned(),
+                    kind,
+                },
+                None,
+            ),
+            _ if self.accepts_new_point() && !matches!(hit, Some((_, Kind::Point))) => {
+                let label = next_label(Kind::Point, |l| is_taken(l) || self.picked(l));
+                let line = format!(
+                    "{label} = ({}, {})",
+                    fixed(world.0, decimals),
+                    fixed(world.1, decimals)
+                );
+                (
+                    Pick::Object {
+                        label,
+                        kind: Kind::Point,
+                    },
+                    Some(line),
+                )
+            }
             _ => return Outcome::Ignored,
         };
-        if matches!(&pick, Pick::Object { label, .. } if self.closes_on(label)) {
-            return self.close_polygon(decimals, is_taken);
+        let closes = matches!(&pick, Pick::Object { label, .. } if self.closes_on(label));
+        let then = if closes {
+            self.close_polygon(is_taken)
+        } else {
+            self.picks.push(pick);
+            match recipe::finish(self.tool, &self.kinds()) {
+                None => Outcome::Pending,
+                Some(recipe::Finish::Ask(request)) => {
+                    self.asking = Some(request);
+                    Outcome::AskNumber(request)
+                }
+                Some(recipe::Finish::Now) => self.build(None, is_taken),
+            }
+        };
+        match place {
+            Some(line) => Outcome::Place {
+                line,
+                then: Box::new(then),
+            },
+            None => then,
         }
-        if let Pick::New { x, y } = pick {
-            // A second click on a new point that is not made yet (a double
-            // click) must not make a second point on top of it. Without a
-            // tolerance from the canvas, ten steps of `decimals` stand in
-            // (five pixels at the standard zoom).
-            let near = self
-                .tolerance
-                .unwrap_or(10.0 * 10f64.powi(-(decimals as i32)));
-            let twice = self.picks.iter().any(|p| match p {
-                Pick::New { x: px, y: py } => (x - px).hypot(y - py) < near,
-                Pick::Object { .. } => false,
-            });
-            let on_first = matches!(self.picks.first(), Some(Pick::New { x: px, y: py })
-                if (x - px).hypot(y - py) < near);
-            if self.tool == Tool::Polygon && self.picks.len() >= 3 && on_first {
-                return self.close_polygon(decimals, is_taken);
-            }
-            if twice {
-                return Outcome::Ignored;
-            }
-        }
-        self.picks.push(pick);
-        match recipe::finish(self.tool, &self.kinds()) {
-            None => Outcome::Pending,
-            Some(recipe::Finish::Ask(request)) => {
-                self.asking = Some(request);
-                Outcome::AskNumber(request)
-            }
-            Some(recipe::Finish::Now) => {
-                let lines = recipe::build(self.tool, &self.picks, None, decimals, is_taken);
-                self.picks.clear();
-                Outcome::Run(lines)
-            }
+    }
+
+    /// The final lines of the tool from its picks, which are then dropped.
+    /// The picked labels count as taken: a point placed by this very click
+    /// is not in the construction yet.
+    fn build(&mut self, number: Option<f64>, is_taken: &dyn Fn(&str) -> bool) -> Outcome {
+        let picks = std::mem::take(&mut self.picks);
+        let taken = |l: &str| is_taken(l) || picks.iter().any(|p| p.label() == l);
+        let lines = recipe::build(self.tool, &picks, number, &taken);
+        if lines.is_empty() {
+            // The point tool: the placed point was all it makes.
+            Outcome::Pending
+        } else {
+            Outcome::Run(lines)
         }
     }
 
     /// Completes a tool that asked for a number. `value` is in the unit the
     /// request named (degrees for angles). Returns [`Outcome::Ignored`] when
     /// the tool was not waiting.
-    pub fn finish_number(
-        &mut self,
-        value: f64,
-        decimals: usize,
-        is_taken: &dyn Fn(&str) -> bool,
-    ) -> Outcome {
+    pub fn finish_number(&mut self, value: f64, is_taken: &dyn Fn(&str) -> bool) -> Outcome {
         let Some(request) = self.asking.take() else {
             return Outcome::Ignored;
         };
@@ -406,9 +401,7 @@ impl ToolState {
         } else {
             value
         };
-        let lines = recipe::build(self.tool, &self.picks, Some(value), decimals, is_taken);
-        self.picks.clear();
-        Outcome::Run(lines)
+        self.build(Some(value), is_taken)
     }
 }
 

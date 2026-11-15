@@ -1,7 +1,6 @@
 //! What each tool picks, when it is complete, the lines it runs and its hint.
 
 use super::{NumberRequest, Pick, Tool};
-use crate::describe::fixed;
 use crate::labels::{next_greek, next_label, polygon_label, primed};
 use geo_kernel::kernel::Kind;
 
@@ -176,29 +175,13 @@ pub(super) fn build(
     tool: Tool,
     picks: &[Pick],
     number: Option<f64>,
-    decimals: usize,
     is_taken: &dyn Fn(&str) -> bool,
 ) -> Vec<String> {
     let mut lines = Vec::new();
     let mut allocated: Vec<String> = Vec::new();
     let taken = |l: &str, allocated: &[String]| is_taken(l) || allocated.iter().any(|a| a == l);
-    let mut args: Vec<String> = Vec::new();
     let kinds: Vec<Kind> = picks.iter().map(Pick::kind).collect();
-    for pick in picks {
-        match pick {
-            Pick::Object { label, .. } => args.push(label.clone()),
-            Pick::New { x, y } => {
-                let label = next_label(Kind::Point, |l| taken(l, &allocated));
-                allocated.push(label.clone());
-                lines.push(format!(
-                    "{label} = ({}, {})",
-                    fixed(*x, decimals),
-                    fixed(*y, decimals)
-                ));
-                args.push(label);
-            }
-        }
-    }
+    let args: Vec<String> = picks.iter().map(|p| p.label().to_owned()).collect();
     let number_label = number.map(|v| {
         let label = if tool == Tool::Rotate {
             next_greek(|l| taken(l, &allocated))

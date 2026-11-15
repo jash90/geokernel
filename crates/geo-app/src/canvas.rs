@@ -45,6 +45,11 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         app.tool.reset();
     }
     let mut cam = app.camera.unwrap_or(Camera::STANDARD);
+    // Opening or closing the keyboard, or resizing the window, keeps the
+    // top left corner of the drawing in place, not its centre.
+    if let Some((old, _)) = app.view.filter(|(old, _)| old.size() != rect.size()) {
+        cam = cam.resized((old.width() as f64, old.height() as f64), (w, h));
+    }
     let to_local = |pos: egui::Pos2| {
         let d = pos - rect.min;
         (d.x as f64, d.y as f64)
@@ -75,41 +80,59 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             shown(app, id) && (move_tool || app.tool.accepts_object(c.label(id), c.kind(id)))
         })
     };
-    // What a click lands on, whatever the tool: a click on an existing point
-    // must never create a new one on top of it.
-    let pick_any = |app: &App, pos: (f64, f64)| -> Option<Id> {
-        hit::pick(
-            app.wb.construction(),
-            &t,
-            pos,
-            POINT_RADIUS,
-            CURVE_RADIUS,
-            |id| shown(app, id),
-        )
-    };
     app.hovered = response.hover_pos().and_then(|p| pick_at(app, to_local(p)));
+
+    // Remember what the user saw when the button went down (the area may
+    // change in this very frame, e.g. the keyboard closes on a press).
+    let pressed = ui.input(|i| {
+        i.pointer
+            .primary_pressed()
+            .then(|| i.pointer.press_origin())
+            .flatten()
+    });
+    if let Some(pos) = pressed {
+        app.press_view = app
+            .view
+            .filter(|(r, _)| r.contains(pos))
+            .or_else(|| rect.contains(pos).then_some((rect, t)));
+    }
+    // A press position in the area as it was at the press, and that
+    // transform.
+    let at_press = |app: &App, pos: egui::Pos2| -> ((f64, f64), ViewTransform) {
+        let (r, pt) = app.press_view.unwrap_or((rect, t));
+        let d = pos - r.min;
+        ((d.x as f64, d.y as f64), pt)
+    };
 
     if response.drag_started() {
         app.drag = None;
         app.panning = false;
-        if move_tool && response.dragged_by(egui::PointerButton::Primary) {
-            // egui reports the drag a few pixels after the press: grab what
-            // was under the pointer when the button went down.
-            let origin = ui
-                .input(|i| i.pointer.press_origin())
-                .or(response.interact_pointer_pos());
-            if let Some(pos) = origin {
-                let (sx, sy) = to_local(pos);
-                app.drag = Drag::begin(app.wb.construction(), &t, sx, sy, free_radius, |id| {
+        // egui reports the drag a few pixels after the press: grab what
+        // was under the pointer when the button went down.
+        let origin = ui
+            .input(|i| i.pointer.press_origin())
+            .or(response.interact_pointer_pos());
+        let mut on_point = false;
+        if let (Some(pos), true) = (origin, response.dragged_by(egui::PointerButton::Primary)) {
+            let ((sx, sy), pt) = at_press(app, pos);
+            if move_tool {
+                app.drag = Drag::begin(app.wb.construction(), &pt, sx, sy, free_radius, |id| {
                     app.wb.is_visible(id)
                 });
             }
+            // A press on a point never pans: a free point drags (with the
+            // move tool), a dependent one stays.
+            let c = app.wb.construction();
+            on_point = hit::pick(c, &pt, (sx, sy), POINT_RADIUS, CURVE_RADIUS, |id| {
+                shown(app, id) && c.kind(id) == Kind::Point
+            })
+            .is_some();
         }
         if let Some(drag) = app.drag {
             app.wb.begin_gesture();
             app.wb.selected = Some(drag.id());
         }
-        app.panning = app.drag.is_none();
+        app.panning = app.drag.is_none() && !on_point;
     }
     if response.dragged() {
         if let Some(drag) = app.drag {
@@ -135,7 +158,14 @@ pub fn show(app: &mut App, ui: &mut Ui) {
                 Tool::ZoomIn => cam.zoom_at(ZOOM_TOOL, local.0, local.1, w, h),
                 Tool::ZoomOut => cam.zoom_at(1.0 / ZOOM_TOOL, local.0, local.1, w, h),
                 Tool::MoveView => {}
-                _ => click(app, &t, local, pick_any(app, local)),
+                _ => {
+                    let (local, pt) = at_press(app, pos);
+                    let c = app.wb.construction();
+                    let hit = hit::pick(c, &pt, local, POINT_RADIUS, CURVE_RADIUS, |id| {
+                        shown(app, id)
+                    });
+                    click(app, &pt, local, hit);
+                }
             }
         }
     }
@@ -156,6 +186,9 @@ pub fn show(app: &mut App, ui: &mut Ui) {
 
     app.camera = Some(cam);
     let t = cam.transform(w, h);
+    if response.drag_stopped() || response.clicked() {
+        app.press_view = None;
+    }
     painter.rect_filled(rect, 0.0, theme::WHITE);
     grid::paint(&painter, rect, &t, app.decor);
     let c = app.wb.construction();
@@ -176,6 +209,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     preview(app, &painter, rect, &t, response.hover_pos());
     overlay(app, ui, rect, w, h, &mut cam);
     app.camera = Some(cam);
+    app.view = Some((rect, cam.transform(w, h)));
 }
 
 fn hit_free_point(app: &App, t: &ViewTransform, pos: (f64, f64), radius: f64) -> bool {
@@ -197,8 +231,6 @@ fn click(app: &mut App, t: &ViewTransform, pos: (f64, f64), hit: Option<Id>) {
         let c = app.wb.construction();
         (c.label(id).to_owned(), c.kind(id))
     });
-    // A click as near to a pending new point as to an existing one hits it.
-    app.tool.set_tolerance(POINT_RADIUS / t.scale());
     let outcome = {
         let c = app.wb.construction();
         app.tool.click(
@@ -211,17 +243,12 @@ fn click(app: &mut App, t: &ViewTransform, pos: (f64, f64), hit: Option<Id>) {
     app.apply_outcome(outcome);
 }
 
-/// The world position of a pick (an existing point or a new one).
+/// The world position of a picked point.
 fn pick_position(app: &App, pick: &Pick) -> Option<(f64, f64)> {
-    match pick {
-        Pick::New { x, y } => Some((*x, *y)),
-        Pick::Object { label, .. } => {
-            let c = app.wb.construction();
-            match c.value(c.id(label)?) {
-                geo_kernel::kernel::Value::Point { x, y } => Some((x, y)),
-                _ => None,
-            }
-        }
+    let c = app.wb.construction();
+    match c.value(c.id(pick.label())?) {
+        geo_kernel::kernel::Value::Point { x, y } => Some((x, y)),
+        _ => None,
     }
 }
 
@@ -239,16 +266,6 @@ fn preview(
         rect.min + vec2(sx as f32, sy as f32)
     };
     let picks = app.tool.picks();
-    for pick in picks {
-        if let Pick::New { x, y } = pick {
-            draw::point_shape(
-                painter,
-                screen((*x, *y)),
-                theme::FREE_POINT,
-                draw::FREE_POINT_RADIUS,
-            );
-        }
-    }
     if app.tool.tool() == Tool::Polygon && !picks.is_empty() {
         // The sides so far and the one following the pointer, lightly filled.
         let mut pts: Vec<egui::Pos2> = picks
