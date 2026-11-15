@@ -9,7 +9,7 @@ geokernel: proof-of-concept dynamic-geometry kernel
 
 USAGE:
     geokernel run <script.geo> [out.svg]   build a construction from a script
-    geokernel run <file.ggb> [out.svg]     open a construction file saved by GeoGebra
+    geokernel run <file.ggb> [out.svg]     open a construction file saved by GeoGebra (any name)
     geokernel demo [out-dir]               triangle demo: draw, drag A, draw again
     geokernel bench [steps]                time dragging a point in a large construction
 ";
@@ -40,19 +40,10 @@ fn main() -> ExitCode {
     }
 }
 
-/// A construction file saved by GeoGebra (`.ggb`, or a bare `geogebra.xml`).
-fn is_construction_file(path: &str) -> bool {
-    let ext = std::path::Path::new(path)
-        .extension()
-        .map(|e| e.to_string_lossy().to_ascii_lowercase());
-    matches!(ext.as_deref(), Some("ggb" | "xml"))
-}
-
 /// Imports a construction file into script text. What was left out is
 /// reported on stderr.
-fn import_file(path: &str) -> Result<String, String> {
-    let bytes = std::fs::read(path).map_err(|e| format!("{path}: {e}"))?;
-    let imported = geo_import::import(&bytes).map_err(|e| format!("{path}: {e}"))?;
+fn import_file(path: &str, bytes: &[u8]) -> Result<String, String> {
+    let imported = geo_import::import(bytes).map_err(|e| format!("{path}: {e}"))?;
     for note in &imported.notes {
         eprintln!("note: {note}");
     }
@@ -70,6 +61,18 @@ fn import_file(path: &str) -> Result<String, String> {
             eprintln!("  ... and {} more", imported.skipped.len() - 20);
         }
     }
+    if !imported.mismatched.is_empty() {
+        eprintln!(
+            "{} objects differ from the value saved in the file:",
+            imported.mismatched.len()
+        );
+        for m in imported.mismatched.iter().take(20) {
+            eprintln!("  {}: saved {}, computed {}", m.label, m.saved, m.computed);
+        }
+        if imported.mismatched.len() > 20 {
+            eprintln!("  ... and {} more", imported.mismatched.len() - 20);
+        }
+    }
     if !imported.hidden.is_empty() {
         eprintln!(
             "{} objects are hidden in the file; SVG shows all",
@@ -80,10 +83,12 @@ fn import_file(path: &str) -> Result<String, String> {
 }
 
 fn run(path: &str, out: Option<&str>) -> Result<(), String> {
-    let src = if is_construction_file(path) {
-        import_file(path)?
+    // A construction file is told from a script by its content, not its name.
+    let bytes = std::fs::read(path).map_err(|e| format!("{path}: {e}"))?;
+    let src = if geo_import::looks_like_construction(&bytes) {
+        import_file(path, &bytes)?
     } else {
-        std::fs::read_to_string(path).map_err(|e| format!("{path}: {e}"))?
+        String::from_utf8(bytes).map_err(|e| format!("{path}: {e}"))?
     };
     let c = script::load(&src).map_err(|e| format!("{path}: {e}"))?;
     print_objects(&c);
