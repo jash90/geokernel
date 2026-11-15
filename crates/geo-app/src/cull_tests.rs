@@ -85,7 +85,7 @@ fn picture(
             ghost: &|_| false,
             selected: None,
             hovered: None,
-            sides: wb.sides(),
+            palette: wb.palette(),
             cull,
         };
         draw::paint(&painter, rect, wb.construction(), t, &scene);

@@ -34,8 +34,8 @@ pub struct Scene<'a> {
     pub ghost: &'a dyn Fn(Id) -> bool,
     pub selected: Option<Id>,
     pub hovered: Option<Id>,
-    /// The sides of the polygons of the construction, for the colours.
-    pub sides: &'a style::Sides,
+    /// The objects' colours (constant time each).
+    pub palette: style::Palette<'a>,
     /// Skip the objects that draw nothing in the area (see `near_view`).
     /// Off only in the tests that check that skipping changes nothing.
     pub cull: bool,
@@ -115,7 +115,7 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
     let screen = |x: f64, y: f64| t.world_to_screen(x, y);
     let in_rect = |s: (f64, f64)| s.0 >= 0.0 && s.0 <= w && s.1 >= 0.0 && s.1 <= h;
     let color = |id: Id| {
-        let c = style::color_in(c, id, scene.sides).egui();
+        let c = scene.palette.color(id).egui();
         if (scene.ghost)(id) {
             c.gamma_multiply(0.3)
         } else {
@@ -148,18 +148,13 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
                     .iter()
                     .map(|&(x, y)| origin + vec2(x as f32, y as f32))
                     .collect();
-                let glow = Stroke::new(
-                    8.0,
-                    style::color_in(c, id, scene.sides)
-                        .egui()
-                        .gamma_multiply(alpha),
-                );
+                let glow = Stroke::new(8.0, scene.palette.color(id).egui().gamma_multiply(alpha));
                 painter.add(Shape::closed_line(points, glow));
             }
             continue;
         }
         if let Some(hl) = highlight::of_value(&c.value(id), t, w, h) {
-            let col = style::color_in(c, id, scene.sides).egui();
+            let col = scene.palette.color(id).egui();
             paint_highlight(painter, rect, hl, col, strong);
         }
     }
@@ -521,7 +516,7 @@ mod tests {
                 ghost: &|_| false,
                 selected: None,
                 hovered: None,
-                sides: wb.sides(),
+                palette: wb.palette(),
                 cull: true,
             };
             paint(ui.painter(), rect, c, &t, &scene);

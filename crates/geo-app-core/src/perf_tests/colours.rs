@@ -2,17 +2,18 @@
 
 use super::session;
 use crate::palette;
-use crate::style::{self, Sides};
+use crate::style;
 use crate::workbench::Workbench;
 
-/// Every object's colour from `wb.sides()` against the scan of `color`,
-/// and the cached sides against sides made anew.
+/// Every object's colour from the workbench's palette against the scan of
+/// `color`, and the palette reads its cache.
 fn assert_colours(wb: &Workbench, what: &str) {
     let c = wb.construction();
-    assert_eq!(wb.sides(), &Sides::of(c), "{what}: stale sides");
+    let palette = wb.palette();
+    assert!(palette.cached(), "{what}: the palette scans");
     for id in c.ids() {
         assert_eq!(
-            style::color_in(c, id, wb.sides()),
+            palette.color(id),
             style::color(c, id),
             "{what}: {}",
             c.label(id)
@@ -45,22 +46,13 @@ fn a_segment_typed_before_or_after_its_polygon_is_a_side() {
     let mut wb =
         Workbench::from_script("A = (0, 0)\nB = (4, 0)\nC = (1, 3)\ns = Segment(A, B)\n").unwrap();
     let s = wb.construction().id("s").unwrap();
-    assert_eq!(
-        style::color_in(wb.construction(), s, wb.sides()),
-        palette::CURVE
-    );
+    assert_eq!(wb.palette().color(s), palette::CURVE);
     wb.run_line("q = Polygon(A, B, C)").unwrap();
     assert_colours(&wb, "polygon added");
-    assert_eq!(
-        style::color_in(wb.construction(), s, wb.sides()),
-        palette::POLYGON
-    );
+    assert_eq!(wb.palette().color(s), palette::POLYGON);
     wb.run_line("t = Segment(B, C)").unwrap();
     assert_colours(&wb, "side typed after");
     assert!(wb.undo() && wb.undo());
     assert_colours(&wb, "undone");
-    assert_eq!(
-        style::color_in(wb.construction(), s, wb.sides()),
-        palette::CURVE
-    );
+    assert_eq!(wb.palette().color(s), palette::CURVE);
 }

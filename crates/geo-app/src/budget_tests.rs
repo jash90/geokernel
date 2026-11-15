@@ -13,6 +13,7 @@
 
 use crate::app::App;
 use crate::headless::{self, Repaint};
+use crate::style;
 use crate::theme;
 use crate::tools::Tool;
 use crate::ui_bench::alloc;
@@ -61,6 +62,8 @@ struct Counts {
     vertices: u64,
     allocs: u64,
     bytes: u64,
+    /// Objects looked through for polygon sides (`style::objects_scanned`).
+    colour_scans: u64,
     rows_formatted: u64,
     rows_built: u64,
     immediate: bool,
@@ -108,14 +111,17 @@ impl Window {
         let input = headless::raw_input(screen, self.time, DT as f32, events);
         self.time += DT;
         let made = self.app.wb.rows_formatted();
+        let scans = style::objects_scanned();
         // The UI pass only, as the benchmark's `ui_allocs` / `ui_bytes`.
         alloc::start();
         let (mut out, pass) = headless::run(&self.ctx, &mut self.app, input, crate::app::show);
         let (allocs, bytes) = alloc::stop();
+        let colour_scans = style::objects_scanned() - scans;
         out.textures_delta.clear();
         let mut c = Counts {
             allocs,
             bytes,
+            colour_scans,
             rows_formatted: self.app.wb.rows_formatted() - made,
             rows_built: pass.rows_built,
             immediate: headless::repaint(&out) == Repaint::Immediate,
@@ -298,28 +304,52 @@ fn frame_counters_stay_within_the_budget() {
         println!("{name}: n100 {s:?}\n{name}: n1000 {l:?}");
     }
     let get = |v: &[(&str, Counts)], name: &str| v.iter().find(|(n, _)| *n == name).unwrap().1;
+    // What each threshold protects:
+    //
+    // - growth from n100 to n1000 (9.3 times the objects): in the fitted
+    //   view every object is on screen, so the drawing grows with the
+    //   objects; the list paints its 15 or so visible rows at both sizes and
+    //   colours and rows cost nothing per object, which keeps the frame at
+    //   3 to 6 times. A list of all rows again (about five shapes, three
+    //   texts and three allocations per row) or work per object for
+    //   colours or rows goes past these. Zoomed in, culling keeps the
+    //   drawing to the objects in view: 2 to 3.5 times.
+    // - ceilings at n1000: the counts when they were set plus about 5%
+    //   (shapes, texts, vertices) or 8% (allocations, bytes), against slow
+    //   creep. Lower them with any change that lowers the counts.
+    // - colour scans: none in any frame (the palette's cache); one call of
+    //   `style::color` per object would scan all objects for each.
+    // - rows: none made outside a drag; in a drag only those of the objects
+    //   it changed (checked in `states`).
+    //
+    // Growth caps in tenths: (shapes, texts, allocations, bytes).
+    let growth = |name: &str| match name {
+        "idle_zoomed_4x" => (25, 40, 30, 30),
+        _ => (40, 70, 65, 50),
+    };
     for (name, l) in &large {
         let s = get(&small, name);
         // No frame without input asks for an immediate repaint.
         if matches!(*name, "idle" | "idle_zoomed_4x" | "keyboard_open") {
             assert!(!s.immediate && !l.immediate, "{name}: immediate repaint");
         }
-        // No state does work for objects that are not visible: at most
-        // linear in the objects from n100 to n1000 (9.3 times the objects).
-        assert!(
-            l.shapes <= 10 * s.shapes,
-            "{name}: shapes {} vs {}",
-            l.shapes,
-            s.shapes
+        let (shapes, texts, allocs, bytes) = growth(name);
+        for (what, cap, l, s) in [
+            ("shapes", shapes, l.shapes, s.shapes),
+            ("texts", texts, l.texts, s.texts),
+            ("allocations", allocs, l.allocs, s.allocs),
+            ("bytes", bytes, l.bytes, s.bytes),
+        ] {
+            assert!(
+                10 * l <= cap * s,
+                "{name}: {what} {l} at n1000 against {s} at n100 (cap {cap} tenths)"
+            );
+        }
+        assert_eq!(
+            (s.colour_scans, l.colour_scans),
+            (0, 0),
+            "{name}: colours scanned"
         );
-        assert!(
-            l.texts <= 10 * s.texts,
-            "{name}: texts {} vs {}",
-            l.texts,
-            s.texts
-        );
-        // The algebra list lays out only its visible rows, whatever the
-        // size; the drawing has about three texts per drawn object.
         if *name != "drag_point" {
             assert_eq!(
                 (l.rows_formatted, l.rows_built),
@@ -328,10 +358,8 @@ fn frame_counters_stay_within_the_budget() {
             );
         }
     }
-    // Ceilings at n1000: the counts when they were set plus about 5%
-    // (shapes, texts, vertices). Before the visible-only list and the
-    // culling the idle frame had 10 887 shapes and 3467 texts. Lower them
-    // with any change that lowers the counts.
+    // Before the visible-only list and the culling the idle frame had
+    // 10 887 shapes and 3467 texts.
     let ceilings = [
         ("idle", 2_550, 1_030, 94_000),
         ("idle_zoomed_4x", 840, 210, 27_000),
@@ -346,11 +374,10 @@ fn frame_counters_stay_within_the_budget() {
         assert!(l.texts <= texts, "{name}: {} texts", l.texts);
         assert!(l.vertices <= vertices, "{name}: {} vertices", l.vertices);
     }
-    // Heap allocations and bytes of the UI pass at n1000: the counts when
-    // they were set plus about 8%. Before the shared colours, the row cache
-    // and the visible-only list the idle frame made 16 696 allocations of
-    // 2.08 MB and a drag frame 27 725 of 2.43 MB; a copy of all rows per
-    // frame adds about 3000 allocations, making them all again about 10 000.
+    // Before the shared colours, the row cache and the visible-only list
+    // the idle frame made 16 696 allocations of 2.08 MB and a drag frame
+    // 27 725 of 2.43 MB; a copy of all rows per frame adds about 4000
+    // allocations, making them all again about 10 000.
     let ceilings = [
         ("idle", 2_900, 565_000),
         ("idle_zoomed_4x", 680, 170_000),
@@ -361,21 +388,10 @@ fn frame_counters_stay_within_the_budget() {
         ("drag_point_still", 3_100, 580_000),
     ];
     for (name, allocs, bytes) in ceilings {
-        let (s, l) = (get(&small, name), get(&large, name));
+        let l = get(&large, name);
         assert!(l.allocs <= allocs, "{name}: {} allocations", l.allocs);
         assert!(l.bytes <= bytes, "{name}: {} bytes", l.bytes);
-        // At most linear from n100 to n1000 (before: 8 to 9 times).
-        assert!(
-            l.allocs <= 7 * s.allocs && l.bytes <= 6 * s.bytes,
-            "{name}: allocations {} vs {}, bytes {} vs {}",
-            l.allocs,
-            s.allocs,
-            l.bytes,
-            s.bytes
-        );
     }
-    // A drag frame makes only the rows of the objects it changed (checked
-    // in `states`); a frame where nothing moved makes none.
     let still = get(&large, "drag_point_still");
     assert_eq!((still.rows_formatted, still.rows_built), (0, 0));
     assert!(get(&large, "drag_point").rows_formatted <= 12);

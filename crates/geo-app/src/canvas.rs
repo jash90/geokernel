@@ -307,7 +307,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             ghost: &ghost,
             selected: app.wb.selected,
             hovered: app.hovered,
-            sides: app.wb.sides(),
+            palette: app.wb.palette(),
             cull: true,
         },
     );

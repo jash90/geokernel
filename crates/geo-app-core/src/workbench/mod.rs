@@ -6,7 +6,7 @@ use crate::describe;
 use crate::history::History;
 use crate::labels::next_label;
 use crate::scriptlog::{normalize, Log, Setting};
-use crate::style::Sides;
+use crate::style::{Palette, Sides};
 use crate::undo::Undo;
 pub use file::{import_notice, rejected_notice, SNAPSHOT_VERSION};
 use geo_kernel::kernel::{Construction, Id, Kind, Value};
@@ -84,12 +84,17 @@ impl Workbench {
         &self.construction
     }
 
-    /// The sides of the polygons of the construction, for
-    /// [`crate::style::color_in`]. Made once after objects were added or the
-    /// construction replaced, so a frame colours every object in linear
-    /// time.
-    pub fn sides(&self) -> &Sides {
-        self.sides.get_or_init(|| Sides::of(&self.construction))
+    /// The colours of the objects. The sides of the polygons they need are
+    /// made once after objects were added or the construction replaced,
+    /// and are read only while the document is in the state they were made
+    /// for (`rebuilds` and the number of objects), so a frame colours every
+    /// object in linear time and never from a stale cache.
+    pub fn palette(&self) -> Palette<'_> {
+        let key = (self.rebuilds, self.construction.len());
+        let sides = self
+            .sides
+            .get_or_init(|| Sides::of(&self.construction, key));
+        Palette::new(&self.construction, sides, key)
     }
 
     /// A copy of `log` for an undo step: shares its storage (see

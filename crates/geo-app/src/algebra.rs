@@ -228,7 +228,7 @@ fn paint_row(app: &App, ui: &mut Ui, row: &Row, actions: &mut Actions) -> bool {
     let marker = ui.interact(cell, id.with("marker"), Sense::click());
     let center = cell.center();
     let visible = app.wb.is_visible(row.id);
-    let base = style::color_in(app.wb.construction(), row.id, app.wb.sides());
+    let base = app.wb.palette().color(row.id);
     let (fill, ring) = style::marker_of(base);
     let (fill, ring) = (fill.egui(), ring.egui());
     if visible {

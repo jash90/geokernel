@@ -15,17 +15,9 @@ pub const FREE_POINT_RADIUS: f32 = 5.0;
 /// and circles.
 ///
 /// For one object. It looks through every polygon for a segment, so a
-/// loop over all objects calls [`color_in`] with one [`Sides`] instead.
+/// loop over all objects takes the colours from a [`Palette`] instead.
 pub fn color(c: &Construction, id: Id) -> Rgba {
     color_with(c, id, |a, b| is_side(c, a, b))
-}
-
-/// [`color`] with the sides of the polygons looked up in `sides`, which
-/// must have been made from `c` as it is now ([`Sides::of`]): constant
-/// time per object.
-pub fn color_in(c: &Construction, id: Id, sides: &Sides) -> Rgba {
-    debug_assert_eq!(sides.objects, c.len(), "the sides of another construction");
-    color_with(c, id, |a, b| sides.contains(a, b))
 }
 
 fn color_with(c: &Construction, id: Id, side: impl Fn(Id, Id) -> bool) -> Rgba {
@@ -40,8 +32,25 @@ fn color_with(c: &Construction, id: Id, side: impl Fn(Id, Id) -> bool) -> Rgba {
     }
 }
 
+thread_local! {
+    static SCANNED: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
+}
+
+/// Objects this thread has looked through for the sides of polygons so far
+/// ([`color`] once per call, [`Sides::of`] once per cache). A frame that
+/// takes its colours from a fresh [`Palette`] adds nothing; the frame
+/// budget test reads it.
+pub fn objects_scanned() -> u64 {
+    SCANNED.with(std::cell::Cell::get)
+}
+
+fn scanned(n: usize) {
+    SCANNED.with(|s| s.set(s.get() + n as u64));
+}
+
 /// Whether the segment from `a` to `b` is a side of a `Polygon(...)`.
 fn is_side(c: &Construction, a: Id, b: Id) -> bool {
+    scanned(c.len());
     c.ids().any(|p| polygon_sides(c, p).any(|s| s == (a, b)))
 }
 
@@ -55,22 +64,29 @@ fn polygon_sides(c: &Construction, p: Id) -> impl Iterator<Item = (Id, Id)> + '_
     (0..v.len()).map(move |i| (v[i], v[(i + 1) % v.len()]))
 }
 
+/// The state of a document a [`Sides`] was made for: the workbench's count
+/// of rebuilt or replaced constructions, and the number of objects.
+/// Definitions only change with one of the two, so the sides of the same
+/// key are the sides of the construction.
+pub type SidesKey = (u64, usize);
+
 /// Every side `(from, to)` of every `Polygon(...)` of a construction, for
-/// [`color_in`]. Depends only on the definitions, so it stays valid until
+/// a [`Palette`]. Depends only on the definitions, so it stays valid until
 /// objects are added or the construction is replaced; moves keep it.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Sides {
     pairs: std::collections::HashSet<(Id, Id)>,
-    /// The number of objects it was made for (a staleness check).
-    objects: usize,
+    key: SidesKey,
 }
 
 impl Sides {
-    /// Made in one pass over the objects and the polygons' vertex lists.
-    pub fn of(c: &Construction) -> Sides {
+    /// Made in one pass over the objects and the polygons' vertex lists,
+    /// for the document state `key`.
+    pub fn of(c: &Construction, key: SidesKey) -> Sides {
+        scanned(c.len());
         Sides {
             pairs: c.ids().flat_map(|p| polygon_sides(c, p)).collect(),
-            objects: c.len(),
+            key,
         }
     }
 
@@ -78,9 +94,43 @@ impl Sides {
         self.pairs.contains(&(a, b))
     }
 
-    /// The number of objects of the construction it was made from.
-    pub fn objects(&self) -> usize {
-        self.objects
+    pub fn key(&self) -> SidesKey {
+        self.key
+    }
+}
+
+/// The colours of the objects of a construction (`Workbench::palette`):
+/// constant time per object from cached [`Sides`], which are used only
+/// when made for the document state the palette is for. A stale cache is
+/// never read, in release builds too: the colours then come from the scan
+/// of [`color`] (and debug builds stop, as that is a bug).
+#[derive(Clone, Copy)]
+pub struct Palette<'a> {
+    c: &'a Construction,
+    sides: Option<&'a Sides>,
+}
+
+impl<'a> Palette<'a> {
+    pub fn new(c: &'a Construction, sides: &'a Sides, key: SidesKey) -> Palette<'a> {
+        let fresh = sides.key == key && key.1 == c.len();
+        debug_assert!(fresh, "polygon sides of {:?} read at {key:?}", sides.key);
+        Palette {
+            c,
+            sides: fresh.then_some(sides),
+        }
+    }
+
+    /// The colour of `id`, as [`color`] gives it.
+    pub fn color(&self, id: Id) -> Rgba {
+        match self.sides {
+            Some(s) => color_with(self.c, id, |a, b| s.contains(a, b)),
+            None => color(self.c, id),
+        }
+    }
+
+    /// Whether the colours come from the cache.
+    pub fn cached(&self) -> bool {
+        self.sides.is_some()
     }
 }
 
