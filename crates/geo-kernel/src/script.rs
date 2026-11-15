@@ -22,6 +22,7 @@
 //! P = Intersect(l, k, 2)  # second intersection (1 is the default)
 //! t = Tangent(P, k)       # two tangents t_{1} and t_{2} when both are defined at creation
 //! c = a + 2*b             # arithmetic (see `crate::expr`) where no form above applies
+//! f(x) = x^2 - a          # a function of x
 //! ```
 
 use crate::algo::conic::ConicDef;
@@ -68,6 +69,13 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
     }
     let (name, rhs) = line.split_once('=').ok_or("expected `name = definition`")?;
     let name = name.trim();
+    // `f(x) = ...`: a function of `x`
+    if let Some(f) = name.strip_suffix("(x)").map(str::trim_end) {
+        if !is_identifier(f) {
+            return Err(format!("`{f}` is not a valid object name"));
+        }
+        return crate::expr::define_function(c, f, rhs.trim()).map(Some);
+    }
     if !is_identifier(name) {
         return Err(format!("`{name}` is not a valid object name"));
     }
@@ -232,6 +240,7 @@ fn is_finite(v: &Value) -> bool {
         Value::Number(v) => v.is_finite(),
         Value::Vector { x, y } => x.is_finite() && y.is_finite(),
         Value::Ray { x, y, a, b, c } => [x, y, a, b, c].iter().all(|v| v.is_finite()),
+        Value::Function => true,
         Value::Undefined => false,
     }
 }

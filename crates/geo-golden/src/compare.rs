@@ -1,6 +1,6 @@
 //! The comparison rules of `golden/SCHEMA.md`.
 
-use crate::model::{Expected, ExpectedData};
+use crate::model::{Expected, ExpectedData, SAMPLE_XS};
 use geo_kernel::{Kind, Value};
 
 /// Result of a successful comparison.
@@ -57,7 +57,20 @@ pub fn line_scale_agrees(expected: &Expected, actual: &Value) -> Option<bool> {
 
 /// Compares one recorded object with what the kernel holds.
 /// `kind` is the kernel's kind of the object (valid even when undefined).
+/// A function is compared by [`compare_sampled`].
 pub fn compare(expected: &Expected, kind: Kind, actual: &Value) -> Result<Sign, String> {
+    compare_sampled(expected, kind, actual, &|_| None)
+}
+
+/// [`compare`], with `sample` giving the kernel's value of the object at `x`
+/// when it is a function. Each sample is compared like a number; a `null`
+/// sample must meet a value that is not finite, and the other way round.
+pub fn compare_sampled(
+    expected: &Expected,
+    kind: Kind,
+    actual: &Value,
+    sample: &dyn Fn(f64) -> Option<f64>,
+) -> Result<Sign, String> {
     if expected.kind != kind {
         return Err(format!(
             "type mismatch: expected {}, got {kind}",
@@ -150,6 +163,20 @@ pub fn compare(expected: &Expected, kind: Kind, actual: &Value) -> Result<Sign, 
             } else {
                 Err("ray lies on a different line".into())
             }
+        }
+        (ExpectedData::Function { samples }, Value::Function) => {
+            for (&x, want) in SAMPLE_XS.iter().zip(samples) {
+                let got = sample(x).filter(|v| v.is_finite());
+                let agree = match (*want, got) {
+                    (None, None) => true,
+                    (Some(p), Some(q)) => numbers_agree(p, q),
+                    _ => false,
+                };
+                if !agree {
+                    return Err(format!("value at x = {x} differs: kernel has {got:?}"));
+                }
+            }
+            Ok(Sign::NotApplicable)
         }
         _ => Err("kernel value has a different shape than its kind".into()),
     }
@@ -282,6 +309,30 @@ mod tests {
             line_scale_agrees(&line(0.0, 1.0, 0.0), &Value::Undefined),
             None
         );
+    }
+
+    #[test]
+    fn functions_are_compared_by_samples() {
+        let mut samples = vec![Some(1.0); 11];
+        samples[0] = None;
+        let e = Expected {
+            kind: Kind::Function,
+            data: Some(ExpectedData::Function { samples }),
+        };
+        let at = |f: fn(f64) -> f64| move |x: f64| Some(f(x));
+        let ok = at(|x| if x == -8.0 { f64::NAN } else { 1.0 + 1e-12 });
+        assert!(compare_sampled(&e, Kind::Function, &Value::Function, &ok).is_ok());
+        let infinite = at(|x| if x == -8.0 { f64::INFINITY } else { 1.0 });
+        assert!(compare_sampled(&e, Kind::Function, &Value::Function, &infinite).is_ok());
+        // a value where GeoGebra has none, and the other way round
+        let value = at(|_| 1.0);
+        assert!(compare_sampled(&e, Kind::Function, &Value::Function, &value).is_err());
+        let missing = at(|x| if x >= 0.0 { f64::NAN } else { 1.0 });
+        assert!(compare_sampled(&e, Kind::Function, &Value::Function, &missing).is_err());
+        let off = at(|x| if x == -8.0 { f64::NAN } else { 1.001 });
+        assert!(compare_sampled(&e, Kind::Function, &Value::Function, &off).is_err());
+        assert!(compare_sampled(&e, Kind::Function, &Value::Undefined, &ok).is_err());
+        assert!(compare(&e, Kind::Number, &Value::Number(1.0)).is_err());
     }
 
     #[test]

@@ -131,3 +131,10 @@ mismatches = ["0:d", "0:e", "1:d", "1:e", "2:d", "2:e", "3:d", "3:e", "4:d", "4:
 id = "vector-rawscale-009"
 reason = "points carry no homogeneous weight"
 mismatches = ["0:o", "1:o", "2:o", "3:o", "4:o"]
+
+# expr
+
+[[gap]]
+id = "expr-fnundef-008"
+reason = "intended difference, recorded in DIFFERENCES.md: GeoGebra keeps a function defined (every value undefined) when it reads a point at infinity, here the intersection of two parallel lines; the kernel has no points at infinity and makes the function undefined"
+mismatches = ["1:f", "1:g"]

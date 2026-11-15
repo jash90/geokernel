@@ -175,3 +175,86 @@ fn errors_leave_the_construction_unchanged() {
     let long = format!("b = 1{}", " + 1".repeat(100_000));
     assert!(exec(&mut c, &long).is_err());
 }
+
+fn sample(c: &Construction, label: &str, x: f64) -> Option<f64> {
+    c.function_value(c.id(label).unwrap(), x)
+}
+
+#[test]
+fn functions_are_sampled_expanded_and_applied() {
+    let mut c = load(
+        "a = 2\n\
+         f(x) = x^2 - 2*x + a\n\
+         g(x) = f(x) + sin(x)\n\
+         h(x) = f(f(x))\n\
+         v = f(2)\n\
+         w = h(a)\n\
+         p = f(a) + g(1)\n\
+         k(x) = 3\n",
+    )
+    .unwrap();
+    assert_eq!(c.kind(c.id("f").unwrap()), Kind::Function);
+    assert_eq!(c.value(c.id("k").unwrap()), Value::Function);
+    assert_eq!(sample(&c, "f", -8.0), Some(82.0));
+    assert_eq!(sample(&c, "g", 0.5), Some(1.729425538604203));
+    assert_eq!(sample(&c, "h", -0.5), Some(6.0625));
+    assert_eq!(sample(&c, "k", 1.0), Some(3.0));
+    assert_eq!(sample(&c, "v", 1.0), None);
+    assert_eq!(num(&c, "v"), 2.0);
+    assert_eq!(num(&c, "w"), 2.0);
+    assert_eq!(num(&c, "p"), 3.8414709848078967);
+    c.set_number(c.id("a").unwrap(), -3.0).unwrap();
+    assert_eq!(sample(&c, "h", 0.5), Some(18.5625));
+    assert_eq!(num(&c, "w"), 117.0);
+}
+
+#[test]
+fn a_function_is_undefined_when_an_input_is() {
+    let mut c = load(
+        "a = 1\nc = a/a\nd = 1/a\nf(x) = x + c\ng(x) = f(x) + 1\nh(x) = x + d\n\
+         k(x) = atan(d) + x\nv = f(2)\n",
+    )
+    .unwrap();
+    let a = c.id("a").unwrap();
+    c.set_number(a, 0.0).unwrap();
+    for label in ["f", "g", "v"] {
+        assert_eq!(c.value(c.id(label).unwrap()), Value::Undefined, "{label}");
+    }
+    // an infinite number is a defined input
+    assert!(sample(&c, "h", 1.0).is_some_and(f64::is_infinite));
+    assert_eq!(sample(&c, "k", 0.0), Some(std::f64::consts::FRAC_PI_2));
+    c.set_number(a, 1.0).unwrap();
+    assert_eq!(sample(&c, "g", 1.0), Some(3.0));
+    assert_eq!(num(&c, "v"), 3.0);
+}
+
+#[test]
+fn bad_function_lines_are_rejected() {
+    let mut c = load("a = 1\nf(x) = x + a\n").unwrap();
+    for bad in [
+        "b = f + 1",
+        "b = f(1, 2)",
+        "g(x) = (x, 1)",
+        "b = x + 1",
+        "g(x) = Line(A, B)",
+        "1(x) = x",
+        "f(x) = x",
+    ] {
+        let before = c.len();
+        assert!(exec(&mut c, bad).is_err(), "{bad}");
+        assert_eq!(c.len(), before, "{bad}");
+    }
+    // each level reads `x` twice: the expansion doubles until it is too large
+    exec(&mut c, "q(x) = x + x").unwrap();
+    let mut prev = "q".to_string();
+    let mut failed = false;
+    for level in 0..40 {
+        let name = format!("q_{{{level}}}");
+        if exec(&mut c, &format!("{name}(x) = {prev}({prev}(x))")).is_err() {
+            failed = true;
+            break;
+        }
+        prev = name;
+    }
+    assert!(failed);
+}

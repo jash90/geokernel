@@ -37,7 +37,6 @@ pub(crate) struct Parsed {
     /// Objects the expression reads, directly or through a command.
     pub(crate) parents: Vec<Id>,
     /// Objects named in the expression.
-    #[allow(dead_code)] // read once function objects exist
     pub(crate) inputs: Vec<Id>,
     /// Whether the variable `x` occurs.
     pub(crate) uses_var: bool,
@@ -404,6 +403,15 @@ impl Parser<'_> {
         }
         if let Some(id) = self.c.id(text) {
             self.read(id, true);
+            if self.c.kind(id) == Kind::Function {
+                if !call {
+                    return Err(format!("the function `{text}` needs an argument"));
+                }
+                return match self.arguments()?[..] {
+                    [a] => Ok(self.push(Node::Apply(id, a))),
+                    _ => Err(format!("the function `{text}` takes one argument")),
+                };
+            }
             // `a(b)` with a number `a` is a product: the bracket follows.
             return Ok(self.push(Node::Obj(id)));
         }

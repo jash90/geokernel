@@ -90,6 +90,7 @@ carries no numeric fields. When it is `true` it carries exactly these:
 | `number` | `value` | The numeric value. |
 | `vector` | `x`, `y` | The vector's coordinates. Where GeoGebra draws it from (its start point) is not recorded. |
 | `ray` | `x`, `y`, `a`, `b`, `c` | Start point `(x, y)` and the raw GeoGebra coefficients of the line `a*x + b*y + c = 0` it lies on, not normalised. The ray points along `(b, -a)`. |
+| `function` | `samples` | The values at `x` = -8, -4, -2, -1, -0.5, 0, 0.5, 1, 2, 4, 8, as pairs `[x, y]` in this order: `{ "type": "function", "defined": true, "samples": [[-8.0, 82.0], [-4.0, 26.0], ..., [0.5, null], ...] }`. `y` is `null` where GeoGebra's value (`GeoFunction.value`) is not finite. An undefined function carries no `samples`. |
 
 All numbers are finite JSON numbers that round-trip to the same `f64`.
 A value that is not finite in GeoGebra is recorded as `defined: false`.
@@ -112,6 +113,9 @@ These rules are applied by the Rust side (`crates/geo-golden`).
   component magnitude of the two triples, same sign) is also counted for the
   `ggb-harness` cases and reported per group and defining command; it does
   not fail the comparison.
+- Functions: every sample is compared like a number; a `null` sample must
+  meet a value that is not finite in `geo-kernel`, and a finite value a
+  finite one.
 - Segments are compared with their end points in order.
 - Vectors are compared by `x` and `y`.
 - Rays: the start points must agree, and the coefficients are normalised like
@@ -133,8 +137,10 @@ whose result is a coordinate pair is a vector when its label starts with a
 lower-case letter and a point otherwise, whatever its operands are, as in
 GeoGebra. An expression that reads no object (`c = 2 + 3`) is evaluated once
 and becomes a free number, point or vector, which steps may set or move.
-Expressions were added after the first golden files were written; no
-existing file changed and the schema version stays 1.
+A line `f(x) = ...` defines a function of `x`, recorded under the label `f`;
+other lines may apply it (`v = f(2)`, `g(x) = f(x) + 1`).
+Expressions and the type `function` were added after the first golden files
+were written; no existing file changed and the schema version stays 1.
 
 ## Known gaps
 

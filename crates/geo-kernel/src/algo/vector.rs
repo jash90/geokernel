@@ -84,6 +84,7 @@ fn only(kind: Kind) -> &'static [Kind] {
         Kind::Number => &[Kind::Number],
         Kind::Vector => &[Kind::Vector],
         Kind::Ray => &[Kind::Ray],
+        Kind::Function => &[Kind::Function],
     }
 }
 
@@ -365,7 +366,7 @@ fn translate(v: Value, dx: f64, dy: f64) -> Option<Value> {
             c: c - (a * dx + b * dy),
         },
         Value::Vector { .. } => v,
-        Value::Number(_) | Value::Undefined => return None,
+        Value::Number(_) | Value::Function | Value::Undefined => return None,
     })
 }
 

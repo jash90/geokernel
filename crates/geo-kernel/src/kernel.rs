@@ -43,6 +43,8 @@ pub enum Kind {
     Number,
     Vector,
     Ray,
+    /// A function of `x`, `f(x) = ...`; see [`Construction::function_value`].
+    Function,
 }
 
 impl fmt::Display for Kind {
@@ -55,6 +57,7 @@ impl fmt::Display for Kind {
             Kind::Number => "number",
             Kind::Vector => "vector",
             Kind::Ray => "ray",
+            Kind::Function => "function",
         })
     }
 }
@@ -104,6 +107,9 @@ pub enum Value {
         b: f64,
         c: f64,
     },
+    /// A defined function; its values come from
+    /// [`Construction::function_value`].
+    Function,
     /// The object does not exist for the current positions
     /// (for example two circles that no longer meet).
     Undefined,
@@ -137,7 +143,7 @@ impl Value {
             Value::Number(v) => v.is_finite(),
             Value::Vector { x, y } => x.is_finite() && y.is_finite(),
             Value::Ray { x, y, a, b, c } => [x, y, a, b, c].iter().all(|v| v.is_finite()),
-            Value::Undefined => true,
+            Value::Function | Value::Undefined => true,
         }
     }
 }
@@ -364,6 +370,13 @@ impl Construction {
 
     pub fn value(&self, id: Id) -> Value {
         self.values[id.0]
+    }
+
+    /// The value of the function `id` at `x`, evaluated as GeoGebra's
+    /// `GeoFunction.value` does; it may be infinite or `NaN` where the
+    /// function is not defined. `None` when `id` is not a defined function.
+    pub fn function_value(&self, id: Id, x: f64) -> Option<f64> {
+        expr::function_value(self, id, x)
     }
 
     /// The objects computed from `id`.

@@ -188,7 +188,7 @@ pub fn render(c: &Construction, view: View, width: u32, height: u32) -> String {
                     );
                 }
             }
-            Value::Number(_) | Value::Undefined => {}
+            Value::Number(_) | Value::Function | Value::Undefined => {}
         }
     }
 

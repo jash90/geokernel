@@ -228,4 +228,97 @@ for extra, rhs in (([], "Midpoint(A, B) + u"), ([], "A + Vector(B, C)"),
              [mv("A", *rp()), mv("u", *rp()), mv("C", *rp()), mv("B", *A), mv("u", 0, 0),
               setn("a", -a), mv("B", *B)])
 
+# ------------------------------------------------------- functions of x
+topic("fn")
+for rhs in ("x^2 - 2*x + a", "a x + b", "sin(a x) + b", "cos(x - a)", "tan(x / a)", "a / x",
+            "sqrt(x - a)", "1 / (x - a)", "ln(x + a)", "exp(-x^2 / a)", "abs(x - a) - b",
+            "floor(x / a)", "ceil(a x)", "round(x a)", "x! + a", "gamma(x + a)", "log(a, x + b)",
+            "atan2(x, a)", "a^x", "x^a", "sinh(x) / a", "acos(x / 8) + a", "cbrt(x - a)",
+            "sgn(x - a) b", "x^3 - a x^2 + b"):
+    a, b = r2(0.5, 3), r2(-3, 3)
+    case("fn", nums(a=a, b=b) + [f"f(x) = {rhs}"],
+         [setn("a", r2(0.5, 3)), setn("b", r2(-3, 3)), setn("a", 0), setn("a", -a), setn("a", a),
+          setn("b", b)])
+
+# ------------------------------------------------------- precedence inside functions
+topic("fnprec")
+for rhs in ("-x^2", "x^-1", "2^-x", "2^-x^2", "x/2x", "x/2 x", "-x!", "x!^2", "sin x",
+            "x sin x", "|x - a|", "a x^2", "(x + a)(x - a)", "x^2\u00b2", "sin(x\u00b0)",
+            "2pi x", "e^x", "x a^2", "x^(1/3)", "x^(2/3)", "(-8)^(x/3)"):
+    case("fnprec", nums(a=2) + [f"f(x) = {rhs}"], [setn("a", -1), setn("a", 0.5), setn("a", 2)])
+
+# ------------------------------------------------------- applying and expanding functions
+topic("apply")
+for script in (["f(x) = x^2 - 2*x + a", "g(x) = f(x) + sin(x)", "v = f(2)"],
+               ["f(x) = x^2 - 2*x + a", "h(x) = f(f(x))", "v = h(a)", "w = f(a) + 1"],
+               ["f(x) = a x + b", "g(x) = f(2x) - f(x - 1)", "v = g(b)"],
+               ["f(x) = sqrt(x - a)", "g(x) = f(x) + f(-x)", "v = f(b)", "w = g(0)"],
+               ["f(x) = 1 / (x - a)", "g(x) = f(cos(x))", "v = f(cos(b))"],
+               ["f(x) = sin(x)", "g(x) = f(x)^2 + f(x + pi / 2)^2", "v = g(a)"],
+               ["f(x) = x / a", "g(x) = f(x) f(x)", "h(x) = g(f(x))", "v = h(b) + g(2)"],
+               ["f(x) = a", "g(x) = f(x) + x", "v = f(100)", "w = g(b)"],
+               ["f(x) = exp(x)", "g(x) = ln(f(x))", "v = g(a) - a", "w = f(-b)"],
+               ["f(x) = x^2", "c = f(a) + f(b)", "d = sqrt(c)", "g(x) = f(x) - c"],
+               ["f(x) = floor(x)", "g(x) = f(a x)", "v = f(a b)"],
+               ["f(x) = (-8)^x", "g(x) = f(1/3) + x", "v = f(1/3)"],
+               ["f(x) = x^2 - b", "c = f(a)", "g(x) = f(x) / c", "v = g(1)"],
+               ["f(x) = abs(x) - a", "g(x) = f(f(f(x)))", "v = g(b)"],
+               ["f(x) = a / x", "P = (f(2), f(b))", "u = (f(1); a)", "v = f(x(P))"]):
+    a, b = r2(0.5, 3), r2(-3, 3)
+    case("apply", nums(a=a, b=b) + script,
+         [setn("a", r2(0.5, 3)), setn("b", r2(-3, 3)), setn("a", 0), setn("b", 0), setn("a", -a),
+          setn("a", a), setn("b", b)])
+
+# ------------------------------------------------------- functions of points and commands
+topic("fncmd")
+for extra, rhs in (([], "x(A) x + y(B)"), ([], "Distance(A, B) x - x(C)"),
+                   (["l = Line(A, B)"], "Slope(l) x + y(A) - Slope(l) x(A)"),
+                   ([], "(x - x(A)) (x - x(B)) (x - x(C))"), ([], "Area(A, B, C) / (1 + x^2)"),
+                   (["u = Vector(A, B)"], "abs(u) sin(x)"), ([], "y(Midpoint(A, B)) + x"),
+                   ([], "Angle(A, B, C) x"), ([], "x(A + B) - x"), ([], "sqrt(x - x(C))")):
+    A, B, C = rp(), rp(), rp()
+    case("fncmd", [pt("A", *A), pt("B", *B), pt("C", *C)] + extra
+         + [f"f(x) = {rhs}", "v = f(1)", "g(x) = f(x) + f(-x)"],
+         [mv("A", *rp()), mv("B", *rp()), mv("C", *rp()), mv("B", *A), mv("A", *A), mv("B", *B)])
+
+# ------------------------------------------------------- when a function is undefined
+topic("fnundef")
+# a NaN input makes it undefined, an infinite one does not
+case("fnundef", nums(a=1) + ["c = a / a", "d = 1 / a", "f(x) = x + c", "g(x) = f(x) + 1",
+                             "h(x) = x + d", "k(x) = atan(d) + x", "v = f(2)", "w = k(2)"],
+     [setn("a", 0), setn("a", 1), setn("a", 0), setn("a", -2)])
+case("fnundef", nums(a=1) + ["c = sqrt(a)", "f(x) = c x", "g(x) = f(x)^2", "v = g(3)"],
+     [setn("a", -1), setn("a", 4), setn("a", -4), setn("a", 1)])
+# undefined only at some sample points, or everywhere
+case("fnundef", nums(a=1) + ["f(x) = sqrt(x - a)", "g(x) = 1 / (x - a)", "h(x) = ln(x)",
+                             "k(x) = f(x) + g(x)", "v = g(2)", "w = f(0)"],
+     [setn("a", 2), setn("a", 9), setn("a", -8), setn("a", 1)])
+case("fnundef", nums(a=1) + ["f(x) = sqrt(-x^2 - a)", "g(x) = a / 0 + x", "h(x) = (0 / 0) x",
+                             "k(x) = x / (a - a)"],
+     [setn("a", 0), setn("a", -1), setn("a", 1)])
+# functions without objects
+case("fnundef", ["f(x) = 3", "g(x) = 2 + 3", "h(x) = x^2 - 1", "a = 2", "k(x) = a",
+                 "v = f(5) + k(1) + h(a)"],
+     [setn("a", -1), setn("a", 0)])
+# a command without a result
+case("fnundef", ["A = (0, 0)", "B = (0, 0)", "C = (1, 3)", "l = Line(A, C)",
+                 "f(x) = Distance(A, B) x", "g(x) = x / Distance(A, B)", "h(x) = Slope(l) + x",
+                 "v = g(1)"],
+     [mv("B", 4, 1), mv("A", 4, 1), mv("C", 4, 5), mv("A", 0, 0)])
+# a point that does not exist: a line missing a circle
+case("fnundef", ["A = (0, 0)", "B = (3, 0)", "C = (0, 1)", "D = (5, 1)", "k = Circle(A, B)",
+                 "l = Line(C, D)", "S = Intersect(l, k, 1)", "f(x) = x(S) x + y(S)",
+                 "g(x) = f(x) + 1", "v = f(1)"],
+     [mv("C", 0, 5), mv("D", 5, 5), mv("C", 0, 2), mv("D", 5, -1)])
+# a point at infinity (parallel lines) is defined in GeoGebra, undefined in
+# the kernel (DIFFERENCES.md)
+case("fnundef", ["A = (0, 0)", "B = (4, 1)", "C = (1, 3)", "D = (2, -2)", "l = Line(A, B)",
+                 "m = Line(C, D)", "S = Intersect(l, m)", "f(x) = x(S) x + y(S)",
+                 "g(x) = f(x)^2", "v = f(1)", "h(x) = Distance(S, A) + x"],
+     [mv("D", 5, 4), mv("D", 3, -1)])
+# a zero vector and a vector of an undefined point
+case("fnundef", ["u = (1, 2)", "A = (1, 1)", "B = (1, 1)", "w = Vector(A, B)",
+                 "f(x) = x(u) x + abs(w)", "g(x) = x / abs(w)"],
+     [mv("B", 2, 2), mv("u", 0, 0), mv("A", 2, 2), mv("A", 1, 1)])
+
 cases.write()

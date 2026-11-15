@@ -2,6 +2,8 @@
 // commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/ExpressionNode.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/ExpressionNodeEvaluator.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/Function.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDependentFunction.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/MyVecNode.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoVec2D.java
 //   source/shared/common/src/main/java/org/geogebra/common/plugin/Operation.java
@@ -21,6 +23,12 @@
 //!   `(x, y)` and the parts of a fractional exponent: plain `+ - * /`,
 //!   `Math.pow`, `Math.sin`, `Math.cos` and `Math.sqrt`; every other
 //!   operation falls back to the full evaluation of its subtree.
+//!
+//! A function is sampled by the fast evaluation with `x` set to a number
+//! (`Function.value`). Inside a function, an applied function is expanded
+//! (`AlgoDependentFunction.expandFunctionDerivativeNodes`): its `x` stands
+//! for the argument's subtree, evaluated in place. Outside a function,
+//! `f(a)` evaluates `a` and samples `f` there.
 
 use super::math::{self, PI_180};
 use super::{Bin, Entry, Node, Raw, Ty, Un};
@@ -33,14 +41,17 @@ enum Val {
 }
 
 /// What the variable `x` stands for.
-enum Env {
+enum Env<'a> {
     None,
+    Value(f64),
+    /// A subtree of the caller: the argument of an expanded function.
+    Arg(&'a Ctx<'a>, u32),
 }
 
 struct Ctx<'a> {
     c: &'a Construction,
     e: &'a Entry,
-    env: &'a Env,
+    env: &'a Env<'a>,
 }
 
 /// Evaluates an entry's tree (full evaluation).
@@ -53,6 +64,24 @@ pub(super) fn root(c: &Construction, e: &Entry) -> Raw {
     match ctx.full(e.root) {
         Val::N(v) => Raw::Num(v),
         Val::V(x, y) => Raw::Vec(x, y),
+    }
+}
+
+/// `Function.value`: a function entry at `x`.
+pub(super) fn sample(c: &Construction, e: &Entry, x: f64) -> f64 {
+    let ctx = Ctx {
+        c,
+        e,
+        env: &Env::Value(x),
+    };
+    ctx.fast(e.root)
+}
+
+/// The tree of the function object `f`, when it is defined.
+fn function_entry(c: &Construction, f: Id) -> Option<&Entry> {
+    match (c.def(f), c.value(f)) {
+        (Def::Expr(d), Value::Function) => Some(super::entry(c, d)),
+        _ => None,
     }
 }
 
@@ -75,8 +104,10 @@ impl Ctx<'_> {
             Node::Num(v) => N(v),
             Node::MinusOne => N(-1.0),
             Node::Degree => N(PI_180),
-            Node::Var => match self.env {
+            Node::Var => match *self.env {
                 Env::None => N(f64::NAN),
+                Env::Value(x) => N(x),
+                Env::Arg(caller, a) => N(caller.full_number(a)),
             },
             Node::Obj(id) => object(self.c, id),
             Node::Cmd(def) => command(self.c, def),
@@ -89,7 +120,31 @@ impl Ctx<'_> {
             Node::Un(op, a) => self.unary(op, a),
             Node::Bin(Bin::Pow, a, b) => self.power(a, b),
             Node::Bin(op, a, b) => binary(op, self.full(a), self.full(b), self.is_angle(a)),
-            Node::Apply(..) | Node::FnName(_) => N(f64::NAN),
+            Node::Apply(f, a) => N(self.apply(f, a, false)),
+            Node::FnName(_) => N(f64::NAN),
+        }
+    }
+
+    /// `f(a)`: expanded inside a function, in the current mode; elsewhere
+    /// `a` is evaluated and `f` sampled there (`GeoFunction.value`).
+    fn apply(&self, f: Id, a: u32, fast: bool) -> f64 {
+        let Some(e) = function_entry(self.c, f) else {
+            return f64::NAN;
+        };
+        if self.e.function {
+            let env = Env::Arg(self, a);
+            let inner = Ctx {
+                c: self.c,
+                e,
+                env: &env,
+            };
+            if fast {
+                inner.fast(e.root)
+            } else {
+                inner.full_number(e.root)
+            }
+        } else {
+            sample(self.c, e, self.full_number(a))
         }
     }
 
@@ -134,6 +189,12 @@ impl Ctx<'_> {
             Node::Un(Un::Sin, a) => self.fast(a).sin(),
             Node::Un(Un::Cos, a) => self.fast(a).cos(),
             Node::Un(Un::Sqrt, a) => self.fast(a).sqrt(),
+            Node::Var => match *self.env {
+                Env::None => f64::NAN,
+                Env::Value(x) => x,
+                Env::Arg(caller, a) => caller.fast(a),
+            },
+            Node::Apply(f, a) if self.e.function => self.apply(f, a, true),
             _ => self.full_number(i),
         }
     }
@@ -163,6 +224,11 @@ impl Ctx<'_> {
     /// odd root. `None` when the exponent has another shape.
     fn neg_power(&self, base: f64, exponent: u32) -> Option<f64> {
         match self.node(exponent) {
+            // an expanded function: the shape is the argument's
+            Node::Var => match *self.env {
+                Env::Arg(caller, a) => caller.neg_power(base, a),
+                _ => None,
+            },
             Node::Bin(Bin::Div, a, b) => Some(self.neg_power_fraction(base, a, b, exponent)),
             Node::Bin(Bin::Mul, m, d) if matches!(self.node(m), Node::MinusOne) => {
                 match self.node(d) {

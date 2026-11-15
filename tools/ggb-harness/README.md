@@ -82,6 +82,7 @@ Snapshot encoding:
 | `GeoNumeric` | `number` |
 | `GeoVector` | `vector` with `x`, `y` |
 | `GeoRay` | `ray` with the inhomogeneous start point `x`, `y` and the raw fields `x`, `y`, `z` as `a`, `b`, `c`; a start point at infinity is undefined |
+| `GeoFunction` | `function` with `samples`, the values of `GeoFunction.value` at the sample points (`null` where not finite) |
 
 `defined` is GeoGebra's `isDefined()` and, in addition, every recorded field
 must be finite. A circle of radius 0 is a single-point conic in GeoGebra; it is
@@ -106,7 +107,9 @@ gives.
   that is not a literal or a single call of a known command is an expression:
   the harness accepts a number, a point or a vector from it (a point or a
   vector by the case of the label) and checks that it is free exactly when it
-  names no scripted object. A command inside the arguments of another command
+  names no scripted object. A line `f(x) = ...` must make a function; it is
+  recorded with its values at the sample points of `golden/SCHEMA.md`
+  (`GeoFunction.value`). A command inside the arguments of another command
   (`Slope(Line(A, B))`) is accepted by GeoGebra but not by `geo-kernel`.
 - Points have upper-case labels, everything else lower case. A coordinate
   pair with a lower-case label is a free vector (GeoGebra's rule), so free
