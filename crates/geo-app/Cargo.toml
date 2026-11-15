@@ -6,17 +6,32 @@ edition.workspace = true
 license.workspace = true
 repository.workspace = true
 
+# The window as a library (an rlib), so that the desktop binary and a later
+# Android shell crate share it; `main.rs` is only the desktop glue.
+[lib]
+name = "geo_app"
+path = "src/lib.rs"
+
 [[bin]]
 name = "geokernel-app"
 path = "src/main.rs"
 
 [dependencies]
 geo-kernel = { path = "../geo-kernel" }
-geo-import = { path = "../geo-import" }
+geo-app-core = { path = "../geo-app-core" }
 # Default features are off to avoid pulling in glow, accesskit and the web
-# helpers. We want the wgpu renderer, the bundled fonts and both Linux
-# window systems.
-eframe = { version = "0.37.0", default-features = false, features = ["wgpu", "default_fonts", "x11", "wayland"] }
+# helpers. We want the wgpu renderer and the bundled fonts everywhere.
+eframe = { version = "0.37.0", default-features = false, features = ["wgpu", "default_fonts"] }
+
+# Both Linux window systems, on Linux only: Cargo merges these features with
+# the ones above, and other targets (macOS, Windows, later Android) build
+# without them.
+[target.'cfg(target_os = "linux")'.dependencies]
+eframe = { version = "0.37.0", default-features = false, features = ["x11", "wayland"] }
+
+# The Android build will be a separate shell crate (a `cdylib` with
+# `android_main` and eframe's `android-game-activity` feature for that
+# target) that depends on this library. None of it is added yet.
 
 [dev-dependencies]
 egui_kittest = { version = "0.37", features = ["wgpu"] }

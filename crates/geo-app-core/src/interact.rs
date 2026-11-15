@@ -19,6 +19,7 @@ pub struct ViewTransform {
 
 impl ViewTransform {
     /// Fits `view` into a `width` x `height` area, centred, keeping the aspect ratio.
+    #[inline]
     pub fn new(view: View, width: f64, height: f64) -> Self {
         let vw = (view.xmax - view.xmin).max(f64::MIN_POSITIVE);
         let vh = (view.ymax - view.ymin).max(f64::MIN_POSITIVE);
@@ -39,15 +40,18 @@ impl ViewTransform {
     }
 
     /// The visible rectangle of the plane this transform was built from.
+    #[inline]
     pub fn view(&self) -> View {
         self.view
     }
 
     /// Pixels per world unit.
+    #[inline]
     pub fn scale(&self) -> f64 {
         self.scale
     }
 
+    #[inline]
     pub fn world_to_screen(&self, x: f64, y: f64) -> (f64, f64) {
         (
             self.ox + (x - self.view.xmin) * self.scale,
@@ -55,6 +59,7 @@ impl ViewTransform {
         )
     }
 
+    #[inline]
     pub fn screen_to_world(&self, sx: f64, sy: f64) -> (f64, f64) {
         (
             self.view.xmin + (sx - self.ox) / self.scale,
@@ -122,11 +127,13 @@ impl Drag {
     }
 
     /// The point being dragged.
+    #[inline]
     pub fn id(&self) -> Id {
         self.id
     }
 
     /// Where the held point should be for the cursor at `(sx, sy)`.
+    #[inline]
     pub fn target(&self, t: &ViewTransform, sx: f64, sy: f64) -> (f64, f64) {
         let (wx, wy) = t.screen_to_world(sx, sy);
         (wx + self.dx, wy + self.dy)

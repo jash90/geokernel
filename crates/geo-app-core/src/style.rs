@@ -1,24 +1,27 @@
 //! How objects look: their colour, the colours of their algebra marker and
 //! the geometry of an angle's sector. No drawing calls.
 
-use crate::theme;
-use eframe::egui::Color32;
+use crate::geom::Rgba;
+use crate::palette;
 use geo_kernel::algo::measure::MeasureDef;
 use geo_kernel::algo::polygon::PolygonDef;
 use geo_kernel::kernel::{Construction, Def, Id, Value};
 
+/// The drawn radius of a free point, in points (point size 5).
+pub const FREE_POINT_RADIUS: f32 = 5.0;
+
 /// The default colour of an object: blue free points, grey dependent
 /// points, green angles, brown polygons and their sides, near-black lines
 /// and circles.
-pub fn color(c: &Construction, id: Id) -> Color32 {
+pub fn color(c: &Construction, id: Id) -> Rgba {
     match (c.value(id), c.def(id)) {
-        (Value::Point { .. }, def) if def.is_free() => theme::FREE_POINT,
-        (Value::Point { .. }, _) => theme::DEPENDENT_POINT,
-        (_, Def::Measure(MeasureDef::Angle(..))) => theme::ANGLE,
-        (Value::Polygon { .. }, _) => theme::POLYGON,
-        (_, Def::Polygon(PolygonDef::RegularSide { .. })) => theme::POLYGON,
-        (_, Def::Segment(a, b)) if is_side(c, a, b) => theme::POLYGON,
-        _ => theme::CURVE,
+        (Value::Point { .. }, def) if def.is_free() => palette::FREE_POINT,
+        (Value::Point { .. }, _) => palette::DEPENDENT_POINT,
+        (_, Def::Measure(MeasureDef::Angle(..))) => palette::ANGLE,
+        (Value::Polygon { .. }, _) => palette::POLYGON,
+        (_, Def::Polygon(PolygonDef::RegularSide { .. })) => palette::POLYGON,
+        (_, Def::Segment(a, b)) if is_side(c, a, b) => palette::POLYGON,
+        _ => palette::CURVE,
     }
 }
 
@@ -35,14 +38,14 @@ fn is_side(c: &Construction, a: Id, b: Id) -> bool {
 }
 
 /// `color` laid over white with opacity `alpha`.
-pub fn over_white(color: Color32, alpha: f32) -> Color32 {
+pub fn over_white(color: Rgba, alpha: f32) -> Rgba {
     let mix = |v: u8| (255.0 - (255.0 - v as f32) * alpha).round() as u8;
-    Color32::from_rgb(mix(color.r()), mix(color.g()), mix(color.b()))
+    Rgba::from_rgb(mix(color.r), mix(color.g), mix(color.b))
 }
 
 /// The marker of an object's row in the algebra view: a light fill and a
 /// darker ring of the object's colour.
-pub fn marker(c: &Construction, id: Id) -> (Color32, Color32) {
+pub fn marker(c: &Construction, id: Id) -> (Rgba, Rgba) {
     let base = color(c, id);
     (over_white(base, 0.35), over_white(base, 0.75))
 }
@@ -93,12 +96,12 @@ mod tests {
         let c = geo_kernel::script::load("A = (0, 0)\nB = (1, 0)\nM = Midpoint(A, B)\n").unwrap();
         let a = c.id("A").unwrap();
         let m = c.id("M").unwrap();
-        assert_eq!(color(&c, a), theme::FREE_POINT);
-        assert_eq!(color(&c, m), theme::DEPENDENT_POINT);
+        assert_eq!(color(&c, a), palette::FREE_POINT);
+        assert_eq!(color(&c, m), palette::DEPENDENT_POINT);
         let (fill, ring) = marker(&c, a);
-        assert!(fill.r() > 180 && fill.b() > 250, "{fill:?}");
-        assert!(ring.r() < fill.r());
-        assert_eq!(over_white(Color32::BLACK, 0.0), Color32::WHITE);
+        assert!(fill.r > 180 && fill.b > 250, "{fill:?}");
+        assert!(ring.r < fill.r);
+        assert_eq!(over_white(Rgba::BLACK, 0.0), Rgba::WHITE);
     }
 
     #[test]
@@ -126,7 +129,7 @@ mod tests {
             angle_points(&c, alpha),
             Some([(1.0, 0.0), (0.0, 0.0), (0.0, 1.0)])
         );
-        assert_eq!(color(&c, alpha), theme::ANGLE);
+        assert_eq!(color(&c, alpha), palette::ANGLE);
         assert_eq!(angle_points(&c, c.id("d").unwrap()), None);
     }
 
@@ -139,12 +142,12 @@ mod tests {
         .unwrap();
         let brown: Vec<&str> = c
             .ids()
-            .filter(|&id| color(&c, id) == theme::POLYGON)
+            .filter(|&id| color(&c, id) == palette::POLYGON)
             .map(|id| c.label(id))
             .collect();
         assert!(brown.contains(&"q") && brown.contains(&"r"), "{brown:?}");
         // The three sides of q and the four of r.
         assert_eq!(brown.len(), 2 + 3 + 4, "{brown:?}");
-        assert_eq!(color(&c, c.id("s").unwrap()), theme::CURVE);
+        assert_eq!(color(&c, c.id("s").unwrap()), palette::CURVE);
     }
 }

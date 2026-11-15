@@ -59,6 +59,7 @@ impl History {
     }
 
     #[cfg(test)]
+    #[allow(clippy::len_without_is_empty)] // a test helper of an exported type
     pub fn len(&self) -> usize {
         self.entries.len()
     }

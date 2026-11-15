@@ -9,7 +9,9 @@
 //! Colours, sizes and the global egui style: a light theme modelled on the
 //! classic desktop look of the reference application.
 
+use crate::geom::rgba;
 use eframe::egui::{self, Color32, FontFamily, FontId, TextStyle};
+use geo_app_core::palette;
 
 /// The purple accent, 0x6557d2 as in `CalcEmbedElement.java`.
 pub const ACCENT: Color32 = Color32::from_rgb(0x65, 0x57, 0xd2);
@@ -35,12 +37,10 @@ pub const AXIS: Color32 = Color32::from_rgb(0x1a, 0x1a, 0x1c);
 pub const TICK_TEXT: Color32 = Color32::from_rgb(0x1a, 0x1a, 0x1c);
 
 /// Default object colours.
-pub const FREE_POINT: Color32 = Color32::from_rgb(77, 77, 255);
-pub const DEPENDENT_POINT: Color32 = Color32::from_rgb(0x6e, 0x6d, 0x73);
+pub const FREE_POINT: Color32 = rgba(palette::FREE_POINT);
 pub const POINT_RING: Color32 = Color32::from_rgb(0x1c, 0x1c, 0x1f);
-pub const CURVE: Color32 = Color32::from_rgb(0x1c, 0x1c, 0x1f);
-pub const POLYGON: Color32 = Color32::from_rgb(153, 51, 0);
-pub const ANGLE: Color32 = Color32::from_rgb(0, 100, 0);
+pub const CURVE: Color32 = rgba(palette::CURVE);
+pub const POLYGON: Color32 = rgba(palette::POLYGON);
 
 pub const KEYBOARD_BG: Color32 = Color32::from_rgb(0xf1, 0xf0, 0xf5);
 pub const KEY_TAB_ACTIVE: Color32 = Color32::from_rgb(0x98, 0x8c, 0xf7);

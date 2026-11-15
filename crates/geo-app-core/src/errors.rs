@@ -39,6 +39,20 @@ pub fn polish(message: &str) -> String {
         let name = tick(message).unwrap_or_default();
         return format!("Nazwa `{name}` jest już zajęta");
     }
+    if message.ends_with("is the name of a file directive and cannot name an object") {
+        let name = tick(message).unwrap_or_default();
+        return format!(
+            "`{name}` to polecenie pliku zapisu (jak SetCoords, SetValue, SetVisibleInView) \
+             i nie może być nazwą obiektu"
+        );
+    }
+    if message.contains("is a file directive:") {
+        let name = tick(message).unwrap_or_default();
+        return format!(
+            "`{name}` działa tylko w pliku zapisu; tutaj przeciągnij obiekt \
+             albo zmień jego wartość w widoku algebry"
+        );
+    }
     format!("Błąd: {message}")
 }
 

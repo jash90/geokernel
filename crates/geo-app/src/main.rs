@@ -1,59 +1,11 @@
-//! `geokernel-app`: a desktop workbench for the construction kernel.
-//!
-//! Logic lives in plain modules (`view`, `interact`, `hit`, `tools`,
-//! `workbench`, `scriptlog`, `undo`, `ticks`, `labels`, `describe`, ...); the
-//! rest (`app`, `canvas`, `algebra`, `toolbar`, `keyboard`, `grid`, `draw`, `icons`)
-//! only turns them into egui calls.
+//! `geokernel-app`: the desktop shell of the geokernel window. It reads the
+//! command line and the file, and opens the window from the `geo_app`
+//! library.
 
-mod algebra;
-mod app;
-mod arc;
-mod canvas;
-mod cli;
-mod describe;
-mod draw;
-mod errors;
-mod floating;
-mod grid;
-mod highlight;
-mod history;
-mod hit;
-mod icons;
-mod interact;
-mod keyboard;
-mod labelpos;
-mod labels;
-mod layout;
-mod scriptlog;
-mod shape;
-mod style;
-mod theme;
-mod ticks;
-mod tool_icons;
-mod toolbar;
-mod tools;
-mod undo;
-mod view;
-mod workbench;
-
-#[cfg(test)]
-mod render_tests;
-#[cfg(test)]
-mod ui_bench;
-#[cfg(test)]
-mod ui_tests;
-
-use app::App;
 use eframe::egui;
-use workbench::Workbench;
+use geo_app::{cli, Metrics, Window, Workbench};
 
 const SCRIPT: &str = include_str!("../../../examples/triangle.geo");
-
-impl eframe::App for App {
-    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
-        self.show(ui);
-    }
-}
 
 fn main() -> eframe::Result {
     let command = match cli::parse_args(std::env::args_os().skip(1)) {
@@ -63,7 +15,7 @@ fn main() -> eframe::Result {
             std::process::exit(2);
         }
     };
-    let cli::Command::Run { script } = command else {
+    let cli::Command::Run { script, touch } = command else {
         println!("{}", cli::USAGE);
         return Ok(());
     };
@@ -91,9 +43,13 @@ fn main() -> eframe::Result {
     eframe::run_native(
         "geokernel",
         options,
-        Box::new(|cc| {
-            theme::apply(&cc.egui_ctx);
-            Ok(Box::new(App::new(wb, load_error)))
+        Box::new(move |cc| {
+            let metrics = if touch {
+                Metrics::touch()
+            } else {
+                Metrics::desktop()
+            };
+            Ok(Box::new(Window::new(cc, wb, load_error, metrics)))
         }),
     )
 }

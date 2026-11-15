@@ -38,7 +38,7 @@ fn render_sized(
         .with_pixels_per_point(1.0)
         .with_context_setup(crate::theme::apply)
         .wgpu()
-        .build_ui(move |ui| app.show(ui));
+        .build_ui(move |ui| crate::app::show(&mut app, ui));
     harness.run();
     let image = harness.render().expect("render");
     let path = out_dir().join(name);
@@ -143,6 +143,18 @@ fn render_axes_out_of_view() {
                 scale: 25.0,
             });
         },
+    );
+    println!("{}", path.display());
+}
+
+#[test]
+#[ignore = "needs a GPU adapter"]
+fn render_touch_portrait() {
+    let path = render_sized(
+        include_str!("../../../examples/triangle.geo"),
+        "touch-portrait.png",
+        (400, 800),
+        |app| app.set_metrics(geo_app_core::metrics::Metrics::touch()),
     );
     println!("{}", path.display());
 }

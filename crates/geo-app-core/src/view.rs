@@ -139,6 +139,7 @@ impl Camera {
         }
     }
 
+    #[inline]
     pub fn transform(&self, width: f64, height: f64) -> ViewTransform {
         let hw = 0.5 * width / self.scale;
         let hh = 0.5 * height / self.scale;
@@ -155,6 +156,7 @@ impl Camera {
     }
 
     /// Moves the content by `(dx, dy)` screen pixels (y points down).
+    #[inline]
     pub fn pan_pixels(&mut self, dx: f64, dy: f64) {
         self.cx -= dx / self.scale;
         self.cy += dy / self.scale;
@@ -163,6 +165,7 @@ impl Camera {
     /// Multiplies the scale by `factor`, keeping the world point under the
     /// screen position `(sx, sy)` fixed. The area is `width` x `height`.
     /// Non-finite or non-positive factors are ignored.
+    #[inline]
     pub fn zoom_at(&mut self, factor: f64, sx: f64, sy: f64, width: f64, height: f64) {
         if !(factor.is_finite() && factor > 0.0) {
             return;
@@ -180,6 +183,7 @@ impl Camera {
 /// Scale factor for one frame of wheel scrolling: `scroll_y` is the scrolled
 /// distance in points (positive = content moves down), `pinch` is the
 /// multiplicative pinch factor of the frame (1 = none).
+#[inline]
 pub fn zoom_factor(scroll_y: f64, pinch: f64) -> f64 {
     (scroll_y * 0.002).exp() * pinch
 }

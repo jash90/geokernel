@@ -9,20 +9,22 @@ use crate::tools::{Tool, GROUPS};
 use eframe::egui::{
     self, pos2, vec2, Align2, Color32, CursorIcon, FontId, Rect, Response, Sense, Stroke, Ui,
 };
+use geo_app_core::metrics::Metrics;
+use geo_app_core::text::{self, Label};
 
-pub const BUTTON: f32 = 40.0;
-pub const PITCH: f32 = 45.0;
 const FIRST_LEFT: f32 = 5.0;
 const ITEM_HEIGHT: f32 = 44.0;
+/// The room the undo, redo and menu buttons take at the right.
+const RIGHT_BUTTONS: f32 = 146.0;
 
-/// The rectangle of group button `i` in the toolbar `bar`.
-pub fn button_rect(bar: Rect, i: usize) -> Rect {
+/// The rectangle of group button `i` in the strip `bar`.
+pub fn button_rect(bar: Rect, i: usize, m: &Metrics) -> Rect {
     Rect::from_min_size(
         pos2(
-            bar.left() + FIRST_LEFT + PITCH * i as f32,
-            bar.center().y - BUTTON / 2.0,
+            bar.left() + FIRST_LEFT + m.toolbar_pitch * i as f32,
+            bar.center().y - m.toolbar_button / 2.0,
         ),
-        vec2(BUTTON, BUTTON),
+        vec2(m.toolbar_button, m.toolbar_button),
     )
 }
 
@@ -45,9 +47,61 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         bar.bottom() - 0.5,
         Stroke::new(1.0, theme::BORDER),
     );
+    // With a profile that adapts to narrow windows (touch), the tool groups
+    // scroll sideways when they do not fit beside the buttons at the right;
+    // otherwise (always on the desktop) they are laid out straight into the
+    // bar, as they always were.
+    let strip = FIRST_LEFT + app.metrics.toolbar_pitch * GROUPS.len() as f32;
+    let room = bar.width() - RIGHT_BUTTONS;
+    if app.metrics.portrait_below > 0.0 && strip > room && room > 0.0 {
+        let area = Rect::from_min_size(bar.min, vec2(room, bar.height()));
+        let mut child = ui.new_child(egui::UiBuilder::new().max_rect(area).id_salt("groups"));
+        child.set_clip_rect(area.intersect(ui.clip_rect()));
+        egui::ScrollArea::horizontal()
+            .id_salt("groups")
+            .scroll_bar_visibility(egui::scroll_area::ScrollBarVisibility::AlwaysHidden)
+            .show(&mut child, |ui| {
+                let (inner, _) = ui.allocate_exact_size(vec2(strip, bar.height()), Sense::hover());
+                group_buttons(app, ui, inner);
+            });
+    } else {
+        group_buttons(app, ui, bar);
+    }
+    let [undo, redo, menu] = right_buttons(bar);
+    if flat_button(
+        ui,
+        "undo",
+        undo,
+        Icon::Undo,
+        app.wb.can_undo(),
+        text::label(Label::Undo),
+    )
+    .clicked()
+    {
+        app.wb.undo();
+    }
+    if flat_button(
+        ui,
+        "redo",
+        redo,
+        Icon::Redo,
+        app.wb.can_redo(),
+        text::label(Label::Redo),
+    )
+    .clicked()
+    {
+        app.wb.redo();
+    }
+    let menu = flat_button(ui, "menu", menu, Icon::Menu, true, text::label(Label::Menu));
+    main_menu(app, &menu);
+}
+
+/// The tool group buttons laid out from the left of `bar`.
+fn group_buttons(app: &mut App, ui: &mut Ui, bar: Rect) {
+    let painter = ui.painter().clone();
     for (i, group) in GROUPS.iter().enumerate() {
         let shown = app.group_tools[i];
-        let rect = button_rect(bar, i);
+        let rect = button_rect(bar, i, &app.metrics);
         let response = ui
             .interact(rect, ui.scope_id().with(("group", i)), Sense::click())
             .on_hover_cursor(CursorIcon::PointingHand);
@@ -87,15 +141,6 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             dropdown(app, &response, group);
         }
     }
-    let [undo, redo, menu] = right_buttons(bar);
-    if flat_button(ui, "undo", undo, Icon::Undo, app.wb.can_undo(), "Cofnij").clicked() {
-        app.wb.undo();
-    }
-    if flat_button(ui, "redo", redo, Icon::Redo, app.wb.can_redo(), "Ponów").clicked() {
-        app.wb.redo();
-    }
-    let menu = flat_button(ui, "menu", menu, Icon::Menu, true, "Menu");
-    main_menu(app, &menu);
 }
 
 /// The list of a group's tools under its button.
@@ -167,8 +212,8 @@ fn flat_button(
 fn main_menu(app: &mut App, button: &Response) {
     egui::Popup::menu(button).show(|ui| {
         ui.set_min_width(200.0);
-        ui.checkbox(&mut app.decor.axes, "Osie");
-        ui.checkbox(&mut app.decor.grid, "Siatka");
+        ui.checkbox(&mut app.decor.axes, text::label(Label::Axes));
+        ui.checkbox(&mut app.decor.grid, text::label(Label::Grid));
         if ui.button("Widok standardowy").clicked() {
             app.view_request = Some(ViewRequest::Standard);
             ui.close();
@@ -179,9 +224,9 @@ fn main_menu(app: &mut App, button: &Response) {
         }
         ui.separator();
         let label = if app.keyboard.open {
-            "Zamknij klawiaturę"
+            text::label(Label::CloseKeyboard)
         } else {
-            "Pokaż klawiaturę"
+            text::label(Label::OpenKeyboard)
         };
         if ui.button(label).clicked() {
             app.keyboard.open = !app.keyboard.open;

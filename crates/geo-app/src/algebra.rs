@@ -1,6 +1,7 @@
 //! The algebra panel: one row per object, and the input row.
 
 use crate::app::App;
+use crate::geom::ToEgui;
 use crate::icons::{self, Icon};
 use crate::style;
 use crate::theme;
@@ -9,6 +10,7 @@ use eframe::egui::{
     self, text::CCursor, text::CCursorRange, vec2, Align2, Color32, CursorIcon, FontId, Pos2, Rect,
     Sense, Stroke, Ui,
 };
+use geo_app_core::text::{self, Label};
 use geo_kernel::kernel::Id;
 
 /// Row heights: one line for a free object, two for a dependent one.
@@ -105,6 +107,7 @@ fn paint_row(app: &App, ui: &mut Ui, row: &Row, actions: &mut Actions) {
     let center = cell.center();
     let visible = app.wb.is_visible(row.id);
     let (fill, ring) = style::marker(app.wb.construction(), row.id);
+    let (fill, ring) = (fill.egui(), ring.egui());
     if visible {
         painter.circle(center, 10.0, fill, Stroke::new(1.5, ring));
     } else {
@@ -115,7 +118,11 @@ fn paint_row(app: &App, ui: &mut Ui, row: &Row, actions: &mut Actions) {
     }
     marker
         .on_hover_cursor(CursorIcon::PointingHand)
-        .on_hover_text(if visible { "Ukryj" } else { "Pokaż" });
+        .on_hover_text(if visible {
+            text::label(Label::Hide)
+        } else {
+            text::label(Label::Show)
+        });
 
     // Text.
     let font = FontId::proportional(FONT);
@@ -134,14 +141,18 @@ fn paint_row(app: &App, ui: &mut Ui, row: &Row, actions: &mut Actions) {
         font.clone(),
         theme::TEXT,
     );
-    if let (Some(n), true) = (row.free_number, true) {
-        let mut v = n;
-        let speed = (n.abs() * 0.01).max(0.01);
+    if let Some(n) = row.free_number {
+        // An angle is edited in degrees.
+        let shown = if row.angle { n.to_degrees() } else { n };
+        let mut v = shown;
+        let speed = (shown.abs() * 0.01).max(0.01);
         let r = Rect::from_min_size(
             Pos2::new(head_pos.x + head_width + 8.0, head_y - 13.0),
             vec2(84.0, 26.0),
         );
-        let response = ui.put(r, egui::DragValue::new(&mut v).speed(speed).max_decimals(2));
+        let drag = egui::DragValue::new(&mut v).speed(speed).max_decimals(2);
+        let drag = if row.angle { drag.suffix("°") } else { drag };
+        let response = ui.put(r, drag);
         response.widget_info(|| {
             egui::WidgetInfo::labeled(
                 egui::Role::SpinButton,
@@ -155,7 +166,7 @@ fn paint_row(app: &App, ui: &mut Ui, row: &Row, actions: &mut Actions) {
             actions.number_drag = Some(false);
         }
         if response.changed() {
-            actions.set_number = Some((row.id, v));
+            actions.set_number = Some((row.id, if row.angle { v.to_radians() } else { v }));
         }
     }
     if let Some(value) = &row.value {
@@ -193,7 +204,7 @@ fn paint_row(app: &App, ui: &mut Ui, row: &Row, actions: &mut Actions) {
     egui::Popup::menu(&kebab).show(|ui| {
         ui.set_min_width(120.0);
         let text = if row.siblings.is_empty() {
-            "Usuń".to_owned()
+            text::label(Label::Delete).to_owned()
         } else {
             format!("Usuń razem z {}", row.siblings.join(", "))
         };
@@ -202,9 +213,9 @@ fn paint_row(app: &App, ui: &mut Ui, row: &Row, actions: &mut Actions) {
             ui.close();
         }
         let toggle = if visible {
-            "Ukryj obiekt"
+            text::label(Label::HideObject)
         } else {
-            "Pokaż obiekt"
+            text::label(Label::ShowObject)
         };
         if ui.button(toggle).clicked() {
             actions.toggle = Some(row.id);
@@ -276,7 +287,12 @@ fn input_row(app: &mut App, ui: &mut Ui) {
             .desired_width(field.width()),
     );
     response.widget_info(|| {
-        egui::WidgetInfo::text_edit(true, String::new(), app.input.clone(), "Wprowadź…")
+        egui::WidgetInfo::text_edit(
+            true,
+            String::new(),
+            app.input.clone(),
+            text::label(Label::InputHint),
+        )
     });
     if app.focus_input {
         response.request_focus();

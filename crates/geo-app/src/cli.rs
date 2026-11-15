@@ -4,7 +4,7 @@ use crate::workbench::Workbench;
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 
-pub const USAGE: &str = "usage: geokernel-app [script.geo | file.ggb]";
+pub const USAGE: &str = "usage: geokernel-app [--touch] [script.geo | file.ggb]\n  --touch  larger hit areas and buttons, as on a touch screen";
 
 /// What the command line asked for.
 #[derive(Debug, PartialEq, Eq)]
@@ -12,6 +12,8 @@ pub enum Command {
     /// Open the window, optionally loading a script.
     Run {
         script: Option<PathBuf>,
+        /// Use the touch profile (larger targets) instead of the mouse one.
+        touch: bool,
     },
     Help,
 }
@@ -20,9 +22,11 @@ pub enum Command {
 /// Unicode.
 pub fn parse_args<I: IntoIterator<Item = OsString>>(args: I) -> Result<Command, String> {
     let mut script = None;
+    let mut touch = false;
     for arg in args {
         match arg.to_str() {
             Some("-h" | "--help") => return Ok(Command::Help),
+            Some("--touch") => touch = true,
             Some(a) if a.starts_with('-') && a.len() > 1 => {
                 return Err(format!("unknown option `{a}`"));
             }
@@ -30,7 +34,7 @@ pub fn parse_args<I: IntoIterator<Item = OsString>>(args: I) -> Result<Command, 
             _ => script = Some(PathBuf::from(arg)),
         }
     }
-    Ok(Command::Run { script })
+    Ok(Command::Run { script, touch })
 }
 
 fn file_name(path: &Path) -> String {
@@ -40,58 +44,14 @@ fn file_name(path: &Path) -> String {
     )
 }
 
-/// The text to show after a file was imported: what was left out (objects the
-/// kernel cannot make, objects that depend on them), objects whose value
-/// differs from the one saved in the file, and the notes of the importer.
-/// `None` when there is nothing to tell.
-pub fn import_notice(imported: &geo_import::Imported) -> Option<String> {
-    let dependents = imported
-        .skipped
-        .iter()
-        .filter(|s| s.reason.starts_with("depends on"))
-        .count();
-    let direct = imported.skipped.len() - dependents;
-    let mut parts = Vec::new();
-    if direct > 0 {
-        parts.push(format!(
-            "Pominięte obiekty: {direct} (jądro ich nie obsługuje)"
-        ));
-    }
-    if dependents > 0 {
-        parts.push(format!("zależne od nich: {dependents}"));
-    }
-    if !imported.mismatched.is_empty() {
-        parts.push(format!(
-            "wartości różne od zapisanych w pliku: {}",
-            imported.mismatched.len()
-        ));
-    }
-    if parts.is_empty() && imported.notes.is_empty() {
-        return None;
-    }
-    parts.push(format!("wczytane linie: {}", imported.script.len()));
-    let mut text = parts.join(", ");
-    if !imported.notes.is_empty() {
-        text.push_str(&format!(". Uwagi: {}", imported.notes.join("; ")));
-    }
-    Some(text)
-}
-
 /// Reads a script file, or a construction file saved by GeoGebra, into the
 /// workbench. A construction file is recognised by its content (a zip archive,
-/// or XML whose root is `geogebra`), not by its name. Errors name the file.
+/// or XML whose root is `geogebra`), not by its name (see
+/// `Workbench::load_bytes`). Errors name the file.
 pub fn load_into(wb: &mut Workbench, path: &Path) -> Result<(), String> {
     let name = file_name(path);
     let bytes = std::fs::read(path).map_err(|e| format!("{name}: {e}"))?;
-    if geo_import::looks_like_construction(&bytes) {
-        let imported = geo_import::import(&bytes).map_err(|e| format!("{name}: {e}"))?;
-        let notice = import_notice(&imported);
-        return wb
-            .load_imported(&imported.script.join("\n"), &imported.hidden, notice)
-            .map_err(|e| format!("{name}: {e}"));
-    }
-    let src = String::from_utf8(bytes).map_err(|e| format!("{name}: {e}"))?;
-    wb.load_script(&src).map_err(|e| format!("{name}: {e}"))
+    wb.load_bytes(&bytes, &name)
 }
 
 #[cfg(test)]
@@ -104,7 +64,13 @@ mod tests {
 
     #[test]
     fn no_arguments_means_the_built_in_example() {
-        assert_eq!(parse(&[]), Ok(Command::Run { script: None }));
+        assert_eq!(
+            parse(&[]),
+            Ok(Command::Run {
+                script: None,
+                touch: false
+            })
+        );
     }
 
     #[test]
@@ -112,7 +78,8 @@ mod tests {
         assert_eq!(
             parse(&["a.geo"]),
             Ok(Command::Run {
-                script: Some(PathBuf::from("a.geo"))
+                script: Some(PathBuf::from("a.geo")),
+                touch: false
             })
         );
     }
@@ -125,7 +92,26 @@ mod tests {
         assert_eq!(
             parse_args([raw.clone()]),
             Ok(Command::Run {
-                script: Some(PathBuf::from(raw))
+                script: Some(PathBuf::from(raw)),
+                touch: false
+            })
+        );
+    }
+
+    #[test]
+    fn the_touch_flag_goes_with_or_without_a_path() {
+        assert_eq!(
+            parse(&["--touch", "a.geo"]),
+            Ok(Command::Run {
+                script: Some(PathBuf::from("a.geo")),
+                touch: true
+            })
+        );
+        assert_eq!(
+            parse(&["--touch"]),
+            Ok(Command::Run {
+                script: None,
+                touch: true
             })
         );
     }
@@ -198,38 +184,6 @@ mod tests {
         load_into(&mut wb, &file).unwrap();
         assert!(wb.construction().id("P").is_some());
         std::fs::remove_dir_all(&dir).ok();
-    }
-
-    #[test]
-    fn the_notice_counts_skipped_dependents_mismatches_and_notes() {
-        use geo_import::{Imported, Mismatch, Skipped};
-        let skipped = |label: &str, reason: &str| Skipped {
-            label: label.into(),
-            kind: "Ray".into(),
-            reason: reason.into(),
-        };
-        let none = Imported::default();
-        assert_eq!(import_notice(&none), None);
-        let imported = Imported {
-            script: vec!["A = (0, 0)".into(); 7],
-            skipped: vec![
-                skipped("a", "an expression"),
-                skipped("b", "depends on the skipped object `a`"),
-                skipped("c", "depends on the skipped object `a`"),
-            ],
-            mismatched: vec![Mismatch {
-                label: "d".into(),
-                saved: String::new(),
-                computed: String::new(),
-            }],
-            notes: vec!["continuity".into()],
-            ..Imported::default()
-        };
-        assert_eq!(
-            import_notice(&imported).unwrap(),
-            "Pominięte obiekty: 1 (jądro ich nie obsługuje), zależne od nich: 2, \
-             wartości różne od zapisanych w pliku: 1, wczytane linie: 7. Uwagi: continuity"
-        );
     }
 
     #[test]

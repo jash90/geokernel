@@ -393,3 +393,43 @@ fn a_cancelled_drag_that_cannot_be_rolled_back_stays_but_is_not_an_undo_step() {
         "the log has the move"
     );
 }
+
+#[test]
+fn every_kind_of_the_kernel_is_known_listed_and_described() {
+    // One object of each kind the kernel has. `Kind` is `#[non_exhaustive]`,
+    // so this list is kept by hand: a kind added to the kernel goes here once
+    // the window shows it, and until then its objects keep their rows with
+    // `describe::NOT_DRAWN_YET` (the drawing and picking skip them).
+    let mut wb = Workbench::from_script(
+        "A = (0, 0)\nB = (4, 0)\nC = (1, 3)\nf = Line(A, B)\ns = Segment(A, C)\n\
+         c = Circle(A, B)\nn = 2\nv = (1, 2)\nr = Ray(A, C)\nt = AreCollinear(A, B, C)\n\
+         q = Polygon(A, B, C)\np = PolyLine(A, B, C)\n",
+    )
+    .unwrap();
+    let c = wb.construction();
+    let mut kinds: Vec<Kind> = c.ids().map(|id| c.kind(id)).collect();
+    kinds.dedup();
+    for kind in [
+        Kind::Point,
+        Kind::Line,
+        Kind::Segment,
+        Kind::Circle,
+        Kind::Number,
+        Kind::Vector,
+        Kind::Ray,
+        Kind::Boolean,
+        Kind::Polygon,
+        Kind::PolyLine,
+    ] {
+        assert!(kinds.contains(&kind), "no {kind:?} in the sample");
+    }
+    for id in c.ids() {
+        assert!(describe::is_known(&c.value(id)), "{}", c.label(id));
+    }
+    let n = c.len();
+    let rows = wb.rows();
+    assert_eq!(rows.len(), n, "every object has a row");
+    assert!(rows
+        .iter()
+        .all(|r| r.value.as_deref() != Some(describe::NOT_DRAWN_YET)));
+}

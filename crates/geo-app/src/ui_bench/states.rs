@@ -197,7 +197,7 @@ fn press_and_drag(
 fn pan(r: &mut Runner, n: usize) {
     let from = r.empty_spot(true);
     let frames = press_and_drag(r, n, from, |r, f| {
-        f.ok = r.app.panning && r.app.drag.is_none();
+        f.ok = adapter::panning(&r.app) && r.app.drag.is_none();
     });
     r.record("pan", frames, BTreeSet::new());
     r.pin_camera(1.0);

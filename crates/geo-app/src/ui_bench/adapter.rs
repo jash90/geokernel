@@ -3,6 +3,7 @@
 //! changing this file only.
 
 use crate::app::App;
+use crate::geom::ToEgui;
 use crate::tools::Tool;
 use crate::workbench::Row;
 use eframe::egui::Rect;
@@ -19,12 +20,12 @@ pub const HAS_KEYBOARD: bool = true;
 
 /// The drawing area as last painted (`screen` is the whole window).
 pub fn canvas(app: &App, _screen: Rect) -> Rect {
-    app.view.map_or(app.regions.graphics, |(r, _)| r)
+    app.view.map_or(app.regions.graphics, |(r, _)| r).egui()
 }
 
 /// The algebra list.
 pub fn algebra(app: &App, _screen: Rect) -> Rect {
-    app.regions.algebra
+    app.regions.algebra.egui()
 }
 
 /// The height of an algebra row.
@@ -34,6 +35,16 @@ pub fn row_height(row: &Row) -> f32 {
     } else {
         102.0
     }
+}
+
+/// One frame of the whole window.
+pub fn show(app: &mut App, ui: &mut eframe::egui::Ui) {
+    crate::app::show(app, ui);
+}
+
+/// The view is being panned by a drag.
+pub fn panning(app: &App) -> bool {
+    app.gesture.panning()
 }
 
 pub fn select_tool(app: &mut App, tool: Tool) {
@@ -54,7 +65,7 @@ pub fn keyboard_open(app: &App) -> bool {
 pub fn per_object_work() -> Vec<Work> {
     vec![("style::color of every object", |c| {
         c.ids()
-            .map(|id| u64::from(crate::style::color(c, id).r()))
+            .map(|id| u64::from(crate::style::color(c, id).r))
             .sum()
     })]
 }
