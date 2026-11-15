@@ -19,55 +19,65 @@ use geo_kernel::kernel::{Id, Kind};
 
 const ZOOM_BUTTON: f64 = 1.25;
 const ZOOM_TOOL: f64 = 1.5;
-/// How many presses of one frame are checked against the areas over the
-/// drawing.
-const PRESSES: usize = 4;
+/// How many places where a press or a finger went down in one frame are
+/// checked against what lies over the drawing; any further one is not the
+/// drawing's.
+const STARTS: usize = 8;
 
 pub fn show(app: &mut App, ui: &mut Ui) {
     let size = ui.available_size();
     let (response, painter) = ui.allocate_painter(size, Sense::click_and_drag());
     let rect = response.rect;
     let (w, h) = (rect.width() as f64, rect.height() as f64);
-    // A press belongs to the area when it lands on it, no area (a menu, a
-    // dialog) lies over it there and no widget over the drawing takes its
-    // drag: egui's rule for the pointer, applied to each press where it
-    // happened (egui's own hit test is private and made for one position a
-    // frame). egui's lock is held while the events
-    // are read, so the positions of the frame's first presses are read
-    // first (into a fixed array, nothing when there is no press) and asked
-    // about outside it.
-    let mut presses: [Option<egui::Pos2>; PRESSES] = [None; PRESSES];
+    // A press, or a finger going down, belongs to the area when it lands
+    // on it, no area (a menu, a dialog) lies over it there and no widget
+    // over the drawing (a button, the notice, the tool hint) is there:
+    // decided for each one where it happened (egui's own hit test is
+    // private and made for one position a frame). The widgets are those
+    // painted in the last frame, which is what the user saw. egui's lock is
+    // held while the events are read, so the places are read first (into a
+    // fixed array, nothing when no press came) and asked about outside it.
+    // The first finger's touch and the press egui-winit makes of it share
+    // one place.
+    let mut starts: [Option<egui::Pos2>; STARTS] = [None; STARTS];
     ui.input(|i| {
         let found = i.events.iter().filter_map(|e| match *e {
             egui::Event::PointerButton {
                 pos, pressed: true, ..
+            }
+            | egui::Event::Touch {
+                pos,
+                phase: egui::TouchPhase::Start,
+                ..
             } => Some(pos),
             _ => None,
         });
-        for (slot, pos) in presses.iter_mut().zip(found) {
-            *slot = Some(pos);
+        let mut n = 0;
+        for pos in found {
+            if n == STARTS {
+                break;
+            }
+            if !starts[..n].contains(&Some(pos)) {
+                starts[n] = Some(pos);
+                n += 1;
+            }
         }
     });
-    // Of the widgets over the drawing only the notice card senses drags;
-    // the round and square buttons take the click of a press but leave its
-    // drag to the drawing, as egui decides.
-    let card = presses[0].and_then(|_| floating::notice_card(ui));
-    let owned = presses.map(|p| {
+    let owned = starts.map(|p| {
         p.is_some_and(|p| {
             rect.contains(p)
                 && ui.ctx().layer_id_at(p) == Some(response.layer_id)
-                && !card.is_some_and(|c| c.contains(p))
+                && !app.overlays.contains(p.core())
         })
     });
-    let mut next = 0;
+    // A place beyond the array (more than `STARTS` in one frame, never seen
+    // in practice) is not found and so is not the drawing's: the safe side,
+    // as nothing was checked there.
     let owns = |pos: egui::Pos2| {
-        next += 1;
-        // A press beyond the array (never seen in practice) is the area's
-        // when it lands on it.
-        owned
-            .get(next - 1)
-            .copied()
-            .unwrap_or_else(|| rect.contains(pos))
+        starts
+            .iter()
+            .position(|s| *s == Some(pos))
+            .is_some_and(|i| owned[i])
     };
     let mut gesture = app.gesture;
     let fed = ui.input(|i| {
@@ -79,6 +89,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         // it shrank ends as a cancel.
         let intents = gesture.cancel();
         app.gesture = gesture;
+        app.overlays.clear();
         end_drag(app, &intents);
         if fed.released {
             app.press_view = None;
@@ -127,11 +138,11 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         });
         let factor = view::zoom_factor(scroll, pinch);
         match touch {
-            Some(t) => Some(gesture.pinch(
+            Some(t) => gesture.pinch(
                 factor,
                 t.center_pos.core(),
                 (t.translation_delta.x, t.translation_delta.y),
-            )),
+            ),
             None => {
                 let center = response.hover_pos().unwrap_or(rect.center());
                 gesture.zoom(factor, center.core())
@@ -141,9 +152,6 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         None
     };
     if let Some(z) = zoom {
-        if z.cancel_drag && app.drag.take().is_some() {
-            app.wb.cancel_gesture();
-        }
         let (sx, sy) = to_local(z.center.egui());
         if z.factor != 1.0 {
             cam.zoom_at(z.factor, sx, sy, w, h);
@@ -240,8 +248,8 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     if let Some((dx, dy)) = intents.pan {
         cam.pan_pixels(dx as f64, dy as f64);
     }
-    // egui decides which widget a click belongs to: a button over the area
-    // takes the click (though a drag from it still pans the view).
+    // egui decides which widget a click belongs to as well; a press on a
+    // widget over the area made no tap here in the first place.
     let tap = intents.tap.filter(|_| response.clicked());
     if let Some(pos) = tap.map(ToEgui::egui) {
         let local = to_local(pos);
@@ -326,14 +334,10 @@ struct Fed {
     released: bool,
 }
 
-/// Gives this frame's pointer events to the automaton, in order. Each press
-/// is the area's when `owns` says so at its position; any other press only
-/// moves the pointer.
-fn feed(
-    gesture: &mut Gesture,
-    events: &[egui::Event],
-    mut owns: impl FnMut(egui::Pos2) -> bool,
-) -> Fed {
+/// Gives this frame's pointer events to the automaton, in order. Each press,
+/// and each finger going down, is the area's when `owns` says so at its
+/// position; any other press only moves the pointer.
+fn feed(gesture: &mut Gesture, events: &[egui::Event], owns: impl Fn(egui::Pos2) -> bool) -> Fed {
     let mut fed = Fed {
         pressed: None,
         released: false,
@@ -391,7 +395,7 @@ fn feed(
                     egui::TouchPhase::End => TouchPhase::End,
                     egui::TouchPhase::Cancel => TouchPhase::Cancel,
                 };
-                gesture.touch(id.0, phase, pos.core());
+                gesture.touch(id.0, phase, phase == TouchPhase::Start && owns(pos));
             }
             _ => {}
         }
@@ -505,6 +509,7 @@ fn preview(
 
 /// The buttons over the drawing area and the tool hint.
 fn overlay(app: &mut App, ui: &mut Ui, rect: Rect, w: f64, h: f64, cam: &mut Camera) {
+    app.overlays.clear();
     style_bar(app, ui, rect, cam);
     let right = rect.right() - 35.0;
     let bottom = rect.bottom() - 33.0;
@@ -516,7 +521,7 @@ fn overlay(app: &mut App, ui: &mut Ui, rect: Rect, w: f64, h: f64, cam: &mut Cam
     ];
     for (i, (icon, tip)) in buttons.into_iter().enumerate() {
         let center = pos2(right, bottom - 44.0 * (3 - i) as f32);
-        if !floating::round_button(ui, tip, center, icon, true, tip).clicked() {
+        if !floating::round_button(ui, &mut app.overlays, tip, center, icon, true, tip).clicked() {
             continue;
         }
         match icon {
@@ -538,13 +543,14 @@ fn overlay(app: &mut App, ui: &mut Ui, rect: Rect, w: f64, h: f64, cam: &mut Cam
     let tip = other_tool || !app.metrics.hover;
     if let Some(notice) = app.wb.notice.clone() {
         let lift = if tip { 66.0 } else { 0.0 };
-        if floating::snackbar(ui, rect, &notice, lift) {
+        if floating::snackbar(ui, &mut app.overlays, rect, &notice, lift) {
             app.wb.notice = None;
         }
     }
     if tip {
         let close = floating::tool_tip(
             ui,
+            &mut app.overlays,
             rect,
             app.tool.tool().caption(),
             app.tool.hint(),
@@ -552,7 +558,7 @@ fn overlay(app: &mut App, ui: &mut Ui, rect: Rect, w: f64, h: f64, cam: &mut Cam
         );
         if other_tool {
             if let Some(e) = app.tool_error.clone() {
-                floating::hint_pill(ui, rect, &e, theme::ERROR, 1.0);
+                floating::hint_pill(ui, &mut app.overlays, rect, &e, theme::ERROR, 1.0);
             }
         }
         if close.is_some_and(|c| c.clicked()) {
@@ -565,7 +571,14 @@ fn overlay(app: &mut App, ui: &mut Ui, rect: Rect, w: f64, h: f64, cam: &mut Cam
 /// settings to its left.
 fn style_bar(app: &mut App, ui: &mut Ui, rect: Rect, cam: &mut Camera) {
     let toggle = Rect::from_min_size(pos2(rect.right() - 44.0, rect.top()), vec2(44.0, 40.0));
-    let response = floating::square_button(ui, "style_bar", toggle, Icon::StyleBar, app.style_bar);
+    let response = floating::square_button(
+        ui,
+        &mut app.overlays,
+        "style_bar",
+        toggle,
+        Icon::StyleBar,
+        app.style_bar,
+    );
     response.widget_info(|| {
         egui::WidgetInfo::labeled(egui::Role::Button, true, text::label(Label::StyleBar))
     });
@@ -588,7 +601,7 @@ fn style_bar(app: &mut App, ui: &mut Ui, rect: Rect, cam: &mut Camera) {
             ),
             vec2(44.0, 40.0),
         );
-        let response = floating::square_button(ui, tip, r, icon, on);
+        let response = floating::square_button(ui, &mut app.overlays, tip, r, icon, on);
         response.widget_info(|| egui::WidgetInfo::selected(egui::Role::Button, true, on, tip));
         if response.on_hover_text(tip).clicked() {
             match icon {

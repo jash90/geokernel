@@ -215,3 +215,73 @@ fn a_notice_shows_over_the_drawing_and_its_close_button_takes_the_click() {
         assert_eq!(labels(&h), ["A"], "{tool:?}: the click reached the drawing");
     }
 }
+
+/// The drawing area as last painted.
+fn area(h: &Harness<'_, App>) -> egui::Rect {
+    h.state().view.unwrap().0.egui()
+}
+
+/// The centre of the round zoom-in button over the drawing.
+fn zoom_in_button(h: &Harness<'_, App>) -> Pos2 {
+    let r = area(h);
+    Pos2::new(r.right() - 35.0, r.bottom() - 33.0 - 2.0 * 44.0)
+}
+
+/// Puts a free point `label` under the window position `pos`.
+fn point_under(h: &mut Harness<'_, App>, label: &str, pos: Pos2) {
+    let (r, t) = h.state().view.unwrap();
+    let local = pos - r.min.egui();
+    let (x, y) = t.screen_to_world(local.x as f64, local.y as f64);
+    h.state_mut()
+        .wb
+        .run_line(&format!("{label} = ({x}, {y})"))
+        .unwrap();
+    h.run();
+}
+
+#[test]
+fn a_drag_from_a_view_button_neither_pans_nor_takes_the_point_under_it() {
+    let mut h = harness("");
+    let button = zoom_in_button(&h);
+    point_under(&mut h, "A", button);
+    let (a, corner) = (point(&h, "A"), top_left(&h));
+    let scale = h.state().camera.unwrap().scale;
+    drag(&mut h, button, button + egui::vec2(-200.0, -120.0));
+    assert!(close(top_left(&h), corner), "the drag panned the view");
+    assert_eq!(
+        point(&h, "A"),
+        a,
+        "the drag took the point under the button"
+    );
+    assert_eq!(h.state().camera.unwrap().scale, scale, "it was a click");
+}
+
+#[test]
+fn a_press_just_outside_a_view_button_is_the_drawings() {
+    let mut h = harness("");
+    let beside = zoom_in_button(&h) + egui::vec2(-19.0 - 12.0, 0.0);
+    let corner = top_left(&h);
+    drag(&mut h, beside, beside + egui::vec2(-200.0, -120.0));
+    assert!(!close(top_left(&h), corner), "the drag did not pan");
+    h.state_mut().select_tool(Tool::Point);
+    h.run();
+    tap(&mut h, beside);
+    assert_eq!(labels(&h), ["A"], "the tap placed no point");
+}
+
+#[test]
+fn a_tap_on_the_tool_hint_places_no_point_under_it() {
+    let mut h = harness("");
+    h.state_mut().select_tool(Tool::Point);
+    h.run();
+    // The hint text: the second line of the card at the bottom left.
+    let r = area(&h);
+    let card_top = r.bottom() - 16.0 - 54.0;
+    let hint = Pos2::new(r.left() + 16.0 + 16.0 + 20.0, card_top + 29.0 + 8.0);
+    tap(&mut h, hint);
+    click(&mut h, hint + egui::vec2(10.0, 0.0));
+    assert!(labels(&h).is_empty(), "a tap on the hint placed a point");
+    // Just above the card the drawing takes the tap.
+    tap(&mut h, Pos2::new(hint.x, card_top - 12.0));
+    assert_eq!(labels(&h), ["A"]);
+}

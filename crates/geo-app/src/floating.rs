@@ -1,10 +1,14 @@
 //! Buttons floating over the drawing area, the tool tooltip and notices.
+//! Each of them adds its rectangle to the frame's [`Overlays`], so that no
+//! press or finger landing on it is taken by the drawing under it.
 
+use crate::geom::ToCore;
 use crate::icons::{self, Icon};
 use crate::theme;
 use eframe::egui::{
     self, vec2, Align2, Color32, CursorIcon, FontId, Painter, Pos2, Rect, Response, Sense, Ui,
 };
+use geo_app_core::layout::Overlays;
 use geo_app_core::text::{self, Label};
 
 const RADIUS: f32 = 19.0;
@@ -25,6 +29,7 @@ pub fn soft_shadow(painter: &Painter, rect: Rect, rounding: f32) {
 /// A round white button with a glyph. Returns the click response.
 pub fn round_button(
     ui: &mut Ui,
+    overlays: &mut Overlays,
     key: &str,
     center: Pos2,
     icon: Icon,
@@ -32,6 +37,7 @@ pub fn round_button(
     tip: &str,
 ) -> Response {
     let rect = Rect::from_center_size(center, vec2(RADIUS * 2.0, RADIUS * 2.0));
+    overlays.add(rect.core());
     // A disabled button still takes the click so it does not reach the drawing.
     let response = ui.interact(rect, ui.scope_id().with(("floating", key)), Sense::click());
     response.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, enabled, tip));
@@ -59,13 +65,29 @@ pub fn round_button(
     }
 }
 
-/// A white pill with one line of text, centred at the top of `area`.
-pub fn hint_pill(ui: &Ui, area: Rect, text: &str, color: Color32, row: f32) {
-    let painter = ui.painter();
-    let galley = painter.layout_no_wrap(text.to_owned(), FontId::proportional(14.0), color);
+/// A white pill with one line of text, centred at the top of `area`. It
+/// takes the clicks on it, so none reach the drawing.
+pub fn hint_pill(
+    ui: &Ui,
+    overlays: &mut Overlays,
+    area: Rect,
+    text: &str,
+    color: Color32,
+    row: f32,
+) {
+    let galley = ui
+        .painter()
+        .layout_no_wrap(text.to_owned(), FontId::proportional(14.0), color);
     let size = galley.size() + vec2(28.0, 14.0);
     let center = Pos2::new(area.center().x, area.top() + 24.0 + row * 40.0);
     let rect = Rect::from_center_size(center, size);
+    overlays.add(rect.core());
+    ui.interact(
+        rect,
+        ui.scope_id().with(("hint_pill", row as i32)),
+        Sense::click(),
+    );
+    let painter = ui.painter();
     soft_shadow(painter, rect, size.y / 2.0);
     painter.rect_filled(rect, size.y / 2.0, theme::WHITE);
     painter.text(
@@ -81,7 +103,7 @@ pub fn hint_pill(ui: &Ui, area: Rect, text: &str, color: Color32, row: f32) {
 /// over several lines (what an import left out, a failed rebuild), and a
 /// button that closes it. `lift` raises it above the tool tip. Returns
 /// true when the user closed it.
-pub fn snackbar(ui: &mut Ui, area: Rect, text: &str, lift: f32) -> bool {
+pub fn snackbar(ui: &mut Ui, overlays: &mut Overlays, area: Rect, text: &str, lift: f32) -> bool {
     const PAD: f32 = 16.0;
     const CLOSE: &str = text::label(Label::Close);
     let font = FontId::proportional(14.0);
@@ -107,8 +129,13 @@ pub fn snackbar(ui: &mut Ui, area: Rect, text: &str, lift: f32) -> bool {
         vec2(close_galley.size().x, height),
     )
     .expand2(vec2(PAD / 2.0, 0.0));
-    // The whole card takes clicks and drags, so none reach the drawing.
-    let notice = ui.interact(rect, notice_id(ui), Sense::click_and_drag());
+    overlays.add(rect.core());
+    // The whole card takes clicks and drags.
+    let notice = ui.interact(
+        rect,
+        ui.scope_id().with("snackbar"),
+        Sense::click_and_drag(),
+    );
     notice.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Label, true, text));
     let close = ui
         .interact(
@@ -144,7 +171,15 @@ pub fn snackbar(ui: &mut Ui, area: Rect, text: &str, lift: f32) -> bool {
 }
 
 /// A square white button at the edge of the drawing area (the style bar).
-pub fn square_button(ui: &mut Ui, key: &str, rect: Rect, icon: Icon, on: bool) -> Response {
+pub fn square_button(
+    ui: &mut Ui,
+    overlays: &mut Overlays,
+    key: &str,
+    rect: Rect,
+    icon: Icon,
+    on: bool,
+) -> Response {
+    overlays.add(rect.core());
     let response = ui
         .interact(rect, ui.scope_id().with(("square", key)), Sense::click())
         .on_hover_cursor(CursorIcon::PointingHand);
@@ -164,8 +199,16 @@ pub fn square_button(ui: &mut Ui, key: &str, rect: Rect, icon: Icon, on: bool) -
 
 /// The active tool's name and what to click next, at the bottom of `area`.
 /// With `closable` it ends in a close button (the counterpart of Escape for
-/// a pointer without a keyboard), whose response is returned.
-pub fn tool_tip(ui: &Ui, area: Rect, name: &str, hint: &str, closable: bool) -> Option<Response> {
+/// a pointer without a keyboard), whose response is returned. The card takes
+/// the clicks on it, so none reach the drawing.
+pub fn tool_tip(
+    ui: &Ui,
+    overlays: &mut Overlays,
+    area: Rect,
+    name: &str,
+    hint: &str,
+    closable: bool,
+) -> Option<Response> {
     const CLOSE: f32 = 36.0;
     let painter = ui.painter();
     let bold = FontId::new(15.0, egui::FontFamily::Proportional);
@@ -181,6 +224,8 @@ pub fn tool_tip(ui: &Ui, area: Rect, name: &str, hint: &str, closable: bool) -> 
         Pos2::new(area.left() + 16.0, area.bottom() - 16.0 - 54.0),
         vec2(width, 54.0),
     );
+    overlays.add(rect.core());
+    ui.interact(rect, ui.scope_id().with("tool_tip"), Sense::click());
     painter.rect_filled(
         rect,
         6.0,
@@ -206,16 +251,4 @@ pub fn tool_tip(ui: &Ui, area: Rect, name: &str, hint: &str, closable: bool) -> 
         painter.line_segment([k - d, k + d], egui::Stroke::new(1.6, theme::WHITE));
     }
     Some(response)
-}
-
-fn notice_id(ui: &Ui) -> egui::Id {
-    ui.scope_id().with("snackbar")
-}
-
-/// Where the notice card was in the last frame, if it was shown. The card
-/// takes drags as well as clicks, so no press on it reaches the drawing.
-pub fn notice_card(ui: &Ui) -> Option<Rect> {
-    ui.ctx()
-        .read_response(notice_id(ui))
-        .map(|r| r.interact_rect)
 }

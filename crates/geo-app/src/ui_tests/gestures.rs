@@ -297,32 +297,61 @@ fn frame(h: &mut Harness<'_, App>, events: Vec<Event>) {
     h.step();
 }
 
-/// The events of one touch in egui-winit's order: the touch, then for the
-/// first finger (`primary`) the pointer events it emulates.
-fn finger(id: u64, phase: egui::TouchPhase, pos: Pos2, primary: bool) -> Vec<Event> {
-    use egui::TouchPhase::{Cancel, End, Move, Start};
-    let mut events = vec![Event::Touch {
-        device_id: egui::TouchDeviceId(1),
-        id: egui::TouchId(id),
-        phase,
-        pos,
-        force: None,
-    }];
-    if primary {
-        match phase {
-            Start => events.extend([
-                Event::PointerMoved(pos),
-                press(pos, PointerButton::Primary, true),
-            ]),
-            Move => events.push(Event::PointerMoved(pos)),
-            End => events.extend([
-                press(pos, PointerButton::Primary, false),
-                Event::PointerGone,
-            ]),
-            Cancel => events.push(Event::PointerGone),
+/// What egui-winit 0.37 makes of touches (`State::on_touch`): every touch
+/// event, and pointer events for the finger it follows as the mouse, which
+/// is the one that went down while no finger was followed. After that finger
+/// lifts no finger is followed, so the moves of a finger that stays are
+/// reported as the mouse's, and its end as a release (at the last pointer
+/// position, if one is known) that no press came before.
+#[derive(Default)]
+struct Winit {
+    pointer: Option<u64>,
+    pos: Option<Pos2>,
+}
+
+impl Winit {
+    fn touch(&mut self, id: u64, phase: egui::TouchPhase, pos: Pos2) -> Vec<Event> {
+        use egui::TouchPhase::{Cancel, End, Move, Start};
+        let mut events = vec![Event::Touch {
+            device_id: egui::TouchDeviceId(1),
+            id: egui::TouchId(id),
+            phase,
+            pos,
+            force: None,
+        }];
+        if self.pointer.is_some_and(|p| p != id) {
+            return events;
         }
+        match phase {
+            Start => {
+                self.pointer = Some(id);
+                self.pos = Some(pos);
+                events.extend([
+                    Event::PointerMoved(pos),
+                    press(pos, PointerButton::Primary, true),
+                ]);
+            }
+            Move => {
+                self.pos = Some(pos);
+                events.push(Event::PointerMoved(pos));
+            }
+            End => {
+                self.pointer = None;
+                events.extend(
+                    self.pos
+                        .take()
+                        .map(|p| press(p, PointerButton::Primary, false)),
+                );
+                events.push(Event::PointerGone);
+            }
+            Cancel => {
+                self.pointer = None;
+                self.pos = None;
+                events.push(Event::PointerGone);
+            }
+        }
+        events
     }
-    events
 }
 
 /// Where the world point `(x, y)` is drawn now.
@@ -337,8 +366,11 @@ fn camera(h: &Harness<'_, App>) -> (f64, f64, f64) {
     (c.cx, c.cy, c.scale)
 }
 
+/// Pins behaviour the window already had before each event was decided when
+/// it came (the earlier code ended the drag at the frame's end and also got
+/// this right); the next test is the one that tells the two apart.
 #[test]
-fn a_release_and_a_press_in_one_frame_end_the_drag_and_start_a_new_press() {
+fn a_release_and_a_press_in_one_frame_end_the_drag_and_start_a_new_press_as_before() {
     let mut h = harness("A = (0, 0)\n");
     let from = world(0.0, 0.0);
     moved(&mut h, from);
@@ -373,6 +405,34 @@ fn a_release_and_a_press_in_one_frame_end_the_drag_and_start_a_new_press() {
 }
 
 #[test]
+fn a_tap_and_a_press_in_one_frame_place_the_point_where_the_tap_was() {
+    let mut h = harness("");
+    h.state_mut().select_tool(Tool::Point);
+    h.run();
+    let (first, second) = (world(1.0, 1.0), world(-3.0, 2.0));
+    moved(&mut h, first);
+    button(&mut h, first, true);
+    // The tap's release, then a press somewhere else, in one frame.
+    frame(
+        &mut h,
+        vec![
+            press(first, PointerButton::Primary, false),
+            Event::PointerMoved(second),
+            press(second, PointerButton::Primary, true),
+        ],
+    );
+    button(&mut h, second, false);
+    h.run();
+    assert_eq!(labels(&h), ["A", "B"]);
+    assert_eq!(
+        point(&h, "A"),
+        (1.0, 1.0),
+        "the tap was placed at the press"
+    );
+    assert_eq!(point(&h, "B"), (-3.0, 2.0));
+}
+
+#[test]
 fn a_press_on_the_toolbar_right_after_a_click_in_the_drawing_is_not_the_drawings() {
     let mut h = harness("");
     h.state_mut().select_tool(Tool::Point);
@@ -402,38 +462,49 @@ fn a_press_on_the_toolbar_right_after_a_click_in_the_drawing_is_not_the_drawings
     assert_eq!(camera(&h), cam, "the press on the toolbar panned nothing");
 }
 
+/// Pins behaviour the window already had (the earlier code reached it by
+/// another way: it ignored the touch events and the finger that stays sends
+/// no press), now with every pointer event egui-winit really sends,
+/// including the moves and the release without a press of a second finger
+/// that outlives the first.
 #[test]
-fn after_a_pinch_the_finger_that_stays_neither_drags_nor_pans() {
+fn after_a_pinch_the_finger_that_stays_neither_drags_nor_pans_as_before() {
     use egui::TouchPhase::{End, Move, Start};
     for first_lifts in [false, true] {
         let mut h = touch_harness("A = (0, 0)\nB = (3, 1)\n", SIZE);
+        let mut w = Winit::default();
         // The first finger on A, the second one far from it.
         let mut f0 = drawn_at(&h, 0.0, 0.0);
-        frame(&mut h, finger(0, Start, f0, true));
+        frame(&mut h, w.touch(0, Start, f0));
         let mut f1 = f0 + egui::vec2(0.0, 150.0);
-        frame(&mut h, finger(1, Start, f1, false));
+        frame(&mut h, w.touch(1, Start, f1));
         for _ in 0..4 {
             f0 += egui::vec2(0.0, -10.0);
             f1 += egui::vec2(0.0, 10.0);
-            let mut events = finger(0, Move, f0, true);
-            events.extend(finger(1, Move, f1, false));
+            let mut events = w.touch(0, Move, f0);
+            events.extend(w.touch(1, Move, f1));
             frame(&mut h, events);
         }
         // One finger lifts; the other one moves on, far.
         let mut stays = if first_lifts {
-            frame(&mut h, finger(0, End, f0, true));
-            (1, f1, false)
+            frame(&mut h, w.touch(0, End, f0));
+            (1, f1)
         } else {
-            frame(&mut h, finger(1, End, f1, false));
-            (0, f0, true)
+            frame(&mut h, w.touch(1, End, f1));
+            (0, f0)
         };
         h.run();
         let cam = camera(&h);
         for _ in 0..6 {
             stays.1 += egui::vec2(25.0, 10.0);
-            frame(&mut h, finger(stays.0, Move, stays.1, stays.2));
+            let events = w.touch(stays.0, Move, stays.1);
+            // The second finger's moves now come as the mouse's.
+            assert!(events.contains(&Event::PointerMoved(stays.1)));
+            frame(&mut h, events);
         }
-        frame(&mut h, finger(stays.0, End, stays.1, stays.2));
+        let events = w.touch(stays.0, End, stays.1);
+        assert!(events.contains(&press(stays.1, PointerButton::Primary, false)));
+        frame(&mut h, events);
         h.run();
         let what = format!("first lifts: {first_lifts}");
         assert_eq!(camera(&h), cam, "{what}: the finger that stayed panned");
@@ -443,22 +514,68 @@ fn after_a_pinch_the_finger_that_stays_neither_drags_nor_pans() {
     }
 }
 
+/// Pins behaviour the window already had (the earlier code cancelled the
+/// press on a cancel of any finger); the next test tells the two apart.
 #[test]
-fn a_cancelled_touch_puts_the_dragged_point_back() {
+fn a_cancelled_touch_puts_the_dragged_point_back_as_before() {
     use egui::TouchPhase::{Cancel, Move, Start};
     let mut h = touch_harness("A = (0, 0)\n", SIZE);
+    let mut w = Winit::default();
     let mut f = drawn_at(&h, 0.0, 0.0);
-    frame(&mut h, finger(4, Start, f, true));
+    frame(&mut h, w.touch(4, Start, f));
     for _ in 0..4 {
         f += egui::vec2(15.0, 0.0);
-        frame(&mut h, finger(4, Move, f, true));
+        frame(&mut h, w.touch(4, Move, f));
     }
     assert!(point(&h, "A").0 > 0.5, "the drag moved A");
-    frame(&mut h, finger(4, Cancel, f, true));
+    frame(&mut h, w.touch(4, Cancel, f));
     h.run();
     assert_eq!(point(&h, "A"), (0.0, 0.0), "A is back");
     assert!(!h.state().wb.can_undo(), "no undo step is left");
     assert!(h.state().drag.is_none() && !h.state().gesture.pressed());
+}
+
+#[test]
+fn a_finger_on_the_toolbar_leaves_a_point_drag_alone_even_when_cancelled() {
+    use egui::TouchPhase::{Cancel, End, Move, Start};
+    let mut h = touch_harness("A = (0, 0)\nB = (3, 1)\n", SIZE);
+    let scale = camera(&h).2;
+    let mut w = Winit::default();
+    let mut f = drawn_at(&h, 0.0, 0.0);
+    frame(&mut h, w.touch(0, Start, f));
+    for _ in 0..3 {
+        f += egui::vec2(15.0, 0.0);
+        frame(&mut h, w.touch(0, Move, f));
+    }
+    let x = point(&h, "A").0;
+    assert!(x > 0.5, "the drag moved A");
+    // A second finger lands on the toolbar, rests there and wobbles while
+    // the first one drags on (egui reports two fingers on the screen).
+    let other = at(100.0, 6.0);
+    frame(&mut h, w.touch(1, Start, other));
+    for i in 0..4 {
+        f += egui::vec2(15.0, 0.0);
+        let mut events = w.touch(0, Move, f);
+        events.extend(w.touch(1, Move, other + egui::vec2(i as f32, 0.0)));
+        frame(&mut h, events);
+    }
+    assert!(point(&h, "A").0 > x + 0.5, "A stopped following the finger");
+    // The platform cancels the second finger: the drag still goes on.
+    frame(&mut h, w.touch(1, Cancel, other));
+    let x = point(&h, "A").0;
+    f += egui::vec2(15.0, 0.0);
+    frame(&mut h, w.touch(0, Move, f));
+    assert!(point(&h, "A").0 > x + 0.1, "the cancel ended the drag");
+    frame(&mut h, w.touch(0, End, f));
+    h.run();
+    let a = point(&h, "A");
+    assert!(a.0 > 2.0, "A went back: {a:?}");
+    assert_eq!(camera(&h).2, scale, "the two fingers zoomed");
+    assert_eq!(labels(&h), ["A", "B"]);
+    // The drag is one undo step.
+    undo(&mut h);
+    assert_eq!(point(&h, "A"), (0.0, 0.0));
+    assert!(!h.state().wb.can_undo());
 }
 
 #[test]

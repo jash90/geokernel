@@ -7,7 +7,7 @@ use crate::geom::Rect;
 use crate::gesture::Gesture;
 use crate::interact::{Drag, ViewTransform};
 use crate::keyboard::Keyboard;
-use crate::layout::Regions;
+use crate::layout::{Overlays, Regions};
 use crate::metrics::Metrics;
 use crate::tools::{Outcome, Tool, ToolState, GROUPS};
 use crate::view::Camera;
@@ -64,6 +64,8 @@ pub struct App {
     pub number_text: String,
     /// Where the regions were in the last frame.
     pub regions: Regions,
+    /// The widgets over the graphics view in the last frame.
+    pub overlays: Overlays,
     /// `Workbench::rebuilds` as the drawing last saw it.
     pub seen_rebuilds: u64,
     /// The drawing area and its transform as last painted, and as they were
@@ -102,6 +104,7 @@ impl App {
             style_bar: false,
             number_text: String::new(),
             regions: Regions::new(Rect::ZERO, false, &Metrics::desktop()),
+            overlays: Overlays::new(),
             seen_rebuilds: 0,
             view: None,
             press_view: None,

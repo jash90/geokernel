@@ -101,6 +101,57 @@ impl Regions {
     }
 }
 
+/// The widgets drawn over the graphics view (the round and square buttons,
+/// the notice, the tool hint and its close button, the error pill), as they
+/// were last painted: a press or a finger that lands on one of them belongs
+/// to the widget, never to the drawing. Each widget adds its rectangle when
+/// it is painted, into a fixed array, so keeping it costs a few stores a
+/// frame and nothing is allocated.
+#[derive(Clone, Copy, Debug)]
+pub struct Overlays {
+    rects: [Rect; Overlays::MAX],
+    len: usize,
+}
+
+impl Overlays {
+    /// Room for every widget over the drawing (eleven at most today).
+    pub const MAX: usize = 16;
+
+    pub const fn new() -> Overlays {
+        Overlays {
+            rects: [Rect::ZERO; Overlays::MAX],
+            len: 0,
+        }
+    }
+
+    /// Starts a new frame of widgets.
+    pub fn clear(&mut self) {
+        self.len = 0;
+    }
+
+    pub fn add(&mut self, rect: Rect) {
+        debug_assert!(
+            self.len < Self::MAX,
+            "more widgets over the drawing than room"
+        );
+        if let Some(slot) = self.rects.get_mut(self.len) {
+            *slot = rect;
+            self.len += 1;
+        }
+    }
+
+    /// Whether `p` is on one of the widgets.
+    pub fn contains(&self, p: Point) -> bool {
+        self.rects[..self.len].iter().any(|r| r.contains(p))
+    }
+}
+
+impl Default for Overlays {
+    fn default() -> Self {
+        Overlays::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -151,5 +202,17 @@ mod tests {
         // A wide touch window keeps the side-by-side layout.
         let wide = Rect::from_min_max(pos2(0.0, 0.0), pos2(1200.0, 800.0));
         assert!(!Regions::new(wide, false, &touch).portrait);
+    }
+
+    #[test]
+    fn overlays_hold_the_widgets_of_one_frame() {
+        let mut o = Overlays::new();
+        let r = |x: f32| Rect::from_min_max(pos2(x, 0.0), pos2(x + 10.0, 10.0));
+        o.add(r(0.0));
+        o.add(r(50.0));
+        assert!(o.contains(pos2(5.0, 5.0)) && o.contains(pos2(60.0, 10.0)));
+        assert!(!o.contains(pos2(30.0, 5.0)) && !o.contains(pos2(61.0, 11.0)));
+        o.clear();
+        assert!(!o.contains(pos2(5.0, 5.0)));
     }
 }
