@@ -1,0 +1,20 @@
+[package]
+name = "geo-import"
+description = "Reads construction files saved by GeoGebra (.ggb or geogebra.xml) into lines of the geo-kernel script language"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[dependencies]
+geo-kernel = { path = "../geo-kernel" }
+# Pull parser; the optional encoding and serde features are not needed.
+quick-xml = "0.42"
+# Only reading, only deflate (the method GeoGebra's writer uses).
+zip = { version = "9.6", default-features = false, features = ["deflate-flate2-zlib-rs"] }
+
+[dev-dependencies]
+geo-golden = { path = "../geo-golden" }
+# Tests build archives with stored (uncompressed) entries.
+zip = { version = "9.6", default-features = false, features = ["deflate-flate2-zlib-rs"] }

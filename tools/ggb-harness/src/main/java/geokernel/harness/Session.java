@@ -66,6 +66,10 @@ final class Session {
         return kernel;
     }
 
+    AppCommon app() {
+        return app;
+    }
+
     /** Runs one `label = definition` line and checks what GeoGebra created. */
     GeoElement run(String line) {
         Matcher m = LINE.matcher(line);

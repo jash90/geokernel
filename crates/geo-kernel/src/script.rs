@@ -21,7 +21,24 @@
 //! m = Circle(A, r)        # centre A, radius r
 //! P = Intersect(l, k, 2)  # second intersection (1 is the default)
 //! t = Tangent(P, k)       # two tangents t_{1} and t_{2} when both are defined at creation
+//! {t_{1}, t_{2}} = Tangent(P, k)   # the same, with the output labels stated
+//! {, g} = AngularBisector(l, m)    # only the second output is created, as `g`
+//! t_{1} = (1, 2)         # a label may have the indexed form `prefix_{digits}`
+//! a = $point(1, 2)        # a free point whose label starts with a lower-case letter
+//! B = $vector(1, 2)       # a free vector whose label starts with an upper-case letter
 //! ```
+//!
+//! `{label, label, ...} = Command(...)` names every output of a command that
+//! creates several objects, in GeoGebra's output order; an empty slot is an
+//! output that is not created (so is a missing one after the last slot: the
+//! second tangent from a point on the circle is never created). Which outputs are created no longer depends on
+//! which are defined when the line runs. It is what a saved construction
+//! needs, because GeoGebra writes the label of every output it created.
+//!
+//! `$vector(x, y)` is GeoGebra's own parser form and gives a free vector for
+//! any label. `$point(x, y)` gives a free point for any label; GeoGebra's
+//! parser also has a `$point` but it follows the label rule, so this is a
+//! deliberate difference (see `DIFFERENCES.md`).
 
 use crate::algo::conic::ConicDef;
 use crate::algo::lines::LineDef;
@@ -67,12 +84,18 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
     if line.is_empty() {
         return Ok(None);
     }
+    if line.starts_with('{') {
+        return exec_labelled(c, line);
+    }
     let (name, rhs) = line.split_once('=').ok_or("expected `name = definition`")?;
     let name = name.trim();
-    if !is_identifier(name) {
+    if !is_output_label(name) {
         return Err(format!("`{name}` is not a valid object name"));
     }
     let rhs = rhs.trim();
+    if let Some(def) = parse_forced(rhs) {
+        return c.add(name, def?).map(Some).map_err(|e| e.to_string());
+    }
     if let Some(defs) = parse_multi(c, rhs) {
         return add_outputs(c, name, defs?).map(Some);
     }
@@ -205,7 +228,7 @@ fn is_finite(v: &Value) -> bool {
 /// vector when the first UTF-16 code unit of the label is lower case by
 /// `StringUtil.isLowerCase`, a point otherwise. A label that starts outside
 /// the Basic Multilingual Plane starts with a surrogate, so it is a point.
-fn is_vector_label(name: &str) -> bool {
+pub fn is_vector_label(name: &str) -> bool {
     name.encode_utf16().next().is_some_and(is_lower_case)
 }
 
@@ -398,6 +421,132 @@ fn parse_number(s: &str) -> Result<f64, String> {
         .map_err(|_| format!("`{s}` is not a number"))
 }
 
+/// `$point(x, y)` and `$vector(x, y)`: a free point or a free vector whatever
+/// the label looks like. `None` for any other right-hand side.
+fn parse_forced(rhs: &str) -> Option<Result<Def, String>> {
+    let (func, args) = split_call(rhs)?;
+    if func != "$point" && func != "$vector" {
+        return None;
+    }
+    if args.len() != 2 {
+        return Some(Err(format!("`{func}` needs two coordinates")));
+    }
+    let (x, y) = match (parse_number(args[0]), parse_number(args[1])) {
+        (Ok(x), Ok(y)) => (x, y),
+        (Err(e), _) | (_, Err(e)) => return Some(Err(e)),
+    };
+    Some(Ok(if func == "$point" {
+        Def::FreePoint { x, y }
+    } else {
+        Def::Vector(VectorDef::Free { x, y })
+    }))
+}
+
+/// Index of the `}` that closes the `{` at the start of `s`. Labels such as
+/// `t_{1}` contain balanced braces of their own.
+fn closing_brace(s: &str) -> Option<usize> {
+    let mut depth = 0usize;
+    for (i, ch) in s.char_indices() {
+        match ch {
+            '{' => depth += 1,
+            '}' => {
+                depth = depth.checked_sub(1)?;
+                if depth == 0 {
+                    return Some(i);
+                }
+            }
+            _ => {}
+        }
+    }
+    None
+}
+
+/// Splits at the commas that are outside braces.
+fn split_slots(s: &str) -> Vec<&str> {
+    let mut slots = Vec::new();
+    let (mut depth, mut start) = (0usize, 0);
+    for (i, ch) in s.char_indices() {
+        match ch {
+            '{' => depth += 1,
+            '}' => depth = depth.saturating_sub(1),
+            ',' if depth == 0 => {
+                slots.push(s[start..i].trim());
+                start = i + 1;
+            }
+            _ => {}
+        }
+    }
+    slots.push(s[start..].trim());
+    slots
+}
+
+/// A label for an output slot: an identifier, or `prefix_{digits}`.
+fn is_output_label(s: &str) -> bool {
+    match s.strip_suffix('}').and_then(|t| t.split_once("_{")) {
+        Some((prefix, digits)) => {
+            is_identifier(prefix)
+                && !digits.is_empty()
+                && digits.bytes().all(|b| b.is_ascii_digit())
+        }
+        None => is_identifier(s),
+    }
+}
+
+/// `{t_{1}, t_{2}} = Tangent(P, k)`: names the outputs of a command that
+/// creates several objects. The slots follow GeoGebra's output order; an
+/// empty slot is an output that is not created. Nothing is created when the
+/// line fails. Returns the id of the first object created.
+fn exec_labelled(c: &mut Construction, line: &str) -> Result<Option<Id>, String> {
+    let close = closing_brace(line).ok_or("missing closing `}` after the output labels")?;
+    let slots = split_slots(&line[1..close]);
+    let rhs = line[close + 1..]
+        .trim_start()
+        .strip_prefix('=')
+        .ok_or("expected `=` after the output labels")?
+        .trim();
+    for (i, slot) in slots.iter().enumerate() {
+        if !slot.is_empty() && !is_output_label(slot) {
+            return Err(format!("`{slot}` is not a valid object name"));
+        }
+        if !slot.is_empty() && slots[..i].contains(slot) {
+            return Err(format!("the label `{slot}` is used twice"));
+        }
+        if !slot.is_empty() && c.id(slot).is_some() {
+            return Err(format!("object `{slot}` already exists"));
+        }
+    }
+    if slots.iter().all(|s| s.is_empty()) {
+        return Err("no output is given a label".into());
+    }
+    let Some(defs) = parse_multi(c, rhs) else {
+        return Err("the command does not create several objects, write `name = ...`".into());
+    };
+    let defs = defs?;
+    // A command can make fewer outputs than GeoGebra's algorithm has (the
+    // second tangent from a point on a circle is undefined at creation and
+    // never created); slots for outputs that are not created may stay empty.
+    if defs.len() > slots.len() || slots[defs.len()..].iter().any(|s| !s.is_empty()) {
+        return Err(format!(
+            "the command creates {} outputs, but {} labels are given",
+            defs.len(),
+            slots.len()
+        ));
+    }
+    for (slot, def) in slots.iter().zip(&defs) {
+        if !slot.is_empty() {
+            probe(c, def)?;
+        }
+    }
+    let mut first = None;
+    for (slot, def) in slots.iter().zip(defs) {
+        if !slot.is_empty() {
+            let id = c.add(slot, def).map_err(|e| e.to_string())?;
+            first.get_or_insert(id);
+        }
+    }
+    Ok(first)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -534,5 +683,87 @@ mod tests {
                 c: -1.0
             }
         );
+    }
+
+    #[test]
+    fn explicit_output_labels() {
+        let mut c = load(
+            "A = (0, 0)\nr = 2\nk = Circle(A, r)\nP = (5, 1)\nB = (4, 0)\nC = (0, 1)\n\
+             l = Line(A, B)\nm = Line(A, C)\n",
+        )
+        .unwrap();
+        let first = exec(&mut c, "{t_{1}, t_{2}} = Tangent(P, k)")
+            .unwrap()
+            .unwrap();
+        assert_eq!(c.label(first), "t_{1}");
+        assert!(c.id("t_{2}").is_some() && c.id("t").is_none());
+        // any labels, an empty slot creates nothing
+        exec(&mut c, "{u, } = Tangent(P, k)").unwrap();
+        assert!(c.id("u").is_some() && c.len() == 11);
+        exec(&mut c, "{, w} = Tangent(P, k)").unwrap();
+        assert!(matches!(
+            c.def(c.id("w").unwrap()),
+            Def::Lines(crate::algo::lines::LineDef::TangentPoint { which: 1, .. })
+        ));
+        // the labels do not depend on how many outputs are defined
+        exec(&mut c, "{b1, b2} = AngularBisector(l, m)").unwrap();
+        assert!(c.id("b1").is_some() && c.id("b2").is_some());
+        // the second tangent from a point on the circle is never created: its slot stays empty
+        exec(&mut c, "T = (2, 0)").unwrap();
+        exec(&mut c, "{o, } = Tangent(T, k)").unwrap();
+        exec(&mut c, "T2 = (0, 2)").unwrap();
+        exec(&mut c, "{o2, , } = Tangent(T2, k)").unwrap();
+        assert!(c.id("o").is_some() && c.id("o2").is_some());
+        // an output that is undefined at creation is still created when it has a label
+        exec(&mut c, "Q = (4, 1)").unwrap();
+        exec(&mut c, "{s1, s2} = Tangent(A, k)").unwrap();
+        assert!(c.id("s1").is_some() && c.id("s2").is_some());
+    }
+
+    #[test]
+    fn explicit_output_labels_fail_cleanly() {
+        let mut c = load("A = (0, 0)\nr = 2\nk = Circle(A, r)\nP = (5, 1)\n").unwrap();
+        let n = c.len();
+        for line in [
+            "{t_{1}, t_{2} = Tangent(P, k)",
+            "{t_{1}, t_{2}} Tangent(P, k)",
+            "{t_{1}} = Tangent(P, k)",
+            "{t_{1}, t_{2}, t_{3}} = Tangent(P, k)",
+            "{, , t} = Tangent(P, k)",
+            "{a, a} = Tangent(P, k)",
+            "{A, b} = Tangent(P, k)",
+            "{, } = Tangent(P, k)",
+            "{a, 1b} = Tangent(P, k)",
+            "{a, b} = Circle(A, r)",
+            "{a, b} = (1, 2)",
+            "{a, b} = Tangent(P, Z)",
+            "{a, b} = Foo(P)",
+            "{}",
+            "{",
+            "}{",
+        ] {
+            assert!(exec(&mut c, line).is_err(), "{line}");
+            assert_eq!(c.len(), n, "{line}");
+        }
+    }
+
+    #[test]
+    fn forced_point_and_vector_forms() {
+        let mut c = Construction::new();
+        exec(&mut c, "a = $point(1, 2)").unwrap();
+        exec(&mut c, "B = $vector(3, 4)").unwrap();
+        exec(&mut c, "c = (5, 6)").unwrap();
+        assert_eq!(c.value(c.id("a").unwrap()), Value::Point { x: 1.0, y: 2.0 });
+        assert_eq!(
+            c.value(c.id("B").unwrap()),
+            Value::Vector { x: 3.0, y: 4.0 }
+        );
+        assert_eq!(c.kind(c.id("c").unwrap()), Kind::Vector);
+        // a lower-case point can be moved like any free point
+        c.move_point(c.id("a").unwrap(), 7.0, 8.0).unwrap();
+        assert_eq!(c.value(c.id("a").unwrap()), Value::Point { x: 7.0, y: 8.0 });
+        assert!(exec(&mut c, "d = $point(1)").is_err());
+        assert!(exec(&mut c, "d = $point(1, x)").is_err());
+        assert!(exec(&mut c, "a = $vector(1, 2)").is_err());
     }
 }

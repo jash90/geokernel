@@ -138,3 +138,39 @@ A case that `geo-kernel` cannot reproduce yet is listed in
 disagree, as `step:label`. The test fails when a listed case disagrees
 anywhere else or starts to agree, so an entry can neither hide a new
 difference nor go stale.
+
+## Stored construction files (`golden/ggb/`)
+
+For every case of the groups written by `ggb-harness`, `golden/ggb/<group>/<case id>.xml`
+holds the construction file GeoGebra itself writes after the script has run, that is,
+the text `app.getXML()` returns, which is the content of `geogebra.xml` in a saved
+`.ggb` file. It is the state of `snapshots[0]` of the same case, so the importer
+(`crates/geo-import`) can be checked against the golden values. About every 50th case
+also has a `<case id>.ggb`, the zip archive of GeoGebra's own writer without a thumbnail
+(`geogebra.xml`, `geogebra_defaults2d.xml`, `geogebra_javascript.js`), for the zip path.
+Nothing in these files is edited after GeoGebra has written it;
+`tools/ggb-harness/harness.sh ggb` rewrites them. The XML is byte-identical between runs;
+the `.ggb` files differ only in the modification times of their zip entries.
+
+The header carries no path, user name or host name: `<geogebra format="5.0"
+version=... app="classic" platform="a" ...>` without an `id`, and
+`<construction title="" author="" date="">` with empty fields.
+
+What the importer reads, and where GeoGebra writes it (`MyXMLHandler`,
+`GeoElement.getXML`, `AlgoElement.getXML`):
+
+- A free point, vector or number is written as `<expression label= exp=>` followed by
+  its `<element>`. The `exp` text is rounded to the decimals of the file; the exact value
+  is in the element: `<coords x= y= z=>` (homogeneous, `z = 0` for a vector and for a
+  point at infinity) or `<value val=>`. A point and a vector differ by the element
+  `type`, not by the label.
+- A dependent object is `<command name=><input a0= a1=/><output a0= a1=/></command>`
+  followed by one `<element>` per labelled output. An output without a label (an
+  object that was undefined when it was created) has an empty name and no element.
+- The images of the end points of a transformed segment are separate commands
+  followed by `Segment`, not one `Mirror` of the segment.
+- `AlgoDistanceLineLine` writes the two inputs of `Distance(line, line)` in the
+  opposite order, so GeoGebra computes another value when it reads the file back
+  (see `crates/geo-import/known-import-gaps.toml`).
+- `<kernel>`: `<continuous val=>`, `<decimals val=>`, `<angleUnit val=>`.
+- `<show object=>` of an element: `false` for an object that is hidden.

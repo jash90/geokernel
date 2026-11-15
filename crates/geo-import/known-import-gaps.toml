@@ -1,0 +1,30 @@
+# Objects of the stored files that disagree with the golden snapshot because of
+# what GeoGebra writes, not because of the kernel or the importer. Same format
+# as crates/geo-golden/known-gaps.toml; only step 0 ("0:label") applies.
+# The test fails when an entry stops disagreeing, so none can go stale.
+
+# GeoGebra writes the inputs of `Distance(line, line)` in the opposite order:
+# AlgoDistanceLineLine.setInputOutput puts `h` before `g`. Reading the file
+# back, GeoGebra itself computes `g.distance(h)` the other way round, and the
+# distance of two lines that are not parallel depends on the order. The
+# importer follows what GeoGebra reads.
+
+[[gap]]
+id = "conic-diameter-009"
+reason = "GeoGebra writes Distance(line, line) with its inputs swapped"
+mismatches = ["0:d"]
+
+[[gap]]
+id = "lines-bisector-015"
+reason = "GeoGebra writes Distance(line, line) with its inputs swapped"
+mismatches = ["0:d", "0:e"]
+
+[[gap]]
+id = "transform-mirrorline-032"
+reason = "GeoGebra writes Distance(line, line) with its inputs swapped"
+mismatches = ["0:e"]
+
+[[gap]]
+id = "transform-rotate-021"
+reason = "GeoGebra writes Distance(line, line) with its inputs swapped"
+mismatches = ["0:e"]

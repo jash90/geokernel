@@ -4,7 +4,7 @@ use crate::workbench::Workbench;
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 
-pub const USAGE: &str = "usage: geokernel-app [script.geo]";
+pub const USAGE: &str = "usage: geokernel-app [script.geo | file.ggb]";
 
 /// What the command line asked for.
 #[derive(Debug, PartialEq, Eq)]
@@ -40,9 +40,27 @@ fn file_name(path: &Path) -> String {
     )
 }
 
-/// Reads a script file into the workbench. Errors name the file.
+/// Reads a script file, or a construction file saved by GeoGebra (`.ggb`,
+/// `.xml`), into the workbench. Errors name the file.
 pub fn load_into(wb: &mut Workbench, path: &Path) -> Result<(), String> {
     let name = file_name(path);
+    let ext = path
+        .extension()
+        .map(|e| e.to_string_lossy().to_ascii_lowercase());
+    if matches!(ext.as_deref(), Some("ggb" | "xml")) {
+        let bytes = std::fs::read(path).map_err(|e| format!("{name}: {e}"))?;
+        let imported = geo_import::import(&bytes).map_err(|e| format!("{name}: {e}"))?;
+        let notice = (!imported.skipped.is_empty()).then(|| {
+            format!(
+                "Pominięto {} obiektów, których jądro nie obsługuje (wczytano {} linii)",
+                imported.skipped.len(),
+                imported.script.len()
+            )
+        });
+        return wb
+            .load_imported(&imported.script.join("\n"), &imported.hidden, notice)
+            .map_err(|e| format!("{name}: {e}"));
+    }
     let src = std::fs::read_to_string(path).map_err(|e| format!("{name}: {e}"))?;
     wb.load_script(&src).map_err(|e| format!("{name}: {e}"))
 }
@@ -100,6 +118,32 @@ mod tests {
         let mut wb = Workbench::default();
         let err = load_into(&mut wb, Path::new("definitely/missing/none.geo")).unwrap_err();
         assert!(err.starts_with("none.geo: "), "{err}");
+    }
+
+    #[test]
+    fn load_into_reads_a_construction_file() {
+        let dir = std::env::temp_dir().join(format!("geo-app-ggb-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let xml = "<geogebra><construction>\
+            <element type=\"point\" label=\"A\"><show object=\"false\"/><coords x=\"1\" y=\"2\" z=\"1\"/></element>\
+            <element type=\"point\" label=\"B\"><coords x=\"3\" y=\"4\" z=\"1\"/></element>\
+            <element type=\"text\" label=\"T\"/>\
+            </construction></geogebra>";
+        let path = dir.join("a.xml");
+        std::fs::write(&path, xml).unwrap();
+        let mut wb = Workbench::default();
+        load_into(&mut wb, &path).unwrap();
+        assert_eq!(wb.construction().len(), 2);
+        let a = wb.construction().id("A").unwrap();
+        let b = wb.construction().id("B").unwrap();
+        assert!(!wb.is_visible(a) && wb.is_visible(b));
+        assert!(wb.notice.as_deref().unwrap().contains("Pominięto 1 "));
+        // a damaged file leaves the document alone and names the file
+        std::fs::write(&path, "<geogebra>").unwrap();
+        let err = load_into(&mut wb, &path).unwrap_err();
+        assert!(err.starts_with("a.xml: "), "{err}");
+        assert_eq!(wb.construction().len(), 2);
+        std::fs::remove_dir_all(&dir).ok();
     }
 
     #[test]
