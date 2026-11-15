@@ -41,6 +41,7 @@ mod names;
 mod parse;
 mod twonum;
 mod types;
+mod wide;
 
 use crate::algo::intersect::Hint;
 use crate::algo::vector::VectorDef;

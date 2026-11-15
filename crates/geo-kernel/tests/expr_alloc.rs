@@ -156,12 +156,44 @@ fn rounding_a_literal_product_recomputes_without_allocating() {
     assert_eq!(drag(&mut c, "d"), 0);
 }
 
+/// Moves `A` between `(x1, 2)` and `(x2, 2)` 1000 times; every move must
+/// change `watch`. Returns the allocations of the 1000 moves.
+fn drag_x(c: &mut Construction, watch: &str, x1: f64, x2: f64) -> u64 {
+    let (a, w) = (id(c, "A"), id(c, watch));
+    c.move_point(a, x2, 2.0).unwrap();
+    c.move_point(a, x1, 2.0).unwrap();
+    let mut changed = 0;
+    let n = allocations(|| {
+        for i in 0..1000 {
+            let before = c.value(w);
+            let x = if i % 2 == 0 { x2 } else { x1 };
+            let count = c.move_point(a, x, 2.0).unwrap();
+            changed += usize::from(count > 0 && c.value(w) != before);
+        }
+    });
+    assert_eq!(changed, 1000, "every move must recompute `{watch}`");
+    n
+}
+
 #[test]
 fn an_exact_power_recomputes_without_allocating() {
     // the working precision of `1.5^2` depends on the digits of the exponent
     let mut c = load("A = (1, 2)\nc = 1.5^2 + x(A)\nd = 0.3^12 + y(A)").unwrap();
     assert_eq!(drag(&mut c, "c"), 0);
     assert_eq!(drag(&mut c, "d"), 0);
+}
+
+#[test]
+fn the_exact_decimal_of_a_rounded_double_does_not_allocate() {
+    // `round(0.5 x(A), 2)` is exact as a double (`setPrecise`): 0.65 and
+    // 0.85 have about 50 digits, which the next `+ 0.1` writes out
+    let mut c =
+        load("A = (1.3, 2)\nc = round(0.5 x(A), 2) + 0.1\nd = round(0.5 x(A), 2) * 3").unwrap();
+    assert_eq!(drag_x(&mut c, "c", 1.3, 1.7), 0);
+    assert_eq!(drag_x(&mut c, "d", 1.3, 1.7), 0);
+    // coordinates in the usual range of a drawing
+    let mut c = load("A = (1.3, 2)\nc = round(x(A) / 7, 6) - 0.25").unwrap();
+    assert_eq!(drag_x(&mut c, "c", 123.457, -0.0123), 0);
 }
 
 #[test]
