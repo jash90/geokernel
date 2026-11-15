@@ -40,8 +40,7 @@ use crate::algo::vector::VectorDef;
 use crate::algo::{
     self, check_index, join, line_through, Group, Parents, CIRCLE, LINE, LINE_LIKE, NUMBER, POINT,
 };
-use std::cmp::Reverse;
-use std::collections::{BinaryHeap, HashMap};
+use std::collections::HashMap;
 use std::fmt;
 
 /// Handle of an object inside one [`Construction`].
@@ -266,15 +265,19 @@ pub enum Def {
         which: u8,
     },
     /// `which` is 0 or 1: the point to the left or to the right of the
-    /// direction from the first centre to the second. `special` is decided by
-    /// [`Construction::add`]: whether the circles had a common point by
-    /// construction when the intersection was created. `add` also gives a
-    /// second intersection of the same circles the order of the first.
+    /// direction from the first centre to the second. `special` is state of
+    /// the intersection from the moment it was created: whether the circles
+    /// had a common point by construction then. A new intersection passes
+    /// `None` and [`Construction::add`] decides it; a definition read back
+    /// with [`Construction::def`] carries the decision, and `add` keeps it,
+    /// so a construction rebuilt from its definitions is the same. `add` also
+    /// gives a second intersection of the same circles the order and the flag
+    /// of the first.
     IntersectCircles {
         c1: Id,
         c2: Id,
         which: u8,
-        special: bool,
+        special: Option<bool>,
     },
     /// Bisectors and tangents.
     Lines(LineDef),
@@ -429,13 +432,113 @@ pub struct Construction {
     labels: Vec<String>,
     /// For each object, the objects that read it directly.
     children: Vec<Vec<Id>>,
+    /// For each object, what its rule needs from the definitions of other
+    /// objects, decided when it is created (see [`algo::intersect::Hint`]).
+    hints: Vec<algo::intersect::Hint>,
     by_label: HashMap<String, Id>,
     /// The stored lists of parents, one after the other (see [`IdList`]).
     lists: Vec<Id>,
     // Scratch state for updates, kept to avoid allocating on every drag.
-    mark: Vec<u32>,
-    epoch: u32,
-    heap: BinaryHeap<Reverse<usize>>,
+    dirty: DirtySet,
+}
+
+/// The objects waiting to be recomputed during an update; empty between
+/// updates. `levels[0]` has one bit per object. Each further level has one
+/// bit per word of the level below, set whenever that word is not zero, and
+/// the last level is a single word. Bits above level 0 are cleared lazily:
+/// one may stay set for a word that has become zero, until a search meets
+/// it. Finding the next dirty object then costs a few reads per level
+/// however far away it is, and a drag with few dirty objects touches little
+/// more than level 0.
+#[derive(Default)]
+struct DirtySet {
+    levels: Vec<Vec<u64>>,
+    /// How many objects are in the set.
+    len: usize,
+}
+
+impl DirtySet {
+    /// Makes room for `n` objects. A construction only grows, and level 0 is
+    /// zero between updates, so new words are clean; when a level has to be
+    /// added the upper levels start over from zero.
+    fn fit(&mut self, n: usize) {
+        let words = n.div_ceil(64).max(1);
+        if self.levels.first().map_or(0, Vec::len) == words {
+            return;
+        }
+        let mut sizes = vec![words];
+        while sizes[sizes.len() - 1] > 1 {
+            sizes.push(sizes[sizes.len() - 1].div_ceil(64));
+        }
+        if sizes.len() == self.levels.len() {
+            for (level, size) in self.levels.iter_mut().zip(sizes) {
+                level.resize(size, 0);
+            }
+        } else {
+            self.levels = sizes.into_iter().map(|size| vec![0; size]).collect();
+        }
+    }
+
+    fn insert(&mut self, i: usize) {
+        let word = &mut self.levels[0][i / 64];
+        let bit = 1 << (i % 64);
+        if *word & bit != 0 {
+            return;
+        }
+        let was = *word;
+        *word |= bit;
+        self.len += 1;
+        if was != 0 {
+            // the levels above already mark this word
+            return;
+        }
+        let mut pos = i / 64;
+        for level in &mut self.levels[1..] {
+            let word = &mut level[pos / 64];
+            let was = *word;
+            *word |= 1 << (pos % 64);
+            if was != 0 {
+                break;
+            }
+            pos /= 64;
+        }
+    }
+
+    /// Removes and returns the smallest index in the set, given that none
+    /// is below `from`.
+    fn pop_first(&mut self, from: usize) -> Option<usize> {
+        if self.len == 0 {
+            return None;
+        }
+        // `pos` is a position at `level`. A dirty object at or after `from`
+        // exists and is marked on every level, so the search ends before it
+        // runs past the end of a level.
+        let mut level = 0;
+        let mut pos = from;
+        loop {
+            let bits = self.levels[level][pos / 64] & (u64::MAX << (pos % 64));
+            if bits == 0 {
+                // nothing more in this word: go on from the next word
+                level += 1;
+                pos = pos / 64 + 1;
+                continue;
+            }
+            pos = pos / 64 * 64 + bits.trailing_zeros() as usize;
+            if level == 0 {
+                break;
+            }
+            if self.levels[level - 1][pos] == 0 {
+                // a stale mark: clear it and look further on this level
+                self.levels[level][pos / 64] &= !(1 << (pos % 64));
+                continue;
+            }
+            level -= 1;
+            pos *= 64;
+        }
+        self.levels[0][pos / 64] &= !(1 << (pos % 64));
+        self.len -= 1;
+        Some(pos)
+    }
 }
 
 impl Construction {
@@ -498,7 +601,9 @@ impl Construction {
     /// added now, without adding it.
     pub(crate) fn evaluate(&self, def: Def) -> Result<Value, Error> {
         self.check(&def)?;
-        Ok(self.compute(algo::intersect::prepare(self, def)))
+        let def = algo::intersect::prepare(self, def);
+        let hint = algo::intersect::hint(self, &def);
+        Ok(self.compute_with(def, |_| hint))
     }
 
     /// The current length of the construction and of its lists, to return to
@@ -527,7 +632,7 @@ impl Construction {
             self.defs.pop();
             self.values.pop();
             self.children.pop();
-            self.mark.pop();
+            self.hints.pop();
             if let Some(label) = self.labels.pop() {
                 self.by_label.remove(&label);
             }
@@ -550,18 +655,6 @@ impl Construction {
         ids
     }
 
-    /// Starts a new epoch of the scratch marks. When the counter wraps, all
-    /// marks are cleared first: a mark left from long ago, or the 0 of a new
-    /// object, must never equal the current epoch.
-    fn next_epoch(&mut self) -> u32 {
-        self.epoch = self.epoch.wrapping_add(1);
-        if self.epoch == 0 {
-            self.mark.fill(0);
-            self.epoch = 1;
-        }
-        self.epoch
-    }
-
     /// Adds an object and computes its value.
     pub fn add(&mut self, label: &str, def: Def) -> Result<Id, Error> {
         if label.is_empty() {
@@ -574,29 +667,22 @@ impl Construction {
         let def = algo::intersect::prepare(self, def);
 
         let id = Id(self.defs.len());
-        let value = self.compute(def);
-        // An object that is read twice is still one child: the scratch
-        // marks tell which parents are linked already.
-        let epoch = self.next_epoch();
-        for parent in self.read_ids(&def) {
-            self.link(parent, id, epoch);
+        // compute reads the hint of the new object from `hints`
+        self.hints.push(algo::intersect::hint(self, &def));
+        let value = self.compute(def, id.0);
+        // An object that is read twice is still one child.
+        let mut parents = self.read_ids(&def);
+        parents.sort_unstable();
+        parents.dedup();
+        for parent in parents {
+            self.children[parent.0].push(id);
         }
         self.defs.push(def);
         self.values.push(value);
         self.labels.push(label.to_string());
         self.children.push(Vec::new());
-        self.mark.push(0);
         self.by_label.insert(label.to_string(), id);
         Ok(id)
-    }
-
-    /// Makes `parent` a parent of `child` unless it was linked already in
-    /// this epoch.
-    fn link(&mut self, parent: Id, child: Id, epoch: u32) {
-        if self.mark[parent.0] != epoch {
-            self.mark[parent.0] = epoch;
-            self.children[parent.0].push(child);
-        }
     }
 
     /// Stores `ids` as a list of parents and adds the object that `make`
@@ -639,20 +725,30 @@ impl Construction {
 
     /// Moves a free point or a free vector and recomputes everything that
     /// depends on it. Returns how many dependent objects were recomputed.
+    ///
+    /// The count includes objects that read the moved object only in a case
+    /// their current state does not take. For example, `Intersect(k, k, 1)`
+    /// reads the first point on `k` by construction, but uses it only when
+    /// its `special` flag is set; with the flag false, moving that point
+    /// still recomputes the intersection, which does not change.
     pub fn move_point(&mut self, id: Id, x: f64, y: f64) -> Result<usize, Error> {
         let def = self.defs.get(id.0).ok_or(Error::UnknownObject)?;
-        let (def, new) = match def {
-            Def::FreePoint { .. } => (Def::FreePoint { x, y }, Value::Point { x, y }),
-            Def::Vector(VectorDef::Free { .. }) => (
+        // The value of a free point or vector is always its coordinates.
+        let (def, new, old) = match *def {
+            Def::FreePoint { x: ox, y: oy } => {
+                (Def::FreePoint { x, y }, Value::Point { x, y }, (ox, oy))
+            }
+            Def::Vector(VectorDef::Free { x: ox, y: oy }) => (
                 Def::Vector(VectorDef::Free { x, y }),
                 Value::Vector { x, y },
+                (ox, oy),
             ),
             _ => return Err(Error::NotFree(self.labels[id.0].clone())),
         };
         if !(x.is_finite() && y.is_finite()) {
             return Err(Error::NotFinite);
         }
-        if self.values[id.0] == new {
+        if old == (x, y) {
             return Ok(0);
         }
         self.defs[id.0] = def;
@@ -681,23 +777,27 @@ impl Construction {
 
     /// Recomputes the descendants of `start` in creation order.
     ///
-    /// A min-heap of dirty indices gives the order. Because children always
-    /// have larger indices than their parents, by the time an object is
-    /// popped every parent that could still change has already been handled.
+    /// A set of dirty indices ([`DirtySet`]) gives the order: the smallest
+    /// is taken next. Because children always have larger indices than their
+    /// parents, by the time an object is reached every parent that could
+    /// still change has already been handled. Unlike a heap, inserting and
+    /// taking cost a few bit operations, which matters when a point has tens
+    /// of thousands of children.
     fn propagate(&mut self, start: Id) -> usize {
-        let epoch = self.next_epoch();
-        let mut heap = std::mem::take(&mut self.heap);
-
+        // Taken out so that `compute` can borrow `self`. If `compute` panics
+        // the set is lost, and `fit` gives a clean one on the next update.
+        let mut dirty = std::mem::take(&mut self.dirty);
+        dirty.fit(self.defs.len());
         for &child in &self.children[start.0] {
-            if self.mark[child.0] != epoch {
-                self.mark[child.0] = epoch;
-                heap.push(Reverse(child.0));
-            }
+            dirty.insert(child.0);
         }
 
         let mut recomputed = 0;
-        while let Some(Reverse(i)) = heap.pop() {
-            let new = self.compute(self.defs[i]);
+        let mut from = start.0;
+        while let Some(i) = dirty.pop_first(from) {
+            // children only add larger indices
+            from = i + 1;
+            let new = self.compute(self.defs[i], i);
             recomputed += 1;
             if new == self.values[i] {
                 // Nothing downstream can change because of this object.
@@ -705,14 +805,11 @@ impl Construction {
             }
             self.values[i] = new;
             for &child in &self.children[i] {
-                if self.mark[child.0] != epoch {
-                    self.mark[child.0] = epoch;
-                    heap.push(Reverse(child.0));
-                }
+                dirty.insert(child.0);
             }
         }
 
-        self.heap = heap;
+        self.dirty = dirty;
         recomputed
     }
 
@@ -791,15 +888,26 @@ impl Construction {
         }
     }
 
-    fn compute(&self, def: Def) -> Value {
-        match self.try_compute(def) {
+    /// `def` is the definition of the object at index `i`.
+    fn compute(&self, def: Def, i: usize) -> Value {
+        self.compute_with(def, |c| c.hints[i])
+    }
+
+    /// Computes `def` with the hint that `hint` gives, which is only asked
+    /// for by intersections.
+    fn compute_with(&self, def: Def, hint: impl Fn(&Self) -> algo::intersect::Hint) -> Value {
+        match self.try_compute(def, hint) {
             Some(v) if v.is_finite() => v,
             _ => Value::Undefined,
         }
     }
 
     /// `None` means the object is undefined for the current inputs.
-    fn try_compute(&self, def: Def) -> Option<Value> {
+    fn try_compute(
+        &self,
+        def: Def,
+        hint: impl Fn(&Self) -> algo::intersect::Hint,
+    ) -> Option<Value> {
         match def {
             Def::FreePoint { x, y } => Some(Value::Point { x, y }),
             Def::Number(v) => Some(Value::Number(v)),
@@ -816,13 +924,13 @@ impl Construction {
                 line,
                 circle,
                 which,
-            } => algo::intersect::line_circle(self, line, circle, which),
+            } => algo::intersect::line_circle(self, line, circle, which, hint(self)),
             Def::IntersectCircles {
                 c1,
                 c2,
                 which,
                 special,
-            } => algo::intersect::circles(self, c1, c2, which, special),
+            } => algo::intersect::circles(self, c1, c2, which, special == Some(true), hint(self)),
             Def::Lines(d) => d.compute(self),
             Def::Conic(d) => d.compute(self),
             Def::Measure(d) => d.compute(self),
@@ -897,6 +1005,37 @@ impl Construction {
 mod tests {
     use super::*;
     use crate::algo::length;
+
+    #[test]
+    fn the_dirty_set_gives_indices_in_order_and_ends_empty() {
+        let mut d = DirtySet::default();
+        d.fit(10_000);
+        for i in [9_999, 70, 5, 4_096, 71, 8_191] {
+            d.insert(i);
+        }
+        d.insert(70);
+        let mut got = Vec::new();
+        let mut from = 0;
+        while let Some(i) = d.pop_first(from) {
+            got.push(i);
+            from = i + 1;
+            if i == 70 {
+                // inserted while taking, above the current index
+                d.insert(4_097);
+            }
+        }
+        assert_eq!(got, [5, 70, 71, 4_096, 4_097, 8_191, 9_999]);
+        assert_eq!(d.len, 0);
+        assert!(d.levels[0].iter().all(|&w| w == 0));
+        d.fit(300_000);
+        assert_eq!(
+            d.levels.iter().map(Vec::len).collect::<Vec<_>>(),
+            [4_688, 74, 2, 1]
+        );
+        d.insert(299_999);
+        assert_eq!(d.pop_first(3), Some(299_999));
+        assert_eq!(d.pop_first(3), None);
+    }
 
     fn pt(c: &mut Construction, label: &str, x: f64, y: f64) -> Id {
         c.add(label, Def::FreePoint { x, y }).unwrap()
@@ -1073,7 +1212,7 @@ mod tests {
                     c1: k1,
                     c2: k2,
                     which: 0,
-                    special: false,
+                    special: None,
                 },
             )
             .unwrap();
@@ -1084,7 +1223,7 @@ mod tests {
                     c1: k1,
                     c2: k2,
                     which: 1,
-                    special: false,
+                    special: None,
                 },
             )
             .unwrap();
@@ -1344,6 +1483,7 @@ mod tests {
         assert_ne!(snapshot(&c), before);
         c.rollback(at);
         assert_eq!(snapshot(&c), before);
+        assert_eq!(c.hints.len(), c.len());
         assert_eq!(c.len(), 7);
         assert_eq!(c.id("q"), None);
         // the construction still works after a rollback
@@ -1377,29 +1517,5 @@ mod tests {
         // `V_1` is taken, so the vertices are `V_{2}`, ...
         exec(&mut c, "V = Vertex(q)").unwrap();
         assert_eq!(c.label(Id(c.len() - 5)), "V_{2}");
-    }
-
-    #[test]
-    fn epochs_survive_the_counter_wrapping() {
-        let mut c = Construction::new();
-        let a = pt(&mut c, "A", 0.0, 0.0);
-        let b = pt(&mut c, "B", 4.0, 0.0);
-        let m = c.add("M", Def::Midpoint(a, b)).unwrap();
-        let n = c.add("N", Def::Midpoint(m, b)).unwrap();
-        // marks from long ago that would equal the epoch after a plain wrap
-        c.mark.fill(1);
-        c.epoch = u32::MAX - 1;
-        for step in 1..=4 {
-            let x = f64::from(step);
-            assert_eq!(c.move_point(a, x, 0.0).unwrap(), 2, "step {step}");
-            assert!(close(xy(&c, n).0, (x + 4.0) / 4.0 + 2.0));
-            assert_ne!(c.epoch, 0);
-        }
-        assert!(c.epoch < 10);
-        // adding across a wrap still links every parent once
-        c.epoch = u32::MAX;
-        let s = c.add("s", Def::Segment(a, a)).unwrap();
-        assert_ne!(c.epoch, 0);
-        assert_eq!(c.children(a), &[m, s]);
     }
 }
