@@ -2,7 +2,7 @@
 //!
 //! Logic lives in plain modules (`view`, `interact`, `hit`, `tools`,
 //! `workbench`, `scriptlog`, `undo`, `ticks`, `labels`, `describe`, ...); the
-//! rest (`app`, `canvas`, `algebra`, `tool_panel`, `grid`, `draw`, `icons`)
+//! rest (`app`, `canvas`, `algebra`, `toolbar`, `keyboard`, `grid`, `draw`, `icons`)
 //! only turns them into egui calls.
 
 mod algebra;
@@ -20,13 +20,17 @@ mod history;
 mod hit;
 mod icons;
 mod interact;
+mod keyboard;
 mod labelpos;
 mod labels;
+mod layout;
 mod scriptlog;
+mod shape;
+mod style;
 mod theme;
 mod ticks;
 mod tool_icons;
-mod tool_panel;
+mod toolbar;
 mod tools;
 mod undo;
 mod view;

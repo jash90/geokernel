@@ -1,33 +1,50 @@
-//! Colours, sizes and the global egui style: a light theme with a violet-blue
-//! accent.
+// Parts of this file are translated from GeoGebra (https://github.com/geogebra/geogebra),
+// commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/ConstructionDefaults.java
+//   source/shared/common/src/main/java/org/geogebra/common/main/GeoGebraColorConstants.java
+//   source/web/web/src/main/java/org/geogebra/web/full/main/embed/CalcEmbedElement.java (the accent colour)
+// Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
+// Licensed by GeoGebra GmbH under the EUPL 1.2.
+
+//! Colours, sizes and the global egui style: a light theme modelled on the
+//! classic desktop look of the reference application.
 
 use eframe::egui::{self, Color32, FontFamily, FontId, TextStyle};
 
+/// The purple accent, 0x6557d2 as in `CalcEmbedElement.java`.
 pub const ACCENT: Color32 = Color32::from_rgb(0x65, 0x57, 0xd2);
-pub const ACCENT_TINT: Color32 = Color32::from_rgb(0xee, 0xec, 0xfb);
 pub const WHITE: Color32 = Color32::WHITE;
-pub const TEXT: Color32 = Color32::from_rgb(0x33, 0x33, 0x33);
+pub const TEXT: Color32 = Color32::from_rgb(0x1c, 0x1c, 0x1f);
 pub const MUTED: Color32 = Color32::from_rgb(0x80, 0x80, 0x80);
-pub const TITLE_GREY: Color32 = Color32::from_rgb(0x9a, 0x9a, 0x9a);
-pub const SEPARATOR: Color32 = Color32::from_rgb(0xdc, 0xdc, 0xdc);
 pub const ERROR: Color32 = Color32::from_rgb(0xd9, 0x30, 0x25);
 
-pub const GRID_MINOR: Color32 = Color32::from_rgb(0xee, 0xee, 0xee);
-pub const GRID_MAJOR: Color32 = Color32::from_rgb(0xd2, 0xd2, 0xd2);
-pub const AXIS: Color32 = Color32::from_rgb(0x44, 0x44, 0x44);
-pub const TICK_TEXT: Color32 = Color32::from_rgb(0x55, 0x55, 0x55);
+/// The toolbar's and the splitter's background.
+pub const TOOLBAR_BG: Color32 = Color32::from_rgb(0xf7, 0xf7, 0xf7);
+pub const BORDER: Color32 = Color32::from_rgb(0xd7, 0xd7, 0xd7);
+pub const SEPARATOR: Color32 = Color32::from_rgb(0xe3, 0xe3, 0xe3);
+/// The border of the active tool group.
+pub const TOOL_ACTIVE: Color32 = Color32::from_rgb(0x56, 0x57, 0xf8);
+pub const ICON: Color32 = Color32::from_rgb(0x66, 0x66, 0x66);
+pub const ICON_DISABLED: Color32 = Color32::from_rgb(0xc8, 0xc8, 0xc8);
+pub const HOVER_ROW: Color32 = Color32::from_rgb(0xf0, 0xf0, 0xf2);
+pub const SELECTED_ROW: Color32 = Color32::from_rgb(0xe9, 0xe7, 0xfb);
 
-pub const FREE_POINT_FILL: Color32 = Color32::from_rgb(0x4a, 0x90, 0xe2);
-pub const FREE_POINT_RING: Color32 = Color32::from_rgb(0x1b, 0x4b, 0x91);
-pub const FREE_POINT_LABEL: Color32 = Color32::from_rgb(0x15, 0x65, 0xc0);
-pub const DEPENDENT_FILL: Color32 = Color32::from_rgb(0x80, 0x80, 0x80);
-pub const DEPENDENT_RING: Color32 = Color32::from_rgb(0x33, 0x33, 0x33);
-pub const CURVE: Color32 = Color32::from_rgb(0x55, 0x55, 0x55);
-pub const LABEL: Color32 = Color32::from_rgb(0x33, 0x33, 0x33);
+pub const GRID_MINOR: Color32 = Color32::from_rgb(0xea, 0xea, 0xec);
+pub const GRID_MAJOR: Color32 = Color32::from_rgb(0xab, 0xaa, 0xb1);
+pub const AXIS: Color32 = Color32::from_rgb(0x1a, 0x1a, 0x1c);
+pub const TICK_TEXT: Color32 = Color32::from_rgb(0x1a, 0x1a, 0x1c);
 
-pub const HEADER_HEIGHT: f32 = 65.0;
-pub const RAIL_WIDTH: f32 = 72.0;
-pub const SIDE_WIDTH: f32 = 324.0;
+/// Default object colours.
+pub const FREE_POINT: Color32 = Color32::from_rgb(77, 77, 255);
+pub const DEPENDENT_POINT: Color32 = Color32::from_rgb(0x6e, 0x6d, 0x73);
+pub const POINT_RING: Color32 = Color32::from_rgb(0x1c, 0x1c, 0x1f);
+pub const CURVE: Color32 = Color32::from_rgb(0x1c, 0x1c, 0x1f);
+pub const POLYGON: Color32 = Color32::from_rgb(153, 51, 0);
+pub const ANGLE: Color32 = Color32::from_rgb(0, 100, 0);
+
+pub const KEYBOARD_BG: Color32 = Color32::from_rgb(0xf1, 0xf0, 0xf5);
+pub const KEY_TAB_ACTIVE: Color32 = Color32::from_rgb(0x98, 0x8c, 0xf7);
+
 pub const MARKER_CELL: f32 = 57.0;
 
 /// Installs the light theme and the text sizes.
@@ -40,8 +57,8 @@ pub fn apply(ctx: &egui::Context) {
     v.selection.bg_fill = ACCENT.gamma_multiply(0.35);
     v.selection.stroke = egui::Stroke::new(1.0, ACCENT);
     v.widgets.noninteractive.bg_stroke = egui::Stroke::new(1.0, SEPARATOR);
-    v.widgets.hovered.weak_bg_fill = Color32::from_rgb(0xf0, 0xf0, 0xf0);
-    v.widgets.hovered.bg_fill = Color32::from_rgb(0xf0, 0xf0, 0xf0);
+    v.widgets.hovered.weak_bg_fill = HOVER_ROW;
+    v.widgets.hovered.bg_fill = HOVER_ROW;
     ctx.set_visuals_of(egui::Theme::Dark, v.clone());
     ctx.set_visuals_of(egui::Theme::Light, v);
     ctx.all_styles_mut(|style| {
@@ -57,5 +74,7 @@ pub fn apply(ctx: &egui::Context) {
             FontId::new(11.0, FontFamily::Proportional),
         );
         style.spacing.item_spacing = egui::vec2(6.0, 4.0);
+        // The fade takes its colour from the parent, which our regions do not set.
+        style.spacing.scroll.fade.strength = 0.0;
     });
 }

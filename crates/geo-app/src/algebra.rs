@@ -1,9 +1,8 @@
 //! The algebra panel: one row per object, and the input row.
 
 use crate::app::App;
-use crate::draw;
-use crate::errors;
 use crate::icons::{self, Icon};
+use crate::style;
 use crate::theme;
 use crate::workbench::Row;
 use eframe::egui::{
@@ -12,8 +11,10 @@ use eframe::egui::{
 };
 use geo_kernel::kernel::Id;
 
-const ROW_FREE: f32 = 48.0;
-const ROW_DEPENDENT: f32 = 88.0;
+/// Row heights: one line for a free object, two for a dependent one.
+const ROW_FREE: f32 = 50.0;
+const ROW_DEPENDENT: f32 = 102.0;
+const FONT: f32 = 22.0;
 const TEXT_X: f32 = theme::MARKER_CELL + 13.0;
 
 /// What the user did in the list this frame.
@@ -29,7 +30,7 @@ struct Actions {
 pub fn show(app: &mut App, ui: &mut Ui) {
     if let Some(e) = app.load_error.clone() {
         ui.horizontal_wrapped(|ui| {
-            ui.colored_label(theme::ERROR, format!("Nie można wczytać skryptu: {e}"));
+            ui.colored_label(theme::ERROR, format!("Nie można wczytać pliku: {e}"));
             if ui.small_button("Zamknij").clicked() {
                 app.load_error = None;
             }
@@ -76,9 +77,9 @@ fn paint_row(app: &App, ui: &mut Ui, row: &Row, actions: &mut Actions) {
     let hovered = app.hovered == Some(row.id);
     let painter = ui.painter_at(rect);
     if selected {
-        painter.rect_filled(rect, 0.0, theme::ACCENT_TINT);
+        painter.rect_filled(rect, 0.0, theme::SELECTED_ROW);
     } else if hovered {
-        painter.rect_filled(rect, 0.0, Color32::from_rgb(0xf6, 0xf5, 0xfd));
+        painter.rect_filled(rect, 0.0, theme::HOVER_ROW);
     }
     painter.hline(
         rect.x_range(),
@@ -103,7 +104,7 @@ fn paint_row(app: &App, ui: &mut Ui, row: &Row, actions: &mut Actions) {
     let marker = ui.interact(cell, id.with("marker"), Sense::click());
     let center = cell.center();
     let visible = app.wb.is_visible(row.id);
-    let (fill, ring) = draw::marker_colors(app.wb.construction(), row.id);
+    let (fill, ring) = style::marker(app.wb.construction(), row.id);
     if visible {
         painter.circle(center, 10.0, fill, Stroke::new(1.5, ring));
     } else {
@@ -117,11 +118,11 @@ fn paint_row(app: &App, ui: &mut Ui, row: &Row, actions: &mut Actions) {
         .on_hover_text(if visible { "Ukryj" } else { "Pokaż" });
 
     // Text.
-    let font = FontId::proportional(17.0);
+    let font = FontId::proportional(FONT);
     let head_y = if row.free {
         rect.center().y
     } else {
-        rect.top() + 25.0
+        rect.top() + 30.0
     };
     let head_pos = Pos2::new(rect.left() + TEXT_X, head_y);
     let head_galley = painter.layout_no_wrap(row.head.clone(), font.clone(), theme::TEXT);
@@ -158,16 +159,16 @@ fn paint_row(app: &App, ui: &mut Ui, row: &Row, actions: &mut Actions) {
         }
     }
     if let Some(value) = &row.value {
-        let y = rect.top() + 61.0;
+        let y = rect.top() + 72.0;
         painter.text(
-            Pos2::new(rect.left() + TEXT_X + 6.0, y),
+            Pos2::new(rect.left() + TEXT_X, y),
             Align2::LEFT_CENTER,
             "=",
-            FontId::proportional(14.0),
-            theme::MUTED,
+            FontId::proportional(FONT),
+            theme::TEXT,
         );
         painter.text(
-            Pos2::new(rect.left() + TEXT_X + 28.0, y),
+            Pos2::new(rect.left() + TEXT_X + 22.0, y),
             Align2::LEFT_CENTER,
             value,
             font,
@@ -198,6 +199,15 @@ fn paint_row(app: &App, ui: &mut Ui, row: &Row, actions: &mut Actions) {
         };
         if ui.button(text).clicked() {
             actions.delete = Some(row.id);
+            ui.close();
+        }
+        let toggle = if visible {
+            "Ukryj obiekt"
+        } else {
+            "Pokaż obiekt"
+        };
+        if ui.button(toggle).clicked() {
+            actions.toggle = Some(row.id);
             ui.close();
         }
     });
@@ -261,42 +271,64 @@ fn input_row(app: &mut App, ui: &mut Ui) {
             .hint_text("Wprowadź…")
             .text_color(theme::TEXT)
             .frame(egui::Frame::NONE)
-            .font(FontId::proportional(17.0))
+            .font(FontId::proportional(FONT))
             .align(egui::Align2::LEFT_CENTER)
             .desired_width(field.width()),
     );
+    response.widget_info(|| {
+        egui::WidgetInfo::text_edit(true, String::new(), app.input.clone(), "Wprowadź…")
+    });
     if app.focus_input {
         response.request_focus();
         app.focus_input = false;
     }
-    if recalled_by_history {
+    if response.gained_focus() {
+        // As in the reference, the keyboard comes up with the input row.
+        app.keyboard.open = true;
+    }
+    let jump = if recalled_by_history {
+        Some(app.input.chars().count())
+    } else if response.has_focus() {
+        app.cursor_request.take()
+    } else {
+        None
+    };
+    if let Some(at) = jump {
         if let Some(mut state) = egui::TextEdit::load_state(ui.ctx(), id) {
-            let end = CCursor::new(app.input.chars().count());
-            state.cursor.set_char_range(Some(CCursorRange::one(end)));
+            let at = CCursor::new(at.min(app.input.chars().count()));
+            state.cursor.set_char_range(Some(CCursorRange::one(at)));
             egui::TextEdit::store_state(ui.ctx(), id, state);
         }
+        app.input_cursor = at;
     } else if response.changed() {
         app.wb.history.stop_browsing();
+    }
+    if response.has_focus() && jump.is_none() {
+        if let Some(range) =
+            egui::TextEdit::load_state(ui.ctx(), id).and_then(|s| s.cursor.char_range())
+        {
+            app.input_cursor = range.primary.index.into();
+        }
+    }
+    if response.has_focus() {
+        painter.hline(
+            row.x_range(),
+            row.bottom() - 1.0,
+            Stroke::new(2.0, theme::TOOL_ACTIVE),
+        );
     }
     if response.has_focus()
         && ui.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape))
     {
-        // Escape only leaves the field.
+        // Escape leaves the field and puts the keyboard away.
         app.input.clear();
         app.input_error = None;
+        app.keyboard.open = false;
         response.surrender_focus();
         return;
     }
     if response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
-        match app.wb.run_line(&app.input) {
-            Ok(()) => {
-                app.input.clear();
-                app.input_error = None;
-                app.wb.selected = None;
-            }
-            Err(e) => app.input_error = Some(errors::polish(&e)),
-        }
-        response.request_focus();
+        app.submit_input();
     }
     if let Some(e) = &app.input_error {
         painter.text(

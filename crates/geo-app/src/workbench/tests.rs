@@ -30,7 +30,7 @@ fn both_label_forms_and_bare_definitions_work() {
     w.run_line("(1, 2)").unwrap();
     w.run_line("Circle(A, B)").unwrap();
     assert_eq!(labels(&w), ["A", "B", "f", "C", "D", "c"]);
-    assert_eq!(w.rows()[2].head, "f: Line(A, B)");
+    assert_eq!(w.rows()[2].head, "f = Line(A, B)");
 }
 
 #[test]
@@ -206,7 +206,7 @@ fn rows_describe_free_and_dependent_objects() {
     let rows = w.rows().to_vec();
     assert_eq!(rows[0].head, "A = (-5.64, 4.44)");
     assert!(rows[0].free && rows[0].value.is_none());
-    assert_eq!(rows[2].head, "f: Line(A, B)");
+    assert_eq!(rows[2].head, "f = Line(A, B)");
     assert_eq!(rows[2].value.as_deref(), Some("y = -0.12x + 3.75"));
     assert_eq!(rows[3].free_number, Some(3.0));
     assert_eq!(rows[3].head, "r =");
@@ -317,4 +317,79 @@ fn a_number_set_to_any_value_keeps_the_tangent_labels_through_undo_and_redo() {
     assert!(w.redo());
     assert_eq!(labels(&w), ["A", "r", "k", "P", "t_{1}", "t_{2}"]);
     assert!(w.notice.is_none());
+}
+
+#[test]
+fn the_sides_of_a_polygon_name_the_polygon() {
+    let mut w =
+        Workbench::from_script("A = (0, 0)\nB = (4, 0)\nC = (1, 3)\nt1 = Polygon(A, B, C)\n")
+            .unwrap();
+    let rows = w.rows().to_vec();
+    let heads: Vec<&str> = rows.iter().map(|r| r.head.as_str()).collect();
+    assert!(heads.contains(&"t1 = Polygon(A, B, C)"), "{heads:?}");
+    assert!(heads.contains(&"a = Segment(B, C, t1)"), "{heads:?}");
+    let t1 = rows.iter().find(|r| r.label == "t1").unwrap();
+    assert_eq!(t1.value.as_deref(), Some("6"));
+}
+
+#[test]
+fn a_failed_rollback_keeps_the_change_without_pretending_it_can_be_undone() {
+    let mut w = Workbench::from_script("A = (0, 0)\n").unwrap();
+    w.run_line("C = (5, 5)").unwrap();
+    w.run_line("D = (6, 6)").unwrap();
+    assert!(w.undo() && w.can_redo());
+    // Every rebuild fails from now on, as a real one would on each replay.
+    w.fail_rebuilds = Some("test".into());
+    let lines = ["B = (1, 1)".to_owned(), "f = Line(B, Nope)".to_owned()];
+    assert!(w.run_lines(&lines).is_err());
+    assert_eq!(
+        w.notice.as_deref(),
+        Some("Nie można cofnąć ostatniej zmiany: test")
+    );
+    assert_eq!(labels(&w), ["A", "C", "B"]);
+    assert!(!w.can_redo(), "the redo steps no longer follow");
+    // The log holds only the line that succeeded and matches the
+    // construction.
+    w.fail_rebuilds = None;
+    let replayed = w.log.rebuild().unwrap().0;
+    let replayed: Vec<&str> = replayed.ids().map(|id| replayed.label(id)).collect();
+    assert_eq!(replayed, ["A", "C", "B"]);
+    // The kept change is not an undo step; the step before it still is.
+    assert!(w.can_undo());
+    assert!(w.undo());
+    assert_eq!(labels(&w), ["A"], "undo went to the state before C");
+    assert!(!w.can_undo());
+
+    // Normally the rollback succeeds and nothing stays.
+    let mut w = Workbench::from_script("A = (0, 0)\n").unwrap();
+    assert!(w.run_lines(&lines).is_err());
+    assert_eq!(labels(&w), ["A"]);
+    assert!(w.notice.is_none() && !w.undo());
+}
+
+#[test]
+fn a_cancelled_drag_that_cannot_be_rolled_back_stays_but_is_not_an_undo_step() {
+    let mut w = Workbench::from_script("A = (0, 0)\n").unwrap();
+    let a = w.construction().id("A").unwrap();
+    w.begin_gesture();
+    w.move_point(a, 2.0, 1.0);
+    w.fail_rebuilds = Some("test".into());
+    w.cancel_gesture();
+    assert_eq!(
+        w.notice.as_deref(),
+        Some("Nie można cofnąć ostatniej zmiany: test")
+    );
+    assert!(!w.can_undo());
+    let a = w.construction().id("A").unwrap();
+    assert_eq!(
+        w.construction().value(a),
+        geo_kernel::kernel::Value::Point { x: 2.0, y: 1.0 }
+    );
+    w.fail_rebuilds = None;
+    let (replayed, _) = w.log.rebuild().unwrap();
+    assert_eq!(
+        replayed.value(replayed.id("A").unwrap()),
+        geo_kernel::kernel::Value::Point { x: 2.0, y: 1.0 },
+        "the log has the move"
+    );
 }

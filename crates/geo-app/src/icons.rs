@@ -7,16 +7,26 @@ use std::f32::consts::PI;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Icon {
     Menu,
-    Algebra,
-    Tools,
     Undo,
     Redo,
-    Gear,
     ZoomIn,
     ZoomOut,
+    /// Show all objects.
+    Fit,
+    Fullscreen,
+    /// The toggle of the graphics style bar.
+    StyleBar,
+    /// The standard view.
     Home,
+    Axes,
+    Grid,
     Plus,
     Kebab,
+    Backspace,
+    Left,
+    Right,
+    Enter,
+    Shift,
 }
 
 /// A drawing context: centre, unit (pixels per icon-box unit) and stroke.
@@ -93,25 +103,6 @@ pub fn paint(painter: &Painter, icon: Icon, c: Pos2, half: f32, color: Color32) 
                 pen.line((-9.0, y), (9.0, y));
             }
         }
-        Icon::Algebra => {
-            pen.poly(
-                &[(-8.0, -10.0), (8.0, -10.0), (8.0, 10.0), (-8.0, 10.0)],
-                true,
-            );
-            pen.fill_poly(
-                &[(-5.0, -7.0), (5.0, -7.0), (5.0, -3.0), (-5.0, -3.0)],
-                color,
-            );
-            for y in [1.0, 5.5] {
-                for x in [-4.0, 0.0, 4.0] {
-                    pen.dot(x, y, 1.2, color);
-                }
-            }
-        }
-        Icon::Tools => {
-            pen.poly(&[(-10.0, 9.0), (2.0, 9.0), (-4.0, -4.0)], true);
-            pen.circle(4.0, 3.0, 6.5);
-        }
         Icon::Undo | Icon::Redo => {
             let s = if icon == Icon::Undo { 1.0 } else { -1.0 };
             let arc: Vec<(f32, f32)> = Pen::arc(0.0, 2.0, 8.0, 15.0, 180.0)
@@ -121,18 +112,6 @@ pub fn paint(painter: &Painter, icon: Icon, c: Pos2, half: f32, color: Color32) 
             pen.poly(&arc, false);
             pen.fill_poly(&[(-8.0 * s, 8.5), (-12.5 * s, 1.5), (-3.5 * s, 1.5)], color);
         }
-        Icon::Gear => {
-            let mut pts = Vec::new();
-            for k in 0..8 {
-                let base = k as f32 * 45.0;
-                for (da, r) in [(-13.0, 7.5), (-8.0, 10.5), (8.0, 10.5), (13.0, 7.5)] {
-                    let a = (base + da) * PI / 180.0;
-                    pts.push((r * a.cos(), r * a.sin()));
-                }
-            }
-            pen.poly(&pts, true);
-            pen.circle(0.0, 0.0, 3.5);
-        }
         Icon::ZoomIn | Icon::ZoomOut => {
             pen.circle(-2.0, -2.0, 7.0);
             pen.line((3.0, 3.0), (10.0, 10.0));
@@ -141,7 +120,7 @@ pub fn paint(painter: &Painter, icon: Icon, c: Pos2, half: f32, color: Color32) 
                 pen.line((-2.0, -5.5), (-2.0, 1.5));
             }
         }
-        Icon::Home => {
+        Icon::Fullscreen => {
             for (sx, sy) in [(-1.0, -1.0), (1.0, -1.0), (1.0, 1.0), (-1.0, 1.0)] {
                 pen.poly(
                     &[
@@ -153,6 +132,66 @@ pub fn paint(painter: &Painter, icon: Icon, c: Pos2, half: f32, color: Color32) 
                 );
             }
         }
+        Icon::Fit => {
+            pen.poly(&[(-9.0, -7.0), (9.0, -7.0), (9.0, 7.0), (-9.0, 7.0)], true);
+            pen.dot(-3.0, 1.0, 2.2, color);
+            pen.line((-3.0, 1.0), (4.0, -3.0));
+            pen.dot(4.0, -3.0, 2.2, color);
+        }
+        Icon::StyleBar => {
+            for (y, w) in [(-6.0, 12.0), (0.0, 7.0), (6.0, 12.0)] {
+                pen.line((-10.0, y), (-10.0 + w, y));
+            }
+            pen.fill_poly(&[(3.0, -1.0), (11.0, -1.0), (7.0, 4.0)], color);
+        }
+        Icon::Home => {
+            pen.poly(&[(-9.0, -1.0), (0.0, -9.0), (9.0, -1.0)], false);
+            pen.poly(&[(-6.0, -3.0), (-6.0, 9.0), (6.0, 9.0), (6.0, -3.0)], false);
+        }
+        Icon::Axes => {
+            pen.line((-10.0, 4.0), (10.0, 4.0));
+            pen.line((-4.0, 10.0), (-4.0, -10.0));
+            pen.fill_poly(&[(11.0, 4.0), (7.0, 1.5), (7.0, 6.5)], color);
+            pen.fill_poly(&[(-4.0, -11.0), (-6.5, -7.0), (-1.5, -7.0)], color);
+        }
+        Icon::Grid => {
+            for v in [-9.0, -3.0, 3.0, 9.0] {
+                pen.line((v, -9.0), (v, 9.0));
+                pen.line((-9.0, v), (9.0, v));
+            }
+        }
+        Icon::Backspace => {
+            pen.poly(
+                &[
+                    (-11.0, 0.0),
+                    (-5.0, -7.0),
+                    (10.0, -7.0),
+                    (10.0, 7.0),
+                    (-5.0, 7.0),
+                ],
+                true,
+            );
+            pen.line((-1.0, -3.5), (6.0, 3.5));
+            pen.line((-1.0, 3.5), (6.0, -3.5));
+        }
+        Icon::Left => pen.poly(&[(3.0, -7.0), (-4.0, 0.0), (3.0, 7.0)], false),
+        Icon::Right => pen.poly(&[(-3.0, -7.0), (4.0, 0.0), (-3.0, 7.0)], false),
+        Icon::Enter => {
+            pen.poly(&[(9.0, -7.0), (9.0, 3.0), (-8.0, 3.0)], false);
+            pen.poly(&[(-3.0, -2.0), (-8.0, 3.0), (-3.0, 8.0)], false);
+        }
+        Icon::Shift => pen.poly(
+            &[
+                (0.0, -9.0),
+                (9.0, 0.0),
+                (4.0, 0.0),
+                (4.0, 8.0),
+                (-4.0, 8.0),
+                (-4.0, 0.0),
+                (-9.0, 0.0),
+            ],
+            true,
+        ),
         Icon::Plus => {
             pen.line((-6.0, 0.0), (6.0, 0.0));
             pen.line((0.0, -6.0), (0.0, 6.0));

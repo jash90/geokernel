@@ -1,23 +1,23 @@
-//! The drawing area: camera, pointer interaction, tools, floating buttons.
+//! The graphics view: camera, pointer interaction, tools, the buttons over it.
 
 use crate::app::{App, ViewRequest};
 use crate::describe;
 use crate::draw::{self, Scene};
-use crate::errors;
 use crate::floating;
 use crate::grid;
 use crate::hit;
 use crate::icons::Icon;
-use crate::interact::Drag;
+use crate::interact::{Drag, ViewTransform};
 use crate::theme;
-use crate::tools::{Outcome, Pick, Tool};
+use crate::tools::{Pick, Tool};
 use crate::view::{self, Camera};
-use eframe::egui::{self, vec2, Color32, Rect, Sense, Ui};
+use eframe::egui::{self, pos2, vec2, Rect, Sense, Stroke, Ui};
 use geo_kernel::kernel::{Id, Kind};
 
 const POINT_RADIUS: f64 = 11.0;
 const CURVE_RADIUS: f64 = 7.0;
 const ZOOM_BUTTON: f64 = 1.25;
+const ZOOM_TOOL: f64 = 1.5;
 
 pub fn show(app: &mut App, ui: &mut Ui) {
     let size = ui.available_size();
@@ -26,6 +26,14 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     let (w, h) = (rect.width() as f64, rect.height() as f64);
     if w < 1.0 || h < 1.0 {
         return;
+    }
+    // Opening or closing the keyboard, or resizing the window, keeps the
+    // top left corner of the drawing in place, not its centre. A view
+    // request is made for the new size, so it comes after.
+    if let (Some(cam), Some((old, _))) = (app.camera, app.view) {
+        if old.size() != rect.size() {
+            app.camera = Some(cam.resized((old.width() as f64, old.height() as f64), (w, h)));
+        }
     }
     let bounds = view::content_bounds(app.wb.construction());
     let request = app.view_request.take();
@@ -60,52 +68,72 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         }
     }
 
-    let move_tool = app.tool.tool() == Tool::Move;
+    let tool = app.tool.tool();
+    let move_tool = tool == Tool::Move;
+    // The show/hide tool shows hidden objects faintly and lets them be picked.
+    let show_all = tool == Tool::ShowHide;
     let t = cam.transform(w, h);
-    let free_radius = (draw::FREE_POINT_RADIUS + 5.0) as f64;
+    let free_radius = (draw::FREE_POINT_RADIUS + 6.0) as f64;
+    let shown = |app: &App, id: Id| show_all || app.wb.is_visible(id);
 
     // What the pointer is over (for highlighting and for picking).
     let pick_at = |app: &App, pos: (f64, f64)| -> Option<Id> {
         let c = app.wb.construction();
         hit::pick(c, &t, pos, POINT_RADIUS, CURVE_RADIUS, |id| {
-            app.wb.is_visible(id) && (move_tool || app.tool.accepts_object(c.label(id), c.kind(id)))
+            shown(app, id) && (move_tool || app.tool.accepts_object(c.label(id), c.kind(id)))
         })
     };
-    // What a click lands on, whatever the tool: a click on an existing point
-    // must never create a new one on top of it.
-    let pick_any = |app: &App, pos: (f64, f64)| -> Option<Id> {
-        hit::pick(
-            app.wb.construction(),
-            &t,
-            pos,
-            POINT_RADIUS,
-            CURVE_RADIUS,
-            |id| app.wb.is_visible(id),
-        )
-    };
     app.hovered = response.hover_pos().and_then(|p| pick_at(app, to_local(p)));
+
+    // Remember what the user saw when the button went down (the area may
+    // change in this very frame, e.g. the keyboard closes on a press). The
+    // press is read from this frame's events: when press and release come
+    // in one frame (a touch tap) egui keeps no press origin.
+    let (pressed, released) = primary_events(ui);
+    if let Some(pos) = pressed {
+        app.press_view = app
+            .view
+            .filter(|(r, _)| r.contains(pos))
+            .or_else(|| rect.contains(pos).then_some((rect, t)));
+    }
+    // A press position in the area as it was at the press, and that
+    // transform.
+    let at_press = |app: &App, pos: egui::Pos2| -> ((f64, f64), ViewTransform) {
+        let (r, pt) = app.press_view.unwrap_or((rect, t));
+        let d = pos - r.min;
+        ((d.x as f64, d.y as f64), pt)
+    };
 
     if response.drag_started() {
         app.drag = None;
         app.panning = false;
-        if move_tool && response.dragged_by(egui::PointerButton::Primary) {
-            // egui reports the drag a few pixels after the press: grab what
-            // was under the pointer when the button went down.
-            let origin = ui
-                .input(|i| i.pointer.press_origin())
-                .or(response.interact_pointer_pos());
-            if let Some(pos) = origin {
-                let (sx, sy) = to_local(pos);
-                app.drag = Drag::begin(app.wb.construction(), &t, sx, sy, free_radius, |id| {
+        // egui reports the drag a few pixels after the press: grab what
+        // was under the pointer when the button went down.
+        let origin = ui
+            .input(|i| i.pointer.press_origin())
+            .or(response.interact_pointer_pos());
+        let mut on_point = false;
+        if let (Some(pos), true) = (origin, response.dragged_by(egui::PointerButton::Primary)) {
+            let ((sx, sy), pt) = at_press(app, pos);
+            if move_tool {
+                app.drag = Drag::begin(app.wb.construction(), &pt, sx, sy, free_radius, |id| {
                     app.wb.is_visible(id)
                 });
             }
+            // A press on a point never pans: a free point drags (with the
+            // move tool), a dependent one stays.
+            let c = app.wb.construction();
+            on_point = hit::pick(c, &pt, (sx, sy), POINT_RADIUS, CURVE_RADIUS, |id| {
+                shown(app, id) && c.kind(id) == Kind::Point
+            })
+            .is_some();
         }
         if let Some(drag) = app.drag {
             app.wb.begin_gesture();
             app.wb.selected = Some(drag.id());
         }
-        app.panning = app.drag.is_none();
+        // The move-view tool pans from anywhere.
+        app.panning = app.drag.is_none() && (!on_point || tool == Tool::MoveView);
     }
     if response.dragged() {
         if let Some(drag) = app.drag {
@@ -126,25 +154,49 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     }
     if response.clicked() {
         if let Some(pos) = response.interact_pointer_pos() {
-            click(app, &t, to_local(pos), pick_any(app, to_local(pos)));
+            let local = to_local(pos);
+            match tool {
+                Tool::ZoomIn => cam.zoom_at(ZOOM_TOOL, local.0, local.1, w, h),
+                Tool::ZoomOut => cam.zoom_at(1.0 / ZOOM_TOOL, local.0, local.1, w, h),
+                Tool::MoveView => {}
+                _ => {
+                    let (local, pt) = at_press(app, pos);
+                    let c = app.wb.construction();
+                    let hit = hit::pick(c, &pt, local, POINT_RADIUS, CURVE_RADIUS, |id| {
+                        shown(app, id)
+                    });
+                    click(app, &pt, local, hit);
+                }
+            }
         }
     }
-    if app.drag.is_some() || app.panning {
-        ui.ctx().set_cursor_icon(egui::CursorIcon::Grabbing);
-    } else if let Some(pos) = response.hover_pos() {
-        if !move_tool {
-            ui.ctx().set_cursor_icon(egui::CursorIcon::Crosshair);
-        } else if hit_free_point(app, &t, to_local(pos), free_radius) {
-            ui.ctx().set_cursor_icon(egui::CursorIcon::Grab);
-        }
+    let cursor = match tool {
+        _ if app.drag.is_some() || app.panning => Some(egui::CursorIcon::Grabbing),
+        Tool::MoveView => Some(egui::CursorIcon::Grab),
+        Tool::ZoomIn => Some(egui::CursorIcon::ZoomIn),
+        Tool::ZoomOut => Some(egui::CursorIcon::ZoomOut),
+        Tool::Move => response
+            .hover_pos()
+            .filter(|&p| hit_free_point(app, &t, to_local(p), free_radius))
+            .map(|_| egui::CursorIcon::Grab),
+        _ => response.hover_pos().map(|_| egui::CursorIcon::Crosshair),
+    };
+    if let (Some(c), true) = (cursor, response.hovered() || app.drag.is_some()) {
+        ui.ctx().set_cursor_icon(c);
     }
 
     app.camera = Some(cam);
     let t = cam.transform(w, h);
+    // Whoever got the press (this area, a button over it, a dialog), it
+    // ends with the release.
+    if released {
+        app.press_view = None;
+    }
     painter.rect_filled(rect, 0.0, theme::WHITE);
     grid::paint(&painter, rect, &t, app.decor);
     let c = app.wb.construction();
-    let visible = |id: Id| app.wb.is_visible(id);
+    let visible = |id: Id| show_all || app.wb.is_visible(id);
+    let ghost = |id: Id| show_all && !app.wb.is_visible(id);
     draw::paint(
         &painter,
         rect,
@@ -152,42 +204,53 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         &t,
         &Scene {
             visible: &visible,
+            ghost: &ghost,
             selected: app.wb.selected,
             hovered: app.hovered,
         },
     );
-    for pick in app.tool.picks() {
-        if let Pick::New { x, y } = pick {
-            let (sx, sy) = t.world_to_screen(*x, *y);
-            painter.circle_filled(
-                rect.min + vec2(sx as f32, sy as f32),
-                5.0,
-                theme::ACCENT.gamma_multiply(0.7),
-            );
-        }
-    }
-    shadow_edge(&painter, rect);
+    preview(app, &painter, rect, &t, response.hover_pos());
     overlay(app, ui, rect, w, h, &mut cam);
     app.camera = Some(cam);
+    app.view = Some((rect, cam.transform(w, h)));
 }
 
-fn hit_free_point(
-    app: &App,
-    t: &crate::interact::ViewTransform,
-    pos: (f64, f64),
-    radius: f64,
-) -> bool {
+/// The position of the last primary press among this frame's events, and
+/// whether the last primary button event was a release.
+fn primary_events(ui: &Ui) -> (Option<egui::Pos2>, bool) {
+    ui.input(|i| {
+        let mut pressed = None;
+        let mut released = false;
+        for event in &i.events {
+            if let egui::Event::PointerButton {
+                pos,
+                button: egui::PointerButton::Primary,
+                pressed: down,
+                ..
+            } = event
+            {
+                if *down {
+                    pressed = Some(*pos);
+                }
+                released = !*down;
+            }
+        }
+        (pressed, released)
+    })
+}
+
+fn hit_free_point(app: &App, t: &ViewTransform, pos: (f64, f64), radius: f64) -> bool {
     crate::interact::hit_test(app.wb.construction(), t, pos.0, pos.1, radius, |id| {
         app.wb.is_visible(id)
     })
     .is_some()
 }
 
-/// A click on the drawing area, with the object under it that the active tool
-/// can use.
-fn click(app: &mut App, t: &crate::interact::ViewTransform, pos: (f64, f64), hit: Option<Id>) {
+/// A click on the drawing area, with the object under it.
+fn click(app: &mut App, t: &ViewTransform, pos: (f64, f64), hit: Option<Id>) {
     if app.tool.tool() == Tool::Move {
         app.wb.selected = hit;
+        app.style_bar = false;
         return;
     }
     let world = t.screen_to_world(pos.0, pos.1);
@@ -204,133 +267,162 @@ fn click(app: &mut App, t: &crate::interact::ViewTransform, pos: (f64, f64), hit
             &|l| c.id(l).is_some(),
         )
     };
-    match outcome {
-        Outcome::Run(lines) => match app.wb.run_lines(&lines) {
-            Ok(()) => {
-                app.tool_error = None;
-                app.wb.selected = app.wb.construction().ids().last();
-            }
-            Err(e) => {
-                app.tool_error = Some(errors::polish(&e));
-                app.tool.reset();
-            }
-        },
-        Outcome::Delete(label) => {
-            if let Some(id) = app.wb.construction().id(&label) {
-                app.wb.delete(id);
-            }
-            app.tool_error = None;
-        }
-        Outcome::Select(label) => {
-            app.wb.selected = app.wb.construction().id(&label);
-            app.tool_error = None;
-        }
-        Outcome::Pending => app.tool_error = None,
-        Outcome::Ignored => {}
+    app.apply_outcome(outcome);
+}
+
+/// The world position of a picked point.
+fn pick_position(app: &App, pick: &Pick) -> Option<(f64, f64)> {
+    let c = app.wb.construction();
+    match c.value(c.id(pick.label())?) {
+        geo_kernel::kernel::Value::Point { x, y } => Some((x, y)),
+        _ => None,
     }
 }
 
-/// The soft shadow the side panel casts on the drawing area.
-fn shadow_edge(painter: &egui::Painter, rect: Rect) {
-    for i in 0..9 {
-        let a = (34.0 * (1.0 - i as f32 / 9.0).powi(2)) as u8;
-        let x = rect.left() + i as f32;
-        painter.rect_filled(
-            Rect::from_min_max(
-                egui::pos2(x, rect.top()),
-                egui::pos2(x + 1.0, rect.bottom()),
-            ),
-            0.0,
-            Color32::from_black_alpha(a),
-        );
+/// New points picked so far, and the object the tool is about to make,
+/// drawn from the first pick to the pointer.
+fn preview(
+    app: &App,
+    painter: &egui::Painter,
+    rect: Rect,
+    t: &ViewTransform,
+    pointer: Option<egui::Pos2>,
+) {
+    let screen = |(x, y): (f64, f64)| {
+        let (sx, sy) = t.world_to_screen(x, y);
+        rect.min + vec2(sx as f32, sy as f32)
+    };
+    let picks = app.tool.picks();
+    if app.tool.tool() == Tool::Polygon && !picks.is_empty() {
+        // The sides so far and the one following the pointer, lightly filled.
+        let mut pts: Vec<egui::Pos2> = picks
+            .iter()
+            .filter_map(|p| pick_position(app, p).map(screen))
+            .collect();
+        pts.extend(pointer.filter(|p| rect.contains(*p)));
+        if pts.len() >= 3 {
+            let tris: Vec<(f64, f64)> = pts.iter().map(|p| (p.x as f64, p.y as f64)).collect();
+            let mut mesh = egui::Mesh::default();
+            for &p in &pts {
+                mesh.colored_vertex(p, theme::POLYGON.gamma_multiply(0.1));
+            }
+            for [a, b, c] in crate::shape::triangulate(&tris) {
+                mesh.add_triangle(a as u32, b as u32, c as u32);
+            }
+            painter.add(egui::Shape::mesh(mesh));
+        }
+        let stroke = Stroke::new(draw::CURVE_WIDTH, theme::POLYGON.gamma_multiply(0.6));
+        painter.add(egui::Shape::line(pts, stroke));
+        return;
+    }
+    let (Some(to), [first]) = (pointer.filter(|p| rect.contains(*p)), picks) else {
+        return;
+    };
+    let Some(from) = pick_position(app, first).map(screen) else {
+        return;
+    };
+    let stroke = Stroke::new(draw::CURVE_WIDTH, theme::CURVE.gamma_multiply(0.6));
+    let d = to - from;
+    match app.tool.tool() {
+        Tool::Segment | Tool::Vector => {
+            painter.line_segment([from, to], stroke);
+        }
+        Tool::Line | Tool::Ray if d.length() > 0.5 => {
+            let far = d / d.length() * (rect.width() + rect.height());
+            let start = if app.tool.tool() == Tool::Line {
+                from - far
+            } else {
+                from
+            };
+            painter.line_segment([start, from + far], stroke);
+        }
+        Tool::Circle => {
+            painter.circle_stroke(from, d.length(), stroke);
+        }
+        _ => {}
     }
 }
 
-/// The floating buttons and the tool hint.
+/// The buttons over the drawing area and the tool hint.
 fn overlay(app: &mut App, ui: &mut Ui, rect: Rect, w: f64, h: f64, cam: &mut Camera) {
-    let margin = 30.0;
-    let left = rect.left() + margin + 4.0;
-    let top = rect.top() + margin;
-    let undo = floating::round_button(
-        ui,
-        "undo",
-        egui::pos2(left, top),
-        Icon::Undo,
-        app.wb.can_undo(),
-        "Cofnij",
-    );
-    if undo.clicked() {
-        app.wb.undo();
-    }
-    let redo = floating::round_button(
-        ui,
-        "redo",
-        egui::pos2(left + 44.0, top),
-        Icon::Redo,
-        app.wb.can_redo(),
-        "Ponów",
-    );
-    if redo.clicked() {
-        app.wb.redo();
-    }
-    let gear = floating::round_button(
-        ui,
-        "gear",
-        egui::pos2(rect.right() - margin, top),
-        Icon::Gear,
-        true,
-        "Ustawienia",
-    );
-    egui::Popup::menu(&gear).show(|ui| {
-        ui.set_min_width(140.0);
-        ui.checkbox(&mut app.decor.grid, "Siatka");
-        ui.checkbox(&mut app.decor.axes, "Osie");
-    });
-    let right = rect.right() - margin;
-    let bottom = rect.bottom() - margin;
-    if floating::round_button(
-        ui,
-        "home",
-        egui::pos2(right, bottom),
-        Icon::Home,
-        true,
-        "Widok standardowy",
-    )
-    .clicked()
-    {
-        *cam = Camera::STANDARD;
-    }
-    if floating::round_button(
-        ui,
-        "zoom_out",
-        egui::pos2(right, bottom - 44.0),
-        Icon::ZoomOut,
-        true,
-        "Pomniejsz",
-    )
-    .clicked()
-    {
-        cam.zoom_at(1.0 / ZOOM_BUTTON, 0.5 * w, 0.5 * h, w, h);
-    }
-    if floating::round_button(
-        ui,
-        "zoom_in",
-        egui::pos2(right, bottom - 88.0),
-        Icon::ZoomIn,
-        true,
-        "Powiększ",
-    )
-    .clicked()
-    {
-        cam.zoom_at(ZOOM_BUTTON, 0.5 * w, 0.5 * h, w, h);
+    style_bar(app, ui, rect, cam);
+    let right = rect.right() - 35.0;
+    let bottom = rect.bottom() - 33.0;
+    let buttons = [
+        (Icon::Fit, "Pokaż wszystkie obiekty"),
+        (Icon::ZoomIn, "Powiększ"),
+        (Icon::ZoomOut, "Pomniejsz"),
+        (Icon::Fullscreen, "Pełny ekran"),
+    ];
+    for (i, (icon, tip)) in buttons.into_iter().enumerate() {
+        let center = pos2(right, bottom - 44.0 * (3 - i) as f32);
+        if !floating::round_button(ui, tip, center, icon, true, tip).clicked() {
+            continue;
+        }
+        match icon {
+            Icon::Fit => {
+                *cam = Camera::fit(view::content_bounds(app.wb.construction()), w, h);
+            }
+            Icon::ZoomIn => cam.zoom_at(ZOOM_BUTTON, 0.5 * w, 0.5 * h, w, h),
+            Icon::ZoomOut => cam.zoom_at(1.0 / ZOOM_BUTTON, 0.5 * w, 0.5 * h, w, h),
+            _ => {
+                let full = ui.ctx().input(|i| i.viewport().fullscreen.unwrap_or(false));
+                ui.ctx()
+                    .send_viewport_cmd(egui::ViewportCommand::Fullscreen(!full));
+            }
+        }
     }
     if let Some(notice) = app.wb.notice.clone() {
-        floating::hint_pill(ui, rect, &notice, theme::ERROR, 2.0);
+        let lift = if app.tool.tool() == Tool::Move {
+            0.0
+        } else {
+            66.0
+        };
+        if floating::snackbar(ui, rect, &notice, lift) {
+            app.wb.notice = None;
+        }
     }
     if app.tool.tool() != Tool::Move {
-        floating::hint_pill(ui, rect, app.tool.hint(), theme::TEXT, 0.0);
+        floating::tool_tip(ui, rect, app.tool.tool().caption(), app.tool.hint());
         if let Some(e) = app.tool_error.clone() {
             floating::hint_pill(ui, rect, &e, theme::ERROR, 1.0);
+        }
+    }
+}
+
+/// The toggle in the top right corner and, when open, the bar with the view
+/// settings to its left.
+fn style_bar(app: &mut App, ui: &mut Ui, rect: Rect, cam: &mut Camera) {
+    let toggle = Rect::from_min_size(pos2(rect.right() - 44.0, rect.top()), vec2(44.0, 40.0));
+    let response = floating::square_button(ui, "style_bar", toggle, Icon::StyleBar, app.style_bar);
+    response.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, "Pasek stylu"));
+    if response.on_hover_text("Pasek stylu").clicked() {
+        app.style_bar = !app.style_bar;
+    }
+    if !app.style_bar {
+        return;
+    }
+    let items = [
+        (Icon::Axes, "Osie", app.decor.axes),
+        (Icon::Grid, "Siatka", app.decor.grid),
+        (Icon::Home, "Widok standardowy", false),
+    ];
+    for (i, (icon, tip, on)) in items.into_iter().enumerate() {
+        let r = Rect::from_min_size(
+            pos2(
+                toggle.left() - 44.0 * (items.len() - i) as f32 - 6.0,
+                rect.top(),
+            ),
+            vec2(44.0, 40.0),
+        );
+        let response = floating::square_button(ui, tip, r, icon, on);
+        response.widget_info(|| egui::WidgetInfo::selected(egui::Role::Button, true, on, tip));
+        if response.on_hover_text(tip).clicked() {
+            match icon {
+                Icon::Axes => app.decor.axes = !app.decor.axes,
+                Icon::Grid => app.decor.grid = !app.decor.grid,
+                _ => *cam = Camera::STANDARD,
+            }
         }
     }
 }
