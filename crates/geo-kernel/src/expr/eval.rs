@@ -359,7 +359,7 @@ fn object(c: &Construction, id: Id) -> Val {
 /// A command computed in place.
 fn command(c: &Construction, def: Def) -> Val {
     let nan = f64::NAN;
-    match c.try_compute(def) {
+    match c.command_value(def) {
         Some(Value::Number(v)) => Val::N(v),
         Some(Value::Point { x, y } | Value::Vector { x, y }) => Val::V(x, y),
         _ if def.kind() == Kind::Number => Val::N(nan),

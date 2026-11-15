@@ -489,10 +489,7 @@ impl Construction {
             let def = self.defs[i];
             recomputed += 1;
             if let Def::Expr(d) = def {
-                // An expression compares its raw result, infinities kept.
-                let raw = expr::evaluate(self, d);
-                self.values[i] = expr::value(d, raw);
-                if !expr::store(self, d, raw) {
+                if !self.update_expr(i, d) {
                     continue;
                 }
             } else {
@@ -513,6 +510,16 @@ impl Construction {
 
         self.heap = heap;
         recomputed
+    }
+
+    /// Recomputes the expression object `i`; tells whether its children
+    /// must follow. An expression compares its raw result, infinities kept.
+    /// Kept out of line so that the loop of [`Self::propagate`] stays small.
+    #[inline(never)]
+    fn update_expr(&mut self, i: usize, d: ExprDef) -> bool {
+        let raw = expr::evaluate(self, d);
+        self.values[i] = expr::value(d, raw);
+        expr::store(self, d, raw)
     }
 
     pub(crate) fn check(&self, def: &Def) -> Result<(), Error> {
@@ -596,8 +603,16 @@ impl Construction {
         }
     }
 
+    /// [`Self::try_compute`] for a command inside an expression. Out of
+    /// line, so that `try_compute` stays inlined in the update loop.
+    #[inline(never)]
+    pub(crate) fn command_value(&self, def: Def) -> Option<Value> {
+        self.try_compute(def)
+    }
+
     /// `None` means the object is undefined for the current inputs.
-    pub(crate) fn try_compute(&self, def: Def) -> Option<Value> {
+    #[inline(always)]
+    fn try_compute(&self, def: Def) -> Option<Value> {
         match def {
             Def::FreePoint { x, y } => Some(Value::Point { x, y }),
             Def::Number(v) => Some(Value::Number(v)),
@@ -626,7 +641,7 @@ impl Construction {
             Def::Measure(d) => d.compute(self),
             Def::Transform(d) => d.compute(self),
             Def::Vector(d) => d.compute(self),
-            Def::Expr(d) => Some(expr::value(d, expr::evaluate(self, d))),
+            Def::Expr(d) => Some(expr::current(self, d)),
         }
     }
 

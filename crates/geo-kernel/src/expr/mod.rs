@@ -282,12 +282,19 @@ fn inputs_defined(c: &Construction, e: &Entry) -> bool {
     });
     objects
         && e.nodes.iter().all(|n| match *n {
-            Node::Cmd(def) => match c.try_compute(def) {
+            Node::Cmd(def) => match c.command_value(def) {
                 Some(Value::Number(v)) => !v.is_nan(),
                 other => other.is_some(),
             },
             _ => true,
         })
+}
+
+/// The value of an expression object for the current values of its
+/// parents, without storing it.
+#[inline(never)]
+pub(crate) fn current(c: &Construction, d: ExprDef) -> Value {
+    value(d, evaluate(c, d))
 }
 
 /// Stores the result of [`evaluate`]; tells whether it changed. A function
