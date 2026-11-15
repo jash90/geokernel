@@ -366,11 +366,10 @@ fn camera(h: &Harness<'_, App>) -> (f64, f64, f64) {
     (c.cx, c.cy, c.scale)
 }
 
-/// Pins behaviour the window already had before each event was decided when
-/// it came (the earlier code ended the drag at the frame's end and also got
-/// this right); the next test is the one that tells the two apart.
+/// With the earlier code (the release decided at the frame's end) the new
+/// press never panned.
 #[test]
-fn a_release_and_a_press_in_one_frame_end_the_drag_and_start_a_new_press_as_before() {
+fn a_release_and_a_press_in_one_frame_end_the_drag_and_start_a_new_press() {
     let mut h = harness("A = (0, 0)\n");
     let from = world(0.0, 0.0);
     moved(&mut h, from);
@@ -404,6 +403,7 @@ fn a_release_and_a_press_in_one_frame_end_the_drag_and_start_a_new_press_as_befo
     assert!(!h.state().wb.can_undo());
 }
 
+/// With the earlier code the tap was placed where the new press went down.
 #[test]
 fn a_tap_and_a_press_in_one_frame_place_the_point_where_the_tap_was() {
     let mut h = harness("");
