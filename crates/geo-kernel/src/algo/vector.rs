@@ -56,7 +56,7 @@
 //! `Direction(l)` is `(y, -x)` and `OrthogonalVector(l)` is `(x, y)` of the
 //! raw coefficients, so their length depends on the raw scale.
 
-use super::{Group, Parents, POINT};
+use super::{normalized_coefficients, Group, Parents, POINT};
 use crate::kernel::{Construction, Def, Error, Id, Kind, Value};
 use crate::script::object;
 use crate::tol::STANDARD_PRECISION;
@@ -182,38 +182,112 @@ fn raw_ortho(p: (f64, f64), v: (f64, f64)) -> (f64, f64, f64) {
     (-v.0, -v.1, p.0 * v.0 + p.1 * v.1)
 }
 
-/// The raw `(x, y)` of a line, segment or ray. An undefined line whose
-/// coefficients GeoGebra computes as a cross product of its inputs has
-/// `(x, y)` zero there, not NaN (see [`zero_when_undefined`]).
+/// The raw `(x, y)` of a line, segment or ray, also when the kernel holds
+/// the line undefined (see [`undefined_raw`]).
 fn normal_of(c: &Construction, id: Id) -> Option<(f64, f64)> {
-    match c.raw_carrier(id) {
-        Some((x, y, _)) => Some((x, y)),
-        None if c.value(id) == Value::Undefined && zero_when_undefined(c, id) => Some((0.0, 0.0)),
-        None => None,
+    let (x, y, _) = raw_or_undefined(c, id)?;
+    Some((x, y))
+}
+
+fn raw_or_undefined(c: &Construction, id: Id) -> Option<(f64, f64, f64)> {
+    c.raw_carrier(id).or_else(|| undefined_raw(c, id))
+}
+
+/// GeoGebra's raw coefficients of a line or ray that the kernel holds as
+/// undefined.
+///
+/// GeoGebra calls a line undefined when its `x` and `y` are both below
+/// `STANDARD_PRECISION`, but it keeps them, and `Direction`,
+/// `OrthogonalVector` and the unit vectors read them (a tiny or zero
+/// vector, or a unit vector of the tiny one). `Value::Undefined` carries no
+/// coefficients, so they are computed again from the definition for the
+/// lines made from points and directions: `AlgoJoinPoints`,
+/// `AlgoJoinPointsRay`, `AlgoRayPointVector`, `AlgoLinePointVector`,
+/// `AlgoOrthoLinePointVector`, and parallels, perpendiculars and
+/// translations of these. `None` when an input is undefined (GeoGebra's
+/// coefficients are then NaN) or the line is made otherwise.
+fn undefined_raw(c: &Construction, id: Id) -> Option<(f64, f64, f64)> {
+    match c.def(id) {
+        Def::Line(p, q) | Def::Vector(VectorDef::RayPoints(p, q)) => {
+            Some(raw_through(point(c, p)?, point(c, q)?))
+        }
+        Def::Vector(VectorDef::RayVector(p, v) | VectorDef::LineVector(p, v)) => {
+            Some(raw_along(point(c, p)?, vector(c, v)?))
+        }
+        Def::Vector(VectorDef::OrthoLineVector(p, v)) => {
+            Some(raw_ortho(point(c, p)?, vector(c, v)?))
+        }
+        Def::Parallel { through, to } => {
+            // `AlgoLinePointLine`: `GeoVec3D.cross(P, l.y, -l.x, 0)`.
+            let (px, py) = point(c, through)?;
+            let (lx, ly, _) = raw_or_undefined(c, to)?;
+            Some((py * 0.0 - -lx, ly - px * 0.0, px * -lx - py * ly))
+        }
+        Def::Perpendicular { through, to } => {
+            // `AlgoOrthoLinePointLine`: `GeoVec3D.cross(P, l.x, l.y, 0)`,
+            // then `GeoLine.getNormalizedCoefficients`.
+            let (px, py) = point(c, through)?;
+            let (lx, ly, _) = raw_or_undefined(c, to)?;
+            Some(normalized_coefficients(
+                (py * 0.0 - ly, lx - px * 0.0, px * ly - py * lx),
+                10e6,
+                1e-2,
+            ))
+        }
+        Def::Vector(VectorDef::Translate { src, by, .. }) => {
+            // `GeoLine.translate`.
+            let (dx, dy) = vector(c, by)?;
+            let (x, y, z) = raw_or_undefined(c, src)?;
+            Some((x, y, z - (x * dx + y * dy)))
+        }
+        _ => None,
     }
 }
 
-/// Whether the line or ray `id` is made by a cross product of points and
-/// directions (`AlgoJoinPoints`, `AlgoJoinPointsRay`, `AlgoRayPointVector`,
-/// `AlgoLinePointVector`, `AlgoOrthoLinePointVector`), or as a parallel,
-/// perpendicular or translation of such a line. When it is undefined because
-/// its direction vanishes, GeoGebra still holds `(x, y)` zero, and
-/// `Direction` and `OrthogonalVector` give the zero vector. This depends on
-/// the definitions only, not on values.
-fn zero_when_undefined(c: &Construction, mut id: Id) -> bool {
+/// Objects that a direction vector reads besides its argument.
+///
+/// For a line the kernel holds as undefined, [`undefined_raw`] reads the
+/// inputs of the line's definition. The line stays undefined while they
+/// move, so the vector must be recomputed from them directly.
+pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
+    let mut ids = Vec::new();
+    let Def::Vector(
+        VectorDef::Direction(l)
+        | VectorDef::Unit(l)
+        | VectorDef::Ortho(l)
+        | VectorDef::UnitOrtho(l),
+    ) = *def
+    else {
+        return ids;
+    };
+    let mut push = |s: Id| {
+        if !ids.contains(&s) {
+            ids.push(s);
+        }
+    };
+    let mut id = l;
     loop {
         match c.def(id) {
-            Def::Line(..)
+            Def::Line(p, q)
             | Def::Vector(
-                VectorDef::RayPoints(..)
-                | VectorDef::RayVector(..)
-                | VectorDef::LineVector(..)
-                | VectorDef::OrthoLineVector(..),
-            ) => return true,
-            Def::Parallel { to, .. }
-            | Def::Perpendicular { to, .. }
-            | Def::Vector(VectorDef::Translate { src: to, .. }) => id = to,
-            _ => return false,
+                VectorDef::RayPoints(p, q)
+                | VectorDef::RayVector(p, q)
+                | VectorDef::LineVector(p, q)
+                | VectorDef::OrthoLineVector(p, q),
+            ) => {
+                push(p);
+                push(q);
+                return ids;
+            }
+            Def::Parallel { through, to } | Def::Perpendicular { through, to } => {
+                push(through);
+                id = to;
+            }
+            Def::Vector(VectorDef::Translate { src, by, .. }) => {
+                push(by);
+                id = src;
+            }
+            _ => return ids,
         }
     }
 }

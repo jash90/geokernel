@@ -254,5 +254,15 @@ case("rawscale", [pt("A", 0, 0), pt("B", 0.001, 0), pt("P", 0, 0), pt("Q", 0, 3)
                   "l = Line(A, B)", "m = PerpendicularLine(P, l)", "n = Line(Q, m)",
                   "o = OrthogonalVector(n)"],
      [mv("P", 5, 0), mv("P", -2, 0), mv("B", 0.002, 0)])
+# a line whose raw direction is tiny but not zero, then exactly zero
+case("rawscale", [pt("A", 0, 0), pt("P", 5, 3), num("f", 1), "B = Dilate(P, f, A)", "l = Line(A, B)",
+                  "d = Direction(l)", "o = OrthogonalVector(l)", "q = UnitVector(l)"],
+     [setn("f", 0.000000001), setn("f", 0), setn("f", 1), setn("f", 0.000000001),
+      mv("A", 1, 1), mv("A", 0, 0)])
+# a line through an intersection point that becomes undefined
+case("rawscale", [pt("C", 0, 0), "r = 2", "k = Circle(C, r)", pt("E", -5, 1), pt("F", 5, 1),
+                  "h = Line(E, F)", "S = Intersect(h, k, 1)", pt("B", 3, -4), "l = Line(S, B)",
+                  "d = Direction(l)", "o = OrthogonalVector(l)", "q = UnitVector(l)"],
+     [mv("E", -5, 4), mv("F", 5, 4), mv("E", -5, 1), mv("F", 5, 1)])
 
 cases.write()
