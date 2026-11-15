@@ -5,6 +5,7 @@
 //! random edit sessions.
 
 mod colours;
+mod rows;
 
 use crate::workbench::Workbench;
 use geo_kernel::kernel::{Kind, Value};

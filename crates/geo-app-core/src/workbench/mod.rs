@@ -1,6 +1,7 @@
 //! The document the window edits: construction, the script lines that built
 //! it, selection, visibility, undo and the cached object list. No UI types.
 
+#[cfg(test)]
 use crate::describe;
 use crate::history::History;
 use crate::labels::next_label;
@@ -8,9 +9,7 @@ use crate::scriptlog::{normalize, Log, Setting};
 use crate::style::Sides;
 use crate::undo::Undo;
 pub use file::{import_notice, rejected_notice, SNAPSHOT_VERSION};
-use geo_kernel::algo::measure::MeasureDef;
-use geo_kernel::kernel::{Construction, Def, Id, Kind, Value};
-use std::collections::HashMap;
+use geo_kernel::kernel::{Construction, Id, Kind, Value};
 use std::sync::OnceLock;
 
 /// What the algebra list shows for one object.
@@ -54,9 +53,13 @@ pub struct Workbench {
     gesture: Option<Gesture>,
     /// A problem to tell the user (for example a failed rebuild).
     pub notice: Option<String>,
+    /// The algebra rows, the values each was made from, and the state they
+    /// were brought up to date with (see `rows.rs`).
     rows: Vec<Row>,
-    rows_version: Option<u64>,
+    row_values: Vec<Value>,
+    rows_at: Option<(u64, u64)>,
     rows_built: u64,
+    rows_formatted: u64,
     /// The sides of the polygons, for the colours; made on first use after
     /// the objects changed (see `objects_changed`).
     sides: OnceLock<Sides>,
@@ -429,87 +432,9 @@ impl Workbench {
         self.version += 1;
         true
     }
-
-    pub fn rows(&mut self) -> &[Row] {
-        if self.rows_version != Some(self.version) {
-            self.rebuild_rows();
-        }
-        &self.rows
-    }
-
-    /// How many times the object list was built (read by the window's
-    /// tests and its frame benchmark).
-    pub fn rows_built(&self) -> u64 {
-        self.rows_built
-    }
-
-    fn rebuild_rows(&mut self) {
-        let c = &self.construction;
-        let rhs: HashMap<&str, &str> = self.log.definitions().collect();
-        let groups: Vec<&[String]> = self.log.multi_output().collect();
-        self.rows.clear();
-        self.rows.extend(c.ids().map(|id| {
-            let value = c.value(id);
-            let label = c.label(id).to_owned();
-            let kind = c.kind(id);
-            let free = c.def(id).is_free();
-            let text = match (c.def(id), value) {
-                // Angles are kept in radians and shown in degrees.
-                (Def::Measure(MeasureDef::Angle(..)), Value::Number(n)) => describe::degrees(n),
-                _ => describe::value_text(&value),
-            };
-            // A free angle is a free number shown and set in degrees.
-            let free_number = match (c.def(id), value) {
-                (Def::Number(_), Value::Number(n)) => Some(n),
-                (Def::Angle(_), Value::Number(n)) => Some(n),
-                _ => None,
-            };
-            let (head, second) = if free_number.is_some() {
-                (format!("{label} ="), None)
-            } else if free {
-                (format!("{label} = {text}"), None)
-            } else {
-                // A side made by a polygon names the polygon, as in the
-                // reference: `a = Segment(A, B, q1)`.
-                let polygon = groups
-                    .iter()
-                    .find(|g| g.contains(&label) && g[0] != label)
-                    .map(|g| g[0].as_str())
-                    .filter(|&p| c.id(p).is_some_and(|p| c.kind(p) == Kind::Polygon));
-                let side = match (c.def(id), polygon) {
-                    (Def::Segment(p, q), Some(poly)) => {
-                        Some(format!("Segment({}, {}, {poly})", c.label(p), c.label(q)))
-                    }
-                    _ => None,
-                };
-                // `label = definition` for every kind, as in the reference.
-                match side.as_deref().or(rhs.get(label.as_str()).copied()) {
-                    Some(rhs) => (format!("{label} = {rhs}"), Some(text)),
-                    None => (label.clone(), Some(text)),
-                }
-            };
-            let siblings = groups
-                .iter()
-                .find(|g| g.contains(&label))
-                .map(|g| g.iter().filter(|l| **l != label).cloned().collect())
-                .unwrap_or_default();
-            Row {
-                id,
-                label,
-                kind,
-                free,
-                head,
-                value: second,
-                siblings,
-                free_number,
-                angle: matches!(c.def(id), Def::Angle(_)),
-            }
-        }));
-        self.rows_version = Some(self.version);
-        self.rows_built += 1;
-    }
 }
 
 mod file;
+mod rows;
 #[cfg(test)]
 mod tests;
