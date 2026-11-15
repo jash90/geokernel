@@ -1,0 +1,685 @@
+{
+  "schema": 1,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "expr-negpow-001",
+      "group": "expr",
+      "script": [
+        "a = -8",
+        "b = 3",
+        "c = a^(1/b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "value": 0.0 },
+        { "action": "set_number", "label": "b", "value": 1.5 },
+        { "action": "set_number", "label": "b", "value": 5.0 },
+        { "action": "set_number", "label": "a", "value": 8.0 },
+        { "action": "set_number", "label": "a", "value": -27.0 },
+        { "action": "set_number", "label": "b", "value": 3.0 },
+        { "action": "set_number", "label": "a", "value": -8.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": -8.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": -2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -8.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -8.0 },
+          "b": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -8.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "c": { "type": "number", "defined": true, "value": -1.515716566510398 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 8.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "c": { "type": "number", "defined": true, "value": 1.515716566510398 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -27.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "c": { "type": "number", "defined": true, "value": -1.9331820449317627 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -27.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": -3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -8.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": -2.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-negpow-002",
+      "group": "expr",
+      "script": [
+        "a = -8",
+        "b = 3",
+        "c = a^(2/b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "value": 0.0 },
+        { "action": "set_number", "label": "b", "value": 1.5 },
+        { "action": "set_number", "label": "b", "value": 5.0 },
+        { "action": "set_number", "label": "a", "value": 8.0 },
+        { "action": "set_number", "label": "a", "value": -27.0 },
+        { "action": "set_number", "label": "b", "value": 3.0 },
+        { "action": "set_number", "label": "a", "value": -8.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": -8.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 3.9999999999999996 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -8.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -8.0 },
+          "b": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -8.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "c": { "type": "number", "defined": true, "value": 2.29739670999407 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 8.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "c": { "type": "number", "defined": true, "value": 2.29739670999407 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -27.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "c": { "type": "number", "defined": true, "value": 3.737192818846552 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -27.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 8.999999999999998 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -8.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 3.9999999999999996 }
+        }
+      ]
+    },
+    {
+      "id": "expr-negpow-003",
+      "group": "expr",
+      "script": [
+        "a = -8",
+        "b = 3",
+        "c = a^(b/3)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "value": 0.0 },
+        { "action": "set_number", "label": "b", "value": 1.5 },
+        { "action": "set_number", "label": "b", "value": 5.0 },
+        { "action": "set_number", "label": "a", "value": 8.0 },
+        { "action": "set_number", "label": "a", "value": -27.0 },
+        { "action": "set_number", "label": "b", "value": 3.0 },
+        { "action": "set_number", "label": "a", "value": -8.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": -8.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": -8.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -8.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -8.0 },
+          "b": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -8.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "c": { "type": "number", "defined": true, "value": -31.999999999999993 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 8.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "c": { "type": "number", "defined": true, "value": 32.00000000000001 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -27.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "c": { "type": "number", "defined": true, "value": -242.99999999999991 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -27.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": -27.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -8.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": -8.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-negpow-004",
+      "group": "expr",
+      "script": [
+        "a = -8",
+        "b = 3",
+        "c = a^(-1/b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "value": 0.0 },
+        { "action": "set_number", "label": "b", "value": 1.5 },
+        { "action": "set_number", "label": "b", "value": 5.0 },
+        { "action": "set_number", "label": "a", "value": 8.0 },
+        { "action": "set_number", "label": "a", "value": -27.0 },
+        { "action": "set_number", "label": "b", "value": 3.0 },
+        { "action": "set_number", "label": "a", "value": -8.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": -8.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -8.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -8.0 },
+          "b": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -8.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "c": { "type": "number", "defined": true, "value": -0.6597539553864471 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 8.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "c": { "type": "number", "defined": true, "value": 0.6597539553864471 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -27.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5172818579717865 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -27.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": -0.33333333333333337 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -8.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 }
+        }
+      ]
+    },
+    {
+      "id": "expr-negpow-005",
+      "group": "expr",
+      "script": [
+        "a = -8",
+        "b = 3",
+        "c = a^-(b/3)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "value": 0.0 },
+        { "action": "set_number", "label": "b", "value": 1.5 },
+        { "action": "set_number", "label": "b", "value": 5.0 },
+        { "action": "set_number", "label": "a", "value": 8.0 },
+        { "action": "set_number", "label": "a", "value": -27.0 },
+        { "action": "set_number", "label": "b", "value": 3.0 },
+        { "action": "set_number", "label": "a", "value": -8.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": -8.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": -0.125 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -8.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -8.0 },
+          "b": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -8.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "c": { "type": "number", "defined": true, "value": -0.03125000000000001 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 8.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "c": { "type": "number", "defined": true, "value": 0.031249999999999997 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -27.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "c": { "type": "number", "defined": true, "value": -0.004115226337448561 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -27.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": -0.037037037037037035 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -8.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": -0.125 }
+        }
+      ]
+    },
+    {
+      "id": "expr-negpow-006",
+      "group": "expr",
+      "script": [
+        "a = -8",
+        "b = 3",
+        "c = a^(1/3) + a^(2/b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "value": 0.0 },
+        { "action": "set_number", "label": "b", "value": 1.5 },
+        { "action": "set_number", "label": "b", "value": 5.0 },
+        { "action": "set_number", "label": "a", "value": 8.0 },
+        { "action": "set_number", "label": "a", "value": -27.0 },
+        { "action": "set_number", "label": "b", "value": 3.0 },
+        { "action": "set_number", "label": "a", "value": -8.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": -8.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 1.9999999999999996 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -8.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -8.0 },
+          "b": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -8.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "c": { "type": "number", "defined": true, "value": 0.2973967099940702 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 8.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "c": { "type": "number", "defined": true, "value": 4.29739670999407 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -27.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "c": { "type": "number", "defined": true, "value": 0.7371928188465522 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -27.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 5.999999999999998 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -8.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 1.9999999999999996 }
+        }
+      ]
+    },
+    {
+      "id": "expr-negpow-007",
+      "group": "expr",
+      "script": [
+        "a = -8",
+        "b = 3",
+        "P = (a^(1/b), a^(2/3))",
+        "u = (a^(1/3); 1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 27.0 },
+        { "action": "set_number", "label": "b", "value": 5.0 },
+        { "action": "set_number", "label": "a", "value": -8.0 },
+        { "action": "set_number", "label": "b", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": -8.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "P": { "type": "point", "defined": true, "x": -2.0, "y": 3.9999999999999996 },
+          "u": { "type": "vector", "defined": true, "x": -1.0806046117362795, "y": -1.682941969615793 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -8.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "P": { "type": "point", "defined": false },
+          "u": { "type": "vector", "defined": true, "x": -1.0806046117362795, "y": -1.682941969615793 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 27.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "P": { "type": "point", "defined": false },
+          "u": { "type": "vector", "defined": true, "x": 1.6209069176044193, "y": 2.5244129544236893 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 27.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "P": { "type": "point", "defined": true, "x": 1.9331820449317627, "y": 8.999999999999998 },
+          "u": { "type": "vector", "defined": true, "x": 1.6209069176044193, "y": 2.5244129544236893 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -8.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "P": { "type": "point", "defined": true, "x": -1.515716566510398, "y": 3.9999999999999996 },
+          "u": { "type": "vector", "defined": true, "x": -1.0806046117362795, "y": -1.682941969615793 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -8.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "P": { "type": "point", "defined": true, "x": -2.0, "y": 3.9999999999999996 },
+          "u": { "type": "vector", "defined": true, "x": -1.0806046117362795, "y": -1.682941969615793 }
+        }
+      ]
+    },
+    {
+      "id": "expr-negpow-008",
+      "group": "expr",
+      "script": [
+        "a = 2",
+        "c = ∞^0"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "expr-negpow-009",
+      "group": "expr",
+      "script": [
+        "a = 2",
+        "c = 1^∞"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "expr-negpow-010",
+      "group": "expr",
+      "script": [
+        "a = 2",
+        "c = (-∞)^0"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "expr-negpow-011",
+      "group": "expr",
+      "script": [
+        "a = 2",
+        "c = 0^0"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-negpow-012",
+      "group": "expr",
+      "script": [
+        "a = 2",
+        "c = ∞^a"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "expr-negpow-013",
+      "group": "expr",
+      "script": [
+        "a = 2",
+        "c = a^∞"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "expr-negpow-014",
+      "group": "expr",
+      "script": [
+        "a = 2",
+        "c = (-1)^∞"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "expr-negpow-015",
+      "group": "expr",
+      "script": [
+        "a = 2",
+        "c = (1 / a)^0"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,2482 @@
+{
+  "schema": 1,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "expr-vector-001",
+      "group": "expr",
+      "script": [
+        "A = (2.16, -4.75)",
+        "B = (-6.54, 4.2)",
+        "u = (1.8, 4.97)",
+        "v = (-0.58, -4.22)",
+        "a = 3.98",
+        "w = u + 2*v"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "u", "x": 6.97, "y": -5.93 },
+        { "action": "move", "label": "v", "x": 6.2, "y": -3.38 },
+        { "action": "set_number", "label": "a", "value": 2.78 },
+        { "action": "move", "label": "u", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 2.16, "y": -4.75 },
+        { "action": "move", "label": "u", "x": 1.8, "y": 4.97 },
+        { "action": "move", "label": "B", "x": 0.84, "y": -3.65 },
+        { "action": "set_number", "label": "a", "value": 3.98 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 2.16, "y": -4.75 },
+          "B": { "type": "point", "defined": true, "x": -6.54, "y": 4.2 },
+          "u": { "type": "vector", "defined": true, "x": 1.8, "y": 4.97 },
+          "v": { "type": "vector", "defined": true, "x": -0.58, "y": -4.22 },
+          "a": { "type": "number", "defined": true, "value": 3.98 },
+          "w": { "type": "vector", "defined": true, "x": 0.6400000000000001, "y": -3.4699999999999998 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.16, "y": -4.75 },
+          "B": { "type": "point", "defined": true, "x": -6.54, "y": 4.2 },
+          "u": { "type": "vector", "defined": true, "x": 6.97, "y": -5.93 },
+          "v": { "type": "vector", "defined": true, "x": -0.58, "y": -4.22 },
+          "a": { "type": "number", "defined": true, "value": 3.98 },
+          "w": { "type": "vector", "defined": true, "x": 5.81, "y": -14.37 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.16, "y": -4.75 },
+          "B": { "type": "point", "defined": true, "x": -6.54, "y": 4.2 },
+          "u": { "type": "vector", "defined": true, "x": 6.97, "y": -5.93 },
+          "v": { "type": "vector", "defined": true, "x": 6.2, "y": -3.38 },
+          "a": { "type": "number", "defined": true, "value": 3.98 },
+          "w": { "type": "vector", "defined": true, "x": 19.37, "y": -12.69 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.16, "y": -4.75 },
+          "B": { "type": "point", "defined": true, "x": -6.54, "y": 4.2 },
+          "u": { "type": "vector", "defined": true, "x": 6.97, "y": -5.93 },
+          "v": { "type": "vector", "defined": true, "x": 6.2, "y": -3.38 },
+          "a": { "type": "number", "defined": true, "value": 2.78 },
+          "w": { "type": "vector", "defined": true, "x": 19.37, "y": -12.69 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.16, "y": -4.75 },
+          "B": { "type": "point", "defined": true, "x": -6.54, "y": 4.2 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 6.2, "y": -3.38 },
+          "a": { "type": "number", "defined": true, "value": 2.78 },
+          "w": { "type": "vector", "defined": true, "x": 12.4, "y": -6.76 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.16, "y": -4.75 },
+          "B": { "type": "point", "defined": true, "x": 2.16, "y": -4.75 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 6.2, "y": -3.38 },
+          "a": { "type": "number", "defined": true, "value": 2.78 },
+          "w": { "type": "vector", "defined": true, "x": 12.4, "y": -6.76 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.16, "y": -4.75 },
+          "B": { "type": "point", "defined": true, "x": 2.16, "y": -4.75 },
+          "u": { "type": "vector", "defined": true, "x": 1.8, "y": 4.97 },
+          "v": { "type": "vector", "defined": true, "x": 6.2, "y": -3.38 },
+          "a": { "type": "number", "defined": true, "value": 2.78 },
+          "w": { "type": "vector", "defined": true, "x": 14.200000000000001, "y": -1.79 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.16, "y": -4.75 },
+          "B": { "type": "point", "defined": true, "x": 0.84, "y": -3.65 },
+          "u": { "type": "vector", "defined": true, "x": 1.8, "y": 4.97 },
+          "v": { "type": "vector", "defined": true, "x": 6.2, "y": -3.38 },
+          "a": { "type": "number", "defined": true, "value": 2.78 },
+          "w": { "type": "vector", "defined": true, "x": 14.200000000000001, "y": -1.79 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.16, "y": -4.75 },
+          "B": { "type": "point", "defined": true, "x": 0.84, "y": -3.65 },
+          "u": { "type": "vector", "defined": true, "x": 1.8, "y": 4.97 },
+          "v": { "type": "vector", "defined": true, "x": 6.2, "y": -3.38 },
+          "a": { "type": "number", "defined": true, "value": 3.98 },
+          "w": { "type": "vector", "defined": true, "x": 14.200000000000001, "y": -1.79 }
+        }
+      ]
+    },
+    {
+      "id": "expr-vector-002",
+      "group": "expr",
+      "script": [
+        "A = (0.08, -2.44)",
+        "B = (-4.35, -5.51)",
+        "u = (1.51, -0.75)",
+        "v = (-5.34, 4.84)",
+        "a = 1.2",
+        "w = u - v"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "u", "x": 1.1, "y": -2.95 },
+        { "action": "move", "label": "v", "x": 6.76, "y": 6.85 },
+        { "action": "set_number", "label": "a", "value": -1.34 },
+        { "action": "move", "label": "u", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 0.08, "y": -2.44 },
+        { "action": "move", "label": "u", "x": 1.51, "y": -0.75 },
+        { "action": "move", "label": "B", "x": 4.32, "y": 6.87 },
+        { "action": "set_number", "label": "a", "value": 1.2 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.08, "y": -2.44 },
+          "B": { "type": "point", "defined": true, "x": -4.35, "y": -5.51 },
+          "u": { "type": "vector", "defined": true, "x": 1.51, "y": -0.75 },
+          "v": { "type": "vector", "defined": true, "x": -5.34, "y": 4.84 },
+          "a": { "type": "number", "defined": true, "value": 1.2 },
+          "w": { "type": "vector", "defined": true, "x": 6.85, "y": -5.59 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.08, "y": -2.44 },
+          "B": { "type": "point", "defined": true, "x": -4.35, "y": -5.51 },
+          "u": { "type": "vector", "defined": true, "x": 1.1, "y": -2.95 },
+          "v": { "type": "vector", "defined": true, "x": -5.34, "y": 4.84 },
+          "a": { "type": "number", "defined": true, "value": 1.2 },
+          "w": { "type": "vector", "defined": true, "x": 6.4399999999999995, "y": -7.79 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.08, "y": -2.44 },
+          "B": { "type": "point", "defined": true, "x": -4.35, "y": -5.51 },
+          "u": { "type": "vector", "defined": true, "x": 1.1, "y": -2.95 },
+          "v": { "type": "vector", "defined": true, "x": 6.76, "y": 6.85 },
+          "a": { "type": "number", "defined": true, "value": 1.2 },
+          "w": { "type": "vector", "defined": true, "x": -5.66, "y": -9.8 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.08, "y": -2.44 },
+          "B": { "type": "point", "defined": true, "x": -4.35, "y": -5.51 },
+          "u": { "type": "vector", "defined": true, "x": 1.1, "y": -2.95 },
+          "v": { "type": "vector", "defined": true, "x": 6.76, "y": 6.85 },
+          "a": { "type": "number", "defined": true, "value": -1.34 },
+          "w": { "type": "vector", "defined": true, "x": -5.66, "y": -9.8 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.08, "y": -2.44 },
+          "B": { "type": "point", "defined": true, "x": -4.35, "y": -5.51 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 6.76, "y": 6.85 },
+          "a": { "type": "number", "defined": true, "value": -1.34 },
+          "w": { "type": "vector", "defined": true, "x": -6.76, "y": -6.85 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.08, "y": -2.44 },
+          "B": { "type": "point", "defined": true, "x": 0.08, "y": -2.44 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 6.76, "y": 6.85 },
+          "a": { "type": "number", "defined": true, "value": -1.34 },
+          "w": { "type": "vector", "defined": true, "x": -6.76, "y": -6.85 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.08, "y": -2.44 },
+          "B": { "type": "point", "defined": true, "x": 0.08, "y": -2.44 },
+          "u": { "type": "vector", "defined": true, "x": 1.51, "y": -0.75 },
+          "v": { "type": "vector", "defined": true, "x": 6.76, "y": 6.85 },
+          "a": { "type": "number", "defined": true, "value": -1.34 },
+          "w": { "type": "vector", "defined": true, "x": -5.25, "y": -7.6 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.08, "y": -2.44 },
+          "B": { "type": "point", "defined": true, "x": 4.32, "y": 6.87 },
+          "u": { "type": "vector", "defined": true, "x": 1.51, "y": -0.75 },
+          "v": { "type": "vector", "defined": true, "x": 6.76, "y": 6.85 },
+          "a": { "type": "number", "defined": true, "value": -1.34 },
+          "w": { "type": "vector", "defined": true, "x": -5.25, "y": -7.6 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.08, "y": -2.44 },
+          "B": { "type": "point", "defined": true, "x": 4.32, "y": 6.87 },
+          "u": { "type": "vector", "defined": true, "x": 1.51, "y": -0.75 },
+          "v": { "type": "vector", "defined": true, "x": 6.76, "y": 6.85 },
+          "a": { "type": "number", "defined": true, "value": 1.2 },
+          "w": { "type": "vector", "defined": true, "x": -5.25, "y": -7.6 }
+        }
+      ]
+    },
+    {
+      "id": "expr-vector-003",
+      "group": "expr",
+      "script": [
+        "A = (-5.77, 1.54)",
+        "B = (5.44, -2.3)",
+        "u = (0.51, 1.69)",
+        "v = (5.91, -1.5)",
+        "a = 1.34",
+        "w = 2u"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "u", "x": -1.31, "y": 7.42 },
+        { "action": "move", "label": "v", "x": 7.02, "y": -7.08 },
+        { "action": "set_number", "label": "a", "value": 0.17 },
+        { "action": "move", "label": "u", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": -5.77, "y": 1.54 },
+        { "action": "move", "label": "u", "x": 0.51, "y": 1.69 },
+        { "action": "move", "label": "B", "x": 3.42, "y": 1.72 },
+        { "action": "set_number", "label": "a", "value": 1.34 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -5.77, "y": 1.54 },
+          "B": { "type": "point", "defined": true, "x": 5.44, "y": -2.3 },
+          "u": { "type": "vector", "defined": true, "x": 0.51, "y": 1.69 },
+          "v": { "type": "vector", "defined": true, "x": 5.91, "y": -1.5 },
+          "a": { "type": "number", "defined": true, "value": 1.34 },
+          "w": { "type": "vector", "defined": true, "x": 1.02, "y": 3.38 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -5.77, "y": 1.54 },
+          "B": { "type": "point", "defined": true, "x": 5.44, "y": -2.3 },
+          "u": { "type": "vector", "defined": true, "x": -1.31, "y": 7.42 },
+          "v": { "type": "vector", "defined": true, "x": 5.91, "y": -1.5 },
+          "a": { "type": "number", "defined": true, "value": 1.34 },
+          "w": { "type": "vector", "defined": true, "x": -2.62, "y": 14.84 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -5.77, "y": 1.54 },
+          "B": { "type": "point", "defined": true, "x": 5.44, "y": -2.3 },
+          "u": { "type": "vector", "defined": true, "x": -1.31, "y": 7.42 },
+          "v": { "type": "vector", "defined": true, "x": 7.02, "y": -7.08 },
+          "a": { "type": "number", "defined": true, "value": 1.34 },
+          "w": { "type": "vector", "defined": true, "x": -2.62, "y": 14.84 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -5.77, "y": 1.54 },
+          "B": { "type": "point", "defined": true, "x": 5.44, "y": -2.3 },
+          "u": { "type": "vector", "defined": true, "x": -1.31, "y": 7.42 },
+          "v": { "type": "vector", "defined": true, "x": 7.02, "y": -7.08 },
+          "a": { "type": "number", "defined": true, "value": 0.17 },
+          "w": { "type": "vector", "defined": true, "x": -2.62, "y": 14.84 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -5.77, "y": 1.54 },
+          "B": { "type": "point", "defined": true, "x": 5.44, "y": -2.3 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 7.02, "y": -7.08 },
+          "a": { "type": "number", "defined": true, "value": 0.17 },
+          "w": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -5.77, "y": 1.54 },
+          "B": { "type": "point", "defined": true, "x": -5.77, "y": 1.54 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 7.02, "y": -7.08 },
+          "a": { "type": "number", "defined": true, "value": 0.17 },
+          "w": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -5.77, "y": 1.54 },
+          "B": { "type": "point", "defined": true, "x": -5.77, "y": 1.54 },
+          "u": { "type": "vector", "defined": true, "x": 0.51, "y": 1.69 },
+          "v": { "type": "vector", "defined": true, "x": 7.02, "y": -7.08 },
+          "a": { "type": "number", "defined": true, "value": 0.17 },
+          "w": { "type": "vector", "defined": true, "x": 1.02, "y": 3.38 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -5.77, "y": 1.54 },
+          "B": { "type": "point", "defined": true, "x": 3.42, "y": 1.72 },
+          "u": { "type": "vector", "defined": true, "x": 0.51, "y": 1.69 },
+          "v": { "type": "vector", "defined": true, "x": 7.02, "y": -7.08 },
+          "a": { "type": "number", "defined": true, "value": 0.17 },
+          "w": { "type": "vector", "defined": true, "x": 1.02, "y": 3.38 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -5.77, "y": 1.54 },
+          "B": { "type": "point", "defined": true, "x": 3.42, "y": 1.72 },
+          "u": { "type": "vector", "defined": true, "x": 0.51, "y": 1.69 },
+          "v": { "type": "vector", "defined": true, "x": 7.02, "y": -7.08 },
+          "a": { "type": "number", "defined": true, "value": 1.34 },
+          "w": { "type": "vector", "defined": true, "x": 1.02, "y": 3.38 }
+        }
+      ]
+    },
+    {
+      "id": "expr-vector-004",
+      "group": "expr",
+      "script": [
+        "A = (-7.94, 0.84)",
+        "B = (3.81, -3.75)",
+        "u = (5.17, -2.05)",
+        "v = (1.26, 0.71)",
+        "a = 2.38",
+        "w = u / 2"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "u", "x": -2.74, "y": -0.32 },
+        { "action": "move", "label": "v", "x": 7.02, "y": -2.03 },
+        { "action": "set_number", "label": "a", "value": 0.82 },
+        { "action": "move", "label": "u", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": -7.94, "y": 0.84 },
+        { "action": "move", "label": "u", "x": 5.17, "y": -2.05 },
+        { "action": "move", "label": "B", "x": -4.14, "y": 1.26 },
+        { "action": "set_number", "label": "a", "value": 2.38 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -7.94, "y": 0.84 },
+          "B": { "type": "point", "defined": true, "x": 3.81, "y": -3.75 },
+          "u": { "type": "vector", "defined": true, "x": 5.17, "y": -2.05 },
+          "v": { "type": "vector", "defined": true, "x": 1.26, "y": 0.71 },
+          "a": { "type": "number", "defined": true, "value": 2.38 },
+          "w": { "type": "vector", "defined": true, "x": 2.585, "y": -1.025 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.94, "y": 0.84 },
+          "B": { "type": "point", "defined": true, "x": 3.81, "y": -3.75 },
+          "u": { "type": "vector", "defined": true, "x": -2.74, "y": -0.32 },
+          "v": { "type": "vector", "defined": true, "x": 1.26, "y": 0.71 },
+          "a": { "type": "number", "defined": true, "value": 2.38 },
+          "w": { "type": "vector", "defined": true, "x": -1.37, "y": -0.16 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.94, "y": 0.84 },
+          "B": { "type": "point", "defined": true, "x": 3.81, "y": -3.75 },
+          "u": { "type": "vector", "defined": true, "x": -2.74, "y": -0.32 },
+          "v": { "type": "vector", "defined": true, "x": 7.02, "y": -2.03 },
+          "a": { "type": "number", "defined": true, "value": 2.38 },
+          "w": { "type": "vector", "defined": true, "x": -1.37, "y": -0.16 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.94, "y": 0.84 },
+          "B": { "type": "point", "defined": true, "x": 3.81, "y": -3.75 },
+          "u": { "type": "vector", "defined": true, "x": -2.74, "y": -0.32 },
+          "v": { "type": "vector", "defined": true, "x": 7.02, "y": -2.03 },
+          "a": { "type": "number", "defined": true, "value": 0.82 },
+          "w": { "type": "vector", "defined": true, "x": -1.37, "y": -0.16 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.94, "y": 0.84 },
+          "B": { "type": "point", "defined": true, "x": 3.81, "y": -3.75 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 7.02, "y": -2.03 },
+          "a": { "type": "number", "defined": true, "value": 0.82 },
+          "w": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.94, "y": 0.84 },
+          "B": { "type": "point", "defined": true, "x": -7.94, "y": 0.84 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 7.02, "y": -2.03 },
+          "a": { "type": "number", "defined": true, "value": 0.82 },
+          "w": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.94, "y": 0.84 },
+          "B": { "type": "point", "defined": true, "x": -7.94, "y": 0.84 },
+          "u": { "type": "vector", "defined": true, "x": 5.17, "y": -2.05 },
+          "v": { "type": "vector", "defined": true, "x": 7.02, "y": -2.03 },
+          "a": { "type": "number", "defined": true, "value": 0.82 },
+          "w": { "type": "vector", "defined": true, "x": 2.585, "y": -1.025 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.94, "y": 0.84 },
+          "B": { "type": "point", "defined": true, "x": -4.14, "y": 1.26 },
+          "u": { "type": "vector", "defined": true, "x": 5.17, "y": -2.05 },
+          "v": { "type": "vector", "defined": true, "x": 7.02, "y": -2.03 },
+          "a": { "type": "number", "defined": true, "value": 0.82 },
+          "w": { "type": "vector", "defined": true, "x": 2.585, "y": -1.025 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.94, "y": 0.84 },
+          "B": { "type": "point", "defined": true, "x": -4.14, "y": 1.26 },
+          "u": { "type": "vector", "defined": true, "x": 5.17, "y": -2.05 },
+          "v": { "type": "vector", "defined": true, "x": 7.02, "y": -2.03 },
+          "a": { "type": "number", "defined": true, "value": 2.38 },
+          "w": { "type": "vector", "defined": true, "x": 2.585, "y": -1.025 }
+        }
+      ]
+    },
+    {
+      "id": "expr-vector-005",
+      "group": "expr",
+      "script": [
+        "A = (-7.84, -6.94)",
+        "B = (5.44, -2.83)",
+        "u = (-2.26, -6.94)",
+        "v = (0.96, 5.11)",
+        "a = 2.38",
+        "w = -u"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "u", "x": -3.57, "y": -1.63 },
+        { "action": "move", "label": "v", "x": 4.73, "y": -0.56 },
+        { "action": "set_number", "label": "a", "value": -0.43 },
+        { "action": "move", "label": "u", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": -7.84, "y": -6.94 },
+        { "action": "move", "label": "u", "x": -2.26, "y": -6.94 },
+        { "action": "move", "label": "B", "x": -2.88, "y": -5.1 },
+        { "action": "set_number", "label": "a", "value": 2.38 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -7.84, "y": -6.94 },
+          "B": { "type": "point", "defined": true, "x": 5.44, "y": -2.83 },
+          "u": { "type": "vector", "defined": true, "x": -2.26, "y": -6.94 },
+          "v": { "type": "vector", "defined": true, "x": 0.96, "y": 5.11 },
+          "a": { "type": "number", "defined": true, "value": 2.38 },
+          "w": { "type": "vector", "defined": true, "x": 2.26, "y": 6.94 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.84, "y": -6.94 },
+          "B": { "type": "point", "defined": true, "x": 5.44, "y": -2.83 },
+          "u": { "type": "vector", "defined": true, "x": -3.57, "y": -1.63 },
+          "v": { "type": "vector", "defined": true, "x": 0.96, "y": 5.11 },
+          "a": { "type": "number", "defined": true, "value": 2.38 },
+          "w": { "type": "vector", "defined": true, "x": 3.57, "y": 1.63 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.84, "y": -6.94 },
+          "B": { "type": "point", "defined": true, "x": 5.44, "y": -2.83 },
+          "u": { "type": "vector", "defined": true, "x": -3.57, "y": -1.63 },
+          "v": { "type": "vector", "defined": true, "x": 4.73, "y": -0.56 },
+          "a": { "type": "number", "defined": true, "value": 2.38 },
+          "w": { "type": "vector", "defined": true, "x": 3.57, "y": 1.63 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.84, "y": -6.94 },
+          "B": { "type": "point", "defined": true, "x": 5.44, "y": -2.83 },
+          "u": { "type": "vector", "defined": true, "x": -3.57, "y": -1.63 },
+          "v": { "type": "vector", "defined": true, "x": 4.73, "y": -0.56 },
+          "a": { "type": "number", "defined": true, "value": -0.43 },
+          "w": { "type": "vector", "defined": true, "x": 3.57, "y": 1.63 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.84, "y": -6.94 },
+          "B": { "type": "point", "defined": true, "x": 5.44, "y": -2.83 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 4.73, "y": -0.56 },
+          "a": { "type": "number", "defined": true, "value": -0.43 },
+          "w": { "type": "vector", "defined": true, "x": -0.0, "y": -0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.84, "y": -6.94 },
+          "B": { "type": "point", "defined": true, "x": -7.84, "y": -6.94 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 4.73, "y": -0.56 },
+          "a": { "type": "number", "defined": true, "value": -0.43 },
+          "w": { "type": "vector", "defined": true, "x": -0.0, "y": -0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.84, "y": -6.94 },
+          "B": { "type": "point", "defined": true, "x": -7.84, "y": -6.94 },
+          "u": { "type": "vector", "defined": true, "x": -2.26, "y": -6.94 },
+          "v": { "type": "vector", "defined": true, "x": 4.73, "y": -0.56 },
+          "a": { "type": "number", "defined": true, "value": -0.43 },
+          "w": { "type": "vector", "defined": true, "x": 2.26, "y": 6.94 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.84, "y": -6.94 },
+          "B": { "type": "point", "defined": true, "x": -2.88, "y": -5.1 },
+          "u": { "type": "vector", "defined": true, "x": -2.26, "y": -6.94 },
+          "v": { "type": "vector", "defined": true, "x": 4.73, "y": -0.56 },
+          "a": { "type": "number", "defined": true, "value": -0.43 },
+          "w": { "type": "vector", "defined": true, "x": 2.26, "y": 6.94 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.84, "y": -6.94 },
+          "B": { "type": "point", "defined": true, "x": -2.88, "y": -5.1 },
+          "u": { "type": "vector", "defined": true, "x": -2.26, "y": -6.94 },
+          "v": { "type": "vector", "defined": true, "x": 4.73, "y": -0.56 },
+          "a": { "type": "number", "defined": true, "value": 2.38 },
+          "w": { "type": "vector", "defined": true, "x": 2.26, "y": 6.94 }
+        }
+      ]
+    },
+    {
+      "id": "expr-vector-006",
+      "group": "expr",
+      "script": [
+        "A = (-6.95, -3.81)",
+        "B = (-4.34, 7.05)",
+        "u = (-3.11, -4.63)",
+        "v = (0.76, -1.76)",
+        "a = 3.18",
+        "w = a u + v"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "u", "x": 7.96, "y": -5.51 },
+        { "action": "move", "label": "v", "x": 6.69, "y": -4.17 },
+        { "action": "set_number", "label": "a", "value": -3.87 },
+        { "action": "move", "label": "u", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": -6.95, "y": -3.81 },
+        { "action": "move", "label": "u", "x": -3.11, "y": -4.63 },
+        { "action": "move", "label": "B", "x": 3.13, "y": 1.93 },
+        { "action": "set_number", "label": "a", "value": 3.18 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -6.95, "y": -3.81 },
+          "B": { "type": "point", "defined": true, "x": -4.34, "y": 7.05 },
+          "u": { "type": "vector", "defined": true, "x": -3.11, "y": -4.63 },
+          "v": { "type": "vector", "defined": true, "x": 0.76, "y": -1.76 },
+          "a": { "type": "number", "defined": true, "value": 3.18 },
+          "w": { "type": "vector", "defined": true, "x": -9.1298, "y": -16.4834 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.95, "y": -3.81 },
+          "B": { "type": "point", "defined": true, "x": -4.34, "y": 7.05 },
+          "u": { "type": "vector", "defined": true, "x": 7.96, "y": -5.51 },
+          "v": { "type": "vector", "defined": true, "x": 0.76, "y": -1.76 },
+          "a": { "type": "number", "defined": true, "value": 3.18 },
+          "w": { "type": "vector", "defined": true, "x": 26.072800000000004, "y": -19.2818 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.95, "y": -3.81 },
+          "B": { "type": "point", "defined": true, "x": -4.34, "y": 7.05 },
+          "u": { "type": "vector", "defined": true, "x": 7.96, "y": -5.51 },
+          "v": { "type": "vector", "defined": true, "x": 6.69, "y": -4.17 },
+          "a": { "type": "number", "defined": true, "value": 3.18 },
+          "w": { "type": "vector", "defined": true, "x": 32.0028, "y": -21.6918 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.95, "y": -3.81 },
+          "B": { "type": "point", "defined": true, "x": -4.34, "y": 7.05 },
+          "u": { "type": "vector", "defined": true, "x": 7.96, "y": -5.51 },
+          "v": { "type": "vector", "defined": true, "x": 6.69, "y": -4.17 },
+          "a": { "type": "number", "defined": true, "value": -3.87 },
+          "w": { "type": "vector", "defined": true, "x": -24.115199999999998, "y": 17.1537 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.95, "y": -3.81 },
+          "B": { "type": "point", "defined": true, "x": -4.34, "y": 7.05 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 6.69, "y": -4.17 },
+          "a": { "type": "number", "defined": true, "value": -3.87 },
+          "w": { "type": "vector", "defined": true, "x": 6.69, "y": -4.17 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.95, "y": -3.81 },
+          "B": { "type": "point", "defined": true, "x": -6.95, "y": -3.81 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 6.69, "y": -4.17 },
+          "a": { "type": "number", "defined": true, "value": -3.87 },
+          "w": { "type": "vector", "defined": true, "x": 6.69, "y": -4.17 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.95, "y": -3.81 },
+          "B": { "type": "point", "defined": true, "x": -6.95, "y": -3.81 },
+          "u": { "type": "vector", "defined": true, "x": -3.11, "y": -4.63 },
+          "v": { "type": "vector", "defined": true, "x": 6.69, "y": -4.17 },
+          "a": { "type": "number", "defined": true, "value": -3.87 },
+          "w": { "type": "vector", "defined": true, "x": 18.7257, "y": 13.748099999999999 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.95, "y": -3.81 },
+          "B": { "type": "point", "defined": true, "x": 3.13, "y": 1.93 },
+          "u": { "type": "vector", "defined": true, "x": -3.11, "y": -4.63 },
+          "v": { "type": "vector", "defined": true, "x": 6.69, "y": -4.17 },
+          "a": { "type": "number", "defined": true, "value": -3.87 },
+          "w": { "type": "vector", "defined": true, "x": 18.7257, "y": 13.748099999999999 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.95, "y": -3.81 },
+          "B": { "type": "point", "defined": true, "x": 3.13, "y": 1.93 },
+          "u": { "type": "vector", "defined": true, "x": -3.11, "y": -4.63 },
+          "v": { "type": "vector", "defined": true, "x": 6.69, "y": -4.17 },
+          "a": { "type": "number", "defined": true, "value": 3.18 },
+          "w": { "type": "vector", "defined": true, "x": -3.199799999999999, "y": -18.8934 }
+        }
+      ]
+    },
+    {
+      "id": "expr-vector-007",
+      "group": "expr",
+      "script": [
+        "A = (-7.62, -2.25)",
+        "B = (5.08, 5.07)",
+        "u = (1.81, -7.21)",
+        "v = (3.7, -7.78)",
+        "a = 1.82",
+        "w = B - A"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "u", "x": 0.84, "y": 1.25 },
+        { "action": "move", "label": "v", "x": -4.3, "y": -5.74 },
+        { "action": "set_number", "label": "a", "value": 3.58 },
+        { "action": "move", "label": "u", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": -7.62, "y": -2.25 },
+        { "action": "move", "label": "u", "x": 1.81, "y": -7.21 },
+        { "action": "move", "label": "B", "x": -7.57, "y": -7.64 },
+        { "action": "set_number", "label": "a", "value": 1.82 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -7.62, "y": -2.25 },
+          "B": { "type": "point", "defined": true, "x": 5.08, "y": 5.07 },
+          "u": { "type": "vector", "defined": true, "x": 1.81, "y": -7.21 },
+          "v": { "type": "vector", "defined": true, "x": 3.7, "y": -7.78 },
+          "a": { "type": "number", "defined": true, "value": 1.82 },
+          "w": { "type": "vector", "defined": true, "x": 12.7, "y": 7.32 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.62, "y": -2.25 },
+          "B": { "type": "point", "defined": true, "x": 5.08, "y": 5.07 },
+          "u": { "type": "vector", "defined": true, "x": 0.84, "y": 1.25 },
+          "v": { "type": "vector", "defined": true, "x": 3.7, "y": -7.78 },
+          "a": { "type": "number", "defined": true, "value": 1.82 },
+          "w": { "type": "vector", "defined": true, "x": 12.7, "y": 7.32 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.62, "y": -2.25 },
+          "B": { "type": "point", "defined": true, "x": 5.08, "y": 5.07 },
+          "u": { "type": "vector", "defined": true, "x": 0.84, "y": 1.25 },
+          "v": { "type": "vector", "defined": true, "x": -4.3, "y": -5.74 },
+          "a": { "type": "number", "defined": true, "value": 1.82 },
+          "w": { "type": "vector", "defined": true, "x": 12.7, "y": 7.32 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.62, "y": -2.25 },
+          "B": { "type": "point", "defined": true, "x": 5.08, "y": 5.07 },
+          "u": { "type": "vector", "defined": true, "x": 0.84, "y": 1.25 },
+          "v": { "type": "vector", "defined": true, "x": -4.3, "y": -5.74 },
+          "a": { "type": "number", "defined": true, "value": 3.58 },
+          "w": { "type": "vector", "defined": true, "x": 12.7, "y": 7.32 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.62, "y": -2.25 },
+          "B": { "type": "point", "defined": true, "x": 5.08, "y": 5.07 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": -4.3, "y": -5.74 },
+          "a": { "type": "number", "defined": true, "value": 3.58 },
+          "w": { "type": "vector", "defined": true, "x": 12.7, "y": 7.32 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.62, "y": -2.25 },
+          "B": { "type": "point", "defined": true, "x": -7.62, "y": -2.25 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": -4.3, "y": -5.74 },
+          "a": { "type": "number", "defined": true, "value": 3.58 },
+          "w": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.62, "y": -2.25 },
+          "B": { "type": "point", "defined": true, "x": -7.62, "y": -2.25 },
+          "u": { "type": "vector", "defined": true, "x": 1.81, "y": -7.21 },
+          "v": { "type": "vector", "defined": true, "x": -4.3, "y": -5.74 },
+          "a": { "type": "number", "defined": true, "value": 3.58 },
+          "w": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.62, "y": -2.25 },
+          "B": { "type": "point", "defined": true, "x": -7.57, "y": -7.64 },
+          "u": { "type": "vector", "defined": true, "x": 1.81, "y": -7.21 },
+          "v": { "type": "vector", "defined": true, "x": -4.3, "y": -5.74 },
+          "a": { "type": "number", "defined": true, "value": 3.58 },
+          "w": { "type": "vector", "defined": true, "x": 0.04999999999999982, "y": -5.39 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.62, "y": -2.25 },
+          "B": { "type": "point", "defined": true, "x": -7.57, "y": -7.64 },
+          "u": { "type": "vector", "defined": true, "x": 1.81, "y": -7.21 },
+          "v": { "type": "vector", "defined": true, "x": -4.3, "y": -5.74 },
+          "a": { "type": "number", "defined": true, "value": 1.82 },
+          "w": { "type": "vector", "defined": true, "x": 0.04999999999999982, "y": -5.39 }
+        }
+      ]
+    },
+    {
+      "id": "expr-vector-008",
+      "group": "expr",
+      "script": [
+        "A = (-6.21, 3.22)",
+        "B = (5.12, -7.09)",
+        "u = (1.33, 0.82)",
+        "v = (-1.75, 5.01)",
+        "a = 1.7",
+        "w = (A + B) / 2"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "u", "x": -0.72, "y": -0.93 },
+        { "action": "move", "label": "v", "x": -5.88, "y": 4.34 },
+        { "action": "set_number", "label": "a", "value": -3.94 },
+        { "action": "move", "label": "u", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": -6.21, "y": 3.22 },
+        { "action": "move", "label": "u", "x": 1.33, "y": 0.82 },
+        { "action": "move", "label": "B", "x": 4.01, "y": -4.14 },
+        { "action": "set_number", "label": "a", "value": 1.7 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -6.21, "y": 3.22 },
+          "B": { "type": "point", "defined": true, "x": 5.12, "y": -7.09 },
+          "u": { "type": "vector", "defined": true, "x": 1.33, "y": 0.82 },
+          "v": { "type": "vector", "defined": true, "x": -1.75, "y": 5.01 },
+          "a": { "type": "number", "defined": true, "value": 1.7 },
+          "w": { "type": "vector", "defined": true, "x": -0.5449999999999999, "y": -1.9349999999999998 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.21, "y": 3.22 },
+          "B": { "type": "point", "defined": true, "x": 5.12, "y": -7.09 },
+          "u": { "type": "vector", "defined": true, "x": -0.72, "y": -0.93 },
+          "v": { "type": "vector", "defined": true, "x": -1.75, "y": 5.01 },
+          "a": { "type": "number", "defined": true, "value": 1.7 },
+          "w": { "type": "vector", "defined": true, "x": -0.5449999999999999, "y": -1.9349999999999998 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.21, "y": 3.22 },
+          "B": { "type": "point", "defined": true, "x": 5.12, "y": -7.09 },
+          "u": { "type": "vector", "defined": true, "x": -0.72, "y": -0.93 },
+          "v": { "type": "vector", "defined": true, "x": -5.88, "y": 4.34 },
+          "a": { "type": "number", "defined": true, "value": 1.7 },
+          "w": { "type": "vector", "defined": true, "x": -0.5449999999999999, "y": -1.9349999999999998 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.21, "y": 3.22 },
+          "B": { "type": "point", "defined": true, "x": 5.12, "y": -7.09 },
+          "u": { "type": "vector", "defined": true, "x": -0.72, "y": -0.93 },
+          "v": { "type": "vector", "defined": true, "x": -5.88, "y": 4.34 },
+          "a": { "type": "number", "defined": true, "value": -3.94 },
+          "w": { "type": "vector", "defined": true, "x": -0.5449999999999999, "y": -1.9349999999999998 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.21, "y": 3.22 },
+          "B": { "type": "point", "defined": true, "x": 5.12, "y": -7.09 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": -5.88, "y": 4.34 },
+          "a": { "type": "number", "defined": true, "value": -3.94 },
+          "w": { "type": "vector", "defined": true, "x": -0.5449999999999999, "y": -1.9349999999999998 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.21, "y": 3.22 },
+          "B": { "type": "point", "defined": true, "x": -6.21, "y": 3.22 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": -5.88, "y": 4.34 },
+          "a": { "type": "number", "defined": true, "value": -3.94 },
+          "w": { "type": "vector", "defined": true, "x": -6.21, "y": 3.22 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.21, "y": 3.22 },
+          "B": { "type": "point", "defined": true, "x": -6.21, "y": 3.22 },
+          "u": { "type": "vector", "defined": true, "x": 1.33, "y": 0.82 },
+          "v": { "type": "vector", "defined": true, "x": -5.88, "y": 4.34 },
+          "a": { "type": "number", "defined": true, "value": -3.94 },
+          "w": { "type": "vector", "defined": true, "x": -6.21, "y": 3.22 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.21, "y": 3.22 },
+          "B": { "type": "point", "defined": true, "x": 4.01, "y": -4.14 },
+          "u": { "type": "vector", "defined": true, "x": 1.33, "y": 0.82 },
+          "v": { "type": "vector", "defined": true, "x": -5.88, "y": 4.34 },
+          "a": { "type": "number", "defined": true, "value": -3.94 },
+          "w": { "type": "vector", "defined": true, "x": -1.1, "y": -0.45999999999999974 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.21, "y": 3.22 },
+          "B": { "type": "point", "defined": true, "x": 4.01, "y": -4.14 },
+          "u": { "type": "vector", "defined": true, "x": 1.33, "y": 0.82 },
+          "v": { "type": "vector", "defined": true, "x": -5.88, "y": 4.34 },
+          "a": { "type": "number", "defined": true, "value": 1.7 },
+          "w": { "type": "vector", "defined": true, "x": -1.1, "y": -0.45999999999999974 }
+        }
+      ]
+    },
+    {
+      "id": "expr-vector-009",
+      "group": "expr",
+      "script": [
+        "A = (6.27, 0.22)",
+        "B = (5.29, 0.64)",
+        "u = (-3.16, -0.42)",
+        "v = (-3.63, 2.39)",
+        "a = 3.23",
+        "w = (a, 1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "u", "x": -4.36, "y": -7.99 },
+        { "action": "move", "label": "v", "x": 3.45, "y": 2.87 },
+        { "action": "set_number", "label": "a", "value": 2.43 },
+        { "action": "move", "label": "u", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 6.27, "y": 0.22 },
+        { "action": "move", "label": "u", "x": -3.16, "y": -0.42 },
+        { "action": "move", "label": "B", "x": -7.46, "y": -6.07 },
+        { "action": "set_number", "label": "a", "value": 3.23 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 6.27, "y": 0.22 },
+          "B": { "type": "point", "defined": true, "x": 5.29, "y": 0.64 },
+          "u": { "type": "vector", "defined": true, "x": -3.16, "y": -0.42 },
+          "v": { "type": "vector", "defined": true, "x": -3.63, "y": 2.39 },
+          "a": { "type": "number", "defined": true, "value": 3.23 },
+          "w": { "type": "vector", "defined": true, "x": 3.23, "y": 1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 6.27, "y": 0.22 },
+          "B": { "type": "point", "defined": true, "x": 5.29, "y": 0.64 },
+          "u": { "type": "vector", "defined": true, "x": -4.36, "y": -7.99 },
+          "v": { "type": "vector", "defined": true, "x": -3.63, "y": 2.39 },
+          "a": { "type": "number", "defined": true, "value": 3.23 },
+          "w": { "type": "vector", "defined": true, "x": 3.23, "y": 1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 6.27, "y": 0.22 },
+          "B": { "type": "point", "defined": true, "x": 5.29, "y": 0.64 },
+          "u": { "type": "vector", "defined": true, "x": -4.36, "y": -7.99 },
+          "v": { "type": "vector", "defined": true, "x": 3.45, "y": 2.87 },
+          "a": { "type": "number", "defined": true, "value": 3.23 },
+          "w": { "type": "vector", "defined": true, "x": 3.23, "y": 1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 6.27, "y": 0.22 },
+          "B": { "type": "point", "defined": true, "x": 5.29, "y": 0.64 },
+          "u": { "type": "vector", "defined": true, "x": -4.36, "y": -7.99 },
+          "v": { "type": "vector", "defined": true, "x": 3.45, "y": 2.87 },
+          "a": { "type": "number", "defined": true, "value": 2.43 },
+          "w": { "type": "vector", "defined": true, "x": 2.43, "y": 1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 6.27, "y": 0.22 },
+          "B": { "type": "point", "defined": true, "x": 5.29, "y": 0.64 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 3.45, "y": 2.87 },
+          "a": { "type": "number", "defined": true, "value": 2.43 },
+          "w": { "type": "vector", "defined": true, "x": 2.43, "y": 1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 6.27, "y": 0.22 },
+          "B": { "type": "point", "defined": true, "x": 6.27, "y": 0.22 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 3.45, "y": 2.87 },
+          "a": { "type": "number", "defined": true, "value": 2.43 },
+          "w": { "type": "vector", "defined": true, "x": 2.43, "y": 1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 6.27, "y": 0.22 },
+          "B": { "type": "point", "defined": true, "x": 6.27, "y": 0.22 },
+          "u": { "type": "vector", "defined": true, "x": -3.16, "y": -0.42 },
+          "v": { "type": "vector", "defined": true, "x": 3.45, "y": 2.87 },
+          "a": { "type": "number", "defined": true, "value": 2.43 },
+          "w": { "type": "vector", "defined": true, "x": 2.43, "y": 1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 6.27, "y": 0.22 },
+          "B": { "type": "point", "defined": true, "x": -7.46, "y": -6.07 },
+          "u": { "type": "vector", "defined": true, "x": -3.16, "y": -0.42 },
+          "v": { "type": "vector", "defined": true, "x": 3.45, "y": 2.87 },
+          "a": { "type": "number", "defined": true, "value": 2.43 },
+          "w": { "type": "vector", "defined": true, "x": 2.43, "y": 1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 6.27, "y": 0.22 },
+          "B": { "type": "point", "defined": true, "x": -7.46, "y": -6.07 },
+          "u": { "type": "vector", "defined": true, "x": -3.16, "y": -0.42 },
+          "v": { "type": "vector", "defined": true, "x": 3.45, "y": 2.87 },
+          "a": { "type": "number", "defined": true, "value": 3.23 },
+          "w": { "type": "vector", "defined": true, "x": 3.23, "y": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-vector-010",
+      "group": "expr",
+      "script": [
+        "A = (6.86, 6.57)",
+        "B = (-5.51, -1)",
+        "u = (4.86, 0.16)",
+        "v = (-1.17, 5.08)",
+        "a = 2.16",
+        "w = u + (1, -1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "u", "x": -7.4, "y": -7.67 },
+        { "action": "move", "label": "v", "x": -1.28, "y": 2.45 },
+        { "action": "set_number", "label": "a", "value": 3.69 },
+        { "action": "move", "label": "u", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 6.86, "y": 6.57 },
+        { "action": "move", "label": "u", "x": 4.86, "y": 0.16 },
+        { "action": "move", "label": "B", "x": 1.92, "y": -3.86 },
+        { "action": "set_number", "label": "a", "value": 2.16 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 6.86, "y": 6.57 },
+          "B": { "type": "point", "defined": true, "x": -5.51, "y": -1.0 },
+          "u": { "type": "vector", "defined": true, "x": 4.86, "y": 0.16 },
+          "v": { "type": "vector", "defined": true, "x": -1.17, "y": 5.08 },
+          "a": { "type": "number", "defined": true, "value": 2.16 },
+          "w": { "type": "vector", "defined": true, "x": 5.86, "y": -0.84 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 6.86, "y": 6.57 },
+          "B": { "type": "point", "defined": true, "x": -5.51, "y": -1.0 },
+          "u": { "type": "vector", "defined": true, "x": -7.4, "y": -7.67 },
+          "v": { "type": "vector", "defined": true, "x": -1.17, "y": 5.08 },
+          "a": { "type": "number", "defined": true, "value": 2.16 },
+          "w": { "type": "vector", "defined": true, "x": -6.4, "y": -8.67 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 6.86, "y": 6.57 },
+          "B": { "type": "point", "defined": true, "x": -5.51, "y": -1.0 },
+          "u": { "type": "vector", "defined": true, "x": -7.4, "y": -7.67 },
+          "v": { "type": "vector", "defined": true, "x": -1.28, "y": 2.45 },
+          "a": { "type": "number", "defined": true, "value": 2.16 },
+          "w": { "type": "vector", "defined": true, "x": -6.4, "y": -8.67 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 6.86, "y": 6.57 },
+          "B": { "type": "point", "defined": true, "x": -5.51, "y": -1.0 },
+          "u": { "type": "vector", "defined": true, "x": -7.4, "y": -7.67 },
+          "v": { "type": "vector", "defined": true, "x": -1.28, "y": 2.45 },
+          "a": { "type": "number", "defined": true, "value": 3.69 },
+          "w": { "type": "vector", "defined": true, "x": -6.4, "y": -8.67 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 6.86, "y": 6.57 },
+          "B": { "type": "point", "defined": true, "x": -5.51, "y": -1.0 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": -1.28, "y": 2.45 },
+          "a": { "type": "number", "defined": true, "value": 3.69 },
+          "w": { "type": "vector", "defined": true, "x": 1.0, "y": -1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 6.86, "y": 6.57 },
+          "B": { "type": "point", "defined": true, "x": 6.86, "y": 6.57 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": -1.28, "y": 2.45 },
+          "a": { "type": "number", "defined": true, "value": 3.69 },
+          "w": { "type": "vector", "defined": true, "x": 1.0, "y": -1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 6.86, "y": 6.57 },
+          "B": { "type": "point", "defined": true, "x": 6.86, "y": 6.57 },
+          "u": { "type": "vector", "defined": true, "x": 4.86, "y": 0.16 },
+          "v": { "type": "vector", "defined": true, "x": -1.28, "y": 2.45 },
+          "a": { "type": "number", "defined": true, "value": 3.69 },
+          "w": { "type": "vector", "defined": true, "x": 5.86, "y": -0.84 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 6.86, "y": 6.57 },
+          "B": { "type": "point", "defined": true, "x": 1.92, "y": -3.86 },
+          "u": { "type": "vector", "defined": true, "x": 4.86, "y": 0.16 },
+          "v": { "type": "vector", "defined": true, "x": -1.28, "y": 2.45 },
+          "a": { "type": "number", "defined": true, "value": 3.69 },
+          "w": { "type": "vector", "defined": true, "x": 5.86, "y": -0.84 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 6.86, "y": 6.57 },
+          "B": { "type": "point", "defined": true, "x": 1.92, "y": -3.86 },
+          "u": { "type": "vector", "defined": true, "x": 4.86, "y": 0.16 },
+          "v": { "type": "vector", "defined": true, "x": -1.28, "y": 2.45 },
+          "a": { "type": "number", "defined": true, "value": 2.16 },
+          "w": { "type": "vector", "defined": true, "x": 5.86, "y": -0.84 }
+        }
+      ]
+    },
+    {
+      "id": "expr-vector-011",
+      "group": "expr",
+      "script": [
+        "A = (0.16, -0.76)",
+        "B = (5.48, 7.34)",
+        "u = (-2.66, -3.61)",
+        "v = (-5.48, 3.82)",
+        "a = 1.52",
+        "w = (u + v) / abs(u + v)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "u", "x": 2.1, "y": -4.42 },
+        { "action": "move", "label": "v", "x": 7.06, "y": 6.52 },
+        { "action": "set_number", "label": "a", "value": -2.64 },
+        { "action": "move", "label": "u", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 0.16, "y": -0.76 },
+        { "action": "move", "label": "u", "x": -2.66, "y": -3.61 },
+        { "action": "move", "label": "B", "x": 2.64, "y": -2.12 },
+        { "action": "set_number", "label": "a", "value": 1.52 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.16, "y": -0.76 },
+          "B": { "type": "point", "defined": true, "x": 5.48, "y": 7.34 },
+          "u": { "type": "vector", "defined": true, "x": -2.66, "y": -3.61 },
+          "v": { "type": "vector", "defined": true, "x": -5.48, "y": 3.82 },
+          "a": { "type": "number", "defined": true, "value": 1.52 },
+          "w": { "type": "vector", "defined": true, "x": -0.9996673840569872, "y": 0.025789944797538975 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.16, "y": -0.76 },
+          "B": { "type": "point", "defined": true, "x": 5.48, "y": 7.34 },
+          "u": { "type": "vector", "defined": true, "x": 2.1, "y": -4.42 },
+          "v": { "type": "vector", "defined": true, "x": -5.48, "y": 3.82 },
+          "a": { "type": "number", "defined": true, "value": 1.52 },
+          "w": { "type": "vector", "defined": true, "x": -0.984607098691483, "y": -0.17478232521150586 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.16, "y": -0.76 },
+          "B": { "type": "point", "defined": true, "x": 5.48, "y": 7.34 },
+          "u": { "type": "vector", "defined": true, "x": 2.1, "y": -4.42 },
+          "v": { "type": "vector", "defined": true, "x": 7.06, "y": 6.52 },
+          "a": { "type": "number", "defined": true, "value": 1.52 },
+          "w": { "type": "vector", "defined": true, "x": 0.9747130075571366, "y": 0.2234604056626623 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.16, "y": -0.76 },
+          "B": { "type": "point", "defined": true, "x": 5.48, "y": 7.34 },
+          "u": { "type": "vector", "defined": true, "x": 2.1, "y": -4.42 },
+          "v": { "type": "vector", "defined": true, "x": 7.06, "y": 6.52 },
+          "a": { "type": "number", "defined": true, "value": -2.64 },
+          "w": { "type": "vector", "defined": true, "x": 0.9747130075571366, "y": 0.2234604056626623 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.16, "y": -0.76 },
+          "B": { "type": "point", "defined": true, "x": 5.48, "y": 7.34 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 7.06, "y": 6.52 },
+          "a": { "type": "number", "defined": true, "value": -2.64 },
+          "w": { "type": "vector", "defined": true, "x": 0.7346438477515315, "y": 0.6784529585467401 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.16, "y": -0.76 },
+          "B": { "type": "point", "defined": true, "x": 0.16, "y": -0.76 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 7.06, "y": 6.52 },
+          "a": { "type": "number", "defined": true, "value": -2.64 },
+          "w": { "type": "vector", "defined": true, "x": 0.7346438477515315, "y": 0.6784529585467401 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.16, "y": -0.76 },
+          "B": { "type": "point", "defined": true, "x": 0.16, "y": -0.76 },
+          "u": { "type": "vector", "defined": true, "x": -2.66, "y": -3.61 },
+          "v": { "type": "vector", "defined": true, "x": 7.06, "y": 6.52 },
+          "a": { "type": "number", "defined": true, "value": -2.64 },
+          "w": { "type": "vector", "defined": true, "x": 0.8340861289321169, "y": 0.5516342352710136 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.16, "y": -0.76 },
+          "B": { "type": "point", "defined": true, "x": 2.64, "y": -2.12 },
+          "u": { "type": "vector", "defined": true, "x": -2.66, "y": -3.61 },
+          "v": { "type": "vector", "defined": true, "x": 7.06, "y": 6.52 },
+          "a": { "type": "number", "defined": true, "value": -2.64 },
+          "w": { "type": "vector", "defined": true, "x": 0.8340861289321169, "y": 0.5516342352710136 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.16, "y": -0.76 },
+          "B": { "type": "point", "defined": true, "x": 2.64, "y": -2.12 },
+          "u": { "type": "vector", "defined": true, "x": -2.66, "y": -3.61 },
+          "v": { "type": "vector", "defined": true, "x": 7.06, "y": 6.52 },
+          "a": { "type": "number", "defined": true, "value": 1.52 },
+          "w": { "type": "vector", "defined": true, "x": 0.8340861289321169, "y": 0.5516342352710136 }
+        }
+      ]
+    },
+    {
+      "id": "expr-vector-012",
+      "group": "expr",
+      "script": [
+        "A = (4.94, -5.59)",
+        "B = (5.43, 1.24)",
+        "u = (-5.98, -6.79)",
+        "v = (4.52, 0.54)",
+        "a = 1.64",
+        "w = (y(u), -x(u))"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "u", "x": -1.87, "y": -4.64 },
+        { "action": "move", "label": "v", "x": 3.53, "y": 5.13 },
+        { "action": "set_number", "label": "a", "value": 2.74 },
+        { "action": "move", "label": "u", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 4.94, "y": -5.59 },
+        { "action": "move", "label": "u", "x": -5.98, "y": -6.79 },
+        { "action": "move", "label": "B", "x": 1.19, "y": 7.87 },
+        { "action": "set_number", "label": "a", "value": 1.64 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 4.94, "y": -5.59 },
+          "B": { "type": "point", "defined": true, "x": 5.43, "y": 1.24 },
+          "u": { "type": "vector", "defined": true, "x": -5.98, "y": -6.79 },
+          "v": { "type": "vector", "defined": true, "x": 4.52, "y": 0.54 },
+          "a": { "type": "number", "defined": true, "value": 1.64 },
+          "w": { "type": "vector", "defined": true, "x": -6.79, "y": 5.98 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 4.94, "y": -5.59 },
+          "B": { "type": "point", "defined": true, "x": 5.43, "y": 1.24 },
+          "u": { "type": "vector", "defined": true, "x": -1.87, "y": -4.64 },
+          "v": { "type": "vector", "defined": true, "x": 4.52, "y": 0.54 },
+          "a": { "type": "number", "defined": true, "value": 1.64 },
+          "w": { "type": "vector", "defined": true, "x": -4.64, "y": 1.87 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 4.94, "y": -5.59 },
+          "B": { "type": "point", "defined": true, "x": 5.43, "y": 1.24 },
+          "u": { "type": "vector", "defined": true, "x": -1.87, "y": -4.64 },
+          "v": { "type": "vector", "defined": true, "x": 3.53, "y": 5.13 },
+          "a": { "type": "number", "defined": true, "value": 1.64 },
+          "w": { "type": "vector", "defined": true, "x": -4.64, "y": 1.87 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 4.94, "y": -5.59 },
+          "B": { "type": "point", "defined": true, "x": 5.43, "y": 1.24 },
+          "u": { "type": "vector", "defined": true, "x": -1.87, "y": -4.64 },
+          "v": { "type": "vector", "defined": true, "x": 3.53, "y": 5.13 },
+          "a": { "type": "number", "defined": true, "value": 2.74 },
+          "w": { "type": "vector", "defined": true, "x": -4.64, "y": 1.87 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 4.94, "y": -5.59 },
+          "B": { "type": "point", "defined": true, "x": 5.43, "y": 1.24 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 3.53, "y": 5.13 },
+          "a": { "type": "number", "defined": true, "value": 2.74 },
+          "w": { "type": "vector", "defined": true, "x": 0.0, "y": -0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 4.94, "y": -5.59 },
+          "B": { "type": "point", "defined": true, "x": 4.94, "y": -5.59 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 3.53, "y": 5.13 },
+          "a": { "type": "number", "defined": true, "value": 2.74 },
+          "w": { "type": "vector", "defined": true, "x": 0.0, "y": -0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 4.94, "y": -5.59 },
+          "B": { "type": "point", "defined": true, "x": 4.94, "y": -5.59 },
+          "u": { "type": "vector", "defined": true, "x": -5.98, "y": -6.79 },
+          "v": { "type": "vector", "defined": true, "x": 3.53, "y": 5.13 },
+          "a": { "type": "number", "defined": true, "value": 2.74 },
+          "w": { "type": "vector", "defined": true, "x": -6.79, "y": 5.98 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 4.94, "y": -5.59 },
+          "B": { "type": "point", "defined": true, "x": 1.19, "y": 7.87 },
+          "u": { "type": "vector", "defined": true, "x": -5.98, "y": -6.79 },
+          "v": { "type": "vector", "defined": true, "x": 3.53, "y": 5.13 },
+          "a": { "type": "number", "defined": true, "value": 2.74 },
+          "w": { "type": "vector", "defined": true, "x": -6.79, "y": 5.98 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 4.94, "y": -5.59 },
+          "B": { "type": "point", "defined": true, "x": 1.19, "y": 7.87 },
+          "u": { "type": "vector", "defined": true, "x": -5.98, "y": -6.79 },
+          "v": { "type": "vector", "defined": true, "x": 3.53, "y": 5.13 },
+          "a": { "type": "number", "defined": true, "value": 1.64 },
+          "w": { "type": "vector", "defined": true, "x": -6.79, "y": 5.98 }
+        }
+      ]
+    },
+    {
+      "id": "expr-vector-013",
+      "group": "expr",
+      "script": [
+        "A = (-6.43, 5.47)",
+        "B = (3.83, -5.52)",
+        "u = (0.69, 0.66)",
+        "v = (-3.49, -4.17)",
+        "a = 2.98",
+        "w = Vector(A, B) + u"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "u", "x": 3.57, "y": -3.01 },
+        { "action": "move", "label": "v", "x": -5.65, "y": -5.73 },
+        { "action": "set_number", "label": "a", "value": 1.91 },
+        { "action": "move", "label": "u", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": -6.43, "y": 5.47 },
+        { "action": "move", "label": "u", "x": 0.69, "y": 0.66 },
+        { "action": "move", "label": "B", "x": -0.44, "y": -3.46 },
+        { "action": "set_number", "label": "a", "value": 2.98 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -6.43, "y": 5.47 },
+          "B": { "type": "point", "defined": true, "x": 3.83, "y": -5.52 },
+          "u": { "type": "vector", "defined": true, "x": 0.69, "y": 0.66 },
+          "v": { "type": "vector", "defined": true, "x": -3.49, "y": -4.17 },
+          "a": { "type": "number", "defined": true, "value": 2.98 },
+          "w": { "type": "vector", "defined": true, "x": 10.95, "y": -10.329999999999998 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.43, "y": 5.47 },
+          "B": { "type": "point", "defined": true, "x": 3.83, "y": -5.52 },
+          "u": { "type": "vector", "defined": true, "x": 3.57, "y": -3.01 },
+          "v": { "type": "vector", "defined": true, "x": -3.49, "y": -4.17 },
+          "a": { "type": "number", "defined": true, "value": 2.98 },
+          "w": { "type": "vector", "defined": true, "x": 13.83, "y": -13.999999999999998 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.43, "y": 5.47 },
+          "B": { "type": "point", "defined": true, "x": 3.83, "y": -5.52 },
+          "u": { "type": "vector", "defined": true, "x": 3.57, "y": -3.01 },
+          "v": { "type": "vector", "defined": true, "x": -5.65, "y": -5.73 },
+          "a": { "type": "number", "defined": true, "value": 2.98 },
+          "w": { "type": "vector", "defined": true, "x": 13.83, "y": -13.999999999999998 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.43, "y": 5.47 },
+          "B": { "type": "point", "defined": true, "x": 3.83, "y": -5.52 },
+          "u": { "type": "vector", "defined": true, "x": 3.57, "y": -3.01 },
+          "v": { "type": "vector", "defined": true, "x": -5.65, "y": -5.73 },
+          "a": { "type": "number", "defined": true, "value": 1.91 },
+          "w": { "type": "vector", "defined": true, "x": 13.83, "y": -13.999999999999998 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.43, "y": 5.47 },
+          "B": { "type": "point", "defined": true, "x": 3.83, "y": -5.52 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": -5.65, "y": -5.73 },
+          "a": { "type": "number", "defined": true, "value": 1.91 },
+          "w": { "type": "vector", "defined": true, "x": 10.26, "y": -10.989999999999998 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.43, "y": 5.47 },
+          "B": { "type": "point", "defined": true, "x": -6.43, "y": 5.47 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": -5.65, "y": -5.73 },
+          "a": { "type": "number", "defined": true, "value": 1.91 },
+          "w": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.43, "y": 5.47 },
+          "B": { "type": "point", "defined": true, "x": -6.43, "y": 5.47 },
+          "u": { "type": "vector", "defined": true, "x": 0.69, "y": 0.66 },
+          "v": { "type": "vector", "defined": true, "x": -5.65, "y": -5.73 },
+          "a": { "type": "number", "defined": true, "value": 1.91 },
+          "w": { "type": "vector", "defined": true, "x": 0.69, "y": 0.66 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.43, "y": 5.47 },
+          "B": { "type": "point", "defined": true, "x": -0.44, "y": -3.46 },
+          "u": { "type": "vector", "defined": true, "x": 0.69, "y": 0.66 },
+          "v": { "type": "vector", "defined": true, "x": -5.65, "y": -5.73 },
+          "a": { "type": "number", "defined": true, "value": 1.91 },
+          "w": { "type": "vector", "defined": true, "x": 6.68, "y": -8.27 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.43, "y": 5.47 },
+          "B": { "type": "point", "defined": true, "x": -0.44, "y": -3.46 },
+          "u": { "type": "vector", "defined": true, "x": 0.69, "y": 0.66 },
+          "v": { "type": "vector", "defined": true, "x": -5.65, "y": -5.73 },
+          "a": { "type": "number", "defined": true, "value": 2.98 },
+          "w": { "type": "vector", "defined": true, "x": 6.68, "y": -8.27 }
+        }
+      ]
+    },
+    {
+      "id": "expr-vector-014",
+      "group": "expr",
+      "script": [
+        "A = (7.04, -7.38)",
+        "B = (-3.1, -3.78)",
+        "u = (-0.08, 2.85)",
+        "v = (-3.15, 6.89)",
+        "a = 3.53",
+        "w = (2; a)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "u", "x": -7.75, "y": -1.27 },
+        { "action": "move", "label": "v", "x": 4.42, "y": 3.4 },
+        { "action": "set_number", "label": "a", "value": -1.94 },
+        { "action": "move", "label": "u", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 7.04, "y": -7.38 },
+        { "action": "move", "label": "u", "x": -0.08, "y": 2.85 },
+        { "action": "move", "label": "B", "x": -1.14, "y": 3.53 },
+        { "action": "set_number", "label": "a", "value": 3.53 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 7.04, "y": -7.38 },
+          "B": { "type": "point", "defined": true, "x": -3.1, "y": -3.78 },
+          "u": { "type": "vector", "defined": true, "x": -0.08, "y": 2.85 },
+          "v": { "type": "vector", "defined": true, "x": -3.15, "y": 6.89 },
+          "a": { "type": "number", "defined": true, "value": 3.53 },
+          "w": { "type": "vector", "defined": true, "x": -1.8510267900175692, "y": -0.7574297476579952 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.04, "y": -7.38 },
+          "B": { "type": "point", "defined": true, "x": -3.1, "y": -3.78 },
+          "u": { "type": "vector", "defined": true, "x": -7.75, "y": -1.27 },
+          "v": { "type": "vector", "defined": true, "x": -3.15, "y": 6.89 },
+          "a": { "type": "number", "defined": true, "value": 3.53 },
+          "w": { "type": "vector", "defined": true, "x": -1.8510267900175692, "y": -0.7574297476579952 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.04, "y": -7.38 },
+          "B": { "type": "point", "defined": true, "x": -3.1, "y": -3.78 },
+          "u": { "type": "vector", "defined": true, "x": -7.75, "y": -1.27 },
+          "v": { "type": "vector", "defined": true, "x": 4.42, "y": 3.4 },
+          "a": { "type": "number", "defined": true, "value": 3.53 },
+          "w": { "type": "vector", "defined": true, "x": -1.8510267900175692, "y": -0.7574297476579952 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.04, "y": -7.38 },
+          "B": { "type": "point", "defined": true, "x": -3.1, "y": -3.78 },
+          "u": { "type": "vector", "defined": true, "x": -7.75, "y": -1.27 },
+          "v": { "type": "vector", "defined": true, "x": 4.42, "y": 3.4 },
+          "a": { "type": "number", "defined": true, "value": -1.94 },
+          "w": { "type": "vector", "defined": true, "x": -0.7217457602795343, "y": -1.865230028044401 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.04, "y": -7.38 },
+          "B": { "type": "point", "defined": true, "x": -3.1, "y": -3.78 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 4.42, "y": 3.4 },
+          "a": { "type": "number", "defined": true, "value": -1.94 },
+          "w": { "type": "vector", "defined": true, "x": -0.7217457602795343, "y": -1.865230028044401 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.04, "y": -7.38 },
+          "B": { "type": "point", "defined": true, "x": 7.04, "y": -7.38 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 4.42, "y": 3.4 },
+          "a": { "type": "number", "defined": true, "value": -1.94 },
+          "w": { "type": "vector", "defined": true, "x": -0.7217457602795343, "y": -1.865230028044401 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.04, "y": -7.38 },
+          "B": { "type": "point", "defined": true, "x": 7.04, "y": -7.38 },
+          "u": { "type": "vector", "defined": true, "x": -0.08, "y": 2.85 },
+          "v": { "type": "vector", "defined": true, "x": 4.42, "y": 3.4 },
+          "a": { "type": "number", "defined": true, "value": -1.94 },
+          "w": { "type": "vector", "defined": true, "x": -0.7217457602795343, "y": -1.865230028044401 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.04, "y": -7.38 },
+          "B": { "type": "point", "defined": true, "x": -1.14, "y": 3.53 },
+          "u": { "type": "vector", "defined": true, "x": -0.08, "y": 2.85 },
+          "v": { "type": "vector", "defined": true, "x": 4.42, "y": 3.4 },
+          "a": { "type": "number", "defined": true, "value": -1.94 },
+          "w": { "type": "vector", "defined": true, "x": -0.7217457602795343, "y": -1.865230028044401 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.04, "y": -7.38 },
+          "B": { "type": "point", "defined": true, "x": -1.14, "y": 3.53 },
+          "u": { "type": "vector", "defined": true, "x": -0.08, "y": 2.85 },
+          "v": { "type": "vector", "defined": true, "x": 4.42, "y": 3.4 },
+          "a": { "type": "number", "defined": true, "value": 3.53 },
+          "w": { "type": "vector", "defined": true, "x": -1.8510267900175692, "y": -0.7574297476579952 }
+        }
+      ]
+    },
+    {
+      "id": "expr-vector-015",
+      "group": "expr",
+      "script": [
+        "A = (-2.26, 5.04)",
+        "B = (-2.84, -5.78)",
+        "u = (-5.05, 3.84)",
+        "v = (-3.21, -2.68)",
+        "a = 2.51",
+        "w = u + (1; pi / 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "u", "x": -4.11, "y": 0.45 },
+        { "action": "move", "label": "v", "x": 1.28, "y": -5.96 },
+        { "action": "set_number", "label": "a", "value": 0.2 },
+        { "action": "move", "label": "u", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": -2.26, "y": 5.04 },
+        { "action": "move", "label": "u", "x": -5.05, "y": 3.84 },
+        { "action": "move", "label": "B", "x": -7.94, "y": -5.09 },
+        { "action": "set_number", "label": "a", "value": 2.51 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -2.26, "y": 5.04 },
+          "B": { "type": "point", "defined": true, "x": -2.84, "y": -5.78 },
+          "u": { "type": "vector", "defined": true, "x": -5.05, "y": 3.84 },
+          "v": { "type": "vector", "defined": true, "x": -3.21, "y": -2.68 },
+          "a": { "type": "number", "defined": true, "value": 2.51 },
+          "w": { "type": "vector", "defined": true, "x": -5.05, "y": 4.84 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.26, "y": 5.04 },
+          "B": { "type": "point", "defined": true, "x": -2.84, "y": -5.78 },
+          "u": { "type": "vector", "defined": true, "x": -4.11, "y": 0.45 },
+          "v": { "type": "vector", "defined": true, "x": -3.21, "y": -2.68 },
+          "a": { "type": "number", "defined": true, "value": 2.51 },
+          "w": { "type": "vector", "defined": true, "x": -4.11, "y": 1.45 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.26, "y": 5.04 },
+          "B": { "type": "point", "defined": true, "x": -2.84, "y": -5.78 },
+          "u": { "type": "vector", "defined": true, "x": -4.11, "y": 0.45 },
+          "v": { "type": "vector", "defined": true, "x": 1.28, "y": -5.96 },
+          "a": { "type": "number", "defined": true, "value": 2.51 },
+          "w": { "type": "vector", "defined": true, "x": -4.11, "y": 1.45 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.26, "y": 5.04 },
+          "B": { "type": "point", "defined": true, "x": -2.84, "y": -5.78 },
+          "u": { "type": "vector", "defined": true, "x": -4.11, "y": 0.45 },
+          "v": { "type": "vector", "defined": true, "x": 1.28, "y": -5.96 },
+          "a": { "type": "number", "defined": true, "value": 0.2 },
+          "w": { "type": "vector", "defined": true, "x": -4.11, "y": 1.45 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.26, "y": 5.04 },
+          "B": { "type": "point", "defined": true, "x": -2.84, "y": -5.78 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.28, "y": -5.96 },
+          "a": { "type": "number", "defined": true, "value": 0.2 },
+          "w": { "type": "vector", "defined": true, "x": 6.123233995736766E-17, "y": 1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.26, "y": 5.04 },
+          "B": { "type": "point", "defined": true, "x": -2.26, "y": 5.04 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.28, "y": -5.96 },
+          "a": { "type": "number", "defined": true, "value": 0.2 },
+          "w": { "type": "vector", "defined": true, "x": 6.123233995736766E-17, "y": 1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.26, "y": 5.04 },
+          "B": { "type": "point", "defined": true, "x": -2.26, "y": 5.04 },
+          "u": { "type": "vector", "defined": true, "x": -5.05, "y": 3.84 },
+          "v": { "type": "vector", "defined": true, "x": 1.28, "y": -5.96 },
+          "a": { "type": "number", "defined": true, "value": 0.2 },
+          "w": { "type": "vector", "defined": true, "x": -5.05, "y": 4.84 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.26, "y": 5.04 },
+          "B": { "type": "point", "defined": true, "x": -7.94, "y": -5.09 },
+          "u": { "type": "vector", "defined": true, "x": -5.05, "y": 3.84 },
+          "v": { "type": "vector", "defined": true, "x": 1.28, "y": -5.96 },
+          "a": { "type": "number", "defined": true, "value": 0.2 },
+          "w": { "type": "vector", "defined": true, "x": -5.05, "y": 4.84 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.26, "y": 5.04 },
+          "B": { "type": "point", "defined": true, "x": -7.94, "y": -5.09 },
+          "u": { "type": "vector", "defined": true, "x": -5.05, "y": 3.84 },
+          "v": { "type": "vector", "defined": true, "x": 1.28, "y": -5.96 },
+          "a": { "type": "number", "defined": true, "value": 2.51 },
+          "w": { "type": "vector", "defined": true, "x": -5.05, "y": 4.84 }
+        }
+      ]
+    },
+    {
+      "id": "expr-vector-016",
+      "group": "expr",
+      "script": [
+        "A = (0.91, -6.75)",
+        "B = (-5.25, -4.36)",
+        "u = (6.54, 7.5)",
+        "v = (-4.45, 6.37)",
+        "a = 3.4",
+        "w = A - B + u"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "u", "x": 1.66, "y": 7.07 },
+        { "action": "move", "label": "v", "x": -1.55, "y": -3.9 },
+        { "action": "set_number", "label": "a", "value": 1.17 },
+        { "action": "move", "label": "u", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 0.91, "y": -6.75 },
+        { "action": "move", "label": "u", "x": 6.54, "y": 7.5 },
+        { "action": "move", "label": "B", "x": -4.96, "y": -6.61 },
+        { "action": "set_number", "label": "a", "value": 3.4 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.91, "y": -6.75 },
+          "B": { "type": "point", "defined": true, "x": -5.25, "y": -4.36 },
+          "u": { "type": "vector", "defined": true, "x": 6.54, "y": 7.5 },
+          "v": { "type": "vector", "defined": true, "x": -4.45, "y": 6.37 },
+          "a": { "type": "number", "defined": true, "value": 3.4 },
+          "w": { "type": "vector", "defined": true, "x": 12.7, "y": 5.11 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.91, "y": -6.75 },
+          "B": { "type": "point", "defined": true, "x": -5.25, "y": -4.36 },
+          "u": { "type": "vector", "defined": true, "x": 1.66, "y": 7.07 },
+          "v": { "type": "vector", "defined": true, "x": -4.45, "y": 6.37 },
+          "a": { "type": "number", "defined": true, "value": 3.4 },
+          "w": { "type": "vector", "defined": true, "x": 7.82, "y": 4.680000000000001 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.91, "y": -6.75 },
+          "B": { "type": "point", "defined": true, "x": -5.25, "y": -4.36 },
+          "u": { "type": "vector", "defined": true, "x": 1.66, "y": 7.07 },
+          "v": { "type": "vector", "defined": true, "x": -1.55, "y": -3.9 },
+          "a": { "type": "number", "defined": true, "value": 3.4 },
+          "w": { "type": "vector", "defined": true, "x": 7.82, "y": 4.680000000000001 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.91, "y": -6.75 },
+          "B": { "type": "point", "defined": true, "x": -5.25, "y": -4.36 },
+          "u": { "type": "vector", "defined": true, "x": 1.66, "y": 7.07 },
+          "v": { "type": "vector", "defined": true, "x": -1.55, "y": -3.9 },
+          "a": { "type": "number", "defined": true, "value": 1.17 },
+          "w": { "type": "vector", "defined": true, "x": 7.82, "y": 4.680000000000001 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.91, "y": -6.75 },
+          "B": { "type": "point", "defined": true, "x": -5.25, "y": -4.36 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": -1.55, "y": -3.9 },
+          "a": { "type": "number", "defined": true, "value": 1.17 },
+          "w": { "type": "vector", "defined": true, "x": 6.16, "y": -2.3899999999999997 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.91, "y": -6.75 },
+          "B": { "type": "point", "defined": true, "x": 0.91, "y": -6.75 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": -1.55, "y": -3.9 },
+          "a": { "type": "number", "defined": true, "value": 1.17 },
+          "w": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.91, "y": -6.75 },
+          "B": { "type": "point", "defined": true, "x": 0.91, "y": -6.75 },
+          "u": { "type": "vector", "defined": true, "x": 6.54, "y": 7.5 },
+          "v": { "type": "vector", "defined": true, "x": -1.55, "y": -3.9 },
+          "a": { "type": "number", "defined": true, "value": 1.17 },
+          "w": { "type": "vector", "defined": true, "x": 6.54, "y": 7.5 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.91, "y": -6.75 },
+          "B": { "type": "point", "defined": true, "x": -4.96, "y": -6.61 },
+          "u": { "type": "vector", "defined": true, "x": 6.54, "y": 7.5 },
+          "v": { "type": "vector", "defined": true, "x": -1.55, "y": -3.9 },
+          "a": { "type": "number", "defined": true, "value": 1.17 },
+          "w": { "type": "vector", "defined": true, "x": 12.41, "y": 7.36 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.91, "y": -6.75 },
+          "B": { "type": "point", "defined": true, "x": -4.96, "y": -6.61 },
+          "u": { "type": "vector", "defined": true, "x": 6.54, "y": 7.5 },
+          "v": { "type": "vector", "defined": true, "x": -1.55, "y": -3.9 },
+          "a": { "type": "number", "defined": true, "value": 3.4 },
+          "w": { "type": "vector", "defined": true, "x": 12.41, "y": 7.36 }
+        }
+      ]
+    },
+    {
+      "id": "expr-vector-017",
+      "group": "expr",
+      "script": [
+        "A = (6.43, 5.27)",
+        "B = (0.31, -3.92)",
+        "u = (2.29, -2.15)",
+        "v = (3.4, 1.73)",
+        "s = u * v"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "u", "x": 3.62, "y": 5.95 },
+        { "action": "move", "label": "v", "x": 0.91, "y": 1.8 },
+        { "action": "move", "label": "A", "x": -2.53, "y": -7.69 },
+        { "action": "move", "label": "u", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 7.91, "y": 2.81 },
+        { "action": "move", "label": "u", "x": 2.29, "y": -2.15 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 6.43, "y": 5.27 },
+          "B": { "type": "point", "defined": true, "x": 0.31, "y": -3.92 },
+          "u": { "type": "vector", "defined": true, "x": 2.29, "y": -2.15 },
+          "v": { "type": "vector", "defined": true, "x": 3.4, "y": 1.73 },
+          "s": { "type": "number", "defined": true, "value": 4.0665 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 6.43, "y": 5.27 },
+          "B": { "type": "point", "defined": true, "x": 0.31, "y": -3.92 },
+          "u": { "type": "vector", "defined": true, "x": 3.62, "y": 5.95 },
+          "v": { "type": "vector", "defined": true, "x": 3.4, "y": 1.73 },
+          "s": { "type": "number", "defined": true, "value": 22.6015 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 6.43, "y": 5.27 },
+          "B": { "type": "point", "defined": true, "x": 0.31, "y": -3.92 },
+          "u": { "type": "vector", "defined": true, "x": 3.62, "y": 5.95 },
+          "v": { "type": "vector", "defined": true, "x": 0.91, "y": 1.8 },
+          "s": { "type": "number", "defined": true, "value": 14.0042 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.53, "y": -7.69 },
+          "B": { "type": "point", "defined": true, "x": 0.31, "y": -3.92 },
+          "u": { "type": "vector", "defined": true, "x": 3.62, "y": 5.95 },
+          "v": { "type": "vector", "defined": true, "x": 0.91, "y": 1.8 },
+          "s": { "type": "number", "defined": true, "value": 14.0042 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.53, "y": -7.69 },
+          "B": { "type": "point", "defined": true, "x": 0.31, "y": -3.92 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 0.91, "y": 1.8 },
+          "s": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.53, "y": -7.69 },
+          "B": { "type": "point", "defined": true, "x": 7.91, "y": 2.81 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 0.91, "y": 1.8 },
+          "s": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.53, "y": -7.69 },
+          "B": { "type": "point", "defined": true, "x": 7.91, "y": 2.81 },
+          "u": { "type": "vector", "defined": true, "x": 2.29, "y": -2.15 },
+          "v": { "type": "vector", "defined": true, "x": 0.91, "y": 1.8 },
+          "s": { "type": "number", "defined": true, "value": -1.7860999999999998 }
+        }
+      ]
+    },
+    {
+      "id": "expr-vector-018",
+      "group": "expr",
+      "script": [
+        "A = (3.9, -7.6)",
+        "B = (-4.4, 5.15)",
+        "u = (-3.91, 6.89)",
+        "v = (3.3, -6.86)",
+        "s = u v"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "u", "x": -0.15, "y": 0.91 },
+        { "action": "move", "label": "v", "x": 5.32, "y": 5.71 },
+        { "action": "move", "label": "A", "x": 0.87, "y": -3.84 },
+        { "action": "move", "label": "u", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": -3.49, "y": -6.2 },
+        { "action": "move", "label": "u", "x": -3.91, "y": 6.89 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 3.9, "y": -7.6 },
+          "B": { "type": "point", "defined": true, "x": -4.4, "y": 5.15 },
+          "u": { "type": "vector", "defined": true, "x": -3.91, "y": 6.89 },
+          "v": { "type": "vector", "defined": true, "x": 3.3, "y": -6.86 },
+          "s": { "type": "number", "defined": true, "value": -60.1684 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.9, "y": -7.6 },
+          "B": { "type": "point", "defined": true, "x": -4.4, "y": 5.15 },
+          "u": { "type": "vector", "defined": true, "x": -0.15, "y": 0.91 },
+          "v": { "type": "vector", "defined": true, "x": 3.3, "y": -6.86 },
+          "s": { "type": "number", "defined": true, "value": -6.7376000000000005 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.9, "y": -7.6 },
+          "B": { "type": "point", "defined": true, "x": -4.4, "y": 5.15 },
+          "u": { "type": "vector", "defined": true, "x": -0.15, "y": 0.91 },
+          "v": { "type": "vector", "defined": true, "x": 5.32, "y": 5.71 },
+          "s": { "type": "number", "defined": true, "value": 4.3981 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.87, "y": -3.84 },
+          "B": { "type": "point", "defined": true, "x": -4.4, "y": 5.15 },
+          "u": { "type": "vector", "defined": true, "x": -0.15, "y": 0.91 },
+          "v": { "type": "vector", "defined": true, "x": 5.32, "y": 5.71 },
+          "s": { "type": "number", "defined": true, "value": 4.3981 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.87, "y": -3.84 },
+          "B": { "type": "point", "defined": true, "x": -4.4, "y": 5.15 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 5.32, "y": 5.71 },
+          "s": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.87, "y": -3.84 },
+          "B": { "type": "point", "defined": true, "x": -3.49, "y": -6.2 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 5.32, "y": 5.71 },
+          "s": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.87, "y": -3.84 },
+          "B": { "type": "point", "defined": true, "x": -3.49, "y": -6.2 },
+          "u": { "type": "vector", "defined": true, "x": -3.91, "y": 6.89 },
+          "v": { "type": "vector", "defined": true, "x": 5.32, "y": 5.71 },
+          "s": { "type": "number", "defined": true, "value": 18.540699999999994 }
+        }
+      ]
+    },
+    {
+      "id": "expr-vector-019",
+      "group": "expr",
+      "script": [
+        "A = (3.18, -5.75)",
+        "B = (-3.07, 6.07)",
+        "u = (4.84, 7.21)",
+        "v = (-7.15, 7.01)",
+        "s = abs(v)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "u", "x": 1.95, "y": 5.78 },
+        { "action": "move", "label": "v", "x": 5.47, "y": 7.42 },
+        { "action": "move", "label": "A", "x": 1.17, "y": -7.56 },
+        { "action": "move", "label": "u", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": -4.53, "y": 7.36 },
+        { "action": "move", "label": "u", "x": 4.84, "y": 7.21 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 3.18, "y": -5.75 },
+          "B": { "type": "point", "defined": true, "x": -3.07, "y": 6.07 },
+          "u": { "type": "vector", "defined": true, "x": 4.84, "y": 7.21 },
+          "v": { "type": "vector", "defined": true, "x": -7.15, "y": 7.01 },
+          "s": { "type": "number", "defined": true, "value": 10.013121391454314 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.18, "y": -5.75 },
+          "B": { "type": "point", "defined": true, "x": -3.07, "y": 6.07 },
+          "u": { "type": "vector", "defined": true, "x": 1.95, "y": 5.78 },
+          "v": { "type": "vector", "defined": true, "x": -7.15, "y": 7.01 },
+          "s": { "type": "number", "defined": true, "value": 10.013121391454314 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.18, "y": -5.75 },
+          "B": { "type": "point", "defined": true, "x": -3.07, "y": 6.07 },
+          "u": { "type": "vector", "defined": true, "x": 1.95, "y": 5.78 },
+          "v": { "type": "vector", "defined": true, "x": 5.47, "y": 7.42 },
+          "s": { "type": "number", "defined": true, "value": 9.218313294741073 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.17, "y": -7.56 },
+          "B": { "type": "point", "defined": true, "x": -3.07, "y": 6.07 },
+          "u": { "type": "vector", "defined": true, "x": 1.95, "y": 5.78 },
+          "v": { "type": "vector", "defined": true, "x": 5.47, "y": 7.42 },
+          "s": { "type": "number", "defined": true, "value": 9.218313294741073 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.17, "y": -7.56 },
+          "B": { "type": "point", "defined": true, "x": -3.07, "y": 6.07 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 5.47, "y": 7.42 },
+          "s": { "type": "number", "defined": true, "value": 9.218313294741073 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.17, "y": -7.56 },
+          "B": { "type": "point", "defined": true, "x": -4.53, "y": 7.36 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 5.47, "y": 7.42 },
+          "s": { "type": "number", "defined": true, "value": 9.218313294741073 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.17, "y": -7.56 },
+          "B": { "type": "point", "defined": true, "x": -4.53, "y": 7.36 },
+          "u": { "type": "vector", "defined": true, "x": 4.84, "y": 7.21 },
+          "v": { "type": "vector", "defined": true, "x": 5.47, "y": 7.42 },
+          "s": { "type": "number", "defined": true, "value": 9.218313294741073 }
+        }
+      ]
+    },
+    {
+      "id": "expr-vector-020",
+      "group": "expr",
+      "script": [
+        "A = (7.02, 0.77)",
+        "B = (7.26, -3.14)",
+        "u = (6.8, 1.49)",
+        "v = (1.56, 1.2)",
+        "s = abs(A)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "u", "x": 0.25, "y": 1.64 },
+        { "action": "move", "label": "v", "x": 4.34, "y": 7.08 },
+        { "action": "move", "label": "A", "x": -3.98, "y": -2.8 },
+        { "action": "move", "label": "u", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 4.61, "y": 5.32 },
+        { "action": "move", "label": "u", "x": 6.8, "y": 1.49 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 7.02, "y": 0.77 },
+          "B": { "type": "point", "defined": true, "x": 7.26, "y": -3.14 },
+          "u": { "type": "vector", "defined": true, "x": 6.8, "y": 1.49 },
+          "v": { "type": "vector", "defined": true, "x": 1.56, "y": 1.2 },
+          "s": { "type": "number", "defined": true, "value": 7.062103086191818 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.02, "y": 0.77 },
+          "B": { "type": "point", "defined": true, "x": 7.26, "y": -3.14 },
+          "u": { "type": "vector", "defined": true, "x": 0.25, "y": 1.64 },
+          "v": { "type": "vector", "defined": true, "x": 1.56, "y": 1.2 },
+          "s": { "type": "number", "defined": true, "value": 7.062103086191818 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.02, "y": 0.77 },
+          "B": { "type": "point", "defined": true, "x": 7.26, "y": -3.14 },
+          "u": { "type": "vector", "defined": true, "x": 0.25, "y": 1.64 },
+          "v": { "type": "vector", "defined": true, "x": 4.34, "y": 7.08 },
+          "s": { "type": "number", "defined": true, "value": 7.062103086191818 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.98, "y": -2.8 },
+          "B": { "type": "point", "defined": true, "x": 7.26, "y": -3.14 },
+          "u": { "type": "vector", "defined": true, "x": 0.25, "y": 1.64 },
+          "v": { "type": "vector", "defined": true, "x": 4.34, "y": 7.08 },
+          "s": { "type": "number", "defined": true, "value": 4.866251123811841 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.98, "y": -2.8 },
+          "B": { "type": "point", "defined": true, "x": 7.26, "y": -3.14 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 4.34, "y": 7.08 },
+          "s": { "type": "number", "defined": true, "value": 4.866251123811841 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.98, "y": -2.8 },
+          "B": { "type": "point", "defined": true, "x": 4.61, "y": 5.32 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 4.34, "y": 7.08 },
+          "s": { "type": "number", "defined": true, "value": 4.866251123811841 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.98, "y": -2.8 },
+          "B": { "type": "point", "defined": true, "x": 4.61, "y": 5.32 },
+          "u": { "type": "vector", "defined": true, "x": 6.8, "y": 1.49 },
+          "v": { "type": "vector", "defined": true, "x": 4.34, "y": 7.08 },
+          "s": { "type": "number", "defined": true, "value": 4.866251123811841 }
+        }
+      ]
+    },
+    {
+      "id": "expr-vector-021",
+      "group": "expr",
+      "script": [
+        "A = (6.66, 7.71)",
+        "B = (5.84, -2.1)",
+        "u = (-7.53, 7.91)",
+        "v = (5.14, -2.72)",
+        "s = A * B"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "u", "x": 3.58, "y": -1.63 },
+        { "action": "move", "label": "v", "x": -7.77, "y": -0.45 },
+        { "action": "move", "label": "A", "x": 0.02, "y": -2.15 },
+        { "action": "move", "label": "u", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 5.6, "y": 5.81 },
+        { "action": "move", "label": "u", "x": -7.53, "y": 7.91 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 6.66, "y": 7.71 },
+          "B": { "type": "point", "defined": true, "x": 5.84, "y": -2.1 },
+          "u": { "type": "vector", "defined": true, "x": -7.53, "y": 7.91 },
+          "v": { "type": "vector", "defined": true, "x": 5.14, "y": -2.72 },
+          "s": { "type": "number", "defined": true, "value": 22.7034 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 6.66, "y": 7.71 },
+          "B": { "type": "point", "defined": true, "x": 5.84, "y": -2.1 },
+          "u": { "type": "vector", "defined": true, "x": 3.58, "y": -1.63 },
+          "v": { "type": "vector", "defined": true, "x": 5.14, "y": -2.72 },
+          "s": { "type": "number", "defined": true, "value": 22.7034 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 6.66, "y": 7.71 },
+          "B": { "type": "point", "defined": true, "x": 5.84, "y": -2.1 },
+          "u": { "type": "vector", "defined": true, "x": 3.58, "y": -1.63 },
+          "v": { "type": "vector", "defined": true, "x": -7.77, "y": -0.45 },
+          "s": { "type": "number", "defined": true, "value": 22.7034 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.02, "y": -2.15 },
+          "B": { "type": "point", "defined": true, "x": 5.84, "y": -2.1 },
+          "u": { "type": "vector", "defined": true, "x": 3.58, "y": -1.63 },
+          "v": { "type": "vector", "defined": true, "x": -7.77, "y": -0.45 },
+          "s": { "type": "number", "defined": true, "value": 4.631799999999999 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.02, "y": -2.15 },
+          "B": { "type": "point", "defined": true, "x": 5.84, "y": -2.1 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": -7.77, "y": -0.45 },
+          "s": { "type": "number", "defined": true, "value": 4.631799999999999 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.02, "y": -2.15 },
+          "B": { "type": "point", "defined": true, "x": 5.6, "y": 5.81 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": -7.77, "y": -0.45 },
+          "s": { "type": "number", "defined": true, "value": -12.379499999999998 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.02, "y": -2.15 },
+          "B": { "type": "point", "defined": true, "x": 5.6, "y": 5.81 },
+          "u": { "type": "vector", "defined": true, "x": -7.53, "y": 7.91 },
+          "v": { "type": "vector", "defined": true, "x": -7.77, "y": -0.45 },
+          "s": { "type": "number", "defined": true, "value": -12.379499999999998 }
+        }
+      ]
+    },
+    {
+      "id": "expr-vector-022",
+      "group": "expr",
+      "script": [
+        "A = (-4.06, -3.01)",
+        "B = (0.58, 0.27)",
+        "u = (6.74, -5.15)",
+        "v = (0.69, 0.79)",
+        "s = x(u) + y(v)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "u", "x": 6.11, "y": 5.03 },
+        { "action": "move", "label": "v", "x": 4.44, "y": -0.98 },
+        { "action": "move", "label": "A", "x": 7.23, "y": 3.58 },
+        { "action": "move", "label": "u", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 4.65, "y": -4.44 },
+        { "action": "move", "label": "u", "x": 6.74, "y": -5.15 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -4.06, "y": -3.01 },
+          "B": { "type": "point", "defined": true, "x": 0.58, "y": 0.27 },
+          "u": { "type": "vector", "defined": true, "x": 6.74, "y": -5.15 },
+          "v": { "type": "vector", "defined": true, "x": 0.69, "y": 0.79 },
+          "s": { "type": "number", "defined": true, "value": 7.53 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -4.06, "y": -3.01 },
+          "B": { "type": "point", "defined": true, "x": 0.58, "y": 0.27 },
+          "u": { "type": "vector", "defined": true, "x": 6.11, "y": 5.03 },
+          "v": { "type": "vector", "defined": true, "x": 0.69, "y": 0.79 },
+          "s": { "type": "number", "defined": true, "value": 6.9 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -4.06, "y": -3.01 },
+          "B": { "type": "point", "defined": true, "x": 0.58, "y": 0.27 },
+          "u": { "type": "vector", "defined": true, "x": 6.11, "y": 5.03 },
+          "v": { "type": "vector", "defined": true, "x": 4.44, "y": -0.98 },
+          "s": { "type": "number", "defined": true, "value": 5.130000000000001 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.23, "y": 3.58 },
+          "B": { "type": "point", "defined": true, "x": 0.58, "y": 0.27 },
+          "u": { "type": "vector", "defined": true, "x": 6.11, "y": 5.03 },
+          "v": { "type": "vector", "defined": true, "x": 4.44, "y": -0.98 },
+          "s": { "type": "number", "defined": true, "value": 5.130000000000001 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.23, "y": 3.58 },
+          "B": { "type": "point", "defined": true, "x": 0.58, "y": 0.27 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 4.44, "y": -0.98 },
+          "s": { "type": "number", "defined": true, "value": -0.98 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.23, "y": 3.58 },
+          "B": { "type": "point", "defined": true, "x": 4.65, "y": -4.44 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 4.44, "y": -0.98 },
+          "s": { "type": "number", "defined": true, "value": -0.98 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.23, "y": 3.58 },
+          "B": { "type": "point", "defined": true, "x": 4.65, "y": -4.44 },
+          "u": { "type": "vector", "defined": true, "x": 6.74, "y": -5.15 },
+          "v": { "type": "vector", "defined": true, "x": 4.44, "y": -0.98 },
+          "s": { "type": "number", "defined": true, "value": 5.76 }
+        }
+      ]
+    },
+    {
+      "id": "expr-vector-023",
+      "group": "expr",
+      "script": [
+        "A = (-6.2, -3.02)",
+        "B = (7.94, 6.08)",
+        "u = (0.4, -1.48)",
+        "v = (-2.89, -5.13)",
+        "s = abs(u - v)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "u", "x": -5.06, "y": 2.15 },
+        { "action": "move", "label": "v", "x": -2.34, "y": 3.98 },
+        { "action": "move", "label": "A", "x": -0.43, "y": -6.19 },
+        { "action": "move", "label": "u", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 5.82, "y": -2.15 },
+        { "action": "move", "label": "u", "x": 0.4, "y": -1.48 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -6.2, "y": -3.02 },
+          "B": { "type": "point", "defined": true, "x": 7.94, "y": 6.08 },
+          "u": { "type": "vector", "defined": true, "x": 0.4, "y": -1.48 },
+          "v": { "type": "vector", "defined": true, "x": -2.89, "y": -5.13 },
+          "s": { "type": "number", "defined": true, "value": 4.913919006251528 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.2, "y": -3.02 },
+          "B": { "type": "point", "defined": true, "x": 7.94, "y": 6.08 },
+          "u": { "type": "vector", "defined": true, "x": -5.06, "y": 2.15 },
+          "v": { "type": "vector", "defined": true, "x": -2.89, "y": -5.13 },
+          "s": { "type": "number", "defined": true, "value": 7.596532103532506 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.2, "y": -3.02 },
+          "B": { "type": "point", "defined": true, "x": 7.94, "y": 6.08 },
+          "u": { "type": "vector", "defined": true, "x": -5.06, "y": 2.15 },
+          "v": { "type": "vector", "defined": true, "x": -2.34, "y": 3.98 },
+          "s": { "type": "number", "defined": true, "value": 3.2783074901540274 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -0.43, "y": -6.19 },
+          "B": { "type": "point", "defined": true, "x": 7.94, "y": 6.08 },
+          "u": { "type": "vector", "defined": true, "x": -5.06, "y": 2.15 },
+          "v": { "type": "vector", "defined": true, "x": -2.34, "y": 3.98 },
+          "s": { "type": "number", "defined": true, "value": 3.2783074901540274 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -0.43, "y": -6.19 },
+          "B": { "type": "point", "defined": true, "x": 7.94, "y": 6.08 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": -2.34, "y": 3.98 },
+          "s": { "type": "number", "defined": true, "value": 4.6169253838458335 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -0.43, "y": -6.19 },
+          "B": { "type": "point", "defined": true, "x": 5.82, "y": -2.15 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": -2.34, "y": 3.98 },
+          "s": { "type": "number", "defined": true, "value": 4.6169253838458335 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -0.43, "y": -6.19 },
+          "B": { "type": "point", "defined": true, "x": 5.82, "y": -2.15 },
+          "u": { "type": "vector", "defined": true, "x": 0.4, "y": -1.48 },
+          "v": { "type": "vector", "defined": true, "x": -2.34, "y": 3.98 },
+          "s": { "type": "number", "defined": true, "value": 6.108944262309159 }
+        }
+      ]
+    },
+    {
+      "id": "expr-vector-024",
+      "group": "expr",
+      "script": [
+        "A = (-0.84, -6.94)",
+        "B = (-3.12, 3.15)",
+        "u = (4.93, 3.59)",
+        "v = (-1.05, 3.22)",
+        "s = u * (A - B)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "u", "x": -2.75, "y": 3.54 },
+        { "action": "move", "label": "v", "x": 2.45, "y": 3.81 },
+        { "action": "move", "label": "A", "x": -7.14, "y": -6.29 },
+        { "action": "move", "label": "u", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": -1.54, "y": -5.21 },
+        { "action": "move", "label": "u", "x": 4.93, "y": 3.59 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -0.84, "y": -6.94 },
+          "B": { "type": "point", "defined": true, "x": -3.12, "y": 3.15 },
+          "u": { "type": "vector", "defined": true, "x": 4.93, "y": 3.59 },
+          "v": { "type": "vector", "defined": true, "x": -1.05, "y": 3.22 },
+          "s": { "type": "number", "defined": true, "value": -24.982699999999994 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -0.84, "y": -6.94 },
+          "B": { "type": "point", "defined": true, "x": -3.12, "y": 3.15 },
+          "u": { "type": "vector", "defined": true, "x": -2.75, "y": 3.54 },
+          "v": { "type": "vector", "defined": true, "x": -1.05, "y": 3.22 },
+          "s": { "type": "number", "defined": true, "value": -41.988600000000005 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -0.84, "y": -6.94 },
+          "B": { "type": "point", "defined": true, "x": -3.12, "y": 3.15 },
+          "u": { "type": "vector", "defined": true, "x": -2.75, "y": 3.54 },
+          "v": { "type": "vector", "defined": true, "x": 2.45, "y": 3.81 },
+          "s": { "type": "number", "defined": true, "value": -41.988600000000005 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.14, "y": -6.29 },
+          "B": { "type": "point", "defined": true, "x": -3.12, "y": 3.15 },
+          "u": { "type": "vector", "defined": true, "x": -2.75, "y": 3.54 },
+          "v": { "type": "vector", "defined": true, "x": 2.45, "y": 3.81 },
+          "s": { "type": "number", "defined": true, "value": -22.3626 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.14, "y": -6.29 },
+          "B": { "type": "point", "defined": true, "x": -3.12, "y": 3.15 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 2.45, "y": 3.81 },
+          "s": { "type": "number", "defined": true, "value": -0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.14, "y": -6.29 },
+          "B": { "type": "point", "defined": true, "x": -1.54, "y": -5.21 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 2.45, "y": 3.81 },
+          "s": { "type": "number", "defined": true, "value": -0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.14, "y": -6.29 },
+          "B": { "type": "point", "defined": true, "x": -1.54, "y": -5.21 },
+          "u": { "type": "vector", "defined": true, "x": 4.93, "y": 3.59 },
+          "v": { "type": "vector", "defined": true, "x": 2.45, "y": 3.81 },
+          "s": { "type": "number", "defined": true, "value": -31.4852 }
+        }
+      ]
+    },
+    {
+      "id": "expr-vector-025",
+      "group": "expr",
+      "script": [
+        "A = (-6.54, 6.89)",
+        "B = (4.15, -4.11)",
+        "u = (-1.94, 4.5)",
+        "v = (4.97, -5.82)",
+        "s = u^2"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "u", "x": 1.24, "y": -3.99 },
+        { "action": "move", "label": "v", "x": 5.11, "y": 2.36 },
+        { "action": "move", "label": "A", "x": -4.43, "y": -2.74 },
+        { "action": "move", "label": "u", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 1.89, "y": 1.94 },
+        { "action": "move", "label": "u", "x": -1.94, "y": 4.5 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -6.54, "y": 6.89 },
+          "B": { "type": "point", "defined": true, "x": 4.15, "y": -4.11 },
+          "u": { "type": "vector", "defined": true, "x": -1.94, "y": 4.5 },
+          "v": { "type": "vector", "defined": true, "x": 4.97, "y": -5.82 },
+          "s": { "type": "number", "defined": true, "value": 24.0136 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.54, "y": 6.89 },
+          "B": { "type": "point", "defined": true, "x": 4.15, "y": -4.11 },
+          "u": { "type": "vector", "defined": true, "x": 1.24, "y": -3.99 },
+          "v": { "type": "vector", "defined": true, "x": 4.97, "y": -5.82 },
+          "s": { "type": "number", "defined": true, "value": 17.457700000000003 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.54, "y": 6.89 },
+          "B": { "type": "point", "defined": true, "x": 4.15, "y": -4.11 },
+          "u": { "type": "vector", "defined": true, "x": 1.24, "y": -3.99 },
+          "v": { "type": "vector", "defined": true, "x": 5.11, "y": 2.36 },
+          "s": { "type": "number", "defined": true, "value": 17.457700000000003 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -4.43, "y": -2.74 },
+          "B": { "type": "point", "defined": true, "x": 4.15, "y": -4.11 },
+          "u": { "type": "vector", "defined": true, "x": 1.24, "y": -3.99 },
+          "v": { "type": "vector", "defined": true, "x": 5.11, "y": 2.36 },
+          "s": { "type": "number", "defined": true, "value": 17.457700000000003 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -4.43, "y": -2.74 },
+          "B": { "type": "point", "defined": true, "x": 4.15, "y": -4.11 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 5.11, "y": 2.36 },
+          "s": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -4.43, "y": -2.74 },
+          "B": { "type": "point", "defined": true, "x": 1.89, "y": 1.94 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 5.11, "y": 2.36 },
+          "s": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -4.43, "y": -2.74 },
+          "B": { "type": "point", "defined": true, "x": 1.89, "y": 1.94 },
+          "u": { "type": "vector", "defined": true, "x": -1.94, "y": 4.5 },
+          "v": { "type": "vector", "defined": true, "x": 5.11, "y": 2.36 },
+          "s": { "type": "number", "defined": true, "value": 24.0136 }
+        }
+      ]
+    },
+    {
+      "id": "expr-vector-026",
+      "group": "expr",
+      "script": [
+        "A = (-7.48, -3.54)",
+        "B = (-1.95, -6.24)",
+        "u = (-1.37, -2.61)",
+        "v = (-3.21, 1.37)",
+        "s = (u + v)^2"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "u", "x": 6.79, "y": -0.6 },
+        { "action": "move", "label": "v", "x": -2.39, "y": -3.16 },
+        { "action": "move", "label": "A", "x": 6.23, "y": -7.78 },
+        { "action": "move", "label": "u", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 2.42, "y": 6.26 },
+        { "action": "move", "label": "u", "x": -1.37, "y": -2.61 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -7.48, "y": -3.54 },
+          "B": { "type": "point", "defined": true, "x": -1.95, "y": -6.24 },
+          "u": { "type": "vector", "defined": true, "x": -1.37, "y": -2.61 },
+          "v": { "type": "vector", "defined": true, "x": -3.21, "y": 1.37 },
+          "s": { "type": "number", "defined": true, "value": 22.514000000000003 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.48, "y": -3.54 },
+          "B": { "type": "point", "defined": true, "x": -1.95, "y": -6.24 },
+          "u": { "type": "vector", "defined": true, "x": 6.79, "y": -0.6 },
+          "v": { "type": "vector", "defined": true, "x": -3.21, "y": 1.37 },
+          "s": { "type": "number", "defined": true, "value": 13.4093 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.48, "y": -3.54 },
+          "B": { "type": "point", "defined": true, "x": -1.95, "y": -6.24 },
+          "u": { "type": "vector", "defined": true, "x": 6.79, "y": -0.6 },
+          "v": { "type": "vector", "defined": true, "x": -2.39, "y": -3.16 },
+          "s": { "type": "number", "defined": true, "value": 33.497600000000006 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 6.23, "y": -7.78 },
+          "B": { "type": "point", "defined": true, "x": -1.95, "y": -6.24 },
+          "u": { "type": "vector", "defined": true, "x": 6.79, "y": -0.6 },
+          "v": { "type": "vector", "defined": true, "x": -2.39, "y": -3.16 },
+          "s": { "type": "number", "defined": true, "value": 33.497600000000006 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 6.23, "y": -7.78 },
+          "B": { "type": "point", "defined": true, "x": -1.95, "y": -6.24 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": -2.39, "y": -3.16 },
+          "s": { "type": "number", "defined": true, "value": 15.697700000000001 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 6.23, "y": -7.78 },
+          "B": { "type": "point", "defined": true, "x": 2.42, "y": 6.26 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": -2.39, "y": -3.16 },
+          "s": { "type": "number", "defined": true, "value": 15.697700000000001 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 6.23, "y": -7.78 },
+          "B": { "type": "point", "defined": true, "x": 2.42, "y": 6.26 },
+          "u": { "type": "vector", "defined": true, "x": -1.37, "y": -2.61 },
+          "v": { "type": "vector", "defined": true, "x": -2.39, "y": -3.16 },
+          "s": { "type": "number", "defined": true, "value": 47.430499999999995 }
+        }
+      ]
+    },
+    {
+      "id": "expr-vector-027",
+      "group": "expr",
+      "script": [
+        "A = (-7.04, 7.89)",
+        "B = (-1.26, 6.03)",
+        "u = (1.08, 0)",
+        "v = (-1.92, -0.96)",
+        "s = abs(B - A) / 2"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "u", "x": 2.03, "y": -2.06 },
+        { "action": "move", "label": "v", "x": -6.46, "y": -0.52 },
+        { "action": "move", "label": "A", "x": 7.71, "y": -0.09 },
+        { "action": "move", "label": "u", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": -1.48, "y": 2.85 },
+        { "action": "move", "label": "u", "x": 1.08, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -7.04, "y": 7.89 },
+          "B": { "type": "point", "defined": true, "x": -1.26, "y": 6.03 },
+          "u": { "type": "vector", "defined": true, "x": 1.08, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": -1.92, "y": -0.96 },
+          "s": { "type": "number", "defined": true, "value": 3.0359512512555273 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.04, "y": 7.89 },
+          "B": { "type": "point", "defined": true, "x": -1.26, "y": 6.03 },
+          "u": { "type": "vector", "defined": true, "x": 2.03, "y": -2.06 },
+          "v": { "type": "vector", "defined": true, "x": -1.92, "y": -0.96 },
+          "s": { "type": "number", "defined": true, "value": 3.0359512512555273 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -7.04, "y": 7.89 },
+          "B": { "type": "point", "defined": true, "x": -1.26, "y": 6.03 },
+          "u": { "type": "vector", "defined": true, "x": 2.03, "y": -2.06 },
+          "v": { "type": "vector", "defined": true, "x": -6.46, "y": -0.52 },
+          "s": { "type": "number", "defined": true, "value": 3.0359512512555273 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.71, "y": -0.09 },
+          "B": { "type": "point", "defined": true, "x": -1.26, "y": 6.03 },
+          "u": { "type": "vector", "defined": true, "x": 2.03, "y": -2.06 },
+          "v": { "type": "vector", "defined": true, "x": -6.46, "y": -0.52 },
+          "s": { "type": "number", "defined": true, "value": 5.42944057891787 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.71, "y": -0.09 },
+          "B": { "type": "point", "defined": true, "x": -1.26, "y": 6.03 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": -6.46, "y": -0.52 },
+          "s": { "type": "number", "defined": true, "value": 5.42944057891787 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.71, "y": -0.09 },
+          "B": { "type": "point", "defined": true, "x": -1.48, "y": 2.85 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": -6.46, "y": -0.52 },
+          "s": { "type": "number", "defined": true, "value": 4.824409290265493 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.71, "y": -0.09 },
+          "B": { "type": "point", "defined": true, "x": -1.48, "y": 2.85 },
+          "u": { "type": "vector", "defined": true, "x": 1.08, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": -6.46, "y": -0.52 },
+          "s": { "type": "number", "defined": true, "value": 4.824409290265493 }
+        }
+      ]
+    },
+    {
+      "id": "expr-vector-028",
+      "group": "expr",
+      "script": [
+        "A = (-0.26, 4.56)",
+        "B = (-6.63, 0.52)",
+        "u = (-2.65, 2.59)",
+        "v = (-3.17, -4.57)",
+        "s = x(A + u)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "u", "x": 6.1, "y": 1.57 },
+        { "action": "move", "label": "v", "x": 3.86, "y": -2.04 },
+        { "action": "move", "label": "A", "x": 5.4, "y": 2.4 },
+        { "action": "move", "label": "u", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": -7.47, "y": 7.61 },
+        { "action": "move", "label": "u", "x": -2.65, "y": 2.59 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -0.26, "y": 4.56 },
+          "B": { "type": "point", "defined": true, "x": -6.63, "y": 0.52 },
+          "u": { "type": "vector", "defined": true, "x": -2.65, "y": 2.59 },
+          "v": { "type": "vector", "defined": true, "x": -3.17, "y": -4.57 },
+          "s": { "type": "number", "defined": true, "value": -2.91 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -0.26, "y": 4.56 },
+          "B": { "type": "point", "defined": true, "x": -6.63, "y": 0.52 },
+          "u": { "type": "vector", "defined": true, "x": 6.1, "y": 1.57 },
+          "v": { "type": "vector", "defined": true, "x": -3.17, "y": -4.57 },
+          "s": { "type": "number", "defined": true, "value": 5.84 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -0.26, "y": 4.56 },
+          "B": { "type": "point", "defined": true, "x": -6.63, "y": 0.52 },
+          "u": { "type": "vector", "defined": true, "x": 6.1, "y": 1.57 },
+          "v": { "type": "vector", "defined": true, "x": 3.86, "y": -2.04 },
+          "s": { "type": "number", "defined": true, "value": 5.84 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 5.4, "y": 2.4 },
+          "B": { "type": "point", "defined": true, "x": -6.63, "y": 0.52 },
+          "u": { "type": "vector", "defined": true, "x": 6.1, "y": 1.57 },
+          "v": { "type": "vector", "defined": true, "x": 3.86, "y": -2.04 },
+          "s": { "type": "number", "defined": true, "value": 11.5 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 5.4, "y": 2.4 },
+          "B": { "type": "point", "defined": true, "x": -6.63, "y": 0.52 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 3.86, "y": -2.04 },
+          "s": { "type": "number", "defined": true, "value": 5.4 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 5.4, "y": 2.4 },
+          "B": { "type": "point", "defined": true, "x": -7.47, "y": 7.61 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 3.86, "y": -2.04 },
+          "s": { "type": "number", "defined": true, "value": 5.4 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 5.4, "y": 2.4 },
+          "B": { "type": "point", "defined": true, "x": -7.47, "y": 7.61 },
+          "u": { "type": "vector", "defined": true, "x": -2.65, "y": 2.59 },
+          "v": { "type": "vector", "defined": true, "x": 3.86, "y": -2.04 },
+          "s": { "type": "number", "defined": true, "value": 2.7500000000000004 }
+        }
+      ]
+    },
+    {
+      "id": "expr-vector-029",
+      "group": "expr",
+      "script": [
+        "A = (-1.32, -0.89)",
+        "B = (-4.14, -1.64)",
+        "u = (4.79, -2.67)",
+        "v = (2.53, -1.76)",
+        "s = u * v / (abs(u) abs(v))"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "u", "x": 1.51, "y": 7.84 },
+        { "action": "move", "label": "v", "x": -3.94, "y": -2.28 },
+        { "action": "move", "label": "A", "x": -1.09, "y": 3.66 },
+        { "action": "move", "label": "u", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": -7.69, "y": 4.37 },
+        { "action": "move", "label": "u", "x": 4.79, "y": -2.67 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -1.32, "y": -0.89 },
+          "B": { "type": "point", "defined": true, "x": -4.14, "y": -1.64 },
+          "u": { "type": "vector", "defined": true, "x": 4.79, "y": -2.67 },
+          "v": { "type": "vector", "defined": true, "x": 2.53, "y": -1.76 },
+          "s": { "type": "number", "defined": true, "value": 0.9950751371653292 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.32, "y": -0.89 },
+          "B": { "type": "point", "defined": true, "x": -4.14, "y": -1.64 },
+          "u": { "type": "vector", "defined": true, "x": 1.51, "y": 7.84 },
+          "v": { "type": "vector", "defined": true, "x": 2.53, "y": -1.76 },
+          "s": { "type": "number", "defined": true, "value": -0.4055037653975036 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.32, "y": -0.89 },
+          "B": { "type": "point", "defined": true, "x": -4.14, "y": -1.64 },
+          "u": { "type": "vector", "defined": true, "x": 1.51, "y": 7.84 },
+          "v": { "type": "vector", "defined": true, "x": -3.94, "y": -2.28 },
+          "s": { "type": "number", "defined": true, "value": -0.6555175688049959 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.09, "y": 3.66 },
+          "B": { "type": "point", "defined": true, "x": -4.14, "y": -1.64 },
+          "u": { "type": "vector", "defined": true, "x": 1.51, "y": 7.84 },
+          "v": { "type": "vector", "defined": true, "x": -3.94, "y": -2.28 },
+          "s": { "type": "number", "defined": true, "value": -0.6555175688049959 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.09, "y": 3.66 },
+          "B": { "type": "point", "defined": true, "x": -4.14, "y": -1.64 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": -3.94, "y": -2.28 },
+          "s": { "type": "number", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.09, "y": 3.66 },
+          "B": { "type": "point", "defined": true, "x": -7.69, "y": 4.37 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": -3.94, "y": -2.28 },
+          "s": { "type": "number", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.09, "y": 3.66 },
+          "B": { "type": "point", "defined": true, "x": -7.69, "y": 4.37 },
+          "u": { "type": "vector", "defined": true, "x": 4.79, "y": -2.67 },
+          "v": { "type": "vector", "defined": true, "x": -3.94, "y": -2.28 },
+          "s": { "type": "number", "defined": true, "value": -0.5121492257890798 }
+        }
+      ]
+    }
+  ]
+}

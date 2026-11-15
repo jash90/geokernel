@@ -1,0 +1,1505 @@
+{
+  "schema": 1,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "expr-twonum-001",
+      "group": "expr",
+      "script": [
+        "a = 7",
+        "b = 3",
+        "c = Mod(a, b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -7.0 },
+        { "action": "set_number", "label": "b", "value": -3.0 },
+        { "action": "set_number", "label": "b", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 7.5 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "b", "value": 1.0E-9 },
+        { "action": "set_number", "label": "a", "value": 1.0E16 },
+        { "action": "set_number", "label": "b", "value": 3.0 },
+        { "action": "set_number", "label": "a", "value": 12.0 },
+        { "action": "set_number", "label": "b", "value": 18.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 7.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": -3.0 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 7.5 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0E-9 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E16 },
+          "b": { "type": "number", "defined": true, "value": 1.0E-9 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E16 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 12.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 12.0 },
+          "b": { "type": "number", "defined": true, "value": 18.0 },
+          "c": { "type": "number", "defined": true, "value": 12.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-twonum-002",
+      "group": "expr",
+      "script": [
+        "a = 7",
+        "b = 3",
+        "c = Div(a, b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -7.0 },
+        { "action": "set_number", "label": "b", "value": -3.0 },
+        { "action": "set_number", "label": "b", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 7.5 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "b", "value": 1.0E-9 },
+        { "action": "set_number", "label": "a", "value": 1.0E16 },
+        { "action": "set_number", "label": "b", "value": 3.0 },
+        { "action": "set_number", "label": "a", "value": 12.0 },
+        { "action": "set_number", "label": "b", "value": 18.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 7.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": -3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": -3.0 },
+          "c": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 7.5 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0E-9 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E16 },
+          "b": { "type": "number", "defined": true, "value": 1.0E-9 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E16 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 12.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 12.0 },
+          "b": { "type": "number", "defined": true, "value": 18.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-twonum-003",
+      "group": "expr",
+      "script": [
+        "a = 7",
+        "b = 3",
+        "c = GCD(a, b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -7.0 },
+        { "action": "set_number", "label": "b", "value": -3.0 },
+        { "action": "set_number", "label": "b", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 7.5 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "b", "value": 1.0E-9 },
+        { "action": "set_number", "label": "a", "value": 1.0E16 },
+        { "action": "set_number", "label": "b", "value": 3.0 },
+        { "action": "set_number", "label": "a", "value": 12.0 },
+        { "action": "set_number", "label": "b", "value": 18.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 7.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": -3.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 7.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 7.5 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0E-9 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E16 },
+          "b": { "type": "number", "defined": true, "value": 1.0E-9 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E16 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 12.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 12.0 },
+          "b": { "type": "number", "defined": true, "value": 18.0 },
+          "c": { "type": "number", "defined": true, "value": 6.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-twonum-004",
+      "group": "expr",
+      "script": [
+        "a = 7",
+        "b = 3",
+        "c = LCM(a, b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -7.0 },
+        { "action": "set_number", "label": "b", "value": -3.0 },
+        { "action": "set_number", "label": "b", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 7.5 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "b", "value": 1.0E-9 },
+        { "action": "set_number", "label": "a", "value": 1.0E16 },
+        { "action": "set_number", "label": "b", "value": 3.0 },
+        { "action": "set_number", "label": "a", "value": 12.0 },
+        { "action": "set_number", "label": "b", "value": 18.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 7.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 21.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 21.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": -3.0 },
+          "c": { "type": "number", "defined": true, "value": 21.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 7.5 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0E-9 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E16 },
+          "b": { "type": "number", "defined": true, "value": 1.0E-9 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E16 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 12.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 12.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 12.0 },
+          "b": { "type": "number", "defined": true, "value": 18.0 },
+          "c": { "type": "number", "defined": true, "value": 36.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-twonum-005",
+      "group": "expr",
+      "script": [
+        "a = 7",
+        "b = 3",
+        "c = Max(a, b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -7.0 },
+        { "action": "set_number", "label": "b", "value": -3.0 },
+        { "action": "set_number", "label": "b", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 7.5 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "b", "value": 1.0E-9 },
+        { "action": "set_number", "label": "a", "value": 1.0E16 },
+        { "action": "set_number", "label": "b", "value": 3.0 },
+        { "action": "set_number", "label": "a", "value": 12.0 },
+        { "action": "set_number", "label": "b", "value": 18.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 7.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 7.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": -3.0 },
+          "c": { "type": "number", "defined": true, "value": -3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 7.5 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 7.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0E-9 },
+          "c": { "type": "number", "defined": true, "value": 1.0E-9 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E16 },
+          "b": { "type": "number", "defined": true, "value": 1.0E-9 },
+          "c": { "type": "number", "defined": true, "value": 1.0E16 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E16 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0E16 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 12.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 12.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 12.0 },
+          "b": { "type": "number", "defined": true, "value": 18.0 },
+          "c": { "type": "number", "defined": true, "value": 18.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-twonum-006",
+      "group": "expr",
+      "script": [
+        "a = 7",
+        "b = 3",
+        "c = Min(a, b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -7.0 },
+        { "action": "set_number", "label": "b", "value": -3.0 },
+        { "action": "set_number", "label": "b", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 7.5 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "b", "value": 1.0E-9 },
+        { "action": "set_number", "label": "a", "value": 1.0E16 },
+        { "action": "set_number", "label": "b", "value": 3.0 },
+        { "action": "set_number", "label": "a", "value": 12.0 },
+        { "action": "set_number", "label": "b", "value": 18.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 7.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": -7.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": -3.0 },
+          "c": { "type": "number", "defined": true, "value": -7.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": -7.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 7.5 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0E-9 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E16 },
+          "b": { "type": "number", "defined": true, "value": 1.0E-9 },
+          "c": { "type": "number", "defined": true, "value": 1.0E-9 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E16 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 12.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 12.0 },
+          "b": { "type": "number", "defined": true, "value": 18.0 },
+          "c": { "type": "number", "defined": true, "value": 12.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-twonum-007",
+      "group": "expr",
+      "script": [
+        "a = 7",
+        "b = 3",
+        "c = Mod(a, b) + Div(a, b) * b"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -7.0 },
+        { "action": "set_number", "label": "b", "value": -3.0 },
+        { "action": "set_number", "label": "b", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 7.5 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "b", "value": 1.0E-9 },
+        { "action": "set_number", "label": "a", "value": 1.0E16 },
+        { "action": "set_number", "label": "b", "value": 3.0 },
+        { "action": "set_number", "label": "a", "value": 12.0 },
+        { "action": "set_number", "label": "b", "value": 18.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 7.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 7.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": -7.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": -3.0 },
+          "c": { "type": "number", "defined": true, "value": -7.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 7.5 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0E-9 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E16 },
+          "b": { "type": "number", "defined": true, "value": 1.0E-9 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E16 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 12.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 12.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 12.0 },
+          "b": { "type": "number", "defined": true, "value": 18.0 },
+          "c": { "type": "number", "defined": true, "value": 12.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-twonum-008",
+      "group": "expr",
+      "script": [
+        "a = 7",
+        "b = 3",
+        "c = Max(a, b) - Min(a, b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -7.0 },
+        { "action": "set_number", "label": "b", "value": -3.0 },
+        { "action": "set_number", "label": "b", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 7.5 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "b", "value": 1.0E-9 },
+        { "action": "set_number", "label": "a", "value": 1.0E16 },
+        { "action": "set_number", "label": "b", "value": 3.0 },
+        { "action": "set_number", "label": "a", "value": 12.0 },
+        { "action": "set_number", "label": "b", "value": 18.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 7.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 10.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": -3.0 },
+          "c": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 7.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 7.5 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 7.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0E-9 },
+          "c": { "type": "number", "defined": true, "value": 1.0E-9 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E16 },
+          "b": { "type": "number", "defined": true, "value": 1.0E-9 },
+          "c": { "type": "number", "defined": true, "value": 1.0E16 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E16 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 9.999999999999996E15 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 12.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 9.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 12.0 },
+          "b": { "type": "number", "defined": true, "value": 18.0 },
+          "c": { "type": "number", "defined": true, "value": 6.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-twonum-009",
+      "group": "expr",
+      "script": [
+        "a = 7",
+        "b = 3",
+        "c = GCD(a, b) LCM(a, b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -7.0 },
+        { "action": "set_number", "label": "b", "value": -3.0 },
+        { "action": "set_number", "label": "b", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 7.5 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "b", "value": 1.0E-9 },
+        { "action": "set_number", "label": "a", "value": 1.0E16 },
+        { "action": "set_number", "label": "b", "value": 3.0 },
+        { "action": "set_number", "label": "a", "value": 12.0 },
+        { "action": "set_number", "label": "b", "value": 18.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 7.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 21.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 21.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": -3.0 },
+          "c": { "type": "number", "defined": true, "value": 21.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 7.5 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0E-9 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E16 },
+          "b": { "type": "number", "defined": true, "value": 1.0E-9 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E16 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 12.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 36.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 12.0 },
+          "b": { "type": "number", "defined": true, "value": 18.0 },
+          "c": { "type": "number", "defined": true, "value": 216.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-twonum-010",
+      "group": "expr",
+      "script": [
+        "a = 7",
+        "b = 3",
+        "c = Mod(a^2, b + 1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -7.0 },
+        { "action": "set_number", "label": "b", "value": -3.0 },
+        { "action": "set_number", "label": "b", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 7.5 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "b", "value": 1.0E-9 },
+        { "action": "set_number", "label": "a", "value": 1.0E16 },
+        { "action": "set_number", "label": "b", "value": 3.0 },
+        { "action": "set_number", "label": "a", "value": 12.0 },
+        { "action": "set_number", "label": "b", "value": 18.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 7.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": -3.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 7.5 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.25 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0E-9 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E16 },
+          "b": { "type": "number", "defined": true, "value": 1.0E-9 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E16 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 12.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 12.0 },
+          "b": { "type": "number", "defined": true, "value": 18.0 },
+          "c": { "type": "number", "defined": true, "value": 11.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-twonum-011",
+      "group": "expr",
+      "script": [
+        "a = 7",
+        "b = 3",
+        "c = Div(a, 2) + Mod(b, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -7.0 },
+        { "action": "set_number", "label": "b", "value": -3.0 },
+        { "action": "set_number", "label": "b", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 7.5 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "b", "value": 1.0E-9 },
+        { "action": "set_number", "label": "a", "value": 1.0E16 },
+        { "action": "set_number", "label": "b", "value": 3.0 },
+        { "action": "set_number", "label": "a", "value": 12.0 },
+        { "action": "set_number", "label": "b", "value": 18.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 7.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": -3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": -3.0 },
+          "c": { "type": "number", "defined": true, "value": -3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": -4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 7.5 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0E-9 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E16 },
+          "b": { "type": "number", "defined": true, "value": 1.0E-9 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E16 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 12.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 7.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 12.0 },
+          "b": { "type": "number", "defined": true, "value": 18.0 },
+          "c": { "type": "number", "defined": true, "value": 6.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-twonum-012",
+      "group": "expr",
+      "script": [
+        "a = 7",
+        "b = 3",
+        "c = Max(Min(a, b), 0)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -7.0 },
+        { "action": "set_number", "label": "b", "value": -3.0 },
+        { "action": "set_number", "label": "b", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 7.5 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "b", "value": 1.0E-9 },
+        { "action": "set_number", "label": "a", "value": 1.0E16 },
+        { "action": "set_number", "label": "b", "value": 3.0 },
+        { "action": "set_number", "label": "a", "value": 12.0 },
+        { "action": "set_number", "label": "b", "value": 18.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 7.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": -3.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 7.5 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0E-9 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E16 },
+          "b": { "type": "number", "defined": true, "value": 1.0E-9 },
+          "c": { "type": "number", "defined": true, "value": 1.0E-9 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E16 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 12.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 12.0 },
+          "b": { "type": "number", "defined": true, "value": 18.0 },
+          "c": { "type": "number", "defined": true, "value": 12.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-twonum-013",
+      "group": "expr",
+      "script": [
+        "a = 7",
+        "b = 3",
+        "c = Mod(-a, b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -7.0 },
+        { "action": "set_number", "label": "b", "value": -3.0 },
+        { "action": "set_number", "label": "b", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 7.5 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "b", "value": 1.0E-9 },
+        { "action": "set_number", "label": "a", "value": 1.0E16 },
+        { "action": "set_number", "label": "b", "value": 3.0 },
+        { "action": "set_number", "label": "a", "value": 12.0 },
+        { "action": "set_number", "label": "b", "value": 18.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 7.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": -3.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 7.5 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0E-9 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E16 },
+          "b": { "type": "number", "defined": true, "value": 1.0E-9 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E16 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 12.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 12.0 },
+          "b": { "type": "number", "defined": true, "value": 18.0 },
+          "c": { "type": "number", "defined": true, "value": 6.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-twonum-014",
+      "group": "expr",
+      "script": [
+        "a = 7",
+        "b = 3",
+        "c = LCM(a, 2b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -7.0 },
+        { "action": "set_number", "label": "b", "value": -3.0 },
+        { "action": "set_number", "label": "b", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 7.5 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "b", "value": 1.0E-9 },
+        { "action": "set_number", "label": "a", "value": 1.0E16 },
+        { "action": "set_number", "label": "b", "value": 3.0 },
+        { "action": "set_number", "label": "a", "value": 12.0 },
+        { "action": "set_number", "label": "b", "value": 18.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 7.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 42.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 42.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": -3.0 },
+          "c": { "type": "number", "defined": true, "value": 42.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 7.5 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0E-9 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E16 },
+          "b": { "type": "number", "defined": true, "value": 1.0E-9 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E16 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 12.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 12.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 12.0 },
+          "b": { "type": "number", "defined": true, "value": 18.0 },
+          "c": { "type": "number", "defined": true, "value": 36.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-twonum-015",
+      "group": "expr",
+      "script": [
+        "a = 7",
+        "b = 3",
+        "c = GCD(a / 2, b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -7.0 },
+        { "action": "set_number", "label": "b", "value": -3.0 },
+        { "action": "set_number", "label": "b", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 7.5 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "b", "value": 1.0E-9 },
+        { "action": "set_number", "label": "a", "value": 1.0E16 },
+        { "action": "set_number", "label": "b", "value": 3.0 },
+        { "action": "set_number", "label": "a", "value": 12.0 },
+        { "action": "set_number", "label": "b", "value": 18.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 7.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": -3.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 7.5 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0E-9 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E16 },
+          "b": { "type": "number", "defined": true, "value": 1.0E-9 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E16 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 12.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 12.0 },
+          "b": { "type": "number", "defined": true, "value": 18.0 },
+          "c": { "type": "number", "defined": true, "value": 6.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-twonum-016",
+      "group": "expr",
+      "script": [
+        "A = (1, 2)",
+        "B = (4, 6)",
+        "c = Mod(Distance(A, B), 2)",
+        "d = Max(x(A), y(B))",
+        "m = Div(x(B), x(A))"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": 3.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": -2.0, "y": 9.0 },
+        { "action": "move", "label": "A", "x": -2.0, "y": 9.0 },
+        { "action": "move", "label": "A", "x": 1.0, "y": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 6.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 6.0 },
+          "m": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 6.0 },
+          "c": { "type": "number", "defined": true, "value": 0.08276253029821934 },
+          "d": { "type": "number", "defined": true, "value": 6.0 },
+          "m": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": 9.0 },
+          "c": { "type": "number", "defined": true, "value": 0.2956301409870008 },
+          "d": { "type": "number", "defined": true, "value": 9.0 },
+          "m": { "type": "number", "defined": true, "value": -1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 9.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": 9.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 9.0 },
+          "m": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": 9.0 },
+          "c": { "type": "number", "defined": true, "value": 1.6157731058639087 },
+          "d": { "type": "number", "defined": true, "value": 9.0 },
+          "m": { "type": "number", "defined": true, "value": -2.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-twonum-017",
+      "group": "expr",
+      "script": [
+        "a = 2",
+        "b = 5",
+        "f(x) = x^2 - a",
+        "c = Mod(f(b), 7)",
+        "g(x) = x + Max(a, b)",
+        "d = GCD(f(4), b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 1.0 },
+        { "action": "set_number", "label": "b", "value": -3.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "b", "value": 5.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 62.0],
+              [-4.0, 14.0],
+              [-2.0, 2.0],
+              [-1.0, -1.0],
+              [-0.5, -1.75],
+              [0.0, -2.0],
+              [0.5, -1.75],
+              [1.0, -1.0],
+              [2.0, 2.0],
+              [4.0, 14.0],
+              [8.0, 62.0]
+            ]
+          },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -3.0],
+              [-4.0, 1.0],
+              [-2.0, 3.0],
+              [-1.0, 4.0],
+              [-0.5, 4.5],
+              [0.0, 5.0],
+              [0.5, 5.5],
+              [1.0, 6.0],
+              [2.0, 7.0],
+              [4.0, 9.0],
+              [8.0, 13.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 63.0],
+              [-4.0, 15.0],
+              [-2.0, 3.0],
+              [-1.0, 0.0],
+              [-0.5, -0.75],
+              [0.0, -1.0],
+              [0.5, -0.75],
+              [1.0, 0.0],
+              [2.0, 3.0],
+              [4.0, 15.0],
+              [8.0, 63.0]
+            ]
+          },
+          "c": { "type": "number", "defined": true, "value": 3.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -3.0],
+              [-4.0, 1.0],
+              [-2.0, 3.0],
+              [-1.0, 4.0],
+              [-0.5, 4.5],
+              [0.0, 5.0],
+              [0.5, 5.5],
+              [1.0, 6.0],
+              [2.0, 7.0],
+              [4.0, 9.0],
+              [8.0, 13.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 5.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": -3.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 63.0],
+              [-4.0, 15.0],
+              [-2.0, 3.0],
+              [-1.0, 0.0],
+              [-0.5, -0.75],
+              [0.0, -1.0],
+              [0.5, -0.75],
+              [1.0, 0.0],
+              [2.0, 3.0],
+              [4.0, 15.0],
+              [8.0, 63.0]
+            ]
+          },
+          "c": { "type": "number", "defined": true, "value": 1.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -7.0],
+              [-4.0, -3.0],
+              [-2.0, -1.0],
+              [-1.0, 0.0],
+              [-0.5, 0.5],
+              [0.0, 1.0],
+              [0.5, 1.5],
+              [1.0, 2.0],
+              [2.0, 3.0],
+              [4.0, 5.0],
+              [8.0, 9.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": -3.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0],
+              [-4.0, -4.0],
+              [-2.0, -2.0],
+              [-1.0, -1.0],
+              [-0.5, -0.5],
+              [0.0, 0.0],
+              [0.5, 0.5],
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [4.0, 4.0],
+              [8.0, 8.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "c": { "type": "number", "defined": true, "value": 4.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -3.0],
+              [-4.0, 1.0],
+              [-2.0, 3.0],
+              [-1.0, 4.0],
+              [-0.5, 4.5],
+              [0.0, 5.0],
+              [0.5, 5.5],
+              [1.0, 6.0],
+              [2.0, 7.0],
+              [4.0, 9.0],
+              [8.0, 13.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-twonum-018",
+      "group": "expr",
+      "script": [
+        "a = 2",
+        "P = (Mod(a, 3), Div(a, 3))",
+        "u = (Max(a, 0); Min(a, 1))"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -4.0 },
+        { "action": "set_number", "label": "a", "value": 9.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0806046117362795, "y": 1.682941969615793 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -4.0 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": -2.0 },
+          "u": { "type": "vector", "defined": true, "x": -0.0, "y": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 9.5 },
+          "P": { "type": "point", "defined": true, "x": 0.5, "y": 3.0 },
+          "u": { "type": "vector", "defined": true, "x": 5.1328719057473275, "y": 7.993974355675017 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0806046117362795, "y": 1.682941969615793 }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,673 @@
+{
+  "schema": 1,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "expr-lit-001",
+      "group": "expr",
+      "script": [
+        "a = 1.5",
+        "c = 1E3 a"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.25 },
+        { "action": "set_number", "label": "a", "value": 1.5 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 1500.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -2000.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.25 },
+          "c": { "type": "number", "defined": true, "value": 250.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 1500.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-lit-002",
+      "group": "expr",
+      "script": [
+        "a = 1.5",
+        "c = 2.5E-3 + a"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.25 },
+        { "action": "set_number", "label": "a", "value": 1.5 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 1.5025 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -1.9975 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0025 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.25 },
+          "c": { "type": "number", "defined": true, "value": 0.2525 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 1.5025 }
+        }
+      ]
+    },
+    {
+      "id": "expr-lit-003",
+      "group": "expr",
+      "script": [
+        "a = 1.5",
+        "c = 1E+2 - a"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.25 },
+        { "action": "set_number", "label": "a", "value": 1.5 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 98.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": 102.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 100.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.25 },
+          "c": { "type": "number", "defined": true, "value": 99.75 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 98.5 }
+        }
+      ]
+    },
+    {
+      "id": "expr-lit-004",
+      "group": "expr",
+      "script": [
+        "a = 1.5",
+        "c = .5 a"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.25 },
+        { "action": "set_number", "label": "a", "value": 1.5 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 0.75 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.25 },
+          "c": { "type": "number", "defined": true, "value": 0.125 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 0.75 }
+        }
+      ]
+    },
+    {
+      "id": "expr-lit-005",
+      "group": "expr",
+      "script": [
+        "a = 1.5",
+        "c = 5. + a"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.25 },
+        { "action": "set_number", "label": "a", "value": 1.5 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 6.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 5.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.25 },
+          "c": { "type": "number", "defined": true, "value": 5.25 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 6.5 }
+        }
+      ]
+    },
+    {
+      "id": "expr-lit-006",
+      "group": "expr",
+      "script": [
+        "a = 1.5",
+        "c = a³"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.25 },
+        { "action": "set_number", "label": "a", "value": 1.5 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 3.375 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -8.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.25 },
+          "c": { "type": "number", "defined": true, "value": 0.015625 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 3.375 }
+        }
+      ]
+    },
+    {
+      "id": "expr-lit-007",
+      "group": "expr",
+      "script": [
+        "a = 1.5",
+        "c = a²³"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.25 },
+        { "action": "set_number", "label": "a", "value": 1.5 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 11222.741464018822 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -8388608.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.25 },
+          "c": { "type": "number", "defined": true, "value": 1.4210854715202004E-14 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 11222.741464018822 }
+        }
+      ]
+    },
+    {
+      "id": "expr-lit-008",
+      "group": "expr",
+      "script": [
+        "a = 1.5",
+        "c = a⁻¹"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.25 },
+        { "action": "set_number", "label": "a", "value": 1.5 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 0.6666666666666666 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.25 },
+          "c": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 0.6666666666666666 }
+        }
+      ]
+    },
+    {
+      "id": "expr-lit-009",
+      "group": "expr",
+      "script": [
+        "a = 1.5",
+        "c = a⁻¹²"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.25 },
+        { "action": "set_number", "label": "a", "value": 1.5 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 0.0077073466292589396 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": 2.44140625E-4 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.25 },
+          "c": { "type": "number", "defined": true, "value": 1.6777216E7 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 0.0077073466292589396 }
+        }
+      ]
+    },
+    {
+      "id": "expr-lit-010",
+      "group": "expr",
+      "script": [
+        "a = 1.5",
+        "c = 2⁻² a"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.25 },
+        { "action": "set_number", "label": "a", "value": 1.5 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 0.375 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.25 },
+          "c": { "type": "number", "defined": true, "value": 0.0625 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 0.375 }
+        }
+      ]
+    },
+    {
+      "id": "expr-lit-011",
+      "group": "expr",
+      "script": [
+        "a = 1.5",
+        "c = √a"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.25 },
+        { "action": "set_number", "label": "a", "value": 1.5 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 1.224744871391589 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.25 },
+          "c": { "type": "number", "defined": true, "value": 0.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 1.224744871391589 }
+        }
+      ]
+    },
+    {
+      "id": "expr-lit-012",
+      "group": "expr",
+      "script": [
+        "a = 1.5",
+        "c = √(a + 1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.25 },
+        { "action": "set_number", "label": "a", "value": 1.5 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 1.5811388300841898 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.25 },
+          "c": { "type": "number", "defined": true, "value": 1.118033988749895 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 1.5811388300841898 }
+        }
+      ]
+    },
+    {
+      "id": "expr-lit-013",
+      "group": "expr",
+      "script": [
+        "a = 1.5",
+        "c = ℯ^a"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.25 },
+        { "action": "set_number", "label": "a", "value": 1.5 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 4.4816890703380645 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.1353352832366127 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.25 },
+          "c": { "type": "number", "defined": true, "value": 1.2840254166877414 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 4.4816890703380645 }
+        }
+      ]
+    },
+    {
+      "id": "expr-lit-014",
+      "group": "expr",
+      "script": [
+        "a = 1.5",
+        "c = a ℯ"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.25 },
+        { "action": "set_number", "label": "a", "value": 1.5 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 4.077422742688568 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -5.43656365691809 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.25 },
+          "c": { "type": "number", "defined": true, "value": 0.6795704571147613 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 4.077422742688568 }
+        }
+      ]
+    },
+    {
+      "id": "expr-lit-015",
+      "group": "expr",
+      "script": [
+        "a = 1.5",
+        "c = a + ?"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.25 },
+        { "action": "set_number", "label": "a", "value": 1.5 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.25 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "expr-lit-016",
+      "group": "expr",
+      "script": [
+        "a = 1.5",
+        "c = a ∞"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.25 },
+        { "action": "set_number", "label": "a", "value": 1.5 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.25 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "expr-lit-017",
+      "group": "expr",
+      "script": [
+        "a = 1.5",
+        "c = -∞ a"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.25 },
+        { "action": "set_number", "label": "a", "value": 1.5 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.25 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "expr-lit-018",
+      "group": "expr",
+      "script": [
+        "a = 1.5",
+        "c = 1E3"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.25 },
+        { "action": "set_number", "label": "a", "value": 1.5 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 1000.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": 1000.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 1000.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.25 },
+          "c": { "type": "number", "defined": true, "value": 1000.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.5 },
+          "c": { "type": "number", "defined": true, "value": 1000.0 }
+        }
+      ]
+    }
+  ]
+}

@@ -265,8 +265,37 @@ pub fn script_of(lines: &[String]) -> String {
     lines.join("\n")
 }
 
+/// A number as a script literal. Rust prints `1e300`, but only an upper-case
+/// `E` starts an exponent in the script language (`1e300` is `1·e300`).
+pub fn lit(v: f64) -> String {
+    format!("{v:?}").replace('e', "E")
+}
+
+/// `src` with every exponent written as Rust prints it (`1e300`, `2.5e-7`)
+/// turned into a script literal (`1E300`).
+pub fn upper_exponents(src: &str) -> String {
+    let b: Vec<char> = src.chars().collect();
+    let mut out = String::with_capacity(src.len());
+    for (i, &ch) in b.iter().enumerate() {
+        let after_digit = i > 0 && b[i - 1].is_ascii_digit();
+        let before_exponent = match b.get(i + 1) {
+            Some('-') => b.get(i + 2).is_some_and(char::is_ascii_digit),
+            Some(c) => c.is_ascii_digit(),
+            None => false,
+        };
+        out.push(if ch == 'e' && after_digit && before_exponent {
+            'E'
+        } else {
+            ch
+        });
+    }
+    out
+}
+
 /// Builds a construction from script text; panics with the script on error.
+/// Exponents as Rust prints them are accepted (see [`upper_exponents`]).
 pub fn build(src: &str) -> Construction {
+    let src = &upper_exponents(src);
     match geo_kernel::script::load(src) {
         Ok(c) => c,
         Err(e) => panic!("script failed: {e}\n{src}"),
@@ -568,6 +597,10 @@ pub struct Case {
     pub multi_lines: Vec<bool>,
     /// For each object, the objects it was built from (empty for free ones).
     pub deps: Vec<Vec<usize>>,
+    /// For each object, whether an expression line made it. `Undefined` does
+    /// not always spread through an expression (`1 / (1 / a)` is 0 when `a`
+    /// is 0, as in GeoGebra), so contagion is not checked on these.
+    pub expr: Vec<bool>,
     pub free: Vec<Id>,
     /// Commands the generator tried with matching kinds that the script
     /// layer rejected.
@@ -581,6 +614,7 @@ pub fn generate(seed: u64, n_commands: usize, all_commands: bool) -> Case {
     let mut lines = Vec::new();
     let mut multi_lines = Vec::new();
     let mut deps: Vec<Vec<usize>> = Vec::new();
+    let mut expr: Vec<bool> = Vec::new();
     let mut free = Vec::new();
     let mut rejected = Vec::new();
 
@@ -592,24 +626,26 @@ pub fn generate(seed: u64, n_commands: usize, all_commands: bool) -> Case {
         let y = random_coordinate(&mut rng, &xs);
         xs.push(x);
         xs.push(y);
-        let line = format!("{name} = ({x:?}, {y:?})");
+        let line = format!("{name} = ({}, {})", lit(x), lit(y));
         let id = exec(&mut c, &line)
             .expect("free point")
             .expect("free point is created");
         lines.push(line);
         multi_lines.push(false);
         deps.push(Vec::new());
+        expr.push(false);
         free.push(id);
     }
     for name in NUMBER_NAMES.iter().take(n_numbers) {
         let v = random_number(&mut rng);
-        let line = format!("{name} = {v:?}");
+        let line = format!("{name} = {}", lit(v));
         let id = exec(&mut c, &line)
             .expect("free number")
             .expect("free number is created");
         lines.push(line);
         multi_lines.push(false);
         deps.push(Vec::new());
+        expr.push(false);
         free.push(id);
     }
 
@@ -617,6 +653,28 @@ pub fn generate(seed: u64, n_commands: usize, all_commands: bool) -> Case {
     let mut attempts = 0;
     while made < n_commands && attempts < n_commands * 20 {
         attempts += 1;
+        if rng.chance(0.25) {
+            let Some((line, used)) = expression_line(&mut rng, &c, made) else {
+                continue;
+            };
+            match exec(&mut c, &line) {
+                Ok(Some(id)) => {
+                    deps.push(
+                        used.iter()
+                            .map(|u| c.id(u).expect("read object").index())
+                            .collect(),
+                    );
+                    expr.push(true);
+                    assert_eq!(id.index() + 1, c.len(), "an expression makes one object");
+                    lines.push(line);
+                    multi_lines.push(false);
+                    made += 1;
+                }
+                Ok(None) => unreachable!("an expression line creates an object"),
+                Err(e) => rejected.push(format!("{line}: {e}")),
+            }
+            continue;
+        }
         let cmd = rng.pick(COMMANDS);
         if cmd.history_dependent && !all_commands {
             continue;
@@ -636,6 +694,7 @@ pub fn generate(seed: u64, n_commands: usize, all_commands: bool) -> Case {
                     .collect();
                 for _ in before..c.len() {
                     deps.push(arg_ids.clone());
+                    expr.push(false);
                 }
                 lines.push(line);
                 multi_lines.push(call.multi);
@@ -651,9 +710,98 @@ pub fn generate(seed: u64, n_commands: usize, all_commands: bool) -> Case {
         lines,
         multi_lines,
         deps,
+        expr,
         free,
         rejected,
     }
+}
+
+/// A random expression line over the objects of `c`: a number, a point, a
+/// vector or a function, sometimes with a command inside (`Distance(A, B)`),
+/// with the labels of the objects it reads.
+fn expression_line(rng: &mut Rng, c: &Construction, made: usize) -> Option<(String, Vec<String>)> {
+    let of = |kind: Kind| -> Vec<String> {
+        c.ids()
+            .filter(|&id| c.kind(id) == kind)
+            .map(|id| c.label(id).to_string())
+            .collect()
+    };
+    let (numbers, points, vectors, functions) = (
+        of(Kind::Number),
+        of(Kind::Point),
+        of(Kind::Vector),
+        of(Kind::Function),
+    );
+    let n = rng.pick(&numbers).clone();
+    let m = rng.pick(&numbers).clone();
+    let p = rng.pick(&points).clone();
+    let q = rng.pick(&points).clone();
+    let pick = rng.below(14);
+    let (label, rhs, used) = match pick {
+        0 => (format!("o{made}"), format!("{n} * 2 + {m}"), vec![n, m]),
+        1 => (
+            format!("o{made}"),
+            format!("sqrt(abs({n})) - {m} / 3"),
+            vec![n, m],
+        ),
+        2 => (
+            format!("o{made}"),
+            format!("x({p}) + y({q}) {n}"),
+            vec![p, q, n],
+        ),
+        3 => (
+            format!("o{made}"),
+            format!("Distance({p}, {q}) / 2 + {n}"),
+            vec![p, q, n],
+        ),
+        4 => (
+            format!("o{made}"),
+            format!("{n}^2 - floor({m})"),
+            vec![n, m],
+        ),
+        5 => (format!("o{made}"), format!("1 / ({n} - {m})"), vec![n, m]),
+        6 => {
+            if functions.is_empty() {
+                return None;
+            }
+            let f = rng.pick(&functions).clone();
+            (format!("o{made}"), format!("{f}({n}) + 1"), vec![f, n])
+        }
+        7 => {
+            if vectors.is_empty() {
+                return None;
+            }
+            let u = rng.pick(&vectors).clone();
+            (format!("o{made}"), format!("abs({u}) + x({u})"), vec![u])
+        }
+        8 => (format!("P{made}"), format!("({p} + {q}) / 2"), vec![p, q]),
+        9 => (format!("P{made}"), format!("{p} + ({n}, 1)"), vec![p, n]),
+        10 => (format!("P{made}"), format!("({n}; 30°) + {p}"), vec![n, p]),
+        11 => (
+            format!("P{made}"),
+            format!("Midpoint({p}, {q}) + (1, {n})"),
+            vec![p, q, n],
+        ),
+        12 => (
+            format!("v{made}"),
+            format!("{p} - {q} + ({n}, {m}) * 2"),
+            vec![p, q, n, m],
+        ),
+        _ => {
+            let body = if rng.chance(0.5) {
+                format!("x^2 + {n}")
+            } else {
+                format!("{n} sin(x) + x({p})")
+            };
+            let used = if body.contains("sin") {
+                vec![n, p]
+            } else {
+                vec![n]
+            };
+            return Some((format!("f{made}(x) = {body}"), used));
+        }
+    };
+    Some((format!("{label} = {rhs}"), used))
 }
 
 pub fn random_step(rng: &mut Rng, c: &Construction, free: &[Id]) -> Step {

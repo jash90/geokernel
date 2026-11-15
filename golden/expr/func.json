@@ -1,0 +1,1800 @@
+{
+  "schema": 1,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "expr-func-001",
+      "group": "expr",
+      "script": [
+        "a = -0.37",
+        "c = sin(a)",
+        "d = 2 sin(a) + 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -3.65 },
+        { "action": "set_number", "label": "a", "value": -1.25 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -0.37 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": -0.37 },
+          "c": { "type": "number", "defined": true, "value": -0.361615431964962 },
+          "d": { "type": "number", "defined": true, "value": 0.276769136070076 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -3.65 },
+          "c": { "type": "number", "defined": true, "value": 0.4867866486556994 },
+          "d": { "type": "number", "defined": true, "value": 1.9735732973113989 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.25 },
+          "c": { "type": "number", "defined": true, "value": -0.9489846193555862 },
+          "d": { "type": "number", "defined": true, "value": -0.8979692387111724 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -0.37 },
+          "c": { "type": "number", "defined": true, "value": -0.361615431964962 },
+          "d": { "type": "number", "defined": true, "value": 0.276769136070076 }
+        }
+      ]
+    },
+    {
+      "id": "expr-func-002",
+      "group": "expr",
+      "script": [
+        "a = 3.92",
+        "c = cos(a)",
+        "d = 2 cos(a) + 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -2.39 },
+        { "action": "set_number", "label": "a", "value": -2.11 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 3.92 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 3.92 },
+          "c": { "type": "number", "defined": true, "value": -0.7120327163983102 },
+          "d": { "type": "number", "defined": true, "value": -0.42406543279662046 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.39 },
+          "c": { "type": "number", "defined": true, "value": -0.7306023269338372 },
+          "d": { "type": "number", "defined": true, "value": -0.4612046538676744 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.11 },
+          "c": { "type": "number", "defined": true, "value": -0.5134528123039594 },
+          "d": { "type": "number", "defined": true, "value": -0.0269056246079189 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.92 },
+          "c": { "type": "number", "defined": true, "value": -0.7120327163983102 },
+          "d": { "type": "number", "defined": true, "value": -0.42406543279662046 }
+        }
+      ]
+    },
+    {
+      "id": "expr-func-003",
+      "group": "expr",
+      "script": [
+        "a = -0.93",
+        "c = tan(a)",
+        "d = 2 tan(a) + 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -0.46 },
+        { "action": "set_number", "label": "a", "value": -0.85 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -0.93 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": -0.93 },
+          "c": { "type": "number", "defined": true, "value": -1.3408738289128344 },
+          "d": { "type": "number", "defined": true, "value": -1.6817476578256687 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -0.46 },
+          "c": { "type": "number", "defined": true, "value": -0.49544876911954966 },
+          "d": { "type": "number", "defined": true, "value": 0.009102461760900682 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -0.85 },
+          "c": { "type": "number", "defined": true, "value": -1.1383327132284393 },
+          "d": { "type": "number", "defined": true, "value": -1.2766654264568786 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -0.93 },
+          "c": { "type": "number", "defined": true, "value": -1.3408738289128344 },
+          "d": { "type": "number", "defined": true, "value": -1.6817476578256687 }
+        }
+      ]
+    },
+    {
+      "id": "expr-func-004",
+      "group": "expr",
+      "script": [
+        "a = 0.82",
+        "c = sec(a)",
+        "d = 2 sec(a) + 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 1.01 },
+        { "action": "set_number", "label": "a", "value": -0.96 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.82 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.82 },
+          "c": { "type": "number", "defined": true, "value": 1.4658002262577217 },
+          "d": { "type": "number", "defined": true, "value": 3.9316004525154433 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.01 },
+          "c": { "type": "number", "defined": true, "value": 1.8801914858761304 },
+          "d": { "type": "number", "defined": true, "value": 4.760382971752261 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -0.96 },
+          "c": { "type": "number", "defined": true, "value": 1.743618399156648 },
+          "d": { "type": "number", "defined": true, "value": 4.487236798313296 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.82 },
+          "c": { "type": "number", "defined": true, "value": 1.4658002262577217 },
+          "d": { "type": "number", "defined": true, "value": 3.9316004525154433 }
+        }
+      ]
+    },
+    {
+      "id": "expr-func-005",
+      "group": "expr",
+      "script": [
+        "a = 1.32",
+        "c = csc(a)",
+        "d = 2 csc(a) + 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 1.4 },
+        { "action": "set_number", "label": "a", "value": 2.8 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 1.32 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.32 },
+          "c": { "type": "number", "defined": true, "value": 1.0322952536591155 },
+          "d": { "type": "number", "defined": true, "value": 3.064590507318231 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.4 },
+          "c": { "type": "number", "defined": true, "value": 1.0147651062948795 },
+          "d": { "type": "number", "defined": true, "value": 3.029530212589759 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.8 },
+          "c": { "type": "number", "defined": true, "value": 2.9851802206573432 },
+          "d": { "type": "number", "defined": true, "value": 6.9703604413146865 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.32 },
+          "c": { "type": "number", "defined": true, "value": 1.0322952536591155 },
+          "d": { "type": "number", "defined": true, "value": 3.064590507318231 }
+        }
+      ]
+    },
+    {
+      "id": "expr-func-006",
+      "group": "expr",
+      "script": [
+        "a = 2.24",
+        "c = cot(a)",
+        "d = 2 cot(a) + 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 1.26 },
+        { "action": "set_number", "label": "a", "value": 2.13 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 2.24 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.24 },
+          "c": { "type": "number", "defined": true, "value": -0.7909588370858429 },
+          "d": { "type": "number", "defined": true, "value": -0.5819176741716858 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.26 },
+          "c": { "type": "number", "defined": true, "value": 0.3212057669521219 },
+          "d": { "type": "number", "defined": true, "value": 1.6424115339042438 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.13 },
+          "c": { "type": "number", "defined": true, "value": -0.6258407528258039 },
+          "d": { "type": "number", "defined": true, "value": -0.25168150565160774 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.24 },
+          "c": { "type": "number", "defined": true, "value": -0.7909588370858429 },
+          "d": { "type": "number", "defined": true, "value": -0.5819176741716858 }
+        }
+      ]
+    },
+    {
+      "id": "expr-func-007",
+      "group": "expr",
+      "script": [
+        "a = -0.51",
+        "c = sinh(a)",
+        "d = 2 sinh(a) + 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -2.09 },
+        { "action": "set_number", "label": "a", "value": -2.51 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -0.51 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": -0.51 },
+          "c": { "type": "number", "defined": true, "value": -0.5323978080668103 },
+          "d": { "type": "number", "defined": true, "value": -0.0647956161336205 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.09 },
+          "c": { "type": "number", "defined": true, "value": -3.9806140142438022 },
+          "d": { "type": "number", "defined": true, "value": -6.9612280284876045 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.51 },
+          "c": { "type": "number", "defined": true, "value": -6.111830910634758 },
+          "d": { "type": "number", "defined": true, "value": -11.223661821269516 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -0.51 },
+          "c": { "type": "number", "defined": true, "value": -0.5323978080668103 },
+          "d": { "type": "number", "defined": true, "value": -0.0647956161336205 }
+        }
+      ]
+    },
+    {
+      "id": "expr-func-008",
+      "group": "expr",
+      "script": [
+        "a = -1.23",
+        "c = cosh(a)",
+        "d = 2 cosh(a) + 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 3.9 },
+        { "action": "set_number", "label": "a", "value": -0.11 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -1.23 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": -1.23 },
+          "c": { "type": "number", "defined": true, "value": 1.8567610569852664 },
+          "d": { "type": "number", "defined": true, "value": 4.713522113970533 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.9 },
+          "c": { "type": "number", "defined": true, "value": 24.711345508487984 },
+          "d": { "type": "number", "defined": true, "value": 50.42269101697597 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -0.11 },
+          "c": { "type": "number", "defined": true, "value": 1.0060561028776998 },
+          "d": { "type": "number", "defined": true, "value": 3.0121122057553995 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.23 },
+          "c": { "type": "number", "defined": true, "value": 1.8567610569852664 },
+          "d": { "type": "number", "defined": true, "value": 4.713522113970533 }
+        }
+      ]
+    },
+    {
+      "id": "expr-func-009",
+      "group": "expr",
+      "script": [
+        "a = 1.96",
+        "c = tanh(a)",
+        "d = 2 tanh(a) + 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -0.6 },
+        { "action": "set_number", "label": "a", "value": 1.46 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 1.96 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.96 },
+          "c": { "type": "number", "defined": true, "value": 0.9610898308636139 },
+          "d": { "type": "number", "defined": true, "value": 2.9221796617272275 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -0.6 },
+          "c": { "type": "number", "defined": true, "value": -0.5370495669980353 },
+          "d": { "type": "number", "defined": true, "value": -0.0740991339960706 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.46 },
+          "c": { "type": "number", "defined": true, "value": 0.8976525981658167 },
+          "d": { "type": "number", "defined": true, "value": 2.7953051963316335 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.96 },
+          "c": { "type": "number", "defined": true, "value": 0.9610898308636139 },
+          "d": { "type": "number", "defined": true, "value": 2.9221796617272275 }
+        }
+      ]
+    },
+    {
+      "id": "expr-func-010",
+      "group": "expr",
+      "script": [
+        "a = 0.95",
+        "c = asin(a)",
+        "d = 2 asin(a) + 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.01 },
+        { "action": "set_number", "label": "a", "value": -0.69 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.95 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.95 },
+          "c": { "type": "number", "defined": true, "value": 1.253235897503375 },
+          "d": { "type": "number", "defined": true, "value": 3.50647179500675 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.01 },
+          "c": { "type": "number", "defined": true, "value": 0.010000166674167114 },
+          "d": { "type": "number", "defined": true, "value": 1.0200003333483343 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -0.69 },
+          "c": { "type": "number", "defined": true, "value": -0.7614890527476331 },
+          "d": { "type": "number", "defined": true, "value": -0.5229781054952662 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.95 },
+          "c": { "type": "number", "defined": true, "value": 1.253235897503375 },
+          "d": { "type": "number", "defined": true, "value": 3.50647179500675 }
+        }
+      ]
+    },
+    {
+      "id": "expr-func-011",
+      "group": "expr",
+      "script": [
+        "a = -0.58",
+        "c = acos(a)",
+        "d = 2 acos(a) + 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.04 },
+        { "action": "set_number", "label": "a", "value": 0.89 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -0.58 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": -0.58 },
+          "c": { "type": "number", "defined": true, "value": 2.1895250174671474 },
+          "d": { "type": "number", "defined": true, "value": 5.379050034934295 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.04 },
+          "c": { "type": "number", "defined": true, "value": 1.5307856524409076 },
+          "d": { "type": "number", "defined": true, "value": 4.061571304881815 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.89 },
+          "c": { "type": "number", "defined": true, "value": 0.4734511572720662 },
+          "d": { "type": "number", "defined": true, "value": 1.9469023145441324 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 1.5707963267948966 },
+          "d": { "type": "number", "defined": true, "value": 4.141592653589793 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -0.58 },
+          "c": { "type": "number", "defined": true, "value": 2.1895250174671474 },
+          "d": { "type": "number", "defined": true, "value": 5.379050034934295 }
+        }
+      ]
+    },
+    {
+      "id": "expr-func-012",
+      "group": "expr",
+      "script": [
+        "a = 7.39",
+        "c = atan(a)",
+        "d = 2 atan(a) + 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 2.31 },
+        { "action": "set_number", "label": "a", "value": 5.05 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 7.39 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 7.39 },
+          "c": { "type": "number", "defined": true, "value": 1.4362953064938244 },
+          "d": { "type": "number", "defined": true, "value": 3.872590612987649 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.31 },
+          "c": { "type": "number", "defined": true, "value": 1.1622530178764288 },
+          "d": { "type": "number", "defined": true, "value": 3.3245060357528575 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 5.05 },
+          "c": { "type": "number", "defined": true, "value": 1.375305526546216 },
+          "d": { "type": "number", "defined": true, "value": 3.750611053092432 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 7.39 },
+          "c": { "type": "number", "defined": true, "value": 1.4362953064938244 },
+          "d": { "type": "number", "defined": true, "value": 3.872590612987649 }
+        }
+      ]
+    },
+    {
+      "id": "expr-func-013",
+      "group": "expr",
+      "script": [
+        "a = -7.4",
+        "c = asinh(a)",
+        "d = 2 asinh(a) + 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -3.93 },
+        { "action": "set_number", "label": "a", "value": 5.24 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -7.4 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": -7.4 },
+          "c": { "type": "number", "defined": true, "value": -2.6991616063975625 },
+          "d": { "type": "number", "defined": true, "value": -4.398323212795125 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -3.93 },
+          "c": { "type": "number", "defined": true, "value": -2.0775937342176403 },
+          "d": { "type": "number", "defined": true, "value": -3.1551874684352805 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 5.24 },
+          "c": { "type": "number", "defined": true, "value": 2.3584517334629327 },
+          "d": { "type": "number", "defined": true, "value": 5.716903466925865 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -7.4 },
+          "c": { "type": "number", "defined": true, "value": -2.6991616063975625 },
+          "d": { "type": "number", "defined": true, "value": -4.398323212795125 }
+        }
+      ]
+    },
+    {
+      "id": "expr-func-014",
+      "group": "expr",
+      "script": [
+        "a = 6.97",
+        "c = acosh(a)",
+        "d = 2 acosh(a) + 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 5.23 },
+        { "action": "set_number", "label": "a", "value": 7.78 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 6.97 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 6.97 },
+          "c": { "type": "number", "defined": true, "value": 2.6295761666750708 },
+          "d": { "type": "number", "defined": true, "value": 6.2591523333501415 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 5.23 },
+          "c": { "type": "number", "defined": true, "value": 2.3382907483329896 },
+          "d": { "type": "number", "defined": true, "value": 5.676581496665979 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 7.78 },
+          "c": { "type": "number", "defined": true, "value": 2.7405473997747887 },
+          "d": { "type": "number", "defined": true, "value": 6.481094799549577 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.97 },
+          "c": { "type": "number", "defined": true, "value": 2.6295761666750708 },
+          "d": { "type": "number", "defined": true, "value": 6.2591523333501415 }
+        }
+      ]
+    },
+    {
+      "id": "expr-func-015",
+      "group": "expr",
+      "script": [
+        "a = -0.51",
+        "c = atanh(a)",
+        "d = 2 atanh(a) + 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -0.49 },
+        { "action": "set_number", "label": "a", "value": -0.13 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -0.51 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": -0.51 },
+          "c": { "type": "number", "defined": true, "value": -0.5627297693521489 },
+          "d": { "type": "number", "defined": true, "value": -0.12545953870429782 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -0.49 },
+          "c": { "type": "number", "defined": true, "value": -0.5360603366105666 },
+          "d": { "type": "number", "defined": true, "value": -0.07212067322113325 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -0.13 },
+          "c": { "type": "number", "defined": true, "value": -0.13073985002887842 },
+          "d": { "type": "number", "defined": true, "value": 0.7385202999422431 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -0.51 },
+          "c": { "type": "number", "defined": true, "value": -0.5627297693521489 },
+          "d": { "type": "number", "defined": true, "value": -0.12545953870429782 }
+        }
+      ]
+    },
+    {
+      "id": "expr-func-016",
+      "group": "expr",
+      "script": [
+        "a = 8.04",
+        "c = sqrt(a)",
+        "d = 2 sqrt(a) + 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 1.97 },
+        { "action": "set_number", "label": "a", "value": 2.73 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 8.04 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 8.04 },
+          "c": { "type": "number", "defined": true, "value": 2.835489375751565 },
+          "d": { "type": "number", "defined": true, "value": 6.67097875150313 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.97 },
+          "c": { "type": "number", "defined": true, "value": 1.40356688476182 },
+          "d": { "type": "number", "defined": true, "value": 3.80713376952364 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.73 },
+          "c": { "type": "number", "defined": true, "value": 1.6522711641858305 },
+          "d": { "type": "number", "defined": true, "value": 4.304542328371661 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 8.04 },
+          "c": { "type": "number", "defined": true, "value": 2.835489375751565 },
+          "d": { "type": "number", "defined": true, "value": 6.67097875150313 }
+        }
+      ]
+    },
+    {
+      "id": "expr-func-017",
+      "group": "expr",
+      "script": [
+        "a = -0.7",
+        "c = cbrt(a)",
+        "d = 2 cbrt(a) + 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 8.62 },
+        { "action": "set_number", "label": "a", "value": -4.66 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -0.7 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": -0.7 },
+          "c": { "type": "number", "defined": true, "value": -0.8879040017426008 },
+          "d": { "type": "number", "defined": true, "value": -0.7758080034852015 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 8.62 },
+          "c": { "type": "number", "defined": true, "value": 2.0503866016861316 },
+          "d": { "type": "number", "defined": true, "value": 5.100773203372263 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -4.66 },
+          "c": { "type": "number", "defined": true, "value": -1.6703031708427707 },
+          "d": { "type": "number", "defined": true, "value": -2.3406063416855414 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": -0.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -0.7 },
+          "c": { "type": "number", "defined": true, "value": -0.8879040017426008 },
+          "d": { "type": "number", "defined": true, "value": -0.7758080034852015 }
+        }
+      ]
+    },
+    {
+      "id": "expr-func-018",
+      "group": "expr",
+      "script": [
+        "a = 6.64",
+        "c = abs(a)",
+        "d = 2 abs(a) + 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -8.96 },
+        { "action": "set_number", "label": "a", "value": 1.81 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 6.64 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 6.64 },
+          "c": { "type": "number", "defined": true, "value": 6.64 },
+          "d": { "type": "number", "defined": true, "value": 14.28 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -8.96 },
+          "c": { "type": "number", "defined": true, "value": 8.96 },
+          "d": { "type": "number", "defined": true, "value": 18.92 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.81 },
+          "c": { "type": "number", "defined": true, "value": 1.81 },
+          "d": { "type": "number", "defined": true, "value": 4.62 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.64 },
+          "c": { "type": "number", "defined": true, "value": 6.64 },
+          "d": { "type": "number", "defined": true, "value": 14.28 }
+        }
+      ]
+    },
+    {
+      "id": "expr-func-019",
+      "group": "expr",
+      "script": [
+        "a = -2.26",
+        "c = sgn(a)",
+        "d = 2 sgn(a) + 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -2.08 },
+        { "action": "set_number", "label": "a", "value": 1.83 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.26 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": -2.26 },
+          "c": { "type": "number", "defined": true, "value": -1.0 },
+          "d": { "type": "number", "defined": true, "value": -1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.08 },
+          "c": { "type": "number", "defined": true, "value": -1.0 },
+          "d": { "type": "number", "defined": true, "value": -1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.83 },
+          "c": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.26 },
+          "c": { "type": "number", "defined": true, "value": -1.0 },
+          "d": { "type": "number", "defined": true, "value": -1.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-func-020",
+      "group": "expr",
+      "script": [
+        "a = -3.03",
+        "c = floor(a)",
+        "d = 2 floor(a) + 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -2.55 },
+        { "action": "set_number", "label": "a", "value": 1.87 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -3.03 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": -3.03 },
+          "c": { "type": "number", "defined": true, "value": -4.0 },
+          "d": { "type": "number", "defined": true, "value": -7.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.55 },
+          "c": { "type": "number", "defined": true, "value": -3.0 },
+          "d": { "type": "number", "defined": true, "value": -5.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.87 },
+          "c": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -3.03 },
+          "c": { "type": "number", "defined": true, "value": -4.0 },
+          "d": { "type": "number", "defined": true, "value": -7.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-func-021",
+      "group": "expr",
+      "script": [
+        "a = -1.34",
+        "c = ceil(a)",
+        "d = 2 ceil(a) + 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -4.13 },
+        { "action": "set_number", "label": "a", "value": -4.28 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -1.34 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": -1.34 },
+          "c": { "type": "number", "defined": true, "value": -1.0 },
+          "d": { "type": "number", "defined": true, "value": -1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -4.13 },
+          "c": { "type": "number", "defined": true, "value": -4.0 },
+          "d": { "type": "number", "defined": true, "value": -7.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -4.28 },
+          "c": { "type": "number", "defined": true, "value": -4.0 },
+          "d": { "type": "number", "defined": true, "value": -7.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.34 },
+          "c": { "type": "number", "defined": true, "value": -1.0 },
+          "d": { "type": "number", "defined": true, "value": -1.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-func-022",
+      "group": "expr",
+      "script": [
+        "a = -3.72",
+        "c = round(a)",
+        "d = 2 round(a) + 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 1.16 },
+        { "action": "set_number", "label": "a", "value": 4.96 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -3.72 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": -3.72 },
+          "c": { "type": "number", "defined": true, "value": -4.0 },
+          "d": { "type": "number", "defined": true, "value": -7.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.16 },
+          "c": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.96 },
+          "c": { "type": "number", "defined": true, "value": 5.0 },
+          "d": { "type": "number", "defined": true, "value": 11.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -3.72 },
+          "c": { "type": "number", "defined": true, "value": -4.0 },
+          "d": { "type": "number", "defined": true, "value": -7.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-func-023",
+      "group": "expr",
+      "script": [
+        "a = -4.5",
+        "c = exp(a)",
+        "d = 2 exp(a) + 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 3.99 },
+        { "action": "set_number", "label": "a", "value": -0.46 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -4.5 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": -4.5 },
+          "c": { "type": "number", "defined": true, "value": 0.011108996538242306 },
+          "d": { "type": "number", "defined": true, "value": 1.0222179930764845 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.99 },
+          "c": { "type": "number", "defined": true, "value": 54.0548893633266 },
+          "d": { "type": "number", "defined": true, "value": 109.1097787266532 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -0.46 },
+          "c": { "type": "number", "defined": true, "value": 0.631283645506926 },
+          "d": { "type": "number", "defined": true, "value": 2.262567291013852 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -4.5 },
+          "c": { "type": "number", "defined": true, "value": 0.011108996538242306 },
+          "d": { "type": "number", "defined": true, "value": 1.0222179930764845 }
+        }
+      ]
+    },
+    {
+      "id": "expr-func-024",
+      "group": "expr",
+      "script": [
+        "a = 0.32",
+        "c = ln(a)",
+        "d = 2 ln(a) + 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 2.28 },
+        { "action": "set_number", "label": "a", "value": 1.19 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.32 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.32 },
+          "c": { "type": "number", "defined": true, "value": -1.1394342831883648 },
+          "d": { "type": "number", "defined": true, "value": -1.2788685663767296 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.28 },
+          "c": { "type": "number", "defined": true, "value": 0.8241754429663493 },
+          "d": { "type": "number", "defined": true, "value": 2.6483508859326985 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.19 },
+          "c": { "type": "number", "defined": true, "value": 0.17395330712343798 },
+          "d": { "type": "number", "defined": true, "value": 1.347906614246876 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.32 },
+          "c": { "type": "number", "defined": true, "value": -1.1394342831883648 },
+          "d": { "type": "number", "defined": true, "value": -1.2788685663767296 }
+        }
+      ]
+    },
+    {
+      "id": "expr-func-025",
+      "group": "expr",
+      "script": [
+        "a = 0.79",
+        "c = log(a)",
+        "d = 2 log(a) + 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 4.28 },
+        { "action": "set_number", "label": "a", "value": 2.41 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.79 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.79 },
+          "c": { "type": "number", "defined": true, "value": -0.10237290870955855 },
+          "d": { "type": "number", "defined": true, "value": 0.7952541825808829 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.28 },
+          "c": { "type": "number", "defined": true, "value": 0.631443769013172 },
+          "d": { "type": "number", "defined": true, "value": 2.262887538026344 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.41 },
+          "c": { "type": "number", "defined": true, "value": 0.38201704257486835 },
+          "d": { "type": "number", "defined": true, "value": 1.7640340851497367 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.79 },
+          "c": { "type": "number", "defined": true, "value": -0.10237290870955855 },
+          "d": { "type": "number", "defined": true, "value": 0.7952541825808829 }
+        }
+      ]
+    },
+    {
+      "id": "expr-func-026",
+      "group": "expr",
+      "script": [
+        "a = 2.24",
+        "c = ld(a)",
+        "d = 2 ld(a) + 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 2.9 },
+        { "action": "set_number", "label": "a", "value": 2.72 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 2.24 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.24 },
+          "c": { "type": "number", "defined": true, "value": 1.1634987322828796 },
+          "d": { "type": "number", "defined": true, "value": 3.326997464565759 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.9 },
+          "c": { "type": "number", "defined": true, "value": 1.5360529002402097 },
+          "d": { "type": "number", "defined": true, "value": 4.072105800480419 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.72 },
+          "c": { "type": "number", "defined": true, "value": 1.4436066514756147 },
+          "d": { "type": "number", "defined": true, "value": 3.8872133029512295 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.24 },
+          "c": { "type": "number", "defined": true, "value": 1.1634987322828796 },
+          "d": { "type": "number", "defined": true, "value": 3.326997464565759 }
+        }
+      ]
+    },
+    {
+      "id": "expr-func-027",
+      "group": "expr",
+      "script": [
+        "a = 0.27",
+        "c = gamma(a)",
+        "d = 2 gamma(a) + 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 3.99 },
+        { "action": "set_number", "label": "a", "value": 4.09 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.27 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.27 },
+          "c": { "type": "number", "defined": true, "value": 3.3426039424648373 },
+          "d": { "type": "number", "defined": true, "value": 7.6852078849296745 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.99 },
+          "c": { "type": "number", "defined": true, "value": 5.925188477419603 },
+          "d": { "type": "number", "defined": true, "value": 12.850376954839206 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.09 },
+          "c": { "type": "number", "defined": true, "value": 6.725793683434034 },
+          "d": { "type": "number", "defined": true, "value": 14.451587366868068 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.27 },
+          "c": { "type": "number", "defined": true, "value": 3.3426039424648373 },
+          "d": { "type": "number", "defined": true, "value": 7.6852078849296745 }
+        }
+      ]
+    },
+    {
+      "id": "expr-func-028",
+      "group": "expr",
+      "script": [
+        "a = 0.98",
+        "b = 1.42",
+        "c = atan2(a, b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 3.66 },
+        { "action": "set_number", "label": "b", "value": 4.11 },
+        { "action": "set_number", "label": "a", "value": 0.98 },
+        { "action": "set_number", "label": "b", "value": -1.42 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.98 },
+          "b": { "type": "number", "defined": true, "value": 1.42 },
+          "c": { "type": "number", "defined": true, "value": 0.604078388995958 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.66 },
+          "b": { "type": "number", "defined": true, "value": 1.42 },
+          "c": { "type": "number", "defined": true, "value": 1.2006963857463515 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.66 },
+          "b": { "type": "number", "defined": true, "value": 4.11 },
+          "c": { "type": "number", "defined": true, "value": 0.7275477274873011 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.98 },
+          "b": { "type": "number", "defined": true, "value": 4.11 },
+          "c": { "type": "number", "defined": true, "value": 0.23407209216062572 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.98 },
+          "b": { "type": "number", "defined": true, "value": -1.42 },
+          "c": { "type": "number", "defined": true, "value": 2.537514264593835 }
+        }
+      ]
+    },
+    {
+      "id": "expr-func-029",
+      "group": "expr",
+      "script": [
+        "a = 5.01",
+        "b = 5.55",
+        "c = atan2(b, a)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "b", "value": 3.02 },
+        { "action": "set_number", "label": "a", "value": 5.01 },
+        { "action": "set_number", "label": "b", "value": -5.55 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 5.01 },
+          "b": { "type": "number", "defined": true, "value": 5.55 },
+          "c": { "type": "number", "defined": true, "value": 0.8364900242049703 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.55 },
+          "c": { "type": "number", "defined": true, "value": 1.7490637850941304 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "number", "defined": true, "value": 3.02 },
+          "c": { "type": "number", "defined": true, "value": 1.890558812240193 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 5.01 },
+          "b": { "type": "number", "defined": true, "value": 3.02 },
+          "c": { "type": "number", "defined": true, "value": 0.5424716814999262 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 5.01 },
+          "b": { "type": "number", "defined": true, "value": -5.55 },
+          "c": { "type": "number", "defined": true, "value": -0.8364900242049703 }
+        }
+      ]
+    },
+    {
+      "id": "expr-func-030",
+      "group": "expr",
+      "script": [
+        "a = 5.8",
+        "b = 3.15",
+        "c = log(b, a)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 4.64 },
+        { "action": "set_number", "label": "b", "value": 4.99 },
+        { "action": "set_number", "label": "a", "value": 5.8 },
+        { "action": "set_number", "label": "b", "value": -3.15 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 5.8 },
+          "b": { "type": "number", "defined": true, "value": 3.15 },
+          "c": { "type": "number", "defined": true, "value": 1.532032560332399 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.64 },
+          "b": { "type": "number", "defined": true, "value": 3.15 },
+          "c": { "type": "number", "defined": true, "value": 1.3375554169705621 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.64 },
+          "b": { "type": "number", "defined": true, "value": 4.99 },
+          "c": { "type": "number", "defined": true, "value": 0.9547592889498367 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 5.8 },
+          "b": { "type": "number", "defined": true, "value": 4.99 },
+          "c": { "type": "number", "defined": true, "value": 1.0935788524290742 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 5.8 },
+          "b": { "type": "number", "defined": true, "value": -3.15 },
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "expr-func-031",
+      "group": "expr",
+      "script": [
+        "a = 2.47",
+        "b = 4.43",
+        "c = ln(b, a)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -2.4 },
+        { "action": "set_number", "label": "b", "value": 1.1 },
+        { "action": "set_number", "label": "a", "value": 2.47 },
+        { "action": "set_number", "label": "b", "value": -4.43 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.47 },
+          "b": { "type": "number", "defined": true, "value": 4.43 },
+          "c": { "type": "number", "defined": true, "value": 0.6075103489179898 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.4 },
+          "b": { "type": "number", "defined": true, "value": 4.43 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.4 },
+          "b": { "type": "number", "defined": true, "value": 1.1 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.47 },
+          "b": { "type": "number", "defined": true, "value": 1.1 },
+          "c": { "type": "number", "defined": true, "value": 9.487109902596728 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.47 },
+          "b": { "type": "number", "defined": true, "value": -4.43 },
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "expr-func-032",
+      "group": "expr",
+      "script": [
+        "a = 1",
+        "b = 3.24",
+        "c = round(a, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -5.73 },
+        { "action": "set_number", "label": "b", "value": 4.05 },
+        { "action": "set_number", "label": "a", "value": 1.0 },
+        { "action": "set_number", "label": "b", "value": -3.24 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 3.24 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -5.73 },
+          "b": { "type": "number", "defined": true, "value": 3.24 },
+          "c": { "type": "number", "defined": true, "value": -5.73 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -5.73 },
+          "b": { "type": "number", "defined": true, "value": 4.05 },
+          "c": { "type": "number", "defined": true, "value": -5.73 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.05 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": -3.24 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-func-033",
+      "group": "expr",
+      "script": [
+        "a = 3",
+        "b = 2.71",
+        "c = round(a b, 1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 2.19 },
+        { "action": "set_number", "label": "b", "value": 4.29 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "b", "value": -2.71 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 2.71 },
+          "c": { "type": "number", "defined": true, "value": 8.1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.19 },
+          "b": { "type": "number", "defined": true, "value": 2.71 },
+          "c": { "type": "number", "defined": true, "value": 5.9 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.19 },
+          "b": { "type": "number", "defined": true, "value": 4.29 },
+          "c": { "type": "number", "defined": true, "value": 9.4 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 4.29 },
+          "c": { "type": "number", "defined": true, "value": 12.9 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": -2.71 },
+          "c": { "type": "number", "defined": true, "value": -8.1 }
+        }
+      ]
+    },
+    {
+      "id": "expr-func-034",
+      "group": "expr",
+      "script": [
+        "a = 4.35",
+        "b = 3.15",
+        "c = a sin b"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 3.61 },
+        { "action": "set_number", "label": "b", "value": 5.87 },
+        { "action": "set_number", "label": "a", "value": 4.35 },
+        { "action": "set_number", "label": "b", "value": -3.15 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 4.35 },
+          "b": { "type": "number", "defined": true, "value": 3.15 },
+          "c": { "type": "number", "defined": true, "value": -0.036571526047096486 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.61 },
+          "b": { "type": "number", "defined": true, "value": 3.15 },
+          "c": { "type": "number", "defined": true, "value": -0.03035016299540651 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.61 },
+          "b": { "type": "number", "defined": true, "value": 5.87 },
+          "c": { "type": "number", "defined": true, "value": -1.4495182907864348 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.35 },
+          "b": { "type": "number", "defined": true, "value": 5.87 },
+          "c": { "type": "number", "defined": true, "value": -1.7466494639670336 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.35 },
+          "b": { "type": "number", "defined": true, "value": -3.15 },
+          "c": { "type": "number", "defined": true, "value": 0.036571526047096486 }
+        }
+      ]
+    },
+    {
+      "id": "expr-func-035",
+      "group": "expr",
+      "script": [
+        "a = 5.39",
+        "b = 5.51",
+        "c = sin a + cos b"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -3.26 },
+        { "action": "set_number", "label": "b", "value": 3.78 },
+        { "action": "set_number", "label": "a", "value": 5.39 },
+        { "action": "set_number", "label": "b", "value": -5.51 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 5.39 },
+          "b": { "type": "number", "defined": true, "value": 5.51 },
+          "c": { "type": "number", "defined": true, "value": -0.06338304586734211 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -3.26 },
+          "b": { "type": "number", "defined": true, "value": 5.51 },
+          "c": { "type": "number", "defined": true, "value": 0.8338204826558784 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -3.26 },
+          "b": { "type": "number", "defined": true, "value": 3.78 },
+          "c": { "type": "number", "defined": true, "value": -0.6849150097779135 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 5.39 },
+          "b": { "type": "number", "defined": true, "value": 3.78 },
+          "c": { "type": "number", "defined": true, "value": -1.582118538301134 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 5.39 },
+          "b": { "type": "number", "defined": true, "value": -5.51 },
+          "c": { "type": "number", "defined": true, "value": -0.06338304586734211 }
+        }
+      ]
+    },
+    {
+      "id": "expr-func-036",
+      "group": "expr",
+      "script": [
+        "a = 3.82",
+        "b = 2.9",
+        "c = sqrt(a^2 + b^2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 2.98 },
+        { "action": "set_number", "label": "b", "value": 3.82 },
+        { "action": "set_number", "label": "a", "value": 3.82 },
+        { "action": "set_number", "label": "b", "value": -2.9 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 3.82 },
+          "b": { "type": "number", "defined": true, "value": 2.9 },
+          "c": { "type": "number", "defined": true, "value": 4.796081734082521 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.98 },
+          "b": { "type": "number", "defined": true, "value": 2.9 },
+          "c": { "type": "number", "defined": true, "value": 4.158172675587198 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.98 },
+          "b": { "type": "number", "defined": true, "value": 3.82 },
+          "c": { "type": "number", "defined": true, "value": 4.844873579362004 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.82 },
+          "b": { "type": "number", "defined": true, "value": 3.82 },
+          "c": { "type": "number", "defined": true, "value": 5.402295808265223 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.82 },
+          "b": { "type": "number", "defined": true, "value": -2.9 },
+          "c": { "type": "number", "defined": true, "value": 4.796081734082521 }
+        }
+      ]
+    },
+    {
+      "id": "expr-func-037",
+      "group": "expr",
+      "script": [
+        "a = 0.76",
+        "b = 3",
+        "c = |a - b|"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -3.34 },
+        { "action": "set_number", "label": "b", "value": 1.31 },
+        { "action": "set_number", "label": "a", "value": 0.76 },
+        { "action": "set_number", "label": "b", "value": -3.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.76 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 2.24 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -3.34 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "number", "defined": true, "value": 6.34 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -3.34 },
+          "b": { "type": "number", "defined": true, "value": 1.31 },
+          "c": { "type": "number", "defined": true, "value": 4.65 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.76 },
+          "b": { "type": "number", "defined": true, "value": 1.31 },
+          "c": { "type": "number", "defined": true, "value": 0.55 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.76 },
+          "b": { "type": "number", "defined": true, "value": -3.0 },
+          "c": { "type": "number", "defined": true, "value": 3.76 }
+        }
+      ]
+    },
+    {
+      "id": "expr-func-038",
+      "group": "expr",
+      "script": [
+        "a = 3.93",
+        "b = 5.08",
+        "c = abs(a) + |b|"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -1.29 },
+        { "action": "set_number", "label": "b", "value": 4.39 },
+        { "action": "set_number", "label": "a", "value": 3.93 },
+        { "action": "set_number", "label": "b", "value": -5.08 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 3.93 },
+          "b": { "type": "number", "defined": true, "value": 5.08 },
+          "c": { "type": "number", "defined": true, "value": 9.01 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.29 },
+          "b": { "type": "number", "defined": true, "value": 5.08 },
+          "c": { "type": "number", "defined": true, "value": 6.37 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.29 },
+          "b": { "type": "number", "defined": true, "value": 4.39 },
+          "c": { "type": "number", "defined": true, "value": 5.68 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.93 },
+          "b": { "type": "number", "defined": true, "value": 4.39 },
+          "c": { "type": "number", "defined": true, "value": 8.32 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.93 },
+          "b": { "type": "number", "defined": true, "value": -5.08 },
+          "c": { "type": "number", "defined": true, "value": 9.01 }
+        }
+      ]
+    },
+    {
+      "id": "expr-func-039",
+      "group": "expr",
+      "script": [
+        "a = 2.13",
+        "b = 5.75",
+        "c = sin(a)^2 + cos(a)^2"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.26 },
+        { "action": "set_number", "label": "b", "value": 5.16 },
+        { "action": "set_number", "label": "a", "value": 2.13 },
+        { "action": "set_number", "label": "b", "value": -5.75 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.13 },
+          "b": { "type": "number", "defined": true, "value": 5.75 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.26 },
+          "b": { "type": "number", "defined": true, "value": 5.75 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.26 },
+          "b": { "type": "number", "defined": true, "value": 5.16 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.13 },
+          "b": { "type": "number", "defined": true, "value": 5.16 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.13 },
+          "b": { "type": "number", "defined": true, "value": -5.75 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-func-040",
+      "group": "expr",
+      "script": [
+        "a = 2.44",
+        "b = 1.67",
+        "c = exp(ln(a))"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 1.63 },
+        { "action": "set_number", "label": "b", "value": 0.98 },
+        { "action": "set_number", "label": "a", "value": 2.44 },
+        { "action": "set_number", "label": "b", "value": -1.67 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.44 },
+          "b": { "type": "number", "defined": true, "value": 1.67 },
+          "c": { "type": "number", "defined": true, "value": 2.44 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.63 },
+          "b": { "type": "number", "defined": true, "value": 1.67 },
+          "c": { "type": "number", "defined": true, "value": 1.63 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.63 },
+          "b": { "type": "number", "defined": true, "value": 0.98 },
+          "c": { "type": "number", "defined": true, "value": 1.63 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.44 },
+          "b": { "type": "number", "defined": true, "value": 0.98 },
+          "c": { "type": "number", "defined": true, "value": 2.44 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.44 },
+          "b": { "type": "number", "defined": true, "value": -1.67 },
+          "c": { "type": "number", "defined": true, "value": 2.44 }
+        }
+      ]
+    },
+    {
+      "id": "expr-func-041",
+      "group": "expr",
+      "script": [
+        "a = 5",
+        "c = a!",
+        "d = gamma(a + 1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 10.0 },
+        { "action": "set_number", "label": "a", "value": 20.0 },
+        { "action": "set_number", "label": "a", "value": 2.5 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 170.0 },
+        { "action": "set_number", "label": "a", "value": 171.0 },
+        { "action": "set_number", "label": "a", "value": 5.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 5.0 },
+          "c": { "type": "number", "defined": true, "value": 120.0 },
+          "d": { "type": "number", "defined": true, "value": 119.99999999999997 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 10.0 },
+          "c": { "type": "number", "defined": true, "value": 3628800.0 },
+          "d": { "type": "number", "defined": true, "value": 3628800.0000000214 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 20.0 },
+          "c": { "type": "number", "defined": true, "value": 2.43290200817664E18 },
+          "d": { "type": "number", "defined": true, "value": 2.43290200817664E18 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.5 },
+          "c": { "type": "number", "defined": true, "value": 3.3233509704478426 },
+          "d": { "type": "number", "defined": true, "value": 3.3233509704478426 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "c": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 170.0 },
+          "c": { "type": "number", "defined": true, "value": 7.257415615308056E306 },
+          "d": { "type": "number", "defined": true, "value": 7.257415615308056E306 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 171.0 },
+          "c": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 5.0 },
+          "c": { "type": "number", "defined": true, "value": 120.0 },
+          "d": { "type": "number", "defined": true, "value": 119.99999999999997 }
+        }
+      ]
+    }
+  ]
+}

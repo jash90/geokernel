@@ -1,0 +1,692 @@
+// Parts of this file are translated from GeoGebra (https://github.com/geogebra/geogebra),
+// commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDependentNumber.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDependentPoint.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDependentVector.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDependentFunction.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoFunction.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/AlgebraProcessor.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoNumeric.java
+// Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
+// Licensed by GeoGebra GmbH under the EUPL 1.2.
+
+//! Arithmetic expressions: `c = a + 2*b`, `M = (A + B) / 2`.
+//!
+//! An expression is parsed once into a tree of [`Node`]s, kept in a side
+//! table owned by the [`Construction`]; the object itself holds only a small
+//! [`ExprDef`] handle. The tree is evaluated as GeoGebra's
+//! `ExpressionNode.evaluate` does (see [`eval`]), and the objects it reads
+//! are its parents in the dependency graph.
+//!
+//! An expression that reads no object is evaluated once and becomes a free
+//! number, point or vector, as in GeoGebra.
+//!
+//! A function `f(x) = ...` keeps its tree and is evaluated wherever it is
+//! used: sampled through [`function_value`], expanded inside other
+//! functions (`g(x) = f(x) + 1`), or applied to a number (`v = f(2)`).
+//!
+//! An [`ExprDef`] is valid only in the construction that made it: adding it
+//! anywhere else, or adding it a second time, is
+//! [`Error::UnknownObject`](crate::Error::UnknownObject). To rebuild an
+//! expression object elsewhere, take its tree with
+//! [`Construction::expression`] and add it with
+//! [`Construction::add_expression`]; the tree is checked again there.
+
+mod decimal;
+mod eval;
+mod lex;
+pub(crate) use lex::{is_name_char, plain_number};
+pub(crate) mod math;
+mod names;
+mod parse;
+mod twonum;
+mod types;
+
+use crate::algo::intersect::Hint;
+use crate::algo::vector::VectorDef;
+use crate::kernel::{Construction, Def, Error, Id, Kind, Value};
+use decimal::Dec;
+
+/// Handle of an expression object's tree, valid only in the construction
+/// that made it; see the module documentation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ExprDef {
+    kind: Kind,
+    index: u32,
+}
+
+impl ExprDef {
+    pub fn kind(&self) -> Kind {
+        self.kind
+    }
+}
+
+/// One node of an expression tree. Children are indices into the same
+/// arena and always smaller than the index of their parent.
+#[derive(Clone, Copy, Debug)]
+pub(crate) enum Node {
+    /// A constant (`MyDouble`): a literal, `π`, `e`, `∞` or `?`.
+    Num(f64),
+    /// The factor GeoGebra puts in front of a negated term.
+    MinusOne,
+    /// The degree sign, `π/180` with one angle dimension.
+    Degree,
+    Obj(Id),
+    /// The variable `x` of a function.
+    Var,
+    /// A command computed inside the expression, with the intersection
+    /// hint it got when the expression was parsed.
+    Cmd(Def, Hint),
+    /// `(x, y)`.
+    Tuple(u32, u32),
+    /// `(r; φ)`.
+    Polar(u32, u32),
+    Un(Un, u32),
+    Bin(Bin, u32, u32),
+    /// A function object applied to an argument.
+    Apply(Id, u32),
+    /// A one-argument function name without brackets, waiting for its
+    /// argument (`sin a`). Never left in a finished tree.
+    FnName(Un),
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Un {
+    Factorial,
+    Sin,
+    Cos,
+    Tan,
+    Csc,
+    Sec,
+    Cot,
+    Sinh,
+    Cosh,
+    Tanh,
+    Csch,
+    Sech,
+    Coth,
+    Asin,
+    Acos,
+    Atan,
+    /// `asind`, `acosd`, `atand`: the inverse functions that give an
+    /// angle (`sin^-1 x`).
+    AsinD,
+    AcosD,
+    AtanD,
+    Asinh,
+    Acosh,
+    Atanh,
+    Sqrt,
+    Cbrt,
+    Abs,
+    Sgn,
+    Floor,
+    Ceil,
+    Round,
+    Exp,
+    Ln,
+    Log10,
+    Log2,
+    Gamma,
+    X,
+    Y,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Bin {
+    Add,
+    Sub,
+    Mul,
+    Div,
+    Pow,
+    Atan2,
+    /// `log(b, x)`: the base comes first.
+    LogB,
+    Round2,
+    /// The commands of two numbers (see [`twonum`]).
+    Mod,
+    /// `Div`, the integer quotient.
+    IntDiv,
+    Gcd,
+    Lcm,
+    Max,
+    Min,
+}
+
+impl Bin {
+    /// Whether this is one of the commands of two numbers.
+    fn is_command(self) -> bool {
+        matches!(
+            self,
+            Bin::Mod | Bin::IntDiv | Bin::Gcd | Bin::Lcm | Bin::Max | Bin::Min
+        )
+    }
+}
+
+/// Static type of a node: a number with its angle dimension (GeoGebra's
+/// `angleDim`; 1 for an angle), or a point or vector.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Ty {
+    Num(i8),
+    Vec,
+}
+
+/// The last result of an expression, with infinities kept: GeoGebra keeps
+/// them in a dependent number (`1/(1/0)` is 0), although the object shows
+/// as undefined.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) enum Raw {
+    Num(f64),
+    Vec(f64, f64),
+}
+
+impl Raw {
+    /// Bit equality, so that a change from `∞` to `NaN` or from `0` to `-0`
+    /// still reaches the children.
+    fn same(self, other: Raw) -> bool {
+        match (self, other) {
+            (Raw::Num(a), Raw::Num(b)) => a.to_bits() == b.to_bits(),
+            (Raw::Vec(a, b), Raw::Vec(c, d)) => {
+                a.to_bits() == c.to_bits() && b.to_bits() == d.to_bits()
+            }
+            _ => false,
+        }
+    }
+}
+
+/// What GeoGebra's number object of a constant node is: a `MySpecialDouble`
+/// (a literal or a named constant, with the decimal it was written as, see
+/// [`decimal`]) or, by default, a plain `MyDouble` that the parser made.
+#[derive(Clone, Debug, Default)]
+pub(crate) struct Lit {
+    pub(crate) special: bool,
+    pub(crate) dec: Option<Dec>,
+}
+
+pub(crate) struct Entry {
+    nodes: Vec<Node>,
+    lits: Vec<Lit>,
+    tys: Vec<Ty>,
+    root: u32,
+    parents: Vec<Id>,
+    /// Whether this is a function of `x`.
+    function: bool,
+    /// The objects named in the tree (a function's inputs).
+    inputs: Vec<Id>,
+    /// The last result; for a function, 0 when it is defined and `NaN`
+    /// when not.
+    raw: Raw,
+    /// The exact decimal of the last result of a number
+    /// (`GeoNumeric.exactValue`, set by `AlgoDependentNumber`).
+    dec: Option<eval::Exact>,
+    depth: u32,
+    cost: u64,
+    vars: u64,
+}
+
+impl Entry {
+    fn new(p: parse::Parsed, function: bool) -> Self {
+        Entry {
+            nodes: p.nodes,
+            lits: p.lits,
+            tys: p.tys,
+            root: p.root,
+            parents: p.parents,
+            function,
+            inputs: p.inputs,
+            raw: Raw::Num(f64::NAN),
+            dec: None,
+            depth: p.depth,
+            cost: p.cost,
+            vars: p.vars,
+        }
+    }
+
+    fn root_ty(&self) -> Ty {
+        self.tys[self.root as usize]
+    }
+}
+
+/// The expression trees of one construction.
+#[derive(Default)]
+pub(crate) struct Table {
+    entries: Vec<Entry>,
+    /// The tree being added, the only one a new [`ExprDef`] may name.
+    pending: Option<u32>,
+    /// The exact decimals of free numbers that a decimal literal or a
+    /// constant expression made and that were never changed since
+    /// (`GeoNumeric.exactValue` with a constant definition), by object.
+    free: Vec<Option<Dec>>,
+}
+
+/// An expression object's tree, owned: what [`Construction::expression`]
+/// hands out and [`Construction::add_expression`] adds again. Like a
+/// [`Def`], it names other objects by [`Id`], so it belongs in a
+/// construction whose objects up to those ids are the same ones, such as a
+/// rebuild of the construction it came from.
+#[derive(Clone, Debug)]
+pub struct Expression {
+    kind: Kind,
+    form: Form,
+}
+
+#[derive(Clone, Debug)]
+enum Form {
+    Tree {
+        nodes: Vec<Node>,
+        lits: Vec<Lit>,
+        root: u32,
+    },
+    /// A free number with its exact decimal (see [`Table`]).
+    Exact { def: Def, dec: Dec },
+}
+
+impl Expression {
+    /// The kind of object the expression defines.
+    pub fn kind(&self) -> Kind {
+        self.kind
+    }
+}
+
+impl Table {
+    pub(crate) fn len(&self) -> usize {
+        self.entries.len()
+    }
+
+    /// Drops the trees added after the first `len`, and what is known about
+    /// the objects from `objects` on (see `Construction::rollback`).
+    pub(crate) fn truncate(&mut self, len: usize, objects: usize) {
+        self.entries.truncate(len);
+        self.free.truncate(objects);
+    }
+}
+
+/// Whether `name` is a built-in function such as `sqrt` or `x`.
+pub(crate) fn is_function_name(name: &str) -> bool {
+    names::is_builtin(name)
+}
+
+/// The children of a node.
+pub(crate) fn children(node: &Node) -> impl Iterator<Item = u32> {
+    let (a, b) = match *node {
+        Node::Tuple(a, b) | Node::Polar(a, b) | Node::Bin(_, a, b) => (Some(a), Some(b)),
+        Node::Un(_, a) | Node::Apply(_, a) => (Some(a), None),
+        _ => (None, None),
+    };
+    a.into_iter().chain(b)
+}
+
+fn entry(c: &Construction, d: ExprDef) -> &Entry {
+    &c.exprs.entries[d.index as usize]
+}
+
+/// `Construction::check` of an expression handle: only the tree being
+/// added may be named, so a handle from another construction, or one that
+/// an object already holds, is rejected.
+pub(crate) fn check_handle(c: &Construction, d: ExprDef) -> Result<(), Error> {
+    if c.exprs.pending == Some(d.index) {
+        Ok(())
+    } else {
+        Err(Error::UnknownObject)
+    }
+}
+
+/// The exact decimal of the free number `id`, if it has one.
+pub(crate) fn free_decimal(c: &Construction, id: Id) -> Option<&Dec> {
+    c.exprs.free.get(id.0).and_then(Option::as_ref)
+}
+
+fn set_free_decimal(c: &mut Construction, id: Id, d: Dec) {
+    let free = &mut c.exprs.free;
+    if free.len() <= id.0 {
+        free.resize(id.0 + 1, None);
+    }
+    free[id.0] = Some(d);
+}
+
+/// Records the decimal of the free number `id` that a script line made from
+/// the decimal literal `text` (a `MySpecialDouble`).
+pub(crate) fn record_literal(c: &mut Construction, id: Id, text: &str) {
+    if let (Some(_), Some(d)) = (plain_number(text), Dec::parse(text.trim())) {
+        set_free_decimal(c, id, d);
+    }
+}
+
+/// Forgets the exact decimal of a free number that is being changed
+/// (`GeoNumeric.setValue`); whether it had one.
+pub(crate) fn forget_decimal(c: &mut Construction, id: Id) -> bool {
+    c.exprs.free.get_mut(id.0).and_then(Option::take).is_some()
+}
+
+/// The tree of the expression object `id`, or the decimal of an exact free
+/// number, if it is one of these.
+pub(crate) fn expression(c: &Construction, id: Id) -> Option<Expression> {
+    if id.0 >= c.len() {
+        return None;
+    }
+    match c.def(id) {
+        Def::Expr(d) => {
+            let e = entry(c, d);
+            Some(Expression {
+                kind: d.kind,
+                form: Form::Tree {
+                    nodes: e.nodes.clone(),
+                    lits: e.lits.clone(),
+                    root: e.root,
+                },
+            })
+        }
+        def @ (Def::Number(_) | Def::Angle(_)) => Some(Expression {
+            kind: Kind::Number,
+            form: Form::Exact {
+                def,
+                dec: free_decimal(c, id)?.clone(),
+            },
+        }),
+        _ => None,
+    }
+}
+
+/// Adds the expression `e` as `name`, checking its tree against this
+/// construction as a parsed line is checked. A tree that names a missing
+/// object, an object of another kind, or a command whose arguments do not
+/// fit is [`Error::UnknownObject`].
+pub(crate) fn add_expression(
+    c: &mut Construction,
+    name: &str,
+    e: &Expression,
+) -> Result<Id, Error> {
+    let (nodes, lits, root) = match &e.form {
+        Form::Tree { nodes, lits, root } => (nodes, lits, *root),
+        Form::Exact { def, dec } => {
+            let id = c.add(name, *def)?;
+            set_free_decimal(c, id, dec.clone());
+            return Ok(id);
+        }
+    };
+    let parsed = reparse(c, e.kind, nodes, lits, root).ok_or(Error::UnknownObject)?;
+    if e.kind == Kind::Function && parsed.tys[parsed.root as usize] == Ty::Vec {
+        return Err(Error::UnknownObject);
+    }
+    add_parsed(c, name, parsed, e.kind)
+}
+
+/// What [`parse::parse`] would have given for a tree, or `None` when the
+/// tree does not fit this construction.
+fn reparse(
+    c: &Construction,
+    kind: Kind,
+    nodes: &[Node],
+    lits: &[Lit],
+    root: u32,
+) -> Option<parse::Parsed> {
+    let n = nodes.len();
+    if root as usize >= n || lits.len() != n {
+        return None;
+    }
+    let mut parents: Vec<Id> = Vec::new();
+    let mut inputs: Vec<Id> = Vec::new();
+    let mut read = |id: Id, input: bool| {
+        if !parents.contains(&id) {
+            parents.push(id);
+        }
+        if input && !inputs.contains(&id) {
+            inputs.push(id);
+        }
+    };
+    let mut uses_var = false;
+    // the intersection hints are decided again for this construction, as
+    // creation does: the tree's own may name objects that are not here
+    let mut nodes = nodes.to_vec();
+    for (i, node) in nodes.iter_mut().enumerate() {
+        if children(node).any(|child| child as usize >= i) {
+            return None;
+        }
+        match *node {
+            Node::Obj(id) => {
+                (id.0 < c.len()).then_some(())?;
+                read(id, true);
+            }
+            Node::Apply(f, _) => {
+                (f.0 < c.len() && c.kind(f) == Kind::Function).then_some(())?;
+                read(f, true);
+            }
+            Node::Cmd(def, _) => {
+                c.check(&def).ok()?;
+                *node = Node::Cmd(def, crate::algo::intersect::hint(c, &def));
+                for &p in def.parents().as_slice() {
+                    read(p, false);
+                }
+                for p in crate::algo::intersect::hidden_parents(c, &def) {
+                    read(p, false);
+                }
+                for p in crate::algo::vector::hidden_parents(c, &def) {
+                    read(p, false);
+                }
+            }
+            Node::Var => uses_var = true,
+            _ => {}
+        }
+    }
+    let (tys, depth, cost, vars) = types::check(c, &nodes, root).ok()?;
+    let r = root as usize;
+    if depth[r] > parse::MAX_DEPTH || cost[r] > parse::MAX_COST {
+        return None;
+    }
+    if uses_var && kind != Kind::Function {
+        return None;
+    }
+    Some(parse::Parsed {
+        nodes,
+        lits: lits.to_vec(),
+        tys,
+        root,
+        parents,
+        inputs,
+        uses_var,
+        depth: depth[r],
+        cost: cost[r],
+        vars: vars[r],
+    })
+}
+
+/// Whether an expression object is an angle (one angle dimension).
+pub(crate) fn is_angle(c: &Construction, d: ExprDef) -> bool {
+    entry(c, d).root_ty() == Ty::Num(1)
+}
+
+/// Depth, cost and variable count of a function object's tree.
+pub(crate) fn function_metrics(c: &Construction, f: Id) -> (u32, u64, u64) {
+    match c.def(f) {
+        Def::Expr(d) => {
+            let e = entry(c, d);
+            (e.depth, e.cost, e.vars)
+        }
+        _ => (1, 1, 0),
+    }
+}
+
+/// The objects an expression object reads.
+pub(crate) fn parents(c: &Construction, def: &Def) -> Vec<Id> {
+    match *def {
+        Def::Expr(d) => entry(c, d).parents.clone(),
+        _ => Vec::new(),
+    }
+}
+
+/// A result of [`evaluate`]: the raw value and the exact decimal of a
+/// number.
+pub(crate) struct Outcome {
+    pub(crate) raw: Raw,
+    dec: Option<eval::Exact>,
+}
+
+/// Evaluates an expression object for the current values of its parents.
+pub(crate) fn evaluate(c: &Construction, d: ExprDef) -> Outcome {
+    let e = entry(c, d);
+    if e.function {
+        let raw = Raw::Num(if inputs_defined(c, e) { 0.0 } else { f64::NAN });
+        Outcome { raw, dec: None }
+    } else {
+        let (raw, dec) = eval::root(c, e);
+        Outcome { raw, dec }
+    }
+}
+
+/// `AlgoDependentFunction.inputDefined`: a function is defined when every
+/// object it names is, and every command in it has a result. A number with
+/// an infinite raw value counts as defined, as in GeoGebra.
+fn inputs_defined(c: &Construction, e: &Entry) -> bool {
+    let objects = e.inputs.iter().all(|&id| match (c.kind(id), c.def(id)) {
+        (Kind::Number, Def::Expr(d)) => !matches!(raw(c, d), Raw::Num(v) if v.is_nan()),
+        _ => c.value(id).is_defined(),
+    });
+    objects
+        && e.nodes.iter().all(|n| match *n {
+            Node::Cmd(def, hint) => match c.command_value(def, hint) {
+                Some(Value::Number(v)) => !v.is_nan(),
+                other => other.is_some(),
+            },
+            _ => true,
+        })
+}
+
+/// The value of an expression object for the current values of its
+/// parents, without storing it.
+#[inline(never)]
+pub(crate) fn current(c: &Construction, d: ExprDef) -> Value {
+    value(d, evaluate(c, d).raw)
+}
+
+/// Stores the result of [`evaluate`]; tells whether it changed. A function
+/// always counts as changed: its values depend on its inputs even when it
+/// stays defined.
+/// Keeps a result; whether it changed (a decimal of the same value counts:
+/// it changes what reads the number).
+pub(crate) fn store(c: &mut Construction, d: ExprDef, out: Outcome) -> bool {
+    let e = &mut c.exprs.entries[d.index as usize];
+    let changed = e.function || !e.raw.same(out.raw) || e.dec != out.dec;
+    e.raw = out.raw;
+    e.dec = out.dec;
+    changed
+}
+
+/// `GeoFunction.value`: the value of the function `f` at `x`, `None` when
+/// `f` is not a defined function.
+pub(crate) fn function_value(c: &Construction, f: Id, x: f64) -> Option<f64> {
+    match (c.def(f), c.value(f)) {
+        (Def::Expr(d), Value::Function) => Some(eval::sample(c, entry(c, d), x)),
+        _ => None,
+    }
+}
+
+/// The last stored result.
+pub(crate) fn raw(c: &Construction, d: ExprDef) -> Raw {
+    entry(c, d).raw
+}
+
+/// The value an object shows for a result. A dependent point with an
+/// infinite coordinate is undefined (`AlgoDependentPoint`); a number or a
+/// vector keeps its infinity in [`Raw`] but shows as undefined too.
+pub(crate) fn value(d: ExprDef, raw: Raw) -> Value {
+    match (d.kind, raw) {
+        (Kind::Number, Raw::Num(v)) if v.is_finite() => Value::Number(v),
+        (Kind::Point, Raw::Vec(x, y)) if x.is_finite() && y.is_finite() => Value::Point { x, y },
+        (Kind::Vector, Raw::Vec(x, y)) if x.is_finite() && y.is_finite() => Value::Vector { x, y },
+        (Kind::Function, Raw::Num(v)) if !v.is_nan() => Value::Function,
+        _ => Value::Undefined,
+    }
+}
+
+/// Defines `name = rhs` as an expression. `vector_label` tells whether a
+/// coordinate result is a vector (lower-case label) or a point. An
+/// expression in `x` defines a function, as `b = x + 1` does in GeoGebra.
+pub(crate) fn define(
+    c: &mut Construction,
+    name: &str,
+    rhs: &str,
+    vector_label: bool,
+) -> Result<Id, String> {
+    let parsed = parse::parse(c, rhs)?;
+    if parsed.uses_var {
+        return function(c, name, parsed);
+    }
+    let kind = match parsed.tys[parsed.root as usize] {
+        Ty::Num(_) => Kind::Number,
+        Ty::Vec if vector_label => Kind::Vector,
+        Ty::Vec => Kind::Point,
+    };
+    add(c, name, parsed, kind)
+}
+
+/// Defines the function `name(x) = rhs`. A function that reads no object
+/// (`f(x) = 3`) stays a function.
+pub(crate) fn define_function(c: &mut Construction, name: &str, rhs: &str) -> Result<Id, String> {
+    function(c, name, parse::parse(c, rhs)?)
+}
+
+fn function(c: &mut Construction, name: &str, parsed: parse::Parsed) -> Result<Id, String> {
+    if parsed.tys[parsed.root as usize] == Ty::Vec {
+        return Err("a function must give a number".into());
+    }
+    add(c, name, parsed, Kind::Function)
+}
+
+fn add(c: &mut Construction, name: &str, parsed: parse::Parsed, kind: Kind) -> Result<Id, String> {
+    add_parsed(c, name, parsed, kind).map_err(|e| e.to_string())
+}
+
+fn add_parsed(
+    c: &mut Construction,
+    name: &str,
+    parsed: parse::Parsed,
+    kind: Kind,
+) -> Result<Id, Error> {
+    let function = kind == Kind::Function;
+    // `AlgebraProcessor.processNumber`: independent unless it reads an
+    // object; a command such as `Mod(7, 3)` makes a helper object, so an
+    // expression with one is dependent even on constants.
+    let has_command = parsed
+        .nodes
+        .iter()
+        .any(|n| matches!(n, Node::Bin(op, ..) if op.is_command()) || matches!(n, Node::Cmd(..)));
+    let constant = parsed.parents.is_empty() && !function && !has_command;
+    let vector_label = kind == Kind::Vector;
+    let entry = Entry::new(parsed, function);
+    if constant {
+        // `AlgebraProcessor`: an expression without objects is free.
+        let angle = entry.root_ty() == Ty::Num(1);
+        let (raw, dec) = eval::root(c, &entry);
+        let free = match raw {
+            Raw::Num(v) if v.is_finite() && angle => Some(Def::Angle(v)),
+            Raw::Num(v) if v.is_finite() => Some(Def::Number(v)),
+            Raw::Vec(x, y) if x.is_finite() && y.is_finite() => Some(if vector_label {
+                Def::Vector(VectorDef::Free { x, y })
+            } else {
+                Def::FreePoint { x, y }
+            }),
+            _ => None,
+        };
+        if let Some(def) = free {
+            let id = c.add(name, def)?;
+            if let (Some(d), Kind::Number, Raw::Num(v)) = (dec, kind, raw) {
+                if let Some(d) = d.get(v) {
+                    set_free_decimal(c, id, d.into_owned());
+                }
+            }
+            return Ok(id);
+        }
+    }
+    let index = u32::try_from(c.exprs.entries.len()).map_err(|_| Error::UnknownObject)?;
+    c.exprs.entries.push(entry);
+    c.exprs.pending = Some(index);
+    let result = c.add(name, Def::Expr(ExprDef { kind, index }));
+    c.exprs.pending = None;
+    if result.is_err() {
+        c.exprs.entries.pop();
+    }
+    result
+}
+
+#[cfg(test)]
+mod tests;

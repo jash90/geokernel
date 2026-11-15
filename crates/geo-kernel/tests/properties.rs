@@ -23,6 +23,8 @@ const COMMANDS_PER_CASE: usize = 14;
 struct Totals {
     cases: usize,
     objects: usize,
+    /// Objects made by expression lines.
+    expressions: usize,
     steps: usize,
     undefined_seen: usize,
     script_rebuilds: usize,
@@ -39,6 +41,21 @@ struct Totals {
 /// circles, a circle with itself included), which GeoGebra decides once from
 /// the positions at creation (`AlgoIntersectConics`), so a build at other
 /// positions can decide it otherwise. A script cannot state the flag.
+/// Whether two objects have the same definition: expression objects by
+/// their trees (their handles are indices into each construction's own
+/// table), others by the definition, up to the creation state of a circle
+/// intersection when `loose`.
+fn same_def(a: &Construction, ia: Id, b: &Construction, ib: Id, loose: bool) -> bool {
+    match (a.def(ia), b.def(ib)) {
+        // `Debug` shows `NaN` literals equal, where `==` would not
+        (Def::Expr(_), Def::Expr(_)) => {
+            format!("{:?}", a.expression(ia)) == format!("{:?}", b.expression(ib))
+        }
+        (da, db) if loose => same_up_to_creation_state(da, db),
+        (da, db) => da == db,
+    }
+}
+
 fn same_up_to_creation_state(a: Def, b: Def) -> bool {
     match (a, b) {
         (
@@ -71,13 +88,16 @@ fn with_creation_state_of(def: Def, orig: Def) -> Def {
 }
 
 /// Builds a fresh construction from the definitions of `orig`: every free
-/// object is created directly at its current value.
+/// object is created directly at its current value, and an expression
+/// object from its tree (its `Def::Expr` handle is valid only in `orig`).
 fn rebuild_from_defs(orig: &Construction) -> Result<Construction, String> {
     let mut fresh = Construction::new();
     for id in orig.ids() {
-        fresh
-            .add(orig.label(id), orig.def(id))
-            .map_err(|e| format!("rebuilding `{}` failed: {e}", orig.label(id)))?;
+        let added = match orig.expression(id) {
+            Some(e) => fresh.add_expression(orig.label(id), &e),
+            None => fresh.add(orig.label(id), orig.def(id)),
+        };
+        added.map_err(|e| format!("rebuilding `{}` failed: {e}", orig.label(id)))?;
     }
     Ok(fresh)
 }
@@ -85,11 +105,11 @@ fn rebuild_from_defs(orig: &Construction) -> Result<Construction, String> {
 /// The script of `case` with the free objects at their current values.
 fn script_at_current_values(case: &Case) -> Vec<String> {
     let mut lines = Vec::new();
-    for id in case.c.ids() {
+    for &id in &case.free {
         let label = case.c.label(id);
         match case.c.def(id) {
-            Def::FreePoint { x, y } => lines.push(format!("{label} = ({x:?}, {y:?})")),
-            Def::Number(v) => lines.push(format!("{label} = {v:?}")),
+            Def::FreePoint { x, y } => lines.push(format!("{label} = ({}, {})", lit(x), lit(y))),
+            Def::Number(v) => lines.push(format!("{label} = {}", lit(v))),
             _ => {}
         }
     }
@@ -102,9 +122,12 @@ fn script_at_current_values(case: &Case) -> Vec<String> {
 fn check_contagion(case: &Case) -> Result<(), String> {
     for id in case.c.ids() {
         let parents = &case.deps[id.index()];
-        let broken = parents
-            .iter()
-            .find(|&&p| !case.c.value(id_at(&case.c, p)).is_defined());
+        // An expression reads an infinite expression number as a value, as
+        // GeoGebra does, which counts it as defined (`1 / (r - a)` with
+        // `a = ∞` is `-0`): for expressions such a parent is not undefined.
+        let read_as_value = |p: Id| case.expr[id.index()] && case.c.infinite_number(p).is_some();
+        let undefined = |p: Id| !case.c.value(p).is_defined() && !read_as_value(p);
+        let broken = parents.iter().find(|&&p| undefined(id_at(&case.c, p)));
         if let Some(&p) = broken {
             let v = case.c.value(id);
             if v.is_defined() {
@@ -174,9 +197,18 @@ fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), St
     let mut case = generate(seed, COMMANDS_PER_CASE, all_commands);
     let reads = reads(&case);
     let mut moves: Vec<String> = Vec::new();
+    // which numbers a step has set: they have lost the exact decimal of
+    // their literal (`GeoNumeric.setValue`), whatever value they were given
+    let mut set = vec![false; case.c.len()];
+    let mut note = |step: &Step| {
+        if let Step::Number { id, .. } = *step {
+            set[id.index()] = true;
+        }
+    };
     let mut rng = Rng::new(seed ^ 0x5DEE_CE66_D1CE_5EED);
     totals.cases += 1;
     totals.objects += case.c.len();
+    totals.expressions += case.expr.iter().filter(|&&e| e).count();
     totals.rejected.append(&mut case.rejected);
 
     macro_rules! fail {
@@ -203,6 +235,7 @@ fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), St
         let before = values(&case.c);
         let moved = step.id();
         moves.push(format!("{step_no}: {}", step.describe(&case.c)));
+        note(&step);
         let count = match step.apply(&mut case.c) {
             Ok(n) => n,
             Err(e) => fail!("move {step_no} failed: {e}"),
@@ -250,15 +283,29 @@ fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), St
 
         // 2/4. away and back gives the original values
         if step_no % 3 == 0 {
-            let snapshot = values(&case.c);
             let target = *rng.pick(&case.free);
             let home = match case.c.def(target) {
                 Def::FreePoint { x, y } => Step::Point { id: target, x, y },
                 Def::Number(v) => Step::Number { id: target, v },
                 other => fail!("free object has definition {other:?}"),
             };
+            // a number from a decimal literal loses its exact decimal when it
+            // is set, even to its own value (`GeoNumeric.setValue`), so the
+            // values to come back to are those after a first `home`, which
+            // must themselves agree with a full recompute
+            moves.push(format!("  home: {}", home.describe(&case.c)));
+            note(&home);
+            if let Err(e) = home.apply(&mut case.c) {
+                fail!("home move failed: {e}");
+            }
+            let snapshot = values(&case.c);
+            let rebuilt = rebuild_from_defs(&case.c)?;
+            if let Some(d) = first_difference(&case.c, &snapshot, &values(&rebuilt)) {
+                fail!("the home move differs from a recompute: {d}");
+            }
             let away = random_step(&mut rng, &case.c, &[target]);
             moves.push(format!("  away: {}", away.describe(&case.c)));
+            note(&away);
             if let Err(e) = away.apply(&mut case.c) {
                 fail!("away move failed: {e}");
             }
@@ -285,12 +332,23 @@ fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), St
             break;
         }
     }
+    if ok && fresh.len() == case.c.len() {
+        // A literal line gives a free number the exact decimal of the
+        // literal; one that a step set has none, so set it here too. Which
+        // ones comes from the steps, not from the kernel under test.
+        for &id in &case.free {
+            if let (Def::Number(v), true) = (case.c.def(id), set[id.index()]) {
+                if fresh.set_number(id, v).is_err() {
+                    fail!("setting `{}` in the fresh build failed", case.c.label(id));
+                }
+            }
+        }
+    }
     let same_layout = ok
         && fresh.len() == case.c.len()
-        && fresh
-            .ids()
-            .zip(case.c.ids())
-            .all(|(f, o)| fresh.label(f) == case.c.label(o) && fresh.def(f) == case.c.def(o));
+        && fresh.ids().zip(case.c.ids()).all(|(f, o)| {
+            fresh.label(f) == case.c.label(o) && same_def(&fresh, f, &case.c, o, false)
+        });
     if same_layout {
         totals.script_rebuilds += 1;
         if let Some(d) = first_difference(&case.c, &values(&case.c), &values(&fresh)) {
@@ -302,8 +360,7 @@ fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), St
     } else if ok
         && fresh.len() == case.c.len()
         && fresh.ids().zip(case.c.ids()).all(|(f, o)| {
-            fresh.label(f) == case.c.label(o)
-                && same_up_to_creation_state(fresh.def(f), case.c.def(o))
+            fresh.label(f) == case.c.label(o) && same_def(&fresh, f, &case.c, o, true)
         })
     {
         // The script decided a circle intersection's creation state
@@ -314,7 +371,11 @@ fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), St
         let mut carried = Construction::new();
         for (f, o) in fresh.ids().zip(case.c.ids()) {
             let def = with_creation_state_of(fresh.def(f), case.c.def(o));
-            if let Err(e) = carried.add(fresh.label(f), def) {
+            let added = match fresh.expression(f) {
+                Some(e) => carried.add_expression(fresh.label(f), &e),
+                None => carried.add(fresh.label(f), def),
+            };
+            if let Err(e) = added {
                 fail!(
                     "rebuilding `{}` with its creation state failed: {e}",
                     fresh.label(f)
@@ -349,10 +410,11 @@ fn random_constructions_and_moves() {
         run_case(rng.state(), false, &mut totals)
     });
     println!(
-        "{} constructions, {} objects, {} moves ({} undefined values seen), \
+        "{} constructions, {} objects ({} from expressions), {} moves ({} undefined values seen), \
          {} script rebuilds compared, {} skipped (multi-output layout), {} rejected commands",
         totals.cases,
         totals.objects,
+        totals.expressions,
         totals.steps,
         totals.undefined_seen,
         totals.script_rebuilds,
@@ -372,6 +434,13 @@ fn random_constructions_and_moves() {
             .cloned()
             .collect::<Vec<_>>()
             .join("\n")
+    );
+    // Expression objects take part in every check (a quarter of the lines).
+    assert!(
+        totals.expressions * 20 >= totals.objects,
+        "only {} of {} objects come from expressions",
+        totals.expressions,
+        totals.objects
     );
     // The script rebuild is skipped only for multi-output layouts; it must
     // stay the rule (379 of 400 at the time of writing).
@@ -951,7 +1020,7 @@ fn measures_agree_with_direct_formulas() {
         let src = format!(
             "{}{}{}{}{}{}{}\
              s = Segment(A, B)\nl = Line(A, B)\nk = Circle(A, B)\npar = Line(P, l)\n\
-             dab = Distance(A, B)\nlen = Length(s)\nrad = Radius(k)\ncirc = Circumference(k)\n\
+             dab = Distance(A, B)\nlen = Length(s)\nrd = Radius(k)\ncirc = Circumference(k)\n\
              per = Perimeter(k)\nar = Area(k)\nar3 = Area(T0, T1, T2)\nar4 = Area(T0, T1, T2, D)\n\
              sl = Slope(l)\nsls = Slope(s)\ndpl = Distance(P, l)\ndlp = Distance(l, P)\n\
              dps = Distance(P, s)\ndll = Distance(l, par)\nang = Angle(T0, T1, T2)\n",
@@ -972,7 +1041,7 @@ fn measures_agree_with_direct_formulas() {
                 let ab = dist(a, b);
                 expect_near("Distance", num(&c, "dab"), ab, sc)?;
                 expect_near("Length", num(&c, "len"), ab, sc)?;
-                expect_near("Radius", num(&c, "rad"), ab, sc)?;
+                expect_near("Radius", num(&c, "rd"), ab, sc)?;
                 expect_near("Circumference", num(&c, "circ"), 2.0 * PI * ab, sc)?;
                 expect_near("Perimeter", num(&c, "per"), 2.0 * PI * ab, sc)?;
                 expect_near("Area(circle)", num(&c, "ar"), PI * ab * ab, sc * sc)?;

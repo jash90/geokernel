@@ -1,0 +1,714 @@
+{
+  "schema": 1,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "expr-exact-001",
+      "group": "expr",
+      "script": [
+        "c = (0.1 + 0.2 - 0.3) 1E20"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-exact-002",
+      "group": "expr",
+      "script": [
+        "c = (1.1 1.1 - 1.21) 1E20"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-exact-003",
+      "group": "expr",
+      "script": [
+        "c = round(1.005 100)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 101.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-exact-004",
+      "group": "expr",
+      "script": [
+        "c = (0.3 - 0.1 - 0.2) 1E20"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-exact-005",
+      "group": "expr",
+      "script": [
+        "c = (1 / 3 3 - 1) 1E40"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": -1000000.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-exact-006",
+      "group": "expr",
+      "script": [
+        "c = (0.1 + 0.2 + 0.3 - 0.6) 1E20"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-exact-007",
+      "group": "expr",
+      "script": [
+        "c = ceil((0.1 + 0.2) 10)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 3.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-exact-008",
+      "group": "expr",
+      "script": [
+        "c = floor((0.3 - 0.1) 5)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-exact-009",
+      "group": "expr",
+      "script": [
+        "c = (0.1 3 - 0.3) 1E20"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-exact-010",
+      "group": "expr",
+      "script": [
+        "c = (1.1^2 - 1.21) 1E20"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-exact-011",
+      "group": "expr",
+      "script": [
+        "c = (2 / 3 - 0.6666666666666666) 1E20"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 6666.666666666667 }
+        }
+      ]
+    },
+    {
+      "id": "expr-exact-012",
+      "group": "expr",
+      "script": [
+        "c = floor(0.7 + 0.1 + 0.2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-exact-013",
+      "group": "expr",
+      "script": [
+        "c = (π - 3.141592653589793) 1E20"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 23850.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-exact-014",
+      "group": "expr",
+      "script": [
+        "c = (-0.1 + 0.3 - 0.2) 1E20"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-exact-015",
+      "group": "expr",
+      "script": [
+        "c = (-(0.1) + 0.3 - 0.2) 1E20"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": -2775.5575615628914 }
+        }
+      ]
+    },
+    {
+      "id": "expr-exact-016",
+      "group": "expr",
+      "script": [
+        "c = (10% 3 - 0.3) 1E20"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-exact-017",
+      "group": "expr",
+      "script": [
+        "c = (0.1³ - 0.001) 1E20"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-exact-018",
+      "group": "expr",
+      "script": [
+        "c = (0.1^2.0 - 0.01) 1E20"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-exact-019",
+      "group": "expr",
+      "script": [
+        "c = (0.1^1.5 0.1^1.5 - 0.001) 1E20"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 21.68404344971009 }
+        }
+      ]
+    },
+    {
+      "id": "expr-exact-020",
+      "group": "expr",
+      "script": [
+        "c = (sqrt(0.01) + 0.2 - 0.3) 1E20"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 5551.115123125783 }
+        }
+      ]
+    },
+    {
+      "id": "expr-exact-021",
+      "group": "expr",
+      "script": [
+        "c = (floor(3.7) 0.1 - 0.3) 1E20"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-exact-022",
+      "group": "expr",
+      "script": [
+        "c = (round(1.15, 1) 3 - 3.6) 1E20"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-exact-023",
+      "group": "expr",
+      "script": [
+        "c = (1.1^30 - 17.4494022689) 1E15"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": -13592.681441196246 }
+        }
+      ]
+    },
+    {
+      "id": "expr-exact-024",
+      "group": "expr",
+      "script": [
+        "c = 0.7^99 1E15"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.46206807280353684 }
+        }
+      ]
+    },
+    {
+      "id": "expr-exact-025",
+      "group": "expr",
+      "script": [
+        "c = (1.0000001^999999 - 1.1051708) 1E20"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 2.0327132133670615E11 }
+        }
+      ]
+    },
+    {
+      "id": "expr-exact-026",
+      "group": "expr",
+      "script": [
+        "c = (30° 3 - 90°) 1E20"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-exact-027",
+      "group": "expr",
+      "script": [
+        "c = (ℯ - 2.718281828459045) 1E20"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 23530.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-exact-028",
+      "group": "expr",
+      "script": [
+        "c = (2 / 3 3 - 2) 1E40"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 1000000.0 }
+        }
+      ]
+    },
+    {
+      "id": "expr-exact-029",
+      "group": "expr",
+      "script": [
+        "c = (1 / 7 - 0.1428571428571428) 1E40"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 5.714285714285714E23 }
+        }
+      ]
+    },
+    {
+      "id": "expr-exact-030",
+      "group": "expr",
+      "script": [
+        "a = 1.005",
+        "c = round(a 100)",
+        "d = (a 100 - 100.5) 1E20"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 1.005 },
+        { "action": "set_number", "label": "a", "value": 2.5 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.005 },
+          "c": { "type": "number", "defined": true, "value": 101.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.005 },
+          "c": { "type": "number", "defined": true, "value": 100.0 },
+          "d": { "type": "number", "defined": true, "value": -1421085.4715202004 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.5 },
+          "c": { "type": "number", "defined": true, "value": 250.0 },
+          "d": { "type": "number", "defined": true, "value": 1.495E22 }
+        }
+      ]
+    },
+    {
+      "id": "expr-exact-031",
+      "group": "expr",
+      "script": [
+        "w = 1 / 3",
+        "c = (w 3 - 1) 1E40",
+        "d = (3 w - 1) 1E40"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "w", "value": 0.25 }
+      ],
+      "snapshots": [
+        {
+          "w": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "c": { "type": "number", "defined": true, "value": -1000000.0 },
+          "d": { "type": "number", "defined": true, "value": -1000000.0 }
+        },
+        {
+          "w": { "type": "number", "defined": true, "value": 0.25 },
+          "c": { "type": "number", "defined": true, "value": -2.5E39 },
+          "d": { "type": "number", "defined": true, "value": -2.5E39 }
+        }
+      ]
+    },
+    {
+      "id": "expr-exact-032",
+      "group": "expr",
+      "script": [
+        "a = 1",
+        "g = a / 3",
+        "c = (g 3 - 1) 1E40",
+        "d = (3 g - 1) 1E40",
+        "h = 0.1 a",
+        "k = (h + 0.2 - 0.3) 1E20",
+        "m = (0.2 + h - 0.3) 1E20"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 2.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "g": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "c": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": true, "value": -1000000.0 },
+          "h": { "type": "number", "defined": true, "value": 0.1 },
+          "k": { "type": "number", "defined": true, "value": 5551.115123125783 },
+          "m": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "g": { "type": "number", "defined": true, "value": 0.6666666666666666 },
+          "c": { "type": "number", "defined": true, "value": 1.0E40 },
+          "d": { "type": "number", "defined": true, "value": 1.0E40 },
+          "h": { "type": "number", "defined": true, "value": 0.2 },
+          "k": { "type": "number", "defined": true, "value": 1.0000000000000004E19 },
+          "m": { "type": "number", "defined": true, "value": 1.0000000000000004E19 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "g": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "c": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "h": { "type": "number", "defined": true, "value": 0.1 },
+          "k": { "type": "number", "defined": true, "value": 5551.115123125783 },
+          "m": { "type": "number", "defined": true, "value": 5551.115123125783 }
+        }
+      ]
+    },
+    {
+      "id": "expr-exact-033",
+      "group": "expr",
+      "script": [
+        "A = (0.1, 0.2)",
+        "c = (x(A) + 0.2 - 0.3) 1E20",
+        "P = (0.1 + 0.2, 1)",
+        "d = (x(P) - 0.3) 1E20"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": 0.3, "y": 0.1 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.1, "y": 0.2 },
+          "c": { "type": "number", "defined": true, "value": 5551.115123125783 },
+          "P": { "type": "point", "defined": true, "x": 0.30000000000000004, "y": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 5551.115123125783 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.3, "y": 0.1 },
+          "c": { "type": "number", "defined": true, "value": 2.0E19 },
+          "P": { "type": "point", "defined": true, "x": 0.30000000000000004, "y": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 5551.115123125783 }
+        }
+      ]
+    },
+    {
+      "id": "expr-exact-034",
+      "group": "expr",
+      "script": [
+        "c = 30°",
+        "d = (c 3 - 90°) 1E20",
+        "g = (3 c - 90°) 1E20"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "c", "value": 0.5 }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.5235987755982989 },
+          "d": { "type": "number", "defined": true, "value": 22204.46049250313 },
+          "g": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -7.0796326794896558E18 },
+          "g": { "type": "number", "defined": true, "value": -7.0796326794896558E18 }
+        }
+      ]
+    },
+    {
+      "id": "expr-exact-035",
+      "group": "expr",
+      "script": [
+        "f(x) = x + (0.1 + 0.2 - 0.3) 1E20",
+        "c = f(2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 5543.115123125783],
+              [-4.0, 5547.115123125783],
+              [-2.0, 5549.115123125783],
+              [-1.0, 5550.115123125783],
+              [-0.5, 5550.615123125783],
+              [0.0, 5551.115123125783],
+              [0.5, 5551.615123125783],
+              [1.0, 5552.115123125783],
+              [2.0, 5553.115123125783],
+              [4.0, 5555.115123125783],
+              [8.0, 5559.115123125783]
+            ]
+          },
+          "c": { "type": "number", "defined": true, "value": 5553.115123125783 }
+        }
+      ]
+    },
+    {
+      "id": "expr-exact-036",
+      "group": "expr",
+      "script": [
+        "a = 3.7",
+        "c = (floor(a) 0.1 - 0.3) 1E20",
+        "d = (0.1 floor(a) - 0.3) 1E20"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 3.7 },
+        { "action": "set_number", "label": "a", "value": 3.2 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 3.7 },
+          "c": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.7 },
+          "c": { "type": "number", "defined": true, "value": 5551.115123125783 },
+          "d": { "type": "number", "defined": true, "value": 5551.115123125783 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.2 },
+          "c": { "type": "number", "defined": true, "value": 5551.115123125783 },
+          "d": { "type": "number", "defined": true, "value": 5551.115123125783 }
+        }
+      ]
+    },
+    {
+      "id": "expr-exact-037",
+      "group": "expr",
+      "script": [
+        "a = 0.1",
+        "b = 0.2",
+        "c = (a + b - 0.3) 1E20",
+        "d = (b + a - 0.3) 1E20",
+        "g = (a b - 0.02) 1E20",
+        "h = (a / b - 0.5) 1E20"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.1 },
+        { "action": "set_number", "label": "b", "value": 0.25 },
+        { "action": "set_number", "label": "a", "value": 0.2 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.1 },
+          "b": { "type": "number", "defined": true, "value": 0.2 },
+          "c": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "g": { "type": "number", "defined": true, "value": 0.0 },
+          "h": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.1 },
+          "b": { "type": "number", "defined": true, "value": 0.2 },
+          "c": { "type": "number", "defined": true, "value": 5551.115123125783 },
+          "d": { "type": "number", "defined": true, "value": 5551.115123125783 },
+          "g": { "type": "number", "defined": true, "value": 346.9446951953614 },
+          "h": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.1 },
+          "b": { "type": "number", "defined": true, "value": 0.25 },
+          "c": { "type": "number", "defined": true, "value": 4.999999999999999E18 },
+          "d": { "type": "number", "defined": true, "value": 4.999999999999999E18 },
+          "g": { "type": "number", "defined": true, "value": 5.0000000000000013E17 },
+          "h": { "type": "number", "defined": true, "value": -9.999999999999998E18 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.2 },
+          "b": { "type": "number", "defined": true, "value": 0.25 },
+          "c": { "type": "number", "defined": true, "value": 1.5000000000000002E19 },
+          "d": { "type": "number", "defined": true, "value": 1.5000000000000002E19 },
+          "g": { "type": "number", "defined": true, "value": 3.0E18 },
+          "h": { "type": "number", "defined": true, "value": 3.0000000000000004E19 }
+        }
+      ]
+    }
+  ]
+}

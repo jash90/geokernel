@@ -124,7 +124,8 @@ fn command_of(case: &Case, label: &str) -> String {
         let Some((lhs, rhs)) = line.split_once('=') else {
             continue;
         };
-        let lhs = lhs.trim();
+        let lhs = crate::model::line_label(lhs);
+        let lhs = lhs.as_str();
         if lhs == label || (wanted != label && prefix(lhs) == wanted) {
             let rhs = rhs.trim();
             return match rhs.split_once('(') {
