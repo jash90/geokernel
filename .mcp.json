@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "geokernel": {
+      "command": "target/release/geokernel-mcp",
+      "args": []
+    }
+  }
+}
