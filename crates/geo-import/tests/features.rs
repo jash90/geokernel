@@ -281,6 +281,33 @@ fn a_circle_far_from_the_origin_is_compared_with_the_precision_of_its_matrix() {
 }
 
 #[test]
+fn a_tiny_saved_radius_stands_for_a_single_point_only_in_a_transform_image() {
+    // A circle of radius 4e-5 around (1, 1): the matrix classifies afresh as
+    // a single point (beta = -1.6e-9 is below the zero threshold).
+    let tiny = "A0=\"1\" A1=\"1\" A2=\"1.9999999984\" A3=\"0\" A4=\"-1\" A5=\"-1\"";
+    // A constructor circle computed with radius 0 against that saved matrix
+    // is a mismatch: only a transformed matrix is classified again.
+    let made = ok(&(free("A", "1", "1")
+        + "<element type=\"numeric\" label=\"r\"><value val=\"0\"/></element>"
+        + "<command name=\"Circle\"><input a0=\"A\" a1=\"r\"/><output a0=\"k\"/></command>"
+        + &format!("<element type=\"conic\" label=\"k\"><matrix {tiny}/></element>")));
+    assert_eq!(made.mismatched.len(), 1, "{:?}", made.mismatched);
+    assert_eq!(made.mismatched[0].label, "k");
+    // The image of that circle under a dilation by 2 is a single point of
+    // radius 0 for GeoGebra and the kernel, while its saved matrix keeps the
+    // radius 8e-5: it agrees.
+    let image = ok(&(free("A", "1", "1")
+        + "<element type=\"numeric\" label=\"r\"><value val=\"0.00004\"/></element>"
+        + "<command name=\"Circle\"><input a0=\"A\" a1=\"r\"/><output a0=\"k\"/></command>"
+        + &format!("<element type=\"conic\" label=\"k\"><matrix {tiny}/></element>")
+        + "<element type=\"numeric\" label=\"f\"><value val=\"2\"/></element>"
+        + "<command name=\"Dilate\"><input a0=\"k\" a1=\"f\"/><output a0=\"m\"/></command>"
+        + "<element type=\"conic\" label=\"m\"><matrix A0=\"1\" A1=\"1\" \
+           A2=\"7.9999999936\" A3=\"0\" A4=\"-2\" A5=\"-2\"/></element>"));
+    assert!(image.mismatched.is_empty(), "{:?}", image.mismatched);
+}
+
+#[test]
 fn defined_against_undefined_is_a_mismatch_both_ways() {
     // the kernel gives an undefined circle for a negative radius; the file
     // saved a defined one

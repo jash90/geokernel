@@ -10,6 +10,8 @@
 use crate::xml::{Document, Element, Item};
 use crate::{ImportError, Imported, Mismatch, Skipped};
 use geo_kernel::algo::conic_nd::{ConicData, ConicType};
+use geo_kernel::algo::general_conic::GeneralConicDef;
+use geo_kernel::kernel::Def;
 use geo_kernel::script::{exec, is_vector_label, multi_output_count};
 use geo_kernel::{Construction, Value};
 use std::collections::{BTreeMap, BTreeSet};
@@ -365,7 +367,8 @@ impl Converter {
             // The result of a command: its value is the kernel's business.
             self.expressions.remove(&el.label);
             if let Some(id) = self.kernel.id(&el.label) {
-                if let Some((saved, computed)) = cross_check(&el, &self.kernel.value(id)) {
+                let image = is_transform_image(&self.kernel.def(id));
+                if let Some((saved, computed)) = cross_check(&el, &self.kernel.value(id), image) {
                     self.out.mismatched.push(Mismatch {
                         label: el.label.clone(),
                         saved,
@@ -660,6 +663,22 @@ fn saved_single_point(el: &Element) -> bool {
     conic.defined && conic.ty == ConicType::SinglePoint
 }
 
+/// Whether `def` makes the image of an object under a transformation.
+fn is_transform_image(def: &Def) -> bool {
+    match def {
+        Def::Transform(_) => true,
+        Def::GeneralConic(g) => matches!(
+            g,
+            GeneralConicDef::Translate { .. }
+                | GeneralConicDef::Rotate { .. }
+                | GeneralConicDef::Dilate { .. }
+                | GeneralConicDef::MirrorPoint { .. }
+                | GeneralConicDef::MirrorLine { .. }
+        ),
+        _ => false,
+    }
+}
+
 /// Whether the saved element is defined, judged from its own data: `None`
 /// when the file saved nothing to judge by.
 fn saved_defined(el: &Element) -> Option<bool> {
@@ -692,7 +711,12 @@ fn saved_defined(el: &Element) -> Option<bool> {
 /// file saved nothing to compare with (a polygon, a polyline: GeoGebra saves
 /// neither the vertices nor the area; a segment or a ray: only its line, the
 /// end points are the objects it was made from).
-fn cross_check(el: &Element, value: &Value) -> Option<(String, String)> {
+///
+/// `image` says whether the object is the image of a transformation, the
+/// only place where GeoGebra classifies the transformed matrix again, so the
+/// only objects for which a saved matrix of a single point stands for
+/// radius 0 (see [`saved_single_point`]).
+fn cross_check(el: &Element, value: &Value, image: bool) -> Option<(String, String)> {
     let report = || Some((saved_text(el), format!("{value:?}")));
     let saved_defined = saved_defined(el);
     match (value.is_defined(), saved_defined) {
@@ -725,7 +749,7 @@ fn cross_check(el: &Element, value: &Value) -> Option<(String, String)> {
             let r2_error = MATRIX_ULPS * f64::EPSILON * s.scale;
             let radius_ok = close(r, rs)
                 || (r * r - s.r2).abs() <= r2_error
-                || (r == 0.0 && saved_single_point(el));
+                || (image && r == 0.0 && saved_single_point(el));
             close(cx, s.cx) && close(cy, s.cy) && radius_ok
         }),
         Value::Number(n) => el.value.as_deref().and_then(num).map(|s| close(n, s)),
