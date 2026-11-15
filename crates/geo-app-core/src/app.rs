@@ -5,14 +5,16 @@
 use crate::errors;
 use crate::geom::Rect;
 use crate::gesture::Gesture;
-use crate::interact::{Drag, ViewTransform};
+use crate::interact::{Drag, Hold, ViewTransform};
 use crate::keyboard::Keyboard;
 use crate::layout::{Overlays, Regions};
 use crate::metrics::Metrics;
+use crate::snap::Snap;
 use crate::tools::{Outcome, Tool, ToolState, GROUPS};
 use crate::view::Camera;
 use crate::workbench::Workbench;
 use geo_kernel::kernel::Id;
+use std::cell::RefCell;
 
 /// Which parts of the plane decoration are shown.
 #[derive(Clone, Copy, Debug)]
@@ -31,8 +33,33 @@ pub enum ViewRequest {
     Fit,
 }
 
+/// The rules where the window deliberately differs from the reference app
+/// (the owner's choice), one named switch each. `OURS` is what the window
+/// runs; `REFERENCE` follows the reference app, for tests that compare
+/// with its observed behaviour.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct OwnerRules {
+    /// `hit::SIDE_TAKES_THE_POLYGON`.
+    pub side_takes_the_polygon: bool,
+    /// `interact::REFUSED_DRAG_NOTICE`.
+    pub refused_drag_notice: bool,
+}
+
+impl OwnerRules {
+    pub const OURS: OwnerRules = OwnerRules {
+        side_takes_the_polygon: crate::hit::SIDE_TAKES_THE_POLYGON,
+        refused_drag_notice: crate::interact::REFUSED_DRAG_NOTICE,
+    };
+    pub const REFERENCE: OwnerRules = OwnerRules {
+        side_takes_the_polygon: false,
+        refused_drag_notice: false,
+    };
+}
+
 pub struct App {
     pub wb: Workbench,
+    /// The owner's rules where the window differs from the reference app.
+    pub rules: OwnerRules,
     /// `None` until the first frame, when the size of the area is known.
     pub camera: Option<Camera>,
     pub view_request: Option<ViewRequest>,
@@ -75,12 +102,22 @@ pub struct App {
     pub press_view: Option<(Rect, ViewTransform)>,
     /// A text field had the keyboard in the previous frame.
     pub was_typing: bool,
+    /// Where the labels were painted in the last frame, in the area's
+    /// coordinates and painting order (the buffer is reused).
+    pub label_rects: RefCell<Vec<(Id, Rect)>>,
 }
 
 impl App {
+    /// How new and dragged free points are captured to the grid at `scale`
+    /// pixels per unit (on while the grid or the axes are shown).
+    pub fn snap(&self, scale: f64) -> Snap {
+        Snap::new(&self.metrics, scale, self.decor.grid || self.decor.axes)
+    }
+
     pub fn new(wb: Workbench, load_error: Option<String>) -> Self {
         App {
             wb,
+            rules: OwnerRules::OURS,
             camera: None,
             view_request: Some(ViewRequest::Initial),
             drag: None,
@@ -109,6 +146,31 @@ impl App {
             view: None,
             press_view: None,
             was_typing: false,
+            label_rects: RefCell::new(Vec::new()),
+        }
+    }
+
+    /// The object whose label was painted at `(sx, sy)` in the area in the
+    /// last frame, the first in painting order
+    /// (`EuclidianView.getLabelHit`: `labelRectangle.contains`, no
+    /// threshold).
+    pub fn label_at(&self, (sx, sy): (f64, f64)) -> Option<Id> {
+        let p = crate::geom::Point::new(sx as f32, sy as f32);
+        self.label_rects
+            .borrow()
+            .iter()
+            .find(|(id, r)| id.index() < self.wb.construction().len() && r.contains(p))
+            .map(|&(id, _)| id)
+    }
+
+    /// Abandons the drag in progress: the point or the object goes back, or
+    /// the label (whose drag is no undo step) gets its old offset back.
+    pub fn cancel_drag(&mut self) {
+        if let Some(drag) = self.drag.take() {
+            if let Hold::Label { old, .. } = drag.hold() {
+                self.wb.set_label_offset(drag.id(), old);
+            }
+            self.wb.cancel_gesture();
         }
     }
 

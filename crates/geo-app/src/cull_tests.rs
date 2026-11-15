@@ -113,6 +113,8 @@ fn picture_with(
             hovered,
             palette: wb.palette(),
             cull,
+            label_offset: &|_| None,
+            label_rects: None,
         };
         draw::paint(&painter, rect, wb.construction(), t, &scene);
     });
@@ -191,6 +193,8 @@ fn shapes_text(
             hovered,
             palette: wb.palette(),
             cull,
+            label_offset: &|_| None,
+            label_rects: None,
         };
         draw::paint(&ui.painter_at(rect), rect, wb.construction(), t, &scene);
     });

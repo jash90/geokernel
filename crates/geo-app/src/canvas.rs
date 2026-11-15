@@ -1,7 +1,6 @@
 //! The graphics view: camera, pointer interaction, tools, the buttons over it.
 
 use crate::app::{App, ViewRequest};
-use crate::describe;
 use crate::draw::{self, Scene};
 use crate::floating;
 use crate::geom::{ToCore, ToEgui};
@@ -9,7 +8,7 @@ use crate::gesture::{Button, Event as GestureEvent, Gesture, Grab, Intents, Touc
 use crate::grid;
 use crate::hit;
 use crate::icons::Icon;
-use crate::interact::{Drag, ViewTransform};
+use crate::interact::{self, Drag, Hold, Step, ViewTransform};
 use crate::theme;
 use crate::tools::{Pick, Tool};
 use crate::view::{self, Camera};
@@ -119,6 +118,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     if app.seen_rebuilds != app.wb.rebuilds() {
         app.seen_rebuilds = app.wb.rebuilds();
         app.drag = None;
+        app.label_rects.borrow_mut().clear();
         gesture.forget_target();
         app.tool.reset();
     }
@@ -166,20 +166,43 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     // The show/hide tool shows hidden objects faintly and lets them be picked.
     let show_all = tool == Tool::ShowHide;
     let t = cam.transform(w, h);
-    // The hit radii of the profile (three numbers read once per frame).
-    let (point_r, curve_r, grab_r) = (
-        app.metrics.point_radius,
-        app.metrics.curve_radius,
-        app.metrics.grab_radius,
-    );
+    // How far a pointer reaches (`App.getCapturingThreshold` by the
+    // pointer's type): the hover is the mouse's; a press is its pointer's.
+    let hover_reach = hit::Reach::of(&app.metrics, false);
+    let press_reach = hit::Reach::of(&app.metrics, gesture.touch_press());
     let shown = |app: &App, id: Id| show_all || app.wb.is_visible(id);
 
     // What the pointer is over (for highlighting and for picking).
     let pick_at = |app: &App, pos: (f64, f64)| -> Option<Id> {
         let c = app.wb.construction();
-        hit::pick(c, &t, pos, point_r, curve_r, |id| {
+        hit::pick(c, &t, pos, &hover_reach, app.wb.selected, |id| {
             shown(app, id) && (move_tool || app.tool.accepts_object(c.label(id), c.kind(id)))
         })
+    };
+    // What a press of the move tool at `pos` (in the area as it was, with
+    // the transform `pt`) takes hold of.
+    let target = |app: &App, pt: &ViewTransform, pos: (f64, f64)| -> Target {
+        let c = app.wb.construction();
+        let Some(id) = hit::pick(c, pt, pos, &press_reach, app.wb.selected, |id| {
+            shown(app, id)
+        }) else {
+            return Target::Nothing;
+        };
+        // A side of a polygon under the pointer: the owner's rule
+        // (`hit::SIDE_TAKES_THE_POLYGON`) takes the polygon; the reference
+        // app does nothing with such a press.
+        if let Some(p) = app.wb.polygon_of_side(id).filter(|&p| shown(app, p)) {
+            let (t0, retry) = (press_reach.threshold, press_reach.retry);
+            let hits = |th: f64| hit::hit(c, p, pt, pos, th, &press_reach).is_some();
+            if hits(t0) || retry.is_some_and(hits) {
+                return if app.rules.side_takes_the_polygon {
+                    Target::Object(p)
+                } else {
+                    Target::Inert
+                };
+            }
+        }
+        Target::Object(id)
     };
     app.hovered = response.hover_pos().and_then(|p| pick_at(app, to_local(p)));
 
@@ -206,51 +229,111 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     };
     let at_press = |app: &App, pos: egui::Pos2| at_view(app.press_view, pos);
 
-    // A drag that starts takes hold of what was under the pointer when the
-    // button went down: a free point (with the move tool), or the view. A
-    // press on a point never pans: a dependent point stays where it is,
-    // unless the move-view tool pans from anywhere.
-    let mut grabbed = None;
-    let intents = gesture.end_frame(response.contains_pointer(), |origin| {
-        let ((sx, sy), pt) = at_press(app, origin.egui());
-        if move_tool {
-            grabbed = Drag::begin(app.wb.construction(), &pt, sx, sy, grab_r, |id| {
-                app.wb.is_visible(id)
-            });
+    // The move tool selects what a press takes hold of when the button goes
+    // down (`handleMousePressedForMoveMode`), whether it then drags or not;
+    // a press on a label takes the label and selects nothing.
+    if let (true, Some(pos)) = (move_tool, fed.owned) {
+        let (local, pt) = at_press(app, pos);
+        if app.label_at(local).is_none() {
+            if let Target::Object(id) = target(app, &pt, local) {
+                app.wb.selected = Some(id);
+            }
         }
+    }
+
+    // A drag that starts takes hold of what was under the pointer when the
+    // button went down. With the move tool: a label first
+    // (`handleMousePressedForMoveMode` asks `getLabelHit` before anything
+    // else), then what the press chose, if it can move; a press on any
+    // object never pans, only one that hits nothing does
+    // (`hasNoHitsDisablingModeForShallMoveView`). The move-view tool
+    // pans from anywhere. Other tools keep their rule until their own part
+    // of the work: a press on a point does not pan.
+    let mut grabbed = None;
+    let mut refused = None;
+    let intents = gesture.end_frame(|origin| {
+        let ((sx, sy), pt) = at_press(app, origin.egui());
         let c = app.wb.construction();
-        let on_point = hit::pick(c, &pt, (sx, sy), point_r, curve_r, |id| {
+        if move_tool {
+            if let Some(id) = app.label_at((sx, sy)) {
+                let old = app.wb.label_offset(id).unwrap_or((0.0, 0.0));
+                grabbed = Some(Drag::label(id, old, (sx, sy)));
+                return Grab::Point;
+            }
+            let id = match target(app, &pt, (sx, sy)) {
+                Target::Object(id) => id,
+                Target::Nothing => return Grab::Pan,
+                Target::Inert => return Grab::Nothing,
+            };
+            // The press position, captured to the grid with no offset
+            // (`wrapMousePressed` calls `transformCoords`).
+            let press = app
+                .snap(pt.scale())
+                .capture(pt.screen_to_world(sx, sy), (0.0, 0.0));
+            grabbed = Drag::begin(c, id, press);
+            if grabbed.is_some() {
+                return Grab::Point;
+            }
+            refused = Some(id);
+            return Grab::Nothing;
+        }
+        if tool == Tool::MoveView {
+            return Grab::Pan;
+        }
+        let on_point = hit::pick(c, &pt, (sx, sy), &press_reach, None, |id| {
             shown(app, id) && c.kind(id) == Kind::Point
         })
         .is_some();
-        if grabbed.is_some() {
-            Grab::Point
-        } else if !on_point || tool == Tool::MoveView {
-            Grab::Pan
-        } else {
+        if on_point {
             Grab::Nothing
+        } else {
+            Grab::Pan
         }
     });
     app.gesture = gesture;
-    end_drag(app, &intents);
+    // A refused drag of a dependent point says why, once per press (the
+    // owner's rule, `interact::REFUSED_DRAG_NOTICE`).
+    if let Some(id) = refused.filter(|_| app.rules.refused_drag_notice) {
+        if app.wb.construction().kind(id) == Kind::Point {
+            app.wb.notice = Some(text::label(Label::PointDependsOnOthers).to_owned());
+        }
+    }
+    // The intents in their order: a drag that starts (perhaps one whose
+    // press already ended this frame), its motion, then the end of a drag,
+    // then the click.
     if intents.started.is_some() {
         app.drag = grabbed;
         if let Some(drag) = grabbed {
             app.wb.begin_gesture();
-            app.wb.selected = Some(drag.id());
+            if !matches!(drag.hold(), Hold::Label { .. }) {
+                app.wb.selected = Some(drag.id());
+            }
         }
     }
-    if let (Some(pos), Some(drag)) = (intents.drag_to, app.drag) {
+    if let (Some(pos), Some(mut drag)) = (intents.drag_to, app.drag) {
         let (sx, sy) = to_local(pos.egui());
-        let (x, y) = drag.target(&t, sx, sy);
-        app.wb.move_point(drag.id(), x, y);
+        match drag.step(&t, &app.snap(t.scale()), sx, sy) {
+            Step::Point { x, y } => {
+                app.wb.move_point(drag.id(), x, y);
+            }
+            Step::Translate { dx, dy } => {
+                let points = interact::free_input_points(app.wb.construction(), drag.id());
+                app.wb.translate(&points, (dx, dy));
+            }
+            Step::Label { x, y } => app.wb.set_label_offset(drag.id(), (x, y)),
+        }
+        app.drag = Some(drag);
     }
     if let Some((dx, dy)) = intents.pan {
         cam.pan_pixels(dx as f64, dy as f64);
     }
-    // egui decides which widget a click belongs to as well; a press on a
-    // widget over the area made no tap here in the first place.
-    let tap = intents.tap.filter(|_| response.clicked());
+    end_drag(app, &intents);
+    // The automaton alone decides a click (egui's click rules take no part
+    // in the drawing); the release must still be over the drawing, not over
+    // a button on it.
+    let tap = intents
+        .tap
+        .filter(|p| rect.contains(p.egui()) && !app.overlays.contains(*p));
     if let Some(pos) = tap.map(ToEgui::egui) {
         let local = to_local(pos);
         match tool {
@@ -264,9 +347,20 @@ pub fn show(app: &mut App, ui: &mut Ui) {
                     app.press_view
                 };
                 let (local, pt) = at_view(view, pos);
-                let c = app.wb.construction();
-                let hit = hit::pick(c, &pt, local, point_r, curve_r, |id| shown(app, id));
-                click(app, &pt, local, hit);
+                let hit = if move_tool {
+                    target(app, &pt, local)
+                } else {
+                    let c = app.wb.construction();
+                    match hit::pick(c, &pt, local, &press_reach, None, |id| shown(app, id)) {
+                        Some(id) => Target::Object(id),
+                        None => Target::Nothing,
+                    }
+                };
+                match hit {
+                    Target::Object(id) => click(app, &pt, local, Some(id)),
+                    Target::Nothing => click(app, &pt, local, None),
+                    Target::Inert => {}
+                }
             }
         }
     }
@@ -275,9 +369,9 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         Tool::MoveView => Some(egui::CursorIcon::Grab),
         Tool::ZoomIn => Some(egui::CursorIcon::ZoomIn),
         Tool::ZoomOut => Some(egui::CursorIcon::ZoomOut),
-        Tool::Move => response
-            .hover_pos()
-            .filter(|&p| hit_free_point(app, &t, to_local(p), grab_r))
+        Tool::Move => app
+            .hovered
+            .filter(|&id| interact::movable(app.wb.construction(), id))
             .map(|_| egui::CursorIcon::Grab),
         _ => response.hover_pos().map(|_| egui::CursorIcon::Crosshair),
     };
@@ -293,7 +387,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         app.press_view = None;
     }
     painter.rect_filled(rect, 0.0, theme::WHITE);
-    grid::paint(&painter, rect, &t, app.decor);
+    grid::paint(&painter, rect, &t, app.decor, app.metrics.numbering_px);
     let c = app.wb.construction();
     let visible = |id: Id| show_all || app.wb.is_visible(id);
     let ghost = |id: Id| show_all && !app.wb.is_visible(id);
@@ -309,6 +403,8 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             hovered: app.hovered,
             palette: app.wb.palette(),
             cull: true,
+            label_offset: &|id| app.wb.label_offset(id),
+            label_rects: Some(&app.label_rects),
         },
     );
     preview(app, &painter, rect, &t, response.hover_pos());
@@ -317,10 +413,22 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     app.view = Some((rect.core(), cam.transform(w, h)));
 }
 
+/// What a press of the move tool takes hold of.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Target {
+    /// Nothing is hit: the press pans, a click deselects.
+    Nothing,
+    Object(Id),
+    /// Something is hit that the press must leave alone: it selects
+    /// nothing, drags nothing and does not pan (a polygon's side under the
+    /// reference app's rule, `OwnerRules::side_takes_the_polygon` off).
+    Inert,
+}
+
 /// Puts back or ends the drag that the automaton ended.
 fn end_drag(app: &mut App, intents: &Intents) {
-    if intents.cancel_drag && app.drag.take().is_some() {
-        app.wb.cancel_gesture();
+    if intents.cancel_drag {
+        app.cancel_drag();
     }
     if intents.end_drag {
         app.wb.end_gesture();
@@ -334,6 +442,8 @@ struct Fed {
     pressed: Option<egui::Pos2>,
     /// The last primary button event was a release.
     released: bool,
+    /// The position of the last primary press that was the area's.
+    owned: Option<egui::Pos2>,
 }
 
 /// Gives this frame's pointer events to the automaton, in order. Each press,
@@ -343,6 +453,7 @@ fn feed(gesture: &mut Gesture, events: &[egui::Event], owns: impl Fn(egui::Pos2)
     let mut fed = Fed {
         pressed: None,
         released: false,
+        owned: None,
     };
     for event in events {
         match *event {
@@ -376,6 +487,9 @@ fn feed(gesture: &mut Gesture, events: &[egui::Event], owns: impl Fn(egui::Pos2)
                         button,
                     }
                 } else if owns(pos) {
+                    if primary {
+                        fed.owned = Some(pos);
+                    }
                     GestureEvent::Down {
                         pos: core,
                         id: MOUSE,
@@ -405,13 +519,6 @@ fn feed(gesture: &mut Gesture, events: &[egui::Event], owns: impl Fn(egui::Pos2)
     fed
 }
 
-fn hit_free_point(app: &App, t: &ViewTransform, pos: (f64, f64), radius: f64) -> bool {
-    crate::interact::hit_test(app.wb.construction(), t, pos.0, pos.1, radius, |id| {
-        app.wb.is_visible(id)
-    })
-    .is_some()
-}
-
 /// A click on the drawing area, with the object under it.
 fn click(app: &mut App, t: &ViewTransform, pos: (f64, f64), hit: Option<Id>) {
     if app.tool.tool() == Tool::Move {
@@ -419,7 +526,9 @@ fn click(app: &mut App, t: &ViewTransform, pos: (f64, f64), hit: Option<Id>) {
         app.style_bar = false;
         return;
     }
-    let world = t.screen_to_world(pos.0, pos.1);
+    // A new point takes the position captured to the grid
+    // (`transformCoords` in `updateNewPoint`).
+    let world = app.snap(t.scale()).apply(t.screen_to_world(pos.0, pos.1));
     let hit_owned: Option<(String, Kind)> = hit.map(|id| {
         let c = app.wb.construction();
         (c.label(id).to_owned(), c.kind(id))
@@ -429,7 +538,6 @@ fn click(app: &mut App, t: &ViewTransform, pos: (f64, f64), hit: Option<Id>) {
         app.tool.click(
             hit_owned.as_ref().map(|(l, k)| (l.as_str(), *k)),
             world,
-            describe::click_decimals(t.scale()),
             &|l| c.id(l).is_some(),
         )
     };

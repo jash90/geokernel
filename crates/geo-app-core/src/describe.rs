@@ -25,29 +25,13 @@ pub fn n2(v: f64) -> String {
     }
 }
 
-/// `v` with at most `decimals` decimals, trailing zeros removed, never `-0`.
-pub fn fixed(v: f64, decimals: usize) -> String {
-    let s = format!("{v:.decimals$}");
-    let s = if s.contains('.') {
-        s.trim_end_matches('0').trim_end_matches('.').to_owned()
-    } else {
-        s
-    };
-    if s == "-0" {
-        "0".into()
-    } else {
-        s
-    }
-}
-
-/// How many decimals a point placed by a click needs so that rounding moves
-/// it by at most a quarter of a pixel at `scale` pixels per unit. At the
-/// standard zoom (50 px per unit) that is two decimals.
-pub fn click_decimals(scale: f64) -> usize {
-    if !(scale.is_finite() && scale > 0.0) {
-        return 2;
-    }
-    (scale / 0.5).log10().ceil().clamp(0.0, 12.0) as usize
+/// `v` with every digit needed to read the same number back, never `-0`:
+/// the coordinates of a point placed by a click keep full precision
+/// (`EuclidianControllerCompanion.createNewPoint` stores the position as
+/// it is; only the algebra view rounds, to two decimals, see [`n2`]).
+pub fn exact(v: f64) -> String {
+    // Adding zero turns -0 into 0.
+    format!("{}", v + 0.0)
 }
 
 /// `value` as a term appended after `y = ` or `x`: `+ 3.75` / `- 3.75`.
@@ -176,19 +160,17 @@ mod tests {
         assert_eq!(n2(f64::NAN), "?");
     }
 
+    /// Was `clicked_points_round_trip_to_a_quarter_pixel` (the stored value
+    /// was rounded by zoom): a clicked point keeps full precision (G3).
     #[test]
-    fn clicked_points_round_trip_to_a_quarter_pixel() {
-        assert_eq!(click_decimals(50.0), 2);
-        assert_eq!(click_decimals(5.0), 1);
-        assert_eq!(click_decimals(5000.0), 4);
-        assert_eq!(click_decimals(0.001), 0);
-        for scale in [0.5, 3.0, 50.0, 700.0, 2.5e5] {
-            let d = click_decimals(scale);
-            let x = 1.234567891;
-            let back: f64 = fixed(x, d).parse().unwrap();
-            assert!((back - x).abs() * scale <= 0.26, "scale {scale}");
+    fn clicked_points_round_trip_exactly() {
+        for x in [1.234567891, -0.000049, 1e-9, 123456.7, 2.0, 0.1 + 0.2] {
+            let back: f64 = exact(x).parse().unwrap();
+            assert_eq!(back, x);
         }
-        assert_eq!(fixed(-0.001, 2), "0");
+        assert_eq!(exact(2.0), "2");
+        assert_eq!(exact(-0.0), "0");
+        assert_eq!(exact(-1.5), "-1.5");
     }
 
     #[test]
