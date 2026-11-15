@@ -61,10 +61,17 @@ pub(crate) enum Edit {
     Redo,
     /// A drag that is cancelled (Escape, or the window losing the pointer).
     CancelledDrag,
+    /// The document replaced by a file (`load_script`).
+    Load,
+    /// The document replaced by its own snapshot (`restore_text`).
+    Restore,
 }
 
 /// Runs `steps` random edits on `wb`, the way the window makes them, and
-/// calls `check` after each with what was done.
+/// calls `check` after each with what was done. Now and then an edit runs
+/// with every rebuild failing (`fail_rebuilds`), or with replays failing
+/// inside `rebuild` (`break_replay`), as an undo, a delete or a rollback
+/// can fail.
 pub(crate) fn session(
     wb: &mut Workbench,
     seed: u64,
@@ -79,19 +86,23 @@ pub(crate) fn session(
             matches!(k, Kind::Line | Kind::Segment | Kind::Circle)
         });
         let numbers = labels(wb, |k, free| k == Kind::Number && free);
-        let edit = match rng.below(20) {
-            0..=7 => Edit::Line,
-            8..=10 => Edit::Move,
-            11 => Edit::Number,
-            12 => Edit::Toggle,
-            13 => Edit::Delete,
-            14..=15 => Edit::Undo,
-            16..=17 => Edit::Redo,
-            _ => Edit::CancelledDrag,
+        let edit = match rng.below(42) {
+            0..=15 => Edit::Line,
+            16..=21 => Edit::Move,
+            22..=24 => Edit::Number,
+            25..=26 => Edit::Toggle,
+            27..=29 => Edit::Delete,
+            30..=33 => Edit::Undo,
+            34..=37 => Edit::Redo,
+            38..=39 => Edit::CancelledDrag,
+            40 => Edit::Load,
+            _ => Edit::Restore,
         };
+        wb.fail_rebuilds = (step % 13 == 12).then(|| format!("failure at step {step}"));
+        wb.break_replay = (step % 7 == 6).then_some(step % 14 == 6);
         match edit {
             Edit::Line => {
-                let line = match rng.below(9) {
+                let line = match rng.below(16) {
                     0 | 1 => format!("P{step} = ({}, {})", rng.coord(), rng.coord()),
                     2 => format!("n{step} = {}", rng.below(9)),
                     3 if points.len() >= 2 => {
@@ -117,6 +128,24 @@ pub(crate) fn session(
                         format!("k{step} = Circle({p}, {n})")
                     }
                     8 => format!("w{step} = {}°", rng.below(360)),
+                    9 if points.len() >= 3 => {
+                        let v: Vec<String> = (0..3).map(|_| rng.pick(&points)).collect();
+                        format!("ang{step} = Angle({}, {}, {})", v[0], v[1], v[2])
+                    }
+                    10 if points.len() >= 2 => {
+                        let (a, b) = (rng.pick(&points), rng.pick(&points));
+                        let cmd = ["Vector", "Ray"][rng.below(2)];
+                        format!("{}{step} = {cmd}({a}, {b})", &cmd[..1].to_lowercase())
+                    }
+                    // Decimal numbers: their text is the exact decimal.
+                    11 => format!("d{step} = {}", ["0.1", "1.25", "-2.5", "0.3"][rng.below(4)]),
+                    12 if !numbers.is_empty() => {
+                        format!("e{step} = {} + 2", rng.pick(&numbers))
+                    }
+                    13 if !numbers.is_empty() => {
+                        format!("f{step}(x) = {} x^2 + 1", rng.pick(&numbers))
+                    }
+                    14 => format!("f{step}(x) = x^3 - x"),
                     _ => format!("R{step} = ({}, {})", rng.coord(), rng.coord()),
                 };
                 // Failing lines (a point with itself) are part of it.
@@ -136,8 +165,11 @@ pub(crate) fn session(
             }
             Edit::Number if !numbers.is_empty() => {
                 let id = wb.construction().id(&rng.pick(&numbers)).unwrap();
-                let v = match (rng.below(3), wb.construction().value(id)) {
+                // The same value (for a decimal number, a set that may
+                // change its text), an exact decimal, or any value.
+                let v = match (rng.below(4), wb.construction().value(id)) {
                     (0, Value::Number(old)) => old,
+                    (1, _) => [0.1, 1.25, 0.3, -2.5][rng.below(4)],
                     _ => rng.below(20) as f64 / 3.0,
                 };
                 wb.set_number(id, v);
@@ -157,8 +189,67 @@ pub(crate) fn session(
             Edit::Redo => {
                 wb.redo();
             }
-            _ => continue,
+            Edit::Load => {
+                let script = "A = (1, 2)\nB = (3, -1)\nC = (0, 4)\nn = 0.5\n\
+                              q = Polygon(A, B, C)\ns = Segment(A, B)\nang = Angle(A, B, C)\n";
+                wb.load_script(script).unwrap();
+            }
+            Edit::Restore => {
+                let text = wb.snapshot_text();
+                wb.restore_text(&text).unwrap();
+            }
+            _ => {
+                wb.fail_rebuilds = None;
+                wb.break_replay = None;
+                continue;
+            }
         }
+        wb.fail_rebuilds = None;
+        wb.break_replay = None;
         check(wb, edit);
     }
+}
+
+/// The sessions make what the tests above claim to cover: every kind of
+/// object, decimal and dependent numbers, functions, loads and restores,
+/// and replays that fail in each way.
+#[test]
+fn the_sessions_cover_every_kind_and_every_failure() {
+    let mut seen = std::collections::BTreeMap::<&str, usize>::new();
+    for seed in 1..=12u64 {
+        let mut wb = Workbench::default();
+        session(&mut wb, seed * 7919, 80, |wb, edit| {
+            let c = wb.construction();
+            let mut note =
+                |what: &'static str, yes: bool| *seen.entry(what).or_default() += usize::from(yes);
+            note("load", edit == Edit::Load);
+            note("restore", edit == Edit::Restore);
+            for id in c.ids() {
+                let free = c.def(id).is_free();
+                note("angle", crate::style::angle_points(c, id).is_some());
+                note("vector", c.kind(id) == Kind::Vector);
+                note("ray", c.kind(id) == Kind::Ray);
+                note("function", c.kind(id) == Kind::Function);
+                note(
+                    "expression",
+                    c.kind(id) == Kind::Number && !free && c.label(id).starts_with('e'),
+                );
+                note(
+                    "decimal number",
+                    free && matches!(c.value(id), Value::Number(v) if v.fract() != 0.0 && (v * 4.0).fract() != 0.0),
+                );
+            }
+            let notice = wb.notice.as_deref().unwrap_or("");
+            note("failed rebuild", notice.contains("failure at step"));
+            note(
+                "unknown command on replay",
+                notice.contains("NoSuchCommand"),
+            );
+            note("other object on replay", notice.contains("instead of"));
+        });
+    }
+    for (what, n) in &seen {
+        assert!(*n > 0, "the sessions never made: {what} ({seen:?})");
+    }
+    assert_eq!(seen.len(), 11, "{seen:?}");
 }

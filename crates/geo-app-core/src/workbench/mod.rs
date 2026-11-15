@@ -66,6 +66,10 @@ pub struct Workbench {
     /// Tests make every rebuild fail with this message while it is set.
     #[cfg(test)]
     pub fail_rebuilds: Option<String>,
+    /// Tests make every replay run a journal whose last definition is
+    /// broken (see `Log::broken`), so it fails inside `rebuild`.
+    #[cfg(test)]
+    pub break_replay: Option<bool>,
     /// Tests make every undo step a full copy of the journal, and every
     /// rebuild record its lines anew, as before the journal shared its
     /// storage, to compare the two.
@@ -110,8 +114,16 @@ impl Workbench {
     /// `log` replayed (see `Log::rebuild`).
     fn replay(&self, log: &Log) -> Result<(Construction, Log), String> {
         #[cfg(test)]
-        if self.unshared {
-            return log.rebuild_reference();
+        if self.break_replay.is_some() || self.unshared {
+            let log = match self.break_replay {
+                Some(wrong_label) => log.broken(wrong_label),
+                None => log.clone(),
+            };
+            return if self.unshared {
+                log.rebuild_reference()
+            } else {
+                log.rebuild()
+            };
         }
         log.rebuild()
     }

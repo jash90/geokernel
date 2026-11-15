@@ -417,6 +417,35 @@ impl Log {
         self.ops.len()
     }
 
+    /// `self` with its last definition line broken, so that replaying it
+    /// fails inside `rebuild`: the line names a command that does not
+    /// exist, or (`wrong_label`) makes another object than it did. The
+    /// lines before it stay shared. For the tests of the replay's errors.
+    #[cfg(test)]
+    pub(crate) fn broken(&self, wrong_label: bool) -> Log {
+        let items = self.ops.items();
+        let Some(last) = items.iter().rposition(|op| matches!(op, Op::Define(_))) else {
+            return self.clone();
+        };
+        let mut ops = self.ops.prefix(last);
+        for (i, op) in items[last..].iter().enumerate() {
+            let mut op = (*op).clone();
+            if let (0, Op::Define(e)) = (i, &mut op) {
+                e.line = if wrong_label {
+                    "zzWrong = (0, 0)".to_owned()
+                } else {
+                    format!("{} = NoSuchCommand(1)", e.labels[0])
+                };
+            }
+            ops.push(op);
+        }
+        Log {
+            ops,
+            hidden: self.hidden.clone(),
+            removed: self.removed.clone(),
+        }
+    }
+
     /// The storage `logs` take together, in journal entries.
     #[cfg(test)]
     pub(crate) fn distinct_entries<'a>(logs: impl IntoIterator<Item = &'a Log>) -> usize {

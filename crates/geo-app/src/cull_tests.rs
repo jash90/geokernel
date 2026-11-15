@@ -8,7 +8,7 @@ use crate::interact::ViewTransform;
 use crate::view::{self, Camera};
 use crate::workbench::Workbench;
 use eframe::egui::{epaint, vec2, Context, Pos2, Rect};
-use geo_kernel::kernel::Kind;
+use geo_kernel::kernel::{Id, Kind};
 
 const W: f32 = 900.0;
 const H: f32 = 640.0;
@@ -66,6 +66,20 @@ fn scene(cells: usize) -> String {
     s
 }
 
+/// [`scene`] with objects whose screen coordinates overflow (a point far
+/// out, a segment, a vector and a polygon through it, a huge circle) and
+/// intersections that do not exist.
+fn scene_with_extremes(cells: usize) -> String {
+    let mut s = scene(cells);
+    s += "Far = (10^300, -10^300)\nfarSeg = Segment(PointA_{0}, Far)\n\
+          farVec = Vector(Far, PointB_{0})\nbig = 10^300\nhuge = Circle(PointA_{0}, big)\n\
+          farPoly = Polygon(PointA_{0}, Far, PointC_{0})\n\
+          Z1 = (0, 0)\nZ2 = (1, 0)\nZ3 = (0, 1)\nZ4 = (1, 1)\nCc = (1000, 1000)\nCd = (1001, 1000)\n\
+          par1 = Line(Z1, Z2)\npar2 = Line(Z3, Z4)\nNone1 = Intersect(par1, par2)\n\
+          away = Circle(Cc, Cd)\nNone2 = Intersect(par1, away)\n";
+    s
+}
+
 /// What `draw::paint` gives for `t`: the tessellated primitives (clip
 /// rectangle, vertices, indices) and the number of shapes.
 fn picture(
@@ -75,6 +89,18 @@ fn picture(
     cull: bool,
     bounded_only: bool,
 ) -> (Vec<(Rect, epaint::Mesh)>, usize) {
+    picture_with(ctx, wb, t, cull, bounded_only, (None, None))
+}
+
+/// [`picture`] with an object selected and one under the pointer.
+fn picture_with(
+    ctx: &Context,
+    wb: &Workbench,
+    t: &ViewTransform,
+    cull: bool,
+    bounded_only: bool,
+    (selected, hovered): (Option<Id>, Option<Id>),
+) -> (Vec<(Rect, epaint::Mesh)>, usize) {
     let c = wb.construction();
     let visible = |id| !bounded_only || !matches!(c.kind(id), Kind::Line | Kind::Ray);
     let mut out = ctx.run_ui(Default::default(), |ui| {
@@ -83,8 +109,8 @@ fn picture(
         let scene = Scene {
             visible: &visible,
             ghost: &|_| false,
-            selected: None,
-            hovered: None,
+            selected,
+            hovered,
             palette: wb.palette(),
             cull,
         };
@@ -110,6 +136,7 @@ fn fitted(wb: &Workbench) -> Camera {
 #[test]
 fn culling_never_changes_the_picture_of_a_random_view() {
     let wb = Workbench::from_script(&scene(16)).unwrap();
+    let ids: Vec<Id> = wb.construction().ids().collect();
     let ctx = Context::default();
     let mut rng = Rng(0x9e37_79b9_7f4a_7c15);
     let (mut fewer, mut empty) = (0, 0);
@@ -125,8 +152,14 @@ fn culling_never_changes_the_picture_of_a_random_view() {
             rng.range(-2.0, 2.0) * H as f64,
         );
         let t = cam.transform(W as f64, H as f64);
-        let (culled, n_culled) = picture(&ctx, &wb, &t, true, false);
-        let (all, n_all) = picture(&ctx, &wb, &t, false, false);
+        // Now and then an object selected and one under the pointer (their
+        // highlights), any of them, in view or not.
+        let pick = |rng: &mut Rng| {
+            (!rng.next().is_multiple_of(3)).then(|| ids[(rng.next() % ids.len() as u64) as usize])
+        };
+        let marks = (pick(&mut rng), pick(&mut rng));
+        let (culled, n_culled) = picture_with(&ctx, &wb, &t, true, false, marks);
+        let (all, n_all) = picture_with(&ctx, &wb, &t, false, false, marks);
         assert_eq!(culled.len(), all.len(), "case {case}: number of meshes");
         for (i, ((r1, m1), (r2, m2))) in culled.iter().zip(&all).enumerate() {
             assert_eq!(r1, r2, "case {case}, mesh {i}: clip");
@@ -139,6 +172,71 @@ fn culling_never_changes_the_picture_of_a_random_view() {
     // The views did cull, and most of them showed something.
     assert!(fewer > 40, "only {fewer} views culled anything");
     assert!(empty < 60, "{empty} views were empty");
+}
+
+/// The shapes `draw::paint` gives, each as text (`NaN` reads as itself).
+fn shapes_text(
+    ctx: &Context,
+    wb: &Workbench,
+    t: &ViewTransform,
+    cull: bool,
+    (selected, hovered): (Option<Id>, Option<Id>),
+) -> Vec<String> {
+    let mut out = ctx.run_ui(Default::default(), |ui| {
+        let rect = Rect::from_min_size(Pos2::new(40.0, 30.0), vec2(W, H));
+        let scene = Scene {
+            visible: &|_| true,
+            ghost: &|_| false,
+            selected,
+            hovered,
+            palette: wb.palette(),
+            cull,
+        };
+        draw::paint(&ui.painter_at(rect), rect, wb.construction(), t, &scene);
+    });
+    out.textures_delta.clear();
+    out.shapes.iter().map(|s| format!("{s:?}")).collect()
+}
+
+/// Objects whose screen coordinates overflow (or that have none) are drawn
+/// as without culling. Compared as shapes, not tessellated: the far point's
+/// coordinates do not fit in an `f32`, and epaint's tessellator stops on the
+/// `NaN`s that gives in debug builds, culling or not.
+#[test]
+fn culling_draws_objects_with_overflowing_coordinates_as_without() {
+    let wb = Workbench::from_script(&scene_with_extremes(4)).unwrap();
+    let ids: Vec<Id> = wb.construction().ids().collect();
+    let ctx = Context::default();
+    let mut rng = Rng(0x2545_f491_4f6c_dd1d);
+    let mut fewer = 0;
+    for case in 0..60 {
+        let mut cam = fitted(&wb);
+        let zoom = [1e-300, 0.05, 1.0, 40.0, 1e6][case % 5] * rng.range(0.7, 1.4);
+        cam.zoom_at(
+            zoom,
+            rng.range(0.0, W as f64),
+            rng.range(0.0, H as f64),
+            W as f64,
+            H as f64,
+        );
+        cam.pan_pixels(
+            rng.range(-2.0, 2.0) * W as f64,
+            rng.range(-2.0, 2.0) * H as f64,
+        );
+        let t = cam.transform(W as f64, H as f64);
+        let pick = |rng: &mut Rng| ids[(rng.next() % ids.len() as u64) as usize];
+        let marks = (Some(pick(&mut rng)), Some(pick(&mut rng)));
+        let culled = shapes_text(&ctx, &wb, &t, true, marks);
+        let all = shapes_text(&ctx, &wb, &t, false, marks);
+        fewer += usize::from(culled.len() < all.len());
+        // Culling only leaves shapes out (of objects outside the area),
+        // and every shape it keeps is the same, in the same order.
+        let mut rest = all.iter();
+        for (i, s) in culled.iter().enumerate() {
+            assert!(rest.any(|a| a == s), "case {case}: shape {i} changed: {s}");
+        }
+    }
+    assert!(fewer > 0, "no view culled anything");
 }
 
 #[test]

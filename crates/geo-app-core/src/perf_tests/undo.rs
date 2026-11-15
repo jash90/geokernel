@@ -26,22 +26,14 @@ fn state(wb: &Workbench) -> State {
     }
 }
 
-/// A random session, with now and then an edit whose rebuild fails, and
-/// then undo to the start and redo to the end: every state on the way.
+/// A random session (with now and then an edit whose rebuild fails, or
+/// whose replay fails inside `rebuild`), and then undo to the start and
+/// redo to the end: every state on the way.
 fn walk(seed: u64, steps: usize, unshared: bool) -> Vec<State> {
     let mut wb = Workbench::default();
     wb.set_unshared(unshared);
     let mut out = Vec::new();
-    let mut n = 0u64;
-    session(&mut wb, seed, steps, |wb, edit| {
-        n += 1;
-        out.push(state(wb));
-        // The next edit (an undo, a delete, a rollback) cannot rebuild.
-        wb.fail_rebuilds = n
-            .is_multiple_of(11)
-            .then(|| format!("failure after {edit:?}"));
-    });
-    wb.fail_rebuilds = None;
+    session(&mut wb, seed, steps, |wb, _| out.push(state(wb)));
     while wb.undo() {
         out.push(state(&wb));
     }
@@ -149,4 +141,31 @@ fn a_delete_copies_only_the_journal_after_the_deleted_line() {
             .value(wb.construction().id("M_{99}").unwrap()),
         Value::Point { .. }
     ));
+}
+
+/// Past the cap of 500 steps the oldest steps are dropped: with shared
+/// steps the walk back to the oldest kept step and forward again goes
+/// through exactly the states full copies go through.
+#[test]
+fn past_the_step_cap_undo_and_redo_restore_what_full_copies_restore() {
+    let walk = |unshared: bool| {
+        let mut wb = grid(10);
+        wb.set_unshared(unshared);
+        edit(&mut wb, 640);
+        let mut out = vec![state(&wb)];
+        while wb.undo() {
+            out.push(state(&wb));
+        }
+        while wb.redo() {
+            out.push(state(&wb));
+        }
+        out
+    };
+    let (shared, copies) = (walk(false), walk(true));
+    assert_eq!(shared.len(), 1 + 2 * 500, "500 steps back and forth");
+    for (i, (a, b)) in shared.iter().zip(&copies).enumerate() {
+        assert_eq!(a, b, "state {i}");
+    }
+    // The oldest kept state is not the start: 140 steps were dropped.
+    assert_ne!(shared[500].text, grid(10).snapshot_text());
 }
