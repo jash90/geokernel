@@ -24,7 +24,32 @@ pub fn n2(v: f64) -> String {
     }
 }
 
-/// `value` as a term appended after `y = ` or `x`: `+ 3.74` / `- 3.74`.
+/// `v` with at most `decimals` decimals, trailing zeros removed, never `-0`.
+pub fn fixed(v: f64, decimals: usize) -> String {
+    let s = format!("{v:.decimals$}");
+    let s = if s.contains('.') {
+        s.trim_end_matches('0').trim_end_matches('.').to_owned()
+    } else {
+        s
+    };
+    if s == "-0" {
+        "0".into()
+    } else {
+        s
+    }
+}
+
+/// How many decimals a point placed by a click needs so that rounding moves
+/// it by at most a quarter of a pixel at `scale` pixels per unit. At the
+/// standard zoom (50 px per unit) that is two decimals.
+pub fn click_decimals(scale: f64) -> usize {
+    if !(scale.is_finite() && scale > 0.0) {
+        return 2;
+    }
+    (scale / 0.5).log10().ceil().clamp(0.0, 12.0) as usize
+}
+
+/// `value` as a term appended after `y = ` or `x`: `+ 3.75` / `- 3.75`.
 fn signed_tail(v: f64) -> Option<String> {
     let s = n2(v);
     if s == "0" {
@@ -36,7 +61,7 @@ fn signed_tail(v: f64) -> Option<String> {
     }
 }
 
-/// The equation of `a*x + b*y + c = 0`: `y = -0.12x + 3.74`, or `x = -5.64`
+/// The equation of `a*x + b*y + c = 0`: `y = -0.12x + 3.75`, or `x = -5.64`
 /// when the line is vertical.
 pub fn line_equation(a: f64, b: f64, c: f64) -> String {
     let len = a.hypot(b);
@@ -105,6 +130,21 @@ mod tests {
         assert_eq!(n2(0.005), "0.01");
         assert_eq!(n2(1234.5678), "1234.57");
         assert_eq!(n2(f64::NAN), "?");
+    }
+
+    #[test]
+    fn clicked_points_round_trip_to_a_quarter_pixel() {
+        assert_eq!(click_decimals(50.0), 2);
+        assert_eq!(click_decimals(5.0), 1);
+        assert_eq!(click_decimals(5000.0), 4);
+        assert_eq!(click_decimals(0.001), 0);
+        for scale in [0.5, 3.0, 50.0, 700.0, 2.5e5] {
+            let d = click_decimals(scale);
+            let x = 1.234567891;
+            let back: f64 = fixed(x, d).parse().unwrap();
+            assert!((back - x).abs() * scale <= 0.26, "scale {scale}");
+        }
+        assert_eq!(fixed(-0.001, 2), "0");
     }
 
     #[test]

@@ -6,6 +6,7 @@
 //! dropped, which deletes everything that depended on the removed object.
 
 use geo_kernel::kernel::Construction;
+use std::collections::BTreeSet;
 
 /// One accepted line and the objects it created.
 #[derive(Clone, Debug, PartialEq)]
@@ -20,6 +21,19 @@ impl Entry {
     pub fn rhs(&self) -> &str {
         self.line.split_once('=').map_or("", |(_, r)| r.trim())
     }
+}
+
+/// A new value of a free object.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Setting {
+    Point(f64, f64),
+    Number(f64),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+enum Op {
+    Define(Entry),
+    Set { label: String, to: Setting },
 }
 
 /// Rewrites `f: Line(A, B)` as `f = Line(A, B)` and removes a trailing `#`
@@ -37,16 +51,29 @@ pub fn normalize(input: &str) -> String {
     }
 }
 
-/// The entries that built a construction, in order.
+/// The identifiers of a script line.
+fn tokens(line: &str) -> impl Iterator<Item = &str> {
+    line.split(|c: char| !(c.is_alphanumeric() || matches!(c, '_' | '{' | '}' | '\'')))
+        .filter(|t| !t.is_empty())
+}
+
+/// The journal of a construction, plus which objects are hidden.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Log {
-    entries: Vec<Entry>,
+    ops: Vec<Op>,
+    /// Labels hidden in the drawing (part of the state that undo restores).
+    pub hidden: BTreeSet<String>,
+    /// Labels removed by `remove` since the last rebuild: lines that use them
+    /// are dropped by the rebuild on purpose.
+    removed: BTreeSet<String>,
 }
 
 impl Log {
-    #[cfg(test)]
-    pub fn entries(&self) -> &[Entry] {
-        &self.entries
+    fn entries(&self) -> impl Iterator<Item = &Entry> {
+        self.ops.iter().filter_map(|op| match op {
+            Op::Define(e) => Some(e),
+            Op::Set { .. } => None,
+        })
     }
 
     /// Records `line` as the origin of the objects with index `from..` in `c`.
@@ -57,61 +84,124 @@ impl Log {
             .map(|id| c.label(id).to_owned())
             .collect();
         if !labels.is_empty() {
-            self.entries.push(Entry {
+            self.ops.push(Op::Define(Entry {
                 labels,
                 line: line.to_owned(),
-            });
+            }));
         }
     }
 
-    /// Every label with the definition of the entry that created it.
+    /// Records a new value of a free object. A move right after a move of the
+    /// same object replaces it: only the state at the next line matters.
+    pub fn record_set(&mut self, label: &str, to: Setting) {
+        if let Some(Op::Set { label: l, to: t }) = self.ops.last_mut() {
+            if l == label {
+                *t = to;
+                return;
+            }
+        }
+        self.ops.push(Op::Set {
+            label: label.to_owned(),
+            to,
+        });
+    }
+
+    /// Every label with the definition of the line that created it.
     pub fn definitions(&self) -> impl Iterator<Item = (&str, &str)> {
-        self.entries
-            .iter()
+        self.entries()
             .flat_map(|e| e.labels.iter().map(move |l| (l.as_str(), e.rhs())))
     }
 
     /// The definition text of the entry that created `label`.
     #[cfg(test)]
     pub fn rhs_of(&self, label: &str) -> Option<&str> {
-        self.entries
-            .iter()
-            .find(|e| e.labels.iter().any(|l| l == label))
-            .map(Entry::rhs)
+        self.definitions()
+            .find(|(l, _)| *l == label)
+            .map(|(_, r)| r)
     }
 
-    /// Replaces the definition of the single-output entry that created `label`
-    /// (a free point or number whose value changed).
-    pub fn set_rhs(&mut self, label: &str, rhs: &str) {
-        if let Some(e) = self
-            .entries
-            .iter_mut()
-            .find(|e| e.labels.len() == 1 && e.labels[0] == label)
-        {
-            e.line = format!("{label} = {rhs}");
-        }
+    /// The label lists of the lines that created several objects.
+    pub fn multi_output(&self) -> impl Iterator<Item = &[String]> {
+        self.entries()
+            .filter(|e| e.labels.len() > 1)
+            .map(|e| e.labels.as_slice())
     }
 
-    /// Removes the entry that created `label`. Returns whether there was one.
+    /// The other objects created by the same line as `label`.
+    #[cfg(test)]
+    pub fn siblings(&self, label: &str) -> Vec<String> {
+        self.multi_output()
+            .find(|ls| ls.iter().any(|l| l == label))
+            .map(|ls| ls.iter().filter(|l| *l != label).cloned().collect())
+            .unwrap_or_default()
+    }
+
+    /// Removes the line that created `label` (and with it every object the
+    /// line created) and the moves of those objects. Returns whether there
+    /// was such a line. Lines that use a removed object go on the next rebuild.
     pub fn remove(&mut self, label: &str) -> bool {
-        let before = self.entries.len();
-        self.entries
-            .retain(|e| !e.labels.iter().any(|l| l == label));
-        self.entries.len() != before
+        let Some(entry) = self.entries().find(|e| e.labels.iter().any(|l| l == label)) else {
+            return false;
+        };
+        let labels = entry.labels.clone();
+        self.ops.retain(|op| match op {
+            Op::Define(e) => e.labels != labels,
+            Op::Set { label, .. } => !labels.contains(label),
+        });
+        self.removed.extend(labels);
+        true
     }
 
-    /// Runs every entry on a fresh construction. Entries that fail (their
-    /// inputs were removed) are dropped from the returned log.
-    pub fn rebuild(&self) -> (Construction, Log) {
+    /// Replays the journal on a fresh construction. Every line must create
+    /// the labels it created before; a line that fails is dropped only when
+    /// it uses an object that was removed (or dropped itself), otherwise the
+    /// whole rebuild fails and the caller keeps its previous state.
+    pub fn rebuild(&self) -> Result<(Construction, Log), String> {
         let mut c = Construction::new();
         let mut kept = Log::default();
-        for e in &self.entries {
-            let before = c.len();
-            if geo_kernel::script::exec(&mut c, &e.line).is_ok() {
-                kept.record(&c, before, &e.line);
+        let mut gone = self.removed.clone();
+        for op in &self.ops {
+            match op {
+                Op::Define(e) => {
+                    let before = c.len();
+                    match geo_kernel::script::exec(&mut c, &e.line) {
+                        Ok(_) => {
+                            let made: Vec<&str> =
+                                c.ids().skip(before).map(|id| c.label(id)).collect();
+                            if made != e.labels {
+                                return Err(format!(
+                                    "`{}` created {made:?} instead of {:?}",
+                                    e.line, e.labels
+                                ));
+                            }
+                            kept.record(&c, before, &e.line);
+                        }
+                        Err(err) => {
+                            if c.len() != before || !tokens(&e.line).any(|t| gone.contains(t)) {
+                                return Err(format!("`{}`: {err}", e.line));
+                            }
+                            gone.extend(e.labels.iter().cloned());
+                        }
+                    }
+                }
+                Op::Set { label, to } => {
+                    let Some(id) = c.id(label) else {
+                        if gone.contains(label) {
+                            continue;
+                        }
+                        return Err(format!("`{label}` is missing"));
+                    };
+                    let result = match *to {
+                        Setting::Point(x, y) => c.move_point(id, x, y),
+                        Setting::Number(v) => c.set_number(id, v),
+                    };
+                    result.map_err(|e| format!("`{label}`: {e}"))?;
+                    kept.record_set(label, *to);
+                }
             }
         }
-        (c, kept)
+        kept.hidden = self.hidden.clone();
+        Ok((c, kept))
     }
 
     /// Builds a log and construction from a whole script. The error carries
@@ -135,6 +225,7 @@ impl Log {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use geo_kernel::kernel::Value;
 
     #[test]
     fn normalize_accepts_both_forms() {
@@ -143,7 +234,6 @@ mod tests {
         assert_eq!(normalize("  f :Line(A,B)  # note"), "f = Line(A,B)");
         assert_eq!(normalize("# only a comment"), "");
         assert_eq!(normalize("   "), "");
-        // A colon after the `=` is part of the definition, not a separator.
         assert_eq!(normalize("A = (1, 2)"), "A = (1, 2)");
     }
 
@@ -156,8 +246,8 @@ mod tests {
     fn load_records_normalised_entries() {
         let (c, log) = sample();
         assert_eq!(c.len(), 5);
-        assert_eq!(log.entries().len(), 5);
-        assert_eq!(log.entries()[2].line, "f = Line(A, B)");
+        assert_eq!(log.entries().count(), 5);
+        assert_eq!(log.entries().nth(2).unwrap().line, "f = Line(A, B)");
         assert_eq!(log.rhs_of("f"), Some("Line(A, B)"));
         assert_eq!(log.rhs_of("A"), Some("(0, 0)"));
         assert_eq!(log.rhs_of("nope"), None);
@@ -173,31 +263,46 @@ mod tests {
     fn removing_an_entry_cascades_through_dependents_on_rebuild() {
         let (_, mut log) = sample();
         assert!(log.remove("A"));
-        let (c, kept) = log.rebuild();
-        // f and M depended on A and are gone; B and C stay.
+        let (c, kept) = log.rebuild().unwrap();
         let labels: Vec<&str> = c.ids().map(|id| c.label(id)).collect();
         assert_eq!(labels, ["B", "C"]);
-        assert_eq!(kept.entries().len(), 2);
+        assert_eq!(kept.entries().count(), 2);
         assert!(!log.remove("zzz"));
     }
 
     #[test]
-    fn set_rhs_changes_a_free_object_and_survives_rebuild() {
+    fn a_line_that_fails_for_another_reason_fails_the_rebuild() {
         let (_, mut log) = sample();
-        log.set_rhs("A", "(1, 1)");
-        let (c, _) = log.rebuild();
+        log.ops.push(Op::Define(Entry {
+            labels: vec!["Z".into()],
+            line: "Z = Line(A, Nope)".into(),
+        }));
+        let err = log.rebuild().err().unwrap();
+        assert!(err.contains("Nope"), "{err}");
+    }
+
+    #[test]
+    fn moves_are_replayed_in_order_and_consecutive_ones_collapse() {
+        let (_, mut log) = sample();
+        log.record_set("A", Setting::Point(1.0, 1.0));
+        log.record_set("A", Setting::Point(2.0, 2.0));
+        assert_eq!(log.ops.len(), 6);
+        let (c, _) = log.rebuild().unwrap();
         let a = c.id("A").unwrap();
-        assert_eq!(
-            c.value(a),
-            geo_kernel::kernel::Value::Point { x: 1.0, y: 1.0 }
-        );
+        assert_eq!(c.value(a), Value::Point { x: 2.0, y: 2.0 });
     }
 
     #[test]
     fn rebuild_of_an_unchanged_log_is_identical() {
         let (c1, log) = sample();
-        let (c2, log2) = log.rebuild();
+        let (c2, log2) = log.rebuild().unwrap();
         assert_eq!(log, log2);
         assert_eq!(c1.len(), c2.len());
+    }
+
+    #[test]
+    fn siblings_of_a_single_output_line_are_empty() {
+        let (_, log) = sample();
+        assert!(log.siblings("A").is_empty());
     }
 }

@@ -51,6 +51,11 @@ impl<T> Undo<T> {
         Some(next)
     }
 
+    /// Drops the newest undo step without touching the redo steps.
+    pub fn discard_last(&mut self) {
+        self.past.pop();
+    }
+
     pub fn clear(&mut self) {
         self.past.clear();
         self.future.clear();

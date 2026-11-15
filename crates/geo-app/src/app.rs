@@ -49,6 +49,10 @@ pub struct App {
     /// The object under the pointer in the drawing area.
     pub hovered: Option<Id>,
     pub focus_input: bool,
+    /// `Workbench::rebuilds` as the drawing last saw it.
+    pub seen_rebuilds: u64,
+    /// A text field had the keyboard in the previous frame.
+    was_typing: bool,
 }
 
 impl App {
@@ -71,6 +75,8 @@ impl App {
             },
             hovered: None,
             focus_input: false,
+            seen_rebuilds: 0,
+            was_typing: false,
         }
     }
 
@@ -86,37 +92,59 @@ impl App {
     }
 
     fn shortcuts(&mut self, ctx: &egui::Context) {
-        let (redo, undo, escape, fit) = ctx.input_mut(|i| {
-            (
-                i.consume_key(
-                    egui::Modifiers::COMMAND | egui::Modifiers::SHIFT,
-                    egui::Key::Z,
-                ),
-                i.consume_key(egui::Modifiers::COMMAND, egui::Key::Z),
-                i.consume_key(egui::Modifiers::NONE, egui::Key::Escape),
-                false,
-            )
-        });
-        let _ = fit;
-        if redo {
-            self.wb.redo();
-        } else if undo {
-            self.wb.undo();
-        }
-        if escape {
-            self.tool.set_tool(Tool::Move);
-            self.tool_error = None;
-            self.wb.selected = None;
-        }
-        if !ctx.egui_wants_keyboard_input()
-            && ctx.input(|i| {
+        // While a text field has focus these keys belong to it: Cmd+Z undoes
+        // the text, Escape leaves the field.
+        // egui drops the focus itself when Escape arrives, so the field
+        // counts as focused if it was a frame ago.
+        let typing = ctx.egui_wants_keyboard_input();
+        let was_typing = std::mem::replace(&mut self.was_typing, typing);
+        let typing = typing || was_typing;
+        if typing {
+            if ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape)) {
+                self.input.clear();
+                self.input_error = None;
+                ctx.memory_mut(|m| {
+                    if let Some(id) = m.focused() {
+                        m.surrender_focus(id);
+                    }
+                });
+            }
+        } else {
+            let (redo, undo, escape) = ctx.input_mut(|i| {
+                (
+                    i.consume_key(
+                        egui::Modifiers::COMMAND | egui::Modifiers::SHIFT,
+                        egui::Key::Z,
+                    ),
+                    i.consume_key(egui::Modifiers::COMMAND, egui::Key::Z),
+                    i.consume_key(egui::Modifiers::NONE, egui::Key::Escape),
+                )
+            });
+            if redo {
+                self.wb.redo();
+            } else if undo {
+                self.wb.undo();
+            }
+            if escape {
+                if self.drag.is_some() {
+                    // Abandon the drag and put the point back.
+                    self.wb.cancel_gesture();
+                    self.drag = None;
+                    self.panning = false;
+                } else {
+                    self.tool.set_tool(Tool::Move);
+                    self.tool_error = None;
+                    self.wb.selected = None;
+                }
+            }
+            if ctx.input(|i| {
                 i.key_pressed(egui::Key::F)
                     && !i.modifiers.ctrl
                     && !i.modifiers.command
                     && !i.modifiers.alt
-            })
-        {
-            self.view_request = Some(ViewRequest::Fit);
+            }) {
+                self.view_request = Some(ViewRequest::Fit);
+            }
         }
     }
 

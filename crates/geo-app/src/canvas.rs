@@ -1,6 +1,7 @@
 //! The drawing area: camera, pointer interaction, tools, floating buttons.
 
 use crate::app::{App, ViewRequest};
+use crate::describe;
 use crate::draw::{self, Scene};
 use crate::errors;
 use crate::floating;
@@ -35,6 +36,14 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             Some(ViewRequest::Initial) | None => Camera::initial(bounds, w, h),
         });
     }
+    // Ids are only valid until the construction is rebuilt (undo, redo,
+    // delete, open): a drag or a half-finished tool must not outlive that.
+    if app.seen_rebuilds != app.wb.rebuilds() {
+        app.seen_rebuilds = app.wb.rebuilds();
+        app.drag = None;
+        app.panning = false;
+        app.tool.reset();
+    }
     let mut cam = app.camera.unwrap_or(Camera::STANDARD);
     let to_local = |pos: egui::Pos2| {
         let d = pos - rect.min;
@@ -62,6 +71,18 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             app.wb.is_visible(id) && (move_tool || app.tool.accepts_object(c.label(id), c.kind(id)))
         })
     };
+    // What a click lands on, whatever the tool: a click on an existing point
+    // must never create a new one on top of it.
+    let pick_any = |app: &App, pos: (f64, f64)| -> Option<Id> {
+        hit::pick(
+            app.wb.construction(),
+            &t,
+            pos,
+            POINT_RADIUS,
+            CURVE_RADIUS,
+            |id| app.wb.is_visible(id),
+        )
+    };
     app.hovered = response.hover_pos().and_then(|p| pick_at(app, to_local(p)));
 
     if response.drag_started() {
@@ -70,7 +91,9 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         if move_tool && response.dragged_by(egui::PointerButton::Primary) {
             if let Some(pos) = response.interact_pointer_pos() {
                 let (sx, sy) = to_local(pos);
-                app.drag = Drag::begin(app.wb.construction(), &t, sx, sy, free_radius);
+                app.drag = Drag::begin(app.wb.construction(), &t, sx, sy, free_radius, |id| {
+                    app.wb.is_visible(id)
+                });
             }
         }
         if let Some(drag) = app.drag {
@@ -98,7 +121,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     }
     if response.clicked() {
         if let Some(pos) = response.interact_pointer_pos() {
-            click(app, &t, to_local(pos), pick_at(app, to_local(pos)));
+            click(app, &t, to_local(pos), pick_any(app, to_local(pos)));
         }
     }
     if app.drag.is_some() || app.panning {
@@ -149,7 +172,10 @@ fn hit_free_point(
     pos: (f64, f64),
     radius: f64,
 ) -> bool {
-    crate::interact::hit_test(app.wb.construction(), t, pos.0, pos.1, radius).is_some()
+    crate::interact::hit_test(app.wb.construction(), t, pos.0, pos.1, radius, |id| {
+        app.wb.is_visible(id)
+    })
+    .is_some()
 }
 
 /// A click on the drawing area, with the object under it that the active tool
@@ -169,6 +195,7 @@ fn click(app: &mut App, t: &crate::interact::ViewTransform, pos: (f64, f64), hit
         app.tool.click(
             hit_owned.as_ref().map(|(l, k)| (l.as_str(), *k)),
             world,
+            describe::click_decimals(t.scale()),
             &|l| c.id(l).is_some(),
         )
     };
@@ -187,6 +214,10 @@ fn click(app: &mut App, t: &crate::interact::ViewTransform, pos: (f64, f64), hit
             if let Some(id) = app.wb.construction().id(&label) {
                 app.wb.delete(id);
             }
+            app.tool_error = None;
+        }
+        Outcome::Select(label) => {
+            app.wb.selected = app.wb.construction().id(&label);
             app.tool_error = None;
         }
         Outcome::Pending => app.tool_error = None,
@@ -287,6 +318,9 @@ fn overlay(app: &mut App, ui: &mut Ui, rect: Rect, w: f64, h: f64, cam: &mut Cam
     .clicked()
     {
         cam.zoom_at(ZOOM_BUTTON, 0.5 * w, 0.5 * h, w, h);
+    }
+    if let Some(notice) = app.wb.notice.clone() {
+        floating::hint_pill(ui, rect, &notice, theme::ERROR, 2.0);
     }
     if app.tool.tool() != Tool::Move {
         floating::hint_pill(ui, rect, app.tool.hint(), theme::TEXT, 0.0);

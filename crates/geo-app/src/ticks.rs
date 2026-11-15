@@ -54,8 +54,8 @@ pub fn multiples(min: f64, max: f64, step: f64) -> std::ops::Range<i64> {
     first..last + 1
 }
 
-/// Caption of the tick `index * step`: just enough decimals for the step, no
-/// trailing zeros and never a negative zero.
+/// Caption of the tick `index * step`: as many decimals as the step needs (so
+/// `1.0` for a step of 0.5), and never a negative zero.
 pub fn caption(index: i64, step: f64) -> String {
     let value = index as f64 * step;
     let decimals = if step >= 1.0 {

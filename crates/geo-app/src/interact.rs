@@ -65,10 +65,17 @@ impl ViewTransform {
 
 /// The free point nearest to the screen position, if it lies within `radius` pixels.
 /// Dependent points, numbers and undefined points are never returned.
-pub fn hit_test(c: &Construction, t: &ViewTransform, sx: f64, sy: f64, radius: f64) -> Option<Id> {
+pub fn hit_test(
+    c: &Construction,
+    t: &ViewTransform,
+    sx: f64,
+    sy: f64,
+    radius: f64,
+    visible: impl Fn(Id) -> bool,
+) -> Option<Id> {
     let mut best: Option<(Id, f64)> = None;
     for id in c.ids() {
-        if !matches!(c.def(id), Def::FreePoint { .. }) {
+        if !matches!(c.def(id), Def::FreePoint { .. }) || !visible(id) {
             continue;
         }
         let Value::Point { x, y } = c.value(id) else {
@@ -100,8 +107,9 @@ impl Drag {
         sx: f64,
         sy: f64,
         radius: f64,
+        visible: impl Fn(Id) -> bool,
     ) -> Option<Drag> {
-        let id = hit_test(c, t, sx, sy, radius)?;
+        let id = hit_test(c, t, sx, sy, radius, visible)?;
         let Value::Point { x, y } = c.value(id) else {
             return None;
         };
@@ -184,10 +192,16 @@ mod tests {
         let c = triangle();
         let t = ViewTransform::fit(&c, 800.0, 600.0);
         let (ax, ay) = screen_of(&c, &t, "A");
-        assert_eq!(hit_test(&c, &t, ax + 3.0, ay - 2.0, 10.0), c.id("A"));
+        assert_eq!(
+            hit_test(&c, &t, ax + 3.0, ay - 2.0, 10.0, |_| true),
+            c.id("A")
+        );
         let (bx, by) = screen_of(&c, &t, "B");
-        assert_eq!(hit_test(&c, &t, bx, by, 10.0), c.id("B"));
-        assert_eq!(hit_test(&c, &t, ax + 200.0, ay - 200.0, 10.0), None);
+        assert_eq!(hit_test(&c, &t, bx, by, 10.0, |_| true), c.id("B"));
+        assert_eq!(
+            hit_test(&c, &t, ax + 200.0, ay - 200.0, 10.0, |_| true),
+            None
+        );
     }
 
     #[test]
@@ -196,9 +210,9 @@ mod tests {
         let t = ViewTransform::fit(&c, 800.0, 600.0);
         let (ox, oy) = screen_of(&c, &t, "O");
         assert!(!c.def(c.id("O").unwrap()).is_free());
-        assert!(hit_test(&c, &t, ox, oy, 4.0).is_none());
+        assert!(hit_test(&c, &t, ox, oy, 4.0, |_| true).is_none());
         let (mx, my) = screen_of(&c, &t, "Mc");
-        assert_eq!(hit_test(&c, &t, mx, my, 4.0), None);
+        assert_eq!(hit_test(&c, &t, mx, my, 4.0, |_| true), None);
     }
 
     #[test]
@@ -208,7 +222,7 @@ mod tests {
         let mc = c.id("Mc").unwrap();
         let before = c.value(mc);
         let (ax, ay) = screen_of(&c, &t, "A");
-        let drag = Drag::begin(&c, &t, ax + 2.0, ay + 1.0, 10.0).expect("grab A");
+        let drag = Drag::begin(&c, &t, ax + 2.0, ay + 1.0, 10.0, |_| true).expect("grab A");
         assert_eq!(Some(drag.id()), c.id("A"));
         let (tx, ty) = drag.target(&t, ax + 2.0 - 60.0, ay + 1.0 - 40.0);
         let recomputed = c.move_point(drag.id(), tx, ty).unwrap();
@@ -234,7 +248,7 @@ mod tests {
         let c = triangle();
         let t = ViewTransform::fit(&c, 800.0, 600.0);
         let (ox, oy) = screen_of(&c, &t, "O");
-        assert!(Drag::begin(&c, &t, ox, oy, 4.0).is_none());
+        assert!(Drag::begin(&c, &t, ox, oy, 4.0, |_| true).is_none());
     }
 
     #[test]
@@ -242,7 +256,7 @@ mod tests {
         let c = triangle();
         let t = ViewTransform::fit(&c, 800.0, 600.0);
         let (ax, ay) = screen_of(&c, &t, "A");
-        let drag = Drag::begin(&c, &t, ax + 3.0, ay - 2.0, 10.0).unwrap();
+        let drag = Drag::begin(&c, &t, ax + 3.0, ay - 2.0, 10.0, |_| true).unwrap();
         // Releasing without moving leaves the point where it was.
         let (x, y) = drag.target(&t, ax + 3.0, ay - 2.0);
         assert!(x.abs() < 1e-9 && y.abs() < 1e-9);

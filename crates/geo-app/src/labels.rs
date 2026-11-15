@@ -4,6 +4,8 @@ use geo_kernel::kernel::Kind;
 
 const LINE_LETTERS: &str = "fghijklmnopqrstuvwxyzabcde";
 const CIRCLE_LETTERS: &str = "cdefghijklmnopqrstuvwxyzab";
+const NUMBER_LETTERS: &str = "abcdefghijklmnopqrstuvwxyz";
+const VECTOR_LETTERS: &str = "uvwxyzabcdefghijklmnopqrst";
 const POINT_LETTERS: &str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 /// The letters of the sequence that `kind` draws its labels from.
@@ -11,12 +13,14 @@ fn alphabet(kind: Kind) -> &'static str {
     match kind {
         Kind::Point => POINT_LETTERS,
         Kind::Circle => CIRCLE_LETTERS,
+        Kind::Number => NUMBER_LETTERS,
+        Kind::Vector => VECTOR_LETTERS,
         _ => LINE_LETTERS,
     }
 }
 
 /// The first label that `is_taken` does not report as used: points `A`, `B`,
-/// ...; circles `c`, `d`, ...; every other kind `f`, `g`, `h`, .... After the
+/// ...; circles `c`, `d`, ...; numbers `a`, `b`, ...; vectors `u`, `v`, ...; every other kind `f`, `g`, `h`, .... After the
 /// alphabet is used up, the sequence continues with `A_1`, `B_1`, ...
 pub fn next_label(kind: Kind, is_taken: impl Fn(&str) -> bool) -> String {
     let letters = alphabet(kind);

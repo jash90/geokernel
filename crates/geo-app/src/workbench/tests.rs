@@ -269,7 +269,33 @@ fn a_reused_label_is_not_born_hidden() {
     // Same when the object disappears through undo.
     w.toggle_visible(b);
     assert!(w.undo());
+    assert!(w.undo());
     w.run_line("B = (7, 7)").unwrap();
     let b = w.construction().id("B").unwrap();
     assert!(w.is_visible(b));
+}
+
+#[test]
+fn stale_ids_are_ignored_instead_of_panicking() {
+    let mut w = Workbench::from_script("A = (0, 0)\nB = (1, 1)\n").unwrap();
+    let b = w.construction().id("B").unwrap();
+    assert!(w.delete(b));
+    assert!(!w.move_point(b, 3.0, 3.0));
+    assert!(!w.set_number(b, 3.0));
+    assert!(!w.delete(b));
+}
+
+#[test]
+fn cancelling_a_gesture_restores_the_state_and_leaves_no_undo_step() {
+    let mut w = Workbench::from_script("A = (0, 0)\n").unwrap();
+    let a = w.construction().id("A").unwrap();
+    w.begin_gesture();
+    assert!(w.move_point(a, 4.0, 4.0));
+    w.cancel_gesture();
+    let a = w.construction().id("A").unwrap();
+    assert_eq!(
+        w.construction().value(a),
+        geo_kernel::kernel::Value::Point { x: 0.0, y: 0.0 }
+    );
+    assert!(!w.can_undo());
 }

@@ -1,5 +1,6 @@
 //! Draws the objects of a construction with `egui::Painter`.
 
+use crate::arc;
 use crate::highlight::{self, Highlight};
 use crate::interact::ViewTransform;
 use crate::labelpos;
@@ -116,11 +117,37 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
     for &id in &ids {
         if let Value::Circle { cx, cy, r } = c.value(id) {
             let radius = r * t.scale();
-            if !(radius.is_finite() && radius < 1e5 && cx.is_finite() && cy.is_finite()) {
+            if !(radius.is_finite() && cx.is_finite() && cy.is_finite()) {
+                continue;
+            }
+            let (sx, sy) = screen(cx, cy);
+            if radius > arc::ARC_RADIUS {
+                // Too big for the painter: draw the part near the area.
+                let Some(pts) = arc::visible_arc(sx, sy, radius, w, h) else {
+                    continue;
+                };
+                let points: Vec<Pos2> = pts
+                    .iter()
+                    .map(|&(x, y)| origin + vec2(x as f32, y as f32))
+                    .collect();
+                painter.add(Shape::line(points, curve));
+                // Label on the arc point nearest to the upper right corner.
+                let best = pts
+                    .iter()
+                    .filter(|&&(x, y)| x > 14.0 && x < w - 14.0 && y > 14.0 && y < h - 14.0)
+                    .max_by(|a, b| (a.0 - a.1).total_cmp(&(b.0 - b.1)));
+                if let Some(&(x, y)) = best {
+                    let (ux, uy) = ((x - sx) / radius, (y - sy) / radius);
+                    labels.push((
+                        c.label(id).to_owned(),
+                        (x + 12.0 * ux, y + 12.0 * uy),
+                        theme::LABEL,
+                        Align2::CENTER_CENTER,
+                    ));
+                }
                 continue;
             }
             painter.circle_stroke(p(cx, cy), radius as f32, curve);
-            let (sx, sy) = screen(cx, cy);
             // Prefer the upper right of the circle, then the other diagonals.
             for deg in [-45.0f64, -135.0, 45.0, 135.0] {
                 let a = deg.to_radians();
@@ -238,8 +265,50 @@ fn paint_highlight(painter: &Painter, rect: Rect, hl: Highlight, strong: bool) {
         Highlight::Stroke { x1, y1, x2, y2 } => {
             painter.line_segment([p(x1, y1), p(x2, y2)], glow);
         }
+        Highlight::Circle { x, y, r } if r > arc::ARC_RADIUS => {
+            let (w, h) = (rect.width() as f64, rect.height() as f64);
+            if let Some(pts) = arc::visible_arc(x, y, r, w, h) {
+                let points = pts.iter().map(|&(x, y)| p(x, y)).collect();
+                painter.add(Shape::line(points, glow));
+            }
+        }
         Highlight::Circle { x, y, r } => {
             painter.circle_stroke(p(x, y), r as f32, glow);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::view::Camera;
+    use eframe::egui::Context;
+
+    /// How many shapes a frame of `script` puts on the canvas.
+    fn shapes(script: &str) -> usize {
+        let wb = crate::workbench::Workbench::from_script(script).unwrap();
+        let c = wb.construction();
+        let t = Camera::STANDARD.transform(800.0, 600.0);
+        let ctx = Context::default();
+        let mut out = ctx.run_ui(Default::default(), |ui| {
+            let rect = Rect::from_min_size(Pos2::ZERO, vec2(800.0, 600.0));
+            let scene = Scene {
+                visible: &|_| true,
+                selected: None,
+                hovered: None,
+            };
+            paint(ui.painter(), rect, c, &t, &scene);
+        });
+        out.textures_delta.clear();
+        out.shapes.len()
+    }
+
+    #[test]
+    fn a_huge_circle_is_drawn_as_an_arc_not_skipped() {
+        // Radius about 5e5 units = 2.5e7 px, far above the old 1e5 px cut-off,
+        // and its rim passes through the middle of the picture.
+        let base = shapes("A = (0, 0)\nB = (1, 0)\n");
+        let with = shapes("A = (0, 0)\nB = (1, 0)\nC = (0, 1000000)\nk = Circle(A, B, C)\n");
+        assert!(with > base + 1, "no arc was painted ({with} vs {base})");
     }
 }

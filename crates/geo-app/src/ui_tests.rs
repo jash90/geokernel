@@ -291,3 +291,227 @@ fn a_click_on_a_disabled_undo_button_does_not_place_a_point() {
     click(&mut h, at(72.0 + 324.0 + 34.0, 65.0 + 30.0));
     assert_eq!(labels(&h), ["A"]);
 }
+
+const TANGENTS: &str =
+    "A = (0, 0)\nr = 2\nk = Circle(A, r)\nP = (5, 0)\nt = Tangent(P, k)\nQ = (-4, 3)\n";
+
+fn drag(h: &mut Harness<'_, App>, from: Pos2, to: Pos2) {
+    moved(h, from);
+    button(h, from, true);
+    for i in 1..=10 {
+        moved(h, from + (to - from) * (i as f32 / 10.0));
+    }
+    button(h, to, false);
+    h.run();
+}
+
+fn point_x(h: &Harness<'_, App>, label: &str) -> f64 {
+    let c = h.state().wb.construction();
+    let Value::Point { x, .. } = c.value(c.id(label).unwrap()) else {
+        panic!("{label} is not a point");
+    };
+    x
+}
+
+fn redo(h: &mut Harness<'_, App>) {
+    h.key_press_modifiers(Modifiers::COMMAND | Modifiers::SHIFT, egui::Key::Z);
+    h.run();
+}
+
+fn undo(h: &mut Harness<'_, App>) {
+    h.key_press_modifiers(Modifiers::COMMAND, egui::Key::Z);
+    h.run();
+}
+
+/// Drags P across the circle with the pointer, places a point with the tool,
+/// then walks the undo stack all the way back and forward. Every rebuild must
+/// bring the objects back under their own labels.
+fn labels_survive_rebuilds(script: &str, from: Pos2, to: Pos2, expect: &[&str]) {
+    let mut h = harness(script);
+    let start_x = point_x(&h, "P");
+    drag(&mut h, from, to);
+    assert!((point_x(&h, "P") - start_x).abs() > 0.2, "the drag moved P");
+    assert!(h.state().wb.construction().id("Q").is_some());
+    h.state_mut().tool.set_tool(Tool::Point);
+    click(&mut h, world(3.0, 3.0));
+    let moved_x = point_x(&h, "P");
+    let full = labels(&h);
+    assert_eq!(&full[..expect.len()], expect);
+    undo(&mut h);
+    undo(&mut h);
+    assert_eq!(labels(&h), expect);
+    assert!(h.state().wb.notice.is_none());
+    redo(&mut h);
+    redo(&mut h);
+    assert_eq!(labels(&h), full);
+    assert!(h.state().wb.notice.is_none());
+    assert!((point_x(&h, "P") - moved_x).abs() < 1e-9);
+}
+
+#[test]
+fn two_tangents_keep_their_labels_when_the_point_is_dragged_around() {
+    labels_survive_rebuilds(
+        TANGENTS,
+        world(5.0, 0.0),
+        world(6.0, 1.0),
+        &["A", "r", "k", "P", "t_{1}", "t_{2}", "Q"],
+    );
+}
+
+#[test]
+fn one_tangent_keeps_its_label_when_the_point_is_dragged_around_inside() {
+    labels_survive_rebuilds(
+        &TANGENTS.replace("(5, 0)", "(1, 0)"),
+        world(1.0, 0.0),
+        world(0.5, 0.5),
+        &["A", "r", "k", "P", "t", "Q"],
+    );
+}
+
+#[test]
+fn a_drag_that_would_change_the_tangents_is_refused_and_labels_stay() {
+    let mut h = harness(TANGENTS);
+    drag(&mut h, world(5.0, 0.0), world(1.0, 0.0));
+    assert_eq!(labels(&h), ["A", "r", "k", "P", "t_{1}", "t_{2}", "Q"]);
+    assert!(point_x(&h, "P") > 2.0, "P stays outside the circle");
+    undo(&mut h);
+    assert_eq!(labels(&h), ["A", "r", "k", "P", "t_{1}", "t_{2}", "Q"]);
+}
+
+#[test]
+fn deleting_one_tangent_says_the_sibling_goes_too() {
+    let mut h = harness(TANGENTS);
+    // Row 4 is t_{1}; its kebab sits at the right edge of the side panel.
+    click(&mut h, at(72.0 + 324.0 - 28.0, 65.0 + 232.0 + 24.0));
+    h.get_by_label_contains("razem z t_{2}").click();
+    h.run();
+    assert_eq!(labels(&h), ["A", "r", "k", "P", "Q"]);
+}
+
+#[test]
+fn the_point_tool_on_an_existing_point_selects_it() {
+    let mut h = harness("A = (0, 0)\nB = (2, 0)\n");
+    h.state_mut().tool.set_tool(Tool::Point);
+    click(&mut h, world(0.0, 0.0));
+    assert_eq!(labels(&h), ["A", "B"]);
+    let a = h.state().wb.construction().id("A").unwrap();
+    assert_eq!(h.state().wb.selected, Some(a));
+    assert!(!h.state().wb.can_undo());
+}
+
+#[test]
+fn a_second_click_on_the_same_point_does_not_create_a_duplicate() {
+    let mut h = harness("A = (0, 0)\n");
+    h.state_mut().tool.set_tool(Tool::Line);
+    click(&mut h, world(0.0, 0.0));
+    click(&mut h, world(0.0, 0.0));
+    assert_eq!(labels(&h), ["A"], "nothing created yet");
+    click(&mut h, world(3.0, 0.0));
+    assert_eq!(labels(&h), ["A", "B", "f"]);
+}
+
+#[test]
+fn hidden_points_cannot_be_dragged_or_picked() {
+    let mut h = harness("A = (1, 1)\nB = (3, 1)\n");
+    let a = h.state().wb.construction().id("A").unwrap();
+    h.state_mut().wb.toggle_visible(a);
+    // A drag from the hidden point pans the view instead of moving it.
+    drag(&mut h, world(1.0, 1.0), world(2.0, 2.0));
+    assert_eq!(point_x(&h, "A"), 1.0);
+    let mut h = harness("A = (1, 1)\nB = (3, 1)\n");
+    let a = h.state().wb.construction().id("A").unwrap();
+    h.state_mut().wb.toggle_visible(a);
+    // The segment tool puts a new point where the hidden one is.
+    h.state_mut().tool.set_tool(Tool::Segment);
+    click(&mut h, world(1.0, 1.0));
+    click(&mut h, world(3.0, 1.0));
+    assert_eq!(labels(&h), ["A", "B", "C", "f"]);
+}
+
+#[test]
+fn undo_during_a_drag_ends_the_drag() {
+    let mut h = harness("A = (1, 1)\n");
+    h.state_mut().wb.run_line("B = (4, 4)").unwrap();
+    let start = world(1.0, 1.0);
+    moved(&mut h, start);
+    button(&mut h, start, true);
+    for i in 1..=5 {
+        moved(&mut h, start + egui::vec2(4.0 * i as f32, 0.0));
+    }
+    undo(&mut h);
+    let x_after_undo = point_x(&h, "A");
+    for i in 6..=12 {
+        moved(&mut h, start + egui::vec2(4.0 * i as f32, 0.0));
+    }
+    button(&mut h, start + egui::vec2(48.0, 0.0), false);
+    h.run();
+    assert_eq!(point_x(&h, "A"), x_after_undo, "no further movement");
+    assert_eq!(labels(&h).len(), 2);
+}
+
+#[test]
+fn escape_cancels_a_drag_and_restores_the_point() {
+    let mut h = harness("A = (1, 1)\n");
+    let start = world(1.0, 1.0);
+    moved(&mut h, start);
+    button(&mut h, start, true);
+    for i in 1..=8 {
+        moved(&mut h, start + egui::vec2(5.0 * i as f32, 0.0));
+    }
+    assert!(point_x(&h, "A") > 1.2);
+    h.key_press(egui::Key::Escape);
+    h.run();
+    assert_eq!(point_x(&h, "A"), 1.0);
+    button(&mut h, start + egui::vec2(40.0, 0.0), false);
+    h.run();
+    assert_eq!(point_x(&h, "A"), 1.0);
+    assert!(
+        !h.state().wb.can_undo(),
+        "the cancelled drag leaves no step"
+    );
+}
+
+#[test]
+fn cmd_z_and_escape_belong_to_the_input_row_while_it_has_focus() {
+    let mut h = harness("A = (0, 0)\n");
+    h.state_mut().wb.run_line("B = (1, 1)").unwrap();
+    h.state_mut().tool.set_tool(Tool::Circle);
+    // The input row is the third one.
+    click(&mut h, at(72.0 + 120.0, 65.0 + 48.0 * 2.0 + 24.0));
+    h.input_mut().events.push(Event::Text("abc".to_owned()));
+    h.step();
+    h.key_press_modifiers(Modifiers::COMMAND, egui::Key::Z);
+    h.run();
+    assert_eq!(
+        labels(&h),
+        ["A", "B"],
+        "Cmd+Z did not undo the construction"
+    );
+    h.key_press(egui::Key::Escape);
+    h.run();
+    assert_eq!(
+        h.state().tool.tool(),
+        Tool::Circle,
+        "Esc only left the field"
+    );
+    assert!(h.state().input.is_empty());
+}
+
+#[test]
+fn a_bare_command_returning_a_point_gets_a_point_label() {
+    let mut h = harness("A = (0, 0)\nB = (2, 0)\n");
+    h.state_mut().wb.run_line("Midpoint(A, B)").unwrap();
+    assert_eq!(labels(&h), ["A", "B", "C"]);
+}
+
+#[test]
+fn hiding_through_the_marker_is_one_undo_step() {
+    let mut h = harness("A = (0, 0)\nB = (2, 0)\n");
+    let a = h.state().wb.construction().id("A").unwrap();
+    click(&mut h, at(72.0 + 28.0, 65.0 + 24.0));
+    assert!(!h.state().wb.is_visible(a));
+    undo(&mut h);
+    assert!(h.state().wb.is_visible(a));
+    redo(&mut h);
+    assert!(!h.state().wb.is_visible(a));
+}

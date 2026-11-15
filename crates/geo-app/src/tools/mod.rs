@@ -4,7 +4,7 @@
 //! remembers the objects picked so far; after the last pick it returns the
 //! script lines to run, exactly as if the user had typed them.
 
-use crate::describe::n2;
+use crate::describe::fixed;
 use crate::labels::next_label;
 use geo_kernel::kernel::Kind;
 
@@ -127,6 +127,10 @@ impl Pick {
     }
 }
 
+fn rounded(v: f64, decimals: usize) -> f64 {
+    fixed(v, decimals).parse().unwrap_or(v)
+}
+
 /// What a click did.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Outcome {
@@ -136,6 +140,8 @@ pub enum Outcome {
     Run(Vec<String>),
     /// Delete the object (and its dependents).
     Delete(String),
+    /// Select this existing object (the point tool clicked on a point).
+    Select(String),
     /// Nothing happened: the click was not something the tool can use.
     Ignored,
 }
@@ -259,11 +265,17 @@ impl ToolState {
 
     /// Handles a click. `hit` is the existing object under the pointer that
     /// the tool may use (see [`Self::accepts_object`]), `world` the pointer
-    /// position, `is_taken` tells whether a label is in use.
+    /// position, `decimals` how many decimals a new point's coordinates get
+    /// (see `describe::click_decimals`), `is_taken` tells whether a label is
+    /// in use.
+    ///
+    /// A click that lands on an existing point never creates a new point: it
+    /// picks the point if the tool can use it, and is ignored otherwise.
     pub fn click(
         &mut self,
         hit: Option<(&str, Kind)>,
         world: (f64, f64),
+        decimals: usize,
         is_taken: &dyn Fn(&str) -> bool,
     ) -> Outcome {
         match self.tool {
@@ -272,6 +284,11 @@ impl ToolState {
                 return match hit {
                     Some((label, _)) => Outcome::Delete(label.to_owned()),
                     None => Outcome::Ignored,
+                }
+            }
+            Tool::Point => {
+                if let Some((label, Kind::Point)) = hit {
+                    return Outcome::Select(label.to_owned());
                 }
             }
             _ => {}
@@ -284,8 +301,8 @@ impl ToolState {
             // The tool wants a point but the click landed on something else
             // (or on an object it cannot take): place a new point there.
             _ if self.accepts_new_point() && !matches!(hit, Some((_, Kind::Point))) => Pick::New {
-                x: world.0,
-                y: world.1,
+                x: rounded(world.0, decimals),
+                y: rounded(world.1, decimals),
             },
             _ => return Outcome::Ignored,
         };
@@ -294,12 +311,12 @@ impl ToolState {
         if self.picks.len() < needed {
             return Outcome::Pending;
         }
-        let lines = self.build(is_taken);
+        let lines = self.build(decimals, is_taken);
         self.picks.clear();
         Outcome::Run(lines)
     }
 
-    fn build(&self, is_taken: &dyn Fn(&str) -> bool) -> Vec<String> {
+    fn build(&self, decimals: usize, is_taken: &dyn Fn(&str) -> bool) -> Vec<String> {
         let mut lines = Vec::new();
         let mut allocated: Vec<String> = Vec::new();
         let fresh = |kind: Kind, allocated: &mut Vec<String>| {
@@ -313,7 +330,11 @@ impl ToolState {
                 Pick::Object { label, .. } => args.push(label.clone()),
                 Pick::New { x, y } => {
                     let label = fresh(Kind::Point, &mut allocated);
-                    lines.push(format!("{label} = ({}, {})", n2(*x), n2(*y)));
+                    lines.push(format!(
+                        "{label} = ({}, {})",
+                        fixed(*x, decimals),
+                        fixed(*y, decimals)
+                    ));
                     args.push(label);
                 }
             }

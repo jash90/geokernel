@@ -7,6 +7,7 @@
 
 mod algebra;
 mod app;
+mod arc;
 mod canvas;
 mod cli;
 mod describe;

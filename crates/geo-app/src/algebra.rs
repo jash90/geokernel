@@ -52,9 +52,6 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     if let Some(id) = actions.toggle {
         app.wb.toggle_visible(id);
     }
-    if let Some(id) = actions.delete {
-        app.wb.delete(id);
-    }
     // A drag of a number field is one undo step.
     if actions.number_drag == Some(true) {
         app.wb.begin_gesture();
@@ -64,6 +61,10 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     }
     if actions.number_drag == Some(false) {
         app.wb.end_gesture();
+    }
+    // Last: deleting rebuilds the construction and invalidates every id.
+    if let Some(id) = actions.delete {
+        app.wb.delete(id);
     }
 }
 
@@ -190,7 +191,12 @@ fn paint_row(app: &App, ui: &mut Ui, row: &Row, actions: &mut Actions) {
     );
     egui::Popup::menu(&kebab).show(|ui| {
         ui.set_min_width(120.0);
-        if ui.button("Usuń").clicked() {
+        let text = if row.siblings.is_empty() {
+            "Usuń".to_owned()
+        } else {
+            format!("Usuń razem z {}", row.siblings.join(", "))
+        };
+        if ui.button(text).clicked() {
             actions.delete = Some(row.id);
             ui.close();
         }
@@ -271,6 +277,15 @@ fn input_row(app: &mut App, ui: &mut Ui) {
         }
     } else if response.changed() {
         app.wb.history.stop_browsing();
+    }
+    if response.has_focus()
+        && ui.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape))
+    {
+        // Escape only leaves the field.
+        app.input.clear();
+        app.input_error = None;
+        response.surrender_focus();
+        return;
     }
     if response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
         match app.wb.run_line(&app.input) {
