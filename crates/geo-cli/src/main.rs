@@ -117,6 +117,7 @@ fn describe(v: Value) -> String {
                 c / n + 0.0
             )
         }
+        Value::Bool(b) => b.to_string(),
         Value::Undefined => "undefined".to_string(),
         // `Value` is non-exhaustive: a kind this printer does not know yet
         // is shown in its debug form.

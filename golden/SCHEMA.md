@@ -90,6 +90,7 @@ carries no numeric fields. When it is `true` it carries exactly these:
 | `number` | `value` | The numeric value. |
 | `vector` | `x`, `y` | The vector's coordinates. Where GeoGebra draws it from (its start point) is not recorded. |
 | `ray` | `x`, `y`, `a`, `b`, `c` | Start point `(x, y)` and the raw GeoGebra coefficients of the line `a*x + b*y + c = 0` it lies on, not normalised. The ray points along `(b, -a)`. |
+| `boolean` | `value` | `true` or `false`, a JSON boolean. `defined` is `false` only for the prover-only "unknown" state. |
 
 All numbers are finite JSON numbers that round-trip to the same `f64`.
 A value that is not finite in GeoGebra is recorded as `defined: false`.
@@ -114,6 +115,7 @@ These rules are applied by the Rust side (`crates/geo-golden`).
   not fail the comparison.
 - Segments are compared with their end points in order.
 - Vectors are compared by `x` and `y`.
+- Booleans are compared exactly.
 - Rays: the start points must agree, and the coefficients are normalised like
   those of a line, but the sign must agree too: a ray with the opposite sign
   points the other way and fails the comparison. Rays are not counted in the
@@ -122,6 +124,8 @@ These rules are applied by the Rust side (`crates/geo-golden`).
 Free vectors come from a script line `v = (x, y)` whose label starts with a
 lower-case letter; with an upper-case label the same line makes a point, as in
 GeoGebra.
+
+The type `boolean` (the predicate commands) was added the same way.
 
 The types `vector` and `ray`, the moving of a free vector and these rules were
 added after the first golden files were written. The addition is backwards

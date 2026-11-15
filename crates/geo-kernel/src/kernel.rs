@@ -12,6 +12,8 @@
 use crate::algo::conic::ConicDef;
 use crate::algo::lines::LineDef;
 use crate::algo::measure::MeasureDef;
+use crate::algo::point::PointDef;
+use crate::algo::predicate::PredicateDef;
 use crate::algo::transform::TransformDef;
 use crate::algo::vector::VectorDef;
 use crate::algo::{
@@ -42,6 +44,8 @@ pub enum Kind {
     Number,
     Vector,
     Ray,
+    /// A true or false answer, such as the result of `AreCollinear`.
+    Boolean,
 }
 
 impl fmt::Display for Kind {
@@ -54,6 +58,7 @@ impl fmt::Display for Kind {
             Kind::Number => "number",
             Kind::Vector => "vector",
             Kind::Ray => "ray",
+            Kind::Boolean => "boolean",
         })
     }
 }
@@ -103,6 +108,10 @@ pub enum Value {
         b: f64,
         c: f64,
     },
+    /// A boolean object. GeoGebra's `GeoBoolean` is undefined only for the
+    /// prover's "unknown" answer, so the kernel reports `Undefined` only when
+    /// a predicate cannot decide.
+    Bool(bool),
     /// The object does not exist for the current positions
     /// (for example two circles that no longer meet).
     Undefined,
@@ -136,6 +145,7 @@ impl Value {
             Value::Number(v) => v.is_finite(),
             Value::Vector { x, y } => x.is_finite() && y.is_finite(),
             Value::Ray { x, y, a, b, c } => [x, y, a, b, c].iter().all(|v| v.is_finite()),
+            Value::Bool(_) => true,
             Value::Undefined => true,
         }
     }
@@ -207,6 +217,10 @@ pub enum Def {
     Transform(TransformDef),
     /// Vectors, rays and translations.
     Vector(VectorDef),
+    /// Boolean tests such as `AreCollinear`.
+    Predicate(PredicateDef),
+    /// Points from `ClosestPoint` and `Trilinear`.
+    Point(PointDef),
 }
 
 impl Def {
@@ -226,6 +240,8 @@ impl Def {
             Def::Measure(d) => d.kind(),
             Def::Transform(d) => d.kind(),
             Def::Vector(d) => d.kind(),
+            Def::Predicate(d) => d.kind(),
+            Def::Point(d) => d.kind(),
         }
     }
 
@@ -257,6 +273,8 @@ impl Def {
             Def::Measure(d) => d.parents(),
             Def::Transform(d) => d.parents(),
             Def::Vector(d) => d.parents(),
+            Def::Predicate(d) => d.parents(),
+            Def::Point(d) => d.parents(),
         }
     }
 }
@@ -381,6 +399,7 @@ impl Construction {
         // Objects the rule also reads, beyond its parents.
         let mut hidden = algo::intersect::hidden_parents(self, &def);
         hidden.extend(algo::vector::hidden_parents(self, &def));
+        hidden.extend(algo::predicate::hidden_parents(self, &def));
         let all = || parents.as_slice().iter().chain(&hidden);
         for (k, parent) in all().enumerate() {
             // An object that is read twice is still one child.
@@ -532,6 +551,8 @@ impl Construction {
             Def::Measure(d) => d.check(self),
             Def::Transform(d) => d.check(self),
             Def::Vector(d) => d.check(self),
+            Def::Predicate(d) => d.check(self),
+            Def::Point(d) => d.check(self),
         }
     }
 
@@ -586,6 +607,8 @@ impl Construction {
             Def::Measure(d) => d.compute(self),
             Def::Transform(d) => d.compute(self),
             Def::Vector(d) => d.compute(self),
+            Def::Predicate(d) => d.compute(self),
+            Def::Point(d) => d.compute(self),
         }
     }
 
