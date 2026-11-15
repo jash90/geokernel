@@ -158,3 +158,101 @@ fn render_touch_portrait() {
     );
     println!("{}", path.display());
 }
+
+/// Rendered on the GPU, `tan(x)` and `1 / (x - 2)` leave dark curve pixels
+/// next to sampled points of their graphs and none along their poles (away
+/// from the x axis and its numbers, which are dark as well).
+#[test]
+#[ignore = "needs a GPU adapter"]
+fn render_function_graphs_and_their_poles() {
+    use std::cell::RefCell;
+    use std::rc::Rc;
+    let mut app = App::new(
+        Workbench::from_script("f(x) = tan(x)\ng(x) = 1 / (x - 2)\n").unwrap(),
+        None,
+    );
+    app.view_request = None;
+    app.camera = Some(crate::view::Camera::STANDARD);
+    let app = Rc::new(RefCell::new(app));
+    let shown = app.clone();
+    let (w, h) = (1400u32, 900u32);
+    let mut harness = Harness::builder()
+        .with_size(eframe::egui::vec2(
+            w as f32 + 2.0 * MARGIN,
+            h as f32 + 2.0 * MARGIN,
+        ))
+        .with_pixels_per_point(1.0)
+        .with_context_setup(crate::theme::apply)
+        .wgpu()
+        .build_ui(move |ui| crate::app::show(&mut shown.borrow_mut(), ui));
+    harness.run();
+    let image = harness.render().expect("render");
+    image.save(out_dir().join("function-graphs.png")).unwrap();
+    // The harness's coordinates, margin included, are the image's.
+    let (rect, t) = app.borrow().view.expect("the canvas was drawn");
+    let px = |x: f64, y: f64| {
+        let (sx, sy) = t.world_to_screen(x, y);
+        (rect.min.x as f64 + sx, rect.min.y as f64 + sy)
+    };
+    let dark = |x: i64, y: i64| {
+        if x < 0 || y < 0 || x >= image.width() as i64 || y >= image.height() as i64 {
+            return false;
+        }
+        let p = image.get_pixel(x as u32, y as u32).0;
+        p[0] < 120 && p[1] < 120 && p[2] < 120
+    };
+    let inside = |(sx, sy): (f64, f64)| {
+        sx > rect.min.x as f64 + 30.0
+            && sx < rect.max.x as f64 - 30.0
+            && sy > rect.min.y as f64 + 30.0
+            && sy < rect.max.y as f64 - 30.0
+    };
+    let (_, axis_y) = px(0.0, 0.0);
+    let mut checked = 0;
+    let graphs = [f64::tan as fn(f64) -> f64, |x| 1.0 / (x - 2.0)];
+    for f in graphs {
+        for i in 0..4000 {
+            let x = -12.0 + 24.0 * i as f64 / 4000.0;
+            let (y, slope) = (f(x), (f(x + 1e-4) - f(x - 1e-4)) / 2e-4);
+            let p = px(x, y);
+            if !y.is_finite() || slope.abs() > 5.0 || !inside(p) {
+                continue;
+            }
+            let (cx, cy) = (p.0.round() as i64, p.1.round() as i64);
+            let near = (-2..=2).any(|dx| (-2..=2).any(|dy| dark(cx + dx, cy + dy)));
+            assert!(near, "no curve pixel near ({x}, {y})");
+            checked += 1;
+        }
+    }
+    assert!(checked > 1000, "{checked} points checked");
+    for pole in [
+        2.0,
+        -std::f64::consts::FRAC_PI_2,
+        std::f64::consts::FRAC_PI_2,
+        3.0 * std::f64::consts::FRAC_PI_2,
+    ] {
+        let (sx, _) = px(pole, 0.0);
+        let sx = sx.round() as i64;
+        let (top, bottom) = (rect.min.y as i64 + 40, rect.max.y as i64);
+        for y in top..bottom {
+            if (y as f64 - axis_y).abs() < 20.0 {
+                continue;
+            }
+            // Another branch may cross the pole's column; only a join is wrong.
+            let crossed = graphs.iter().any(|f| {
+                (-24..=24).any(|k| {
+                    let x = pole + k as f64 / (4.0 * t.scale());
+                    let (cx, cy) = px(x, f(x));
+                    (cx - sx as f64).abs() < 6.0 && (cy - y as f64).abs() < 4.0
+                })
+            });
+            if crossed {
+                continue;
+            }
+            assert!(
+                !dark(sx, y),
+                "a curve pixel on the pole x = {pole} at row {y}"
+            );
+        }
+    }
+}
