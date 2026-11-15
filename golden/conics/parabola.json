@@ -1,0 +1,1067 @@
+{
+  "schema": 1,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "conics-parabola-001",
+      "group": "conics",
+      "script": [
+        "F = (4.31, -3.43)",
+        "A = (-7.64, 2.94)",
+        "B = (-1.63, -4.04)",
+        "g = Line(A, B)",
+        "p = Parabola(F, g)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "F", "x": -2.88, "y": 1.03 },
+        { "action": "move", "label": "A", "x": 6.06, "y": -7.36 },
+        { "action": "move", "label": "B", "x": 4.4, "y": 2.36 }
+      ],
+      "snapshots": [
+        {
+          "F": { "type": "point", "defined": true, "x": 4.31, "y": -3.43 },
+          "A": { "type": "point", "defined": true, "x": -7.64, "y": 2.94 },
+          "B": { "type": "point", "defined": true, "x": -1.63, "y": -4.04 },
+          "g": { "type": "line", "defined": true, "a": 6.98, "b": 6.01, "c": 35.6578 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [0.8872899061370023, 1.1968161534147805, 32.0, -1.0304964300892308, -15.096513024294767, 1.8841233824236798],
+            "vertex": [2.453642753166235, -5.028382099351136],
+            "p": 4.899341818407193,
+            "eigenvectors": [
+              [0.7577986250558357, 0.6524885009434918],
+              [-0.6524885009434918, 0.7577986250558357]
+            ]
+          }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -2.88, "y": 1.03 },
+          "A": { "type": "point", "defined": true, "x": -7.64, "y": 2.94 },
+          "B": { "type": "point", "defined": true, "x": -1.63, "y": -4.04 },
+          "g": { "type": "line", "defined": true, "a": 6.98, "b": 6.01, "c": 35.6578 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [36.1201, 48.720400000000005, -477.7703711900001, -41.9498, -4.550804000000028, -301.689093],
+            "vertex": [-3.774531420724771, 0.2597802523558914],
+            "p": 2.360868418463708,
+            "eigenvectors": [
+              [0.7577986250558356, 0.6524885009434916],
+              [-0.6524885009434916, 0.7577986250558356]
+            ]
+          }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -2.88, "y": 1.03 },
+          "A": { "type": "point", "defined": true, "x": 6.06, "y": -7.36 },
+          "B": { "type": "point", "defined": true, "x": -1.63, "y": -4.04 },
+          "g": { "type": "line", "defined": true, "a": -3.3200000000000003, "b": -7.6899999999999995, "c": -36.4792 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [59.13609999999999, 11.022400000000001, -674.3782175900001, -25.5308, 80.94553599999996, -352.7883029999999],
+            "vertex": [-3.7042989516594567, -0.8792948609220552],
+            "p": 4.159267064111296,
+            "eigenvectors": [
+              [0.3963674075040832, 0.9180919770199999],
+              [0.9180919770199999, -0.3963674075040832]
+            ]
+          }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -2.88, "y": 1.03 },
+          "A": { "type": "point", "defined": true, "x": 6.06, "y": -7.36 },
+          "B": { "type": "point", "defined": true, "x": 4.4, "y": 2.36 },
+          "g": { "type": "line", "defined": true, "a": -9.72, "b": -1.6599999999999993, "c": 46.68560000000001 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [0.0347191727732836, 1.1903802775959502, -16.0, -0.20329539720260045, 9.245736775883712, -0.2854154384439196],
+            "vertex": [0.7671942324701244, 1.6528747351749384],
+            "p": 7.399999650022312,
+            "eigenvectors": [
+              [-0.9857282175571797, -0.1683445309819874],
+              [0.1683445309819874, -0.9857282175571797]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "conics-parabola-002",
+      "group": "conics",
+      "script": [
+        "F = (-5.68, 5.78)",
+        "A = (-5.95, -1.5)",
+        "B = (7.4, 3.85)",
+        "g = Line(A, B)",
+        "p = Parabola(F, g)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "F", "x": -3.68, "y": 7.6 },
+        { "action": "move", "label": "A", "x": -2.63, "y": 1.39 },
+        { "action": "move", "label": "B", "x": 5.73, "y": 1.51 }
+      ],
+      "snapshots": [
+        {
+          "F": { "type": "point", "defined": true, "x": -5.68, "y": 5.78 },
+          "A": { "type": "point", "defined": true, "x": -5.95, "y": -1.5 },
+          "B": { "type": "point", "defined": true, "x": 7.4, "y": 3.85 },
+          "g": { "type": "line", "defined": true, "a": -5.35, "b": 13.350000000000001, "c": -11.807500000000001 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [1.6968193660384827, 0.27250887123924566, 128.0, 0.679998772157744, 10.5843547621006, -9.88195356618442],
+            "vertex": [-4.441807815030578, 2.690305482366022],
+            "p": 6.6571261364696435,
+            "eigenvectors": [
+              [-0.3719900027689878, 0.9282367358814929],
+              [-0.9282367358814929, -0.3719900027689878]
+            ]
+          }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -3.68, "y": 7.6 },
+          "A": { "type": "point", "defined": true, "x": -5.95, "y": -1.5 },
+          "B": { "type": "point", "defined": true, "x": 7.4, "y": 3.85 },
+          "g": { "type": "line", "defined": true, "a": -5.35, "b": 13.350000000000001, "c": -11.807500000000001 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [1.5615223715108282, 0.2507801993495135, 128.0, 0.6257786282833655, 6.115799217061501, -12.392400257518815],
+            "vertex": [-2.265966121975392, 4.07152293988252],
+            "p": 7.602536990235984,
+            "eigenvectors": [
+              [-0.37199000276898775, 0.9282367358814929],
+              [-0.9282367358814929, -0.37199000276898775]
+            ]
+          }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -3.68, "y": 7.6 },
+          "A": { "type": "point", "defined": true, "x": -2.63, "y": 1.39 },
+          "B": { "type": "point", "defined": true, "x": 7.4, "y": 3.85 },
+          "g": { "type": "line", "defined": true, "a": -2.46, "b": 10.030000000000001, "c": -20.4115 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [1.7914586785185025, 0.1077643573658145, 128.0, 0.43938069283704045, 6.094981349138708, -10.788396287418673],
+            "vertex": [-2.9318765242258746, 4.549724202433137],
+            "p": 6.2813600999231145,
+            "eigenvectors": [
+              [-0.23820429457094283, 0.9712150709538848],
+              [-0.9712150709538848, -0.23820429457094283]
+            ]
+          }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -3.68, "y": 7.6 },
+          "A": { "type": "point", "defined": true, "x": -2.63, "y": 1.39 },
+          "B": { "type": "point", "defined": true, "x": 5.73, "y": 1.51 },
+          "g": { "type": "line", "defined": true, "a": -0.1200000000000001, "b": 8.36, "c": -11.936 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [1.8476119242600506, 3.806805548943588E-4, 128.0, 0.02652074532430697, 6.762747759858837, -11.406813661669181],
+            "vertex": [-3.635331654840924, 4.488105287251089],
+            "p": 6.224430564893108,
+            "eigenvectors": [
+              [-0.014352588463597849, 0.9998969962973159],
+              [-0.9998969962973159, -0.014352588463597849]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "conics-parabola-003",
+      "group": "conics",
+      "script": [
+        "F = (-2.88, -3.23)",
+        "A = (0.44, -1.07)",
+        "B = (-4.56, -3.34)",
+        "g = Line(A, B)",
+        "p = Parabola(F, g)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "F", "x": 0.1, "y": 0.05 },
+        { "action": "move", "label": "A", "x": 2.84, "y": -7.17 },
+        { "action": "move", "label": "B", "x": 6.01, "y": -4.13 }
+      ],
+      "snapshots": [
+        {
+          "F": { "type": "point", "defined": true, "x": -2.88, "y": -3.23 },
+          "A": { "type": "point", "defined": true, "x": 0.44, "y": -1.07 },
+          "B": { "type": "point", "defined": true, "x": -4.56, "y": -3.34 },
+          "g": { "type": "line", "defined": true, "a": 2.2699999999999996, "b": -5.0, "c": -6.3488 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [25.0, 5.152899999999998, 524.3751427299999, 11.349999999999998, 101.252128, 65.649867],
+            "vertex": [-3.0028467576916293, -2.959412427992002],
+            "p": 0.5943364703617999,
+            "eigenvectors": [
+              [0.4133912819344544, -0.9105534844371244],
+              [0.9105534844371244, 0.4133912819344544]
+            ]
+          }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": 0.1, "y": 0.05 },
+          "A": { "type": "point", "defined": true, "x": 0.44, "y": -1.07 },
+          "B": { "type": "point", "defined": true, "x": -4.56, "y": -3.34 },
+          "g": { "type": "line", "defined": true, "a": 2.2699999999999996, "b": -5.0, "c": -6.3488 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [25.0, 5.152899999999998, -39.93035019, 11.349999999999998, 11.396485999999996, -33.251644999999996],
+            "vertex": [0.3398440282692544, -0.4782908111657586],
+            "p": 1.1603729384272934,
+            "eigenvectors": [
+              [-0.4133912819344544, 0.9105534844371244],
+              [0.9105534844371244, 0.4133912819344544]
+            ]
+          }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": 0.1, "y": 0.05 },
+          "A": { "type": "point", "defined": true, "x": 2.84, "y": -7.17 },
+          "B": { "type": "point", "defined": true, "x": -4.56, "y": -3.34 },
+          "g": { "type": "line", "defined": true, "a": -3.83, "b": -7.3999999999999995, "c": -42.1808 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [1.9707234259707218, 0.5279098769762952, -64.0, -1.01998252992809, -6.063874019266428, -11.358268244361652],
+            "vertex": [-1.0842075418161607, -2.2380250155194736],
+            "p": 5.152632714928228,
+            "eigenvectors": [
+              [0.4596514470690952, 0.88809940164786],
+              [0.88809940164786, -0.4596514470690952]
+            ]
+          }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": 0.1, "y": 0.05 },
+          "A": { "type": "point", "defined": true, "x": 2.84, "y": -7.17 },
+          "B": { "type": "point", "defined": true, "x": 6.01, "y": -4.13 },
+          "g": { "type": "line", "defined": true, "a": -3.04, "b": 3.17, "c": 31.362499999999997 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [10.0489, 9.2416, -983.3652749999999, 9.6368, 93.41295, -100.38364999999999],
+            "vertex": [2.5597516912469875, -2.5149384412016276],
+            "p": 7.107541794388899,
+            "eigenvectors": [
+              [-0.6921525788814511, 0.7217512088994079],
+              [-0.7217512088994079, -0.6921525788814511]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "conics-parabola-004",
+      "group": "conics",
+      "script": [
+        "F = (5.16, -0.82)",
+        "A = (-4.23, 4.61)",
+        "B = (7.89, 0.94)",
+        "g = Line(A, B)",
+        "p = Parabola(F, g)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "F", "x": -3.87, "y": -0.62 },
+        { "action": "move", "label": "A", "x": 4.01, "y": 4.25 },
+        { "action": "move", "label": "B", "x": 1.48, "y": -6.55 }
+      ],
+      "snapshots": [
+        {
+          "F": { "type": "point", "defined": true, "x": 5.16, "y": -0.82 },
+          "A": { "type": "point", "defined": true, "x": -4.23, "y": 4.61 },
+          "B": { "type": "point", "defined": true, "x": 7.89, "y": 0.94 },
+          "g": { "type": "line", "defined": true, "a": 3.6700000000000004, "b": 12.120000000000001, "c": -40.3491 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [1.7095979657264044, 0.1567548118959768, 32.0, -0.5176752916019723, -7.906970092566376, 7.221889416172734],
+            "vertex": [5.518734202276955, 0.36470259716531217],
+            "p": 2.475649790752737,
+            "eigenvectors": [
+              [-0.28981013681089324, -0.9570841575335219],
+              [-0.9570841575335219, 0.28981013681089324]
+            ]
+          }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -3.87, "y": -0.62 },
+          "A": { "type": "point", "defined": true, "x": -4.23, "y": 4.61 },
+          "B": { "type": "point", "defined": true, "x": 7.89, "y": 0.94 },
+          "g": { "type": "line", "defined": true, "a": 3.6700000000000004, "b": 12.120000000000001, "c": -40.3491 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [146.89440000000002, 13.468900000000003, 835.33888948, -44.48040000000001, 768.687168, 588.4563380000001],
+            "vertex": [-3.159788598762934, 1.7254392869191395],
+            "p": 4.901218494648399,
+            "eigenvectors": [
+              [-0.28981013681089324, -0.9570841575335219],
+              [-0.9570841575335219, 0.28981013681089324]
+            ]
+          }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -3.87, "y": -0.62 },
+          "A": { "type": "point", "defined": true, "x": 4.01, "y": 4.25 },
+          "B": { "type": "point", "defined": true, "x": 7.89, "y": 0.94 },
+          "g": { "type": "line", "defined": true, "a": 3.31, "b": 3.88, "c": -29.763099999999998 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [15.0544, 10.956100000000001, -486.2870279599998, -12.8428, 199.176496, 131.607338],
+            "vertex": [-1.0081076103881133, 2.7347258222640862],
+            "p": 8.819209350567405,
+            "eigenvectors": [
+              [-0.6490133697592202, -0.7607770014095996],
+              [-0.7607770014095996, 0.6490133697592202]
+            ]
+          }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -3.87, "y": -0.62 },
+          "A": { "type": "point", "defined": true, "x": 4.01, "y": 4.25 },
+          "B": { "type": "point", "defined": true, "x": 1.48, "y": -6.55 },
+          "g": { "type": "line", "defined": true, "a": 10.8, "b": -2.53, "c": -32.5555 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [6.400899999999999, 116.64000000000001, 830.20759692, 27.323999999999998, 827.767683, -6.0800569999999965],
+            "vertex": [-0.6757153353072027, -1.3682907594141462],
+            "p": 6.561522256219566,
+            "eigenvectors": [
+              [-0.9736413411278104, 0.22808449935679262],
+              [0.22808449935679262, 0.9736413411278104]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "conics-parabola-005",
+      "group": "conics",
+      "script": [
+        "F = (7.97, -2.28)",
+        "A = (2.35, 5.45)",
+        "B = (5.39, -7.11)",
+        "g = Line(A, B)",
+        "p = Parabola(F, g)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "F", "x": -7.62, "y": 3.32 },
+        { "action": "move", "label": "A", "x": -7.48, "y": -4.75 },
+        { "action": "move", "label": "B", "x": -6.71, "y": -5.8 }
+      ],
+      "snapshots": [
+        {
+          "F": { "type": "point", "defined": true, "x": 7.97, "y": -2.28 },
+          "A": { "type": "point", "defined": true, "x": 2.35, "y": 5.45 },
+          "B": { "type": "point", "defined": true, "x": 5.39, "y": -7.11 },
+          "g": { "type": "line", "defined": true, "a": 12.56, "b": 3.0399999999999996, "c": -46.084 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [0.06324408893717415, 1.079573094329921, 64.0, -0.2612979463983248, -5.147182371092564, 3.5643536365926396],
+            "vertex": [6.1992147319204385, -2.708597708197601],
+            "p": 3.6438312041695022,
+            "eigenvectors": [
+              [0.971935948105015, 0.23524564349038576],
+              [-0.23524564349038576, 0.971935948105015]
+            ]
+          }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -7.62, "y": 3.32 },
+          "A": { "type": "point", "defined": true, "x": 2.35, "y": 5.45 },
+          "B": { "type": "point", "defined": true, "x": 5.39, "y": -7.11 },
+          "g": { "type": "line", "defined": true, "a": 12.56, "b": 3.0399999999999996, "c": -46.084 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [0.06283176986453072, 1.0725348306030598, 64.0, -0.25959441759819274, 12.586739923390379, -2.8169370864349546],
+            "vertex": [-2.6673669183305875, 4.518726478365846],
+            "p": 10.19127462324152,
+            "eigenvectors": [
+              [-0.971935948105015, -0.2352456434903858],
+              [-0.2352456434903858, 0.971935948105015]
+            ]
+          }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -7.62, "y": 3.32 },
+          "A": { "type": "point", "defined": true, "x": -7.48, "y": -4.75 },
+          "B": { "type": "point", "defined": true, "x": 5.39, "y": -7.11 },
+          "g": { "type": "line", "defined": true, "a": 2.3600000000000003, "b": 12.870000000000001, "c": 78.7853 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [1.885925727757434, 0.06341492706829097, 64.0, -0.34582631837665456, 12.736957123012099, -18.016739042326595],
+            "vertex": [-8.333559298274308, -0.5713170206738654],
+            "p": 7.912399137439883,
+            "eigenvectors": [
+              [0.1803648390025946, 0.9835997787980477],
+              [-0.9835997787980477, 0.1803648390025946]
+            ]
+          }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -7.62, "y": 3.32 },
+          "A": { "type": "point", "defined": true, "x": -7.48, "y": -4.75 },
+          "B": { "type": "point", "defined": true, "x": -6.71, "y": -5.8 },
+          "g": { "type": "line", "defined": true, "a": 1.0499999999999998, "b": 0.7700000000000005, "c": 11.511500000000002 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [0.5929000000000008, 1.1024999999999996, -15.384871530000026, -0.8085000000000003, 0.8318730000000016, -14.492583000000007],
+            "vertex": [-9.498684971098266, 1.9422976878612705],
+            "p": 4.659408066054271,
+            "eigenvectors": [
+              [0.8064049958557054, 0.5913636636275178],
+              [-0.5913636636275178, 0.8064049958557054]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "conics-parabola-006",
+      "group": "conics",
+      "script": [
+        "F = (6.97, 4.48)",
+        "A = (-7.87, 7.25)",
+        "B = (-3.45, -6.5)",
+        "g = Line(A, B)",
+        "p = Parabola(F, g)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "F", "x": 1.95, "y": 4.08 },
+        { "action": "move", "label": "A", "x": -4.43, "y": -0.56 },
+        { "action": "move", "label": "B", "x": -1.26, "y": -6.29 }
+      ],
+      "snapshots": [
+        {
+          "F": { "type": "point", "defined": true, "x": 6.97, "y": 4.48 },
+          "A": { "type": "point", "defined": true, "x": -7.87, "y": 7.25 },
+          "B": { "type": "point", "defined": true, "x": -3.45, "y": -6.5 },
+          "g": { "type": "line", "defined": true, "a": 13.75, "b": 4.42, "c": 76.1675 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [0.1467678453320759, 1.4203382280305277, 64.0, -0.45657417948326784, -18.790628384683913, -9.549807122540232],
+            "vertex": [0.6484404184298197, 2.44790593814253],
+            "p": 13.280289427505435,
+            "eigenvectors": [
+              [0.9520213570763452, 0.306031592601996],
+              [-0.306031592601996, 0.9520213570763452]
+            ]
+          }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": 1.95, "y": 4.08 },
+          "A": { "type": "point", "defined": true, "x": -7.87, "y": 7.25 },
+          "B": { "type": "point", "defined": true, "x": -3.45, "y": -6.5 },
+          "g": { "type": "line", "defined": true, "a": 13.75, "b": 4.42, "c": 76.1675 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [0.20352139045403922, 1.9695677239776412, -16.0, -0.6331264974531763, -15.147854654310287, -12.37337904104597],
+            "vertex": [-2.0383647516837335, 2.7979220216405745],
+            "p": 8.378729577941384,
+            "eigenvectors": [
+              [0.9520213570763452, 0.3060315926019961],
+              [-0.3060315926019961, 0.9520213570763452]
+            ]
+          }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": 1.95, "y": 4.08 },
+          "A": { "type": "point", "defined": true, "x": -4.43, "y": -0.56 },
+          "B": { "type": "point", "defined": true, "x": -3.45, "y": -6.5 },
+          "g": { "type": "line", "defined": true, "a": 5.9399999999999995, "b": 0.9799999999999995, "c": 26.863 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [0.9603999999999991, 35.28359999999999, 19.529162599999836, -5.821199999999997, -230.24201999999997, -174.20125999999996],
+            "vertex": [-1.5280892837435165, 3.5061738218739658],
+            "p": 7.050214620391133,
+            "eigenvectors": [
+              [0.9866619588243284, 0.16278261273532688],
+              [-0.16278261273532688, 0.9866619588243284]
+            ]
+          }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": 1.95, "y": 4.08 },
+          "A": { "type": "point", "defined": true, "x": -4.43, "y": -0.56 },
+          "B": { "type": "point", "defined": true, "x": -1.26, "y": -6.29 },
+          "g": { "type": "line", "defined": true, "a": 5.73, "b": 3.17, "c": 27.1591 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [10.0489, 32.8329, 139.2689272099999, -18.1641, -239.241153, -261.052091],
+            "vertex": [-1.475174852734728, 2.1850952385394287],
+            "p": 7.8287896451015495,
+            "eigenvectors": [
+              [0.8750202797638966, 0.484086262975838],
+              [-0.484086262975838, 0.8750202797638966]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "conics-parabola-007",
+      "group": "conics",
+      "script": [
+        "F = (1, 2)",
+        "A = (-1, 0)",
+        "B = (3, 0)",
+        "g = Line(A, B)",
+        "p = Parabola(F, g)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "F", "x": 1.0, "y": 0.0 },
+        { "action": "move", "label": "F", "x": 1.0, "y": 1.0E-6 },
+        { "action": "move", "label": "F", "x": 1.0, "y": -2.0 },
+        { "action": "move", "label": "F", "x": 1.0, "y": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "F": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "A": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": -0.0 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [16.0, 0.0, 80.0, -0.0, -16.0, -32.0],
+            "vertex": [1.0, 1.0],
+            "p": 2.0,
+            "eigenvectors": [
+              [0.0, 1.0],
+              [-1.0, 0.0]
+            ]
+          }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": -0.0 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "double_line",
+            "matrix": [16.0, 0.0, 16.0, -0.0, -16.0, -0.0],
+            "lines": [
+              [-1.0, 0.0, 1.0],
+              [-1.0, 0.0, 1.0]
+            ]
+          }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": 1.0, "y": 1.0E-6 },
+          "A": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": -0.0 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [62500.0, 0.0, 62500.00000006251, -0.0, -62500.0, -0.0625],
+            "vertex": [1.0, 5.000620149075985E-7],
+            "p": 1.0E-6,
+            "eigenvectors": [
+              [0.0, 1.0],
+              [-1.0, 0.0]
+            ]
+          }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": 1.0, "y": -2.0 },
+          "A": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": -0.0 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [16.0, 0.0, 80.0, -0.0, -16.0, 32.0],
+            "vertex": [1.0, -1.0],
+            "p": 2.0,
+            "eigenvectors": [
+              [-0.0, -1.0],
+              [-1.0, 0.0]
+            ]
+          }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "A": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": -0.0 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [16.0, 0.0, 80.0, -0.0, -16.0, -32.0],
+            "vertex": [1.0, 1.0],
+            "p": 2.0,
+            "eigenvectors": [
+              [0.0, 1.0],
+              [-1.0, 0.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "conics-parabola-008",
+      "group": "conics",
+      "script": [
+        "F = (3, 1)",
+        "A = (0, -2)",
+        "B = (0, 2)",
+        "g = Line(A, B)",
+        "p = Parabola(F, g)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "F", "x": -3.0, "y": 1.0 },
+        { "action": "move", "label": "B", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 4.0, "y": -2.0 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "F": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": -2.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "g": { "type": "line", "defined": true, "a": -4.0, "b": 0.0, "c": 0.0 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [0.0, 16.0, 160.0, 0.0, -48.0, -16.0],
+            "vertex": [1.5, 1.0],
+            "p": 3.0,
+            "eigenvectors": [
+              [1.0, 0.0],
+              [0.0, -1.0]
+            ]
+          }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -3.0, "y": 1.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": -2.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "g": { "type": "line", "defined": true, "a": -4.0, "b": 0.0, "c": 0.0 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [0.0, 16.0, 160.0, 0.0, 48.0, -16.0],
+            "vertex": [-1.5, 1.0],
+            "p": 3.0,
+            "eigenvectors": [
+              [-1.0, -0.0],
+              [0.0, -1.0]
+            ]
+          }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -3.0, "y": 1.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": -2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "g": { "type": "line", "defined": true, "a": -4.0, "b": 1.0, "c": 2.0 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [1.0, 16.0, 166.0, 4.0, 59.0, -19.0],
+            "vertex": [-1.2352941176470587, 0.5588235294117647],
+            "p": 3.6380343755449944,
+            "eigenvectors": [
+              [-0.9701425001453319, 0.24253562503633297],
+              [-0.24253562503633297, -0.9701425001453319]
+            ]
+          }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -3.0, "y": 1.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": -2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": -2.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": 8.0 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [16.0, 0.0, 96.0, -0.0, 48.0, -48.0],
+            "vertex": [-3.0, -0.5],
+            "p": 3.0,
+            "eigenvectors": [
+              [0.0, 1.0],
+              [-1.0, 0.0]
+            ]
+          }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -3.0, "y": 1.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": -2.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "g": { "type": "line", "defined": true, "a": -4.0, "b": 0.0, "c": 0.0 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [0.0, 16.0, 160.0, 0.0, 48.0, -16.0],
+            "vertex": [-1.5, 1.0],
+            "p": 3.0,
+            "eigenvectors": [
+              [-1.0, -0.0],
+              [0.0, -1.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "conics-parabola-009",
+      "group": "conics",
+      "script": [
+        "F = (0, 2)",
+        "A = (-2, -1)",
+        "B = (2, -1)",
+        "s = Segment(A, B)",
+        "p = Parabola(F, s)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "F", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": -2.0, "y": -3.0 }
+      ],
+      "snapshots": [
+        {
+          "F": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": -1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": -1.0 },
+          "s": { "type": "segment", "defined": true, "x1": -2.0, "y1": -1.0, "x2": 2.0, "y2": -1.0 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [16.0, 0.0, 48.0, -0.0, -0.0, -48.0],
+            "vertex": [0.0, 0.5],
+            "p": 3.0,
+            "eigenvectors": [
+              [0.0, 1.0],
+              [-1.0, 0.0]
+            ]
+          }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": -1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": -1.0 },
+          "s": { "type": "segment", "defined": true, "x1": -2.0, "y1": -1.0, "x2": 2.0, "y2": -1.0 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [16.0, 0.0, 384.0, -0.0, -48.0, -80.0],
+            "vertex": [3.0, 1.5],
+            "p": 5.0,
+            "eigenvectors": [
+              [0.0, 1.0],
+              [-1.0, 0.0]
+            ]
+          }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": -3.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": -1.0 },
+          "s": { "type": "segment", "defined": true, "x1": -2.0, "y1": -3.0, "x2": 2.0, "y2": -1.0 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [16.0, 4.0, 436.0, 8.0, -44.0, -112.0],
+            "vertex": [3.9000000000000004, 2.1999999999999997],
+            "p": 4.024922359499621,
+            "eigenvectors": [
+              [-0.4472135954999579, 0.8944271909999159],
+              [-0.8944271909999159, -0.4472135954999579]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "conics-parabola-010",
+      "group": "conics",
+      "script": [
+        "F = (0, 2)",
+        "A = (-2, -1)",
+        "B = (2, -1)",
+        "r = Ray(A, B)",
+        "p = Parabola(F, r)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "F", "x": 3.0, "y": 4.0 },
+        { "action": "move", "label": "B", "x": 2.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "F": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": -1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": -1.0 },
+          "r": { "type": "ray", "defined": true, "x": -2.0, "y": -1.0, "a": 0.0, "b": 4.0, "c": 4.0 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [16.0, 0.0, 48.0, -0.0, -0.0, -48.0],
+            "vertex": [0.0, 0.5],
+            "p": 3.0,
+            "eigenvectors": [
+              [0.0, 1.0],
+              [-1.0, 0.0]
+            ]
+          }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": -1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": -1.0 },
+          "r": { "type": "ray", "defined": true, "x": -2.0, "y": -1.0, "a": 0.0, "b": 4.0, "c": 4.0 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [16.0, 0.0, 384.0, -0.0, -48.0, -80.0],
+            "vertex": [3.0, 1.5],
+            "p": 5.0,
+            "eigenvectors": [
+              [0.0, 1.0],
+              [-1.0, 0.0]
+            ]
+          }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": -1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "r": { "type": "ray", "defined": true, "x": -2.0, "y": -1.0, "a": -2.0, "b": 4.0, "c": 0.0 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [16.0, 4.0, 500.0, 8.0, -60.0, -80.0],
+            "vertex": [3.5000000000000004, 2.9999999999999996],
+            "p": 2.23606797749979,
+            "eigenvectors": [
+              [-0.4472135954999579, 0.8944271909999159],
+              [-0.8944271909999159, -0.4472135954999579]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "conics-parabola-011",
+      "group": "conics",
+      "script": [
+        "F = (0, 2)",
+        "A = (-2, -1)",
+        "B = (2, -1)",
+        "g = Line(A, B)",
+        "p = Parabola(F, g)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": -2.0, "y": -1.0 },
+        { "action": "move", "label": "B", "x": 2.0, "y": -1.0 }
+      ],
+      "snapshots": [
+        {
+          "F": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": -1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": -1.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": 4.0 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [16.0, 0.0, 48.0, -0.0, -0.0, -48.0],
+            "vertex": [0.0, 0.5],
+            "p": 3.0,
+            "eigenvectors": [
+              [0.0, 1.0],
+              [-1.0, 0.0]
+            ]
+          }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": -1.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": -1.0 },
+          "g": { "type": "line", "defined": false },
+          "p": { "type": "conic", "defined": false }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": -1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": -1.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": 4.0 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [16.0, 0.0, 48.0, -0.0, -0.0, -48.0],
+            "vertex": [0.0, 0.5],
+            "p": 3.0,
+            "eigenvectors": [
+              [0.0, 1.0],
+              [-1.0, 0.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "conics-parabola-012",
+      "group": "conics",
+      "script": [
+        "F = (500, 300)",
+        "A = (-400, -100)",
+        "B = (600, -200)",
+        "g = Line(A, B)",
+        "p = Parabola(F, g)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "F", "x": 0.001, "y": 0.002 },
+        { "action": "move", "label": "A", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 0.001, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "F": { "type": "point", "defined": true, "x": 500.0, "y": 300.0 },
+          "A": { "type": "point", "defined": true, "x": -400.0, "y": -100.0 },
+          "B": { "type": "point", "defined": true, "x": 600.0, "y": -200.0 },
+          "g": { "type": "line", "defined": true, "a": 100.0, "b": 1000.0, "c": 140000.0 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [1.6191723285978998, 0.016191723285979, 524288.0, -0.16191723285978998, -840.35043854231, -717.2933415688697],
+            "vertex": [475.7425742574259, 57.42574257425734],
+            "p": 487.5682232028948,
+            "eigenvectors": [
+              [0.09950371902099893, 0.9950371902099893],
+              [-0.9950371902099893, 0.09950371902099893]
+            ]
+          }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": 0.001, "y": 0.002 },
+          "A": { "type": "point", "defined": true, "x": -400.0, "y": -100.0 },
+          "B": { "type": "point", "defined": true, "x": 600.0, "y": -200.0 },
+          "g": { "type": "line", "defined": true, "a": 100.0, "b": 1000.0, "c": 140000.0 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [1.6718367351246313, 0.016718367351246315, -32768.0, -0.16718367351246313, -23.407402846847315, -234.06052002765333],
+            "vertex": [-6.92979702970297, -69.3059702970297],
+            "p": 139.30729620749793,
+            "eigenvectors": [
+              [0.09950371902099893, 0.9950371902099893],
+              [-0.9950371902099893, 0.09950371902099893]
+            ]
+          }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": 0.001, "y": 0.002 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 600.0, "y": -200.0 },
+          "g": { "type": "line", "defined": true, "a": 200.0, "b": 600.0, "c": -0.0 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [1.0, 0.1111111111111111, 5.555555555555555E-6, -0.3333333333333333, -0.0011111111111111111, -0.0022222222222222222],
+            "vertex": [6.5E-4, 9.499999999999999E-4],
+            "p": 0.0022135943621178654,
+            "eigenvectors": [
+              [0.3162277660168379, 0.9486832980505138],
+              [-0.9486832980505138, 0.3162277660168379]
+            ]
+          }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": 0.001, "y": 0.002 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.001, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 0.001, "c": 0.0 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [1.0, 0.0, 4.9999999999999996E-6, -0.0, -0.001, -0.002],
+            "vertex": [0.001, 0.001],
+            "p": 0.002,
+            "eigenvectors": [
+              [0.0, 1.0],
+              [-1.0, 0.0]
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

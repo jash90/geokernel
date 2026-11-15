@@ -2,9 +2,12 @@ package geokernel.harness;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -29,6 +32,8 @@ import org.geogebra.common.kernel.geos.GeoPolygon;
 import org.geogebra.common.kernel.geos.GeoRay;
 import org.geogebra.common.kernel.geos.GeoSegment;
 import org.geogebra.common.kernel.geos.GeoVector;
+import org.geogebra.common.kernel.kernelND.GeoConicND;
+import org.geogebra.common.kernel.kernelND.GeoConicNDConstants;
 import org.geogebra.common.kernel.kernelND.GeoElementND;
 import org.geogebra.common.kernel.kernelND.GeoPointND;
 import org.geogebra.common.kernel.matrix.Coords;
@@ -65,6 +70,13 @@ final class Session {
      * on to the objects themselves instead of looking labels up.
      */
     private final Map<String, GeoElement> objects = new LinkedHashMap<>();
+    /**
+     * The scripted objects recorded as general conics (type `conic`): those
+     * made by `Conic`, `Ellipse`, `Hyperbola` or `Parabola`, and the images
+     * of such objects under a transformation. Every other `GeoConic` is a
+     * `circle`.
+     */
+    private final Set<GeoElement> conics = Collections.newSetFromMap(new IdentityHashMap<>());
 
     Session() {
         LocalizationCommon loc = new LocalizationCommon(2);
@@ -118,7 +130,7 @@ final class Session {
             throw new IllegalStateException("GeoGebra labelled '" + line + "' as "
                     + geo.getLabelSimple());
         }
-        String actual = typeOf(geo);
+        String actual = "conic".equals(expected) && geo instanceof GeoConic ? "conic" : typeOf(geo);
         boolean expression = expected == null;
         if (expression) {
             expected = expressionType(label, actual, line);
@@ -136,6 +148,9 @@ final class Session {
             throw new IllegalStateException("unexpected dependency state for: " + line);
         }
         objects.put(label, geo);
+        if (actual.equals("conic")) {
+            conics.add(geo);
+        }
         return geo;
     }
 
@@ -254,7 +269,7 @@ final class Session {
     Map<String, Object> snapshot() {
         Map<String, Object> snap = new LinkedHashMap<>();
         for (Map.Entry<String, GeoElement> e : objects.entrySet()) {
-            snap.put(e.getKey(), describe(e.getValue()));
+            snap.put(e.getKey(), describe(e.getValue(), schemaType(e.getValue())));
         }
         return snap;
     }
@@ -335,6 +350,11 @@ final class Session {
         return false;
     }
 
+    /** The schema type of a scripted object: `conic` for a general conic, else {@link #typeOf}. */
+    private String schemaType(GeoElement geo) {
+        return conics.contains(geo) ? "conic" : typeOf(geo);
+    }
+
     /** The schema type of a GeoGebra object; the class decides, not the state. */
     static String typeOf(GeoElement geo) {
         if (geo instanceof GeoPolygon) {
@@ -394,7 +414,7 @@ final class Session {
             default:
                 return null;
         }
-        return typeOf(transformedSource(definition));
+        return schemaType(transformedSource(definition));
     }
 
     /** The object a transformation command transforms: its first argument. */
@@ -544,6 +564,11 @@ final class Session {
             case "Circle":
             case "Incircle":
                 return "circle";
+            case "Conic":
+            case "Ellipse":
+            case "Hyperbola":
+            case "Parabola":
+                return "conic";
             case "Vector":
             case "Direction":
             case "UnitVector":
@@ -560,8 +585,7 @@ final class Session {
         }
     }
 
-    private static Map<String, Object> describe(GeoElement geo) {
-        String type = typeOf(geo);
+    private static Map<String, Object> describe(GeoElement geo, String type) {
         Map<String, Object> obj = new LinkedHashMap<>();
         obj.put("type", type);
         if (geo instanceof GeoBoolean) {
@@ -598,9 +622,9 @@ final class Session {
         return obj;
     }
 
-    /** Whether a field is finite: a number, or a list of finite fields or nulls. */
+    /** Whether a field is finite: a number, or a list of finite fields or nulls; a name is. */
     private static boolean finite(Object v) {
-        if (v == null) {
+        if (v == null || v instanceof String) {
             return true;
         }
         if (v instanceof List) {
@@ -672,6 +696,8 @@ final class Session {
                 f.put("r", c.getHalfAxis(0));
                 return f;
             }
+            case "conic":
+                return conicFields((GeoConicND) geo);
             case "number":
                 f.put("value", ((GeoNumeric) geo).getDouble());
                 return f;
@@ -722,6 +748,74 @@ final class Session {
             default:
                 throw new IllegalStateException(type);
         }
+    }
+
+    /** `[x, y]`. */
+    private static List<Object> pair(double x, double y) {
+        return Arrays.asList(x, y);
+    }
+
+    /**
+     * The fields of a general conic: its type, its raw matrix as GeoGebra
+     * holds it, and the parts its type has (see golden/SCHEMA.md).
+     */
+    private static Map<String, Object> conicFields(GeoConicND c) {
+        Map<String, Object> f = new LinkedHashMap<>();
+        int t = c.getType();
+        String name;
+        switch (t) {
+            case GeoConicNDConstants.CONIC_SINGLE_POINT: name = "single_point"; break;
+            case GeoConicNDConstants.CONIC_INTERSECTING_LINES: name = "intersecting_lines"; break;
+            case GeoConicNDConstants.CONIC_ELLIPSE: name = "ellipse"; break;
+            case GeoConicNDConstants.CONIC_CIRCLE: name = "circle"; break;
+            case GeoConicNDConstants.CONIC_HYPERBOLA: name = "hyperbola"; break;
+            case GeoConicNDConstants.CONIC_EMPTY: name = "empty"; break;
+            case GeoConicNDConstants.CONIC_DOUBLE_LINE: name = "double_line"; break;
+            case GeoConicNDConstants.CONIC_PARALLEL_LINES: name = "parallel_lines"; break;
+            case GeoConicNDConstants.CONIC_PARABOLA: name = "parabola"; break;
+            default:
+                throw new IllegalStateException("conic of unsupported type " + t);
+        }
+        f.put("conic_type", name);
+        List<Object> matrix = new ArrayList<>();
+        for (double v : c.getMatrix()) {
+            matrix.add(v);
+        }
+        f.put("matrix", matrix);
+        Coords mid = c.getMidpoint2D();
+        List<Object> eigenvectors = Arrays.asList(
+                pair(c.getEigenvec(0).getX(), c.getEigenvec(0).getY()),
+                pair(c.getEigenvec(1).getX(), c.getEigenvec(1).getY()));
+        switch (t) {
+            case GeoConicNDConstants.CONIC_CIRCLE:
+            case GeoConicNDConstants.CONIC_ELLIPSE:
+            case GeoConicNDConstants.CONIC_HYPERBOLA:
+                f.put("midpoint", pair(mid.getX(), mid.getY()));
+                f.put("half_axes", pair(c.getHalfAxis(0), c.getHalfAxis(1)));
+                f.put("eigenvectors", eigenvectors);
+                break;
+            case GeoConicNDConstants.CONIC_PARABOLA:
+                f.put("vertex", pair(mid.getX(), mid.getY()));
+                f.put("p", c.p);
+                f.put("eigenvectors", eigenvectors);
+                break;
+            case GeoConicNDConstants.CONIC_SINGLE_POINT:
+                f.put("point", pair(mid.getX(), mid.getY()));
+                break;
+            case GeoConicNDConstants.CONIC_INTERSECTING_LINES:
+            case GeoConicNDConstants.CONIC_PARALLEL_LINES:
+            case GeoConicNDConstants.CONIC_DOUBLE_LINE: {
+                List<Object> lines = new ArrayList<>();
+                for (GeoLine l : c.getLines()) {
+                    lines.add(Arrays.asList(l.x, l.y, l.z));
+                }
+                f.put("lines", lines);
+                break;
+            }
+            default:
+                break;
+        }
+        return f;
     }
 
     /** Turns every GeoGebra error report into an exception. */

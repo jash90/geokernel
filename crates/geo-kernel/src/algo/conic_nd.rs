@@ -228,7 +228,8 @@ impl ConicData {
             eccentricity: 0.0,
             p: 0.0,
             mu: [0.0; 2],
-            lines: [[0.0; 3]; 2],
+            // `new GeoLine(cons)` has NaN coordinates
+            lines: [[f64::NAN; 3]; 2],
             err_det_s: STANDARD_PRECISION,
             scratch_eigenvec: [0.0; 2],
             scratch_lambda: 0.0,

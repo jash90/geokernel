@@ -144,6 +144,118 @@ pub enum ExpectedData {
         vertices: Vec<Option<(f64, f64)>>,
         length: f64,
     },
+    /// A general conic: its type name (`ConicType::name`), its raw matrix
+    /// `[A00, A11, A22, A01, A02, A12]` and the parts its type records.
+    Conic {
+        conic_type: String,
+        matrix: [f64; 6],
+        parts: ConicParts,
+    },
+}
+
+/// The parts of a general conic that its type records (`golden/SCHEMA.md`).
+#[derive(Debug, Clone, PartialEq)]
+pub enum ConicParts {
+    /// A circle, an ellipse or a hyperbola.
+    Central {
+        midpoint: (f64, f64),
+        half_axes: (f64, f64),
+        eigenvectors: [(f64, f64); 2],
+    },
+    Parabola {
+        vertex: (f64, f64),
+        p: f64,
+        eigenvectors: [(f64, f64); 2],
+    },
+    SinglePoint {
+        point: (f64, f64),
+    },
+    /// Intersecting, parallel or double lines, raw `[x, y, z]` in GeoGebra's order.
+    Lines {
+        lines: [[f64; 3]; 2],
+    },
+    /// An empty conic: the matrix only.
+    Empty,
+}
+
+/// A list of exactly `N` numbers.
+fn numbers<const N: usize>(name: &str, v: &serde_json::Value) -> Result<[f64; N], String> {
+    let list = v
+        .as_array()
+        .filter(|l| l.len() == N)
+        .ok_or_else(|| format!("`{name}` must be a list of {N} numbers, got {v}"))?;
+    let mut out = [0.0; N];
+    for (slot, x) in out.iter_mut().zip(list) {
+        *slot = number(name, x)?;
+    }
+    Ok(out)
+}
+
+fn pair(name: &str, v: &serde_json::Value) -> Result<(f64, f64), String> {
+    let [x, y] = numbers::<2>(name, v)?;
+    Ok((x, y))
+}
+
+fn pairs(name: &str, v: &serde_json::Value) -> Result<[(f64, f64); 2], String> {
+    match v.as_array().map(Vec::as_slice) {
+        Some([a, b]) => Ok([pair(name, a)?, pair(name, b)?]),
+        _ => Err(format!("`{name}` must be two pairs, got {v}")),
+    }
+}
+
+/// The data of a defined conic: the fields its type needs, exactly.
+fn conic_data(raw: &RawObject) -> Result<ExpectedData, String> {
+    let conic_type = raw
+        .fields
+        .get("conic_type")
+        .and_then(|v| v.as_str())
+        .ok_or("a defined conic needs a `conic_type` name")?
+        .to_string();
+    let parts: &[&str] = match conic_type.as_str() {
+        "circle" | "ellipse" | "hyperbola" => &["midpoint", "half_axes", "eigenvectors"],
+        "parabola" => &["vertex", "p", "eigenvectors"],
+        "single_point" => &["point"],
+        "intersecting_lines" | "parallel_lines" | "double_line" => &["lines"],
+        "empty" => &[],
+        other => return Err(format!("unknown conic type `{other}`")),
+    };
+    let mut expected: BTreeSet<&str> = parts.iter().copied().collect();
+    expected.insert("conic_type");
+    expected.insert("matrix");
+    let got: BTreeSet<&str> = raw.fields.keys().map(String::as_str).collect();
+    if expected != got {
+        return Err(format!(
+            "defined {conic_type} conic must carry exactly {expected:?}, got {got:?}"
+        ));
+    }
+    let f = |n: &str| &raw.fields[n];
+    let parts = match conic_type.as_str() {
+        "circle" | "ellipse" | "hyperbola" => ConicParts::Central {
+            midpoint: pair("midpoint", f("midpoint"))?,
+            half_axes: pair("half_axes", f("half_axes"))?,
+            eigenvectors: pairs("eigenvectors", f("eigenvectors"))?,
+        },
+        "parabola" => ConicParts::Parabola {
+            vertex: pair("vertex", f("vertex"))?,
+            p: number("p", f("p"))?,
+            eigenvectors: pairs("eigenvectors", f("eigenvectors"))?,
+        },
+        "single_point" => ConicParts::SinglePoint {
+            point: pair("point", f("point"))?,
+        },
+        "empty" => ConicParts::Empty,
+        _ => match f("lines").as_array().map(Vec::as_slice) {
+            Some([a, b]) => ConicParts::Lines {
+                lines: [numbers::<3>("lines", a)?, numbers::<3>("lines", b)?],
+            },
+            _ => return Err(format!("`lines` must be two triples, got {}", f("lines"))),
+        },
+    };
+    Ok(ExpectedData::Conic {
+        conic_type,
+        matrix: numbers::<6>("matrix", f("matrix"))?,
+        parts,
+    })
 }
 
 /// Where a function is sampled (`golden/SCHEMA.md`).
@@ -225,6 +337,7 @@ impl TryFrom<RawObject> for Expected {
             "function" => (Kind::Function, &[]),
             "polygon" => (Kind::Polygon, &["vertices", "area", "signed_area"]),
             "polyline" => (Kind::PolyLine, &["vertices", "length"]),
+            "conic" => (Kind::Conic, &[]),
             other => return Err(format!("unknown object type `{other}`")),
         };
         if raw.samples.is_some() && (kind != Kind::Function || !raw.defined) {
@@ -243,6 +356,12 @@ impl TryFrom<RawObject> for Expected {
             return Ok(Expected {
                 kind,
                 data: Some(function_samples(&raw)?),
+            });
+        }
+        if kind == Kind::Conic {
+            return Ok(Expected {
+                kind,
+                data: Some(conic_data(&raw)?),
             });
         }
         let expected: BTreeSet<&str> = names.iter().copied().collect();
@@ -958,5 +1077,47 @@ mod tests {
                "t_{2}":{"type":"point","defined":true,"x":1.0,"y":0.0}}"#,
         );
         assert!(parse_file(&fixed, "t").is_ok());
+    }
+
+    #[test]
+    fn conics_carry_the_fields_of_their_type() {
+        let parse = |s: &str| serde_json::from_str::<Expected>(s);
+        let e = parse(
+            r#"{"type":"conic","defined":true,"conic_type":"single_point","matrix":[1,1,0,0,0,0],"point":[0,0]}"#,
+        )
+        .unwrap();
+        assert_eq!(
+            e.data,
+            Some(ExpectedData::Conic {
+                conic_type: "single_point".into(),
+                matrix: [1.0, 1.0, 0.0, 0.0, 0.0, 0.0],
+                parts: ConicParts::SinglePoint { point: (0.0, 0.0) },
+            })
+        );
+        for bad in [
+            // a field of another type
+            r#"{"type":"conic","defined":true,"conic_type":"single_point","matrix":[1,1,0,0,0,0],"lines":[[1,0,0],[0,1,0]]}"#,
+            // a short matrix
+            r#"{"type":"conic","defined":true,"conic_type":"empty","matrix":[1,1,0,0,0]}"#,
+            // an unknown type
+            r#"{"type":"conic","defined":true,"conic_type":"line","matrix":[1,1,0,0,0,0]}"#,
+            // no type
+            r#"{"type":"conic","defined":true,"matrix":[1,1,0,0,0,0]}"#,
+            // fields on an undefined conic
+            r#"{"type":"conic","defined":false,"conic_type":"empty"}"#,
+        ] {
+            assert!(parse(bad).is_err(), "{bad}");
+        }
+        let lines = parse(
+            r#"{"type":"conic","defined":true,"conic_type":"double_line","matrix":[0,1,-1,0,0,0],"lines":[[0,1,-1],[0,1,-1]]}"#,
+        )
+        .unwrap();
+        assert!(matches!(
+            lines.data,
+            Some(ExpectedData::Conic {
+                parts: ConicParts::Lines { .. },
+                ..
+            })
+        ));
     }
 }

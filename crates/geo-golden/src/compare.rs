@@ -1,7 +1,7 @@
 //! The comparison rules of `golden/SCHEMA.md`.
 
-use crate::model::{Expected, ExpectedData, SAMPLE_XS};
-use geo_kernel::{Kind, Value};
+use crate::model::{ConicParts, Expected, ExpectedData, SAMPLE_XS};
+use geo_kernel::{ConicData, Kind, Value};
 
 /// Result of a successful comparison.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -246,6 +246,118 @@ pub fn compare_sampled(
         }
         _ => Err("kernel value has a different shape than its kind".into()),
     }
+}
+
+/// How a conic's matrix compares with GeoGebra's: raw, as GeoGebra holds it
+/// (this decides the comparison), and up to a common factor (counted only).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct MatrixAgreement {
+    pub raw: bool,
+    pub up_to_scale: bool,
+}
+
+/// Whether two matrices agree up to a common non-zero factor: each is
+/// divided by its entry of largest magnitude (signed), then compared like
+/// numbers.
+fn matrices_agree_up_to_scale(e: &[f64; 6], k: &[f64; 6]) -> bool {
+    let unit = |m: &[f64; 6]| {
+        let big = m
+            .iter()
+            .copied()
+            .fold(0.0_f64, |b, v| if v.abs() > b.abs() { v } else { b });
+        (big != 0.0).then(|| m.map(|v| v / big))
+    };
+    match (unit(e), unit(k)) {
+        (Some(a), Some(b)) => a.iter().zip(&b).all(|(&p, &q)| numbers_agree(p, q)),
+        _ => false,
+    }
+}
+
+/// Compares a recorded conic with the kernel's record `data` of the object
+/// (`Construction::conic`). The type name, the raw matrix and the parts of
+/// the type must agree; the lines of a degenerate conic in GeoGebra's order.
+/// Also tells how the matrices compare when both are defined.
+pub fn compare_conic(
+    expected: &Expected,
+    kind: Kind,
+    actual: &Value,
+    data: Option<&ConicData>,
+) -> (Result<Sign, String>, Option<MatrixAgreement>) {
+    if expected.kind != kind {
+        return (
+            Err(format!(
+                "type mismatch: expected {}, got {kind}",
+                expected.kind
+            )),
+            None,
+        );
+    }
+    let (conic_type, matrix, parts) = match (&expected.data, actual, data) {
+        (None, Value::Undefined, _) => return (Ok(Sign::NotApplicable), None),
+        (None, _, _) => return (Err("expected undefined, kernel has a value".into()), None),
+        (Some(_), Value::Undefined, _) | (Some(_), _, None) => {
+            return (Err("expected a value, kernel is undefined".into()), None)
+        }
+        (
+            Some(ExpectedData::Conic {
+                conic_type,
+                matrix,
+                parts,
+            }),
+            Value::Conic { .. },
+            Some(_),
+        ) => (conic_type, matrix, parts),
+        _ => {
+            return (
+                Err("kernel value has a different shape than its kind".into()),
+                None,
+            )
+        }
+    };
+    let d = data.expect("matched above");
+    let agreement = MatrixAgreement {
+        raw: matrix
+            .iter()
+            .zip(&d.matrix)
+            .all(|(&p, &q)| numbers_agree(p, q)),
+        up_to_scale: matrices_agree_up_to_scale(matrix, &d.matrix),
+    };
+    let result = if conic_type != d.ty.name() {
+        Err(format!("conic type differs: kernel has {}", d.ty.name()))
+    } else if !agreement.raw {
+        Err(format!("matrix differs: kernel has {:?}", d.matrix))
+    } else {
+        let pt = |e: (f64, f64), k: [f64; 2]| all_agree(&[(e.0, k[0]), (e.1, k[1])]);
+        let ev = |e: &[(f64, f64); 2]| pt(e[0], d.eigenvec[0]) && pt(e[1], d.eigenvec[1]);
+        let ok = match parts {
+            ConicParts::Central {
+                midpoint,
+                half_axes,
+                eigenvectors,
+            } => {
+                pt(*midpoint, d.midpoint)
+                    && all_agree(&[(half_axes.0, d.half_axes[0]), (half_axes.1, d.half_axes[1])])
+                    && ev(eigenvectors)
+            }
+            ConicParts::Parabola {
+                vertex,
+                p,
+                eigenvectors,
+            } => pt(*vertex, d.midpoint) && numbers_agree(*p, d.p) && ev(eigenvectors),
+            ConicParts::SinglePoint { point } => pt(*point, d.midpoint),
+            ConicParts::Lines { lines } => lines
+                .iter()
+                .zip(&d.lines)
+                .all(|(e, k)| all_agree(&[(e[0], k[0]), (e[1], k[1]), (e[2], k[2])])),
+            ConicParts::Empty => true,
+        };
+        if ok {
+            Ok(Sign::NotApplicable)
+        } else {
+            Err(format!("parts differ: kernel has {d:?}"))
+        }
+    };
+    (result, Some(agreement))
 }
 
 #[cfg(test)]
@@ -572,5 +684,63 @@ mod tests {
         assert!(compare_object(&e, Kind::PolyLine, &line, &filled).is_err());
         let longer = Value::PolyLine { length: 5.0 };
         assert!(compare_object(&e, Kind::PolyLine, &longer, &holed).is_err());
+    }
+
+    #[test]
+    fn conics_compare_the_raw_matrix_and_count_the_scale() {
+        use geo_kernel::script::load;
+        let c = load("F = (0, 1)\nA = (0, -1)\nB = (1, -1)\ng = Line(A, B)\np = Parabola(F, g)\n")
+            .unwrap();
+        let id = c.id("p").unwrap();
+        let d = c.conic(id).unwrap();
+        let expected = |matrix: [f64; 6]| Expected {
+            kind: Kind::Conic,
+            data: Some(ExpectedData::Conic {
+                conic_type: "parabola".into(),
+                matrix,
+                parts: ConicParts::Parabola {
+                    vertex: (d.midpoint[0], d.midpoint[1]),
+                    p: d.p,
+                    eigenvectors: [
+                        (d.eigenvec[0][0], d.eigenvec[0][1]),
+                        (d.eigenvec[1][0], d.eigenvec[1][1]),
+                    ],
+                },
+            }),
+        };
+        let (r, a) = compare_conic(&expected(d.matrix), Kind::Conic, &c.value(id), Some(&d));
+        assert_eq!(r, Ok(Sign::NotApplicable));
+        assert_eq!(
+            a,
+            Some(MatrixAgreement {
+                raw: true,
+                up_to_scale: true
+            })
+        );
+        // the same conic with another scale fails, and is counted as agreeing up to scale
+        let (r, a) = compare_conic(
+            &expected(d.matrix.map(|v| 2.0 * v)),
+            Kind::Conic,
+            &c.value(id),
+            Some(&d),
+        );
+        assert!(r.is_err());
+        assert_eq!(
+            a,
+            Some(MatrixAgreement {
+                raw: false,
+                up_to_scale: true
+            })
+        );
+        // an undefined expectation against a defined conic
+        let undefined = Expected {
+            kind: Kind::Conic,
+            data: None,
+        };
+        assert!(
+            compare_conic(&undefined, Kind::Conic, &c.value(id), Some(&d))
+                .0
+                .is_err()
+        );
     }
 }
