@@ -144,11 +144,9 @@ impl fmt::Display for ImportError {
                 "the archive lists {n} entries, more than the {} allowed",
                 archive::MAX_ZIP_ENTRIES
             ),
-            ImportError::TooManyItems => write!(
-                f,
-                "the construction has more than {} items",
-                xml::MAX_ITEMS
-            ),
+            ImportError::TooManyItems => {
+                write!(f, "the construction has more than {} items", xml::MAX_ITEMS)
+            }
             ImportError::Internal(e) => write!(f, "internal error: {e}"),
             ImportError::BadNumber { label, text } => {
                 write!(f, "object `{label}`: `{text}` is not a number")

@@ -201,8 +201,32 @@ What the importer reads, and where GeoGebra writes it (`MyXMLHandler`,
   object that was undefined when it was created) has an empty name and no element.
 - The images of the end points of a transformed segment are separate commands
   followed by `Segment`, not one `Mirror` of the segment.
-- `AlgoDistanceLineLine` writes the two inputs of `Distance(line, line)` in the
-  opposite order, so GeoGebra computes another value when it reads the file back
-  (see `crates/geo-import/known-import-gaps.toml`).
+- `AlgoDistanceLineLine.setInputOutput` writes `input[0] = h; input[1] = g`, the
+  reverse of the order it computes in. `GeoLine.distance(GeoLine)` is 0 for lines
+  that are not parallel and treats two lines as parallel when
+  `isZero(g.x * y - g.y * x)` on the raw coefficients, so the order matters only
+  for lines whose coefficients are about 1e-6 (a line through two points 1e-6
+  apart): a point of `g` is chosen and the distance is measured with the
+  normalisation of `this`. Reading the file back evaluates the saved order, so
+  GeoGebra computes another value than before saving for these lines (see
+  `crates/geo-import/known-import-gaps.toml`, which pins all five values).
+- `Intersect` of a line and a conic, or of two conics, is saved without an index
+  and lists both points as outputs (`a0`, `a1`); the importer maps output `n` to
+  `Intersect(a, b, n + 1)`. `Polygon` lists the polygon, its sides and (for
+  `Polygon(A, B, n)`) the new vertices, in an order other than the one the
+  kernel creates them in; the importer matches them by label.
+- The same files after the free points were moved are in `golden/ggb/saved/`:
+  `<id>.xml` and `<id>.snapshot` (the golden field format of every labelled
+  object, taken in the same state; extension `.snapshot` so the golden loader
+  skips it). They come from `tools/ggb-harness/saved/saved.json`
+  (`harness.sh saved`).
+- Several `<construction>` sections: GeoGebra's `MyXMLHandler` appends the
+  elements of each, and so does the importer (with a note).
+- An angle command's inputs are objects; numbers in command inputs are written
+  as text (`30°`) or plain radians whatever the `<angleUnit>`, which only
+  affects display, so the unit does not change what the importer computes
+  (`saved/` has cases under both units).
+- `<fixed>`, `<auxiliary>`, `<condition>` and a vector's `<startPoint>` are
+  counted and reported as notes; no value depends on them.
 - `<kernel>`: `<continuous val=>`, `<decimals val=>`, `<angleUnit val=>`.
 - `<show object=>` of an element: `false` for an object that is hidden.

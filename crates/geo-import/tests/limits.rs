@@ -54,12 +54,18 @@ fn timed<T>(f: impl FnOnce() -> T) -> (T, Duration) {
 fn a_deflate_bomb_stops_at_the_declared_size() {
     // 8 MiB of zeros deflates to a few KiB; the headers claim 1 KiB.
     let zeros = vec![b' '; 8 << 20];
-    let mut zip = zip_with(&[("geogebra.xml", &zeros)], zip::CompressionMethod::Deflated);
+    let mut zip = zip_with(
+        &[("geogebra.xml", &zeros)],
+        zip::CompressionMethod::Deflated,
+    );
     assert!(zip.len() < 100_000, "the archive is small: {}", zip.len());
     patch_u32(&mut zip, LOCAL, 22, 1024);
     patch_u32(&mut zip, CENTRAL, 24, 1024);
     let (r, took) = timed(|| import(&zip));
-    assert!(matches!(&r, Err(ImportError::Zip(m)) if m.contains("larger")), "{r:?}");
+    assert!(
+        matches!(&r, Err(ImportError::Zip(m)) if m.contains("larger")),
+        "{r:?}"
+    );
     assert!(took < BOUND);
 }
 
@@ -144,7 +150,10 @@ fn damaged_archives_are_errors() {
     }
     assert!(matches!(import(&copy), Err(ImportError::Zip(m)) if m.contains("method")));
     // An archive without the construction.
-    let other = zip_with(&[("other.xml", SMALL.as_bytes())], zip::CompressionMethod::Stored);
+    let other = zip_with(
+        &[("other.xml", SMALL.as_bytes())],
+        zip::CompressionMethod::Stored,
+    );
     assert_eq!(import(&other), Err(ImportError::MissingXml));
 }
 

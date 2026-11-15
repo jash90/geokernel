@@ -6,13 +6,13 @@
 
 use geo_golden::compare::{compare_object, numbers_agree};
 use geo_golden::model::ExpectedData;
-use geo_kernel::Value;
-use serde::Deserialize;
 use geo_golden::model::{self, Case};
 use geo_golden::{gaps, repo_root};
 use geo_import::import;
 use geo_kernel::script::exec;
 use geo_kernel::Construction;
+use geo_kernel::Value;
+use serde::Deserialize;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -178,9 +178,10 @@ fn compare_case(
         .map(|s| (s.label.as_str(), s.reason.as_str()))
         .collect();
     for m in &imported.mismatched {
-        totals
-            .mismatched
-            .insert(format!("{}:{}", case.id, m.label), (m.saved.clone(), m.computed.clone()));
+        totals.mismatched.insert(
+            format!("{}:{}", case.id, m.label),
+            (m.saved.clone(), m.computed.clone()),
+        );
     }
     // What the kernel gives for the golden script itself.
     let direct = geo_kernel::script::load(&case.script.join("\n")).ok();
@@ -280,7 +281,9 @@ fn compare_case(
                              the golden script {:?}",
                             case.id,
                             c.value(id),
-                            direct.as_ref().and_then(|d| d.id(label).map(|i| d.value(i)))
+                            direct
+                                .as_ref()
+                                .and_then(|d| d.id(label).map(|i| d.value(i)))
                         ));
                     }
                 } else {
@@ -320,7 +323,11 @@ fn imported_constructions_agree_with_the_golden_snapshots() {
     files(&root.join("golden/ggb"), "xml", &mut xml);
     // `saved/` holds files saved after moves, with their own snapshots
     // (tests/saved.rs); they have no golden case.
-    xml.retain(|p| p.parent().and_then(|d| d.file_name()).is_none_or(|d| d != "saved"));
+    xml.retain(|p| {
+        p.parent()
+            .and_then(|d| d.file_name())
+            .is_none_or(|d| d != "saved")
+    });
     xml.sort();
     let mut totals = Totals::default();
     let mut failures = Vec::new();
@@ -427,9 +434,15 @@ fn imported_constructions_agree_with_the_golden_snapshots() {
         undocumented.join("\n")
     );
     for key in &listed {
-        assert!(totals.mismatched.contains_key(key), "{key} no longer mismatches");
+        assert!(
+            totals.mismatched.contains_key(key),
+            "{key} no longer mismatches"
+        );
     }
-    println!("objects that differ from the saved value: {}", totals.mismatched.len());
+    println!(
+        "objects that differ from the saved value: {}",
+        totals.mismatched.len()
+    );
     assert!(totals.files >= MIN_FILES, "only {} files", totals.files);
     assert!(totals.zips >= MIN_ZIPS, "only {} zip files", totals.zips);
     assert!(

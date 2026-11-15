@@ -29,7 +29,7 @@ pub fn convert(doc: Document) -> Result<Imported, ImportError> {
             } => c.command(&name, &inputs, &outputs)?,
             Item::Element(el) => {
                 flags.count(&el);
-                c.element(el)?;
+                c.element(*el)?;
             }
         }
     }
@@ -217,11 +217,9 @@ impl Converter {
         // Exactly the expected labels, and nothing else, were added.
         let created = self.kernel.len() - before;
         let matches = created == expected.len()
-            && expected.iter().all(|l| {
-                self.kernel
-                    .id(l)
-                    .is_some_and(|id| id.index() >= before)
-            });
+            && expected
+                .iter()
+                .all(|l| self.kernel.id(l).is_some_and(|id| id.index() >= before));
         match result {
             Ok(_) if matches => Ok(Ok(())),
             Ok(_) => Err(ImportError::Internal(format!(
@@ -552,9 +550,7 @@ fn coords3(el: &Element) -> Option<[f64; 3]> {
 /// positive factor (the orientation of a line is part of its value).
 fn same_line(line: [f64; 3], saved: [f64; 3]) -> bool {
     let (n, sn) = (line[0].hypot(line[1]), saved[0].hypot(saved[1]));
-    n > 0.0
-        && sn > 0.0
-        && (0..3).all(|i| close(line[i] / n, saved[i] / sn))
+    n > 0.0 && sn > 0.0 && (0..3).all(|i| close(line[i] / n, saved[i] / sn))
 }
 
 fn saved_text(el: &Element) -> String {
@@ -576,9 +572,9 @@ fn saved_text(el: &Element) -> String {
 /// agree or when the file saved nothing the kernel value can be compared with.
 fn cross_check(el: &Element, value: &Value) -> Option<(String, String)> {
     let agrees: Option<bool> = match *value {
-        Value::Point { x, y } => coords3(el).map(|[sx, sy, sz]| {
-            sz != 0.0 && close(x, sx / sz) && close(y, sy / sz)
-        }),
+        Value::Point { x, y } => {
+            coords3(el).map(|[sx, sy, sz]| sz != 0.0 && close(x, sx / sz) && close(y, sy / sz))
+        }
         Value::Vector { x, y } => coords3(el).map(|[sx, sy, _]| close(x, sx) && close(y, sy)),
         Value::Line { a, b, c } | Value::Ray { a, b, c, .. } => {
             coords3(el).map(|saved| same_line([a, b, c], saved))

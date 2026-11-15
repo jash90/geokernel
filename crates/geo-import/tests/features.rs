@@ -61,7 +61,10 @@ fn unindexed_intersect_maps_each_output_to_its_index() {
 fn the_saved_value_is_checked_against_the_computed_one() {
     let first = "<element type=\"point\" label=\"P\"><coords x=\"1\" y=\"0\" z=\"1\"/></element>";
     let second = "<element type=\"point\" label=\"Q\"><coords x=\"3\" y=\"0\" z=\"1\"/></element>";
-    let r = ok(&line_circle("<output a0=\"P\" a1=\"Q\"/>", &(first.to_string() + second)));
+    let r = ok(&line_circle(
+        "<output a0=\"P\" a1=\"Q\"/>",
+        &(first.to_string() + second),
+    ));
     let swapped = ok(&line_circle(
         "<output a0=\"P\" a1=\"Q\"/>",
         &(second.replace('Q', "P") + &first.replace('P', "Q")),
@@ -75,7 +78,11 @@ fn the_saved_value_is_checked_against_the_computed_one() {
         r.mismatched,
         swapped.mismatched
     );
-    let wrong = if r.mismatched.is_empty() { &swapped } else { &r };
+    let wrong = if r.mismatched.is_empty() {
+        &swapped
+    } else {
+        &r
+    };
     assert_eq!(wrong.mismatched.len(), 2);
     assert!(wrong.script.iter().any(|l| l == "P = Intersect(f, k, 1)"));
     assert_eq!(wrong.mismatched[0].label, "P");
@@ -104,10 +111,28 @@ fn values_within_tolerance_and_scaled_lines_agree() {
 
 #[test]
 fn constant_expressions_are_free_objects_with_the_saved_value() {
-    for yes in ["(1/2, 3)", "2^10", "1.5E-3", "(1, 2) ", "-(3 + 4) * 2", "1e5"] {
+    for yes in [
+        "(1/2, 3)",
+        "2^10",
+        "1.5E-3",
+        "(1, 2) ",
+        "-(3 + 4) * 2",
+        "1e5",
+    ] {
         assert!(is_constant_expression(yes), "{yes}");
     }
-    for no in ["a + 1", "pi", "sqrt(2)", "e", "E5", "(A, 1)", "", "()", "x(A)", "1 + t_{1}"] {
+    for no in [
+        "a + 1",
+        "pi",
+        "sqrt(2)",
+        "e",
+        "E5",
+        "(A, 1)",
+        "",
+        "()",
+        "x(A)",
+        "1 + t_{1}",
+    ] {
         assert!(!is_constant_expression(no), "{no}");
     }
     let r = ok("<expression label=\"A\" exp=\"(1/2, 3)\" type=\"point\"/>\
@@ -131,7 +156,10 @@ fn a_second_construction_section_is_appended() {
                </construction></geogebra>";
     let r = import(xml.as_bytes()).unwrap();
     assert_eq!(r.script, ["A = (1, 2)", "B = (3, 4)", "M = Midpoint(A, B)"]);
-    assert!(r.notes.iter().any(|n| n.contains("2 construction sections")));
+    assert!(r
+        .notes
+        .iter()
+        .any(|n| n.contains("2 construction sections")));
 }
 
 #[test]
@@ -181,7 +209,9 @@ fn the_angle_unit_does_not_change_what_is_computed() {
 #[test]
 fn files_are_told_from_scripts_by_content() {
     assert!(looks_like_construction(b"PK\x03\x04rest"));
-    assert!(looks_like_construction(b"<geogebra><construction/></geogebra>"));
+    assert!(looks_like_construction(
+        b"<geogebra><construction/></geogebra>"
+    ));
     assert!(looks_like_construction(
         b"\xEF\xBB\xBF<?xml version=\"1.0\"?>\n<!-- c -->\n  <geogebra format=\"5\">"
     ));

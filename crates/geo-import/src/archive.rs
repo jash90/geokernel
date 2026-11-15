@@ -79,7 +79,10 @@ struct Entry {
 fn find_end(bytes: &[u8]) -> Result<(usize, usize), ImportError> {
     let sig = EOCD.to_le_bytes();
     let lowest = bytes.len().saturating_sub(22 + 0xFFFF);
-    let mut at = bytes.len().checked_sub(22).ok_or_else(|| zip_error("truncated"))?;
+    let mut at = bytes
+        .len()
+        .checked_sub(22)
+        .ok_or_else(|| zip_error("truncated"))?;
     loop {
         if bytes[at..at + 4] == sig {
             let comment = u16_at(bytes, at + 20)?;
@@ -143,7 +146,11 @@ const CRC_TABLE: [u32; 256] = {
         let mut c = n as u32;
         let mut k = 0;
         while k < 8 {
-            c = if c & 1 != 0 { 0xEDB8_8320 ^ (c >> 1) } else { c >> 1 };
+            c = if c & 1 != 0 {
+                0xEDB8_8320 ^ (c >> 1)
+            } else {
+                c >> 1
+            };
             k += 1;
         }
         table[n] = c;

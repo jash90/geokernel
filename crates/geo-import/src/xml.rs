@@ -69,7 +69,7 @@ pub enum Item {
         /// no label.
         outputs: Vec<String>,
     },
-    Element(Element),
+    Element(Box<Element>),
 }
 
 /// The parsed construction.
@@ -212,7 +212,7 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                         ..Element::default()
                     };
                     if empty {
-                        push(&mut doc, Item::Element(el))?;
+                        push(&mut doc, Item::Element(Box::new(el)))?;
                     } else {
                         element = Some(el);
                     }
@@ -277,7 +277,7 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                 }
                 "element" => {
                     if let Some(el) = element.take() {
-                        push(&mut doc, Item::Element(el))?;
+                        push(&mut doc, Item::Element(Box::new(el)))?;
                     }
                 }
                 _ => {}

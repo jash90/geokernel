@@ -95,7 +95,10 @@ fn forced_forms_and_indexed_labels() {
     assert!(c.id("v_{max}").is_some() && c.id("P_{ab'}").is_some());
     let c = load("{u_{a}, w_{b}} = Tangent(P, k)\n");
     assert!(c.is_err()); // P and k do not exist here
-    let c = load(&format!("{BASE}{{u_{{a}}, w_{{b}}}} = Tangent(P, k)\nV_{{max}} = Midpoint(A, B)\n")).unwrap();
+    let c = load(&format!(
+        "{BASE}{{u_{{a}}, w_{{b}}}} = Tangent(P, k)\nV_{{max}} = Midpoint(A, B)\n"
+    ))
+    .unwrap();
     assert!(c.id("u_{a}").is_some() && c.id("V_{max}").is_some());
     // a lower-case point is usable in constructions
     let c =

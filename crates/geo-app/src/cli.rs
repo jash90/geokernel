@@ -53,7 +53,9 @@ pub fn import_notice(imported: &geo_import::Imported) -> Option<String> {
     let direct = imported.skipped.len() - dependents;
     let mut parts = Vec::new();
     if direct > 0 {
-        parts.push(format!("Pominięte obiekty: {direct} (jądro ich nie obsługuje)"));
+        parts.push(format!(
+            "Pominięte obiekty: {direct} (jądro ich nie obsługuje)"
+        ));
     }
     if dependents > 0 {
         parts.push(format!("zależne od nich: {dependents}"));
