@@ -11,7 +11,8 @@
 //! - after a move or a new number only the rows whose value changed (by its
 //!   bits, as the kernel compares) are made anew, and nothing when no value
 //!   changed. Telling which values changed is one comparison of plain
-//!   values per object, without formatting or allocating.
+//!   values per object, without formatting or allocating. A conic's value
+//!   holds only its type, so its matrix is compared as well.
 
 use super::{Row, Workbench};
 use crate::describe;
@@ -67,6 +68,30 @@ pub(crate) fn same_value(a: Value, b: Value) -> bool {
     }
 }
 
+/// What a row was made from: the value and, for a conic, the bits of its
+/// matrix (zero for any other kind).
+pub(crate) type RowKey = (Value, [u64; 6]);
+
+/// The [`RowKey`] of `id`, without allocating.
+fn row_key(c: &Construction, id: Id) -> RowKey {
+    let value = c.value(id);
+    let matrix = match value {
+        Value::Conic { .. } => c
+            .conic(id)
+            .map_or([u64::MAX; 6], |d| d.matrix.map(f64::to_bits)),
+        _ => [0; 6],
+    };
+    (value, matrix)
+}
+
+/// Whether two row keys are the same bit for bit.
+fn same_key(a: RowKey, b: RowKey) -> bool {
+    match (a.0, b.0) {
+        (Value::Conic { ty }, Value::Conic { ty: ty2 }) => ty == ty2 && a.1 == b.1,
+        _ => same_value(a.0, b.0),
+    }
+}
+
 /// What the rows take from the journal: the definition of each label and
 /// the line (as an index into `groups`) that made it with other objects.
 struct Lines<'a> {
@@ -99,7 +124,7 @@ fn value_parts(c: &Construction, id: Id) -> (String, Option<f64>) {
     let text = match (c.def(id), value) {
         // Angles are kept in radians and shown in degrees.
         (Def::Measure(MeasureDef::Angle(..)), Value::Number(n)) => describe::degrees(n),
-        _ => describe::value_text(&value),
+        _ => describe::object_text(c, id),
     };
     // A free angle is a free number shown and set in degrees.
     let free_number = match (c.def(id), value) {
@@ -167,6 +192,10 @@ fn set_value(row: &mut Row, text: String, free_number: Option<f64>) -> bool {
         let head = format!("{} =", row.label);
         changed |= row.head != head;
         row.head = head;
+    } else if row.kind == Kind::Function {
+        // A function's value is the expression its definition shows.
+        changed |= row.value.is_some();
+        row.value = None;
     } else if row.free {
         let head = format!("{} = {text}", row.label);
         changed |= row.head != head;
@@ -222,11 +251,11 @@ impl Workbench {
         }
         // Rows whose value changed.
         for ((id, row), old) in c.ids().zip(&mut self.rows).zip(&mut self.row_values) {
-            let value = c.value(id);
-            if same_value(*old, value) {
+            let key = row_key(c, id);
+            if same_key(*old, key) {
                 continue;
             }
-            *old = value;
+            *old = key;
             let (text, free_number) = value_parts(c, id);
             self.rows_formatted += 1;
             changed |= set_value(row, text, free_number);
@@ -236,7 +265,7 @@ impl Workbench {
             let lines = Lines::of(&self.log);
             for id in c.ids().skip(self.rows.len()) {
                 self.rows.push(make_row(c, id, &lines));
-                self.row_values.push(c.value(id));
+                self.row_values.push(row_key(c, id));
                 self.rows_formatted += 1;
             }
             changed = true;
@@ -263,7 +292,7 @@ impl Workbench {
                 let free = c.def(id).is_free();
                 let text = match (c.def(id), value) {
                     (Def::Measure(MeasureDef::Angle(..)), Value::Number(n)) => describe::degrees(n),
-                    _ => describe::value_text(&value),
+                    _ => describe::object_text(c, id),
                 };
                 let free_number = match (c.def(id), value) {
                     (Def::Number(_), Value::Number(n)) => Some(n),
@@ -272,6 +301,12 @@ impl Workbench {
                 };
                 let (head, second) = if free_number.is_some() {
                     (format!("{label} ="), None)
+                } else if kind == Kind::Function {
+                    let head = match rhs.get(label.as_str()) {
+                        Some(rhs) => format!("{label} = {rhs}"),
+                        None => label.clone(),
+                    };
+                    (head, None)
                 } else if free {
                     (format!("{label} = {text}"), None)
                 } else {

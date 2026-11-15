@@ -403,7 +403,8 @@ fn every_kind_of_the_kernel_is_known_listed_and_described() {
     let mut wb = Workbench::from_script(
         "A = (0, 0)\nB = (4, 0)\nC = (1, 3)\nf = Line(A, B)\ns = Segment(A, C)\n\
          c = Circle(A, B)\nn = 2\nv = (1, 2)\nr = Ray(A, C)\nt = AreCollinear(A, B, C)\n\
-         q = Polygon(A, B, C)\np = PolyLine(A, B, C)\n",
+         q = Polygon(A, B, C)\np = PolyLine(A, B, C)\nm = 3\ne = Ellipse(A, B, m)\n\
+         g(x) = x^2\n",
     )
     .unwrap();
     let c = wb.construction();
@@ -420,6 +421,8 @@ fn every_kind_of_the_kernel_is_known_listed_and_described() {
         Kind::Boolean,
         Kind::Polygon,
         Kind::PolyLine,
+        Kind::Conic,
+        Kind::Function,
     ] {
         assert!(kinds.contains(&kind), "no {kind:?} in the sample");
     }

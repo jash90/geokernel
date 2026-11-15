@@ -586,17 +586,18 @@ mod tests {
     }
 
     #[test]
-    fn a_function_has_a_row_but_is_neither_drawn_nor_picked() {
+    fn a_function_has_a_row_with_its_definition_and_is_not_picked() {
         let mut wb = Workbench::from_script("A = (5, 5)\nf(x) = x^2\n").unwrap();
         let c = wb.construction();
         let f = c.id("f").unwrap();
         assert_eq!(c.kind(f), Kind::Function);
         assert!(
-            !crate::describe::is_known(&c.value(f)),
-            "the window has no drawing for it"
+            crate::describe::is_known(&c.value(f)),
+            "the window draws it"
         );
         let t = crate::interact::ViewTransform::fit(c, 400.0, 400.0);
-        // Presses on the parabola find nothing.
+        // Picking functions is not there yet: presses on the parabola find
+        // nothing.
         for (x, y) in [(0.0, 0.0), (1.0, 1.0), (2.0, 4.0)] {
             let at = t.world_to_screen(x, y);
             assert_eq!(crate::hit::pick(c, &t, at, 30.0, 30.0, |_| true), None);
@@ -604,10 +605,8 @@ mod tests {
         let rows = wb.rows();
         assert_eq!(rows.len(), 2);
         assert_eq!(rows[1].label, "f");
-        assert_eq!(
-            rows[1].value.as_deref(),
-            Some(crate::describe::NOT_DRAWN_YET)
-        );
+        assert_eq!(rows[1].head, "f = x^2");
+        assert_eq!(rows[1].value, None, "the definition is the value");
         assert_round_trip(&mut wb, "function");
     }
 
