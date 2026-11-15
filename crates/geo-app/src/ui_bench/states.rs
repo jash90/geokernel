@@ -171,7 +171,8 @@ fn zoom(r: &mut Runner, n: usize) {
     r.settle();
 }
 
-/// Presses at `from`, moves until egui reports a drag, then oscillates.
+/// Presses at `from`, waits out the drag delay (moves before it are
+/// dropped), then oscillates: every measured frame drags.
 fn press_and_drag(
     r: &mut Runner,
     n: usize,
@@ -180,6 +181,10 @@ fn press_and_drag(
 ) -> Vec<Frame> {
     r.step(vec![moved(from)]);
     r.step(vec![button(from, true)]);
+    let wait = (r.app.metrics.drag_delay / super::DT).ceil() as usize + 1;
+    for _ in 0..wait {
+        r.step(vec![]);
+    }
     let frames = r.frames(
         n,
         |_, i| {

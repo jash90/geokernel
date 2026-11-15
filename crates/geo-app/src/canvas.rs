@@ -211,7 +211,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     // press on a point never pans: a dependent point stays where it is,
     // unless the move-view tool pans from anywhere.
     let mut grabbed = None;
-    let intents = gesture.end_frame(response.contains_pointer(), |origin| {
+    let intents = gesture.end_frame(|origin| {
         let ((sx, sy), pt) = at_press(app, origin.egui());
         if move_tool {
             grabbed = Drag::begin(app.wb.construction(), &pt, sx, sy, grab_r, |id| {
@@ -232,7 +232,9 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         }
     });
     app.gesture = gesture;
-    end_drag(app, &intents);
+    // The intents in their order: a drag that starts (perhaps one whose
+    // press already ended this frame), its motion, then the end of a drag,
+    // then the click.
     if intents.started.is_some() {
         app.drag = grabbed;
         if let Some(drag) = grabbed {
@@ -248,9 +250,13 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     if let Some((dx, dy)) = intents.pan {
         cam.pan_pixels(dx as f64, dy as f64);
     }
-    // egui decides which widget a click belongs to as well; a press on a
-    // widget over the area made no tap here in the first place.
-    let tap = intents.tap.filter(|_| response.clicked());
+    end_drag(app, &intents);
+    // The automaton alone decides a click (egui's click rules take no part
+    // in the drawing); the release must still be over the drawing, not over
+    // a button on it.
+    let tap = intents
+        .tap
+        .filter(|p| rect.contains(p.egui()) && !app.overlays.contains(*p));
     if let Some(pos) = tap.map(ToEgui::egui) {
         let local = to_local(pos);
         match tool {
