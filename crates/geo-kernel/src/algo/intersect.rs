@@ -249,7 +249,7 @@ fn is_epsilon(e: f64, x: f64, y: f64) -> bool {
 }
 
 /// A point, or `None` where GeoGebra's point is undefined or at infinity.
-type Pt = Option<(f64, f64)>;
+pub(crate) type Pt = Option<(f64, f64)>;
 
 /// `which` is 0 or 1: GeoGebra's intersection 1 or 2 (`AlgoIntersectLineConic`).
 /// `hint` is the intersection's [`Hint`].
@@ -311,13 +311,21 @@ pub(crate) fn line_general_conic(
     conic: Id,
     which: u8,
 ) -> Option<Value> {
+    let line_def = c.def(line);
+    if let Def::ConicPart(d) = line_def {
+        // A tangent of this conic has one point, the tangent algorithm's
+        // own (`isDefinedAsTangent`).
+        if let Some(t) = super::conic_parts::tangent_point_on(c, d, conic) {
+            return if which == 0 { to_value(t) } else { None };
+        }
+    }
     let q = match (c.raw_line(line), c.conic(conic)) {
         (Some((a, b, cc)), Some(data)) if data.defined => {
             intersect_line_general_conic([a, b, cc], &data)
         }
         _ => [None, None],
     };
-    let p = match existing_line_conic_point(c, line, c.def(line), conic) {
+    let p = match existing_line_conic_point(c, line, line_def, conic) {
         Some(s) => {
             let first = c.point(s);
             [first, other_point(&q, first)]
@@ -332,6 +340,29 @@ pub(crate) fn line_general_conic(
         }
     };
     to_value(p[usize::from(which)])
+}
+
+/// The points of the helper `AlgoIntersectLineConic` that a tangent
+/// algorithm makes for the raw line `g` and the conic: in the order of
+/// `intersectLineConic`, the defined points first, a tangent point only
+/// once. Both are undefined when the line or the conic is.
+pub(crate) fn helper_line_conic_points(g: [f64; 3], conic: &ConicData) -> [Pt; 2] {
+    let defined_line = !(g.iter().any(|v| v.is_nan()) || (is_zero(g[0]) && is_zero(g[1])));
+    if !(conic.defined && defined_line) {
+        return [None, None];
+    }
+    let mut p = intersect_line_general_conic(g, conic);
+    if p[0].is_none() {
+        p = [p[1], None];
+    }
+    avoid_double_tangent_point(&mut p);
+    p
+}
+
+/// Whether the point `s` lies on the general conic `conic` by construction
+/// (it is in the conic's incidence list).
+pub(crate) fn on_general_conic_by_construction(c: &Construction, s: Id, conic: Id) -> bool {
+    general_conic_points(c, conic).contains(&Some(s)) || intersection_on_general_conic(c, s, conic)
 }
 
 /// `AlgoIntersectLineConic.intersect` for a general conic: retries with a

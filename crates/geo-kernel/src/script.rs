@@ -196,6 +196,10 @@ fn parse_multi(c: &Construction, rhs: &str) -> Option<Result<Vec<Def>, String>> 
         r.map(|defs| defs.into_iter().map(f).collect())
     }
     let (func, args) = split_call(rhs)?;
+    // asked first: `Tangent` of a conic is not a circle tangent
+    if let Some(r) = ConicPartDef::parse_multi(c, func, &args) {
+        return Some(wrap(r, Def::ConicPart));
+    }
     if let Some(r) = LineDef::parse_multi(c, func, &args) {
         return Some(wrap(r, Def::Lines));
     }
@@ -207,9 +211,6 @@ fn parse_multi(c: &Construction, rhs: &str) -> Option<Result<Vec<Def>, String>> 
     }
     if let Some(r) = TransformDef::parse_multi(c, func, &args) {
         return Some(wrap(r, Def::Transform));
-    }
-    if let Some(r) = ConicPartDef::parse_multi(c, func, &args) {
-        return Some(wrap(r, Def::ConicPart));
     }
     None
 }

@@ -306,4 +306,43 @@ case("transform", SOURCES[1] + [num("f", 2), "m = Dilate(k, f)", pt("U", -9, -2)
                                 "S = Intersect(g, m, 1)", "T = Intersect(g, m, 2)"],
      [setn("f", 0.5), mv("V", 8, -3), setn("f", 0), setn("f", 2)])
 
+# --------------------------------------------- tangents, polars, diameters
+topic("tangent")
+ELL = [pt("F", -3, 0), pt("G", 3, 0), pt("P", 0, 4), "k = Ellipse(F, G, P)"]
+HYP = [pt("F", -3, 0), pt("G", 3, 0), pt("P", 2, 1), "k = Hyperbola(F, G, P)"]
+PAR = [pt("F", 0, 1), pt("A", -1, -1), pt("B", 1, -1), "d = Line(A, B)", "k = Parabola(F, d)"]
+for conic, start in ((ELL, (7, 5)), (HYP, (1, 5)), (PAR, (7, 5))):
+    # from a point outside, then inside, onto the conic and out again
+    case("tangent", conic + [pt("Q", *start), "t = Tangent(Q, k)", "S = Intersect(t_{1}, k)"],
+         [mv("Q", 0.5, 0.2), mv("Q", *start), mv("Q", -6, 3), mv("Q", *rp()), mv("Q", *rp())])
+    # parallel to a line
+    case("tangent", conic + [pt("U", -2, -6), pt("V", -1, -2), "g = Line(U, V)", "t = Tangent(g, k)"],
+         [mv("V", 3, 1), mv("V", -2, 0), mv("V", 4, -6), mv("U", *rp()), mv("V", *rp())])
+    # polar and diameters
+    case("tangent", conic + [pt("Q", 5, 2), "p = Polar(Q, k)", pt("U", 1, 1), pt("V", 3, -1),
+                             "g = Line(U, V)", "m = Diameter(g, k)", "v = Vector(U, V)",
+                             "n = ConjugateDiameter(v, k)"],
+         [mv("Q", 0, 0), mv("Q", -4, 7), mv("V", 1, 5), mv("V", 1, 1.000001), mv("U", *rp())])
+# a tangent from a point on the ellipse: one line
+case("tangent", ELL + ["t = Tangent(P, k)"], [mv("P", 3, 2), mv("P", 0, 4), mv("F", -1, 0)])
+case("tangent", [pt("Q", 5, 0)] + ELL[:3] + ["k = Ellipse(F, G, Q)", "t = Tangent(Q, k)",
+                                            "S = Intersect(t, k)"],
+     [mv("Q", 6, 1), mv("P", 9, 9)])
+# a tangent of a five-point conic at one of its points
+case("tangent", five([(3, 0), (0, 2), (-3, 0), (0, -2), (1.8, 1.6)]) + ["t = Tangent(E, k)"],
+     [mv("E", 1, 1), mv("A", 4, 0), mv("E", 1.8, 1.6)])
+# the conic becomes degenerate or undefined
+case("tangent", [pt("F", -3, 0), pt("G", 3, 0), num("a", 5), "k = Ellipse(F, G, a)", pt("Q", 8, 6),
+                 "t = Tangent(Q, k)", pt("U", 0, 0), pt("V", 2, 1), "g = Line(U, V)", "s = Tangent(g, k)",
+                 "p = Polar(Q, k)", "m = Diameter(g, k)"],
+     [setn("a", 3), setn("a", 2), setn("a", -1), setn("a", 5)])
+case("tangent", five([(0, 0), (1, 0), (2, 0.5), (0, 1), (1, 2)]) + [pt("Q", 5, 5), "p = Polar(Q, k)",
+                                                                      pt("U", 0, -3), pt("V", 1, -3),
+                                                                      "g = Line(U, V)", "m = Diameter(g, k)"],
+     [mv("C", 2, 0), mv("C", 2, -0.5), mv("Q", -3, 1)])
+# a segment and a ray as the direction of the tangents
+case("tangent", HYP + [pt("U", 0, 0), pt("V", 1, 4), "s = Segment(U, V)", "t = Tangent(s, k)", "r = Ray(V, U)",
+                       "w = Tangent(r, k)"],
+     [mv("V", 4, 1), mv("V", -1, 3)])
+
 cases.write()

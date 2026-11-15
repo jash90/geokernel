@@ -13,14 +13,24 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoExcentricity.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoDirectrix.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoParabolaParameter.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoTangentPointND.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoTangentPoint.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoTangentLineND.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoTangentLine.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoPolarLine.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDiameterLine.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDiameterVector.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/kernelND/GeoConicND.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoVec3D.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdIntersect.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/Commands.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
 //! Objects computed from a general conic ([`Kind::Conic`]): its
-//! intersection points with a line, and what is read off its record
-//! (centre, foci, vertices, axes, directrices, lengths and eccentricities).
+//! intersection points with a line, its tangents, polar lines and
+//! diameters, and what is read off its record (centre, foci, vertices,
+//! axes, directrices, lengths and eccentricities).
 //!
 //! They read the conic's [`ConicData`] record through
 //! [`Construction::conic`]. Like GeoGebra's algorithms, most readers look at
@@ -30,8 +40,13 @@
 //! `Directrix` check that the conic is defined.
 
 use super::conic_nd::{ConicData, ConicType};
-use super::{line_value, Group, Parents, LINE};
+use super::intersect::{helper_line_conic_points, on_general_conic_by_construction, Pt};
+use super::{line_value, Group, Parents, LINE, POINT};
 use crate::kernel::{Construction, Error, Id, Kind, Value};
+use crate::tol::STANDARD_PRECISION;
+
+const LINE_LIKE_OR_RAY: &[Kind] = &[Kind::Line, Kind::Segment, Kind::Ray];
+const DIRECTION: &[Kind] = &[Kind::Line, Kind::Segment, Kind::Ray, Kind::Vector];
 
 const CONIC: &[Kind] = &[Kind::Conic];
 
@@ -61,6 +76,16 @@ pub enum ConicPartDef {
     LinearEccentricity(Id),
     /// `Parameter(k)` of a parabola.
     Parameter(Id),
+    /// Output `which` (0 or 1) of `Tangent(P, k)`.
+    TangentPoint { point: Id, conic: Id, which: u8 },
+    /// Output `which` (0 or 1) of `Tangent(g, k)`: the tangents parallel
+    /// to a line, segment or ray.
+    TangentLine { line: Id, conic: Id, which: u8 },
+    /// `Polar(P, k)`.
+    Polar { point: Id, conic: Id },
+    /// `Diameter(g, k)` and `Diameter(v, k)` (`ConjugateDiameter`): the
+    /// diameter conjugate to the direction of a line, segment, ray or vector.
+    Diameter { direction: Id, conic: Id },
 }
 
 impl ConicPartDef {
@@ -71,7 +96,11 @@ impl ConicPartDef {
             | ConicPartDef::Vertex { conic, .. }
             | ConicPartDef::Axis { conic, .. }
             | ConicPartDef::Directrix { conic, .. }
-            | ConicPartDef::AxisLength { conic, .. } => conic,
+            | ConicPartDef::AxisLength { conic, .. }
+            | ConicPartDef::TangentPoint { conic, .. }
+            | ConicPartDef::TangentLine { conic, .. }
+            | ConicPartDef::Polar { conic, .. }
+            | ConicPartDef::Diameter { conic, .. } => conic,
             ConicPartDef::Center(conic)
             | ConicPartDef::Eccentricity(conic)
             | ConicPartDef::LinearEccentricity(conic)
@@ -86,7 +115,9 @@ impl ConicPartDef {
             | ConicPartDef::Focus { .. }
             | ConicPartDef::Axis { .. }
             | ConicPartDef::Directrix { .. }
-            | ConicPartDef::AxisLength { .. } => 2,
+            | ConicPartDef::AxisLength { .. }
+            | ConicPartDef::TangentPoint { .. }
+            | ConicPartDef::TangentLine { .. } => 2,
             ConicPartDef::Vertex { .. } => 4,
             _ => 1,
         }
@@ -99,7 +130,9 @@ impl ConicPartDef {
             | ConicPartDef::Vertex { which, .. }
             | ConicPartDef::Axis { which, .. }
             | ConicPartDef::Directrix { which, .. }
-            | ConicPartDef::AxisLength { which, .. } => which,
+            | ConicPartDef::AxisLength { which, .. }
+            | ConicPartDef::TangentPoint { which, .. }
+            | ConicPartDef::TangentLine { which, .. } => which,
             _ => 0,
         }
     }
@@ -112,7 +145,12 @@ impl Group for ConicPartDef {
             | ConicPartDef::Center(_)
             | ConicPartDef::Focus { .. }
             | ConicPartDef::Vertex { .. } => Kind::Point,
-            ConicPartDef::Axis { .. } | ConicPartDef::Directrix { .. } => Kind::Line,
+            ConicPartDef::Axis { .. }
+            | ConicPartDef::Directrix { .. }
+            | ConicPartDef::TangentPoint { .. }
+            | ConicPartDef::TangentLine { .. }
+            | ConicPartDef::Polar { .. }
+            | ConicPartDef::Diameter { .. } => Kind::Line,
             ConicPartDef::AxisLength { .. }
             | ConicPartDef::Eccentricity(_)
             | ConicPartDef::LinearEccentricity(_)
@@ -122,14 +160,24 @@ impl Group for ConicPartDef {
 
     fn parents(&self) -> Parents {
         match *self {
-            ConicPartDef::IntersectLine { line, conic, .. } => Parents::of(&[line, conic]),
+            ConicPartDef::IntersectLine { line, conic, .. }
+            | ConicPartDef::TangentLine { line, conic, .. } => Parents::of(&[line, conic]),
+            ConicPartDef::TangentPoint { point, conic, .. }
+            | ConicPartDef::Polar { point, conic } => Parents::of(&[point, conic]),
+            ConicPartDef::Diameter { direction, conic } => Parents::of(&[direction, conic]),
             other => Parents::of(&[other.conic()]),
         }
     }
 
     fn check(&self, c: &Construction) -> Result<(), Error> {
-        if let ConicPartDef::IntersectLine { line, .. } = *self {
-            c.expect(line, LINE)?;
+        match *self {
+            ConicPartDef::IntersectLine { line, .. } => c.expect(line, LINE)?,
+            ConicPartDef::TangentLine { line, .. } => c.expect(line, LINE_LIKE_OR_RAY)?,
+            ConicPartDef::TangentPoint { point, .. } | ConicPartDef::Polar { point, .. } => {
+                c.expect(point, POINT)?
+            }
+            ConicPartDef::Diameter { direction, .. } => c.expect(direction, DIRECTION)?,
+            _ => {}
         }
         c.expect(self.conic(), CONIC)?;
         if self.which() < self.outputs() {
@@ -146,6 +194,34 @@ impl Group for ConicPartDef {
         let d = c.conic(self.conic())?;
         match *self {
             ConicPartDef::IntersectLine { .. } => None,
+            ConicPartDef::TangentPoint {
+                point,
+                conic,
+                which,
+            } => {
+                let (g, _) = tangent_from_point(c, point, conic, &d, which)?;
+                line_value(g[0], g[1], g[2])
+            }
+            ConicPartDef::TangentLine { line, which, .. } => {
+                let (g, _) = tangent_parallel(c, line, &d, which)?;
+                line_value(g[0], g[1], g[2])
+            }
+            ConicPartDef::Polar { point, .. } => {
+                let g = polar(&d, c.point(point)?);
+                line_value(g[0], g[1], g[2])
+            }
+            ConicPartDef::Diameter { direction, .. } => {
+                let (vx, vy) = match c.value(direction) {
+                    Value::Vector { x, y } => (x, y),
+                    _ => {
+                        // `GeoLine.getDirection`
+                        let (a, b, _) = c.raw_carrier(direction)?;
+                        (b, -a)
+                    }
+                };
+                let g = diameter(&d, vx, vy);
+                line_value(g[0], g[1], g[2])
+            }
             ConicPartDef::Center(_) => center(&d),
             ConicPartDef::Focus { which, .. } => focus(&d, which),
             ConicPartDef::Vertex { which, .. } => vertex(&d, which),
@@ -194,6 +270,27 @@ impl Group for ConicPartDef {
                 }),
             );
         }
+        if let ("Polar" | "Diameter" | "ConjugateDiameter", [first, second]) = (func, args) {
+            let first = c.id(first)?;
+            let conic = c.id(second).filter(|&k| c.kind(k) == Kind::Conic)?;
+            return Some(match (func, c.kind(first)) {
+                ("Polar", Kind::Point) => Ok(ConicPartDef::Polar {
+                    point: first,
+                    conic,
+                }),
+                ("Polar", Kind::Line | Kind::Segment) => Err(
+                    "the pole of a line (`Polar` of a line and a conic) is not supported yet"
+                        .into(),
+                ),
+                (_, Kind::Line | Kind::Segment | Kind::Ray | Kind::Vector) if func != "Polar" => {
+                    Ok(ConicPartDef::Diameter {
+                        direction: first,
+                        conic,
+                    })
+                }
+                (_, k) => Err(format!("`{func}` does not take a {k} and a conic")),
+            });
+        }
         let [arg] = args else { return None };
         let conic = c.id(arg).filter(|&k| c.kind(k) == Kind::Conic)?;
         let def = match func {
@@ -219,6 +316,24 @@ impl Group for ConicPartDef {
         func: &str,
         args: &[&str],
     ) -> Option<Result<Vec<Self>, String>> {
+        if let ("Tangent", [first, second]) = (func, args) {
+            let (first, second) = (c.id(first)?, c.id(second)?);
+            return match (c.kind(first), c.kind(second)) {
+                (Kind::Point, Kind::Conic) => Some(Ok(tangents_from_point(c, first, second))),
+                (Kind::Conic, Kind::Point) => Some(Ok(tangents_from_point(c, second, first))),
+                (Kind::Line | Kind::Segment | Kind::Ray, Kind::Conic) => Some(Ok((0..2)
+                    .map(|which| ConicPartDef::TangentLine {
+                        line: first,
+                        conic: second,
+                        which,
+                    })
+                    .collect())),
+                (_, Kind::Conic) | (Kind::Conic, _) => Some(Err(
+                    "this form of `Tangent` of a conic is not supported yet".into(),
+                )),
+                _ => None,
+            };
+        }
         let [arg] = args else { return None };
         let conic = c.id(arg).filter(|&k| c.kind(k) == Kind::Conic)?;
         let (n, make): (u8, fn(Id, u8) -> Self) = match func {
@@ -229,6 +344,134 @@ impl Group for ConicPartDef {
             _ => return None,
         };
         Some(Ok((0..n).map(|which| make(conic, which)).collect()))
+    }
+}
+
+/// The tangents from `point` to `conic`. As in the constructor of
+/// `AlgoTangentPointND`, when both tangents are the same line at creation
+/// (the point is on the conic) the second one is made undefined; the kernel
+/// then creates only the first tangent.
+fn tangents_from_point(c: &Construction, point: Id, conic: Id) -> Vec<ConicPartDef> {
+    let defs: Vec<ConicPartDef> = (0..2)
+        .map(|which| ConicPartDef::TangentPoint {
+            point,
+            conic,
+            which,
+        })
+        .collect();
+    match (defs[0].compute(c), defs[1].compute(c)) {
+        (Some(t0), Some(t1)) if super::lines::lin_dep(t0, t1) => defs[..1].to_vec(),
+        _ => defs,
+    }
+}
+
+/// `GeoConicND.polarLine` for the point `(px, py, 1)`; NaN when the conic
+/// is undefined.
+fn polar(d: &ConicData, (px, py): (f64, f64)) -> [f64; 3] {
+    if !d.defined {
+        return [f64::NAN; 3];
+    }
+    let m = &d.matrix;
+    [
+        m[0] * px + m[3] * py + m[4],
+        m[3] * px + m[1] * py + m[5],
+        m[4] * px + m[5] * py + m[2],
+    ]
+}
+
+/// `GeoConicND.diameterLine(vx, vy)`; it does not check whether the conic
+/// is defined.
+fn diameter(d: &ConicData, vx: f64, vy: f64) -> [f64; 3] {
+    let m = &d.matrix;
+    [
+        m[0] * vx + m[3] * vy,
+        m[3] * vx + m[1] * vy,
+        m[4] * vx + m[5] * vy,
+    ]
+}
+
+/// `AlgoTangentPointND.compute` with `AlgoTangentPoint`: tangent `which`
+/// from `point` and the point where it touches the conic. `None` for a
+/// degenerate conic.
+fn tangent_from_point(
+    c: &Construction,
+    point: Id,
+    conic: Id,
+    d: &ConicData,
+    which: u8,
+) -> Option<([f64; 3], Pt)> {
+    if d.ty.is_degenerate() {
+        return None;
+    }
+    let p = c.point(point)?;
+    let g = polar(d, p);
+    // isIntersectionPointIncident: on the conic, or on it by construction
+    if d.on_full_conic(p, STANDARD_PRECISION) || on_general_conic_by_construction(c, point, conic) {
+        // the polar of a point on the conic is its tangent
+        return Some((g, Some(p)));
+    }
+    let t = helper_line_conic_points(g, d)[usize::from(which)];
+    // `GeoVec3D.lineThroughPoints(P, T)`
+    let line = match t {
+        Some((tx, ty)) => [p.1 - ty, tx - p.0, p.0 * ty - p.1 * tx],
+        None => [f64::NAN; 3],
+    };
+    Some((line, t))
+}
+
+/// `AlgoTangentLineND.compute` with `AlgoTangentLine`: tangent `which`
+/// parallel to `line` and the point where it touches the conic. A parabola
+/// has one such tangent. `None` for a degenerate conic.
+fn tangent_parallel(
+    c: &Construction,
+    line: Id,
+    d: &ConicData,
+    which: u8,
+) -> Option<([f64; 3], Pt)> {
+    if d.ty.is_degenerate() {
+        return None;
+    }
+    let (gx, gy, _) = c.raw_carrier(line)?;
+    // the diameter conjugate to the direction (gy, -gx)
+    let points = helper_line_conic_points(diameter(d, gy, -gx), d);
+    let z = |t: Pt| t.map_or(f64::NAN, |(tx, ty)| -(tx * gx + ty * gy));
+    let line = if d.ty == ConicType::Parabola {
+        match which {
+            0 if z(points[1]).is_nan() => [gx, gy, z(points[0])],
+            0 => [gx, gy, z(points[1])],
+            _ => [f64::NAN; 3],
+        }
+    } else {
+        [gx, gy, z(points[usize::from(which)])]
+    };
+    Some((line, points[usize::from(which)]))
+}
+
+/// The point where the tangent `d` touches `conic`, as
+/// `TangentAlgo.getTangentPoint` gives it to `AlgoIntersectLineConic`:
+/// `None` when `d` is not a tangent of `conic`, `Some(None)` when the point
+/// is undefined.
+pub(crate) fn tangent_point_on(c: &Construction, d: ConicPartDef, conic: Id) -> Option<Pt> {
+    match d {
+        ConicPartDef::TangentPoint {
+            point,
+            conic: k,
+            which,
+        } if k == conic => Some(
+            c.conic(k)
+                .and_then(|data| tangent_from_point(c, point, k, &data, which))
+                .and_then(|(_, t)| t),
+        ),
+        ConicPartDef::TangentLine {
+            line,
+            conic: k,
+            which,
+        } if k == conic => Some(
+            c.conic(k)
+                .and_then(|data| tangent_parallel(c, line, &data, which))
+                .and_then(|(_, t)| t),
+        ),
+        _ => None,
     }
 }
 
@@ -516,5 +759,51 @@ mod tests {
         assert!(close(xy(&c, "W"), 0.0, 1.0));
         assert!(close(xy(&c, "V"), 0.0, 0.0));
         assert_eq!(num(&c, "r"), Some(2.0));
+    }
+
+    fn line(c: &Construction, label: &str) -> Option<(f64, f64, f64)> {
+        match c.value(c.id(label).unwrap()) {
+            Value::Line { a, b, c } => Some((a, b, c)),
+            _ => None,
+        }
+    }
+
+    #[test]
+    fn tangents_from_a_point_touch_the_ellipse_where_the_intersection_says() {
+        let c = load(&format!(
+            "{ELLIPSE}Q = (7, 5)\nt = Tangent(Q, e)\nS = Intersect(t_{{1}}, e)\nT = Intersect(t_{{1}}, e, 2)\n"
+        ))
+        .unwrap();
+        let s = xy(&c, "S").unwrap();
+        assert!((s.0 * s.0 / 25.0 + s.1 * s.1 / 16.0 - 1.0).abs() < 1e-9);
+        let (a, b, cc) = line(&c, "t_{1}").unwrap();
+        assert!((a * s.0 + b * s.1 + cc).abs() < 1e-9 && (a * 7.0 + b * 5.0 + cc).abs() < 1e-9);
+        assert_eq!(xy(&c, "T"), None);
+        assert!(line(&c, "t_{2}").is_some());
+    }
+
+    #[test]
+    fn a_point_on_the_conic_has_one_tangent_its_polar() {
+        let c = load(&format!("{ELLIPSE}t = Tangent(P, e)\np = Polar(P, e)\n")).unwrap();
+        assert!(c.id("t_{1}").is_none());
+        let (a, b, cc) = line(&c, "t").unwrap();
+        // y = 4
+        assert!(a.abs() < 1e-12 && (cc / b + 4.0).abs() < 1e-12);
+        assert_eq!(line(&c, "t"), line(&c, "p"));
+    }
+
+    #[test]
+    fn a_parabola_has_one_tangent_parallel_to_a_line_and_diameters_along_its_axis() {
+        let c = load(
+            "F = (0, 1)\nA = (0, -1)\nB = (1, -1)\nd = Line(A, B)\np = Parabola(F, d)\nU = (0, 0)\nV = (1, 1)\ng = Line(U, V)\nt = Tangent(g, p)\nm = Diameter(g, p)\n",
+        )
+        .unwrap();
+        // y = x^2 / 4 touches a line of slope 1 at (2, 1)
+        let (a, b, cc) = line(&c, "t").unwrap();
+        assert!((a * 2.0 + b + cc).abs() < 1e-9 && (a + b).abs() < 1e-12);
+        assert!(c.id("t_{2}").is_none());
+        // the diameter is the vertical line x = 2
+        let (a, b, cc) = line(&c, "m").unwrap();
+        assert!(b.abs() < 1e-12 && (cc / a + 2.0).abs() < 1e-9);
     }
 }

@@ -522,6 +522,7 @@ final class Session {
             case "Line":
             case "PerpendicularLine":
             case "Diameter":
+            case "ConjugateDiameter":
             case "OrthogonalLine":
             case "LineBisector":
             case "PerpendicularBisector":
