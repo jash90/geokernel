@@ -1,7 +1,7 @@
 //! The comparison rules of `golden/SCHEMA.md`.
 
-use crate::model::{Expected, ExpectedData, SAMPLE_XS};
-use geo_kernel::{Kind, Value};
+use crate::model::{ConicParts, Expected, ExpectedData, SAMPLE_XS};
+use geo_kernel::{ConicData, Kind, Value};
 
 /// Result of a successful comparison.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -248,9 +248,128 @@ pub fn compare_sampled(
     }
 }
 
+/// How a conic's matrix compares with GeoGebra's: raw, as GeoGebra holds it
+/// (this decides the comparison), and up to a common factor (counted only).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct MatrixAgreement {
+    pub raw: bool,
+    pub up_to_scale: bool,
+}
+
+/// Whether two matrices agree up to a common non-zero factor: each is
+/// divided by its entry of largest magnitude (signed), then compared like
+/// numbers.
+fn matrices_agree_up_to_scale(e: &[f64; 6], k: &[f64; 6]) -> bool {
+    let unit = |m: &[f64; 6]| {
+        let big = m
+            .iter()
+            .copied()
+            .fold(0.0_f64, |b, v| if v.abs() > b.abs() { v } else { b });
+        (big != 0.0).then(|| m.map(|v| v / big))
+    };
+    match (unit(e), unit(k)) {
+        (Some(a), Some(b)) => a.iter().zip(&b).all(|(&p, &q)| numbers_agree(p, q)),
+        _ => false,
+    }
+}
+
+/// Compares a recorded conic with the kernel's record `data` of the object
+/// (`Construction::conic`). The type name, the raw matrix and the parts of
+/// the type must agree; the lines of a degenerate conic in GeoGebra's order.
+/// Also tells how the matrices compare when both are defined.
+pub fn compare_conic(
+    expected: &Expected,
+    kind: Kind,
+    actual: &Value,
+    data: Option<&ConicData>,
+) -> (Result<Sign, String>, Option<MatrixAgreement>) {
+    if expected.kind != kind {
+        return (
+            Err(format!(
+                "type mismatch: expected {}, got {kind}",
+                expected.kind
+            )),
+            None,
+        );
+    }
+    let (conic_type, matrix, parts) = match (&expected.data, actual, data) {
+        (None, Value::Undefined, _) => return (Ok(Sign::NotApplicable), None),
+        (None, _, _) => return (Err("expected undefined, kernel has a value".into()), None),
+        (Some(_), Value::Undefined, _) | (Some(_), _, None) => {
+            return (Err("expected a value, kernel is undefined".into()), None)
+        }
+        (Some(_), _, Some(d)) if !d.defined => {
+            return (
+                Err("expected a value, kernel's record is undefined".into()),
+                None,
+            )
+        }
+        (
+            Some(ExpectedData::Conic {
+                conic_type,
+                matrix,
+                parts,
+            }),
+            Value::Conic { .. },
+            Some(_),
+        ) => (conic_type, matrix, parts),
+        _ => {
+            return (
+                Err("kernel value has a different shape than its kind".into()),
+                None,
+            )
+        }
+    };
+    let d = data.expect("matched above");
+    let agreement = MatrixAgreement {
+        raw: matrix
+            .iter()
+            .zip(&d.matrix)
+            .all(|(&p, &q)| numbers_agree(p, q)),
+        up_to_scale: matrices_agree_up_to_scale(matrix, &d.matrix),
+    };
+    let result = if conic_type != d.ty.name() {
+        Err(format!("conic type differs: kernel has {}", d.ty.name()))
+    } else if !agreement.raw {
+        Err(format!("matrix differs: kernel has {:?}", d.matrix))
+    } else {
+        let pt = |e: (f64, f64), k: [f64; 2]| all_agree(&[(e.0, k[0]), (e.1, k[1])]);
+        let ev = |e: &[(f64, f64); 2]| pt(e[0], d.eigenvec[0]) && pt(e[1], d.eigenvec[1]);
+        let ok = match parts {
+            ConicParts::Central {
+                midpoint,
+                half_axes,
+                eigenvectors,
+            } => {
+                pt(*midpoint, d.midpoint)
+                    && all_agree(&[(half_axes.0, d.half_axes[0]), (half_axes.1, d.half_axes[1])])
+                    && ev(eigenvectors)
+            }
+            ConicParts::Parabola {
+                vertex,
+                p,
+                eigenvectors,
+            } => pt(*vertex, d.midpoint) && numbers_agree(*p, d.p) && ev(eigenvectors),
+            ConicParts::SinglePoint { point } => pt(*point, d.midpoint),
+            ConicParts::Lines { lines } => lines
+                .iter()
+                .zip(&d.lines)
+                .all(|(e, k)| all_agree(&[(e[0], k[0]), (e[1], k[1]), (e[2], k[2])])),
+            ConicParts::Empty => true,
+        };
+        if ok {
+            Ok(Sign::NotApplicable)
+        } else {
+            Err(format!("parts differ: kernel has {d:?}"))
+        }
+    };
+    (result, Some(agreement))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use geo_kernel::algo::conic_nd::ConicType;
 
     fn num(v: f64) -> Expected {
         Expected {
@@ -572,5 +691,266 @@ mod tests {
         assert!(compare_object(&e, Kind::PolyLine, &line, &filled).is_err());
         let longer = Value::PolyLine { length: 5.0 };
         assert!(compare_object(&e, Kind::PolyLine, &longer, &holed).is_err());
+    }
+
+    /// A record written by hand, independent of the kernel's computations.
+    fn record(ty: ConicType, matrix: [f64; 6]) -> ConicData {
+        let mut d = ConicData::new();
+        d.ty = ty;
+        d.defined = true;
+        d.matrix = matrix;
+        d
+    }
+
+    fn conic(conic_type: &str, matrix: [f64; 6], parts: ConicParts) -> Expected {
+        Expected {
+            kind: Kind::Conic,
+            data: Some(ExpectedData::Conic {
+                conic_type: conic_type.into(),
+                matrix,
+                parts,
+            }),
+        }
+    }
+
+    fn conic_result(e: &Expected, d: &ConicData) -> Result<Sign, String> {
+        let value = if d.defined {
+            Value::Conic { ty: d.ty }
+        } else {
+            Value::Undefined
+        };
+        compare_conic(e, Kind::Conic, &value, Some(d)).0
+    }
+
+    /// Every way a conic can differ from its expectation is reported, one
+    /// part at a time, for every kind of parts.
+    #[test]
+    fn conics_report_each_wrong_part() {
+        // x^2/25 + y^2/16 = 1 around (1, 2)
+        let ellipse_matrix = [16.0, 25.0, -284.0, 0.0, -16.0, -50.0];
+        let mut ellipse = record(ConicType::Ellipse, ellipse_matrix);
+        ellipse.midpoint = [1.0, 2.0];
+        ellipse.half_axes = [5.0, 4.0];
+        ellipse.eigenvec = [[1.0, 0.0], [0.0, 1.0]];
+        let e_ellipse = conic(
+            "ellipse",
+            ellipse_matrix,
+            ConicParts::Central {
+                midpoint: (1.0, 2.0),
+                half_axes: (5.0, 4.0),
+                eigenvectors: [(1.0, 0.0), (0.0, 1.0)],
+            },
+        );
+        assert_eq!(conic_result(&e_ellipse, &ellipse), Ok(Sign::NotApplicable));
+        let central: [fn(&mut ConicData); 5] = [
+            |d| d.midpoint[1] += 0.5,
+            |d| d.half_axes[0] = 5.5,
+            |d| d.half_axes[1] = 3.0,
+            |d| d.eigenvec[0] = [0.0, 1.0],
+            |d| d.eigenvec[1] = [0.0, -1.0],
+        ];
+        for (i, wrong) in central.iter().enumerate() {
+            let mut d = ellipse;
+            wrong(&mut d);
+            let r = conic_result(&e_ellipse, &d);
+            assert!(
+                matches!(&r, Err(m) if m.starts_with("parts differ")),
+                "central part {i}: {r:?}"
+            );
+        }
+
+        // y = x^2 / 4: focus (0, 1), vertex (0, 0), p = 2
+        let parabola_matrix = [1.0, 0.0, 0.0, 0.0, 0.0, -2.0];
+        let mut parabola = record(ConicType::Parabola, parabola_matrix);
+        parabola.midpoint = [0.0, 0.0];
+        parabola.p = 2.0;
+        parabola.eigenvec = [[0.0, 1.0], [-1.0, 0.0]];
+        let e_parabola = conic(
+            "parabola",
+            parabola_matrix,
+            ConicParts::Parabola {
+                vertex: (0.0, 0.0),
+                p: 2.0,
+                eigenvectors: [(0.0, 1.0), (-1.0, 0.0)],
+            },
+        );
+        assert_eq!(
+            conic_result(&e_parabola, &parabola),
+            Ok(Sign::NotApplicable)
+        );
+        let parabolic: [fn(&mut ConicData); 4] = [
+            |d| d.midpoint[0] = 0.25,
+            |d| d.p = 1.0,
+            |d| d.eigenvec[0] = [0.0, -1.0],
+            |d| d.eigenvec[1] = [1.0, 0.0],
+        ];
+        for (i, wrong) in parabolic.iter().enumerate() {
+            let mut d = parabola;
+            wrong(&mut d);
+            let r = conic_result(&e_parabola, &d);
+            assert!(
+                matches!(&r, Err(m) if m.starts_with("parts differ")),
+                "parabola part {i}: {r:?}"
+            );
+        }
+
+        // the single point (3, -1): (x - 3)^2 + (y + 1)^2 = 0
+        let point_matrix = [1.0, 1.0, 10.0, 0.0, -3.0, 1.0];
+        let mut point = record(ConicType::SinglePoint, point_matrix);
+        point.midpoint = [3.0, -1.0];
+        let e_point = conic(
+            "single_point",
+            point_matrix,
+            ConicParts::SinglePoint { point: (3.0, -1.0) },
+        );
+        assert_eq!(conic_result(&e_point, &point), Ok(Sign::NotApplicable));
+        let mut moved = point;
+        moved.midpoint = [3.0, -1.5];
+        assert!(matches!(conic_result(&e_point, &moved), Err(m) if m.starts_with("parts differ")));
+
+        // the lines x = 0 and y = 0: x y = 0
+        let pair_matrix = [0.0, 0.0, 0.0, 0.5, 0.0, 0.0];
+        let mut pair = record(ConicType::IntersectingLines, pair_matrix);
+        pair.lines = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]];
+        let e_pair = conic(
+            "intersecting_lines",
+            pair_matrix,
+            ConicParts::Lines {
+                lines: [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]],
+            },
+        );
+        assert_eq!(conic_result(&e_pair, &pair), Ok(Sign::NotApplicable));
+        for wrong in [[0.0, 1.0, 1.0], [0.0, -1.0, 0.0], [1.0, 0.0, 0.0]] {
+            let mut d = pair;
+            d.lines[1] = wrong;
+            let r = conic_result(&e_pair, &d);
+            assert!(
+                matches!(&r, Err(m) if m.starts_with("parts differ")),
+                "second line {wrong:?}: {r:?}"
+            );
+        }
+        // the lines in the other order
+        let mut swapped = pair;
+        swapped.lines = [pair.lines[1], pair.lines[0]];
+        assert!(conic_result(&e_pair, &swapped).is_err());
+
+        // a wrong type with the same matrix and parts
+        let mut circle = ellipse;
+        circle.ty = ConicType::Circle;
+        let r = conic_result(&e_ellipse, &circle);
+        assert!(
+            matches!(&r, Err(m) if m.starts_with("conic type differs")),
+            "{r:?}"
+        );
+        let mut hyperbola = ellipse;
+        hyperbola.ty = ConicType::Hyperbola;
+        assert!(conic_result(&e_ellipse, &hyperbola).is_err());
+
+        // a zero matrix on either side, and a NaN entry
+        let mut zero = ellipse;
+        zero.matrix = [0.0; 6];
+        assert!(
+            matches!(conic_result(&e_ellipse, &zero), Err(m) if m.starts_with("matrix differs"))
+        );
+        let e_zero = conic(
+            "ellipse",
+            [0.0; 6],
+            ConicParts::Central {
+                midpoint: (1.0, 2.0),
+                half_axes: (5.0, 4.0),
+                eigenvectors: [(1.0, 0.0), (0.0, 1.0)],
+            },
+        );
+        assert!(
+            matches!(conic_result(&e_zero, &ellipse), Err(m) if m.starts_with("matrix differs"))
+        );
+        let mut nan = ellipse;
+        nan.matrix[2] = f64::NAN;
+        assert!(
+            matches!(conic_result(&e_ellipse, &nan), Err(m) if m.starts_with("matrix differs"))
+        );
+        let mut nan_part = ellipse;
+        nan_part.half_axes[1] = f64::NAN;
+        assert!(conic_result(&e_ellipse, &nan_part).is_err());
+
+        // defined flipped either way
+        let mut undefined = ellipse;
+        undefined.defined = false;
+        assert!(conic_result(&e_ellipse, &undefined).is_err());
+        // the record says undefined although the value claims a conic
+        let r = compare_conic(
+            &e_ellipse,
+            Kind::Conic,
+            &Value::Conic {
+                ty: ConicType::Ellipse,
+            },
+            Some(&undefined),
+        )
+        .0;
+        assert!(r.is_err(), "{r:?}");
+        let none = Expected {
+            kind: Kind::Conic,
+            data: None,
+        };
+        assert!(conic_result(&none, &ellipse).is_err());
+        assert_eq!(conic_result(&none, &undefined), Ok(Sign::NotApplicable));
+    }
+
+    #[test]
+    fn conics_compare_the_raw_matrix_and_count_the_scale() {
+        use geo_kernel::script::load;
+        let c = load("F = (0, 1)\nA = (0, -1)\nB = (1, -1)\ng = Line(A, B)\np = Parabola(F, g)\n")
+            .unwrap();
+        let id = c.id("p").unwrap();
+        let d = c.conic(id).unwrap();
+        let expected = |matrix: [f64; 6]| Expected {
+            kind: Kind::Conic,
+            data: Some(ExpectedData::Conic {
+                conic_type: "parabola".into(),
+                matrix,
+                parts: ConicParts::Parabola {
+                    vertex: (d.midpoint[0], d.midpoint[1]),
+                    p: d.p,
+                    eigenvectors: [
+                        (d.eigenvec[0][0], d.eigenvec[0][1]),
+                        (d.eigenvec[1][0], d.eigenvec[1][1]),
+                    ],
+                },
+            }),
+        };
+        let (r, a) = compare_conic(&expected(d.matrix), Kind::Conic, &c.value(id), Some(&d));
+        assert_eq!(r, Ok(Sign::NotApplicable));
+        assert_eq!(
+            a,
+            Some(MatrixAgreement {
+                raw: true,
+                up_to_scale: true
+            })
+        );
+        // the same conic with another scale fails, and is counted as agreeing up to scale
+        let (r, a) = compare_conic(
+            &expected(d.matrix.map(|v| 2.0 * v)),
+            Kind::Conic,
+            &c.value(id),
+            Some(&d),
+        );
+        assert!(r.is_err());
+        assert_eq!(
+            a,
+            Some(MatrixAgreement {
+                raw: false,
+                up_to_scale: true
+            })
+        );
+        // an undefined expectation against a defined conic
+        let undefined = Expected {
+            kind: Kind::Conic,
+            data: None,
+        };
+        assert!(
+            compare_conic(&undefined, Kind::Conic, &c.value(id), Some(&d))
+                .0
+                .is_err()
+        );
     }
 }

@@ -26,16 +26,16 @@ Line,,geometry,P0,partial,"Line(point, point); Line(point, line or segment); Lin
 Ray,,geometry,P1,partial,"Ray(point, point); Ray(point, vector)"
 AngularBisector,,geometry,P1,partial,"AngularBisector(point, point, point); AngularBisector(line, line)"
 OrthogonalLine,,geometry,P0,partial,"OrthogonalLine(point, line or segment); OrthogonalLine(point, vector)"
-Tangent,,geometry,P1,partial,"Tangent(point, circle); Tangent(line or segment, circle)"
+Tangent,,geometry,P1,partial,"Tangent(point, circle or conic); Tangent(line or segment, circle or conic)"
 Segment,,geometry,P0,partial,"Segment(point, point)"
 Slope,,geometry,P1,partial,Slope(line or segment)
 Angle,,geometry,P1,partial,"Angle(point, point, point); Angle(polygon)"
 InteriorAngles,,geometry,P1,partial,InteriorAngles(polygon)
 Direction,,geometry,P1,partial,"Direction(line, segment or ray)"
 Point,,geometry,P1,todo,
-Midpoint,,geometry,P0,partial,"Midpoint(point, point); Midpoint(segment); Midpoint(circle)"
+Midpoint,,geometry,P0,partial,"Midpoint(point, point); Midpoint(segment); Midpoint(circle or conic)"
 LineBisector,,geometry,P1,partial,"LineBisector(point, point); LineBisector(segment)"
-Intersect,,geometry,P0,partial,line/line; line/circle; circle/circle; optional index 1 or 2
+Intersect,,geometry,P0,partial,line/line; line/circle; circle/circle; line/conic; optional index 1 or 2
 IntersectPath,,geometry,P1,todo,
 IntersectRegion,,english,P2,todo,
 Distance,,geometry,P0,partial,"Distance(point, point); Distance(point, line or segment); Distance(line, line)"
@@ -60,7 +60,7 @@ Barycenter,,geometry,P1,todo,
 Trilinear,,geometry,P1,partial,"Trilinear(point, point, point, number, number, number)"
 Cubic,,geometry,P1,todo,
 TriangleCurve,,geometry,P1,todo,
-Vertex,,geometry,P1,partial,"Vertex(polygon); Vertex(polygon, index)"
+Vertex,,geometry,P1,partial,"Vertex(polygon); Vertex(polygon, index); Vertex(conic)"
 PolyLine,,geometry,P1,partial,PolyLine of two or more points
 PenStroke,,geometry,P1,todo,
 PenStrokeBezier,,english,P2,todo,
@@ -153,26 +153,26 @@ BezierCurve,,function,P2,todo,
 ImplicitSurface,,english,P2,todo,
 Normalize,,function,P2,todo,
 SVD,,function,P2,todo,
-Ellipse,,conic,P1,todo,
-Hyperbola,,conic,P1,todo,
-SecondAxisLength,,conic,P1,todo,
-SecondAxis,,conic,P1,todo,
-Directrix,,conic,P1,todo,
-Diameter,,conic,P1,partial,"Diameter(line or segment, circle)"
-Conic,,conic,P1,todo,
-FirstAxis,,conic,P1,todo,
+Ellipse,,conic,P1,partial,"Ellipse(focus, focus, point); Ellipse(focus, focus, semi-major axis length)"
+Hyperbola,,conic,P1,partial,"Hyperbola(focus, focus, point); Hyperbola(focus, focus, semi-major axis length)"
+SecondAxisLength,,conic,P1,partial,"SecondAxisLength(conic), as a number"
+SecondAxis,,conic,P1,partial,SecondAxis(conic)
+Directrix,,conic,P1,partial,Directrix(conic)
+Diameter,,conic,P1,partial,"Diameter(line or segment, circle or conic)"
+Conic,,conic,P1,partial,"Conic(point, point, point, point, point)"
+FirstAxis,,conic,P1,partial,FirstAxis(conic)
 Circle,,conic,P0,partial,"Circle(centre, point); Circle(centre, radius); Circle(centre, segment); Circle(point, point, point)"
 Incircle,,conic,P1,partial,"Incircle(point, point, point)"
 Semicircle,,conic,P1,todo,
-FirstAxisLength,,conic,P1,todo,
-Parabola,,conic,P1,todo,
-Focus,,conic,P1,todo,
-Parameter,,conic,P1,todo,
-Center,,conic,P1,partial,Center(circle); Center(segment)
-Polar,,conic,P1,partial,"Polar(point, circle)"
-Excentricity,,conic,P1,todo,
-Eccentricity,,conic,P1,todo,
-Axes,,conic,P1,todo,
+FirstAxisLength,,conic,P1,partial,"FirstAxisLength(conic), as a number"
+Parabola,,conic,P1,partial,"Parabola(focus, directrix line)"
+Focus,,conic,P1,partial,Focus(conic)
+Parameter,,conic,P1,partial,Parameter(parabola)
+Center,,conic,P1,partial,Center(circle or conic); Center(segment)
+Polar,,conic,P1,partial,"Polar(point, circle or conic)"
+Excentricity,,conic,P1,partial,Excentricity(conic)
+Eccentricity,,conic,P1,partial,Eccentricity(conic)
+Axes,,conic,P1,partial,Axes(conic)
 Sort,,list,P2,todo,
 First,,list,P2,todo,
 Last,,list,P2,todo,
@@ -339,10 +339,10 @@ Determinant,,vector,P2,todo,
 Identity,,vector,P2,todo,
 Dimension,,vector,P2,todo,
 MatrixRank,,vector,P2,todo,
-Mirror,,transformation,P1,partial,"point, line, segment or circle in a point or a line; point in a circle"
-Dilate,,transformation,P1,partial,"point, line, segment or circle by a factor, from the origin or a point"
-Rotate,,transformation,P1,partial,"point, line, segment or circle by an angle, about the origin or a point"
-Translate,,transformation,P1,partial,"point, line, segment, circle, ray or vector by a vector"
+Mirror,,transformation,P1,partial,"point, line, segment, circle or conic in a point or a line; point in a circle"
+Dilate,,transformation,P1,partial,"point, line, segment, circle or conic by a factor, from the origin or a point"
+Rotate,,transformation,P1,partial,"point, line, segment, circle or conic by an angle, about the origin or a point"
+Translate,,transformation,P1,partial,"point, line, segment, circle, conic, ray or vector by a vector"
 Shear,,transformation,P1,partial,"point, line or segment with a line and a ratio"
 Stretch,,transformation,P1,partial,"point, line or segment with a line and a ratio"
 CellRange,,spreadsheet,,out_of_scope,
@@ -439,14 +439,14 @@ Curve,CurveCartesian,function,P2,todo,
 FormulaText,LaTeX,text,P2,todo,
 IsDefined,Defined,logical,P2,todo,
 ConjugateDiameter,Diameter,conic,P1,partial,
-LinearEccentricity,Excentricity,conic,P1,todo,
-MajorAxis,FirstAxis,conic,P1,todo,
-SemiMajorAxisLength,FirstAxisLength,conic,P1,todo,
+LinearEccentricity,Excentricity,conic,P1,partial,
+MajorAxis,FirstAxis,conic,P1,partial,
+SemiMajorAxisLength,FirstAxisLength,conic,P1,partial,
 PerpendicularBisector,LineBisector,geometry,P1,partial,
 PerpendicularLine,OrthogonalLine,geometry,P0,partial,
 PerpendicularVector,OrthogonalVector,vector,P2,partial,
-MinorAxis,SecondAxis,conic,P1,todo,
-SemiMinorAxisLength,SecondAxisLength,conic,P1,todo,
+MinorAxis,SecondAxis,conic,P1,partial,
+SemiMinorAxisLength,SecondAxisLength,conic,P1,partial,
 UnitPerpendicularVector,UnitOrthogonalVector,vector,P2,partial,
 CorrelationCoefficient,PMCC,statistics,,out_of_scope,
 FitLine,FitLineY,statistics,,out_of_scope,

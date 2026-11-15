@@ -54,9 +54,24 @@ struct ImportGap {
     reason: String,
 }
 
+/// An object whose imported value is the golden one, but whose saved conic
+/// matrix, classified on a fresh record, is a different object: the live
+/// object kept the type of the conic it was made from (a dilated degenerate
+/// conic is not classified again), the saved matrix alone does not.
+#[derive(Deserialize)]
+struct Reclassified {
+    id: String,
+    label: String,
+    /// The saved value exactly as the cross-check reports it.
+    saved: String,
+    reason: String,
+}
+
 #[derive(Deserialize)]
 struct ImportGapFile {
     gap: Vec<ImportGap>,
+    #[serde(default)]
+    reclassified: Vec<Reclassified>,
 }
 
 /// Whether two kernel values are the same within the tolerance of the golden files.
@@ -348,10 +363,19 @@ fn imported_constructions_agree_with_the_golden_snapshots() {
         .map(|c| (c.id.clone(), c))
         .collect();
     let gaps = gaps::load().unwrap();
-    let import_gaps: Vec<ImportGap> =
-        toml::from_str::<ImportGapFile>(include_str!("../known-import-gaps.toml"))
-            .unwrap()
-            .gap;
+    let gap_file: ImportGapFile =
+        toml::from_str(include_str!("../known-import-gaps.toml")).unwrap();
+    let import_gaps = gap_file.gap;
+    let reclassified: BTreeMap<String, &Reclassified> = gap_file
+        .reclassified
+        .iter()
+        .map(|r| (format!("{}:{}", r.id, r.label), r))
+        .collect();
+    assert_eq!(
+        reclassified.len(),
+        gap_file.reclassified.len(),
+        "a reclassified object is listed twice"
+    );
     let mut used_import_gaps = BTreeSet::new();
     let mut xml = Vec::new();
     files(&root.join("golden/ggb"), "xml", &mut xml);
@@ -450,14 +474,19 @@ fn imported_constructions_agree_with_the_golden_snapshots() {
         "the set of skipped objects changed"
     );
     // Every disagreement with the saved value is documented: a pinned import
-    // gap, or a kernel gap at step 0 (whose golden value is the saved one).
+    // gap, a kernel gap at step 0 (whose golden value is the saved one), or a
+    // pinned saved matrix that classifies afresh as another object (the imported
+    // value agreed with the golden one above, or the test already failed).
     let mut undocumented = Vec::new();
     for key in totals.mismatched.keys() {
         let (id, label) = key.split_once(':').unwrap();
         let in_kernel_gap = gaps
             .get(id)
             .is_some_and(|g| g.mismatches.contains(&format!("0:{label}")));
-        if !(listed.contains(key) || in_kernel_gap) {
+        let reclassified_as_pinned = reclassified
+            .get(key)
+            .is_some_and(|r| r.saved == totals.mismatched[key].0 && !r.reason.is_empty());
+        if !(listed.contains(key) || in_kernel_gap || reclassified_as_pinned) {
             undocumented.push(format!("{key}: {:?}", totals.mismatched[key]));
         }
     }
@@ -467,7 +496,7 @@ fn imported_constructions_agree_with_the_golden_snapshots() {
         undocumented.len(),
         undocumented.join("\n")
     );
-    for key in &listed {
+    for key in listed.iter().chain(reclassified.keys()) {
         assert!(
             totals.mismatched.contains_key(key),
             "{key} no longer mismatches"

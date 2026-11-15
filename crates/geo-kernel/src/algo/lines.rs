@@ -251,7 +251,7 @@ fn tangent_points(c: &Construction, point: Id, circle: Id) -> Vec<LineDef> {
 
 /// `GeoVec3D.linDep` for two lines: the same line within the standard
 /// precision.
-fn lin_dep(l1: Value, l2: Value) -> bool {
+pub(crate) fn lin_dep(l1: Value, l2: Value) -> bool {
     let (Value::Line { a: x, b: y, c: z }, Value::Line { a: u, b: v, c: w }) = (l1, l2) else {
         return false;
     };
