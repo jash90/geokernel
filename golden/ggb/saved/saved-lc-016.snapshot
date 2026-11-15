@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "id": "saved-lc-016",
+  "script": [
+    "A = (1.02, 1.53)",
+    "r = 3.35",
+    "k = Circle(A, r)",
+    "C = (-3.98, 1.04)",
+    "D = (6.02, 1.53)",
+    "f = Line(C, D)",
+    "P = Intersect(f, k)"
+  ],
+  "objects": {
+    "A": { "type": "point", "defined": true, "x": 0.95, "y": 1.19 },
+    "r": { "type": "number", "defined": true, "value": 3.35 },
+    "k": { "type": "circle", "defined": true, "cx": 0.95, "cy": 1.19, "r": 3.35 },
+    "C": { "type": "point", "defined": true, "x": 6.02, "y": 1.53 },
+    "D": { "type": "point", "defined": true, "x": -3.98, "y": 1.04 },
+    "f": { "type": "line", "defined": true, "a": 0.49, "b": -10.0, "c": 12.350200000000001 },
+    "P_{1}": { "type": "point", "defined": true, "x": 4.290262128998705, "y": 1.4452428443209366 },
+    "P_{2}": { "type": "point", "defined": true, "x": -2.399214494369449, "y": 1.117458489775897 }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "id": "saved-tangent-010",
+  "script": [
+    "A = (-1.15, 1.27)",
+    "r = 1.86",
+    "k = Circle(A, r)",
+    "P = (3.33, -0.59)",
+    "t = Tangent(P, k)"
+  ],
+  "objects": {
+    "A": { "type": "point", "defined": true, "x": -1.15, "y": 1.27 },
+    "r": { "type": "number", "defined": true, "value": 1.86 },
+    "k": { "type": "circle", "defined": true, "cx": -1.15, "cy": 1.27, "r": 1.86 },
+    "P": { "type": "point", "defined": true, "x": -5.050697, "y": -4.12096 },
+    "t_{1}": { "type": "line", "defined": true, "a": -3.9228667481233694, "b": 5.042757507939181, "c": 0.9677906637705911 },
+    "t_{2}": { "type": "line", "defined": true, "a": -6.016620761946728, "b": 2.149083854650765, "c": -21.531839830840436 }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "id": "saved-firstmove-005",
+  "script": [
+    "A = (-1.86, 2.78)",
+    "r = 1.59",
+    "k = Circle(A, r)",
+    "C = (-6.86, 2.89)",
+    "D = (3.14, 2.62)",
+    "f = Line(C, D)",
+    "P = Intersect(f, k)"
+  ],
+  "objects": {
+    "A": { "type": "point", "defined": true, "x": -1.86, "y": 2.78 },
+    "r": { "type": "number", "defined": true, "value": 1.59 },
+    "k": { "type": "circle", "defined": true, "cx": -1.86, "cy": 2.78, "r": 1.59 },
+    "C": { "type": "point", "defined": true, "x": 4.14, "y": 2.62 },
+    "D": { "type": "point", "defined": true, "x": 3.14, "y": 2.62 },
+    "f": { "type": "line", "defined": true, "a": 0.0, "b": -0.9999999999999996, "c": 2.619999999999999 },
+    "P_{1}": { "type": "point", "defined": true, "x": -3.441929201955638, "y": 2.6200000000000006 },
+    "P_{2}": { "type": "point", "defined": true, "x": -0.27807079804436247, "y": 2.6200000000000006 }
+  }
+}

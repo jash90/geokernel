@@ -760,21 +760,36 @@ fn next_indexed_label(c: &Construction, taken: &Taken, chars: &[char]) -> String
             ch.to_string()
         }
     };
-    let mut counter = 0;
+    // Every counter below the hint is taken by the construction (see
+    // `Construction::label_hint`); `taken` holds only this line's labels, so
+    // it does not move the hint.
+    let family: String = format!("L:{}", chars.iter().collect::<String>());
+    let none = Taken::new();
+    let mut counter = c.label_hint(&family);
+    let mut first_open = None;
     loop {
         let (q, r) = (counter / chars.len(), counter % chars.len());
         let b = base(chars[r]);
+        let at = counter;
         counter += 1;
         if q == 0 {
-            if is_free(c, taken, &b) {
-                return b;
+            if is_free(c, &none, &b) {
+                first_open.get_or_insert(at);
+                if is_free(c, taken, &b) {
+                    c.set_label_hint(&family, first_open.unwrap_or(at));
+                    return b;
+                }
             }
             continue;
         }
         let short = format!("{b}_{q}");
         let long = format!("{b}_{{{q}}}");
-        if is_free(c, taken, &short) && is_free(c, taken, &long) {
-            return if q < 10 { short } else { long };
+        if is_free(c, &none, &short) && is_free(c, &none, &long) {
+            first_open.get_or_insert(at);
+            if is_free(c, taken, &short) && is_free(c, taken, &long) {
+                c.set_label_hint(&family, first_open.unwrap_or(at));
+                return if q < 10 { short } else { long };
+            }
         }
     }
 }
@@ -802,11 +817,19 @@ fn side_label(c: &Construction, taken: &Taken, p: Id) -> String {
 /// labels given earlier in the same line.
 fn planned_index_label(c: &Construction, taken: &Taken, prefix: &str) -> String {
     let free = |label: &str| c.id(label).is_none() && !taken.contains(label);
-    let mut n = 1;
+    let in_construction = |label: &str| c.id(label).is_none();
+    let family = format!("I:{prefix}");
+    let mut n = c.label_hint(&family).max(1);
+    let mut first_open = None;
     loop {
         let long = format!("{prefix}_{{{n}}}");
-        if free(&long) && (n >= 10 || free(&format!("{prefix}_{n}"))) {
-            return long;
+        let short = format!("{prefix}_{n}");
+        if in_construction(&long) && (n >= 10 || in_construction(&short)) {
+            first_open.get_or_insert(n);
+            if free(&long) && (n >= 10 || free(&short)) {
+                c.set_label_hint(&family, first_open.unwrap_or(n));
+                return long;
+            }
         }
         n += 1;
     }
