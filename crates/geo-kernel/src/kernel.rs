@@ -440,7 +440,11 @@ impl Construction {
         if !(x.is_finite() && y.is_finite()) {
             return Err(Error::NotFinite);
         }
-        if self.values[id.0] == new {
+        // Bit equality, as in `set_number`: `0` to `-0` is a change.
+        let same = |a: f64, b: f64| a.to_bits() == b.to_bits();
+        if matches!(self.values[id.0], Value::Point { x: ox, y: oy } | Value::Vector { x: ox, y: oy }
+            if same(ox, x) && same(oy, y))
+        {
             return Ok(0);
         }
         self.defs[id.0] = def;

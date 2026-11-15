@@ -101,7 +101,12 @@ pub(crate) fn lcm_of(a: f64, b: f64) -> f64 {
         return f64::NAN;
     }
     let (i, j) = (magnitude(a), magnitude(b));
-    let l = (i / gcd(i, j) * j) as f64;
+    let g = gcd(i, j);
+    if g == 0 {
+        // ±1e-8 is an integer (0) but not zero; `BigInteger.divide` throws
+        return f64::NAN;
+    }
+    let l = (i / g * j) as f64;
     if l < 1e15 {
         l
     } else {
@@ -159,6 +164,7 @@ mod tests {
         assert_eq!(lcm_of(7.0, -3.0), 21.0);
         assert_eq!(lcm_of(7.5, 0.0), 0.0);
         assert!(lcm_of(1e16, 3.0).is_nan());
+        assert!(lcm_of(1e-8, -1e-8).is_nan());
         assert!(max(f64::NAN, 1.0).is_nan());
         assert!(max(-0.0, 0.0).is_sign_positive());
         assert!(min(0.0, -0.0).is_sign_negative());

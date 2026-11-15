@@ -101,6 +101,11 @@ fn infinity_is_kept_behind_an_undefined_number() {
     c.set_number(a, -0.0).unwrap();
     assert_eq!(num(&c, "f"), -std::f64::consts::FRAC_PI_2);
     assert!(num(&c, "d").is_sign_negative());
+    // the same through a point that moves from 0 to -0
+    let mut c = load("P = (0, 0)\nc = 1/x(P)\nf = atan(c)\n").unwrap();
+    let p = c.id("P").unwrap();
+    c.move_point(p, -0.0, 0.0).unwrap();
+    assert_eq!(num(&c, "f"), -std::f64::consts::FRAC_PI_2);
 }
 
 #[test]
