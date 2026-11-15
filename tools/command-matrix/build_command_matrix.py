@@ -30,11 +30,11 @@ KNOWN_GROUPS = OUT_OF_SCOPE_GROUPS | P1_GROUPS | {
 # (derived from crates/geo-kernel/src/script.rs and the group files in
 # crates/geo-kernel/src/algo/). The note lists the supported forms.
 PARTIAL = {
-    "Line": "Line(point, point); Line(point, line or segment)",
+    "Line": "Line(point, point); Line(point, line or segment); Line(point, vector)",
     "Segment": "Segment(point, point)",
     "Midpoint": "Midpoint(point, point); Midpoint(segment); Midpoint(circle)",
     "Distance": "Distance(point, point); Distance(point, line or segment); Distance(line, line)",
-    "OrthogonalLine": "OrthogonalLine(point, line or segment)",
+    "OrthogonalLine": "OrthogonalLine(point, line or segment); OrthogonalLine(point, vector)",
     "Circle": "Circle(centre, point); Circle(centre, radius); Circle(centre, segment); "
               "Circle(point, point, point)",
     "Intersect": "line/line; line/circle; circle/circle; optional index 1 or 2",
@@ -45,7 +45,7 @@ PARTIAL = {
     "Incircle": "Incircle(point, point, point)",
     "Center": "Center(circle); Center(segment)",
     "Diameter": "Diameter(line or segment, circle)",
-    "Length": "Length(segment)",
+    "Length": "Length(segment); Length(vector)",
     "Radius": "Radius(circle)",
     "Circumference": "Circumference(circle)",
     "Perimeter": "Perimeter(circle)",
@@ -59,6 +59,13 @@ PARTIAL = {
     "Dilate": "point, line, segment or circle by a factor, from the origin or a point",
     "Shear": "point, line or segment with a line and a ratio",
     "Stretch": "point, line or segment with a line and a ratio",
+    "Vector": "Vector(point, point); Vector(point); a free (x, y) under a lower-case label",
+    "Ray": "Ray(point, point); Ray(point, vector)",
+    "Translate": "point, line, segment, circle, ray or vector by a vector",
+    "Direction": "Direction(line, segment or ray)",
+    "UnitVector": "UnitVector(vector, line, segment or ray)",
+    "OrthogonalVector": "OrthogonalVector(vector, line, segment or ray)",
+    "UnitOrthogonalVector": "UnitOrthogonalVector(vector, line, segment or ray)",
 }
 
 # Commands the first version of the kernel already had: priority P0.

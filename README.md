@@ -10,14 +10,16 @@ belong to GeoGebra GmbH.
 
 ## Status
 
-Early. The kernel covers points, lines, segments, circles and numbers,
-incremental updates, a small script language and SVG output, plus a desktop
-window in which free points can be dragged. The commands so far: lines,
-segments, midpoints, perpendicular and parallel lines, bisectors, tangents
-and polars of circles, circles (centre and point, centre and radius, three
-points, incircle), intersections, measures (length, distance, radius, area,
-slope, angle, ratios) and transformations (reflection, rotation, dilation,
-shear, stretch).
+Early. The kernel covers points, lines, segments, rays, circles, vectors
+and numbers, incremental updates, a small script language and SVG output.
+The desktop window draws a construction, runs commands from an input bar,
+lists the objects and lets you drag free points. The commands so far: lines,
+segments, rays, midpoints, perpendicular and parallel lines, bisectors,
+tangents and polars of circles, circles (centre and point, centre and
+radius, three points, incircle), intersections, measures (length, distance,
+radius, area, slope, angle, ratios), vectors (between points, direction,
+unit and orthogonal vectors) and transformations (translation, reflection,
+rotation, dilation, shear, stretch).
 
 Every command is checked against values recorded from GeoGebra. See
 `docs/command-matrix.csv` for what is planned and done,
@@ -53,7 +55,7 @@ The reference commit for ported code and recorded test data is
 | --- | --- |
 | `crates/geo-kernel` | The kernel: construction graph, object types, incremental updates, script parser, SVG output. No dependencies and no knowledge of any user interface. |
 | `crates/geo-cli` | The `geokernel` binary: `run`, `demo`, `bench`. |
-| `crates/geo-app` | The `geokernel-app` desktop window (egui on wgpu): draws a construction and lets you drag its free points. |
+| `crates/geo-app` | The `geokernel-app` desktop window (egui on wgpu): draws a construction, with pan and zoom, an input bar, an object list and dragging of free points. |
 | `crates/geo-golden` | Tests that compare the kernel with values recorded from GeoGebra. |
 | `golden/` | Recorded golden data and its format, [golden/SCHEMA.md](golden/SCHEMA.md). |
 | `examples/` | Example scripts. |
@@ -67,7 +69,7 @@ cargo test --workspace
 cargo run --release -p geo-cli -- demo out        # triangle before and after moving A
 cargo run --release -p geo-cli -- run examples/triangle.geo out.svg
 cargo run --release -p geo-cli -- bench           # 105 thousand objects, dragging a point
-cargo run --release -p geo-app                    # window with the triangle; drag the blue points
+cargo run --release -p geo-app                    # window with the triangle; drag the blue points, type commands
 ```
 
 ## Script syntax
@@ -76,6 +78,7 @@ Commands use GeoGebra's English names and argument order.
 
 ```
 A = (0, 0)              # free point
+v = (1, 2)              # free vector: a lower-case label, as in GeoGebra
 r = 3                   # free number (a slider)
 l = Line(A, B)
 s = Segment(A, B)
@@ -91,6 +94,9 @@ b = LineBisector(A, B)
 t = Tangent(P, k)       # creates t_{1} and t_{2}, as GeoGebra does
 a = Angle(A, B, C)      # radians
 R = Rotate(A, a, B)     # A rotated by the angle a about B
+u = Vector(A, B)
+h = Ray(A, B)
+T = Translate(k, u)     # the circle k moved by the vector u
 ```
 
 The group files in `crates/geo-kernel/src/algo/` list every command and

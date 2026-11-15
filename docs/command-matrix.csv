@@ -22,16 +22,16 @@ NextPrime,,algebra,P2,todo,
 RightSide,,algebra,P2,todo,
 PreviousPrime,,algebra,P2,todo,
 IsFactored,,algebra,P2,todo,
-Line,,geometry,P0,partial,"Line(point, point); Line(point, line or segment)"
-Ray,,geometry,P1,todo,
+Line,,geometry,P0,partial,"Line(point, point); Line(point, line or segment); Line(point, vector)"
+Ray,,geometry,P1,partial,"Ray(point, point); Ray(point, vector)"
 AngularBisector,,geometry,P1,partial,"AngularBisector(point, point, point); AngularBisector(line, line)"
-OrthogonalLine,,geometry,P0,partial,"OrthogonalLine(point, line or segment)"
+OrthogonalLine,,geometry,P0,partial,"OrthogonalLine(point, line or segment); OrthogonalLine(point, vector)"
 Tangent,,geometry,P1,partial,"Tangent(point, circle); Tangent(line or segment, circle)"
 Segment,,geometry,P0,partial,"Segment(point, point)"
 Slope,,geometry,P1,partial,Slope(line or segment)
 Angle,,geometry,P1,partial,"Angle(point, point, point)"
 InteriorAngles,,geometry,P1,todo,
-Direction,,geometry,P1,todo,
+Direction,,geometry,P1,partial,"Direction(line, segment or ray)"
 Point,,geometry,P1,todo,
 Midpoint,,geometry,P0,partial,"Midpoint(point, point); Midpoint(segment); Midpoint(circle)"
 LineBisector,,geometry,P1,partial,"LineBisector(point, point); LineBisector(segment)"
@@ -39,7 +39,7 @@ Intersect,,geometry,P0,partial,line/line; line/circle; circle/circle; optional i
 IntersectPath,,geometry,P1,todo,
 IntersectRegion,,english,P2,todo,
 Distance,,geometry,P0,partial,"Distance(point, point); Distance(point, line or segment); Distance(line, line)"
-Length,,geometry,P1,partial,Length(segment)
+Length,,geometry,P1,partial,Length(segment); Length(vector)
 Radius,,geometry,P1,partial,Radius(circle)
 Type,,geometry,P1,todo,
 CircleArc,,geometry,P1,todo,
@@ -328,10 +328,10 @@ RandomPolynomial,,probability,,out_of_scope,
 RandomDiscrete,,probability,,out_of_scope,
 RandomPointIn,,probability,,out_of_scope,
 ApplyMatrix,,vector,P2,todo,
-UnitVector,,vector,P2,todo,
-Vector,,vector,P2,todo,
-UnitOrthogonalVector,,vector,P2,todo,
-OrthogonalVector,,vector,P2,todo,
+UnitVector,,vector,P2,partial,"UnitVector(vector, line, segment or ray)"
+Vector,,vector,P2,partial,"Vector(point, point); Vector(point); a free (x, y) under a lower-case label"
+UnitOrthogonalVector,,vector,P2,partial,"UnitOrthogonalVector(vector, line, segment or ray)"
+OrthogonalVector,,vector,P2,partial,"OrthogonalVector(vector, line, segment or ray)"
 Invert,,vector,P2,todo,
 Transpose,,vector,P2,todo,
 ReducedRowEchelonForm,,vector,P2,todo,
@@ -342,7 +342,7 @@ MatrixRank,,vector,P2,todo,
 Mirror,,transformation,P1,partial,"point, line, segment or circle in a point or a line; point in a circle"
 Dilate,,transformation,P1,partial,"point, line, segment or circle by a factor, from the origin or a point"
 Rotate,,transformation,P1,partial,"point, line, segment or circle by an angle, about the origin or a point"
-Translate,,transformation,P1,todo,
+Translate,,transformation,P1,partial,"point, line, segment, circle, ray or vector by a vector"
 Shear,,transformation,P1,partial,"point, line or segment with a line and a ratio"
 Stretch,,transformation,P1,partial,"point, line or segment with a line and a ratio"
 CellRange,,spreadsheet,,out_of_scope,
@@ -444,10 +444,10 @@ MajorAxis,FirstAxis,conic,P1,todo,
 SemiMajorAxisLength,FirstAxisLength,conic,P1,todo,
 PerpendicularBisector,LineBisector,geometry,P1,partial,
 PerpendicularLine,OrthogonalLine,geometry,P0,partial,
-PerpendicularVector,OrthogonalVector,vector,P2,todo,
+PerpendicularVector,OrthogonalVector,vector,P2,partial,
 MinorAxis,SecondAxis,conic,P1,todo,
 SemiMinorAxisLength,SecondAxisLength,conic,P1,todo,
-UnitPerpendicularVector,UnitOrthogonalVector,vector,P2,todo,
+UnitPerpendicularVector,UnitOrthogonalVector,vector,P2,partial,
 CorrelationCoefficient,PMCC,statistics,,out_of_scope,
 FitLine,FitLineY,statistics,,out_of_scope,
 BinomialCoefficient,nCr,english,P2,todo,
