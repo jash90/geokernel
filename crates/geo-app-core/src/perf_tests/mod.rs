@@ -6,6 +6,7 @@
 
 mod colours;
 mod rows;
+mod undo;
 
 use crate::workbench::Workbench;
 use geo_kernel::kernel::{Kind, Value};

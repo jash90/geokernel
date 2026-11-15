@@ -22,7 +22,11 @@
 //! plain script; `load_tolerant` checks it.
 
 use geo_kernel::kernel::Construction;
+use shared::Chain;
+pub use shared::Labels;
 use std::collections::BTreeSet;
+
+mod shared;
 
 /// The names of the directives, which no object may take.
 pub const DIRECTIVES: [&str; 3] = ["SetCoords", "SetValue", "SetVisibleInView"];
@@ -154,11 +158,15 @@ fn tokens(line: &str) -> impl Iterator<Item = &str> {
 }
 
 /// The journal of a construction, plus which objects are hidden.
+///
+/// Copies share their storage (see `shared.rs`): a clone, as an undo step
+/// takes, costs a pointer and the steps after it take memory for what
+/// they change only.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Log {
-    ops: Vec<Op>,
+    ops: Chain<Op>,
     /// Labels hidden in the drawing (part of the state that undo restores).
-    pub hidden: BTreeSet<String>,
+    pub hidden: Labels,
     /// Labels removed by `remove` since the last rebuild: lines that use them
     /// are dropped by the rebuild on purpose.
     removed: BTreeSet<String>,
@@ -166,7 +174,7 @@ pub struct Log {
 
 impl Log {
     fn entries(&self) -> impl Iterator<Item = &Entry> {
-        self.ops.iter().filter_map(|op| match op {
+        self.ops.items().into_iter().filter_map(|op| match op {
             Op::Define(e) => Some(e),
             Op::Set { .. } => None,
         })
@@ -190,9 +198,12 @@ impl Log {
     /// Records a new value of a free object. A move right after a move of the
     /// same object replaces it: only the state at the next line matters.
     pub fn record_set(&mut self, label: &str, to: Setting) {
-        if let Some(Op::Set { label: l, to: t }) = self.ops.last_mut() {
+        if let Some(Op::Set { label: l, .. }) = self.ops.last() {
             if l == label {
-                *t = to;
+                self.ops.replace_last(Op::Set {
+                    label: label.to_owned(),
+                    to,
+                });
                 return;
             }
         }
@@ -255,7 +266,108 @@ impl Log {
         let mut c = Construction::new();
         let mut kept = Log::default();
         let mut gone = self.removed.clone();
-        for op in &self.ops {
+        // While nothing is dropped or merged, `kept` is the first `same`
+        // ops of the journal and shares their storage (see `shared.rs`).
+        let ops = self.ops.items();
+        let mut same = Some(0);
+        let diverge = |kept: &mut Log, same: &mut Option<usize>| {
+            if let Some(n) = same.take() {
+                kept.ops = self.ops.prefix(n);
+            }
+        };
+        for (i, op) in ops.iter().enumerate() {
+            match op {
+                Op::Define(e) => {
+                    let before = c.len();
+                    match geo_kernel::script::exec(&mut c, &e.line) {
+                        Ok(_) => {
+                            let made: Vec<&str> =
+                                c.ids().skip(before).map(|id| c.label(id)).collect();
+                            if made != e.labels {
+                                return Err(format!(
+                                    "`{}` created {made:?} instead of {:?}",
+                                    e.line, e.labels
+                                ));
+                            }
+                            // What `record` would make of it is `e` itself.
+                            match &mut same {
+                                Some(n) => *n = i + 1,
+                                None => kept.record(&c, before, &e.line),
+                            }
+                        }
+                        Err(err) => {
+                            if c.len() != before || !tokens(&e.line).any(|t| gone.contains(t)) {
+                                return Err(format!("`{}`: {err}", e.line));
+                            }
+                            gone.extend(e.labels.iter().cloned());
+                            diverge(&mut kept, &mut same);
+                        }
+                    }
+                }
+                Op::Set { label, to } => {
+                    let Some(id) = c.id(label) else {
+                        if gone.contains(label) {
+                            diverge(&mut kept, &mut same);
+                            continue;
+                        }
+                        return Err(format!("`{label}` is missing"));
+                    };
+                    let result = match *to {
+                        Setting::Point(x, y) => c.move_point(id, x, y),
+                        Setting::Number(v) => c.set_number(id, v),
+                    };
+                    result.map_err(|e| format!("`{label}`: {e}"))?;
+                    // A set right after a set of the same object is merged
+                    // into it by `record_set` (after a `remove` they can
+                    // meet): the journal and `kept` part there.
+                    let merges = |n: usize| {
+                        n > 0 && matches!(ops[n - 1], Op::Set { label: l, .. } if l == label)
+                    };
+                    match same {
+                        Some(n) if n == i && !merges(n) => same = Some(i + 1),
+                        _ => {
+                            diverge(&mut kept, &mut same);
+                            kept.record_set(label, *to);
+                        }
+                    }
+                }
+            }
+        }
+        if let Some(n) = same {
+            kept.ops = self.ops.prefix(n);
+        }
+        kept.hidden = self.hidden.clone();
+        Ok((c, kept))
+    }
+
+    /// A copy that shares no storage with `self`: what every clone was
+    /// before the journal shared its storage. For the tests that compare
+    /// the two.
+    #[cfg(test)]
+    pub(crate) fn deep_copy(&self) -> Log {
+        let mut ops = Chain::default();
+        for op in self.ops.items() {
+            ops.push(op.clone());
+        }
+        let mut hidden = Labels::default();
+        for l in &self.hidden {
+            hidden.insert(l.clone());
+        }
+        Log {
+            ops,
+            hidden,
+            removed: self.removed.clone(),
+        }
+    }
+
+    /// `rebuild` as it was before the journal shared its storage: every
+    /// kept line recorded anew. The oracle of the tests of `rebuild`.
+    #[cfg(test)]
+    pub(crate) fn rebuild_reference(&self) -> Result<(Construction, Log), String> {
+        let mut c = Construction::new();
+        let mut kept = Log::default();
+        let mut gone = self.removed.clone();
+        for op in self.ops.items() {
             match op {
                 Op::Define(e) => {
                     let before = c.len();
@@ -299,6 +411,18 @@ impl Log {
         Ok((c, kept))
     }
 
+    /// The number of entries (definitions and moves).
+    #[cfg(test)]
+    pub(crate) fn len(&self) -> usize {
+        self.ops.len()
+    }
+
+    /// The storage `logs` take together, in journal entries.
+    #[cfg(test)]
+    pub(crate) fn distinct_entries<'a>(logs: impl IntoIterator<Item = &'a Log>) -> usize {
+        Chain::distinct_nodes(logs.into_iter().map(|l| &l.ops))
+    }
+
     /// The journal as a script that `load` reads back into the same
     /// construction and an equal log: every definition line and every move
     /// in their order, then the hidden objects. Numbers are written with
@@ -319,7 +443,7 @@ impl Log {
     fn write_script(&self, labels: bool) -> String {
         use std::fmt::Write;
         let mut out = String::new();
-        for op in &self.ops {
+        for op in self.ops.items() {
             // Writing to a `String` cannot fail.
             let _ = match op {
                 Op::Define(e)

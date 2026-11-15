@@ -66,6 +66,11 @@ pub struct Workbench {
     /// Tests make every rebuild fail with this message while it is set.
     #[cfg(test)]
     pub fail_rebuilds: Option<String>,
+    /// Tests make every undo step a full copy of the journal, and every
+    /// rebuild record its lines anew, as before the journal shared its
+    /// storage, to compare the two.
+    #[cfg(test)]
+    pub(crate) unshared: bool,
 }
 
 impl Workbench {
@@ -85,6 +90,44 @@ impl Workbench {
     /// time.
     pub fn sides(&self) -> &Sides {
         self.sides.get_or_init(|| Sides::of(&self.construction))
+    }
+
+    /// A copy of `log` for an undo step: shares its storage (see
+    /// `scriptlog`), so it costs a pointer.
+    fn copy(&self, log: &Log) -> Log {
+        #[cfg(test)]
+        if self.unshared {
+            return log.deep_copy();
+        }
+        log.clone()
+    }
+
+    /// `log` replayed (see `Log::rebuild`).
+    fn replay(&self, log: &Log) -> Result<(Construction, Log), String> {
+        #[cfg(test)]
+        if self.unshared {
+            return log.rebuild_reference();
+        }
+        log.rebuild()
+    }
+
+    /// See the field of the same name.
+    #[cfg(test)]
+    pub(crate) fn set_unshared(&mut self, on: bool) {
+        self.unshared = on;
+    }
+
+    /// The journal entries the document holds with its undo history:
+    /// `(stored, listed)`, where `stored` counts each shared entry once and
+    /// `listed` counts every entry of every state, as full copies took.
+    #[cfg(test)]
+    pub(crate) fn history_entries(&self) -> (usize, usize) {
+        let logs: Vec<&Log> = std::iter::once(&self.log)
+            .chain(self.undo.states())
+            .chain(self.gesture.as_ref().map(|g| &g.snapshot))
+            .collect();
+        let listed = logs.iter().map(|l| l.len()).sum();
+        (Log::distinct_entries(logs), listed)
     }
 
     /// Forgets what is derived from the set of objects (not their values):
@@ -180,7 +223,7 @@ impl Workbench {
     /// Runs several script lines as one undo step. If one fails, nothing of
     /// the whole group stays.
     pub fn run_lines(&mut self, lines: &[String]) -> Result<(), String> {
-        let snapshot = self.log.clone();
+        let snapshot = self.copy(&self.log);
         let n0 = self.construction.len();
         let mut failure = None;
         for raw in lines {
@@ -243,8 +286,8 @@ impl Workbench {
     /// of them in the construction, so it is rebuilt from that log once more
     /// (if that fails too, they stay until the document is reloaded).
     fn keep_unrevertable(&mut self, why: &str) {
-        if self.construction.len() != self.log.rebuild().map_or(usize::MAX, |r| r.0.len()) {
-            let _ = self.restore(self.log.clone());
+        if self.construction.len() != self.replay(&self.log).map_or(usize::MAX, |r| r.0.len()) {
+            let _ = self.restore(self.copy(&self.log));
         }
         self.undo.clear_redo();
         self.gesture = None;
@@ -260,7 +303,7 @@ impl Workbench {
             self.notice = Some(format!("Nie można odtworzyć konstrukcji: {e}"));
             return Err(e);
         }
-        let (c, mut kept) = match log.rebuild() {
+        let (c, mut kept) = match self.replay(&log) {
             Ok(r) => r,
             Err(e) => {
                 self.notice = Some(format!("Nie można odtworzyć konstrukcji: {e}"));
@@ -292,8 +335,8 @@ impl Workbench {
             return false;
         }
         let label = self.construction.label(id).to_owned();
-        let snapshot = self.log.clone();
-        let mut next = snapshot.clone();
+        let snapshot = self.copy(&self.log);
+        let mut next = self.copy(&snapshot);
         if !next.remove(&label) {
             return false;
         }
@@ -313,10 +356,10 @@ impl Workbench {
     }
 
     pub fn undo(&mut self) -> bool {
-        let Some(prev) = self.undo.undo(self.log.clone()) else {
+        let Some(prev) = self.undo.undo(self.copy(&self.log)) else {
             return false;
         };
-        if self.restore(prev.clone()).is_err() {
+        if self.restore(self.copy(&prev)).is_err() {
             // Put the stacks back as they were.
             self.undo.redo(prev);
             return false;
@@ -325,10 +368,10 @@ impl Workbench {
     }
 
     pub fn redo(&mut self) -> bool {
-        let Some(next) = self.undo.redo(self.log.clone()) else {
+        let Some(next) = self.undo.redo(self.copy(&self.log)) else {
             return false;
         };
-        if self.restore(next.clone()).is_err() {
+        if self.restore(self.copy(&next)).is_err() {
             self.undo.undo(next);
             return false;
         }
@@ -338,7 +381,7 @@ impl Workbench {
     /// Marks the start of a drag: its moves become a single undo step.
     pub fn begin_gesture(&mut self) {
         self.gesture = Some(Gesture {
-            snapshot: self.log.clone(),
+            snapshot: self.copy(&self.log),
             committed: false,
         });
     }
@@ -364,14 +407,16 @@ impl Workbench {
 
     /// Records the undo step for a change that is about to be logged.
     fn note_change(&mut self) {
-        match &mut self.gesture {
-            Some(g) => {
-                if !g.committed {
-                    self.undo.record(g.snapshot.clone());
+        match &self.gesture {
+            Some(g) if !g.committed => {
+                let snapshot = self.copy(&g.snapshot);
+                self.undo.record(snapshot);
+                if let Some(g) = &mut self.gesture {
                     g.committed = true;
                 }
             }
-            None => self.undo.record(self.log.clone()),
+            Some(_) => {}
+            None => self.undo.record(self.copy(&self.log)),
         }
     }
 
@@ -386,7 +431,7 @@ impl Workbench {
             return;
         }
         let label = self.construction.label(id).to_owned();
-        self.undo.record(self.log.clone());
+        self.undo.record(self.copy(&self.log));
         if !self.log.hidden.remove(&label) {
             self.log.hidden.insert(label);
         }
