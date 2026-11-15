@@ -213,11 +213,61 @@ fn validate_case(case: &Case) -> Result<(), String> {
     if labels.len() != case.script.len() {
         return Err("script lines must each define a distinct `label = ...`".into());
     }
+    let mut first: Option<BTreeSet<String>> = None;
     for (i, snap) in case.snapshots.iter().enumerate() {
         let keys: BTreeSet<String> = snap.keys().cloned().collect();
-        if keys != labels {
-            return Err(format!("snapshot {i} labels differ from the script labels"));
+        match &first {
+            None => {
+                check_keys(&keys, &labels).map_err(|e| format!("snapshot {i}: {e}"))?;
+                first = Some(keys);
+            }
+            Some(f) if *f != keys => {
+                return Err(format!("snapshot {i} labels differ from snapshot 0"));
+            }
+            Some(_) => {}
         }
+    }
+    Ok(())
+}
+
+/// The part of a label before its first `_`, which GeoGebra numbers when a
+/// command creates several objects (`t` -> `t_{1}`, `t_{2}`).
+fn label_prefix(label: &str) -> &str {
+    label.split('_').next().unwrap_or(label)
+}
+
+/// `Some(prefix)` when `key` has the form `prefix_{n}` with `n` a positive
+/// integer written without leading zeros.
+fn indexed_prefix(key: &str) -> Option<&str> {
+    let (prefix, rest) = key.split_once("_{")?;
+    let n = rest.strip_suffix('}')?;
+    let digits = !n.is_empty() && n.bytes().all(|b| b.is_ascii_digit());
+    (digits && !n.starts_with('0') && !prefix.is_empty() && !prefix.contains('_')).then_some(prefix)
+}
+
+/// Snapshot keys must match the script labels: each label is either a key
+/// itself, or (for a command with several outputs) is replaced by one or
+/// more keys `<prefix>_{n}`. No other key is allowed.
+fn check_keys(keys: &BTreeSet<String>, labels: &BTreeSet<String>) -> Result<(), String> {
+    let replaced: BTreeSet<&str> = labels
+        .iter()
+        .filter(|l| !keys.contains(*l))
+        .map(|l| label_prefix(l))
+        .collect();
+    let mut used = BTreeSet::new();
+    for key in keys.iter().filter(|k| !labels.contains(*k)) {
+        match indexed_prefix(key) {
+            Some(p) if replaced.contains(p) => {
+                used.insert(p);
+            }
+            _ => return Err(format!("unexpected label `{key}`")),
+        }
+    }
+    if let Some(l) = labels
+        .iter()
+        .find(|l| !keys.contains(*l) && !used.contains(label_prefix(l)))
+    {
+        return Err(format!("no label for script object `{l}`"));
     }
     Ok(())
 }
@@ -327,5 +377,73 @@ mod tests {
         ] {
             assert!(parse_file(bad, "t").is_err(), "accepted: {bad}");
         }
+    }
+
+    fn set(items: &[&str]) -> BTreeSet<String> {
+        items.iter().map(|s| s.to_string()).collect()
+    }
+
+    #[test]
+    fn plain_labels_are_accepted() {
+        assert!(check_keys(&set(&["A", "c", "t"]), &set(&["A", "c", "t"])).is_ok());
+    }
+
+    #[test]
+    fn indexed_outputs_replace_their_label() {
+        let labels = set(&["P", "c", "t"]);
+        assert!(check_keys(&set(&["P", "c", "t_{1}", "t_{2}"]), &labels).is_ok());
+        assert!(check_keys(&set(&["P", "c", "t_{1}"]), &labels).is_ok());
+        let labels = set(&["P", "c", "b_1", "b"]);
+        assert!(check_keys(&set(&["P", "c", "b_1", "b_{2}", "b_{3}"]), &labels).is_ok());
+        // A label that is itself a key keeps it; `t_{1}` written in the
+        // script is a plain label.
+        assert!(check_keys(&set(&["t_{1}"]), &set(&["t_{1}"])).is_ok());
+    }
+
+    #[test]
+    fn unexpected_keys_are_rejected() {
+        let labels = set(&["P", "c", "t"]);
+        for keys in [
+            &["P", "c", "t", "u"][..],
+            &["P", "c", "t", "t_{1}"],
+            &["P", "c"],
+            &["P", "c", "t_{0}"],
+            &["P", "c", "t_{01}"],
+            &["P", "c", "t_{}"],
+            &["P", "c", "t_1"],
+            &["P", "c", "t_{x}"],
+        ] {
+            assert!(
+                check_keys(&set(keys), &labels).is_err(),
+                "accepted {keys:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn indexed_keys_need_a_matching_script_label() {
+        assert!(check_keys(&set(&["P", "c", "s_{1}"]), &set(&["P", "c", "t"])).is_err());
+        // Both labels are present, so nothing was replaced.
+        assert!(check_keys(&set(&["P", "c", "c_{1}"]), &set(&["P", "c"])).is_err());
+    }
+
+    #[test]
+    fn every_snapshot_has_the_same_labels() {
+        let file = r#"{"schema":1,"generator":"g","upstream_commit":null,
+          "cases":[{"id":"x","group":"g","script":["A = (0, 0)","t = A"],
+          "steps":[{"action":"initial"},{"action":"move","label":"A","x":1.0,"y":0.0}],
+          "snapshots":[
+            {"A":{"type":"point","defined":true,"x":0.0,"y":0.0},
+             "t_{1}":{"type":"point","defined":true,"x":0.0,"y":0.0},
+             "t_{2}":{"type":"point","defined":true,"x":0.0,"y":0.0}},
+            {"A":{"type":"point","defined":true,"x":1.0,"y":0.0},
+             "t_{1}":{"type":"point","defined":true,"x":1.0,"y":0.0}}]}]}"#;
+        assert!(parse_file(file, "t").is_err());
+        let fixed = file.replace(
+            r#""t_{1}":{"type":"point","defined":true,"x":1.0,"y":0.0}}"#,
+            r#""t_{1}":{"type":"point","defined":true,"x":1.0,"y":0.0},
+               "t_{2}":{"type":"point","defined":true,"x":1.0,"y":0.0}}"#,
+        );
+        assert!(parse_file(&fixed, "t").is_ok());
     }
 }

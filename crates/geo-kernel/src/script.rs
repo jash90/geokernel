@@ -113,7 +113,9 @@ fn parse_multi(c: &Construction, rhs: &str) -> Option<Result<Vec<Def>, String>> 
 /// outputs are defined, every output gets the next free indexed label
 /// (`t_{1}`, `t_{2}`, ...); when only one is defined, it gets `name` and the
 /// others get no label, so they are not created here. When none is defined,
-/// GeoGebra suggests `name` for all of them; only the first is created.
+/// GeoGebra gives no label yet and names the outputs as they become defined
+/// (the first takes `name`, the next renames it and takes `name` itself);
+/// here only the first is created, under `name`.
 /// Returns the id of the first object created.
 fn add_outputs(c: &mut Construction, name: &str, defs: Vec<Def>) -> Result<Id, String> {
     if c.id(name).is_some() {
