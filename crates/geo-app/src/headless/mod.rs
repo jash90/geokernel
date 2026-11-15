@@ -343,6 +343,16 @@ impl Headless {
         self.touch.touch(id, phase, pos)
     }
 
+    /// The touch emulation's state, to restore after a frame that was not
+    /// run.
+    pub fn touch_state(&self) -> TouchEmulation {
+        self.touch.clone()
+    }
+
+    pub fn set_touch_state(&mut self, touch: TouchEmulation) {
+        self.touch = touch;
+    }
+
     /// The last frame's output, if a frame ran.
     pub fn last_output(&self) -> Option<&FullOutput> {
         self.last.as_ref()
