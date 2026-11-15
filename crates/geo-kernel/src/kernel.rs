@@ -164,11 +164,15 @@ pub enum Def {
         which: u8,
     },
     /// `which` is 0 or 1: the point to the left or to the right of the
-    /// direction from the first centre to the second.
+    /// direction from the first centre to the second. `special` is decided by
+    /// [`Construction::add`]: whether the circles had a common point by
+    /// construction when the intersection was created. `add` also gives a
+    /// second intersection of the same circles the order of the first.
     IntersectCircles {
         c1: Id,
         c2: Id,
         which: u8,
+        special: bool,
     },
     /// Bisectors and tangents.
     Lines(LineDef),
@@ -325,6 +329,11 @@ impl Construction {
         self.values[id.0]
     }
 
+    /// The objects computed from `id`.
+    pub(crate) fn children(&self, id: Id) -> &[Id] {
+        &self.children[id.0]
+    }
+
     /// Adds an object and computes its value.
     pub fn add(&mut self, label: &str, def: Def) -> Result<Id, Error> {
         if label.is_empty() {
@@ -334,14 +343,17 @@ impl Construction {
             return Err(Error::DuplicateLabel(label.to_string()));
         }
         self.check(&def)?;
+        let def = algo::intersect::prepare(self, def);
 
         let id = Id(self.defs.len());
         let value = self.compute(def);
         let parents = def.parents();
-        let parents = parents.as_slice();
-        for (k, parent) in parents.iter().enumerate() {
+        // Objects the rule also reads, beyond its parents.
+        let hidden = algo::intersect::hidden_parents(self, &def);
+        let all = || parents.as_slice().iter().chain(&hidden);
+        for (k, parent) in all().enumerate() {
             // An object that is read twice is still one child.
-            if !parents[..k].contains(parent) {
+            if !all().take(k).any(|p| p == parent) {
                 self.children[parent.0].push(id);
             }
         }
@@ -475,7 +487,7 @@ impl Construction {
                 self.expect(circle, CIRCLE)?;
                 check_index(which)
             }
-            Def::IntersectCircles { c1, c2, which } => {
+            Def::IntersectCircles { c1, c2, which, .. } => {
                 self.expect(c1, CIRCLE)?;
                 self.expect(c2, CIRCLE)?;
                 check_index(which)
@@ -527,9 +539,12 @@ impl Construction {
                 circle,
                 which,
             } => algo::intersect::line_circle(self, line, circle, which),
-            Def::IntersectCircles { c1, c2, which } => {
-                algo::intersect::circles(self, c1, c2, which)
-            }
+            Def::IntersectCircles {
+                c1,
+                c2,
+                which,
+                special,
+            } => algo::intersect::circles(self, c1, c2, which, special),
             Def::Lines(d) => d.compute(self),
             Def::Conic(d) => d.compute(self),
             Def::Measure(d) => d.compute(self),
@@ -776,6 +791,7 @@ mod tests {
                     c1: k1,
                     c2: k2,
                     which: 0,
+                    special: false,
                 },
             )
             .unwrap();
@@ -786,6 +802,7 @@ mod tests {
                     c1: k1,
                     c2: k2,
                     which: 1,
+                    special: false,
                 },
             )
             .unwrap();
