@@ -10,6 +10,7 @@ use eframe::egui::{
     self, pos2, vec2, Align2, Color32, CursorIcon, FontId, Rect, Response, Sense, Stroke, Ui,
 };
 use geo_app_core::metrics::Metrics;
+use geo_app_core::text::{self, Label};
 
 const FIRST_LEFT: f32 = 5.0;
 const ITEM_HEIGHT: f32 = 44.0;
@@ -67,13 +68,31 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         group_buttons(app, ui, bar);
     }
     let [undo, redo, menu] = right_buttons(bar);
-    if flat_button(ui, "undo", undo, Icon::Undo, app.wb.can_undo(), "Cofnij").clicked() {
+    if flat_button(
+        ui,
+        "undo",
+        undo,
+        Icon::Undo,
+        app.wb.can_undo(),
+        text::label(Label::Undo),
+    )
+    .clicked()
+    {
         app.wb.undo();
     }
-    if flat_button(ui, "redo", redo, Icon::Redo, app.wb.can_redo(), "Ponów").clicked() {
+    if flat_button(
+        ui,
+        "redo",
+        redo,
+        Icon::Redo,
+        app.wb.can_redo(),
+        text::label(Label::Redo),
+    )
+    .clicked()
+    {
         app.wb.redo();
     }
-    let menu = flat_button(ui, "menu", menu, Icon::Menu, true, "Menu");
+    let menu = flat_button(ui, "menu", menu, Icon::Menu, true, text::label(Label::Menu));
     main_menu(app, &menu);
 }
 
@@ -193,8 +212,8 @@ fn flat_button(
 fn main_menu(app: &mut App, button: &Response) {
     egui::Popup::menu(button).show(|ui| {
         ui.set_min_width(200.0);
-        ui.checkbox(&mut app.decor.axes, "Osie");
-        ui.checkbox(&mut app.decor.grid, "Siatka");
+        ui.checkbox(&mut app.decor.axes, text::label(Label::Axes));
+        ui.checkbox(&mut app.decor.grid, text::label(Label::Grid));
         if ui.button("Widok standardowy").clicked() {
             app.view_request = Some(ViewRequest::Standard);
             ui.close();
@@ -205,9 +224,9 @@ fn main_menu(app: &mut App, button: &Response) {
         }
         ui.separator();
         let label = if app.keyboard.open {
-            "Zamknij klawiaturę"
+            text::label(Label::CloseKeyboard)
         } else {
-            "Pokaż klawiaturę"
+            text::label(Label::OpenKeyboard)
         };
         if ui.button(label).clicked() {
             app.keyboard.open = !app.keyboard.open;

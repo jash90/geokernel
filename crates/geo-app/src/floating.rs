@@ -5,6 +5,7 @@ use crate::theme;
 use eframe::egui::{
     self, vec2, Align2, Color32, CursorIcon, FontId, Painter, Pos2, Rect, Response, Sense, Ui,
 };
+use geo_app_core::text::{self, Label};
 
 const RADIUS: f32 = 19.0;
 
@@ -82,7 +83,7 @@ pub fn hint_pill(ui: &Ui, area: Rect, text: &str, color: Color32, row: f32) {
 /// true when the user closed it.
 pub fn snackbar(ui: &mut Ui, area: Rect, text: &str, lift: f32) -> bool {
     const PAD: f32 = 16.0;
-    const CLOSE: &str = "Zamknij";
+    const CLOSE: &str = text::label(Label::Close);
     let font = FontId::proportional(14.0);
     let close_galley = ui
         .painter()
@@ -120,7 +121,9 @@ pub fn snackbar(ui: &mut Ui, area: Rect, text: &str, lift: f32) -> bool {
             Sense::click(),
         )
         .on_hover_cursor(CursorIcon::PointingHand);
-    close.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, "Zamknij komunikat"));
+    close.widget_info(|| {
+        egui::WidgetInfo::labeled(egui::Role::Button, true, text::label(Label::CloseNotice))
+    });
     let painter = ui.painter();
     painter.rect_filled(
         rect,
@@ -199,7 +202,9 @@ pub fn tool_tip(ui: &Ui, area: Rect, name: &str, hint: &str, closable: bool) -> 
     let response = ui
         .interact(close, ui.scope_id().with("tool_tip_close"), Sense::click())
         .on_hover_cursor(CursorIcon::PointingHand);
-    response.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, "Zakończ"));
+    response.widget_info(|| {
+        egui::WidgetInfo::labeled(egui::Role::Button, true, text::label(Label::LeaveTool))
+    });
     let k = close.center();
     for d in [vec2(6.0, 6.0), vec2(6.0, -6.0)] {
         painter.line_segment([k - d, k + d], egui::Stroke::new(1.6, theme::WHITE));

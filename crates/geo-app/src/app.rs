@@ -11,6 +11,7 @@ use crate::theme;
 use crate::toolbar;
 use eframe::egui::{self, Rect, Stroke, Ui, UiBuilder};
 pub use geo_app_core::app::{parse_number, App, ViewRequest};
+use geo_app_core::text::{self, Label};
 use std::path::Path;
 
 /// Opens a script or construction file into the window.
@@ -171,7 +172,7 @@ fn number_dialog(app: &mut App, ctx: &egui::Context) {
         let enter = field.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
         let parsed = parse_number(&app.number_text);
         if parsed.is_none() {
-            ui.colored_label(theme::ERROR, "To nie jest liczba");
+            ui.colored_label(theme::ERROR, text::label(Label::NotANumber));
         }
         ui.add_space(8.0);
         ui.horizontal(|ui| {

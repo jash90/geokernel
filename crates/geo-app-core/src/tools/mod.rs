@@ -108,40 +108,7 @@ impl Tool {
 
     /// The tool's name in the drop-down list and the tooltip.
     pub fn caption(self) -> &'static str {
-        match self {
-            Tool::Move => "Przesuń",
-            Tool::Point => "Punkt",
-            Tool::Intersect => "Przecięcie",
-            Tool::Midpoint => "Środek",
-            Tool::Line => "Prosta",
-            Tool::Segment => "Odcinek",
-            Tool::Ray => "Półprosta",
-            Tool::Vector => "Wektor",
-            Tool::Perpendicular => "Prostopadła",
-            Tool::Parallel => "Równoległa",
-            Tool::Bisector => "Symetralna",
-            Tool::AngleBisector => "Dwusieczna",
-            Tool::Tangents => "Styczne",
-            Tool::Polar => "Biegunowa",
-            Tool::Circle => "Okrąg: środek i punkt",
-            Tool::CircleRadius => "Okrąg: środek i promień",
-            Tool::Circle3 => "Okrąg przez trzy punkty",
-            Tool::Polygon => "Wielokąt",
-            Tool::RegularPolygon => "Wielokąt foremny",
-            Tool::Angle => "Kąt",
-            Tool::Distance => "Odległość lub długość",
-            Tool::ReflectLine => "Symetria osiowa",
-            Tool::ReflectPoint => "Symetria środkowa",
-            Tool::ReflectCircle => "Inwersja",
-            Tool::Rotate => "Obrót",
-            Tool::Translate => "Przesunięcie o wektor",
-            Tool::Dilate => "Jednokładność",
-            Tool::MoveView => "Przesuń widok",
-            Tool::ZoomIn => "Powiększ",
-            Tool::ZoomOut => "Pomniejsz",
-            Tool::ShowHide => "Pokaż lub ukryj",
-            Tool::Delete => "Usuń",
-        }
+        crate::text::tool_caption(self)
     }
 
     /// Tools that act on the view or on whole objects instead of building
@@ -294,7 +261,7 @@ impl ToolState {
 
     /// A one-line Polish hint for what the next click should be.
     pub fn hint(&self) -> &'static str {
-        recipe::hint(self.tool, &self.kinds())
+        crate::text::hint(recipe::hint(self.tool, &self.kinds()))
     }
 
     /// Forgets the picks (after an error, on Escape, or a cancelled dialog).

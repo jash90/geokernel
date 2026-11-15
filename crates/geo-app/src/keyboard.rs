@@ -9,6 +9,7 @@ use crate::icons::{self, Icon};
 use crate::theme;
 use eframe::egui::{self, pos2, vec2, Align2, Color32, CursorIcon, FontId, Rect, Sense, Ui};
 pub use geo_app_core::keyboard::*;
+use geo_app_core::text::{self, Label};
 
 const KEY: egui::Vec2 = vec2(66.0, 40.0);
 const PITCH: egui::Vec2 = vec2(70.0, 44.0);
@@ -66,8 +67,9 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         .interact(close, ui.scope_id().with("close"), Sense::click())
         .on_hover_cursor(CursorIcon::PointingHand)
         .on_hover_text("Zamknij klawiaturę");
-    close_response
-        .widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, "Zamknij klawiaturę"));
+    close_response.widget_info(|| {
+        egui::WidgetInfo::labeled(egui::Role::Button, true, text::label(Label::CloseKeyboard))
+    });
     let k = close.center();
     for d in [vec2(7.0, 7.0), vec2(7.0, -7.0)] {
         painter.line_segment([k - d, k + d], egui::Stroke::new(1.6, theme::ICON));
@@ -98,12 +100,12 @@ pub fn show(app: &mut App, ui: &mut Ui) {
                 )
                 .on_hover_cursor(CursorIcon::PointingHand);
             let name = match key {
-                Key::Backspace => "Usuń znak".to_owned(),
-                Key::Enter => "Zatwierdź".to_owned(),
-                Key::Space => "Spacja".to_owned(),
-                Key::Left => "W lewo".to_owned(),
-                Key::Right => "W prawo".to_owned(),
-                Key::Shift => "Wielkie litery".to_owned(),
+                Key::Backspace => text::label(Label::KeyBackspace).to_owned(),
+                Key::Enter => text::label(Label::KeyEnter).to_owned(),
+                Key::Space => text::label(Label::KeySpace).to_owned(),
+                Key::Left => text::label(Label::KeyLeft).to_owned(),
+                Key::Right => text::label(Label::KeyRight).to_owned(),
+                Key::Shift => text::label(Label::KeyShift).to_owned(),
                 _ => text.clone(),
             };
             response.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, &name));

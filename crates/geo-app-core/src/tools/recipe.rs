@@ -2,6 +2,7 @@
 
 use super::{NumberRequest, Pick, Tool};
 use crate::labels::{next_greek, next_label, polygon_label, primed};
+use crate::text::{self, Hint, Label};
 use geo_kernel::kernel::Kind;
 
 fn point(k: Option<Kind>) -> bool {
@@ -131,8 +132,8 @@ pub(super) fn finish(tool: Tool, picks: &[Kind]) -> Option<Finish> {
         Tool::AngleBisector => n == 3 || (n == 2 && first != Some(Kind::Point)),
         Tool::CircleRadius => {
             return (n == 1).then_some(Finish::Ask(NumberRequest {
-                title: "Okrąg: środek i promień",
-                prompt: "Promień",
+                title: text::tool_caption(Tool::CircleRadius),
+                prompt: text::label(Label::Radius),
                 default: 2.0,
                 degrees: false,
             }))
@@ -141,24 +142,24 @@ pub(super) fn finish(tool: Tool, picks: &[Kind]) -> Option<Finish> {
         Tool::Polygon => false,
         Tool::RegularPolygon => {
             return (n == 2).then_some(Finish::Ask(NumberRequest {
-                title: "Wielokąt foremny",
-                prompt: "Liczba wierzchołków",
+                title: text::tool_caption(Tool::RegularPolygon),
+                prompt: text::label(Label::VertexCount),
                 default: 4.0,
                 degrees: false,
             }))
         }
         Tool::Rotate => {
             return (n == 2).then_some(Finish::Ask(NumberRequest {
-                title: "Obrót",
-                prompt: "Kąt w stopniach",
+                title: text::tool_caption(Tool::Rotate),
+                prompt: text::label(Label::AngleInDegrees),
                 default: 45.0,
                 degrees: true,
             }))
         }
         Tool::Dilate => {
             return (n == 2).then_some(Finish::Ask(NumberRequest {
-                title: "Jednokładność",
-                prompt: "Skala",
+                title: text::tool_caption(Tool::Dilate),
+                prompt: text::label(Label::Scale),
                 default: 2.0,
                 degrees: false,
             }))
@@ -319,70 +320,70 @@ pub(super) fn build(
     lines
 }
 
-/// A one-line Polish hint for what the next click should be.
-pub(super) fn hint(tool: Tool, picks: &[Kind]) -> &'static str {
+/// What the next click should be (the text is in `crate::text`).
+pub(super) fn hint(tool: Tool, picks: &[Kind]) -> Hint {
     let n = picks.len();
     let first = picks.first().copied();
     match (tool, n) {
-        (Tool::Move, _) => "Przeciągnij punkt, aby go przesunąć",
-        (Tool::Point, _) => "Kliknij, aby umieścić punkt",
-        (Tool::Intersect, 0) => "Kliknij pierwszy obiekt",
-        (Tool::Intersect, _) => "Kliknij drugi obiekt",
-        (Tool::Midpoint, 0) => "Kliknij dwa punkty, odcinek albo okrąg",
-        (Tool::Midpoint, _) => "Kliknij drugi punkt",
-        (Tool::Line, 0) => "Kliknij pierwszy punkt prostej",
-        (Tool::Line, _) => "Kliknij drugi punkt prostej",
-        (Tool::Segment, 0) => "Kliknij pierwszy koniec odcinka",
-        (Tool::Segment, _) => "Kliknij drugi koniec odcinka",
-        (Tool::Ray, 0) => "Kliknij początek półprostej",
-        (Tool::Ray, _) => "Kliknij punkt na półprostej",
-        (Tool::Vector, 0) => "Kliknij początek wektora",
-        (Tool::Vector, _) => "Kliknij koniec wektora",
-        (Tool::Perpendicular | Tool::Parallel, 0) => "Kliknij punkt lub prostą",
-        (Tool::Perpendicular | Tool::Parallel, _) if first == Some(Kind::Point) => "Kliknij prostą",
-        (Tool::Perpendicular | Tool::Parallel, _) => "Kliknij punkt",
-        (Tool::Bisector, 0) => "Kliknij dwa punkty albo odcinek",
-        (Tool::Bisector, _) => "Kliknij drugi punkt",
-        (Tool::AngleBisector, 0) => "Kliknij trzy punkty albo dwie proste",
-        (Tool::AngleBisector, _) if first == Some(Kind::Point) => "Kliknij kolejny punkt",
-        (Tool::AngleBisector, _) => "Kliknij drugą prostą",
-        (Tool::Tangents, 0) => "Kliknij punkt lub prostą, potem okrąg",
-        (Tool::Tangents, _) if first == Some(Kind::Circle) => "Kliknij punkt lub prostą",
-        (Tool::Tangents, _) => "Kliknij okrąg",
-        (Tool::Polar, 0) => "Kliknij punkt, potem okrąg",
-        (Tool::Polar, _) if first == Some(Kind::Circle) => "Kliknij punkt",
-        (Tool::Polar, _) => "Kliknij okrąg",
-        (Tool::Circle, 0) => "Kliknij środek okręgu",
-        (Tool::Circle, _) => "Kliknij punkt na okręgu",
-        (Tool::CircleRadius, _) => "Kliknij środek okręgu",
-        (Tool::Circle3, _) => "Kliknij trzy punkty okręgu",
-        (Tool::Polygon, 0) => "Kliknij pierwszy wierzchołek",
-        (Tool::Polygon, 1 | 2) => "Kliknij kolejny wierzchołek",
-        (Tool::Polygon, _) => "Kliknij kolejny wierzchołek albo pierwszy, aby zamknąć",
-        (Tool::RegularPolygon, 0) => "Kliknij pierwszy wierzchołek",
-        (Tool::RegularPolygon, _) => "Kliknij drugi wierzchołek",
-        (Tool::Angle, 0) => "Kliknij punkt na pierwszym ramieniu",
-        (Tool::Angle, 1) => "Kliknij wierzchołek kąta",
-        (Tool::Angle, _) => "Kliknij punkt na drugim ramieniu",
-        (Tool::Distance, 0) => "Kliknij dwa punkty, punkt i prostą, odcinek albo okrąg",
-        (Tool::Distance, _) if first == Some(Kind::Point) => "Kliknij punkt lub prostą",
-        (Tool::Distance, _) => "Kliknij punkt",
+        (Tool::Move, _) => Hint::DragPoint,
+        (Tool::Point, _) => Hint::ClickToPlacePoint,
+        (Tool::Intersect, 0) => Hint::FirstObject,
+        (Tool::Intersect, _) => Hint::SecondObject,
+        (Tool::Midpoint, 0) => Hint::TwoPointsSegmentOrCircle,
+        (Tool::Midpoint, _) => Hint::SecondPoint,
+        (Tool::Line, 0) => Hint::FirstPointOfLine,
+        (Tool::Line, _) => Hint::SecondPointOfLine,
+        (Tool::Segment, 0) => Hint::FirstEndOfSegment,
+        (Tool::Segment, _) => Hint::SecondEndOfSegment,
+        (Tool::Ray, 0) => Hint::StartOfRay,
+        (Tool::Ray, _) => Hint::PointOnRay,
+        (Tool::Vector, 0) => Hint::StartOfVector,
+        (Tool::Vector, _) => Hint::EndOfVector,
+        (Tool::Perpendicular | Tool::Parallel, 0) => Hint::PointOrLine,
+        (Tool::Perpendicular | Tool::Parallel, _) if first == Some(Kind::Point) => Hint::Line,
+        (Tool::Perpendicular | Tool::Parallel, _) => Hint::Point,
+        (Tool::Bisector, 0) => Hint::TwoPointsOrSegment,
+        (Tool::Bisector, _) => Hint::SecondPoint,
+        (Tool::AngleBisector, 0) => Hint::ThreePointsOrTwoLines,
+        (Tool::AngleBisector, _) if first == Some(Kind::Point) => Hint::NextPoint,
+        (Tool::AngleBisector, _) => Hint::SecondLine,
+        (Tool::Tangents, 0) => Hint::PointOrLineThenCircle,
+        (Tool::Tangents, _) if first == Some(Kind::Circle) => Hint::PointOrLine,
+        (Tool::Tangents, _) => Hint::Circle,
+        (Tool::Polar, 0) => Hint::PointThenCircle,
+        (Tool::Polar, _) if first == Some(Kind::Circle) => Hint::Point,
+        (Tool::Polar, _) => Hint::Circle,
+        (Tool::Circle, 0) => Hint::CenterOfCircle,
+        (Tool::Circle, _) => Hint::PointOnCircle,
+        (Tool::CircleRadius, _) => Hint::CenterOfCircle,
+        (Tool::Circle3, _) => Hint::ThreePointsOfCircle,
+        (Tool::Polygon, 0) => Hint::FirstVertex,
+        (Tool::Polygon, 1 | 2) => Hint::NextVertex,
+        (Tool::Polygon, _) => Hint::NextVertexOrClose,
+        (Tool::RegularPolygon, 0) => Hint::FirstVertex,
+        (Tool::RegularPolygon, _) => Hint::SecondVertex,
+        (Tool::Angle, 0) => Hint::PointOnFirstArm,
+        (Tool::Angle, 1) => Hint::VertexOfAngle,
+        (Tool::Angle, _) => Hint::PointOnSecondArm,
+        (Tool::Distance, 0) => Hint::DistanceObjects,
+        (Tool::Distance, _) if first == Some(Kind::Point) => Hint::PointOrLine,
+        (Tool::Distance, _) => Hint::Point,
         (Tool::ReflectLine, 0)
         | (Tool::ReflectPoint, 0)
         | (Tool::Rotate, 0)
         | (Tool::Translate, 0)
-        | (Tool::Dilate, 0) => "Kliknij obiekt do przekształcenia",
-        (Tool::ReflectLine, _) => "Kliknij oś symetrii",
-        (Tool::ReflectPoint, _) => "Kliknij środek symetrii",
-        (Tool::Rotate, _) => "Kliknij środek obrotu",
-        (Tool::Dilate, _) => "Kliknij środek jednokładności",
-        (Tool::Translate, _) => "Kliknij wektor",
-        (Tool::ReflectCircle, 0) => "Kliknij punkt",
-        (Tool::ReflectCircle, _) => "Kliknij okrąg inwersji",
-        (Tool::MoveView, _) => "Przeciągnij, aby przesunąć widok",
-        (Tool::ZoomIn, _) => "Kliknij, aby powiększyć",
-        (Tool::ZoomOut, _) => "Kliknij, aby pomniejszyć",
-        (Tool::ShowHide, _) => "Kliknij obiekt, aby go pokazać lub ukryć",
-        (Tool::Delete, _) => "Kliknij obiekt do usunięcia",
+        | (Tool::Dilate, 0) => Hint::ObjectToTransform,
+        (Tool::ReflectLine, _) => Hint::MirrorLine,
+        (Tool::ReflectPoint, _) => Hint::MirrorPoint,
+        (Tool::Rotate, _) => Hint::CenterOfRotation,
+        (Tool::Dilate, _) => Hint::CenterOfDilation,
+        (Tool::Translate, _) => Hint::Vector,
+        (Tool::ReflectCircle, 0) => Hint::Point,
+        (Tool::ReflectCircle, _) => Hint::InversionCircle,
+        (Tool::MoveView, _) => Hint::DragView,
+        (Tool::ZoomIn, _) => Hint::ClickToZoomIn,
+        (Tool::ZoomOut, _) => Hint::ClickToZoomOut,
+        (Tool::ShowHide, _) => Hint::ObjectToShowOrHide,
+        (Tool::Delete, _) => Hint::ObjectToDelete,
     }
 }

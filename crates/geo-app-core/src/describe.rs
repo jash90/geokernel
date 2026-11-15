@@ -1,6 +1,7 @@
 //! Algebra-view text for objects: numbers rounded to two decimals, line and
 //! circle equations. No UI types.
 
+use crate::text::{self, Label};
 use geo_kernel::kernel::Value;
 
 /// Two decimals with trailing zeros removed and never a negative zero.
@@ -105,7 +106,7 @@ pub fn circle_equation(cx: f64, cy: f64, r: f64) -> String {
 /// kernel that gains a kind must not make its objects vanish. Such an object
 /// keeps its algebra row (label, definition and this text); the drawing and
 /// picking skip it.
-pub const NOT_DRAWN_YET: &str = "(ten rodzaj obiektu nie jest jeszcze rysowany)";
+pub const NOT_DRAWN_YET: &str = text::label(Label::NotDrawnYet);
 
 /// Whether the window knows how to show a value: every variant the kernel
 /// has today. `Value` is `#[non_exhaustive]`; a variant added later is not
@@ -131,7 +132,7 @@ pub fn is_known(v: &Value) -> bool {
 /// The text after `=` in the second line of a dependent object's row.
 pub fn value_text(v: &Value) -> String {
     match *v {
-        Value::Undefined => "niezdefiniowany".into(),
+        Value::Undefined => text::label(Label::Undefined).into(),
         Value::Point { x, y } | Value::Vector { x, y } => format!("({}, {})", n2(x), n2(y)),
         Value::Number(n) => n2(n),
         Value::Line { a, b, c } | Value::Ray { a, b, c, .. } => line_equation(a, b, c),

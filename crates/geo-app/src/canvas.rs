@@ -14,6 +14,7 @@ use crate::theme;
 use crate::tools::{Pick, Tool};
 use crate::view::{self, Camera};
 use eframe::egui::{self, pos2, vec2, Rect, Sense, Stroke, Ui};
+use geo_app_core::text::{self, Label};
 use geo_kernel::kernel::{Id, Kind};
 
 const ZOOM_BUTTON: f64 = 1.25;
@@ -424,10 +425,10 @@ fn overlay(app: &mut App, ui: &mut Ui, rect: Rect, w: f64, h: f64, cam: &mut Cam
     let right = rect.right() - 35.0;
     let bottom = rect.bottom() - 33.0;
     let buttons = [
-        (Icon::Fit, "Pokaż wszystkie obiekty"),
-        (Icon::ZoomIn, "Powiększ"),
-        (Icon::ZoomOut, "Pomniejsz"),
-        (Icon::Fullscreen, "Pełny ekran"),
+        (Icon::Fit, text::label(Label::ShowAllObjects)),
+        (Icon::ZoomIn, text::label(Label::ZoomIn)),
+        (Icon::ZoomOut, text::label(Label::ZoomOut)),
+        (Icon::Fullscreen, text::label(Label::Fullscreen)),
     ];
     for (i, (icon, tip)) in buttons.into_iter().enumerate() {
         let center = pos2(right, bottom - 44.0 * (3 - i) as f32);
@@ -481,7 +482,9 @@ fn overlay(app: &mut App, ui: &mut Ui, rect: Rect, w: f64, h: f64, cam: &mut Cam
 fn style_bar(app: &mut App, ui: &mut Ui, rect: Rect, cam: &mut Camera) {
     let toggle = Rect::from_min_size(pos2(rect.right() - 44.0, rect.top()), vec2(44.0, 40.0));
     let response = floating::square_button(ui, "style_bar", toggle, Icon::StyleBar, app.style_bar);
-    response.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, "Pasek stylu"));
+    response.widget_info(|| {
+        egui::WidgetInfo::labeled(egui::Role::Button, true, text::label(Label::StyleBar))
+    });
     if response.on_hover_text("Pasek stylu").clicked() {
         app.style_bar = !app.style_bar;
     }
@@ -489,9 +492,9 @@ fn style_bar(app: &mut App, ui: &mut Ui, rect: Rect, cam: &mut Camera) {
         return;
     }
     let items = [
-        (Icon::Axes, "Osie", app.decor.axes),
-        (Icon::Grid, "Siatka", app.decor.grid),
-        (Icon::Home, "Widok standardowy", false),
+        (Icon::Axes, text::label(Label::Axes), app.decor.axes),
+        (Icon::Grid, text::label(Label::Grid), app.decor.grid),
+        (Icon::Home, text::label(Label::StandardView), false),
     ];
     for (i, (icon, tip, on)) in items.into_iter().enumerate() {
         let r = Rect::from_min_size(

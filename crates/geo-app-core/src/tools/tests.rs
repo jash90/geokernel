@@ -395,5 +395,8 @@ fn cancelling_keeps_the_placed_points_out_of_the_tool_only() {
     // The point is already in the construction; the tool just forgets it.
     s.reset();
     assert!(s.picks().is_empty());
-    assert_eq!(s.hint(), recipe::hint(Tool::Segment, &[]));
+    assert_eq!(
+        s.hint(),
+        crate::text::hint(recipe::hint(Tool::Segment, &[]))
+    );
 }

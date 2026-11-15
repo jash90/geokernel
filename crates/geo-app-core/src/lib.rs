@@ -26,6 +26,7 @@ pub mod palette;
 pub mod scriptlog;
 pub mod shape;
 pub mod style;
+pub mod text;
 pub mod ticks;
 pub mod tools;
 pub mod undo;

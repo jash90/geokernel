@@ -10,6 +10,7 @@ use eframe::egui::{
     self, text::CCursor, text::CCursorRange, vec2, Align2, Color32, CursorIcon, FontId, Pos2, Rect,
     Sense, Stroke, Ui,
 };
+use geo_app_core::text::{self, Label};
 use geo_kernel::kernel::Id;
 
 /// Row heights: one line for a free object, two for a dependent one.
@@ -117,7 +118,11 @@ fn paint_row(app: &App, ui: &mut Ui, row: &Row, actions: &mut Actions) {
     }
     marker
         .on_hover_cursor(CursorIcon::PointingHand)
-        .on_hover_text(if visible { "Ukryj" } else { "Pokaż" });
+        .on_hover_text(if visible {
+            text::label(Label::Hide)
+        } else {
+            text::label(Label::Show)
+        });
 
     // Text.
     let font = FontId::proportional(FONT);
@@ -195,7 +200,7 @@ fn paint_row(app: &App, ui: &mut Ui, row: &Row, actions: &mut Actions) {
     egui::Popup::menu(&kebab).show(|ui| {
         ui.set_min_width(120.0);
         let text = if row.siblings.is_empty() {
-            "Usuń".to_owned()
+            text::label(Label::Delete).to_owned()
         } else {
             format!("Usuń razem z {}", row.siblings.join(", "))
         };
@@ -204,9 +209,9 @@ fn paint_row(app: &App, ui: &mut Ui, row: &Row, actions: &mut Actions) {
             ui.close();
         }
         let toggle = if visible {
-            "Ukryj obiekt"
+            text::label(Label::HideObject)
         } else {
-            "Pokaż obiekt"
+            text::label(Label::ShowObject)
         };
         if ui.button(toggle).clicked() {
             actions.toggle = Some(row.id);
@@ -278,7 +283,12 @@ fn input_row(app: &mut App, ui: &mut Ui) {
             .desired_width(field.width()),
     );
     response.widget_info(|| {
-        egui::WidgetInfo::text_edit(true, String::new(), app.input.clone(), "Wprowadź…")
+        egui::WidgetInfo::text_edit(
+            true,
+            String::new(),
+            app.input.clone(),
+            text::label(Label::InputHint),
+        )
     });
     if app.focus_input {
         response.request_focus();
