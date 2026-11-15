@@ -38,15 +38,33 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             }
         });
     }
-    let rows = app.wb.rows().to_vec();
+    app.wb.refresh_rows();
     let mut actions = Actions::default();
     egui::ScrollArea::vertical()
         .auto_shrink([false, false])
-        .show(ui, |ui| {
+        .show_viewport(ui, |ui, viewport| {
             ui.spacing_mut().item_spacing = vec2(0.0, 0.0);
-            for row in &rows {
-                paint_row(app, ui, row, &mut actions);
+            // Only the rows in the visible part are laid out; the space of
+            // the others is left empty, so the list is as tall and every
+            // row where it would be with all of them laid out.
+            let rows = app.wb.current_rows();
+            let (mut top, mut skipped) = (0.0, 0.0);
+            let mut drawn = false;
+            for row in rows {
+                let height = row_height(row);
+                if top + height > viewport.min.y && top < viewport.max.y {
+                    if !drawn {
+                        ui.add_space(skipped);
+                        skipped = 0.0;
+                        drawn = true;
+                    }
+                    paint_row(app, ui, row, &mut actions);
+                } else {
+                    skipped += height;
+                }
+                top += height;
             }
+            ui.add_space(skipped);
             input_row(app, ui);
         });
     if let Some(s) = actions.select {
@@ -71,8 +89,16 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     }
 }
 
+fn row_height(row: &Row) -> f32 {
+    if row.free {
+        ROW_FREE
+    } else {
+        ROW_DEPENDENT
+    }
+}
+
 fn paint_row(app: &App, ui: &mut Ui, row: &Row, actions: &mut Actions) {
-    let height = if row.free { ROW_FREE } else { ROW_DEPENDENT };
+    let height = row_height(row);
     let (rect, _) = ui.allocate_exact_size(vec2(ui.available_width(), height), Sense::hover());
     let id = ui.scope_id().with(("row", row.id.index()));
     let selected = app.wb.selected == Some(row.id);

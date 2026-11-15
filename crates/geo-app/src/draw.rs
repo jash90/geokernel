@@ -17,6 +17,7 @@ use crate::theme;
 use eframe::egui::{vec2, Align2, Color32, FontId, Mesh, Painter, Pos2, Rect, Shape, Stroke};
 use geo_kernel::algo::vector;
 use geo_kernel::kernel::{Construction, Id, Value};
+use std::borrow::Cow;
 
 /// Point radii in pixels: point size 5 for free points, 4 for dependent ones.
 pub use crate::style::FREE_POINT_RADIUS;
@@ -35,6 +36,56 @@ pub struct Scene<'a> {
     pub hovered: Option<Id>,
     /// The sides of the polygons of the construction, for the colours.
     pub sides: &'a style::Sides,
+    /// Skip the objects that draw nothing in the area (see `near_view`).
+    /// Off only in the tests that check that skipping changes nothing.
+    pub cull: bool,
+}
+
+/// How far outside the area, in pixels, an object's points may lie and
+/// still be drawn: a point's disc and label (6 px off it), a segment's
+/// label (12 px off it), a circle's label (12 px out) and every stroke all
+/// stay within it, and so does the label rule below (an anchor at most
+/// 20 px outside).
+const NEAR: f64 = 32.0;
+/// The same for an angle, around its vertex: the sector (30 px) and the
+/// label anchor (36 px out, then the 20 px of the label rule).
+const NEAR_ANGLE: f64 = 64.0;
+
+/// Whether `id` may draw something in the `w` x `h` area: false only when
+/// every shape and label of it certainly lies outside, so skipping it
+/// changes no pixel. Lines and rays are unbounded and always drawn;
+/// anything this does not know, or with a coordinate that is not finite
+/// (the drawing code decides about those), too.
+fn near_view(c: &Construction, id: Id, t: &ViewTransform, w: f64, h: f64) -> bool {
+    let near = |pts: &mut dyn Iterator<Item = (f64, f64)>, margin: f64| {
+        let (mut x0, mut y0, mut x1, mut y1) = (f64::MAX, f64::MAX, f64::MIN, f64::MIN);
+        let mut any = false;
+        for (x, y) in pts {
+            let (sx, sy) = t.world_to_screen(x, y);
+            if !(sx.is_finite() && sy.is_finite()) {
+                return true;
+            }
+            (x0, y0, x1, y1) = (x0.min(sx), y0.min(sy), x1.max(sx), y1.max(sy));
+            any = true;
+        }
+        !any || (x1 >= -margin && x0 <= w + margin && y1 >= -margin && y0 <= h + margin)
+    };
+    if let Some([_, b, _]) = style::angle_points(c, id) {
+        return near(&mut std::iter::once(b), NEAR_ANGLE);
+    }
+    match c.value(id) {
+        Value::Point { x, y } => near(&mut std::iter::once((x, y)), NEAR),
+        Value::Segment { x1, y1, x2, y2 } => near(&mut [(x1, y1), (x2, y2)].into_iter(), NEAR),
+        Value::Circle { cx, cy, r } => {
+            near(&mut [(cx - r, cy - r), (cx + r, cy + r)].into_iter(), NEAR)
+        }
+        Value::Vector { x, y } => match vector::start(c, id) {
+            Some((x0, y0)) => near(&mut [(x0, y0), (x0 + x, y0 + y)].into_iter(), NEAR),
+            None => true,
+        },
+        Value::Polygon { .. } | Value::PolyLine { .. } => near(&mut c.vertices(id).flatten(), NEAR),
+        _ => true,
+    }
 }
 
 /// A point: a filled disc with a thin dark ring.
@@ -50,7 +101,9 @@ pub fn point_shape(painter: &Painter, at: Pos2, fill: Color32, radius: f32) {
     );
 }
 
-type Label = (String, (f64, f64), Color32, Align2);
+/// A label's text (borrowed from the construction where it is the bare
+/// label), its anchor in the area, colour and alignment.
+type Label<'c> = (Cow<'c, str>, (f64, f64), Color32, Align2);
 
 pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform, scene: &Scene) {
     let (w, h) = (rect.width() as f64, rect.height() as f64);
@@ -77,7 +130,10 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
     let (mx, my) = (0.5 * (v.xmin + v.xmax), 0.5 * (v.ymin + v.ymax));
     let reach = (w / t.scale()).hypot(h / t.scale()).max(vw.hypot(vh));
 
-    let ids: Vec<Id> = c.ids().filter(|&id| (scene.visible)(id)).collect();
+    let ids: Vec<Id> = c
+        .ids()
+        .filter(|&id| (scene.visible)(id) && (!scene.cull || near_view(c, id, t, w, h)))
+        .collect();
     let mut labels: Vec<Label> = Vec::new();
 
     // Highlights go under the objects, in the object's own colour.
@@ -169,7 +225,11 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
             eframe::egui::Align::Center
         };
         labels.push((
-            format!("{} = {}", c.label(id), crate::describe::degrees(angle)),
+            Cow::Owned(format!(
+                "{} = {}",
+                c.label(id),
+                crate::describe::degrees(angle)
+            )),
             (mid.x as f64, mid.y as f64),
             col,
             Align2([h, v]),
@@ -231,7 +291,7 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
             if let Some(entry) = labelpos::line_entry(screen(fx, fy), (b, a), w, h) {
                 let pos = labelpos::line_label(entry, w, h, 24.0, 12.0);
                 labels.push((
-                    c.label(id).to_owned(),
+                    Cow::Borrowed(c.label(id)),
                     pos,
                     color(id),
                     Align2::CENTER_CENTER,
@@ -262,7 +322,7 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
             if let Some(e) = entry {
                 let pos = labelpos::line_label(e, w, h, 24.0, 12.0);
                 labels.push((
-                    c.label(id).to_owned(),
+                    Cow::Borrowed(c.label(id)),
                     pos,
                     color(id),
                     Align2::CENTER_CENTER,
@@ -274,7 +334,7 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
         if let Value::Circle { cx, cy, r } = c.value(id) {
             paint_circle(painter, rect, t, (cx, cy, r), curve(id), &mut |pos| {
                 labels.push((
-                    c.label(id).to_owned(),
+                    Cow::Borrowed(c.label(id)),
                     pos,
                     color(id),
                     Align2::CENTER_CENTER,
@@ -290,7 +350,7 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
             painter.line_segment([p(x1, y1), p(x2, y2)], curve(id));
             let pos = labelpos::segment_label(screen(x1, y1), screen(x2, y2), 12.0);
             labels.push((
-                c.label(id).to_owned(),
+                Cow::Borrowed(c.label(id)),
                 pos,
                 color(id),
                 Align2::CENTER_CENTER,
@@ -317,7 +377,7 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
         }
         let pos = labelpos::segment_label(screen(x0, y0), screen(x0 + x, y0 + y), 12.0);
         labels.push((
-            c.label(id).to_owned(),
+            Cow::Borrowed(c.label(id)),
             pos,
             color(id),
             Align2::CENTER_CENTER,
@@ -336,7 +396,7 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
             point_shape(painter, p(x, y), color(id), radius);
             let (sx, sy) = screen(x, y);
             labels.push((
-                c.label(id).to_owned(),
+                Cow::Borrowed(c.label(id)),
                 (sx + 6.0, sy - 6.0),
                 color(id),
                 Align2::LEFT_BOTTOM,
@@ -462,6 +522,7 @@ mod tests {
                 selected: None,
                 hovered: None,
                 sides: wb.sides(),
+                cull: true,
             };
             paint(ui.painter(), rect, c, &t, &scene);
         });
