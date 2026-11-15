@@ -7,7 +7,8 @@ indices), `Length`, `Sum` (with a truncation), the forms of `Sequence`
 (a count, a range with and without a step, an expression of a variable),
 element-wise arithmetic, with lists of unequal length, and a list minus a
 point; `Product`, `Min`, `Max`, `Mean` and `Sum` of points; `Reverse`,
-`First`, `Last` and `Sort`; `Append` and `Join`.
+`First`, `Last` and `Sort`; `Append` and `Join`; the same operations
+and commands on list objects; `If` with list branches.
 
 The steps set the free numbers (`set_number`) and move the free points so
 that lists grow, shrink and change, and come back to the first state.
@@ -160,5 +161,39 @@ for line in ("p = Append(l, a)", "p = Append(a, l)", "p = Append(l, m)", "p = Ap
     case("join", nums(n=2, a=3) + [pt("A", 1, 2), pt("B", 3, -1), "l = {a, 1}", "m = {2, a}", line],
          [setn("n", 0), setn("n", 3), setn("a", -1), mv("A", -2, 5), setn("n", -1), setn("a", 3),
           mv("A", 1, 2), setn("n", 2)])
+
+# ------------------------------------------------------- list objects
+# Every operation and command reads list objects, not literals, so that a
+# step changes the list it reads: arithmetic, a list minus a point or
+# vector (`GeoVec2D.sub`), element access and the list commands.
+topic("objects")
+for line in ("p = l + k", "p = l + 1", "p = 2 l", "p = l^2", "p = -l", "p = sin(l)", "p = l / k",
+             "p = m + v", "p = 2 m", "c = x(m)", "p = b + 1", "p = w - A", "P = w - A",
+             "p = A - w", "c = x(w - A)", "c = y(A - w) + 1", "p = l - A", "p = b - A",
+             "P = 2 (w - A)", "p = w - v", "c = l(n)", "c = Element(l, n)", "P = m(n)",
+             "c = x(m(n))", "p = q(n)", "c = Length(q(n))", "c = b(n)", "c = Length(l)",
+             "c = Sum(l)", "c = Sum(l, n)", "P = Sum(m)", "c = Product(l)", "c = Min(l)",
+             "c = Max(l)", "c = Mean(l)", "p = Reverse(l)", "p = First(l, n)", "p = Last(m, n)",
+             "p = Sort(l)", "p = Sort(m)", "p = Sort(b)", "p = Append(l, a)", "p = Append(a, l)",
+             "p = Join(l, k)", "p = Join(q)", "p = {l, 1}", "p = l", "p = Sequence(l(j) + j, j, 1, n)"):
+    case("objects", nums(a=2, n=2) + [pt("A", 1, 2), pt("B", 3, -1), "v = (1, 1)", "l = {a, 1, 2 a}",
+                                      "k = {3, a, 1}", "w = {a, 2}", "m = {A, B, (a, 0)}",
+                                      "q = {{a, 1}, {2}}", "b = {a < 3, true}", line],
+         [setn("a", 3), setn("n", 3), mv("A", -2, 5), setn("a", -1), setn("n", 1), setn("a", 5),
+          mv("A", 1, 2), setn("a", 2), setn("n", 2)])
+
+# ------------------------------------------------------- If of lists
+# `AlgoIf` with list branches: the first true condition picks its branch,
+# then the else branch; without one the list is undefined.
+topic("if")
+for line in ("p = If(a > 0, {1, 2})", "c = Length(If(a > 0, {1, 2}))", "p = If(a > 0, l)",
+             "p = If(a > 0, l, k)", "p = If(a > 2, {1}, a > 0, l, k)", "p = If(a > 2, {1}, a > 0, l)",
+             "p = {If(a > 0, l, {0}), 5}", "P = Sum(If(a > 0, m, {A}))", "p = If(a > 0, {a}, {})",
+             "p = If(a > 0, m, l)", "p = If(a < 3, q, {{1}})", "p = If(a > 0, l, Sequence(n))",
+             "c = Sum(If(a > 0, l, k)) + 1", "p = If(a > 0, l) + 1"):
+    case("if", nums(a=1, n=2) + [pt("A", 1, 2), pt("B", 3, -1), "l = {a, 1}", "k = {3, a, 1}",
+                                 "m = {A, B}", "q = {{a, 1}, {2}}", line],
+         [setn("a", -1), setn("a", 2), setn("a", 3), mv("A", -2, 5), setn("n", 4), setn("a", 0),
+          setn("a", 1), mv("A", 1, 2), setn("n", 2)])
 
 cases.write()

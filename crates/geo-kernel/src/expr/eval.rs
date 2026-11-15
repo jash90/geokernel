@@ -811,7 +811,25 @@ impl Ctx<'_> {
             // an element that is a list: its elements were built with the
             // list it belongs to
             Node::ListOp(op, l, n) => self.pick(op, l, n)?.run(),
+            Node::If(_, cond, then, rest) => self.list_if(cond, then, rest),
             _ => None,
+        }
+    }
+
+    /// `AlgoIf` of lists: the first branch whose condition is true (an
+    /// undefined condition reads false), the else branch, or undefined
+    /// without one. What the condition built is dropped.
+    fn list_if(&self, cond: u32, then: u32, rest: u32) -> Option<(u32, u32)> {
+        let lists = self.lists?;
+        let mark = lists.len();
+        let value = matches!(self.full(cond).val, Val::B(true, _));
+        lists.truncate(mark);
+        if value {
+            self.list(then)
+        } else if rest != NONE {
+            self.list(rest)
+        } else {
+            None
         }
     }
 
@@ -1118,7 +1136,7 @@ impl Ctx<'_> {
         let index = self.full_number(n);
         lists.truncate(mark);
         let (start, len) = self.list(l)?;
-        let mut k = math::java_round(index) - 1;
+        let mut k = math::java_round(index).saturating_sub(1);
         if op == ListOp::Index && k < 0 {
             k += i64::from(len) + 1;
         }

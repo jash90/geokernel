@@ -1009,6 +1009,11 @@ fn elements_are_picked_by_a_rounded_index() {
         assert_eq!(pick(&c)[0], u, "{bad}");
         assert_eq!(pick(&c)[4], u, "{bad}");
     }
+    // indices beyond the integer range are undefined, not an overflow
+    for huge in [-1e300, 1e300] {
+        c.set_number(n, huge).unwrap();
+        assert_eq!(pick(&c), [u; 5], "{huge}");
+    }
     c.set_number(n, 2.0).unwrap();
     assert_eq!(elems(&c, "r"), "{3}");
     assert_eq!(num(&c, "s"), 1.0);
@@ -1167,6 +1172,61 @@ fn list_arithmetic_works_element_by_element() {
     c.move_point(c.id("A").unwrap(), 1.0, 2.0).unwrap();
     assert_eq!(elems(&c, "b"), "{3, 5, 4}");
     assert_eq!(elems(&c, "q"), "{(2, 4), (6, -2)}");
+}
+
+#[test]
+fn a_list_object_minus_a_point_is_read_as_coordinates() {
+    let mut c = load(
+        "a = 2\n\
+         A = (1, 2)\n\
+         l = {a, 2}\n\
+         t = l - A\n\
+         u = A - l\n\
+         c = x(l - A)",
+    )
+    .unwrap();
+    let v = |c: &Construction, l: &str| c.value(c.id(l).unwrap());
+    assert_eq!(v(&c, "t"), Value::Vector { x: 1.0, y: 0.0 });
+    assert_eq!(v(&c, "u"), Value::Vector { x: -1.0, y: 0.0 });
+    assert_eq!(num(&c, "c"), 1.0);
+    c.set_number(c.id("a").unwrap(), 3.0).unwrap();
+    assert_eq!(v(&c, "t"), Value::Vector { x: 2.0, y: 0.0 });
+    assert_eq!(num(&c, "c"), 2.0);
+    rebuilt(&c);
+    // a function that reads a list object is refused like one with a list
+    assert!(exec(&mut c, "f(x) = x + x(l - A)").is_err());
+}
+
+#[test]
+fn if_picks_a_list_branch() {
+    let mut c = load(
+        "a = 1\n\
+         l = If(a > 0, {1, 2})\n\
+         n = Length(If(a > 0, {1, 2}))\n\
+         m = If(a > 0, {a, 2}, {3})\n\
+         k = If(a > 2, {1}, a > 0, {a, a, a}, {})\n\
+         j = {If(a > 0, {a}, {0}), 5}",
+    )
+    .unwrap();
+    assert_eq!(elems(&c, "l"), "{1, 2}");
+    assert_eq!(num(&c, "n"), 2.0);
+    assert_eq!(elems(&c, "m"), "{1, 2}");
+    assert_eq!(elems(&c, "k"), "{1, 1, 1}");
+    assert_eq!(elems(&c, "j"), "{{1}, 5}");
+    let a = c.id("a").unwrap();
+    c.set_number(a, -1.0).unwrap();
+    assert_eq!(flat(&c, c.id("l").unwrap()), None);
+    assert_eq!(c.value(c.id("n").unwrap()), Value::Undefined);
+    assert_eq!(elems(&c, "m"), "{3}");
+    assert_eq!(elems(&c, "k"), "{}");
+    assert_eq!(elems(&c, "j"), "{{0}, 5}");
+    rebuilt(&c);
+    c.set_number(a, 3.0).unwrap();
+    assert_eq!(elems(&c, "l"), "{1, 2}");
+    assert_eq!(num(&c, "n"), 2.0);
+    assert_eq!(elems(&c, "k"), "{1}");
+    // a list and a number do not fit together as branches
+    assert!(exec(&mut c, "b = If(a > 0, {1}, 2)").is_err());
 }
 
 #[test]

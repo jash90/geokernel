@@ -398,6 +398,7 @@ fn join(a: Ty, b: Ty) -> Result<Ty, String> {
         (Ty::Num(x), Ty::Num(_)) => Ok(Ty::Num(x)),
         (Ty::Vec | Ty::Num(_), Ty::Vec) | (Ty::Vec, Ty::Num(_)) => Ok(Ty::Vec),
         (Ty::Bool, Ty::Bool) => Ok(Ty::Bool),
+        (Ty::List(x), Ty::List(y)) => Ok(Ty::List(join_elem(x, y))),
         _ => Err("the branches of `If` do not fit together".into()),
     }
 }

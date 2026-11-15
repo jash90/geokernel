@@ -417,8 +417,7 @@ pub(crate) struct Entry {
 impl Entry {
     fn new(p: parse::Parsed, function: bool) -> Self {
         let has_if = function && p.nodes.iter().any(|n| matches!(n, Node::If(..)));
-        let lists =
-            p.nodes.iter().any(is_list_node) || matches!(p.tys[p.root as usize], Ty::List(_));
+        let lists = reads_list(&p.nodes, &p.tys);
         Entry {
             has_if,
             lists,
@@ -535,6 +534,12 @@ fn is_list_node(node: &Node) -> bool {
             | Node::Seq(..)
             | Node::Local(_)
     )
+}
+
+/// Whether a tree makes or reads a list: a list node, or any subtree whose
+/// type is a list, such as a list object read by `l - A`.
+fn reads_list(nodes: &[Node], tys: &[Ty]) -> bool {
+    nodes.iter().any(is_list_node) || tys.iter().any(|t| matches!(t, Ty::List(_)))
 }
 
 /// The commands that expressions compute themselves; `Length` and `Sum`
@@ -721,9 +726,7 @@ fn reparse(
     if depth[r] > parse::MAX_DEPTH || cost[r] > parse::MAX_COST {
         return None;
     }
-    if uses_var && kind != Kind::Function
-        || kind == Kind::Function && nodes.iter().any(is_list_node)
-    {
+    if uses_var && kind != Kind::Function || kind == Kind::Function && reads_list(&nodes, &tys) {
         return None;
     }
     Some(parse::Parsed {
@@ -970,7 +973,7 @@ fn function(c: &mut Construction, name: &str, parsed: parse::Parsed) -> Result<I
         Ty::List(_) => return Err("a function cannot give a list".into()),
         Ty::Num(_) => {}
     }
-    if parsed.nodes.iter().any(is_list_node) {
+    if reads_list(&parsed.nodes, &parsed.tys) {
         return Err("a list in a function is not supported".into());
     }
     add(c, name, parsed, Kind::Function)

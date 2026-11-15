@@ -730,6 +730,10 @@ pub struct Case {
     /// cannot be decided, and a list holds an undefined element (one of
     /// `Sequence(expr, k, a, b)` too, where only `a` and `b` must be defined).
     pub lenient: Vec<bool>,
+    /// Pairs of expression objects that must have the same value: one reads
+    /// list or boolean objects, the other is the same expression with their
+    /// definitions written in its place.
+    pub twins: Vec<(usize, usize)>,
     pub free: Vec<Id>,
     /// Commands the generator tried with matching kinds that the script
     /// layer rejected.
@@ -745,6 +749,9 @@ pub fn generate(seed: u64, n_commands: usize, all_commands: bool) -> Case {
     let mut deps: Vec<Vec<usize>> = Vec::new();
     let mut expr: Vec<bool> = Vec::new();
     let mut lenient: Vec<bool> = Vec::new();
+    let mut twins: Vec<(usize, usize)> = Vec::new();
+    // the right-hand side and the objects read of each list or boolean
+    let mut inline: Vec<(String, String, Vec<String>)> = Vec::new();
     let mut free = Vec::new();
     let mut rejected = Vec::new();
 
@@ -789,19 +796,64 @@ pub fn generate(seed: u64, n_commands: usize, all_commands: bool) -> Case {
             let Some((line, used)) = expression_line(&mut rng, &c, made) else {
                 continue;
             };
+            let read_kinds: Vec<Kind> = used
+                .iter()
+                .map(|u| c.kind(c.id(u).expect("read object")))
+                .collect();
+            let reads_list_or_boolean = read_kinds
+                .iter()
+                .any(|&k| matches!(k, Kind::List | Kind::Boolean));
             match exec(&mut c, &line) {
                 Ok(Some(id)) => {
-                    deps.push(
+                    let ids = |used: &[String], c: &Construction| -> Vec<usize> {
                         used.iter()
                             .map(|u| c.id(u).expect("read object").index())
-                            .collect(),
-                    );
+                            .collect()
+                    };
+                    deps.push(ids(&used, &c));
                     expr.push(true);
-                    lenient.push(c.kind(id) == Kind::List || line.contains("If("));
+                    let kind = c.kind(id);
+                    let loose = matches!(kind, Kind::List | Kind::Boolean)
+                        || reads_list_or_boolean
+                        || line.contains("If(");
+                    lenient.push(loose);
                     assert_eq!(id.index() + 1, c.len(), "an expression makes one object");
+                    let (label, rhs) = line.split_once(" = ").expect("label = rhs");
+                    let (label, rhs) = (label.to_string(), rhs.to_string());
                     lines.push(line);
                     multi_lines.push(false);
                     made += 1;
+                    if reads_list_or_boolean && !label.contains('(') {
+                        // the same expression with the definitions of the
+                        // lists and booleans it reads written in their place
+                        let mut twin_rhs = rhs.clone();
+                        let mut twin_used: Vec<String> = Vec::new();
+                        for u in &used {
+                            match inline.iter().find(|(l, ..)| l == u) {
+                                Some((l, def, inner)) => {
+                                    twin_rhs = replace_label(&twin_rhs, l, &format!("({def})"));
+                                    twin_used.extend(inner.iter().cloned());
+                                }
+                                None => twin_used.push(u.clone()),
+                            }
+                        }
+                        let twin_line = format!("{label}w = {twin_rhs}");
+                        match exec(&mut c, &twin_line) {
+                            Ok(Some(twin)) => {
+                                deps.push(ids(&twin_used, &c));
+                                expr.push(true);
+                                lenient.push(loose);
+                                twins.push((id.index(), twin.index()));
+                                lines.push(twin_line);
+                                multi_lines.push(false);
+                            }
+                            Ok(None) => unreachable!("an expression line creates an object"),
+                            Err(e) => rejected.push(format!("{twin_line}: {e}")),
+                        }
+                    }
+                    if matches!(kind, Kind::List | Kind::Boolean) {
+                        inline.push((label, rhs, used));
+                    }
                 }
                 Ok(None) => unreachable!("an expression line creates an object"),
                 Err(e) => rejected.push(format!("{line}: {e}")),
@@ -846,14 +898,36 @@ pub fn generate(seed: u64, n_commands: usize, all_commands: bool) -> Case {
         deps,
         expr,
         lenient,
+        twins,
         free,
         rejected,
     }
 }
 
+/// `text` with every identifier equal to `label` replaced by `by`.
+fn replace_label(text: &str, label: &str, by: &str) -> String {
+    let mut out = String::new();
+    let mut word = String::new();
+    let flush = |word: &mut String, out: &mut String| {
+        out.push_str(if word == label { by } else { word });
+        word.clear();
+    };
+    for ch in text.chars() {
+        if ch.is_alphanumeric() || ch == '_' {
+            word.push(ch);
+        } else {
+            flush(&mut word, &mut out);
+            out.push(ch);
+        }
+    }
+    flush(&mut word, &mut out);
+    out
+}
+
 /// A random expression line over the objects of `c`: a number, a point, a
-/// vector or a function, sometimes with a command inside (`Distance(A, B)`),
-/// with the labels of the objects it reads.
+/// vector, a boolean, a list or a function, sometimes with a command inside
+/// (`Distance(A, B)`), with the labels of the objects it reads. Some read
+/// list and boolean objects made by earlier lines.
 fn expression_line(rng: &mut Rng, c: &Construction, made: usize) -> Option<(String, Vec<String>)> {
     let of = |kind: Kind| -> Vec<String> {
         c.ids()
@@ -861,17 +935,25 @@ fn expression_line(rng: &mut Rng, c: &Construction, made: usize) -> Option<(Stri
             .map(|id| c.label(id).to_string())
             .collect()
     };
-    let (numbers, points, vectors, functions) = (
+    let (numbers, points, vectors, functions, lists, booleans) = (
         of(Kind::Number),
         of(Kind::Point),
         of(Kind::Vector),
         of(Kind::Function),
+        of(Kind::List),
+        of(Kind::Boolean),
     );
     let n = rng.pick(&numbers).clone();
     let m = rng.pick(&numbers).clone();
     let p = rng.pick(&points).clone();
     let q = rng.pick(&points).clone();
-    let pick = rng.below(24);
+    // readers of list and boolean objects, when there are any, a third of
+    // the time
+    let pick = if !(lists.is_empty() && booleans.is_empty()) && rng.chance(0.33) {
+        24 + rng.below(7)
+    } else {
+        rng.below(32)
+    };
     let (label, rhs, used) = match pick {
         0 => (format!("o{made}"), format!("{n} * 2 + {m}"), vec![n, m]),
         1 => (
@@ -974,6 +1056,65 @@ fn expression_line(rng: &mut Rng, c: &Construction, made: usize) -> Option<(Stri
             format!("Join({{{n}}}, Last({{{m}, x({p})}}, 1), {{}})"),
             vec![n, m, p],
         ),
+        23 => (
+            format!("b{made}"),
+            format!("{n} < {m} || x({p}) > {m}"),
+            vec![n, m, p],
+        ),
+        24 | 25 => {
+            if booleans.is_empty() {
+                return None;
+            }
+            let b = rng.pick(&booleans).clone();
+            if pick == 24 {
+                (
+                    format!("o{made}"),
+                    format!("If({b}, {n}, {m}) + 1"),
+                    vec![b, n, m],
+                )
+            } else {
+                (
+                    format!("P{made}"),
+                    format!("If({b} && {n} > 0, {p}, {q})"),
+                    vec![b, n, p, q],
+                )
+            }
+        }
+        26..=30 => {
+            if lists.is_empty() {
+                return None;
+            }
+            let l = rng.pick(&lists).clone();
+            match pick {
+                26 => (
+                    format!("o{made}"),
+                    format!("Length({l}) {n} + Length(Reverse({l}))"),
+                    vec![l, n],
+                ),
+                27 => (format!("v{made}"), format!("{l} - {p}"), vec![l, p]),
+                28 => (
+                    format!("o{made}"),
+                    format!("x({p} - {l}) + {n}"),
+                    vec![p, l, n],
+                ),
+                29 => (
+                    format!("s{made}"),
+                    format!("Append(First({l}, 2), {n})"),
+                    vec![l, n],
+                ),
+                _ => {
+                    if booleans.is_empty() {
+                        return None;
+                    }
+                    let b = rng.pick(&booleans).clone();
+                    (
+                        format!("s{made}"),
+                        format!("If({b}, {l}, {{{n}, {b}}})"),
+                        vec![b, l, n],
+                    )
+                }
+            }
+        }
         _ => {
             let body = if rng.chance(0.5) {
                 format!("x^2 + {n}")
