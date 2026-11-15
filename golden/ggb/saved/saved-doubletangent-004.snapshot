@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "id": "saved-doubletangent-004",
+  "script": [
+    "A = (2, -1)",
+    "r = 4",
+    "k = Circle(A, r)",
+    "C = (-3, -2)",
+    "D = (7, -2)",
+    "f = Line(C, D)",
+    "P = Intersect(f, k)"
+  ],
+  "objects": {
+    "A": { "type": "point", "defined": true, "x": 2.0, "y": -1.0 },
+    "r": { "type": "number", "defined": true, "value": 4.0 },
+    "k": { "type": "circle", "defined": true, "cx": 2.0, "cy": -1.0, "r": 4.0 },
+    "C": { "type": "point", "defined": true, "x": -3.0, "y": -5.0 },
+    "D": { "type": "point", "defined": true, "x": 7.0, "y": -5.0 },
+    "f": { "type": "line", "defined": true, "a": 0.0, "b": 10.0, "c": 50.0 },
+    "P_{1}": { "type": "point", "defined": true, "x": 2.0, "y": -5.0 },
+    "P_{2}": { "type": "point", "defined": true, "x": 2.0, "y": -5.0 }
+  }
+}

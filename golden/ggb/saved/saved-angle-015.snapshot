@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "id": "saved-angle-015",
+  "script": [
+    "A = (0.16, -2.7)",
+    "B = (3.34, -2.73)",
+    "C = (-2.9, -0.15)",
+    "a = Angle(B, A, C)",
+    "b = Angle(C, A, B)"
+  ],
+  "objects": {
+    "A": { "type": "point", "defined": true, "x": 0.16, "y": -2.7 },
+    "B": { "type": "point", "defined": true, "x": 3.56, "y": -1.93 },
+    "C": { "type": "point", "defined": true, "x": -3.39, "y": -1.1 },
+    "a": { "type": "number", "defined": true, "value": 2.4954395196315957 },
+    "b": { "type": "number", "defined": true, "value": 3.7877457875479905 }
+  }
+}

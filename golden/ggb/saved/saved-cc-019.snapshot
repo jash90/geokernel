@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "id": "saved-cc-019",
+  "script": [
+    "A = (-1.38, 0.42)",
+    "r = 2.98",
+    "k = Circle(A, r)",
+    "B = (1.64, 0.54)",
+    "s = 2.38",
+    "c = Circle(B, s)",
+    "P = Intersect(k, c)"
+  ],
+  "objects": {
+    "A": { "type": "point", "defined": true, "x": -2.86, "y": 1.42 },
+    "r": { "type": "number", "defined": true, "value": 2.98 },
+    "k": { "type": "circle", "defined": true, "cx": -2.86, "cy": 1.42, "r": 2.98 },
+    "B": { "type": "point", "defined": true, "x": -0.24, "y": 0.57 },
+    "s": { "type": "number", "defined": true, "value": 2.38 },
+    "c": { "type": "circle", "defined": true, "cx": -0.24, "cy": 0.57, "r": 2.38 },
+    "P_{1}": { "type": "point", "defined": true, "x": -0.3022681286522565, "y": 2.9491852975659856 },
+    "P_{2}": { "type": "point", "defined": true, "x": -1.6871438841592998, "y": -1.3194905605851366 }
+  }
+}

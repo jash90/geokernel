@@ -88,6 +88,24 @@ impl Workbench {
         Ok(())
     }
 
+    /// Replaces the whole document with an imported file: its script, the
+    /// labels it hides, and a notice to show (for what was left out).
+    pub fn load_imported(
+        &mut self,
+        src: &str,
+        hidden: &[String],
+        notice: Option<String>,
+    ) -> Result<(), String> {
+        self.load_script(src)?;
+        for label in hidden {
+            if self.construction.id(label).is_some() {
+                self.log.hidden.insert(label.clone());
+            }
+        }
+        self.notice = notice;
+        Ok(())
+    }
+
     /// Runs what the user typed: `f = Line(A, B)`, `f: Line(A, B)`, or just a
     /// definition, which gets the next free label of its kind.
     pub fn run_line(&mut self, input: &str) -> Result<(), String> {
