@@ -116,6 +116,10 @@ pub enum ImportError {
     TooManyEntries(usize),
     /// The construction has more than [`xml::MAX_ITEMS`] items.
     TooManyItems,
+    /// A command lists more than [`xml::MAX_ARGUMENTS`] inputs or outputs.
+    TooManyArguments(String),
+    /// An attribute value is longer than [`xml::MAX_ATTRIBUTE_BYTES`].
+    AttributeTooLong,
     /// A bug of the importer (the scratch construction disagrees with the
     /// lines it accepted).
     Internal(String),
@@ -147,6 +151,17 @@ impl fmt::Display for ImportError {
             ImportError::TooManyItems => {
                 write!(f, "the construction has more than {} items", xml::MAX_ITEMS)
             }
+            ImportError::TooManyArguments(c) => write!(
+                f,
+                "command `{}` lists more than {} inputs or outputs",
+                convert::quote(c),
+                xml::MAX_ARGUMENTS
+            ),
+            ImportError::AttributeTooLong => write!(
+                f,
+                "an attribute is longer than {} bytes",
+                xml::MAX_ATTRIBUTE_BYTES
+            ),
             ImportError::Internal(e) => write!(f, "internal error: {e}"),
             ImportError::BadNumber { label, text } => {
                 write!(f, "object `{label}`: `{text}` is not a number")

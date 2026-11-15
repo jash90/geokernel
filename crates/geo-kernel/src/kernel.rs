@@ -438,6 +438,10 @@ pub struct Construction {
     by_label: HashMap<String, Id>,
     /// The stored lists of parents, one after the other (see [`IdList`]).
     lists: Vec<Id>,
+    /// For each family of generated labels (see [`Construction::label_hint`]),
+    /// the first index that may still be free. Behind a mutex because the
+    /// label searches only borrow the construction.
+    label_hints: std::sync::Mutex<HashMap<String, usize>>,
     // Scratch state for updates, kept to avoid allocating on every drag.
     dirty: DirtySet,
 }
@@ -615,6 +619,23 @@ impl Construction {
         }
     }
 
+    /// Where to start searching a family of generated labels (`c0, c1, ...`,
+    /// `p_{1}, p_{2}, ...`): every index below it is taken by an object of
+    /// the construction (or reserved), so the search for the first free label
+    /// gives the same result as one that starts at the beginning, without
+    /// scanning the labels again for every new object.
+    pub(crate) fn label_hint(&self, family: &str) -> usize {
+        let hints = self.label_hints.lock().unwrap_or_else(|e| e.into_inner());
+        hints.get(family).copied().unwrap_or(0)
+    }
+
+    /// Records that every index below `start` of `family` is taken.
+    pub(crate) fn set_label_hint(&self, family: &str, start: usize) {
+        let mut hints = self.label_hints.lock().unwrap_or_else(|e| e.into_inner());
+        let slot = hints.entry(family.to_string()).or_insert(0);
+        *slot = (*slot).max(start);
+    }
+
     /// Removes every object added after `at`, newest first, together with
     /// the edges from its parents and the lists stored since. No object may
     /// have been moved in between.
@@ -638,6 +659,11 @@ impl Construction {
             }
         }
         self.lists.truncate(at.lists.min(self.lists.len()));
+        // Labels became free again, so the hints may be too high.
+        self.label_hints
+            .get_mut()
+            .unwrap_or_else(|e| e.into_inner())
+            .clear();
     }
 
     /// Every object `def` reads: its parents, the objects its rule also

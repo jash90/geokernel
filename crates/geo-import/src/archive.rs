@@ -51,13 +51,13 @@ fn zip_error(detail: &str) -> ImportError {
 }
 
 fn u16_at(b: &[u8], at: usize) -> Result<usize, ImportError> {
-    b.get(at..at + 2)
+    at.checked_add(2).and_then(|end| b.get(at..end))
         .map(|s| u16::from_le_bytes([s[0], s[1]]) as usize)
         .ok_or_else(|| zip_error("truncated"))
 }
 
 fn u32_at(b: &[u8], at: usize) -> Result<u64, ImportError> {
-    b.get(at..at + 4)
+    at.checked_add(4).and_then(|end| b.get(at..end))
         .map(|s| u32::from_le_bytes([s[0], s[1], s[2], s[3]]) as u64)
         .ok_or_else(|| zip_error("truncated"))
 }
@@ -119,22 +119,30 @@ fn find_entry(bytes: &[u8]) -> Result<Option<Entry>, ImportError> {
         let extra_len = u16_at(bytes, at + 30)?;
         let comment_len = u16_at(bytes, at + 32)?;
         let name = bytes
-            .get(at + 46..at + 46 + name_len)
+            .get(at.saturating_add(46)..at.saturating_add(46).saturating_add(name_len))
             .ok_or_else(|| zip_error("truncated"))?;
         if name == XML_FILE.as_bytes() {
             let flags = u16_at(bytes, at + 8)?;
             if flags & 1 != 0 {
                 return Err(zip_error("encrypted entries are not supported"));
             }
-            return Ok(Some(Entry {
+            let entry = Entry {
                 method: u16_at(bytes, at + 10)?,
                 crc: u32_at(bytes, at + 16)? as u32,
                 compressed: u32_at(bytes, at + 20)?,
                 size: u32_at(bytes, at + 24)?,
                 local_offset: u32_at(bytes, at + 42)?,
-            }));
+            };
+            // 0xFFFFFFFF in any of these means the real value is in a zip64
+            // extra field, which is not read.
+            if [entry.compressed, entry.size, entry.local_offset].contains(&0xFFFF_FFFF) {
+                return Err(zip_error("zip64 entries are not supported"));
+            }
+            return Ok(Some(entry));
         }
-        at += 46 + name_len + extra_len + comment_len;
+        at = at
+            .checked_add(46 + name_len + extra_len + comment_len)
+            .ok_or_else(|| zip_error("damaged central directory"))?;
     }
     Ok(None)
 }
@@ -174,7 +182,9 @@ fn unzip(bytes: &[u8]) -> Result<Vec<u8>, ImportError> {
     if u32_at(bytes, at)? != LOCAL as u64 {
         return Err(zip_error("damaged local header"));
     }
-    let start = at + 30 + u16_at(bytes, at + 26)? + u16_at(bytes, at + 28)?;
+    let start = at
+        .checked_add(30 + u16_at(bytes, at + 26)? + u16_at(bytes, at + 28)?)
+        .ok_or_else(|| zip_error("bad offset"))?;
     let end = start
         .checked_add(entry.compressed as usize)
         .filter(|&e| e <= bytes.len())

@@ -22,7 +22,10 @@
 //!
 //! Everything else (the user interface, styles, scripts) is ignored.
 //!
-//! At most [`MAX_ITEMS`] items are read.
+//! At most [`MAX_ITEMS`] items (an item counts once, plus once per output of
+//! a command) are read, a command lists at most [`MAX_ARGUMENTS`] inputs and
+//! as many outputs, and an attribute value has at most
+//! [`MAX_ATTRIBUTE_BYTES`] bytes.
 
 use crate::{ImportError, Settings};
 use quick_xml::events::{BytesStart, Event};
@@ -30,6 +33,13 @@ use quick_xml::{Reader, XmlVersion};
 
 /// The most items (expressions, commands, elements) a construction may have.
 pub const MAX_ITEMS: usize = 200_000;
+
+/// The most inputs, and the most outputs, one command may list. Every output
+/// also counts as an item toward [`MAX_ITEMS`].
+pub const MAX_ARGUMENTS: usize = 10_000;
+
+/// The longest value one attribute may have, in bytes.
+pub const MAX_ATTRIBUTE_BYTES: usize = 1 << 20;
 
 /// An element of the construction that GeoGebra wrote.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -80,6 +90,8 @@ pub struct Document {
     /// How many `<construction>` tags the file has. GeoGebra's reader appends
     /// the elements of a second one to the first, and so does the importer.
     pub constructions: usize,
+    /// Items plus outputs, what [`MAX_ITEMS`] limits.
+    pub weight: usize,
 }
 
 fn bad(e: impl std::fmt::Display) -> ImportError {
@@ -88,34 +100,41 @@ fn bad(e: impl std::fmt::Display) -> ImportError {
 
 /// The value of attribute `name`, with entities resolved.
 fn attr(e: &BytesStart, name: &str) -> Result<Option<String>, ImportError> {
-    for a in e.attributes() {
+    // No duplicate check: it is quadratic in the number of attributes.
+    for a in e.attributes().with_checks(false) {
         let a = a.map_err(bad)?;
         if a.key.as_ref() == name {
-            return Ok(Some(
-                a.normalized_value(XmlVersion::Implicit1_0)
-                    .map_err(bad)?
-                    .into_owned(),
-            ));
+            return Ok(Some(value_of(&a)?));
         }
     }
     Ok(None)
+}
+
+/// The value of an attribute, with entities resolved, at most
+/// [`MAX_ATTRIBUTE_BYTES`] long.
+fn value_of(a: &quick_xml::events::attributes::Attribute) -> Result<String, ImportError> {
+    if a.value.len() > MAX_ATTRIBUTE_BYTES {
+        return Err(ImportError::AttributeTooLong);
+    }
+    Ok(a.normalized_value(XmlVersion::Implicit1_0)
+        .map_err(bad)?
+        .into_owned())
 }
 
 /// The attributes `a0`, `a1`, ... of an `<input>` or `<output>` tag, which
 /// must be numbered without gaps.
 fn numbered(e: &BytesStart, command: &str) -> Result<Vec<String>, ImportError> {
     let mut found: Vec<(usize, String)> = Vec::new();
-    for a in e.attributes() {
+    for a in e.attributes().with_checks(false) {
         let a = a.map_err(bad)?;
         let key = a.key.as_ref().to_string();
         let Some(index) = key.strip_prefix('a').and_then(|n| n.parse::<usize>().ok()) else {
             continue;
         };
-        let value = a
-            .normalized_value(XmlVersion::Implicit1_0)
-            .map_err(bad)?
-            .into_owned();
-        found.push((index, value));
+        if found.len() >= MAX_ARGUMENTS {
+            return Err(ImportError::TooManyArguments(command.to_string()));
+        }
+        found.push((index, value_of(&a)?));
     }
     found.sort_by_key(|(i, _)| *i);
     for (n, (i, _)) in found.iter().enumerate() {
@@ -132,9 +151,14 @@ fn numbered(e: &BytesStart, command: &str) -> Result<Vec<String>, ImportError> {
 }
 
 fn push(doc: &mut Document, item: Item) -> Result<(), ImportError> {
-    if doc.items.len() >= MAX_ITEMS {
+    let weight = match &item {
+        Item::Command { outputs, .. } => 1 + outputs.len(),
+        _ => 1,
+    };
+    if doc.weight + weight > MAX_ITEMS {
         return Err(ImportError::TooManyItems);
     }
+    doc.weight += weight;
     doc.items.push(item);
     Ok(())
 }

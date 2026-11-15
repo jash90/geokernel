@@ -13,6 +13,25 @@ use geo_kernel::script::{exec, is_vector_label, multi_output_count};
 use geo_kernel::{Construction, Value};
 use std::collections::{BTreeMap, BTreeSet};
 
+/// The longest text a reason may quote from the file, in characters.
+const QUOTE_CHARS: usize = 60;
+
+/// The longest label or number literal the importer passes into a script
+/// line (anything longer is not a label the script can use).
+/// The longest reason kept for a skipped object, in characters.
+const MAX_REASON_CHARS: usize = 300;
+
+const MAX_TOKEN_BYTES: usize = 256;
+
+/// `text`, cut to [`QUOTE_CHARS`] characters (with `...`) so that a reason
+/// never grows with the input it talks about.
+pub fn quote(text: &str) -> String {
+    match text.char_indices().nth(QUOTE_CHARS) {
+        Some((end, _)) => format!("{}...", &text[..end]),
+        None => text.to_string(),
+    }
+}
+
 /// Runs the whole conversion.
 pub fn convert(doc: Document) -> Result<Imported, ImportError> {
     let mut c = Converter::default();
@@ -123,7 +142,12 @@ fn labels_by_kernel(name: &str, args: &[String]) -> bool {
 }
 
 impl Converter {
-    fn skip(&mut self, label: &str, kind: &str, reason: String) {
+    fn skip(&mut self, label: &str, kind: &str, mut reason: String) {
+        // Whatever produced the reason, it stays short.
+        if let Some((end, _)) = reason.char_indices().nth(MAX_REASON_CHARS) {
+            reason.truncate(end);
+            reason.push_str("...");
+        }
         if !label.is_empty() {
             self.skipped.insert(label.to_string(), reason.clone());
         }
@@ -161,7 +185,7 @@ impl Converter {
             return Ok(());
         }
         let steps = match labelled.iter().find(|l| !is_label(l)) {
-            Some(bad) => Err(format!("`{bad}` is not a label the script can use")),
+            Some(bad) => Err(format!("`{}` is not a label the script can use", quote(bad))),
             None => self.steps(name, inputs, outputs),
         };
         match steps {
@@ -279,13 +303,13 @@ impl Converter {
         outputs: &[String],
     ) -> Result<Vec<Step>, String> {
         if name.is_empty() || !name.bytes().all(|b| b.is_ascii_alphanumeric()) {
-            return Err(format!("`{name}` is not a command name"));
+            return Err(format!("`{}` is not a command name", quote(name)));
         }
         let mut args = Vec::with_capacity(inputs.len());
         for arg in inputs {
             for token in tokens(arg) {
                 if self.skipped.contains_key(token) {
-                    return Err(format!("depends on the skipped object `{token}`"));
+                    return Err(format!("depends on the skipped object `{}`", quote(token)));
                 }
             }
             args.push(pass_argument(arg)?);
@@ -384,7 +408,7 @@ impl Converter {
         }
         let label = el.label.as_str();
         if !is_label(label) {
-            return Ok(Err(format!("`{label}` is not a label the script can use")));
+            return Ok(Err(format!("`{}` is not a label the script can use", quote(label))));
         }
         let number = |text: &str| -> Result<f64, ImportError> {
             text.trim()
@@ -452,7 +476,8 @@ impl Converter {
 /// the script line.
 pub fn expression_line(exp: &str) -> Result<String, String> {
     Err(format!(
-        "the object is defined by the expression `{exp}`; the kernel has no expressions yet"
+        "the object is defined by the expression `{}`; the kernel has no expressions yet",
+        quote(exp)
     ))
 }
 
@@ -462,11 +487,13 @@ pub fn expression_line(exp: &str) -> Result<String, String> {
 /// is the place to add one.
 pub fn pass_argument(arg: &str) -> Result<String, String> {
     let arg = arg.trim();
-    if is_label(arg) || arg.parse::<f64>().is_ok_and(f64::is_finite) {
+    let short = arg.len() <= MAX_TOKEN_BYTES;
+    if short && (is_label(arg) || arg.parse::<f64>().is_ok_and(f64::is_finite)) {
         Ok(arg.to_string())
     } else {
         Err(format!(
-            "the argument `{arg}` is an expression; the kernel has no expressions yet"
+            "the argument `{}` is an expression; the kernel has no expressions yet",
+            quote(arg)
         ))
     }
 }

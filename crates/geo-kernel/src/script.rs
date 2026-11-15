@@ -189,10 +189,13 @@ fn add_outputs(c: &mut Construction, name: &str, defs: Vec<Def>) -> Result<Id, S
 /// `Construction.buildIndexedLabel`: the first `p_{n}` that is free, where
 /// for `n < 10` the short form `p_n` must be free too.
 pub(crate) fn index_label(c: &Construction, prefix: &str) -> String {
-    let mut n = 1;
+    // Indexes below the hint are known to be taken (see `label_hint`).
+    let family = format!("I:{prefix}");
+    let mut n = c.label_hint(&family).max(1);
     loop {
         let long = format!("{prefix}_{{{n}}}");
         if c.id(&long).is_none() && (n >= 10 || c.id(&format!("{prefix}_{n}")).is_none()) {
+            c.set_label_hint(&family, n);
             return long;
         }
         n += 1;
@@ -524,20 +527,9 @@ fn exec_labelled(c: &mut Construction, line: &str) -> Result<Option<Id>, String>
         .strip_prefix('=')
         .ok_or("expected `=` after the output labels")?
         .trim();
-    for (i, slot) in slots.iter().enumerate() {
-        if !slot.is_empty() && !is_output_label(slot) {
-            return Err(format!("`{slot}` is not a valid object name"));
-        }
-        if !slot.is_empty() && slots[..i].contains(slot) {
-            return Err(format!("the label `{slot}` is used twice"));
-        }
-        if !slot.is_empty() && c.id(slot).is_some() {
-            return Err(format!("object `{slot}` already exists"));
-        }
-    }
-    if slots.iter().all(|s| s.is_empty()) {
-        return Err("no output is given a label".into());
-    }
+    // The command decides how many outputs it has; a longer list of labels is
+    // refused before any label is looked at, so the work is bounded by the
+    // command, not by the length of the line.
     let Some(defs) = parse_multi(c, rhs) else {
         // An unknown command or a bad argument is the better message.
         return Err(match parse_def(c, rhs) {
@@ -556,16 +548,43 @@ fn exec_labelled(c: &mut Construction, line: &str) -> Result<Option<Id>, String>
             slots.len()
         ));
     }
+    let mut seen = std::collections::HashSet::new();
+    for slot in &slots {
+        if slot.is_empty() {
+            continue;
+        }
+        if !is_output_label(slot) {
+            return Err(format!("`{slot}` is not a valid object name"));
+        }
+        if !seen.insert(*slot) {
+            return Err(format!("the label `{slot}` is used twice"));
+        }
+        if c.id(slot).is_some() {
+            return Err(format!("object `{slot}` already exists"));
+        }
+    }
+    if seen.is_empty() {
+        return Err("no output is given a label".into());
+    }
     for (slot, def) in slots.iter().zip(&defs) {
         if !slot.is_empty() {
             probe(c, def)?;
         }
     }
+    // All or nothing: a failure after the first object removes it again.
+    let at = c.checkpoint();
     let mut first = None;
     for (slot, def) in slots.iter().zip(defs) {
         if !slot.is_empty() {
-            let id = c.add(slot, def).map_err(|e| e.to_string())?;
-            first.get_or_insert(id);
+            match c.add(slot, def) {
+                Ok(id) => {
+                    first.get_or_insert(id);
+                }
+                Err(e) => {
+                    c.rollback(at);
+                    return Err(e.to_string());
+                }
+            }
         }
     }
     Ok(first)
