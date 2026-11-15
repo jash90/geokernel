@@ -12,6 +12,10 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/MyDouble.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/MySpecialDouble.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoNumeric.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/MyBoolean.java
+//   source/shared/common/src/main/java/org/geogebra/common/util/DoubleUtil.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoVec2D.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDependentBoolean.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
@@ -45,6 +49,7 @@ use super::twonum;
 use super::{Bin, Entry, Node, Raw, Ty, Un};
 use crate::algo::intersect::Hint;
 use crate::kernel::{Construction, Def, Id, Kind, Value};
+use crate::tol::STANDARD_PRECISION;
 use std::borrow::Cow;
 use std::sync::OnceLock;
 
@@ -52,6 +57,10 @@ use std::sync::OnceLock;
 enum Val {
     N(f64),
     V(f64, f64),
+    /// A `MyBoolean`: its value and whether it is defined. A comparison
+    /// of an infinite or undefined number is false and undefined; the flag
+    /// only travels through the logical operators.
+    B(bool, bool),
 }
 
 impl Val {
@@ -59,7 +68,17 @@ impl Val {
         match self {
             Val::N(v) => v,
             Val::V(..) => f64::NAN,
+            Val::B(b, _) => bool_number(b),
         }
+    }
+}
+
+/// `MyBoolean.getDouble`.
+fn bool_number(b: bool) -> f64 {
+    if b {
+        1.0
+    } else {
+        0.0
     }
 }
 
@@ -191,6 +210,7 @@ pub(super) fn root(c: &Construction, e: &Entry) -> (Raw, Option<Exact>) {
     match x.val {
         Val::N(v) => (Raw::Num(v), x.dec),
         Val::V(x, y) => (Raw::Vec(x, y), None),
+        Val::B(b, _) => (Raw::Num(bool_number(b)), None),
     }
 }
 
@@ -238,6 +258,14 @@ impl Ctx<'_> {
                 }
             }
             Node::MinusOne => Ex::plain(N(-1.0)),
+            Node::Bool(b) => Ex::plain(Val::B(b, true)),
+            Node::Un(Un::Not, a) => Ex::plain(match self.full(a).val {
+                Val::B(b, defined) => Val::B(!b, defined),
+                _ => Val::B(false, false),
+            }),
+            Node::Bin(op, a, b) if op.is_comparison() || op.is_logic() => {
+                Ex::plain(logic(op, self.full(a).val, self.full(b).val))
+            }
             Node::Degree => Ex {
                 val: N(PI_180),
                 dec: Some(Exact::Dec(degree().clone())),
@@ -266,7 +294,7 @@ impl Ctx<'_> {
             Node::Bin(Bin::Pow, a, b) => self.power(a, b),
             Node::Bin(Bin::Round2, a, b) => self.round2(a, b),
             Node::Bin(op, a, b) => {
-                let (l, r) = (self.full(a), self.full(b));
+                let (l, r) = (self.operand(a), self.operand(b));
                 match (l.val, r.val) {
                     (N(_), N(_)) if matches!(op, Bin::Add | Bin::Sub | Bin::Mul | Bin::Div) => {
                         arithmetic(op, &l, &r)
@@ -330,6 +358,16 @@ impl Ctx<'_> {
         self.full(i).num()
     }
 
+    /// The full evaluation of an operand of a numeric operation: a boolean
+    /// is the plain number 1 or 0 (`MyBoolean.getNumber`).
+    fn operand(&self, i: u32) -> Ex {
+        let x = self.full(i);
+        match x.val {
+            Val::B(b, _) => Ex::plain(Val::N(bool_number(b))),
+            _ => x,
+        }
+    }
+
     /// `ExpressionNode.evaluateDouble`.
     fn fast(&self, i: u32) -> f64 {
         match self.node(i) {
@@ -378,7 +416,7 @@ impl Ctx<'_> {
     /// `Operation.ROUND2`: digits that evaluate to `NaN` fall back to
     /// rounding to an integer, unless they are an object.
     fn round2(&self, a: u32, b: u32) -> Ex {
-        let (x, digits) = (self.full(a), self.full(b));
+        let (x, digits) = (self.operand(a), self.operand(b));
         let object = matches!(self.node(b), Node::Obj(_) | Node::Cmd(..));
         match (x.val, digits.val) {
             (Val::N(v), Val::N(d)) => {
@@ -393,7 +431,7 @@ impl Ctx<'_> {
     /// `ExpressionNodeEvaluator.handlePower` and `MyDouble.pow`: a whole
     /// exponent from 0 to below 10^6 is `DoubleOperation.INT_POWER`.
     fn power(&self, a: u32, b: u32) -> Ex {
-        let (l, r) = (self.full(a), self.full(b));
+        let (l, r) = (self.operand(a), self.operand(b));
         match (l.val, r.val) {
             (Val::N(base), Val::N(e)) => {
                 let (special, dec) = l.left();
@@ -462,9 +500,10 @@ impl Ctx<'_> {
     /// `floor`, `ceil` and `round` of a `MySpecialDouble` are exact
     /// (`setPrecise`, `doRound`).
     fn unary(&self, op: Un, a: u32) -> Ex {
-        let operand = self.full(a);
+        let operand = self.operand(a);
         let x = match operand.val {
             Val::N(x) => x,
+            Val::B(..) => f64::NAN,
             Val::V(x, y) => {
                 return Ex::plain(Val::N(match op {
                     Un::X => x,
@@ -526,7 +565,56 @@ pub(super) fn scalar(op: Un, x: f64, deg: bool) -> f64 {
         Un::Log10 => math::log10(x),
         Un::Log2 => math::log2(x),
         Un::Gamma => math::gamma(x),
-        Un::X | Un::Y => f64::NAN,
+        Un::X | Un::Y | Un::Not => f64::NAN,
+    }
+}
+
+/// `Operation.LESS` and the other comparisons, `EQUAL_BOOLEAN`,
+/// `NOT_EQUAL`, `AND`, `OR`, `XOR` and `IMPLICATION`. Comparisons are on
+/// doubles with `Kernel.STANDARD_PRECISION`, never on exact decimals:
+/// `0.1 + 0.2 == 0.3` holds because the doubles are within 1e-8. Both
+/// operands are always evaluated, as upstream.
+fn logic(op: Bin, l: Val, r: Val) -> Val {
+    use Val::{B, N, V};
+    let number = |v: Val| match v {
+        N(x) => Some(x),
+        B(b, _) => Some(bool_number(b)),
+        V(..) => None,
+    };
+    match op {
+        Bin::And | Bin::Or | Bin::Xor | Bin::Implies => match (l, r) {
+            (B(a, da), B(b, db)) => B(
+                match op {
+                    Bin::And => a && b,
+                    Bin::Or => a || b,
+                    Bin::Xor => a ^ b,
+                    _ => !a || b,
+                },
+                da && db,
+            ),
+            _ => B(false, false),
+        },
+        // `ExpressionNode.isEqual`: numbers by `isEqual(a, b, eps)`, points
+        // and vectors by `GeoVec2D.isEqual`, anything else is not equal;
+        // always defined
+        Bin::Equal | Bin::NotEqual => {
+            let equal = match (number(l), number(r), l, r) {
+                (Some(a), Some(b), ..) => math::is_equal_eps(a, b, STANDARD_PRECISION),
+                (_, _, V(a, b), V(c, d)) => math::is_equal(a, c) && math::is_equal(b, d),
+                _ => false,
+            };
+            B(equal == (op == Bin::Equal), true)
+        }
+        _ => {
+            let (a, b) = (number(l).unwrap_or(f64::NAN), number(r).unwrap_or(f64::NAN));
+            let value = match op {
+                Bin::Less => math::is_greater(b, a),
+                Bin::Greater => math::is_greater(a, b),
+                Bin::LessEqual => math::is_greater_equal(b, a),
+                _ => math::is_greater_equal(a, b),
+            };
+            B(value, a.is_finite() && b.is_finite())
+        }
     }
 }
 
@@ -659,6 +747,9 @@ fn object(c: &Construction, id: Id) -> Val {
             Val::V(x, y)
         }
         (Kind::Point | Kind::Vector, _, _) => Val::V(nan, nan),
+        // `GeoBoolean.getMyBoolean`: the value, defined
+        (Kind::Boolean, _, Value::Bool(b)) => Val::B(b, true),
+        (Kind::Boolean, _, _) => Val::B(false, true),
         _ => Val::N(nan),
     }
 }
@@ -669,6 +760,8 @@ fn command(c: &Construction, def: Def, hint: Hint) -> Val {
     match c.command_value(def, hint) {
         Some(Value::Number(v)) => Val::N(v),
         Some(Value::Point { x, y } | Value::Vector { x, y }) => Val::V(x, y),
+        Some(Value::Bool(b)) => Val::B(b, true),
+        _ if def.kind() == Kind::Boolean => Val::B(false, true),
         _ if def.kind() == Kind::Number => Val::N(nan),
         _ => Val::V(nan, nan),
     }

@@ -2,11 +2,16 @@
 // commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/MyDouble.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/ExpressionNodeEvaluator.java
+//   source/shared/common/src/main/java/org/geogebra/common/plugin/Operation.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
 //! Static types of an expression tree: numbers with their angle dimension,
-//! and points or vectors; plus the size of the evaluation.
+//! points or vectors, and booleans; plus the size of the evaluation.
+//!
+//! GeoGebra finds a misplaced boolean only when it evaluates the line (a
+//! `MyError` from `Operation`); the evaluation of a new object always runs,
+//! so rejecting the same trees here gives the same lines errors.
 
 use super::{Bin, Node, Ty, Un};
 use crate::algo::measure::MeasureDef;
@@ -45,6 +50,7 @@ pub(crate) fn check(
         }
         let (ty, d, k, v) = match *node {
             Node::Num(_) | Node::MinusOne => (Ty::Num(0), 1, 1, 0),
+            Node::Bool(_) => (Ty::Bool, 1, 1, 0),
             Node::Degree => (Ty::Num(1), 1, 1, 0),
             Node::Var => (Ty::Num(0), 1, 1, 1),
             Node::Obj(id) => (object_type(c, id)?, 1, 1, 0),
@@ -124,6 +130,7 @@ fn result_type(kind: Kind, angle: bool) -> Result<Ty, String> {
     match kind {
         Kind::Number => Ok(Ty::Num(i8::from(angle))),
         Kind::Point | Kind::Vector => Ok(Ty::Vec),
+        Kind::Boolean => Ok(Ty::Bool),
         other => Err(format!("a {other} cannot be used in an expression")),
     }
 }
@@ -131,7 +138,14 @@ fn result_type(kind: Kind, angle: bool) -> Result<Ty, String> {
 /// `MyDouble`: functions drop the angle dimension except `abs`, `floor`,
 /// `ceil` and `round`; complex arguments are not supported.
 fn unary_type(op: Un, a: Ty) -> Result<Ty, String> {
-    match (op, a) {
+    if op == Un::Not {
+        // `Operation.NOT`: `illegalBoolean` for anything else
+        return match a {
+            Ty::Bool => Ok(Ty::Bool),
+            _ => Err("`\u{ac}` needs a boolean".into()),
+        };
+    }
+    match (op, numeric(a)) {
         (Un::X | Un::Y, Ty::Vec) => Ok(Ty::Num(0)),
         (Un::X | Un::Y, Ty::Num(_)) => Err("`x()` and `y()` need a point or a vector".into()),
         (Un::Abs, Ty::Vec) => Ok(Ty::Num(0)),
@@ -139,7 +153,7 @@ fn unary_type(op: Un, a: Ty) -> Result<Ty, String> {
         (Un::Abs | Un::Floor | Un::Ceil | Un::Round, Ty::Num(d)) => Ok(Ty::Num(d)),
         // `MyDouble.asin(true)`: `makeAngle`
         (Un::AsinD | Un::AcosD | Un::AtanD, Ty::Num(_)) => Ok(Ty::Num(1)),
-        (_, Ty::Num(_)) => Ok(Ty::Num(0)),
+        (_, Ty::Num(_) | Ty::Bool) => Ok(Ty::Num(0)),
     }
 }
 
@@ -147,8 +161,25 @@ fn unary_type(op: Un, a: Ty) -> Result<Ty, String> {
 /// add, scale and multiply to the scalar product.
 fn binary_type(op: Bin, a: Ty, b: Ty) -> Result<Ty, String> {
     use Ty::{Num, Vec};
+    if op.is_logic() {
+        // `Operation.AND` and the others: `IllegalBoolean` unless both are
+        return match (a, b) {
+            (Ty::Bool, Ty::Bool) => Ok(Ty::Bool),
+            _ => Err("a logical operator needs two booleans".into()),
+        };
+    }
+    if op.is_comparison() {
+        // `==` and `!=` compare anything (a number and a point are not
+        // equal); `<` and the others only numbers (`illegalComparison`)
+        let ordered = !matches!(op, Bin::Equal | Bin::NotEqual);
+        return if ordered && (a == Vec || b == Vec) {
+            Err("only numbers can be ordered".into())
+        } else {
+            Ok(Ty::Bool)
+        };
+    }
     let complex = || Err("complex numbers are not supported".to_string());
-    match (op, a, b) {
+    match (op, numeric(a), numeric(b)) {
         (Bin::Add | Bin::Sub, Num(x), Num(y)) => Ok(Num(if x == y { x } else { 0 })),
         (Bin::Add | Bin::Sub, _, _) => Ok(Vec),
         (Bin::Mul, Num(x), Num(y)) => Ok(Num(x.saturating_add(y))),
@@ -163,5 +194,13 @@ fn binary_type(op: Bin, a: Ty, b: Ty) -> Result<Ty, String> {
         (op, Num(_), Num(_)) if op.is_command() => Ok(Num(0)),
         (op, _, _) if op.is_command() => Err("the command takes two numbers".into()),
         _ => complex(),
+    }
+}
+
+/// A boolean where a number is expected is the number 1 or 0.
+fn numeric(t: Ty) -> Ty {
+    match t {
+        Ty::Bool => Ty::Num(0),
+        t => t,
     }
 }

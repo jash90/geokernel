@@ -8,14 +8,18 @@
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
-//! Recursive-descent parser with the precedence of GeoGebra's grammar:
-//! sums, then products (`*` and implicit), then quotients (`/` binds tighter
-//! than a product, so `a/2a` is `(a/2)·a`), unary signs, powers (right
-//! associative, `-2^2 = -4`), factorials, then elements.
+//! Recursive-descent parser with the precedence of GeoGebra's grammar,
+//! loosest first: implications (`->`, left associative), `||`, `⊕`, `&&`,
+//! comparisons (all at one level; a chain `1 < a < 3` is the conjunction
+//! of its links, which share the middle operand), sums, then products
+//! (`*` and implicit), then quotients (`/` binds tighter than a product,
+//! so `a/2a` is `(a/2)·a`), unary signs, powers (right associative,
+//! `-2^2 = -4`), factorials, square roots, negations (`!a^2` is
+//! `(!a)^2`), then elements.
 
 use super::decimal::Dec;
 use super::eval;
-use super::lex::{tokens, Tok, Token};
+use super::lex::{split_bars, tokens, Tok, Token};
 use super::math::{self, PI_180};
 use super::names::{binary_builtin, builtin_name, unary_builtin};
 use super::types::check;
@@ -56,6 +60,8 @@ pub(crate) struct Parsed {
 }
 
 pub(crate) fn parse(c: &Construction, src: &str) -> Result<Parsed, String> {
+    let preprocessed = split_bars(src);
+    let src: &str = &preprocessed;
     let mut p = Parser {
         c,
         src,
@@ -171,8 +177,74 @@ impl Parser<'_> {
         }
     }
 
-    /// sum = product (('+' | '-') product)*
+    /// `expressionnode`: implications of disjunctions, left associative.
     fn expression(&mut self) -> Result<u32, String> {
+        let mut left = self.disjunction()?;
+        while self.eat(&Tok::Implies) {
+            let right = self.disjunction()?;
+            left = self.push(Node::Bin(Bin::Implies, left, right));
+        }
+        Ok(left)
+    }
+
+    /// `ORterm`, `XORterm` and `ANDterm`: each a left-associative chain of
+    /// the next.
+    fn disjunction(&mut self) -> Result<u32, String> {
+        self.chain(&Tok::Or, Bin::Or, Self::exclusive)
+    }
+
+    fn exclusive(&mut self) -> Result<u32, String> {
+        self.chain(&Tok::Xor, Bin::Xor, Self::conjunction)
+    }
+
+    fn conjunction(&mut self) -> Result<u32, String> {
+        self.chain(&Tok::And, Bin::And, Self::comparison)
+    }
+
+    fn chain(
+        &mut self,
+        tok: &Tok,
+        op: Bin,
+        next: fn(&mut Self) -> Result<u32, String>,
+    ) -> Result<u32, String> {
+        let mut left = next(self)?;
+        while self.eat(tok) {
+            let right = next(self)?;
+            left = self.push(Node::Bin(op, left, right));
+        }
+        Ok(left)
+    }
+
+    /// `COMPAREterm`: sums joined by comparisons. A chain compares each
+    /// sum with the next, and the comparisons are joined left to right by
+    /// `AND_INTERVAL`, a conjunction.
+    fn comparison(&mut self) -> Result<u32, String> {
+        let mut left = self.sum()?;
+        let mut joined: Option<u32> = None;
+        loop {
+            let op = match self.peek() {
+                Some(Tok::Less) => Bin::Less,
+                Some(Tok::Greater) => Bin::Greater,
+                Some(Tok::LessEqual) => Bin::LessEqual,
+                Some(Tok::GreaterEqual) => Bin::GreaterEqual,
+                Some(Tok::Equal) => Bin::Equal,
+                Some(Tok::NotEqual) => Bin::NotEqual,
+                _ => break,
+            };
+            self.pos += 1;
+            let right = self.sum()?;
+            let link = self.push(Node::Bin(op, left, right));
+            joined = Some(match joined {
+                None => link,
+                Some(j) => self.push(Node::Bin(Bin::And, j, link)),
+            });
+            left = right;
+        }
+        Ok(joined.unwrap_or(left))
+    }
+
+    /// sum = product (('+' | '-') product)*
+    fn sum(&mut self) -> Result<u32, String> {
         let mut left = self.product()?;
         loop {
             let op = match self.peek() {
@@ -215,6 +287,7 @@ impl Parser<'_> {
                     | Tok::Sqrt
                     | Tok::Infinity
                     | Tok::Undefined
+                    | Tok::Not
             )
         )
     }
@@ -453,16 +526,26 @@ impl Parser<'_> {
     /// `enfactorial`: one optional `!`.
     fn factorial(&mut self) -> Result<u32, String> {
         let e = if self.eat(&Tok::Sqrt) {
-            let e = self.element()?;
+            let e = self.negation()?;
             self.push(Node::Un(Un::Sqrt, e))
         } else {
-            self.element()?
+            self.negation()?
         };
         Ok(if self.eat(&Tok::Bang) {
             self.push(Node::Un(Un::Factorial, e))
         } else {
             e
         })
+    }
+
+    /// `NOTterm`: `¬` or a `!` in front of an element negates it; a `!`
+    /// after an operand is a factorial.
+    fn negation(&mut self) -> Result<u32, String> {
+        if self.eat(&Tok::Not) || self.eat(&Tok::Bang) {
+            let e = self.element()?;
+            return Ok(self.push(Node::Un(Un::Not, e)));
+        }
+        self.element()
     }
 
     fn element(&mut self) -> Result<u32, String> {
@@ -553,6 +636,9 @@ impl Parser<'_> {
             return Ok(self.push_special(v, Dec::parse(dec)));
         }
         let constant = match text {
+            // `TRUE` and `FALSE` tokens, never labels
+            "true" | "True" => Some(Node::Bool(true)),
+            "false" | "False" => Some(Node::Bool(false)),
             "deg" if free("deg") => Some(Node::Degree),
             "Infinity" | "infinity" | "inf" => Some(Node::Num(f64::INFINITY)),
             "Undefined" | "NaN" => Some(Node::Num(f64::NAN)),
@@ -666,8 +752,13 @@ impl Parser<'_> {
         self.pos = end + 1;
         let def = crate::script::parse_def(self.c, text)?;
         let kind = def.kind();
-        if !matches!(kind, Kind::Number | Kind::Point | Kind::Vector) {
-            return Err(format!("`{text}` is a {kind}, not a number or a point"));
+        if !matches!(
+            kind,
+            Kind::Number | Kind::Point | Kind::Vector | Kind::Boolean
+        ) {
+            return Err(format!(
+                "`{text}` is a {kind}, not a number, a point or a boolean"
+            ));
         }
         self.c.check(&def).map_err(|e| e.to_string())?;
         let def = intersect::prepare(self.c, def);

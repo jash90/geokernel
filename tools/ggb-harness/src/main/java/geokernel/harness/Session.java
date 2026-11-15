@@ -269,13 +269,15 @@ final class Session {
 
     /**
      * The schema type an arithmetic expression must produce: a number, a
-     * function (it reads `x`), or a point or vector, which GeoGebra decides by
-     * the label (`AlgebraProcessor.isVectorLabel`) and not by the operands.
+     * function (it reads `x`), a boolean, or a point or vector, which
+     * GeoGebra decides by the label (`AlgebraProcessor.isVectorLabel`) and
+     * not by the operands.
      */
     private static String expressionType(String label, String actual, String line) {
         switch (actual) {
             case "number":
             case "function":
+            case "boolean":
                 return actual;
             case "point":
             case "vector":

@@ -21,6 +21,12 @@
 //! An expression that reads no object is evaluated once and becomes a free
 //! number, point or vector, as in GeoGebra.
 //!
+//! Comparisons and logical operators make boolean objects (`b = a < 3`,
+//! `AlgoDependentBoolean`): compared as doubles within 1e-8, never
+//! undefined (a comparison of an undefined number is false). A boolean is
+//! also the number 1 or 0. A constant boolean (`b = 1 < 2`) stays an
+//! expression object: the kernel has no free boolean.
+//!
 //! A function `f(x) = ...` keeps its tree and is evaluated wherever it is
 //! used: sampled through [`function_value`], expanded inside other
 //! functions (`g(x) = f(x) + 1`), or applied to a number (`v = f(2)`).
@@ -89,6 +95,8 @@ pub(crate) enum Node {
     /// A one-argument function name without brackets, waiting for its
     /// argument (`sin a`). Never left in a finished tree.
     FnName(Un),
+    /// `true` or `false` (`MyBoolean`).
+    Bool(bool),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -131,6 +139,8 @@ pub(crate) enum Un {
     Gamma,
     X,
     Y,
+    /// `¬a` or `!a`.
+    Not,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -152,6 +162,21 @@ pub(crate) enum Bin {
     Lcm,
     Max,
     Min,
+    /// `<`, `>`, `<=`, `>=`: numbers compared with the tolerance 1e-8.
+    Less,
+    Greater,
+    LessEqual,
+    GreaterEqual,
+    /// `==` and `!=`: numbers, or points and vectors coordinate by
+    /// coordinate, equal within 1e-8.
+    Equal,
+    NotEqual,
+    /// `&&` (also what a chain such as `1 < a < 3` joins its comparisons
+    /// with, `AND_INTERVAL`), `||`, `⊕` and `->`.
+    And,
+    Or,
+    Xor,
+    Implies,
 }
 
 impl Bin {
@@ -162,19 +187,40 @@ impl Bin {
             Bin::Mod | Bin::IntDiv | Bin::Gcd | Bin::Lcm | Bin::Max | Bin::Min
         )
     }
+
+    /// Whether this compares two values.
+    fn is_comparison(self) -> bool {
+        matches!(
+            self,
+            Bin::Less
+                | Bin::Greater
+                | Bin::LessEqual
+                | Bin::GreaterEqual
+                | Bin::Equal
+                | Bin::NotEqual
+        )
+    }
+
+    /// Whether this joins two booleans.
+    fn is_logic(self) -> bool {
+        matches!(self, Bin::And | Bin::Or | Bin::Xor | Bin::Implies)
+    }
 }
 
 /// Static type of a node: a number with its angle dimension (GeoGebra's
-/// `angleDim`; 1 for an angle), or a point or vector.
+/// `angleDim`; 1 for an angle), a point or vector, or a boolean. A boolean
+/// is also a number, 1 or 0, wherever a number is expected (`MyBoolean`
+/// is a `NumberValue`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Ty {
     Num(i8),
     Vec,
+    Bool,
 }
 
 /// The last result of an expression, with infinities kept: GeoGebra keeps
 /// them in a dependent number (`1/(1/0)` is 0), although the object shows
-/// as undefined.
+/// as undefined. A boolean is kept as 1 or 0.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(crate) enum Raw {
     Num(f64),
@@ -406,7 +452,13 @@ pub(crate) fn add_expression(
         }
     };
     let parsed = reparse(c, e.kind, nodes, lits, root).ok_or(Error::UnknownObject)?;
-    if e.kind == Kind::Function && parsed.tys[parsed.root as usize] == Ty::Vec {
+    let fits = matches!(
+        (e.kind, parsed.tys[parsed.root as usize]),
+        (Kind::Function | Kind::Number, Ty::Num(_))
+            | (Kind::Boolean, Ty::Bool)
+            | (Kind::Point | Kind::Vector, Ty::Vec)
+    );
+    if !fits {
         return Err(Error::UnknownObject);
     }
     add_parsed(c, name, parsed, e.kind)
@@ -595,6 +647,9 @@ pub(crate) fn value(d: ExprDef, raw: Raw) -> Value {
         (Kind::Point, Raw::Vec(x, y)) if x.is_finite() && y.is_finite() => Value::Point { x, y },
         (Kind::Vector, Raw::Vec(x, y)) if x.is_finite() && y.is_finite() => Value::Vector { x, y },
         (Kind::Function, Raw::Num(v)) if !v.is_nan() => Value::Function,
+        // `AlgoDependentBoolean`: a boolean is never undefined, a
+        // comparison of an undefined number is false
+        (Kind::Boolean, Raw::Num(v)) => Value::Bool(v == 1.0),
         _ => Value::Undefined,
     }
 }
@@ -616,6 +671,7 @@ pub(crate) fn define(
         Ty::Num(_) => Kind::Number,
         Ty::Vec if vector_label => Kind::Vector,
         Ty::Vec => Kind::Point,
+        Ty::Bool => Kind::Boolean,
     };
     add(c, name, parsed, kind)
 }
@@ -627,8 +683,10 @@ pub(crate) fn define_function(c: &mut Construction, name: &str, rhs: &str) -> Re
 }
 
 fn function(c: &mut Construction, name: &str, parsed: parse::Parsed) -> Result<Id, String> {
-    if parsed.tys[parsed.root as usize] == Ty::Vec {
-        return Err("a function must give a number".into());
+    match parsed.tys[parsed.root as usize] {
+        Ty::Vec => return Err("a function must give a number".into()),
+        Ty::Bool => return Err("a function that gives a boolean is not supported".into()),
+        Ty::Num(_) => {}
     }
     add(c, name, parsed, Kind::Function)
 }
@@ -651,7 +709,9 @@ fn add_parsed(
         .nodes
         .iter()
         .any(|n| matches!(n, Node::Bin(op, ..) if op.is_command()) || matches!(n, Node::Cmd(..)));
-    let constant = parsed.parents.is_empty() && !function && !has_command;
+    // a constant boolean (`b = 1 < 2`) stays an expression: there is no
+    // free boolean object
+    let constant = parsed.parents.is_empty() && !function && !has_command && kind != Kind::Boolean;
     let vector_label = kind == Kind::Vector;
     let entry = Entry::new(parsed, function);
     if constant {

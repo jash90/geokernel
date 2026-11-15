@@ -475,8 +475,9 @@ fn unsupported_syntax_is_an_error_and_leaves_nothing_behind() {
         "b = sin[a]",
         "b = xcoord(A)",
         "B = (1 | 2)",
-        "b = a < 3",
+        "b = A < 3",
         "b = \u{ac}a",
+        "b = a && true",
         "b = 1..2",
         "b = random()",
         "b = \u{663}",
@@ -592,4 +593,184 @@ fn setting_a_decimal_number_without_dependents_recomputes_nothing() {
     assert!(c.expression(a).is_some());
     assert_eq!(c.set_number(a, 0.1), Ok(0));
     assert!(c.expression(a).is_none());
+}
+
+fn truth(c: &Construction, label: &str) -> bool {
+    match c.value(c.id(label).unwrap()) {
+        Value::Bool(b) => b,
+        other => panic!("`{label}` is {other:?}"),
+    }
+}
+
+/// Rebuilds every object of `orig` from its tree or definition and checks
+/// that the values agree.
+fn rebuilt(orig: &Construction) -> Construction {
+    let mut fresh = Construction::new();
+    for i in 0..orig.len() {
+        let id = crate::kernel::Id(i);
+        let added = match orig.expression(id) {
+            Some(e) => fresh.add_expression(orig.label(id), &e),
+            None => fresh.add(orig.label(id), orig.def(id)),
+        };
+        assert_eq!(added, Ok(id), "`{}`", orig.label(id));
+        assert_eq!(fresh.value(id), orig.value(id), "`{}`", orig.label(id));
+    }
+    fresh
+}
+
+#[test]
+fn comparisons_use_the_tolerance_of_doubles() {
+    let mut c = load(
+        "a = 2\n\
+         b = a < 3\n\
+         d = a <= 3\n\
+         g = a == 3\n\
+         h = a != 3\n\
+         k = a > 3\n\
+         m = a \u{2265} 3\n\
+         n = 0.1 + 0.2 == 0.3\n\
+         p = 1 < 2",
+    )
+    .unwrap();
+    assert_eq!(c.kind(c.id("b").unwrap()), Kind::Boolean);
+    let a = c.id("a").unwrap();
+    let all = |c: &Construction| ["b", "d", "g", "h", "k", "m"].map(|l| truth(c, l));
+    assert_eq!(all(&c), [true, true, false, true, false, false]);
+    // `isGreater(b, a)` is `b > a + 1e-8`: within 1e-8 of 3, `a < 3` is
+    // false and `a <= 3`, `a >= 3` and `a == 3` are true
+    for v in [3.0, 3.0 - 1e-9, 3.0 + 1e-9] {
+        c.set_number(a, v).unwrap();
+        assert_eq!(all(&c), [false, true, true, false, false, true], "{v}");
+    }
+    c.set_number(a, 3.0 - 1e-7).unwrap();
+    assert_eq!(all(&c), [true, true, false, true, false, false]);
+    c.set_number(a, 3.0 + 1e-7).unwrap();
+    assert_eq!(all(&c), [false, false, false, true, true, true]);
+    // decided on doubles, not on the exact decimals
+    assert!(truth(&c, "n") && truth(&c, "p"));
+    // a constant boolean is an expression that never changes
+    assert!(c.set_number(c.id("p").unwrap(), 0.0).is_err());
+    rebuilt(&c);
+}
+
+#[test]
+fn an_undefined_operand_makes_a_comparison_false_never_undefined() {
+    let mut c = load(
+        "a = 1\n\
+         d = 1 / a\n\
+         r = sqrt(a)\n\
+         b = d > 3\n\
+         g = d < 3\n\
+         h = r < 3\n\
+         k = r != 3\n\
+         m = r == r\n\
+         n = !(r < 3)",
+    )
+    .unwrap();
+    c.set_number(c.id("a").unwrap(), 0.0).unwrap();
+    // `d` is infinite: compared as a value, `defined` is dropped by
+    // `AlgoDependentBoolean`
+    assert!(truth(&c, "b") && !truth(&c, "g"));
+    c.set_number(c.id("a").unwrap(), -1.0).unwrap();
+    assert_eq!(
+        ["h", "k", "m", "n"].map(|l| truth(&c, l)),
+        [false, true, false, true]
+    );
+    c.set_number(c.id("a").unwrap(), 4.0).unwrap();
+    assert_eq!(
+        ["h", "k", "m", "n"].map(|l| truth(&c, l)),
+        [true, true, true, false]
+    );
+    rebuilt(&c);
+}
+
+#[test]
+fn logical_operators_follow_the_grammar() {
+    let c = load(
+        "a = 2\n\
+         A = (1, 2)\n\
+         B = (1, 2)\n\
+         C = (3, 3)\n\
+         u = (1, 2)\n\
+         t = true\n\
+         f = False\n\
+         b = 1 < a < 3\n\
+         d = 1 < a && a < 3\n\
+         g = a < 3 || a > 5 && a > 7\n\
+         h = t \u{2295} f\n\
+         k = t -> f\n\
+         m = f \u{2192} t \u{2192} f\n\
+         n = !t == f\n\
+         p = \u{ac}(a < 3) \u{2228} t \u{2227} f\n\
+         q = A == B\n\
+         r = A == u\n\
+         s = A == (1, 2 + 1E-9)\n\
+         v = A != C\n\
+         w = A == a\n\
+         zz = (a < 3) + 1\n\
+         yy = true > false\n\
+         o = AreCollinear(A, B, C) && t\n\
+         j = 3 < a < 1 == f",
+    )
+    .unwrap();
+    for (label, want) in [
+        ("b", true),
+        ("d", true),
+        // `&&` binds tighter than `||`
+        ("g", true),
+        ("h", true),
+        ("k", false),
+        // left associative: `(f -> t) -> f`
+        ("m", false),
+        // `!` binds tightest: `(!t) == f`
+        ("n", true),
+        ("p", false),
+        ("q", true),
+        ("r", true),
+        ("s", true),
+        ("v", true),
+        // a number and a point are never equal
+        ("w", false),
+        ("yy", true),
+        ("o", true),
+        // `3 < a && a < 1 && 1 == f`
+        ("j", false),
+    ] {
+        assert_eq!(truth(&c, label), want, "{label}");
+    }
+    assert_eq!(num(&c, "zz"), 2.0);
+    rebuilt(&c);
+}
+
+#[test]
+fn bars_split_where_the_preprocessor_splits_them() {
+    let c =
+        load("a = -3\nb = 2\nc = ||a| - |b||\nd = |a - |b||\nt = true\ng = t || a < 0").unwrap();
+    assert_eq!(num(&c, "c"), 1.0);
+    assert_eq!(num(&c, "d"), 5.0);
+    assert!(truth(&c, "g"));
+}
+
+#[test]
+fn misplaced_booleans_are_errors() {
+    let base = "a = 2\nA = (1, 2)\nB = (3, 4)\nt = true";
+    for line in [
+        "b = a && t",
+        "b = t || 1",
+        "b = \u{ac}a",
+        "b = !A",
+        "b = A < B",
+        "b = A >= 1",
+        "f(x) = x < 3",
+        "b = a = 3",
+        "b = a < ",
+        "b = == a",
+    ] {
+        let mut c = load(base).unwrap();
+        assert!(exec(&mut c, line).is_err(), "`{line}` was accepted");
+        assert_eq!(c.len(), 4, "`{line}` left an object behind");
+    }
+    for label in ["true", "False"] {
+        assert!(exec(&mut load(base).unwrap(), &format!("{label} = 1")).is_err());
+    }
 }
