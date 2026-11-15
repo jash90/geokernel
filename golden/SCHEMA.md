@@ -76,7 +76,29 @@ creation, the plain label `p` when only one is. Here `p` is the script label
 up to its first `_`, and each output takes the next free index `n`; for
 `n < 10` the short form `p_n` must be free too, so an existing `b_1` makes
 the outputs `b_{2}` and `b_{3}`. Every snapshot of a case has the same keys,
-and no key other than a script label or such an indexed label is allowed.
+and no key other than a script label or such an indexed label is allowed,
+except for the objects `Polygon` creates:
+
+A line `p = Polygon(...)` also creates the sides of the polygon and, for
+`Polygon(A, B, n)`, its new vertices. They are recorded under the labels
+GeoGebra gives them (for example `c`, `a`, `b` for `Polygon(A, B, C)`, or
+`C`, `D`, `f`, `g`, `h`, `i` for `Polygon(A, B, 4)`). A key that is not a
+script label is also allowed when it is one of the labels a `Polygon(...)`
+line of the script can give, with the right type:
+
+- `Polygon(A, B, n)`, where `A` and `B` are recorded as points and `n` is
+  a number literal or recorded as a number: points labelled from `A`, ...,
+  `W`, `Z`, and segments labelled from `f`, `g`, `h`, `i`, `j`, `k`, `l`,
+  `m`, `n`, `p`, `q`, `r`, `s`, `t`, `a`, `b`, `c`, `d`, `e`;
+- any other `Polygon(...)` with two or more arguments: segments labelled
+  after a vertex, the vertex label in lower case; for a one-character
+  vertex label also indexed, and for a longer one also the segment labels
+  above.
+
+"Labelled from" a letter means the letter itself, or the letter followed
+by `_<n>` or `_{<n>}` with `n` a positive integer without leading zeros.
+The comparison then checks that `geo-kernel` gave the object the same
+label.
 
 Every Object has `type` and `defined`. When `defined` is `false` the object
 carries no numeric fields. When it is `true` it carries exactly these:
@@ -91,11 +113,15 @@ carries no numeric fields. When it is `true` it carries exactly these:
 | `vector` | `x`, `y` | The vector's coordinates. Where GeoGebra draws it from (its start point) is not recorded. |
 | `ray` | `x`, `y`, `a`, `b`, `c` | Start point `(x, y)` and the raw GeoGebra coefficients of the line `a*x + b*y + c = 0` it lies on, not normalised. The ray points along `(b, -a)`. |
 | `boolean` | `value` | `true` or `false`, a JSON boolean. `defined` is `false` only for the prover-only "unknown" state. |
+| `polygon` | `vertices`, `area`, `signed_area` | `vertices` is the list of vertices in order, each `[x, y]`. `area` is GeoGebra's area (never negative), `signed_area` the area with its sign: positive when the vertices run counter-clockwise. |
+| `polyline` | `vertices`, `length` | `vertices` is the list of vertices in order, each `[x, y]`, or `null` for an undefined point (GeoGebra leaves a hole there). `length` is the sum of the lengths of the pieces between two defined points. |
 
 All numbers are finite JSON numbers that round-trip to the same `f64`.
 A value that is not finite in GeoGebra is recorded as `defined: false`.
 This includes a point at infinity and a circle whose centre is at infinity,
-both of which GeoGebra itself reports as defined.
+both of which GeoGebra itself reports as defined. A polygon with a vertex at
+infinity is recorded as undefined; in a polyline such a vertex is `null`, and
+its length is not finite, so the polyline is undefined.
 
 ## Comparison rules
 
@@ -120,6 +146,10 @@ These rules are applied by the Rust side (`crates/geo-golden`).
   those of a line, but the sign must agree too: a ray with the opposite sign
   points the other way and fails the comparison. Rays are not counted in the
   line signs.
+- Polygons: `area`, `signed_area` and the vertices
+  (`Construction::vertices`) must agree, in the same order and number.
+- Polylines: `length` and the vertices must agree, in the same order and
+  number, with `null` on both sides at the same places.
 
 Free vectors come from a script line `v = (x, y)` whose label starts with a
 lower-case letter; with an upper-case label the same line makes a point, as in
@@ -130,6 +160,8 @@ The type `boolean` (the predicate commands) was added the same way.
 The types `vector` and `ray`, the moving of a free vector and these rules were
 added after the first golden files were written. The addition is backwards
 compatible: no existing file changes and the schema version stays 1.
+The same holds for the types `polygon` and `polyline`, the lists in their
+fields and the labels of the objects `Polygon` creates, added later still.
 
 ## Known gaps
 

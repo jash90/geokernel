@@ -86,6 +86,8 @@ fn only(kind: Kind) -> &'static [Kind] {
         Kind::Vector => &[Kind::Vector],
         Kind::Ray => &[Kind::Ray],
         Kind::Boolean => &[Kind::Boolean],
+        Kind::Polygon => &[Kind::Polygon],
+        Kind::PolyLine => &[Kind::PolyLine],
     }
 }
 
@@ -379,7 +381,11 @@ fn translate(v: Value, dx: f64, dy: f64) -> Option<Value> {
             c: c - (a * dx + b * dy),
         },
         Value::Vector { .. } => v,
-        Value::Number(_) | Value::Bool(_) | Value::Undefined => return None,
+        Value::Number(_)
+        | Value::Bool(_)
+        | Value::Polygon { .. }
+        | Value::PolyLine { .. }
+        | Value::Undefined => return None,
     })
 }
 

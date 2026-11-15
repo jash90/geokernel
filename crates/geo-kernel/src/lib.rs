@@ -13,4 +13,4 @@ pub mod script;
 pub mod svg;
 pub mod tol;
 
-pub use kernel::{Construction, Def, Error, Id, Kind, Value};
+pub use kernel::{Construction, Def, Error, Id, IdList, Kind, Value};

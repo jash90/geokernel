@@ -23,11 +23,12 @@ pub mod intersect;
 pub mod lines;
 pub mod measure;
 pub mod point;
+pub mod polygon;
 pub mod predicate;
 pub mod transform;
 pub mod vector;
 
-use crate::kernel::{Construction, Error, Id, Kind, Value};
+use crate::kernel::{Construction, Error, Id, IdList, Kind, Value};
 use crate::tol::{EPS, STANDARD_PRECISION};
 
 pub(crate) const POINT: &[Kind] = &[Kind::Point];
@@ -74,6 +75,17 @@ pub(crate) trait Group: Copy {
 
     /// The objects this definition reads.
     fn parents(&self) -> Parents;
+
+    /// The stored list of further objects this definition reads, if any
+    /// (see [`Construction::add_with_list`]).
+    fn list(&self) -> Option<IdList> {
+        None
+    }
+
+    /// The same definition reading `list` instead of its own list.
+    fn with_list(self, _list: IdList) -> Self {
+        self
+    }
 
     /// Checks that the parents exist and have the right kinds.
     fn check(&self, c: &Construction) -> Result<(), Error>;

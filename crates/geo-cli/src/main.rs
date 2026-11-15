@@ -118,6 +118,9 @@ fn describe(v: Value) -> String {
             )
         }
         Value::Bool(b) => b.to_string(),
+        // GeoGebra shows the area of a polygon, always positive.
+        Value::Polygon { area } => format!("area {:.4}", area.abs()),
+        Value::PolyLine { length } => format!("length {length:.4}"),
         Value::Undefined => "undefined".to_string(),
         // `Value` is non-exhaustive: a kind this printer does not know yet
         // is shown in its debug form.
