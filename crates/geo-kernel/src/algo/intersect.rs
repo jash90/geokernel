@@ -840,8 +840,8 @@ mod tests {
 
     #[test]
     fn sliding_a_point_along_the_line_recomputes_the_intersections() {
-        // The normalised line does not change, but GeoGebra's coefficients
-        // of Line(C, D) do, so P and Q are recomputed with them.
+        // The line stays the same, but the raw coefficients of Line(C, D)
+        // change, so P and Q are recomputed with them.
         let mut c = load(LINE_CIRCLE).unwrap();
         let moved = c.move_point(c.id("C").unwrap(), -20.0, 3.0).unwrap();
         assert_eq!(moved, 3); // f, P and Q
