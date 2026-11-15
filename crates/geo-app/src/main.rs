@@ -1,53 +1,11 @@
-//! `geokernel-app`: a desktop workbench for the construction kernel.
-//!
-//! Logic lives in the `geo-app-core` crate (`view`, `interact`, `hit`,
-//! `tools`, `workbench`, `scriptlog`, `undo`, `ticks`, `labels`, `describe`,
-//! ...); the modules here (`app`, `canvas`, `algebra`, `toolbar`, `keyboard`,
-//! `grid`, `draw`, `icons`) only turn it into egui calls.
+//! `geokernel-app`: the desktop shell of the geokernel window. It reads the
+//! command line and the file, and opens the window from the `geo_app`
+//! library.
 
-mod algebra;
-mod app;
-mod canvas;
-mod cli;
-mod draw;
-mod floating;
-mod geom;
-mod grid;
-mod icons;
-mod keyboard;
-mod theme;
-mod tool_icons;
-mod toolbar;
-
-#[cfg(test)]
-mod frame_counts;
-#[cfg(test)]
-mod render_tests;
-#[cfg(test)]
-mod ui_bench;
-#[cfg(test)]
-mod ui_tests;
-
-use app::App;
 use eframe::egui;
-use geo_app_core::metrics::Metrics;
-use geo_app_core::workbench::Workbench;
-use geo_app_core::{
-    arc, describe, gesture, highlight, hit, interact, labelpos, layout, shape, style, ticks, tools,
-    view, workbench,
-};
+use geo_app::{cli, Metrics, Window, Workbench};
 
 const SCRIPT: &str = include_str!("../../../examples/triangle.geo");
-
-/// The window around the application state (the state type lives in the
-/// core crate, so the eframe trait needs a local type).
-struct Window(App);
-
-impl eframe::App for Window {
-    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
-        app::show(&mut self.0, ui);
-    }
-}
 
 fn main() -> eframe::Result {
     let command = match cli::parse_args(std::env::args_os().skip(1)) {
@@ -86,21 +44,12 @@ fn main() -> eframe::Result {
         "geokernel",
         options,
         Box::new(move |cc| {
-            theme::apply(&cc.egui_ctx);
             let metrics = if touch {
                 Metrics::touch()
             } else {
                 Metrics::desktop()
             };
-            // egui's own click rules (buttons, rows) follow the profile too;
-            // the desktop profile holds egui's defaults.
-            cc.egui_ctx.options_mut(|o| {
-                o.input_options.max_click_dist = metrics.drag_slop;
-                o.input_options.max_click_duration = metrics.click_time;
-            });
-            let mut app = App::new(wb, load_error);
-            app.set_metrics(metrics);
-            Ok(Box::new(Window(app)))
+            Ok(Box::new(Window::new(cc, wb, load_error, metrics)))
         }),
     )
 }

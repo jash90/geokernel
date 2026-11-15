@@ -6,6 +6,12 @@ edition.workspace = true
 license.workspace = true
 repository.workspace = true
 
+# The window as a library (an rlib), so that the desktop binary and a later
+# Android shell crate share it; `main.rs` is only the desktop glue.
+[lib]
+name = "geo_app"
+path = "src/lib.rs"
+
 [[bin]]
 name = "geokernel-app"
 path = "src/main.rs"
@@ -23,10 +29,9 @@ eframe = { version = "0.37.0", default-features = false, features = ["wgpu", "de
 [target.'cfg(target_os = "linux")'.dependencies]
 eframe = { version = "0.37.0", default-features = false, features = ["x11", "wayland"] }
 
-# An Android build will need a `[lib]` with `crate-type = ["cdylib"]`, an
-# `android_main` entry point and eframe's `android-native-activity` (or
-# `android-game-activity`) feature for that target. None of it is added yet:
-# it changes nothing on the desktop, so it belongs to the port itself.
+# The Android build will be a separate shell crate (a `cdylib` with
+# `android_main` and eframe's `android-game-activity` feature for that
+# target) that depends on this library. None of it is added yet.
 
 [dev-dependencies]
 egui_kittest = { version = "0.37", features = ["wgpu"] }
