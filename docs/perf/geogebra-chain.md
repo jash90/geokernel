@@ -104,3 +104,46 @@ with the current one at load average about 13, gave 4.8 to 5.4 ms against
 larger cost per object, but they were measured under heavier load. None of
 this is a clean measurement; it has to be repeated on a quiet machine before
 the 10% regression gate can be applied.
+
+### Regression bisect and fix (PROVISIONAL, 15 November 2026)
+
+Method: `geokernel bench` (15,000 steps, 105,003 objects) from release
+binaries built at each commit, run in alternation, one run of every binary
+per round, 15 rounds; the table gives the minimum over the rounds. A second
+copy of the pre-port binary was run alongside as an A/A control and stayed
+within 0.5% (full drag) and 0.1 ns (local drag) of the first. The load
+average was between 20 and 37 during the run below (other runs that day,
+at load 36 to 215, gave the same picture). The machine was not quiet, so
+these numbers are provisional, but the alternation and the control make the
+comparison between binaries fair. Commits before this one print the local
+drag in whole nanoseconds.
+
+| Commit | `size_of` Value / Def | Full drag (A) | Local drag (Z1) |
+| --- | ---: | ---: | ---: |
+| 5bdc473, before the intersection port | 40 / 48 | 4.836 ms | 15.9 ns |
+| 4994707, intersection port | 40 / 48 | 7.078 ms | 17 ns |
+| 46bbb9a | 48 / 48 | 7.119 ms | 19 ns |
+| 93d1eb5 | 48 / 48 | 6.684 ms | 19 ns |
+| 584002b, main before this fix | 48 / 48 | 6.694 ms | 19 ns |
+| this fix | 48 / 48 | 3.451 ms | 17.9 ns |
+
+The full-drag regression came with the intersection port (4994707). A
+sample profile of the full drag showed about half the time in the
+propagation loop, not in the intersection maths: its binary heap held the
+roughly 60,000 children of `A` at once. The loop now marks dirty objects in
+a bit set and scans it upwards, which keeps creation order. Each line-circle
+and circle-circle intersection also caches at creation what its structural
+lookups give (tangent, point on both by construction), since the
+construction only grows. With both, the full drag is 29% faster than before
+the port.
+
+The local drag went up by about 1 ns at 4994707 and 2 ns at 46bbb9a, the
+commit in which `Value` grew from 40 to 48 bytes; that growth was not
+isolated from the other changes of that commit. Comparing the new
+coordinates with the definition instead of the stored value in
+`move_point`, and reading the intersection hint only in the intersection
+arms of `compute`, bring it from 19.9 to 17.9 ns (both printed with one decimal, in a
+separate alternating run at load 28 to 44 with the pre-port binary at
+15.9 ns).
+That is still 12.6% over the pre-port 15.9 ns, so the 10% gate for the local
+drag is **not met**; the full-drag gate is.
