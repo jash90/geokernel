@@ -57,7 +57,7 @@ Locus,,geometry,P1,todo,
 Centroid,,geometry,P1,todo,
 TriangleCenter,,geometry,P1,todo,
 Barycenter,,geometry,P1,todo,
-Trilinear,,geometry,P1,todo,
+Trilinear,,geometry,P1,partial,"Trilinear(point, point, point, number, number, number)"
 Cubic,,geometry,P1,todo,
 TriangleCurve,,geometry,P1,todo,
 Vertex,,geometry,P1,todo,
@@ -67,18 +67,18 @@ PenStrokeBezier,,english,P2,todo,
 PointIn,,geometry,P1,todo,
 AffineRatio,,geometry,P1,partial,"AffineRatio(point, point, point)"
 CrossRatio,,geometry,P1,partial,"CrossRatio(point, point, point, point)"
-ClosestPoint,,geometry,P1,todo,
+ClosestPoint,,geometry,P1,partial,"ClosestPoint(line, segment, ray or circle, point); ClosestPoint(line, line)"
 ClosestPointRegion,,geometry,P1,todo,
 Prove,,geometry,P1,todo,
 ProveDetails,,geometry,P1,todo,
-AreCollinear,,geometry,P1,todo,
-AreParallel,,geometry,P1,todo,
-AreConcyclic,,geometry,P1,todo,
-ArePerpendicular,,geometry,P1,todo,
-AreEqual,,geometry,P1,todo,
-AreConcurrent,,geometry,P1,todo,
-AreCongruent,,geometry,P1,todo,
-IsTangent,,geometry,P1,todo,
+AreCollinear,,geometry,P1,partial,"AreCollinear(point, point, point)"
+AreParallel,,geometry,P1,partial,"AreParallel of two lines, segments or rays"
+AreConcyclic,,geometry,P1,partial,"AreConcyclic(point, point, point, point)"
+ArePerpendicular,,geometry,P1,partial,"ArePerpendicular of two lines, segments or rays"
+AreEqual,,geometry,P1,partial,AreEqual of two objects of any kind the kernel has
+AreConcurrent,,geometry,P1,partial,"AreConcurrent of three lines, segments or rays"
+AreCongruent,,geometry,P1,partial,AreCongruent of two objects of any kind the kernel has
+IsTangent,,geometry,P1,partial,"IsTangent(line, segment or ray, circle)"
 LocusEquation,,geometry,P1,todo,
 Envelope,,geometry,P1,todo,
 Volume,,3d,,out_of_scope,

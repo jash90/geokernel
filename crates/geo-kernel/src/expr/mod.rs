@@ -32,6 +32,7 @@ mod parse;
 mod twonum;
 mod types;
 
+use crate::algo::intersect::Hint;
 use crate::algo::vector::VectorDef;
 use crate::kernel::{Construction, Def, Id, Kind, Value};
 
@@ -61,8 +62,9 @@ pub(crate) enum Node {
     Obj(Id),
     /// The variable `x` of a function.
     Var,
-    /// A command computed inside the expression.
-    Cmd(Def),
+    /// A command computed inside the expression, with the intersection
+    /// hint it got when the expression was parsed.
+    Cmd(Def, Hint),
     /// `(x, y)`.
     Tuple(u32, u32),
     /// `(r; φ)`.
@@ -282,7 +284,7 @@ fn inputs_defined(c: &Construction, e: &Entry) -> bool {
     });
     objects
         && e.nodes.iter().all(|n| match *n {
-            Node::Cmd(def) => match c.command_value(def) {
+            Node::Cmd(def, hint) => match c.command_value(def, hint) {
                 Some(Value::Number(v)) => !v.is_nan(),
                 other => other.is_some(),
             },

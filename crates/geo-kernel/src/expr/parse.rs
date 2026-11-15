@@ -503,6 +503,7 @@ impl Parser<'_> {
         for p in vector::hidden_parents(self.c, &def) {
             self.read(p, false);
         }
-        Ok(self.push(Node::Cmd(def)))
+        let hint = intersect::hint(self.c, &def);
+        Ok(self.push(Node::Cmd(def, hint)))
     }
 }

@@ -12,14 +12,15 @@
 use crate::algo::conic::ConicDef;
 use crate::algo::lines::LineDef;
 use crate::algo::measure::MeasureDef;
+use crate::algo::point::PointDef;
+use crate::algo::predicate::PredicateDef;
 use crate::algo::transform::TransformDef;
 use crate::algo::vector::VectorDef;
 use crate::algo::{
     self, check_index, join, line_through, Group, Parents, CIRCLE, LINE, LINE_LIKE, NUMBER, POINT,
 };
 use crate::expr::{self, ExprDef};
-use std::cmp::Reverse;
-use std::collections::{BinaryHeap, HashMap};
+use std::collections::HashMap;
 use std::fmt;
 
 /// Handle of an object inside one [`Construction`].
@@ -43,6 +44,8 @@ pub enum Kind {
     Number,
     Vector,
     Ray,
+    /// A true or false answer, such as the result of `AreCollinear`.
+    Boolean,
     /// A function of `x`, `f(x) = ...`; see [`Construction::function_value`].
     Function,
 }
@@ -57,6 +60,7 @@ impl fmt::Display for Kind {
             Kind::Number => "number",
             Kind::Vector => "vector",
             Kind::Ray => "ray",
+            Kind::Boolean => "boolean",
             Kind::Function => "function",
         })
     }
@@ -107,6 +111,10 @@ pub enum Value {
         b: f64,
         c: f64,
     },
+    /// A boolean object. GeoGebra's `GeoBoolean` is undefined only for the
+    /// prover's "unknown" answer, so the kernel reports `Undefined` only when
+    /// a predicate cannot decide.
+    Bool(bool),
     /// A defined function; its values come from
     /// [`Construction::function_value`].
     Function,
@@ -143,6 +151,7 @@ impl Value {
             Value::Number(v) => v.is_finite(),
             Value::Vector { x, y } => x.is_finite() && y.is_finite(),
             Value::Ray { x, y, a, b, c } => [x, y, a, b, c].iter().all(|v| v.is_finite()),
+            Value::Bool(_) => true,
             Value::Function | Value::Undefined => true,
         }
     }
@@ -194,15 +203,19 @@ pub enum Def {
         which: u8,
     },
     /// `which` is 0 or 1: the point to the left or to the right of the
-    /// direction from the first centre to the second. `special` is decided by
-    /// [`Construction::add`]: whether the circles had a common point by
-    /// construction when the intersection was created. `add` also gives a
-    /// second intersection of the same circles the order of the first.
+    /// direction from the first centre to the second. `special` is state of
+    /// the intersection from the moment it was created: whether the circles
+    /// had a common point by construction then. A new intersection passes
+    /// `None` and [`Construction::add`] decides it; a definition read back
+    /// with [`Construction::def`] carries the decision, and `add` keeps it,
+    /// so a construction rebuilt from its definitions is the same. `add` also
+    /// gives a second intersection of the same circles the order and the flag
+    /// of the first.
     IntersectCircles {
         c1: Id,
         c2: Id,
         which: u8,
-        special: bool,
+        special: Option<bool>,
     },
     /// Bisectors and tangents.
     Lines(LineDef),
@@ -214,6 +227,10 @@ pub enum Def {
     Transform(TransformDef),
     /// Vectors, rays and translations.
     Vector(VectorDef),
+    /// Boolean tests such as `AreCollinear`.
+    Predicate(PredicateDef),
+    /// Points from `ClosestPoint` and `Trilinear`.
+    Point(PointDef),
     /// An arithmetic expression; the tree is kept by the construction.
     Expr(ExprDef),
 }
@@ -235,6 +252,8 @@ impl Def {
             Def::Measure(d) => d.kind(),
             Def::Transform(d) => d.kind(),
             Def::Vector(d) => d.kind(),
+            Def::Predicate(d) => d.kind(),
+            Def::Point(d) => d.kind(),
             Def::Expr(d) => d.kind(),
         }
     }
@@ -268,6 +287,8 @@ impl Def {
             Def::Measure(d) => d.parents(),
             Def::Transform(d) => d.parents(),
             Def::Vector(d) => d.parents(),
+            Def::Predicate(d) => d.parents(),
+            Def::Point(d) => d.parents(),
         }
     }
 }
@@ -325,13 +346,113 @@ pub struct Construction {
     labels: Vec<String>,
     /// For each object, the objects that read it directly.
     children: Vec<Vec<Id>>,
+    /// For each object, what its rule needs from the definitions of other
+    /// objects, decided when it is created (see [`algo::intersect::Hint`]).
+    hints: Vec<algo::intersect::Hint>,
     by_label: HashMap<String, Id>,
     // Scratch state for updates, kept to avoid allocating on every drag.
-    mark: Vec<u32>,
-    epoch: u32,
-    heap: BinaryHeap<Reverse<usize>>,
+    dirty: DirtySet,
     /// Trees of the expression objects.
     pub(crate) exprs: expr::Table,
+}
+
+/// The objects waiting to be recomputed during an update; empty between
+/// updates. `levels[0]` has one bit per object. Each further level has one
+/// bit per word of the level below, set whenever that word is not zero, and
+/// the last level is a single word. Bits above level 0 are cleared lazily:
+/// one may stay set for a word that has become zero, until a search meets
+/// it. Finding the next dirty object then costs a few reads per level
+/// however far away it is, and a drag with few dirty objects touches little
+/// more than level 0.
+#[derive(Default)]
+struct DirtySet {
+    levels: Vec<Vec<u64>>,
+    /// How many objects are in the set.
+    len: usize,
+}
+
+impl DirtySet {
+    /// Makes room for `n` objects. A construction only grows, and level 0 is
+    /// zero between updates, so new words are clean; when a level has to be
+    /// added the upper levels start over from zero.
+    fn fit(&mut self, n: usize) {
+        let words = n.div_ceil(64).max(1);
+        if self.levels.first().map_or(0, Vec::len) == words {
+            return;
+        }
+        let mut sizes = vec![words];
+        while sizes[sizes.len() - 1] > 1 {
+            sizes.push(sizes[sizes.len() - 1].div_ceil(64));
+        }
+        if sizes.len() == self.levels.len() {
+            for (level, size) in self.levels.iter_mut().zip(sizes) {
+                level.resize(size, 0);
+            }
+        } else {
+            self.levels = sizes.into_iter().map(|size| vec![0; size]).collect();
+        }
+    }
+
+    fn insert(&mut self, i: usize) {
+        let word = &mut self.levels[0][i / 64];
+        let bit = 1 << (i % 64);
+        if *word & bit != 0 {
+            return;
+        }
+        let was = *word;
+        *word |= bit;
+        self.len += 1;
+        if was != 0 {
+            // the levels above already mark this word
+            return;
+        }
+        let mut pos = i / 64;
+        for level in &mut self.levels[1..] {
+            let word = &mut level[pos / 64];
+            let was = *word;
+            *word |= 1 << (pos % 64);
+            if was != 0 {
+                break;
+            }
+            pos /= 64;
+        }
+    }
+
+    /// Removes and returns the smallest index in the set, given that none
+    /// is below `from`.
+    fn pop_first(&mut self, from: usize) -> Option<usize> {
+        if self.len == 0 {
+            return None;
+        }
+        // `pos` is a position at `level`. A dirty object at or after `from`
+        // exists and is marked on every level, so the search ends before it
+        // runs past the end of a level.
+        let mut level = 0;
+        let mut pos = from;
+        loop {
+            let bits = self.levels[level][pos / 64] & (u64::MAX << (pos % 64));
+            if bits == 0 {
+                // nothing more in this word: go on from the next word
+                level += 1;
+                pos = pos / 64 + 1;
+                continue;
+            }
+            pos = pos / 64 * 64 + bits.trailing_zeros() as usize;
+            if level == 0 {
+                break;
+            }
+            if self.levels[level - 1][pos] == 0 {
+                // a stale mark: clear it and look further on this level
+                self.levels[level][pos / 64] &= !(1 << (pos % 64));
+                continue;
+            }
+            level -= 1;
+            pos *= 64;
+        }
+        self.levels[0][pos / 64] &= !(1 << (pos % 64));
+        self.len -= 1;
+        Some(pos)
+    }
 }
 
 impl Construction {
@@ -396,18 +517,21 @@ impl Construction {
         let def = algo::intersect::prepare(self, def);
 
         let id = Id(self.defs.len());
+        // compute reads the hint of the new object from `hints`
+        self.hints.push(algo::intersect::hint(self, &def));
         let value = match def {
             Def::Expr(d) => {
                 let raw = expr::evaluate(self, d);
                 expr::store(self, d, raw);
                 expr::value(d, raw)
             }
-            _ => self.compute(def),
+            _ => self.compute(def, id.0),
         };
         let parents = def.parents();
         // Objects the rule also reads, beyond its parents.
         let mut hidden = algo::intersect::hidden_parents(self, &def);
         hidden.extend(algo::vector::hidden_parents(self, &def));
+        hidden.extend(algo::predicate::hidden_parents(self, &def));
         hidden.extend(expr::parents(self, &def));
         let all = || parents.as_slice().iter().chain(&hidden);
         for (k, parent) in all().enumerate() {
@@ -420,20 +544,29 @@ impl Construction {
         self.values.push(value);
         self.labels.push(label.to_string());
         self.children.push(Vec::new());
-        self.mark.push(0);
         self.by_label.insert(label.to_string(), id);
         Ok(id)
     }
 
     /// Moves a free point or a free vector and recomputes everything that
     /// depends on it. Returns how many dependent objects were recomputed.
+    ///
+    /// The count includes objects that read the moved object only in a case
+    /// their current state does not take. For example, `Intersect(k, k, 1)`
+    /// reads the first point on `k` by construction, but uses it only when
+    /// its `special` flag is set; with the flag false, moving that point
+    /// still recomputes the intersection, which does not change.
     pub fn move_point(&mut self, id: Id, x: f64, y: f64) -> Result<usize, Error> {
         let def = self.defs.get(id.0).ok_or(Error::UnknownObject)?;
-        let (def, new) = match def {
-            Def::FreePoint { .. } => (Def::FreePoint { x, y }, Value::Point { x, y }),
-            Def::Vector(VectorDef::Free { .. }) => (
+        // The value of a free point or vector is always its coordinates.
+        let (def, new, old) = match *def {
+            Def::FreePoint { x: ox, y: oy } => {
+                (Def::FreePoint { x, y }, Value::Point { x, y }, (ox, oy))
+            }
+            Def::Vector(VectorDef::Free { x: ox, y: oy }) => (
                 Def::Vector(VectorDef::Free { x, y }),
                 Value::Vector { x, y },
+                (ox, oy),
             ),
             _ => return Err(Error::NotFree(self.labels[id.0].clone())),
         };
@@ -442,9 +575,7 @@ impl Construction {
         }
         // Bit equality, as in `set_number`: `0` to `-0` is a change.
         let same = |a: f64, b: f64| a.to_bits() == b.to_bits();
-        if matches!(self.values[id.0], Value::Point { x: ox, y: oy } | Value::Vector { x: ox, y: oy }
-            if same(ox, x) && same(oy, y))
-        {
+        if same(old.0, x) && same(old.1, y) {
             return Ok(0);
         }
         self.defs[id.0] = def;
@@ -473,23 +604,26 @@ impl Construction {
 
     /// Recomputes the descendants of `start` in creation order.
     ///
-    /// A min-heap of dirty indices gives the order. Because children always
-    /// have larger indices than their parents, by the time an object is
-    /// popped every parent that could still change has already been handled.
+    /// A set of dirty indices ([`DirtySet`]) gives the order: the smallest
+    /// is taken next. Because children always have larger indices than their
+    /// parents, by the time an object is reached every parent that could
+    /// still change has already been handled. Unlike a heap, inserting and
+    /// taking cost a few bit operations, which matters when a point has tens
+    /// of thousands of children.
     fn propagate(&mut self, start: Id) -> usize {
-        self.epoch = self.epoch.wrapping_add(1);
-        let epoch = self.epoch;
-        let mut heap = std::mem::take(&mut self.heap);
-
+        // Taken out so that `compute` can borrow `self`. If `compute` panics
+        // the set is lost, and `fit` gives a clean one on the next update.
+        let mut dirty = std::mem::take(&mut self.dirty);
+        dirty.fit(self.defs.len());
         for &child in &self.children[start.0] {
-            if self.mark[child.0] != epoch {
-                self.mark[child.0] = epoch;
-                heap.push(Reverse(child.0));
-            }
+            dirty.insert(child.0);
         }
 
         let mut recomputed = 0;
-        while let Some(Reverse(i)) = heap.pop() {
+        let mut from = start.0;
+        while let Some(i) = dirty.pop_first(from) {
+            // children only add larger indices
+            from = i + 1;
             let def = self.defs[i];
             recomputed += 1;
             if let Def::Expr(d) = def {
@@ -497,7 +631,7 @@ impl Construction {
                     continue;
                 }
             } else {
-                let new = self.compute(def);
+                let new = self.compute(def, i);
                 if new == self.values[i] {
                     // Nothing downstream can change because of this object.
                     continue;
@@ -505,14 +639,11 @@ impl Construction {
                 self.values[i] = new;
             }
             for &child in &self.children[i] {
-                if self.mark[child.0] != epoch {
-                    self.mark[child.0] = epoch;
-                    heap.push(Reverse(child.0));
-                }
+                dirty.insert(child.0);
             }
         }
 
-        self.heap = heap;
+        self.dirty = dirty;
         recomputed
     }
 
@@ -581,6 +712,8 @@ impl Construction {
             Def::Measure(d) => d.check(self),
             Def::Transform(d) => d.check(self),
             Def::Vector(d) => d.check(self),
+            Def::Predicate(d) => d.check(self),
+            Def::Point(d) => d.check(self),
             // checked when the expression was parsed
             Def::Expr(_) => Ok(()),
         }
@@ -600,8 +733,9 @@ impl Construction {
         }
     }
 
-    fn compute(&self, def: Def) -> Value {
-        match self.try_compute(def) {
+    /// `def` is the definition of the object at index `i`.
+    fn compute(&self, def: Def, i: usize) -> Value {
+        match self.try_compute(def, i) {
             Some(v) if v.is_finite() => v,
             _ => Value::Undefined,
         }
@@ -609,14 +743,30 @@ impl Construction {
 
     /// [`Self::try_compute`] for a command inside an expression. Out of
     /// line, so that `try_compute` stays inlined in the update loop.
+    /// `hint` is the intersection hint taken when the expression was
+    /// parsed; it stands for the entry in `hints` that an object has.
     #[inline(never)]
-    pub(crate) fn command_value(&self, def: Def) -> Option<Value> {
-        self.try_compute(def)
+    pub(crate) fn command_value(&self, def: Def, hint: algo::intersect::Hint) -> Option<Value> {
+        match def {
+            Def::IntersectLineCircle {
+                line,
+                circle,
+                which,
+            } => algo::intersect::line_circle(self, line, circle, which, hint),
+            Def::IntersectCircles {
+                c1,
+                c2,
+                which,
+                special,
+            } => algo::intersect::circles(self, c1, c2, which, special == Some(true), hint),
+            // no other definition reads `hints`
+            _ => self.try_compute(def, usize::MAX),
+        }
     }
 
     /// `None` means the object is undefined for the current inputs.
     #[inline(always)]
-    fn try_compute(&self, def: Def) -> Option<Value> {
+    fn try_compute(&self, def: Def, i: usize) -> Option<Value> {
         match def {
             Def::FreePoint { x, y } => Some(Value::Point { x, y }),
             Def::Number(v) => Some(Value::Number(v)),
@@ -633,18 +783,22 @@ impl Construction {
                 line,
                 circle,
                 which,
-            } => algo::intersect::line_circle(self, line, circle, which),
+            } => algo::intersect::line_circle(self, line, circle, which, self.hints[i]),
             Def::IntersectCircles {
                 c1,
                 c2,
                 which,
                 special,
-            } => algo::intersect::circles(self, c1, c2, which, special),
+            } => {
+                algo::intersect::circles(self, c1, c2, which, special == Some(true), self.hints[i])
+            }
             Def::Lines(d) => d.compute(self),
             Def::Conic(d) => d.compute(self),
             Def::Measure(d) => d.compute(self),
             Def::Transform(d) => d.compute(self),
             Def::Vector(d) => d.compute(self),
+            Def::Predicate(d) => d.compute(self),
+            Def::Point(d) => d.compute(self),
             Def::Expr(d) => Some(expr::current(self, d)),
         }
     }
@@ -712,6 +866,37 @@ impl Construction {
 mod tests {
     use super::*;
     use crate::algo::length;
+
+    #[test]
+    fn the_dirty_set_gives_indices_in_order_and_ends_empty() {
+        let mut d = DirtySet::default();
+        d.fit(10_000);
+        for i in [9_999, 70, 5, 4_096, 71, 8_191] {
+            d.insert(i);
+        }
+        d.insert(70);
+        let mut got = Vec::new();
+        let mut from = 0;
+        while let Some(i) = d.pop_first(from) {
+            got.push(i);
+            from = i + 1;
+            if i == 70 {
+                // inserted while taking, above the current index
+                d.insert(4_097);
+            }
+        }
+        assert_eq!(got, [5, 70, 71, 4_096, 4_097, 8_191, 9_999]);
+        assert_eq!(d.len, 0);
+        assert!(d.levels[0].iter().all(|&w| w == 0));
+        d.fit(300_000);
+        assert_eq!(
+            d.levels.iter().map(Vec::len).collect::<Vec<_>>(),
+            [4_688, 74, 2, 1]
+        );
+        d.insert(299_999);
+        assert_eq!(d.pop_first(3), Some(299_999));
+        assert_eq!(d.pop_first(3), None);
+    }
 
     fn pt(c: &mut Construction, label: &str, x: f64, y: f64) -> Id {
         c.add(label, Def::FreePoint { x, y }).unwrap()
@@ -888,7 +1073,7 @@ mod tests {
                     c1: k1,
                     c2: k2,
                     which: 0,
-                    special: false,
+                    special: None,
                 },
             )
             .unwrap();
@@ -899,7 +1084,7 @@ mod tests {
                     c1: k1,
                     c2: k2,
                     which: 1,
-                    special: false,
+                    special: None,
                 },
             )
             .unwrap();

@@ -48,7 +48,7 @@ pub(crate) fn check(
             Node::Degree => (Ty::Num(1), 1, 1, 0),
             Node::Var => (Ty::Num(0), 1, 1, 1),
             Node::Obj(id) => (object_type(c, id)?, 1, 1, 0),
-            Node::Cmd(def) => (result_type(def.kind(), is_angle_def(c, &def))?, 1, 1, 0),
+            Node::Cmd(def, _) => (result_type(def.kind(), is_angle_def(c, &def))?, 1, 1, 0),
             Node::FnName(_) => return Err("a function name needs an argument".into()),
             Node::Tuple(a, b) | Node::Polar(a, b) => {
                 let (a, b) = (a as usize, b as usize);

@@ -33,6 +33,7 @@
 use super::math::{self, PI_180};
 use super::twonum;
 use super::{Bin, Entry, Node, Raw, Ty, Un};
+use crate::algo::intersect::Hint;
 use crate::kernel::{Construction, Def, Id, Kind, Value};
 
 #[derive(Clone, Copy)]
@@ -111,7 +112,7 @@ impl Ctx<'_> {
                 Env::Arg(caller, a) => N(caller.full_number(a)),
             },
             Node::Obj(id) => object(self.c, id),
-            Node::Cmd(def) => command(self.c, def),
+            Node::Cmd(def, hint) => command(self.c, def, hint),
             // `MyVecNode.getVector`: coordinates by `evaluateDouble`.
             Node::Tuple(a, b) => V(self.fast(a), self.fast(b)),
             Node::Polar(r, phi) => {
@@ -357,9 +358,9 @@ fn object(c: &Construction, id: Id) -> Val {
 }
 
 /// A command computed in place.
-fn command(c: &Construction, def: Def) -> Val {
+fn command(c: &Construction, def: Def, hint: Hint) -> Val {
     let nan = f64::NAN;
-    match c.command_value(def) {
+    match c.command_value(def, hint) {
         Some(Value::Number(v)) => Val::N(v),
         Some(Value::Point { x, y } | Value::Vector { x, y }) => Val::V(x, y),
         _ if def.kind() == Kind::Number => Val::N(nan),

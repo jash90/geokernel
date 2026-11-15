@@ -78,6 +78,26 @@ pub struct Camera {
 }
 
 impl Camera {
+    /// The standard view: origin in the middle, 50 pixels per unit.
+    pub const STANDARD: Camera = Camera {
+        cx: 0.0,
+        cy: 0.0,
+        scale: DEFAULT_SCALE,
+    };
+
+    /// The view a document opens with: the standard view when all of the
+    /// content fits into it, otherwise fitted to the content.
+    pub fn initial(bounds: Option<Bounds>, width: f64, height: f64) -> Camera {
+        let std = Camera::STANDARD;
+        let Some(b) = bounds else { return std };
+        let v = std.transform(width, height).view();
+        if b.xmin >= v.xmin && b.xmax <= v.xmax && b.ymin >= v.ymin && b.ymax <= v.ymax {
+            std
+        } else {
+            Camera::fit(Some(b), width, height)
+        }
+    }
+
     /// Frames `bounds` in a `width` x `height` area with a margin. `None`, an
     /// empty box and a single point get a fixed scale around the box centre.
     pub fn fit(bounds: Option<Bounds>, width: f64, height: f64) -> Camera {
@@ -162,6 +182,30 @@ mod tests {
 
     fn triangle() -> Construction {
         geo_kernel::script::load(include_str!("../../../examples/triangle.geo")).unwrap()
+    }
+
+    #[test]
+    fn initial_view_is_standard_when_the_content_fits() {
+        let small = Bounds {
+            xmin: -5.0,
+            ymin: -4.0,
+            xmax: 5.0,
+            ymax: 4.0,
+        };
+        assert_eq!(
+            Camera::initial(Some(small), 1000.0, 800.0),
+            Camera::STANDARD
+        );
+        assert_eq!(Camera::initial(None, 1000.0, 800.0), Camera::STANDARD);
+        let big = Bounds {
+            xmin: -50.0,
+            ymin: -4.0,
+            xmax: 50.0,
+            ymax: 4.0,
+        };
+        let cam = Camera::initial(Some(big), 1000.0, 800.0);
+        assert_ne!(cam, Camera::STANDARD);
+        assert!(cam.scale < 10.0);
     }
 
     #[test]

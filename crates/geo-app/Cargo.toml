@@ -16,3 +16,7 @@ geo-kernel = { path = "../geo-kernel" }
 # helpers. We want the wgpu renderer, the bundled fonts and both Linux
 # window systems.
 eframe = { version = "0.37.0", default-features = false, features = ["wgpu", "default_fonts", "x11", "wayland"] }
+
+[dev-dependencies]
+egui_kittest = { version = "0.37", features = ["wgpu"] }
+image = { version = "0.25", default-features = false, features = ["png"] }

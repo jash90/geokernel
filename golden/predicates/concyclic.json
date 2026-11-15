@@ -1,0 +1,900 @@
+{
+  "schema": 1,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "predicates-concyclic-001",
+      "group": "predicates",
+      "script": [
+        "A = (1, 0)",
+        "B = (0, 1)",
+        "C = (-1, 0)",
+        "D = (0, -1)",
+        "t = AreConcyclic(A, B, C, D)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "D", "x": 0.0, "y": -1.000001 },
+        { "action": "move", "label": "D", "x": 0.0, "y": -1.000004 },
+        { "action": "move", "label": "D", "x": 0.0, "y": -1.000006 },
+        { "action": "move", "label": "D", "x": 0.0, "y": -1.00001 },
+        { "action": "move", "label": "D", "x": 0.0, "y": -0.999996 },
+        { "action": "move", "label": "D", "x": 0.0, "y": -0.99999 },
+        { "action": "move", "label": "D", "x": 0.0, "y": -1.0 },
+        { "action": "move", "label": "D", "x": 0.6, "y": -0.8 },
+        { "action": "move", "label": "D", "x": 2.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": -1.0 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": -1.000001 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": -1.000004 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": -1.000006 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": -1.00001 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": -0.999996 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": -0.99999 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": -1.0 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.6, "y": -0.8 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "predicates-concyclic-002",
+      "group": "predicates",
+      "script": [
+        "A = (3, 4)",
+        "B = (4, 3)",
+        "C = (5, 0)",
+        "D = (0, -5)",
+        "t = AreConcyclic(A, B, C, D)",
+        "u = AreConcyclic(D, C, B, A)",
+        "v = AreConcyclic(B, A, D, C)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "D", "x": 0.0, "y": -5.000001 },
+        { "action": "move", "label": "D", "x": 0.0, "y": -5.00001 },
+        { "action": "move", "label": "D", "x": 0.0, "y": -5.0001 },
+        { "action": "move", "label": "D", "x": -3.0, "y": -4.0 },
+        { "action": "move", "label": "C", "x": 5.0, "y": 1.0E-5 },
+        { "action": "move", "label": "C", "x": 0.0, "y": 5.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "C": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": -5.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "C": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": -5.000001 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "C": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": -5.00001 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "C": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": -5.0001 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "C": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": -3.0, "y": -4.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "C": { "type": "point", "defined": true, "x": 5.0, "y": 1.0E-5 },
+          "D": { "type": "point", "defined": true, "x": -3.0, "y": -4.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": -3.0, "y": -4.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "predicates-concyclic-003",
+      "group": "predicates",
+      "script": [
+        "A = (1.99, 7.08)",
+        "B = (7.45, 1.19)",
+        "C = (0.46, -6.63)",
+        "D = (3.76, -5.99)",
+        "t = AreConcyclic(A, B, C, D)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "D", "x": 5.68, "y": -2.65 },
+        { "action": "move", "label": "D", "x": 1.99, "y": 7.08 },
+        { "action": "move", "label": "C", "x": 7.45, "y": 1.19 },
+        { "action": "move", "label": "B", "x": -4.34, "y": 5.44 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.99, "y": 7.08 },
+          "B": { "type": "point", "defined": true, "x": 7.45, "y": 1.19 },
+          "C": { "type": "point", "defined": true, "x": 0.46, "y": -6.63 },
+          "D": { "type": "point", "defined": true, "x": 3.76, "y": -5.99 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.99, "y": 7.08 },
+          "B": { "type": "point", "defined": true, "x": 7.45, "y": 1.19 },
+          "C": { "type": "point", "defined": true, "x": 0.46, "y": -6.63 },
+          "D": { "type": "point", "defined": true, "x": 5.68, "y": -2.65 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.99, "y": 7.08 },
+          "B": { "type": "point", "defined": true, "x": 7.45, "y": 1.19 },
+          "C": { "type": "point", "defined": true, "x": 0.46, "y": -6.63 },
+          "D": { "type": "point", "defined": true, "x": 1.99, "y": 7.08 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.99, "y": 7.08 },
+          "B": { "type": "point", "defined": true, "x": 7.45, "y": 1.19 },
+          "C": { "type": "point", "defined": true, "x": 7.45, "y": 1.19 },
+          "D": { "type": "point", "defined": true, "x": 1.99, "y": 7.08 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.99, "y": 7.08 },
+          "B": { "type": "point", "defined": true, "x": -4.34, "y": 5.44 },
+          "C": { "type": "point", "defined": true, "x": 7.45, "y": 1.19 },
+          "D": { "type": "point", "defined": true, "x": 1.99, "y": 7.08 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "predicates-concyclic-004",
+      "group": "predicates",
+      "script": [
+        "A = (0.53, 4.52)",
+        "B = (5.44, -5.01)",
+        "C = (-4.91, -7.65)",
+        "D = (-3.85, -3.7)",
+        "t = AreConcyclic(A, B, C, D)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "D", "x": 0.73, "y": -2.57 },
+        { "action": "move", "label": "D", "x": 0.53, "y": 4.52 },
+        { "action": "move", "label": "C", "x": 5.44, "y": -5.01 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 1.64 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.53, "y": 4.52 },
+          "B": { "type": "point", "defined": true, "x": 5.44, "y": -5.01 },
+          "C": { "type": "point", "defined": true, "x": -4.91, "y": -7.65 },
+          "D": { "type": "point", "defined": true, "x": -3.85, "y": -3.7 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.53, "y": 4.52 },
+          "B": { "type": "point", "defined": true, "x": 5.44, "y": -5.01 },
+          "C": { "type": "point", "defined": true, "x": -4.91, "y": -7.65 },
+          "D": { "type": "point", "defined": true, "x": 0.73, "y": -2.57 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.53, "y": 4.52 },
+          "B": { "type": "point", "defined": true, "x": 5.44, "y": -5.01 },
+          "C": { "type": "point", "defined": true, "x": -4.91, "y": -7.65 },
+          "D": { "type": "point", "defined": true, "x": 0.53, "y": 4.52 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.53, "y": 4.52 },
+          "B": { "type": "point", "defined": true, "x": 5.44, "y": -5.01 },
+          "C": { "type": "point", "defined": true, "x": 5.44, "y": -5.01 },
+          "D": { "type": "point", "defined": true, "x": 0.53, "y": 4.52 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.53, "y": 4.52 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 1.64 },
+          "C": { "type": "point", "defined": true, "x": 5.44, "y": -5.01 },
+          "D": { "type": "point", "defined": true, "x": 0.53, "y": 4.52 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "predicates-concyclic-005",
+      "group": "predicates",
+      "script": [
+        "A = (7.18, -5.3)",
+        "B = (-1.22, 0.18)",
+        "C = (-6.01, 3.15)",
+        "D = (-0.72, 5.03)",
+        "t = AreConcyclic(A, B, C, D)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "D", "x": 3.81, "y": -1.46 },
+        { "action": "move", "label": "D", "x": 7.18, "y": -5.3 },
+        { "action": "move", "label": "C", "x": -1.22, "y": 0.18 },
+        { "action": "move", "label": "B", "x": 2.93, "y": 2.83 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 7.18, "y": -5.3 },
+          "B": { "type": "point", "defined": true, "x": -1.22, "y": 0.18 },
+          "C": { "type": "point", "defined": true, "x": -6.01, "y": 3.15 },
+          "D": { "type": "point", "defined": true, "x": -0.72, "y": 5.03 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.18, "y": -5.3 },
+          "B": { "type": "point", "defined": true, "x": -1.22, "y": 0.18 },
+          "C": { "type": "point", "defined": true, "x": -6.01, "y": 3.15 },
+          "D": { "type": "point", "defined": true, "x": 3.81, "y": -1.46 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.18, "y": -5.3 },
+          "B": { "type": "point", "defined": true, "x": -1.22, "y": 0.18 },
+          "C": { "type": "point", "defined": true, "x": -6.01, "y": 3.15 },
+          "D": { "type": "point", "defined": true, "x": 7.18, "y": -5.3 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.18, "y": -5.3 },
+          "B": { "type": "point", "defined": true, "x": -1.22, "y": 0.18 },
+          "C": { "type": "point", "defined": true, "x": -1.22, "y": 0.18 },
+          "D": { "type": "point", "defined": true, "x": 7.18, "y": -5.3 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.18, "y": -5.3 },
+          "B": { "type": "point", "defined": true, "x": 2.93, "y": 2.83 },
+          "C": { "type": "point", "defined": true, "x": -1.22, "y": 0.18 },
+          "D": { "type": "point", "defined": true, "x": 7.18, "y": -5.3 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "predicates-concyclic-006",
+      "group": "predicates",
+      "script": [
+        "O = (0, 0)",
+        "A = (5, 0)",
+        "c = Circle(O, A)",
+        "B = (3, 4)",
+        "C = (-4, 3)",
+        "D = (0, -5)",
+        "t = AreConcyclic(A, B, C, D)",
+        "u = AreConcyclic(O, A, B, C)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "D", "x": 0.0, "y": -5.000004 },
+        { "action": "move", "label": "D", "x": 0.0, "y": -5.000006 },
+        { "action": "move", "label": "D", "x": 0.0, "y": -4.999994 },
+        { "action": "move", "label": "D", "x": 0.0, "y": -4.999996 },
+        { "action": "move", "label": "O", "x": 1.0E-6, "y": 0.0 },
+        { "action": "move", "label": "O", "x": 1.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "C": { "type": "point", "defined": true, "x": -4.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": -5.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "C": { "type": "point", "defined": true, "x": -4.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": -5.000004 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "C": { "type": "point", "defined": true, "x": -4.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": -5.000006 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "C": { "type": "point", "defined": true, "x": -4.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": -4.999994 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "C": { "type": "point", "defined": true, "x": -4.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": -4.999996 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 1.0E-6, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 1.0E-6, "cy": 0.0, "r": 4.999999 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "C": { "type": "point", "defined": true, "x": -4.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": -4.999996 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 1.0, "cy": 1.0, "r": 4.123105625617661 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "C": { "type": "point", "defined": true, "x": -4.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": -4.999996 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "predicates-concyclic-007",
+      "group": "predicates",
+      "script": [
+        "A = (0, 0)",
+        "B = (1, 1)",
+        "C = (2, 2)",
+        "D = (5, 5)",
+        "t = AreConcyclic(A, B, C, D)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "D", "x": 5.0, "y": 5.000001 },
+        { "action": "move", "label": "D", "x": 5.0, "y": 5.00001 },
+        { "action": "move", "label": "D", "x": 5.0, "y": 5.01 },
+        { "action": "move", "label": "D", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "C", "x": 0.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 5.0, "y": 5.000001 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 5.0, "y": 5.00001 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 5.0, "y": 5.01 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "predicates-concyclic-008",
+      "group": "predicates",
+      "script": [
+        "A = (1, 0)",
+        "B = (0, 1)",
+        "C = (-1, 0)",
+        "D = (1, 0)",
+        "t = AreConcyclic(A, B, C, D)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "D", "x": 1.0, "y": 1.0E-6 },
+        { "action": "move", "label": "D", "x": 1.0, "y": 1.0E-5 },
+        { "action": "move", "label": "D", "x": 0.0, "y": 1.0 },
+        { "action": "move", "label": "B", "x": 1.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 0.5, "y": 0.5 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 1.0E-6 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 1.0E-5 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.5, "y": 0.5 },
+          "C": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "predicates-concyclic-009",
+      "group": "predicates",
+      "script": [
+        "A = (0, 0)",
+        "B = (0.001, 0)",
+        "C = (0.001, 0.001)",
+        "D = (0, 0.001)",
+        "t = AreConcyclic(A, B, C, D)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "D", "x": 0.0, "y": 0.002 },
+        { "action": "move", "label": "D", "x": 0.0, "y": 0.0011 },
+        { "action": "move", "label": "D", "x": 5.0E-4, "y": 0.001 },
+        { "action": "move", "label": "B", "x": 0.002, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.001, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.001, "y": 0.001 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 0.001 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.001, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.001, "y": 0.001 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 0.002 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.001, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.001, "y": 0.001 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 0.0011 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.001, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.001, "y": 0.001 },
+          "D": { "type": "point", "defined": true, "x": 5.0E-4, "y": 0.001 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.002, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.001, "y": 0.001 },
+          "D": { "type": "point", "defined": true, "x": 5.0E-4, "y": 0.001 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "predicates-concyclic-010",
+      "group": "predicates",
+      "script": [
+        "A = (0, 0)",
+        "B = (4, 0)",
+        "C = (0, 3)",
+        "D = (4, 3)",
+        "M = Midpoint(A, D)",
+        "N = Midpoint(B, C)",
+        "t = AreConcyclic(A, B, C, D)",
+        "u = AreConcyclic(M, N, A, D)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "D", "x": 4.0, "y": 3.000001 },
+        { "action": "move", "label": "D", "x": 4.0, "y": 3.0001 },
+        { "action": "move", "label": "C", "x": 0.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 4.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "M": { "type": "point", "defined": true, "x": 2.0, "y": 1.5 },
+          "N": { "type": "point", "defined": true, "x": 2.0, "y": 1.5 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": 4.0, "y": 3.000001 },
+          "M": { "type": "point", "defined": true, "x": 2.0, "y": 1.5000005 },
+          "N": { "type": "point", "defined": true, "x": 2.0, "y": 1.5 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": 4.0, "y": 3.0001 },
+          "M": { "type": "point", "defined": true, "x": 2.0, "y": 1.50005 },
+          "N": { "type": "point", "defined": true, "x": 2.0, "y": 1.5 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 4.0, "y": 3.0001 },
+          "M": { "type": "point", "defined": true, "x": 2.0, "y": 1.50005 },
+          "N": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 4.0, "y": 3.0001 },
+          "M": { "type": "point", "defined": true, "x": 2.0, "y": 1.50005 },
+          "N": { "type": "point", "defined": true, "x": 2.0, "y": 1.5 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "predicates-concyclic-011",
+      "group": "predicates",
+      "script": [
+        "A = (0, 0)",
+        "B = (1, 0)",
+        "C = (0, 1)",
+        "r = 1",
+        "E = (1.5, 0)",
+        "c = Circle(A, r)",
+        "d = Circle(E, r)",
+        "P = Intersect(c, d, 1)",
+        "t = AreConcyclic(A, B, C, P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "r", "value": 0.5 },
+        { "action": "set_number", "label": "r", "value": 0.75 },
+        { "action": "set_number", "label": "r", "value": 0.8 },
+        { "action": "move", "label": "E", "x": 20.0, "y": 0.0 },
+        { "action": "move", "label": "E", "x": 1.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "E": { "type": "point", "defined": true, "x": 1.5, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 1.0 },
+          "d": { "type": "circle", "defined": true, "cx": 1.5, "cy": 0.0, "r": 1.0 },
+          "P": { "type": "point", "defined": true, "x": 0.75, "y": 0.6614378277661477 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 0.5 },
+          "E": { "type": "point", "defined": true, "x": 1.5, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.5 },
+          "d": { "type": "circle", "defined": true, "cx": 1.5, "cy": 0.0, "r": 0.5 },
+          "P": { "type": "point", "defined": false },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 0.75 },
+          "E": { "type": "point", "defined": true, "x": 1.5, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.75 },
+          "d": { "type": "circle", "defined": true, "cx": 1.5, "cy": 0.0, "r": 0.75 },
+          "P": { "type": "point", "defined": true, "x": 0.75, "y": 0.0 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 0.8 },
+          "E": { "type": "point", "defined": true, "x": 1.5, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.8 },
+          "d": { "type": "circle", "defined": true, "cx": 1.5, "cy": 0.0, "r": 0.8 },
+          "P": { "type": "point", "defined": true, "x": 0.75, "y": 0.27838821814150133 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 0.8 },
+          "E": { "type": "point", "defined": true, "x": 20.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.8 },
+          "d": { "type": "circle", "defined": true, "cx": 20.0, "cy": 0.0, "r": 0.8 },
+          "P": { "type": "point", "defined": false },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 0.8 },
+          "E": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.8 },
+          "d": { "type": "circle", "defined": true, "cx": 1.0, "cy": 0.0, "r": 0.8 },
+          "P": { "type": "point", "defined": true, "x": 0.5, "y": 0.6244997998398399 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "predicates-concyclic-012",
+      "group": "predicates",
+      "script": [
+        "O = (0, 0)",
+        "A = (5, 0)",
+        "B = (-3, -7)",
+        "C = (4, 6)",
+        "c = Circle(O, A)",
+        "l = Line(B, C)",
+        "P = Intersect(l, c, 1)",
+        "Q = Intersect(l, c, 2)",
+        "t = AreConcyclic(A, P, Q, A)",
+        "u = AreConcyclic(P, Q, A, B)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 0.0, "y": 7.0 },
+        { "action": "move", "label": "C", "x": 1.0, "y": 1.0 },
+        { "action": "move", "label": "B", "x": -2.0, "y": 2.0 },
+        { "action": "move", "label": "A", "x": 0.0, "y": 3.0 },
+        { "action": "move", "label": "C", "x": 9.0, "y": 9.0 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": -3.0, "y": -7.0 },
+          "C": { "type": "point", "defined": true, "x": 4.0, "y": 6.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "l": { "type": "line", "defined": true, "a": -13.0, "b": 7.0, "c": 10.0 },
+          "P": { "type": "point", "defined": true, "x": -1.7523204556948295, "y": -4.682880846290398 },
+          "Q": { "type": "point", "defined": true, "x": 2.9449810061535446, "y": 4.040679011428011 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 7.0 },
+          "C": { "type": "point", "defined": true, "x": 4.0, "y": 6.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "l": { "type": "line", "defined": true, "a": 1.0, "b": 4.0, "c": -28.0 },
+          "P": { "type": "point", "defined": false },
+          "Q": { "type": "point", "defined": false },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 7.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "l": { "type": "line", "defined": true, "a": 6.0, "b": 1.0, "c": -7.0 },
+          "P": { "type": "point", "defined": true, "x": 0.33520818448925727, "y": 4.988750893064457 },
+          "Q": { "type": "point", "defined": true, "x": 1.9350620857810132, "y": -4.610372514686079 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "l": { "type": "line", "defined": true, "a": 1.0, "b": 3.0, "c": -4.0 },
+          "P": { "type": "point", "defined": true, "x": -4.189117562233506, "y": 2.729705854077835 },
+          "Q": { "type": "point", "defined": true, "x": 4.989117562233506, "y": -0.3297058540778355 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 3.0 },
+          "l": { "type": "line", "defined": true, "a": 1.0, "b": 3.0, "c": -4.0 },
+          "P": { "type": "point", "defined": true, "x": -2.180697580112788, "y": 2.0602325267042625 },
+          "Q": { "type": "point", "defined": true, "x": 2.980697580112788, "y": 0.3397674732957372 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 9.0, "y": 9.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 3.0 },
+          "l": { "type": "line", "defined": true, "a": -7.0, "b": 11.0, "c": -36.0 },
+          "P": { "type": "point", "defined": true, "x": -2.4721626114621285, "y": 1.6995328836150092 },
+          "Q": { "type": "point", "defined": true, "x": -0.4925432708908129, "y": 2.959290645796756 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    }
+  ]
+}
