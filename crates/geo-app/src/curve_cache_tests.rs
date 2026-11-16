@@ -39,6 +39,8 @@ struct Shown {
     label: String,
     paths: Vec<Vec<Pos2>>,
     vertices: Vec<Pos2>,
+    /// The mesh's triangles, as indices into `vertices`.
+    indices: Vec<u32>,
     text: Option<(f64, f64)>,
 }
 
@@ -78,6 +80,7 @@ fn frame_with(
                         .iter()
                         .map(|v| v.pos - origin.to_vec2())
                         .collect(),
+                    indices: d.mesh.indices.clone(),
                     text: d.label,
                 });
             }
@@ -414,7 +417,8 @@ fn arcs_and_sectors_a_function_reads_are_keyed_by_value() {
 #[test]
 fn the_same_view_elsewhere_on_the_screen_is_drawn_there() {
     // The same size and camera with the area at two places on the screen:
-    // relative to its area, each frame draws the same thing.
+    // relative to its area, each frame draws the same thing (a moved mesh
+    // keeps only the triangles that reach the area).
     let wb = Workbench::from_script(
         "F = (-2, 0)\nG = (2, 0)\na = 3\nk = Ellipse(F, G, a)\nf(x) = sin(x)\n",
     )
@@ -434,15 +438,37 @@ fn the_same_view_elsewhere_on_the_screen_is_drawn_there() {
                 a.paths.iter().flatten().copied().collect(),
                 b.paths.iter().flatten().copied().collect(),
             );
-            for (u, v) in [(&pa, &pb), (&a.vertices, &b.vertices)] {
-                assert_eq!(u.len(), v.len(), "{}", a.label);
-                let off = u
-                    .iter()
-                    .zip(v)
-                    .map(|(p, q)| (*p - *q).length())
-                    .fold(0.0f32, f32::max);
-                assert!(off < 1e-3, "{}: {off} px off", a.label);
-            }
+            assert_eq!(pa.len(), pb.len(), "{}", a.label);
+            let off = pa
+                .iter()
+                .zip(&pb)
+                .map(|(p, q)| (*p - *q).length())
+                .fold(0.0f32, f32::max);
+            assert!(off < 1e-3, "{}: {off} px off", a.label);
+            assert_same_in_area(a, b);
         }
+    }
+}
+
+/// The triangles of `s` that reach the area (within 1 px).
+fn triangles_in_area(s: &Shown) -> Vec<[Pos2; 3]> {
+    let area = Rect::from_min_size(Pos2::ZERO, vec2(W, H)).expand(1.0);
+    s.indices
+        .chunks(3)
+        .map(|t| [0, 1, 2].map(|k| s.vertices[t[k] as usize]))
+        .filter(|t| Rect::from_points(t).intersects(area))
+        .collect()
+}
+
+/// `a` and `b` have the same triangles in the area, within 1e-3 px.
+fn assert_same_in_area(a: &Shown, b: &Shown) {
+    let (ta, tb) = (triangles_in_area(a), triangles_in_area(b));
+    assert_eq!(ta.len(), tb.len(), "{}: triangles in the area", a.label);
+    let mut used = vec![false; tb.len()];
+    for t in &ta {
+        let near = |u: &[Pos2; 3]| (0..3).all(|k| (u[k] - t[k]).length() < 1e-3);
+        let k = (0..tb.len()).find(|&k| !used[k] && near(&tb[k]));
+        let k = k.unwrap_or_else(|| panic!("{}: a triangle in the area is missing", a.label));
+        used[k] = true;
     }
 }
