@@ -960,10 +960,10 @@ impl Ctx<'_> {
             return None;
         };
         let items = &super::entry(self.c, d).items;
-        work(items.len() as u64);
         if !lists.build(items.len() as u64) {
             return None;
         }
+        work(items.len() as u64);
         let mut arena = lists.arena.borrow_mut();
         let base = arena.len() as u32;
         arena.extend(items.iter().map(|s| match s.run() {

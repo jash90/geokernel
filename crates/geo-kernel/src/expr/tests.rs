@@ -1415,11 +1415,22 @@ fn the_nested_sequence_of_the_fuzz_corpus_stops_at_the_bound() {
 }
 
 #[test]
+fn the_loop_around_a_list_past_the_bound_stops_at_once() {
+    // the outer range fits, its first element does not: no more elements
+    // are evaluated after it, so the work is the outer count and little else
+    let mut c = load("n = 3\nl = Sequence(Sum(Sequence(2E6)), k, 1, n)").unwrap();
+    let n = c.id("n").unwrap();
+    let (_, work) = list_work_of(|| c.set_number(n, 1e6).unwrap());
+    assert!(!is_defined(&c, "l"));
+    assert!(work <= 1_000_100, "{work} units of list work");
+}
+
+#[test]
 fn every_list_construct_stops_at_the_bound() {
     // each over the bound at its large `n`, and within it at its small one
     // (none for a step that cannot move the variable: that never ends)
     let cases: &[(&str, Option<f64>, f64)] = &[
-        // a generated list summed, multiplied or averaged in a body
+        // a generated list summed, multiplied or averaged
         (
             "Sequence(Sum(Sequence(j, j, 1, k)), k, 1, n)",
             Some(3.0),
@@ -1433,6 +1444,7 @@ fn every_list_construct_stops_at_the_bound() {
         ("Sum(Sequence(k, k, 1, n))", Some(3.0), 1e7),
         ("Sum(Sequence(n), 2)", Some(3.0), 1e7),
         ("Product(Sequence(n))", Some(3.0), 1e7),
+        ("Mean(Sequence(n))", Some(3.0), 1e7),
         ("Max(Sequence(k^2, k, 1, n))", Some(3.0), 1e7),
         ("Length(Sequence(n))", Some(3.0), 1e7),
         // Join of sequences
@@ -1499,6 +1511,14 @@ fn every_list_construct_stops_at_the_bound() {
         ("Sequence(j, j, n, 0, -1E-7)", Some(0.0), 1.0),
         ("Sequence(0, n, 1E-7)", Some(0.0), 1.0),
         ("Sequence(j, j, -n, n)", Some(3.0), 1e300),
+        // a zero step, a NaN bound, infinite bounds (`1/0` is infinite)
+        ("Sequence(j, j, 1, n, 0)", Some(1.0), 3.0),
+        ("Sequence(1, n, 0)", None, 3.0),
+        ("Sequence(j, j, 1, sqrt(-n))", Some(0.0), 3.0),
+        ("Sequence(j, j, 1, 1 / n)", Some(1.0), 0.0),
+        ("Sequence(j, j, 1 / n, 1 / n)", Some(1.0), 0.0),
+        ("Sequence(j, j, -1 / n, 1 / n)", Some(1.0), 0.0),
+        ("Sequence(1 / n, 3)", Some(1.0), 0.0),
         // within `MIN_PRECISION` of the end, or stalled, for ever
         ("Sequence(j, j, 0, n, 1E-300)", None, 1.0),
         ("Sequence(j, j, n, 0, -1E-300)", None, 1.0),
