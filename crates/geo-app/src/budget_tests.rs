@@ -75,6 +75,8 @@ struct Window {
     time: f64,
     /// The label suffix of the cell in the middle, `{n}`.
     mid: String,
+    /// The window's size in points.
+    screen: (f32, f32),
 }
 
 fn leaves(shape: &Shape, c: &mut Counts) {
@@ -103,6 +105,7 @@ impl Window {
             app: App::new(Workbench::from_script(script).unwrap(), None),
             time: 0.0,
             mid,
+            screen: SCREEN,
         };
         w.frames(3);
         w.fit(1.0);
@@ -111,7 +114,7 @@ impl Window {
     }
 
     fn step(&mut self, events: Vec<Event>) -> Counts {
-        let screen = Rect::from_min_size(Pos2::ZERO, vec2(SCREEN.0, SCREEN.1));
+        let screen = Rect::from_min_size(Pos2::ZERO, vec2(self.screen.0, self.screen.1));
         let input = headless::raw_input(screen, self.time, DT as f32, events);
         self.time += DT;
         let made = self.app.wb.rows_formatted();
@@ -574,13 +577,48 @@ fn curve_frames_stay_within_the_budget() {
     w.app.camera = Some(cam);
     let zoom = curve_step(&mut w, Vec::new());
     let mut after_zoom = Vec::new();
-    for _ in 0..20 {
+    for _ in 0..60 {
         let f = curve_step(&mut w, Vec::new());
         after_zoom.push(f);
         if !f.counts.immediate {
             break;
         }
     }
+
+    w.settled(1);
+
+    // Edits that change no curve's drawing: the frame after each plots
+    // nothing. Undo, redo and a deletion rebuild the construction, which
+    // renumbers the objects; the kept drawings are found by label.
+    let mut edits = Vec::new();
+    w.app.wb.run_line("Z = (1, 1)").unwrap();
+    edits.push(("add_point", curve_step(&mut w, Vec::new())));
+    w.settled(1);
+    assert!(w.app.wb.undo());
+    edits.push(("undo", curve_step(&mut w, Vec::new())));
+    w.settled(1);
+    assert!(w.app.wb.redo());
+    edits.push(("redo", curve_step(&mut w, Vec::new())));
+    w.settled(1);
+    // An early object, so that every curve after it is renumbered.
+    let first = w.app.wb.construction().id("P_{0}").unwrap();
+    assert!(w.app.wb.delete(first));
+    edits.push(("delete", curve_step(&mut w, Vec::new())));
+    w.settled(1);
+    let f1 = w.app.wb.construction().id("f1").unwrap();
+    w.app.wb.selected = Some(f1);
+    edits.push(("select", curve_step(&mut w, Vec::new())));
+    w.app.wb.selected = None;
+    w.settled(1);
+    // The window grows by 10 points: the kept drawings move at once; the
+    // functions are plotted for the new area over the next frames.
+    w.screen = (SCREEN.0 + 10.0, SCREEN.1 + 10.0);
+    let mut resize = vec![curve_step(&mut w, Vec::new())];
+    while resize.last().unwrap().counts.immediate && resize.len() < 60 {
+        resize.push(curve_step(&mut w, Vec::new()));
+    }
+    w.screen = SCREEN;
+    w.settled(1);
 
     let show = |name: &str, f: &CurveFrame| {
         println!(
@@ -596,10 +634,22 @@ fn curve_frames_stay_within_the_budget() {
     let worst_pan = pans.iter().max_by_key(|f| f.plotted).unwrap();
     show("pan_worst", worst_pan);
     let slowest = pans.iter().map(|f| f.ms).fold(0.0, f64::max);
+    println!(
+        "curves pan_frames: {:?}",
+        pans.iter()
+            .map(|f| (f.plotted, (f.ms * 100.0).round() / 100.0))
+            .collect::<Vec<_>>()
+    );
     println!("curves pan_slowest: {slowest:.2} ms");
     show("zoom", &zoom);
     for (i, f) in after_zoom.iter().enumerate() {
         show(&format!("after_zoom_{i}"), f);
+    }
+    for (name, f) in &edits {
+        show(name, f);
+    }
+    for (i, f) in resize.iter().enumerate() {
+        show(&format!("resize_{i}"), f);
     }
 
     // Idle: nothing plotted, no rows, no repaint asked for.
@@ -621,7 +671,8 @@ fn curve_frames_stay_within_the_budget() {
     }
     assert_eq!((related[2].plotted, related[2].tessellated), (0, 0));
     // The first pan frames move every kept drawing: nothing plotted or
-    // tessellated. Later frames plot at most `REPLOTS_PER_FRAME` curves.
+    // tessellated. Later frames plot at most `REPLOTS_PER_FRAME` conics, a
+    // function counting as `FUNCTION_COST`.
     let quiet = pans.iter().take_while(|f| f.plotted == 0).count();
     println!("curves pan_quiet_frames: {quiet}");
     assert!(quiet >= 20, "only {quiet} pan frames plotted nothing");
@@ -652,18 +703,43 @@ fn curve_frames_stay_within_the_budget() {
         assert!(f.plotted <= REPLOTS_PER_FRAME as u64);
         assert_eq!(f.plotted, f.tessellated);
     }
-    assert_eq!(after_zoom.len(), 12, "frames until the zoom is done");
+    println!("curves after_zoom_frames: {}", after_zoom.len());
+    assert_eq!(after_zoom.len(), 24, "frames until the zoom is done");
+    for (name, f) in &edits {
+        assert_eq!((f.plotted, f.tessellated), (0, 0), "{name}");
+    }
+    assert!(
+        !resize.last().unwrap().counts.immediate,
+        "the resize never settles"
+    );
+    println!("curves resize_frames: {}", resize.len());
+    // The frame of the resize moves the kept drawings, re-tessellating
+    // none (a curve that comes into the grown area is plotted).
+    assert_eq!(resize[0].plotted, resize[0].tessellated);
+    for f in &resize {
+        assert!(f.plotted <= REPLOTS_PER_FRAME as u64);
+    }
     let heaviest = *after_zoom.iter().max_by_key(|f| f.counts.bytes).unwrap();
+    let heaviest_resize = *resize.iter().max_by_key(|f| f.counts.bytes).unwrap();
     // Ceilings: the counts when they were set plus about 8%. A pan frame
-    // copies every visible curve's mesh to its new place (about 8 MB here).
+    // copies every visible curve's mesh to its new place (about 9 MB here);
+    // the zoom frame tessellates 234 kept drawings scaled. The frame after
+    // a rebuild (undo, redo, delete) finds what each function depends on
+    // again; most of its allocations are the algebra list's.
     for (name, f, allocs, bytes) in [
         ("idle", idle, 2_650, 545_000),
         ("drag_unrelated", unrelated[0], 2_800, 555_000),
         ("drag_related", related[0], 3_000, 750_000),
-        ("pan", pans[0], 4_050, 9_050_000),
+        ("pan", pans[0], 4_050, 10_500_000),
         ("pan_worst", *worst_pan, 4_600, 11_700_000),
-        ("zoom", zoom, 4_550, 11_400_000),
+        ("zoom", zoom, 4_900, 19_500_000),
         ("after_zoom", heaviest, 2_800, 4_150_000),
+        ("resize", heaviest_resize, 2_550, 1_750_000),
+        ("add_point", edits[0].1, 2_200, 680_000),
+        ("undo", edits[1].1, 18_800, 1_180_000),
+        ("redo", edits[2].1, 18_850, 1_190_000),
+        ("delete", edits[3].1, 19_500, 1_460_000),
+        ("select", edits[4].1, 2_100, 480_000),
     ] {
         let c = f.counts;
         assert!(c.allocs <= allocs, "{name}: {} allocations", c.allocs);

@@ -22,6 +22,7 @@
 //! that lie off the view.
 
 use super::{Cutter, Frame, Path};
+use crate::svg::View;
 
 /// `CurvePlotter.MIN_SAMPLE_POINTS`.
 const MIN_SAMPLE_POINTS: f64 = 80.0;
@@ -64,6 +65,13 @@ pub struct Plot {
 /// `GeoFunction` without an interval). `f` gives `NaN` or an infinity where
 /// the function is not defined.
 pub fn plot(f: &mut dyn FnMut(f64) -> f64, frame: &Frame) -> Plot {
+    // `CurvePlotter`: at least this many samples across the range.
+    let min_samples = MIN_SAMPLE_POINTS.max(((frame.width() as i64) / 6) as f64);
+    plot_sampled(f, frame, min_samples)
+}
+
+/// [`plot`] starting from `min_samples` samples across the range.
+fn plot_sampled(f: &mut dyn FnMut(f64) -> f64, frame: &Frame, min_samples: f64) -> Plot {
     let v = frame.visible(0.0);
     let (min, max) = (v.xmin, v.xmax);
     if !(min.is_finite() && max.is_finite() && frame.scale().is_finite() && frame.scale() > 0.0) {
@@ -90,8 +98,6 @@ pub fn plot(f: &mut dyn FnMut(f64) -> f64, frame: &Frame) -> Plot {
             label: Some((java_int(sx), java_int(sy))),
         };
     }
-    // `CurvePlotter`: at least this many samples across the range.
-    let min_samples = MIN_SAMPLE_POINTS.max(((frame.width() as i64) / 6) as f64);
     let max_param_step = (max - min).abs() / min_samples;
     let label = p.segment(min, max, 0, max_param_step, true);
     let mut cutter = Cutter::new(frame);
@@ -106,6 +112,58 @@ pub fn plot(f: &mut dyn FnMut(f64) -> f64, frame: &Frame) -> Plot {
         paths: cutter.finish(),
         label,
     }
+}
+
+/// The graph as [`plot`] draws it in `frame`, together with what lies up to
+/// `margin` pixels around the area, so that a drawing kept from this frame
+/// can be moved by up to `margin` pixels: the paths of [`plot`], then the
+/// graph over each of four strips around the area, each plotted on its own
+/// as the area of a frame of the same scale, from as many samples a pixel
+/// as the area (the strips left and right of
+/// the area reach `margin` pixels above and below it; those above and
+/// below are as wide as the area). Where the area and a strip meet, both
+/// draw `PAD` pixels into the other. The label is that of [`plot`]. Paths
+/// are in the screen pixels of `frame`.
+pub fn plot_with_margin(f: &mut dyn FnMut(f64) -> f64, frame: &Frame, margin: f64) -> Plot {
+    let min_samples = MIN_SAMPLE_POINTS.max(((frame.width() as i64) / 6) as f64);
+    let mut out = plot_sampled(f, frame, min_samples);
+    if !(margin > 0.0 && margin.is_finite()) {
+        return out;
+    }
+    let (w, h, m) = (frame.width(), frame.height(), margin);
+    for (x0, y0, x1, y1) in [
+        (-m, -m, 0.0, h + m),
+        (w, -m, w + m, h + m),
+        (0.0, -m, w, 0.0),
+        (0.0, h, w, h + m),
+    ] {
+        let (xmin, ymax) = frame.screen_to_world(x0, y0);
+        let (xmax, ymin) = frame.screen_to_world(x1, y1);
+        let strip = Frame::fit(
+            View {
+                xmin,
+                ymin,
+                xmax,
+                ymax,
+            },
+            x1 - x0,
+            y1 - y0,
+        );
+        // A strip starts from as many samples a pixel as the area: a strip
+        // of the area's width from as many as it, a narrow one from fewer.
+        let samples = (min_samples * (x1 - x0) / w).max(2.0);
+        for path in plot_sampled(f, &strip, samples).paths {
+            out.paths.push(
+                path.into_iter()
+                    .map(|(sx, sy)| {
+                        let (x, y) = strip.screen_to_world(sx, sy);
+                        frame.world_to_screen(x, y)
+                    })
+                    .collect(),
+            );
+        }
+    }
+    out
 }
 
 /// Java's `(int)` of a double: towards zero, saturating, `NaN` to 0.

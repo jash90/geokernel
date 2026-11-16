@@ -83,15 +83,7 @@ pub fn plot(d: &ConicData, frame: &Frame) -> Plot {
                     out.dot = Some(frame.world_to_screen(mx, my));
                 }
             }
-            out.label = Some(if d.ty == ConicType::Circle {
-                // `DrawConic.updateCircle`, in screen pixels.
-                let (mx, my) = frame.world_to_screen(d.midpoint[0], d.midpoint[1]);
-                let r = a * scale;
-                (java_int(mx - r / 2.0), java_int(my - r * 0.85) + 20.0)
-            } else {
-                // `DrawConic.updateEllipse`.
-                curve.label(frame, -a / 2.0, b * 0.85 - 20.0 / scale)
-            });
+            out.label = label_of(d, &curve, frame);
         }
         ConicType::Hyperbola => {
             let [a, b] = d.half_axes;
@@ -106,8 +98,7 @@ pub fn plot(d: &ConicData, frame: &Frame) -> Plot {
                 }
             }
             out.paths = cutter.finish();
-            // `DrawConic.updateHyperbolaLabelCoords`.
-            out.label = Some(curve.label(frame, 2.0 * a, 1.7 * b - 20.0 / scale));
+            out.label = label_of(d, &curve, frame);
         }
         ConicType::Parabola => {
             let p = d.p;
@@ -121,8 +112,7 @@ pub fn plot(d: &ConicData, frame: &Frame) -> Plot {
                 sample_uniform(&mut cutter, &c, t0, t1, step);
             }
             out.paths = cutter.finish();
-            // `DrawConic.updateParabolaLabelCoords`.
-            out.label = Some(curve.label(frame, 2.0 * p, 2.0 * p - 20.0 / scale));
+            out.label = label_of(d, &curve, frame);
         }
         ConicType::IntersectingLines | ConicType::ParallelLines | ConicType::DoubleLine => {
             // `DrawConic` hands these to `DrawLine`; a double line is one
@@ -131,10 +121,7 @@ pub fn plot(d: &ConicData, frame: &Frame) -> Plot {
             for l in &d.lines[..count] {
                 out.paths.extend(line_paths(*l, frame));
             }
-            out.label = out.paths.first().map(|path| {
-                let (a, b) = (path[0], path[path.len() - 1]);
-                (java_int((a.0 + b.0) / 2.0), java_int((a.1 + b.1) / 2.0))
-            });
+            out.label = out.paths.first().map(lines_label);
         }
         ConicType::SinglePoint => {
             // `DrawConic` draws it with a `DrawPoint`.
@@ -146,6 +133,67 @@ pub fn plot(d: &ConicData, frame: &Frame) -> Plot {
         ConicType::Empty | ConicType::NotClassified => {}
     }
     out
+}
+
+/// Where [`plot`] puts the label of `d` in `frame`, without plotting it:
+/// the label of a conic other than a pair of lines is a point of the plane
+/// (`DrawConic`), so a drawing kept from another frame can be labelled for
+/// this one.
+pub fn label(d: &ConicData, frame: &Frame) -> Option<(f64, f64)> {
+    let scale = frame.scale();
+    if !(d.defined && scale.is_finite() && scale > 0.0 && finite_data(d)) {
+        return None;
+    }
+    match d.ty {
+        ConicType::IntersectingLines | ConicType::ParallelLines | ConicType::DoubleLine => {
+            let count = if d.ty == ConicType::DoubleLine { 1 } else { 2 };
+            d.lines[..count]
+                .iter()
+                .find_map(|l| line_paths(*l, frame).first().map(lines_label))
+        }
+        _ => label_of(d, &Eigen::new(d), frame),
+    }
+}
+
+/// The label of a circle, ellipse, hyperbola or parabola that [`plot`]
+/// draws; `None` for one it does not draw and for other types.
+fn label_of(d: &ConicData, curve: &Eigen, frame: &Frame) -> Option<(f64, f64)> {
+    let scale = frame.scale();
+    match d.ty {
+        ConicType::Circle | ConicType::Ellipse => {
+            let [a, b] = d.half_axes;
+            if a * scale > HUGE_RADIUS || b * scale > HUGE_RADIUS || !(a > 0.0 && b > 0.0) {
+                return None;
+            }
+            Some(if d.ty == ConicType::Circle {
+                // `DrawConic.updateCircle`, in screen pixels.
+                let (mx, my) = frame.world_to_screen(d.midpoint[0], d.midpoint[1]);
+                let r = a * scale;
+                (java_int(mx - r / 2.0), java_int(my - r * 0.85) + 20.0)
+            } else {
+                // `DrawConic.updateEllipse`.
+                curve.label(frame, -a / 2.0, b * 0.85 - 20.0 / scale)
+            })
+        }
+        ConicType::Hyperbola => {
+            let [a, b] = d.half_axes;
+            // `DrawConic.updateHyperbolaLabelCoords`.
+            (a > 0.0 && b > 0.0).then(|| curve.label(frame, 2.0 * a, 1.7 * b - 20.0 / scale))
+        }
+        ConicType::Parabola => {
+            let p = d.p;
+            // `DrawConic.updateParabolaLabelCoords`.
+            (!(p > HUGE_RADIUS || p.is_nan() || p <= 0.0))
+                .then(|| curve.label(frame, 2.0 * p, 2.0 * p - 20.0 / scale))
+        }
+        _ => None,
+    }
+}
+
+/// `DrawLine`'s label: the middle of the drawn part of the line.
+fn lines_label(path: &Path) -> (f64, f64) {
+    let (a, b) = (path[0], path[path.len() - 1]);
+    (java_int((a.0 + b.0) / 2.0), java_int((a.1 + b.1) / 2.0))
 }
 
 /// Java's `(int)` of a double: towards zero, saturating, `NaN` to 0.

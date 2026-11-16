@@ -26,6 +26,8 @@ mod budget_tests;
 #[cfg(test)]
 mod cull_tests;
 #[cfg(test)]
+mod curve_cache_tests;
+#[cfg(test)]
 mod curve_tests;
 #[cfg(test)]
 mod frame_counts;

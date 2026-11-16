@@ -109,7 +109,8 @@ fn picture_with(
     (selected, hovered): (Option<Id>, Option<Id>),
 ) -> (Vec<(Rect, epaint::Mesh)>, usize) {
     // Each picture plots its curves afresh: a kept drawing moved by a pan
-    // or waiting to be plotted again is not what this compares.
+    // or waiting to be plotted again is not what this compares. The frames
+    // run until every curve is plotted (a frame plots a few at most).
     crate::curves::forget(ctx);
     let c = wb.construction();
     let visible = |id| {
@@ -117,22 +118,32 @@ fn picture_with(
             || !(matches!(c.kind(id), Kind::Line | Kind::Ray)
                 || c.label(id).starts_with("Unbounded"))
     };
-    let mut out = ctx.run_ui(Default::default(), |ui| {
-        let rect = Rect::from_min_size(Pos2::new(40.0, 30.0), vec2(W, H));
-        let painter = ui.painter_at(rect);
-        let scene = Scene {
-            visible: &visible,
-            ghost: &|_| false,
-            selected,
-            hovered,
-            palette: wb.palette(),
-            cull,
-            generation: wb.rebuilds(),
-            label_offset: &|_| None,
-            label_rects: None,
-        };
-        draw::paint(&painter, rect, wb.construction(), t, &scene);
-    });
+    let frame = || {
+        ctx.run_ui(Default::default(), |ui| {
+            let rect = Rect::from_min_size(Pos2::new(40.0, 30.0), vec2(W, H));
+            let painter = ui.painter_at(rect);
+            let scene = Scene {
+                visible: &visible,
+                ghost: &|_| false,
+                selected,
+                hovered,
+                palette: wb.palette(),
+                cull,
+                generation: wb.rebuilds(),
+                label_offset: &|_| None,
+                label_rects: None,
+            };
+            draw::paint(&painter, rect, wb.construction(), t, &scene);
+        })
+    };
+    let mut out = frame();
+    for _ in 0..40 {
+        if crate::headless::repaint(&out) != crate::headless::Repaint::Immediate {
+            break;
+        }
+        out.textures_delta.clear();
+        out = frame();
+    }
     out.textures_delta.clear();
     let shapes = out.shapes.len();
     let prims = ctx.tessellate(out.shapes, out.pixels_per_point);
@@ -199,21 +210,31 @@ fn shapes_text(
     cull: bool,
     (selected, hovered): (Option<Id>, Option<Id>),
 ) -> Vec<String> {
-    let mut out = ctx.run_ui(Default::default(), |ui| {
-        let rect = Rect::from_min_size(Pos2::new(40.0, 30.0), vec2(W, H));
-        let scene = Scene {
-            visible: &|_| true,
-            ghost: &|_| false,
-            selected,
-            hovered,
-            palette: wb.palette(),
-            cull,
-            generation: wb.rebuilds(),
-            label_offset: &|_| None,
-            label_rects: None,
-        };
-        draw::paint(&ui.painter_at(rect), rect, wb.construction(), t, &scene);
-    });
+    let frame = || {
+        ctx.run_ui(Default::default(), |ui| {
+            let rect = Rect::from_min_size(Pos2::new(40.0, 30.0), vec2(W, H));
+            let scene = Scene {
+                visible: &|_| true,
+                ghost: &|_| false,
+                selected,
+                hovered,
+                palette: wb.palette(),
+                cull,
+                generation: wb.rebuilds(),
+                label_offset: &|_| None,
+                label_rects: None,
+            };
+            draw::paint(&ui.painter_at(rect), rect, wb.construction(), t, &scene);
+        })
+    };
+    let mut out = frame();
+    for _ in 0..40 {
+        if crate::headless::repaint(&out) != crate::headless::Repaint::Immediate {
+            break;
+        }
+        out.textures_delta.clear();
+        out = frame();
+    }
     out.textures_delta.clear();
     out.shapes.iter().map(|s| format!("{s:?}")).collect()
 }

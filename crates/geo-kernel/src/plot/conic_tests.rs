@@ -649,3 +649,69 @@ fn small_hyperbolas_stay_flat_along_their_chords() {
     }
     assert!(worst <= FLATNESS, "a chord {worst} px off the curve");
 }
+
+#[test]
+fn the_label_alone_is_where_the_plot_puts_it() {
+    let views = [
+        standard(),
+        frame(-3.3, 2.1, 40.0, 44.05),
+        frame(-900.0, 700.0, -500.0, 700.0),
+    ];
+    let mut cases = Vec::new();
+    for (k, ty) in [
+        ConicType::Circle,
+        ConicType::Ellipse,
+        ConicType::Hyperbola,
+        ConicType::Parabola,
+        ConicType::SinglePoint,
+        ConicType::Empty,
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        for j in 0..20 {
+            let t = (k * 20 + j) as f64;
+            let b = [
+                (t * 1.7).sin() * 12.0,
+                (t * 2.3).cos() * 9.0 + 42.0 * (j % 2) as f64,
+            ];
+            let r = 0.3 + (t * 0.9).sin().abs() * 15.0;
+            let axes = if ty == ConicType::Circle {
+                [r, r]
+            } else {
+                [r, 0.2 + r * (t * 0.4).cos().abs()]
+            };
+            cases.push(conic(ty, b, t * 0.37, axes, r));
+        }
+    }
+    let mut lines = conic(
+        ConicType::IntersectingLines,
+        [0.0, 0.0],
+        0.0,
+        [0.0, 0.0],
+        0.0,
+    );
+    for (l0, l1) in [
+        ([1.0, -1.0, 0.0], [1.0, 1.0, -2.0]),
+        // The first line misses the standard view: the label is on the
+        // second.
+        ([0.0, 1.0, -100.0], [1.0, 1.0, -2.0]),
+        ([0.0, 1.0, -100.0], [0.0, 1.0, 100.0]),
+    ] {
+        lines.lines = [l0, l1];
+        cases.push(lines);
+        let mut double = lines;
+        double.ty = ConicType::DoubleLine;
+        cases.push(double);
+    }
+    for d in &cases {
+        for fr in &views {
+            assert_eq!(
+                super::conic::label(d, fr),
+                plot(d, fr).label,
+                "{:?} in {fr:?}",
+                d.ty
+            );
+        }
+    }
+}

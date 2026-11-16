@@ -247,14 +247,17 @@ fn ln_falls_along_its_asymptote_and_is_a_gap_left_of_zero() {
         points(&p).all(|q| q.0 >= zero - 1e-6),
         "drawn left of x = 0"
     );
-    // It falls far along the asymptote, within a pixel of x = 0. The
-    // search for the end of the domain stops near y = -6.3 here (the
-    // bisection of `CurvePlotter` ends once two points are half a pixel
-    // apart), short of the bottom border at -7.5.
+    // It falls far along the asymptote, within a pixel of x = 0, and stops
+    // at y = -6.015 here, short of the bottom border at -7.5: the
+    // bisection of `CurvePlotter` refines the jump to the undefined part
+    // only until two samples are `GeoFunction.getMinDistX` (0.1 px) apart
+    // in x, and the last defined sample is ln(0.00244). Upstream ends the
+    // graph at the same point for this view.
     let low = points(&p).fold((0.0f64, 0.0f64), |m, q| if q.1 > m.1 { q } else { m });
+    let (lx, ly) = fr.screen_to_world(low.0, low.1);
     assert!(
-        low.1 > 0.85 * H && low.0 - zero < 1.0,
-        "lowest point {low:?}"
+        low.0 - zero < 0.1 && (ly + 6.015).abs() < 1e-3 && (lx - 0.00244).abs() < 1e-5,
+        "lowest point {low:?}, ({lx}, {ly}) in the plane"
     );
     for pt in points(&p) {
         if pt.1 < H {
@@ -294,5 +297,55 @@ fn a_nearly_vertical_graph_is_cut_to_the_whole_column() {
             "{slope} x in {:?}: column covered from {top} to {bottom}",
             fr.visible(0.0)
         );
+    }
+}
+
+#[test]
+fn a_plot_with_a_margin_is_the_area_plot_and_covers_the_margin() {
+    let m = 200.0;
+    let fr = frame(-9.3, 10.7, -6.8, 8.2);
+    for f in [
+        (|x: f64| (3.0 * x).sin() + x / 2.0) as fn(f64) -> f64,
+        |x| x * x / 4.0 - 5.0,
+        |x| 1.0 / (x - 0.4),
+        f64::ln,
+    ] {
+        let area = run(f, &fr);
+        let mut g = |x: f64| f(x);
+        let wide = super::function::plot_with_margin(&mut g, &fr, m);
+        // The area's paths first, unchanged, and its label.
+        assert_eq!(wide.paths[..area.paths.len()], area.paths[..]);
+        assert_eq!(wide.label, area.label);
+        // Every point of the graph in the area and the margin, away from
+        // poles and the end of the domain, is within half a pixel of a path.
+        let near = |q: (f64, f64)| {
+            segments(&wide).any(|(a, b)| {
+                let (dx, dy) = (b.0 - a.0, b.1 - a.1);
+                let len2 = dx * dx + dy * dy;
+                let t = if len2 > 0.0 {
+                    (((q.0 - a.0) * dx + (q.1 - a.1) * dy) / len2).clamp(0.0, 1.0)
+                } else {
+                    0.0
+                };
+                (a.0 + t * dx - q.0).hypot(a.1 + t * dy - q.1) < 0.5
+            })
+        };
+        let mut checked = 0;
+        for i in 0..=((W + 2.0 * m) as usize) {
+            let sx = i as f64 - m;
+            let (x, _) = fr.screen_to_world(sx, 0.0);
+            let (x0, _) = fr.screen_to_world(sx - 3.0, 0.0);
+            let (x1, _) = fr.screen_to_world(sx + 3.0, 0.0);
+            let ys = [f(x0), f(x), f(x1)].map(|y| fr.world_to_screen(x, y).1);
+            let calm = ys
+                .iter()
+                .all(|y| y.is_finite() && *y > -m + PAD && *y < H + m - PAD)
+                && (ys[0] - ys[2]).abs() < 60.0;
+            if calm {
+                checked += 1;
+                assert!(near((sx, ys[1])), "({sx}, {}) is not drawn", ys[1]);
+            }
+        }
+        assert!(checked > 300, "{checked} points checked");
     }
 }

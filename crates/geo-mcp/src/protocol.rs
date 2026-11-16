@@ -111,7 +111,7 @@ pub fn tools() -> Vec<Json> {
             object_schema(json!({"verbose": {"type": "boolean"}}), &[])),
         def("widgets", "Named rectangles of the last frame ([x, y, width, height] in window points): tool group buttons and open drop-down entries with tool ids, undo/redo/menu, algebra rows with their marker, menu and value field, the input bar, view and style buttons, keyboard keys, the hint card and its close cross, the notice, menu entries and dialog controls.",
             object_schema(json!({"kind": {"type": "string", "description": "Only widgets of this kind (tool_group, tool_entry, row, key, ...)."}}), &[])),
-        def("input", "Runs frames through the window's frame loop. Each frame: dt (seconds since the previous frame, default 1/60) and a list of events, applied in order within the frame. Returns per frame what changed. settle runs empty frames afterwards while the window animates.",
+        def("input", "Runs frames through the window's frame loop. Each frame: dt (seconds since the previous frame, default 1/60) and a list of events, applied in order within the frame. Returns per frame what changed. settle runs empty frames afterwards while the window animates. Without settle, a screenshot right after a view change or an edit may show conics and graphs moved or scaled from their previous drawing, or not yet drawn, while they are plotted again over the next frames.",
             object_schema(json!({
                 "frames": {"type": "array", "items": {"type": "object", "properties": {
                     "dt": {"type": "number", "minimum": 0}, "events": {"type": "array", "items": event}

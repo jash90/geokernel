@@ -106,20 +106,40 @@ impl Frame {
     }
 
     /// How far, in pixels, every point moved from `self` to `to` when both
-    /// have the same area and the same scale (to a relative 1e-9: a pan
-    /// recomputes the scale from the moved view, which rounds; the error is
-    /// then under 1e-5 pixels across 10 000 pixels): a pan. `None`
-    /// otherwise.
+    /// have the same scale (to a relative 1e-9: a pan recomputes the scale
+    /// from the moved view, which rounds; the error is then under 1e-5
+    /// pixels across 10 000 pixels): a pan, or a resize that keeps the
+    /// scale. `None` otherwise.
     pub fn shift_to(&self, to: &Frame) -> Option<(f64, f64)> {
         let same_scale = (to.scale - self.scale).abs() <= 1e-9 * self.scale;
-        if !(same_scale && to.width == self.width && to.height == self.height) {
+        if !same_scale {
             return None;
         }
         let d = (
             (to.ox - self.ox) + (self.view.xmin - to.view.xmin) * self.scale,
-            (self.oy - to.oy) + (to.view.ymin - self.view.ymin) * self.scale,
+            (to.height - to.oy) - (self.height - self.oy)
+                + (to.view.ymin - self.view.ymin) * self.scale,
         );
         (d.0.is_finite() && d.1.is_finite()).then_some(d)
+    }
+
+    /// Whether a pixel of the frame is wider than a few units in the last
+    /// place of its coordinates, so that points a pixel apart differ, and
+    /// the scale is a finite positive number. A view zoomed in that far
+    /// around a far point (1e10 at a billion pixels a unit) is not.
+    pub fn resolves(&self) -> bool {
+        let v = self.visible(0.0);
+        let finite = [v.xmin, v.xmax, v.ymin, v.ymax, self.scale]
+            .iter()
+            .all(|c| c.is_finite());
+        let pixel = 1.0 / self.scale;
+        let ulps = |a: f64, b: f64| 4.0 * f64::EPSILON * a.abs().max(b.abs());
+        finite
+            && self.scale > 0.0
+            && self.width > 0.0
+            && self.height > 0.0
+            && pixel > ulps(v.xmin, v.xmax)
+            && pixel > ulps(v.ymin, v.ymax)
     }
 
     /// The rectangle of the plane the whole area shows, grown by `margin`
