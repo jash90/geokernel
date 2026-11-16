@@ -1099,14 +1099,20 @@ fn sub_mag(a: &[u8], b: &[u8]) -> Vec<u8> {
 }
 
 fn mul_mag(a: &[u8], b: &[u8]) -> Vec<u8> {
-    // a row for each nonzero digit of the shorter operand, which has at
-    // most about 3 200 digits (`MAX_WORK`): a cell takes at most one product
-    // of 81 from each row, far within a `u32`, so one carry pass at the end
-    // is enough (a pass every few rows over the whole product made a long
-    // number times a short one quadratic)
+    // a row for each nonzero digit of the shorter operand, and one carry
+    // pass at the end (a pass every few rows over the whole product made a
+    // long number times a short one quadratic)
     let (a, b) = if a.len() <= b.len() { (a, b) } else { (b, a) };
     debug_assert!(a.len() <= 1 << 20);
-    let mut acc = vec![0u32; a.len() + b.len()];
+    // A cell takes at most one product of 81 from each row. The shorter
+    // operand has at most 3 162 digits (3 162^2 <= `MAX_WORK` < 3 163^2), so
+    // a cell holds at most 81 * 3 162 = 256 122 before the carry pass, and
+    // the carry into it is at most a tenth of the cell before it plus its
+    // own carry, under 28 500: the largest sum is below 300 000. Even with
+    // 2^20 rows it stays below 81 * 2^20 * 10 / 9 < 10^8, far within `u32`
+    // (4.29 * 10^9). `all_nines_at_the_largest_product_do_not_overflow`
+    // checks the worst case.
+    let mut acc: Vec<u32> = vec![0u32; a.len() + b.len()];
     let rows = a.iter().filter(|&&x| x != 0).count();
     charge_digits(0, rows * b.len());
     for (i, &x) in a.iter().enumerate() {
@@ -1550,5 +1556,162 @@ mod tests {
                 d.len()
             );
         }
+    }
+
+    /// Digits least significant first, from a decimal string.
+    fn le(s: &str) -> Vec<u8> {
+        s.bytes().rev().map(|c| c - b'0').collect()
+    }
+
+    /// A product of digits, least significant first, as a decimal string.
+    fn product_string(digits: &[u8]) -> String {
+        let n = significant(digits);
+        if n == 0 {
+            return "0".to_owned();
+        }
+        digits[..n]
+            .iter()
+            .rev()
+            .map(|&d| char::from(b'0' + d))
+            .collect()
+    }
+
+    fn nines(n: usize) -> String {
+        "9".repeat(n)
+    }
+
+    /// `(10^n - 1) * (10^m - 1)` for `n <= m`, from the formula
+    /// `10^(n+m) - 10^m - 10^n + 1`: `n - 1` nines, an 8, `m - n` nines,
+    /// `n - 1` zeros and a 1 (for `n = m`, `10^(2n) - 2 * 10^n + 1`).
+    fn nines_times_nines(n: usize, m: usize) -> String {
+        assert!(1 <= n && n <= m);
+        format!(
+            "{}8{}{}1",
+            "9".repeat(n - 1),
+            "9".repeat(m - n),
+            "0".repeat(n - 1)
+        )
+    }
+
+    /// `(10^n - 1) * 9 = 9 * 10^n - 9`: an 8, `n - 1` nines and a 1.
+    fn nines_times_nine(n: usize) -> String {
+        format!("8{}1", "9".repeat(n - 1))
+    }
+
+    /// The plain schoolbook product, carrying after every row (the oracle
+    /// for [`mul_mag`], which carries once at the end).
+    fn schoolbook(a: &[u8], b: &[u8]) -> Vec<u8> {
+        let mut r = vec![0u8; a.len() + b.len()];
+        for (i, &x) in a.iter().enumerate() {
+            let mut carry = 0u32;
+            for (j, &y) in b.iter().enumerate() {
+                let t = u32::from(r[i + j]) + u32::from(x) * u32::from(y) + carry;
+                r[i + j] = (t % 10) as u8;
+                carry = t / 10;
+            }
+            let mut k = i + b.len();
+            while carry > 0 {
+                let t = u32::from(r[k]) + carry;
+                r[k] = (t % 10) as u8;
+                carry = t / 10;
+                k += 1;
+            }
+        }
+        r
+    }
+
+    fn assert_product(a: &str, b: &str, want: &str) {
+        let got = product_string(&mul_mag(&le(a), &le(b)));
+        assert!(
+            got == want,
+            "{} digits times {} digits: {} digits, want {}",
+            a.len(),
+            b.len(),
+            got.len(),
+            want.len()
+        );
+    }
+
+    #[test]
+    fn long_products_match_their_closed_forms() {
+        for n in [1, 2, 3, 38, 39, 63, 64, 65, 77, 78, 500, 1000, 3000] {
+            assert_product(&nines(n), &nines(n), &nines_times_nines(n, n));
+        }
+        // a long number times a short one, up to `MAX_DIGITS`
+        for n in [1, 2, 64, 1000, 50_000, MAX_DIGITS - 1, MAX_DIGITS] {
+            assert_product(&nines(n), "9", &nines_times_nine(n));
+            assert_product("9", &nines(n), &nines_times_nine(n));
+        }
+        for (n, m) in [
+            (1, 2),
+            (2, 3),
+            (64, 65),
+            (127, 129),
+            (1000, 3000),
+            (2500, 4000),
+        ] {
+            assert_product(&nines(n), &nines(m), &nines_times_nines(n, m));
+            assert_product(&nines(m), &nines(n), &nines_times_nines(n, m));
+        }
+        // through the public product
+        let a = Dec::parse(&nines(MAX_DIGITS - 1)).unwrap();
+        let p = a.mul(&d("9")).unwrap();
+        assert!(p == d(&nines_times_nine(MAX_DIGITS - 1)));
+        let b = Dec::parse(&nines(3000)).unwrap();
+        let c = Dec::parse(&nines(2500)).unwrap();
+        assert!(b.mul(&c).unwrap() == d(&nines_times_nines(2500, 3000)));
+    }
+
+    #[test]
+    fn dense_products_match_a_schoolbook_product() {
+        let mut state = 17u64;
+        let mut digits = |n: usize| -> Vec<u8> {
+            let mut v: Vec<u8> = (0..n)
+                .map(|_| {
+                    state = state
+                        .wrapping_mul(6364136223846793005)
+                        .wrapping_add(1442695040888963407);
+                    ((state >> 33) % 10) as u8
+                })
+                .collect();
+            // the leading digit is not zero
+            if v[n - 1] == 0 {
+                v[n - 1] = 7;
+            }
+            v
+        };
+        let lengths = [1, 2, 63, 64, 65, 127, 128, 129, 1000, 5000];
+        let factors: Vec<Vec<u8>> = lengths.iter().map(|&n| digits(n)).collect();
+        for a in &factors {
+            for b in &factors {
+                let got = mul_mag(a, b);
+                let want = schoolbook(a, b);
+                assert!(
+                    got[..significant(&got)] == want[..significant(&want)],
+                    "{} digits times {} digits",
+                    a.len(),
+                    b.len()
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn all_nines_at_the_largest_product_do_not_overflow() {
+        // the longest shorter operand a product may have: every cell of
+        // the middle takes 3 162 products of 81 before the carry pass
+        let n = 3162;
+        assert!(n * n <= MAX_WORK && (n + 1) * (n + 1) > MAX_WORK);
+        let a = nines(n);
+        let want = nines_times_nines(n, n);
+        assert_product(&a, &a, &want);
+        let got = mul_mag(&le(&a), &le(&a));
+        let reference = schoolbook(&le(&a), &le(&a));
+        assert!(got[..significant(&got)] == reference[..significant(&reference)]);
+        let x = Dec::parse(&a).unwrap();
+        assert!(x.mul(&x).unwrap() == d(&want));
+        // one digit longer is refused before any product is taken
+        let y = Dec::parse(&nines(n + 1)).unwrap();
+        assert!(y.mul(&y).is_none());
     }
 }
