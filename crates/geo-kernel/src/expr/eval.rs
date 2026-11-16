@@ -74,9 +74,33 @@ use std::borrow::Cow;
 use std::cell::{Cell, RefCell};
 use std::sync::OnceLock;
 
-/// Elements one evaluation may build in all; past it every list being built
-/// is undefined, so a `Sequence` with a huge range ends quickly.
-const MAX_ELEMENTS: u64 = 1 << 20;
+/// The elements one evaluation of one object may build in all, across all
+/// nesting levels, lists dropped again included. Every loop of the list code
+/// either builds elements counted against it, reads elements already
+/// counted, or counts the values of a range within what is left of it; once
+/// it is crossed nothing more is built or evaluated, and the result is
+/// undefined. Upstream has no such bound (see `DIFFERENCES.md`).
+pub const MAX_ELEMENTS: u64 = 1 << 20;
+
+thread_local! {
+    /// The list work done on this thread (see [`list_work`]).
+    static WORK: Cell<u64> = const { Cell::new(0) };
+}
+
+/// The list work done on this thread so far: the loop iterations of the
+/// list code, an element built or read, or a step of counting a range.
+/// Only the difference between two readings means anything; tests use it
+/// to check that an evaluation does bounded work without a clock.
+#[doc(hidden)]
+pub fn list_work() -> u64 {
+    WORK.with(Cell::get)
+}
+
+/// Adds `n` to [`list_work`].
+#[inline]
+fn work(n: u64) {
+    WORK.with(|w| w.set(w.get().wrapping_add(n)));
+}
 
 /// `Kernel.MIN_PRECISION`, the slack of the bounds of `Sequence`.
 const MIN_PRECISION: f64 = 1e-5;
@@ -147,6 +171,12 @@ impl Lists {
         let built = self.built.get().saturating_add(n);
         self.built.set(built);
         built <= MAX_ELEMENTS
+    }
+
+    /// Whether this evaluation went past [`MAX_ELEMENTS`]: its result is
+    /// undefined, so nothing more is built or evaluated.
+    fn over(&self) -> bool {
+        self.built.get() > MAX_ELEMENTS
     }
 
     /// `n` undefined slots at the end, where they start.
@@ -352,7 +382,7 @@ pub(super) fn root(c: &Construction, e: &Entry, lists: Option<&Lists>) -> (Raw, 
         ..Ctx::new(c, e, &Env::None)
     };
     let x = ctx.full(e.root);
-    if lists.is_some_and(|l| l.built.get() > MAX_ELEMENTS) {
+    if lists.is_some_and(Lists::over) {
         return (Raw::Num(f64::NAN), None);
     }
     match x.val {
@@ -375,7 +405,7 @@ pub(super) fn root_list(
         ..Ctx::new(c, e, &Env::None)
     };
     let (start, len) = ctx.list(e.root)?;
-    if lists.built.get() > MAX_ELEMENTS {
+    if lists.over() {
         return None;
     }
     out.clear();
@@ -821,11 +851,18 @@ impl Ctx<'_> {
     /// start and how many there are; `None` when it is undefined.
     fn list(&self, i: u32) -> Option<(u32, u32)> {
         let lists = self.lists?;
+        if lists.over() {
+            return None;
+        }
         match self.node(i) {
             // `AlgoDependentList`: one element per item
             Node::List(first, len) => {
                 let start = lists.reserve(len)?;
                 for k in 0..len {
+                    if lists.over() {
+                        return None;
+                    }
+                    work(1);
                     let slot = self.element(first + k);
                     lists.set(start + k, slot);
                 }
@@ -923,6 +960,7 @@ impl Ctx<'_> {
             return None;
         };
         let items = &super::entry(self.c, d).items;
+        work(items.len() as u64);
         if !lists.build(items.len() as u64) {
             return None;
         }
@@ -958,6 +996,7 @@ impl Ctx<'_> {
             (None, None) => return None,
         };
         let start = lists.reserve(len)?;
+        work(u64::from(len));
         for k in 0..len {
             let x = left.unwrap_or_else(|| {
                 ra.map_or(Val::N(f64::NAN), |(s, _)| slot_val(lists.get(s + k)))
@@ -1012,6 +1051,7 @@ impl Ctx<'_> {
         let lists = self.lists?;
         let (s, n) = self.list(a)?;
         let start = lists.reserve(n)?;
+        work(u64::from(n));
         for k in 0..n {
             let slot = match slot_val(lists.get(s + k)) {
                 Val::B(b, _) if op == Un::Not => Slot::boolean(!b),
@@ -1038,6 +1078,7 @@ impl Ctx<'_> {
         if from == NONE {
             let n = u32::try_from(math::java_round(self.full_number(to)).max(0)).ok()?;
             let start = lists.reserve(n)?;
+            work(u64::from(n));
             for k in 0..n {
                 lists.set(start + k, Slot::number(f64::from(k) + 1.0));
             }
@@ -1095,10 +1136,11 @@ impl Ctx<'_> {
                 k = a + steps * d;
             }
         };
-        let n = count(values)?;
+        let n = count(lists, values)?;
         let start = lists.reserve(n)?;
         let mut k = 0;
         values(&mut |v| {
+            work(1);
             lists.set(start + k, Slot::number(v));
             k += 1;
             k < n
@@ -1138,10 +1180,11 @@ impl Ctx<'_> {
                 }
             }
         };
-        let n = count(values)?;
+        let n = count(lists, values)?;
         let start = lists.reserve(n)?;
         let mut k = 0;
         values(&mut |v| {
+            work(1);
             let local = Local {
                 depth,
                 value: v,
@@ -1154,9 +1197,10 @@ impl Ctx<'_> {
             .element(e);
             lists.set(start + k, slot);
             k += 1;
-            k < n
+            // an element past the bound: the evaluation stops here
+            k < n && !lists.over()
         });
-        Some((start, n))
+        (!lists.over()).then_some((start, n))
     }
 
     /// The element `l(n)` or `Element(l, n)` picks, `None` when there is
@@ -1228,6 +1272,7 @@ impl Ctx<'_> {
             return if op == ListOp::Sum { 0.0 } else { f64::NAN };
         }
         let (mut sum, mut product) = (0.0, 1.0);
+        work(u64::from(size));
         for k in 0..size {
             let Some(v) = number_of(lists.get(start + k)) else {
                 return f64::NAN;
@@ -1282,6 +1327,7 @@ impl Ctx<'_> {
         } else {
             f64::NEG_INFINITY
         };
+        work(u64::from(len));
         for k in 0..len {
             let Some(v) = number_of(lists.get(start + k)) else {
                 return f64::NAN;
@@ -1308,6 +1354,7 @@ impl Ctx<'_> {
             return undefined;
         };
         let (mut x, mut y) = (0.0, 0.0);
+        work(u64::from(size));
         for k in 0..size {
             match slot_val(lists.get(start + k)) {
                 Val::V(a, b) => {
@@ -1328,6 +1375,7 @@ impl Ctx<'_> {
             ListOp::Append | ListOp::Prepend => {
                 let (s, len) = self.list(l)?;
                 let start = lists.reserve(len + 1)?;
+                work(u64::from(len) + 1);
                 let at = if op == ListOp::Append {
                     start
                 } else {
@@ -1363,6 +1411,7 @@ impl Ctx<'_> {
             ListOp::Reverse => {
                 let (s, len) = self.list(l)?;
                 let start = lists.reserve(len)?;
+                work(u64::from(len));
                 for k in 0..len {
                     lists.set(start + k, lists.get(s + len - 1 - k));
                 }
@@ -1371,6 +1420,7 @@ impl Ctx<'_> {
             ListOp::Sort => {
                 let (s, len) = self.list(l)?;
                 let first = (len > 0).then(|| lists.get(s).kind)?;
+                work(u64::from(len));
                 // numbers or booleans (`GeoNumeric.getComparator`) or
                 // points (`GeoPoint.getComparatorX`), all of the same class
                 if !matches!(first, Kind::Number | Kind::Boolean | Kind::Point)
@@ -1385,6 +1435,7 @@ impl Ctx<'_> {
             ListOp::Join => {
                 let (s, len) = self.list(l)?;
                 let mut total = 0u32;
+                work(u64::from(len));
                 for k in 0..len {
                     let slot = lists.get(s + k);
                     match (slot.kind, slot.run()) {
@@ -1395,6 +1446,7 @@ impl Ctx<'_> {
                     }
                 }
                 let start = lists.reserve(total)?;
+                work(u64::from(total));
                 let mut at = start;
                 for k in 0..len {
                     if let Some((from, m)) = lists.get(s + k).run() {
@@ -1414,6 +1466,7 @@ impl Ctx<'_> {
     fn copy_run(&self, from: u32, len: u32) -> Option<(u32, u32)> {
         let lists = self.lists?;
         let start = lists.reserve(len)?;
+        work(u64::from(len));
         for k in 0..len {
             lists.set(start + k, lists.get(from + k));
         }
@@ -1433,14 +1486,22 @@ fn number_of(slot: Slot) -> Option<f64> {
     }
 }
 
-/// How many values `values` gives, `None` past [`MAX_ELEMENTS`].
-fn count(values: impl Fn(&mut dyn FnMut(f64) -> bool)) -> Option<u32> {
+/// How many values `values` gives, `None` when they do not fit in what is
+/// left of [`MAX_ELEMENTS`]. Counting stops there, and the evaluation is
+/// then past the bound, so that no loop around this one goes on.
+fn count(lists: &Lists, values: impl Fn(&mut dyn FnMut(f64) -> bool)) -> Option<u32> {
+    let room = MAX_ELEMENTS.saturating_sub(lists.built.get());
     let mut n: u64 = 0;
     values(&mut |_| {
         n += 1;
-        n <= MAX_ELEMENTS
+        n <= room
     });
-    (n <= MAX_ELEMENTS).then_some(n as u32)
+    work(n);
+    if n > room {
+        lists.build(n);
+        return None;
+    }
+    Some(n as u32)
 }
 
 /// An element as an operand.
