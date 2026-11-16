@@ -45,6 +45,14 @@ pub fn margin(width: f64, height: f64) -> f64 {
 thread_local! {
     static PLOTTED: Cell<u64> = const { Cell::new(0) };
     static TESSELLATED: Cell<u64> = const { Cell::new(0) };
+    static UNCOVERED: Cell<u64> = const { Cell::new(0) };
+}
+
+/// How many times this thread drew a curve moved past its plotted margin
+/// (a strip of it may be missing that frame).
+#[cfg(test)]
+pub fn curves_uncovered() -> u64 {
+    UNCOVERED.with(Cell::get)
 }
 
 /// Curves this thread has plotted so far.
@@ -85,9 +93,11 @@ struct Plotted {
     mesh: Mesh,
     point: Option<Pos2>,
     dot: Option<Pos2>,
-    /// A conic's label anchor; a function's label is found per frame.
+    /// A conic's label anchor; the label of a function or of a pair of
+    /// lines is found per frame, from the part in the area.
     label: Option<(f64, f64)>,
     function: bool,
+    lines: bool,
     /// Around everything above; `Rect::NOTHING` when nothing is drawn.
     bounds: Rect,
     /// How far a pan may go before a strip shows that was not plotted.
@@ -296,6 +306,9 @@ impl Curves {
             Fit::Stale(o, k) => {
                 // Drawn from the kept polylines this frame; asked again.
                 self.ctx.request_repaint();
+                if k == 1.0 {
+                    count(&UNCOVERED);
+                }
                 if k == 0.0 {
                     return None;
                 }
@@ -365,6 +378,8 @@ impl Curves {
         };
         if p.function {
             drawn.label = self.function_label(&drawn);
+        } else if p.lines {
+            drawn.label = self.lines_label(&drawn);
         }
         let drawn = Arc::new(drawn);
         entry.shown = Some((origin, scale, Some(drawn.clone())));
@@ -379,6 +394,23 @@ impl Curves {
             let s = drawn.place(q) - self.origin;
             let (x, y) = (s.x as f64, s.y as f64);
             ((0.0..=w).contains(&x) && (0.0..=h).contains(&y)).then(|| (x.trunc(), y.trunc()))
+        })
+    }
+
+    /// Where the label of a pair of lines goes: the middle of the part of
+    /// the first line in the area and its padding, as `plot::conic` puts it
+    /// for a plot of the area alone.
+    fn lines_label(&self, drawn: &Drawn) -> Option<(f64, f64)> {
+        let area = Rect::from_min_size(
+            self.origin,
+            vec2(self.frame.width() as f32, self.frame.height() as f32),
+        )
+        .expand(plot::PAD as f32);
+        drawn.plotted.paths.iter().find_map(|path| {
+            let (a, b) = (path.first()?, path.last()?);
+            let (s, e) = segment_in(drawn.place(*a), drawn.place(*b), area)?;
+            let m = s + 0.5 * (e - s) - self.origin;
+            Some(((m.x as f64).trunc(), (m.y as f64).trunc()))
         })
     }
 
@@ -410,9 +442,15 @@ impl Curves {
         let margin = margin(self.frame.width(), self.frame.height());
         let wide = self.frame.grown(margin);
         let back = |(x, y): (f64, f64)| Pos2::new((x - margin) as f32, (y - margin) as f32);
+        let mut lines = false;
         let (paths, point, dot, label, function) = match c.value(id) {
             Value::Conic { .. } => match c.conic(id) {
                 Some(d) => {
+                    use geo_kernel::ConicType as T;
+                    lines = matches!(
+                        d.ty,
+                        T::IntersectingLines | T::ParallelLines | T::DoubleLine
+                    );
                     let p = plot::conic::plot(&d, &wide);
                     let label = p.label.map(|(x, y)| (x - margin, y - margin));
                     (p.paths, p.point.map(back), p.dot.map(back), label, false)
@@ -447,6 +485,7 @@ impl Curves {
             dot,
             label,
             function,
+            lines,
             bounds,
             margin,
         }
@@ -464,9 +503,13 @@ impl Curves {
     }
 }
 
-/// Whether the segment from `a` to `b` has a point in `r` (Liang and
-/// Barsky).
+/// Whether the segment from `a` to `b` has a point in `r`.
 fn segment_meets(a: Pos2, b: Pos2, r: Rect) -> bool {
+    segment_in(a, b, r).is_some()
+}
+
+/// The part of the segment from `a` to `b` in `r` (Liang and Barsky).
+fn segment_in(a: Pos2, b: Pos2, r: Rect) -> Option<(Pos2, Pos2)> {
     let d = b - a;
     let (mut t0, mut t1) = (0.0f32, 1.0f32);
     for (p, q) in [
@@ -477,7 +520,7 @@ fn segment_meets(a: Pos2, b: Pos2, r: Rect) -> bool {
     ] {
         if p == 0.0 {
             if q < 0.0 {
-                return false;
+                return None;
             }
         } else if p < 0.0 {
             t0 = t0.max(q / p);
@@ -485,7 +528,7 @@ fn segment_meets(a: Pos2, b: Pos2, r: Rect) -> bool {
             t1 = t1.min(q / p);
         }
     }
-    t0 <= t1
+    (t0 <= t1).then(|| (a + t0 * d, a + t1 * d))
 }
 
 /// Every object `id` depends on, directly or not, each once, in a fixed

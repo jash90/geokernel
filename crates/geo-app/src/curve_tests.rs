@@ -564,3 +564,92 @@ fn the_area_size_pixel_density_and_colour_are_part_of_the_key() {
     );
     assert_eq!(plotted_by(|| touch(&ctx, &wb, &t, taller, red)), 0);
 }
+
+/// The label `Curves` hands out for `id` in the view `t`.
+fn drawn_label(ctx: &Context, wb: &Workbench, t: &ViewTransform, id: Id) -> Option<(f64, f64)> {
+    let mut label = None;
+    let mut out = ctx.run_ui(Default::default(), |ui| {
+        let rect = Rect::from_min_size(ORIGIN, vec2(W, H));
+        let curves = crate::curves::Curves::new(&ui.painter_at(rect), rect, t, wb.rebuilds());
+        let color = wb.palette().color(id).egui();
+        label = curves
+            .get(wb.construction(), id, color)
+            .and_then(|d| d.label);
+    });
+    out.textures_delta.clear();
+    label
+}
+
+#[test]
+fn the_label_of_a_pair_of_lines_is_where_a_plot_of_the_area_puts_it() {
+    // Three points on a line make the conic a pair of lines: that line and
+    // the line through D and E. In the first scene one line cuts the top
+    // right corner of the view; in the second one lies only in the margin,
+    // above the area.
+    for script in [
+        "A = (4, 4)\nB = (5, 2)\nC = (6, 0)\nD = (-5, -5)\nE = (-4, -5)\n",
+        "A = (0, 7)\nB = (1, 7)\nC = (2, 7)\nD = (-2, -1)\nE = (1, -2)\n",
+    ] {
+        let wb = Workbench::from_script(&format!("{script}k = Conic(A, B, C, D, E)\n")).unwrap();
+        let c = wb.construction();
+        let k = c.id("k").unwrap();
+        let d = c.conic(k).expect("a conic");
+        assert!(
+            matches!(
+                d.ty,
+                geo_kernel::ConicType::IntersectingLines | geo_kernel::ConicType::ParallelLines
+            ),
+            "{:?}",
+            d.ty
+        );
+        let ctx = Context::default();
+        for (dx, dy) in [(0.0, 0.0), (0.6, -0.3), (-1.7, 1.1)] {
+            let t = transform(-8.0 + dx, 8.0 + dx, -6.0 + dy, 6.0 + dy);
+            let frame = geo_kernel::plot::Frame::fit(t.view(), W as f64, H as f64);
+            let want = geo_kernel::plot::conic::plot(&d, &frame).label;
+            let got = drawn_label(&ctx, &wb, &t, k);
+            match (want, got) {
+                (Some(a), Some(b)) => assert!(
+                    (a.0 - b.0).abs() <= 1.0 && (a.1 - b.1).abs() <= 1.0,
+                    "pan ({dx}, {dy}): label at {b:?}, a plot of the area puts it at {a:?}"
+                ),
+                (a, b) => assert_eq!(a, b, "pan ({dx}, {dy})"),
+            }
+            assert!(want.is_some(), "the scene shows a line");
+        }
+    }
+}
+
+#[test]
+fn extreme_zooms_with_curves_waiting_to_be_plotted_again_stay_finite() {
+    // More curves than one frame plots again, one context across the
+    // views: the curves left over are drawn from polylines scaled by up to
+    // 1e15 and moved by up to 1e19 points.
+    let mut script = String::from(
+        "F = (-2, 0)\nG = (2, 0)\nr = 3\nk = 1\ne = Ellipse(F, G, r)\nh = Hyperbola(F, G, k)\n",
+    );
+    for j in 1..=30 {
+        script += &format!("f{j}(x) = sin(x + {j}) + {j} / 10\n");
+    }
+    let wb = Workbench::from_script(&script).unwrap();
+    let ctx = Context::default();
+    stroke_triangles(&ctx, &wb, &standard(), (None, None));
+    for (half, cx, cy) in [
+        (1e-6 * 8.0, 0.0, 0.0),
+        (1e9 * 8.0, 0.0, 0.0),
+        (1e-6 * 8.0, 3.0, 0.0),
+        (1e9 * 8.0, 1e12, -1e12),
+        (8.0, 0.0, 0.0),
+        (1e-6 * 8.0, 1.0, 1.0),
+    ] {
+        let t = transform(cx - half, cx + half, cy - 0.75 * half, cy + 0.75 * half);
+        for _ in 0..3 {
+            for tri in stroke_triangles(&ctx, &wb, &t, (None, None)) {
+                assert!(
+                    tri.iter().all(|p| p.x.is_finite() && p.y.is_finite()),
+                    "a triangle {tri:?} in the view of half width {half} at ({cx}, {cy})"
+                );
+            }
+        }
+    }
+}

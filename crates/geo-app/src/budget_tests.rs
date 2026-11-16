@@ -669,4 +669,25 @@ fn curve_frames_stay_within_the_budget() {
         assert!(c.allocs <= allocs, "{name}: {} allocations", c.allocs);
         assert!(c.bytes <= bytes, "{name}: {} bytes", c.bytes);
     }
+    // A fast pan, 24 points a frame for 40 frames: printed, not asserted.
+    let from = w.empty_spot();
+    w.step(vec![Event::PointerMoved(from)]);
+    w.step(vec![press(from, true)]);
+    w.frames(wait);
+    let uncovered = crate::curves::curves_uncovered();
+    let mut fast_ms = 0.0f64;
+    for k in 1..=40 {
+        let f = curve_step(
+            &mut w,
+            vec![Event::PointerMoved(from - vec2(24.0 * k as f32, 0.0))],
+        );
+        fast_ms = fast_ms.max(f.ms);
+    }
+    println!(
+        "curves fast_pan: {} curve draws past the margin in 40 frames, slowest {fast_ms:.2} ms",
+        crate::curves::curves_uncovered() - uncovered
+    );
+    w.step(vec![press(from - vec2(960.0, 0.0), false)]);
+    w.step(vec![Event::PointerGone]);
+    w.settled(1);
 }
