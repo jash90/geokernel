@@ -1365,3 +1365,215 @@ fn list_statistics_and_reordering() {
         assert_eq!(c.len(), len, "`{line}` left an object behind");
     }
 }
+
+/// The list work `f` does on this thread (see `list_work`).
+fn list_work_of<T>(f: impl FnOnce() -> T) -> (T, u64) {
+    let before = super::list_work();
+    let r = f();
+    (r, super::list_work() - before)
+}
+
+/// The most list work one evaluation of one object may do: the elements it
+/// builds, a range it counts within what is left, and the reads of the
+/// elements it built, each at most [`super::MAX_ELEMENTS`].
+const WORK_BOUND: u64 = 4 * super::MAX_ELEMENTS;
+
+fn is_defined(c: &Construction, label: &str) -> bool {
+    match c.value(c.id(label).unwrap()) {
+        Value::Undefined => false,
+        Value::Number(v) => !v.is_nan(),
+        _ => true,
+    }
+}
+
+#[test]
+fn the_nested_sequence_of_the_fuzz_corpus_stops_at_the_bound() {
+    // `lists-seq-011` with `b = 4` mutated to `b = 1E5`: about 5e9 elements
+    // in all, each inner list counted and built for every outer value
+    let script = |b: &str| {
+        format!(
+            "a = 1\nb = {b}\ns = 0.5\nA = (1, 2)\n\
+             l = Sequence(Sequence(j + k, j, 1, k), k, a, b)"
+        )
+    };
+    // created at the size
+    let (c, work) = list_work_of(|| load(&script("1E5")).unwrap());
+    assert!(!is_defined(&c, "l"));
+    assert!(work <= WORK_BOUND, "creation did {work} units of list work");
+    // recomputed at the size
+    let mut c = load(&script("4")).unwrap();
+    assert_eq!(elems(&c, "l"), "{{2}, {3, 4}, {4, 5, 6}, {5, 6, 7, 8}}");
+    let b = c.id("b").unwrap();
+    let (_, work) = list_work_of(|| c.set_number(b, 1e5).unwrap());
+    assert!(!is_defined(&c, "l"));
+    assert!(
+        work <= WORK_BOUND,
+        "the update did {work} units of list work"
+    );
+    c.set_number(b, 4.0).unwrap();
+    assert_eq!(elems(&c, "l"), "{{2}, {3, 4}, {4, 5, 6}, {5, 6, 7, 8}}");
+}
+
+#[test]
+fn the_loop_around_a_list_past_the_bound_stops_at_once() {
+    // the outer range fits, its first element does not: no more elements
+    // are evaluated after it, so the work is the outer count and little else
+    let mut c = load("n = 3\nl = Sequence(Sum(Sequence(2E6)), k, 1, n)").unwrap();
+    let n = c.id("n").unwrap();
+    let (_, work) = list_work_of(|| c.set_number(n, 1e6).unwrap());
+    assert!(!is_defined(&c, "l"));
+    assert!(work <= 1_000_100, "{work} units of list work");
+}
+
+#[test]
+fn every_list_construct_stops_at_the_bound() {
+    // each over the bound at its large `n`, and within it at its small one
+    // (none for a step that cannot move the variable: that never ends)
+    let cases: &[(&str, Option<f64>, f64)] = &[
+        // a generated list summed, multiplied or averaged
+        (
+            "Sequence(Sum(Sequence(j, j, 1, k)), k, 1, n)",
+            Some(3.0),
+            1e5,
+        ),
+        (
+            "Sequence(Product(Sequence(j, j, 1, k)), k, 1, n)",
+            Some(3.0),
+            1e5,
+        ),
+        ("Sum(Sequence(k, k, 1, n))", Some(3.0), 1e7),
+        ("Sum(Sequence(n), 2)", Some(3.0), 1e7),
+        ("Product(Sequence(n))", Some(3.0), 1e7),
+        ("Mean(Sequence(n))", Some(3.0), 1e7),
+        ("Max(Sequence(k^2, k, 1, n))", Some(3.0), 1e7),
+        ("Length(Sequence(n))", Some(3.0), 1e7),
+        // Join of sequences
+        (
+            "Join(Sequence(Sequence(j, j, 1, k), k, 1, n))",
+            Some(3.0),
+            1e5,
+        ),
+        (
+            "Sequence(Join({Sequence(k), Sequence(j, j, 1, k)}), k, 1, n)",
+            Some(3.0),
+            1e5,
+        ),
+        // element by element arithmetic on nested lists
+        (
+            "Sequence(Sequence(j, j, 1, k) * 2, k, 1, n)",
+            Some(3.0),
+            1e5,
+        ),
+        ("Sequence(-Sequence(j, j, 1, k), k, 1, n)", Some(3.0), 1e5),
+        (
+            "Sequence(Sequence(j, j, 1, k) + Sequence(j, j, 1, k), k, 1, n)",
+            Some(3.0),
+            1e5,
+        ),
+        ("Sequence(n) + Sequence(n)", Some(3.0), 7e5),
+        // First and Last with a huge count, and the other list commands
+        ("First(Sequence(n), 1E9)", None, 1e7),
+        ("First(Sequence(n), n - 1)", Some(3.0), 1e7),
+        (
+            "Sequence(First(Sequence(j, j, 1, k), k), k, 1, n)",
+            Some(3.0),
+            1e5,
+        ),
+        (
+            "Sequence(Last(Sequence(j, j, 1, k), 1E9), k, 1, n)",
+            Some(3.0),
+            1e5,
+        ),
+        (
+            "Sequence(Reverse(Sequence(j, j, 1, k)), k, 1, n)",
+            Some(3.0),
+            1e5,
+        ),
+        (
+            "Sequence(Sort(Sequence(-j, j, 1, k)), k, 1, n)",
+            Some(3.0),
+            1e5,
+        ),
+        (
+            "Sequence(Append(Sequence(j, j, 1, k), 0), k, 1, n)",
+            Some(3.0),
+            1e5,
+        ),
+        (
+            "Sequence(Element(Sequence(j, j, 1, k), 1), k, 1, n)",
+            Some(3.0),
+            1e5,
+        ),
+        ("Sequence(Sequence(1, k), k, 1, n)", Some(3.0), 1e5),
+        ("Sequence(Sequence(0, k, 0.5), k, 1, n)", Some(3.0), 1e5),
+        // a tiny, stalled or negative step, and huge bounds
+        ("Sequence(j, j, 0, n, 1E-7)", Some(0.0), 1.0),
+        ("Sequence(j, j, n, 0, -1E-7)", Some(0.0), 1.0),
+        ("Sequence(0, n, 1E-7)", Some(0.0), 1.0),
+        ("Sequence(j, j, -n, n)", Some(3.0), 1e300),
+        // a zero step, a NaN bound, infinite bounds (`1/0` is infinite)
+        ("Sequence(j, j, 1, n, 0)", Some(1.0), 3.0),
+        ("Sequence(1, n, 0)", None, 3.0),
+        ("Sequence(j, j, 1, sqrt(-n))", Some(0.0), 3.0),
+        ("Sequence(j, j, 1, 1 / n)", Some(1.0), 0.0),
+        ("Sequence(j, j, 1 / n, 1 / n)", Some(1.0), 0.0),
+        ("Sequence(j, j, -1 / n, 1 / n)", Some(1.0), 0.0),
+        ("Sequence(1 / n, 3)", Some(1.0), 0.0),
+        // within `MIN_PRECISION` of the end, or stalled, for ever
+        ("Sequence(j, j, 0, n, 1E-300)", None, 1.0),
+        ("Sequence(j, j, n, 0, -1E-300)", None, 1.0),
+        ("Sequence(j, j, 1E300, 1E300 + n, 1)", None, 0.0),
+        ("Sequence(0, n, 1E-300)", None, 1.0),
+        ("Sequence(1E15, 1E15 + n, 1E-9)", None, 1.0),
+        ("Sequence(-n, n)", Some(3.0), 1e15),
+        // If branches holding sequences
+        (
+            "If(n > 0, Sequence(Sequence(j + k, j, 1, k), k, 1, n), {1})",
+            Some(3.0),
+            1e5,
+        ),
+        (
+            "Sequence(If(k > 0, Sequence(j, j, 1, k), {0}), k, 1, n)",
+            Some(3.0),
+            1e5,
+        ),
+        (
+            "Sequence(If(k > 0, Sum(Sequence(j, j, 1, k)), 0), k, 1, n)",
+            Some(3.0),
+            1e5,
+        ),
+        // a function applied to what a generated list gives
+        (
+            "Sequence(f(Sum(Sequence(j, j, 1, k))), k, 1, n)",
+            Some(3.0),
+            1e5,
+        ),
+        // a literal list of lists that fit one by one
+        ("{Sequence(n), Sequence(n)}", Some(3.0), 7e5),
+        ("{Sequence(Sequence(j, j, 1, k), k, 1, n)}", Some(3.0), 1e5),
+        // a list object read in a body
+        ("Sequence(Length(m), k, 1, n)", Some(3.0), 1e5),
+    ];
+    for &(expr, small, large) in cases {
+        let mut c = load("n = 3\nf(x) = x^2 + 1\nm = Sequence(n)").unwrap();
+        let n = c.id("n").unwrap();
+        c.set_number(n, small.unwrap_or(3.0)).unwrap();
+        exec(&mut c, &format!("l = {expr}")).unwrap();
+        assert_eq!(
+            is_defined(&c, "l"),
+            small.is_some(),
+            "`{expr}` at {small:?}"
+        );
+        let (_, work) = list_work_of(|| c.set_number(n, large).unwrap());
+        assert!(!is_defined(&c, "l"), "`{expr}` at n = {large}");
+        // `m` is recomputed too and fits or not on its own
+        assert!(
+            work <= 2 * WORK_BOUND,
+            "`{expr}` at n = {large}: {work} units of list work"
+        );
+        if let Some(small) = small {
+            c.set_number(n, small).unwrap();
+            assert!(is_defined(&c, "l"), "`{expr}` back at n = {small}");
+        }
+    }
+}
