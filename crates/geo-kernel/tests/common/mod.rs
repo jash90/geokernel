@@ -1342,3 +1342,78 @@ pub fn shrink(input: &str, fails: &dyn Fn(&str) -> bool) -> String {
     }
     chars.into_iter().collect()
 }
+
+/// The points on paths of a construction before one operation, each with
+/// its state `p` and the state `a` that following its path from `p` gives
+/// (`Construction::follow_path_from`).
+///
+/// After the operation, with `s` the point's state and `b` the state that
+/// following its path from `p` gives now, [`Self::check`] requires, bit for
+/// bit (NaN payloads included):
+///
+/// - `s == b` when `a != b`: something the follow reads changed, so the
+///   point must have been recomputed, exactly once, from `p`;
+/// - `s == p` or `s == b` when `a == b`: nothing the follow reads changed,
+///   so the point was left alone or recomputed to the same state.
+///
+/// The point the operation moved itself is not checked. A missing parent
+/// of `Point(path)` or `Point(path, u)`, or a missing input of a path that
+/// the follow reads, leaves `s == p` where `a != b`.
+///
+/// Following again from `s` is not a check of its own: GeoGebra's follow
+/// projects the point instead of using its parameter when the path's type
+/// changed or the parameter is NaN, so a state can be up to date without
+/// being where following it once more would put it.
+pub struct PathWatch(Vec<(Id, PathState, PathState)>);
+
+impl PathWatch {
+    pub fn before(c: &Construction) -> PathWatch {
+        PathWatch(
+            c.ids()
+                .filter_map(|id| {
+                    let p = c.path_state(id)?;
+                    Some((id, p, c.follow_path_from(id, p)?))
+                })
+                .collect(),
+        )
+    }
+
+    /// See [`PathWatch`]; `moved` is the point the operation moved.
+    pub fn check(&self, c: &Construction, moved: Option<Id>) -> Result<(), String> {
+        for &(id, p, a) in &self.0 {
+            if Some(id) == moved {
+                continue;
+            }
+            let (Some(s), Some(b)) = (c.path_state(id), c.follow_path_from(id, p)) else {
+                return Err(format!("`{}` lost its path state", c.label(id)));
+            };
+            let ok = if a != b { s == b } else { s == p || s == b };
+            if !ok {
+                return Err(format!(
+                    "`{}` is not up to date with its path: state {s:?}, before {p:?}, \
+                     following from before gave {a:?} and now gives {b:?}",
+                    c.label(id)
+                ));
+            }
+        }
+        Ok(())
+    }
+}
+
+impl Step {
+    /// [`Self::apply`], and a [`PathWatch`] check of the points on paths
+    /// afterwards: the outer error is a failed check.
+    pub fn apply_watched(
+        &self,
+        c: &mut Construction,
+    ) -> Result<Result<usize, geo_kernel::Error>, String> {
+        let watch = PathWatch::before(c);
+        let r = self.apply(c);
+        let moved = match *self {
+            Step::Point { id, .. } => Some(id),
+            Step::Number { .. } => None,
+        };
+        watch.check(c, moved)?;
+        Ok(r)
+    }
+}

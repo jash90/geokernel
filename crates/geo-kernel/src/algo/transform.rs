@@ -25,21 +25,21 @@
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
-//! Images of points, lines, segments and circles under reflection in a
-//! point or a line, inversion of a point in a circle, rotation and dilation,
-//! and of points, lines and segments under shear and stretch.
+//! Images of points, lines and segments under reflection in a point or a
+//! line, rotation, dilation, shear and stretch, and inversion of a point in
+//! a circle. Images of circles keep a conic record with the circle's axes
+//! and are made by [`crate::algo::general_conic`].
 //!
-//! GeoGebra transforms a line by transforming its raw coefficients, and a
-//! circle by transforming its centre and scaling its radius. A segment whose
+//! GeoGebra transforms a line by transforming its raw coefficients. A segment whose
 //! end points have labels is transformed through its end points, so the
 //! image keeps the order of the end points. The formulas below follow
 //! `GeoPoint`, `GeoLine` and `GeoConic`, including the sign flips of the
 //! line coefficients, so that an image line has the same orientation.
 //!
 //! Not covered: inversion of lines, segments and circles in a circle (the
-//! image is a circle, a line or a conic depending on the position) and the
-//! forms that need a vector (`Translate`, `Shear` and `Stretch` along a
-//! vector), and shear and stretch of a circle (the image is an ellipse).
+//! image is a circle, a line or a conic depending on the position), the
+//! forms that need a vector (`Shear` and `Stretch` along a vector), and
+//! shear and stretch of a circle (the image is an ellipse).
 
 use super::{line_value, Group, Parents, CIRCLE, LINE, LINE_LIKE, NUMBER, POINT};
 use crate::kernel::{Construction, Error, Id, Kind, Value};
@@ -47,10 +47,9 @@ use crate::script::object;
 use crate::tol::STANDARD_PRECISION;
 
 const SEGMENT: &[Kind] = &[Kind::Segment];
-/// Kinds of object GeoGebra can transform, restricted to those supported here.
-const TRANSFORMABLE: &[Kind] = &[Kind::Point, Kind::Line, Kind::Segment, Kind::Circle];
-/// Kinds that stay of the same kind under shear and stretch.
-const AFFINE_ONLY: &[Kind] = &[Kind::Point, Kind::Line, Kind::Segment];
+/// Kinds of object this group transforms. Circles are transformed by
+/// [`crate::algo::general_conic::GeneralConicDef`], which keeps their axes.
+const TRANSFORMABLE: &[Kind] = &[Kind::Point, Kind::Line, Kind::Segment];
 
 fn of_kind(kind: Kind) -> &'static [Kind] {
     match kind {
@@ -169,20 +168,6 @@ impl Map {
         }
     }
 
-    /// Image of the centre of a circle: `GeoConicND` moves its midpoint with
-    /// `GeoVec2D`, which uses the plain cosine for rotations.
-    fn center(&self, x: f64, y: f64) -> (f64, f64) {
-        match *self {
-            Map::Rotate { phi, qx, qy } => {
-                let (sin, cos) = phi.sin_cos();
-                let (x, y) = (x - qx, y - qy);
-                (x * cos - y * sin + qx, x * sin + y * cos + qy)
-            }
-            Map::Dilate { r, sx, sy } => ((x - sx) * r + sx, (y - sy) * r + sy),
-            _ => self.point(x, y),
-        }
-    }
-
     /// Image of the raw line `a*x + b*y + c = 0`, as GeoGebra computes it.
     fn line(&self, a: f64, b: f64, c: f64) -> (f64, f64, f64) {
         match *self {
@@ -230,24 +215,6 @@ impl Map {
         }
     }
 
-    /// Radius of the image of a circle; `None` when the circle is undefined.
-    fn radius(&self, r: f64) -> Option<f64> {
-        // A circle of radius below the standard precision is a single point
-        // in GeoGebra and has radius 0.
-        let r = if r < STANDARD_PRECISION { 0.0 } else { r };
-        match *self {
-            Map::Dilate { r: factor, .. } => {
-                if factor == 0.0 {
-                    None
-                } else {
-                    Some(factor.abs() * r)
-                }
-            }
-            Map::Matrix { .. } => None,
-            _ => Some(r),
-        }
-    }
-
     fn value(&self, src: Value) -> Option<Value> {
         match src {
             Value::Point { x, y } => {
@@ -264,12 +231,8 @@ impl Map {
                 // undefined like `GeoLine.isDefined`
                 line_value(a, b, c)
             }
-            Value::Circle { cx, cy, r } => {
-                let r = self.radius(r)?;
-                let (cx, cy) = self.center(cx, cy);
-                Some(Value::Circle { cx, cy, r })
-            }
-            Value::Number(_)
+            Value::Circle { .. }
+            | Value::Number(_)
             | Value::Vector { .. }
             | Value::Ray { .. }
             | Value::Bool(_)
@@ -384,7 +347,7 @@ impl Group for TransformDef {
                 ..
             } => {
                 c.expect(src, of_kind(kind))?;
-                c.expect(src, AFFINE_ONLY)?;
+                c.expect(src, TRANSFORMABLE)?;
                 c.expect(axis, LINE_LIKE)?;
                 c.expect(ratio, NUMBER)
             }
@@ -505,6 +468,11 @@ fn parse_transform(c: &Construction, func: &str, args: &[&str]) -> Result<Transf
     }
     let src = object(c, args[0])?;
     let kind = c.kind(src);
+    if kind == Kind::Circle && matches!(func, "Shear" | "Stretch") {
+        return Err(format!(
+            "`{func}` of a circle is not supported (the image is an ellipse)"
+        ));
+    }
     if !TRANSFORMABLE.contains(&kind) {
         return Err(format!(
             "`{}` is a {kind}, which `{func}` does not transform",
@@ -515,11 +483,6 @@ fn parse_transform(c: &Construction, func: &str, args: &[&str]) -> Result<Transf
     let second_kind = c.kind(second);
 
     if matches!(func, "Shear" | "Stretch") {
-        if kind == Kind::Circle {
-            return Err(format!(
-                "`{func}` of a circle is not supported (the image is an ellipse)"
-            ));
-        }
         if !matches!(second_kind, Kind::Line | Kind::Segment) {
             return Err(format!("`{}` is a {second_kind}, expected a line", args[1]));
         }

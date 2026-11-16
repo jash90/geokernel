@@ -1267,6 +1267,18 @@ impl Construction {
         Ok(self.propagate(id))
     }
 
+    /// The state the point on a path `id` gets when its path is followed
+    /// from the state `from` (`AlgoPointOnPath.compute`), without changing
+    /// the construction: what an update of the point computes when its
+    /// state before was `from`. For checks of the update order; `None` for
+    /// any other object.
+    pub fn follow_path_from(&self, id: Id, from: PathState) -> Option<PathState> {
+        match *self.defs.get(id.0)? {
+            Def::Path(d) if d.has_state() => Some(d.update(self, &from)),
+            _ => None,
+        }
+    }
+
     /// Whether [`Self::move_point`] accepts `id`: a free point, a free
     /// vector, or a point made by `Point(path)`, which moves along its path.
     pub fn is_movable(&self, id: Id) -> bool {

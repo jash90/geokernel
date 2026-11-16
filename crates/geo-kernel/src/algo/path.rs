@@ -119,6 +119,12 @@ impl PathState {
         self.t
     }
 
+    /// Whether the path parameter and the type of path it was computed for
+    /// are the same as in `o`, bit for bit.
+    pub fn same_parameter(&self, o: &PathState) -> bool {
+        self.t.to_bits() == o.t.to_bits() && self.ty == o.ty
+    }
+
     /// Bit equality, so that a change from `0` to `-0` or between two NaNs
     /// with other payloads still counts as a change.
     pub(crate) fn same(&self, o: &PathState) -> bool {
@@ -893,7 +899,7 @@ fn path_parameter(c: &Construction, point: Id) -> Option<Value> {
 /// a point on a line with a start point, or on a polygon or polyline, the
 /// inputs of the path (a start point or a vertex can move while the line
 /// or the polygon's value stays the same); for `PathParameter`, also the
-/// path of the point.
+/// path of the point, and the point a `ClosestPoint` is closest to.
 pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
     use super::point::PointDef;
     let inputs = |path: Id| match c.kind(path) {
@@ -904,10 +910,16 @@ pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
     match *def {
         Def::Path(PathDef::On { path } | PathDef::OnParam { path, .. }) => inputs(path),
         Def::Path(PathDef::Parameter { point }) => match c.def(point) {
-            Def::Path(PathDef::On { path } | PathDef::OnParam { path, .. })
-            | Def::Point(PointDef::Closest { path, .. }) => {
+            Def::Path(PathDef::On { path } | PathDef::OnParam { path, .. }) => {
                 let mut ids = inputs(path);
                 ids.push(path);
+                ids
+            }
+            // the parameter is computed from the point `q` itself, which can
+            // move while the closest point stays the same to the last bit
+            Def::Point(PointDef::Closest { path, point: q }) => {
+                let mut ids = inputs(path);
+                ids.extend([path, q]);
                 ids
             }
             _ => Vec::new(),

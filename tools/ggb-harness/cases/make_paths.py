@@ -218,4 +218,62 @@ case("chain", [pt("A", 0, 0), pt("B", 4, 0), "s = Segment(A, B)", "V = Point(s)"
                "q = Polygon(A, V, C)", "P = Point(q)", "t = PathParameter(P)"],
      [mv("V", 3, 3), mv("P", 5, 0), mv("B", 2, 0), mv("V", -1, 0)])
 
+# ------------------------------------------- points on images of circles
+topic("transformed")
+# The image of a circle carries the axes of its source, turned or mirrored
+# with it (`GeoConicND.rotate`, `GeoConic.mirror`): the path parameter, the
+# points at a parameter and the parts between two parameters follow them.
+
+
+def on_image(image):
+    """`Point`, `PathParameter`, a point at a parameter, and parts between
+    two parameters of the circle image `kr`."""
+    return [f"kr = {image}"] + on("kr") + at("kr", 0.3) + [
+        num("s", 0.5), num("e", 2.5), "ar = Arc(kr, s, e)", "se = Sector(kr, e, s)",
+        "Q = Point(ar)", "W = Point(se, u)", "q = PathParameter(Q)"]
+
+
+base = [pt("M", 1, -1), num("r", 2), "k = Circle(M, r)"]
+transforms = [
+    ("Rotate(k, al, C)", [num("al", 0.5), pt("C", 2, 3)], [setn("al", 1.5), mv("C", -1, 0)]),
+    ("Rotate(k, al)", [num("al", -2)], [setn("al", 2.5), setn("al", 0)]),
+    ("Reflect(k, g)", [pt("D", 5, 0), pt("E", 6, 2), "g = Line(D, E)"], [mv("E", 5, 1), mv("D", 0, 7)]),
+    ("Reflect(k, C)", [pt("C", 4, 1)], [mv("C", -2, 2), mv("C", 1, -1)]),
+    ("Translate(k, v)", [pt("v", 3, 1)], [mv("v", -2, 4)]),
+    ("Dilate(k, f, C)", [num("f", 1.5), pt("C", 0, 2)], [setn("f", -0.5), mv("C", 3, 3), setn("f", 2)]),
+    ("Dilate(k, f)", [num("f", -2)], [setn("f", 0.75)]),
+]
+for image, extra, moves in transforms:
+    case("transformed", base + extra + on_image(image),
+         [mv("P", 0, 5), mv("Q", -4, 1)] + moves[:1] + [mv("M", -2, 1), mv("P", 4, -3)] + moves[1:]
+         + [setn("r", 3), mv("Q", 5, 5)])
+# chains of two transformations
+chains = [
+    ("Rotate(Reflect(k, g), al, C)", ["h = Reflect(k, g)"], [pt("D", 5, 0), pt("E", 6, 2), "g = Line(D, E)",
+                                                             num("al", 0.75), pt("C", 0, 1)],
+     "Rotate(h, al, C)", [setn("al", -1), mv("E", 4, 3)]),
+    ("Dilate(Rotate(k, al), f, C)", ["h = Rotate(k, al)"], [num("al", 1), num("f", -1.5), pt("C", 2, 2)],
+     "Dilate(h, f, C)", [setn("al", 2), setn("f", 0.5)]),
+    ("Translate(Reflect(k, C), v)", ["h = Reflect(k, C)"], [pt("C", 3, -2), pt("v", 1, 2)],
+     "Translate(h, v)", [mv("C", 0, 0), mv("v", -3, 1)]),
+    ("Reflect(Reflect(k, g), C)", ["h = Reflect(k, g)"], [pt("D", 0, 4), pt("E", 3, 5), "g = Line(D, E)",
+                                                          pt("C", -1, -2)],
+     "Reflect(h, C)", [mv("D", 1, 0), mv("C", 2, 2)]),
+]
+for _, first, extra, image, moves in chains:
+    case("transformed", base + extra + first + on_image(image),
+         [mv("P", 0, 5), mv("Q", -4, 1)] + moves[:1] + [mv("M", -2, 1), mv("P", 4, -3)] + moves[1:]
+         + [mv("Q", 5, 5)])
+# the review's example: a rotation about the circle's own centre leaves the
+# circle the same, but turns its points
+case("transformed", [pt("M", 0, 0), num("r", 2), "k = Circle(M, r)", num("al", 0.5), "kr = Rotate(k, al, M)"]
+     + on("kr") + at("kr", 0.5) + [pt("D", 5, 0), pt("E", 5, 1), "g = Line(D, E)", "kg = Reflect(k, g)",
+                                   "W = Point(kg, u)", num("s", 0), num("e", 1), "ar = Arc(kr, s, e)",
+                                   "Q = Point(ar, u)"],
+     [mv("P", 0, 5), setn("al", 1.5), setn("u", 0.8), mv("P", -3, -3), setn("al", -0.25)])
+# parts between two points of an image
+case("transformed", base + [num("al", 1), "kr = Rotate(k, al, M)", pt("A", 4, 0), pt("B", -1, 3),
+                            "ar = Arc(kr, A, B)", "se = Sector(kr, B, A)", "P = Point(ar)", "t = PathParameter(P)"],
+     [mv("P", 1, 5), setn("al", 2), mv("A", 0, -4), mv("P", -3, -3)])
+
 cases.write()

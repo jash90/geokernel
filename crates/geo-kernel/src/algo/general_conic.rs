@@ -18,8 +18,11 @@
 
 //! Objects whose state is a [`ConicData`] record: the general conics
 //! (`Conic`, `Ellipse`, `Hyperbola`, `Parabola`) and the transformations of
-//! a conic, among them `Dilate` of a circle, which GeoGebra computes on the
-//! circle's matrix and classifies again.
+//! a conic or a circle. `Dilate` of a circle is computed on the circle's
+//! matrix and classified again; `Translate`, `Rotate` and `Mirror` move the
+//! circle's axes with it (`GeoConicND.rotate`, `GeoConic.mirror` turn and
+//! mirror the eigenvectors by hand), and points on the image are placed by
+//! those axes.
 //!
 //! These definitions do not compute a [`Value`] from their parents alone:
 //! the classification depends on the previous state of the object (see
@@ -469,15 +472,9 @@ fn parse_parabola(c: &Construction, args: &[&str]) -> Result<GeneralConicDef, St
     Ok(GeneralConicDef::Parabola { focus, directrix })
 }
 
-/// Whether the object `id` keeps a conic record of its own: a general
-/// conic, or a circle made by a transformation of one.
-pub(crate) fn has_record(c: &Construction, id: Id) -> bool {
-    matches!(c.def(id), crate::kernel::Def::GeneralConic(_))
-}
-
-/// A transformation of a conic, or of a circle when GeoGebra computes the
-/// image on the matrix: `Dilate` of any circle, and every transformation of
-/// a circle that keeps a record. `None` leaves the line to the other groups.
+/// A transformation of a conic or of a circle: every image of a circle
+/// keeps a record too (see below). `None` leaves the line to the other
+/// groups.
 fn parse_transform(
     c: &Construction,
     func: &str,
@@ -487,7 +484,10 @@ fn parse_transform(
     let kind = c.kind(src);
     let claim = match kind {
         Kind::Conic => true,
-        Kind::Circle => func == "Dilate" || has_record(c, src),
+        // every image of a circle keeps a record: GeoGebra copies the
+        // circle's axes and turns or mirrors them with it, and the axes
+        // carry the path parameter of points on the image
+        Kind::Circle => true,
         _ => false,
     };
     if !claim {

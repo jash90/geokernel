@@ -12,7 +12,7 @@ use geo_kernel::algo::arc::ArcDef;
 use geo_kernel::algo::conic::ConicDef;
 use geo_kernel::algo::path::PathDef;
 use geo_kernel::script::exec;
-use geo_kernel::{Construction, Def, Error, Id, Kind, Value};
+use geo_kernel::{Construction, Def, Error, Id, Kind, PathState, Value};
 use std::f64::consts::PI;
 
 // ------------------------------------------------ random constructions
@@ -337,9 +337,10 @@ fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), St
             let moved = step.id();
             moves.push(format!("{step_no}: {}", step.describe(&case.c)));
             note(&step);
-            let count = match step.apply(&mut case.c) {
-                Ok(n) => n,
-                Err(e) => fail!("move {step_no} failed: {e}"),
+            let count = match step.apply_watched(&mut case.c) {
+                Ok(Ok(n)) => n,
+                Ok(Err(e)) => fail!("move {step_no} failed: {e}"),
+                Err(e) => fail!("after move {step_no}: {e}"),
             };
             let after = values(&case.c);
             totals.undefined_seen += after.iter().filter(|v| !v.is_defined()).count();
@@ -364,7 +365,10 @@ fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), St
                 }
             }
             // 3. incremental update equals a full recompute
-            let fresh = rebuild_from_defs(&case.c)?;
+            let fresh = match rebuild_from_defs(&case.c) {
+                Ok(f) => f,
+                Err(e) => fail!("{e}"),
+            };
             if let Some(d) = first_difference(&case.c, &after, &values(&fresh)) {
                 fail!("incremental update differs from recompute after move {step_no}: {d}");
             }
@@ -376,10 +380,11 @@ fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), St
                 fail!("after move {step_no}: {e}");
             }
             // 3. moving to the current position recomputes nothing
-            match step.apply(&mut case.c) {
-                Ok(0) => {}
-                Ok(n) => fail!("repeating move {step_no} recomputed {n} objects"),
-                Err(e) => fail!("repeating move {step_no} failed: {e}"),
+            match step.apply_watched(&mut case.c) {
+                Ok(Ok(0)) => {}
+                Ok(Ok(n)) => fail!("repeating move {step_no} recomputed {n} objects"),
+                Ok(Err(e)) => fail!("repeating move {step_no} failed: {e}"),
+                Err(e) => fail!("after repeating move {step_no}: {e}"),
             }
             if let Some(d) = first_difference(&case.c, &after, &values(&case.c)) {
                 fail!("repeating move {step_no} changed a value: {d}");
@@ -400,34 +405,66 @@ fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), St
             // must themselves agree with a full recompute
             moves.push(format!("  home: {}", home.describe(&case.c)));
             note(&home);
-            if let Err(e) = home.apply(&mut case.c) {
-                fail!("home move failed: {e}");
+            match home.apply_watched(&mut case.c) {
+                Ok(Ok(_)) => {}
+                Ok(Err(e)) => fail!("home move failed: {e}"),
+                Err(e) => fail!("after the home move: {e}"),
             }
             let snapshot = values(&case.c);
-            let rebuilt = rebuild_from_defs(&case.c)?;
+            // the points on paths at home, and whether each is where
+            // following its path once more would put it
+            let home_states: Vec<Option<(PathState, bool)>> = case
+                .c
+                .ids()
+                .map(|id| {
+                    let p = case.c.path_state(id)?;
+                    Some((p, case.c.follow_path_from(id, p) == Some(p)))
+                })
+                .collect();
+            let rebuilt = match rebuild_from_defs(&case.c) {
+                Ok(f) => f,
+                Err(e) => fail!("{e}"),
+            };
             if let Some(d) = first_difference(&case.c, &snapshot, &values(&rebuilt)) {
                 fail!("the home move differs from a recompute: {d}");
             }
             let away = random_step(&mut rng, &case.c, &[target]);
             moves.push(format!("  away: {}", away.describe(&case.c)));
             note(&away);
-            if let Err(e) = away.apply(&mut case.c) {
-                fail!("away move failed: {e}");
+            match away.apply_watched(&mut case.c) {
+                Ok(Ok(_)) => {}
+                Ok(Err(e)) => fail!("away move failed: {e}"),
+                Err(e) => fail!("after the away move: {e}"),
             }
             moves.push(format!("  back: {}", home.describe(&case.c)));
-            if let Err(e) = home.apply(&mut case.c) {
-                fail!("back move failed: {e}");
+            match home.apply_watched(&mut case.c) {
+                Ok(Ok(_)) => {}
+                Ok(Err(e)) => fail!("back move failed: {e}"),
+                Err(e) => fail!("after the back move: {e}"),
             }
             // A point on a path need not come back: it follows the parameter
             // it kept, and a way through an undefined or degenerate path
             // changes that parameter (`GeoPoint.setUndefined` restores the
             // one of the last move; a single point resets it to 0), as in
-            // GeoGebra. Points on paths and what depends on them are compared
+            // GeoGebra; the follow also projects the point instead of using
+            // its parameter after the type of its path changed, and a point
+            // placed by a move or at creation sits where its move projected
+            // it, which following the path from its parameter need not give
+            // again. A point on a path must come back, bit for bit, when it
+            // was where following its path puts it at home and the away move
+            // and the way back left its parameter and path type as they
+            // were. The others, and what depends on them, are compared
             // against a recompute above; here they are left out.
-            let on_path = |i: usize| case.c.path_state(id_at(&case.c, i)).is_some();
+            let returns = |i: usize| match home_states[i] {
+                Some((home, fixed)) => {
+                    let now = case.c.path_state(id_at(&case.c, i));
+                    fixed && now.is_some_and(|s| s.same_parameter(&home))
+                }
+                None => true,
+            };
             let mut history = vec![false; case.c.len()];
             for i in 0..case.c.len() {
-                history[i] = on_path(i) || reads[i].iter().any(|&p| history[p]);
+                history[i] = !returns(i) || reads[i].iter().any(|&p| history[p]);
             }
             let comparable = |v: Vec<Snap>| {
                 v.into_iter()
