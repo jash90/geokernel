@@ -19,10 +19,13 @@
 //! - a view change (a zoom, a pan past the margin, a resize, another pixel
 //!   density, a curve seen for the first time) plots at most
 //!   [`REPLOTS_PER_FRAME`] conics a frame, a function counting as
-//!   [`FUNCTION_COST`]; the others are drawn from their
-//!   kept polylines moved and scaled (within [`MAX_STALE_SCALE`]; a curve
-//!   seen for the first time is not drawn yet), and the next frames are
-//!   asked for until none is left;
+//!   [`FUNCTION_COST`] ([`REPLOTS_PER_PAN_FRAME`] while the view pans);
+//!   the others are drawn from their kept meshes moved and scaled (within
+//!   [`MAX_STALE_SCALE`]; a curve seen for the first time is not drawn
+//!   yet), and the next frames are asked for until none is left;
+//! - a kept mesh is moved or scaled by copying only its runs of triangles
+//!   that reach the area (see [`placed_runs`]), never tessellated again
+//!   unless epaint laid it out otherwise;
 //! - a curve whose drawing lies outside the area costs only that test, and
 //!   a view whose pixels the coordinates cannot tell apart draws nothing.
 
@@ -43,6 +46,11 @@ use std::sync::{Arc, Mutex};
 /// strips around it, see `plot::function::plot_with_margin`) as
 /// [`FUNCTION_COST`]; an edited curve is always plotted at once.
 pub const REPLOTS_PER_FRAME: usize = 24;
+
+/// [`REPLOTS_PER_FRAME`] for a frame of a pan, which also moves every kept
+/// mesh: the curves due again are still drawn whole for a while (they are
+/// within the margin), and once the view stops the full cap plots them.
+pub const REPLOTS_PER_PAN_FRAME: usize = 12;
 
 /// What plotting a function counts against [`REPLOTS_PER_FRAME`].
 pub const FUNCTION_COST: usize = 4;
@@ -69,6 +77,7 @@ thread_local! {
     static PLOTTED: Cell<u64> = const { Cell::new(0) };
     static TESSELLATED: Cell<u64> = const { Cell::new(0) };
     static UNCOVERED: Cell<u64> = const { Cell::new(0) };
+    static MOVED: Cell<u64> = const { Cell::new(0) };
     static COST: Cell<u64> = const { Cell::new(0) };
 }
 
@@ -77,6 +86,12 @@ thread_local! {
 #[cfg(test)]
 pub fn curves_uncovered() -> u64 {
     UNCOVERED.with(Cell::get)
+}
+
+/// Vertices this thread has copied to move or scale kept meshes so far.
+#[cfg(test)]
+pub fn curves_moved_vertices() -> u64 {
+    MOVED.with(Cell::get)
 }
 
 /// Curves this thread has plotted so far.
@@ -125,6 +140,215 @@ fn count(c: &'static std::thread::LocalKey<Cell<u64>>) {
 
 /// A plot kept for a curve, in the coordinates of the area it was made in
 /// (`frame`), without the area's origin.
+/// A run of a mesh's triangles: `indices[tris]`, which name only vertices
+/// in `vertices`, whose positions lie in `bounds`.
+struct Run {
+    tris: std::ops::Range<u32>,
+    vertices: std::ops::Range<u32>,
+    bounds: Rect,
+}
+
+/// Triangles per [`Run`].
+const RUN_TRIANGLES: usize = 64;
+
+/// The runs of `mesh`. The tessellator lays a stroke's triangles and
+/// vertices along the path, so a run names a short stretch of vertices.
+fn runs(mesh: &Mesh) -> Arc<[Run]> {
+    mesh.indices
+        .chunks(3 * RUN_TRIANGLES)
+        .enumerate()
+        .map(|(k, tris)| {
+            let (lo, hi) = tris
+                .iter()
+                .fold((u32::MAX, 0), |(lo, hi), &i| (lo.min(i), hi.max(i)));
+            let mut bounds = Rect::NOTHING;
+            for v in &mesh.vertices[lo as usize..=hi as usize] {
+                bounds.extend_with(v.pos);
+            }
+            let start = (k * 3 * RUN_TRIANGLES) as u32;
+            Run {
+                tris: start..start + tris.len() as u32,
+                vertices: lo..hi + 1,
+                bounds,
+            }
+        })
+        .collect()
+}
+
+/// The stroke of the open polylines `paths` as epaint tessellates it, and
+/// whether it has four vertices for each point of every polyline of two
+/// points or more, laid out as a thick stroke (epaint adds a point at a
+/// sharp corner, and lays a thin stroke out with three), as
+/// [`placed_runs`] needs to scale it.
+fn stroke_mesh(
+    tess: &mut Tessellator,
+    paths: impl Iterator<Item = Vec<Pos2>>,
+    stroke: Stroke,
+) -> (Mesh, bool) {
+    let mut mesh = Mesh::default();
+    let mut fours = true;
+    for points in paths {
+        let (n, before) = (points.len(), mesh.vertices.len());
+        tess.tessellate_path(&PathShape::line(points, stroke), &mut mesh);
+        let added = &mesh.vertices[before..];
+        // A thick stroke: per point a clear outer vertex, two of the stroke's
+        // colour, a clear outer vertex. A thin one (at a low pixel density)
+        // has three per point, clear, faded, clear, and no four of them in a
+        // row look like that.
+        fours = fours
+            && added.len() == if n >= 2 { 4 * n } else { 0 }
+            && added.as_chunks::<4>().0.iter().all(|q| {
+                q[0].color == Color32::TRANSPARENT
+                    && q[1].color == stroke.color
+                    && q[2].color == stroke.color
+                    && q[3].color == Color32::TRANSPARENT
+            });
+    }
+    (mesh, fours)
+}
+
+/// Where a kept mesh goes: a point `p` of it to `origin + scale * (p -
+/// from)`. A scaled stroke keeps its width (see [`placed_runs`]).
+#[derive(Clone, Copy)]
+struct Placing {
+    from: Pos2,
+    origin: Pos2,
+    scale: f32,
+}
+
+impl Placing {
+    fn point(&self, p: Pos2) -> Pos2 {
+        self.origin + self.scale * (p - self.from)
+    }
+}
+
+/// The runs of `mesh` (see [`runs`]) that reach `near` placed by `at`,
+/// placed. Inside `near` it draws what the whole mesh placed draws: a
+/// triangle left out lies wholly outside. Runs next to each other share
+/// their vertices, each copied once.
+///
+/// A moved mesh may have any layout. A scaled mesh must be a stroke of
+/// open polylines as epaint tessellates it with four vertices per point,
+/// the middle two at the same distance on either side of the point, which
+/// `fours` says (see [`stroke_mesh`]); otherwise it is `None`. Each point
+/// is placed and its four vertices keep their offsets from it, which is
+/// the stroke of the placed polyline (a uniform scale keeps every
+/// direction, so the normals and the joins are the same).
+fn placed_runs(mesh: &Mesh, runs: &[Run], fours: bool, at: Placing, near: Rect) -> Option<Mesh> {
+    let quads = at.scale != 1.0;
+    if quads && !fours {
+        return None;
+    }
+    let len = mesh.vertices.len() as u32;
+    let grow = if at.scale == 1.0 {
+        0.0
+    } else {
+        2.0 * crate::draw::CURVE_WIDTH
+    };
+    let keep = |run: &&Run| {
+        let b = Rect::from_two_pos(at.point(run.bounds.min), at.point(run.bounds.max));
+        b.expand(grow).intersects(near)
+    };
+    // The vertices of a run. Scaled, a stretch starts and ends on a point
+    // (four vertices, and the polylines start on one).
+    let span = |run: &Run| {
+        let (lo, hi) = (run.vertices.start, run.vertices.end);
+        let (lo, hi) = if quads {
+            (lo & !3, (hi + 3) & !3)
+        } else {
+            (lo, hi)
+        };
+        (lo, hi.min(len))
+    };
+    // The vertices and indices to copy, to allocate once (the same walk
+    // as below).
+    let (mut nv, mut ni, mut from, mut copied) = (0u32, 0usize, 0u32, 0u32);
+    for run in runs.iter().filter(keep) {
+        let (lo, hi) = span(run);
+        if lo < from || lo > copied {
+            from = lo;
+            copied = lo;
+        }
+        if hi > copied {
+            nv += hi - copied;
+            copied = hi;
+        }
+        ni += run.tris.len();
+    }
+    MOVED.with(|n| n.set(n.get() + u64::from(nv)));
+    let mut out = Mesh::with_texture(mesh.texture_id);
+    out.vertices.reserve_exact(nv as usize);
+    out.indices.reserve_exact(ni);
+    let d = at.origin - at.from;
+    // `mesh.vertices[from..copied]` are at `out.vertices[base..]`.
+    let (mut from, mut copied, mut base) = (0u32, 0u32, 0u32);
+    for run in runs.iter().filter(keep) {
+        let (lo, hi) = span(run);
+        if lo < from || lo > copied {
+            // Not joined to what was copied last: a new stretch.
+            from = lo;
+            copied = lo;
+            base = out.vertices.len() as u32;
+        }
+        if hi > copied {
+            let src = &mesh.vertices[copied as usize..hi as usize];
+            if !quads {
+                out.vertices.extend(src.iter().map(|v| {
+                    let mut v = *v;
+                    v.pos += d;
+                    v
+                }));
+            } else {
+                for quad in src.as_chunks::<4>().0 {
+                    let mid = quad[1].pos.lerp(quad[2].pos, 0.5);
+                    let shift = at.point(mid) - mid;
+                    out.vertices.extend(quad.iter().map(|v| {
+                        let mut v = *v;
+                        v.pos += shift;
+                        v
+                    }));
+                }
+            }
+            copied = hi;
+        }
+        out.indices.extend(
+            mesh.indices[run.tris.start as usize..run.tris.end as usize]
+                .iter()
+                .map(|&i| i - from + base),
+        );
+    }
+    Some(out)
+}
+
+/// The stroke of the polylines `paths` (in the coordinates of the area
+/// the kept stroke was made in, without its origin) placed by `at`, as far
+/// as it shows in `area`. Moved, or scaled for a frame or two, it is the
+/// kept stroke (`mesh` with its `runs`, and whether it has four vertices
+/// per point) placed, only the runs that reach the area (the clip);
+/// scaled, a stroke not laid out as [`placed_runs`] needs is the stretches
+/// of the polylines that reach the area, tessellated by `tessellate`.
+fn placed_stroke(
+    (mesh, runs, fours): (&Mesh, &[Run], bool),
+    paths: &[Vec<Pos2>],
+    at: Placing,
+    area: Rect,
+    tessellate: impl FnOnce(Vec<Vec<Pos2>>) -> Mesh,
+) -> Mesh {
+    if let Some(placed) = placed_runs(mesh, runs, fours, at, area.expand(1.0)) {
+        return placed;
+    }
+    let near = area.expand(plot::PAD as f32);
+    let mut pieces = Vec::new();
+    for path in paths {
+        near_pieces(
+            path.iter().map(|&q| at.origin + at.scale * q.to_vec2()),
+            near,
+            &mut pieces,
+        );
+    }
+    tessellate(pieces)
+}
+
 struct Plotted {
     frame: Frame,
     pixels_per_point: f32,
@@ -134,6 +358,13 @@ struct Plotted {
     /// origin when they were plotted).
     mesh: Arc<Mesh>,
     mesh_at: Pos2,
+    /// The mesh's triangles in runs, each with the bounds of its vertices,
+    /// so that a moved drawing copies only the runs that reach the area.
+    runs: Arc<[Run]>,
+    /// Whether the mesh has four vertices for each point of the polylines
+    /// (of two points or more), as `placed_runs` needs to scale it (see
+    /// `stroke_mesh`).
+    points_of_four: bool,
     point: Option<Pos2>,
     dot: Option<Pos2>,
     /// A function's label in `frame`; `None` for a conic.
@@ -221,6 +452,9 @@ pub struct Curves {
     now: u64,
     /// Whether the last frame had the same view: the view stopped moving.
     still: bool,
+    /// Whether the view moves at the same scale and size as the last
+    /// frame's (a pan): the frame moves every kept mesh, so it plots less.
+    panning: bool,
     /// Whether the view can be drawn at all ([`Frame::resolves`]).
     usable: bool,
 }
@@ -241,7 +475,7 @@ impl Curves {
         });
         let frame = Frame::fit(t.view(), rect.width() as f64, rect.height() as f64);
         let usable = frame.resolves();
-        let (now, still) = {
+        let (now, still, panning) = {
             let mut guard = cache.lock().unwrap_or_else(|e| e.into_inner());
             let cache = &mut *guard;
             cache.frames += 1;
@@ -252,8 +486,14 @@ impl Curves {
                 cache.generation = Some(generation);
             }
             let still = cache.view == Some(frame);
+            let panning = cache.view.is_some_and(|v| {
+                !still
+                    && (v.scale() - frame.scale()).abs() <= 1e-9 * frame.scale()
+                    && v.width() == frame.width()
+                    && v.height() == frame.height()
+            });
             cache.view = usable.then_some(frame);
-            (now, still)
+            (now, still, panning)
         };
         let pixels_per_point = ctx.pixels_per_point();
         let options = ctx.tessellation_options(|o| *o);
@@ -267,6 +507,7 @@ impl Curves {
             replots: Cell::new(0),
             now,
             still,
+            panning,
             usable,
         }
     }
@@ -274,8 +515,13 @@ impl Curves {
     /// Whether the frame may still plot the curve `id` because of the view;
     /// if so, it is counted.
     fn may_plot(&self, c: &Construction, id: Id) -> bool {
+        let cap = if self.panning {
+            REPLOTS_PER_PAN_FRAME
+        } else {
+            REPLOTS_PER_FRAME
+        };
         let n = self.replots.get() + plot_cost(c, id);
-        let may = n <= REPLOTS_PER_FRAME;
+        let may = n <= cap;
         if may {
             self.replots.set(n);
         }
@@ -457,24 +703,16 @@ impl Curves {
             Arc::new(Mesh::default())
         } else if scale == 1.0 && origin == p.mesh_at {
             p.mesh.clone()
-        } else if scale == 1.0 {
-            let mut m = (*p.mesh).clone();
-            m.translate(origin - p.mesh_at);
-            Arc::new(m)
         } else {
-            // Scaled for a frame or two: only the polylines that reach the
-            // area are tessellated (most of a function's margin strips do
-            // not).
-            let near = area.expand(plot::PAD as f32);
-            let points = p
-                .paths
-                .iter()
-                .map(|path| path.iter().map(|&q| place(q)).collect::<Vec<_>>())
-                .filter(|path| match path.as_slice() {
-                    [q] => near.contains(*q),
-                    _ => path.windows(2).any(|w| segment_meets(w[0], w[1], near)),
-                });
-            Arc::new(self.tessellate(points, entry.color))
+            let at = Placing {
+                from: p.mesh_at,
+                origin,
+                scale,
+            };
+            let kept = (&*p.mesh, &*p.runs, p.points_of_four);
+            Arc::new(placed_stroke(kept, &p.paths, at, area, |pieces| {
+                self.tessellate(pieces.into_iter(), entry.color).0
+            }))
         };
         Some(Arc::new(Drawn {
             mesh,
@@ -564,11 +802,14 @@ impl Curves {
         for &q in paths.iter().flatten().chain(&point).chain(&dot) {
             bounds.extend_with(q);
         }
-        let mesh = Arc::new(self.tessellate(at_origin(&paths, self.origin), color));
+        let (mesh, points_of_four) = self.tessellate(at_origin(&paths, self.origin), color);
+        let mesh = Arc::new(mesh);
         Plotted {
             frame: self.frame,
             pixels_per_point: self.pixels_per_point,
             paths,
+            runs: runs(&mesh),
+            points_of_four,
             mesh,
             mesh_at: self.origin,
             point,
@@ -583,12 +824,17 @@ impl Curves {
 
     /// The same plot in another colour.
     fn recolored(&self, p: &Plotted, color: Color32) -> Plotted {
+        // Tessellated at this frame's density, which may lay the stroke out
+        // differently: its own runs.
+        let (mesh, points_of_four) = self.tessellate(at_origin(&p.paths, p.mesh_at), color);
         Plotted {
             frame: p.frame,
             pixels_per_point: p.pixels_per_point,
             paths: p.paths.clone(),
-            mesh: Arc::new(self.tessellate(at_origin(&p.paths, p.mesh_at), color)),
+            runs: runs(&mesh),
+            mesh: Arc::new(mesh),
             mesh_at: p.mesh_at,
+            points_of_four,
             point: p.point,
             dot: p.dot,
             label: p.label,
@@ -599,15 +845,46 @@ impl Curves {
         }
     }
 
-    fn tessellate(&self, paths: impl Iterator<Item = Vec<Pos2>>, color: Color32) -> Mesh {
+    /// The stroke of `paths` in `color`, and whether [`placed_runs`] can
+    /// scale it (see [`stroke_mesh`]).
+    fn tessellate(&self, paths: impl Iterator<Item = Vec<Pos2>>, color: Color32) -> (Mesh, bool) {
         count(&TESSELLATED);
         let stroke = Stroke::new(crate::draw::CURVE_WIDTH, color);
         let mut tess = Tessellator::new(self.pixels_per_point, self.options, [1, 1], Vec::new());
-        let mut mesh = Mesh::default();
-        for points in paths {
-            tess.tessellate_path(&PathShape::line(points, stroke), &mut mesh);
+        stroke_mesh(&mut tess, paths, stroke)
+    }
+}
+
+/// Adds to `out` the stretches of the polyline `path` made of segments that
+/// meet `near` (a single point if it lies in `near`). A segment left out
+/// does not meet `near`, so where a stretch ends (its cap, or the join it
+/// lost) lies outside `near`: inside the area a stroke of the stretches
+/// draws what a stroke of the whole polyline draws, as long as `near`
+/// reaches past the area by more than the stroke.
+fn near_pieces(path: impl Iterator<Item = Pos2>, near: Rect, out: &mut Vec<Vec<Pos2>>) {
+    let mut piece: Vec<Pos2> = Vec::new();
+    let mut last: Option<Pos2> = None;
+    let mut single = true;
+    for q in path {
+        if let Some(a) = last {
+            single = false;
+            if segment_meets(a, q, near) {
+                if piece.is_empty() {
+                    piece.push(a);
+                }
+                piece.push(q);
+            } else if !piece.is_empty() {
+                out.push(std::mem::take(&mut piece));
+            }
         }
-        mesh
+        last = Some(q);
+    }
+    if !piece.is_empty() {
+        out.push(piece);
+    } else if let (true, Some(q)) = (single, last) {
+        if near.contains(q) {
+            out.push(vec![q]);
+        }
     }
 }
 
@@ -640,4 +917,193 @@ fn segment_meets(a: Pos2, b: Pos2, r: Rect) -> bool {
         }
     }
     t0 <= t1
+}
+
+#[cfg(test)]
+mod placing_tests {
+    use super::*;
+    use eframe::egui::epaint::TessellationOptions;
+
+    fn stroke(paths: &[Vec<Pos2>], ppp: f32) -> (Mesh, bool) {
+        let stroke = Stroke::new(crate::draw::CURVE_WIDTH, Color32::BLACK);
+        let mut tess = Tessellator::new(ppp, TessellationOptions::default(), [1, 1], Vec::new());
+        stroke_mesh(&mut tess, paths.iter().cloned(), stroke)
+    }
+
+    /// A wave, a closed loop, a single point and a segment, in the
+    /// coordinates of an area at `from`.
+    fn paths(from: Pos2) -> Vec<Vec<Pos2>> {
+        let wave = (0..400)
+            .map(|i| from + vec2(i as f32 * 2.0, 200.0 + 80.0 * (i as f32 * 0.05).sin()))
+            .collect();
+        let lp: Vec<Pos2> = (0..=90)
+            .map(|i| {
+                let t = i as f32 / 90.0 * std::f32::consts::TAU;
+                from + vec2(400.0 + 150.0 * t.cos(), 300.0 + 60.0 * t.sin())
+            })
+            .collect();
+        vec![
+            wave,
+            lp,
+            vec![from + vec2(5.0, 5.0)],
+            vec![from + vec2(10.0, 500.0), from + vec2(790.0, 20.0)],
+        ]
+    }
+
+    /// Asserts that `part` holds every triangle of `whole` that reaches
+    /// `near`, and that some do.
+    fn assert_reaches(whole: &Mesh, part: &Mesh, near: Rect, what: &str) {
+        assert!(part.vertices.len() < whole.vertices.len(), "{what}");
+        let key = |m: &Mesh, t: &[u32]| {
+            let mut k: Vec<(i64, i64)> = t
+                .iter()
+                .map(|&i| {
+                    let p = m.vertices[i as usize].pos;
+                    ((p.x * 64.0).round() as i64, (p.y * 64.0).round() as i64)
+                })
+                .collect();
+            k.sort();
+            k
+        };
+        let have: std::collections::HashSet<_> =
+            part.indices.chunks(3).map(|t| key(part, t)).collect();
+        let mut reached = 0;
+        for t in whole.indices.chunks(3) {
+            let mut b = Rect::NOTHING;
+            for &i in t {
+                b.extend_with(whole.vertices[i as usize].pos);
+            }
+            if b.intersects(near) {
+                reached += 1;
+                assert!(
+                    have.contains(&key(whole, t)),
+                    "{what}: a triangle is missing"
+                );
+            }
+        }
+        assert!(reached > 0, "{what}");
+    }
+
+    /// Asserts that `got` is `want` up to rounding (`scale` times larger).
+    fn assert_same_mesh(got: &Mesh, want: &Mesh, scale: f32, what: &str) {
+        assert_eq!(got.indices, want.indices, "{what}");
+        assert_eq!(got.vertices.len(), want.vertices.len(), "{what}");
+        let off = got
+            .vertices
+            .iter()
+            .zip(&want.vertices)
+            .map(|(a, b)| (a.pos - b.pos).length() / scale.max(1.0))
+            .fold(0.0f32, f32::max);
+        assert!(off < 2e-3, "{what}: {off}");
+        assert!(
+            got.vertices
+                .iter()
+                .zip(&want.vertices)
+                .all(|(a, b)| a.color == b.color),
+            "{what}"
+        );
+    }
+
+    #[test]
+    fn a_placed_stroke_is_a_fresh_stroke_at_any_pixel_density() {
+        // Below about 0.36 pixels per point a curve's stroke is thin (three
+        // vertices per point, epaint's rule below): moved, the kept mesh is
+        // placed as it is; scaled, the polylines are tessellated again.
+        let from = Pos2::new(20.0, 10.0);
+        for ppp in [0.3f32, 0.35, 0.36, 1.5, 3.0] {
+            let thin = crate::draw::CURVE_WIDTH <= 0.9 * (1.0 / ppp);
+            assert_eq!(thin, ppp < 0.36, "{ppp}");
+            // Three points with a sharp corner: thin, as many vertices as
+            // four per point, but not laid out so.
+            let corner = vec![
+                from + vec2(0.0, 0.0),
+                from + vec2(300.0, 10.0),
+                from + vec2(0.0, 20.0),
+            ];
+            let (sharp, fours) = stroke(&[corner], ppp);
+            assert!(!fours, "{ppp}");
+            assert_eq!(sharp.vertices.len() == 12, thin, "{ppp}");
+            let (mesh, fours) = stroke(&paths(from), ppp);
+            assert_eq!(fours, !thin, "{ppp}");
+            let runs = runs(&mesh);
+            let kept = (&mesh, &*runs, fours);
+            let in_area = paths(Pos2::ZERO);
+            for (origin, scale) in [
+                (Pos2::new(-317.25, 41.5), 1.0),
+                (Pos2::new(311.0, -7.0), 1.0),
+                (Pos2::new(-90.0, -60.0), 1.25),
+                (Pos2::new(140.0, 95.0), 0.8),
+            ] {
+                let what = format!("{ppp} {origin:?} {scale}");
+                let at = Placing {
+                    from,
+                    origin,
+                    scale,
+                };
+                let placed: Vec<Vec<Pos2>> = in_area
+                    .iter()
+                    .map(|p| p.iter().map(|&q| origin + scale * q.to_vec2()).collect())
+                    .collect();
+                let (want, _) = stroke(&placed, ppp);
+                // An area that holds the whole stroke.
+                let area = Rect::from_min_size(origin - vec2(500.0, 500.0), vec2(5000.0, 5000.0));
+                let mut tessellated = false;
+                let got = placed_stroke(kept, &in_area, at, area, |pieces| {
+                    tessellated = true;
+                    stroke(&pieces, ppp).0
+                });
+                assert_eq!(tessellated, thin && scale != 1.0, "{what}");
+                assert_same_mesh(&got, &want, scale, &what);
+
+                // Only part of it near a small rectangle.
+                let near = Rect::from_min_size(origin + vec2(150.0, 120.0), vec2(90.0, 70.0));
+                if let Some(part) = placed_runs(&mesh, &runs, fours, at, near) {
+                    assert_reaches(&got, &part, near, &what);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn a_placed_mesh_is_the_stroke_of_the_placed_polylines() {
+        let from = Pos2::new(20.0, 10.0);
+        for ppp in [1.0, 2.0] {
+            // A sharp corner adds a point: such a mesh is not scaled.
+            let corner = vec![
+                from + vec2(0.0, 0.0),
+                from + vec2(300.0, 10.0),
+                from + vec2(0.0, 20.0),
+            ];
+            assert!(!stroke(&[corner], ppp).1);
+            let (mesh, fours) = stroke(&paths(from), ppp);
+            assert!(fours);
+            let runs = runs(&mesh);
+            for (origin, scale) in [
+                (from, 1.0),
+                (Pos2::new(-317.25, 41.5), 1.0),
+                (Pos2::new(-90.0, -60.0), 1.25),
+                (Pos2::new(140.0, 95.0), 0.8),
+                (Pos2::new(-900.0, -700.0), 3.7),
+            ] {
+                let at = Placing {
+                    from,
+                    origin,
+                    scale,
+                };
+                let placed: Vec<Vec<Pos2>> = paths(from)
+                    .iter()
+                    .map(|p| p.iter().map(|&q| at.point(q)).collect())
+                    .collect();
+                let (want, _) = stroke(&placed, ppp);
+                let got = placed_runs(&mesh, &runs, fours, at, Rect::EVERYTHING).unwrap();
+                assert_same_mesh(&got, &want, scale, &format!("{origin:?} {scale}"));
+
+                // Only part of it near a small rectangle: every triangle
+                // of the whole stroke that reaches it is there.
+                let near = Rect::from_min_size(origin + vec2(150.0, 120.0), vec2(90.0, 70.0));
+                let part = placed_runs(&mesh, &runs, fours, at, near).unwrap();
+                assert_reaches(&got, &part, near, &format!("{origin:?} {scale}"));
+            }
+        }
+    }
 }

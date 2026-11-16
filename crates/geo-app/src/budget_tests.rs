@@ -451,6 +451,8 @@ fn curve_scene() -> (String, String) {
 struct CurveFrame {
     counts: Counts,
     plotted: u64,
+    /// Vertices copied to move kept meshes.
+    moved: u64,
     /// What the plots counted against `REPLOTS_PER_FRAME`.
     cost: u64,
     tessellated: u64,
@@ -465,6 +467,7 @@ fn curve_step(w: &mut Window, events: Vec<Event>) -> CurveFrame {
         crate::curves::curves_tessellated(),
         crate::curves::curves_plot_cost(),
     );
+    let moved = crate::curves::curves_moved_vertices();
     let start = std::time::Instant::now();
     let counts = w.step(events);
     CurveFrame {
@@ -472,6 +475,7 @@ fn curve_step(w: &mut Window, events: Vec<Event>) -> CurveFrame {
         counts,
         plotted: crate::curves::curves_plotted() - p,
         cost: crate::curves::curves_plot_cost() - k,
+        moved: crate::curves::curves_moved_vertices() - moved,
         tessellated: crate::curves::curves_tessellated() - t,
     }
 }
@@ -626,8 +630,8 @@ fn curve_frames_stay_within_the_budget() {
 
     let show = |name: &str, f: &CurveFrame| {
         println!(
-            "curves {name}: {:?}, plotted {}, tessellated {}, {:.2} ms",
-            f.counts, f.plotted, f.tessellated, f.ms
+            "curves {name}: {:?}, plotted {} (cost {}), tessellated {}, moved {}, {:.2} ms",
+            f.counts, f.plotted, f.cost, f.tessellated, f.moved, f.ms
         )
     };
     show("idle", &idle);
@@ -638,6 +642,9 @@ fn curve_frames_stay_within_the_budget() {
     let worst_pan = pans.iter().max_by_key(|f| f.plotted).unwrap();
     show("pan_worst", worst_pan);
     let slowest = pans.iter().map(|f| f.ms).fold(0.0, f64::max);
+    if let Some(f) = pans.iter().max_by(|a, b| a.ms.total_cmp(&b.ms)) {
+        show("pan_slowest_frame", f);
+    }
     println!("curves pan_slowest: {slowest:.2} ms");
     show("zoom", &zoom);
     for (i, f) in after_zoom.iter().enumerate() {
@@ -669,15 +676,15 @@ fn curve_frames_stay_within_the_budget() {
     }
     assert_eq!((related[2].plotted, related[2].tessellated), (0, 0));
     // The first pan frames move every kept drawing: nothing plotted or
-    // tessellated. Later frames spend at most `REPLOTS_PER_FRAME` on plots,
-    // a function counting as `FUNCTION_COST`.
+    // tessellated. Later frames spend at most `REPLOTS_PER_PAN_FRAME` on
+    // plots, a function counting as `FUNCTION_COST`.
     let quiet = pans.iter().take_while(|f| f.plotted == 0).count();
     println!("curves pan_quiet_frames: {quiet}");
     assert!(quiet >= 20, "only {quiet} pan frames plotted nothing");
     for f in &pans {
         assert_eq!(f.plotted, f.tessellated, "a pan re-tessellated a curve");
         assert!(
-            f.cost <= REPLOTS_PER_FRAME as u64,
+            f.cost <= crate::curves::REPLOTS_PER_PAN_FRAME as u64,
             "{} plotted, costing {}",
             f.plotted,
             f.cost
@@ -689,8 +696,8 @@ fn curve_frames_stay_within_the_budget() {
     );
     // The zoom frame: the most it may plot, the rest moved and scaled.
     // 258 curves meet the zoomed view: 24 plotted, 234 drawn from their
-    // kept polylines.
-    assert_eq!((zoom.plotted, zoom.tessellated), (24, 258));
+    // kept meshes placed point by point, none tessellated again.
+    assert_eq!((zoom.plotted, zoom.tessellated), (24, 24));
     assert!(
         zoom.cost <= REPLOTS_PER_FRAME as u64,
         "zoom cost {}",
@@ -727,19 +734,32 @@ fn curve_frames_stay_within_the_budget() {
     let heaviest = *after_zoom.iter().max_by_key(|f| f.counts.bytes).unwrap();
     let heaviest_resize = *resize.iter().max_by_key(|f| f.counts.bytes).unwrap();
     // Ceilings: the counts when they were set plus about 8%. A pan frame
-    // copies every visible curve's mesh to its new place (about 9.7 MB
-    // here, a function's mesh holding its margin strips too); the zoom
-    // frame tessellates the parts of 234 kept drawings that reach the area,
-    // scaled. The frame after a rebuild (undo, redo, delete) finds what
-    // each function depends on again; most of its allocations are the
-    // algebra list's.
+    // copies the parts of the kept meshes that reach the area to their new
+    // place (about 187k vertices, 7.6 MB here; the whole meshes with
+    // their margin strips were 241k vertices, 9.7 MB); the zoom frame
+    // places 234 kept meshes scaled the same way. The frame after a
+    // rebuild (undo, redo, delete) finds what each function depends on
+    // again (about 0.25 ms, most of it formatting the definitions for
+    // their fingerprints); most of its allocations and time are the
+    // algebra list's (990 rows formatted again).
+    let most_moved = pans.iter().map(|f| f.moved).max().unwrap();
+    println!("curves pan_most_moved: {most_moved}");
+    assert!(
+        most_moved <= 210_000,
+        "a pan frame moved {most_moved} vertices"
+    );
+    assert!(
+        zoom.moved <= 160_000,
+        "the zoom placed {} vertices",
+        zoom.moved
+    );
     for (name, f, allocs, bytes) in [
         ("idle", idle, 2_650, 545_000),
         ("drag_unrelated", unrelated[0], 2_800, 555_000),
         ("drag_related", related[0], 3_000, 750_000),
-        ("pan", pans[0], 4_050, 10_500_000),
-        ("pan_worst", *worst_pan, 4_600, 11_700_000),
-        ("zoom", zoom, 4_550, 11_400_000),
+        ("pan", pans[0], 4_050, 8_250_000),
+        ("pan_worst", *worst_pan, 4_200, 8_400_000),
+        ("zoom", zoom, 3_700, 7_200_000),
         ("after_zoom", heaviest, 2_800, 4_150_000),
         ("resize", heaviest_resize, 2_550, 1_750_000),
         ("add_point", edits[0].1, 2_200, 680_000),
@@ -767,7 +787,7 @@ fn curve_frames_stay_within_the_budget() {
         );
         fast_ms = fast_ms.max(f.ms);
         assert!(
-            f.cost <= REPLOTS_PER_FRAME as u64,
+            f.cost <= crate::curves::REPLOTS_PER_PAN_FRAME as u64,
             "fast pan cost {}",
             f.cost
         );
