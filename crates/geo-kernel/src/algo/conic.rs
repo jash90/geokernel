@@ -82,21 +82,45 @@ fn snap_radius(r: f64) -> f64 {
 /// infinity (collinear points, or two equal points and a third) is
 /// undefined.
 fn through_three(c: &Construction, a: Id, b: Id, cc: Id) -> Option<Value> {
-    let (ax, ay) = c.point(a)?;
-    let (bx, by) = c.point(b)?;
-    let (cx, cy) = c.point(cc)?;
+    match circumcircle(c.point(a)?, c.point(b)?, c.point(cc)?) {
+        Circumcircle::Circle { cx, cy, r } => Some(Value::Circle { cx, cy, r }),
+        Circumcircle::Lines | Circumcircle::Undefined => None,
+    }
+}
 
+/// What `AlgoCircleThreePoints` makes of three finite points.
+pub(crate) enum Circumcircle {
+    Circle {
+        cx: f64,
+        cy: f64,
+        r: f64,
+    },
+    /// The centre is at infinity in the direction perpendicular to a pair
+    /// of the points (collinear points, or two equal points and a third):
+    /// GeoGebra makes the conic two parallel lines (`setCircle(M, P)`).
+    Lines,
+    /// The two bisectors meet at a point that `GeoPoint` counts as at
+    /// infinity: `setCircle(M, r)` makes the conic undefined.
+    Undefined,
+}
+
+/// `AlgoCircleThreePoints.compute` for three finite points.
+pub(crate) fn circumcircle(
+    (ax, ay): (f64, f64),
+    (bx, by): (f64, f64),
+    (cx, cy): (f64, f64),
+) -> Circumcircle {
     if is_equal(ax, bx) && is_equal(ay, by) {
         if is_equal(ax, cx) && is_equal(ay, cy) {
-            return Some(Value::Circle {
+            return Circumcircle::Circle {
                 cx: ax,
                 cy: ay,
                 r: 0.0,
-            });
+            };
         }
-        return None;
+        return Circumcircle::Lines;
     } else if (is_equal(ax, cx) && is_equal(ay, cy)) || (is_equal(bx, cx) && is_equal(by, cy)) {
-        return None;
+        return Circumcircle::Lines;
     }
 
     let (abx, aby) = (bx - ax, by - ay);
@@ -124,7 +148,7 @@ fn through_three(c: &Construction, a: Id, b: Id, cc: Id) -> Option<Value> {
     }
 
     if is_zero(max_det) {
-        return None;
+        return Circumcircle::Lines;
     }
 
     let bisector = |dx: f64, dy: f64, px: f64, py: f64, qx: f64, qy: f64| {
@@ -151,12 +175,12 @@ fn through_three(c: &Construction, a: Id, b: Id, cc: Id) -> Option<Value> {
     let y = s0.2 * s1.0 - s0.0 * s1.2;
     let z = s0.0 * s1.1 - s0.1 * s1.0;
     if z.is_nan() || is_epsilon(z, x, y) {
-        return None;
+        return Circumcircle::Undefined;
     }
     let (mx, my) = if z == 1.0 { (x, y) } else { (x / z, y / z) };
 
     let r = snap_radius(ggb_length(ax - mx, ay - my));
-    Some(Value::Circle { cx: mx, cy: my, r })
+    Circumcircle::Circle { cx: mx, cy: my, r }
 }
 
 /// `DoubleUtil.isEpsilon(e, x, y)`: whether `e` is negligible against

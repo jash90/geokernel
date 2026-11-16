@@ -66,12 +66,12 @@ const VECTOR: &[Kind] = &[Kind::Vector];
 /// Objects with a direction: GeoGebra's `GeoLine` and its subclasses.
 const DIRECTED: &[Kind] = &[Kind::Line, Kind::Segment, Kind::Ray];
 const VECTOR_OR_DIRECTED: &[Kind] = &[Kind::Vector, Kind::Line, Kind::Segment, Kind::Ray];
-/// Kinds of object `Translate` moves, restricted to those supported here.
+/// Kinds of object `Translate` moves here. A circle is translated by
+/// [`crate::algo::general_conic::GeneralConicDef`], which keeps its axes.
 const TRANSLATABLE: &[Kind] = &[
     Kind::Point,
     Kind::Line,
     Kind::Segment,
-    Kind::Circle,
     Kind::Ray,
     Kind::Vector,
 ];
@@ -91,6 +91,8 @@ fn only(kind: Kind) -> &'static [Kind] {
         Kind::PolyLine => &[Kind::PolyLine],
         Kind::List => &[Kind::List],
         Kind::Conic => &[Kind::Conic],
+        Kind::Arc => &[Kind::Arc],
+        Kind::Sector => &[Kind::Sector],
     }
 }
 
@@ -371,11 +373,6 @@ fn translate(v: Value, dx: f64, dy: f64) -> Option<Value> {
             x2: x2 + dx,
             y2: y2 + dy,
         },
-        Value::Circle { cx, cy, r } => Value::Circle {
-            cx: cx + dx,
-            cy: cy + dy,
-            r,
-        },
         Value::Ray { x, y, a, b, c } => Value::Ray {
             x: x + dx,
             y: y + dy,
@@ -384,13 +381,16 @@ fn translate(v: Value, dx: f64, dy: f64) -> Option<Value> {
             c: c - (a * dx + b * dy),
         },
         Value::Vector { .. } => v,
-        Value::Number(_)
+        Value::Circle { .. }
+        | Value::Number(_)
         | Value::Bool(_)
         | Value::Polygon { .. }
         | Value::PolyLine { .. }
         | Value::Function
         | Value::List { .. }
         | Value::Conic { .. }
+        | Value::Arc { .. }
+        | Value::Sector { .. }
         | Value::Undefined => return None,
     })
 }

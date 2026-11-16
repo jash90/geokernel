@@ -6,8 +6,9 @@
 //! Only the public API of the kernel is used.
 #![allow(dead_code)]
 
+use geo_kernel::algo::arc::ArcDef;
 use geo_kernel::script::exec;
-use geo_kernel::{ConicData, ConicType, Construction, Def, Id, Kind, Value};
+use geo_kernel::{ArcData, ConicData, ConicType, Construction, Def, Id, Kind, PathState, Value};
 use std::cell::{Cell, RefCell};
 use std::panic::{self, AssertUnwindSafe};
 use std::sync::mpsc;
@@ -166,6 +167,12 @@ pub fn first_non_finite(c: &Construction) -> Option<String> {
 pub struct Snap {
     pub value: Value,
     pub conic: Option<ConicData>,
+    /// The state of a point on a path (`Construction::path_state`),
+    /// compared bit for bit.
+    pub path: Option<PathState>,
+    /// The record of an arc or sector (`Construction::arc`), compared by
+    /// [`arc_bits`].
+    pub arc: Option<ArcData>,
     pub elements: Vec<Value>,
 }
 
@@ -218,12 +225,33 @@ fn conic_bits(d: &ConicData) -> Vec<u64> {
     bits
 }
 
+/// The record of an arc or sector, bit for bit (but `-0.0` is `0.0`): its
+/// conic by [`conic_bits`], its kind, orientation and parameter range, its
+/// value and measures and the end points of a degenerate part.
+fn arc_bits(a: &ArcData) -> Vec<u64> {
+    let mut bits = conic_bits(&a.conic);
+    bits.extend([a.sector, a.positive, a.defined].map(u64::from));
+    let mut numbers = vec![a.start, a.end, a.extent, a.value, a.arc_length(), a.area()];
+    if let Some([p, q]) = a.segment() {
+        numbers.extend([p.0, p.1, q.0, q.1]);
+    }
+    bits.extend(
+        numbers
+            .iter()
+            .map(|&v| if v == 0.0 { 0 } else { v.to_bits() }),
+    );
+    bits
+}
+
 /// Values with `==` on `f64` (so `-0.0` and `0.0` are the same), conic
-/// records by [`conic_bits`], list elements with `==`.
+/// records by [`conic_bits`], arc records by [`arc_bits`], list elements
+/// with `==`.
 impl PartialEq for Snap {
     fn eq(&self, other: &Snap) -> bool {
         self.value == other.value
             && self.conic.as_ref().map(conic_bits) == other.conic.as_ref().map(conic_bits)
+            && self.path == other.path
+            && self.arc.as_ref().map(arc_bits) == other.arc.as_ref().map(arc_bits)
             && self.elements == other.elements
     }
 }
@@ -250,6 +278,8 @@ pub fn snap(c: &Construction, id: Id) -> Snap {
     Snap {
         value: c.value(id),
         conic: c.conic(id),
+        path: c.path_state(id),
+        arc: c.arc(id),
         elements,
     }
 }
@@ -446,6 +476,11 @@ pub enum K {
     Circle,
     Conic,
     Number,
+    /// An arc or a sector.
+    Arc,
+    /// An arc or a sector that points can be put on: not a part of a
+    /// general conic (`Arc(conic, s, t)` with a `Conic`).
+    PointArc,
     /// A literal intersection index, `1` or `2`.
     Index,
 }
@@ -460,7 +495,14 @@ impl K {
                 | (K::Circle, Kind::Circle)
                 | (K::Conic, Kind::Conic)
                 | (K::Number, Kind::Number)
+                | (K::Arc | K::PointArc, Kind::Arc | Kind::Sector)
         )
+    }
+
+    /// Whether the object `id` of `c` can be this argument.
+    pub fn fits_object(self, c: &Construction, id: Id) -> bool {
+        let general_part = || matches!(c.def(id), Def::Arc(ArcDef::ConicParameters { conic, .. }) if c.kind(conic) == Kind::Conic);
+        self.fits(c.kind(id)) && !(self == K::PointArc && general_part())
     }
 }
 
@@ -473,6 +515,8 @@ const CI: Slot = &[K::Circle];
 const CO: Slot = &[K::Conic];
 const NU: Slot = &[K::Number];
 const IX: Slot = &[K::Index];
+const AR: Slot = &[K::Arc];
+const PA: Slot = &[K::PointArc];
 /// A line or a segment.
 const LL: Slot = &[K::Line, K::Segment];
 /// Everything a transformation accepts.
@@ -614,6 +658,33 @@ pub const COMMANDS: &[Cmd] = &[
     cmd("Diameter", &[LL, CO]),
 ];
 
+/// Points on paths and their parameters, arcs and sectors and their
+/// measures. [`generate`] adds them after the other commands, from a stream
+/// of their own, so that the objects before them are those of the same
+/// seed without them. The state of a point on a path depends on the history
+/// of moves; a test that rebuilds a construction restores it
+/// (`Construction::restore_path_state`).
+pub const PATH_COMMANDS: &[Cmd] = &[
+    cmd("Point", &[LL]),
+    cmd("Point", &[CI]),
+    cmd("Point", &[LL, NU]),
+    cmd("Point", &[CI, NU]),
+    cmd("PathParameter", &[PT]),
+    cmd("CircularArc", &[PT, PT, PT]),
+    cmd("CircularSector", &[PT, PT, PT]),
+    cmd("CircumcircularArc", &[PT, PT, PT]),
+    cmd("CircumcircleSector", &[PT, PT, PT]),
+    cmd("Semicircle", &[PT, PT]),
+    cmd("Arc", &[CI, PT, PT]),
+    cmd("Sector", &[CI, NU, NU]),
+    cmd("Arc", &[CO, NU, NU]),
+    cmd("Point", &[PA]),
+    cmd("Point", &[PA, NU]),
+    cmd("Length", &[AR]),
+    cmd("Area", &[AR]),
+    cmd("Perimeter", &[AR]),
+];
+
 /// A command call, as script text and as the objects it reads.
 pub struct Call {
     pub text: String,
@@ -635,7 +706,7 @@ pub fn pick_args(rng: &mut Rng, c: &Construction, cmd: &Cmd, limit: usize) -> Op
         let candidates: Vec<Id> = c
             .ids()
             .take(limit)
-            .filter(|&id| slot.iter().any(|k| k.fits(c.kind(id))))
+            .filter(|&id| slot.iter().any(|k| k.fits_object(c, id)))
             .collect();
         if candidates.is_empty() {
             return None;
@@ -884,6 +955,35 @@ pub fn generate(seed: u64, n_commands: usize, all_commands: bool) -> Case {
                 }
                 lines.push(line);
                 multi_lines.push(call.multi);
+                made += 1;
+            }
+            Ok(None) => unreachable!("a command line creates an object"),
+            Err(e) => rejected.push(format!("{line}: {e}")),
+        }
+    }
+    let mut path_rng = Rng::new(seed ^ 0x5EED_0A7B_9A7B_0A7B);
+    for _ in 0..path_rng.below(8) {
+        let cmd = path_rng.pick(PATH_COMMANDS);
+        let Some(call) = pick_args(&mut path_rng, &c, cmd, usize::MAX) else {
+            continue;
+        };
+        let label = format!("o{made}");
+        let line = format!("{label} = {}", call.text);
+        let before = c.len();
+        match exec(&mut c, &line) {
+            Ok(Some(_)) => {
+                let arg_ids: Vec<usize> = call
+                    .args
+                    .iter()
+                    .map(|a| c.id(a).expect("argument exists").index())
+                    .collect();
+                for _ in before..c.len() {
+                    deps.push(arg_ids.clone());
+                    expr.push(false);
+                    lenient.push(false);
+                }
+                lines.push(line);
+                multi_lines.push(false);
                 made += 1;
             }
             Ok(None) => unreachable!("a command line creates an object"),
@@ -1241,4 +1341,79 @@ pub fn shrink(input: &str, fails: &dyn Fn(&str) -> bool) -> String {
         chunk = chunk.div_ceil(2);
     }
     chars.into_iter().collect()
+}
+
+/// The points on paths of a construction before one operation, each with
+/// its state `p` and the state `a` that following its path from `p` gives
+/// (`Construction::follow_path_from`).
+///
+/// After the operation, with `s` the point's state and `b` the state that
+/// following its path from `p` gives now, [`Self::check`] requires, bit for
+/// bit (NaN payloads included):
+///
+/// - `s == b` when `a != b`: something the follow reads changed, so the
+///   point must have been recomputed, exactly once, from `p`;
+/// - `s == p` or `s == b` when `a == b`: nothing the follow reads changed,
+///   so the point was left alone or recomputed to the same state.
+///
+/// The point the operation moved itself is not checked. A missing parent
+/// of `Point(path)` or `Point(path, u)`, or a missing input of a path that
+/// the follow reads, leaves `s == p` where `a != b`.
+///
+/// Following again from `s` is not a check of its own: GeoGebra's follow
+/// projects the point instead of using its parameter when the path's type
+/// changed or the parameter is NaN, so a state can be up to date without
+/// being where following it once more would put it.
+pub struct PathWatch(Vec<(Id, PathState, PathState)>);
+
+impl PathWatch {
+    pub fn before(c: &Construction) -> PathWatch {
+        PathWatch(
+            c.ids()
+                .filter_map(|id| {
+                    let p = c.path_state(id)?;
+                    Some((id, p, c.follow_path_from(id, p)?))
+                })
+                .collect(),
+        )
+    }
+
+    /// See [`PathWatch`]; `moved` is the point the operation moved.
+    pub fn check(&self, c: &Construction, moved: Option<Id>) -> Result<(), String> {
+        for &(id, p, a) in &self.0 {
+            if Some(id) == moved {
+                continue;
+            }
+            let (Some(s), Some(b)) = (c.path_state(id), c.follow_path_from(id, p)) else {
+                return Err(format!("`{}` lost its path state", c.label(id)));
+            };
+            let ok = if a != b { s == b } else { s == p || s == b };
+            if !ok {
+                return Err(format!(
+                    "`{}` is not up to date with its path: state {s:?}, before {p:?}, \
+                     following from before gave {a:?} and now gives {b:?}",
+                    c.label(id)
+                ));
+            }
+        }
+        Ok(())
+    }
+}
+
+impl Step {
+    /// [`Self::apply`], and a [`PathWatch`] check of the points on paths
+    /// afterwards: the outer error is a failed check.
+    pub fn apply_watched(
+        &self,
+        c: &mut Construction,
+    ) -> Result<Result<usize, geo_kernel::Error>, String> {
+        let watch = PathWatch::before(c);
+        let r = self.apply(c);
+        let moved = match *self {
+            Step::Point { id, .. } => Some(id),
+            Step::Number { .. } => None,
+        };
+        watch.check(c, moved)?;
+        Ok(r)
+    }
 }

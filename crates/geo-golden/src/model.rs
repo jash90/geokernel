@@ -153,6 +153,28 @@ pub enum ExpectedData {
         matrix: [f64; 6],
         parts: ConicParts,
     },
+    /// An arc or sector: its value (arc length or area), the type name of
+    /// its conic, its orientation (`true` positive) where recorded, and the
+    /// numbers of a part of a circle or ellipse.
+    Arc {
+        value: f64,
+        conic_type: String,
+        orientation: Option<bool>,
+        curve: Option<ArcCurve>,
+    },
+}
+
+/// What an arc or sector of a circle or ellipse records besides its value
+/// (`golden/SCHEMA.md`).
+#[derive(Debug, Clone, PartialEq)]
+pub struct ArcCurve {
+    pub start: f64,
+    pub end: f64,
+    pub arc_length: f64,
+    pub area: f64,
+    pub midpoint: (f64, f64),
+    pub half_axes: (f64, f64),
+    pub eigenvectors: [(f64, f64); 2],
 }
 
 /// The parts of a general conic that its type records (`golden/SCHEMA.md`).
@@ -260,6 +282,73 @@ fn conic_data(raw: &RawObject) -> Result<ExpectedData, String> {
     })
 }
 
+/// The fields of a defined arc or sector, which depend on its conic type.
+fn arc_data(raw: &RawObject) -> Result<ExpectedData, String> {
+    let conic_type = raw
+        .fields
+        .get("conic_type")
+        .and_then(|v| v.as_str())
+        .ok_or("a defined arc or sector needs a `conic_type` name")?
+        .to_string();
+    let names: &[&str] = match conic_type.as_str() {
+        "circle" | "ellipse" => &[
+            "value",
+            "conic_type",
+            "orientation",
+            "start",
+            "end",
+            "arc_length",
+            "area",
+            "midpoint",
+            "half_axes",
+            "eigenvectors",
+        ],
+        "parallel_lines" => &["value", "conic_type", "orientation"],
+        "single_point" => &["value", "conic_type"],
+        other => return Err(format!("unknown conic type of a part `{other}`")),
+    };
+    let expected: BTreeSet<&str> = names.iter().copied().collect();
+    let got: BTreeSet<&str> = raw.fields.keys().map(String::as_str).collect();
+    if expected != got {
+        return Err(format!(
+            "defined {} of a {conic_type} must carry exactly {expected:?}, got {got:?}",
+            raw.ty
+        ));
+    }
+    let f = |n: &str| &raw.fields[n];
+    let orientation = match raw.fields.get("orientation") {
+        None => None,
+        Some(v) => match v.as_str() {
+            Some("positive") => Some(true),
+            Some("negative") => Some(false),
+            _ => {
+                return Err(format!(
+                    "`orientation` must be positive or negative, got {v}"
+                ))
+            }
+        },
+    };
+    let curve = if names.contains(&"start") {
+        Some(ArcCurve {
+            start: number("start", f("start"))?,
+            end: number("end", f("end"))?,
+            arc_length: number("arc_length", f("arc_length"))?,
+            area: number("area", f("area"))?,
+            midpoint: pair("midpoint", f("midpoint"))?,
+            half_axes: pair("half_axes", f("half_axes"))?,
+            eigenvectors: pairs("eigenvectors", f("eigenvectors"))?,
+        })
+    } else {
+        None
+    };
+    Ok(ExpectedData::Arc {
+        value: number("value", f("value"))?,
+        conic_type,
+        orientation,
+        curve,
+    })
+}
+
 /// Where a function is sampled (`golden/SCHEMA.md`).
 pub const SAMPLE_XS: [f64; 11] = [-8.0, -4.0, -2.0, -1.0, -0.5, 0.0, 0.5, 1.0, 2.0, 4.0, 8.0];
 
@@ -341,6 +430,8 @@ impl TryFrom<RawObject> for Expected {
             "polyline" => (Kind::PolyLine, &["vertices", "length"]),
             "list" => (Kind::List, &["elements"]),
             "conic" => (Kind::Conic, &[]),
+            "arc" => (Kind::Arc, &[]),
+            "sector" => (Kind::Sector, &[]),
             other => return Err(format!("unknown object type `{other}`")),
         };
         if raw.samples.is_some() && (kind != Kind::Function || !raw.defined) {
@@ -365,6 +456,12 @@ impl TryFrom<RawObject> for Expected {
             return Ok(Expected {
                 kind,
                 data: Some(conic_data(&raw)?),
+            });
+        }
+        if matches!(kind, Kind::Arc | Kind::Sector) {
+            return Ok(Expected {
+                kind,
+                data: Some(arc_data(&raw)?),
             });
         }
         let expected: BTreeSet<&str> = names.iter().copied().collect();
