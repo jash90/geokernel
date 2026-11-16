@@ -48,14 +48,23 @@ const CONTEXT: &[&str] = &[
 const MIN_CASE_SCRIPTS: usize = 500;
 const MIN_README_LINES: usize = 10;
 
-/// The list work one line may do (`geo_kernel::expr::list_work`): a few
-/// objects evaluated, each within its bound. This is what finds a blow-up,
-/// the same on any machine.
-const MAX_LINE_WORK: u64 = 16 * geo_kernel::expr::MAX_ELEMENTS;
+/// The evaluation work one line may do (`geo_kernel::expr::work_done`):
+/// two objects at the bound of one evaluation, about 0.6 s of a release
+/// build and 5 s of the test build (a unit is about 3.5 ns and 31 ns). This
+/// is what finds a blow-up in an expression (a loop, a costly function,
+/// long exact decimals), the same on any machine. It is a number of its
+/// own, not a multiple of the bound, so that a bound raised by mistake is
+/// caught here. At the time of writing the most work a line of the corpus
+/// or its mutations does is the nested `Sequence` of `lists-seq-011` cut at
+/// the element bound (when the mutations reach it), 10 531 983 units and
+/// 0.29 s of the test build; otherwise it is about 2 000 000 units. The
+/// slowest line is a long chain of powers that takes 0.4 s to parse and
+/// evaluates no list.
+const MAX_LINE_WORK: u64 = 160_000_000;
 
-/// Only a backstop for work the counter does not see (commands other than
-/// expressions); far above what a loaded machine takes for any line.
-const SLOW: Duration = Duration::from_secs(60);
+/// A backstop for work the counter does not see (parsing, commands other
+/// than expressions): twice the time of [`MAX_LINE_WORK`] in the test build.
+const SLOW: Duration = Duration::from_secs(10);
 
 /// What went wrong with one input line, as a short stable key and a detail.
 struct Problem {
@@ -69,7 +78,7 @@ fn check_line(c: &mut Construction, line: &str) -> Result<bool, Problem> {
     let len = c.len();
     let before = values(c);
     let started = Instant::now();
-    let work = geo_kernel::expr::list_work();
+    let work = geo_kernel::expr::work_done();
     let result = match catch(|| exec(c, line)) {
         Ok(r) => r,
         Err(panic) => {
@@ -79,11 +88,11 @@ fn check_line(c: &mut Construction, line: &str) -> Result<bool, Problem> {
             })
         }
     };
-    let work = geo_kernel::expr::list_work() - work;
+    let work = geo_kernel::expr::work_done() - work;
     if work > MAX_LINE_WORK {
         return Err(Problem {
-            key: "too much list work".into(),
-            detail: format!("{work} units of list work"),
+            key: "too much evaluation work".into(),
+            detail: format!("{work} units of work"),
         });
     }
     if started.elapsed() > SLOW {
@@ -1032,6 +1041,27 @@ fn the_nested_sequence_mutation_does_bounded_work() {
         }
     }
     assert_eq!(c.value(c.id("l").unwrap()), geo_kernel::Value::Undefined);
+}
+
+#[test]
+fn a_costly_function_in_a_sequence_does_bounded_work() {
+    // A function of about 240 000 nodes, functions expanded, applied for
+    // each value of a range of 30 000 took 19 s of a release build before
+    // evaluation work was bounded. At 1400 values the list does twice
+    // `MAX_LINE_WORK` unbounded, so that a bound raised past it fails here
+    // through the counter, before the clock.
+    let script = [
+        "f(x) = x + x + x + x",
+        "g(x) = f(f(f(f(f(f(f(f(x))))))))",
+        "s = Sequence(g(k), k, 1, 1400)",
+    ];
+    let mut c = Construction::new();
+    for line in script {
+        if let Err(p) = check_line(&mut c, line) {
+            panic!("`{line}`: {}: {}", p.key, p.detail);
+        }
+    }
+    assert_eq!(c.value(c.id("s").unwrap()), geo_kernel::Value::Undefined);
 }
 
 #[test]

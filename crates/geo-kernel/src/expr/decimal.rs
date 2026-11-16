@@ -97,6 +97,46 @@ thread_local! {
     pub(crate) static OPS: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
 }
 
+/// Every operation is charged to the evaluation work (see `work_done`) by
+/// its measured time, in units of about 3.5 ns of a release build: an
+/// operation on inline coefficients by its form, one on digit vectors a
+/// fixed part and its digit work.
+const SMALL_OP: u64 = 3;
+const WIDE_OP: u64 = 30;
+const DIVISION: u64 = 100;
+const FROM_DOUBLE: u64 = 40;
+const TO_DOUBLE_SMALL: u64 = 90;
+const TO_DOUBLE_WIDE: u64 = 180;
+const BIG_OP: u64 = 100;
+
+/// Digit products one unit stands for, in a product and in a long
+/// division; a digit copied, added or compared is one unit.
+const PRODUCTS_PER_UNIT: usize = 24;
+const QUOTIENT_PRODUCTS_PER_UNIT: usize = 2;
+
+/// Digits one unit stands for where they are only scanned or copied whole
+/// (the dividend past the digits a quotient needs, a rounding).
+const SCANNED_PER_UNIT: usize = 64;
+
+/// The most one operation charges: a product, its fixed part, two operands
+/// of at most [`MAX_DIGITS`] digits and [`MAX_WORK`] digit products. The
+/// others charge less: a quotient takes `PRECISION + 3` products for each
+/// digit of a divisor of at most about 3 100 digits, a sum passes over at
+/// most [`MAX_DIGITS`] digits, and the exact decimal of a double has at
+/// most 1 074 passes over about 750 digits.
+pub(crate) const MAX_CHARGE: u64 =
+    BIG_OP + 2 * MAX_DIGITS as u64 + (MAX_WORK / PRODUCTS_PER_UNIT) as u64;
+
+fn charge(units: u64) {
+    super::eval::work(units);
+}
+
+/// Charges the digit work of an operation on digit vectors: `digits`
+/// handled in linear passes and `products` digit products.
+fn charge_digits(digits: usize, products: usize) {
+    charge((digits + products / PRODUCTS_PER_UNIT) as u64);
+}
+
 fn count_op() {
     #[cfg(test)]
     OPS.with(|n| n.set(n.get() + 1));
@@ -327,6 +367,7 @@ impl Dec {
     /// The exact value of a finite double (`new BigDecimal(double)`).
     pub(crate) fn from_f64(x: f64) -> Option<Dec> {
         count_op();
+        charge(FROM_DOUBLE);
         if !x.is_finite() {
             return None;
         }
@@ -369,6 +410,12 @@ impl Dec {
 
     /// [`Dec::from_f64`] of `±m · 2^e` on a digit vector.
     fn from_f64_digits(neg: bool, m: u128, e: i64) -> Option<Dec> {
+        // `e` passes over the digits, which grow to about `0.7 e` of them
+        charge(BIG_OP);
+        charge_digits(
+            e.unsigned_abs() as usize * (e.unsigned_abs() as usize + 40) / 3,
+            0,
+        );
         let mut digits = to_digits(m);
         if e >= 0 {
             for _ in 0..e {
@@ -395,10 +442,18 @@ impl Dec {
     /// a small coefficient.
     pub(crate) fn to_f64(&self) -> f64 {
         let v = match self.mag {
-            Mag::Small(c) => to_f64_parts(c, self.exp),
-            Mag::Wide(w) => digits_to_f64(w.write_digits(&mut [0; 78]), self.exp),
+            Mag::Small(c) => {
+                charge(TO_DOUBLE_SMALL);
+                to_f64_parts(c, self.exp)
+            }
+            Mag::Wide(w) => {
+                charge(TO_DOUBLE_WIDE);
+                digits_to_f64(w.write_digits(&mut [0; 78]), self.exp)
+            }
             Mag::Big(ref d) if d.is_empty() => 0.0,
             Mag::Big(ref d) => {
+                charge(BIG_OP);
+                charge_digits(d.len() / 2, 0);
                 let mut s = String::with_capacity(d.len() + 24);
                 s.extend(d.iter().rev().map(|&d| char::from(b'0' + d)));
                 s.push('e');
@@ -444,6 +499,7 @@ impl Dec {
                     Some((other.neg, b - a))
                 };
                 if let Some((neg, s)) = sum {
+                    charge(SMALL_OP);
                     return Dec::small(neg, s, exp);
                 }
             }
@@ -464,15 +520,19 @@ impl Dec {
                     Some((other.neg, b.sub(a)))
                 };
                 if let Some((neg, s)) = sum {
+                    charge(WIDE_OP);
                     return Dec::wide(neg, s, exp);
                 }
             }
         }
         // aligning must not need more digits than a result may have
         let (la, lb) = (self.len() as i64, other.len() as i64);
-        if (la + self.exp - exp).max(lb + other.exp - exp) > MAX_DIGITS as i64 + 1 {
+        let aligned = (la + self.exp - exp).max(lb + other.exp - exp);
+        if aligned > MAX_DIGITS as i64 + 1 {
             return None;
         }
+        charge(BIG_OP);
+        charge_digits(aligned as usize, 0);
         let a = shifted(&self.digits(), (self.exp - exp) as usize);
         let b = shifted(&other.digits(), (other.exp - exp) as usize);
         let (neg, digits) = if self.neg == other.neg {
@@ -505,23 +565,29 @@ impl Dec {
         let exp = self.exp + other.exp;
         if let (Some(a), Some(b)) = (self.small_coef(), other.small_coef()) {
             if let Some(p) = a.checked_mul(b) {
+                charge(SMALL_OP);
                 return Dec::small(neg, p, exp);
             }
         }
         if let (Some(a), Some(b)) = (self.wide_coef(), other.wide_coef()) {
             if let Some(p) = a.checked_mul(b) {
+                charge(WIDE_OP);
                 return Dec::wide(neg, p, exp);
             }
         }
+        charge(BIG_OP);
         Dec::from_raw(self.mul_raw(other)?)
     }
 
     /// The exact product, before normalising; `None` beyond [`MAX_WORK`].
     fn mul_raw(&self, other: &Dec) -> Option<Raw> {
         // refused before anything is copied
-        if self.len().saturating_mul(other.len()) > MAX_WORK {
+        let (la, lb) = (self.len(), other.len());
+        if la.saturating_mul(lb) > MAX_WORK {
             return None;
         }
+        // the products are charged by `mul_mag`, which skips zero digits
+        charge_digits(la + lb, 0);
         let digits = self.with_digits(|a| other.with_digits(|b| mul_mag(a, b)));
         Some(Raw {
             neg: self.neg != other.neg,
@@ -542,11 +608,13 @@ impl Dec {
         let neg = self.neg != other.neg;
         if let (Some(x), Some(y)) = (self.small_coef(), other.small_coef()) {
             if y < POW10[37] {
+                charge(DIVISION);
                 return div_small(neg, x, y, self.exp - other.exp);
             }
         }
         if let (Some(x), Some(y)) = (self.wide_coef(), other.small_coef()) {
             if y < POW10[37] {
+                charge(DIVISION);
                 return div_wide(neg, x, y, self.exp - other.exp);
             }
         }
@@ -558,6 +626,10 @@ impl Dec {
         if lb.saturating_mul(want) > MAX_WORK {
             return None;
         }
+        // the products are charged by `div_mag`, by the quotient digits;
+        // the digits of the dividend past `want` are only scanned
+        charge(BIG_OP);
+        charge_digits(self.len() / SCANNED_PER_UNIT + want + lb, 0);
         let (num, exp, sticky) = self.with_digits(|a| {
             if a.len() >= want {
                 let drop = a.len() - want;
@@ -594,8 +666,12 @@ impl Dec {
         // nothing is rounded while every product stays within the working
         // precision, so exact products of small coefficients are the result
         if let Some(acc) = self.pow_small(n, POW10[work.min(SMALL_DIGITS)]) {
+            charge(WIDE_OP);
             return round_dec(acc, PRECISION);
         }
+        // each step multiplies and rounds (the products are charged by
+        // `mul_raw`)
+        charge(BIG_OP);
         let mut acc = Raw {
             neg: false,
             digits: vec![1],
@@ -605,9 +681,11 @@ impl Dec {
         for bit in (0..32).rev() {
             if seen {
                 let a = Dec::from_raw_unchecked(&acc);
+                charge(BIG_OP);
                 acc = round_raw_to(a.mul_raw(&a)?, work)?;
             }
             if (n >> bit) & 1 == 1 {
+                charge(BIG_OP);
                 acc = round_raw_to(Dec::from_raw_unchecked(&acc).mul_raw(self)?, work)?;
                 seen = true;
             }
@@ -655,12 +733,14 @@ impl Dec {
                 return Some(Dec::zero());
             };
             let kept = c / p + u128::from(c % p >= p / 2);
+            charge(SMALL_OP);
             return Dec::small(self.neg, kept, self.exp + drop);
         }
         if let Mag::Wide(c) = self.mag {
             let Some(p) = usize::try_from(drop).ok().and_then(U256::pow10) else {
                 return Some(Dec::zero());
             };
+            charge(WIDE_OP);
             let (q, r) = c.divrem(p);
             let half = p.divrem_u64(2).0;
             let kept = if r >= half {
@@ -674,6 +754,8 @@ impl Dec {
         if drop > len {
             return Some(Dec::zero());
         }
+        charge(BIG_OP);
+        charge_digits(self.len() / SCANNED_PER_UNIT, 0);
         round_raw(
             Raw {
                 neg: self.neg,
@@ -1017,17 +1099,28 @@ fn sub_mag(a: &[u8], b: &[u8]) -> Vec<u8> {
 }
 
 fn mul_mag(a: &[u8], b: &[u8]) -> Vec<u8> {
-    let mut acc = vec![0u32; a.len() + b.len()];
+    // a row for each nonzero digit of the shorter operand, and one carry
+    // pass at the end (a pass every few rows over the whole product made a
+    // long number times a short one quadratic)
+    let (a, b) = if a.len() <= b.len() { (a, b) } else { (b, a) };
+    debug_assert!(a.len() <= 1 << 20);
+    // A cell takes at most one product of 81 from each row. The shorter
+    // operand has at most 3 162 digits (3 162^2 <= `MAX_WORK` < 3 163^2), so
+    // a cell holds at most 81 * 3 162 = 256 122 before the carry pass, and
+    // the carry into it is at most a tenth of the cell before it plus its
+    // own carry, under 28 500: the largest sum is below 300 000. Even with
+    // 2^20 rows it stays below 81 * 2^20 * 10 / 9 < 10^8, far within `u32`
+    // (4.29 * 10^9). `all_nines_at_the_largest_product_do_not_overflow`
+    // checks the worst case.
+    let mut acc: Vec<u32> = vec![0u32; a.len() + b.len()];
+    let rows = a.iter().filter(|&&x| x != 0).count();
+    charge_digits(0, rows * b.len());
     for (i, &x) in a.iter().enumerate() {
         if x == 0 {
             continue;
         }
         for (j, &y) in b.iter().enumerate() {
             acc[i + j] += u32::from(x) * u32::from(y);
-        }
-        // keep the cells small
-        if i % 64 == 63 {
-            carry_all(&mut acc);
         }
     }
     carry_all(&mut acc);
@@ -1056,6 +1149,9 @@ fn carry_all(acc: &mut Vec<u32>) {
 fn div_mag(a: &[u8], b: &[u8]) -> (Vec<u8>, bool) {
     let b = &b[..significant(b)];
     let n = b.len();
+    // a multiply-and-subtract over the divisor for each quotient digit
+    let products = (a.len() + 1).saturating_sub(n) * n;
+    charge((a.len() + n + products / QUOTIENT_PRODUCTS_PER_UNIT) as u64);
     let big: Vec<u8> = b.iter().rev().copied().collect();
     // the divisor's leading digits, for the estimate
     let k = n.min(18);
@@ -1460,5 +1556,162 @@ mod tests {
                 d.len()
             );
         }
+    }
+
+    /// Digits least significant first, from a decimal string.
+    fn le(s: &str) -> Vec<u8> {
+        s.bytes().rev().map(|c| c - b'0').collect()
+    }
+
+    /// A product of digits, least significant first, as a decimal string.
+    fn product_string(digits: &[u8]) -> String {
+        let n = significant(digits);
+        if n == 0 {
+            return "0".to_owned();
+        }
+        digits[..n]
+            .iter()
+            .rev()
+            .map(|&d| char::from(b'0' + d))
+            .collect()
+    }
+
+    fn nines(n: usize) -> String {
+        "9".repeat(n)
+    }
+
+    /// `(10^n - 1) * (10^m - 1)` for `n <= m`, from the formula
+    /// `10^(n+m) - 10^m - 10^n + 1`: `n - 1` nines, an 8, `m - n` nines,
+    /// `n - 1` zeros and a 1 (for `n = m`, `10^(2n) - 2 * 10^n + 1`).
+    fn nines_times_nines(n: usize, m: usize) -> String {
+        assert!(1 <= n && n <= m);
+        format!(
+            "{}8{}{}1",
+            "9".repeat(n - 1),
+            "9".repeat(m - n),
+            "0".repeat(n - 1)
+        )
+    }
+
+    /// `(10^n - 1) * 9 = 9 * 10^n - 9`: an 8, `n - 1` nines and a 1.
+    fn nines_times_nine(n: usize) -> String {
+        format!("8{}1", "9".repeat(n - 1))
+    }
+
+    /// The plain schoolbook product, carrying after every row (the oracle
+    /// for [`mul_mag`], which carries once at the end).
+    fn schoolbook(a: &[u8], b: &[u8]) -> Vec<u8> {
+        let mut r = vec![0u8; a.len() + b.len()];
+        for (i, &x) in a.iter().enumerate() {
+            let mut carry = 0u32;
+            for (j, &y) in b.iter().enumerate() {
+                let t = u32::from(r[i + j]) + u32::from(x) * u32::from(y) + carry;
+                r[i + j] = (t % 10) as u8;
+                carry = t / 10;
+            }
+            let mut k = i + b.len();
+            while carry > 0 {
+                let t = u32::from(r[k]) + carry;
+                r[k] = (t % 10) as u8;
+                carry = t / 10;
+                k += 1;
+            }
+        }
+        r
+    }
+
+    fn assert_product(a: &str, b: &str, want: &str) {
+        let got = product_string(&mul_mag(&le(a), &le(b)));
+        assert!(
+            got == want,
+            "{} digits times {} digits: {} digits, want {}",
+            a.len(),
+            b.len(),
+            got.len(),
+            want.len()
+        );
+    }
+
+    #[test]
+    fn long_products_match_their_closed_forms() {
+        for n in [1, 2, 3, 38, 39, 63, 64, 65, 77, 78, 500, 1000, 3000] {
+            assert_product(&nines(n), &nines(n), &nines_times_nines(n, n));
+        }
+        // a long number times a short one, up to `MAX_DIGITS`
+        for n in [1, 2, 64, 1000, 50_000, MAX_DIGITS - 1, MAX_DIGITS] {
+            assert_product(&nines(n), "9", &nines_times_nine(n));
+            assert_product("9", &nines(n), &nines_times_nine(n));
+        }
+        for (n, m) in [
+            (1, 2),
+            (2, 3),
+            (64, 65),
+            (127, 129),
+            (1000, 3000),
+            (2500, 4000),
+        ] {
+            assert_product(&nines(n), &nines(m), &nines_times_nines(n, m));
+            assert_product(&nines(m), &nines(n), &nines_times_nines(n, m));
+        }
+        // through the public product
+        let a = Dec::parse(&nines(MAX_DIGITS - 1)).unwrap();
+        let p = a.mul(&d("9")).unwrap();
+        assert!(p == d(&nines_times_nine(MAX_DIGITS - 1)));
+        let b = Dec::parse(&nines(3000)).unwrap();
+        let c = Dec::parse(&nines(2500)).unwrap();
+        assert!(b.mul(&c).unwrap() == d(&nines_times_nines(2500, 3000)));
+    }
+
+    #[test]
+    fn dense_products_match_a_schoolbook_product() {
+        let mut state = 17u64;
+        let mut digits = |n: usize| -> Vec<u8> {
+            let mut v: Vec<u8> = (0..n)
+                .map(|_| {
+                    state = state
+                        .wrapping_mul(6364136223846793005)
+                        .wrapping_add(1442695040888963407);
+                    ((state >> 33) % 10) as u8
+                })
+                .collect();
+            // the leading digit is not zero
+            if v[n - 1] == 0 {
+                v[n - 1] = 7;
+            }
+            v
+        };
+        let lengths = [1, 2, 63, 64, 65, 127, 128, 129, 1000, 5000];
+        let factors: Vec<Vec<u8>> = lengths.iter().map(|&n| digits(n)).collect();
+        for a in &factors {
+            for b in &factors {
+                let got = mul_mag(a, b);
+                let want = schoolbook(a, b);
+                assert!(
+                    got[..significant(&got)] == want[..significant(&want)],
+                    "{} digits times {} digits",
+                    a.len(),
+                    b.len()
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn all_nines_at_the_largest_product_do_not_overflow() {
+        // the longest shorter operand a product may have: every cell of
+        // the middle takes 3 162 products of 81 before the carry pass
+        let n = 3162;
+        assert!(n * n <= MAX_WORK && (n + 1) * (n + 1) > MAX_WORK);
+        let a = nines(n);
+        let want = nines_times_nines(n, n);
+        assert_product(&a, &a, &want);
+        let got = mul_mag(&le(&a), &le(&a));
+        let reference = schoolbook(&le(&a), &le(&a));
+        assert!(got[..significant(&got)] == reference[..significant(&reference)]);
+        let x = Dec::parse(&a).unwrap();
+        assert!(x.mul(&x).unwrap() == d(&want));
+        // one digit longer is refused before any product is taken
+        let y = Dec::parse(&nines(n + 1)).unwrap();
+        assert!(y.mul(&y).is_none());
     }
 }

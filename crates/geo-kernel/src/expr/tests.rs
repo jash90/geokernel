@@ -1366,17 +1366,18 @@ fn list_statistics_and_reordering() {
     }
 }
 
-/// The list work `f` does on this thread (see `list_work`).
-fn list_work_of<T>(f: impl FnOnce() -> T) -> (T, u64) {
-    let before = super::list_work();
+/// The evaluation work `f` does on this thread (see `work_done`).
+fn work_of<T>(f: impl FnOnce() -> T) -> (T, u64) {
+    let before = super::work_done();
     let r = f();
-    (r, super::list_work() - before)
+    (r, super::work_done() - before)
 }
 
-/// The most list work one evaluation of one object may do: the elements it
-/// builds, a range it counts within what is left, and the reads of the
-/// elements it built, each at most [`super::MAX_ELEMENTS`].
-const WORK_BOUND: u64 = 4 * super::MAX_ELEMENTS;
+/// The most work one evaluation past the element bound does here: at most
+/// [`super::MAX_ELEMENTS`] elements built, each with a step of counting,
+/// one of filling and a small body (up to 3 nodes visited, 3 units each),
+/// and a range counted within what is left.
+const WORK_BOUND: u64 = 12 * super::MAX_ELEMENTS;
 
 fn is_defined(c: &Construction, label: &str) -> bool {
     match c.value(c.id(label).unwrap()) {
@@ -1397,19 +1398,16 @@ fn the_nested_sequence_of_the_fuzz_corpus_stops_at_the_bound() {
         )
     };
     // created at the size
-    let (c, work) = list_work_of(|| load(&script("1E5")).unwrap());
+    let (c, work) = work_of(|| load(&script("1E5")).unwrap());
     assert!(!is_defined(&c, "l"));
-    assert!(work <= WORK_BOUND, "creation did {work} units of list work");
+    assert!(work <= WORK_BOUND, "creation did {work} units of work");
     // recomputed at the size
     let mut c = load(&script("4")).unwrap();
     assert_eq!(elems(&c, "l"), "{{2}, {3, 4}, {4, 5, 6}, {5, 6, 7, 8}}");
     let b = c.id("b").unwrap();
-    let (_, work) = list_work_of(|| c.set_number(b, 1e5).unwrap());
+    let (_, work) = work_of(|| c.set_number(b, 1e5).unwrap());
     assert!(!is_defined(&c, "l"));
-    assert!(
-        work <= WORK_BOUND,
-        "the update did {work} units of list work"
-    );
+    assert!(work <= WORK_BOUND, "the update did {work} units of work");
     c.set_number(b, 4.0).unwrap();
     assert_eq!(elems(&c, "l"), "{{2}, {3, 4}, {4, 5, 6}, {5, 6, 7, 8}}");
 }
@@ -1420,160 +1418,484 @@ fn the_loop_around_a_list_past_the_bound_stops_at_once() {
     // are evaluated after it, so the work is the outer count and little else
     let mut c = load("n = 3\nl = Sequence(Sum(Sequence(2E6)), k, 1, n)").unwrap();
     let n = c.id("n").unwrap();
-    let (_, work) = list_work_of(|| c.set_number(n, 1e6).unwrap());
+    let (_, work) = work_of(|| c.set_number(n, 1e6).unwrap());
     assert!(!is_defined(&c, "l"));
-    assert!(work <= 1_000_100, "{work} units of list work");
+    assert!(work <= 1_000_100, "{work} units of work");
+}
+
+/// Creates `l = expr` at `small` (3 when `None`), checks it is defined
+/// exactly when `small` is given, then sets `n` to `large` and checks that
+/// `l` is undefined and the update did at most `bound` units of work (`m`
+/// is recomputed too), and that `l` is defined again back at `small`.
+fn check_over_bound(expr: &str, small: Option<f64>, large: f64, bound: u64) {
+    let mut c = load(&format!("n = 3\nf(x) = x^2 + 1\n{COSTLY}\nm = Sequence(n)")).unwrap();
+    let n = c.id("n").unwrap();
+    c.set_number(n, small.unwrap_or(3.0)).unwrap();
+    exec(&mut c, &format!("l = {expr}")).unwrap();
+    assert_eq!(
+        is_defined(&c, "l"),
+        small.is_some(),
+        "`{expr}` at {small:?}"
+    );
+    let (_, work) = work_of(|| c.set_number(n, large).unwrap());
+    assert!(!is_defined(&c, "l"), "`{expr}` at n = {large}");
+    assert!(
+        work <= bound,
+        "`{expr}` at n = {large}: {work} units of work"
+    );
+    if let Some(small) = small {
+        c.set_number(n, small).unwrap();
+        assert!(is_defined(&c, "l"), "`{expr}` back at n = {small}");
+    }
+}
+
+/// Lists past the element bound in a loop: before the bound stopped
+/// evaluations, each of these went on counting every inner range in full
+/// (about 5e9 units at `n = 1E5`).
+const OVER_ELEMENT_BOUND: &[(&str, Option<f64>, f64)] = &[
+    (
+        "Sequence(Sum(Sequence(j, j, 1, k)), k, 1, n)",
+        Some(3.0),
+        1e5,
+    ),
+    (
+        "Sequence(Product(Sequence(j, j, 1, k)), k, 1, n)",
+        Some(3.0),
+        1e5,
+    ),
+    (
+        "Join(Sequence(Sequence(j, j, 1, k), k, 1, n))",
+        Some(3.0),
+        1e5,
+    ),
+    (
+        "Sequence(Sequence(j, j, 1, k) * 2, k, 1, n)",
+        Some(3.0),
+        1e5,
+    ),
+    ("Sequence(-Sequence(j, j, 1, k), k, 1, n)", Some(3.0), 1e5),
+    (
+        "Sequence(Sequence(j, j, 1, k) + Sequence(j, j, 1, k), k, 1, n)",
+        Some(3.0),
+        1e5,
+    ),
+    (
+        "Sequence(First(Sequence(j, j, 1, k), k), k, 1, n)",
+        Some(3.0),
+        1e5,
+    ),
+    (
+        "Sequence(Last(Sequence(j, j, 1, k), 1E9), k, 1, n)",
+        Some(3.0),
+        1e5,
+    ),
+    (
+        "Sequence(Reverse(Sequence(j, j, 1, k)), k, 1, n)",
+        Some(3.0),
+        1e5,
+    ),
+    (
+        "Sequence(Sort(Sequence(-j, j, 1, k)), k, 1, n)",
+        Some(3.0),
+        1e5,
+    ),
+    (
+        "Sequence(Append(Sequence(j, j, 1, k), 0), k, 1, n)",
+        Some(3.0),
+        1e5,
+    ),
+    (
+        "Sequence(Element(Sequence(j, j, 1, k), 1), k, 1, n)",
+        Some(3.0),
+        1e5,
+    ),
+    ("Sequence(Sequence(1, k), k, 1, n)", Some(3.0), 1e5),
+    ("Sequence(Sequence(0, k, 0.5), k, 1, n)", Some(3.0), 1e5),
+    (
+        "If(n > 0, Sequence(Sequence(j + k, j, 1, k), k, 1, n), {1})",
+        Some(3.0),
+        1e5,
+    ),
+    (
+        "Sequence(If(k > 0, Sequence(j, j, 1, k), {0}), k, 1, n)",
+        Some(3.0),
+        1e5,
+    ),
+    (
+        "Sequence(If(k > 0, Sum(Sequence(j, j, 1, k)), 0), k, 1, n)",
+        Some(3.0),
+        1e5,
+    ),
+    (
+        "Sequence(f(Sum(Sequence(j, j, 1, k))), k, 1, n)",
+        Some(3.0),
+        1e5,
+    ),
+    ("{Sequence(Sequence(j, j, 1, k), k, 1, n)}", Some(3.0), 1e5),
+];
+
+/// Lists that are undefined at the large size without a loop going on past
+/// the bound: they were cheap before the bound stopped evaluations too, and
+/// are kept so that every list construct and every kind of range (a zero,
+/// tiny, stalled or negative step, NaN and infinite bounds, `1/0` being
+/// infinite) is checked for its result and its work. `None` marks a range
+/// that never ends (within `MIN_PRECISION` of its end, or stalled) or a
+/// count that is always too large.
+const UNDEFINED_WITHOUT_A_LOOP: &[(&str, Option<f64>, f64)] = &[
+    ("Sum(Sequence(k, k, 1, n))", Some(3.0), 1e7),
+    ("Sum(Sequence(n), 2)", Some(3.0), 1e7),
+    ("Product(Sequence(n))", Some(3.0), 1e7),
+    ("Mean(Sequence(n))", Some(3.0), 1e7),
+    ("Max(Sequence(k^2, k, 1, n))", Some(3.0), 1e7),
+    ("Length(Sequence(n))", Some(3.0), 1e7),
+    (
+        "Sequence(Join({Sequence(k), Sequence(j, j, 1, k)}), k, 1, n)",
+        Some(3.0),
+        1e5,
+    ),
+    ("Sequence(n) + Sequence(n)", Some(3.0), 7e5),
+    ("First(Sequence(n), 1E9)", None, 1e7),
+    ("First(Sequence(n), n - 1)", Some(3.0), 1e7),
+    ("Sequence(j, j, 0, n, 1E-7)", Some(0.0), 1.0),
+    ("Sequence(j, j, n, 0, -1E-7)", Some(0.0), 1.0),
+    ("Sequence(0, n, 1E-7)", Some(0.0), 1.0),
+    ("Sequence(j, j, -n, n)", Some(3.0), 1e300),
+    ("Sequence(j, j, 1, n, 0)", Some(1.0), 3.0),
+    ("Sequence(1, n, 0)", None, 5.0),
+    ("Sequence(j, j, 1, sqrt(-n))", Some(0.0), 3.0),
+    ("Sequence(j, j, 1, 1 / n)", Some(1.0), 0.0),
+    ("Sequence(j, j, 1 / n, 1 / n)", Some(1.0), 0.0),
+    ("Sequence(j, j, -1 / n, 1 / n)", Some(1.0), 0.0),
+    ("Sequence(1 / n, 3)", Some(1.0), 0.0),
+    ("Sequence(j, j, 0, n, 1E-300)", None, 1.0),
+    ("Sequence(j, j, n, 0, -1E-300)", None, 1.0),
+    ("Sequence(j, j, 1E300, 1E300 + n, 1)", None, 0.0),
+    ("Sequence(0, n, 1E-300)", None, 1.0),
+    ("Sequence(1E15, 1E15 + n, 1E-9)", None, 1.0),
+    ("Sequence(-n, n)", Some(3.0), 1e15),
+    ("{Sequence(n), Sequence(n)}", Some(3.0), 7e5),
+];
+
+/// Lists within the element bound whose bodies cost more than the work
+/// bound allows: a costly function call, exact decimals of 3001 digits,
+/// short exact divisions. Before the work bound, the first took about
+/// 0.64 ms of a release build for each value, the product about 48 us, the
+/// quotient about 110 us and the sum of quotients about 7 us (7.4 s for the
+/// whole list).
+const OVER_WORK_BOUND: &[(&str, Option<f64>, f64)] = &[
+    ("Sequence(g(k), k, 1, n)", Some(30.0), 1e4),
+    ("Sequence(k + g(k), k, 1, n)", Some(30.0), 1e4),
+    (
+        "Sequence(Sum(Sequence(g(j), j, 1, k)), k, 1, n)",
+        Some(3.0),
+        1e3,
+    ),
+    (
+        "Sequence((1 + 1E-3000) * (1 + 1E-3000), k, 1, n)",
+        Some(1000.0),
+        1e5,
+    ),
+    ("Sequence(1 / (1 + 1E-3000), k, 1, n)", Some(300.0), 1e5),
+    (
+        "Sequence(1 / 3 + 1 / 7 + 1 / 9 + 1 / 11 + 1 / 13 + 1 / 17 + 1 / 19, k, 1, n)",
+        Some(1000.0),
+        1048576.0,
+    ),
+    ("Sequence((1 + 1E-70) / 7, k, 1, n)", Some(1000.0), 1e6),
+];
+
+/// A function `g(x) = 65536 x` whose tree, functions expanded, has about
+/// 240 000 nodes (the review's example): 6.4 s of a release build for 10^4
+/// values before the work bound.
+const COSTLY: &str = "h(x) = x + x + x + x\ng(x) = h(h(h(h(h(h(h(h(x))))))))";
+
+/// The most work one evaluation past the work bound may do.
+const PAST_WORK_BOUND: u64 = super::MAX_EVALUATION_WORK + super::MAX_OVERRUN;
+
+#[test]
+fn a_costly_sequence_body_stops_at_the_work_bound() {
+    for &(expr, small, large) in OVER_WORK_BOUND {
+        check_over_bound(expr, small, large, PAST_WORK_BOUND);
+    }
+    // created at the size, and the values within it
+    let (c, work) = work_of(|| load(&format!("{COSTLY}\nl = Sequence(g(k), k, 1, 1E4)")).unwrap());
+    assert!(!is_defined(&c, "l"));
+    assert!(work <= PAST_WORK_BOUND, "creation did {work} units of work");
+    let c = load(&format!("{COSTLY}\nl = Sequence(g(k), k, 1, 3)")).unwrap();
+    assert_eq!(elems(&c, "l"), "{65536, 131072, 196608}");
 }
 
 #[test]
-fn every_list_construct_stops_at_the_bound() {
-    // each over the bound at its large `n`, and within it at its small one
-    // (none for a step that cannot move the variable: that never ends)
-    let cases: &[(&str, Option<f64>, f64)] = &[
-        // a generated list summed, multiplied or averaged
+fn a_full_length_list_with_a_small_body_is_defined() {
+    // 2^20 values, each a step of counting, one of filling and the nodes of
+    // the body visited (3 units each): within `MAX_EVALUATION_WORK` for 10
+    // terms (59 units a value), past it for 15 (89 units, 0.35 s)
+    let sum = |terms: usize| vec!["k"; terms].join(" + ");
+    let c = load(&format!("l = Sequence({}, k, 1, 1048576)", sum(10))).unwrap();
+    assert_eq!(c.value(c.id("l").unwrap()), Value::List { len: 1 << 20 });
+    let (c, work) = work_of(|| load(&format!("l = Sequence({}, k, 1, 1048576)", sum(15))).unwrap());
+    assert!(!is_defined(&c, "l"));
+    assert!(work <= PAST_WORK_BOUND, "{work} units of work");
+}
+
+/// A polynomial of degree 20.
+const POLYNOMIAL: &str = "p(x) = 1 + x + x^2 + x^3 + x^4 + x^5 + x^6 + x^7 + x^8 + x^9 + x^10 \
+                          + x^11 + x^12 + x^13 + x^14 + x^15 + x^16 + x^17 + x^18 + x^19 + x^20";
+
+/// Ordinary lists that take from under a millisecond to 0.3 s of a release
+/// build (`1.0000001^999999` is 6 200 units for each value, `1.0001^365`
+/// 2 500), and the most work each may do: what it does now, rounded up. Charging the static cost of a body for each value, with
+/// both branches of an `If` and a sampled function's body for each call
+/// around it, charged the first five 6 to 300 times as much (31 to 62
+/// million units) and, with a bound of 2^25, made them undefined.
+fn defined_within_the_bound() -> Vec<(String, u64)> {
+    let logistic = |levels: usize, n: usize| {
+        format!(
+            "f(x) = 3.7 x (1 - x)\nl = Sequence({}k / 10000{}, k, 1, {n})",
+            "f(".repeat(levels),
+            ")".repeat(levels)
+        )
+    };
+    vec![
+        (logistic(9, 10000), 1_100_000),
+        (logistic(12, 1000), 150_000),
         (
-            "Sequence(Sum(Sequence(j, j, 1, k)), k, 1, n)",
-            Some(3.0),
-            1e5,
+            format!("{POLYNOMIAL}\nl = Sum(Sequence(p(p(k / 10000)), k, 1, 11000))"),
+            5_500_000,
         ),
         (
-            "Sequence(Product(Sequence(j, j, 1, k)), k, 1, n)",
-            Some(3.0),
-            1e5,
-        ),
-        ("Sum(Sequence(k, k, 1, n))", Some(3.0), 1e7),
-        ("Sum(Sequence(n), 2)", Some(3.0), 1e7),
-        ("Product(Sequence(n))", Some(3.0), 1e7),
-        ("Mean(Sequence(n))", Some(3.0), 1e7),
-        ("Max(Sequence(k^2, k, 1, n))", Some(3.0), 1e7),
-        ("Length(Sequence(n))", Some(3.0), 1e7),
-        // Join of sequences
-        (
-            "Join(Sequence(Sequence(j, j, 1, k), k, 1, n))",
-            Some(3.0),
-            1e5,
+            "N(x) = x - (x^2 - 2) / (2x)\nl = Sequence(N(N(N(N(N(N(k / 100)))))), k, 1, 10000)"
+                .into(),
+            1_500_000,
         ),
         (
-            "Sequence(Join({Sequence(k), Sequence(j, j, 1, k)}), k, 1, n)",
-            Some(3.0),
-            1e5,
-        ),
-        // element by element arithmetic on nested lists
-        (
-            "Sequence(Sequence(j, j, 1, k) * 2, k, 1, n)",
-            Some(3.0),
-            1e5,
-        ),
-        ("Sequence(-Sequence(j, j, 1, k), k, 1, n)", Some(3.0), 1e5),
-        (
-            "Sequence(Sequence(j, j, 1, k) + Sequence(j, j, 1, k), k, 1, n)",
-            Some(3.0),
-            1e5,
-        ),
-        ("Sequence(n) + Sequence(n)", Some(3.0), 7e5),
-        // First and Last with a huge count, and the other list commands
-        ("First(Sequence(n), 1E9)", None, 1e7),
-        ("First(Sequence(n), n - 1)", Some(3.0), 1e7),
-        (
-            "Sequence(First(Sequence(j, j, 1, k), k), k, 1, n)",
-            Some(3.0),
-            1e5,
+            format!(
+                "{POLYNOMIAL}\nq(x) = p(p(x))\nl = Sequence(If(k < 3, q(k / 10000), 0), k, 1, 10000)"
+            ),
+            200_000,
         ),
         (
-            "Sequence(Last(Sequence(j, j, 1, k), 1E9), k, 1, n)",
-            Some(3.0),
-            1e5,
+            "l = Sequence(1.0000001^999999 + k, k, 1, 10000)".into(),
+            70_000_000,
         ),
         (
-            "Sequence(Reverse(Sequence(j, j, 1, k)), k, 1, n)",
-            Some(3.0),
-            1e5,
+            "l = Sequence(k * 1.0001^365, k, 1, 29000)".into(),
+            super::MAX_EVALUATION_WORK,
         ),
+        // a list object read in a body is read in place, as upstream reads
+        // the `GeoList`: neither copied nor counted against the element
+        // bound for each value (each read was, and these were undefined
+        // from about 2 000 values on)
+        (list_read(10000, "L(k) + 1"), 340_000),
+        (list_read(10000, "Element(L, k) + 1"), 340_000),
+        (list_read(10000, "Length(L) + k"), 310_000),
+        (list_read(3000, "Max(L) + k"), 9_100_000),
+        (list_read(3000, "Sum(First(L, k))"), 4_600_000),
+        // in the table of lists past the element bound before
         (
-            "Sequence(Sort(Sequence(-j, j, 1, k)), k, 1, n)",
-            Some(3.0),
-            1e5,
+            "L = Sequence(100000)\nl = Sequence(Length(L), k, 1, 100000)".into(),
+            3_500_000,
         ),
-        (
-            "Sequence(Append(Sequence(j, j, 1, k), 0), k, 1, n)",
-            Some(3.0),
-            1e5,
-        ),
-        (
-            "Sequence(Element(Sequence(j, j, 1, k), 1), k, 1, n)",
-            Some(3.0),
-            1e5,
-        ),
-        ("Sequence(Sequence(1, k), k, 1, n)", Some(3.0), 1e5),
-        ("Sequence(Sequence(0, k, 0.5), k, 1, n)", Some(3.0), 1e5),
-        // a tiny, stalled or negative step, and huge bounds
-        ("Sequence(j, j, 0, n, 1E-7)", Some(0.0), 1.0),
-        ("Sequence(j, j, n, 0, -1E-7)", Some(0.0), 1.0),
-        ("Sequence(0, n, 1E-7)", Some(0.0), 1.0),
-        ("Sequence(j, j, -n, n)", Some(3.0), 1e300),
-        // a zero step, a NaN bound, infinite bounds (`1/0` is infinite)
-        ("Sequence(j, j, 1, n, 0)", Some(1.0), 3.0),
-        ("Sequence(1, n, 0)", None, 3.0),
-        ("Sequence(j, j, 1, sqrt(-n))", Some(0.0), 3.0),
-        ("Sequence(j, j, 1, 1 / n)", Some(1.0), 0.0),
-        ("Sequence(j, j, 1 / n, 1 / n)", Some(1.0), 0.0),
-        ("Sequence(j, j, -1 / n, 1 / n)", Some(1.0), 0.0),
-        ("Sequence(1 / n, 3)", Some(1.0), 0.0),
-        // within `MIN_PRECISION` of the end, or stalled, for ever
-        ("Sequence(j, j, 0, n, 1E-300)", None, 1.0),
-        ("Sequence(j, j, n, 0, -1E-300)", None, 1.0),
-        ("Sequence(j, j, 1E300, 1E300 + n, 1)", None, 0.0),
-        ("Sequence(0, n, 1E-300)", None, 1.0),
-        ("Sequence(1E15, 1E15 + n, 1E-9)", None, 1.0),
-        ("Sequence(-n, n)", Some(3.0), 1e15),
-        // If branches holding sequences
-        (
-            "If(n > 0, Sequence(Sequence(j + k, j, 1, k), k, 1, n), {1})",
-            Some(3.0),
-            1e5,
-        ),
-        (
-            "Sequence(If(k > 0, Sequence(j, j, 1, k), {0}), k, 1, n)",
-            Some(3.0),
-            1e5,
-        ),
-        (
-            "Sequence(If(k > 0, Sum(Sequence(j, j, 1, k)), 0), k, 1, n)",
-            Some(3.0),
-            1e5,
-        ),
-        // a function applied to what a generated list gives
-        (
-            "Sequence(f(Sum(Sequence(j, j, 1, k))), k, 1, n)",
-            Some(3.0),
-            1e5,
-        ),
-        // a literal list of lists that fit one by one
-        ("{Sequence(n), Sequence(n)}", Some(3.0), 7e5),
-        ("{Sequence(Sequence(j, j, 1, k), k, 1, n)}", Some(3.0), 1e5),
-        // a list object read in a body
-        ("Sequence(Length(m), k, 1, n)", Some(3.0), 1e5),
-    ];
-    for &(expr, small, large) in cases {
-        let mut c = load("n = 3\nf(x) = x^2 + 1\nm = Sequence(n)").unwrap();
-        let n = c.id("n").unwrap();
-        c.set_number(n, small.unwrap_or(3.0)).unwrap();
-        exec(&mut c, &format!("l = {expr}")).unwrap();
-        assert_eq!(
-            is_defined(&c, "l"),
-            small.is_some(),
-            "`{expr}` at {small:?}"
-        );
-        let (_, work) = list_work_of(|| c.set_number(n, large).unwrap());
-        assert!(!is_defined(&c, "l"), "`{expr}` at n = {large}");
-        // `m` is recomputed too and fits or not on its own
-        assert!(
-            work <= 2 * WORK_BOUND,
-            "`{expr}` at n = {large}: {work} units of list work"
-        );
-        if let Some(small) = small {
-            c.set_number(n, small).unwrap();
-            assert!(is_defined(&c, "l"), "`{expr}` back at n = {small}");
-        }
+    ]
+}
+
+/// `l` reading the list object `L` of `n` elements in a body of `n` values.
+fn list_read(n: usize, body: &str) -> String {
+    format!("L = Sequence(k^2, k, 1, {n})\nl = Sequence({body}, k, 1, {n})")
+}
+
+/// The value of `l`: its elements or its number.
+fn value_of_l(c: &Construction) -> String {
+    let id = c.id("l").unwrap();
+    flat(c, id).unwrap_or_else(|| format!("{:?}", c.value(id)))
+}
+
+#[test]
+fn ordinary_lists_are_defined_with_their_unbounded_value() {
+    for (script, most) in defined_within_the_bound() {
+        let (c, work) = work_of(|| load(&script).unwrap());
+        assert!(is_defined(&c, "l"), "{script}");
+        assert!(work <= most, "{script}: {work} units of work");
+        let free = super::eval::unbounded(|| load(&script).unwrap());
+        assert_eq!(value_of_l(&c), value_of_l(&free), "{script}");
+    }
+    // the evaluation charges the branch of `If` it takes: the other one
+    // would be 10^4 times as much
+    let script = format!("{POLYNOMIAL}\nl = Sequence(If(k < 3, p(p(k / 10000)), 0), k, 1, 10000)");
+    let (_, taken) = work_of(|| load(&script).unwrap());
+    let script = format!("{POLYNOMIAL}\nl = Sequence(If(k > 3, p(p(k / 10000)), 0), k, 1, 10000)");
+    let (_, both) = work_of(|| load(&script).unwrap());
+    assert!(taken * 20 < both, "{taken} and {both} units of work");
+}
+
+#[test]
+fn a_list_past_the_work_bound_is_undefined() {
+    // `k * 1.0001^365` costs about 2 520 units for each value: undefined
+    // from about 31 700 values on
+    let (c, work) = work_of(|| load("l = Sequence(k * 1.0001^365, k, 1, 33000)").unwrap());
+    assert!(!is_defined(&c, "l"));
+    assert!(work <= PAST_WORK_BOUND, "{work} units of work");
+}
+
+#[test]
+fn a_range_upstream_refuses_is_an_undefined_element() {
+    // `AlgoSequenceRange` past `LARGEST_INTEGER` and `AlgoSequence` with an
+    // infinite count are undefined lists, elements of the list around them
+    let c = load(
+        "a = {Sequence(1, 1E20), {1}}\n\
+         b = {Sequence(k, k, 0, 1, 1E-320), {1}}",
+    )
+    .unwrap();
+    assert_eq!(elems(&c, "a"), "{?list, {1}}");
+    assert_eq!(elems(&c, "b"), "{?list, {1}}");
+    // and counted like any other element: a million of them fit
+    let (c, work) = work_of(|| load("l = Sequence(Sequence(1, 1E20), k, 1, 1E6)").unwrap());
+    assert_eq!(c.value(c.id("l").unwrap()), Value::List { len: 1_000_000 });
+    assert!(
+        (2_000_000..=WORK_BOUND * 2).contains(&work),
+        "{work} units of work"
+    );
+    // `Sequence(n)` counts to `(int) Math.round(n)`: past `int` it wraps,
+    // and a count of 0 or less is empty
+    let c = load(
+        "a = Sequence(1E20)\n\
+         b = Sequence(3E9)\n\
+         d = Sequence(2^32 + 3)\n\
+         e = Sequence(-5)\n\
+         g = Sequence(5E9)",
+    )
+    .unwrap();
+    assert_eq!(elems(&c, "a"), "{}");
+    assert_eq!(elems(&c, "b"), "{}");
+    assert_eq!(elems(&c, "d"), "{1, 2, 3}");
+    assert_eq!(elems(&c, "e"), "{}");
+    // 705032704 values: past the element bound
+    assert!(!is_defined(&c, "g"));
+}
+
+#[test]
+fn every_list_construct_stops_at_the_element_bound() {
+    for &(expr, small, large) in OVER_ELEMENT_BOUND.iter().chain(UNDEFINED_WITHOUT_A_LOOP) {
+        check_over_bound(expr, small, large, 2 * WORK_BOUND);
+    }
+}
+
+/// A number of `n` digits, none of them zero: `1.` and `n - 1` digits from
+/// a fixed sequence.
+fn dense_digits(n: usize, seed: u64) -> String {
+    let mut x = seed;
+    let mut s = String::from("1.");
+    for _ in 1..n {
+        x = x
+            .wrapping_mul(6364136223846793005)
+            .wrapping_add(1442695040888963407);
+        s.push(char::from(b'1' + ((x >> 33) % 9) as u8));
+    }
+    s
+}
+
+#[test]
+fn long_numbers_with_dense_digits_cost_what_they_take() {
+    // a 99 000-digit number times 3 took 0.29 s of a release build for each
+    // value (a carry pass over the whole product every 64 digits) and was
+    // charged 0.4 ms; it is 0.2 ms and about 103 000 units now
+    let a = dense_digits(99_000, 7);
+    let script = |n: u32| format!("a = {a}\nl = Sequence(a * 3, k, 1, {n})");
+    let (c, work) = work_of(|| load(&script(12)).unwrap());
+    assert!(is_defined(&c, "l"));
+    assert!(
+        (1_200_000..2_000_000).contains(&work),
+        "{work} units of work"
+    );
+    let (c, work) = work_of(|| load(&script(2000)).unwrap());
+    assert!(!is_defined(&c, "l"));
+    assert!(work <= PAST_WORK_BOUND, "{work} units of work");
+    // 3 000 dense digits: a product of 9 million digit products, a quotient
+    // and a power, each with the value of the unbounded evaluation
+    let b = dense_digits(3000, 8);
+    for (body, most) in [
+        ("b * b", 1_200_000),
+        ("1 / b", 1_400_000),
+        ("b^365", 900_000),
+    ] {
+        let script = format!("b = {b}\nl = Sequence({body}, k, 1, 3)");
+        let (c, work) = work_of(|| load(&script).unwrap());
+        assert!(is_defined(&c, "l"), "{body}");
+        assert!(work <= most, "{body}: {work} units of work");
+        let free = super::eval::unbounded(|| load(&script).unwrap());
+        assert_eq!(value_of_l(&c), value_of_l(&free), "{body}");
+    }
+}
+
+/// Small lists and the exact work each does, so that a charge that goes
+/// missing (or changes) is seen: the counter does not depend on the
+/// machine. Each line shows one kind of charge. `Sequence(1.5 + 2.25, k, 1,
+/// 4)`, for one: the bounds (two visits of 3), counting 4 values, and for
+/// each value a step of filling, three visits, the sum (3) and its double
+/// (90): `6 + 4 + 4 * 103 = 422`.
+const EXACT_WORK: &[(&str, &str, u64)] = &[
+    ("a range, its values", "l = Sequence(k, k, 1, 4)", 26),
+    (
+        "full visits, a power, a function",
+        "l = Sequence(k^2 + sin(k), k, 1, 4)",
+        134,
+    ),
+    (
+        "a sampled function",
+        "f(x) = 2x + 1\nl = Sequence(f(k), k, 1, 4)",
+        58,
+    ),
+    (
+        "the branch of `If` taken",
+        "l = Sequence(If(k < 2, k, k + k + k), k, 1, 4)",
+        110,
+    ),
+    (
+        "a sum of short decimals",
+        "l = Sequence(1.5 + 2.25, k, 1, 4)",
+        422,
+    ),
+    ("a short quotient", "l = Sequence(1 / 3, k, 1, 4)", 810),
+    (
+        "a 41-digit product",
+        "l = Sequence(1.2345678901234567890123456789012345678901 * 3, k, 1, 4)",
+        890,
+    ),
+    (
+        "a rounding",
+        "l = Sequence(round(1.23456, 2), k, 1, 4)",
+        422,
+    ),
+    (
+        "the decimal of a double",
+        "l = Sequence(floor(2.5) * 0.5, k, 1, 4)",
+        610,
+    ),
+    ("a short power", "l = Sequence(1.5^3, k, 1, 4)", 562),
+    ("a long power", "l = Sequence(1.0001^365, k, 1, 4)", 10070),
+    (
+        "an 81-digit product",
+        "l = Sequence((1 + 1E-80) * 3, k, 1, 4)",
+        2658,
+    ),
+    (
+        "an 81-digit quotient",
+        "l = Sequence(1 / (1 + 1E-80), k, 1, 4)",
+        9694,
+    ),
+    (
+        "a list object read",
+        "L = Sequence(5)\nl = Sequence(Max(L) + Length(L) + L(k), k, 1, 4)",
+        114,
+    ),
+    ("a sort", "l = Sort(Sequence(5 - k, k, 1, 4))", 66),
+];
+
+#[test]
+fn small_lists_do_exactly_their_work() {
+    for &(what, script, units) in EXACT_WORK {
+        let (c, work) = work_of(|| load(script).unwrap());
+        assert!(is_defined(&c, "l"), "{what}");
+        assert_eq!(work, units, "{what}");
     }
 }

@@ -196,4 +196,18 @@ for line in ("p = If(a > 0, {1, 2})", "c = Length(If(a > 0, {1, 2}))", "p = If(a
          [setn("a", -1), setn("a", 2), setn("a", 3), mv("A", -2, 5), setn("n", 4), setn("a", 0),
           setn("a", 1), mv("A", 1, 2), setn("n", 2)])
 
+# ------------------------------------------------------- limits of a range
+# `Sequence(n)` counts to `(int) Math.round(n)`: past `int` it wraps, and 0
+# or less is empty. A range past `MyMath.LARGEST_INTEGER` and an infinite
+# count are undefined lists, elements of a list around them.
+topic("limit")
+case("limit", nums(n=3) + ["l = Sequence(n)"],
+     [setn("n", 1e20), setn("n", 3), setn("n", 4294967299), setn("n", -5), setn("n", 3),
+      setn("n", 3e9), setn("n", 3)])
+for rhs in ("{Sequence(1, n), {1}}", "Sequence(Sequence(1, n), k, 1, 3)",
+            "{Sequence(n, 1E20), {1}}"):
+    case("limit", nums(n=3) + [f"l = {rhs}"], [setn("n", 1e20), setn("n", 3)])
+case("limit", nums(n=1) + ["l = {Sequence(k, k, 0, n, 1E-320), {1}}"],
+     [setn("n", 2), setn("n", 1)])
+
 cases.write()
