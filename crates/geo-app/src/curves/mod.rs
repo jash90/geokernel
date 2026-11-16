@@ -69,6 +69,7 @@ thread_local! {
     static PLOTTED: Cell<u64> = const { Cell::new(0) };
     static TESSELLATED: Cell<u64> = const { Cell::new(0) };
     static UNCOVERED: Cell<u64> = const { Cell::new(0) };
+    static COST: Cell<u64> = const { Cell::new(0) };
 }
 
 /// How many times this thread drew a curve moved past its plotted margin
@@ -82,6 +83,21 @@ pub fn curves_uncovered() -> u64 {
 #[cfg(test)]
 pub fn curves_plotted() -> u64 {
     PLOTTED.with(Cell::get)
+}
+
+/// What the plots this thread has made so far count against
+/// [`REPLOTS_PER_FRAME`] ([`plot_cost`] each), capped or not.
+#[cfg(test)]
+pub fn curves_plot_cost() -> u64 {
+    COST.with(Cell::get)
+}
+
+/// What plotting `id` counts against [`REPLOTS_PER_FRAME`].
+fn plot_cost(c: &Construction, id: Id) -> usize {
+    match c.value(id) {
+        Value::Function => FUNCTION_COST,
+        _ => 1,
+    }
 }
 
 /// Curves this thread has tessellated so far: each plot, each new colour,
@@ -162,9 +178,9 @@ struct Entry {
     data: Data,
     color: Color32,
     plotted: Arc<Plotted>,
-    /// The last drawing handed out (`None`: nothing of it in the area) and
-    /// the view it was for.
-    shown: Option<(Frame, Option<Arc<Drawn>>)>,
+    /// The last drawing handed out (`None`: nothing of it in the area), the
+    /// view it was for and where on the screen that view's area was.
+    shown: Option<(Frame, Pos2, Option<Arc<Drawn>>)>,
     /// The frame it was last asked for in.
     seen: u64,
 }
@@ -258,11 +274,7 @@ impl Curves {
     /// Whether the frame may still plot the curve `id` because of the view;
     /// if so, it is counted.
     fn may_plot(&self, c: &Construction, id: Id) -> bool {
-        let cost = match c.value(id) {
-            Value::Function => FUNCTION_COST,
-            _ => 1,
-        };
-        let n = self.replots.get() + cost;
+        let n = self.replots.get() + plot_cost(c, id);
         let may = n <= REPLOTS_PER_FRAME;
         if may {
             self.replots.set(n);
@@ -374,13 +386,15 @@ impl Curves {
 
     /// The drawing of a kept plot in this view.
     fn show(&self, entry: &mut Entry) -> Option<Arc<Drawn>> {
-        if let Some((frame, drawn)) = &entry.shown {
-            if *frame == self.frame {
+        // The drawing is in screen coordinates: the same view in an area
+        // elsewhere on the screen is placed again.
+        if let Some((frame, origin, drawn)) = &entry.shown {
+            if *frame == self.frame && *origin == self.origin {
                 return drawn.clone();
             }
         }
         let drawn = self.place(entry);
-        entry.shown = Some((self.frame, drawn.clone()));
+        entry.shown = Some((self.frame, self.origin, drawn.clone()));
         drawn
     }
 
@@ -511,6 +525,7 @@ impl Curves {
 
     fn plot(&self, c: &Construction, id: Id, color: Color32) -> Plotted {
         count(&PLOTTED);
+        COST.with(|n| n.set(n.get() + plot_cost(c, id) as u64));
         let margin = margin(self.frame.width(), self.frame.height());
         let at = |(x, y): (f64, f64)| Pos2::new(x as f32, y as f32);
         let (paths, point, dot, label, conic, function) = match c.value(id) {

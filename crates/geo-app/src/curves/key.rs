@@ -8,7 +8,8 @@
 //!   fingerprint that names other objects by label, so it survives a
 //!   rebuild that renumbers them), then the values of every object it
 //!   depends on, directly or not (`Construction::reads`), the elements of
-//!   the lists among them included.
+//!   the lists, the matrices of the conics and the parameters of the arcs
+//!   and sectors among them included.
 //!
 //! Comparing a key with what the construction holds now allocates nothing;
 //! a new key is made only when they differ.
@@ -145,7 +146,7 @@ fn fingerprint(c: &Construction, a: Id, ids: &[Id], own: Id) -> u64 {
     h.finish()
 }
 
-/// A value this file does not know is never the same as before.
+/// A value that cannot be compared here is never the same as before.
 static FRESH: AtomicU64 = AtomicU64::new(0);
 
 /// Hands the bits of the value of `id` to `out`, a tag first.
@@ -157,6 +158,16 @@ fn feed(c: &Construction, id: Id, out: &mut dyn FnMut(u64)) {
                 d.matrix.iter().for_each(|v| out(v.to_bits()));
             }
             None => out(11),
+        },
+        Value::Arc { .. } | Value::Sector { .. } => match c.arc(id) {
+            Some(a) => {
+                out(18 + ((a.sector as u64) << 8) + ((a.positive as u64) << 9));
+                a.conic.matrix.iter().for_each(|v| out(v.to_bits()));
+                [a.start, a.end, a.extent, a.value]
+                    .iter()
+                    .for_each(|v| out(v.to_bits()));
+            }
+            None => feed_value(&c.value(id), out),
         },
         Value::List { len } => match c.elements(id) {
             Some(list) => {
@@ -205,7 +216,12 @@ fn feed_value(v: &Value, out: &mut dyn FnMut(u64)) {
         // Its definition is in the fingerprints.
         Value::Function => all(12, &[]),
         Value::Undefined => all(13, &[]),
-        // Read with the construction (`feed`); never the same here.
+        Value::Arc { length } => all(19, &[length]),
+        Value::Sector { area } => all(20, &[area]),
+        // A list's elements and a conic's matrix are read with the
+        // construction (`feed`), and a list element is never one of them;
+        // a variant added to the kernel later (`Value` is non-exhaustive)
+        // is never the same until it is fed here.
         _ => all(14, &[FRESH.fetch_add(1, Ordering::Relaxed) as f64]),
     }
 }

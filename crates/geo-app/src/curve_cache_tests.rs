@@ -45,9 +45,22 @@ struct Shown {
 /// What one frame drew of the curves of `wb`, and whether it asked for the
 /// next frame at once.
 fn frame(ctx: &Context, wb: &Workbench, t: &ViewTransform, size: Vec2) -> (Vec<Shown>, bool) {
+    frame_with(ctx, wb, t, size, ORIGIN, Default::default())
+}
+
+/// [`frame`] with the area at `origin` on the screen and the input `input`;
+/// the paths and the mesh are given relative to the area.
+fn frame_with(
+    ctx: &Context,
+    wb: &Workbench,
+    t: &ViewTransform,
+    size: Vec2,
+    origin: Pos2,
+    input: eframe::egui::RawInput,
+) -> (Vec<Shown>, bool) {
     let mut shown = Vec::new();
-    let mut out = ctx.run_ui(Default::default(), |ui| {
-        let rect = Rect::from_min_size(ORIGIN, size);
+    let mut out = ctx.run_ui(input, |ui| {
+        let rect = Rect::from_min_size(origin, size);
         let curves = Curves::new(&ui.painter_at(rect), rect, t, wb.rebuilds());
         let c = wb.construction();
         for id in c.ids() {
@@ -57,9 +70,14 @@ fn frame(ctx: &Context, wb: &Workbench, t: &ViewTransform, size: Vec2) -> (Vec<S
                     label: c.label(id).to_owned(),
                     paths: d
                         .paths()
-                        .map(|p| p.into_iter().map(|q| q - ORIGIN.to_vec2()).collect())
+                        .map(|p| p.into_iter().map(|q| q - origin.to_vec2()).collect())
                         .collect(),
-                    vertices: d.mesh.vertices.iter().map(|v| v.pos).collect(),
+                    vertices: d
+                        .mesh
+                        .vertices
+                        .iter()
+                        .map(|v| v.pos - origin.to_vec2())
+                        .collect(),
                     text: d.label,
                 });
             }
@@ -361,5 +379,70 @@ fn a_pan_moves_the_kept_drawings_within_the_flatness_of_a_plot_of_the_area() {
             1e-3,
             &format!("idle after a pan by ({dx}, {dy})"),
         );
+    }
+}
+
+#[test]
+fn arcs_and_sectors_a_function_reads_are_keyed_by_value() {
+    // A function that reads the length of an arc and one that reads the
+    // area of a sector: an idle frame and a frame with a mouse move plot
+    // neither; moving the arc's end point plots both again.
+    let mut wb = Workbench::from_script(
+        "M = (0, 0)\nA = (3, 0)\nB = (0, 3)\na1 = CircularArc(M, A, B)\n\
+         s1 = CircularSector(M, A, B)\nL = Length(a1)\nS = Area(s1)\n\
+         f(x) = L x\ng(x) = S x^2 - 5\n",
+    )
+    .unwrap();
+    let ctx = Context::default();
+    let t = at(0.0, 0.0, 40.0);
+    settle(&ctx, &wb, &t, 60);
+    assert_eq!(plots(&ctx, &wb), 0, "idle");
+    let moved = eframe::egui::RawInput {
+        events: vec![eframe::egui::Event::PointerMoved(Pos2::new(300.0, 200.0))],
+        ..Default::default()
+    };
+    let n = curves_plotted();
+    frame_with(&ctx, &wb, &t, vec2(W, H), ORIGIN, moved);
+    assert_eq!(curves_plotted() - n, 0, "mouse move");
+    assert_eq!(plots(&ctx, &wb), 0, "idle again");
+    let b = wb.construction().id("B").unwrap();
+    assert!(wb.move_point(b, 0.0, 4.0));
+    assert_eq!(plots(&ctx, &wb), 2, "the arc changed");
+    assert_eq!(plots(&ctx, &wb), 0);
+}
+
+#[test]
+fn the_same_view_elsewhere_on_the_screen_is_drawn_there() {
+    // The same size and camera with the area at two places on the screen:
+    // relative to its area, each frame draws the same thing.
+    let wb = Workbench::from_script(
+        "F = (-2, 0)\nG = (2, 0)\na = 3\nk = Ellipse(F, G, a)\nf(x) = sin(x)\n",
+    )
+    .unwrap();
+    let ctx = Context::default();
+    let t = at(0.0, 0.0, 40.0);
+    let (here, _) = settle(&ctx, &wb, &t, 60);
+    let elsewhere = Pos2::new(220.0, 130.0);
+    let (there, _) = frame_with(&ctx, &wb, &t, vec2(W, H), elsewhere, Default::default());
+    let (back, _) = frame(&ctx, &wb, &t, vec2(W, H));
+    assert_eq!(here.len(), 2);
+    for frame in [&there, &back] {
+        assert_eq!(frame.len(), here.len());
+        for (a, b) in here.iter().zip(frame.iter()) {
+            assert_eq!(a.label, b.label);
+            let (pa, pb): (Vec<Pos2>, Vec<Pos2>) = (
+                a.paths.iter().flatten().copied().collect(),
+                b.paths.iter().flatten().copied().collect(),
+            );
+            for (u, v) in [(&pa, &pb), (&a.vertices, &b.vertices)] {
+                assert_eq!(u.len(), v.len(), "{}", a.label);
+                let off = u
+                    .iter()
+                    .zip(v)
+                    .map(|(p, q)| (*p - *q).length())
+                    .fold(0.0f32, f32::max);
+                assert!(off < 1e-3, "{}: {off} px off", a.label);
+            }
+        }
     }
 }

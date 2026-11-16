@@ -451,6 +451,8 @@ fn curve_scene() -> (String, String) {
 struct CurveFrame {
     counts: Counts,
     plotted: u64,
+    /// What the plots counted against `REPLOTS_PER_FRAME`.
+    cost: u64,
     tessellated: u64,
     /// Not asserted: printed to compare by hand (release builds only mean
     /// anything).
@@ -458,9 +460,10 @@ struct CurveFrame {
 }
 
 fn curve_step(w: &mut Window, events: Vec<Event>) -> CurveFrame {
-    let (p, t) = (
+    let (p, t, k) = (
         crate::curves::curves_plotted(),
         crate::curves::curves_tessellated(),
+        crate::curves::curves_plot_cost(),
     );
     let start = std::time::Instant::now();
     let counts = w.step(events);
@@ -468,6 +471,7 @@ fn curve_step(w: &mut Window, events: Vec<Event>) -> CurveFrame {
         ms: start.elapsed().as_secs_f64() * 1e3,
         counts,
         plotted: crate::curves::curves_plotted() - p,
+        cost: crate::curves::curves_plot_cost() - k,
         tessellated: crate::curves::curves_tessellated() - t,
     }
 }
@@ -665,17 +669,18 @@ fn curve_frames_stay_within_the_budget() {
     }
     assert_eq!((related[2].plotted, related[2].tessellated), (0, 0));
     // The first pan frames move every kept drawing: nothing plotted or
-    // tessellated. Later frames plot at most `REPLOTS_PER_FRAME` conics, a
-    // function counting as `FUNCTION_COST`.
+    // tessellated. Later frames spend at most `REPLOTS_PER_FRAME` on plots,
+    // a function counting as `FUNCTION_COST`.
     let quiet = pans.iter().take_while(|f| f.plotted == 0).count();
     println!("curves pan_quiet_frames: {quiet}");
     assert!(quiet >= 20, "only {quiet} pan frames plotted nothing");
     for f in &pans {
         assert_eq!(f.plotted, f.tessellated, "a pan re-tessellated a curve");
         assert!(
-            f.plotted <= REPLOTS_PER_FRAME as u64,
-            "{} plotted",
-            f.plotted
+            f.cost <= REPLOTS_PER_FRAME as u64,
+            "{} plotted, costing {}",
+            f.plotted,
+            f.cost
         );
     }
     assert!(
@@ -686,6 +691,11 @@ fn curve_frames_stay_within_the_budget() {
     // 258 curves meet the zoomed view: 24 plotted, 234 drawn from their
     // kept polylines.
     assert_eq!((zoom.plotted, zoom.tessellated), (24, 258));
+    assert!(
+        zoom.cost <= REPLOTS_PER_FRAME as u64,
+        "zoom cost {}",
+        zoom.cost
+    );
     assert_eq!(REPLOTS_PER_FRAME, 24);
     assert!(zoom.counts.immediate, "the zoom asks for the next frame");
     let last = after_zoom.last().unwrap();
@@ -694,7 +704,7 @@ fn curve_frames_stay_within_the_budget() {
         "the frames after a zoom never settle"
     );
     for f in &after_zoom {
-        assert!(f.plotted <= REPLOTS_PER_FRAME as u64);
+        assert!(f.cost <= REPLOTS_PER_FRAME as u64, "cost {}", f.cost);
         assert_eq!(f.plotted, f.tessellated);
     }
     println!("curves after_zoom_frames: {}", after_zoom.len());
@@ -712,7 +722,7 @@ fn curve_frames_stay_within_the_budget() {
     // before the zoom (one hyperbola here) is plotted.
     assert_eq!(resize[0].plotted, resize[0].tessellated);
     for f in &resize {
-        assert!(f.plotted <= REPLOTS_PER_FRAME as u64);
+        assert!(f.cost <= REPLOTS_PER_FRAME as u64, "cost {}", f.cost);
     }
     let heaviest = *after_zoom.iter().max_by_key(|f| f.counts.bytes).unwrap();
     let heaviest_resize = *resize.iter().max_by_key(|f| f.counts.bytes).unwrap();
@@ -742,7 +752,8 @@ fn curve_frames_stay_within_the_budget() {
         assert!(c.allocs <= allocs, "{name}: {} allocations", c.allocs);
         assert!(c.bytes <= bytes, "{name}: {} bytes", c.bytes);
     }
-    // A fast pan, 24 points a frame for 40 frames: printed, not asserted.
+    // A fast pan, 24 points a frame for 40 frames: printed, only the cap
+    // asserted.
     let from = w.empty_spot();
     w.step(vec![Event::PointerMoved(from)]);
     w.step(vec![press(from, true)]);
@@ -755,6 +766,11 @@ fn curve_frames_stay_within_the_budget() {
             vec![Event::PointerMoved(from - vec2(24.0 * k as f32, 0.0))],
         );
         fast_ms = fast_ms.max(f.ms);
+        assert!(
+            f.cost <= REPLOTS_PER_FRAME as u64,
+            "fast pan cost {}",
+            f.cost
+        );
     }
     println!(
         "curves fast_pan: {} curve draws past the margin in 40 frames, slowest {fast_ms:.2} ms",
