@@ -59,7 +59,7 @@
 mod decimal;
 mod eval;
 #[doc(hidden)]
-pub use eval::{work_done, MAX_ELEMENTS, MAX_EVALUATION_WORK};
+pub use eval::{work_done, MAX_ELEMENTS, MAX_EVALUATION_WORK, MAX_OVERRUN};
 mod lex;
 pub(crate) use lex::{is_name_char, plain_number};
 mod list;
@@ -413,9 +413,6 @@ pub(crate) struct Entry {
     items: Vec<Slot>,
     depth: u32,
     cost: u64,
-    /// The cost of every node's subtree, kept for a tree with lists only:
-    /// a `Sequence` charges its body's cost for each value of its variable.
-    costs: Vec<u64>,
     vars: u64,
 }
 
@@ -438,7 +435,6 @@ impl Entry {
             dec: None,
             depth: p.depth,
             cost: p.cost,
-            costs: if lists { p.costs } else { Vec::new() },
             vars: p.vars,
         }
     }
@@ -745,7 +741,6 @@ fn reparse(
         uses_var,
         depth: depth[r],
         cost: cost[r],
-        costs: cost,
         vars: vars[r],
     })
 }

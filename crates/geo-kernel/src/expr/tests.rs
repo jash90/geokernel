@@ -1375,9 +1375,9 @@ fn work_of<T>(f: impl FnOnce() -> T) -> (T, u64) {
 
 /// The most work one evaluation past the element bound does here: at most
 /// [`super::MAX_ELEMENTS`] elements built, each with a step of counting,
-/// one of filling, a read and the cost of a small body (up to 4), and a
-/// range counted within what is left.
-const WORK_BOUND: u64 = 8 * super::MAX_ELEMENTS;
+/// one of filling and a small body (up to 3 nodes visited, 3 units each),
+/// and a range counted within what is left.
+const WORK_BOUND: u64 = 12 * super::MAX_ELEMENTS;
 
 fn is_defined(c: &Construction, label: &str) -> bool {
     match c.value(c.id(label).unwrap()) {
@@ -1578,9 +1578,11 @@ const UNDEFINED_WITHOUT_A_LOOP: &[(&str, Option<f64>, f64)] = &[
 ];
 
 /// Lists within the element bound whose bodies cost more than the work
-/// bound allows: a costly function call, exact decimals of 3001 digits.
-/// Before the work bound, the first took about 0.6 ms of a release build for
-/// each value, the product about 48 us and the quotient about 110 us.
+/// bound allows: a costly function call, exact decimals of 3001 digits,
+/// short exact divisions. Before the work bound, the first took about
+/// 0.64 ms of a release build for each value, the product about 48 us, the
+/// quotient about 110 us and the sum of quotients about 7 us (7.4 s for the
+/// whole list).
 const OVER_WORK_BOUND: &[(&str, Option<f64>, f64)] = &[
     ("Sequence(g(k), k, 1, n)", Some(30.0), 1e4),
     ("Sequence(k + g(k), k, 1, n)", Some(30.0), 1e4),
@@ -1595,15 +1597,21 @@ const OVER_WORK_BOUND: &[(&str, Option<f64>, f64)] = &[
         1e5,
     ),
     ("Sequence(1 / (1 + 1E-3000), k, 1, n)", Some(300.0), 1e5),
+    (
+        "Sequence(1 / 3 + 1 / 7 + 1 / 9 + 1 / 11 + 1 / 13 + 1 / 17 + 1 / 19, k, 1, n)",
+        Some(1000.0),
+        1048576.0,
+    ),
+    ("Sequence((1 + 1E-70) / 7, k, 1, n)", Some(1000.0), 1e6),
 ];
 
-/// A function `g(x) = 65536 x` whose tree, functions expanded, has a cost of
-/// about 280 000 (the review's example).
+/// A function `g(x) = 65536 x` whose tree, functions expanded, has about
+/// 240 000 nodes (the review's example): 6.4 s of a release build for 10^4
+/// values before the work bound.
 const COSTLY: &str = "h(x) = x + x + x + x\ng(x) = h(h(h(h(h(h(h(h(x))))))))";
 
-/// The most work one evaluation past the work bound may do: the bound, and
-/// at most one body or one range count beyond it.
-const PAST_WORK_BOUND: u64 = super::MAX_EVALUATION_WORK + 2 * super::MAX_ELEMENTS;
+/// The most work one evaluation past the work bound may do.
+const PAST_WORK_BOUND: u64 = super::MAX_EVALUATION_WORK + super::MAX_OVERRUN;
 
 #[test]
 fn a_costly_sequence_body_stops_at_the_work_bound() {
@@ -1620,14 +1628,96 @@ fn a_costly_sequence_body_stops_at_the_work_bound() {
 
 #[test]
 fn a_full_length_list_with_a_small_body_is_defined() {
-    // 2^20 values, each a step of counting, one of filling and the body's
-    // cost: within `MAX_EVALUATION_WORK` for a body of cost up to 29 (15 terms, 15
-    // variables and 14 additions), past it for one of cost 31
+    // 2^20 values, each a step of counting, one of filling and the nodes of
+    // the body visited (3 units each): within `MAX_EVALUATION_WORK` for 10
+    // terms (59 units a value), past it for 15 (89 units, 0.35 s)
     let sum = |terms: usize| vec!["k"; terms].join(" + ");
-    let c = load(&format!("l = Sequence({}, k, 1, 1048576)", sum(15))).unwrap();
+    let c = load(&format!("l = Sequence({}, k, 1, 1048576)", sum(10))).unwrap();
     assert_eq!(c.value(c.id("l").unwrap()), Value::List { len: 1 << 20 });
-    let c = load(&format!("l = Sequence({}, k, 1, 1048576)", sum(16))).unwrap();
+    let (c, work) = work_of(|| load(&format!("l = Sequence({}, k, 1, 1048576)", sum(15))).unwrap());
     assert!(!is_defined(&c, "l"));
+    assert!(work <= PAST_WORK_BOUND, "{work} units of work");
+}
+
+/// A polynomial of degree 20.
+const POLYNOMIAL: &str = "p(x) = 1 + x + x^2 + x^3 + x^4 + x^5 + x^6 + x^7 + x^8 + x^9 + x^10 \
+                          + x^11 + x^12 + x^13 + x^14 + x^15 + x^16 + x^17 + x^18 + x^19 + x^20";
+
+/// Ordinary lists that take from under a millisecond to 0.3 s of a release
+/// build (the last two: `1.0000001^999999` is 6 600 units for each value,
+/// `1.0001^365` 2 600), and the most work each may do: what it does now,
+/// rounded up. Charging the static cost of a body for each value, with
+/// both branches of an `If` and a sampled function's body for each call
+/// around it, charged the first five 6 to 300 times as much (31 to 62
+/// million units) and, with a bound of 2^25, made them undefined.
+fn defined_within_the_bound() -> Vec<(String, u64)> {
+    let logistic = |levels: usize, n: usize| {
+        format!(
+            "f(x) = 3.7 x (1 - x)\nl = Sequence({}k / 10000{}, k, 1, {n})",
+            "f(".repeat(levels),
+            ")".repeat(levels)
+        )
+    };
+    vec![
+        (logistic(9, 10000), 1_100_000),
+        (logistic(12, 1000), 150_000),
+        (
+            format!("{POLYNOMIAL}\nl = Sum(Sequence(p(p(k / 10000)), k, 1, 11000))"),
+            5_500_000,
+        ),
+        (
+            "N(x) = x - (x^2 - 2) / (2x)\nl = Sequence(N(N(N(N(N(N(k / 100)))))), k, 1, 10000)"
+                .into(),
+            1_500_000,
+        ),
+        (
+            format!(
+                "{POLYNOMIAL}\nq(x) = p(p(x))\nl = Sequence(If(k < 3, q(k / 10000), 0), k, 1, 10000)"
+            ),
+            200_000,
+        ),
+        (
+            "l = Sequence(1.0000001^999999 + k, k, 1, 10000)".into(),
+            70_000_000,
+        ),
+        (
+            "l = Sequence(k * 1.0001^365, k, 1, 29000)".into(),
+            super::MAX_EVALUATION_WORK,
+        ),
+    ]
+}
+
+/// The value of `l`: its elements or its number.
+fn value_of_l(c: &Construction) -> String {
+    let id = c.id("l").unwrap();
+    flat(c, id).unwrap_or_else(|| format!("{:?}", c.value(id)))
+}
+
+#[test]
+fn ordinary_lists_are_defined_with_their_unbounded_value() {
+    for (script, most) in defined_within_the_bound() {
+        let (c, work) = work_of(|| load(&script).unwrap());
+        assert!(is_defined(&c, "l"), "{script}");
+        assert!(work <= most, "{script}: {work} units of work");
+        let free = super::eval::unbounded(|| load(&script).unwrap());
+        assert_eq!(value_of_l(&c), value_of_l(&free), "{script}");
+    }
+    // the evaluation charges the branch of `If` it takes: the other one
+    // would be 10^4 times as much
+    let script = format!("{POLYNOMIAL}\nl = Sequence(If(k < 3, p(p(k / 10000)), 0), k, 1, 10000)");
+    let (_, taken) = work_of(|| load(&script).unwrap());
+    let script = format!("{POLYNOMIAL}\nl = Sequence(If(k > 3, p(p(k / 10000)), 0), k, 1, 10000)");
+    let (_, both) = work_of(|| load(&script).unwrap());
+    assert!(taken * 20 < both, "{taken} and {both} units of work");
+}
+
+#[test]
+fn a_list_past_the_work_bound_is_undefined() {
+    // `k * 1.0001^365` costs about 2 670 units for each value: undefined
+    // from about 30 000 values on
+    let (c, work) = work_of(|| load("l = Sequence(k * 1.0001^365, k, 1, 31000)").unwrap());
+    assert!(!is_defined(&c, "l"));
+    assert!(work <= PAST_WORK_BOUND, "{work} units of work");
 }
 
 #[test]

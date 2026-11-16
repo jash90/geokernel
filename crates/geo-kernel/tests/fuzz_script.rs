@@ -43,14 +43,20 @@ const CONTEXT: &[&str] = &[
 const MIN_CASE_SCRIPTS: usize = 500;
 const MIN_README_LINES: usize = 10;
 
-/// The evaluation work one line may do (`geo_kernel::expr::work_done`): a
-/// few objects evaluated, each within its bound. This is what finds a
-/// blow-up in an expression (a loop, a costly function, long exact
-/// decimals), the same on any machine.
-const MAX_LINE_WORK: u64 = 4 * geo_kernel::expr::MAX_EVALUATION_WORK;
+/// The evaluation work one line may do (`geo_kernel::expr::work_done`):
+/// two objects at the bound of one evaluation, about 0.6 s of a release
+/// build and 5 s of the test build (a unit is about 3.5 ns and 31 ns). This
+/// is what finds a blow-up in an expression (a loop, a costly function,
+/// long exact decimals), the same on any machine. It is a number of its
+/// own, not a multiple of the bound, so that a bound raised by mistake is
+/// caught here. At the time of writing the most work a line of the corpus
+/// or its mutations does is `Sequence(0.1, 1E5, 0.1)`, 2 000 009 units and
+/// 0.1 s of the test build; the slowest line is a long chain of powers that
+/// takes 0.4 s to parse and evaluates no list.
+const MAX_LINE_WORK: u64 = 160_000_000;
 
-/// A backstop for work the counter does not see (commands other than
-/// expressions): far above what any line takes.
+/// A backstop for work the counter does not see (parsing, commands other
+/// than expressions): twice the time of [`MAX_LINE_WORK`] in the test build.
 const SLOW: Duration = Duration::from_secs(10);
 
 /// What went wrong with one input line, as a short stable key and a detail.
@@ -1020,12 +1026,15 @@ fn the_nested_sequence_mutation_does_bounded_work() {
 
 #[test]
 fn a_costly_function_in_a_sequence_does_bounded_work() {
-    // A function of a cost of about 280 000 applied for each value of a
-    // range of 30 000 took 19 s before evaluation work was bounded.
+    // A function of about 240 000 nodes, functions expanded, applied for
+    // each value of a range of 30 000 took 19 s of a release build before
+    // evaluation work was bounded. At 1400 values the list does twice
+    // `MAX_LINE_WORK` unbounded, so that a bound raised past it fails here
+    // through the counter, before the clock.
     let script = [
         "f(x) = x + x + x + x",
         "g(x) = f(f(f(f(f(f(f(f(x))))))))",
-        "s = Sequence(g(k), k, 1, 30000)",
+        "s = Sequence(g(k), k, 1, 1400)",
     ];
     let mut c = Construction::new();
     for line in script {

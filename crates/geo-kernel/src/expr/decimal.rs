@@ -97,16 +97,37 @@ thread_local! {
     pub(crate) static OPS: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
 }
 
-/// Digit products one unit of evaluation work stands for; a digit copied,
-/// added or compared is one unit (see `work_done`).
-const PRODUCTS_PER_UNIT: usize = 4;
+/// Every operation is charged to the evaluation work (see `work_done`) by
+/// its measured time, in units of about 3.5 ns of a release build: an
+/// operation on inline coefficients by its form, one on digit vectors a
+/// fixed part and its digit work.
+const SMALL_OP: u64 = 3;
+const WIDE_OP: u64 = 30;
+const DIVISION: u64 = 100;
+const FROM_DOUBLE: u64 = 40;
+const TO_DOUBLE_SMALL: u64 = 90;
+const TO_DOUBLE_WIDE: u64 = 180;
+const BIG_OP: u64 = 100;
 
-/// Charges the digit work of an operation on numbers too long for the
-/// inline forms to the evaluation work: `digits` handled in linear passes
-/// and `products` digit products. The inline forms take a bounded time and
-/// are counted with the node that uses them.
+/// Digit products one unit stands for, in a product and in a long
+/// division; a digit copied, added or compared is one unit.
+const PRODUCTS_PER_UNIT: usize = 16;
+const QUOTIENT_PRODUCTS_PER_UNIT: usize = 4;
+
+/// The most one operation charges: its fixed part, linear passes over at
+/// most three times [`MAX_DIGITS`] digits, and [`MAX_WORK`] products of a
+/// division.
+pub(crate) const MAX_CHARGE: u64 =
+    BIG_OP + 3 * MAX_DIGITS as u64 + (MAX_WORK / QUOTIENT_PRODUCTS_PER_UNIT) as u64;
+
+fn charge(units: u64) {
+    super::eval::work(units);
+}
+
+/// Charges the digit work of an operation on digit vectors: `digits`
+/// handled in linear passes and `products` digit products.
 fn charge_digits(digits: usize, products: usize) {
-    super::eval::work((digits + products / PRODUCTS_PER_UNIT) as u64);
+    charge((digits + products / PRODUCTS_PER_UNIT) as u64);
 }
 
 fn count_op() {
@@ -339,6 +360,7 @@ impl Dec {
     /// The exact value of a finite double (`new BigDecimal(double)`).
     pub(crate) fn from_f64(x: f64) -> Option<Dec> {
         count_op();
+        charge(FROM_DOUBLE);
         if !x.is_finite() {
             return None;
         }
@@ -381,6 +403,12 @@ impl Dec {
 
     /// [`Dec::from_f64`] of `±m · 2^e` on a digit vector.
     fn from_f64_digits(neg: bool, m: u128, e: i64) -> Option<Dec> {
+        // `e` passes over the digits, which grow to about `0.7 e` of them
+        charge(BIG_OP);
+        charge_digits(
+            e.unsigned_abs() as usize * (e.unsigned_abs() as usize + 40) / 3,
+            0,
+        );
         let mut digits = to_digits(m);
         if e >= 0 {
             for _ in 0..e {
@@ -407,10 +435,18 @@ impl Dec {
     /// a small coefficient.
     pub(crate) fn to_f64(&self) -> f64 {
         let v = match self.mag {
-            Mag::Small(c) => to_f64_parts(c, self.exp),
-            Mag::Wide(w) => digits_to_f64(w.write_digits(&mut [0; 78]), self.exp),
+            Mag::Small(c) => {
+                charge(TO_DOUBLE_SMALL);
+                to_f64_parts(c, self.exp)
+            }
+            Mag::Wide(w) => {
+                charge(TO_DOUBLE_WIDE);
+                digits_to_f64(w.write_digits(&mut [0; 78]), self.exp)
+            }
             Mag::Big(ref d) if d.is_empty() => 0.0,
             Mag::Big(ref d) => {
+                charge(BIG_OP);
+                charge_digits(d.len() / 2, 0);
                 let mut s = String::with_capacity(d.len() + 24);
                 s.extend(d.iter().rev().map(|&d| char::from(b'0' + d)));
                 s.push('e');
@@ -456,6 +492,7 @@ impl Dec {
                     Some((other.neg, b - a))
                 };
                 if let Some((neg, s)) = sum {
+                    charge(SMALL_OP);
                     return Dec::small(neg, s, exp);
                 }
             }
@@ -476,6 +513,7 @@ impl Dec {
                     Some((other.neg, b.sub(a)))
                 };
                 if let Some((neg, s)) = sum {
+                    charge(WIDE_OP);
                     return Dec::wide(neg, s, exp);
                 }
             }
@@ -486,6 +524,7 @@ impl Dec {
         if aligned > MAX_DIGITS as i64 + 1 {
             return None;
         }
+        charge(BIG_OP);
         charge_digits(aligned as usize, 0);
         let a = shifted(&self.digits(), (self.exp - exp) as usize);
         let b = shifted(&other.digits(), (other.exp - exp) as usize);
@@ -519,14 +558,17 @@ impl Dec {
         let exp = self.exp + other.exp;
         if let (Some(a), Some(b)) = (self.small_coef(), other.small_coef()) {
             if let Some(p) = a.checked_mul(b) {
+                charge(SMALL_OP);
                 return Dec::small(neg, p, exp);
             }
         }
         if let (Some(a), Some(b)) = (self.wide_coef(), other.wide_coef()) {
             if let Some(p) = a.checked_mul(b) {
+                charge(WIDE_OP);
                 return Dec::wide(neg, p, exp);
             }
         }
+        charge(BIG_OP);
         Dec::from_raw(self.mul_raw(other)?)
     }
 
@@ -559,11 +601,13 @@ impl Dec {
         let neg = self.neg != other.neg;
         if let (Some(x), Some(y)) = (self.small_coef(), other.small_coef()) {
             if y < POW10[37] {
+                charge(DIVISION);
                 return div_small(neg, x, y, self.exp - other.exp);
             }
         }
         if let (Some(x), Some(y)) = (self.wide_coef(), other.small_coef()) {
             if y < POW10[37] {
+                charge(DIVISION);
                 return div_wide(neg, x, y, self.exp - other.exp);
             }
         }
@@ -576,6 +620,7 @@ impl Dec {
             return None;
         }
         // the products are charged by `div_mag`, by the quotient digits
+        charge(BIG_OP);
         charge_digits(self.len() + want + lb, 0);
         let (num, exp, sticky) = self.with_digits(|a| {
             if a.len() >= want {
@@ -613,8 +658,12 @@ impl Dec {
         // nothing is rounded while every product stays within the working
         // precision, so exact products of small coefficients are the result
         if let Some(acc) = self.pow_small(n, POW10[work.min(SMALL_DIGITS)]) {
+            charge(WIDE_OP);
             return round_dec(acc, PRECISION);
         }
+        // each step multiplies and rounds (the products are charged by
+        // `mul_raw`)
+        charge(BIG_OP);
         let mut acc = Raw {
             neg: false,
             digits: vec![1],
@@ -624,9 +673,11 @@ impl Dec {
         for bit in (0..32).rev() {
             if seen {
                 let a = Dec::from_raw_unchecked(&acc);
+                charge(BIG_OP);
                 acc = round_raw_to(a.mul_raw(&a)?, work)?;
             }
             if (n >> bit) & 1 == 1 {
+                charge(BIG_OP);
                 acc = round_raw_to(Dec::from_raw_unchecked(&acc).mul_raw(self)?, work)?;
                 seen = true;
             }
@@ -674,12 +725,14 @@ impl Dec {
                 return Some(Dec::zero());
             };
             let kept = c / p + u128::from(c % p >= p / 2);
+            charge(SMALL_OP);
             return Dec::small(self.neg, kept, self.exp + drop);
         }
         if let Mag::Wide(c) = self.mag {
             let Some(p) = usize::try_from(drop).ok().and_then(U256::pow10) else {
                 return Some(Dec::zero());
             };
+            charge(WIDE_OP);
             let (q, r) = c.divrem(p);
             let half = p.divrem_u64(2).0;
             let kept = if r >= half {
@@ -693,6 +746,7 @@ impl Dec {
         if drop > len {
             return Some(Dec::zero());
         }
+        charge(BIG_OP);
         charge_digits(self.len(), 0);
         round_raw(
             Raw {
@@ -1079,7 +1133,8 @@ fn div_mag(a: &[u8], b: &[u8]) -> (Vec<u8>, bool) {
     let b = &b[..significant(b)];
     let n = b.len();
     // a multiply-and-subtract over the divisor for each quotient digit
-    charge_digits(a.len() + n, (a.len() + 1).saturating_sub(n) * n);
+    let products = (a.len() + 1).saturating_sub(n) * n;
+    charge((a.len() + n + products / QUOTIENT_PRODUCTS_PER_UNIT) as u64);
     let big: Vec<u8> = b.iter().rev().copied().collect();
     // the divisor's leading digits, for the estimate
     let k = n.min(18);
