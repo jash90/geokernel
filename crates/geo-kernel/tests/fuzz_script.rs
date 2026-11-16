@@ -55,9 +55,11 @@ const MIN_README_LINES: usize = 10;
 /// long exact decimals), the same on any machine. It is a number of its
 /// own, not a multiple of the bound, so that a bound raised by mistake is
 /// caught here. At the time of writing the most work a line of the corpus
-/// or its mutations does is `Sequence(0.1, 1E5, 0.1)`, 2 000 009 units and
-/// 0.1 s of the test build; the slowest line is a long chain of powers that
-/// takes 0.4 s to parse and evaluates no list.
+/// or its mutations does is the nested `Sequence` of `lists-seq-011` cut at
+/// the element bound (when the mutations reach it), 10 531 983 units and
+/// 0.29 s of the test build; otherwise it is about 2 000 000 units. The
+/// slowest line is a long chain of powers that takes 0.4 s to parse and
+/// evaluates no list.
 const MAX_LINE_WORK: u64 = 160_000_000;
 
 /// A backstop for work the counter does not see (parsing, commands other

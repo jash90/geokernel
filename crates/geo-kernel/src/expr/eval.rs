@@ -153,6 +153,15 @@ pub(super) fn work(n: u64) {
     WORK.with(|w| w.set(w.get().wrapping_add(n)));
 }
 
+/// The addresses of the elements of a list object read in place (see
+/// [`Lists::read`]): the object in the high bits, the element in the low
+/// ones. The scratch buffer stays below `1 << OBJECT_SHIFT` (at most about
+/// [`MAX_ELEMENTS`] elements are ever built in it), and so does a list
+/// object.
+const OBJECT_SHIFT: u32 = 24;
+const OFFSET: u32 = (1 << OBJECT_SHIFT) - 1;
+const MAX_OBJECTS: usize = 32;
+
 /// `Kernel.MIN_PRECISION`, the slack of the bounds of `Sequence`.
 const MIN_PRECISION: f64 = 1e-5;
 
@@ -163,6 +172,12 @@ const LARGEST_INTEGER: f64 = 9007199254740992.0;
 /// documentation), the elements built so far, and where its work ends.
 pub(super) struct Lists {
     arena: RefCell<Vec<Slot>>,
+    /// The list objects read in place (`AlgoDependentList` and the commands
+    /// read a list object without copying it): the elements of the `k`th
+    /// are at the addresses `(k + 1) << OBJECT_SHIFT` on (see
+    /// [`Lists::read`]). Kept inline, so that an evaluation allocates
+    /// nothing for them.
+    objects: RefCell<([Id; MAX_OBJECTS], usize)>,
     built: Cell<u64>,
     /// The reading of [`work_done`] past which the evaluation is over.
     end: u64,
@@ -173,6 +188,7 @@ impl Lists {
         arena.clear();
         Lists {
             arena: RefCell::new(arena),
+            objects: RefCell::new(([Id(0); MAX_OBJECTS], 0)),
             built: Cell::new(0),
             end: work_done().saturating_add(limit()),
         }
@@ -190,8 +206,70 @@ impl Lists {
         self.arena.borrow_mut().truncate(mark as usize);
     }
 
-    fn get(&self, i: u32) -> Slot {
-        self.arena.borrow()[i as usize]
+    /// The element at `i`: in the scratch buffer, or in a list object read
+    /// in place, whose nested lists are given addresses in it too.
+    fn read(&self, c: &Construction, i: u32) -> Slot {
+        let object = i >> OBJECT_SHIFT;
+        if object == 0 {
+            return self.arena.borrow()[i as usize];
+        }
+        let id = self.objects.borrow().0[object as usize - 1];
+        let Def::Expr(d) = c.def(id) else {
+            unreachable!("a list object read in place has an expression");
+        };
+        let mut slot = super::entry(c, d).items[(i & OFFSET) as usize];
+        if slot.run().is_some() {
+            slot.start |= object << OBJECT_SHIFT;
+        }
+        slot
+    }
+
+    /// Where the elements of the list object `id` are read in place, `None`
+    /// when too many list objects are read already.
+    fn object(&self, id: Id) -> Option<u32> {
+        let (ids, len) = &mut *self.objects.borrow_mut();
+        let k = match ids[..*len].iter().position(|&o| o == id) {
+            Some(k) => k,
+            None if *len < MAX_OBJECTS => {
+                ids[*len] = id;
+                *len += 1;
+                *len - 1
+            }
+            None => return None,
+        };
+        Some((k as u32 + 1) << OBJECT_SHIFT)
+    }
+
+    /// Copies the list of `len` elements at `start`, with the lists nested
+    /// in it, to `out`. Lists read in place are copied there, and counted
+    /// as built then; `false` past the element bound.
+    fn copy_out(&self, c: &Construction, start: u32, len: u32, out: &mut Vec<Slot>) -> bool {
+        if self.objects.borrow().1 == 0 {
+            copy_tree(&self.arena.borrow(), start, len, out);
+            return true;
+        }
+        let copy = |from: u32, n: u32, out: &mut Vec<Slot>| {
+            if from >> OBJECT_SHIFT != 0 && !(self.build(u64::from(n)) && self.charge(u64::from(n)))
+            {
+                return false;
+            }
+            out.extend((from..from + n).map(|k| self.read(c, k)));
+            true
+        };
+        if !copy(start, len, out) {
+            return false;
+        }
+        let mut i = 0;
+        while i < out.len() {
+            if let Some((s, n)) = out[i].run() {
+                out[i].start = out.len() as u32;
+                if !copy(s, n, out) {
+                    return false;
+                }
+            }
+            i += 1;
+        }
+        true
     }
 
     fn set(&self, i: u32, slot: Slot) {
@@ -512,8 +590,7 @@ pub(super) fn root_list(
         return None;
     }
     out.clear();
-    copy_tree(&lists.arena.borrow(), start, len, out);
-    Some(len)
+    lists.copy_out(c, start, len, out).then_some(len)
 }
 
 /// `Function.value`: a function entry at `x`.
@@ -1098,12 +1175,17 @@ impl<const M: bool> Ctx<'_, M> {
         }
     }
 
-    /// The elements of a list object, copied to the scratch buffer.
+    /// The elements of a list object: read in place, as `AlgoDependentList`
+    /// and the commands read the `GeoList` itself; copied to the scratch
+    /// buffer when too many list objects are read in place already.
     fn object_list(&self, id: Id) -> Option<(u32, u32)> {
         let lists = self.lists?;
         let (Def::Expr(d), Value::List { len }) = (self.c.def(id), self.c.value(id)) else {
             return None;
         };
+        if let Some(start) = lists.object(id) {
+            return Some((start, len));
+        }
         let items = &super::entry(self.c, d).items;
         if !lists.build(items.len() as u64) {
             return None;
@@ -1148,10 +1230,14 @@ impl<const M: bool> Ctx<'_, M> {
         }
         for k in 0..len {
             let x = left.unwrap_or_else(|| {
-                ra.map_or(Val::N(f64::NAN), |(s, _)| slot_val(lists.get(s + k)))
+                ra.map_or(Val::N(f64::NAN), |(s, _)| {
+                    slot_val(lists.read(self.c, s + k))
+                })
             });
             let y = right.unwrap_or_else(|| {
-                rb.map_or(Val::N(f64::NAN), |(s, _)| slot_val(lists.get(s + k)))
+                rb.map_or(Val::N(f64::NAN), |(s, _)| {
+                    slot_val(lists.read(self.c, s + k))
+                })
             });
             lists.set(start + k, combine(op, x, y));
         }
@@ -1182,7 +1268,12 @@ impl<const M: bool> Ctx<'_, M> {
         };
         let mark = lists.len();
         let xy = self.list(list).and_then(|(s, n)| {
-            (n == 2).then(|| (coordinate(lists.get(s)), coordinate(lists.get(s + 1))))
+            (n == 2).then(|| {
+                (
+                    coordinate(lists.read(self.c, s)),
+                    coordinate(lists.read(self.c, s + 1)),
+                )
+            })
         });
         lists.truncate(mark);
         let Some((lx, ly)) = xy else {
@@ -1204,7 +1295,7 @@ impl<const M: bool> Ctx<'_, M> {
             return None;
         }
         for k in 0..n {
-            let slot = match slot_val(lists.get(s + k)) {
+            let slot = match slot_val(lists.read(self.c, s + k)) {
                 Val::B(b, _) if op == Un::Not => Slot::boolean(!b),
                 Val::B(b, _) => Slot::number(scalar(op, bool_number(b), false)),
                 Val::N(x) => Slot::number(scalar(op, x, false)),
@@ -1376,7 +1467,7 @@ impl<const M: bool> Ctx<'_, M> {
         }
         (0..i64::from(len))
             .contains(&k)
-            .then(|| lists.get(start + k as u32))
+            .then(|| lists.read(self.c, start + k as u32))
     }
 
     /// A list command that gives a number, a point or a boolean; the result
@@ -1435,7 +1526,7 @@ impl<const M: bool> Ctx<'_, M> {
             return f64::NAN;
         }
         for k in 0..size {
-            let Some(v) = number_of(lists.get(start + k)) else {
+            let Some(v) = number_of(lists.read(self.c, start + k)) else {
                 return f64::NAN;
             };
             sum += v;
@@ -1492,7 +1583,7 @@ impl<const M: bool> Ctx<'_, M> {
             return f64::NAN;
         }
         for k in 0..len {
-            let Some(v) = number_of(lists.get(start + k)) else {
+            let Some(v) = number_of(lists.read(self.c, start + k)) else {
                 return f64::NAN;
             };
             // `Math.min` and `Math.max`: NaN wins
@@ -1521,7 +1612,7 @@ impl<const M: bool> Ctx<'_, M> {
             return undefined;
         }
         for k in 0..size {
-            match slot_val(lists.get(start + k)) {
+            match slot_val(lists.read(self.c, start + k)) {
                 Val::V(a, b) => {
                     x += a;
                     y += b;
@@ -1549,7 +1640,7 @@ impl<const M: bool> Ctx<'_, M> {
                     start + 1
                 };
                 for k in 0..len {
-                    lists.set(at + k, lists.get(s + k));
+                    lists.set(at + k, lists.read(self.c, s + k));
                 }
                 let object = self.element(n);
                 let at = if op == ListOp::Append {
@@ -1573,6 +1664,11 @@ impl<const M: bool> Ctx<'_, M> {
                 } else {
                     s + len - count
                 };
+                if s >> OBJECT_SHIFT != 0 {
+                    // a part of a list object read in place: it never
+                    // changes, so it is read where it is
+                    return Some((from, count));
+                }
                 self.copy_run(from, count)
             }
             ListOp::Reverse => {
@@ -1582,20 +1678,20 @@ impl<const M: bool> Ctx<'_, M> {
                     return None;
                 }
                 for k in 0..len {
-                    lists.set(start + k, lists.get(s + len - 1 - k));
+                    lists.set(start + k, lists.read(self.c, s + len - 1 - k));
                 }
                 Some((start, len))
             }
             ListOp::Sort => {
                 let (s, len) = self.list(l)?;
-                let first = (len > 0).then(|| lists.get(s).kind)?;
+                let first = (len > 0).then(|| lists.read(self.c, s).kind)?;
                 if !lists.charge(u64::from(len) * u64::from(1 + len.ilog2())) {
                     return None;
                 }
                 // numbers or booleans (`GeoNumeric.getComparator`) or
                 // points (`GeoPoint.getComparatorX`), all of the same class
                 if !matches!(first, Kind::Number | Kind::Boolean | Kind::Point)
-                    || (0..len).any(|k| lists.get(s + k).kind != first)
+                    || (0..len).any(|k| lists.read(self.c, s + k).kind != first)
                 {
                     return None;
                 }
@@ -1610,7 +1706,7 @@ impl<const M: bool> Ctx<'_, M> {
                     return None;
                 }
                 for k in 0..len {
-                    let slot = lists.get(s + k);
+                    let slot = lists.read(self.c, s + k);
                     match (slot.kind, slot.run()) {
                         (_, Some((_, m))) => total = total.checked_add(m)?,
                         // an undefined list has no elements
@@ -1624,9 +1720,9 @@ impl<const M: bool> Ctx<'_, M> {
                 }
                 let mut at = start;
                 for k in 0..len {
-                    if let Some((from, m)) = lists.get(s + k).run() {
+                    if let Some((from, m)) = lists.read(self.c, s + k).run() {
                         for j in 0..m {
-                            lists.set(at + j, lists.get(from + j));
+                            lists.set(at + j, lists.read(self.c, from + j));
                         }
                         at += m;
                     }
@@ -1645,7 +1741,7 @@ impl<const M: bool> Ctx<'_, M> {
             return None;
         }
         for k in 0..len {
-            lists.set(start + k, lists.get(from + k));
+            lists.set(start + k, lists.read(self.c, from + k));
         }
         Some((start, len))
     }

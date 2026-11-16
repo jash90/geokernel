@@ -111,14 +111,21 @@ const BIG_OP: u64 = 100;
 
 /// Digit products one unit stands for, in a product and in a long
 /// division; a digit copied, added or compared is one unit.
-const PRODUCTS_PER_UNIT: usize = 16;
-const QUOTIENT_PRODUCTS_PER_UNIT: usize = 4;
+const PRODUCTS_PER_UNIT: usize = 24;
+const QUOTIENT_PRODUCTS_PER_UNIT: usize = 2;
 
-/// The most one operation charges: its fixed part, linear passes over at
-/// most three times [`MAX_DIGITS`] digits, and [`MAX_WORK`] products of a
-/// division.
+/// Digits one unit stands for where they are only scanned or copied whole
+/// (the dividend past the digits a quotient needs, a rounding).
+const SCANNED_PER_UNIT: usize = 64;
+
+/// The most one operation charges: a product, its fixed part, two operands
+/// of at most [`MAX_DIGITS`] digits and [`MAX_WORK`] digit products. The
+/// others charge less: a quotient takes `PRECISION + 3` products for each
+/// digit of a divisor of at most about 3 100 digits, a sum passes over at
+/// most [`MAX_DIGITS`] digits, and the exact decimal of a double has at
+/// most 1 074 passes over about 750 digits.
 pub(crate) const MAX_CHARGE: u64 =
-    BIG_OP + 3 * MAX_DIGITS as u64 + (MAX_WORK / QUOTIENT_PRODUCTS_PER_UNIT) as u64;
+    BIG_OP + 2 * MAX_DIGITS as u64 + (MAX_WORK / PRODUCTS_PER_UNIT) as u64;
 
 fn charge(units: u64) {
     super::eval::work(units);
@@ -619,9 +626,10 @@ impl Dec {
         if lb.saturating_mul(want) > MAX_WORK {
             return None;
         }
-        // the products are charged by `div_mag`, by the quotient digits
+        // the products are charged by `div_mag`, by the quotient digits;
+        // the digits of the dividend past `want` are only scanned
         charge(BIG_OP);
-        charge_digits(self.len() + want + lb, 0);
+        charge_digits(self.len() / SCANNED_PER_UNIT + want + lb, 0);
         let (num, exp, sticky) = self.with_digits(|a| {
             if a.len() >= want {
                 let drop = a.len() - want;
@@ -747,7 +755,7 @@ impl Dec {
             return Some(Dec::zero());
         }
         charge(BIG_OP);
-        charge_digits(self.len(), 0);
+        charge_digits(self.len() / SCANNED_PER_UNIT, 0);
         round_raw(
             Raw {
                 neg: self.neg,
@@ -1091,6 +1099,13 @@ fn sub_mag(a: &[u8], b: &[u8]) -> Vec<u8> {
 }
 
 fn mul_mag(a: &[u8], b: &[u8]) -> Vec<u8> {
+    // a row for each nonzero digit of the shorter operand, which has at
+    // most about 3 200 digits (`MAX_WORK`): a cell takes at most one product
+    // of 81 from each row, far within a `u32`, so one carry pass at the end
+    // is enough (a pass every few rows over the whole product made a long
+    // number times a short one quadratic)
+    let (a, b) = if a.len() <= b.len() { (a, b) } else { (b, a) };
+    debug_assert!(a.len() <= 1 << 20);
     let mut acc = vec![0u32; a.len() + b.len()];
     let rows = a.iter().filter(|&&x| x != 0).count();
     charge_digits(0, rows * b.len());
@@ -1100,10 +1115,6 @@ fn mul_mag(a: &[u8], b: &[u8]) -> Vec<u8> {
         }
         for (j, &y) in b.iter().enumerate() {
             acc[i + j] += u32::from(x) * u32::from(y);
-        }
-        // keep the cells small
-        if i % 64 == 63 {
-            carry_all(&mut acc);
         }
     }
     carry_all(&mut acc);
