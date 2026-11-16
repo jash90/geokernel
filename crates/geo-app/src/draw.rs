@@ -216,8 +216,8 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
         if let Some(drawn) = curves.as_ref().and_then(|k| k.get(c, id, color(id))) {
             let alpha = if strong { 0.35 } else { 0.2 };
             let glow = Stroke::new(8.0, scene.palette.color(id).egui().gamma_multiply(alpha));
-            for path in &drawn.paths {
-                painter.add(Shape::line(path.clone(), glow));
+            for path in drawn.paths() {
+                painter.add(Shape::line(path, glow));
             }
             continue;
         }
@@ -417,13 +417,12 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
             if !drawn.mesh.is_empty() {
                 painter.add(Shape::Mesh(drawn.mesh.clone()));
             }
-            if let Some((sx, sy)) = drawn.point {
-                point_shape(
-                    painter,
-                    origin + vec2(sx as f32, sy as f32),
-                    color(id),
-                    DEPENDENT_POINT_RADIUS,
-                );
+            if let Some(at) = drawn.point {
+                point_shape(painter, at, color(id), DEPENDENT_POINT_RADIUS);
+            }
+            // An ellipse smaller than a pixel: a dot of the stroke width.
+            if let Some(at) = drawn.dot {
+                painter.circle_filled(at, 0.5 * CURVE_WIDTH, color(id));
             }
             if let Some(pos) = drawn.label {
                 labels.push(label(

@@ -442,23 +442,76 @@ fn curve_scene() -> (String, String) {
     (s, mid)
 }
 
-/// What a frame of the curve scene does: its counts and how many curves it
-/// plotted and tessellated.
-fn curve_step(w: &mut Window, events: Vec<Event>) -> (Counts, u64) {
-    let made = crate::curves::curves_tessellated();
-    let start = std::time::Instant::now();
-    let c = w.step(events);
-    // Not asserted: printed to compare by hand (release builds only mean
-    // anything).
-    println!(
-        "curves frame: {:.2} ms",
-        start.elapsed().as_secs_f64() * 1e3
+/// What a frame of the curve scene does: its counts, and how many curves
+/// it plotted and tessellated.
+#[derive(Clone, Copy, Debug)]
+struct CurveFrame {
+    counts: Counts,
+    plotted: u64,
+    tessellated: u64,
+    /// Not asserted: printed to compare by hand (release builds only mean
+    /// anything).
+    ms: f64,
+}
+
+fn curve_step(w: &mut Window, events: Vec<Event>) -> CurveFrame {
+    let (p, t) = (
+        crate::curves::curves_plotted(),
+        crate::curves::curves_tessellated(),
     );
-    (c, crate::curves::curves_tessellated() - made)
+    let start = std::time::Instant::now();
+    let counts = w.step(events);
+    CurveFrame {
+        ms: start.elapsed().as_secs_f64() * 1e3,
+        counts,
+        plotted: crate::curves::curves_plotted() - p,
+        tessellated: crate::curves::curves_tessellated() - t,
+    }
+}
+
+impl Window {
+    /// A grid-free spot on the point `name` that no label covers.
+    fn bare(&self, name: &str) -> bool {
+        let (rect, _) = self.app.view.unwrap();
+        let q = self.point(name);
+        self.app
+            .label_at(((q.x - rect.min.x) as f64, (q.y - rect.min.y) as f64))
+            .is_none()
+    }
+
+    /// Drags the point `name` by 50 points in `steps` frames of 50 points
+    /// each after the press: the frames of the drag after the first move.
+    fn drag_point(&mut self, name: &str, steps: usize) -> Vec<CurveFrame> {
+        let wait = (self.app.metrics.drag_delay / DT).ceil() as usize + 1;
+        let p = self.point(name);
+        self.step(vec![Event::PointerMoved(p)]);
+        self.step(vec![press(p, true)]);
+        self.frames(wait);
+        // Steps of a grid cell or more: grid snapping must not keep the
+        // point where it was.
+        self.step(vec![Event::PointerMoved(p + vec2(14.0, 4.0))]);
+        self.step(vec![Event::PointerMoved(p + vec2(40.0, 4.0))]);
+        assert!(self.app.drag.is_some(), "no drag of {name}");
+        let mut out = Vec::new();
+        let mut at = p + vec2(40.0, 4.0);
+        for _ in 0..steps {
+            let before = self.point(name);
+            at += vec2(50.0, 0.0);
+            out.push(curve_step(self, vec![Event::PointerMoved(at)]));
+            let moved = (self.point(name) - before).length();
+            assert!(moved > 20.0, "{name} did not move");
+        }
+        // The frame after the last move.
+        out.push(curve_step(self, vec![Event::PointerMoved(at)]));
+        self.step(vec![press(at, false)]);
+        self.frames(3);
+        out
+    }
 }
 
 #[test]
 fn curve_frames_stay_within_the_budget() {
+    use crate::curves::REPLOTS_PER_FRAME;
     let (script, mid) = curve_scene();
     let mut w = Window::with(&script, mid);
     let c = w.app.wb.construction();
@@ -469,98 +522,150 @@ fn curve_frames_stay_within_the_budget() {
         100
     );
     w.settled(1);
-    let (idle, idle_made) = curve_step(&mut w, Vec::new());
+    let idle = curve_step(&mut w, Vec::new());
 
-    // A drag of a grid point: no conic or function reads it. Moves within
-    // the drag delay after a press are dropped.
-    let wait = (w.app.metrics.drag_delay / DT).ceil() as usize + 1;
-    // A grid point no label covers: a press on a label drags the label.
-    let (rect, _) = w.app.view.unwrap();
+    // A drag of a grid point that no conic or function reads.
     let mid: usize = w
         .mid
         .trim_matches(|ch| ch == '{' || ch == '}')
         .parse()
         .unwrap();
-    let name = (mid..)
+    let grid = (mid..)
         .map(|k| format!("P_{{{k}}}"))
-        .find(|n| {
-            let q = w.point(n);
-            w.app
-                .label_at(((q.x - rect.min.x) as f64, (q.y - rect.min.y) as f64))
-                .is_none()
-        })
+        .find(|n| w.bare(n))
         .unwrap();
-    let p = w.point(&name);
-    w.step(vec![Event::PointerMoved(p)]);
-    w.step(vec![press(p, true)]);
-    w.frames(wait);
-    // Steps of a grid cell or more: grid snapping must not keep the point
-    // where it was.
-    w.step(vec![Event::PointerMoved(p + vec2(14.0, 4.0))]);
-    w.step(vec![Event::PointerMoved(p + vec2(40.0, 4.0))]);
-    assert!(w.app.drag.is_some(), "no drag");
-    let before = w.point(&name);
-    let (drag, drag_made) = curve_step(&mut w, vec![Event::PointerMoved(p + vec2(90.0, 4.0))]);
-    let after = w.point(&name);
-    assert!((after - before).length() > 20.0, "the point did not move");
-    let (next, next_made) = curve_step(&mut w, vec![Event::PointerMoved(p + vec2(90.0, 4.0))]);
-    w.step(vec![press(p + vec2(90.0, 4.0), false)]);
-    w.frames(3);
+    let unrelated = w.drag_point(&grid, 2);
+    // A drag of a focus of two ellipses and two hyperbolas.
+    let focus = (0..50)
+        .map(|j| format!("A_{{{j}}}"))
+        .find(|n| w.bare(n))
+        .unwrap();
+    let related = w.drag_point(&focus, 2);
+    w.settled(1);
 
-    // A pan: every curve on the view is plotted again.
+    // A pan by 4 points a frame, 60 frames: the kept drawings move; past
+    // half the margin they are plotted again, a bounded number a frame.
+    let wait = (w.app.metrics.drag_delay / DT).ceil() as usize + 1;
     let from = w.empty_spot();
     w.step(vec![Event::PointerMoved(from)]);
     w.step(vec![press(from, true)]);
     w.frames(wait);
-    w.step(vec![Event::PointerMoved(from + vec2(14.0, 4.0))]);
-    let (pan, pan_made) = curve_step(&mut w, vec![Event::PointerMoved(from + vec2(10.0, 4.0))]);
+    w.step(vec![Event::PointerMoved(from + vec2(4.0, 0.0))]);
     assert!(w.app.gesture.panning() && w.app.drag.is_none(), "no pan");
-    w.step(vec![press(from + vec2(10.0, 4.0), false)]);
+    let pans: Vec<CurveFrame> = (2..62)
+        .map(|k| {
+            curve_step(
+                &mut w,
+                vec![Event::PointerMoved(from + vec2(4.0 * k as f32, 0.0))],
+            )
+        })
+        .collect();
+    w.step(vec![press(from + vec2(244.0, 0.0), false)]);
     w.step(vec![Event::PointerGone]);
+    w.settled(1);
 
-    // Zoomed in four times: the ellipses off the view are culled before
-    // they are plotted.
-    w.fit(4.0);
-    let (zoomed, zoomed_made) = curve_step(&mut w, Vec::new());
-
-    for (name, c, made) in [
-        ("idle", idle, idle_made),
-        ("drag_unrelated", drag, drag_made),
-        ("drag_unrelated_rows", next, next_made),
-        ("pan", pan, pan_made),
-        ("zoomed_4x", zoomed, zoomed_made),
-    ] {
-        println!("curves {name}: {c:?}, curves made {made}");
+    // A zoom step (a quarter in) about the middle of the area: at most
+    // `REPLOTS_PER_FRAME` curves plotted, the others drawn from their kept
+    // polylines, and the next frames finish the job.
+    let r = w.app.view.unwrap().0;
+    let (aw, ah) = (r.width() as f64, r.height() as f64);
+    let mut cam = w.app.camera.unwrap();
+    cam.zoom_at(1.25, aw / 2.0, ah / 2.0, aw, ah);
+    w.app.camera = Some(cam);
+    let zoom = curve_step(&mut w, Vec::new());
+    let mut after_zoom = Vec::new();
+    for _ in 0..20 {
+        let f = curve_step(&mut w, Vec::new());
+        after_zoom.push(f);
+        if !f.counts.immediate {
+            break;
+        }
     }
-    // Idle and a drag that no curve depends on: nothing plotted, no rows,
-    // no repaint asked for.
-    assert_eq!(idle_made, 0, "idle frame plotted curves");
-    assert!(!idle.immediate, "idle: immediate repaint");
-    assert_eq!((idle.rows_formatted, idle.rows_built), (0, 0));
-    assert_eq!(drag_made + next_made, 0, "an unrelated drag plotted curves");
+
+    let show = |name: &str, f: &CurveFrame| {
+        println!(
+            "curves {name}: {:?}, plotted {}, tessellated {}, {:.2} ms",
+            f.counts, f.plotted, f.tessellated, f.ms
+        )
+    };
+    show("idle", &idle);
+    show("drag_unrelated", &unrelated[0]);
+    show("drag_unrelated_next", &unrelated[2]);
+    show("drag_related", &related[0]);
+    show("pan", &pans[0]);
+    let worst_pan = pans.iter().max_by_key(|f| f.plotted).unwrap();
+    show("pan_worst", worst_pan);
+    let slowest = pans.iter().map(|f| f.ms).fold(0.0, f64::max);
+    println!("curves pan_slowest: {slowest:.2} ms");
+    show("zoom", &zoom);
+    for (i, f) in after_zoom.iter().enumerate() {
+        show(&format!("after_zoom_{i}"), f);
+    }
+
+    // Idle: nothing plotted, no rows, no repaint asked for.
+    assert_eq!((idle.plotted, idle.tessellated), (0, 0), "idle");
+    assert!(!idle.counts.immediate, "idle: immediate repaint");
+    assert_eq!((idle.counts.rows_formatted, idle.counts.rows_built), (0, 0));
+    // A drag no curve depends on: nothing plotted.
+    for f in &unrelated {
+        assert_eq!((f.plotted, f.tessellated), (0, 0), "unrelated drag");
+        assert!(
+            f.counts.rows_formatted <= 12,
+            "{} rows made",
+            f.counts.rows_formatted
+        );
+    }
+    // A drag of a focus: its four conics, each frame it moves.
+    for f in &related[..2] {
+        assert_eq!((f.plotted, f.tessellated), (4, 4), "drag of {focus}");
+    }
+    assert_eq!((related[2].plotted, related[2].tessellated), (0, 0));
+    // The first pan frames move every kept drawing: nothing plotted or
+    // tessellated. Later frames plot at most `REPLOTS_PER_FRAME` curves.
+    let quiet = pans.iter().take_while(|f| f.plotted == 0).count();
+    println!("curves pan_quiet_frames: {quiet}");
+    assert!(quiet >= 20, "only {quiet} pan frames plotted nothing");
+    for f in &pans {
+        assert_eq!(f.plotted, f.tessellated, "a pan re-tessellated a curve");
+        assert!(
+            f.plotted <= REPLOTS_PER_FRAME as u64,
+            "{} plotted",
+            f.plotted
+        );
+    }
     assert!(
-        next.rows_formatted <= 12,
-        "{} rows made",
-        next.rows_formatted
+        pans.iter().any(|f| f.plotted > 0),
+        "the pan never plotted again"
     );
-    // The pan plots the curves near the view: the hyperbolas and functions
-    // (unbounded) and the ellipses in it, at most every curve once.
-    assert!(pan_made > 100 && pan_made <= 300, "{pan_made} curves made");
-    // Zoomed in, most ellipses are skipped: fewer curves than at the fit.
+    // The zoom frame: the most it may plot, the rest moved and scaled.
+    // 258 curves meet the zoomed view: 24 plotted, 234 drawn from their
+    // kept polylines.
+    assert_eq!((zoom.plotted, zoom.tessellated), (24, 258));
+    assert_eq!(REPLOTS_PER_FRAME, 24);
+    assert!(zoom.counts.immediate, "the zoom asks for the next frame");
+    let last = after_zoom.last().unwrap();
     assert!(
-        zoomed_made < pan_made,
-        "{zoomed_made} curves made zoomed in"
+        !last.counts.immediate,
+        "the frames after a zoom never settle"
     );
-    // Ceilings: the counts when they were set plus about 8%. An idle or
-    // drag frame keeps every curve's mesh, so it costs about what the plain
-    // grid does (n1000 idle: about 2700 allocations); a pan makes about 21
-    // allocations per curve it plots.
-    for (name, c, allocs, bytes) in [
+    for f in &after_zoom {
+        assert!(f.plotted <= REPLOTS_PER_FRAME as u64);
+        assert_eq!(f.plotted, f.tessellated);
+    }
+    assert_eq!(after_zoom.len(), 12, "frames until the zoom is done");
+    let heaviest = *after_zoom.iter().max_by_key(|f| f.counts.bytes).unwrap();
+    // Ceilings: the counts when they were set plus about 8%. A pan frame
+    // copies every visible curve's mesh to its new place (about 8 MB here).
+    for (name, f, allocs, bytes) in [
         ("idle", idle, 2_650, 545_000),
-        ("drag_unrelated", drag, 2_800, 555_000),
-        ("drag_unrelated_rows", next, 2_800, 555_000),
-        ("pan", pan, 9_600, 14_500_000),
+        ("drag_unrelated", unrelated[0], 2_800, 555_000),
+        ("drag_related", related[0], 3_000, 750_000),
+        ("pan", pans[0], 4_050, 9_050_000),
+        ("pan_worst", *worst_pan, 4_600, 11_700_000),
+        ("zoom", zoom, 4_550, 11_400_000),
+        ("after_zoom", heaviest, 2_800, 4_150_000),
     ] {
+        let c = f.counts;
         assert!(c.allocs <= allocs, "{name}: {} allocations", c.allocs);
         assert!(c.bytes <= bytes, "{name}: {} bytes", c.bytes);
     }

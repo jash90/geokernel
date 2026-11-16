@@ -108,6 +108,9 @@ fn picture_with(
     bounded_only: bool,
     (selected, hovered): (Option<Id>, Option<Id>),
 ) -> (Vec<(Rect, epaint::Mesh)>, usize) {
+    // Each picture plots its curves afresh: a kept drawing moved by a pan
+    // or waiting to be plotted again is not what this compares.
+    crate::curves::forget(ctx);
     let c = wb.construction();
     let visible = |id| {
         !bounded_only

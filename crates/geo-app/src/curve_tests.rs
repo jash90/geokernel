@@ -3,8 +3,9 @@
 //! only when their object or the view changes, and extreme zooms draw
 //! without panicking.
 
-use crate::curves::curves_tessellated;
+use crate::curves::{curves_plotted, curves_tessellated};
 use crate::draw::{self, Scene};
+use crate::geom::ToEgui;
 use crate::interact::ViewTransform;
 use crate::workbench::Workbench;
 use eframe::egui::{epaint, vec2, Context, Pos2, Rect};
@@ -250,10 +251,18 @@ fn drawings_are_made_again_only_when_their_object_or_the_view_changes() {
     assert!(wb.set_number(r, 3.5));
     stroke_triangles(&ctx, &wb, &t, (None, None));
     assert_eq!(curves_tessellated() - n, 2);
-    // The view moves: every curve.
-    let n = curves_tessellated();
+    // A pan of 50 points, less than half the margin: the kept drawings
+    // move, nothing is plotted or tessellated.
+    let (n, m) = (curves_tessellated(), curves_plotted());
     stroke_triangles(&ctx, &wb, &transform(-7.0, 9.0, -6.0, 6.0), (None, None));
-    assert_eq!(curves_tessellated() - n, 3);
+    assert_eq!((curves_tessellated() - n, curves_plotted() - m), (0, 0));
+    // A pan past half the margin (150 points in all): every curve again.
+    stroke_triangles(&ctx, &wb, &transform(-5.0, 11.0, -6.0, 6.0), (None, None));
+    assert_eq!((curves_tessellated() - n, curves_plotted() - m), (3, 3));
+    // A zoom: every curve again.
+    let (n, m) = (curves_tessellated(), curves_plotted());
+    stroke_triangles(&ctx, &wb, &transform(-4.0, 4.0, -3.0, 3.0), (None, None));
+    assert_eq!((curves_tessellated() - n, curves_plotted() - m), (3, 3));
 }
 
 #[test]
@@ -309,4 +318,249 @@ fn extreme_zooms_draw_without_panicking() {
             assert!(tri.iter().all(|p| p.x.is_finite() && p.y.is_finite()));
         }
     }
+}
+
+/// The polylines of every curve as `Curves` hands them out in one frame,
+/// relative to the area.
+fn drawn_paths(ctx: &Context, wb: &Workbench, t: &ViewTransform) -> Vec<(Id, Vec<Vec<Pos2>>)> {
+    let mut paths = Vec::new();
+    let mut out = ctx.run_ui(Default::default(), |ui| {
+        let rect = Rect::from_min_size(ORIGIN, vec2(W, H));
+        let curves = crate::curves::Curves::new(&ui.painter_at(rect), rect, t, wb.rebuilds());
+        let c = wb.construction();
+        for id in c.ids() {
+            let color = wb.palette().color(id).egui();
+            if let Some(drawn) = curves.get(c, id, color) {
+                let moved = drawn
+                    .paths()
+                    .map(|p| p.into_iter().map(|q| q - ORIGIN.to_vec2()).collect())
+                    .collect();
+                paths.push((id, moved));
+            }
+        }
+    });
+    out.textures_delta.clear();
+    paths
+}
+
+/// The largest distance from a point of `a` inside the area to the
+/// polylines of `b`.
+fn farthest(a: &[Vec<Pos2>], b: &[Vec<Pos2>]) -> f32 {
+    let inside = |q: &Pos2| q.x >= 0.0 && q.x <= W && q.y >= 0.0 && q.y <= H;
+    let mut worst = 0.0f32;
+    for q in a.iter().flatten().filter(|q| inside(q)) {
+        let mut best = f32::INFINITY;
+        for w in b.iter().flat_map(|p| p.windows(2)) {
+            let (s, e) = (w[0], w[1]);
+            let d = e - s;
+            let len2 = d.length_sq();
+            let t = if len2 > 0.0 {
+                ((*q - s).dot(d) / len2).clamp(0.0, 1.0)
+            } else {
+                0.0
+            };
+            best = best.min((s + t * d - *q).length());
+        }
+        worst = worst.max(best);
+    }
+    worst
+}
+
+#[test]
+fn a_pan_that_moves_the_kept_drawings_shows_what_a_fresh_plot_shows() {
+    let wb = Workbench::from_script(
+        "F = (-2, 0)\nG = (2, 0)\nr = 3\nk = 1\ne = Ellipse(F, G, r)\nh = Hyperbola(F, G, k)\n\
+         L = (0, 1)\nM = (-1, -1)\nN = (1, -1)\nd = Line(M, N)\np = Parabola(L, d)\n\
+         f(x) = 1 / x\ng(x) = sin(3x) + x / 2\n",
+    )
+    .unwrap();
+    let ctx = Context::default();
+    drawn_paths(&ctx, &wb, &standard());
+    for (dx, dy) in [(0.37, 0.0), (-1.13, 0.71), (1.9, -1.4)] {
+        let t = transform(-8.0 + dx, 8.0 + dx, -6.0 + dy, 6.0 + dy);
+        let (p, n) = (curves_plotted(), curves_tessellated());
+        let moved = drawn_paths(&ctx, &wb, &t);
+        assert_eq!(
+            (curves_plotted() - p, curves_tessellated() - n),
+            (0, 0),
+            "the pan by ({dx}, {dy}) moved the kept drawings"
+        );
+        crate::curves::forget(&ctx);
+        let fresh = drawn_paths(&ctx, &wb, &t);
+        crate::curves::forget(&ctx);
+        drawn_paths(&ctx, &wb, &standard());
+        assert_eq!(moved.len(), fresh.len());
+        let c = wb.construction();
+        for ((id, a), (id2, b)) in moved.iter().zip(&fresh) {
+            assert_eq!(id, id2);
+            // Each is within its chord limit of the curve; their vertices
+            // lie on it: a conic's chords stay 0.25 px from the curve,
+            // `CurvePlotter`'s are at most 10 px long and bend at most 10
+            // degrees, 0.44 px.
+            let limit = match c.value(*id) {
+                geo_kernel::kernel::Value::Function => 0.44,
+                _ => geo_kernel::plot::conic::FLATNESS as f32,
+            } + 1e-3;
+            let d = farthest(a, b).max(farthest(b, a));
+            assert!(
+                d <= limit,
+                "{} after a pan by ({dx}, {dy}): {d} px from a fresh plot",
+                c.label(*id)
+            );
+            assert!(
+                a.iter().flatten().count() > 10,
+                "{} drew little",
+                c.label(*id)
+            );
+        }
+    }
+}
+
+/// Asks `Curves` for every curve of `wb` in one frame of an area of
+/// `size`, in `color` when given (the palette's otherwise).
+fn touch(
+    ctx: &Context,
+    wb: &Workbench,
+    t: &ViewTransform,
+    size: eframe::egui::Vec2,
+    color: Option<eframe::egui::Color32>,
+) {
+    let mut out = ctx.run_ui(Default::default(), |ui| {
+        let rect = Rect::from_min_size(ORIGIN, size);
+        let curves = crate::curves::Curves::new(&ui.painter_at(rect), rect, t, wb.rebuilds());
+        let c = wb.construction();
+        for id in c.ids() {
+            let col = color.unwrap_or_else(|| wb.palette().color(id).egui());
+            let _ = curves.get(c, id, col);
+        }
+    });
+    out.textures_delta.clear();
+}
+
+/// How many curves one frame plots.
+fn plotted_by(f: impl FnOnce()) -> u64 {
+    let n = curves_plotted();
+    f();
+    curves_plotted() - n
+}
+
+fn area() -> eframe::egui::Vec2 {
+    vec2(W, H)
+}
+
+#[test]
+fn a_function_is_plotted_again_when_what_it_reads_through_others_changes() {
+    // g reads f, f reads r: a change of r reaches g.
+    let mut wb =
+        Workbench::from_script("r = 2\nf(x) = r x\ng(x) = f(x) + 1\nh(x) = x^2\n").unwrap();
+    let ctx = Context::default();
+    let t = standard();
+    touch(&ctx, &wb, &t, area(), None);
+    assert_eq!(plotted_by(|| touch(&ctx, &wb, &t, area(), None)), 0);
+    let r = wb.construction().id("r").unwrap();
+    assert!(wb.set_number(r, 3.0));
+    assert_eq!(
+        plotted_by(|| touch(&ctx, &wb, &t, area(), None)),
+        2,
+        "f and g"
+    );
+}
+
+#[test]
+fn a_function_reading_a_point_coordinate_follows_the_point() {
+    let mut wb = Workbench::from_script("A = (1, 2)\nf(x) = x(A) x\ng(x) = x^2\n").unwrap();
+    let ctx = Context::default();
+    let t = standard();
+    touch(&ctx, &wb, &t, area(), None);
+    assert_eq!(plotted_by(|| touch(&ctx, &wb, &t, area(), None)), 0);
+    let a = wb.construction().id("A").unwrap();
+    assert!(wb.move_point(a, 2.0, 2.0));
+    assert_eq!(
+        plotted_by(|| touch(&ctx, &wb, &t, area(), None)),
+        1,
+        "f only"
+    );
+}
+
+#[test]
+fn a_function_reading_a_list_is_kept_while_the_list_stays() {
+    // A list in a function's own expression is not supported yet; f reads
+    // the list through a number.
+    let mut wb =
+        Workbench::from_script("a = 1\nl = {a, 2}\nn = Sum(l)\nf(x) = n x\ng(x) = x^2\n").unwrap();
+    let ctx = Context::default();
+    let t = standard();
+    touch(&ctx, &wb, &t, area(), None);
+    let c = wb.construction();
+    assert!(
+        matches!(
+            c.value(c.id("l").unwrap()),
+            geo_kernel::kernel::Value::List { .. }
+        ),
+        "l is a list"
+    );
+    for _ in 0..3 {
+        assert_eq!(plotted_by(|| touch(&ctx, &wb, &t, area(), None)), 0, "idle");
+    }
+    // One element changes: f only.
+    let a = wb.construction().id("a").unwrap();
+    assert!(wb.set_number(a, 3.0));
+    assert_eq!(
+        plotted_by(|| touch(&ctx, &wb, &t, area(), None)),
+        1,
+        "f only"
+    );
+    assert_eq!(plotted_by(|| touch(&ctx, &wb, &t, area(), None)), 0, "idle");
+}
+
+#[test]
+fn a_function_with_a_condition_follows_what_the_condition_reads() {
+    let mut wb = Workbench::from_script("a = 1\nf(x) = If(a > 0, x, -x)\ng(x) = x^2\n").unwrap();
+    let ctx = Context::default();
+    let t = standard();
+    touch(&ctx, &wb, &t, area(), None);
+    assert_eq!(plotted_by(|| touch(&ctx, &wb, &t, area(), None)), 0);
+    let a = wb.construction().id("a").unwrap();
+    assert!(wb.set_number(a, -1.0));
+    assert_eq!(
+        plotted_by(|| touch(&ctx, &wb, &t, area(), None)),
+        1,
+        "f only"
+    );
+}
+
+#[test]
+fn the_area_size_pixel_density_and_colour_are_part_of_the_key() {
+    // More curves than one frame plots again for a view change: a change of
+    // the key plots every one at once.
+    let script: String = (1..=30).map(|j| format!("f{j}(x) = x + {j}\n")).collect();
+    let wb = Workbench::from_script(&script).unwrap();
+    let ctx = Context::default();
+    let t = standard();
+    touch(&ctx, &wb, &t, area(), None);
+    assert_eq!(plotted_by(|| touch(&ctx, &wb, &t, area(), None)), 0);
+    // A taller area, the same view.
+    let taller = vec2(W, H + 40.0);
+    assert_eq!(
+        plotted_by(|| touch(&ctx, &wb, &t, taller, None)),
+        30,
+        "size"
+    );
+    assert_eq!(plotted_by(|| touch(&ctx, &wb, &t, taller, None)), 0);
+    // Twice the pixel density: the strokes are tessellated for it.
+    ctx.set_pixels_per_point(2.0);
+    assert_eq!(
+        plotted_by(|| touch(&ctx, &wb, &t, taller, None)),
+        30,
+        "density"
+    );
+    assert_eq!(plotted_by(|| touch(&ctx, &wb, &t, taller, None)), 0);
+    // Another colour.
+    let red = Some(eframe::egui::Color32::RED);
+    assert_eq!(
+        plotted_by(|| touch(&ctx, &wb, &t, taller, red)),
+        30,
+        "colour"
+    );
+    assert_eq!(plotted_by(|| touch(&ctx, &wb, &t, taller, red)), 0);
 }

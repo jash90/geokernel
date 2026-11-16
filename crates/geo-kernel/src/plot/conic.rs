@@ -42,11 +42,15 @@ const MAX_POINTS: usize = 8192;
 const RANGE_MARGIN: f64 = 2.0 * PAD;
 
 /// A conic as it is drawn: polylines in screen pixels, the single point of
-/// a conic that is one point, and where its label goes.
+/// a conic that is one point, the dot of an ellipse smaller than a pixel,
+/// and where its label goes.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Plot {
     pub paths: Vec<Path>,
     pub point: Option<(f64, f64)>,
+    /// An ellipse too small to show a chord: `DrawConic` still strokes its
+    /// shape, which is a dot of the line width.
+    pub dot: Option<(f64, f64)>,
     pub label: Option<(f64, f64)>,
 }
 
@@ -73,6 +77,12 @@ pub fn plot(d: &ConicData, frame: &Frame) -> Plot {
                 sample_uniform(&mut cutter, &c, t0, t1, step);
             }
             out.paths = cutter.finish();
+            if out.paths.is_empty() && a.max(b) * scale < 1.0 {
+                let [mx, my] = d.midpoint;
+                if inside(&frame.visible(PAD), (mx, my)) {
+                    out.dot = Some(frame.world_to_screen(mx, my));
+                }
+            }
             out.label = Some(if d.ty == ConicType::Circle {
                 // `DrawConic.updateCircle`, in screen pixels.
                 let (mx, my) = frame.world_to_screen(d.midpoint[0], d.midpoint[1]);
@@ -92,7 +102,7 @@ pub fn plot(d: &ConicData, frame: &Frame) -> Plot {
             for s in [1.0, -1.0] {
                 let c = |t: f64| curve.at(s * a * t.cosh(), b * t.sinh());
                 for (t0, t1) in hyperbola_ranges(&curve, s * a, b, &range_rect) {
-                    sample_hyperbola(&mut cutter, &c, t0, t1, a.max(b) * scale);
+                    sample_hyperbola(&mut cutter, &c, t0, t1, a.hypot(b) * scale);
                 }
             }
             out.paths = cutter.finish();
@@ -396,9 +406,11 @@ fn sample_uniform(
     }
 }
 
-/// Samples a hyperbola branch on `[t0, t1]`. The curve bends at most by
-/// `size cosh t` pixels per squared parameter unit, so the step shrinks
-/// as `1 / sqrt(cosh t)` away from the vertex.
+/// Samples a hyperbola branch on `[t0, t1]`. The second derivative of
+/// `(a cosh t, b sinh t)` is at most `hypot(a, b) cosh t` long (`size` in
+/// pixels), and a chord runs at most an eighth of that times the squared
+/// step from its arc, so the step shrinks as `1 / sqrt(cosh t)` away from
+/// the vertex.
 fn sample_hyperbola(
     cutter: &mut Cutter,
     c: &impl Fn(f64) -> (f64, f64),

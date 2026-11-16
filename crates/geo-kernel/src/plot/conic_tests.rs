@@ -185,15 +185,41 @@ fn implicit(d: &ConicData, (x, y): (f64, f64)) -> (f64, [f64; 2]) {
     }
 }
 
-/// Every drawn point lies within the flatness of the curve and inside the
-/// padded area.
+/// How far, in pixels, the screen point `s` lies from the curve: Newton
+/// steps along the gradient of the implicit equation walk it onto the
+/// curve, and the walk is measured.
+fn pixels_off(d: &ConicData, fr: &Frame, s: (f64, f64)) -> f64 {
+    let start = fr.screen_to_world(s.0, s.1);
+    let mut q = start;
+    for _ in 0..8 {
+        let (f, g) = implicit(d, q);
+        let g2 = g[0] * g[0] + g[1] * g[1];
+        if g2 == 0.0 || f == 0.0 {
+            break;
+        }
+        // The gradient is in the eigenvector system: turn it back.
+        let [e0, e1] = d.eigenvec;
+        let (gx, gy) = (g[0] * e0[0] + g[1] * e1[0], g[0] * e0[1] + g[1] * e1[1]);
+        q = (q.0 - f * gx / g2, q.1 - f * gy / g2);
+    }
+    (q.0 - start.0).hypot(q.1 - start.1) * fr.scale()
+}
+
+/// Every drawn point lies on the curve, every chord within the flatness of
+/// it at its midpoint, all inside the padded area.
 fn check_on_curve(d: &ConicData, fr: &Frame, p: &Plot) {
     for &(sx, sy) in p.paths.iter().flatten() {
         assert!(sx >= -PAD - 1e-6 && sx <= fr.width() + PAD + 1e-6, "{sx}");
         assert!(sy >= -PAD - 1e-6 && sy <= fr.height() + PAD + 1e-6, "{sy}");
-        let (f, g) = implicit(d, fr.screen_to_world(sx, sy));
-        let dist = f.abs() / g[0].hypot(g[1]) * fr.scale();
-        assert!(dist <= FLATNESS + 0.05, "{dist} px off the curve");
+        // A vertex is a point of the curve, or where a chord meets the
+        // border.
+        let dist = pixels_off(d, fr, (sx, sy));
+        assert!(dist <= FLATNESS + 1e-3, "a vertex {dist} px off the curve");
+    }
+    for w in p.paths.iter().flat_map(|path| path.windows(2)) {
+        let mid = (0.5 * (w[0].0 + w[1].0), 0.5 * (w[0].1 + w[1].1));
+        let dist = pixels_off(d, fr, mid);
+        assert!(dist <= FLATNESS + 1e-3, "a chord {dist} px off the curve");
     }
 }
 
@@ -551,4 +577,75 @@ fn the_cull_matrix_matches_the_curve() {
     let u = v * v / 3.0;
     let (x, y) = (1.0 + u * e0[0] + v * e1[0], 2.0 + u * e0[1] + v * e1[1]);
     assert!(q(x, y).abs() < 1e-9, "{}", q(x, y));
+}
+
+#[test]
+fn a_hyperbola_of_about_a_pixel_keeps_its_chords_flat() {
+    let fr = standard();
+    let mut g = Lcg(7);
+    for i in 0..2000 {
+        let size = g.range(0.3, 3.0) / fr.scale();
+        // Equal half-axes bend the most for their size.
+        let ratio = if i % 2 == 0 { 1.0 } else { g.range(0.2, 1.0) };
+        let d = conic(
+            ConicType::Hyperbola,
+            [g.range(-2.0, 2.0), g.range(-2.0, 2.0)],
+            g.range(0.0, TAU),
+            [size, size * ratio],
+            0.0,
+        );
+        check_on_curve(&d, &fr, &plot(&d, &fr));
+    }
+}
+
+#[test]
+fn an_ellipse_smaller_than_a_pixel_is_a_dot() {
+    // 3 by 2 units in a view a million units across: a ten-thousandth of a
+    // pixel. `DrawConic` strokes the shape, a dot of the line width.
+    let fr = frame(-1e6, 1e6, -7.5e5, 7.5e5);
+    let d = conic(ConicType::Ellipse, [5.0, -3.0], 0.3, [3.0, 2.0], 0.0);
+    let p = plot(&d, &fr);
+    assert!(p.paths.is_empty());
+    let (sx, sy) = p.dot.expect("a dot");
+    let (ex, ey) = fr.world_to_screen(5.0, -3.0);
+    assert!((sx - ex).abs() < 1e-6 && (sy - ey).abs() < 1e-6);
+    // Off the view there is no dot; a visible ellipse has none either.
+    let away = conic(ConicType::Ellipse, [5e6, 0.0], 0.3, [3.0, 2.0], 0.0);
+    assert_eq!(plot(&away, &fr).dot, None);
+    let big = conic(ConicType::Ellipse, [0.0, 0.0], 0.3, [3.0, 2.0], 0.0);
+    assert_eq!(plot(&big, &standard()).dot, None);
+}
+
+/// Every chord of a small hyperbola, at 19 points along it, stays within
+/// the flatness of the curve, at four zooms.
+#[test]
+fn small_hyperbolas_stay_flat_along_their_chords() {
+    let mut worst = 0.0f64;
+    for half in [10.0, 1.0, 0.1, 100.0] {
+        let fr = frame(-half, half, -0.75 * half, 0.75 * half);
+        let mut g = Lcg(11);
+        for _ in 0..3000 {
+            let size = g.range(0.2, 6.0) / fr.scale();
+            let ratio = g.range(0.05, 1.0);
+            let (a, b) = if g.range(0.0, 1.0) < 0.5 {
+                (size, size * ratio)
+            } else {
+                (size * ratio, size)
+            };
+            let b0 = [g.range(-0.2, 0.2) * half, g.range(-0.2, 0.2) * half];
+            let d = conic(ConicType::Hyperbola, b0, g.range(0.0, TAU), [a, b], 0.0);
+            let p = plot(&d, &fr);
+            for w in p.paths.iter().flat_map(|path| path.windows(2)) {
+                for k in 1..20 {
+                    let t = k as f64 / 20.0;
+                    let q = (
+                        w[0].0 + t * (w[1].0 - w[0].0),
+                        w[0].1 + t * (w[1].1 - w[0].1),
+                    );
+                    worst = worst.max(pixels_off(&d, &fr, q));
+                }
+            }
+        }
+    }
+    assert!(worst <= FLATNESS, "a chord {worst} px off the curve");
 }

@@ -202,3 +202,97 @@ fn extreme_zooms_do_not_panic() {
         }
     }
 }
+
+#[test]
+fn a_double_pole_is_never_joined_and_both_sides_rise() {
+    let fr = standard();
+    let f = |x: f64| 1.0 / ((x - 1.0) * (x - 1.0));
+    let p = check_common(f, &fr);
+    let (pole, _) = fr.world_to_screen(1.0, 0.0);
+    assert!(!crosses(&p, pole), "a segment crosses x = 1");
+    // Both sides reach the top of the area.
+    assert!(points(&p).any(|q| q.0 < pole && q.1 <= 0.0));
+    assert!(points(&p).any(|q| q.0 > pole && q.1 <= 0.0));
+    for pt in points(&p) {
+        assert!(distance_to_graph(f, &fr, pt) < 1.0, "{pt:?}");
+    }
+}
+
+#[test]
+fn the_jump_of_sign_is_not_joined() {
+    let fr = standard();
+    let f = f64::signum;
+    let p = check_common(f, &fr);
+    let (zero, _) = fr.world_to_screen(0.0, 0.0);
+    let (_, top) = fr.world_to_screen(0.0, 1.0);
+    let (_, bottom) = fr.world_to_screen(0.0, -1.0);
+    // No segment runs from one level to the other.
+    for (a, b) in segments(&p) {
+        assert!(
+            (a.1 - b.1).abs() < 1.0,
+            "a segment from {a:?} to {b:?} joins the jump"
+        );
+    }
+    assert!(points(&p).any(|q| q.0 < zero - 100.0 && (q.1 - bottom).abs() < 0.5));
+    assert!(points(&p).any(|q| q.0 > zero + 100.0 && (q.1 - top).abs() < 0.5));
+}
+
+#[test]
+fn ln_falls_along_its_asymptote_and_is_a_gap_left_of_zero() {
+    let fr = standard();
+    let f = f64::ln;
+    let p = check_common(f, &fr);
+    let (zero, _) = fr.world_to_screen(0.0, 0.0);
+    assert!(
+        points(&p).all(|q| q.0 >= zero - 1e-6),
+        "drawn left of x = 0"
+    );
+    // It falls far along the asymptote, within a pixel of x = 0. The
+    // search for the end of the domain stops near y = -6.3 here (the
+    // bisection of `CurvePlotter` ends once two points are half a pixel
+    // apart), short of the bottom border at -7.5.
+    let low = points(&p).fold((0.0f64, 0.0f64), |m, q| if q.1 > m.1 { q } else { m });
+    assert!(
+        low.1 > 0.85 * H && low.0 - zero < 1.0,
+        "lowest point {low:?}"
+    );
+    for pt in points(&p) {
+        if pt.1 < H {
+            assert!(distance_to_graph(f, &fr, pt) < 1.0, "{pt:?}");
+        }
+    }
+}
+
+/// The paths that cross the column `sx`, top and bottom of the whole cover.
+fn column_cover(p: &Plot, sx: f64) -> (f64, f64) {
+    let (mut top, mut bottom) = (f64::INFINITY, f64::NEG_INFINITY);
+    for (a, b) in segments(p) {
+        if (a.0 - sx).abs() < 1.0 && (b.0 - sx).abs() < 1.0 {
+            top = top.min(a.1.min(b.1));
+            bottom = bottom.max(a.1.max(b.1));
+        }
+    }
+    (top, bottom)
+}
+
+#[test]
+fn a_nearly_vertical_graph_is_cut_to_the_whole_column() {
+    // A slope of 1e20 is vertical on the screen: the line runs from the top
+    // border to the bottom one, both ends on the padded rectangle.
+    for (fr, slope) in [
+        (standard(), 1e20),
+        (frame(-9.7, 10.3, -7.5, 7.5), 1e20),
+        (frame(-9.7, 10.3, -7.5, 7.5), 1e300),
+        (standard(), 1e300),
+    ] {
+        let f = move |x: f64| slope * x;
+        let p = check_common(f, &fr);
+        let (zero, _) = fr.world_to_screen(0.0, 0.0);
+        let (top, bottom) = column_cover(&p, zero);
+        assert!(
+            (top + PAD).abs() < 1e-6 && (bottom - H - PAD).abs() < 1e-6,
+            "{slope} x in {:?}: column covered from {top} to {bottom}",
+            fr.visible(0.0)
+        );
+    }
+}

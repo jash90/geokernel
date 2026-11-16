@@ -235,6 +235,13 @@ pub fn render(c: &Construction, view: View, width: u32, height: u32) -> String {
                         r##"<circle cx="{px:.2}" cy="{py:.2}" r="4" fill="#202124" stroke="none"/>"##,
                     );
                 }
+                // A dot of the stroke width (2).
+                if let Some((px, py)) = drawn.dot {
+                    let _ = writeln!(
+                        segments,
+                        r##"<circle cx="{px:.2}" cy="{py:.2}" r="1" fill="#202124" stroke="none"/>"##,
+                    );
+                }
             }
             Value::Function => {
                 let mut f = |x: f64| c.function_value(id, x).unwrap_or(f64::NAN);

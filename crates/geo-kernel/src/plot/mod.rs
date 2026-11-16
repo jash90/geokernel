@@ -94,6 +94,34 @@ impl Frame {
         )
     }
 
+    /// The same scale on an area grown by `margin` pixels on each side: a
+    /// point lands `margin` pixels right of and below where `self` puts it
+    /// (up to rounding).
+    pub fn grown(&self, margin: f64) -> Frame {
+        Frame::fit(
+            self.visible(margin),
+            self.width + 2.0 * margin,
+            self.height + 2.0 * margin,
+        )
+    }
+
+    /// How far, in pixels, every point moved from `self` to `to` when both
+    /// have the same area and the same scale (to a relative 1e-9: a pan
+    /// recomputes the scale from the moved view, which rounds; the error is
+    /// then under 1e-5 pixels across 10 000 pixels): a pan. `None`
+    /// otherwise.
+    pub fn shift_to(&self, to: &Frame) -> Option<(f64, f64)> {
+        let same_scale = (to.scale - self.scale).abs() <= 1e-9 * self.scale;
+        if !(same_scale && to.width == self.width && to.height == self.height) {
+            return None;
+        }
+        let d = (
+            (to.ox - self.ox) + (self.view.xmin - to.view.xmin) * self.scale,
+            (self.oy - to.oy) + (to.view.ymin - self.view.ymin) * self.scale,
+        );
+        (d.0.is_finite() && d.1.is_finite()).then_some(d)
+    }
+
     /// The rectangle of the plane the whole area shows, grown by `margin`
     /// pixels on each side.
     pub fn visible(&self, margin: f64) -> View {
@@ -117,43 +145,54 @@ pub(crate) fn inside(r: &View, (x, y): (f64, f64)) -> bool {
 /// border.
 type Cut = ((f64, f64), (f64, f64), bool, bool);
 
-/// The part of the segment from `a` to `b` inside `r` (Liang and Barsky).
-/// `None` when no part is inside.
+/// The part of the segment from `a` to `b` inside `r` (Cohen and
+/// Sutherland). `None` when no part is inside.
+///
+/// Each moved end is put on the border it crosses directly, from the slope
+/// of the segment, not through one parameter along the whole segment: for
+/// a nearly vertical segment millions of times longer than the area, such a
+/// parameter rounds off the visible part. Both ends land in `r`.
 fn cut(a: (f64, f64), b: (f64, f64), r: &View) -> Option<Cut> {
-    let (dx, dy) = (b.0 - a.0, b.1 - a.1);
-    let (mut t0, mut t1) = (0.0f64, 1.0f64);
-    for (p, q) in [
-        (-dx, a.0 - r.xmin),
-        (dx, r.xmax - a.0),
-        (-dy, a.1 - r.ymin),
-        (dy, r.ymax - a.1),
-    ] {
-        if p == 0.0 {
-            if q < 0.0 {
-                return None;
-            }
-        } else {
-            let t = q / p;
-            if p < 0.0 {
-                t0 = t0.max(t);
-            } else {
-                t1 = t1.min(t);
-            }
-        }
-    }
-    if t0 > t1 || t0.is_nan() || t1.is_nan() {
-        return None;
-    }
-    let at = |t: f64| {
-        if t == 0.0 {
-            a
-        } else if t == 1.0 {
-            b
-        } else {
-            (a.0 + t * dx, a.1 + t * dy)
-        }
+    let code = |p: (f64, f64)| -> u8 {
+        u8::from(p.0 < r.xmin)
+            | u8::from(p.0 > r.xmax) << 1
+            | u8::from(p.1 < r.ymin) << 2
+            | u8::from(p.1 > r.ymax) << 3
     };
-    Some((at(t0), at(t1), t0 > 0.0, t1 < 1.0))
+    let (mut s, mut e) = (a, b);
+    let (mut cs, mut ce) = (code(s), code(e));
+    let (mut s_moved, mut e_moved) = (false, false);
+    // Each round puts one end on a border; four rounds put both inside.
+    for _ in 0..5 {
+        if cs | ce == 0 {
+            return Some((s, e, s_moved, e_moved));
+        }
+        if cs & ce != 0 {
+            return None;
+        }
+        let (p, q, c) = if cs != 0 { (s, e, cs) } else { (e, s, ce) };
+        let (dx, dy) = (q.0 - p.0, q.1 - p.1);
+        let x_at = |y: f64| p.0 + (y - p.1) * (dx / dy);
+        let y_at = |x: f64| p.1 + (x - p.0) * (dy / dx);
+        let m = if c & 1 != 0 {
+            (r.xmin, y_at(r.xmin))
+        } else if c & 2 != 0 {
+            (r.xmax, y_at(r.xmax))
+        } else if c & 4 != 0 {
+            (x_at(r.ymin), r.ymin)
+        } else {
+            (x_at(r.ymax), r.ymax)
+        };
+        if m.0.is_nan() || m.1.is_nan() {
+            return None;
+        }
+        if cs != 0 {
+            (s, cs, s_moved) = (m, code(m), true);
+        } else {
+            (e, ce, e_moved) = (m, code(m), true);
+        }
+    }
+    None
 }
 
 /// Builds screen paths from polylines given in world coordinates, cutting
