@@ -43,14 +43,15 @@ const CONTEXT: &[&str] = &[
 const MIN_CASE_SCRIPTS: usize = 500;
 const MIN_README_LINES: usize = 10;
 
-/// The list work one line may do (`geo_kernel::expr::list_work`): a few
-/// objects evaluated, each within its bound. This is what finds a blow-up,
-/// the same on any machine.
-const MAX_LINE_WORK: u64 = 16 * geo_kernel::expr::MAX_ELEMENTS;
+/// The evaluation work one line may do (`geo_kernel::expr::work_done`): a
+/// few objects evaluated, each within its bound. This is what finds a
+/// blow-up in an expression (a loop, a costly function, long exact
+/// decimals), the same on any machine.
+const MAX_LINE_WORK: u64 = 4 * geo_kernel::expr::MAX_WORK;
 
-/// Only a backstop for work the counter does not see (commands other than
-/// expressions); far above what a loaded machine takes for any line.
-const SLOW: Duration = Duration::from_secs(60);
+/// A backstop for work the counter does not see (commands other than
+/// expressions): far above what any line takes.
+const SLOW: Duration = Duration::from_secs(10);
 
 /// What went wrong with one input line, as a short stable key and a detail.
 struct Problem {
@@ -64,7 +65,7 @@ fn check_line(c: &mut Construction, line: &str) -> Result<bool, Problem> {
     let len = c.len();
     let before = values(c);
     let started = Instant::now();
-    let work = geo_kernel::expr::list_work();
+    let work = geo_kernel::expr::work_done();
     let result = match catch(|| exec(c, line)) {
         Ok(r) => r,
         Err(panic) => {
@@ -74,11 +75,11 @@ fn check_line(c: &mut Construction, line: &str) -> Result<bool, Problem> {
             })
         }
     };
-    let work = geo_kernel::expr::list_work() - work;
+    let work = geo_kernel::expr::work_done() - work;
     if work > MAX_LINE_WORK {
         return Err(Problem {
-            key: "too much list work".into(),
-            detail: format!("{work} units of list work"),
+            key: "too much evaluation work".into(),
+            detail: format!("{work} units of work"),
         });
     }
     if started.elapsed() > SLOW {
@@ -1015,6 +1016,24 @@ fn the_nested_sequence_mutation_does_bounded_work() {
         }
     }
     assert_eq!(c.value(c.id("l").unwrap()), geo_kernel::Value::Undefined);
+}
+
+#[test]
+fn a_costly_function_in_a_sequence_does_bounded_work() {
+    // A function of a cost of about 280 000 applied for each value of a
+    // range of 30 000 took 19 s before evaluation work was bounded.
+    let script = [
+        "f(x) = x + x + x + x",
+        "g(x) = f(f(f(f(f(f(f(f(x))))))))",
+        "s = Sequence(g(k), k, 1, 30000)",
+    ];
+    let mut c = Construction::new();
+    for line in script {
+        if let Err(p) = check_line(&mut c, line) {
+            panic!("`{line}`: {}: {}", p.key, p.detail);
+        }
+    }
+    assert_eq!(c.value(c.id("s").unwrap()), geo_kernel::Value::Undefined);
 }
 
 #[test]

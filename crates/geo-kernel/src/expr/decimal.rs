@@ -97,6 +97,18 @@ thread_local! {
     pub(crate) static OPS: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
 }
 
+/// Digit products one unit of evaluation work stands for; a digit copied,
+/// added or compared is one unit (see `work_done`).
+const PRODUCTS_PER_UNIT: usize = 4;
+
+/// Charges the digit work of an operation on numbers too long for the
+/// inline forms to the evaluation work: `digits` handled in linear passes
+/// and `products` digit products. The inline forms take a bounded time and
+/// are counted with the node that uses them.
+fn charge_digits(digits: usize, products: usize) {
+    super::eval::work((digits + products / PRODUCTS_PER_UNIT) as u64);
+}
+
 fn count_op() {
     #[cfg(test)]
     OPS.with(|n| n.set(n.get() + 1));
@@ -470,9 +482,11 @@ impl Dec {
         }
         // aligning must not need more digits than a result may have
         let (la, lb) = (self.len() as i64, other.len() as i64);
-        if (la + self.exp - exp).max(lb + other.exp - exp) > MAX_DIGITS as i64 + 1 {
+        let aligned = (la + self.exp - exp).max(lb + other.exp - exp);
+        if aligned > MAX_DIGITS as i64 + 1 {
             return None;
         }
+        charge_digits(aligned as usize, 0);
         let a = shifted(&self.digits(), (self.exp - exp) as usize);
         let b = shifted(&other.digits(), (other.exp - exp) as usize);
         let (neg, digits) = if self.neg == other.neg {
@@ -519,9 +533,12 @@ impl Dec {
     /// The exact product, before normalising; `None` beyond [`MAX_WORK`].
     fn mul_raw(&self, other: &Dec) -> Option<Raw> {
         // refused before anything is copied
-        if self.len().saturating_mul(other.len()) > MAX_WORK {
+        let (la, lb) = (self.len(), other.len());
+        if la.saturating_mul(lb) > MAX_WORK {
             return None;
         }
+        // the products are charged by `mul_mag`, which skips zero digits
+        charge_digits(la + lb, 0);
         let digits = self.with_digits(|a| other.with_digits(|b| mul_mag(a, b)));
         Some(Raw {
             neg: self.neg != other.neg,
@@ -558,6 +575,7 @@ impl Dec {
         if lb.saturating_mul(want) > MAX_WORK {
             return None;
         }
+        charge_digits(self.len() + want + lb, lb * want);
         let (num, exp, sticky) = self.with_digits(|a| {
             if a.len() >= want {
                 let drop = a.len() - want;
@@ -674,6 +692,7 @@ impl Dec {
         if drop > len {
             return Some(Dec::zero());
         }
+        charge_digits(self.len(), 0);
         round_raw(
             Raw {
                 neg: self.neg,
@@ -1018,6 +1037,8 @@ fn sub_mag(a: &[u8], b: &[u8]) -> Vec<u8> {
 
 fn mul_mag(a: &[u8], b: &[u8]) -> Vec<u8> {
     let mut acc = vec![0u32; a.len() + b.len()];
+    let rows = a.iter().filter(|&&x| x != 0).count();
+    charge_digits(0, rows * b.len());
     for (i, &x) in a.iter().enumerate() {
         if x == 0 {
             continue;

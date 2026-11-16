@@ -75,30 +75,44 @@ use std::cell::{Cell, RefCell};
 use std::sync::OnceLock;
 
 /// The elements one evaluation of one object may build in all, across all
-/// nesting levels, lists dropped again included. Every loop of the list code
-/// either builds elements counted against it, reads elements already
-/// counted, or counts the values of a range within what is left of it; once
-/// it is crossed nothing more is built or evaluated, and the result is
-/// undefined. Upstream has no such bound (see `DIFFERENCES.md`).
+/// nesting levels, lists dropped again included: a bound on memory. Every
+/// loop of the list code either builds elements counted against it, reads
+/// elements already counted, or counts the values of a range within what is
+/// left of it; once it is crossed nothing more is built or evaluated, and
+/// the result is undefined. Upstream has no such bound (see
+/// `DIFFERENCES.md`).
 pub const MAX_ELEMENTS: u64 = 1 << 20;
 
+/// The work one evaluation of one object with lists may do, in the units of
+/// [`work_done`]: a bound on time. It is 32 times [`MAX_ELEMENTS`], so that
+/// a list of the full length still fits with a `Sequence` body of a cost up
+/// to 29 (each value also costs a step of counting and one of filling);
+/// a longer list of that cost, or a body of cost `c` beyond about
+/// `2^25 / (c + 2)` values, makes the result undefined, and the evaluation
+/// stops there. Upstream has no such bound (see `DIFFERENCES.md`).
+pub const MAX_WORK: u64 = 1 << 25;
+
 thread_local! {
-    /// The list work done on this thread (see [`list_work`]).
+    /// The work done on this thread (see [`work_done`]).
     static WORK: Cell<u64> = const { Cell::new(0) };
 }
 
-/// The list work done on this thread so far: the loop iterations of the
-/// list code, an element built or read, or a step of counting a range.
-/// Only the difference between two readings means anything; tests use it
-/// to check that an evaluation does bounded work without a clock.
+/// The evaluation work done on this thread so far, in units of about one
+/// node of an expression tree: the cost of a tree with lists (its nodes,
+/// functions expanded) once, the cost of a `Sequence` body again for each
+/// value of its variable, a loop iteration of the list code (an element
+/// built or read, a step of counting a range), and the digit work of exact
+/// decimal arithmetic on long numbers. Only the difference between two
+/// readings means anything; tests use it to check that an evaluation does
+/// bounded work without a clock.
 #[doc(hidden)]
-pub fn list_work() -> u64 {
+pub fn work_done() -> u64 {
     WORK.with(Cell::get)
 }
 
-/// Adds `n` to [`list_work`].
+/// Adds `n` to [`work_done`].
 #[inline]
-fn work(n: u64) {
+pub(super) fn work(n: u64) {
     WORK.with(|w| w.set(w.get().wrapping_add(n)));
 }
 
@@ -109,10 +123,12 @@ const MIN_PRECISION: f64 = 1e-5;
 const LARGEST_INTEGER: f64 = 9007199254740992.0;
 
 /// The scratch buffer of the lists of one evaluation (see the module
-/// documentation), and the elements built so far.
+/// documentation), the elements built so far, and the reading of
+/// [`work_done`] when the evaluation began.
 pub(super) struct Lists {
     arena: RefCell<Vec<Slot>>,
     built: Cell<u64>,
+    began: u64,
 }
 
 impl Lists {
@@ -121,6 +137,7 @@ impl Lists {
         Lists {
             arena: RefCell::new(arena),
             built: Cell::new(0),
+            began: work_done(),
         }
     }
 
@@ -173,10 +190,20 @@ impl Lists {
         built <= MAX_ELEMENTS
     }
 
-    /// Whether this evaluation went past [`MAX_ELEMENTS`]: its result is
-    /// undefined, so nothing more is built or evaluated.
+    /// The work this evaluation has done.
+    fn spent(&self) -> u64 {
+        work_done().wrapping_sub(self.began)
+    }
+
+    /// Whether this evaluation went past [`MAX_ELEMENTS`] or [`MAX_WORK`]:
+    /// its result is undefined, so nothing more is built or evaluated.
     fn over(&self) -> bool {
-        self.built.get() > MAX_ELEMENTS
+        self.built.get() > MAX_ELEMENTS || self.spent() > MAX_WORK
+    }
+
+    /// Puts this evaluation past its bound.
+    fn give_up(&self) {
+        self.built.set(MAX_ELEMENTS + 1);
     }
 
     /// `n` undefined slots at the end, where they start.
@@ -381,6 +408,9 @@ pub(super) fn root(c: &Construction, e: &Entry, lists: Option<&Lists>) -> (Raw, 
         lists,
         ..Ctx::new(c, e, &Env::None)
     };
+    if lists.is_some() {
+        work(e.cost);
+    }
     let x = ctx.full(e.root);
     if lists.is_some_and(Lists::over) {
         return (Raw::Num(f64::NAN), None);
@@ -404,6 +434,7 @@ pub(super) fn root_list(
         lists: Some(lists),
         ..Ctx::new(c, e, &Env::None)
     };
+    work(e.cost);
     let (start, len) = ctx.list(e.root)?;
     if lists.over() {
         return None;
@@ -1069,14 +1100,16 @@ impl Ctx<'_> {
         Some((start, n))
     }
 
-    /// `AlgoSequenceRange`: `Sequence(n)` is 1 to `n` rounded; `Sequence(a,
-    /// b)` runs from `a` to `b` rounded, up or down; `Sequence(a, b, step)`
-    /// steps from `a`, on decimals when `a` and `step` have them and there
-    /// are at most 100 steps.
+    /// `AlgoSequenceRange`: `Sequence(n)` is 1 to `(int) Math.round(n)` (a
+    /// count past `int` wraps, one of 0 or less is empty); `Sequence(a, b)`
+    /// runs from `a` to `b` rounded, up or down; `Sequence(a, b, step)` steps
+    /// from `a`, on decimals when `a` and `step` have them and there are at
+    /// most 100 steps.
     fn range(&self, from: u32, to: u32, step: u32) -> Option<(u32, u32)> {
         let lists = self.lists?;
         if from == NONE {
-            let n = u32::try_from(math::java_round(self.full_number(to)).max(0)).ok()?;
+            // `(int)` of the `long` keeps its low 32 bits
+            let n = (math::java_round(self.full_number(to)) as i32).max(0) as u32;
             let start = lists.reserve(n)?;
             work(u64::from(n));
             for k in 0..n {
@@ -1182,9 +1215,15 @@ impl Ctx<'_> {
         };
         let n = count(lists, values)?;
         let start = lists.reserve(n)?;
+        let body = self.e.costs.get(e as usize).copied().unwrap_or(0);
         let mut k = 0;
         values(&mut |v| {
-            work(1);
+            // a step of filling and the nodes of the body, charged before
+            // the body runs: past the bound it does not run
+            work(1 + body);
+            if lists.over() {
+                return false;
+            }
             let local = Local {
                 depth,
                 value: v,
@@ -1197,8 +1236,7 @@ impl Ctx<'_> {
             .element(e);
             lists.set(start + k, slot);
             k += 1;
-            // an element past the bound: the evaluation stops here
-            k < n && !lists.over()
+            k < n
         });
         (!lists.over()).then_some((start, n))
     }
@@ -1487,10 +1525,13 @@ fn number_of(slot: Slot) -> Option<f64> {
 }
 
 /// How many values `values` gives, `None` when they do not fit in what is
-/// left of [`MAX_ELEMENTS`]. Counting stops there, and the evaluation is
-/// then past the bound, so that no loop around this one goes on.
+/// left of [`MAX_ELEMENTS`] or [`MAX_WORK`]. Counting stops there, and the
+/// evaluation is then past its bound, so that no loop around this one goes
+/// on.
 fn count(lists: &Lists, values: impl Fn(&mut dyn FnMut(f64) -> bool)) -> Option<u32> {
-    let room = MAX_ELEMENTS.saturating_sub(lists.built.get());
+    let room = MAX_ELEMENTS
+        .saturating_sub(lists.built.get())
+        .min(MAX_WORK.saturating_sub(lists.spent()));
     let mut n: u64 = 0;
     values(&mut |_| {
         n += 1;
@@ -1498,7 +1539,7 @@ fn count(lists: &Lists, values: impl Fn(&mut dyn FnMut(f64) -> bool)) -> Option<
     });
     work(n);
     if n > room {
-        lists.build(n);
+        lists.give_up();
         return None;
     }
     Some(n as u32)

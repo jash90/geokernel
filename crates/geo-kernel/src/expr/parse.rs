@@ -57,6 +57,8 @@ pub(crate) struct Parsed {
     pub(crate) uses_var: bool,
     pub(crate) depth: u32,
     pub(crate) cost: u64,
+    /// The cost of every node's subtree (`cost` is the root's).
+    pub(crate) costs: Vec<u64>,
     /// How many times one evaluation reads `x`.
     pub(crate) vars: u64,
 }
@@ -98,6 +100,7 @@ pub(crate) fn parse(c: &Construction, src: &str) -> Result<Parsed, String> {
         root,
         depth: depth[r],
         cost: cost[r],
+        costs: cost,
         vars: vars[r],
         nodes: p.nodes,
         lits: p.lits,
