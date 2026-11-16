@@ -90,7 +90,7 @@ pub const MAX_ELEMENTS: u64 = 1 << 20;
 /// a longer list of that cost, or a body of cost `c` beyond about
 /// `2^25 / (c + 2)` values, makes the result undefined, and the evaluation
 /// stops there. Upstream has no such bound (see `DIFFERENCES.md`).
-pub const MAX_WORK: u64 = 1 << 25;
+pub const MAX_EVALUATION_WORK: u64 = 1 << 25;
 
 thread_local! {
     /// The work done on this thread (see [`work_done`]).
@@ -195,10 +195,10 @@ impl Lists {
         work_done().wrapping_sub(self.began)
     }
 
-    /// Whether this evaluation went past [`MAX_ELEMENTS`] or [`MAX_WORK`]:
+    /// Whether this evaluation went past [`MAX_ELEMENTS`] or [`MAX_EVALUATION_WORK`]:
     /// its result is undefined, so nothing more is built or evaluated.
     fn over(&self) -> bool {
-        self.built.get() > MAX_ELEMENTS || self.spent() > MAX_WORK
+        self.built.get() > MAX_ELEMENTS || self.spent() > MAX_EVALUATION_WORK
     }
 
     /// Puts this evaluation past its bound.
@@ -1525,13 +1525,13 @@ fn number_of(slot: Slot) -> Option<f64> {
 }
 
 /// How many values `values` gives, `None` when they do not fit in what is
-/// left of [`MAX_ELEMENTS`] or [`MAX_WORK`]. Counting stops there, and the
+/// left of [`MAX_ELEMENTS`] or [`MAX_EVALUATION_WORK`]. Counting stops there, and the
 /// evaluation is then past its bound, so that no loop around this one goes
 /// on.
 fn count(lists: &Lists, values: impl Fn(&mut dyn FnMut(f64) -> bool)) -> Option<u32> {
     let room = MAX_ELEMENTS
         .saturating_sub(lists.built.get())
-        .min(MAX_WORK.saturating_sub(lists.spent()));
+        .min(MAX_EVALUATION_WORK.saturating_sub(lists.spent()));
     let mut n: u64 = 0;
     values(&mut |_| {
         n += 1;

@@ -47,7 +47,7 @@ const MIN_README_LINES: usize = 10;
 /// few objects evaluated, each within its bound. This is what finds a
 /// blow-up in an expression (a loop, a costly function, long exact
 /// decimals), the same on any machine.
-const MAX_LINE_WORK: u64 = 4 * geo_kernel::expr::MAX_WORK;
+const MAX_LINE_WORK: u64 = 4 * geo_kernel::expr::MAX_EVALUATION_WORK;
 
 /// A backstop for work the counter does not see (commands other than
 /// expressions): far above what any line takes.

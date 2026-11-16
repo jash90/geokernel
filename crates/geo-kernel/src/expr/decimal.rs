@@ -575,7 +575,8 @@ impl Dec {
         if lb.saturating_mul(want) > MAX_WORK {
             return None;
         }
-        charge_digits(self.len() + want + lb, lb * want);
+        // the products are charged by `div_mag`, by the quotient digits
+        charge_digits(self.len() + want + lb, 0);
         let (num, exp, sticky) = self.with_digits(|a| {
             if a.len() >= want {
                 let drop = a.len() - want;
@@ -1077,6 +1078,8 @@ fn carry_all(acc: &mut Vec<u32>) {
 fn div_mag(a: &[u8], b: &[u8]) -> (Vec<u8>, bool) {
     let b = &b[..significant(b)];
     let n = b.len();
+    // a multiply-and-subtract over the divisor for each quotient digit
+    charge_digits(a.len() + n, (a.len() + 1).saturating_sub(n) * n);
     let big: Vec<u8> = b.iter().rev().copied().collect();
     // the divisor's leading digits, for the estimate
     let k = n.min(18);

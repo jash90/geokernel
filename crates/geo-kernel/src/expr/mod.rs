@@ -59,7 +59,7 @@
 mod decimal;
 mod eval;
 #[doc(hidden)]
-pub use eval::{work_done, MAX_ELEMENTS, MAX_WORK};
+pub use eval::{work_done, MAX_ELEMENTS, MAX_EVALUATION_WORK};
 mod lex;
 pub(crate) use lex::{is_name_char, plain_number};
 mod list;

@@ -1580,7 +1580,7 @@ const UNDEFINED_WITHOUT_A_LOOP: &[(&str, Option<f64>, f64)] = &[
 /// Lists within the element bound whose bodies cost more than the work
 /// bound allows: a costly function call, exact decimals of 3001 digits.
 /// Before the work bound, the first took about 0.6 ms of a release build for
-/// each value and the second about 48 us.
+/// each value, the product about 48 us and the quotient about 110 us.
 const OVER_WORK_BOUND: &[(&str, Option<f64>, f64)] = &[
     ("Sequence(g(k), k, 1, n)", Some(30.0), 1e4),
     ("Sequence(k + g(k), k, 1, n)", Some(30.0), 1e4),
@@ -1594,6 +1594,7 @@ const OVER_WORK_BOUND: &[(&str, Option<f64>, f64)] = &[
         Some(1000.0),
         1e5,
     ),
+    ("Sequence(1 / (1 + 1E-3000), k, 1, n)", Some(300.0), 1e5),
 ];
 
 /// A function `g(x) = 65536 x` whose tree, functions expanded, has a cost of
@@ -1602,7 +1603,7 @@ const COSTLY: &str = "h(x) = x + x + x + x\ng(x) = h(h(h(h(h(h(h(h(x))))))))";
 
 /// The most work one evaluation past the work bound may do: the bound, and
 /// at most one body or one range count beyond it.
-const PAST_WORK_BOUND: u64 = super::MAX_WORK + 2 * super::MAX_ELEMENTS;
+const PAST_WORK_BOUND: u64 = super::MAX_EVALUATION_WORK + 2 * super::MAX_ELEMENTS;
 
 #[test]
 fn a_costly_sequence_body_stops_at_the_work_bound() {
@@ -1620,7 +1621,7 @@ fn a_costly_sequence_body_stops_at_the_work_bound() {
 #[test]
 fn a_full_length_list_with_a_small_body_is_defined() {
     // 2^20 values, each a step of counting, one of filling and the body's
-    // cost: within `MAX_WORK` for a body of cost up to 29 (15 terms, 15
+    // cost: within `MAX_EVALUATION_WORK` for a body of cost up to 29 (15 terms, 15
     // variables and 14 additions), past it for one of cost 31
     let sum = |terms: usize| vec!["k"; terms].join(" + ");
     let c = load(&format!("l = Sequence({}, k, 1, 1048576)", sum(15))).unwrap();

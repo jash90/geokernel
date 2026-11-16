@@ -1,0 +1,424 @@
+{
+  "schema": 1,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "lists-limit-001",
+      "group": "lists",
+      "script": [
+        "n = 3",
+        "l = Sequence(n)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 1.0E20 },
+        { "action": "set_number", "label": "n", "value": 3.0 },
+        { "action": "set_number", "label": "n", "value": 4.294967299E9 },
+        { "action": "set_number", "label": "n", "value": -5.0 },
+        { "action": "set_number", "label": "n", "value": 3.0 },
+        { "action": "set_number", "label": "n", "value": 3.0E9 },
+        { "action": "set_number", "label": "n", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0E20 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 4.294967299E9 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": -5.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0E9 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "lists-limit-002",
+      "group": "lists",
+      "script": [
+        "n = 3",
+        "l = {Sequence(1, n), {1}}"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 1.0E20 },
+        { "action": "set_number", "label": "n", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 },
+                  { "type": "number", "defined": true, "value": 3.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0E20 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "list", "defined": false },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 },
+                  { "type": "number", "defined": true, "value": 3.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "lists-limit-003",
+      "group": "lists",
+      "script": [
+        "n = 3",
+        "l = Sequence(Sequence(1, n), k, 1, 3)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 1.0E20 },
+        { "action": "set_number", "label": "n", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 },
+                  { "type": "number", "defined": true, "value": 3.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 },
+                  { "type": "number", "defined": true, "value": 3.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 },
+                  { "type": "number", "defined": true, "value": 3.0 }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0E20 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "list", "defined": false },
+              { "type": "list", "defined": false },
+              { "type": "list", "defined": false }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 },
+                  { "type": "number", "defined": true, "value": 3.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 },
+                  { "type": "number", "defined": true, "value": 3.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 },
+                  { "type": "number", "defined": true, "value": 3.0 }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "lists-limit-004",
+      "group": "lists",
+      "script": [
+        "n = 3",
+        "l = {Sequence(n, 1E20), {1}}"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 1.0E20 },
+        { "action": "set_number", "label": "n", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "list", "defined": false },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0E20 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "list", "defined": false },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "list", "defined": false },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "lists-limit-005",
+      "group": "lists",
+      "script": [
+        "n = 1",
+        "l = {Sequence(k, k, 0, n, 1E-320), {1}}"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 2.0 },
+        { "action": "set_number", "label": "n", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "list", "defined": false },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "list", "defined": false },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "list", "defined": false },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
