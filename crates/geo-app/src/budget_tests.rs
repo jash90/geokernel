@@ -634,12 +634,6 @@ fn curve_frames_stay_within_the_budget() {
     let worst_pan = pans.iter().max_by_key(|f| f.plotted).unwrap();
     show("pan_worst", worst_pan);
     let slowest = pans.iter().map(|f| f.ms).fold(0.0, f64::max);
-    println!(
-        "curves pan_frames: {:?}",
-        pans.iter()
-            .map(|f| (f.plotted, (f.ms * 100.0).round() / 100.0))
-            .collect::<Vec<_>>()
-    );
     println!("curves pan_slowest: {slowest:.2} ms");
     show("zoom", &zoom);
     for (i, f) in after_zoom.iter().enumerate() {
@@ -714,7 +708,8 @@ fn curve_frames_stay_within_the_budget() {
     );
     println!("curves resize_frames: {}", resize.len());
     // The frame of the resize moves the kept drawings, re-tessellating
-    // none (a curve that comes into the grown area is plotted).
+    // none; a curve that comes into the grown area with a plot kept from
+    // before the zoom (one hyperbola here) is plotted.
     assert_eq!(resize[0].plotted, resize[0].tessellated);
     for f in &resize {
         assert!(f.plotted <= REPLOTS_PER_FRAME as u64);
@@ -722,17 +717,19 @@ fn curve_frames_stay_within_the_budget() {
     let heaviest = *after_zoom.iter().max_by_key(|f| f.counts.bytes).unwrap();
     let heaviest_resize = *resize.iter().max_by_key(|f| f.counts.bytes).unwrap();
     // Ceilings: the counts when they were set plus about 8%. A pan frame
-    // copies every visible curve's mesh to its new place (about 9 MB here);
-    // the zoom frame tessellates 234 kept drawings scaled. The frame after
-    // a rebuild (undo, redo, delete) finds what each function depends on
-    // again; most of its allocations are the algebra list's.
+    // copies every visible curve's mesh to its new place (about 9.7 MB
+    // here, a function's mesh holding its margin strips too); the zoom
+    // frame tessellates the parts of 234 kept drawings that reach the area,
+    // scaled. The frame after a rebuild (undo, redo, delete) finds what
+    // each function depends on again; most of its allocations are the
+    // algebra list's.
     for (name, f, allocs, bytes) in [
         ("idle", idle, 2_650, 545_000),
         ("drag_unrelated", unrelated[0], 2_800, 555_000),
         ("drag_related", related[0], 3_000, 750_000),
         ("pan", pans[0], 4_050, 10_500_000),
         ("pan_worst", *worst_pan, 4_600, 11_700_000),
-        ("zoom", zoom, 4_900, 19_500_000),
+        ("zoom", zoom, 4_550, 11_400_000),
         ("after_zoom", heaviest, 2_800, 4_150_000),
         ("resize", heaviest_resize, 2_550, 1_750_000),
         ("add_point", edits[0].1, 2_200, 680_000),

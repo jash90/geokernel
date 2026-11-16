@@ -448,10 +448,18 @@ impl Curves {
             m.translate(origin - p.mesh_at);
             Arc::new(m)
         } else {
+            // Scaled for a frame or two: only the polylines that reach the
+            // area are tessellated (most of a function's margin strips do
+            // not).
+            let near = area.expand(plot::PAD as f32);
             let points = p
                 .paths
                 .iter()
-                .map(|path| path.iter().map(|&q| place(q)).collect::<Vec<_>>());
+                .map(|path| path.iter().map(|&q| place(q)).collect::<Vec<_>>())
+                .filter(|path| match path.as_slice() {
+                    [q] => near.contains(*q),
+                    _ => path.windows(2).any(|w| segment_meets(w[0], w[1], near)),
+                });
             Arc::new(self.tessellate(points, entry.color))
         };
         Some(Arc::new(Drawn {

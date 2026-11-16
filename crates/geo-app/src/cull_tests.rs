@@ -144,6 +144,10 @@ fn picture_with(
         out.textures_delta.clear();
         out = frame();
     }
+    assert!(
+        crate::headless::repaint(&out) != crate::headless::Repaint::Immediate,
+        "the curves were not all plotted in 40 frames"
+    );
     out.textures_delta.clear();
     let shapes = out.shapes.len();
     let prims = ctx.tessellate(out.shapes, out.pixels_per_point);
@@ -235,6 +239,10 @@ fn shapes_text(
         out.textures_delta.clear();
         out = frame();
     }
+    assert!(
+        crate::headless::repaint(&out) != crate::headless::Repaint::Immediate,
+        "the curves were not all plotted in 40 frames"
+    );
     out.textures_delta.clear();
     out.shapes.iter().map(|s| format!("{s:?}")).collect()
 }
