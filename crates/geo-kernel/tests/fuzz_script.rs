@@ -48,7 +48,14 @@ const CONTEXT: &[&str] = &[
 const MIN_CASE_SCRIPTS: usize = 500;
 const MIN_README_LINES: usize = 10;
 
-const SLOW: Duration = Duration::from_secs(10);
+/// The list work one line may do (`geo_kernel::expr::list_work`): a few
+/// objects evaluated, each within its bound. This is what finds a blow-up,
+/// the same on any machine.
+const MAX_LINE_WORK: u64 = 16 * geo_kernel::expr::MAX_ELEMENTS;
+
+/// Only a backstop for work the counter does not see (commands other than
+/// expressions); far above what a loaded machine takes for any line.
+const SLOW: Duration = Duration::from_secs(60);
 
 /// What went wrong with one input line, as a short stable key and a detail.
 struct Problem {
@@ -62,6 +69,7 @@ fn check_line(c: &mut Construction, line: &str) -> Result<bool, Problem> {
     let len = c.len();
     let before = values(c);
     let started = Instant::now();
+    let work = geo_kernel::expr::list_work();
     let result = match catch(|| exec(c, line)) {
         Ok(r) => r,
         Err(panic) => {
@@ -71,6 +79,13 @@ fn check_line(c: &mut Construction, line: &str) -> Result<bool, Problem> {
             })
         }
     };
+    let work = geo_kernel::expr::list_work() - work;
+    if work > MAX_LINE_WORK {
+        return Err(Problem {
+            key: "too much list work".into(),
+            detail: format!("{work} units of list work"),
+        });
+    }
     if started.elapsed() > SLOW {
         return Err(Problem {
             key: "slow line".into(),
@@ -996,6 +1011,27 @@ fn mutated_corpus_lines_never_panic() {
         }
         findings.report("mutated corpus", 20_000);
     });
+}
+
+#[test]
+fn the_nested_sequence_mutation_does_bounded_work() {
+    // A mutation of `lists-seq-011` (`b = 4` to `b = 1E5`) once built about
+    // 5e9 elements in its last line and took 92 s; it is in the corpus only
+    // for some seeds, so it is checked here on its own.
+    let script = [
+        "a = 1",
+        "b = 1E5",
+        "s = 0.5",
+        "A = (1, 2)",
+        "l = Sequence(Sequence(j + k, j, 1, k), k, a, b)",
+    ];
+    let mut c = Construction::new();
+    for line in script {
+        if let Err(p) = check_line(&mut c, line) {
+            panic!("`{line}`: {}: {}", p.key, p.detail);
+        }
+    }
+    assert_eq!(c.value(c.id("l").unwrap()), geo_kernel::Value::Undefined);
 }
 
 #[test]
