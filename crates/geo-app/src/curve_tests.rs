@@ -476,6 +476,45 @@ fn a_resize_and_a_density_change_go_through_the_cap_and_a_colour_only_tessellate
     assert_eq!(plotted_by(|| touch(&ctx, &wb, &t, taller, red)), 0);
 }
 
+#[test]
+fn a_curve_recoloured_at_a_low_density_is_moved_and_scaled_from_its_kept_plot() {
+    // More curves than one frame plots again, so most are drawn from their
+    // kept plots; at 0.3 pixels per point a stroke is thin (three vertices
+    // per point, not four).
+    let curves: String = (1..=30)
+        .map(|j| format!("f{j}(x) = x + {j} / 4\nr{j} = {j} / 4\nc{j} = Circle(O, r{j})\n"))
+        .collect();
+    let script = format!("O = (0, 0)\n{curves}");
+    let wb = Workbench::from_script(&script).unwrap();
+    let ctx = Context::default();
+    let t = standard();
+    for _ in 0..30 {
+        touch(&ctx, &wb, &t, area(), None);
+    }
+    assert_eq!(plotted_by(|| touch(&ctx, &wb, &t, area(), None)), 0);
+    ctx.set_pixels_per_point(0.3);
+    let colors = [
+        eframe::egui::Color32::RED,
+        eframe::egui::Color32::BLUE,
+        eframe::egui::Color32::GREEN,
+    ];
+    // Recoloured (tessellated at the new density), then moved and scaled,
+    // a step a frame.
+    for (k, view) in [
+        transform(-7.5, 8.5, -6.0, 6.0),
+        transform(-7.0, 9.0, -5.5, 6.5),
+        transform(-9.0, 10.0, -7.125, 7.125),
+        transform(-6.0, 6.0, -4.5, 4.5),
+    ]
+    .iter()
+    .enumerate()
+    {
+        let n = curves_plotted();
+        touch(&ctx, &wb, view, area(), Some(colors[k % colors.len()]));
+        assert!(curves_plotted() - n < 60, "{k}: most are drawn kept");
+    }
+}
+
 /// The label `Curves` hands out for `id` in the view `t`.
 fn drawn_label(ctx: &Context, wb: &Workbench, t: &ViewTransform, id: Id) -> Option<(f64, f64)> {
     let mut label = None;
