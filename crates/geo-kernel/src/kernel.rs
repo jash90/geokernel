@@ -29,12 +29,14 @@
 //! other: they are linked into the dependency graph when the object is added,
 //! so incremental updates treat them exactly like fixed parents.
 
+use crate::algo::arc::{ArcData, ArcDef};
 use crate::algo::conic::ConicDef;
 use crate::algo::conic_nd::{ConicData, ConicType};
 use crate::algo::conic_parts::ConicPartDef;
 use crate::algo::general_conic::GeneralConicDef;
 use crate::algo::lines::LineDef;
 use crate::algo::measure::MeasureDef;
+use crate::algo::path::{PathDef, PathState};
 use crate::algo::point::PointDef;
 use crate::algo::polygon::PolygonDef;
 use crate::algo::predicate::PredicateDef;
@@ -111,6 +113,11 @@ pub enum Kind {
     /// A general conic (`Conic`, `Ellipse`, `Hyperbola`, `Parabola` and
     /// their images); its state is read with [`Construction::conic`].
     Conic,
+    /// An arc of a circle or conic; its state is read with
+    /// [`Construction::arc`].
+    Arc,
+    /// A sector of a circle or conic, read like an arc.
+    Sector,
 }
 
 impl fmt::Display for Kind {
@@ -129,6 +136,8 @@ impl fmt::Display for Kind {
             Kind::PolyLine => "polyline",
             Kind::List => "list",
             Kind::Conic => "conic",
+            Kind::Arc => "arc",
+            Kind::Sector => "sector",
         })
     }
 }
@@ -206,6 +215,15 @@ pub enum Value {
     Conic {
         ty: ConicType,
     },
+    /// A defined arc with its length. Its conic and parameters are read
+    /// with [`Construction::arc`].
+    Arc {
+        length: f64,
+    },
+    /// A defined sector with its area, read like an arc.
+    Sector {
+        area: f64,
+    },
     /// The object does not exist for the current positions
     /// (for example two circles that no longer meet).
     Undefined,
@@ -242,6 +260,8 @@ impl Value {
             Value::Bool(_) => true,
             Value::Polygon { area } => area.is_finite(),
             Value::PolyLine { length } => length.is_finite(),
+            Value::Arc { length } => length.is_finite(),
+            Value::Sector { area } => area.is_finite(),
             Value::Function | Value::List { .. } | Value::Conic { .. } | Value::Undefined => true,
         }
     }
@@ -337,6 +357,13 @@ pub enum Def {
     /// Objects computed from a general conic, such as its intersection
     /// points with a line.
     ConicPart(ConicPartDef),
+    /// Points on paths and their parameters; a point on a path keeps a
+    /// [`PathState`] in the construction (see [`Construction::path_state`]).
+    Path(PathDef),
+    /// Arcs and sectors and what is measured on them; an arc or sector
+    /// keeps an [`ArcData`] record in the construction (see
+    /// [`Construction::arc`]).
+    Arc(ArcDef),
 }
 
 impl Def {
@@ -362,6 +389,8 @@ impl Def {
             Def::Polygon(d) => d.kind(),
             Def::GeneralConic(d) => d.kind(),
             Def::ConicPart(d) => d.kind(),
+            Def::Path(d) => d.kind(),
+            Def::Arc(d) => d.kind(),
         }
     }
 
@@ -423,6 +452,8 @@ impl Def {
             Def::Polygon(d) => d.parents(),
             Def::GeneralConic(d) => d.parents(),
             Def::ConicPart(d) => d.parents(),
+            Def::Path(d) => d.parents(),
+            Def::Arc(d) => d.parents(),
         }
     }
 }
@@ -527,6 +558,12 @@ pub struct Construction {
     /// The conic records of the [`Def::GeneralConic`] objects, with the
     /// index of each object, in creation order.
     conics: Vec<(usize, ConicData)>,
+    /// The states of the points on paths, with the index of each point, in
+    /// creation order.
+    paths: Vec<(usize, PathState)>,
+    /// The records of the arcs and sectors, with the index of each object,
+    /// in creation order.
+    arcs: Vec<(usize, ArcData)>,
 }
 
 /// The objects waiting to be recomputed during an update; empty between
@@ -817,6 +854,12 @@ impl Construction {
         {
             self.conics.pop();
         }
+        while self.paths.last().is_some_and(|&(owner, _)| owner >= at.len) {
+            self.paths.pop();
+        }
+        while self.arcs.last().is_some_and(|&(owner, _)| owner >= at.len) {
+            self.arcs.pop();
+        }
         // Labels became free again, so the hints may be too high.
         self.label_hints
             .get_mut()
@@ -827,8 +870,9 @@ impl Construction {
     /// Every object `def` reads: its parents, the objects its rule also
     /// reads (for example the line an intersection was prepared with), and
     /// its list. An object may appear more than once.
-    fn read_ids(&self, def: &Def) -> Vec<Id> {
+    pub(crate) fn read_ids(&self, def: &Def) -> Vec<Id> {
         let mut ids = algo::intersect::hidden_parents(self, def);
+        ids.extend(algo::path::hidden_parents(self, def));
         ids.extend(algo::vector::hidden_parents(self, def));
         ids.extend(algo::predicate::hidden_parents(self, def));
         ids.extend(algo::polygon::hidden_parents(self, def));
@@ -860,6 +904,16 @@ impl Construction {
                 let data = d.record(self, &ConicData::new());
                 self.conics.push((id.0, data));
                 algo::general_conic::value(d.kind(), &data)
+            }
+            Def::Path(d) if d.has_state() => {
+                let state = d.create(self);
+                self.paths.push((id.0, state));
+                PathDef::value(&state)
+            }
+            Def::Arc(d) if d.has_record() => {
+                let record = d.record(self);
+                self.arcs.push((id.0, record));
+                algo::arc::value(d.kind() == Kind::Sector, &record)
             }
             _ => self.compute(def, id.0),
         };
@@ -963,6 +1017,9 @@ impl Construction {
     /// still recomputes the intersection, which does not change.
     pub fn move_point(&mut self, id: Id, x: f64, y: f64) -> Result<usize, Error> {
         let def = self.defs.get(id.0).ok_or(Error::UnknownObject)?;
+        if let Def::Path(d @ PathDef::On { .. }) = *def {
+            return self.move_on_path(id, d, x, y);
+        }
         // The value of a free point or vector is always its coordinates.
         let (def, new, old) = match *def {
             Def::FreePoint { x: ox, y: oy } => {
@@ -985,6 +1042,29 @@ impl Construction {
         }
         self.defs[id.0] = def;
         self.values[id.0] = new;
+        Ok(self.propagate(id))
+    }
+
+    /// [`Self::move_point`] for a point made by `Point(path)`:
+    /// `GeoPoint.setCoords`, which projects the point onto its path. A move
+    /// to the point's own coordinates is not skipped: the projection can
+    /// still change the state (the parameter kept for an undefined path, or
+    /// the parameter of a point that sits off a path that changed shape).
+    /// Only a move that leaves the state the same, bit for bit, recomputes
+    /// nothing, because everything downstream reads only that state.
+    fn move_on_path(&mut self, id: Id, d: PathDef, x: f64, y: f64) -> Result<usize, Error> {
+        if !(x.is_finite() && y.is_finite()) {
+            return Err(Error::NotFinite);
+        }
+        let slot = self.path_slot(id.0).ok_or(Error::UnknownObject)?;
+        let Some(new) = d.moved(self, &self.paths[slot].1, x, y) else {
+            return Err(Error::NotFree(self.labels[id.0].clone()));
+        };
+        if new.same(&self.paths[slot].1) {
+            return Ok(0);
+        }
+        self.paths[slot].1 = new;
+        self.values[id.0] = PathDef::value(&new);
         Ok(self.propagate(id))
     }
 
@@ -1049,6 +1129,16 @@ impl Construction {
                         continue;
                     }
                 }
+                Def::Path(d) if d.has_state() => {
+                    if !self.update_path(i, d) {
+                        continue;
+                    }
+                }
+                Def::Arc(d) if d.has_record() => {
+                    if !self.update_arc(i, d) {
+                        continue;
+                    }
+                }
                 _ => {
                     let new = self.compute(def, i);
                     if new == self.values[i] {
@@ -1097,6 +1187,120 @@ impl Construction {
         self.conics[slot].1 = new;
         self.values[i] = algo::general_conic::value(d.kind(), &new);
         true
+    }
+
+    /// Recomputes the state of the point on a path `i`; tells whether its
+    /// children must follow: whether the state changed, bit for bit. Out of
+    /// line like [`Self::update_expr`].
+    #[inline(never)]
+    fn update_path(&mut self, i: usize, d: PathDef) -> bool {
+        let Some(slot) = self.path_slot(i) else {
+            return false;
+        };
+        let new = d.update(self, &self.paths[slot].1);
+        if new.same(&self.paths[slot].1) {
+            return false;
+        }
+        self.paths[slot].1 = new;
+        self.values[i] = PathDef::value(&new);
+        true
+    }
+
+    /// Recomputes the record of the arc or sector `i`; tells whether its
+    /// children must follow: whether the record changed, bit for bit. Out
+    /// of line like [`Self::update_expr`].
+    #[inline(never)]
+    fn update_arc(&mut self, i: usize, d: ArcDef) -> bool {
+        let Some(slot) = self.arc_slot(i) else {
+            return false;
+        };
+        let new = d.record(self);
+        if new.same(&self.arcs[slot].1) {
+            return false;
+        }
+        self.arcs[slot].1 = new;
+        self.values[i] = algo::arc::value(d.kind() == Kind::Sector, &new);
+        true
+    }
+
+    /// Where the record of object `i` is kept in `arcs`.
+    fn arc_slot(&self, i: usize) -> Option<usize> {
+        self.arcs.binary_search_by_key(&i, |&(owner, _)| owner).ok()
+    }
+
+    /// The record of the arc or sector `id`: its conic, the range of its
+    /// parameter and its measures. `None` for any other object.
+    pub fn arc(&self, id: Id) -> Option<ArcData> {
+        match self.defs.get(id.0)? {
+            Def::Arc(d) if d.has_record() => self.arc_slot(id.0).map(|slot| self.arcs[slot].1),
+            _ => None,
+        }
+    }
+
+    /// Where the state of object `i` is kept in `paths`.
+    fn path_slot(&self, i: usize) -> Option<usize> {
+        self.paths
+            .binary_search_by_key(&i, |&(owner, _)| owner)
+            .ok()
+    }
+
+    /// The state of the point on a path `id` (made by `Point(path)` or
+    /// `Point(path, t)`): it depends on how the point was moved, so a
+    /// construction built again from the definitions gets it back only with
+    /// [`Self::restore_path_state`]. `None` for any other object.
+    pub fn path_state(&self, id: Id) -> Option<PathState> {
+        match self.defs.get(id.0)? {
+            Def::Path(d) if d.has_state() => self.path_slot(id.0).map(|slot| self.paths[slot].1),
+            _ => None,
+        }
+    }
+
+    /// Gives the point on a path `id` the state `state` read from another
+    /// construction with [`Self::path_state`], and recomputes everything
+    /// that depends on it. Returns how many dependent objects were
+    /// recomputed. The point's value follows from the state as it is, and
+    /// the next change of its path moves it from there.
+    pub fn restore_path_state(&mut self, id: Id, state: PathState) -> Result<usize, Error> {
+        let def = *self.defs.get(id.0).ok_or(Error::UnknownObject)?;
+        let slot = match def {
+            Def::Path(d) if d.has_state() => self.path_slot(id.0),
+            _ => None,
+        }
+        .ok_or_else(|| Error::NotFree(self.labels[id.0].clone()))?;
+        if !state.is_valid() {
+            return Err(Error::NotFinite);
+        }
+        if state.same(&self.paths[slot].1) {
+            return Ok(0);
+        }
+        self.paths[slot].1 = state;
+        self.values[id.0] = PathDef::value(&state);
+        Ok(self.propagate(id))
+    }
+
+    /// The state the point on a path `id` gets when its path is followed
+    /// from the state `from` (`AlgoPointOnPath.compute`), without changing
+    /// the construction: what an update of the point computes when its
+    /// state before was `from`. For checks of the update order; `None` for
+    /// any other object.
+    pub fn follow_path_from(&self, id: Id, from: PathState) -> Option<PathState> {
+        match *self.defs.get(id.0)? {
+            Def::Path(d) if d.has_state() => Some(d.update(self, &from)),
+            _ => None,
+        }
+    }
+
+    /// Whether [`Self::move_point`] accepts `id`: a free point, a free
+    /// vector, or a point made by `Point(path)`, which moves along its path.
+    pub fn is_movable(&self, id: Id) -> bool {
+        matches!(
+            self.defs.get(id.0),
+            Some(
+                Def::FreePoint { .. }
+                    | Def::Vector(VectorDef::Free { .. })
+                    | Def::Path(PathDef::On { .. })
+            )
+        )
     }
 
     /// Where the record of object `i` is kept in `conics`.
@@ -1183,6 +1387,8 @@ impl Construction {
             Def::Polygon(d) => d.check(self),
             Def::GeneralConic(d) => d.check(self),
             Def::ConicPart(d) => d.check(self),
+            Def::Path(d) => d.check(self),
+            Def::Arc(d) => d.check(self),
         }
     }
 
@@ -1264,6 +1470,8 @@ impl Construction {
             Def::Polygon(d) => d.compute(self),
             Def::GeneralConic(d) => d.compute(self),
             Def::ConicPart(d) => d.compute(self),
+            Def::Path(d) => d.compute(self),
+            Def::Arc(d) => d.compute(self),
         }
     }
 

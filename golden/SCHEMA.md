@@ -63,7 +63,7 @@ One JSON object per file, stored under `golden/<group>/`.
 | `action` | Other fields | Meaning |
 | --- | --- | --- |
 | `initial` | none | The state right after the script has run. |
-| `move` | `label`, `x`, `y` | Move the free point `label` to `(x, y)`, or set the free vector `label` to `(x, y)`. |
+| `move` | `label`, `x`, `y` | Move the free point `label` to `(x, y)`, or set the free vector `label` to `(x, y)`. A point made by `Point(path)` moves too: GeoGebra puts it at the point of its path closest to `(x, y)` (`GeoPoint.setCoords` with `Path.pointChanged`) and keeps its path parameter. |
 | `set_number` | `label`, `value` | Set the free number `label` to `value`. |
 
 ## Snapshot
@@ -117,7 +117,8 @@ carries no numeric fields. When it is `true` it carries exactly these:
 | `polygon` | `vertices`, `area`, `signed_area` | `vertices` is the list of vertices in order, each `[x, y]`. `area` is GeoGebra's area (never negative), `signed_area` the area with its sign: positive when the vertices run counter-clockwise. |
 | `polyline` | `vertices`, `length` | `vertices` is the list of vertices in order, each `[x, y]`, or `null` for an undefined point (GeoGebra leaves a hole there). `length` is the sum of the lengths of the pieces between two defined points. |
 | `list` | `elements` | The elements in order, each an Object of its own (`number`, `point`, `vector`, `boolean` or `list`, defined or not): `{ "type": "list", "defined": true, "elements": [{ "type": "number", "defined": true, "value": 1.0 }, { "type": "list", "defined": true, "elements": [] }] }`. An element that is a point or vector carries `x` and `y` like an object. |
-| `conic` | `conic_type`, `matrix`, and the parts of the type (below) | A general conic: an object made by `Conic`, `Ellipse`, `Hyperbola` or `Parabola`, or the image of one under a transformation. Every other conic object of GeoGebra is a `circle`. |
+| `conic` | `conic_type`, `matrix`, and the parts of the type (below) | A general conic: an object made by `Conic`, `Ellipse`, `Hyperbola` or `Parabola`, or the image of one under a transformation. Every other conic object of GeoGebra is a `circle`, an `arc` or a `sector`. |
+| `arc`, `sector` | `value`, `conic_type`, and further fields of the type (below) | A part of a circle or conic (GeoGebra's `GeoConicPart`), made by `CircularArc`, `CircumcircularArc`, `Semicircle` or `Arc` (an `arc`), or by `CircularSector`, `CircumcircularSector` or `Sector` (a `sector`). `value` is the length of an arc and the area of a sector. |
 
 A `conic` carries `conic_type`, a string, and `matrix`, the six numbers
 `[A00, A11, A22, A01, A02, A12]` of
@@ -133,6 +134,20 @@ on `conic_type`:
 | `single_point` | `point` `[x, y]` |
 | `intersecting_lines`, `parallel_lines`, `double_line` | `lines` `[[x, y, z], [x, y, z]]`, the two lines raw in GeoGebra's order |
 | `empty` | none |
+
+An `arc` or `sector` carries `value` and `conic_type`, the type of the conic
+it lies on, named as for a `conic`. The further fields depend on that type:
+
+| `conic_type` | Further fields |
+| --- | --- |
+| `circle`, `ellipse` | `orientation` (`"positive"` or `"negative"`), `start` and `end` (the parameters where the part starts and ends, each in `[0, 2 pi]`, as GeoGebra keeps them: swapped for a negative orientation), `arc_length`, `area` (GeoGebra's `getArcLength` and `getArea`: for an arc of a circle the area between the arc and its chord), `midpoint`, `half_axes` and `eigenvectors` of the conic as for a `conic` |
+| `parallel_lines` | `orientation`: a circumcircular part of three collinear points, which is the segment between the first and the last point (positive) or the two rays from them away from each other (negative) |
+| `single_point` | none: a circumcircular part of three equal points, with `value` 0 |
+
+GeoGebra keeps the start and end parameters, the arc length, the area and,
+for a single point, the orientation of a part of any other type from an
+earlier update, so they depend on the history of the construction and are
+not recorded.
 
 All numbers are finite JSON numbers that round-trip to the same `f64`.
 A value that is not finite in GeoGebra is recorded as `defined: false`.
@@ -171,6 +186,10 @@ These rules are applied by the Rust side (`crates/geo-golden`).
   (`Construction::vertices`) must agree, in the same order and number.
 - Polylines: `length` and the vertices must agree, in the same order and
   number, with `null` on both sides at the same places.
+- Arcs and sectors: `value` must agree with the kernel's value, the
+  conic type and the orientation must be equal, and the further numbers of a
+  part of a circle or an ellipse must agree with the kernel's record
+  (`Construction::arc`), raw.
 - Lists: the number of elements must be equal, and each element is
   compared like an object of its type, nested lists recursively
   (`Construction::elements`).
@@ -203,7 +222,8 @@ other lines may apply it (`v = f(2)`, `g(x) = f(x) + 1`).
 Expressions and the type `function` were added after the first golden files
 were written; no existing file changed and the schema version stays 1.
 The type `conic` was added the same way, later still: no existing file
-changed and the schema version stays 1.
+changed and the schema version stays 1. So were the types `arc` and
+`sector` and the `move` of a point on a path, later again.
 
 Expressions may also compare and combine booleans and pick a branch with
 `If` (group `logic`), and build lists (group `lists`): literals such as

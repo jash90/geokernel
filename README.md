@@ -21,7 +21,9 @@ an input row with an on-screen keyboard, undo and redo, and lets you drag
 free points. The commands so far: lines,
 segments, rays, midpoints, perpendicular and parallel lines, bisectors,
 tangents and polars of circles, circles (centre and point, centre and
-radius, three points, incircle), conics (through five points, ellipse and
+radius, three points, incircle), circular arcs and sectors (centre and two
+points, three points, semicircle, part of a circle), points on a path with
+their path parameter, conics (through five points, ellipse and
 hyperbola from foci, parabola from focus and directrix, their centre, foci,
 vertices, axes, directrix, eccentricity), intersections, measures (length, distance,
 radius, area, slope, angle, ratios), vectors (between points, direction,
