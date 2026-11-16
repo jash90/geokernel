@@ -18,7 +18,8 @@ expressions with GeoGebra's exact decimal arithmetic, incremental updates,
 a small script language and SVG output.
 The desktop window has a toolbar with construction tools, an algebra view,
 an input row with an on-screen keyboard, undo and redo, and lets you drag
-free points. The commands so far: lines,
+free points. The window and the SVG output draw conics and the graphs of
+functions of x. The commands so far: lines,
 segments, rays, midpoints, perpendicular and parallel lines, bisectors,
 tangents and polars of circles, circles (centre and point, centre and
 radius, three points, incircle), circular arcs and sectors (centre and two
