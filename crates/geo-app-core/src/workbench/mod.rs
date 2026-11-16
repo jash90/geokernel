@@ -64,7 +64,7 @@ pub struct Workbench {
     /// The algebra rows, the values each was made from, and the state they
     /// were brought up to date with (see `rows.rs`).
     rows: Vec<Row>,
-    row_values: Vec<Value>,
+    row_values: Vec<rows::RowKey>,
     rows_at: Option<(u64, u64)>,
     rows_built: u64,
     rows_formatted: u64,

@@ -109,6 +109,8 @@ pub fn render(c: &Construction, view: View, width: u32, height: u32) -> String {
     // Used to draw an "infinite" line as a segment longer than the view.
     let (mx, my) = (0.5 * (view.xmin + view.xmax), 0.5 * (view.ymin + view.ymax));
     let reach = vw.hypot(vh);
+    // Conics and function graphs, cut to the image.
+    let frame = crate::plot::Frame::fit(view, w, h);
 
     for id in c.ids() {
         match c.value(id) {
@@ -232,17 +234,26 @@ pub fn render(c: &Construction, view: View, width: u32, height: u32) -> String {
                 let Some(d) = c.conic(id) else {
                     continue;
                 };
-                for path in conic_paths(&d, (mx, my), reach) {
-                    let mut pts = String::new();
-                    for (x, y) in path {
-                        let _ = write!(pts, "{:.2},{:.2} ", sx(x), sy(y));
-                    }
+                let drawn = crate::plot::conic::plot(&d, &frame);
+                write_paths(&mut segments, &drawn.paths);
+                if let Some((px, py)) = drawn.point {
                     let _ = writeln!(
                         segments,
-                        r##"<polyline points="{}" fill="none"/>"##,
-                        pts.trim_end()
+                        r##"<circle cx="{px:.2}" cy="{py:.2}" r="4" fill="#202124" stroke="none"/>"##,
                     );
                 }
+                // A dot of the stroke width (2).
+                if let Some((px, py)) = drawn.dot {
+                    let _ = writeln!(
+                        segments,
+                        r##"<circle cx="{px:.2}" cy="{py:.2}" r="1" fill="#202124" stroke="none"/>"##,
+                    );
+                }
+            }
+            Value::Function => {
+                let mut f = |x: f64| c.function_value(id, x).unwrap_or(f64::NAN);
+                let drawn = crate::plot::function::plot(&mut f, &frame);
+                write_paths(&mut segments, &drawn.paths);
             }
             Value::Arc { .. } | Value::Sector { .. } => {
                 let Some(a) = c.arc(id) else {
@@ -258,11 +269,7 @@ pub fn render(c: &Construction, view: View, width: u32, height: u32) -> String {
                 }
                 let _ = writeln!(segments, r##"<polyline points="{pts}" fill="none"/>"##);
             }
-            Value::Number(_)
-            | Value::Bool(_)
-            | Value::Function
-            | Value::List { .. }
-            | Value::Undefined => {}
+            Value::Number(_) | Value::Bool(_) | Value::List { .. } | Value::Undefined => {}
         }
     }
 
@@ -345,80 +352,17 @@ fn arc_path(a: &crate::algo::arc::ArcData) -> Vec<(f64, f64)> {
     }
 }
 
-/// Polylines that draw a conic in a view centred at `mid` whose diagonal is
-/// `reach`: an ellipse sampled around, each branch of a hyperbola and a
-/// parabola sampled until it leaves the view, the lines of a degenerate
-/// conic as long segments, and a single point as a tiny cross.
-fn conic_paths(
-    d: &crate::algo::conic_nd::ConicData,
-    mid: (f64, f64),
-    reach: f64,
-) -> Vec<Vec<(f64, f64)>> {
-    use crate::algo::conic_nd::ConicType;
-    const N: usize = 120;
-    let [e0, e1] = d.eigenvec;
-    let [bx, by] = d.midpoint;
-    // a point given in the eigenvector system
-    let at = |u: f64, v: f64| (bx + u * e0[0] + v * e1[0], by + u * e0[1] + v * e1[1]);
-    let far = reach + (bx - mid.0).hypot(by - mid.1);
-    let line = |l: [f64; 3]| {
-        let n = l[0].hypot(l[1]);
-        let (a, b, k) = (l[0] / n, l[1] / n, l[2] / n);
-        let dist = a * mid.0 + b * mid.1 + k;
-        let (fx, fy) = (mid.0 - a * dist, mid.1 - b * dist);
-        vec![
-            (fx - reach * b, fy + reach * a),
-            (fx + reach * b, fy - reach * a),
-        ]
-    };
-    match d.ty {
-        ConicType::Circle | ConicType::Ellipse => {
-            let [a, b] = d.half_axes;
-            let path = (0..=N)
-                .map(|i| {
-                    let t = std::f64::consts::TAU * i as f64 / N as f64;
-                    at(a * t.cos(), b * t.sin())
-                })
-                .collect();
-            vec![path]
+/// Writes each path, already in pixels, as an open polyline.
+fn write_paths(out: &mut String, paths: &[crate::plot::Path]) {
+    for path in paths {
+        let mut pts = String::new();
+        for &(x, y) in path {
+            let _ = write!(pts, "{x:.2},{y:.2} ");
         }
-        ConicType::Hyperbola => {
-            let [a, b] = d.half_axes;
-            let tmax = (far / a.min(b).max(1e-12)).asinh();
-            [1.0, -1.0]
-                .iter()
-                .map(|&s| {
-                    (0..=N)
-                        .map(|i| {
-                            let t = -tmax + 2.0 * tmax * i as f64 / N as f64;
-                            at(s * a * t.cosh(), b * t.sinh())
-                        })
-                        .collect()
-                })
-                .collect()
-        }
-        ConicType::Parabola => {
-            let p = d.p;
-            let vmax = far.max((2.0 * p * far).abs().sqrt());
-            let path = (0..=N)
-                .map(|i| {
-                    let v = -vmax + 2.0 * vmax * i as f64 / N as f64;
-                    at(v * v / (2.0 * p), v)
-                })
-                .collect();
-            vec![path]
-        }
-        ConicType::IntersectingLines | ConicType::ParallelLines => {
-            vec![line(d.lines[0]), line(d.lines[1])]
-        }
-        ConicType::DoubleLine => vec![line(d.lines[0])],
-        ConicType::SinglePoint => {
-            let r = reach * 1e-3;
-            vec![
-                vec![(bx - r, by), (bx + r, by)],
-                vec![(bx, by - r), (bx, by + r)],
-            ]
-        }
-        ConicType::Empty | ConicType::NotClassified => Vec::new(),
+        let _ = writeln!(
+            out,
+            r##"<polyline points="{}" fill="none"/>"##,
+            pts.trim_end()
+        );
     }
 }

@@ -31,9 +31,11 @@ impl Rng {
 }
 
 /// `cells` cells in a square grid, each with every kind the canvas draws:
-/// points, a segment, a line, a ray, a circle, a vector, an angle, a
-/// polygon with its sides, a regular polygon, a polyline, a midpoint and an
-/// intersection. Labels are long enough to stick out of the area.
+/// points, a segment, a line, a ray, a circle, an ellipse, a vector, an
+/// angle, a polygon with its sides, a regular polygon, a polyline, a
+/// midpoint and an intersection; once, a hyperbola, a parabola and two
+/// functions (named `Unbounded...`). Labels are long enough to stick out of
+/// the area.
 fn scene(cells: usize) -> String {
     let cols = (cells as f64).sqrt().ceil() as usize;
     let mut s = String::new();
@@ -51,6 +53,7 @@ fn scene(cells: usize) -> String {
             format!("{} = Line({b}, {c})", p("l")),
             format!("{} = Ray({a}, {b})", p("r")),
             format!("{} = Circle({a}, {b})", p("k")),
+            format!("{} = Ellipse({b}, {c}, {a})", p("e")),
             format!("{} = Vector({b}, {c})", p("v")),
             format!("{} = Angle({b}, {a}, {c})", p("alpha")),
             format!("{} = Polygon({a}, {b}, {c})", p("t")),
@@ -63,6 +66,9 @@ fn scene(cells: usize) -> String {
             s.push('\n');
         }
     }
+    s += "UnboundedHyperbola = Hyperbola(PointA_{0}, PointB_{0}, PointC_{0})\n\
+          UnboundedParabola = Parabola(PointC_{0}, l_{0})\n\
+          Unboundedf(x) = 1 / (x - 3)\nUnboundedg(x) = sqrt(x) + sin(5x)\n";
     s
 }
 
@@ -76,7 +82,8 @@ fn scene_with_extremes(cells: usize) -> String {
           farPoly = Polygon(PointA_{0}, Far, PointC_{0})\n\
           Z1 = (0, 0)\nZ2 = (1, 0)\nZ3 = (0, 1)\nZ4 = (1, 1)\nCc = (1000, 1000)\nCd = (1001, 1000)\n\
           par1 = Line(Z1, Z2)\npar2 = Line(Z3, Z4)\nNone1 = Intersect(par1, par2)\n\
-          away = Circle(Cc, Cd)\nNone2 = Intersect(par1, away)\n";
+          away = Circle(Cc, Cd)\nNone2 = Intersect(par1, away)\n\
+          farEllipse = Ellipse(PointA_{0}, Far, PointC_{0})\nfarHyp = Hyperbola(Z1, Far, Z3)\n";
     s
 }
 
@@ -101,23 +108,46 @@ fn picture_with(
     bounded_only: bool,
     (selected, hovered): (Option<Id>, Option<Id>),
 ) -> (Vec<(Rect, epaint::Mesh)>, usize) {
+    // Each picture plots its curves afresh: a kept drawing moved by a pan
+    // or waiting to be plotted again is not what this compares. The frames
+    // run until every curve is plotted (a frame plots a few at most).
+    crate::curves::forget(ctx);
     let c = wb.construction();
-    let visible = |id| !bounded_only || !matches!(c.kind(id), Kind::Line | Kind::Ray);
-    let mut out = ctx.run_ui(Default::default(), |ui| {
-        let rect = Rect::from_min_size(Pos2::new(40.0, 30.0), vec2(W, H));
-        let painter = ui.painter_at(rect);
-        let scene = Scene {
-            visible: &visible,
-            ghost: &|_| false,
-            selected,
-            hovered,
-            palette: wb.palette(),
-            cull,
-            label_offset: &|_| None,
-            label_rects: None,
-        };
-        draw::paint(&painter, rect, wb.construction(), t, &scene);
-    });
+    let visible = |id| {
+        !bounded_only
+            || !(matches!(c.kind(id), Kind::Line | Kind::Ray)
+                || c.label(id).starts_with("Unbounded"))
+    };
+    let frame = || {
+        ctx.run_ui(Default::default(), |ui| {
+            let rect = Rect::from_min_size(Pos2::new(40.0, 30.0), vec2(W, H));
+            let painter = ui.painter_at(rect);
+            let scene = Scene {
+                visible: &visible,
+                ghost: &|_| false,
+                selected,
+                hovered,
+                palette: wb.palette(),
+                cull,
+                generation: wb.rebuilds(),
+                label_offset: &|_| None,
+                label_rects: None,
+            };
+            draw::paint(&painter, rect, wb.construction(), t, &scene);
+        })
+    };
+    let mut out = frame();
+    for _ in 0..40 {
+        if crate::headless::repaint(&out) != crate::headless::Repaint::Immediate {
+            break;
+        }
+        out.textures_delta.clear();
+        out = frame();
+    }
+    assert!(
+        crate::headless::repaint(&out) != crate::headless::Repaint::Immediate,
+        "the curves were not all plotted in 40 frames"
+    );
     out.textures_delta.clear();
     let shapes = out.shapes.len();
     let prims = ctx.tessellate(out.shapes, out.pixels_per_point);
@@ -184,20 +214,35 @@ fn shapes_text(
     cull: bool,
     (selected, hovered): (Option<Id>, Option<Id>),
 ) -> Vec<String> {
-    let mut out = ctx.run_ui(Default::default(), |ui| {
-        let rect = Rect::from_min_size(Pos2::new(40.0, 30.0), vec2(W, H));
-        let scene = Scene {
-            visible: &|_| true,
-            ghost: &|_| false,
-            selected,
-            hovered,
-            palette: wb.palette(),
-            cull,
-            label_offset: &|_| None,
-            label_rects: None,
-        };
-        draw::paint(&ui.painter_at(rect), rect, wb.construction(), t, &scene);
-    });
+    let frame = || {
+        ctx.run_ui(Default::default(), |ui| {
+            let rect = Rect::from_min_size(Pos2::new(40.0, 30.0), vec2(W, H));
+            let scene = Scene {
+                visible: &|_| true,
+                ghost: &|_| false,
+                selected,
+                hovered,
+                palette: wb.palette(),
+                cull,
+                generation: wb.rebuilds(),
+                label_offset: &|_| None,
+                label_rects: None,
+            };
+            draw::paint(&ui.painter_at(rect), rect, wb.construction(), t, &scene);
+        })
+    };
+    let mut out = frame();
+    for _ in 0..40 {
+        if crate::headless::repaint(&out) != crate::headless::Repaint::Immediate {
+            break;
+        }
+        out.textures_delta.clear();
+        out = frame();
+    }
+    assert!(
+        crate::headless::repaint(&out) != crate::headless::Repaint::Immediate,
+        "the curves were not all plotted in 40 frames"
+    );
     out.textures_delta.clear();
     out.shapes.iter().map(|s| format!("{s:?}")).collect()
 }

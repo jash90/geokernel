@@ -4,13 +4,18 @@
 //!   only what depends on the object that moved.
 //! * [`algo`] holds the rules that compute one object from others.
 //! * [`tol`] holds the numeric tolerances.
+//! * [`equation`] writes the equation of a conic.
 //! * [`script`] parses a small input-bar style language.
 //! * [`expr`] holds arithmetic expressions such as `c = a + 2*b`.
 //! * [`svg`] draws a construction to an SVG string.
+//! * [`plot`] cuts conics and function graphs to a view, for the SVG writer
+//!   and the window alike.
 
 pub mod algo;
+pub mod equation;
 pub mod expr;
 pub mod kernel;
+pub mod plot;
 pub mod script;
 pub mod svg;
 pub mod tol;

@@ -403,6 +403,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             hovered: app.hovered,
             palette: app.wb.palette(),
             cull: true,
+            generation: app.wb.rebuilds(),
             label_offset: &|id| app.wb.label_offset(id),
             label_rects: Some(&app.label_rects),
         },

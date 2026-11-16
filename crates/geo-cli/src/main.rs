@@ -134,12 +134,13 @@ fn print_objects(c: &Construction) {
             "  {:<4} {:<8} {}",
             c.label(id),
             c.kind(id).to_string(),
-            describe(c.value(id))
+            describe(c, id)
         );
     }
 }
 
-fn describe(v: Value) -> String {
+fn describe(c: &Construction, id: Id) -> String {
+    let v = c.value(id);
     match v {
         Value::Point { x, y } => format!("({x:.4}, {y:.4})"),
         // Shown with (a, b) of unit length. Adding 0.0 turns a negative zero
@@ -171,9 +172,38 @@ fn describe(v: Value) -> String {
         Value::Polygon { area } => format!("area {:.4}", area.abs()),
         Value::PolyLine { length } => format!("length {length:.4}"),
         Value::Undefined => "undefined".to_string(),
+        // The implicit equation, the reference's default form.
+        Value::Conic { .. } => match c.conic(id) {
+            Some(d) => geo_kernel::equation::conic_equation(&d, &four_decimals),
+            None => "undefined".to_string(),
+        },
+        // A function stands for its values at a few points.
+        Value::Function => {
+            let label = c.label(id);
+            let values: Vec<String> = [-1.0, 0.0, 1.0]
+                .iter()
+                .map(|&x| match c.function_value(id, x) {
+                    Some(y) if y.is_finite() => {
+                        format!("{label}({x}) = {}", four_decimals(y))
+                    }
+                    _ => format!("{label}({x}) undefined"),
+                })
+                .collect();
+            format!("function, {}", values.join(", "))
+        }
         // `Value` is non-exhaustive: a kind this printer does not know yet
         // is shown in its debug form.
         other => format!("{other:?}"),
+    }
+}
+
+/// Four decimals, never a negative zero.
+fn four_decimals(v: f64) -> String {
+    let s = format!("{v:.4}");
+    if s == "-0.0000" {
+        "0.0000".to_string()
+    } else {
+        s
     }
 }
 

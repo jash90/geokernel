@@ -1,8 +1,9 @@
-//! Algebra-view text for objects: numbers rounded to two decimals, line and
-//! circle equations. No UI types.
+//! Algebra-view text for objects: numbers rounded to two decimals, line,
+//! circle and conic equations. No UI types.
 
 use crate::text::{self, Label};
-use geo_kernel::kernel::Value;
+use geo_kernel::kernel::{Construction, Id, Value};
+use geo_kernel::ConicData;
 
 /// Two decimals with trailing zeros removed and never a negative zero.
 pub fn n2(v: f64) -> String {
@@ -86,6 +87,26 @@ pub fn circle_equation(cx: f64, cy: f64, r: f64) -> String {
     format!("{} + {} = {}", square("x", cx), square("y", cy), n2(r * r))
 }
 
+/// The implicit equation of a conic, `x² + 2y² = 4`, in the form the
+/// reference shows by default (see `geo_kernel::equation`).
+pub fn conic_equation(d: &ConicData) -> String {
+    geo_kernel::equation::conic_equation(d, &n2)
+}
+
+/// The text after `=` for the object `id`: [`value_text`] of its value, or
+/// the equation of a conic, whose value alone does not hold it. A function
+/// has no text of its own: its row shows its definition.
+pub fn object_text(c: &Construction, id: Id) -> String {
+    match c.value(id) {
+        Value::Conic { .. } => match c.conic(id) {
+            Some(d) => conic_equation(&d),
+            None => text::label(Label::Undefined).into(),
+        },
+        Value::Function => String::new(),
+        v => value_text(&v),
+    }
+}
+
 /// The row value of an object of a kind the window does not know yet: a
 /// kernel that gains a kind must not make its objects vanish. Such an object
 /// keeps its algebra row (label, definition and this text); the drawing and
@@ -110,6 +131,8 @@ pub fn is_known(v: &Value) -> bool {
             | Value::Circle { .. }
             | Value::Polygon { .. }
             | Value::PolyLine { .. }
+            | Value::Conic { .. }
+            | Value::Function
     )
 }
 

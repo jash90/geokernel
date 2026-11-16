@@ -158,8 +158,10 @@ impl Camera {
     /// Moves the content by `(dx, dy)` screen pixels (y points down).
     #[inline]
     pub fn pan_pixels(&mut self, dx: f64, dy: f64) {
-        self.cx -= dx / self.scale;
-        self.cy += dy / self.scale;
+        let (cx, cy) = (self.cx - dx / self.scale, self.cy + dy / self.scale);
+        if cx.is_finite() && cy.is_finite() {
+            (self.cx, self.cy) = (cx, cy);
+        }
     }
 
     /// Multiplies the scale by `factor`, keeping the world point under the
@@ -171,12 +173,24 @@ impl Camera {
             return;
         }
         let new_scale = (self.scale * factor).clamp(MIN_SCALE, MAX_SCALE);
-        let (wx, wy) = self.transform(width, height).screen_to_world(sx, sy);
         // Offset of the cursor from the area centre, in pixels, is unchanged.
         let (ox, oy) = (sx - 0.5 * width, sy - 0.5 * height);
-        self.scale = new_scale;
-        self.cx = wx - ox / new_scale;
-        self.cy = wy + oy / new_scale;
+        let (mut wx, mut wy) = self.transform(width, height).screen_to_world(sx, sy);
+        if !(wx.is_finite() && wy.is_finite()) {
+            // A view whose extent rounds away (far out and zoomed far in)
+            // has no usable transform; the point under the cursor follows
+            // from the camera alone.
+            (wx, wy) = (self.cx + ox / self.scale, self.cy - oy / self.scale);
+        }
+        let (cx, cy) = (wx - ox / new_scale, wy + oy / new_scale);
+        // Never a camera that is not finite: it stays as it was.
+        if cx.is_finite() && cy.is_finite() {
+            *self = Camera {
+                cx,
+                cy,
+                scale: new_scale,
+            };
+        }
     }
 }
 
@@ -191,6 +205,34 @@ pub fn zoom_factor(scroll_y: f64, pinch: f64) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_zoom_or_pan_far_out_keeps_the_camera_finite() {
+        for (c, scale) in [(1e10, 1e9), (1e16, 1e3), (1e300, 1e-3)] {
+            let mut cam = Camera {
+                cx: c,
+                cy: c,
+                scale,
+            };
+            for (factor, sx, sy) in [(1.25, 10.0, 590.0), (0.8, 400.0, 300.0), (1.1, 799.0, 1.0)] {
+                cam.zoom_at(factor, sx, sy, 800.0, 600.0);
+                assert!(
+                    cam.cx.is_finite() && cam.cy.is_finite() && cam.scale.is_finite(),
+                    "{cam:?}"
+                );
+            }
+            cam.pan_pixels(1e300, -1e300);
+            assert!(cam.cx.is_finite() && cam.cy.is_finite(), "{cam:?}");
+        }
+        // Far out and zoomed in, a zoom out still works.
+        let mut cam = Camera {
+            cx: 1e10,
+            cy: 1e10,
+            scale: 1e9,
+        };
+        cam.zoom_at(0.5, 10.0, 10.0, 800.0, 600.0);
+        assert_eq!(cam.scale, 5e8);
+    }
 
     fn close(a: f64, b: f64) -> bool {
         (a - b).abs() < 1e-9 * (1.0 + a.abs().max(b.abs()))

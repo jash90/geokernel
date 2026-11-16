@@ -98,3 +98,31 @@ fn an_added_object_makes_one_row_and_a_delete_makes_all() {
     assert_eq!(wb.rows_formatted() - made, n);
     assert_eq!(wb.rows().to_vec(), wb.rows_reference());
 }
+
+#[test]
+fn conic_rows_show_the_equation_and_change_only_with_the_conic() {
+    let mut wb = Workbench::from_script(
+        "A = (-2, 0)\nB = (2, 0)\nm = 3\ne = Ellipse(A, B, m)\nP = (7, 7)\n\
+         f(x) = x^2\nk = 1\nh = Hyperbola(A, B, k)\n",
+    )
+    .unwrap();
+    let rows = wb.rows().to_vec();
+    assert_eq!(rows, wb.rows_reference());
+    // 5x² + 9y² = 45 is x²/9 + y²/5 = 1.
+    assert_eq!(rows[3].value.as_deref(), Some("5x² + 9y² = 45"));
+    // The sign of the matrix is the reference's.
+    assert_eq!(rows[7].value.as_deref(), Some("-3x² + y² = -3"));
+    assert_eq!(rows[5].value, None);
+    // A point the conics do not read moves: only its own row is made.
+    let made = wb.rows_formatted();
+    let p = wb.construction().id("P").unwrap();
+    assert!(wb.move_point(p, 8.0, 7.5));
+    wb.rows();
+    assert_eq!(wb.rows_formatted() - made, 1);
+    // A focus moves: its row and both conics.
+    let made = wb.rows_formatted();
+    let a = wb.construction().id("A").unwrap();
+    assert!(wb.move_point(a, -2.0, 1.0));
+    assert_eq!(wb.rows().to_vec(), wb.rows_reference());
+    assert_eq!(wb.rows_formatted() - made, 3);
+}
