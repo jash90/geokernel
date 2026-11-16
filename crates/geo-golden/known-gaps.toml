@@ -194,3 +194,25 @@ mismatches = ["2:c", "3:c", "4:c"]
 id = "lists-if-014"
 reason = "arithmetic on `If(a > 0, l)` with a false condition: GeoGebra's undefined helper list keeps the elements of the branch it last copied, each set undefined, and the sum is a defined list of undefined numbers; the kernel gives an undefined list"
 mismatches = ["1:p", "6:p"]
+
+# arcs
+
+[[gap]]
+id = "arcs-undefined-003"
+reason = "intended difference, recorded in DIFFERENCES.md: an arc made undefined by an undefined input point keeps its last circle in GeoGebra, and a point moved onto it is projected onto that circle; the kernel's arc keeps no history, so the point stays where it was moved and has no parameter"
+mismatches = ["5:P", "5:t"]
+
+[[gap]]
+id = "arcs-undefined-005"
+reason = "intended difference, recorded in DIFFERENCES.md: an end point of Arc(k, P, Q) or Sector(k, P, Q) that becomes undefined keeps the parameter it had in GeoGebra (PathParameter.setT ignores NaN); the kernel keeps no history and puts it at parameter 0, as GeoGebra does before the point was ever defined"
+mismatches = ["3:a", "3:b", "3:len", "3:ar", "3:per", "4:a", "4:b", "4:len", "4:ar", "4:per"]
+
+[[gap]]
+id = "arcs-undefined-006"
+reason = "intended difference, recorded in DIFFERENCES.md: an end point of Arc(k, P, Q) or Sector(k, P, Q) that becomes undefined keeps the parameter it had in GeoGebra (PathParameter.setT ignores NaN); the kernel keeps no history and puts it at parameter 0, as GeoGebra does before the point was ever defined"
+mismatches = ["3:a", "3:b", "3:len", "3:ar", "3:per", "4:a", "4:b", "4:len", "4:ar", "4:per"]
+
+[[gap]]
+id = "arcs-undefined-007"
+reason = "intended difference, recorded in DIFFERENCES.md: a part whose circumcircle degenerates to a segment or two rays keeps the arc length and area of its last circle in GeoGebra, and Length and Area read them; the kernel's record keeps no history and they are undefined"
+mismatches = ["1:len", "1:ar", "1:sar", "1:slen", "2:len", "2:ar", "2:sar", "2:slen"]

@@ -15,5 +15,7 @@ pub mod script;
 pub mod svg;
 pub mod tol;
 
+pub use algo::arc::ArcData;
 pub use algo::conic_nd::{ConicData, ConicType};
+pub use algo::path::PathState;
 pub use kernel::{Construction, Def, Error, Id, IdList, Kind, Value};

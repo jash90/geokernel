@@ -1,0 +1,1007 @@
+// Parts of this file are translated from GeoGebra (https://github.com/geogebra/geogebra),
+// commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/PathParameter.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/PathNormalizer.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/PathMover.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoPointOnPath.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDispatcher.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoClosestPoint.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoPathParameter.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdPoint.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoJoinPoints.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoLinePointLine.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoOrthoLinePointLine.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoLinePointVector.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoOrthoLinePointVector.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoLineBisector.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoLineBisectorSegment.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoAngularBisectorPoints.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoAngularBisectorLines.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoTangentPoint.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoTangentLine.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoAxes.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoPoint.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoLine.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoSegment.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoRay.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoPolygon.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoPolyLine.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoVec3D.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/kernelND/GeoConicND.java
+// Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
+// Licensed by GeoGebra GmbH under the EUPL 1.2.
+
+//! Points on paths: `Point(path)`, `Point(path, t)` and `PathParameter(P)`.
+//!
+//! A point on a path keeps state between updates, as GeoGebra's `GeoPoint`
+//! does: its coordinates, its path parameter and the copy of the parameter
+//! that `GeoPoint.setCoords` keeps for the case that the point becomes
+//! undefined. That state is a [`PathState`], kept by the construction in a
+//! side table (see [`Construction::path_state`]); the definition stays a
+//! small handle. Moving a point made by `Point(path)` is `setCoords` on the
+//! path: the point is projected onto the path and its parameter is stored
+//! (`Path.pointChanged`). When the path changes, the point follows its
+//! stored parameter (`Path.pathChanged`, called by `AlgoPointOnPath`).
+
+use super::arc::ArcData;
+use super::conic_nd::{my_length, ConicData};
+use super::{join, Group, Parents, POINT};
+use crate::kernel::{Construction, Def, Error, Id, Kind, Value};
+use crate::script::object;
+use crate::tol::STANDARD_PRECISION;
+
+/// `PathMover.OPEN_BORDER_OFFSET`.
+const OPEN_BORDER_OFFSET: f64 = 1e-5;
+
+/// The kinds of objects a point can be put on.
+pub(crate) const PATH: &[Kind] = &[
+    Kind::Line,
+    Kind::Segment,
+    Kind::Ray,
+    Kind::Circle,
+    Kind::Polygon,
+    Kind::PolyLine,
+    Kind::Arc,
+    Kind::Sector,
+];
+const NUMBER: &[Kind] = &[Kind::Number];
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum PathDef {
+    /// `Point(path)`: a point on `path` that the user can move along it.
+    On { path: Id },
+    /// `Point(path, t)`: the point at the parameter `t` from 0 to 1 along
+    /// `path` (`AlgoPointOnPath` with a parameter); it cannot be moved.
+    OnParam { path: Id, param: Id },
+    /// `PathParameter(P)`: the parameter of a point on a path, from 0 to 1.
+    Parameter { point: Id },
+}
+
+/// What a point on a path remembers between updates: GeoGebra's
+/// homogeneous coordinates of the point, its `PathParameter` (the value `t`
+/// and the type of path it was computed for, -1 for none) and the second
+/// `PathParameter` that `GeoPoint.setCoords` keeps to restore the first
+/// when the point becomes undefined.
+///
+/// Read it with [`Construction::path_state`] and give it back with
+/// [`Construction::restore_path_state`] to rebuild a construction whose
+/// points on paths were moved. Two states are equal when they are the same
+/// bit for bit (NaN included).
+#[derive(Clone, Copy, Debug)]
+pub struct PathState {
+    x: f64,
+    y: f64,
+    z: f64,
+    t: f64,
+    ty: i32,
+    temp_t: f64,
+    temp_ty: i32,
+}
+
+impl PathState {
+    /// A new point on a path before it is placed: `new GeoPoint` with a
+    /// path parameter of 0 (`GeoPoint.getPathParameter`) and the copy not
+    /// yet set (`new PathParameter()`, NaN).
+    fn new() -> Self {
+        PathState {
+            x: 0.0,
+            y: 0.0,
+            z: 1.0,
+            t: 0.0,
+            ty: -1,
+            temp_t: f64::NAN,
+            temp_ty: -1,
+        }
+    }
+
+    /// The raw path parameter, in the range of the path (not normalised).
+    pub fn parameter(&self) -> f64 {
+        self.t
+    }
+
+    /// Whether the path parameter and the type of path it was computed for
+    /// are the same as in `o`, bit for bit.
+    pub fn same_parameter(&self, o: &PathState) -> bool {
+        self.t.to_bits() == o.t.to_bits() && self.ty == o.ty
+    }
+
+    /// Bit equality, so that a change from `0` to `-0` or between two NaNs
+    /// with other payloads still counts as a change.
+    pub(crate) fn same(&self, o: &PathState) -> bool {
+        let b = |a: f64, b: f64| a.to_bits() == b.to_bits();
+        b(self.x, o.x)
+            && b(self.y, o.y)
+            && b(self.z, o.z)
+            && b(self.t, o.t)
+            && self.ty == o.ty
+            && b(self.temp_t, o.temp_t)
+            && self.temp_ty == o.temp_ty
+    }
+
+    /// Whether every field is a number or NaN that the state can hold:
+    /// what [`Construction::restore_path_state`] accepts.
+    pub(crate) fn is_valid(&self) -> bool {
+        // any bit pattern is a state GeoGebra could hold, but the type is one
+        // of the conic types or -1
+        [self.ty, self.temp_ty]
+            .iter()
+            .all(|&t| t == -1 || (1..=9).contains(&t) || t == 32)
+    }
+
+    /// `GeoPoint.isDefined` after `updateCoords`: no coordinate is NaN (a
+    /// point at infinity is defined).
+    fn is_defined(&self) -> bool {
+        let infinite = !self.z.is_nan() && is_epsilon(self.z, self.x, self.y);
+        if infinite {
+            !(self.x.is_nan() || self.y.is_nan())
+        } else {
+            !(self.x.is_nan() || self.y.is_nan() || self.z.is_nan())
+        }
+    }
+
+    /// `GeoPoint.updateCoords`: a finite point gets a positive `z`.
+    fn update_coords(&mut self) {
+        let infinite = !self.z.is_nan() && is_epsilon(self.z, self.x, self.y);
+        if !infinite && self.is_defined() && self.z < 0.0 {
+            self.x = -self.x;
+            self.y = -self.y;
+            self.z = -self.z;
+        }
+    }
+
+    /// The value of the point: undefined when a coordinate is NaN, when the
+    /// point is at infinity and when a coordinate is infinite (the end of a
+    /// line at the parameter 0 or 1), which the kernel does not represent.
+    fn value(&self) -> Option<Value> {
+        let (x, y, z) = (self.x, self.y, self.z);
+        if x.is_nan() || y.is_nan() || z.is_nan() || is_epsilon(z, x, y) {
+            return None;
+        }
+        let (x, y) = if z == 1.0 { (x, y) } else { (x / z, y / z) };
+        (x.is_finite() && y.is_finite()).then_some(Value::Point { x, y })
+    }
+
+    /// The homogeneous coordinates.
+    pub(crate) fn coords(&self) -> (f64, f64, f64) {
+        (self.x, self.y, self.z)
+    }
+
+    /// The type of path the parameter was computed for (`getPathType`).
+    pub(crate) fn path_type(&self) -> i32 {
+        self.ty
+    }
+
+    pub(crate) fn set_type(&mut self, ty: i32) {
+        self.ty = ty;
+    }
+
+    pub(crate) fn set_coords_2d(&mut self, x: f64, y: f64, z: f64) {
+        self.x = x;
+        self.y = y;
+        self.z = z;
+    }
+
+    /// `PathParameter.setT`: NaN is ignored.
+    pub(crate) fn set_t(&mut self, t: f64) {
+        if !t.is_nan() {
+            self.t = t;
+        }
+    }
+
+    /// A direct write `pp.t = t`, which keeps NaN (unlike [`Self::set_t`]).
+    pub(crate) fn put_t(&mut self, t: f64) {
+        self.t = t;
+    }
+
+    /// `P.setX(x)` alone, as `GeoConicPart.pathChanged` does for an
+    /// undefined part.
+    pub(crate) fn put_x(&mut self, x: f64) {
+        self.x = x;
+    }
+
+    /// `GeoPoint.setCoords(x, y, 1)` for a point on a path.
+    fn set_coords(&mut self, path: &Geom<'_>, x: f64, y: f64) {
+        self.set_coords_2d(x, y, 1.0);
+        // remember the path parameter for the undefined case
+        self.temp_t = self.t;
+        self.temp_ty = self.ty;
+        path.point_changed(self);
+        self.update_coords();
+        if self.is_defined() {
+            self.temp_t = self.t;
+            self.temp_ty = self.ty;
+        } else {
+            self.t = self.temp_t;
+            self.ty = self.temp_ty;
+        }
+    }
+
+    /// `GeoPoint.setUndefined`: NaN coordinates, and the path parameter of
+    /// the last `setCoords`.
+    fn set_undefined(&mut self) {
+        self.set_coords_2d(f64::NAN, f64::NAN, f64::NAN);
+        self.t = self.temp_t;
+        self.ty = self.temp_ty;
+    }
+}
+
+impl PartialEq for PathState {
+    fn eq(&self, other: &PathState) -> bool {
+        self.same(other)
+    }
+}
+
+/// `DoubleUtil.isEpsilon(z, x, y)`.
+fn is_epsilon(e: f64, x: f64, y: f64) -> bool {
+    let ea = e.abs();
+    !(ea > STANDARD_PRECISION
+        || ea > x.abs() * STANDARD_PRECISION
+        || ea > y.abs() * STANDARD_PRECISION)
+}
+
+fn is_zero(v: f64) -> bool {
+    -STANDARD_PRECISION < v && v < STANDARD_PRECISION
+}
+
+/// The parameter that the full conic `d` gives a temporary point at
+/// `(x, y)`: `pointChanged` (`pointChangedUnlimited` for a full conic) on a
+/// new point. With `on_path` the point lies on `d` first, as a point whose
+/// path is `d` does when `setCoords` projects it (`AlgoConicPartConicPoints`
+/// calls `setCoords` and then `pointChangedUnlimited`).
+pub(crate) fn conic_parameter(d: &ConicData, (x, y): (f64, f64), on_path: bool) -> f64 {
+    let mut st = PathState::new();
+    if on_path {
+        st.set_coords(&Geom::Conic(*d), x, y);
+    } else {
+        st.set_coords_2d(x, y, 1.0);
+    }
+    super::conic_path::point_changed(d, &mut st);
+    st.t
+}
+
+/// `PathNormalizer.infFunction`.
+pub(crate) fn inf_function(t: f64) -> f64 {
+    t / (1.0 - t.abs())
+}
+
+/// `PathNormalizer.inverseInfFunction`.
+pub(crate) fn inverse_inf_function(z: f64) -> f64 {
+    if z == f64::NEG_INFINITY {
+        return -1.0 + OPEN_BORDER_OFFSET;
+    }
+    if z >= 0.0 {
+        return z / (1.0 + z);
+    }
+    z / (1.0 - z)
+}
+
+/// `PathNormalizer.toParentPathParameter`.
+fn to_parent(parameter: f64, min: f64, max: f64) -> f64 {
+    let mut tn = parameter;
+    // for points as paths (min = max = 0)
+    if min == max {
+        return min;
+    }
+    // NaN stays NaN, as in the upstream if-chain
+    tn = tn.clamp(0.0, 1.0);
+    if min == f64::NEG_INFINITY {
+        if max == f64::INFINITY {
+            return inf_function(2.0 * tn - 1.0);
+        }
+        return max + inf_function(tn - 1.0);
+    }
+    if max == f64::INFINITY {
+        return min + inf_function(tn);
+    }
+    (1.0 - tn) * min + tn * max
+}
+
+/// `PathNormalizer.toNormalizedPathParameter`.
+fn to_normalized(p: f64, min: f64, max: f64) -> f64 {
+    let mut t = p;
+    if min == max {
+        return 0.0;
+    }
+    if t < min {
+        t = min;
+    } else if t > max {
+        t = max;
+    }
+    if min == f64::NEG_INFINITY {
+        if max == f64::INFINITY {
+            if t == f64::NEG_INFINITY {
+                return 0.0;
+            } else if t == f64::INFINITY {
+                return 1.0;
+            }
+            return 0.5 + 0.5 * inverse_inf_function(t);
+        }
+        if t == f64::NEG_INFINITY {
+            return 0.0;
+        }
+        return 1.0 + inverse_inf_function(t - max);
+    }
+    if max == f64::INFINITY {
+        return inverse_inf_function(t - min);
+    }
+    (t - min) / (max - min)
+}
+
+/// A path as the path code reads it, taken from the construction for one
+/// update.
+// a conic is read for one update on the stack; boxing it would allocate on
+// every recomputation of a point on a path
+#[allow(clippy::large_enum_variant)]
+pub(crate) enum Geom<'a> {
+    /// The path is undefined (`input[0].isDefined()` is false).
+    Undefined,
+    /// A `GeoLine` with its raw coefficients and its start point, in
+    /// homogeneous coordinates, if the algorithm that made it sets one.
+    Line {
+        g: (f64, f64, f64),
+        start: Option<(f64, f64, f64)>,
+    },
+    Ray {
+        g: (f64, f64, f64),
+        start: (f64, f64),
+    },
+    Segment(Seg),
+    Conic(ConicData),
+    /// A polygon with `n` defined vertices, read from the construction.
+    Polygon {
+        c: &'a Construction,
+        id: Id,
+        n: usize,
+    },
+    PolyLine {
+        c: &'a Construction,
+        id: Id,
+        n: usize,
+    },
+    /// An arc or sector (`GeoConicPart`) with its record.
+    Arc(ArcData),
+}
+
+/// A `GeoSegment`: its line through the start and end point
+/// (`GeoVec3D.lineThroughPoints`) and whether its length is zero
+/// (`GeoSegment.calcLength`).
+#[derive(Clone, Copy)]
+pub(crate) struct Seg {
+    g: (f64, f64, f64),
+    start: (f64, f64),
+    end: (f64, f64),
+    zero_length: bool,
+}
+
+impl Seg {
+    fn new(start: (f64, f64), end: (f64, f64)) -> Self {
+        let length = my_length(end.0 - start.0, end.1 - start.1);
+        Seg {
+            g: join(start, end),
+            start,
+            end,
+            zero_length: length == 0.0 || is_zero(length),
+        }
+    }
+
+    /// `GeoSegment.pointChanged`.
+    fn point_changed(&self, p: &mut PathState) {
+        // special case: segment of length 0
+        if self.zero_length {
+            p.set_coords_2d(self.start.0, self.start.1, 1.0);
+            if !(p.t >= 0.0 && p.t <= 1.0) {
+                p.t = 0.0;
+            }
+            return;
+        }
+        line_point_changed(self.g, Some((self.start.0, self.start.1, 1.0)), p);
+        // keep the point on the segment: 0 <= t <= 1
+        if p.t < 0.0 {
+            p.set_coords_2d(self.start.0, self.start.1, 1.0);
+            p.t = 0.0;
+        } else if p.t > 1.0 {
+            p.set_coords_2d(self.end.0, self.end.1, 1.0);
+            p.t = 1.0;
+        }
+    }
+
+    /// `GeoSegment.pathChanged`.
+    fn path_changed(&self, p: &mut PathState) {
+        if self.zero_length {
+            p.set_coords_2d(self.start.0, self.start.1, 1.0);
+            if !(p.t >= 0.0 && p.t <= 1.0) {
+                p.t = 0.0;
+            }
+            return;
+        }
+        p.t = p.t.clamp(0.0, 1.0);
+        let (x, y) = self.point_at(p.t);
+        p.set_coords_2d(x, y, 1.0);
+    }
+
+    /// `GeoSegment.getPointX` and `getPointY`.
+    fn point_at(&self, t: f64) -> (f64, f64) {
+        (self.start.0 + t * self.g.1, self.start.1 - t * self.g.0)
+    }
+}
+
+/// `GeoLine.doPointChanged` (`projectCoordsAndComputePathParam`): projects
+/// the point onto the line and sets its parameter from the start point, or
+/// from the foot of the perpendicular from the origin when there is none.
+pub(crate) fn line_point_changed(
+    (x, y, z): (f64, f64, f64),
+    start: Option<(f64, f64, f64)>,
+    p: &mut PathState,
+) {
+    let mut px = p.x / p.z;
+    let mut py = p.y / p.z;
+    // parameter of the projection on the perpendicular line
+    let t = -(z + x * px + y * py) / (x * x + y * y);
+    if x == 0.0 && px.is_infinite() && py.is_finite() {
+        py = -z / y;
+    } else if y == 0.0 && py.is_infinite() && px.is_finite() {
+        px = -z / x;
+    } else {
+        px += t * x;
+        py += t * y;
+    }
+    p.set_coords_2d(px, py, 1.0);
+    let (spx, spy, spz) = match start {
+        Some(s) => s,
+        None => {
+            let (mut spx, mut spy) = (0.0, 0.0);
+            if x != 0.0 && y != 0.0 {
+                spx = -z * x / (x * x + y * y);
+                spy = -z * y / (x * x + y * y);
+            } else if x != 0.0 {
+                spx = -z / x;
+            } else if y != 0.0 {
+                spy = -z / y;
+            }
+            (spx, spy, 1.0)
+        }
+    };
+    p.t = if x.abs() <= y.abs() {
+        (spz * px - spx) / (y * spz)
+    } else {
+        (spy - spz * py) / (x * spz)
+    };
+}
+
+/// `GeoLine.pathChanged(Coords, PathParameter)`.
+pub(crate) fn line_path_changed(
+    (x, y, z): (f64, f64, f64),
+    start: Option<(f64, f64, f64)>,
+    p: &mut PathState,
+) {
+    // if t is infinite and x or y is 0, avoid 0 * inf
+    let dx = if y == 0.0 { 0.0 } else { p.t * y };
+    let dy = if x == 0.0 { 0.0 } else { -p.t * x };
+    if dx.is_infinite() && dy.is_infinite() {
+        let sgn = if p.t > 0.0 { 1.0 } else { -1.0 };
+        p.set_coords_2d(sgn * y, -sgn * x, 0.0);
+    } else if let Some((sx, sy, sz)) = start {
+        // `GeoPoint.inhomX`
+        let (ix, iy) = if sz == 1.0 {
+            (sx, sy)
+        } else {
+            (sx / sz, sy / sz)
+        };
+        p.set_coords_2d(ix + dx, iy + dy, 1.0);
+    } else {
+        let (mut ix, mut iy) = (0.0, 0.0);
+        if x != 0.0 && y != 0.0 {
+            ix = -z * x / (x * x + y * y);
+            iy = -z * y / (x * x + y * y);
+        } else if x != 0.0 {
+            ix = -z / x;
+        } else if y != 0.0 {
+            iy = -z / y;
+        }
+        p.set_coords_2d(ix + dx, iy + dy, 1.0);
+    }
+}
+
+impl Geom<'_> {
+    /// `isDefined` of the path. An arc whose value is not finite (two rays,
+    /// a sector of a degenerate conic) is defined, as `GeoConicPart.isDefined`
+    /// says.
+    fn is_defined(&self) -> bool {
+        match self {
+            Geom::Undefined => false,
+            Geom::Arc(a) => a.defined,
+            _ => true,
+        }
+    }
+
+    /// `Path.getMinParameter` and `Path.getMaxParameter`.
+    fn range(&self) -> (f64, f64) {
+        match self {
+            Geom::Undefined => (0.0, 0.0),
+            Geom::Line { .. } => (f64::NEG_INFINITY, f64::INFINITY),
+            Geom::Ray { .. } => (0.0, f64::INFINITY),
+            Geom::Segment(_) => (0.0, 1.0),
+            Geom::Conic(d) => super::conic_path::range(d),
+            Geom::Polygon { n, .. } => (0.0, *n as f64),
+            Geom::PolyLine { n, .. } => (0.0, *n as f64 - 1.0),
+            Geom::Arc(a) => a.range(),
+        }
+    }
+
+    /// `Path.pointChanged`: projects the point onto the path and sets its
+    /// parameter.
+    fn point_changed(&self, p: &mut PathState) {
+        match self {
+            // an undefined path gives NaN, and `setCoords` keeps the
+            // parameter of before
+            Geom::Undefined => p.set_coords_2d(f64::NAN, f64::NAN, f64::NAN),
+            Geom::Line { g, start } => line_point_changed(*g, *start, p),
+            Geom::Ray { g, start } => {
+                line_point_changed(*g, Some((start.0, start.1, 1.0)), p);
+                // keep the point on the ray: 0 <= t
+                if p.t < 0.0 {
+                    p.set_coords_2d(start.0, start.1, 1.0);
+                    p.t = 0.0;
+                }
+            }
+            Geom::Segment(s) => s.point_changed(p),
+            Geom::Conic(d) => super::conic_path::point_changed(d, p),
+            &Geom::Polygon { c, id, n } => polygonal_point_changed(c, id, n, true, p),
+            &Geom::PolyLine { c, id, n } => polygonal_point_changed(c, id, n, false, p),
+            Geom::Arc(a) => a.point_changed(p),
+        }
+    }
+
+    /// `Path.pathChanged`: puts the point at its parameter.
+    fn path_changed(&self, p: &mut PathState) {
+        match self {
+            Geom::Undefined => p.set_coords_2d(f64::NAN, f64::NAN, f64::NAN),
+            Geom::Line { g, start } => line_path_changed(*g, *start, p),
+            Geom::Ray { g, start } => {
+                if p.t < 0.0 {
+                    p.t = 0.0;
+                }
+                p.set_coords_2d(start.0 + p.t * g.1, start.1 - p.t * g.0, 1.0);
+            }
+            Geom::Segment(s) => s.path_changed(p),
+            Geom::Conic(d) => super::conic_path::path_changed(d, p),
+            &Geom::Polygon { c, id, n } => {
+                // `GeoPolygon.pathChanged`: the parameter runs from 0 to the
+                // number of sides; its whole part is the side
+                let length = n as f64;
+                p.t %= length;
+                if p.t < 0.0 {
+                    p.t += length;
+                }
+                let index = p.t.floor() as usize;
+                let seg = Seg::new(vertex(c, id, index), vertex(c, id, (index + 1) % n));
+                let (x, y) = seg.point_at(p.t - index as f64);
+                p.set_coords_2d(x, y, 1.0);
+            }
+            &Geom::PolyLine { c, id, n } => {
+                // `GeoPolyLine.pathChanged`
+                if n == 1 {
+                    let (x, y) = vertex(c, id, 0);
+                    p.set_coords_2d(x, y, 1.0);
+                    return;
+                }
+                let last = (n - 1) as f64;
+                let index = if p.t == last {
+                    n - 2
+                } else {
+                    p.t %= last;
+                    if p.t < 0.0 {
+                        p.t += last;
+                    }
+                    (p.t.floor() as usize).min(n - 2)
+                };
+                let seg = Seg::new(vertex(c, id, index), vertex(c, id, index + 1));
+                let (x, y) = seg.point_at(p.t - index as f64);
+                p.set_coords_2d(x, y, 1.0);
+            }
+            Geom::Arc(a) => a.path_changed(p),
+        }
+    }
+}
+
+/// Vertex `i` of a polygon or polyline whose vertices are all defined.
+fn vertex(c: &Construction, id: Id, i: usize) -> (f64, f64) {
+    c.vertices(id)
+        .nth(i)
+        .flatten()
+        .unwrap_or((f64::NAN, f64::NAN))
+}
+
+/// `GeoPoint.pointChanged(GeoPolygon)` and `GeoPolyLine.pointChanged`: the
+/// closest point on any side, where side `i` runs from vertex `i` to vertex
+/// `i + 1` (and the last side of a polygon back to vertex 0). One path
+/// parameter is threaded through the sides, as there: a side of length 0
+/// keeps the parameter the previous side left when it lies in `[0, 1]`.
+fn polygonal_point_changed(c: &Construction, id: Id, n: usize, closed: bool, p: &mut PathState) {
+    let qx = p.x / p.z;
+    let qy = p.y / p.z;
+    let mut best = Best {
+        min_dist: f64::INFINITY,
+        res: (0.0, 0.0, 0.0, 0.0),
+    };
+    let mut first = (f64::NAN, f64::NAN);
+    let mut prev = (f64::NAN, f64::NAN);
+    for (k, v) in c.vertices(id).enumerate().take(n) {
+        let v = v.unwrap_or((f64::NAN, f64::NAN));
+        if k == 0 {
+            first = v;
+        } else {
+            best.side(k - 1, prev, v, (qx, qy), p);
+        }
+        prev = v;
+    }
+    if closed && n > 0 {
+        best.side(n - 1, prev, first, (qx, qy), p);
+    }
+    let (x, y, z, t) = best.res;
+    p.set_coords_2d(x, y, z);
+    p.t = t;
+}
+
+/// The closest point found so far by [`polygonal_point_changed`].
+struct Best {
+    min_dist: f64,
+    res: (f64, f64, f64, f64),
+}
+
+impl Best {
+    fn side(&mut self, i: usize, a: (f64, f64), b: (f64, f64), q: (f64, f64), p: &mut PathState) {
+        p.set_coords_2d(q.0, q.1, 1.0);
+        Seg::new(a, b).point_changed(p);
+        let x1 = p.x / p.z - q.0;
+        let y1 = p.y / p.z - q.1;
+        let dist = x1 * x1 + y1 * y1;
+        if dist < self.min_dist {
+            self.min_dist = dist;
+            self.res = (p.x, p.y, p.z, i as f64 + p.t);
+        }
+    }
+}
+
+/// The start point of a line, in homogeneous coordinates, as the algorithm
+/// that made it sets it with `GeoLine.setStartPoint`; `None` for a line
+/// without one. A start point that is undefined now has NaN coordinates.
+fn line_start(c: &Construction, line: Id) -> Option<(f64, f64, f64)> {
+    use super::conic_parts::ConicPartDef;
+    use super::lines::LineDef;
+    use super::vector::VectorDef;
+    const NAN: (f64, f64, f64) = (f64::NAN, f64::NAN, f64::NAN);
+    let hom = |p: Option<(f64, f64)>| p.map_or(NAN, |(x, y)| (x, y, 1.0));
+    // `AlgoLineBisector` and `AlgoLineBisectorSegment`: the midpoint
+    // `(A + B, 2)`
+    let mid = |a: Option<(f64, f64)>, b: Option<(f64, f64)>| match (a, b) {
+        (Some(a), Some(b)) => (a.0 + b.0, a.1 + b.1, 2.0),
+        _ => NAN,
+    };
+    Some(match c.def(line) {
+        Def::Line(p, _)
+        | Def::Perpendicular { through: p, .. }
+        | Def::Parallel { through: p, .. }
+        | Def::Vector(VectorDef::LineVector(p, _) | VectorDef::OrthoLineVector(p, _))
+        | Def::Lines(
+            LineDef::AngleBisectorPoints { vertex: p, .. } | LineDef::TangentPoint { point: p, .. },
+        )
+        | Def::ConicPart(ConicPartDef::TangentPoint { point: p, .. }) => hom(c.point(p)),
+        Def::Lines(LineDef::BisectorPoints(a, b)) => mid(c.point(a), c.point(b)),
+        Def::Lines(LineDef::BisectorSegment(s)) => match c.value(s) {
+            Value::Segment { x1, y1, x2, y2 } => mid(Some((x1, y1)), Some((x2, y2))),
+            _ => NAN,
+        },
+        // `AlgoAngularBisectorLines`: the intersection `g x h`
+        Def::Lines(LineDef::AngleBisectorLines { g, h, .. }) => {
+            match (c.raw_carrier(g), c.raw_carrier(h)) {
+                (Some(g), Some(h)) => (
+                    g.1 * h.2 - g.2 * h.1,
+                    g.2 * h.0 - g.0 * h.2,
+                    g.0 * h.1 - g.1 * h.0,
+                ),
+                _ => NAN,
+            }
+        }
+        // `AlgoTangentLine`: the point where the tangent touches
+        Def::Lines(d @ LineDef::TangentLine { circle, .. }) => {
+            hom(super::lines::tangent_point_on(c, d, circle).flatten())
+        }
+        Def::ConicPart(d @ ConicPartDef::TangentLine { conic, .. }) => {
+            hom(super::conic_parts::tangent_point_on(c, d, conic).flatten())
+        }
+        // `AlgoAxes`: the midpoint of the conic
+        Def::ConicPart(ConicPartDef::Axis { conic, .. }) => {
+            hom(c.conic(conic).map(|d| (d.midpoint[0], d.midpoint[1])))
+        }
+        _ => return None,
+    })
+}
+
+/// The path `path` as the path code reads it now.
+pub(crate) fn geom(c: &Construction, path: Id) -> Geom<'_> {
+    // an arc is read as it is even when undefined: `setCoords` still asks
+    // it to place the point (see `Geom::is_defined`)
+    if let Some(a) = c.arc(path) {
+        return Geom::Arc(a);
+    }
+    let value = c.value(path);
+    if !value.is_defined() {
+        return Geom::Undefined;
+    }
+    let polygonal = || {
+        let n = c.vertices(path).count();
+        (n > 0 && c.vertices(path).all(|v| v.is_some())).then_some(n)
+    };
+    match (c.kind(path), value) {
+        (_, Value::Line { a, b, c: z }) => Geom::Line {
+            g: (a, b, z),
+            start: line_start(c, path),
+        },
+        (_, Value::Ray { x, y, a, b, c: z }) => Geom::Ray {
+            g: (a, b, z),
+            start: (x, y),
+        },
+        (_, Value::Segment { x1, y1, x2, y2 }) => Geom::Segment(Seg::new((x1, y1), (x2, y2))),
+        (Kind::Circle | Kind::Conic, _) => match c.conic(path) {
+            Some(d) if d.defined => Geom::Conic(d),
+            _ => Geom::Undefined,
+        },
+        (Kind::Polygon, _) => match polygonal() {
+            Some(n) => Geom::Polygon { c, id: path, n },
+            None => Geom::Undefined,
+        },
+        (Kind::PolyLine, _) => match polygonal() {
+            Some(n) => Geom::PolyLine { c, id: path, n },
+            None => Geom::Undefined,
+        },
+        _ => Geom::Undefined,
+    }
+}
+
+/// `AlgoPointOnPath.compute`: a parameter given as a number is put on the
+/// path first; then the point follows the path, or becomes undefined with
+/// it.
+fn follow(c: &Construction, path: &Geom<'_>, param: Option<Id>, st: &mut PathState) {
+    if let Some(param) = param {
+        let (min, max) = path.range();
+        st.set_t(to_parent(c.number(param).unwrap_or(f64::NAN), min, max));
+    }
+    if !path.is_defined() {
+        st.set_undefined();
+    } else {
+        path.path_changed(st);
+        st.update_coords();
+    }
+}
+
+impl PathDef {
+    /// The path and the parameter object of a point on a path.
+    fn path_and_param(self) -> Option<(Id, Option<Id>)> {
+        match self {
+            PathDef::On { path } => Some((path, None)),
+            PathDef::OnParam { path, param } => Some((path, Some(param))),
+            PathDef::Parameter { .. } => None,
+        }
+    }
+
+    /// Whether this defines a point on a path, which has a [`PathState`].
+    pub(crate) fn has_state(self) -> bool {
+        self.path_and_param().is_some()
+    }
+
+    /// The state of a new point (`AlgoDispatcher.point` with a path): placed
+    /// at `(0, 0)`, then `(1, 0)` if that is undefined. GeoGebra then tries
+    /// a random point; this kernel does not (see `DIFFERENCES.md`).
+    pub(crate) fn create(self, c: &Construction) -> PathState {
+        let mut st = PathState::new();
+        let Some((path, param)) = self.path_and_param() else {
+            return st;
+        };
+        let path = geom(c, path);
+        st.set_coords(&path, 0.0, 0.0);
+        // `AlgoPointOnPath` with a parameter computes once when created
+        if param.is_some() {
+            follow(c, &path, param, &mut st);
+        }
+        if !st.is_defined() {
+            st.set_coords(&path, 1.0, 0.0);
+        }
+        st
+    }
+
+    /// The state after the path or the parameter changed.
+    pub(crate) fn update(self, c: &Construction, old: &PathState) -> PathState {
+        let mut st = *old;
+        if let Some((path, param)) = self.path_and_param() {
+            follow(c, &geom(c, path), param, &mut st);
+        }
+        st
+    }
+
+    /// The state after the user moved a point made by `Point(path)` to
+    /// `(x, y)`; `None` for any other definition.
+    pub(crate) fn moved(
+        self,
+        c: &Construction,
+        old: &PathState,
+        x: f64,
+        y: f64,
+    ) -> Option<PathState> {
+        let PathDef::On { path } = self else {
+            return None;
+        };
+        let mut st = *old;
+        st.set_coords(&geom(c, path), x, y);
+        Some(st)
+    }
+
+    /// The value of a point with state `st`.
+    pub(crate) fn value(st: &PathState) -> Value {
+        st.value().unwrap_or(Value::Undefined)
+    }
+}
+
+/// `AlgoPathParameter.compute`: the parameter of a point on a path,
+/// normalised to `[0, 1]`. A point of `ClosestPoint` lies on its path too:
+/// its parameter is that of `AlgoClosestPoint.compute`, `setCoords` with the
+/// point followed by `pointChanged`.
+fn path_parameter(c: &Construction, point: Id) -> Option<Value> {
+    use super::point::PointDef;
+    let (st, path) = match c.def(point) {
+        Def::Path(PathDef::On { path } | PathDef::OnParam { path, .. }) => {
+            (c.path_state(point)?, path)
+        }
+        Def::Point(PointDef::Closest { path, point: q }) => {
+            let (qx, qy) = c.point(q)?;
+            let g = geom(c, path);
+            if !g.is_defined() {
+                return None;
+            }
+            let mut st = PathState::new();
+            st.set_coords(&g, qx, qy);
+            g.point_changed(&mut st);
+            st.update_coords();
+            (st, path)
+        }
+        _ => return None,
+    };
+    // A point with an infinite coordinate is undefined in this kernel, and
+    // so is its parameter (GeoGebra counts such a point as defined).
+    if !st.is_defined() || st.value().is_none() {
+        return None;
+    }
+    let (min, max) = geom(c, path).range();
+    Some(Value::Number(to_normalized(st.t, min, max)))
+}
+
+/// The objects a definition of this module reads besides its parents: for
+/// a point on a line with a start point, or on a polygon or polyline, the
+/// inputs of the path (a start point or a vertex can move while the line
+/// or the polygon's value stays the same); for `PathParameter`, also the
+/// path of the point, and the point a `ClosestPoint` is closest to.
+pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
+    use super::point::PointDef;
+    let inputs = |path: Id| match c.kind(path) {
+        Kind::Line if line_start(c, path).is_some() => c.read_ids(&c.def(path)),
+        Kind::Polygon | Kind::PolyLine => c.read_ids(&c.def(path)),
+        _ => Vec::new(),
+    };
+    match *def {
+        Def::Path(PathDef::On { path } | PathDef::OnParam { path, .. }) => inputs(path),
+        Def::Path(PathDef::Parameter { point }) => match c.def(point) {
+            Def::Path(PathDef::On { path } | PathDef::OnParam { path, .. }) => {
+                let mut ids = inputs(path);
+                ids.push(path);
+                ids
+            }
+            // the parameter is computed from the point `q` itself, which can
+            // move while the closest point stays the same to the last bit
+            Def::Point(PointDef::Closest { path, point: q }) => {
+                let mut ids = inputs(path);
+                ids.extend([path, q]);
+                ids
+            }
+            _ => Vec::new(),
+        },
+        _ => Vec::new(),
+    }
+}
+
+impl Group for PathDef {
+    fn kind(&self) -> Kind {
+        match self {
+            PathDef::On { .. } | PathDef::OnParam { .. } => Kind::Point,
+            PathDef::Parameter { .. } => Kind::Number,
+        }
+    }
+
+    fn parents(&self) -> Parents {
+        match *self {
+            PathDef::On { path } => Parents::of(&[path]),
+            PathDef::OnParam { path, param } => Parents::of(&[path, param]),
+            PathDef::Parameter { point } => Parents::of(&[point]),
+        }
+    }
+
+    fn check(&self, c: &Construction) -> Result<(), Error> {
+        match *self {
+            PathDef::On { path } => {
+                c.expect(path, PATH)?;
+                super::arc::expect_point_path(c, path)
+            }
+            PathDef::OnParam { path, param } => {
+                c.expect(path, PATH)?;
+                super::arc::expect_point_path(c, path)?;
+                c.expect(param, NUMBER)
+            }
+            PathDef::Parameter { point } => c.expect(point, POINT),
+        }
+    }
+
+    fn compute(&self, c: &Construction) -> Option<Value> {
+        match *self {
+            PathDef::Parameter { point } => path_parameter(c, point),
+            d => d.create(c).value(),
+        }
+    }
+
+    fn parse(c: &Construction, func: &str, args: &[&str]) -> Option<Result<Self, String>> {
+        let path = |label: &str| -> Result<Id, String> {
+            let id = object(c, label)?;
+            if PATH.contains(&c.kind(id)) {
+                Ok(id)
+            } else {
+                Err(format!(
+                    "`Point` needs a line, segment, ray, circle, polygon, polyline, arc \
+                     or sector, and `{label}` is a {}",
+                    c.kind(id)
+                ))
+            }
+        };
+        Some(match (func, args) {
+            ("Point", [p]) => path(p).map(|path| PathDef::On { path }),
+            ("Point", [p, t]) => (|| {
+                let path = path(p)?;
+                let param = object(c, t)?;
+                if c.kind(param) != Kind::Number {
+                    return Err(format!("`Point({p}, {t})` needs a number as the parameter"));
+                }
+                Ok(PathDef::OnParam { path, param })
+            })(),
+            ("Point", _) => Err("`Point` takes a path, or a path and a number".into()),
+            ("PathParameter", [p]) => (|| {
+                let point = object(c, p)?;
+                if c.kind(point) != Kind::Point {
+                    return Err(format!(
+                        "`PathParameter` needs a point, and `{p}` is a {}",
+                        c.kind(point)
+                    ));
+                }
+                Ok(PathDef::Parameter { point })
+            })(),
+            ("PathParameter", _) => Err("`PathParameter` takes one point".into()),
+            _ => return None,
+        })
+    }
+}

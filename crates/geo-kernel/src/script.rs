@@ -45,6 +45,7 @@
 //! parser also has a `$point` but it follows the label rule, so this is a
 //! deliberate difference (see `DIFFERENCES.md`).
 
+use crate::algo::arc::ArcDef;
 use crate::algo::conic::ConicDef;
 use crate::algo::conic_parts::ConicPartDef;
 use crate::algo::general_conic::GeneralConicDef;
@@ -304,6 +305,8 @@ fn probe(c: &Construction, def: &Def) -> Result<bool, String> {
         Def::Measure(d) => run(c, d),
         Def::Transform(d) => run(c, d),
         Def::ConicPart(d) => run(c, d),
+        Def::Path(d) => run(c, d),
+        Def::Arc(d) => run(c, d),
         _ => Ok(true),
     }
 }
@@ -324,6 +327,8 @@ fn is_finite(v: &Value) -> bool {
         Value::Polygon { area } => area.is_finite(),
         Value::PolyLine { length } => length.is_finite(),
         Value::Conic { .. } => true,
+        Value::Arc { length } => length.is_finite(),
+        Value::Sector { area } => area.is_finite(),
         Value::Undefined => false,
     }
 }
@@ -415,6 +420,9 @@ pub(crate) fn parse_def(c: &Construction, rhs: &str) -> Result<Def, String> {
     if let Some(def) = GeneralConicDef::parse(c, func, &args) {
         return def.map(Def::GeneralConic);
     }
+    if let Some(def) = ArcDef::parse(c, func, &args) {
+        return def.map(Def::Arc);
+    }
     if let Some(def) = ConicPartDef::parse(c, func, &args) {
         return def.map(Def::ConicPart);
     }
@@ -438,6 +446,9 @@ pub(crate) fn parse_def(c: &Construction, rhs: &str) -> Result<Def, String> {
     }
     if let Some(def) = PointDef::parse(c, func, &args) {
         return def.map(Def::Point);
+    }
+    if let Some(def) = crate::algo::path::PathDef::parse(c, func, &args) {
+        return def.map(Def::Path);
     }
 
     match (func, args.len()) {
