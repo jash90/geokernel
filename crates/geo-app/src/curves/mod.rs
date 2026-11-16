@@ -271,7 +271,7 @@ fn placed_runs(mesh: &Mesh, runs: &[Run], at: Placing, near: Rect) -> Mesh {
                     v
                 }));
             } else {
-                for quad in src.chunks_exact(4) {
+                for quad in src.as_chunks::<4>().0 {
                     let mid = quad[1].pos.lerp(quad[2].pos, 0.5);
                     let shift = at.point(mid) - mid;
                     out.vertices.extend(quad.iter().map(|v| {
