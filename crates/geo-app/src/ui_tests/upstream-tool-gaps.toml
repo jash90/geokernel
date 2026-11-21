@@ -10,7 +10,7 @@
 [[gap]]
 id = "mirrorAtPointTool"
 category = "behaviour"
-reason = "upstream clicks empty space twice and the reflection tool makes a new point each time; the window's reflect-at-point tool picks existing objects only and ignores a click on empty space, so nothing is created"
+reason = "upstream clicks empty space twice and the reflection tool makes a new point each time, then types a circle and mirrors it at the same point; the window's reflect-at-point tool picks existing objects only and ignores clicks on empty space, so of the ported scenario only the typed circle appears (the input row reads the equation; nothing reflects)"
 
 [[gap]]
 id = "mirrorAtLineTool"
@@ -20,7 +20,7 @@ reason = "upstream clicks empty space to make the point to reflect and again on 
 [[gap]]
 id = "deleteTool"
 category = "app-bug"
-reason = "deleting the clicked line leaves the pointer's hovered id stale and the next frame's paint panics reading the deleted object's value (draw.rs builds the curve layer for hovered and selected ids without checking the id still exists)"
+reason = "upstream builds the lines a: x = 1 and b: y = -1, clicks their intersection twice and checks a: x = 1 after the first click and an empty construction after the second; the window's delete tool removes the first line but its paint then panics on the pointer's stale hovered id (draw.rs builds the curve layer for hovered and selected ids without checking the id still exists; being fixed in draw.rs/canvas.rs), so neither checkpoint is reached"
 
 [[gap]]
 id = "rotateByAngleToolMultiplePointsToExistingPoint"
