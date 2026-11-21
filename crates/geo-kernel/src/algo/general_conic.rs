@@ -42,14 +42,17 @@
 //! parabola by construction, and points with a homogeneous coordinate
 //! other than 1 (every point of the kernel has `z = 1`).
 
-use super::conic_nd::{ConicData, ConicType};
-use super::{Group, Parents, NUMBER, POINT};
+use super::conic_nd::{my_length, ConicData, ConicType};
+use super::transform::{center_of, TransformOf};
+use super::vector;
+use super::{Group, Parents, NUMBER, NUMBER_OR_ANGLE, POINT};
 use crate::expr::{Element, ExprDef, List};
 use crate::kernel::{Construction, Error, Id, IdList, Kind, Value};
 use crate::script::object;
 
 const VECTOR: &[Kind] = &[Kind::Vector];
-const CONIC: &[Kind] = &[Kind::Conic];
+const CIRCLE: &[Kind] = &[Kind::Circle];
+const LINE: &[Kind] = &[Kind::Line];
 
 /// General conics and the transformations of conics.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -95,6 +98,22 @@ pub enum GeneralConicDef {
     MirrorPoint { kind: Kind, src: Id, center: Id },
     /// `Mirror(k, g)` with a line, segment or ray.
     MirrorLine { kind: Kind, src: Id, mirror: Id },
+    /// `Shear(k, g, f)` and `Stretch(k, g, f)` of a conic or a circle.
+    ShearStretch {
+        kind: Kind,
+        src: Id,
+        axis: Id,
+        ratio: Id,
+        shear: bool,
+    },
+    /// `Stretch(k, v)`: stretched along the vector `v` by its length.
+    StretchVector { kind: Kind, src: Id, vector: Id },
+    /// `Mirror(k, c)`: the inversion of a conic or circle in a circle.
+    Invert { kind: Kind, src: Id, circle: Id },
+    /// `Mirror(g, c)`: the inversion of a line in a circle, which is a
+    /// circle through the centre of `c` (or the line itself when it passes
+    /// through the centre, which the kernel reports as undefined).
+    InvertLine { src: Id, circle: Id },
 }
 
 /// The value of an object of kind `kind` with the record `d`.
@@ -211,10 +230,15 @@ impl GeneralConicDef {
                 if !set_out(c, src, &mut d) {
                     return d;
                 }
-                let phi = c.number(angle).unwrap_or(f64::NAN);
+                // an undefined angle or centre fills the record with NaN, which
+                // the golden files count as an undefined object
+                let Some((phi, center)) = rotated_by(c, angle, center) else {
+                    d.defined = false;
+                    return d;
+                };
                 match center {
                     None => d.rotate(phi, None),
-                    Some(q) => d.rotate(phi, Some(pt(q))),
+                    Some(q) => d.rotate(phi, Some(q)),
                 }
             }
             GeneralConicDef::Dilate {
@@ -226,10 +250,19 @@ impl GeneralConicDef {
                 if !set_out(c, src, &mut d) {
                     return d;
                 }
-                let r = c.number(factor).unwrap_or(f64::NAN);
+                let Some(r) = c.number(factor) else {
+                    d.defined = false;
+                    return d;
+                };
                 let s = match center {
                     None => (0.0, 0.0),
-                    Some(q) => pt(q),
+                    Some(q) => match c.point(q) {
+                        Some(p) => p,
+                        None => {
+                            d.defined = false;
+                            return d;
+                        }
+                    },
                 };
                 d.dilate(r, s);
             }
@@ -257,6 +290,99 @@ impl GeneralConicDef {
                     return d;
                 }
                 d.mirror_line([a, b, z]);
+            }
+            GeneralConicDef::ShearStretch {
+                src,
+                axis,
+                ratio,
+                shear,
+                ..
+            } => {
+                let Some((la, lb, lc)) = c.raw_carrier(axis) else {
+                    d.defined = false;
+                    return d;
+                };
+                let Some(n) = c.number(ratio) else {
+                    d.defined = false;
+                    return d;
+                };
+                if !set_out(c, src, &mut d) {
+                    return d;
+                }
+                // `AlgoShearOrStretch.compute`: a point of the axis moves to
+                // the origin, the matrix is applied, and the point is added
+                // back (the point is `GeoLine`'s, not a point of the line).
+                let (qx, qy) = if la.abs() > lb.abs() {
+                    (lc / la, 0.0)
+                } else {
+                    (0.0, lc / lb)
+                };
+                let len = my_length(la, lb);
+                let (s, cos) = (-la / len, lb / len);
+                // translate(q), matrix, translate(-q): the point q = (z/x, 0)
+                // of the raw coefficients is minus the point of the line on
+                // the axis (`Coords negativeStartPoint`)
+                d.translate(qx, qy);
+                let m = if shear {
+                    [
+                        1.0 - cos * s * n,
+                        cos * cos * n,
+                        -s * s * n,
+                        1.0 + s * cos * n,
+                    ]
+                } else {
+                    [
+                        cos * cos + s * s * n,
+                        cos * s * (1.0 - n),
+                        cos * s * (1.0 - n),
+                        s * s + cos * cos * n,
+                    ]
+                };
+                d.matrix_transform(m[0], m[1], m[2], m[3]);
+                d.translate(-qx, -qy);
+            }
+            GeneralConicDef::StretchVector {
+                src, vector: vid, ..
+            } => {
+                let Some((vx, vy)) = vector(c, vid) else {
+                    d.defined = false;
+                    return d;
+                };
+                if !set_out(c, src, &mut d) {
+                    return d;
+                }
+                // the same as above, around the start point of the vector
+                let (sx, sy) = vector::start(c, vid).unwrap_or((0.0, 0.0));
+                let len = my_length(vx, vy);
+                let (cos, s) = (-vy / len, vx / len);
+                d.translate(-sx, -sy);
+                let m = [
+                    cos * cos + s * s * len,
+                    cos * s * (1.0 - len),
+                    cos * s * (1.0 - len),
+                    s * s + cos * cos * len,
+                ];
+                d.matrix_transform(m[0], m[1], m[2], m[3]);
+                d.translate(sx, sy);
+            }
+            GeneralConicDef::Invert { src, circle, .. } => {
+                let Some(k) = c.conic(circle) else {
+                    d.defined = false;
+                    return d;
+                };
+                if !set_out(c, src, &mut d) {
+                    return d;
+                }
+                d.mirror_conic(&k, false);
+            }
+            GeneralConicDef::InvertLine { src, circle } => {
+                let (Some(k), Some((a, b, z))) = (c.conic(circle), c.raw_carrier(src)) else {
+                    d.defined = false;
+                    return d;
+                };
+                d = ConicData::new();
+                d.from_line([a, b, z], None);
+                d.mirror_conic(&k, true);
             }
         }
         d
@@ -336,6 +462,124 @@ fn vector(c: &Construction, id: Id) -> Option<(f64, f64)> {
     }
 }
 
+/// The angle a rotation runs by and the centre it runs about, as one tuple
+/// (`None` for the origin); `None` when either is undefined.
+fn rotated_by(
+    c: &Construction,
+    angle: Id,
+    center: Option<Id>,
+) -> Option<(f64, Option<(f64, f64)>)> {
+    let phi = c.number(angle)?;
+    let center = match center {
+        None => None,
+        Some(q) => Some(c.point(q)?),
+    };
+    Some((phi, center))
+}
+
+/// Applies the transformation `def` of [`record`](GeneralConicDef::record) to
+/// `d`, which starts as a copy of the source's record (`setOutGeo`); an
+/// undefined input leaves `d` undefined. The parts of conics call this with
+/// the conic of their own record, which starts the same way.
+pub(crate) fn transform_conic(c: &Construction, def: &TransformOf, d: &mut ConicData) {
+    match *def {
+        TransformOf::MirrorPoint(center) => {
+            // `AlgoMirror`: an undefined mirror makes the image undefined
+            match c.point(center) {
+                Some(q) => d.mirror_point(q),
+                None => d.defined = false,
+            }
+        }
+        TransformOf::MirrorLine(mirror) => match c.raw_carrier(mirror) {
+            Some((a, b, z)) if super::line_value(a, b, z).is_some() => {
+                d.mirror_line([a, b, z]);
+            }
+            _ => d.defined = false,
+        },
+        TransformOf::Rotate { angle, center } => {
+            // an undefined angle or centre leaves no image (the parts of
+            // conics read this record, so the flag ends their parameters)
+            match rotated_by(c, angle, center_of(center)) {
+                Some((phi, None)) => d.rotate(phi, None),
+                Some((phi, Some(q))) => d.rotate(phi, Some(q)),
+                None => d.defined = false,
+            }
+        }
+        TransformOf::Dilate { factor, center } => {
+            let (r, s) = match (c.number(factor), center_of(center).map(|q| c.point(q))) {
+                (Some(r), None) => (r, (0.0, 0.0)),
+                (Some(r), Some(Some(q))) => (r, q),
+                _ => {
+                    d.defined = false;
+                    return;
+                }
+            };
+            d.dilate(r, s);
+        }
+        TransformOf::Shear { axis, ratio } | TransformOf::Stretch { axis, ratio } => {
+            let shear = matches!(def, TransformOf::Shear { .. });
+            match (c.raw_carrier(axis), c.number(ratio)) {
+                (Some((la, lb, lc)), Some(n)) => {
+                    // `AlgoShearOrStretch.compute`: a point of the axis moves
+                    // to the origin, the matrix is applied, and the point is
+                    // added back (the point is `GeoLine`'s, not a point of
+                    // the line).
+                    let (qx, qy) = if la.abs() > lb.abs() {
+                        (lc / la, 0.0)
+                    } else {
+                        (0.0, lc / lb)
+                    };
+                    let len = my_length(la, lb);
+                    let (s, cos) = (-la / len, lb / len);
+                    // translate(q), matrix, translate(-q); see the record
+                    d.translate(qx, qy);
+                    let m = if shear {
+                        [
+                            1.0 - cos * s * n,
+                            cos * cos * n,
+                            -s * s * n,
+                            1.0 + s * cos * n,
+                        ]
+                    } else {
+                        [
+                            cos * cos + s * s * n,
+                            cos * s * (1.0 - n),
+                            cos * s * (1.0 - n),
+                            s * s + cos * cos * n,
+                        ]
+                    };
+                    d.matrix_transform(m[0], m[1], m[2], m[3]);
+                    d.translate(-qx, -qy);
+                }
+                _ => d.defined = false,
+            }
+        }
+        TransformOf::StretchVector(vid) => {
+            match vector(c, vid) {
+                Some((vx, vy)) => {
+                    // the same as above, around the start point of the vector
+                    let (sx, sy) = vector::start(c, vid).unwrap_or((0.0, 0.0));
+                    let len = my_length(vx, vy);
+                    let (cos, s) = (-vy / len, vx / len);
+                    d.translate(-sx, -sy);
+                    let m = [
+                        cos * cos + s * s * len,
+                        cos * s * (1.0 - len),
+                        cos * s * (1.0 - len),
+                        s * s + cos * cos * len,
+                    ];
+                    d.matrix_transform(m[0], m[1], m[2], m[3]);
+                    d.translate(sx, sy);
+                }
+                None => d.defined = false,
+            }
+        }
+        // the inversion of a part is computed by the part itself
+        // (`ArcDef::InvertPart`); a plain point has no conic record
+        TransformOf::Invert(_) => d.defined = false,
+    }
+}
+
 impl Group for GeneralConicDef {
     fn kind(&self) -> Kind {
         match *self {
@@ -349,7 +593,11 @@ impl Group for GeneralConicDef {
             | GeneralConicDef::Rotate { kind, .. }
             | GeneralConicDef::Dilate { kind, .. }
             | GeneralConicDef::MirrorPoint { kind, .. }
-            | GeneralConicDef::MirrorLine { kind, .. } => kind,
+            | GeneralConicDef::MirrorLine { kind, .. }
+            | GeneralConicDef::ShearStretch { kind, .. }
+            | GeneralConicDef::StretchVector { kind, .. }
+            | GeneralConicDef::Invert { kind, .. } => kind,
+            GeneralConicDef::InvertLine { .. } => Kind::Conic,
         }
     }
 
@@ -382,6 +630,12 @@ impl Group for GeneralConicDef {
             },
             GeneralConicDef::MirrorPoint { src, center, .. } => Parents::of(&[src, center]),
             GeneralConicDef::MirrorLine { src, mirror, .. } => Parents::of(&[src, mirror]),
+            GeneralConicDef::ShearStretch {
+                src, axis, ratio, ..
+            } => Parents::of(&[src, axis, ratio]),
+            GeneralConicDef::StretchVector { src, vector, .. } => Parents::of(&[src, vector]),
+            GeneralConicDef::Invert { src, circle, .. }
+            | GeneralConicDef::InvertLine { src, circle } => Parents::of(&[src, circle]),
         }
     }
 
@@ -409,7 +663,9 @@ impl Group for GeneralConicDef {
     fn check(&self, c: &Construction) -> Result<(), Error> {
         let kind_of = |kind: Kind| match kind {
             Kind::Circle => Ok(&[Kind::Circle][..]),
-            Kind::Conic => Ok(CONIC),
+            // a sheared or stretched circle is held as a conic, whose source
+            // is a circle or a conic
+            Kind::Conic => Ok(&[Kind::Conic, Kind::Circle][..]),
             _ => Err(Error::UnknownObject),
         };
         match *self {
@@ -456,7 +712,7 @@ impl Group for GeneralConicDef {
                 center,
             } => {
                 c.expect(src, kind_of(kind)?)?;
-                c.expect(second, NUMBER)?;
+                c.expect(second, NUMBER_OR_ANGLE)?;
                 match center {
                     Some(q) => c.expect(q, POINT),
                     None => Ok(()),
@@ -469,6 +725,29 @@ impl Group for GeneralConicDef {
             GeneralConicDef::MirrorLine { kind, src, mirror } => {
                 c.expect(src, kind_of(kind)?)?;
                 c.expect(mirror, LINE_OR_RAY)
+            }
+            GeneralConicDef::ShearStretch {
+                kind,
+                src,
+                axis,
+                ratio,
+                ..
+            } => {
+                c.expect(src, kind_of(kind)?)?;
+                c.expect(axis, LINE_OR_RAY)?;
+                c.expect(ratio, NUMBER_OR_ANGLE)
+            }
+            GeneralConicDef::StretchVector { kind, src, vector } => {
+                c.expect(src, kind_of(kind)?)?;
+                c.expect(vector, VECTOR)
+            }
+            GeneralConicDef::Invert { kind, src, circle } => {
+                c.expect(src, kind_of(kind)?)?;
+                c.expect(circle, CIRCLE)
+            }
+            GeneralConicDef::InvertLine { src, circle } => {
+                c.expect(src, LINE)?;
+                c.expect(circle, CIRCLE)
             }
         }
     }
@@ -483,7 +762,7 @@ impl Group for GeneralConicDef {
         match func {
             "Ellipse" | "Hyperbola" => Some(parse_foci(c, func, args)),
             "Parabola" => Some(parse_parabola(c, args)),
-            "Translate" | "Rotate" | "Dilate" | "Mirror" | "Reflect" => {
+            "Translate" | "Rotate" | "Dilate" | "Mirror" | "Reflect" | "Shear" | "Stretch" => {
                 parse_transform(c, func, args)
             }
             _ => None,
@@ -548,8 +827,9 @@ fn parse_parabola(c: &Construction, args: &[&str]) -> Result<GeneralConicDef, St
 }
 
 /// A transformation of a conic or of a circle: every image of a circle
-/// keeps a record too (see below). `None` leaves the line to the other
-/// groups.
+/// keeps a record too (see below). The group also claims the inversion of a
+/// line in a circle, whose image is a conic. `None` leaves the line to the
+/// other groups.
 fn parse_transform(
     c: &Construction,
     func: &str,
@@ -557,12 +837,18 @@ fn parse_transform(
 ) -> Option<Result<GeneralConicDef, String>> {
     let src = c.id(args.first()?)?;
     let kind = c.kind(src);
+    // whether the command mirrors in a circle (an inversion)
+    let in_a_circle = matches!(func, "Mirror" | "Reflect")
+        && matches!(c.id(args.get(1)?).map(|id| c.kind(id)), Some(Kind::Circle));
     let claim = match kind {
         Kind::Conic => true,
         // every image of a circle keeps a record: GeoGebra copies the
         // circle's axes and turns or mirrors them with it, and the axes
         // carry the path parameter of points on the image
         Kind::Circle => true,
+        // the inversion of a line is a conic (a circle through the centre
+        // of the mirror)
+        Kind::Line => in_a_circle,
         _ => false,
     };
     if !claim {
@@ -570,6 +856,8 @@ fn parse_transform(
     }
     let arity_ok = match func {
         "Mirror" | "Reflect" | "Translate" => args.len() == 2,
+        "Shear" => args.len() == 3,
+        "Stretch" => args.len() == 2 || args.len() == 3,
         _ => args.len() == 2 || args.len() == 3,
     };
     if !arity_ok {
@@ -590,6 +878,13 @@ fn parse_transform_args(
 ) -> Result<GeneralConicDef, String> {
     let second = object(c, args[1])?;
     let second_kind = c.kind(second);
+    // `Shear` and `Stretch` of a circle give a conic (an ellipse usually),
+    // whose kind is a conic whatever the image turns out to be
+    let kind = if matches!(func, "Shear" | "Stretch") && kind == Kind::Circle {
+        Kind::Conic
+    } else {
+        kind
+    };
     match func {
         "Translate" => {
             if second_kind != Kind::Vector {
@@ -615,13 +910,57 @@ fn parse_transform_args(
                 src,
                 mirror: second,
             }),
+            Kind::Circle if kind == Kind::Line => Ok(GeneralConicDef::InvertLine {
+                src,
+                circle: second,
+            }),
+            Kind::Circle => Ok(GeneralConicDef::Invert {
+                kind,
+                src,
+                circle: second,
+            }),
             _ => Err(format!(
                 "`{}` is a {second_kind}, expected a point or a line (a conic cannot be inverted)",
                 args[1]
             )),
         },
+        "Shear" | "Stretch" => {
+            if args.len() == 2 {
+                // `Stretch(k, v)`: stretched along a vector by its length
+                if second_kind != Kind::Vector {
+                    return Err(format!(
+                        "`{}` is a {second_kind}, expected a vector",
+                        args[1]
+                    ));
+                }
+                return Ok(GeneralConicDef::StretchVector {
+                    kind,
+                    src,
+                    vector: second,
+                });
+            }
+            if !matches!(second_kind, Kind::Line | Kind::Segment | Kind::Ray) {
+                return Err(format!("`{}` is a {second_kind}, expected a line", args[1]));
+            }
+            let ratio = object(c, args[2])?;
+            if !c.kind(ratio).is_number() {
+                return Err(format!(
+                    "`{}` is a {}, expected a number",
+                    args[2],
+                    c.kind(ratio)
+                ));
+            }
+            Ok(GeneralConicDef::ShearStretch {
+                kind,
+                src,
+                axis: second,
+                ratio,
+                shear: func == "Shear",
+            })
+        }
         _ => {
-            if second_kind != Kind::Number {
+            // a `GeoNumberValue`, which an angle is too
+            if !second_kind.is_number() {
                 return Err(format!(
                     "`{}` is a {second_kind}, expected a number",
                     args[1]

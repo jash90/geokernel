@@ -837,9 +837,47 @@ struct PolygonNames {
     indexed_segments: BTreeSet<String>,
 }
 
+/// The points a script line `name = Polygon(a, b, ...)` is made from (not
+/// the `n` of a regular polygon, whose own vertices are labelled by
+/// GeoGebra, not after its arguments).
+fn polygon_args(line: &str) -> Option<Vec<&str>> {
+    let (label, command, args) = command_args(line)?;
+    let regular = args.iter().any(|arg| arg.parse::<f64>().is_ok());
+    (!label.is_empty() && command == "Polygon" && !regular).then_some(args)
+}
+
 impl PolygonNames {
     fn of(script: &[String], kind: impl Fn(&str) -> Option<Kind>) -> PolygonNames {
         let mut names = PolygonNames::default();
+        // the polygons made from points by their label, whose images the
+        // transformations below move with their sides
+        let mut polygons: BTreeMap<String, Vec<String>> = BTreeMap::new();
+        let label_of = |line: &str| -> Option<String> {
+            let lhs = line.split('#').next()?;
+            lhs.split_once('=').map(|(n, _)| line_label(n))
+        };
+        for line in script {
+            if let Some(args) = polygon_args(line) {
+                if let Some(label) = label_of(line) {
+                    polygons.insert(label, args.iter().map(|a| a.to_string()).collect());
+                }
+            } else if let Some(src) = transformed_arg(line) {
+                if let Some(label) = label_of(line) {
+                    if let Some(vertices) = polygons.get(src).cloned() {
+                        // the sides of the image are named after the labels
+                        // of the transformed vertices (`A'` gives `a'`, and
+                        // the image of an image `A''`), or after the default
+                        // segment labels
+                        for vertex in &vertices {
+                            names.segments.insert(format!("{vertex}'").to_lowercase());
+                        }
+                        names.default_segments();
+                        let image: Vec<String> = vertices.iter().map(|v| format!("{v}'")).collect();
+                        polygons.insert(label, image);
+                    }
+                }
+            }
+        }
         for line in script {
             let Some((_, command, args)) = command_args(line) else {
                 continue;
@@ -958,6 +996,23 @@ fn command_args(line: &str) -> Option<(&str, &str, Vec<&str>)> {
     let (name, inner) = rhs.trim().split_once('(')?;
     let args = inner.strip_suffix(')')?.split(',').map(str::trim).collect();
     Some((label.trim(), name.trim(), args))
+}
+
+/// The transformed object of a script line `name = Mirror(p, ...)` and the
+/// other transformations, when the line creates the sides of a polygon's
+/// image as well (`Transform.transformPoly`).
+fn transformed_arg(line: &str) -> Option<&str> {
+    let (_, rhs) = line.split('#').next()?.split_once('=')?;
+    let rhs = rhs.trim();
+    let (func, rest) = rhs.split_once('(')?;
+    if !matches!(
+        func,
+        "Mirror" | "Reflect" | "Rotate" | "Dilate" | "Shear" | "Stretch" | "Translate"
+    ) {
+        return None;
+    }
+    let inner = rest.strip_suffix(')')?;
+    inner.split(',').map(str::trim).next()
 }
 
 /// Snapshot keys must match the script labels: each label is either a key
@@ -1190,6 +1245,24 @@ mod tests {
             script_labels(&["f(x) = x^2".to_string(), "v = f(2)".to_string()]),
             set(&["f", "v"])
         );
+    }
+
+    #[test]
+    fn transformed_polygon_sides_are_created_labels() {
+        let script = vec![
+            "A = (4.7, -3.93)".to_string(),
+            "B = (-7.04, -4.69)".to_string(),
+            "E = (4.14, 4.51)".to_string(),
+            "p = Polygon(A, B, E)".to_string(),
+            "Q = (0.71, -2.15)".to_string(),
+            "m = Mirror(p, Q)".to_string(),
+        ];
+        let names = PolygonNames::of(&script, |l| {
+            (l == "A" || l == "B" || l == "E" || l == "Q").then_some(Kind::Point)
+        });
+        assert!(names.segment("a'"));
+        assert!(names.segment("b'"));
+        assert!(names.segment("e'"));
     }
 
     fn check_keys_(keys: &BTreeSet<String>, labels: &BTreeSet<String>) -> Result<(), String> {

@@ -31,7 +31,7 @@
 <tableview min="0" max="0" step="0"/>
 <scripting blocked="false" disabled="false"/>
 <construction title="" author="" date="">
-<expression label="A" exp="(1.11, -3.06)" type="point"/>
+<expression label="A" exp="(-5.7, -5.15)" type="point"/>
 <element type="point" label="A">
 	<show object="true" label="true"/>
 	<objColor r="77" g="77" b="255" alpha="0"/>
@@ -40,9 +40,9 @@
 	<animation step="0.1" type="1" playing="false"/>
 	<pointSize val="5"/>
 	<pointStyle val="0"/>
-	<coords x="1.11" y="-3.06" z="1"/>
+	<coords x="-5.7" y="-5.15" z="1"/>
 </element>
-<expression label="B" exp="(0.61, -3.47)" type="point"/>
+<expression label="B" exp="(-6.16, -4.49)" type="point"/>
 <element type="point" label="B">
 	<show object="true" label="true"/>
 	<objColor r="77" g="77" b="255" alpha="0"/>
@@ -51,7 +51,7 @@
 	<animation step="0.1" type="1" playing="false"/>
 	<pointSize val="5"/>
 	<pointStyle val="0"/>
-	<coords x="0.61" y="-3.47" z="1"/>
+	<coords x="-6.16" y="-4.49" z="1"/>
 </element>
 <command name="Line">
 	<input a0="A" a1="B"/>
@@ -64,9 +64,9 @@
 	<labelMode val="0"/>
 	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
 	<eqnStyle style="implicit"/>
-	<coords x="0.41000000000000014" y="-0.5000000000000001" z="-1.9851000000000005"/>
+	<coords x="-0.6600000000000001" y="-0.45999999999999996" z="-6.131"/>
 </element>
-<expression label="C" exp="(0, 1)" type="point"/>
+<expression label="C" exp="(4.23, 6.79)" type="point"/>
 <element type="point" label="C">
 	<show object="true" label="true"/>
 	<objColor r="77" g="77" b="255" alpha="0"/>
@@ -75,9 +75,9 @@
 	<animation step="0.1" type="1" playing="false"/>
 	<pointSize val="5"/>
 	<pointStyle val="0"/>
-	<coords x="0" y="1" z="1"/>
+	<coords x="4.23" y="6.79" z="1"/>
 </element>
-<expression label="D" exp="(5, 1)" type="point"/>
+<expression label="D" exp="(3.55, 1.28)" type="point"/>
 <element type="point" label="D">
 	<show object="true" label="true"/>
 	<objColor r="77" g="77" b="255" alpha="0"/>
@@ -86,7 +86,7 @@
 	<animation step="0.1" type="1" playing="false"/>
 	<pointSize val="5"/>
 	<pointStyle val="0"/>
-	<coords x="5" y="1" z="1"/>
+	<coords x="3.55" y="1.28" z="1"/>
 </element>
 <command name="Line">
 	<input a0="C" a1="D"/>
@@ -99,7 +99,7 @@
 	<labelMode val="0"/>
 	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
 	<eqnStyle style="implicit"/>
-	<coords x="0" y="5" z="-5"/>
+	<coords x="5.51" y="-0.6800000000000006" z="-18.690099999999997"/>
 </element>
 <command name="Mirror">
 	<input a0="l" a1="n"/>
@@ -112,7 +112,7 @@
 	<labelMode val="0"/>
 	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
 	<eqnStyle style="implicit"/>
-	<coords x="-0.41000000000000014" y="-0.5000000000000001" z="2.985100000000001"/>
+	<coords x="-0.5283616189471976" y="0.606658058236678" z="10.161961432719604"/>
 </element>
 </construction>
 </geogebra>

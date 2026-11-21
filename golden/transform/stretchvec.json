@@ -1,0 +1,3248 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "transform-stretchvec-001",
+      "group": "transform",
+      "script": [
+        "P = (4.84, 5.89)",
+        "C = (-2.73, -2.5)",
+        "D = (-5.58, -7.64)",
+        "v = Vector(C, D)",
+        "m = Stretch(P, v)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": -1.71, "y": 1.25 },
+        { "action": "move", "label": "D", "x": 5.15, "y": 0.76 },
+        { "action": "move", "label": "P", "x": -6.29, "y": -0.14 },
+        { "action": "move", "label": "D", "x": -2.73, "y": -2.5 },
+        { "action": "move", "label": "D", "x": 6.15, "y": 1.95 },
+        { "action": "move", "label": "C", "x": 7.12, "y": -7.66 }
+      ],
+      "snapshots": [
+        {
+          "P": { "type": "point", "defined": true, "x": 4.84, "y": 5.89 },
+          "C": { "type": "point", "defined": true, "x": -2.73, "y": -2.5 },
+          "D": { "type": "point", "defined": true, "x": -5.58, "y": -7.64 },
+          "v": { "type": "vector", "defined": true, "x": -2.85, "y": -5.14 },
+          "m": { "type": "point", "defined": true, "x": 30.875721987070026, "y": 52.84565298720698 }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 4.84, "y": 5.89 },
+          "C": { "type": "point", "defined": true, "x": -1.71, "y": 1.25 },
+          "D": { "type": "point", "defined": true, "x": -5.58, "y": -7.64 },
+          "v": { "type": "vector", "defined": true, "x": -3.87, "y": -8.89 },
+          "m": { "type": "point", "defined": true, "x": 28.68043111428755, "y": 60.65522806357011 }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 4.84, "y": 5.89 },
+          "C": { "type": "point", "defined": true, "x": -1.71, "y": 1.25 },
+          "D": { "type": "point", "defined": true, "x": 5.15, "y": 0.76 },
+          "v": { "type": "vector", "defined": true, "x": 6.86, "y": -0.49 },
+          "m": { "type": "point", "defined": true, "x": 41.203984583417125, "y": 3.2925725297559185 }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": -6.29, "y": -0.14 },
+          "C": { "type": "point", "defined": true, "x": -1.71, "y": 1.25 },
+          "D": { "type": "point", "defined": true, "x": 5.15, "y": 0.76 },
+          "v": { "type": "vector", "defined": true, "x": 6.86, "y": -0.49 },
+          "m": { "type": "point", "defined": true, "x": -32.491616734639976, "y": 1.7315440524742842 }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": -6.29, "y": -0.14 },
+          "C": { "type": "point", "defined": true, "x": -1.71, "y": 1.25 },
+          "D": { "type": "point", "defined": true, "x": -2.73, "y": -2.5 },
+          "v": { "type": "vector", "defined": true, "x": -1.02, "y": -3.75 },
+          "m": { "type": "point", "defined": true, "x": -8.216682466886187, "y": -7.223391422375686 }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": -6.29, "y": -0.14 },
+          "C": { "type": "point", "defined": true, "x": -1.71, "y": 1.25 },
+          "D": { "type": "point", "defined": true, "x": 6.15, "y": 1.95 },
+          "v": { "type": "vector", "defined": true, "x": 7.86, "y": 0.7 },
+          "m": { "type": "point", "defined": true, "x": -38.44926982466313, "y": -3.004057109066691 }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": -6.29, "y": -0.14 },
+          "C": { "type": "point", "defined": true, "x": 7.12, "y": -7.66 },
+          "D": { "type": "point", "defined": true, "x": 6.15, "y": 1.95 },
+          "v": { "type": "vector", "defined": true, "x": -0.9699999999999998, "y": 9.61 },
+          "m": { "type": "point", "defined": true, "x": -13.967204607793871, "y": 75.9197281246383 }
+        }
+      ]
+    },
+    {
+      "id": "transform-stretchvec-002",
+      "group": "transform",
+      "script": [
+        "A = (-2.75, -6.19)",
+        "B = (-1.51, 3.32)",
+        "l = Line(A, B)",
+        "C = (-4.5, -0.6)",
+        "D = (-2.3, 5.25)",
+        "v = Vector(C, D)",
+        "m = Stretch(l, v)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": -3.8, "y": 0.96 },
+        { "action": "move", "label": "D", "x": -4.02, "y": -7.8 },
+        { "action": "move", "label": "A", "x": -3.26, "y": 7.26 },
+        { "action": "move", "label": "B", "x": -0.94, "y": 2.94 },
+        { "action": "move", "label": "A", "x": 6.2, "y": -4.09 },
+        { "action": "move", "label": "D", "x": -4.5, "y": -0.6 },
+        { "action": "move", "label": "D", "x": -0.4, "y": 4.2 },
+        { "action": "move", "label": "C", "x": -6.03, "y": -1.81 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -2.75, "y": -6.19 },
+          "B": { "type": "point", "defined": true, "x": -1.51, "y": 3.32 },
+          "l": { "type": "line", "defined": true, "a": -9.51, "b": 1.24, "c": -18.4769 },
+          "C": { "type": "point", "defined": true, "x": -4.5, "y": -0.6 },
+          "D": { "type": "point", "defined": true, "x": -2.3, "y": 5.25 },
+          "v": { "type": "vector", "defined": true, "x": 2.2, "y": 5.85 },
+          "m": { "type": "line", "defined": true, "a": 68.6912207424, "b": -22.9354471168, "c": 112.64995007072054 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.75, "y": -6.19 },
+          "B": { "type": "point", "defined": true, "x": -1.51, "y": 3.32 },
+          "l": { "type": "line", "defined": true, "a": -9.51, "b": 1.24, "c": -18.4769 },
+          "C": { "type": "point", "defined": true, "x": -3.8, "y": 0.96 },
+          "D": { "type": "point", "defined": true, "x": -2.3, "y": 5.25 },
+          "v": { "type": "vector", "defined": true, "x": 1.5, "y": 4.29 },
+          "m": { "type": "line", "defined": true, "a": 50.73715615044151, "b": -15.154647605049481, "c": 101.1138935739659 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.75, "y": -6.19 },
+          "B": { "type": "point", "defined": true, "x": -1.51, "y": 3.32 },
+          "l": { "type": "line", "defined": true, "a": -9.51, "b": 1.24, "c": -18.4769 },
+          "C": { "type": "point", "defined": true, "x": -3.8, "y": 0.96 },
+          "D": { "type": "point", "defined": true, "x": -4.02, "y": -7.8 },
+          "v": { "type": "vector", "defined": true, "x": -0.21999999999999975, "y": -8.76 },
+          "m": { "type": "line", "defined": true, "a": 103.57586943587128, "b": -3.8426643009008736, "c": 192.44016101701487 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.26, "y": 7.26 },
+          "B": { "type": "point", "defined": true, "x": -1.51, "y": 3.32 },
+          "l": { "type": "line", "defined": true, "a": 3.94, "b": 1.7499999999999998, "c": 0.13940000000000197 },
+          "C": { "type": "point", "defined": true, "x": -3.8, "y": 0.96 },
+          "D": { "type": "point", "defined": true, "x": -4.02, "y": -7.8 },
+          "v": { "type": "vector", "defined": true, "x": -0.21999999999999975, "y": -8.76 },
+          "m": { "type": "line", "defined": true, "a": -59.78883324791008, "b": -1.7341160599839927, "c": -23.839881033169263 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.26, "y": 7.26 },
+          "B": { "type": "point", "defined": true, "x": -0.94, "y": 2.94 },
+          "l": { "type": "line", "defined": true, "a": 4.32, "b": 2.32, "c": -2.759999999999999 },
+          "C": { "type": "point", "defined": true, "x": -3.8, "y": 0.96 },
+          "D": { "type": "point", "defined": true, "x": -4.02, "y": -7.8 },
+          "v": { "type": "vector", "defined": true, "x": -0.21999999999999975, "y": -8.76 },
+          "m": { "type": "line", "defined": true, "a": -86.72620146611729, "b": -3.4560488216271903, "c": 18.32070343813399 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 6.2, "y": -4.09 },
+          "B": { "type": "point", "defined": true, "x": -0.94, "y": 2.94 },
+          "l": { "type": "line", "defined": true, "a": -7.029999999999999, "b": -7.140000000000001, "c": 14.383400000000002 },
+          "C": { "type": "point", "defined": true, "x": -3.8, "y": 0.96 },
+          "D": { "type": "point", "defined": true, "x": -4.02, "y": -7.8 },
+          "v": { "type": "vector", "defined": true, "x": -0.21999999999999975, "y": -8.76 },
+          "m": { "type": "line", "defined": true, "a": -429.6617576237557, "b": -41.44959284506549, "c": 549.5286303403434 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 6.2, "y": -4.09 },
+          "B": { "type": "point", "defined": true, "x": -0.94, "y": 2.94 },
+          "l": { "type": "line", "defined": true, "a": -7.029999999999999, "b": -7.140000000000001, "c": 14.383400000000002 },
+          "C": { "type": "point", "defined": true, "x": -3.8, "y": 0.96 },
+          "D": { "type": "point", "defined": true, "x": -4.5, "y": -0.6 },
+          "v": { "type": "vector", "defined": true, "x": -0.7000000000000002, "y": -1.56 },
+          "m": { "type": "line", "defined": true, "a": -66.33632820771824, "b": -43.73633734269054, "c": 207.9595744455286 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 6.2, "y": -4.09 },
+          "B": { "type": "point", "defined": true, "x": -0.94, "y": 2.94 },
+          "l": { "type": "line", "defined": true, "a": -7.029999999999999, "b": -7.140000000000001, "c": 14.383400000000002 },
+          "C": { "type": "point", "defined": true, "x": -3.8, "y": 0.96 },
+          "D": { "type": "point", "defined": true, "x": -0.4, "y": 4.2 },
+          "v": { "type": "vector", "defined": true, "x": 3.4, "y": 3.24 },
+          "m": { "type": "line", "defined": true, "a": -44.383540045509065, "b": -57.077206125083094, "c": 1034.4202229517682 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 6.2, "y": -4.09 },
+          "B": { "type": "point", "defined": true, "x": -0.94, "y": 2.94 },
+          "l": { "type": "line", "defined": true, "a": -7.029999999999999, "b": -7.140000000000001, "c": 14.383400000000002 },
+          "C": { "type": "point", "defined": true, "x": -6.03, "y": -1.81 },
+          "D": { "type": "point", "defined": true, "x": -0.4, "y": 4.2 },
+          "v": { "type": "vector", "defined": true, "x": 5.63, "y": 6.01 },
+          "m": { "type": "line", "defined": true, "a": -59.588785744825884, "b": -42.17901468496347, "c": 3662.467631539886 }
+        }
+      ]
+    },
+    {
+      "id": "transform-stretchvec-003",
+      "group": "transform",
+      "script": [
+        "A = (6.7, -6.03)",
+        "B = (-6.62, -2.55)",
+        "s = Segment(A, B)",
+        "C = (4.07, -3.28)",
+        "D = (-3.83, -3.28)",
+        "v = Vector(C, D)",
+        "m = Stretch(s, v)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 1.32, "y": -4.75 },
+        { "action": "move", "label": "D", "x": -0.63, "y": 4.8 },
+        { "action": "move", "label": "A", "x": -3.53, "y": 4.57 },
+        { "action": "move", "label": "B", "x": 0.43, "y": 3.11 },
+        { "action": "move", "label": "A", "x": 5.96, "y": -7.67 },
+        { "action": "move", "label": "D", "x": 4.07, "y": -3.28 },
+        { "action": "move", "label": "D", "x": 3.23, "y": 0.04 },
+        { "action": "move", "label": "C", "x": -3.68, "y": -7.38 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 6.7, "y": -6.03 },
+          "B": { "type": "point", "defined": true, "x": -6.62, "y": -2.55 },
+          "s": { "type": "segment", "defined": true, "x1": 6.7, "y1": -6.03, "x2": -6.62, "y2": -2.55 },
+          "C": { "type": "point", "defined": true, "x": 4.07, "y": -3.28 },
+          "D": { "type": "point", "defined": true, "x": -3.83, "y": -3.28 },
+          "v": { "type": "vector", "defined": true, "x": -7.9, "y": 0.0 },
+          "m": { "type": "segment", "defined": true, "x1": 24.847, "y1": -6.03, "x2": -80.381, "y2": -2.55 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 6.7, "y": -6.03 },
+          "B": { "type": "point", "defined": true, "x": -6.62, "y": -2.55 },
+          "s": { "type": "segment", "defined": true, "x1": 6.7, "y1": -6.03, "x2": -6.62, "y2": -2.55 },
+          "C": { "type": "point", "defined": true, "x": 1.32, "y": -4.75 },
+          "D": { "type": "point", "defined": true, "x": -3.83, "y": -3.28 },
+          "v": { "type": "vector", "defined": true, "x": -5.15, "y": 1.4700000000000002 },
+          "m": { "type": "segment", "defined": true, "x1": 29.839705972721234, "y1": -12.634925782504897, "x2": -41.12786877535012, "y2": 7.299818854323238 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 6.7, "y": -6.03 },
+          "B": { "type": "point", "defined": true, "x": -6.62, "y": -2.55 },
+          "s": { "type": "segment", "defined": true, "x1": 6.7, "y1": -6.03, "x2": -6.62, "y2": -2.55 },
+          "C": { "type": "point", "defined": true, "x": 1.32, "y": -4.75 },
+          "D": { "type": "point", "defined": true, "x": -0.63, "y": 4.8 },
+          "v": { "type": "vector", "defined": true, "x": -1.9500000000000002, "y": 9.55 },
+          "m": { "type": "segment", "defined": true, "x1": 10.778143850254976, "y1": -26.002448087146167, "x2": -13.171780916898738, "y2": 29.536927054555363 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.53, "y": 4.57 },
+          "B": { "type": "point", "defined": true, "x": -6.62, "y": -2.55 },
+          "s": { "type": "segment", "defined": true, "x1": -3.53, "y1": 4.57, "x2": -6.62, "y2": -2.55 },
+          "C": { "type": "point", "defined": true, "x": 1.32, "y": -4.75 },
+          "D": { "type": "point", "defined": true, "x": -0.63, "y": 4.8 },
+          "v": { "type": "vector", "defined": true, "x": -1.9500000000000002, "y": 9.55 },
+          "m": { "type": "segment", "defined": true, "x1": -21.207671890802587, "y1": 91.14526490111012, "x2": -13.171780916898738, "y2": 29.536927054555363 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.53, "y": 4.57 },
+          "B": { "type": "point", "defined": true, "x": 0.43, "y": 3.11 },
+          "s": { "type": "segment", "defined": true, "x1": -3.53, "y1": 4.57, "x2": 0.43, "y2": 3.11 },
+          "C": { "type": "point", "defined": true, "x": 1.32, "y": -4.75 },
+          "D": { "type": "point", "defined": true, "x": -0.63, "y": 4.8 },
+          "v": { "type": "vector", "defined": true, "x": -1.9500000000000002, "y": 9.55 },
+          "m": { "type": "segment", "defined": true, "x1": -21.207671890802587, "y1": 91.14526490111012, "x2": -13.358040082932279, "y2": 70.63604245743757 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 5.96, "y": -7.67 },
+          "B": { "type": "point", "defined": true, "x": 0.43, "y": 3.11 },
+          "s": { "type": "segment", "defined": true, "x1": 5.96, "y1": -7.67, "x2": 0.43, "y2": 3.11 },
+          "C": { "type": "point", "defined": true, "x": 1.32, "y": -4.75 },
+          "D": { "type": "point", "defined": true, "x": -0.63, "y": 4.8 },
+          "v": { "type": "vector", "defined": true, "x": -1.9500000000000002, "y": 9.55 },
+          "m": { "type": "segment", "defined": true, "x1": 12.590955974700297, "y1": -40.144681824814285, "x2": -13.358040082932279, "y2": 70.63604245743757 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 5.96, "y": -7.67 },
+          "B": { "type": "point", "defined": true, "x": 0.43, "y": 3.11 },
+          "s": { "type": "segment", "defined": true, "x1": 5.96, "y1": -7.67, "x2": 0.43, "y2": 3.11 },
+          "C": { "type": "point", "defined": true, "x": 1.32, "y": -4.75 },
+          "D": { "type": "point", "defined": true, "x": 4.07, "y": -3.28 },
+          "v": { "type": "vector", "defined": true, "x": 2.75, "y": 1.4700000000000002 },
+          "m": { "type": "segment", "defined": true, "x1": 11.032818924946552, "y1": -4.958347701937661, "x2": 5.885694660093861, "y2": 6.02631678194108 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 5.96, "y": -7.67 },
+          "B": { "type": "point", "defined": true, "x": 0.43, "y": 3.11 },
+          "s": { "type": "segment", "defined": true, "x1": 5.96, "y1": -7.67, "x2": 0.43, "y2": 3.11 },
+          "C": { "type": "point", "defined": true, "x": 1.32, "y": -4.75 },
+          "D": { "type": "point", "defined": true, "x": 3.23, "y": 0.04 },
+          "v": { "type": "vector", "defined": true, "x": 1.91, "y": 4.79 },
+          "m": { "type": "segment", "defined": true, "x1": 4.430049647483137, "y1": -11.50689119819674, "x2": 11.163149285341692, "y2": 30.027164961668426 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 5.96, "y": -7.67 },
+          "B": { "type": "point", "defined": true, "x": 0.43, "y": 3.11 },
+          "s": { "type": "segment", "defined": true, "x1": 5.96, "y1": -7.67, "x2": 0.43, "y2": 3.11 },
+          "C": { "type": "point", "defined": true, "x": -3.68, "y": -7.38 },
+          "D": { "type": "point", "defined": true, "x": 3.23, "y": 0.04 },
+          "v": { "type": "vector", "defined": true, "x": 6.91, "y": 7.42 },
+          "m": { "type": "segment", "defined": true, "x1": 45.55780199508966, "y1": 34.85036046361291, "x2": 65.69014546824175, "y2": 73.18674086459535 }
+        }
+      ]
+    },
+    {
+      "id": "transform-stretchvec-004",
+      "group": "transform",
+      "script": [
+        "A = (2.29, -4.74)",
+        "B = (-4.88, 1.48)",
+        "k = Circle(A, B)",
+        "C = (-5.44, -6.53)",
+        "D = (-7.57, -6.05)",
+        "v = Vector(C, D)",
+        "m = Stretch(k, v)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": -0.66, "y": 7.48 },
+        { "action": "move", "label": "D", "x": -7.04, "y": 5.59 },
+        { "action": "move", "label": "A", "x": 7.01, "y": 6.75 },
+        { "action": "move", "label": "B", "x": -4.32, "y": -4.73 },
+        { "action": "move", "label": "A", "x": -6.57, "y": -5.68 },
+        { "action": "move", "label": "D", "x": -5.44, "y": -6.53 },
+        { "action": "move", "label": "D", "x": -6.64, "y": 6.58 },
+        { "action": "move", "label": "C", "x": -6.25, "y": -1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 2.29, "y": -4.74 },
+          "B": { "type": "point", "defined": true, "x": -4.88, "y": 1.48 },
+          "k": { "type": "circle", "defined": true, "cx": 2.29, "cy": -4.74, "r": 9.491959755498334 },
+          "C": { "type": "point", "defined": true, "x": -5.44, "y": -6.53 },
+          "D": { "type": "point", "defined": true, "x": -7.57, "y": -6.05 },
+          "v": { "type": "vector", "defined": true, "x": -2.13, "y": 0.4800000000000004 },
+          "m": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [0.4959078543545749, 1.9236168241846394, -88.4694817156155, 0.3389503426806593, -2.9906680203708857, 9.121840680646955],
+            "midpoint": [10.541394578880904, -6.599469200874571],
+            "half_axes": [20.724885000645962, 9.491959755498335],
+            "eigenvectors": [
+              [0.9755361382502867, -0.2198391297465437],
+              [0.2198391297465437, 0.9755361382502867]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.29, "y": -4.74 },
+          "B": { "type": "point", "defined": true, "x": -4.88, "y": 1.48 },
+          "k": { "type": "circle", "defined": true, "cx": 2.29, "cy": -4.74, "r": 9.491959755498334 },
+          "C": { "type": "point", "defined": true, "x": -0.66, "y": 7.48 },
+          "D": { "type": "point", "defined": true, "x": -7.57, "y": -6.05 },
+          "v": { "type": "vector", "defined": true, "x": -6.91, "y": -13.530000000000001 },
+          "m": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1.5880470240090925, 0.4206181493593649, 21.44243021049553, -0.8066170427144712, -6.926310042684159, 4.885850234802222],
+            "midpoint": [-59.29935338859088, -125.33391481152462],
+            "half_axes": [144.2056438413559, 9.49195975549833],
+            "eigenvectors": [
+              [0.4548326969965891, 0.8905769016445514],
+              [-0.8905769016445514, 0.4548326969965891]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.29, "y": -4.74 },
+          "B": { "type": "point", "defined": true, "x": -4.88, "y": 1.48 },
+          "k": { "type": "circle", "defined": true, "cx": 2.29, "cy": -4.74, "r": 9.491959755498334 },
+          "C": { "type": "point", "defined": true, "x": -0.66, "y": 7.48 },
+          "D": { "type": "point", "defined": true, "x": -7.04, "y": 5.59 },
+          "v": { "type": "vector", "defined": true, "x": -6.38, "y": -1.8900000000000006 },
+          "m": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [0.20288066542639033, 1.842290023313685, -125.864122382247, -0.5323754768564454, -2.83073782430258, 9.998198356123536],
+            "midpoint": [-1.1927598208355854, -5.771726655388601],
+            "half_axes": [63.16005940030461, 9.491959755498337],
+            "eigenvectors": [
+              [0.9588132724236698, 0.2840371606396139],
+              [-0.2840371606396139, 0.9588132724236698]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.01, "y": 6.75 },
+          "B": { "type": "point", "defined": true, "x": -4.88, "y": 1.48 },
+          "k": { "type": "circle", "defined": true, "cx": 7.01, "cy": 6.75, "r": 13.005575727356325 },
+          "C": { "type": "point", "defined": true, "x": -0.66, "y": 7.48 },
+          "D": { "type": "point", "defined": true, "x": -7.04, "y": 5.59 },
+          "v": { "type": "vector", "defined": true, "x": -6.38, "y": -1.8900000000000006 },
+          "m": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [0.20288066542639033, 1.842290023313685, -189.47169881903505, -0.5323754768564454, 0.4212537167750985, -9.221948350359717],
+            "midpoint": [45.75386988955059, 18.227416001763423],
+            "half_axes": [86.53986707003898, 13.00557572735633],
+            "eigenvectors": [
+              [0.9588132724236698, 0.2840371606396139],
+              [-0.2840371606396139, 0.9588132724236698]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.01, "y": 6.75 },
+          "B": { "type": "point", "defined": true, "x": -4.32, "y": -4.73 },
+          "k": { "type": "circle", "defined": true, "cx": 7.01, "cy": 6.75, "r": 16.129454423507326 },
+          "C": { "type": "point", "defined": true, "x": -0.66, "y": 7.48 },
+          "D": { "type": "point", "defined": true, "x": -7.04, "y": 5.59 },
+          "v": { "type": "vector", "defined": true, "x": -6.38, "y": -1.8900000000000006 },
+          "m": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [0.20288066542639033, 1.842290023313685, -371.50029881903515, -0.5323754768564454, 0.4212537167750985, -9.221948350359717],
+            "midpoint": [45.75386988955059, 18.227416001763423],
+            "half_axes": [107.3263399471445, 16.129454423507333],
+            "eigenvectors": [
+              [0.9588132724236698, 0.2840371606396139],
+              [-0.2840371606396139, 0.9588132724236698]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.57, "y": -5.68 },
+          "B": { "type": "point", "defined": true, "x": -4.32, "y": -4.73 },
+          "k": { "type": "circle", "defined": true, "cx": -6.57, "cy": -5.68, "r": 2.4423349483639623 },
+          "C": { "type": "point", "defined": true, "x": -0.66, "y": 7.48 },
+          "D": { "type": "point", "defined": true, "x": -7.04, "y": 5.59 },
+          "v": { "type": "vector", "defined": true, "x": -6.38, "y": -1.8900000000000006 },
+          "m": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [0.20288066542639033, 1.842290023313685, 182.25858160879721, -0.5323754768564454, 0.611999146660624, 7.6487270199355155],
+            "midpoint": [-57.55363446715848, -20.78330237349995],
+            "half_axes": [16.25144062844924, 2.44233494836401],
+            "eigenvectors": [
+              [0.9588132724236698, 0.2840371606396139],
+              [-0.2840371606396139, 0.9588132724236698]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.57, "y": -5.68 },
+          "B": { "type": "point", "defined": true, "x": -4.32, "y": -4.73 },
+          "k": { "type": "circle", "defined": true, "cx": -6.57, "cy": -5.68, "r": 2.4423349483639623 },
+          "C": { "type": "point", "defined": true, "x": -0.66, "y": 7.48 },
+          "D": { "type": "point", "defined": true, "x": -5.44, "y": -6.53 },
+          "v": { "type": "vector", "defined": true, "x": -4.78, "y": -14.010000000000002 },
+          "m": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1.7924128482848745, 0.2167142164282946, 412.9039240740566, -0.6084301245876333, 8.904575235122422, -1.0538704928733917],
+            "midpoint": [-70.58904094153979, -193.3173982407892],
+            "half_axes": [36.15385874979172, 2.4423349483638654],
+            "eigenvectors": [
+              [0.32290774641715103, 0.9464304450427389],
+              [-0.9464304450427389, 0.32290774641715103]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.57, "y": -5.68 },
+          "B": { "type": "point", "defined": true, "x": -4.32, "y": -4.73 },
+          "k": { "type": "circle", "defined": true, "cx": -6.57, "cy": -5.68, "r": 2.4423349483639623 },
+          "C": { "type": "point", "defined": true, "x": -0.66, "y": 7.48 },
+          "D": { "type": "point", "defined": true, "x": -6.64, "y": 6.58 },
+          "v": { "type": "vector", "defined": true, "x": -5.9799999999999995, "y": -0.9000000000000004 },
+          "m": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [0.09777584820279113, 1.9569131899264065, 150.5096111560089, -0.2862879158223226, 1.1461081558972859, 9.554899220787213],
+            "midpoint": [-45.5144807941989, -11.54120948407676],
+            "half_axes": [14.769645764201591, 2.4423349483639516],
+            "eigenvectors": [
+              [0.988863458500553, 0.14882560412215687],
+              [-0.14882560412215687, 0.988863458500553]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.57, "y": -5.68 },
+          "B": { "type": "point", "defined": true, "x": -4.32, "y": -4.73 },
+          "k": { "type": "circle", "defined": true, "cx": -6.57, "cy": -5.68, "r": 2.4423349483639623 },
+          "C": { "type": "point", "defined": true, "x": -6.25, "y": -1.0 },
+          "D": { "type": "point", "defined": true, "x": -6.64, "y": 6.58 },
+          "v": { "type": "vector", "defined": true, "x": -0.3899999999999997, "y": 7.58 },
+          "m": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1.9948111905493797, 0.03990590848982594, 127.06330221143477, 0.10084916829669761, 13.623981663272478, 1.9533820317812474],
+            "midpoint": [-4.992934632287057, -36.331680736574654],
+            "half_axes": [18.537386614622896, 2.4423349483639623],
+            "eigenvectors": [
+              [0.05138322082092463, -0.9986790098014816],
+              [0.9986790098014816, 0.05138322082092463]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "transform-stretchvec-005",
+      "group": "transform",
+      "script": [
+        "A = (7.36, 6.43)",
+        "B = (-5.74, -2.63)",
+        "g = Ray(A, B)",
+        "C = (0.61, -7.06)",
+        "D = (7.57, -0.24)",
+        "v = Vector(C, D)",
+        "m = Stretch(g, v)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 5.25, "y": -3.34 },
+        { "action": "move", "label": "D", "x": 7.74, "y": -3.26 },
+        { "action": "move", "label": "A", "x": -6.91, "y": 0.78 },
+        { "action": "move", "label": "B", "x": 7.49, "y": -2.3 },
+        { "action": "move", "label": "A", "x": 4.62, "y": 4.9 },
+        { "action": "move", "label": "D", "x": 0.61, "y": -7.06 },
+        { "action": "move", "label": "D", "x": -5.75, "y": 0.83 },
+        { "action": "move", "label": "C", "x": -6.49, "y": 2.79 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 7.36, "y": 6.43 },
+          "B": { "type": "point", "defined": true, "x": -5.74, "y": -2.63 },
+          "g": { "type": "ray", "defined": true, "x": 7.36, "y": 6.43, "a": 9.059999999999999, "b": -13.100000000000001, "c": 17.5514 },
+          "C": { "type": "point", "defined": true, "x": 0.61, "y": -7.06 },
+          "D": { "type": "point", "defined": true, "x": 7.57, "y": -0.24 },
+          "v": { "type": "vector", "defined": true, "x": 6.96, "y": 6.819999999999999 },
+          "m": { "type": "ray", "defined": true, "x": 96.44111140969564, "y": 93.7192499732937, "a": 105.13169845271011, "b": -111.14384475525843, "c": 277.29992644267054 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.36, "y": 6.43 },
+          "B": { "type": "point", "defined": true, "x": -5.74, "y": -2.63 },
+          "g": { "type": "ray", "defined": true, "x": 7.36, "y": 6.43, "a": 9.059999999999999, "b": -13.100000000000001, "c": 17.5514 },
+          "C": { "type": "point", "defined": true, "x": 5.25, "y": -3.34 },
+          "D": { "type": "point", "defined": true, "x": 7.57, "y": -0.24 },
+          "v": { "type": "vector", "defined": true, "x": 2.3200000000000003, "y": 3.0999999999999996 },
+          "m": { "type": "ray", "defined": true, "x": 22.995960521991503, "y": 27.32287828369554, "a": 43.7870419778737, "b": -39.089270125376444, "c": 61.106281136188784 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.36, "y": 6.43 },
+          "B": { "type": "point", "defined": true, "x": -5.74, "y": -2.63 },
+          "g": { "type": "ray", "defined": true, "x": 7.36, "y": 6.43, "a": 9.059999999999999, "b": -13.100000000000001, "c": 17.5514 },
+          "C": { "type": "point", "defined": true, "x": 5.25, "y": -3.34 },
+          "D": { "type": "point", "defined": true, "x": 7.74, "y": -3.26 },
+          "v": { "type": "vector", "defined": true, "x": 2.49, "y": 0.08000000000000007 },
+          "m": { "type": "ray", "defined": true, "x": 10.970991246031787, "y": 6.546015783005039, "a": 9.700942269134849, "b": -33.04932812682208, "c": 109.91247082295158 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.91, "y": 0.78 },
+          "B": { "type": "point", "defined": true, "x": -5.74, "y": -2.63 },
+          "g": { "type": "ray", "defined": true, "x": -6.91, "y": 0.78, "a": 3.41, "b": 1.17, "c": 22.6505 },
+          "C": { "type": "point", "defined": true, "x": 5.25, "y": -3.34 },
+          "D": { "type": "point", "defined": true, "x": 7.74, "y": -3.26 },
+          "v": { "type": "vector", "defined": true, "x": 2.49, "y": 0.08000000000000007 },
+          "m": { "type": "ray", "defined": true, "x": -24.82812685430482, "y": 0.204317209500247, "a": 3.359243695630056, "b": 2.749789973514524, "c": 82.84189919552651 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.91, "y": 0.78 },
+          "B": { "type": "point", "defined": true, "x": 7.49, "y": -2.3 },
+          "g": { "type": "ray", "defined": true, "x": -6.91, "y": 0.78, "a": 3.08, "b": 14.4, "c": 10.050799999999999 },
+          "C": { "type": "point", "defined": true, "x": 5.25, "y": -3.34 },
+          "D": { "type": "point", "defined": true, "x": 7.74, "y": -3.26 },
+          "v": { "type": "vector", "defined": true, "x": 2.49, "y": 0.08000000000000007 },
+          "m": { "type": "ray", "defined": true, "x": -24.82812685430482, "y": 0.204317209500247, "a": 2.395503996935436, "b": 35.704938095384556, "c": 52.18074379887919 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 4.62, "y": 4.9 },
+          "B": { "type": "point", "defined": true, "x": 7.49, "y": -2.3 },
+          "g": { "type": "ray", "defined": true, "x": 4.62, "y": 4.9, "a": 7.2, "b": 2.87, "c": -47.327 },
+          "C": { "type": "point", "defined": true, "x": 5.25, "y": -3.34 },
+          "D": { "type": "point", "defined": true, "x": 7.74, "y": -3.26 },
+          "v": { "type": "vector", "defined": true, "x": 2.49, "y": 0.08000000000000007 },
+          "m": { "type": "ray", "defined": true, "x": 4.07585344407822, "y": 4.882517379729421, "a": 7.07370416716461, "b": 6.800957797001516, "c": -62.03717613479455 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 4.62, "y": 4.9 },
+          "B": { "type": "point", "defined": true, "x": 7.49, "y": -2.3 },
+          "g": { "type": "ray", "defined": true, "x": 4.62, "y": 4.9, "a": 7.2, "b": 2.87, "c": -47.327 },
+          "C": { "type": "point", "defined": true, "x": 5.25, "y": -3.34 },
+          "D": { "type": "point", "defined": true, "x": 0.61, "y": -7.06 },
+          "v": { "type": "vector", "defined": true, "x": -4.64, "y": -3.7199999999999998 },
+          "m": { "type": "ray", "defined": true, "x": 22.617069116212473, "y": 19.32868472248069, "a": 14.207457117830476, "b": -5.8704841469713465, "c": -207.86230235446658 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 4.62, "y": 4.9 },
+          "B": { "type": "point", "defined": true, "x": 7.49, "y": -2.3 },
+          "g": { "type": "ray", "defined": true, "x": 4.62, "y": 4.9, "a": 7.2, "b": 2.87, "c": -47.327 },
+          "C": { "type": "point", "defined": true, "x": 5.25, "y": -3.34 },
+          "D": { "type": "point", "defined": true, "x": -5.75, "y": 0.83 },
+          "v": { "type": "vector", "defined": true, "x": -11.0, "y": 4.17 },
+          "m": { "type": "ray", "defined": true, "x": -30.707558115177065, "y": 18.2923561218444, "a": 27.17754422217259, "b": 55.56855790021545, "c": -181.92383165791165 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 4.62, "y": 4.9 },
+          "B": { "type": "point", "defined": true, "x": 7.49, "y": -2.3 },
+          "g": { "type": "ray", "defined": true, "x": 4.62, "y": 4.9, "a": 7.2, "b": 2.87, "c": -47.327 },
+          "C": { "type": "point", "defined": true, "x": -6.49, "y": 2.79 },
+          "D": { "type": "point", "defined": true, "x": -5.75, "y": 0.83 },
+          "v": { "type": "vector", "defined": true, "x": 0.7400000000000002, "y": -1.96 },
+          "m": { "type": "ray", "defined": true, "x": 5.374317419630016, "y": 2.902078185844818, "a": 15.139169560492604, "b": 5.867441568757414, "c": -98.39047687109789 }
+        }
+      ]
+    },
+    {
+      "id": "transform-stretchvec-006",
+      "group": "transform",
+      "script": [
+        "A = (-2.69, 2.29)",
+        "B = (-6.39, 3.78)",
+        "u = (-0.72, -2.64)",
+        "g = Ray(A, u)",
+        "C = (-4.68, 3.65)",
+        "D = (2.96, 3.35)",
+        "v = Vector(C, D)",
+        "m = Stretch(g, v)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": -1.15, "y": 4.69 },
+        { "action": "move", "label": "D", "x": 3.89, "y": -3.63 },
+        { "action": "move", "label": "A", "x": -0.82, "y": 5.65 },
+        { "action": "move", "label": "u", "x": 1.37, "y": 7.82 },
+        { "action": "move", "label": "A", "x": 7.76, "y": -5.21 },
+        { "action": "move", "label": "D", "x": -4.68, "y": 3.65 },
+        { "action": "move", "label": "D", "x": 0.69, "y": -6.77 },
+        { "action": "move", "label": "C", "x": -7.97, "y": 1.17 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -2.69, "y": 2.29 },
+          "B": { "type": "point", "defined": true, "x": -6.39, "y": 3.78 },
+          "u": { "type": "vector", "defined": true, "x": -0.72, "y": -2.64 },
+          "g": { "type": "ray", "defined": true, "x": -2.69, "y": 2.29, "a": 2.64, "b": -0.72, "c": 8.7504 },
+          "C": { "type": "point", "defined": true, "x": -4.68, "y": 3.65 },
+          "D": { "type": "point", "defined": true, "x": 2.96, "y": 3.35 },
+          "v": { "type": "vector", "defined": true, "x": 7.64, "y": -0.2999999999999998 },
+          "m": { "type": "ray", "defined": true, "x": 10.869320877395104, "y": 1.7575659341337004, "a": 2.479406240913729, "b": -4.8097877313970425, "c": -18.495942950789654 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.69, "y": 2.29 },
+          "B": { "type": "point", "defined": true, "x": -6.39, "y": 3.78 },
+          "u": { "type": "vector", "defined": true, "x": -0.72, "y": -2.64 },
+          "g": { "type": "ray", "defined": true, "x": -2.69, "y": 2.29, "a": 2.64, "b": -0.72, "c": 8.7504 },
+          "C": { "type": "point", "defined": true, "x": -1.15, "y": 4.69 },
+          "D": { "type": "point", "defined": true, "x": 2.96, "y": 3.35 },
+          "v": { "type": "vector", "defined": true, "x": 4.109999999999999, "y": -1.3400000000000003 },
+          "m": { "type": "ray", "defined": true, "x": -4.96531600863687, "y": 3.03183052349718, "a": 2.777815499065578, "b": -0.2972972379406529, "c": 14.694086607089808 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.69, "y": 2.29 },
+          "B": { "type": "point", "defined": true, "x": -6.39, "y": 3.78 },
+          "u": { "type": "vector", "defined": true, "x": -0.72, "y": -2.64 },
+          "g": { "type": "ray", "defined": true, "x": -2.69, "y": 2.29, "a": 2.64, "b": -0.72, "c": 8.7504 },
+          "C": { "type": "point", "defined": true, "x": -1.15, "y": 4.69 },
+          "D": { "type": "point", "defined": true, "x": 3.89, "y": -3.63 },
+          "v": { "type": "vector", "defined": true, "x": 5.04, "y": -8.32 },
+          "m": { "type": "ray", "defined": true, "x": 2.9842182102875134, "y": -7.076963394760344, "a": 16.710703959097323, "b": 7.803599513683958, "c": 5.357401044249109 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -0.82, "y": 5.65 },
+          "B": { "type": "point", "defined": true, "x": -6.39, "y": 3.78 },
+          "u": { "type": "vector", "defined": true, "x": -0.72, "y": -2.64 },
+          "g": { "type": "ray", "defined": true, "x": -0.82, "y": 5.65, "a": 2.64, "b": -0.72, "c": 6.232800000000001 },
+          "C": { "type": "point", "defined": true, "x": -1.15, "y": 4.69 },
+          "D": { "type": "point", "defined": true, "x": 3.89, "y": -3.63 },
+          "v": { "type": "vector", "defined": true, "x": 5.04, "y": -8.32 },
+          "m": { "type": "ray", "defined": true, "x": -3.7597493087116782, "y": 10.502919493746262, "a": 16.710703959097323, "b": 7.803599513683958, "c": -19.132519795358427 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -0.82, "y": 5.65 },
+          "B": { "type": "point", "defined": true, "x": -6.39, "y": 3.78 },
+          "u": { "type": "vector", "defined": true, "x": 1.37, "y": 7.82 },
+          "g": { "type": "ray", "defined": true, "x": -0.82, "y": 5.65, "a": -7.82, "b": 1.37, "c": -14.1529 },
+          "C": { "type": "point", "defined": true, "x": -1.15, "y": 4.69 },
+          "D": { "type": "point", "defined": true, "x": 3.89, "y": -3.63 },
+          "v": { "type": "vector", "defined": true, "x": 5.04, "y": -8.32 },
+          "m": { "type": "ray", "defined": true, "x": -3.7597493087116782, "y": 10.502919493746262, "a": -52.449056095746, "b": -25.6649089810769, "c": 72.36117044401499 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.76, "y": -5.21 },
+          "B": { "type": "point", "defined": true, "x": -6.39, "y": 3.78 },
+          "u": { "type": "vector", "defined": true, "x": 1.37, "y": 7.82 },
+          "g": { "type": "ray", "defined": true, "x": 7.76, "y": -5.21, "a": -7.82, "b": 1.37, "c": 67.8209 },
+          "C": { "type": "point", "defined": true, "x": -1.15, "y": 4.69 },
+          "D": { "type": "point", "defined": true, "x": 3.89, "y": -3.63 },
+          "v": { "type": "vector", "defined": true, "x": 5.04, "y": -8.32 },
+          "m": { "type": "ray", "defined": true, "x": 66.92426777620076, "y": -102.87799759880764, "a": -52.449056095746, "b": -25.6649089810769, "c": 869.7602302318346 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.76, "y": -5.21 },
+          "B": { "type": "point", "defined": true, "x": -6.39, "y": 3.78 },
+          "u": { "type": "vector", "defined": true, "x": 1.37, "y": 7.82 },
+          "g": { "type": "ray", "defined": true, "x": 7.76, "y": -5.21, "a": -7.82, "b": 1.37, "c": 67.8209 },
+          "C": { "type": "point", "defined": true, "x": -1.15, "y": 4.69 },
+          "D": { "type": "point", "defined": true, "x": -4.68, "y": 3.65 },
+          "v": { "type": "vector", "defined": true, "x": -3.53, "y": -1.0400000000000005 },
+          "m": { "type": "ray", "defined": true, "x": 22.53925606170704, "y": -0.8557715852194532, "a": -10.489160150330985, "b": 10.429745510258055, "c": 245.34334634931258 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.76, "y": -5.21 },
+          "B": { "type": "point", "defined": true, "x": -6.39, "y": 3.78 },
+          "u": { "type": "vector", "defined": true, "x": 1.37, "y": 7.82 },
+          "g": { "type": "ray", "defined": true, "x": 7.76, "y": -5.21, "a": -7.82, "b": 1.37, "c": 67.8209 },
+          "C": { "type": "point", "defined": true, "x": -1.15, "y": 4.69 },
+          "D": { "type": "point", "defined": true, "x": 0.69, "y": -6.77 },
+          "v": { "type": "vector", "defined": true, "x": 1.8399999999999999, "y": -11.46 },
+          "m": { "type": "ray", "defined": true, "x": 26.57112149879245, "y": -122.37057194356602, "a": -86.40598210086226, "b": -11.24764459560092, "c": 919.5231464428527 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.76, "y": -5.21 },
+          "B": { "type": "point", "defined": true, "x": -6.39, "y": 3.78 },
+          "u": { "type": "vector", "defined": true, "x": 1.37, "y": 7.82 },
+          "g": { "type": "ray", "defined": true, "x": 7.76, "y": -5.21, "a": -7.82, "b": 1.37, "c": 67.8209 },
+          "C": { "type": "point", "defined": true, "x": -7.97, "y": 1.17 },
+          "D": { "type": "point", "defined": true, "x": 0.69, "y": -6.77 },
+          "v": { "type": "vector", "defined": true, "x": 8.66, "y": -7.9399999999999995 },
+          "m": { "type": "ray", "defined": true, "x": 133.78141883272664, "y": -120.75388747480942, "a": -38.87419345481441, "b": -32.500190846182974, "c": 1276.120368013157 }
+        }
+      ]
+    },
+    {
+      "id": "transform-stretchvec-007",
+      "group": "transform",
+      "script": [
+        "A = (3.19, 2.34)",
+        "B = (-1.11, 7.21)",
+        "b = Vector(A, B)",
+        "C = (5.61, 0.75)",
+        "D = (5.47, -7.46)",
+        "v = Vector(C, D)",
+        "m = Stretch(b, v)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 0.17, "y": 6.81 },
+        { "action": "move", "label": "D", "x": 1.08, "y": -3.35 },
+        { "action": "move", "label": "A", "x": -4.19, "y": -4.51 },
+        { "action": "move", "label": "B", "x": 1.91, "y": -4.56 },
+        { "action": "move", "label": "A", "x": -2.5, "y": 3.35 },
+        { "action": "move", "label": "D", "x": 5.61, "y": 0.75 },
+        { "action": "move", "label": "D", "x": -4.79, "y": -2.53 },
+        { "action": "move", "label": "C", "x": -3.05, "y": 2.97 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 3.19, "y": 2.34 },
+          "B": { "type": "point", "defined": true, "x": -1.11, "y": 7.21 },
+          "b": { "type": "vector", "defined": true, "x": -4.3, "y": 4.87 },
+          "C": { "type": "point", "defined": true, "x": 5.61, "y": 0.75 },
+          "D": { "type": "point", "defined": true, "x": 5.47, "y": -7.46 },
+          "v": { "type": "vector", "defined": true, "x": -0.14000000000000057, "y": -8.21 },
+          "m": { "type": "vector", "defined": true, "x": -3.710334064439316, "y": 39.44969522109432 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.19, "y": 2.34 },
+          "B": { "type": "point", "defined": true, "x": -1.11, "y": 7.21 },
+          "b": { "type": "vector", "defined": true, "x": -4.3, "y": 4.87 },
+          "C": { "type": "point", "defined": true, "x": 0.17, "y": 6.81 },
+          "D": { "type": "point", "defined": true, "x": 5.47, "y": -7.46 },
+          "v": { "type": "vector", "defined": true, "x": 5.3, "y": -14.27 },
+          "m": { "type": "vector", "defined": true, "x": -34.32008322566007, "y": 85.69765804342816 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.19, "y": 2.34 },
+          "B": { "type": "point", "defined": true, "x": -1.11, "y": 7.21 },
+          "b": { "type": "vector", "defined": true, "x": -4.3, "y": 4.87 },
+          "C": { "type": "point", "defined": true, "x": 0.17, "y": 6.81 },
+          "D": { "type": "point", "defined": true, "x": 1.08, "y": -3.35 },
+          "v": { "type": "vector", "defined": true, "x": 0.91, "y": -10.16 },
+          "m": { "type": "vector", "defined": true, "x": -8.596167524701157, "y": 52.83600225380632 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -4.19, "y": -4.51 },
+          "B": { "type": "point", "defined": true, "x": -1.11, "y": 7.21 },
+          "b": { "type": "vector", "defined": true, "x": 3.08, "y": 11.719999999999999 },
+          "C": { "type": "point", "defined": true, "x": 0.17, "y": 6.81 },
+          "D": { "type": "point", "defined": true, "x": 1.08, "y": -3.35 },
+          "v": { "type": "vector", "defined": true, "x": 0.91, "y": -10.16 },
+          "m": { "type": "vector", "defined": true, "x": -6.275780599021258, "y": 116.17574822643512 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -4.19, "y": -4.51 },
+          "B": { "type": "point", "defined": true, "x": 1.91, "y": -4.56 },
+          "b": { "type": "vector", "defined": true, "x": 6.1000000000000005, "y": -0.04999999999999982 },
+          "C": { "type": "point", "defined": true, "x": 0.17, "y": 6.81 },
+          "D": { "type": "point", "defined": true, "x": 1.08, "y": -3.35 },
+          "v": { "type": "vector", "defined": true, "x": 0.91, "y": -10.16 },
+          "m": { "type": "vector", "defined": true, "x": 6.587533366899366, "y": -5.493229678788521 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.5, "y": 3.35 },
+          "B": { "type": "point", "defined": true, "x": 1.91, "y": -4.56 },
+          "b": { "type": "vector", "defined": true, "x": 4.41, "y": -7.91 },
+          "C": { "type": "point", "defined": true, "x": 0.17, "y": 6.81 },
+          "D": { "type": "point", "defined": true, "x": 1.08, "y": -3.35 },
+          "v": { "type": "vector", "defined": true, "x": 0.91, "y": -10.16 },
+          "m": { "type": "vector", "defined": true, "x": 11.199475442414839, "y": -83.71337417025798 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.5, "y": 3.35 },
+          "B": { "type": "point", "defined": true, "x": 1.91, "y": -4.56 },
+          "b": { "type": "vector", "defined": true, "x": 4.41, "y": -7.91 },
+          "C": { "type": "point", "defined": true, "x": 0.17, "y": 6.81 },
+          "D": { "type": "point", "defined": true, "x": 5.61, "y": 0.75 },
+          "v": { "type": "vector", "defined": true, "x": 5.44, "y": -6.06 },
+          "m": { "type": "vector", "defined": true, "x": 46.55692617142347, "y": -54.860436139490105 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.5, "y": 3.35 },
+          "B": { "type": "point", "defined": true, "x": 1.91, "y": -4.56 },
+          "b": { "type": "vector", "defined": true, "x": 4.41, "y": -7.91 },
+          "C": { "type": "point", "defined": true, "x": 0.17, "y": 6.81 },
+          "D": { "type": "point", "defined": true, "x": -4.79, "y": -2.53 },
+          "v": { "type": "vector", "defined": true, "x": -4.96, "y": -9.34 },
+          "m": { "type": "vector", "defined": true, "x": -17.675134840360684, "y": -49.497733751808234 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.5, "y": 3.35 },
+          "B": { "type": "point", "defined": true, "x": 1.91, "y": -4.56 },
+          "b": { "type": "vector", "defined": true, "x": 4.41, "y": -7.91 },
+          "C": { "type": "point", "defined": true, "x": -3.05, "y": 2.97 },
+          "D": { "type": "point", "defined": true, "x": -4.79, "y": -2.53 },
+          "v": { "type": "vector", "defined": true, "x": -1.7400000000000002, "y": -5.5 },
+          "m": { "type": "vector", "defined": true, "x": -4.5243114618131095, "y": -36.15063967814488 }
+        }
+      ]
+    },
+    {
+      "id": "transform-stretchvec-008",
+      "group": "transform",
+      "script": [
+        "A = (1.38, 5.01)",
+        "B = (-5.5, -5.1)",
+        "E = (-3.46, 6.28)",
+        "p = Polygon(A, B, E)",
+        "C = (-4.25, -3.78)",
+        "D = (2.12, -5.35)",
+        "v = Vector(C, D)",
+        "m = Stretch(p, v)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 3.59, "y": -7.49 },
+        { "action": "move", "label": "D", "x": 4.98, "y": 7.64 },
+        { "action": "move", "label": "A", "x": -4.3, "y": -7.0 },
+        { "action": "move", "label": "B", "x": 5.03, "y": -1.2 },
+        { "action": "move", "label": "A", "x": -3.59, "y": 2.07 },
+        { "action": "move", "label": "D", "x": -4.25, "y": -3.78 },
+        { "action": "move", "label": "D", "x": 4.04, "y": -4.52 },
+        { "action": "move", "label": "C", "x": 4.08, "y": -7.72 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.38, "y": 5.01 },
+          "B": { "type": "point", "defined": true, "x": -5.5, "y": -5.1 },
+          "E": { "type": "point", "defined": true, "x": -3.46, "y": 6.28 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [1.38, 5.01],
+              [-5.5, -5.1],
+              [-3.46, 6.28]
+            ],
+            "area": 28.834999999999994,
+            "signed_area": -28.834999999999994
+          },
+          "e": { "type": "segment", "defined": true, "x1": 1.38, "y1": 5.01, "x2": -5.5, "y2": -5.1 },
+          "a": { "type": "segment", "defined": true, "x1": -5.5, "y1": -5.1, "x2": -3.46, "y2": 6.28 },
+          "b": { "type": "segment", "defined": true, "x1": -3.46, "y1": 6.28, "x2": 1.38, "y2": 5.01 },
+          "C": { "type": "point", "defined": true, "x": -4.25, "y": -3.78 },
+          "D": { "type": "point", "defined": true, "x": 2.12, "y": -5.35 },
+          "v": { "type": "vector", "defined": true, "x": 6.37, "y": -1.5699999999999998 },
+          "m": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [19.53654627591238, 0.5349956588410616],
+              [-10.347248455307192, -3.9053092504187923],
+              [-12.316488540291413, 8.462839404750005]
+            ],
+            "area": 189.17562101657023,
+            "signed_area": -189.17562101657023
+          },
+          "e'": { "type": "segment", "defined": true, "x1": 19.53654627591238, "y1": 0.5349956588410616, "x2": -10.347248455307192, "y2": -3.9053092504187923 },
+          "a'": { "type": "segment", "defined": true, "x1": -10.347248455307192, "y1": -3.9053092504187923, "x2": -12.316488540291413, "y2": 8.462839404750005 },
+          "b'": { "type": "segment", "defined": true, "x1": -12.316488540291413, "y1": 8.462839404750005, "x2": 19.53654627591238, "y2": 0.5349956588410616 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.38, "y": 5.01 },
+          "B": { "type": "point", "defined": true, "x": -5.5, "y": -5.1 },
+          "E": { "type": "point", "defined": true, "x": -3.46, "y": 6.28 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [1.38, 5.01],
+              [-5.5, -5.1],
+              [-3.46, 6.28]
+            ],
+            "area": 28.834999999999994,
+            "signed_area": -28.834999999999994
+          },
+          "e": { "type": "segment", "defined": true, "x1": 1.38, "y1": 5.01, "x2": -5.5, "y2": -5.1 },
+          "a": { "type": "segment", "defined": true, "x1": -5.5, "y1": -5.1, "x2": -3.46, "y2": 6.28 },
+          "b": { "type": "segment", "defined": true, "x1": -3.46, "y1": 6.28, "x2": 1.38, "y2": 5.01 },
+          "C": { "type": "point", "defined": true, "x": 3.59, "y": -7.49 },
+          "D": { "type": "point", "defined": true, "x": 2.12, "y": -5.35 },
+          "v": { "type": "vector", "defined": true, "x": -1.4699999999999998, "y": 2.1400000000000006 },
+          "m": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [-9.063061366113285, 20.21282402957989],
+              [-11.93212541061908, 4.263774407295804],
+              [-17.3259578645764, 26.46581621101599]
+            ],
+            "area": 74.86279065805991,
+            "signed_area": -74.86279065805991
+          },
+          "e'": { "type": "segment", "defined": true, "x1": -9.063061366113285, "y1": 20.21282402957989, "x2": -11.93212541061908, "y2": 4.263774407295804 },
+          "a'": { "type": "segment", "defined": true, "x1": -11.93212541061908, "y1": 4.263774407295804, "x2": -17.3259578645764, "y2": 26.46581621101599 },
+          "b'": { "type": "segment", "defined": true, "x1": -17.3259578645764, "y1": 26.46581621101599, "x2": -9.063061366113285, "y2": 20.21282402957989 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.38, "y": 5.01 },
+          "B": { "type": "point", "defined": true, "x": -5.5, "y": -5.1 },
+          "E": { "type": "point", "defined": true, "x": -3.46, "y": 6.28 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [1.38, 5.01],
+              [-5.5, -5.1],
+              [-3.46, 6.28]
+            ],
+            "area": 28.834999999999994,
+            "signed_area": -28.834999999999994
+          },
+          "e": { "type": "segment", "defined": true, "x1": 1.38, "y1": 5.01, "x2": -5.5, "y2": -5.1 },
+          "a": { "type": "segment", "defined": true, "x1": -5.5, "y1": -5.1, "x2": -3.46, "y2": 6.28 },
+          "b": { "type": "segment", "defined": true, "x1": -3.46, "y1": 6.28, "x2": 1.38, "y2": 5.01 },
+          "C": { "type": "point", "defined": true, "x": 3.59, "y": -7.49 },
+          "D": { "type": "point", "defined": true, "x": 4.98, "y": 7.64 },
+          "v": { "type": "vector", "defined": true, "x": 1.3900000000000006, "y": 15.129999999999999 },
+          "m": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [17.280830882995094, 178.08882824439976],
+              [-3.489409544796679, 16.785060134695158],
+              [13.50806182755555, 190.97552190713336]
+            ],
+            "area": 438.1107952721833,
+            "signed_area": -438.1107952721833
+          },
+          "e'": { "type": "segment", "defined": true, "x1": 17.280830882995094, "y1": 178.08882824439976, "x2": -3.489409544796679, "y2": 16.785060134695158 },
+          "a'": { "type": "segment", "defined": true, "x1": -3.489409544796679, "y1": 16.785060134695158, "x2": 13.50806182755555, "y2": 190.97552190713336 },
+          "b'": { "type": "segment", "defined": true, "x1": 13.50806182755555, "y1": 190.97552190713336, "x2": 17.280830882995094, "y2": 178.08882824439976 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -4.3, "y": -7.0 },
+          "B": { "type": "point", "defined": true, "x": -5.5, "y": -5.1 },
+          "E": { "type": "point", "defined": true, "x": -3.46, "y": 6.28 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [-4.3, -7.0],
+              [-5.5, -5.1],
+              [-3.46, 6.28]
+            ],
+            "area": 8.765999999999998,
+            "signed_area": -8.765999999999998
+          },
+          "e": { "type": "segment", "defined": true, "x1": -4.3, "y1": -7.0, "x2": -5.5, "y2": -5.1 },
+          "a": { "type": "segment", "defined": true, "x1": -5.5, "y1": -5.1, "x2": -3.46, "y2": 6.28 },
+          "b": { "type": "segment", "defined": true, "x1": -3.46, "y1": 6.28, "x2": -4.3, "y2": -7.0 },
+          "C": { "type": "point", "defined": true, "x": 3.59, "y": -7.49 },
+          "D": { "type": "point", "defined": true, "x": 4.98, "y": 7.64 },
+          "v": { "type": "vector", "defined": true, "x": 1.3900000000000006, "y": 15.129999999999999 },
+          "m": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [-4.603687562634727, -10.305606347239848],
+              [-3.489409544796679, 16.785060134695158],
+              [13.50806182755555, 190.97552190713336]
+            ],
+            "area": 133.18811275727285,
+            "signed_area": -133.18811275727285
+          },
+          "e'": { "type": "segment", "defined": true, "x1": -4.603687562634727, "y1": -10.305606347239848, "x2": -3.489409544796679, "y2": 16.785060134695158 },
+          "a'": { "type": "segment", "defined": true, "x1": -3.489409544796679, "y1": 16.785060134695158, "x2": 13.50806182755555, "y2": 190.97552190713336 },
+          "b'": { "type": "segment", "defined": true, "x1": 13.50806182755555, "y1": 190.97552190713336, "x2": -4.603687562634727, "y2": -10.305606347239848 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -4.3, "y": -7.0 },
+          "B": { "type": "point", "defined": true, "x": 5.03, "y": -1.2 },
+          "E": { "type": "point", "defined": true, "x": -3.46, "y": 6.28 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [-4.3, -7.0],
+              [5.03, -1.2],
+              [-3.46, 6.28]
+            ],
+            "area": 59.5152,
+            "signed_area": 59.5152
+          },
+          "e": { "type": "segment", "defined": true, "x1": -4.3, "y1": -7.0, "x2": 5.03, "y2": -1.2 },
+          "a": { "type": "segment", "defined": true, "x1": 5.03, "y1": -1.2, "x2": -3.46, "y2": 6.28 },
+          "b": { "type": "segment", "defined": true, "x1": -3.46, "y1": 6.28, "x2": -4.3, "y2": -7.0 },
+          "C": { "type": "point", "defined": true, "x": 3.59, "y": -7.49 },
+          "D": { "type": "point", "defined": true, "x": 4.98, "y": 7.64 },
+          "v": { "type": "vector", "defined": true, "x": 1.3900000000000006, "y": 15.129999999999999 },
+          "m": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [-4.603687562634727, -10.305606347239848],
+              [13.334471176879156, 89.19327259437524],
+              [13.50806182755555, 190.97552190713336]
+            ],
+            "area": 904.257034949993,
+            "signed_area": 904.257034949993
+          },
+          "e'": { "type": "segment", "defined": true, "x1": -4.603687562634727, "y1": -10.305606347239848, "x2": 13.334471176879156, "y2": 89.19327259437524 },
+          "a'": { "type": "segment", "defined": true, "x1": 13.334471176879156, "y1": 89.19327259437524, "x2": 13.50806182755555, "y2": 190.97552190713336 },
+          "b'": { "type": "segment", "defined": true, "x1": 13.50806182755555, "y1": 190.97552190713336, "x2": -4.603687562634727, "y2": -10.305606347239848 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.59, "y": 2.07 },
+          "B": { "type": "point", "defined": true, "x": 5.03, "y": -1.2 },
+          "E": { "type": "point", "defined": true, "x": -3.46, "y": 6.28 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [-3.59, 2.07],
+              [5.03, -1.2],
+              [-3.46, 6.28]
+            ],
+            "area": 18.357650000000003,
+            "signed_area": 18.357650000000003
+          },
+          "e": { "type": "segment", "defined": true, "x1": -3.59, "y1": 2.07, "x2": 5.03, "y2": -1.2 },
+          "a": { "type": "segment", "defined": true, "x1": 5.03, "y1": -1.2, "x2": -3.46, "y2": 6.28 },
+          "b": { "type": "segment", "defined": true, "x1": -3.46, "y1": 6.28, "x2": -3.59, "y2": 2.07 },
+          "C": { "type": "point", "defined": true, "x": 3.59, "y": -7.49 },
+          "D": { "type": "point", "defined": true, "x": 4.98, "y": 7.64 },
+          "v": { "type": "vector", "defined": true, "x": 1.3900000000000006, "y": 15.129999999999999 },
+          "m": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [7.918796299897259, 127.34200576794642],
+              [13.334471176879156, 89.19327259437524],
+              [13.50806182755555, 190.97552190713336]
+            ],
+            "area": 278.9209169699462,
+            "signed_area": 278.9209169699462
+          },
+          "e'": { "type": "segment", "defined": true, "x1": 7.918796299897259, "y1": 127.34200576794642, "x2": 13.334471176879156, "y2": 89.19327259437524 },
+          "a'": { "type": "segment", "defined": true, "x1": 13.334471176879156, "y1": 89.19327259437524, "x2": 13.50806182755555, "y2": 190.97552190713336 },
+          "b'": { "type": "segment", "defined": true, "x1": 13.50806182755555, "y1": 190.97552190713336, "x2": 7.918796299897259, "y2": 127.34200576794642 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.59, "y": 2.07 },
+          "B": { "type": "point", "defined": true, "x": 5.03, "y": -1.2 },
+          "E": { "type": "point", "defined": true, "x": -3.46, "y": 6.28 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [-3.59, 2.07],
+              [5.03, -1.2],
+              [-3.46, 6.28]
+            ],
+            "area": 18.357650000000003,
+            "signed_area": 18.357650000000003
+          },
+          "e": { "type": "segment", "defined": true, "x1": -3.59, "y1": 2.07, "x2": 5.03, "y2": -1.2 },
+          "a": { "type": "segment", "defined": true, "x1": 5.03, "y1": -1.2, "x2": -3.46, "y2": 6.28 },
+          "b": { "type": "segment", "defined": true, "x1": -3.46, "y1": 6.28, "x2": -3.59, "y2": 2.07 },
+          "C": { "type": "point", "defined": true, "x": 3.59, "y": -7.49 },
+          "D": { "type": "point", "defined": true, "x": -4.25, "y": -3.78 },
+          "v": { "type": "vector", "defined": true, "x": -7.84, "y": 3.7100000000000004 },
+          "m": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [-76.96840618603218, 36.793710070175955],
+              [-4.603280889013366, 3.3586061349795404],
+              [-88.51377021079549, 46.52865911760859]
+            ],
+            "area": 159.22518071995904,
+            "signed_area": 159.22518071995904
+          },
+          "e'": { "type": "segment", "defined": true, "x1": -76.96840618603218, "y1": 36.793710070175955, "x2": -4.603280889013366, "y2": 3.3586061349795404 },
+          "a'": { "type": "segment", "defined": true, "x1": -4.603280889013366, "y1": 3.3586061349795404, "x2": -88.51377021079549, "y2": 46.52865911760859 },
+          "b'": { "type": "segment", "defined": true, "x1": -88.51377021079549, "y1": 46.52865911760859, "x2": -76.96840618603218, "y2": 36.793710070175955 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.59, "y": 2.07 },
+          "B": { "type": "point", "defined": true, "x": 5.03, "y": -1.2 },
+          "E": { "type": "point", "defined": true, "x": -3.46, "y": 6.28 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [-3.59, 2.07],
+              [5.03, -1.2],
+              [-3.46, 6.28]
+            ],
+            "area": 18.357650000000003,
+            "signed_area": 18.357650000000003
+          },
+          "e": { "type": "segment", "defined": true, "x1": -3.59, "y1": 2.07, "x2": 5.03, "y2": -1.2 },
+          "a": { "type": "segment", "defined": true, "x1": 5.03, "y1": -1.2, "x2": -3.46, "y2": 6.28 },
+          "b": { "type": "segment", "defined": true, "x1": -3.46, "y1": 6.28, "x2": -3.59, "y2": 2.07 },
+          "C": { "type": "point", "defined": true, "x": 3.59, "y": -7.49 },
+          "D": { "type": "point", "defined": true, "x": 4.04, "y": -4.52 },
+          "v": { "type": "vector", "defined": true, "x": 0.4500000000000002, "y": 2.9700000000000006 },
+          "m": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [-1.075414478525305, 18.66626444173297],
+              [6.961674413216682, 11.549051127230092],
+              [0.3099895099124863, 31.161930765422383]
+            ],
+            "area": 55.144498358756735,
+            "signed_area": 55.144498358756735
+          },
+          "e'": { "type": "segment", "defined": true, "x1": -1.075414478525305, "y1": 18.66626444173297, "x2": 6.961674413216682, "y2": 11.549051127230092 },
+          "a'": { "type": "segment", "defined": true, "x1": 6.961674413216682, "y1": 11.549051127230092, "x2": 0.3099895099124863, "y2": 31.161930765422383 },
+          "b'": { "type": "segment", "defined": true, "x1": 0.3099895099124863, "y1": 31.161930765422383, "x2": -1.075414478525305, "y2": 18.66626444173297 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.59, "y": 2.07 },
+          "B": { "type": "point", "defined": true, "x": 5.03, "y": -1.2 },
+          "E": { "type": "point", "defined": true, "x": -3.46, "y": 6.28 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [-3.59, 2.07],
+              [5.03, -1.2],
+              [-3.46, 6.28]
+            ],
+            "area": 18.357650000000003,
+            "signed_area": 18.357650000000003
+          },
+          "e": { "type": "segment", "defined": true, "x1": -3.59, "y1": 2.07, "x2": 5.03, "y2": -1.2 },
+          "a": { "type": "segment", "defined": true, "x1": 5.03, "y1": -1.2, "x2": -3.46, "y2": 6.28 },
+          "b": { "type": "segment", "defined": true, "x1": -3.46, "y1": 6.28, "x2": -3.59, "y2": 2.07 },
+          "C": { "type": "point", "defined": true, "x": 4.08, "y": -7.72 },
+          "D": { "type": "point", "defined": true, "x": 4.04, "y": -4.52 },
+          "v": { "type": "vector", "defined": true, "x": -0.040000000000000036, "y": 3.2 },
+          "m": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [-3.861849978093619, 23.817998247489623],
+              [4.851034188811759, 13.117264895059204],
+              [-3.8475753591610253, 37.28602873288208]
+            ],
+            "area": 58.74906923324008,
+            "signed_area": 58.74906923324008
+          },
+          "e'": { "type": "segment", "defined": true, "x1": -3.861849978093619, "y1": 23.817998247489623, "x2": 4.851034188811759, "y2": 13.117264895059204 },
+          "a'": { "type": "segment", "defined": true, "x1": 4.851034188811759, "y1": 13.117264895059204, "x2": -3.8475753591610253, "y2": 37.28602873288208 },
+          "b'": { "type": "segment", "defined": true, "x1": -3.8475753591610253, "y1": 37.28602873288208, "x2": -3.861849978093619, "y2": 23.817998247489623 }
+        }
+      ]
+    },
+    {
+      "id": "transform-stretchvec-009",
+      "group": "transform",
+      "script": [
+        "A = (7.27, -2.05)",
+        "B = (3.89, 2.8)",
+        "E = (-7.27, -5.53)",
+        "a = CircularArc(A, B, E)",
+        "C = (-6.51, -6.48)",
+        "D = (-3.35, -0.22)",
+        "v = Vector(C, D)",
+        "m = Stretch(a, v)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": -3.12, "y": 1.25 },
+        { "action": "move", "label": "D", "x": 0.29, "y": -5.75 },
+        { "action": "move", "label": "A", "x": -0.44, "y": 1.71 },
+        { "action": "move", "label": "B", "x": -6.25, "y": 1.63 },
+        { "action": "move", "label": "A", "x": -1.61, "y": 1.46 },
+        { "action": "move", "label": "D", "x": -6.51, "y": -6.48 },
+        { "action": "move", "label": "D", "x": 2.44, "y": -5.14 },
+        { "action": "move", "label": "C", "x": 0.62, "y": 1.04 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 7.27, "y": -2.05 },
+          "B": { "type": "point", "defined": true, "x": 3.89, "y": 2.8 },
+          "E": { "type": "point", "defined": true, "x": -7.27, "y": -5.53 },
+          "a": {
+            "type": "arc",
+            "defined": true,
+            "value": 7.076585474428819,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 2.1794435802092167,
+            "end": 3.376513252269937,
+            "arc_length": 7.076585474428819,
+            "area": 4.649622372098924,
+            "midpoint": [7.27, -2.05],
+            "half_axes": [5.911590310567876, 5.911590310567876],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "C": { "type": "point", "defined": true, "x": -6.51, "y": -6.48 },
+          "D": { "type": "point", "defined": true, "x": -3.35, "y": -0.22 },
+          "v": { "type": "vector", "defined": true, "x": 3.1599999999999997, "y": 6.260000000000001 },
+          "m": {
+            "type": "arc",
+            "defined": true,
+            "value": 46.530537438991985,
+            "conic_type": "ellipse",
+            "orientation": "positive",
+            "start": 1.0761213743510836,
+            "end": 2.273191046411804,
+            "arc_length": 46.530537438991985,
+            "area": 146.67710355462336,
+            "midpoint": [34.809154357472345, 52.505413379043304],
+            "half_axes": [41.4542024779153, 5.911590310567878],
+            "eigenvectors": [
+              [0.4506328493799049, 0.8927093788348748],
+              [-0.8927093788348748, 0.4506328493799049]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.27, "y": -2.05 },
+          "B": { "type": "point", "defined": true, "x": 3.89, "y": 2.8 },
+          "E": { "type": "point", "defined": true, "x": -7.27, "y": -5.53 },
+          "a": {
+            "type": "arc",
+            "defined": true,
+            "value": 7.076585474428819,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 2.1794435802092167,
+            "end": 3.376513252269937,
+            "arc_length": 7.076585474428819,
+            "area": 4.649622372098924,
+            "midpoint": [7.27, -2.05],
+            "half_axes": [5.911590310567876, 5.911590310567876],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "C": { "type": "point", "defined": true, "x": -3.12, "y": 1.25 },
+          "D": { "type": "point", "defined": true, "x": -3.35, "y": -0.22 },
+          "v": { "type": "vector", "defined": true, "x": -0.22999999999999998, "y": -1.47 },
+          "m": {
+            "type": "arc",
+            "defined": true,
+            "value": 10.093043886188195,
+            "conic_type": "ellipse",
+            "orientation": "positive",
+            "start": 0.7638515072672231,
+            "end": 1.9609211793279417,
+            "arc_length": 10.093043886188195,
+            "area": 31.121984435256945,
+            "midpoint": [7.145241271441209, -2.847371004267057],
+            "half_axes": [8.795763026594114, 5.911590310567877],
+            "eigenvectors": [
+              [0.15458190123127238, 0.9879799774346264],
+              [-0.9879799774346264, 0.15458190123127238]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.27, "y": -2.05 },
+          "B": { "type": "point", "defined": true, "x": 3.89, "y": 2.8 },
+          "E": { "type": "point", "defined": true, "x": -7.27, "y": -5.53 },
+          "a": {
+            "type": "arc",
+            "defined": true,
+            "value": 7.076585474428819,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 2.1794435802092167,
+            "end": 3.376513252269937,
+            "arc_length": 7.076585474428819,
+            "area": 4.649622372098924,
+            "midpoint": [7.27, -2.05],
+            "half_axes": [5.911590310567876, 5.911590310567876],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "C": { "type": "point", "defined": true, "x": -3.12, "y": 1.25 },
+          "D": { "type": "point", "defined": true, "x": 0.29, "y": -5.75 },
+          "v": { "type": "vector", "defined": true, "x": 3.41, "y": -7.0 },
+          "m": {
+            "type": "arc",
+            "defined": true,
+            "value": 36.072071168693924,
+            "conic_type": "ellipse",
+            "orientation": "positive",
+            "start": 3.2969308153415,
+            "end": 4.494000487402218,
+            "arc_length": 36.072071168693924,
+            "area": 162.86773952540597,
+            "midpoint": [29.610761137139907, -47.91079998826372],
+            "half_axes": [46.03003528012982, 5.911590310567871],
+            "eigenvectors": [
+              [0.43794280921914575, -0.8990028341741994],
+              [0.8990028341741994, 0.43794280921914575]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -0.44, "y": 1.71 },
+          "B": { "type": "point", "defined": true, "x": 3.89, "y": 2.8 },
+          "E": { "type": "point", "defined": true, "x": -7.27, "y": -5.53 },
+          "a": {
+            "type": "arc",
+            "defined": true,
+            "value": 16.563303622599058,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.24660821084254786,
+            "end": 3.9561225874135038,
+            "arc_length": 16.563303622599058,
+            "area": 42.34016261710369,
+            "midpoint": [-0.44, 1.71],
+            "half_axes": [4.465086785270809, 4.465086785270809],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "C": { "type": "point", "defined": true, "x": -3.12, "y": 1.25 },
+          "D": { "type": "point", "defined": true, "x": 0.29, "y": -5.75 },
+          "v": { "type": "vector", "defined": true, "x": 3.41, "y": -7.0 },
+          "m": {
+            "type": "arc",
+            "defined": true,
+            "value": 90.65549195287275,
+            "conic_type": "ellipse",
+            "orientation": "positive",
+            "start": 1.3640954459748262,
+            "end": 5.073609822545783,
+            "arc_length": 90.65549195287275,
+            "area": 287.92796707666014,
+            "midpoint": [1.819195676372308, -2.927645083462221],
+            "half_axes": [34.76697326055289, 4.465086785270808],
+            "eigenvectors": [
+              [0.43794280921914575, -0.8990028341741994],
+              [0.8990028341741994, 0.43794280921914575]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -0.44, "y": 1.71 },
+          "B": { "type": "point", "defined": true, "x": -6.25, "y": 1.63 },
+          "E": { "type": "point", "defined": true, "x": -7.27, "y": -5.53 },
+          "a": {
+            "type": "arc",
+            "defined": true,
+            "value": 4.652864988917775,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 3.1553611466532603,
+            "end": 3.9561225874135038,
+            "arc_length": 4.652864988917775,
+            "area": 1.3990345557147725,
+            "midpoint": [-0.44, 1.71],
+            "half_axes": [5.810550748423078, 5.810550748423078],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "C": { "type": "point", "defined": true, "x": -3.12, "y": 1.25 },
+          "D": { "type": "point", "defined": true, "x": 0.29, "y": -5.75 },
+          "v": { "type": "vector", "defined": true, "x": 3.41, "y": -7.0 },
+          "m": {
+            "type": "arc",
+            "defined": true,
+            "value": 35.258546891110754,
+            "conic_type": "ellipse",
+            "orientation": "positive",
+            "start": 4.272848381785539,
+            "end": 5.073609822545783,
+            "arc_length": 35.258546891110754,
+            "area": 105.255484082825,
+            "midpoint": [1.819195676372308, -2.927645083462221],
+            "half_axes": [45.243300346570635, 5.810550748423077],
+            "eigenvectors": [
+              [0.43794280921914575, -0.8990028341741994],
+              [0.8990028341741994, 0.43794280921914575]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.61, "y": 1.46 },
+          "B": { "type": "point", "defined": true, "x": -6.25, "y": 1.63 },
+          "E": { "type": "point", "defined": true, "x": -7.27, "y": -5.53 },
+          "a": {
+            "type": "arc",
+            "defined": true,
+            "value": 4.303112864893171,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 3.104971102860163,
+            "end": 4.031744304008296,
+            "arc_length": 4.303112864893171,
+            "area": 1.3698973733684976,
+            "midpoint": [-1.61, 1.46],
+            "half_axes": [4.6431131797534295, 4.6431131797534295],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "C": { "type": "point", "defined": true, "x": -3.12, "y": 1.25 },
+          "D": { "type": "point", "defined": true, "x": 0.29, "y": -5.75 },
+          "v": { "type": "vector", "defined": true, "x": 3.41, "y": -7.0 },
+          "m": {
+            "type": "arc",
+            "defined": true,
+            "value": 32.32853933963205,
+            "conic_type": "ellipse",
+            "orientation": "positive",
+            "start": 4.222458337992441,
+            "end": 5.149231539140574,
+            "arc_length": 32.32853933963205,
+            "area": 77.78556144772058,
+            "midpoint": [-0.2056939222576588, -1.4227397490312002],
+            "half_axes": [36.15315883640045, 4.6431131797534295],
+            "eigenvectors": [
+              [0.43794280921914575, -0.8990028341741994],
+              [0.8990028341741994, 0.43794280921914575]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.61, "y": 1.46 },
+          "B": { "type": "point", "defined": true, "x": -6.25, "y": 1.63 },
+          "E": { "type": "point", "defined": true, "x": -7.27, "y": -5.53 },
+          "a": {
+            "type": "arc",
+            "defined": true,
+            "value": 4.303112864893171,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 3.104971102860163,
+            "end": 4.031744304008296,
+            "arc_length": 4.303112864893171,
+            "area": 1.3698973733684976,
+            "midpoint": [-1.61, 1.46],
+            "half_axes": [4.6431131797534295, 4.6431131797534295],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "C": { "type": "point", "defined": true, "x": -3.12, "y": 1.25 },
+          "D": { "type": "point", "defined": true, "x": -6.51, "y": -6.48 },
+          "v": { "type": "vector", "defined": true, "x": -3.3899999999999997, "y": -7.73 },
+          "m": {
+            "type": "arc",
+            "defined": true,
+            "value": 23.660327404095547,
+            "conic_type": "ellipse",
+            "orientation": "positive",
+            "start": 1.947467111471066,
+            "end": 2.874240312619198,
+            "arc_length": 23.660327404095547,
+            "area": 84.32167151736566,
+            "midpoint": [0.7770377832242241, 6.903009458502432],
+            "half_axes": [39.191010863462026, 4.643113179753429],
+            "eigenvectors": [
+              [0.4016266315304136, 0.915803499035428],
+              [-0.915803499035428, 0.4016266315304136]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.61, "y": 1.46 },
+          "B": { "type": "point", "defined": true, "x": -6.25, "y": 1.63 },
+          "E": { "type": "point", "defined": true, "x": -7.27, "y": -5.53 },
+          "a": {
+            "type": "arc",
+            "defined": true,
+            "value": 4.303112864893171,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 3.104971102860163,
+            "end": 4.031744304008296,
+            "arc_length": 4.303112864893171,
+            "area": 1.3698973733684976,
+            "midpoint": [-1.61, 1.46],
+            "half_axes": [4.6431131797534295, 4.6431131797534295],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "C": { "type": "point", "defined": true, "x": -3.12, "y": 1.25 },
+          "D": { "type": "point", "defined": true, "x": 2.44, "y": -5.14 },
+          "v": { "type": "vector", "defined": true, "x": 5.5600000000000005, "y": -6.39 },
+          "m": {
+            "type": "arc",
+            "defined": true,
+            "value": 33.739321824589446,
+            "conic_type": "ellipse",
+            "orientation": "positive",
+            "start": 3.959713966656823,
+            "end": 4.886487167804958,
+            "arc_length": 33.739321824589446,
+            "area": 84.61745326776109,
+            "midpoint": [2.473503894373782, -3.23309170594397],
+            "half_axes": [39.32848425060379, 4.643113179753431],
+            "eigenvectors": [
+              [0.656412515542921, -0.7544021536545441],
+              [0.7544021536545441, 0.656412515542921]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.61, "y": 1.46 },
+          "B": { "type": "point", "defined": true, "x": -6.25, "y": 1.63 },
+          "E": { "type": "point", "defined": true, "x": -7.27, "y": -5.53 },
+          "a": {
+            "type": "arc",
+            "defined": true,
+            "value": 4.303112864893171,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 3.104971102860163,
+            "end": 4.031744304008296,
+            "arc_length": 4.303112864893171,
+            "area": 1.3698973733684976,
+            "midpoint": [-1.61, 1.46],
+            "half_axes": [4.6431131797534295, 4.6431131797534295],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "C": { "type": "point", "defined": true, "x": 0.62, "y": 1.04 },
+          "D": { "type": "point", "defined": true, "x": 2.44, "y": -5.14 },
+          "v": { "type": "vector", "defined": true, "x": 1.8199999999999998, "y": -6.18 },
+          "m": {
+            "type": "arc",
+            "defined": true,
+            "value": 26.509539696802328,
+            "conic_type": "ellipse",
+            "orientation": "positive",
+            "start": 4.389365602528113,
+            "end": 5.316138803676246,
+            "arc_length": 26.509539696802328,
+            "area": 64.35927961908294,
+            "midpoint": [-3.198038833757892, 6.852351644298776],
+            "half_axes": [29.912894055908396, 4.6431131797534295],
+            "eigenvectors": [
+              [0.28250245433815174, -0.959266575719659],
+              [0.959266575719659, 0.28250245433815174]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "transform-stretchvec-010",
+      "group": "transform",
+      "script": [
+        "A = (-3.17, -7.68)",
+        "B = (0.25, -4.5)",
+        "E = (-7.6, 0.54)",
+        "e = CircularSector(A, B, E)",
+        "C = (-3.79, 2.76)",
+        "D = (-5.48, -0.83)",
+        "v = Vector(C, D)",
+        "m = Stretch(e, v)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": -3.13, "y": 4.61 },
+        { "action": "move", "label": "D", "x": -0.02, "y": -5.85 },
+        { "action": "move", "label": "A", "x": -5.29, "y": -3.4 },
+        { "action": "move", "label": "B", "x": -6.23, "y": -2.92 },
+        { "action": "move", "label": "A", "x": -3.66, "y": -5.22 },
+        { "action": "move", "label": "D", "x": -3.79, "y": 2.76 },
+        { "action": "move", "label": "D", "x": 7.25, "y": 4.48 },
+        { "action": "move", "label": "C", "x": -0.08, "y": -3.49 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -3.17, "y": -7.68 },
+          "B": { "type": "point", "defined": true, "x": 0.25, "y": -4.5 },
+          "E": { "type": "point", "defined": true, "x": -7.6, "y": 0.54 },
+          "e": {
+            "type": "sector",
+            "defined": true,
+            "value": 14.350733589572497,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.7490505423784276,
+            "end": 2.0651003561758396,
+            "arc_length": 6.145938539948664,
+            "area": 14.350733589572497,
+            "midpoint": [-3.17, -7.68],
+            "half_axes": [4.6699892933496105, 4.6699892933496105],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "C": { "type": "point", "defined": true, "x": -3.79, "y": 2.76 },
+          "D": { "type": "point", "defined": true, "x": -5.48, "y": -0.83 },
+          "v": { "type": "vector", "defined": true, "x": -1.6900000000000004, "y": -3.59 },
+          "m": {
+            "type": "sector",
+            "defined": true,
+            "value": 56.94222081800132,
+            "conic_type": "ellipse",
+            "orientation": "positive",
+            "start": 5.901416243740355,
+            "end": 0.9342807503581814,
+            "arc_length": 11.105237318867296,
+            "area": 56.94222081800132,
+            "midpoint": [-14.776344008988914, -32.3348964451303],
+            "half_axes": [18.53003262166589, 4.669989293349622],
+            "eigenvectors": [
+              [0.42591840321602953, 0.9047615784293161],
+              [-0.9047615784293161, 0.42591840321602953]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.17, "y": -7.68 },
+          "B": { "type": "point", "defined": true, "x": 0.25, "y": -4.5 },
+          "E": { "type": "point", "defined": true, "x": -7.6, "y": 0.54 },
+          "e": {
+            "type": "sector",
+            "defined": true,
+            "value": 14.350733589572497,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.7490505423784276,
+            "end": 2.0651003561758396,
+            "arc_length": 6.145938539948664,
+            "area": 14.350733589572497,
+            "midpoint": [-3.17, -7.68],
+            "half_axes": [4.6699892933496105, 4.6699892933496105],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "C": { "type": "point", "defined": true, "x": -3.13, "y": 4.61 },
+          "D": { "type": "point", "defined": true, "x": -5.48, "y": -0.83 },
+          "v": { "type": "vector", "defined": true, "x": -2.3500000000000005, "y": -5.44 },
+          "m": {
+            "type": "sector",
+            "defined": true,
+            "value": 85.04078113614202,
+            "conic_type": "ellipse",
+            "orientation": "positive",
+            "start": 5.869211868331077,
+            "end": 0.9020763749489027,
+            "arc_length": 14.680964424444937,
+            "area": 85.04078113614202,
+            "midpoint": [-25.240222777290427, -58.770217833387214],
+            "half_axes": [27.673814368098927, 4.669989293349608],
+            "eigenvectors": [
+              [0.39656531237061543, 0.9180065103387863],
+              [-0.9180065103387863, 0.39656531237061543]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.17, "y": -7.68 },
+          "B": { "type": "point", "defined": true, "x": 0.25, "y": -4.5 },
+          "E": { "type": "point", "defined": true, "x": -7.6, "y": 0.54 },
+          "e": {
+            "type": "sector",
+            "defined": true,
+            "value": 14.350733589572497,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.7490505423784276,
+            "end": 2.0651003561758396,
+            "arc_length": 6.145938539948664,
+            "area": 14.350733589572497,
+            "midpoint": [-3.17, -7.68],
+            "half_axes": [4.6699892933496105, 4.6699892933496105],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "C": { "type": "point", "defined": true, "x": -3.13, "y": 4.61 },
+          "D": { "type": "point", "defined": true, "x": -0.02, "y": -5.85 },
+          "v": { "type": "vector", "defined": true, "x": 3.11, "y": -10.46 },
+          "m": {
+            "type": "sector",
+            "defined": true,
+            "value": 156.60306659840393,
+            "conic_type": "ellipse",
+            "orientation": "positive",
+            "start": 2.0308477191812377,
+            "end": 3.3468975329786512,
+            "arc_length": 30.530852723583045,
+            "area": 156.60306659840393,
+            "midpoint": [30.077306388332953, -119.50213016783364],
+            "half_axes": [50.9614814988734, 4.669989293349622],
+            "eigenvectors": [
+              [0.2849930236552957, -0.958529590814917],
+              [0.958529590814917, 0.2849930236552957]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -5.29, "y": -3.4 },
+          "B": { "type": "point", "defined": true, "x": 0.25, "y": -4.5 },
+          "E": { "type": "point", "defined": true, "x": -7.6, "y": 0.54 },
+          "e": {
+            "type": "sector",
+            "defined": true,
+            "value": 36.640325956269216,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 6.087178635325534,
+            "end": 2.1010772334214964,
+            "arc_length": 12.974274780364098,
+            "area": 36.640325956269216,
+            "midpoint": [-5.29, -3.4],
+            "half_axes": [5.648150139647493, 5.648150139647493],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "C": { "type": "point", "defined": true, "x": -3.13, "y": 4.61 },
+          "D": { "type": "point", "defined": true, "x": -0.02, "y": -5.85 },
+          "v": { "type": "vector", "defined": true, "x": 3.11, "y": -10.46 },
+          "m": {
+            "type": "sector",
+            "defined": true,
+            "value": 399.83930926612163,
+            "conic_type": "ellipse",
+            "orientation": "positive",
+            "start": 1.0857905049487573,
+            "end": 3.3828744102243005,
+            "arc_length": 93.57528252584588,
+            "area": 399.83930926612163,
+            "midpoint": [14.660869051613389, -70.5016367459408],
+            "half_axes": [61.63570851316627, 5.648150139647488],
+            "eigenvectors": [
+              [0.2849930236552957, -0.958529590814917],
+              [0.958529590814917, 0.2849930236552957]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -5.29, "y": -3.4 },
+          "B": { "type": "point", "defined": true, "x": -6.23, "y": -2.92 },
+          "E": { "type": "point", "defined": true, "x": -7.6, "y": 0.54 },
+          "e": {
+            "type": "sector",
+            "defined": true,
+            "value": 3.1831390712641934,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 2.6694706711860166,
+            "end": 2.1010772334214964,
+            "arc_length": 6.0317455655354095,
+            "area": 3.1831390712641934,
+            "midpoint": [-5.29, -3.4],
+            "half_axes": [1.0554619841567012, 1.0554619841567012],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "C": { "type": "point", "defined": true, "x": -3.13, "y": 4.61 },
+          "D": { "type": "point", "defined": true, "x": -0.02, "y": -5.85 },
+          "v": { "type": "vector", "defined": true, "x": 3.11, "y": -10.46 },
+          "m": {
+            "type": "sector",
+            "defined": true,
+            "value": 34.736157343994385,
+            "conic_type": "ellipse",
+            "orientation": "positive",
+            "start": 3.951267847988801,
+            "end": 3.3828744102242156,
+            "arc_length": 43.41973045594359,
+            "area": 34.736157343994385,
+            "midpoint": [14.660869051613389, -70.5016367459408],
+            "half_axes": [11.51777937798749, 1.055461984156676],
+            "eigenvectors": [
+              [0.2849930236552957, -0.958529590814917],
+              [0.958529590814917, 0.2849930236552957]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.66, "y": -5.22 },
+          "B": { "type": "point", "defined": true, "x": -6.23, "y": -2.92 },
+          "E": { "type": "point", "defined": true, "x": -7.6, "y": 0.54 },
+          "e": {
+            "type": "sector",
+            "defined": true,
+            "value": 35.93644421239066,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 2.411579268610393,
+            "end": 2.1707220537040777,
+            "arc_length": 20.839375537714144,
+            "area": 35.93644421239066,
+            "midpoint": [-3.66, -5.22],
+            "half_axes": [3.44889837484377, 3.44889837484377],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "C": { "type": "point", "defined": true, "x": -3.13, "y": 4.61 },
+          "D": { "type": "point", "defined": true, "x": -0.02, "y": -5.85 },
+          "v": { "type": "vector", "defined": true, "x": 3.11, "y": -10.46 },
+          "m": {
+            "type": "sector",
+            "defined": true,
+            "value": 392.1581660739668,
+            "conic_type": "ellipse",
+            "orientation": "positive",
+            "start": 3.6933764454132025,
+            "end": 3.4525192305068884,
+            "arc_length": 148.76373559438764,
+            "area": 392.1581660739668,
+            "midpoint": [22.53148597964637, -93.31097856819967],
+            "half_axes": [37.63626845384656, 3.448898374843775],
+            "eigenvectors": [
+              [0.2849930236552957, -0.958529590814917],
+              [0.958529590814917, 0.2849930236552957]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.66, "y": -5.22 },
+          "B": { "type": "point", "defined": true, "x": -6.23, "y": -2.92 },
+          "E": { "type": "point", "defined": true, "x": -7.6, "y": 0.54 },
+          "e": {
+            "type": "sector",
+            "defined": true,
+            "value": 35.93644421239066,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 2.411579268610393,
+            "end": 2.1707220537040777,
+            "arc_length": 20.839375537714144,
+            "area": 35.93644421239066,
+            "midpoint": [-3.66, -5.22],
+            "half_axes": [3.44889837484377, 3.44889837484377],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "C": { "type": "point", "defined": true, "x": -3.13, "y": 4.61 },
+          "D": { "type": "point", "defined": true, "x": -3.79, "y": 2.76 },
+          "v": { "type": "vector", "defined": true, "x": -0.6600000000000001, "y": -1.8500000000000005 },
+          "m": {
+            "type": "sector",
+            "defined": true,
+            "value": 70.58653167644532,
+            "conic_type": "ellipse",
+            "orientation": "positive",
+            "start": 1.1834644164961636,
+            "end": 0.9426072015898491,
+            "arc_length": 31.49291824779197,
+            "area": 70.58653167644532,
+            "midpoint": [-6.71730880635261, -13.789729229927772],
+            "half_axes": [6.7743423068221125, 3.4488983748437674],
+            "eigenvectors": [
+              [0.33601386294054886, 0.9418570400606295],
+              [-0.9418570400606295, 0.33601386294054886]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.66, "y": -5.22 },
+          "B": { "type": "point", "defined": true, "x": -6.23, "y": -2.92 },
+          "E": { "type": "point", "defined": true, "x": -7.6, "y": 0.54 },
+          "e": {
+            "type": "sector",
+            "defined": true,
+            "value": 35.93644421239066,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 2.411579268610393,
+            "end": 2.1707220537040777,
+            "arc_length": 20.839375537714144,
+            "area": 35.93644421239066,
+            "midpoint": [-3.66, -5.22],
+            "half_axes": [3.44889837484377, 3.44889837484377],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "C": { "type": "point", "defined": true, "x": -3.13, "y": 4.61 },
+          "D": { "type": "point", "defined": true, "x": 7.25, "y": 4.48 },
+          "v": { "type": "vector", "defined": true, "x": 10.379999999999999, "y": -0.1299999999999999 },
+          "m": {
+            "type": "sector",
+            "defined": true,
+            "value": 373.04954439734496,
+            "conic_type": "ellipse",
+            "orientation": "positive",
+            "start": 2.424102698638263,
+            "end": 2.1832454837319486,
+            "arc_length": 138.9411660736669,
+            "area": 373.04954439734496,
+            "midpoint": [-7.476344370155589, -5.172203779564524],
+            "half_axes": [35.80237265000741, 3.4488983748437683],
+            "eigenvectors": [
+              [0.9999215828750642, -0.012523102675699251],
+              [0.012523102675699251, 0.9999215828750642]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.66, "y": -5.22 },
+          "B": { "type": "point", "defined": true, "x": -6.23, "y": -2.92 },
+          "E": { "type": "point", "defined": true, "x": -7.6, "y": 0.54 },
+          "e": {
+            "type": "sector",
+            "defined": true,
+            "value": 35.93644421239066,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 2.411579268610393,
+            "end": 2.1707220537040777,
+            "arc_length": 20.839375537714144,
+            "area": 35.93644421239066,
+            "midpoint": [-3.66, -5.22],
+            "half_axes": [3.44889837484377, 3.44889837484377],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "C": { "type": "point", "defined": true, "x": -0.08, "y": -3.49 },
+          "D": { "type": "point", "defined": true, "x": 7.25, "y": 4.48 },
+          "v": { "type": "vector", "defined": true, "x": 7.33, "y": 7.970000000000001 },
+          "m": {
+            "type": "sector",
+            "defined": true,
+            "value": 389.12681399229297,
+            "conic_type": "ellipse",
+            "orientation": "positive",
+            "start": 1.5843754117182456,
+            "end": 1.3435181968119254,
+            "arc_length": 142.54632183109518,
+            "area": 389.12681399229297,
+            "midpoint": [-28.254940711826595, -31.96238437561501],
+            "half_axes": [37.345343029887864, 3.4488983748437616],
+            "eigenvectors": [
+              [0.6769364808718612, 0.7360414396382993],
+              [-0.7360414396382993, 0.6769364808718612]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "transform-stretchvec-011",
+      "group": "transform",
+      "script": [
+        "A = (3.37, 7.19)",
+        "B = (6.55, -6)",
+        "F = (-2.09, -1.99)",
+        "c = Ellipse(A, F, B)",
+        "C = (7.1, 1.63)",
+        "D = (-0.73, 0.1)",
+        "v = Vector(C, D)",
+        "m = Stretch(c, v)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": -3.72, "y": -6.88 },
+        { "action": "move", "label": "D", "x": -3.13, "y": 0.48 },
+        { "action": "move", "label": "A", "x": 4.34, "y": 6.06 },
+        { "action": "move", "label": "B", "x": 2.49, "y": 4.79 },
+        { "action": "move", "label": "A", "x": -4.94, "y": 0.69 },
+        { "action": "move", "label": "D", "x": 7.1, "y": 1.63 },
+        { "action": "move", "label": "D", "x": -6.07, "y": -5.76 },
+        { "action": "move", "label": "C", "x": -2.79, "y": -5.3 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 3.37, "y": 7.19 },
+          "B": { "type": "point", "defined": true, "x": 6.55, "y": -6.0 },
+          "F": { "type": "point", "defined": true, "x": -2.09, "y": -1.99 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [2013.9252539604831, 1796.082053960483, -211261.9590809794, -200.4912, -767.6350425347092, -4541.498972297256],
+            "midpoint": [0.6399999999999999, 2.6],
+            "half_axes": [11.54656781786389, 10.237295950226812],
+            "eigenvectors": [
+              [0.5111875555463011, 0.8594691867976403],
+              [-0.8594691867976403, 0.5111875555463011]
+            ]
+          },
+          "C": { "type": "point", "defined": true, "x": 7.1, "y": 1.63 },
+          "D": { "type": "point", "defined": true, "x": -0.73, "y": 0.1 },
+          "v": { "type": "vector", "defined": true, "x": -7.83, "y": -1.5299999999999998 },
+          "m": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [109.03854197405809, 1800.855659455976, -153662.86130500343, -374.38600722403226, 2415.9488584340265, -5390.690322889232],
+            "midpoint": [-41.50654364988249, -5.635531517793131],
+            "half_axes": [86.48039435556957, 10.90483326289347],
+            "eigenvectors": [
+              [0.9783766343674326, 0.20683123875240653],
+              [-0.20683123875240653, 0.9783766343674326]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.37, "y": 7.19 },
+          "B": { "type": "point", "defined": true, "x": 6.55, "y": -6.0 },
+          "F": { "type": "point", "defined": true, "x": -2.09, "y": -1.99 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [2013.9252539604831, 1796.082053960483, -211261.9590809794, -200.4912, -767.6350425347092, -4541.498972297256],
+            "midpoint": [0.6399999999999999, 2.6],
+            "half_axes": [11.54656781786389, 10.237295950226812],
+            "eigenvectors": [
+              [0.5111875555463011, 0.8594691867976403],
+              [-0.8594691867976403, 0.5111875555463011]
+            ]
+          },
+          "C": { "type": "point", "defined": true, "x": -3.72, "y": -6.88 },
+          "D": { "type": "point", "defined": true, "x": -0.73, "y": 0.1 },
+          "v": { "type": "vector", "defined": true, "x": 2.99, "y": 6.9799999999999995 },
+          "m": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1794.6258496064356, 359.8768442502253, -73644.5231562589, -764.0740333035037, 541.9089989837066, -2505.9222066556795],
+            "midpoint": [27.721208665344303, 65.8196777538807],
+            "half_axes": [87.51666532939232, 10.256203041001145],
+            "eigenvectors": [
+              [0.3971921821674967, 0.9177354577573116],
+              [-0.9177354577573116, 0.3971921821674967]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.37, "y": 7.19 },
+          "B": { "type": "point", "defined": true, "x": 6.55, "y": -6.0 },
+          "F": { "type": "point", "defined": true, "x": -2.09, "y": -1.99 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [2013.9252539604831, 1796.082053960483, -211261.9590809794, -200.4912, -767.6350425347092, -4541.498972297256],
+            "midpoint": [0.6399999999999999, 2.6],
+            "half_axes": [11.54656781786389, 10.237295950226812],
+            "eigenvectors": [
+              [0.5111875555463011, 0.8594691867976403],
+              [-0.8594691867976403, 0.5111875555463011]
+            ]
+          },
+          "C": { "type": "point", "defined": true, "x": -3.72, "y": -6.88 },
+          "D": { "type": "point", "defined": true, "x": -3.13, "y": 0.48 },
+          "v": { "type": "vector", "defined": true, "x": 0.5900000000000003, "y": 7.359999999999999 },
+          "m": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [2027.7296591863965, 49.12798240013809, -86928.7219739215, -184.4097246619858, 544.6726440593156, -2151.0308262483727],
+            "midpoint": [5.637934608689864, 64.94711647450401],
+            "half_axes": [83.47011878825278, 10.456248605265783],
+            "eigenvectors": [
+              [0.09201418735426917, 0.9957576960915409],
+              [-0.9957576960915409, 0.09201418735426917]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 4.34, "y": 6.06 },
+          "B": { "type": "point", "defined": true, "x": 6.55, "y": -6.0 },
+          "F": { "type": "point", "defined": true, "x": -2.09, "y": -1.99 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1733.145443557422, 1639.315043557422, -166859.6867405342, -207.04599999999996, -1528.4500140020996, -3103.079363639353],
+            "midpoint": [1.125, 2.0349999999999993],
+            "half_axes": [10.89301680997229, 9.597966723339837],
+            "eigenvectors": [
+              [0.6241030320022214, 0.781342054061878],
+              [-0.781342054061878, 0.6241030320022214]
+            ]
+          },
+          "C": { "type": "point", "defined": true, "x": -3.72, "y": -6.88 },
+          "D": { "type": "point", "defined": true, "x": -3.13, "y": 0.48 },
+          "v": { "type": "vector", "defined": true, "x": 0.5900000000000003, "y": 7.359999999999999 },
+          "m": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1750.1956506262688, 44.80900514937491, -65583.57411233641, -164.6091741816912, -199.5654236591954, -1771.5099938971157],
+            "midpoint": [5.855422012297849, 61.045010187308726],
+            "half_axes": [77.57050311868753, 9.951752536610478],
+            "eigenvectors": [
+              [0.09520574622295895, 0.995457616318309],
+              [-0.995457616318309, 0.09520574622295895]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 4.34, "y": 6.06 },
+          "B": { "type": "point", "defined": true, "x": 2.49, "y": 4.79 },
+          "F": { "type": "point", "defined": true, "x": -2.09, "y": -1.99 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [269.422125034124, 175.59172503412407, -157.37525281807575, -207.04599999999996, 118.23871933661042, -124.40241044444235],
+            "midpoint": [1.1249999999999911, 2.034999999999989],
+            "half_axes": [5.21297494859053, 0.7989103921171309],
+            "eigenvectors": [
+              [0.6241030320022208, 0.7813420540618783],
+              [-0.7813420540618783, 0.6241030320022208]
+            ]
+          },
+          "C": { "type": "point", "defined": true, "x": -3.72, "y": -6.88 },
+          "D": { "type": "point", "defined": true, "x": -3.13, "y": 0.48 },
+          "v": { "type": "vector", "defined": true, "x": 0.5900000000000003, "y": 7.359999999999999 },
+          "m": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [295.64689547156325, 8.78585281750581, 6740.359364372439, -50.160383685367464, 1330.9037934608582, -242.62225997223067],
+            "midpoint": [5.855422012297847, 61.04501018730871],
+            "half_axes": [32.19314278653722, 0.9551885222592382],
+            "eigenvectors": [
+              [0.16742009834567995, 0.9858856478668927],
+              [-0.9858856478668927, 0.16742009834567995]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -4.94, "y": 0.69 },
+          "B": { "type": "point", "defined": true, "x": 2.49, "y": 4.79 },
+          "F": { "type": "point", "defined": true, "x": -2.09, "y": -1.99 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1078.8175002534708, 1082.5779002534707, -59009.63049089251, 30.552000000000003, 3811.90231339095, 811.0659151647561],
+            "midpoint": [-3.515, -0.6500000000000001],
+            "half_axes": [8.334069760077726, 8.101264948502909],
+            "eigenvectors": [
+              [0.7285000934998347, -0.6850457019577103],
+              [0.6850457019577103, 0.7285000934998347]
+            ]
+          },
+          "C": { "type": "point", "defined": true, "x": -3.72, "y": -6.88 },
+          "D": { "type": "point", "defined": true, "x": -3.13, "y": 0.48 },
+          "v": { "type": "vector", "defined": true, "x": 0.5900000000000003, "y": 7.359999999999999 },
+          "m": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1067.888730319898, 26.031972785146678, -31166.595237046942, -79.96185560350618, 3478.062865272791, -1041.572044189061],
+            "midpoint": [-0.3389247909155637, 38.970192438748214],
+            "half_axes": [60.493525404947476, 8.240808747346774],
+            "eigenvectors": [
+              [0.07608138044377678, 0.9971016114467819],
+              [-0.9971016114467819, 0.07608138044377678]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -4.94, "y": 0.69 },
+          "B": { "type": "point", "defined": true, "x": 2.49, "y": 4.79 },
+          "F": { "type": "point", "defined": true, "x": -2.09, "y": -1.99 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1078.8175002534708, 1082.5779002534707, -59009.63049089251, 30.552000000000003, 3811.90231339095, 811.0659151647561],
+            "midpoint": [-3.515, -0.6500000000000001],
+            "half_axes": [8.334069760077726, 8.101264948502909],
+            "eigenvectors": [
+              [0.7285000934998347, -0.6850457019577103],
+              [0.6850457019577103, 0.7285000934998347]
+            ]
+          },
+          "C": { "type": "point", "defined": true, "x": -3.72, "y": -6.88 },
+          "D": { "type": "point", "defined": true, "x": 7.1, "y": 1.63 },
+          "v": { "type": "vector", "defined": true, "x": 10.82, "y": 8.51 },
+          "m": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [404.82361665635364, 652.4829479365154, -56397.914963032, -507.9193903243272, 877.7388855976133, -1573.108124798072],
+            "midpoint": [36.74695931635549, 31.01629147709662],
+            "half_axes": [111.59127312797467, 8.328671780225891],
+            "eigenvectors": [
+              [0.7864032967289197, 0.617713408381174],
+              [-0.617713408381174, 0.7864032967289197]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -4.94, "y": 0.69 },
+          "B": { "type": "point", "defined": true, "x": 2.49, "y": 4.79 },
+          "F": { "type": "point", "defined": true, "x": -2.09, "y": -1.99 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1078.8175002534708, 1082.5779002534707, -59009.63049089251, 30.552000000000003, 3811.90231339095, 811.0659151647561],
+            "midpoint": [-3.515, -0.6500000000000001],
+            "half_axes": [8.334069760077726, 8.101264948502909],
+            "eigenvectors": [
+              [0.7285000934998347, -0.6850457019577103],
+              [0.6850457019577103, 0.7285000934998347]
+            ]
+          },
+          "C": { "type": "point", "defined": true, "x": -3.72, "y": -6.88 },
+          "D": { "type": "point", "defined": true, "x": -6.07, "y": -5.76 },
+          "v": { "type": "vector", "defined": true, "x": -2.35, "y": 1.12 },
+          "m": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [336.9083284916618, 924.4962876188548, -60462.458371089844, 373.1919260700379, 2001.1857725350853, 1669.2161651576298],
+            "midpoint": [-7.126382355581457, 1.0711694630856297],
+            "half_axes": [21.64047670513302, 8.121919533401885],
+            "eigenvectors": [
+              [0.8996014600741993, -0.4367118192038875],
+              [0.4367118192038875, 0.8996014600741993]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -4.94, "y": 0.69 },
+          "B": { "type": "point", "defined": true, "x": 2.49, "y": 4.79 },
+          "F": { "type": "point", "defined": true, "x": -2.09, "y": -1.99 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1078.8175002534708, 1082.5779002534707, -59009.63049089251, 30.552000000000003, 3811.90231339095, 811.0659151647561],
+            "midpoint": [-3.515, -0.6500000000000001],
+            "half_axes": [8.334069760077726, 8.101264948502909],
+            "eigenvectors": [
+              [0.7285000934998347, -0.6850457019577103],
+              [0.6850457019577103, 0.7285000934998347]
+            ]
+          },
+          "C": { "type": "point", "defined": true, "x": -2.79, "y": -5.3 },
+          "D": { "type": "point", "defined": true, "x": -6.07, "y": -5.76 },
+          "v": { "type": "vector", "defined": true, "x": -3.2800000000000002, "y": -0.45999999999999996 },
+          "m": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [115.43923577394075, 1057.7772046753887, -71514.24913471834, -125.42183485919598, 340.4117625191262, 250.48517465434725],
+            "midpoint": [-3.680223397760141, -0.673171574076119],
+            "half_axes": [27.138310604587073, 8.240061863361705],
+            "eigenvectors": [
+              [0.9915515185534206, 0.12971347676477346],
+              [-0.12971347676477346, 0.9915515185534206]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "transform-stretchvec-012",
+      "group": "transform",
+      "script": [
+        "A = (-6.99, -4.63)",
+        "B = (-4.33, -1.39)",
+        "l = Line(A, B)",
+        "v = (-1.04, 4.03)",
+        "m = Stretch(l, v)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "v", "x": 3.01, "y": -6.85 },
+        { "action": "move", "label": "v", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "v", "x": 3.0, "y": -2.0 },
+        { "action": "move", "label": "A", "x": -5.63, "y": 1.86 },
+        { "action": "move", "label": "v", "x": 2.18, "y": -4.36 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -6.99, "y": -4.63 },
+          "B": { "type": "point", "defined": true, "x": -4.33, "y": -1.39 },
+          "l": { "type": "line", "defined": true, "a": -3.24, "b": 2.66, "c": -10.3318 },
+          "v": { "type": "vector", "defined": true, "x": -1.04, "y": 4.03 },
+          "m": { "type": "line", "defined": true, "a": 28.75524096890853, "b": -1.8789958789913468, "c": 114.38337646461774 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.99, "y": -4.63 },
+          "B": { "type": "point", "defined": true, "x": -4.33, "y": -1.39 },
+          "l": { "type": "line", "defined": true, "a": -3.24, "b": 2.66, "c": -10.3318 },
+          "v": { "type": "vector", "defined": true, "x": 3.01, "y": -6.85 },
+          "m": { "type": "line", "defined": true, "a": 38.55077476219478, "b": 6.0771661363804705, "c": 205.62890343033595 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.99, "y": -4.63 },
+          "B": { "type": "point", "defined": true, "x": -4.33, "y": -1.39 },
+          "l": { "type": "line", "defined": true, "a": -3.24, "b": 2.66, "c": -10.3318 },
+          "v": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "m": { "type": "line", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.99, "y": -4.63 },
+          "B": { "type": "point", "defined": true, "x": -4.33, "y": -1.39 },
+          "l": { "type": "line", "defined": true, "a": -3.24, "b": 2.66, "c": -10.3318 },
+          "v": { "type": "vector", "defined": true, "x": 3.0, "y": -2.0 },
+          "m": { "type": "line", "defined": true, "a": 7.018992370907489, "b": -9.474711443638764, "c": 99.08988021645129 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -5.63, "y": 1.86 },
+          "B": { "type": "point", "defined": true, "x": -4.33, "y": -1.39 },
+          "l": { "type": "line", "defined": true, "a": 3.25, "b": 1.2999999999999998, "c": 15.8795 },
+          "v": { "type": "vector", "defined": true, "x": 3.0, "y": -2.0 },
+          "m": { "type": "line", "defined": true, "a": -9.644546652965095, "b": -9.819319979447645, "c": -74.43065692234956 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -5.63, "y": 1.86 },
+          "B": { "type": "point", "defined": true, "x": -4.33, "y": -1.39 },
+          "l": { "type": "line", "defined": true, "a": 3.25, "b": 1.2999999999999998, "c": 15.8795 },
+          "v": { "type": "vector", "defined": true, "x": 2.18, "y": -4.36 },
+          "m": { "type": "line", "defined": true, "a": -19.940491942491338, "b": -9.54774597124567, "c": -100.62865586563822 }
+        }
+      ]
+    },
+    {
+      "id": "transform-stretchvec-013",
+      "group": "transform",
+      "script": [
+        "A = (3.06, 4.85)",
+        "B = (-6.17, 3.44)",
+        "k = Circle(A, B)",
+        "v = (3.68, -0.35)",
+        "m = Stretch(k, v)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "v", "x": -6.71, "y": 7.81 },
+        { "action": "move", "label": "v", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "v", "x": 3.0, "y": -2.0 },
+        { "action": "move", "label": "A", "x": -1.65, "y": 1.4 },
+        { "action": "move", "label": "v", "x": 5.05, "y": -3.68 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 3.06, "y": 4.85 },
+          "B": { "type": "point", "defined": true, "x": -6.17, "y": 3.44 },
+          "k": { "type": "circle", "defined": true, "cx": 3.06, "cy": 4.85, "r": 9.337076630294945 },
+          "v": { "type": "vector", "defined": true, "x": 3.68, "y": -0.35 },
+          "m": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [0.162977471702061, 1.9833829114694224, -108.5898, 0.17471681655007573, -2.362547555652099, -10.057366400957003],
+            "midpoint": [10.004911662228908, 4.189478510385838],
+            "half_axes": [34.515498647708974, 9.337076630294945],
+            "eigenvectors": [
+              [0.9955076225377415, -0.09468143149136127],
+              [0.09468143149136127, 0.9955076225377415]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.06, "y": 4.85 },
+          "B": { "type": "point", "defined": true, "x": -6.17, "y": 3.44 },
+          "k": { "type": "circle", "defined": true, "cx": 3.06, "cy": 4.85, "r": 9.337076630294945 },
+          "v": { "type": "vector", "defined": true, "x": -6.71, "y": 7.81 },
+          "m": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1.1586617405323973, 0.8602025890953543, -108.5898, 0.9792625642983588, -8.102399086177565, -7.392617457072019],
+            "midpoint": [-7.145996210720803, 16.72911034362584],
+            "half_axes": [96.14024680746321, 9.33707663029494],
+            "eigenvectors": [
+              [0.6516707234458162, -0.7585019895844746],
+              [0.7585019895844746, 0.6516707234458162]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.06, "y": 4.85 },
+          "B": { "type": "point", "defined": true, "x": -6.17, "y": 3.44 },
+          "k": { "type": "circle", "defined": true, "cx": 3.06, "cy": 4.85, "r": 9.337076630294945 },
+          "v": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "m": { "type": "conic", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.06, "y": 4.85 },
+          "B": { "type": "point", "defined": true, "x": -6.17, "y": 3.44 },
+          "k": { "type": "circle", "defined": true, "cx": 3.06, "cy": 4.85, "r": 9.337076630294945 },
+          "v": { "type": "vector", "defined": true, "x": 3.0, "y": -2.0 },
+          "m": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [0.7218934911242605, 1.4319526627218935, -108.5898, 0.8520710059171598, -6.293435976452972, -9.584376015698018],
+            "midpoint": [2.74733384694432, 5.05844410203712],
+            "half_axes": [33.66530855346493, 9.337076630294945],
+            "eigenvectors": [
+              [0.8320502943378436, -0.5547001962252291],
+              [0.5547001962252291, 0.8320502943378436]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.65, "y": 1.4 },
+          "B": { "type": "point", "defined": true, "x": -6.17, "y": 3.44 },
+          "k": { "type": "circle", "defined": true, "cx": -1.65, "cy": 1.4, "r": 4.959032163638384 },
+          "v": { "type": "vector", "defined": true, "x": 3.0, "y": -2.0 },
+          "m": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [0.7218934911242605, 1.4319526627218935, -39.81899999999999, 0.8520710059171598, 0.7151368894028136, -1.0767579262685423],
+            "midpoint": [-6.309928242656745, 4.506618828437831],
+            "half_axes": [17.880044742673316, 4.959032163638384],
+            "eigenvectors": [
+              [0.8320502943378436, -0.5547001962252291],
+              [0.5547001962252291, 0.8320502943378436]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.65, "y": 1.4 },
+          "B": { "type": "point", "defined": true, "x": -6.17, "y": 3.44 },
+          "k": { "type": "circle", "defined": true, "cx": -1.65, "cy": 1.4, "r": 4.959032163638384 },
+          "v": { "type": "vector", "defined": true, "x": 5.05, "y": -3.68 },
+          "m": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [0.7271402045848645, 1.3240828744856412, -39.81899999999999, 0.9275493162629105, 0.37010167077290823, -0.6649453759295647],
+            "midpoint": [-10.803869398021824, 8.070542452419863],
+            "half_axes": [30.98696791878807, 4.959032163638384],
+            "eigenvectors": [
+              [0.8081820877734113, -0.5889326897041888],
+              [0.5889326897041888, 0.8081820877734113]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "transform-stretchvec-014",
+      "group": "transform",
+      "script": [
+        "A = (-1.23, 2.16)",
+        "B = (-5.13, -7.42)",
+        "E = (0.98, -5.64)",
+        "a = CircularArc(A, B, E)",
+        "v = (-7.65, 4.35)",
+        "m = Stretch(a, v)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "v", "x": 6.65, "y": 7.97 },
+        { "action": "move", "label": "v", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "v", "x": 3.0, "y": -2.0 },
+        { "action": "move", "label": "A", "x": 0.88, "y": 7.82 },
+        { "action": "move", "label": "v", "x": 0.19, "y": -6.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -1.23, "y": 2.16 },
+          "B": { "type": "point", "defined": true, "x": -5.13, "y": -7.42 },
+          "E": { "type": "point", "defined": true, "x": 0.98, "y": -5.64 },
+          "a": {
+            "type": "arc",
+            "defined": true,
+            "value": 6.854663500781518,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 4.325778549820804,
+            "end": 4.988485999780126,
+            "arc_length": 6.854663500781518,
+            "area": 2.53846542070897,
+            "midpoint": [-1.23, 2.16],
+            "half_axes": [10.343423031085985, 10.343423031085985],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "v": { "type": "vector", "defined": true, "x": -7.65, "y": 4.35 },
+          "m": {
+            "type": "arc",
+            "defined": true,
+            "value": 53.12714115855363,
+            "conic_type": "ellipse",
+            "orientation": "positive",
+            "start": 4.842810502312344,
+            "end": 5.505517952271668,
+            "arc_length": 53.12714115855363,
+            "area": 311.97308198441806,
+            "midpoint": [-15.71983219378893, 10.399316345487822],
+            "half_axes": [91.02506109857862, 10.343423031085985],
+            "eigenvectors": [
+              [0.8692901189279537, -0.49430222448844413],
+              [0.49430222448844413, 0.8692901189279537]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.23, "y": 2.16 },
+          "B": { "type": "point", "defined": true, "x": -5.13, "y": -7.42 },
+          "E": { "type": "point", "defined": true, "x": 0.98, "y": -5.64 },
+          "a": {
+            "type": "arc",
+            "defined": true,
+            "value": 6.854663500781518,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 4.325778549820804,
+            "end": 4.988485999780126,
+            "arc_length": 6.854663500781518,
+            "area": 2.53846542070897,
+            "midpoint": [-1.23, 2.16],
+            "half_axes": [10.343423031085985, 10.343423031085985],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "v": { "type": "vector", "defined": true, "x": 6.65, "y": 7.97 },
+          "m": {
+            "type": "arc",
+            "defined": true,
+            "value": 42.134604602333084,
+            "conic_type": "ellipse",
+            "orientation": "positive",
+            "start": 3.450337250100378,
+            "end": 4.113044700059698,
+            "arc_length": 42.134604602333084,
+            "area": 367.97284401202813,
+            "midpoint": [4.0011043136713305, 8.429458854129404],
+            "half_axes": [107.36423282341306, 10.343423031085994],
+            "eigenvectors": [
+              [0.6406580790257572, 0.767826299223351],
+              [-0.767826299223351, 0.6406580790257572]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.23, "y": 2.16 },
+          "B": { "type": "point", "defined": true, "x": -5.13, "y": -7.42 },
+          "E": { "type": "point", "defined": true, "x": 0.98, "y": -5.64 },
+          "a": {
+            "type": "arc",
+            "defined": true,
+            "value": 6.854663500781518,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 4.325778549820804,
+            "end": 4.988485999780126,
+            "arc_length": 6.854663500781518,
+            "area": 2.53846542070897,
+            "midpoint": [-1.23, 2.16],
+            "half_axes": [10.343423031085985, 10.343423031085985],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "v": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "m": { "type": "arc", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.23, "y": 2.16 },
+          "B": { "type": "point", "defined": true, "x": -5.13, "y": -7.42 },
+          "E": { "type": "point", "defined": true, "x": 0.98, "y": -5.64 },
+          "a": {
+            "type": "arc",
+            "defined": true,
+            "value": 6.854663500781518,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 4.325778549820804,
+            "end": 4.988485999780126,
+            "arc_length": 6.854663500781518,
+            "area": 2.53846542070897,
+            "midpoint": [-1.23, 2.16],
+            "half_axes": [10.343423031085985, 10.343423031085985],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "v": { "type": "vector", "defined": true, "x": 3.0, "y": -2.0 },
+          "m": {
+            "type": "arc",
+            "defined": true,
+            "value": 21.23376940097909,
+            "conic_type": "ellipse",
+            "orientation": "positive",
+            "start": 4.913781153368371,
+            "end": 5.576488603327694,
+            "arc_length": 21.23376940097909,
+            "area": 127.81802639842545,
+            "midpoint": [-6.046261319184583, 5.370840879456389],
+            "half_axes": [37.29374210239566, 10.343423031085985],
+            "eigenvectors": [
+              [0.8320502943378436, -0.5547001962252291],
+              [0.5547001962252291, 0.8320502943378436]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.88, "y": 7.82 },
+          "B": { "type": "point", "defined": true, "x": -5.13, "y": -7.42 },
+          "E": { "type": "point", "defined": true, "x": 0.98, "y": -5.64 },
+          "a": {
+            "type": "arc",
+            "defined": true,
+            "value": 6.275404755295007,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 4.336756742864148,
+            "end": 4.71981826420227,
+            "arc_length": 6.275404755295007,
+            "area": 1.2479117636985115,
+            "midpoint": [0.88, 7.82],
+            "half_axes": [16.382237331939738, 16.382237331939738],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "v": { "type": "vector", "defined": true, "x": 3.0, "y": -2.0 },
+          "m": {
+            "type": "arc",
+            "defined": true,
+            "value": 20.836959598045766,
+            "conic_type": "ellipse",
+            "orientation": "positive",
+            "start": 4.924759346411715,
+            "end": 5.307820867749838,
+            "arc_length": 20.836959598045766,
+            "area": 185.33465600845653,
+            "midpoint": [-6.93665382639196, 13.03110255092797],
+            "half_axes": [59.06699670712907, 16.382237331939734],
+            "eigenvectors": [
+              [0.8320502943378436, -0.5547001962252291],
+              [0.5547001962252291, 0.8320502943378436]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.88, "y": 7.82 },
+          "B": { "type": "point", "defined": true, "x": -5.13, "y": -7.42 },
+          "E": { "type": "point", "defined": true, "x": 0.98, "y": -5.64 },
+          "a": {
+            "type": "arc",
+            "defined": true,
+            "value": 6.275404755295007,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 4.336756742864148,
+            "end": 4.71981826420227,
+            "arc_length": 6.275404755295007,
+            "area": 1.2479117636985115,
+            "midpoint": [0.88, 7.82],
+            "half_axes": [16.382237331939738, 16.382237331939738],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "v": { "type": "vector", "defined": true, "x": 0.19, "y": -6.0 },
+          "m": {
+            "type": "arc",
+            "defined": true,
+            "value": 10.445380645253328,
+            "conic_type": "ellipse",
+            "orientation": "positive",
+            "start": 5.875896981504914,
+            "end": 6.258958502843046,
+            "arc_length": 10.445380645253328,
+            "area": 308.5701075286559,
+            "midpoint": [-0.35325988176538226, 46.76504889785418],
+            "half_axes": [98.34269487343734, 16.382237331939738],
+            "eigenvectors": [
+              [0.03165080128294378, -0.9994989878825028],
+              [0.9994989878825028, 0.03165080128294378]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "transform-stretchvec-015",
+      "group": "transform",
+      "script": [
+        "A = (-5.11, -3.21)",
+        "B = (0.25, -6.26)",
+        "E = (3.36, 4.5)",
+        "p = Polygon(A, B, E)",
+        "v = (-5.42, -3.46)",
+        "m = Stretch(p, v)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "v", "x": 6.95, "y": 6.51 },
+        { "action": "move", "label": "v", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "v", "x": 3.0, "y": -2.0 },
+        { "action": "move", "label": "A", "x": 2.52, "y": -2.67 },
+        { "action": "move", "label": "v", "x": -1.25, "y": 7.94 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -5.11, "y": -3.21 },
+          "B": { "type": "point", "defined": true, "x": 0.25, "y": -6.26 },
+          "E": { "type": "point", "defined": true, "x": 3.36, "y": 4.5 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [-5.11, -3.21],
+              [0.25, -6.26],
+              [3.36, 4.5]
+            ],
+            "area": 33.57955,
+            "signed_area": 33.57955
+          },
+          "e": { "type": "segment", "defined": true, "x1": -5.11, "y1": -3.21, "x2": 0.25, "y2": -6.26 },
+          "a": { "type": "segment", "defined": true, "x1": 0.25, "y1": -6.26, "x2": 3.36, "y2": 4.5 },
+          "b": { "type": "segment", "defined": true, "x1": 3.36, "y1": 4.5, "x2": -5.11, "y2": -3.21 },
+          "v": { "type": "vector", "defined": true, "x": -5.42, "y": -3.46 },
+          "m": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [-32.7302085185507, -20.84208883287554],
+              [-14.203010759165947, -15.486460742936195],
+              [27.405785046616863, 19.850261302821835]
+            ],
+            "area": 215.92460095208457,
+            "signed_area": 215.92460095208457
+          },
+          "e'": { "type": "segment", "defined": true, "x1": -32.7302085185507, "y1": -20.84208883287554, "x2": -14.203010759165947, "y2": -15.486460742936195 },
+          "a'": { "type": "segment", "defined": true, "x1": -14.203010759165947, "y1": -15.486460742936195, "x2": 27.405785046616863, "y2": 19.850261302821835 },
+          "b'": { "type": "segment", "defined": true, "x1": 27.405785046616863, "y1": 19.850261302821835, "x2": -32.7302085185507, "y2": -20.84208883287554 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -5.11, "y": -3.21 },
+          "B": { "type": "point", "defined": true, "x": 0.25, "y": -6.26 },
+          "E": { "type": "point", "defined": true, "x": 3.36, "y": 4.5 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [-5.11, -3.21],
+              [0.25, -6.26],
+              [3.36, 4.5]
+            ],
+            "area": 33.57955,
+            "signed_area": 33.57955
+          },
+          "e": { "type": "segment", "defined": true, "x1": -5.11, "y1": -3.21, "x2": 0.25, "y2": -6.26 },
+          "a": { "type": "segment", "defined": true, "x1": 0.25, "y1": -6.26, "x2": 3.36, "y2": 4.5 },
+          "b": { "type": "segment", "defined": true, "x1": 3.36, "y1": 4.5, "x2": -5.11, "y2": -3.21 },
+          "v": { "type": "vector", "defined": true, "x": 6.95, "y": 6.51 },
+          "m": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [-41.9575451712913, -37.72475094461962],
+              [-25.234309248673092, -30.130914130771494],
+              [37.74854261593312, 36.711426248881246]
+            ],
+            "area": 319.7693643291463,
+            "signed_area": 319.7693643291463
+          },
+          "e'": { "type": "segment", "defined": true, "x1": -41.9575451712913, "y1": -37.72475094461962, "x2": -25.234309248673092, "y2": -30.130914130771494 },
+          "a'": { "type": "segment", "defined": true, "x1": -25.234309248673092, "y1": -30.130914130771494, "x2": 37.74854261593312, "y2": 36.711426248881246 },
+          "b'": { "type": "segment", "defined": true, "x1": 37.74854261593312, "y1": 36.711426248881246, "x2": -41.9575451712913, "y2": -37.72475094461962 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -5.11, "y": -3.21 },
+          "B": { "type": "point", "defined": true, "x": 0.25, "y": -6.26 },
+          "E": { "type": "point", "defined": true, "x": 3.36, "y": 4.5 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [-5.11, -3.21],
+              [0.25, -6.26],
+              [3.36, 4.5]
+            ],
+            "area": 33.57955,
+            "signed_area": 33.57955
+          },
+          "e": { "type": "segment", "defined": true, "x1": -5.11, "y1": -3.21, "x2": 0.25, "y2": -6.26 },
+          "a": { "type": "segment", "defined": true, "x1": 0.25, "y1": -6.26, "x2": 3.36, "y2": 4.5 },
+          "b": { "type": "segment", "defined": true, "x1": 3.36, "y1": 4.5, "x2": -5.11, "y2": -3.21 },
+          "v": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "m": { "type": "polygon", "defined": false },
+          "e'": { "type": "segment", "defined": false },
+          "a'": { "type": "segment", "defined": false },
+          "b'": { "type": "segment", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -5.11, "y": -3.21 },
+          "B": { "type": "point", "defined": true, "x": 0.25, "y": -6.26 },
+          "E": { "type": "point", "defined": true, "x": 3.36, "y": 4.5 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [-5.11, -3.21],
+              [0.25, -6.26],
+              [3.36, 4.5]
+            ],
+            "area": 33.57955,
+            "signed_area": 33.57955
+          },
+          "e": { "type": "segment", "defined": true, "x1": -5.11, "y1": -3.21, "x2": 0.25, "y2": -6.26 },
+          "a": { "type": "segment", "defined": true, "x1": 0.25, "y1": -6.26, "x2": 3.36, "y2": 4.5 },
+          "b": { "type": "segment", "defined": true, "x1": 3.36, "y1": 4.5, "x2": -5.11, "y2": -3.21 },
+          "v": { "type": "vector", "defined": true, "x": 3.0, "y": -2.0 },
+          "m": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [-10.46741427639634, 0.3616095175975609],
+              [8.228999713555492, -11.579333142370327],
+              [4.009383548654101, 4.067077634230598]
+            ],
+            "area": 121.07278933200676,
+            "signed_area": 121.07278933200676
+          },
+          "e'": { "type": "segment", "defined": true, "x1": -10.46741427639634, "y1": 0.3616095175975609, "x2": 8.228999713555492, "y2": -11.579333142370327 },
+          "a'": { "type": "segment", "defined": true, "x1": 8.228999713555492, "y1": -11.579333142370327, "x2": 4.009383548654101, "y2": 4.067077634230598 },
+          "b'": { "type": "segment", "defined": true, "x1": 4.009383548654101, "y1": 4.067077634230598, "x2": -10.46741427639634, "y2": 0.3616095175975609 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.52, "y": -2.67 },
+          "B": { "type": "point", "defined": true, "x": 0.25, "y": -6.26 },
+          "E": { "type": "point", "defined": true, "x": 3.36, "y": 4.5 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [2.52, -2.67],
+              [0.25, -6.26],
+              [3.36, 4.5]
+            ],
+            "area": 6.6301499999999995,
+            "signed_area": -6.6301499999999995
+          },
+          "e": { "type": "segment", "defined": true, "x1": 2.52, "y1": -2.67, "x2": 0.25, "y2": -6.26 },
+          "a": { "type": "segment", "defined": true, "x1": 0.25, "y1": -6.26, "x2": 3.36, "y2": 4.5 },
+          "b": { "type": "segment", "defined": true, "x1": 3.36, "y1": 4.5, "x2": 2.52, "y2": -2.67 },
+          "v": { "type": "vector", "defined": true, "x": 3.0, "y": -2.0 },
+          "m": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [10.276525720035105, -7.841017146690071],
+              [8.228999713555492, -11.579333142370327],
+              [4.009383548654101, 4.067077634230598]
+            ],
+            "area": 23.90534578901756,
+            "signed_area": -23.90534578901756
+          },
+          "e'": { "type": "segment", "defined": true, "x1": 10.276525720035105, "y1": -7.841017146690071, "x2": 8.228999713555492, "y2": -11.579333142370327 },
+          "a'": { "type": "segment", "defined": true, "x1": 8.228999713555492, "y1": -11.579333142370327, "x2": 4.009383548654101, "y2": 4.067077634230598 },
+          "b'": { "type": "segment", "defined": true, "x1": 4.009383548654101, "y1": 4.067077634230598, "x2": 10.276525720035105, "y2": -7.841017146690071 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.52, "y": -2.67 },
+          "B": { "type": "point", "defined": true, "x": 0.25, "y": -6.26 },
+          "E": { "type": "point", "defined": true, "x": 3.36, "y": 4.5 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [2.52, -2.67],
+              [0.25, -6.26],
+              [3.36, 4.5]
+            ],
+            "area": 6.6301499999999995,
+            "signed_area": -6.6301499999999995
+          },
+          "e": { "type": "segment", "defined": true, "x1": 2.52, "y1": -2.67, "x2": 0.25, "y2": -6.26 },
+          "a": { "type": "segment", "defined": true, "x1": 0.25, "y1": -6.26, "x2": 3.36, "y2": 4.5 },
+          "b": { "type": "segment", "defined": true, "x1": 3.36, "y1": 4.5, "x2": 2.52, "y2": -2.67 },
+          "v": { "type": "vector", "defined": true, "x": -1.25, "y": 7.94 },
+          "m": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [5.835647192858801, -23.730990969039098],
+              [7.060667606325282, -49.52136063537819],
+              [-0.9333558382753862, 31.771396284725252]
+            ],
+            "area": 53.29176653176866,
+            "signed_area": -53.29176653176866
+          },
+          "e'": { "type": "segment", "defined": true, "x1": 5.835647192858801, "y1": -23.730990969039098, "x2": 7.060667606325282, "y2": -49.52136063537819 },
+          "a'": { "type": "segment", "defined": true, "x1": 7.060667606325282, "y1": -49.52136063537819, "x2": -0.9333558382753862, "y2": 31.771396284725252 },
+          "b'": { "type": "segment", "defined": true, "x1": -0.9333558382753862, "y1": 31.771396284725252, "x2": 5.835647192858801, "y2": -23.730990969039098 }
+        }
+      ]
+    },
+    {
+      "id": "transform-stretchvec-016",
+      "group": "transform",
+      "script": [
+        "A = (7.82, 3.63)",
+        "B = (-0.28, 6.73)",
+        "l = Line(A, B)",
+        "C = (-6.88, -6.49)",
+        "D = (2.02, 4.42)",
+        "v = Vector(C, D)",
+        "m = Stretch(l, v)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": -3.65, "y": -6.93 },
+        { "action": "move", "label": "D", "x": 2.31, "y": -3.48 },
+        { "action": "move", "label": "C", "x": 2.36, "y": 6.31 },
+        { "action": "move", "label": "D", "x": 3.13, "y": 6.71 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 7.82, "y": 3.63 },
+          "B": { "type": "point", "defined": true, "x": -0.28, "y": 6.73 },
+          "l": { "type": "line", "defined": true, "a": -3.1000000000000005, "b": -8.1, "c": 53.645 },
+          "C": { "type": "point", "defined": true, "x": -6.88, "y": -6.49 },
+          "D": { "type": "point", "defined": true, "x": 2.02, "y": 4.42 },
+          "v": { "type": "vector", "defined": true, "x": 8.9, "y": 10.91 },
+          "m": { "type": "line", "defined": true, "a": 198.0250087272756, "b": -247.63580913590772, "c": 14300.86117409783 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.82, "y": 3.63 },
+          "B": { "type": "point", "defined": true, "x": -0.28, "y": 6.73 },
+          "l": { "type": "line", "defined": true, "a": -3.1000000000000005, "b": -8.1, "c": 53.645 },
+          "C": { "type": "point", "defined": true, "x": -3.65, "y": -6.93 },
+          "D": { "type": "point", "defined": true, "x": 2.02, "y": 4.42 },
+          "v": { "type": "vector", "defined": true, "x": 5.67, "y": 11.35 },
+          "m": { "type": "line", "defined": true, "a": 46.5929611780521, "b": -101.42989338145863, "c": 11911.682831335605 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.82, "y": 3.63 },
+          "B": { "type": "point", "defined": true, "x": -0.28, "y": 6.73 },
+          "l": { "type": "line", "defined": true, "a": -3.1000000000000005, "b": -8.1, "c": 53.645 },
+          "C": { "type": "point", "defined": true, "x": -3.65, "y": -6.93 },
+          "D": { "type": "point", "defined": true, "x": 2.31, "y": -3.48 },
+          "v": { "type": "vector", "defined": true, "x": 5.96, "y": 3.4499999999999997 },
+          "m": { "type": "line", "defined": true, "a": 105.2461913661155, "b": -290.80504363537636, "c": 5123.531403735561 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.82, "y": 3.63 },
+          "B": { "type": "point", "defined": true, "x": -0.28, "y": 6.73 },
+          "l": { "type": "line", "defined": true, "a": -3.1000000000000005, "b": -8.1, "c": 53.645 },
+          "C": { "type": "point", "defined": true, "x": 2.36, "y": 6.31 },
+          "D": { "type": "point", "defined": true, "x": 2.31, "y": -3.48 },
+          "v": { "type": "vector", "defined": true, "x": -0.04999999999999982, "y": -9.79 },
+          "m": { "type": "line", "defined": true, "a": -242.87896980448934, "b": -64.49779892847553, "c": 600.9627163762266 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.82, "y": 3.63 },
+          "B": { "type": "point", "defined": true, "x": -0.28, "y": 6.73 },
+          "l": { "type": "line", "defined": true, "a": -3.1000000000000005, "b": -8.1, "c": 53.645 },
+          "C": { "type": "point", "defined": true, "x": 2.36, "y": 6.31 },
+          "D": { "type": "point", "defined": true, "x": 3.13, "y": 6.71 },
+          "v": { "type": "vector", "defined": true, "x": 0.77, "y": 0.40000000000000036 },
+          "m": { "type": "line", "defined": true, "a": -27.955005628680993, "b": -60.13336416478908, "c": 411.805749256523 }
+        }
+      ]
+    },
+    {
+      "id": "transform-stretchvec-017",
+      "group": "transform",
+      "script": [
+        "A = (-4.59, -4.44)",
+        "B = (2.85, 5.55)",
+        "E = (-5.87, -7.82)",
+        "a = CircularArc(A, B, E)",
+        "C = (-5.26, 1.75)",
+        "D = (-2.65, 6.56)",
+        "v = Vector(C, D)",
+        "m = Stretch(a, v)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": -3.4, "y": 3.01 },
+        { "action": "move", "label": "D", "x": 0.39, "y": 6.78 },
+        { "action": "move", "label": "C", "x": -2.41, "y": 3.25 },
+        { "action": "move", "label": "D", "x": 5.03, "y": -3.67 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -4.59, "y": -4.44 },
+          "B": { "type": "point", "defined": true, "x": 2.85, "y": 5.55 },
+          "E": { "type": "point", "defined": true, "x": -5.87, "y": -7.82 },
+          "a": {
+            "type": "arc",
+            "defined": true,
+            "value": 42.59618609457451,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.9306670742016829,
+            "end": 4.350379979465146,
+            "arc_length": 42.59618609457451,
+            "area": 286.58917213100295,
+            "midpoint": [-4.59, -4.44],
+            "half_axes": [12.456070809047288, 12.456070809047288],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "C": { "type": "point", "defined": true, "x": -5.26, "y": 1.75 },
+          "D": { "type": "point", "defined": true, "x": -2.65, "y": 6.56 },
+          "v": { "type": "vector", "defined": true, "x": 2.61, "y": 4.81 },
+          "m": {
+            "type": "arc",
+            "defined": true,
+            "value": 146.0401222055077,
+            "conic_type": "ellipse",
+            "orientation": "positive",
+            "start": 6.140215234182023,
+            "end": 3.2767428322658976,
+            "arc_length": 146.0401222055077,
+            "area": 1451.8011993385257,
+            "midpoint": [-15.513664505691203, -24.571351062212536],
+            "half_axes": [68.16578348658508, 12.456070809047288],
+            "eigenvectors": [
+              [0.47693055296593784, 0.8789409807533182],
+              [-0.8789409807533182, 0.47693055296593784]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -4.59, "y": -4.44 },
+          "B": { "type": "point", "defined": true, "x": 2.85, "y": 5.55 },
+          "E": { "type": "point", "defined": true, "x": -5.87, "y": -7.82 },
+          "a": {
+            "type": "arc",
+            "defined": true,
+            "value": 42.59618609457451,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.9306670742016829,
+            "end": 4.350379979465146,
+            "arc_length": 42.59618609457451,
+            "area": 286.58917213100295,
+            "midpoint": [-4.59, -4.44],
+            "half_axes": [12.456070809047288, 12.456070809047288],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "C": { "type": "point", "defined": true, "x": -3.4, "y": 3.01 },
+          "D": { "type": "point", "defined": true, "x": -2.65, "y": 6.56 },
+          "v": { "type": "vector", "defined": true, "x": 0.75, "y": 3.55 },
+          "m": {
+            "type": "arc",
+            "defined": true,
+            "value": 102.97317347862767,
+            "conic_type": "ellipse",
+            "orientation": "positive",
+            "start": 5.851262004110359,
+            "end": 2.9877896021942347,
+            "arc_length": 102.97317347862767,
+            "area": 962.5697741278404,
+            "midpoint": [-8.683773815747523, -23.81719606120494],
+            "half_axes": [45.19511544957043, 12.456070809047288],
+            "eigenvectors": [
+              [0.2067049284830237, 0.97840332815298],
+              [-0.97840332815298, 0.2067049284830237]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -4.59, "y": -4.44 },
+          "B": { "type": "point", "defined": true, "x": 2.85, "y": 5.55 },
+          "E": { "type": "point", "defined": true, "x": -5.87, "y": -7.82 },
+          "a": {
+            "type": "arc",
+            "defined": true,
+            "value": 42.59618609457451,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.9306670742016829,
+            "end": 4.350379979465146,
+            "arc_length": 42.59618609457451,
+            "area": 286.58917213100295,
+            "midpoint": [-4.59, -4.44],
+            "half_axes": [12.456070809047288, 12.456070809047288],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "C": { "type": "point", "defined": true, "x": -3.4, "y": 3.01 },
+          "D": { "type": "point", "defined": true, "x": 0.39, "y": 6.78 },
+          "v": { "type": "vector", "defined": true, "x": 3.79, "y": 3.7700000000000005 },
+          "m": {
+            "type": "arc",
+            "defined": true,
+            "value": 145.45184799019103,
+            "conic_type": "ellipse",
+            "orientation": "positive",
+            "start": 0.1479144072780848,
+            "end": 3.5676273125415503,
+            "arc_length": 145.45184799019103,
+            "area": 1418.1759163776874,
+            "midpoint": [-23.37707697010802, -23.127936722244655],
+            "half_axes": [66.58699035772685, 12.456070809047292],
+            "eigenvectors": [
+              [0.7089749531052522, 0.7052336604767283],
+              [-0.7052336604767283, 0.7089749531052522]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -4.59, "y": -4.44 },
+          "B": { "type": "point", "defined": true, "x": 2.85, "y": 5.55 },
+          "E": { "type": "point", "defined": true, "x": -5.87, "y": -7.82 },
+          "a": {
+            "type": "arc",
+            "defined": true,
+            "value": 42.59618609457451,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.9306670742016829,
+            "end": 4.350379979465146,
+            "arc_length": 42.59618609457451,
+            "area": 286.58917213100295,
+            "midpoint": [-4.59, -4.44],
+            "half_axes": [12.456070809047288, 12.456070809047288],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "C": { "type": "point", "defined": true, "x": -2.41, "y": 3.25 },
+          "D": { "type": "point", "defined": true, "x": 0.39, "y": 6.78 },
+          "v": { "type": "vector", "defined": true, "x": 2.8000000000000003, "y": 3.5300000000000002 },
+          "m": {
+            "type": "arc",
+            "defined": true,
+            "value": 123.37071426210599,
+            "conic_type": "ellipse",
+            "orientation": "positive",
+            "start": 0.03045226821031286,
+            "end": 3.4501651734737773,
+            "arc_length": 123.37071426210599,
+            "area": 1195.3069217596158,
+            "midpoint": [-20.66678758180531, -24.708235772775975],
+            "half_axes": [56.122720428806744, 12.456070809047286],
+            "eigenvectors": [
+              [0.6214416906175259, 0.7834604170999524],
+              [-0.7834604170999524, 0.6214416906175259]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -4.59, "y": -4.44 },
+          "B": { "type": "point", "defined": true, "x": 2.85, "y": 5.55 },
+          "E": { "type": "point", "defined": true, "x": -5.87, "y": -7.82 },
+          "a": {
+            "type": "arc",
+            "defined": true,
+            "value": 42.59618609457451,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.9306670742016829,
+            "end": 4.350379979465146,
+            "arc_length": 42.59618609457451,
+            "area": 286.58917213100295,
+            "midpoint": [-4.59, -4.44],
+            "half_axes": [12.456070809047288, 12.456070809047288],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "C": { "type": "point", "defined": true, "x": -2.41, "y": 3.25 },
+          "D": { "type": "point", "defined": true, "x": 5.03, "y": -3.67 },
+          "v": { "type": "vector", "defined": true, "x": 7.44, "y": -6.92 },
+          "m": {
+            "type": "arc",
+            "defined": true,
+            "value": 291.0890020449121,
+            "conic_type": "ellipse",
+            "orientation": "positive",
+            "start": 1.679869353972097,
+            "end": 5.09958225923556,
+            "arc_length": 291.0890020449121,
+            "area": 2695.540034386706,
+            "midpoint": [19.833285437369852, -27.1562816164784],
+            "half_axes": [126.56250624888868, 12.456070809047286],
+            "eigenvectors": [
+              [0.7322323930364292, -0.6810548601897971],
+              [0.6810548601897971, 0.7322323930364292]
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

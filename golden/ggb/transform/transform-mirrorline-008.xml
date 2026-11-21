@@ -31,7 +31,7 @@
 <tableview min="0" max="0" step="0"/>
 <scripting blocked="false" disabled="false"/>
 <construction title="" author="" date="">
-<expression label="A" exp="(-5.3, 5.75)" type="point"/>
+<expression label="A" exp="(7.68, -4.33)" type="point"/>
 <element type="point" label="A">
 	<show object="true" label="true"/>
 	<objColor r="77" g="77" b="255" alpha="0"/>
@@ -40,9 +40,9 @@
 	<animation step="0.1" type="1" playing="false"/>
 	<pointSize val="5"/>
 	<pointStyle val="0"/>
-	<coords x="-5.3" y="5.75" z="1"/>
+	<coords x="7.68" y="-4.33" z="1"/>
 </element>
-<expression label="B" exp="(-3.83, -3.61)" type="point"/>
+<expression label="B" exp="(5.37, 4.97)" type="point"/>
 <element type="point" label="B">
 	<show object="true" label="true"/>
 	<objColor r="77" g="77" b="255" alpha="0"/>
@@ -51,26 +51,23 @@
 	<animation step="0.1" type="1" playing="false"/>
 	<pointSize val="5"/>
 	<pointStyle val="0"/>
-	<coords x="-3.83" y="-3.61" z="1"/>
+	<coords x="5.37" y="4.97" z="1"/>
 </element>
-<command name="Segment">
+<command name="Vector">
 	<input a0="A" a1="B"/>
-	<output a0="s"/>
+	<output a0="b"/>
 </command>
-<element type="segment" label="s">
+<element type="vector" label="b">
 	<show object="true" label="false"/>
 	<objColor r="28" g="28" b="31" alpha="0"/>
 	<layer val="0"/>
 	<labelMode val="0"/>
 	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
-	<eqnStyle style="implicit"/>
-	<outlyingIntersections val="false"/>
-	<keepTypeOnTransform val="true"/>
-	<startStyle val="default"/>
-	<endStyle val="default"/>
-	<coords x="9.36" y="1.4699999999999998" z="41.1555"/>
+	<coordStyle style="cartesian"/>
+	<startPoint exp="A"/>
+	<coords x="-2.3099999999999996" y="9.3" z="0"/>
 </element>
-<expression label="C" exp="(3.83, -1.07)" type="point"/>
+<expression label="C" exp="(6.17, -5.48)" type="point"/>
 <element type="point" label="C">
 	<show object="true" label="true"/>
 	<objColor r="77" g="77" b="255" alpha="0"/>
@@ -79,9 +76,9 @@
 	<animation step="0.1" type="1" playing="false"/>
 	<pointSize val="5"/>
 	<pointStyle val="0"/>
-	<coords x="3.83" y="-1.07" z="1"/>
+	<coords x="6.17" y="-5.48" z="1"/>
 </element>
-<expression label="D" exp="(-7.24, -6.23)" type="point"/>
+<expression label="D" exp="(-3.17, -5.93)" type="point"/>
 <element type="point" label="D">
 	<show object="true" label="true"/>
 	<objColor r="77" g="77" b="255" alpha="0"/>
@@ -90,7 +87,7 @@
 	<animation step="0.1" type="1" playing="false"/>
 	<pointSize val="5"/>
 	<pointStyle val="0"/>
-	<coords x="-7.24" y="-6.23" z="1"/>
+	<coords x="-3.17" y="-5.93" z="1"/>
 </element>
 <command name="Line">
 	<input a0="C" a1="D"/>
@@ -103,50 +100,21 @@
 	<labelMode val="0"/>
 	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
 	<eqnStyle style="implicit"/>
-	<coords x="5.16" y="-11.07" z="-31.6077"/>
+	<coords x="0.4499999999999993" y="-9.34" z="-53.9597"/>
 </element>
 <command name="Mirror">
-	<input a0="A" a1="n"/>
-	<output a0="A&apos;"/>
-</command>
-<element type="point" label="A&apos;">
-	<show object="true" label="true"/>
-	<objColor r="77" g="77" b="255" alpha="0"/>
-	<layer val="0"/>
-	<labelMode val="0"/>
-	<pointSize val="5"/>
-	<pointStyle val="0"/>
-	<coords x="3.1823515641497444" y="-12.447603064949169" z="1"/>
-</element>
-<command name="Mirror">
-	<input a0="B" a1="n"/>
-	<output a0="B&apos;"/>
-</command>
-<element type="point" label="B&apos;">
-	<show object="true" label="true"/>
-	<objColor r="77" g="77" b="255" alpha="0"/>
-	<layer val="0"/>
-	<labelMode val="0"/>
-	<pointSize val="5"/>
-	<pointStyle val="0"/>
-	<coords x="-3.0407789676913337" y="-5.303154423964523" z="1"/>
-</element>
-<command name="Segment">
-	<input a0="A&apos;" a1="B&apos;"/>
+	<input a0="b" a1="n"/>
 	<output a0="m"/>
 </command>
-<element type="segment" label="m">
+<element type="vector" label="m">
 	<show object="true" label="false"/>
 	<objColor r="28" g="28" b="31" alpha="0"/>
 	<layer val="0"/>
 	<labelMode val="0"/>
 	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
-	<eqnStyle style="implicit"/>
-	<outlyingIntersections val="false"/>
-	<keepTypeOnTransform val="true"/>
-	<startStyle val="default"/>
-	<endStyle val="default"/>
-	<coords x="-7.1444486409846455" y="-6.223130531841078" z="-54.72691137409875"/>
+	<coordStyle style="cartesian"/>
+	<startPoint exp="A"/>
+	<coords x="-1.4052302257254008" y="-9.478999314943943" z="0"/>
 </element>
 </construction>
 </geogebra>

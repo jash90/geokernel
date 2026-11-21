@@ -67,13 +67,16 @@ const VECTOR: &[Kind] = &[Kind::Vector];
 const DIRECTED: &[Kind] = &[Kind::Line, Kind::Segment, Kind::Ray];
 const VECTOR_OR_DIRECTED: &[Kind] = &[Kind::Vector, Kind::Line, Kind::Segment, Kind::Ray];
 /// Kinds of object `Translate` moves here. A circle is translated by
-/// [`crate::algo::general_conic::GeneralConicDef`], which keeps its axes.
+/// [`crate::algo::general_conic::GeneralConicDef`], which keeps its axes,
+/// and a part of a conic by [`crate::algo::arc::ArcDef`].
 const TRANSLATABLE: &[Kind] = &[
     Kind::Point,
     Kind::Line,
     Kind::Segment,
     Kind::Ray,
     Kind::Vector,
+    Kind::Polygon,
+    Kind::PolyLine,
 ];
 
 fn only(kind: Kind) -> &'static [Kind] {
@@ -382,11 +385,12 @@ fn translate(v: Value, dx: f64, dy: f64) -> Option<Value> {
             c: c - (a * dx + b * dy),
         },
         Value::Vector { .. } => v,
+        // a translation moves neither a polygon's area nor a polyline's
+        // length; GeoGebra recomputes them from the moved points
+        Value::Polygon { .. } | Value::PolyLine { .. } => v,
         Value::Circle { .. }
         | Value::Number(_)
         | Value::Bool(_)
-        | Value::Polygon { .. }
-        | Value::PolyLine { .. }
         | Value::Function
         | Value::List { .. }
         | Value::Conic { .. }
@@ -528,8 +532,15 @@ impl Group for VectorDef {
             }
             VectorDef::LineVector(p, v) => line_value(raw_along(point(c, p)?, vector(c, v)?)),
             VectorDef::OrthoLineVector(p, v) => line_value(raw_ortho(point(c, p)?, vector(c, v)?)),
-            VectorDef::Translate { src, by, .. } => {
-                let (dx, dy) = vector(c, by)?;
+            VectorDef::Translate { src, by, kind } => {
+                let (dx, dy) = match vector(c, by) {
+                    Some(v) => v,
+                    // `transformPoly` builds a polyline from the images of its
+                    // points: an undefined vector leaves them undefined, and
+                    // `GeoPolyLine` stays defined, its length 0
+                    None if kind == Kind::PolyLine => return Some(Value::PolyLine { length: 0.0 }),
+                    None => return None,
+                };
                 translate(c.value(src), dx, dy)
             }
             // `AlgoTranslateVector` copies the coordinates and does not read
@@ -631,6 +642,10 @@ impl Group for VectorDef {
                 }
             }
             ("Translate", &[src, by]) => {
+                // a part of a conic is translated by `ArcDef`
+                if matches!(c.kind(src), Kind::Arc | Kind::Sector) {
+                    return None;
+                }
                 // `CmdTranslate`: a vector and a point give the vector drawn
                 // from the point; otherwise the first object is moved by the
                 // second, which must be a vector here.

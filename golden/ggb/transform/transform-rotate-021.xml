@@ -31,7 +31,7 @@
 <tableview min="0" max="0" step="0"/>
 <scripting blocked="false" disabled="false"/>
 <construction title="" author="" date="">
-<expression label="A" exp="(0, 0)" type="point"/>
+<expression label="A" exp="(-7.29, 7.91)" type="point"/>
 <element type="point" label="A">
 	<show object="true" label="true"/>
 	<objColor r="77" g="77" b="255" alpha="0"/>
@@ -40,9 +40,9 @@
 	<animation step="0.1" type="1" playing="false"/>
 	<pointSize val="5"/>
 	<pointStyle val="0"/>
-	<coords x="0" y="0" z="1"/>
+	<coords x="-7.29" y="7.91" z="1"/>
 </element>
-<expression label="B" exp="(0.000001, 0.000002)" type="point"/>
+<expression label="B" exp="(-4.07, 6.95)" type="point"/>
 <element type="point" label="B">
 	<show object="true" label="true"/>
 	<objColor r="77" g="77" b="255" alpha="0"/>
@@ -51,27 +51,28 @@
 	<animation step="0.1" type="1" playing="false"/>
 	<pointSize val="5"/>
 	<pointStyle val="0"/>
-	<coords x="1.0E-6" y="2.0E-6" z="1"/>
+	<coords x="-4.07" y="6.95" z="1"/>
 </element>
-<command name="Line">
+<command name="Vector">
 	<input a0="A" a1="B"/>
-	<output a0="l"/>
+	<output a0="b"/>
 </command>
-<element type="line" label="l">
+<element type="vector" label="b">
 	<show object="true" label="false"/>
 	<objColor r="28" g="28" b="31" alpha="0"/>
 	<layer val="0"/>
 	<labelMode val="0"/>
 	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
-	<eqnStyle style="implicit"/>
-	<coords x="-2.0E-6" y="1.0E-6" z="0"/>
+	<coordStyle style="cartesian"/>
+	<startPoint exp="A"/>
+	<coords x="3.2199999999999998" y="-0.96" z="0"/>
 </element>
-<expression label="w" exp="0.5"/>
+<expression label="w" exp="1.2"/>
 <element type="numeric" label="w">
-	<value val="0.5"/>
+	<value val="1.2"/>
 	<show object="false" label="true"/>
 </element>
-<expression label="Q" exp="(1, 1)" type="point"/>
+<expression label="Q" exp="(-7.73, 2.02)" type="point"/>
 <element type="point" label="Q">
 	<show object="true" label="true"/>
 	<objColor r="77" g="77" b="255" alpha="0"/>
@@ -80,81 +81,21 @@
 	<animation step="0.1" type="1" playing="false"/>
 	<pointSize val="5"/>
 	<pointStyle val="0"/>
-	<coords x="1" y="1" z="1"/>
+	<coords x="-7.73" y="2.02" z="1"/>
 </element>
 <command name="Rotate">
-	<input a0="l" a1="w"/>
+	<input a0="b" a1="w" a2="Q"/>
 	<output a0="m"/>
 </command>
-<element type="line" label="m">
+<element type="vector" label="m">
 	<show object="true" label="false"/>
 	<objColor r="28" g="28" b="31" alpha="0"/>
 	<layer val="0"/>
 	<labelMode val="0"/>
 	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
-	<eqnStyle style="implicit"/>
-	<coords x="-2.2345906623849485E-6" y="-8.126851531803334E-8" z="0"/>
-</element>
-<command name="Rotate">
-	<input a0="l" a1="w" a2="Q"/>
-	<output a0="n"/>
-</command>
-<element type="line" label="n">
-	<show object="true" label="false"/>
-	<objColor r="28" g="28" b="31" alpha="0"/>
-	<layer val="0"/>
-	<labelMode val="0"/>
-	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
-	<eqnStyle style="implicit"/>
-	<coords x="-2.2345906623849485E-6" y="-8.126851531803334E-8" z="1.3158591777029819E-6"/>
-</element>
-<command name="Distance">
-	<input a0="m" a1="l"/>
-	<output a0="d"/>
-</command>
-<element type="numeric" label="d">
-	<value val="0"/>
-</element>
-<command name="Distance">
-	<input a0="n" a1="l"/>
-	<output a0="e"/>
-</command>
-<element type="numeric" label="e">
-	<value val="0.526691643295513"/>
-</element>
-<command name="Slope">
-	<input a0="n"/>
-	<output a0="s"/>
-</command>
-<element type="numeric" label="s">
-	<value val="-27.496388406262625"/>
-	<lineStyle thickness="4" type="0" typeHidden="1" opacity="204"/>
-	<show object="true" label="true"/>
-	<objColor r="153" g="51" b="0" alpha="0.10000000149011612"/>
-	<layer val="0"/>
-	<labelMode val="1"/>
-</element>
-<command name="AngularBisector">
-	<input a0="l" a1="n"/>
-	<output a0="b_{1}" a1="b_{2}"/>
-</command>
-<element type="line" label="b_{1}">
-	<show object="true" label="false"/>
-	<objColor r="28" g="28" b="31" alpha="0"/>
-	<layer val="0"/>
-	<labelMode val="0"/>
-	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
-	<eqnStyle style="implicit"/>
-	<coords x="-0.9772640298347183" y="0.21202597951950836" z="0.3036755958774924"/>
-</element>
-<element type="line" label="b_{2}">
-	<show object="true" label="false"/>
-	<objColor r="28" g="28" b="31" alpha="0"/>
-	<layer val="0"/>
-	<labelMode val="0"/>
-	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
-	<eqnStyle style="implicit"/>
-	<coords x="-0.21202597951950836" y="-0.9772640298347183" z="1.1892900093542265"/>
+	<coordStyle style="cartesian"/>
+	<startPoint exp="A"/>
+	<coords x="2.0615494919434263" y="2.653302412516862" z="0"/>
 </element>
 </construction>
 </geogebra>

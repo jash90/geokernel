@@ -53,47 +53,64 @@
 	<pointStyle val="0"/>
 	<coords x="-3.56" y="-1.1" z="1"/>
 </element>
-<command name="Line">
-	<input a0="A" a1="B"/>
-	<output a0="l"/>
+<expression label="u" exp="(-3.14, 3.79)" type="vector"/>
+<element type="vector" label="u">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="0" playing="false"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<coordStyle style="cartesian"/>
+	<coords x="-3.14" y="3.79" z="0"/>
+</element>
+<command name="Ray">
+	<input a0="A" a1="u"/>
+	<output a0="g"/>
 </command>
-<element type="line" label="l">
+<element type="ray" label="g">
 	<show object="true" label="false"/>
 	<objColor r="28" g="28" b="31" alpha="0"/>
 	<layer val="0"/>
 	<labelMode val="0"/>
 	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
 	<eqnStyle style="implicit"/>
-	<coords x="-4.34" y="-9.65" z="-26.065400000000004"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<coords x="-3.79" y="-3.14" z="5.999499999999998"/>
 </element>
-<expression label="f" exp="1.5"/>
+<expression label="f" exp="2"/>
 <element type="numeric" label="f">
-	<value val="1.5"/>
+	<value val="2"/>
 	<show object="false" label="true"/>
 </element>
-<expression label="Q" exp="(-6.27, 7.57)" type="point"/>
-<element type="point" label="Q">
+<command name="Dilate">
+	<input a0="A" a1="f"/>
+	<output a0="A&apos;"/>
+</command>
+<element type="point" label="A&apos;">
 	<show object="true" label="true"/>
 	<objColor r="77" g="77" b="255" alpha="0"/>
 	<layer val="0"/>
 	<labelMode val="0"/>
-	<animation step="0.1" type="1" playing="false"/>
 	<pointSize val="5"/>
 	<pointStyle val="0"/>
-	<coords x="-6.27" y="7.57" z="1"/>
+	<coords x="12.18" y="-10.88" z="1"/>
 </element>
-<command name="Dilate">
-	<input a0="l" a1="f" a2="Q"/>
+<command name="Ray">
+	<input a0="A&apos;" a1="Vector[Dilate[Direction[g], f]]"/>
 	<output a0="m"/>
 </command>
-<element type="line" label="m">
+<element type="ray" label="m">
 	<show object="true" label="false"/>
 	<objColor r="28" g="28" b="31" alpha="0"/>
 	<layer val="0"/>
 	<labelMode val="0"/>
 	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
 	<eqnStyle style="implicit"/>
-	<coords x="-6.51" y="-14.475000000000001" z="-93.02617500000001"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<coords x="-7.58" y="-6.28" z="23.99799999999999"/>
 </element>
 </construction>
 </geogebra>

@@ -25,38 +25,59 @@
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
-//! Images of points, lines and segments under reflection in a point or a
-//! line, rotation, dilation, shear and stretch, and inversion of a point in
-//! a circle. Images of circles keep a conic record with the circle's axes
-//! and are made by [`crate::algo::general_conic`].
+//! Images of points, lines, segments, rays, vectors, polygons and
+//! polylines under reflection in a point or a line, rotation, dilation,
+//! shear and stretch, and inversion of a point in a circle. Images of
+//! circles and conics keep a conic record with the circle's axes and are
+//! made by [`crate::algo::general_conic`]; the inversion of a line is a
+//! conic and is made there too, and the parts of conics (arcs and sectors)
+//! keep their record in [`crate::algo::arc`].
 //!
-//! GeoGebra transforms a line by transforming its raw coefficients. A segment whose
-//! end points have labels is transformed through its end points, so the
-//! image keeps the order of the end points. The formulas below follow
-//! `GeoPoint`, `GeoLine` and `GeoConic`, including the sign flips of the
-//! line coefficients, so that an image line has the same orientation.
+//! GeoGebra transforms a line by transforming its raw coefficients. A
+//! segment whose end points have labels is transformed through its end
+//! points, so the image keeps the order of the end points; the same holds
+//! for a ray and for the vertices of a polygon, whose image also gets the
+//! images of its sides. The formulas below follow `GeoPoint`, `GeoLine`,
+//! `GeoVector` and `GeoConic`, including the sign flips of the line
+//! coefficients, so that an image line has the same orientation.
 //!
-//! Not covered: inversion of lines, segments and circles in a circle (the
-//! image is a circle, a line or a conic depending on the position), the
-//! forms that need a vector (`Shear` and `Stretch` along a vector), and
-//! shear and stretch of a circle (the image is an ellipse).
+//! Not covered: the inversion of a ray in a circle (GeoGebra labels the
+//! image after the ray instead of the command) and `Shear` or `Stretch` of
+//! a polyline (GeoGebra rejects it too).
 
-use super::{line_value, Group, Parents, CIRCLE, LINE, LINE_LIKE, NUMBER, POINT};
+use super::{line_value, Group, Parents, CIRCLE, LINE_LIKE, NUMBER, NUMBER_OR_ANGLE, POINT};
 use crate::kernel::{Construction, Error, Id, Kind, Value};
 use crate::script::object;
 use crate::tol::STANDARD_PRECISION;
 
-const SEGMENT: &[Kind] = &[Kind::Segment];
 /// Kinds of object this group transforms. Circles are transformed by
 /// [`crate::algo::general_conic::GeneralConicDef`], which keeps their axes.
-const TRANSFORMABLE: &[Kind] = &[Kind::Point, Kind::Line, Kind::Segment];
+const TRANSFORMABLE: &[Kind] = &[
+    Kind::Point,
+    Kind::Line,
+    Kind::Segment,
+    Kind::Ray,
+    Kind::Vector,
+    Kind::Polygon,
+    Kind::PolyLine,
+];
+const VECTOR: &[Kind] = &[Kind::Vector];
+/// What `Shear` and `Stretch` accept: no polyline (`isMatrixTransformable`).
+const SHEARABLE: &[Kind] = &[
+    Kind::Point,
+    Kind::Line,
+    Kind::Segment,
+    Kind::Ray,
+    Kind::Vector,
+    Kind::Polygon,
+];
 
 fn of_kind(kind: Kind) -> &'static [Kind] {
     match kind {
         Kind::Point => POINT,
-        Kind::Line => LINE,
-        Kind::Segment => SEGMENT,
-        Kind::Circle => CIRCLE,
+        Kind::Line => &[Kind::Line],
+        Kind::Segment => &[Kind::Segment],
+        Kind::Circle => &[Kind::Circle],
         Kind::Number | Kind::Angle => NUMBER,
         Kind::Vector => &[Kind::Vector],
         Kind::Ray => &[Kind::Ray],
@@ -105,11 +126,45 @@ pub enum TransformDef {
         ratio: Id,
         shear: bool,
     },
+    /// `Stretch(object, vector)`: stretched along the vector by its length.
+    StretchVector { kind: Kind, src: Id, vector: Id },
+}
+
+/// The parameters of a transformation, without the transformed object and
+/// its kind, which the definitions that hold a [`TransformDef`] inside
+/// themselves carry separately (an [`crate::algo::arc::ArcDef`] image keeps
+/// its own record).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum TransformOf {
+    /// Reflection in a point.
+    MirrorPoint(Id),
+    /// Reflection in a line.
+    MirrorLine(Id),
+    /// Rotation by `angle` about `center`, or the origin. The centre is
+    /// kept as an index so the whole enum stays small enough for `Def`
+    /// (see the `expr_sizes` test).
+    Rotate { angle: Id, center: Option<u32> },
+    /// Dilation by `factor` from `center`, or the origin (as `Rotate`).
+    Dilate { factor: Id, center: Option<u32> },
+    /// Shear along `axis` by `ratio`.
+    Shear { axis: Id, ratio: Id },
+    /// Stretch along `axis` by `ratio`.
+    Stretch { axis: Id, ratio: Id },
+    /// Stretch along a vector by its length.
+    StretchVector(Id),
+    /// Inversion in a circle.
+    Invert(Id),
+}
+
+/// The centre a [`TransformOf`] rotation or dilation runs about: kept as an
+/// index, `None` meaning the origin.
+pub(crate) fn center_of(center: Option<u32>) -> Option<Id> {
+    center.map(|index| Id(index as usize))
 }
 
 /// A map of the plane that moves points, lines and circle centres.
-#[derive(Clone, Copy)]
-enum Map {
+#[derive(Clone, Copy, Debug)]
+pub(crate) enum Map {
     /// Reflection in the point `(qx, qy)`.
     Point { qx: f64, qy: f64 },
     /// Reflection in the line `a*x + b*y + c = 0`.
@@ -140,7 +195,7 @@ fn mirror_xy(x: f64, y: f64, phi: f64) -> (f64, f64) {
 
 impl Map {
     /// Image of a point, or of the centre of a circle.
-    fn point(&self, x: f64, y: f64) -> (f64, f64) {
+    pub(crate) fn point(&self, x: f64, y: f64) -> (f64, f64) {
         match *self {
             Map::Point { qx, qy } => (2.0 * qx - x, 2.0 * qy - y),
             Map::Line { a, b, c } => {
@@ -166,6 +221,23 @@ impl Map {
                 let (x, y) = (x + qx, y + qy);
                 (m[0] * x + m[1] * y - qx, m[2] * x + m[3] * y - qy)
             }
+        }
+    }
+
+    /// Image of a direction `(x, y)` (`GeoVector.mirror`, `GeoVector.rotate`
+    // and friends): a translation does not turn it and the others are
+    // applied without their centre.
+    pub(crate) fn vector(&self, x: f64, y: f64) -> (f64, f64) {
+        match *self {
+            Map::Point { .. } => (-x, -y),
+            Map::Line { a, b, .. } => mirror_xy(x, y, 2.0 * (-a).atan2(b)),
+            // `GeoVec3D.rotateXY`: a plain rotation, without `MyMath.cos`
+            Map::Rotate { phi, .. } => {
+                let (sin, cos) = phi.sin_cos();
+                (x * cos - y * sin, x * sin + y * cos)
+            }
+            Map::Dilate { r, .. } => (r * x, r * y),
+            Map::Matrix { m, .. } => (m[0] * x + m[1] * y, m[2] * x + m[3] * y),
         }
     }
 
@@ -266,16 +338,64 @@ fn my_length(x: f64, y: f64) -> f64 {
     }
 }
 
-/// Inversion of a point in a circle (`GeoPointND.mirror(GeoConicND)`).
-fn invert(p: (f64, f64), circle: (f64, f64, f64)) -> (f64, f64) {
-    let (cx, cy, r) = circle;
-    // A circle of radius 0 is a single point and leaves the point alone.
-    if r < STANDARD_PRECISION {
-        return p;
+/// The transformed object of a definition (every variant holds it).
+pub(crate) fn source_of(d: &TransformDef) -> Id {
+    match *d {
+        TransformDef::MirrorPoint { src, .. }
+        | TransformDef::MirrorLine { src, .. }
+        | TransformDef::Invert { src, .. }
+        | TransformDef::Rotate { src, .. }
+        | TransformDef::Dilate { src, .. }
+        | TransformDef::ShearStretch { src, .. }
+        | TransformDef::StretchVector { src, .. } => src,
     }
-    let (dx, dy) = (p.0 - cx, p.1 - cy);
-    let scale = r * r / (dx * dx + dy * dy);
-    (cx + scale * dx, cy + scale * dy)
+}
+
+/// A ray value from a start point and raw coefficients, undefined like
+/// `GeoRay.isDefined`.
+fn ray_value(start: (f64, f64), (x, y, z): (f64, f64, f64)) -> Option<Value> {
+    let (a, b, c) = super::vector::stored_line(x, y, z)?;
+    Some(Value::Ray {
+        x: start.0,
+        y: start.1,
+        a,
+        b,
+        c,
+    })
+}
+
+/// The image of a ray: the image of its start point and the image of its
+/// direction, as `GeoRay.createTransformedObject` rebuilds it from the image
+/// of the point and of the direction vector it was made from. Reading both
+/// off the source's value covers an image of an image the same way: the
+/// rebuilt ray is what the next transformation sees.
+fn ray_image(c: &Construction, def: &TransformDef, map: &Map) -> Option<Value> {
+    let Value::Ray { x, y, a, b, .. } = c.value(source_of(def)) else {
+        return None;
+    };
+    let start = map.point(x, y);
+    // the direction `(b, -a)` of the raw line, turned by the map's linear
+    // part (`GeoVector.rotate`, `mirror`, `matrixTransform`)
+    let d = map.vector(b, -a);
+    ray_value(start, (-d.1, d.0, start.0 * d.1 - start.1 * d.0))
+}
+
+/// `AlgoPolygon.calcAreaWithSign` over the moved vertices: half the sum of
+/// `GeoPoint.det` over the closed sequence. `None` for fewer than two
+/// points (an image of an empty polygon, which GeoGebra holds undefined).
+fn moved_area(points: &[(f64, f64)]) -> Option<f64> {
+    let (&first, rest) = points.split_first()?;
+    if rest.is_empty() {
+        return None;
+    }
+    let mut prev = first;
+    let mut sum = 0.0;
+    for &p in rest {
+        sum += prev.0 * p.1 - p.0 * prev.1;
+        prev = p;
+    }
+    sum += prev.0 * first.1 - first.0 * prev.1;
+    Some(sum / 2.0)
 }
 
 impl TransformDef {
@@ -285,6 +405,210 @@ impl TransformDef {
             Some(id) => c.point(id),
         }
     }
+
+    /// The kind and source of the transformed object and the parameters of
+    /// the transformation.
+    pub(crate) fn parts(self) -> (Kind, Id, TransformOf) {
+        match self {
+            TransformDef::MirrorPoint { kind, src, center } => {
+                (kind, src, TransformOf::MirrorPoint(center))
+            }
+            TransformDef::MirrorLine { kind, src, mirror } => {
+                (kind, src, TransformOf::MirrorLine(mirror))
+            }
+            TransformDef::Invert { src, circle } => (Kind::Point, src, TransformOf::Invert(circle)),
+            TransformDef::Rotate {
+                kind,
+                src,
+                angle,
+                center,
+            } => (
+                kind,
+                src,
+                TransformOf::Rotate {
+                    angle,
+                    center: center.map(|id| id.index() as u32),
+                },
+            ),
+            TransformDef::Dilate {
+                kind,
+                src,
+                factor,
+                center,
+            } => (
+                kind,
+                src,
+                TransformOf::Dilate {
+                    factor,
+                    center: center.map(|id| id.index() as u32),
+                },
+            ),
+            TransformDef::ShearStretch {
+                kind,
+                src,
+                axis,
+                ratio,
+                shear,
+            } => (
+                kind,
+                src,
+                if shear {
+                    TransformOf::Shear { axis, ratio }
+                } else {
+                    TransformOf::Stretch { axis, ratio }
+                },
+            ),
+            TransformDef::StretchVector { kind, src, vector } => {
+                (kind, src, TransformOf::StretchVector(vector))
+            }
+        }
+    }
+
+    /// The same transformation of another object: the sides of a transformed
+    /// polygon are transformations of its sides.
+    pub(crate) fn of(self, kind: Kind, src: Id) -> TransformDef {
+        match self {
+            TransformDef::MirrorPoint { center, .. } => {
+                TransformDef::MirrorPoint { kind, src, center }
+            }
+            TransformDef::MirrorLine { mirror, .. } => {
+                TransformDef::MirrorLine { kind, src, mirror }
+            }
+            TransformDef::Invert { circle, .. } => TransformDef::Invert { src, circle },
+            TransformDef::Rotate { angle, center, .. } => TransformDef::Rotate {
+                kind,
+                src,
+                angle,
+                center,
+            },
+            TransformDef::Dilate { factor, center, .. } => TransformDef::Dilate {
+                kind,
+                src,
+                factor,
+                center,
+            },
+            TransformDef::ShearStretch {
+                axis, ratio, shear, ..
+            } => TransformDef::ShearStretch {
+                kind,
+                src,
+                axis,
+                ratio,
+                shear,
+            },
+            TransformDef::StretchVector { vector, .. } => {
+                TransformDef::StretchVector { kind, src, vector }
+            }
+        }
+    }
+
+    /// The map of the plane this definition is: the image of every point it
+    /// moves. `None` when an input is undefined (the image then is too) or
+    /// for the inversion, which parts compute themselves.
+    pub(crate) fn map(&self, c: &Construction) -> Option<Map> {
+        self.parts().2.map(c)
+    }
+}
+
+impl TransformOf {
+    /// The map of the plane this transformation is (see
+    /// [`TransformDef::map`]).
+    pub(crate) fn map(&self, c: &Construction) -> Option<Map> {
+        match *self {
+            TransformOf::MirrorPoint(center) => {
+                let (qx, qy) = c.point(center)?;
+                Some(Map::Point { qx, qy })
+            }
+            TransformOf::MirrorLine(mirror) => {
+                let (a, b, c) = c.raw_carrier(mirror)?;
+                Some(Map::Line { a, b, c })
+            }
+            TransformOf::Rotate { angle, center } => {
+                let (qx, qy) = TransformDef::center(c, center_of(center))?;
+                let phi = c.number(angle)?;
+                Some(Map::Rotate { phi, qx, qy })
+            }
+            TransformOf::Dilate { factor, center } => {
+                let (sx, sy) = TransformDef::center(c, center_of(center))?;
+                let r = c.number(factor)?;
+                Some(Map::Dilate { r, sx, sy })
+            }
+            TransformOf::Shear { axis, ratio } => {
+                let (la, lb, lc) = c.raw_carrier(axis)?;
+                let n = c.number(ratio)?;
+                shear_matrix(la, lb, lc, n, true)
+            }
+            TransformOf::Stretch { axis, ratio } => {
+                let (la, lb, lc) = c.raw_carrier(axis)?;
+                let n = c.number(ratio)?;
+                shear_matrix(la, lb, lc, n, false)
+            }
+            TransformOf::StretchVector(vector) => {
+                let Value::Vector { x: vx, y: vy } = c.value(vector) else {
+                    return None;
+                };
+                let (qx, qy) = match crate::algo::vector::start(c, vector) {
+                    Some((sx, sy)) => (-sx, -sy),
+                    None => (0.0, 0.0),
+                };
+                // the point of the vector moves to the origin and the
+                // stretch is by the vector's length along it
+                let len = my_length(vx, vy);
+                let (cos, s) = (-vy / len, vx / len);
+                let m = [
+                    cos * cos + s * s * len,
+                    cos * s * (1.0 - len),
+                    cos * s * (1.0 - len),
+                    s * s + cos * cos * len,
+                ];
+                Some(Map::Matrix { qx, qy, m })
+            }
+            TransformOf::Invert(_) => None,
+        }
+    }
+}
+
+/// The matrix of `Shear` and `Stretch` along the line `(la, lb, lc)` by the
+/// ratio `n` (`AlgoShearOrStretch.compute`), which moves a point of the line
+/// to the origin first and back afterwards.
+fn shear_matrix(la: f64, lb: f64, lc: f64, n: f64, shear: bool) -> Option<Map> {
+    let (qx, qy) = if la.abs() > lb.abs() {
+        (lc / la, 0.0)
+    } else {
+        (0.0, lc / lb)
+    };
+    let len = my_length(la, lb);
+    let (s, cos) = (-la / len, lb / len);
+    let m = if shear {
+        [
+            1.0 - cos * s * n,
+            cos * cos * n,
+            -s * s * n,
+            1.0 + s * cos * n,
+        ]
+    } else {
+        [
+            cos * cos + s * s * n,
+            cos * s * (1.0 - n),
+            cos * s * (1.0 - n),
+            s * s + cos * cos * n,
+        ]
+    };
+    Some(Map::Matrix { qx, qy, m })
+}
+
+/// Inversion of the point `p` in the circle `(cx, cy, r)`
+/// (`GeoPointND.mirror(GeoConicND)`): the point itself for a circle of
+/// radius 0, `None` for the centre, whose image is at infinity.
+pub(crate) fn invert_point(p: (f64, f64), (cx, cy, r): (f64, f64, f64)) -> Option<(f64, f64)> {
+    // A circle of radius 0 is a single point and leaves the point alone.
+    if r < STANDARD_PRECISION {
+        return Some(p);
+    }
+    let (dx, dy) = (p.0 - cx, p.1 - cy);
+    let scale = r * r / (dx * dx + dy * dy);
+    let out = (cx + scale * dx, cy + scale * dy);
+    (out.0.is_finite() && out.1.is_finite()).then_some(out)
 }
 
 impl Group for TransformDef {
@@ -294,7 +618,8 @@ impl Group for TransformDef {
             | TransformDef::MirrorLine { kind, .. }
             | TransformDef::Rotate { kind, .. }
             | TransformDef::Dilate { kind, .. }
-            | TransformDef::ShearStretch { kind, .. } => kind,
+            | TransformDef::ShearStretch { kind, .. }
+            | TransformDef::StretchVector { kind, .. } => kind,
             TransformDef::Invert { .. } => Kind::Point,
         }
     }
@@ -307,6 +632,7 @@ impl Group for TransformDef {
             TransformDef::ShearStretch {
                 src, axis, ratio, ..
             } => Parents::of(&[src, axis, ratio]),
+            TransformDef::StretchVector { src, vector, .. } => Parents::of(&[src, vector]),
             TransformDef::Rotate {
                 src,
                 angle: second,
@@ -349,9 +675,14 @@ impl Group for TransformDef {
                 ..
             } => {
                 c.expect(src, of_kind(kind))?;
-                c.expect(src, TRANSFORMABLE)?;
+                c.expect(src, SHEARABLE)?;
                 c.expect(axis, LINE_LIKE)?;
-                c.expect(ratio, NUMBER)
+                c.expect(ratio, NUMBER_OR_ANGLE)
+            }
+            TransformDef::StretchVector { kind, src, vector } => {
+                c.expect(src, of_kind(kind))?;
+                c.expect(src, SHEARABLE)?;
+                c.expect(vector, VECTOR)
             }
             TransformDef::Rotate {
                 kind,
@@ -367,7 +698,7 @@ impl Group for TransformDef {
             } => {
                 c.expect(src, of_kind(kind))?;
                 c.expect(src, TRANSFORMABLE)?;
-                c.expect(second, NUMBER)?;
+                c.expect(second, NUMBER_OR_ANGLE)?;
                 match center {
                     Some(q) => c.expect(q, POINT),
                     None => Ok(()),
@@ -377,74 +708,50 @@ impl Group for TransformDef {
     }
 
     fn compute(&self, c: &Construction) -> Option<Value> {
-        let (src, map) = match *self {
-            TransformDef::MirrorPoint { src, center, .. } => {
-                let (qx, qy) = c.point(center)?;
-                (src, Map::Point { qx, qy })
+        if let TransformDef::Invert { src, circle } = *self {
+            let p = c.point(src)?;
+            let (x, y) = invert_point(p, c.circle(circle)?)?;
+            return Some(Value::Point { x, y });
+        }
+        let map = self.map(c);
+        match self.kind() {
+            Kind::Ray => ray_image(c, self, &map?),
+            Kind::Vector => match (c.value(source_of(self)), map) {
+                (Value::Vector { x, y }, Some(map)) => {
+                    let (x, y) = map.vector(x, y);
+                    Some(Value::Vector { x, y })
+                }
+                _ => None,
+            },
+            Kind::Polygon => {
+                let map = map?;
+                let mut points = Vec::new();
+                for v in c.vertices(source_of(self)) {
+                    let (x, y) = v?;
+                    points.push(map.point(x, y));
+                }
+                Some(Value::Polygon {
+                    area: moved_area(&points)?,
+                })
             }
-            TransformDef::MirrorLine { src, mirror, .. } => {
-                let (a, b, c) = c.raw_carrier(mirror)?;
-                (src, Map::Line { a, b, c })
+            Kind::PolyLine => {
+                // the image runs through the points like the source
+                // (`transformPoly`): an undefined input leaves a hole rather
+                // than undefining the polyline (GeoPolyLine.isDefined)
+                let mut length = 0.0;
+                let mut prev: Option<(f64, f64)> = None;
+                for v in c.vertices(source_of(self)) {
+                    let p = v.and_then(|(x, y)| map.as_ref().map(|m| m.point(x, y)));
+                    if let (Some(a), Some(b)) = (prev, p) {
+                        let (dx, dy) = (a.0 - b.0, a.1 - b.1);
+                        length += (dx * dx + dy * dy).sqrt();
+                    }
+                    prev = p;
+                }
+                Some(Value::PolyLine { length })
             }
-            TransformDef::ShearStretch {
-                src,
-                axis,
-                ratio,
-                shear,
-                ..
-            } => {
-                let (la, lb, lc) = c.raw_carrier(axis)?;
-                let n = c.number(ratio)?;
-                // `AlgoShearOrStretch.compute`: a point on the axis moves to
-                // the origin, then the matrix of the shear or stretch is applied.
-                let (qx, qy) = if la.abs() > lb.abs() {
-                    (lc / la, 0.0)
-                } else {
-                    (0.0, lc / lb)
-                };
-                let len = my_length(la, lb);
-                let (s, cos) = (-la / len, lb / len);
-                let m = if shear {
-                    [
-                        1.0 - cos * s * n,
-                        cos * cos * n,
-                        -s * s * n,
-                        1.0 + s * cos * n,
-                    ]
-                } else {
-                    [
-                        cos * cos + s * s * n,
-                        cos * s * (1.0 - n),
-                        cos * s * (1.0 - n),
-                        s * s + cos * cos * n,
-                    ]
-                };
-                (src, Map::Matrix { qx, qy, m })
-            }
-            TransformDef::Invert { src, circle } => {
-                let p = c.point(src)?;
-                let (x, y) = invert(p, c.circle(circle)?);
-                return Some(Value::Point { x, y });
-            }
-            TransformDef::Rotate {
-                src, angle, center, ..
-            } => {
-                let (qx, qy) = Self::center(c, center)?;
-                let phi = c.number(angle)?;
-                (src, Map::Rotate { phi, qx, qy })
-            }
-            TransformDef::Dilate {
-                src,
-                factor,
-                center,
-                ..
-            } => {
-                let (sx, sy) = Self::center(c, center)?;
-                let r = c.number(factor)?;
-                (src, Map::Dilate { r, sx, sy })
-            }
-        };
-        map.value(c.value(src))
+            _ => map?.value(c.value(source_of(self))),
+        }
     }
 
     fn parse(c: &Construction, func: &str, args: &[&str]) -> Option<Result<Self, String>> {
@@ -456,13 +763,18 @@ impl Group for TransformDef {
     }
 }
 
-fn parse_transform(c: &Construction, func: &str, args: &[&str]) -> Result<TransformDef, String> {
-    if func == "Stretch" && args.len() == 2 {
-        return Err("`Stretch` along a vector is not supported (there are no vectors)".into());
-    }
+/// Parses a transformation of one of `kinds`; the parts of conics call
+/// this with their own kinds and read the definition themselves.
+pub(crate) fn parse_transform_for(
+    c: &Construction,
+    func: &str,
+    args: &[&str],
+    kinds: &[Kind],
+) -> Result<TransformDef, String> {
     let arity_ok = match func {
         "Mirror" | "Reflect" => args.len() == 2,
-        "Shear" | "Stretch" => args.len() == 3,
+        "Shear" => args.len() == 3,
+        "Stretch" => args.len() == 2 || args.len() == 3,
         _ => args.len() == 2 || args.len() == 3,
     };
     if !arity_ok {
@@ -470,22 +782,37 @@ fn parse_transform(c: &Construction, func: &str, args: &[&str]) -> Result<Transf
     }
     let src = object(c, args[0])?;
     let kind = c.kind(src);
-    if kind == Kind::Circle && matches!(func, "Shear" | "Stretch") {
-        return Err(format!(
-            "`{func}` of a circle is not supported (the image is an ellipse)"
-        ));
-    }
-    if !TRANSFORMABLE.contains(&kind) {
+    if !kinds.contains(&kind) {
         return Err(format!(
             "`{}` is a {kind}, which `{func}` does not transform",
             args[0]
         ));
     }
+    if matches!(func, "Shear" | "Stretch") && kind == Kind::PolyLine {
+        return Err(format!(
+            "`{func}` of a polyline is not supported (GeoGebra rejects it too)"
+        ));
+    }
     let second = object(c, args[1])?;
     let second_kind = c.kind(second);
 
+    if func == "Stretch" && args.len() == 2 {
+        // `Stretch(object, vector)`: stretched along the vector by its length
+        if second_kind != Kind::Vector {
+            return Err(format!(
+                "`{}` is a {second_kind}, expected a vector",
+                args[1]
+            ));
+        }
+        return Ok(TransformDef::StretchVector {
+            kind,
+            src,
+            vector: second,
+        });
+    }
+
     if matches!(func, "Shear" | "Stretch") {
-        if !matches!(second_kind, Kind::Line | Kind::Segment) {
+        if !matches!(second_kind, Kind::Line | Kind::Segment | Kind::Ray) {
             return Err(format!("`{}` is a {second_kind}, expected a line", args[1]));
         }
         let ratio = object(c, args[2])?;
@@ -512,7 +839,7 @@ fn parse_transform(c: &Construction, func: &str, args: &[&str]) -> Result<Transf
                 src,
                 center: second,
             }),
-            Kind::Line | Kind::Segment => Ok(TransformDef::MirrorLine {
+            Kind::Line | Kind::Segment | Kind::Ray => Ok(TransformDef::MirrorLine {
                 kind,
                 src,
                 mirror: second,
@@ -522,21 +849,10 @@ fn parse_transform(c: &Construction, func: &str, args: &[&str]) -> Result<Transf
                 circle: second,
             }),
             Kind::Circle => Err(format!(
-                "inversion of a {kind} in a circle is not supported (only a point can be inverted)"
+                "inversion of a {kind} in a circle is not supported (only a point, a line, a \
+                 segment, a circle, a conic, an arc and a sector can be inverted)"
             )),
-            Kind::Number
-            | Kind::Angle
-            | Kind::Vector
-            | Kind::Ray
-            | Kind::Boolean
-            | Kind::Polygon
-            | Kind::PolyLine
-            | Kind::List
-            | Kind::Conic
-            | Kind::Arc
-            | Kind::Sector
-            | Kind::Locus
-            | Kind::Function => Err(format!(
+            _ => Err(format!(
                 "`{}` is a {second_kind}, expected a mirror",
                 args[1]
             )),
@@ -574,6 +890,10 @@ fn parse_transform(c: &Construction, func: &str, args: &[&str]) -> Result<Transf
             center,
         }
     })
+}
+
+fn parse_transform(c: &Construction, func: &str, args: &[&str]) -> Result<TransformDef, String> {
+    parse_transform_for(c, func, args, TRANSFORMABLE)
 }
 
 #[cfg(test)]
@@ -628,8 +948,11 @@ mod tests {
 
     #[test]
     fn rejects_wrong_arguments() {
-        let mut c =
-            load("A = (1, 0)\nB = (3, 1)\nw = 0.5\nl = Line(A, B)\nk = Circle(A, B)\n").unwrap();
+        let mut c = load(
+            "A = (1, 0)\nB = (3, 1)\nw = 0.5\nl = Line(A, B)\nk = Circle(A, B)\n\
+             r = Ray(A, B)\nt = PolyLine(A, B)\n",
+        )
+        .unwrap();
         let mut err = |line: &str| exec(&mut c, line).unwrap_err();
         assert!(err("m = Mirror(A)").contains("`Mirror` does not take 1 argument(s)"));
         assert!(err("m = Reflect(A, B, l)").contains("does not take 3"));
@@ -639,11 +962,17 @@ mod tests {
         assert!(err("m = Rotate(A, w, l)").contains("expected a point"));
         assert!(err("m = Mirror(w, A)").contains("does not transform"));
         assert!(err("m = Mirror(A, w)").contains("expected a mirror"));
-        assert!(err("m = Mirror(l, k)").contains("not supported"));
+        // the inversion of a ray is not supported (its ends are labelled
+        // like a ray's in GeoGebra); a line, a segment, a circle, a conic,
+        // an arc and a sector can be inverted
+        assert!(err("m = Mirror(r, k)").contains("not supported"));
+        assert!(err("m = Mirror(t, k)").contains("not supported"));
         assert!(err("m = Dilate(Z, w)").contains("unknown object"));
         assert!(err("m = Shear(A, l)").contains("`Shear` does not take 2"));
-        assert!(err("m = Stretch(A, l)").contains("not supported"));
-        assert!(err("m = Shear(k, l, w)").contains("ellipse"));
+        // `Stretch(A, l)` with a line is the vector form's error: `l` is
+        // not a vector
+        assert!(err("m = Stretch(A, l)").contains("expected a vector"));
+        assert!(err("m = Shear(t, l, w)").contains("polyline is not supported"));
         assert!(err("m = Stretch(A, w, w)").contains("expected a line"));
         assert!(err("m = Stretch(A, l, B)").contains("expected a number"));
     }
@@ -752,5 +1081,23 @@ mod tests {
         let b = c.id("B").unwrap();
         c.move_point(b, 0.0, 0.0).unwrap();
         assert_eq!(value(&c, "m"), Value::Undefined);
+    }
+
+    #[test]
+    fn the_image_of_an_image_of_a_ray_is_a_ray() {
+        // a ray built from a point and a vector (not from two points) is
+        // rebuilt from the images of both, however deep the chain goes
+        let c = load(
+            "A = (1, 2)\nu = (2, 1)\nC = (-2, 4)\nD = (3, -3)\nn = Line(C, D)\nw = 0.9\n\
+             g = Ray(A, u)\nm = Mirror(g, n)\nr = Rotate(m, w)\nt = Translate(r, u)\n",
+        )
+        .unwrap();
+        assert_eq!(c.kind(c.id("r").unwrap()), Kind::Ray);
+        for label in ["m", "r", "t"] {
+            assert!(
+                matches!(value(&c, label), Value::Ray { .. }),
+                "{label} is not a ray"
+            );
+        }
     }
 }

@@ -31,8 +31,8 @@
 <tableview min="0" max="0" step="0"/>
 <scripting blocked="false" disabled="false"/>
 <construction title="" author="" date="">
-<expression label="P" exp="(6.17, 7.26)" type="point"/>
-<element type="point" label="P">
+<expression label="A" exp="(-4.42, -0.5)" type="point"/>
+<element type="point" label="A">
 	<show object="true" label="true"/>
 	<objColor r="77" g="77" b="255" alpha="0"/>
 	<layer val="0"/>
@@ -40,9 +40,45 @@
 	<animation step="0.1" type="1" playing="false"/>
 	<pointSize val="5"/>
 	<pointStyle val="0"/>
-	<coords x="6.17" y="7.26" z="1"/>
+	<coords x="-4.42" y="-0.5" z="1"/>
 </element>
-<expression label="C" exp="(0, 0)" type="point"/>
+<expression label="B" exp="(6.48, -7.26)" type="point"/>
+<element type="point" label="B">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="1" playing="false"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="6.48" y="-7.26" z="1"/>
+</element>
+<expression label="F" exp="(-6.71, -1.62)" type="point"/>
+<element type="point" label="F">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="1" playing="false"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="-6.71" y="-1.62" z="1"/>
+</element>
+<command name="Ellipse">
+	<input a0="A" a1="F" a2="B"/>
+	<output a0="c"/>
+</command>
+<element type="conic" label="c">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="implicit"/>
+	<eigenvectors x0="0.8983155567092597" y0="0.4393508399606546" z0="1" x1="-0.4393508399606546" y1="0.8983155567092597" z1="1"/>
+	<matrix A0="2932.1383558249863" A1="2948.097155824986" A2="-446260.2200595731" A3="-10.259200000000002" A4="16306.475198166048" A5="3067.890537174486"/>
+</element>
+<expression label="C" exp="(0, 2)" type="point"/>
 <element type="point" label="C">
 	<show object="true" label="true"/>
 	<objColor r="77" g="77" b="255" alpha="0"/>
@@ -51,9 +87,9 @@
 	<animation step="0.1" type="1" playing="false"/>
 	<pointSize val="5"/>
 	<pointStyle val="0"/>
-	<coords x="0" y="0" z="1"/>
+	<coords x="0" y="2" z="1"/>
 </element>
-<expression label="D" exp="(0.000001, 100)" type="point"/>
+<expression label="D" exp="(4, 2)" type="point"/>
 <element type="point" label="D">
 	<show object="true" label="true"/>
 	<objColor r="77" g="77" b="255" alpha="0"/>
@@ -62,7 +98,7 @@
 	<animation step="0.1" type="1" playing="false"/>
 	<pointSize val="5"/>
 	<pointStyle val="0"/>
-	<coords x="1.0E-6" y="100" z="1"/>
+	<coords x="4" y="2" z="1"/>
 </element>
 <command name="Line">
 	<input a0="C" a1="D"/>
@@ -75,25 +111,26 @@
 	<labelMode val="0"/>
 	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
 	<eqnStyle style="implicit"/>
-	<coords x="-100" y="1.0E-6" z="0"/>
+	<coords x="0" y="4" z="-8"/>
 </element>
-<expression label="f" exp="1.5"/>
+<expression label="f" exp="1.7"/>
 <element type="numeric" label="f">
-	<value val="1.5"/>
+	<value val="1.7"/>
 	<show object="false" label="true"/>
 </element>
 <command name="Shear">
-	<input a0="P" a1="n" a2="f"/>
+	<input a0="c" a1="n" a2="f"/>
 	<output a0="m"/>
 </command>
-<element type="point" label="m">
-	<show object="true" label="true"/>
-	<objColor r="77" g="77" b="255" alpha="0"/>
+<element type="conic" label="m">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
 	<layer val="0"/>
 	<labelMode val="0"/>
-	<pointSize val="5"/>
-	<pointStyle val="0"/>
-	<coords x="6.16999990745" y="-1.9949998911" z="1"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="implicit"/>
+	<eigenvectors x0="0.908053875927937" y0="0.41885338534175764" z0="1" x1="-0.41885338534175764" y1="0.908053875927937" z1="1"/>
+	<matrix A0="2932.1383558249863" A1="11456.858284159196" A2="-301480.6693187072" A3="-4994.894404902477" A4="26275.745607971003" A5="-41635.75827637622"/>
 </element>
 </construction>
 </geogebra>

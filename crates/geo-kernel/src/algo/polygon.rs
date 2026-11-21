@@ -64,6 +64,8 @@
 
 use super::measure::{angle_of_points, segment_length};
 use super::polygon_clip::{ClipDef, ClipOutput};
+use super::transform::{parse_transform_for, source_of, Map};
+use super::vector::VectorDef;
 use super::{Group, Parents, NUMBER, POINT};
 use crate::kernel::{Construction, Def, Error, Id, IdList, Kind, Value};
 use crate::script::{object, split_call};
@@ -284,6 +286,13 @@ enum Shape<'a> {
     Points(&'a [Id]),
     Regular(Regular),
     Clipped(Vec<(f64, f64)>),
+    /// The image of another shape under a map: a polygon or polyline under
+    /// `Mirror`, `Rotate`, `Dilate`, `Shear` or `Stretch`
+    /// (`Transform.transformPoly` moves the points). Without a map (an
+    /// undefined input) the vertices are holes, not gone.
+    Moved(Box<Shape<'a>>, Option<Map>),
+    /// Another shape translated by a vector (`GeoPoly.translate`).
+    Shifted(Box<Shape<'a>>, Option<(f64, f64)>),
     Empty,
 }
 
@@ -302,6 +311,20 @@ impl<'a> Shape<'a> {
             Def::Polygon(PolygonDef::Clip(d)) if d.kind() == Kind::Polygon => {
                 d.vertices(c).map_or(Shape::Empty, Shape::Clipped)
             }
+            Def::Transform(def) if matches!(def.kind(), Kind::Polygon | Kind::PolyLine) => {
+                Shape::Moved(Box::new(Shape::of(c, source_of(&def))), def.map(c))
+            }
+            Def::Vector(VectorDef::Translate {
+                kind: Kind::Polygon | Kind::PolyLine,
+                src,
+                by,
+            }) => {
+                let by = match c.value(by) {
+                    Value::Vector { x, y } => Some((x, y)),
+                    _ => None,
+                };
+                Shape::Shifted(Box::new(Shape::of(c, src)), by)
+            }
             _ => Shape::Empty,
         }
     }
@@ -311,6 +334,7 @@ impl<'a> Shape<'a> {
             Shape::Points(ids) => ids.len(),
             Shape::Regular(r) => r.n,
             Shape::Clipped(vertices) => vertices.len(),
+            Shape::Moved(inner, ..) | Shape::Shifted(inner, ..) => inner.len(),
             Shape::Empty => 0,
         }
     }
@@ -320,6 +344,14 @@ impl<'a> Shape<'a> {
             Shape::Points(ids) => c.point(*ids.get(k)?),
             Shape::Regular(r) => (k < r.n).then(|| r.vertex(k)),
             Shape::Clipped(vertices) => vertices.get(k).copied(),
+            Shape::Moved(inner, map) => {
+                let (x, y) = inner.vertex(c, k)?;
+                map.map(|m| m.point(x, y))
+            }
+            Shape::Shifted(inner, by) => {
+                let (x, y) = inner.vertex(c, k)?;
+                by.map(|(dx, dy)| (x + dx, y + dy))
+            }
             Shape::Empty => None,
         }
     }
@@ -386,6 +418,16 @@ pub(crate) fn inputs(c: &Construction, poly: Id) -> Vec<Id> {
             ids.extend(d.hidden_parents(c));
             ids
         }
+        // the image reads the vertices of the object it transforms, and so
+        // the objects they come from
+        Def::Transform(def) if matches!(def.kind(), Kind::Polygon | Kind::PolyLine) => {
+            inputs(c, source_of(&def))
+        }
+        Def::Vector(VectorDef::Translate {
+            kind: Kind::Polygon | Kind::PolyLine,
+            src,
+            ..
+        }) => inputs(c, src),
         _ => Vec::new(),
     }
 }
@@ -405,6 +447,16 @@ pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
             | PolygonDef::Angle { poly, .. }
             | PolygonDef::RigidCopyVertex { poly, .. },
         ) => inputs(c, poly),
+        // a transformed or translated polygon reads the vertices of the
+        // object it moves
+        Def::Transform(def) if matches!(def.kind(), Kind::Polygon | Kind::PolyLine) => {
+            inputs(c, source_of(&def))
+        }
+        Def::Vector(VectorDef::Translate {
+            kind: Kind::Polygon | Kind::PolyLine,
+            src,
+            ..
+        }) => inputs(c, src),
         _ => Vec::new(),
     }
 }
@@ -864,8 +916,8 @@ fn next_indexed_label(c: &Construction, taken: &Taken, chars: &[char]) -> String
 /// the vertex `p`: the vertex label in lower case, with an index when that
 /// is a single character, or the next default label for segments when a
 /// longer lower-case label is taken.
-fn side_label(c: &Construction, taken: &Taken, p: Id) -> String {
-    let lower = c.label(p).to_lowercase();
+fn side_label(c: &Construction, taken: &Taken, vertex: &str) -> String {
+    let lower = vertex.to_lowercase();
     let mut units = lower.encode_utf16();
     if let (Some(unit), None) = (units.next(), units.next()) {
         if let Some(ch) = char::from_u32(u32::from(unit)) {
@@ -1068,9 +1120,200 @@ pub(crate) fn exec(
         "Angle" if n == 1 && kind_of(c, args[0]) == Some(Kind::Polygon) => {
             outputs_line(c, name, args[0], Outputs::Angles(false))
         }
+        // `Transform.transformPoly`: a polygon or polyline made from three
+        // or more points is transformed through its points, so the line
+        // creates the sides of the image as well
+        "Mirror" | "Reflect" | "Rotate" | "Dilate" | "Shear" | "Stretch" | "Translate"
+            if n >= 2
+                && matches!(
+                    kind_of(c, args[0]),
+                    Some(Kind::Polygon) | Some(Kind::PolyLine)
+                )
+                && from_points(c, args[0]) =>
+        {
+            let src = c.id(args[0]).unwrap();
+            transform_line(c, name, func, &args, src)
+        }
         _ => return None,
     };
     Some(result.map(Some))
+}
+
+/// Whether `arg` is a polygon or polyline made from a list of three or more
+/// points, whose vertex count is fixed (`GeoPolygon.isVertexCountFixed`);
+/// every image of such a polygon is one again (GeoGebra rebuilds it from
+/// the transformed points), while a polygon of two points and a regular
+/// polygon go the plain way, without sides.
+fn from_points(c: &Construction, arg: &str) -> bool {
+    c.id(arg).is_some_and(|id| from_points_id(c, id))
+}
+
+fn from_points_id(c: &Construction, id: Id) -> bool {
+    match c.def(id) {
+        Def::Polygon(PolygonDef::Polygon(list)) => c.list(list).len() >= 3,
+        Def::Transform(def) if matches!(def.kind(), Kind::Polygon | Kind::PolyLine) => {
+            from_points_id(c, source_of(&def))
+        }
+        Def::Vector(VectorDef::Translate {
+            kind: Kind::Polygon | Kind::PolyLine,
+            src,
+            ..
+        }) => from_points_id(c, src),
+        _ => false,
+    }
+}
+
+/// The polygon made from points that `id` is (an image of): its own id and
+/// the ids of its vertices. `None` for a regular polygon, a polygon of two
+/// points, and anything that is not a polygon.
+fn base_polygon(c: &Construction, id: Id) -> Option<(Id, Vec<Id>)> {
+    match c.def(id) {
+        Def::Polygon(PolygonDef::Polygon(list)) => Some((id, c.list(list).to_vec())),
+        Def::Transform(def) if matches!(def.kind(), Kind::Polygon | Kind::PolyLine) => {
+            base_polygon(c, source_of(&def))
+        }
+        Def::Vector(VectorDef::Translate {
+            kind: Kind::Polygon | Kind::PolyLine,
+            src,
+            ..
+        }) => base_polygon(c, src),
+        _ => None,
+    }
+}
+
+/// How many transformations the polygon or polyline `id` is an image of its
+/// points-built source under.
+fn chain_depth(c: &Construction, id: Id) -> usize {
+    match c.def(id) {
+        Def::Transform(def) if matches!(def.kind(), Kind::Polygon | Kind::PolyLine) => {
+            1 + chain_depth(c, source_of(&def))
+        }
+        Def::Vector(VectorDef::Translate {
+            kind: Kind::Polygon | Kind::PolyLine,
+            src,
+            ..
+        }) => 1 + chain_depth(c, src),
+        _ => 0,
+    }
+}
+
+/// The side of the image `src` that is the segment `side` of the
+/// points-built source: the segment itself, or its image under the
+/// transformations between the source and `src`.
+fn side_of_image(c: &Construction, src: Id, side: Id) -> Option<Id> {
+    let mut current = side;
+    for _ in 0..chain_depth(c, src) {
+        current = c.ids().find(|&id| match c.def(id) {
+            Def::Transform(d) => d.kind() == Kind::Segment && source_of(&d) == current,
+            Def::Vector(VectorDef::Translate { kind, src: s, .. }) => {
+                kind == Kind::Segment && s == current
+            }
+            _ => false,
+        })?;
+    }
+    Some(current)
+}
+
+/// `Transform.transformedGeoLabel`: the label of an image, its source's
+/// label with an apostrophe; `None` for an indexed label or one with three
+/// apostrophes, whose image gets no label.
+fn transformed_label(label: &str) -> Option<String> {
+    (!label.contains('_') && !label.ends_with("'''")).then(|| format!("{label}'"))
+}
+
+/// The label of a vertex of the image `depth` transformations away from its
+/// source vertex `label`: the last transformation names it from the label
+/// one step below (`None` when that has no label to give).
+fn vertex_image_label(label: &str, depth: usize) -> Option<String> {
+    transformed_label(&format!("{label}{}", "'".repeat(depth)))
+}
+
+/// `Mirror(p, l)`, `Rotate(p, a, Q)`, ... of a polygon or polyline made
+/// from three or more points: the image, then the sides of a polygon's
+/// image, named after the labels of its transformed vertices as the polygon
+/// command names them (`polygonND` over the transformed points; a vertex
+/// whose image has no label to give leaves the side a default label, as it
+/// does for unlabelled points).
+fn transform_line(
+    c: &mut Construction,
+    name: &str,
+    func: &str,
+    args: &[&str],
+    src: Id,
+) -> Result<Id, String> {
+    let kind = c.kind(src);
+    let def = if func == "Translate" {
+        // `CmdTranslate`: the object is moved by a vector
+        if args.len() != 2 {
+            return Err(format!(
+                "`Translate` does not take {} argument(s)",
+                args.len()
+            ));
+        }
+        let by = object(c, args[1])?;
+        if c.kind(by) != Kind::Vector {
+            return Err(format!(
+                "`{}` is a {}, expected a vector",
+                args[1],
+                c.kind(by)
+            ));
+        }
+        Def::Vector(VectorDef::Translate { kind, src, by })
+    } else {
+        Def::Transform(parse_transform_for(c, func, args, &[kind])?)
+    };
+    let mut plan = Plan::new(c, name)?;
+    plan.first(name, Planned::Def(def));
+    if kind == Kind::Polygon {
+        let Some((_, pts)) = base_polygon(c, src) else {
+            unreachable!("checked by the caller");
+        };
+        let depth = chain_depth(c, src);
+        let n = pts.len();
+        // The label of the image of every vertex: the vertex's label with as
+        // many apostrophes as the chain is deep. Past three transformations
+        // (or for an indexed label) GeoGebra gives the image a default point
+        // label instead (`transformedGeoLabel` returns null and
+        // `transformPoints` labels the point itself); the sides are named
+        // after those labels as the polygon command names them.
+        let mut vertex_taken = Taken::new();
+        let image_labels: Vec<String> = pts
+            .iter()
+            .map(|&p| match vertex_image_label(c.label(p), depth) {
+                Some(label) => label,
+                None => {
+                    let label = next_indexed_label(c, &vertex_taken, POINT_LABELS);
+                    vertex_taken.insert(label.clone());
+                    label
+                }
+            })
+            .collect();
+        for i in 0..n {
+            // the side as the polygon line created it, from vertex i to the
+            // next one
+            let wanted = Def::Segment(pts[i], pts[(i + 1) % n]);
+            let Some(side) = c.ids().find(|&id| c.def(id) == wanted) else {
+                continue;
+            };
+            let Some(side) = side_of_image(c, src, side) else {
+                continue;
+            };
+            let named_after = if n == 3 { (i + 2) % 3 } else { i };
+            let label = side_label(c, &plan.taken, &image_labels[named_after]);
+            // the same transformation of the side
+            let side_def = match def {
+                Def::Transform(d) => Def::Transform(d.of(Kind::Segment, side)),
+                Def::Vector(VectorDef::Translate { by, .. }) => Def::Vector(VectorDef::Translate {
+                    kind: Kind::Segment,
+                    src: side,
+                    by,
+                }),
+                _ => unreachable!("the line's first object"),
+            };
+            plan.push(label, Planned::Def(side_def));
+        }
+    }
+    plan.commit(c)
 }
 
 /// The number of arguments as GeoGebra counts them: `F()` has none.
@@ -1351,7 +1594,7 @@ fn plan_polygon_sides(
             }
             // `GeoPolygon.defaultSegmentLabels`
             let named_after = side_names[if n == 3 { (i + 2) % 3 } else { i }];
-            let label = side_label(c, &plan.taken, named_after);
+            let label = side_label(c, &plan.taken, c.label(named_after));
             plan.push(label, Planned::Def(side));
         }
     }
@@ -1843,6 +2086,100 @@ mod tests {
     }
 
     #[test]
+    fn a_transformed_polygon_comes_with_its_sides() {
+        let src = "A = (0, 0)\nB = (4, 0)\nC = (4, 3)\nQ = (1, 1)\nw = 0.5\n\
+                   l = Line(A, C)\nv = Vector(A, B)\n";
+        let mut c = load(src).unwrap();
+        run(&mut c, "p = Polygon(A, B, C)").unwrap();
+        let n = c.len();
+        // a triangle's sides are named after the opposite vertex's image
+        run(&mut c, "q = Mirror(p, Q)").unwrap();
+        assert_eq!(labels(&c, n), ["q", "c'", "a'", "b'"]);
+        // reflection in a point turns nothing: the image runs as the source
+        assert!(close(
+            match c.value(c.id("q").unwrap()) {
+                Value::Polygon { area } => area,
+                v => panic!("{v:?}"),
+            },
+            6.0
+        ));
+        // `a'` is the side from B' = (-2, 2) to C' = (-2, -1)
+        assert_eq!(
+            c.value(c.id("a'").unwrap()),
+            Value::Segment {
+                x1: -2.0,
+                y1: 2.0,
+                x2: -2.0,
+                y2: -1.0
+            }
+        );
+        // the image follows a moved vertex and the moved mirror
+        c.move_point(c.id("Q").unwrap(), 0.0, 0.0).unwrap();
+        assert_eq!(
+            c.value(c.id("c'").unwrap()),
+            Value::Segment {
+                x1: 0.0,
+                y1: 0.0,
+                x2: -4.0,
+                y2: 0.0
+            }
+        );
+        // the measures and vertices of the image read the moved points
+        run(&mut c, "ar = Area(q)").unwrap();
+        assert!(close(num(&c, "ar").unwrap(), 6.0));
+        run(&mut c, "V = Vertex(q, 2)").unwrap();
+        assert_eq!(
+            c.value(c.id("V").unwrap()),
+            Value::Point { x: -4.0, y: 0.0 }
+        );
+    }
+
+    #[test]
+    fn transformations_of_other_polygons_and_polylines() {
+        let src = "A = (0, 0)\nB = (4, 0)\nD = (1, 3)\nQ = (1, 1)\nw = 0.5\n\
+                   v = Vector(A, D)\nt = PolyLine(A, B, D)\nu = PolyLine(A, B)\n";
+        // a polyline from three points is transformed through its points
+        // (no sides); one from two goes the plain way
+        let mut c = load(src).unwrap();
+        let n = c.len();
+        run(&mut c, "m = Rotate(t, w)").unwrap();
+        run(&mut c, "o = Rotate(u, w)").unwrap();
+        assert_eq!(labels(&c, n), ["m", "o"]);
+        // a rotation moves the points and keeps every length
+        assert!(close(
+            match c.value(c.id("m").unwrap()) {
+                Value::PolyLine { length } => length,
+                v => panic!("{v:?}"),
+            },
+            4.0 + 18.0_f64.sqrt()
+        ));
+        // a polygon of two points and a regular one give no sides either
+        let mut c = load(src).unwrap();
+        run(&mut c, "p = Polygon(A, B)").unwrap();
+        run(&mut c, "r = Polygon(A, B, 4)").unwrap();
+        let n = c.len();
+        run(&mut c, "q = Mirror(p, Q)").unwrap();
+        run(&mut c, "s = Mirror(r, Q)").unwrap();
+        assert_eq!(labels(&c, n), ["q", "s"]);
+        // a translation moves a polygon and a polyline without new objects
+        let mut c = load(src).unwrap();
+        run(&mut c, "d = Translate(t, v)").unwrap();
+        run(&mut c, "e = Polygon(A, B, D)").unwrap();
+        let n = c.len();
+        // a translation creates the sides as well, named after the moved
+        // vertices like the polygon command
+        run(&mut c, "f = Translate(e, v)").unwrap();
+        assert_eq!(labels(&c, n), ["f", "d'", "a'", "b'"]);
+        let verts: Vec<_> = c.vertices(c.id("f").unwrap()).map(Option::unwrap).collect();
+        assert_eq!(verts.len(), 3);
+        assert_eq!(verts[0], (1.0, 3.0));
+        // the image of a polygon under inversion is refused, like a curve
+        // GeoGebra draws instead of it
+        let e = run(&mut c, "g = Mirror(f, k)");
+        assert!(e.is_err());
+    }
+
+    #[test]
     fn polylines_skip_undefined_points() {
         let mut c = load(
             "A = (0, 0)\nB = (3, 4)\nO = (10, 0)\nr = 1\nk = Circle(O, r)\nl = Line(A, B)\n\
@@ -1860,5 +2197,44 @@ mod tests {
         );
         let e = run(&mut c, "a = Area(pl)").unwrap_err();
         assert!(e.contains("expected a circle"), "{e}");
+    }
+
+    #[test]
+    fn a_fourth_image_names_its_sides_after_default_point_labels() {
+        // past three transformations GeoGebra stops deriving the side labels
+        // from the vertex labels: the vertex images get default point labels
+        // and the sides are named after those
+        let mut c = load(
+            "A = (0, 5)\nB = (4, 0)\nE = (4, 3)\nQ = (1, 1)\nw = 0.5\nX = (-1, 2)\n\
+             Y = (2, -3)\nn = Line(X, Y)\np = Polygon(A, B, E)\nq = Mirror(p, Q)\n\
+             r = Rotate(q, w)\ns = Dilate(r, w)\n",
+        )
+        .unwrap();
+        let n = c.len();
+        run(&mut c, "t = Shear(s, n, w)").unwrap();
+        // the vertex images are labelled C, D, F (A, B and E are taken)
+        assert_eq!(labels(&c, n), ["t", "f", "c", "d"]);
+    }
+
+    #[test]
+    fn a_polyline_translated_by_an_undefined_vector_keeps_length_zero() {
+        let mut c = load(
+            "A = (0, 0)\nB = (3, 4)\nC = (6, 0)\nD = (2, 2)\nt = PolyLine(A, B, C)\n\
+             q = Vector(D, C)\nu = UnitVector(q)\nm = Translate(t, u)\n",
+        )
+        .unwrap();
+        assert_eq!(
+            c.value(c.id("m").unwrap()),
+            Value::PolyLine { length: 10.0 }
+        );
+        // a zero vector has no unit vector: the image stays a polyline whose
+        // vertices are undefined, with no length
+        c.move_point(c.id("C").unwrap(), 2.0, 2.0).unwrap();
+        assert_eq!(c.value(c.id("m").unwrap()), Value::PolyLine { length: 0.0 });
+        c.move_point(c.id("C").unwrap(), 6.0, 0.0).unwrap();
+        assert_eq!(
+            c.value(c.id("m").unwrap()),
+            Value::PolyLine { length: 10.0 }
+        );
     }
 }

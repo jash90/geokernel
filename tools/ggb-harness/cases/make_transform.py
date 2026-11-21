@@ -22,6 +22,16 @@ rp = cases.rp
 r2 = cases.r2
 
 
+def vec(label, x, y):
+    """A free vector: the same literal as a point, with a lower-case label."""
+    return pt(label, x, y)
+
+
+def vec(label, x, y):
+    """A free vector: the same literal as a point, with a lower-case label."""
+    return pt(label, x, y)
+
+
 def subject(kind, label_prefix=""):
     """Script lines and the label of an object of the given kind, plus the
     labels of its free points. Kinds: point, line, segment, circle, circle_r."""
@@ -37,10 +47,33 @@ def subject(kind, label_prefix=""):
         return lines + ["k = Circle(A, B)"], "k", ["A", "B"]
     if kind == "circle_r":
         return [pt("A", *a), num("r", round(abs(r2(1.0, 5.0)), 2)), "k = Circle(A, r)"], "k", ["A"]
+    if kind == "ray":
+        return lines + ["g = Ray(A, B)"], "g", ["A", "B"]
+    if kind == "rayvec":
+        u = (round(r2(-4, 4), 2), round(r2(-4, 4), 2))
+        return lines + [vec("u", *u), "g = Ray(A, u)"], "g", ["A", "u"]
+    if kind == "vector":
+        return lines + ["b = Vector(A, B)"], "b", ["A", "B"]
+    if kind == "polygon":
+        return lines + [pt("E", *rp()), "p = Polygon(A, B, E)"], "p", ["A", "B", "E"]
+    if kind == "polyline":
+        return lines + [pt("E", *rp()), "t = PolyLine(A, B, E)"], "t", ["A", "B", "E"]
+    if kind == "arc":
+        return lines + [pt("E", *rp()), "a = CircularArc(A, B, E)"], "a", ["A", "B", "E"]
+    if kind == "sector":
+        return lines + [pt("E", *rp()), "e = CircularSector(A, B, E)"], "e", ["A", "B", "E"]
+    if kind == "ellipse":
+        return lines + [pt("F", *rp()), "c = Ellipse(A, F, B)"], "c", ["A", "B", "F"]
     raise ValueError(kind)
 
 
-KINDS = ["point", "line", "segment", "circle", "circle_r"]
+KINDS = ["point", "line", "segment", "circle", "circle_r", "ray", "rayvec", "vector",
+         "polygon", "polyline", "arc", "sector", "ellipse"]
+
+# The kinds `Shear` and `Stretch(obj, line, f)` accept (no polyline:
+# GeoGebra rejects it too).
+MATRIX_KINDS = ["point", "line", "segment", "circle", "ray", "rayvec", "vector",
+                "polygon", "arc", "sector", "ellipse"]
 
 
 def object_steps(free):
@@ -222,7 +255,7 @@ RATIOS = [0.0, 1.0, -1.0, 2.5, -0.5, 7.0]
 for name in ("shear", "stretch"):
     topic(name)
     cmd = name.capitalize()
-    for kind in ("point", "line", "segment"):
+    for kind in MATRIX_KINDS:
         script, obj, free = subject(kind)
         script += [pt("C", *rp()), pt("D", *rp()), "n = Line(C, D)", num("f", 2),
                    f"m = {cmd}({obj}, n, f)"]
@@ -231,7 +264,7 @@ for name in ("shear", "stretch"):
         # coincident points make the axis undefined, then separate them again
         steps += [mv("D", *rp(-8, 8)), mv("C", *rp()), mv("D", *rp())]
         case(name, script, steps)
-    for kind in ("point", "line", "segment"):
+    for kind in MATRIX_KINDS:
         script, obj, free = subject(kind)
         script += [pt("C", *rp()), pt("D", *rp()), "n = Segment(C, D)", num("f", -1.5),
                    f"m = {cmd}({obj}, n, f)"]
@@ -240,7 +273,7 @@ for name in ("shear", "stretch"):
     # horizontal, vertical and diagonal axes, an axis through the origin
     for c, d in (((0, 2), (4, 2)), ((3, -1), (3, 5)), ((0, 0), (2, 2)), ((0, 0), (-3, 1)),
                  ((1, 1), (5, 2))):
-        for kind in ("point", "line", "segment"):
+        for kind in MATRIX_KINDS:
             script, obj, free = subject(kind)
             script += [pt("C", *c), pt("D", *d), "n = Line(C, D)", num("f", 1.7),
                        f"m = {cmd}({obj}, n, f)"]
@@ -391,5 +424,302 @@ case("dilate", [pt("A", 0, 0), pt("B", 0.000001, 1), "l = Line(A, B)", num("f", 
                 "e = Distance(n, g)", "b = AngularBisector(n, g)"],
      [setn("f", 0.001), setn("f", 1e-5), setn("f", -0.001), mv("D", 1.000001, 1),
       mv("D", 3, 1), setn("f", 1)])
+
+# ------------------------------------------------------------- new forms
+# Everything below covers the kinds the commands above did not reach when
+# this file only made points, lines, segments and circles.
+
+# -------------------------------------------- Stretch along a vector
+topic("stretchvec")
+for kind in MATRIX_KINDS:
+    script, obj, free = subject(kind)
+    a, b = rp(), rp()
+    script += [pt("C", *a), pt("D", *b), "v = Vector(C, D)", f"m = Stretch({obj}, v)"]
+    steps = [mv("C", *rp()), mv("D", *rp())] + object_steps(free)
+    # the vector shrinks to nothing, flips and grows again
+    steps += [mv("D", *a), mv("D", *rp()), mv("C", *rp())]
+    case("stretchvec", script, steps)
+
+# the vector starts at the origin and at a point of the object
+for kind in ("line", "circle", "arc", "polygon"):
+    script, obj, free = subject(kind)
+    script += [vec("v", *rp()), f"m = Stretch({obj}, v)"]
+    case("stretchvec", script, [mv("v", *rp()), mv("v", 0, 0), mv("v", 3, -2),
+                                mv(free[0], *rp()), mv("v", *rp())])
+for kind in ("line", "arc"):
+    script, obj, free = subject(kind)
+    script += [pt("C", *rp()), pt("D", *rp()), "v = Vector(C, D)", f"m = Stretch({obj}, v)"]
+    case("stretchvec", script, [mv("C", *rp()), mv("D", *rp()),
+                                mv("C", *rp()), mv("D", *rp())])
+
+# ------------------------------------------------------------- Translate
+topic("translate")
+for kind in ("ray", "vector", "polygon", "polyline", "arc", "sector", "ellipse", "circle_r"):
+    script, obj, free = subject(kind)
+    script += [vec("d", *rp()), f"m = Translate({obj}, d)"]
+    steps = [mv("d", *rp())] + object_steps(free)
+    steps += [mv("d", 0, 0), mv("d", *rp())]
+    case("translate", script, steps)
+
+# a polygon translated by a vector between points, and a chain of two
+script = [pt("A", *rp()), pt("B", *rp()), pt("C", *rp()), "p = Polygon(A, B, C)",
+          pt("D", *rp()), pt("E", *rp()), "u = Vector(D, E)", "q = Translate(p, u)",
+          "r = Translate(q, u)"]
+case("translate", script, [mv("D", *rp()), mv("E", *rp()), mv("A", *rp()), mv("B", *rp()),
+                           mv("E", *rp()), mv("C", *rp())])
+
+# ------------------------------------------------- inversion of objects
+topic("invert")
+# a line, a segment, a circle, an arc and a sector in a circle; none of
+# these pass through the mirror's centre (that image is a single line
+# GeoGebra keeps, which the kernel holds undefined)
+for kind in ("line", "segment", "circle", "circle_r", "arc", "sector"):
+    for _ in range(2):
+        script, obj, free = subject(kind)
+        o = (round(r2(-4, 4), 2), round(r2(-4, 4), 2))
+        r = round(abs(r2(1.0, 5.0)), 2)
+        script += [pt("O", *o), num("q", r), "h = Circle(O, q)", f"m = Mirror({obj}, h)"]
+        steps = [mv("O", *rp()), mv("A", *rp()), setn("q", 0.5), setn("q", 4.0)]
+        steps += object_steps(free)
+        steps += [mv("O", *rp()), setn("q", r)]
+        case("invert", script, steps)
+
+# a circle that grows to take in the mirror's centre and back
+script = [pt("A", *rp()), pt("B", *rp()), "c = Circle(A, B)", pt("O", *rp()), pt("R", *rp()),
+          "k = Circle(O, R)", "m = Mirror(c, k)"]
+case("invert", script, [mv("B", *rp()), mv("R", *rp()), mv("A", *rp()), mv("O", *rp()),
+                        mv("B", *rp()), mv("R", *rp())])
+
+# the mirror is an image itself (the image of the line conic cannot be
+# inverted again: GeoGebra turns it into an implicit curve)
+script = [pt("O", 0, 0), pt("R", 4, 0), "k = Circle(O, R)", pt("A", 1, 2), pt("B", 6, 2),
+          "l = Line(A, B)", "m = Mirror(l, k)", pt("Q", 1, 1),
+          "c = Mirror(k, Q)", "d = Mirror(A, c)"]
+case("invert", script, [mv("A", *rp()), mv("Q", *rp()), mv("B", *rp()), mv("R", *rp())])
+
+# segments and arcs whose ends move around the mirror's centre
+script = [pt("O", 0, 0), pt("R", 4, 0), "k = Circle(O, R)", pt("A", 2, 1), pt("B", 2, 5),
+          "s = Segment(A, B)", "m = Mirror(s, k)", pt("C", 3, 0), "a = CircularArc(O, C, A)",
+          "n = Mirror(a, k)"]
+case("invert", script, [mv("A", -2, 1), mv("A", 2, 1), mv("B", *rp()), mv("C", *rp()),
+                        mv("A", *rp()), mv("O", 1, 1), mv("O", 0, 0)])
+
+# ------------------------------------------------------------- chains
+topic("chain")
+script = [pt("M", *rp()), pt("P", *rp()), pt("Q", *rp()), "a = CircularArc(M, P, Q)",
+          pt("C", *rp()), num("w", 0.7), num("f", 1.5), "b = Rotate(a, w)",
+          "c = Dilate(b, f)", "d = Mirror(c, M)"]
+case("chain", script, [mv("M", *rp()), mv("P", *rp()), setn("f", -1.0), setn("w", 3.14159),
+                       mv("Q", *rp()), setn("f", 0.0), setn("f", 2.0)])
+script = [pt("A", *rp()), pt("B", *rp()), pt("C", *rp()), "p = Polygon(A, B, C)",
+          pt("D", *rp()), pt("E", *rp()), "n = Line(D, E)", num("w", 0.4), num("g", 2),
+          "q = Rotate(p, w)", "r = Mirror(q, n)", "s = Dilate(r, g, A)"]
+case("chain", script, [mv("A", *rp()), mv("D", *rp()), setn("w", 1.9), mv("E", *rp()),
+                       mv("B", *rp()), setn("g", -1.0)])
+script = [pt("A", *rp()), pt("B", *rp()), "u = Vector(A, B)", pt("C", *rp()), pt("D", *rp()),
+          "v = Vector(C, D)", num("w", 1.1), num("f", 2),
+          "i = Rotate(u, w)", "j = Mirror(v, A)", "h = Dilate(i, f)",
+          "s = Translate(A, j)", "g = Ray(s, h)"]
+case("chain", script, [mv("A", *rp()), mv("B", *rp()), mv("C", *rp()), mv("D", *rp()),
+                       mv("B", *rp())])
+
+# ------------------------------------------------- the other part forms
+# `CircumcircularArc`/`CircumcircularSector` (three points on the part) and
+# `Arc(k, P, Q)`/`Sector(k, P, Q)` (P and Q off the circle, projected onto
+# it): GeoGebra transforms the defining points and makes the image of the
+# same form again, so a chain rebuilds from the points at every step, unlike
+# `CircularArc`, whose image is a part of the transformed conic.
+
+
+def circum(cmd):
+    """`cmd(A, B, C)`: a circumcircular part through three free points."""
+    lines = [pt("A", *rp()), pt("B", *rp()), pt("C", *rp())]
+    return lines + [f"g = {cmd}(A, B, C)"], "g", ["A", "B", "C"]
+
+
+def arc_of_circle(cmd):
+    """`cmd(k, P, Q)`: a part of a circle between two points off it."""
+    lines = [pt("M", *rp()), num("r", round(r2(0.5, 6.0), 2)), "k = Circle(M, r)"]
+    return lines + [pt("P", *rp()), pt("Q", *rp()), f"g = {cmd}(k, P, Q)"], "g", ["M", "P", "Q"]
+
+
+def part_steps(free):
+    """Moves of a part's own free points (three of them), ending near the start."""
+    return [mv(free[0], *rp()), mv(free[1], *rp()), mv(free[2], *rp()), mv(free[0], *rp())]
+
+
+for name, make in (("circumarc", lambda: circum("CircumcircularArc")),
+                   ("circumsec", lambda: circum("CircumcircularSector")),
+                   ("arcpart", lambda: arc_of_circle("Arc")),
+                   ("secpart", lambda: arc_of_circle("Sector"))):
+    topic(name)
+    script, obj, free = make()
+    script += [pt("X", *rp()), f"m = Mirror({obj}, X)"]
+    case(name, script, [mv("X", *rp())] + part_steps(free) + [mv("B", *rp()) if name.startswith("circum") else mv("M", *rp())])
+
+    script, obj, free = make()
+    script += [pt("D", *rp()), pt("E", *rp()), "n = Line(D, E)", f"m = Mirror({obj}, n)"]
+    case(name, script, [mv("D", *rp()), mv("E", *rp())] + part_steps(free)
+         + [mv("E", *rp(-8, 8)), mv("D", *rp()), mv("E", *rp())])
+
+    script, obj, free = make()
+    script += [num("w", 0.7), pt("X", *rp()), f"m = Rotate({obj}, w, X)"]
+    case(name, script, [setn("w", math.pi), setn("w", -2.3), mv("X", *rp())] + part_steps(free)
+         + [setn("w", 0.0), setn("w", math.pi / 2), mv("X", *rp(-8, 8))])
+
+    script, obj, free = make()
+    script += [num("f", 1.5), pt("X", *rp()), f"m = Dilate({obj}, f, X)"]
+    # the factor through 1, 0 (the image shrinks to the centre), negative values
+    case(name, script, [setn("f", -1.0), setn("f", 2.0), setn("f", 0.0), setn("f", -0.25),
+                        mv("X", *rp())] + part_steps(free) + [setn("f", 1.0)])
+
+    script, obj, free = make()
+    script += [pt("D", *rp()), pt("E", *rp()), "n = Line(D, E)", num("f", 2),
+               f"m = Shear({obj}, n, f)"]
+    case(name, script, [setn("f", v) for v in RATIOS] + [mv("D", *rp()), mv("E", *rp())]
+         + part_steps(free) + [setn("f", -3.0)])
+
+    script, obj, free = make()
+    script += [pt("D", *rp()), pt("E", *rp()), "n = Line(D, E)", num("f", -1.5),
+               f"m = Stretch({obj}, n, f)"]
+    case(name, script, [setn("f", 0.5), setn("f", -2.0), setn("f", 1.0), mv("D", *rp()),
+                        mv("E", *rp())] + part_steps(free) + [setn("f", 3.0)])
+
+    script, obj, free = make()
+    script += [pt("D", *rp()), pt("E", *rp()), "v = Vector(D, E)", f"m = Stretch({obj}, v)"]
+    case(name, script, [mv("D", *rp()), mv("E", *rp())] + part_steps(free)
+         + [mv("E", *rp()), mv("D", *rp())])
+
+    script, obj, free = make()
+    script += [vec("v", *rp()), f"m = Translate({obj}, v)"]
+    case(name, script, [mv("v", *rp()), mv("v", 0, 0), mv("v", 3, -2)] + part_steps(free)
+         + [mv("v", *rp())])
+
+    # mirrored in a circle: the image of the points again, on the inverted conic
+    script, obj, free = make()
+    script += [pt("O", *rp()), num("q", round(abs(r2(1.0, 5.0)), 2)), "h = Circle(O, q)",
+               f"m = Mirror({obj}, h)"]
+    case(name, script, [mv("O", *rp()), setn("q", 0.5), setn("q", 4.0)] + part_steps(free)
+         + [mv("O", *rp()), setn("q", 2.0)])
+
+    # the part feeds a second, a third and a fourth transformation
+    script, obj, free = make()
+    script += [pt("X", *rp()), num("w", 0.9), num("f", -1.5), "m = Mirror(%s, X)" % obj,
+               "mb = Rotate(m, w, X)", "mc = Dilate(mb, f, X)", "md = Mirror(mc, X)"]
+    case(name, script, [mv("X", *rp()), setn("f", 2.0), setn("w", math.pi), setn("f", 0.0),
+                        setn("f", -2.0)] + part_steps(free) + [setn("w", -0.4), setn("f", 1.5)])
+
+# chains that pass through a negative orientation: the image of a negative
+# part under a translate or a rotate keeps its parameter range (the ends are
+# passed swapped)
+topic("arcchain")
+script = [pt("M", *rp()), pt("A", *rp()), pt("B", *rp()), "a = CircularArc(M, A, B)",
+          pt("C", *rp()), pt("D", *rp()), "n = Line(C, D)", num("f", -2), "b = Stretch(a, n, f)",
+          vec("v", *rp()), "c = Translate(b, v)"]
+case("arcchain", script, [setn("f", 0.5), setn("f", -2.0), setn("f", 2.0), mv("v", *rp()),
+                          mv("C", *rp()), mv("D", *rp()), setn("f", -0.5), mv("v", 0, 0),
+                          mv("v", *rp())])
+script = [pt("A", *rp()), pt("B", *rp()), pt("C", *rp()), "a = CircumcircularArc(A, B, C)",
+          num("f", -1.5), pt("X", *rp()), "b = Dilate(a, f, X)", vec("v", *rp()),
+          "c = Translate(b, v)", num("w", 0.8), "d = Rotate(c, w)"]
+case("arcchain", script, [setn("f", 2.0), mv("v", *rp()), setn("w", math.pi), mv("X", *rp()),
+                          setn("f", -2.0), setn("f", 0.5), mv("B", *rp()), setn("w", 0.0)])
+script = [pt("A", *rp()), pt("B", *rp()), pt("C", *rp()), "a = CircumcircularSector(A, B, C)",
+          pt("X", *rp()), "b = Mirror(a, X)", num("w", 1.1), "c = Rotate(b, w)",
+          pt("O", *rp()), num("q", 3), "h = Circle(O, q)", "d = Mirror(c, h)"]
+case("arcchain", script, [mv("X", *rp()), setn("w", math.pi), mv("O", *rp()), setn("q", 0.5),
+                          setn("w", -1.0), mv("B", *rp()), setn("q", 4.0)])
+# a sheared arc feeds a translate; the axis degenerates and comes back
+script = [pt("M", *rp()), pt("A", *rp()), pt("B", *rp()), "a = CircularArc(M, A, B)",
+          pt("C", *rp()), pt("D", *rp()), "n = Line(C, D)", num("f", 2), "b = Shear(a, n, f)",
+          vec("v", *rp()), "c = Translate(b, v)"]
+case("arcchain", script, [setn("f", -1.0), mv("v", *rp()), mv("D", *rp(-8, 8)), mv("C", *rp()),
+                          mv("D", *rp()), setn("f", 0.0), setn("f", 1.5), mv("A", *rp())])
+
+# ------------------------------------------------------------- ray chains
+topic("raychain")
+# the image of an image is a ray again: rebuilt from the image of the start
+# point and of the direction, however deep the chain goes
+for kind in ("ray", "rayvec"):
+    script, obj, free = subject(kind)
+    script += [pt("C", *rp()), pt("D", *rp()), "n = Line(C, D)", num("w", 0.9), num("f", -1.5),
+               pt("X", *rp()), "m = Mirror(%s, n)" % obj, "mb = Rotate(m, w, X)",
+               "mc = Dilate(mb, f, X)", vec("v", *rp()), "md = Translate(mc, v)"]
+    steps = [mv("C", *rp()), setn("f", 2.0), setn("w", math.pi), setn("f", 0.0), setn("f", -2.0),
+             mv("v", *rp())] + object_steps(free)
+    steps += [mv("X", *rp()), mv("D", *rp()), setn("w", -0.4), mv("v", 0, 0)]
+    case("raychain", script, steps)
+    script, obj, free = subject(kind)
+    script += [pt("C", *rp()), pt("D", *rp()), "n = Line(C, D)", num("f", 1.7),
+               "m = Shear(%s, n, f)" % obj, num("w", 0.6), "mb = Rotate(m, w)",
+               "mc = Stretch(mb, n, f)"]
+    case("raychain", script, [setn("f", -2.0), setn("w", math.pi), setn("f", 0.5), mv("D", *rp()),
+                              setn("w", 0.0)] + object_steps(free) + [mv("C", *rp()), setn("f", 2.0)])
+    script, obj, free = subject(kind)
+    script += [pt("X", *rp()), "m = Mirror(%s, X)" % obj, "mb = Mirror(m, X)",
+               vec("v", *rp()), "mc = Translate(mb, v)", "md = Mirror(mc, X)"]
+    case("raychain", script, [mv("X", *rp()), mv("v", *rp()), mv("X", 0, 0), mv("v", 0, 0),
+                              mv("v", *rp())] + object_steps(free))
+
+# ------------------------------------------- an angle as the number argument
+# `Rotate`, `Dilate`, `Shear` and `Stretch` take the angle object like any
+# number; dragged onto its vertex the angle is undefined and so is the image
+topic("anglearg")
+ANGLE = [pt("U", 3, 1), pt("V", 0.5, 0.5), pt("T", 2, 3), "w = Angle(U, V, T)"]
+UNDEF = [mv("U", 0.5, 0.5), mv("U", 3, 1), mv("T", *rp()), mv("U", 0.5, 0.5), mv("U", 1, 2)]
+for make in (lambda: subject("point"), lambda: subject("circle"), lambda: subject("ellipse"),
+             lambda: subject("arc"), lambda: subject("sector"), lambda: subject("polygon"),
+             lambda: circum("CircumcircularArc"), lambda: arc_of_circle("Sector")):
+    script, obj, free = make()
+    script += ANGLE + [f"m = Rotate({obj}, w)"]
+    case("anglearg", script, UNDEF + object_steps(free) + [mv("T", *rp())])
+for make in (lambda: subject("circle"), lambda: subject("arc"), lambda: subject("ellipse")):
+    script, obj, free = make()
+    script += ANGLE + [pt("X", *rp()), f"m = Rotate({obj}, w, X)"]
+    case("anglearg", script, UNDEF + [mv("X", *rp())] + object_steps(free) + [mv("U", 3, 1)])
+for make in (lambda: subject("point"), lambda: subject("circle"), lambda: subject("arc")):
+    script, obj, free = make()
+    script += ANGLE + [f"m = Dilate({obj}, w)"]
+    case("anglearg", script, UNDEF + object_steps(free))
+for make in (lambda: subject("line"), lambda: subject("arc"), lambda: subject("polygon")):
+    script, obj, free = make()
+    script += ANGLE + [pt("C", *rp()), pt("D", *rp()), "n = Line(C, D)", f"m = Shear({obj}, n, w)"]
+    case("anglearg", script, UNDEF + [mv("C", *rp()), mv("D", *rp())] + object_steps(free))
+script, obj, free = subject("sector")
+script += ANGLE + [pt("C", *rp()), pt("D", *rp()), "n = Line(C, D)", f"m = Stretch({obj}, n, w)"]
+case("anglearg", script, UNDEF + [mv("D", *rp()), mv("C", *rp())] + object_steps(free))
+
+# --------------------------------------------- translate by nothing at all
+# a vector of length 0 has no unit vector: translated by it, GeoGebra keeps
+# the object (its points and lengths are undefined, a polyline keeps length 0)
+topic("undefvec")
+for kind in ("polyline", "polygon", "ray", "vector", "arc", "sector"):
+    script, obj, free = subject(kind)
+    script += [pt("C", 0, 0), pt("D", 2, 2), "q = Vector(C, D)", "u = UnitVector(q)",
+               f"m = Translate({obj}, u)"]
+    case("undefvec", script, [mv("D", 0, 0), mv("D", 2, 2), mv("D", 0, 0), mv("C", 1, 1),
+                              mv("D", *rp()), mv("C", 0, 0), mv("D", 2, 2)] + object_steps(free))
+
+# ------------------------------------------------------- deep polygon chains
+# four transformations deep, GeoGebra stops naming the sides after the vertex
+# labels and gives the vertex images default point labels of its own
+topic("polychain")
+script = [pt("A", *rp()), pt("B", *rp()), pt("E", *rp()), "p = Polygon(A, B, E)", pt("X", *rp()),
+          num("w", 0.5), num("f", 1.5), pt("C", *rp()), pt("D", *rp()), "n = Line(C, D)",
+          "q = Mirror(p, X)", "r = Rotate(q, w)", "s = Dilate(r, f)", "t = Shear(s, n, f)"]
+case("polychain", script, [mv("X", *rp()), setn("w", math.pi), setn("f", -2.0), mv("C", *rp()),
+                           mv("D", *rp()), setn("f", 0.5), mv("A", *rp()), mv("E", *rp()),
+                           setn("w", 0.0), setn("f", 2.0)])
+script = [pt("A", *rp()), pt("B", *rp()), pt("E", *rp()), pt("F", *rp()),
+          "p = Polygon(A, B, E, F)", vec("v", *rp()), pt("X", *rp()), num("w", 0.9),
+          "q = Translate(p, v)", "r = Rotate(q, w, X)", "s = Mirror(r, X)", "t = Translate(s, v)"]
+case("polychain", script, [mv("v", *rp()), mv("X", *rp()), setn("w", math.pi), mv("F", *rp()),
+                           mv("v", 0, 0), mv("v", *rp()), mv("B", *rp()), setn("w", -0.7)])
+script = [pt("A", *rp()), pt("B", *rp()), pt("E", *rp()), "p = Polygon(A, B, E)",
+          pt("C", *rp()), pt("D", *rp()), "n = Line(C, D)", num("f", 1.2), num("g", 0.6),
+          "q = Stretch(p, n, f)", "r = Shear(q, n, g)", "s = Mirror(r, C)", "t = Dilate(s, f)"]
+case("polychain", script, [mv("C", *rp()), setn("f", -1.0), setn("g", 2.0), mv("D", *rp()),
+                           mv("E", *rp()), setn("f", 0.0), setn("f", 1.5), mv("A", *rp()),
+                           setn("g", -0.5)])
 
 cases.write()

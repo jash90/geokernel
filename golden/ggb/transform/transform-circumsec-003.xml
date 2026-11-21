@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<geogebra format="5.0" version="5.4.936.0" app="classic" platform="a" xsi:noNamespaceSchemaLocation="https://www.geogebra.org/apps/xsd/ggb.xsd" xmlns="" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<gui>
+	<window width="800" height="600"/>
+	<labelingStyle val="3"/>
+	<font size="12"/>
+</gui>
+<euclidianView>
+	<viewNumber viewNo="1"/>
+	<size width="800" height="600"/>
+	<coordSystem xZero="215" yZero="315" scale="50" yscale="50"/>
+	<evSettings axes="true" grid="false" gridIsBold="false" pointCapturing="3" rightAngleStyle="1" checkboxSize="26" gridType="3"/>
+	<bgColor r="255" g="255" b="255"/>
+	<axesColor r="28" g="28" b="31"/>
+	<gridColor r="180" g="179" b="186"/>
+	<lineStyle axes="1" grid="0"/>
+	<axis id="0" show="true" label="" unitLabel="" tickStyle="1" showNumbers="true"/>
+	<axis id="1" show="true" label="" unitLabel="" tickStyle="1" showNumbers="true"/>
+</euclidianView>
+<algebraView>
+	<mode val="1"/>
+</algebraView>
+<kernel>
+	<continuous val="false"/>
+	<usePathAndRegionParameters val="true"/>
+	<decimals val="2"/>
+	<angleUnit val="degree"/>
+	<algebraStyle val="0" spreadsheet="0"/>
+	<coordStyle val="0"/>
+</kernel>
+<tableview min="0" max="0" step="0"/>
+<scripting blocked="false" disabled="false"/>
+<construction title="" author="" date="">
+<expression label="A" exp="(-5.6, 5.33)" type="point"/>
+<element type="point" label="A">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="1" playing="false"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="-5.6" y="5.33" z="1"/>
+</element>
+<expression label="B" exp="(-2.97, -2.48)" type="point"/>
+<element type="point" label="B">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="1" playing="false"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="-2.97" y="-2.48" z="1"/>
+</element>
+<expression label="C" exp="(-0.01, 5.68)" type="point"/>
+<element type="point" label="C">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="1" playing="false"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="-0.01" y="5.68" z="1"/>
+</element>
+<command name="CircumcircleSector">
+	<input a0="A" a1="B" a2="C"/>
+	<output a0="g"/>
+</command>
+<element type="conicpart" label="g">
+	<show object="true" label="false"/>
+	<objColor r="153" g="51" b="0" alpha="0.10000000149011612"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="specific"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<eigenvectors x0="1" y0="0" z0="1" x1="0" y1="1" z1="1"/>
+	<matrix A0="1" A1="1" A2="-9.520970631516606" A3="0" A4="2.585379286829496" A5="-1.9973434667910919"/>
+</element>
+<expression label="w" exp="0.7"/>
+<element type="numeric" label="w">
+	<value val="0.7"/>
+	<show object="false" label="true"/>
+</element>
+<expression label="X" exp="(7.06, 1.39)" type="point"/>
+<element type="point" label="X">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="1" playing="false"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="7.06" y="1.39" z="1"/>
+</element>
+<command name="Rotate">
+	<input a0="A" a1="w" a2="X"/>
+	<output a0="A&apos;"/>
+</command>
+<element type="point" label="A&apos;">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="-5.161119778738128" y="-3.752317702528284" z="1"/>
+</element>
+<command name="Rotate">
+	<input a0="B" a1="w" a2="X"/>
+	<output a0="B&apos;"/>
+</command>
+<element type="point" label="B&apos;">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="1.8817553111464447" y="-8.03144266778501" z="1"/>
+</element>
+<command name="Rotate">
+	<input a0="C" a1="w" a2="X"/>
+	<output a0="C&apos;"/>
+</command>
+<element type="point" label="C&apos;">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="-1.1111281423510286" y="0.11655393467997999" z="1"/>
+</element>
+<command name="CircumcircleSector">
+	<input a0="A&apos;" a1="B&apos;" a2="C&apos;"/>
+	<output a0="m"/>
+</command>
+<element type="conicpart" label="m">
+	<show object="true" label="false"/>
+	<objColor r="153" g="51" b="0" alpha="0.10000000149011612"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="specific"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<eigenvectors x0="1" y0="0" z0="1" x1="0" y1="1" z1="1"/>
+	<matrix A0="1" A1="1" A2="-0.6899876354788788" A3="0" A4="0.7084543944622514" A5="4.359202031118184"/>
+</element>
+</construction>
+</geogebra>
