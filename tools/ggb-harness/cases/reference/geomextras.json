@@ -1,0 +1,11 @@
+{
+  "cases": [
+    {"id": "geomextras-lengthpoint-001", "group": "geomextras", "script": ["P = (3, 4)", "d = Length(P)"], "steps": [{"action": "initial"}, {"action": "move", "label": "P", "x": 0.0, "y": 0.0}, {"action": "move", "label": "P", "x": -6.0, "y": 8.0}]},
+    {"id": "geomextras-conicparts-001", "group": "geomextras", "script": ["k = Conic({1, 0.5, -1, 0, 0, 0})", "P = (1, 1)", "Q = (2, 1/2)", "a = Arc(k, P, Q)", "s = Sector(k, P, Q)"], "steps": [{"action": "initial"}, {"action": "move", "label": "Q", "x": 1.0, "y": 1.0}, {"action": "move", "label": "P", "x": -1.0, "y": -1.0}, {"action": "move", "label": "Q", "x": 0.0, "y": -2.0}]},
+    {"id": "geomextras-conicparts-002", "group": "geomextras", "script": ["k = Conic({1, 1, -1, 0, 0, 0})", "P = (1, 1)", "Q = (2, 1/2)", "s = Sector(k, P, Q)"], "steps": [{"action": "initial"}, {"action": "move", "label": "Q", "x": 1.0, "y": 1.0}, {"action": "move", "label": "P", "x": -1.0, "y": -1.0}, {"action": "move", "label": "Q", "x": 0.0, "y": -2.0}]},
+    {"id": "geomextras-polygonlist-001", "group": "geomextras", "script": ["A = (1, 1)", "B = (2, 2)", "C = (3, 3)", "D = (4, 1/4)", "E = (5, 1/5)", "l = {A, B, C, D, E}", "p = Polygon(l)"], "steps": [{"action": "initial"}, {"action": "move", "label": "E", "x": 4.0, "y": 0.25}]},
+    {"id": "geomextras-polylinelist-001", "group": "geomextras", "script": ["A = (1, 1)", "B = (2, 2)", "C = (3, 3)", "D = (4, 1/4)", "E = (5, 1/5)", "l = {A, B, C, D, E}", "p = PolyLine(l)"], "steps": [{"action": "initial"}, {"action": "move", "label": "E", "x": 4.0, "y": 0.25}]},
+    {"id": "geomextras-polylinelist-002", "group": "geomextras", "script": ["A = (1, 1)", "B = (2, 2)", "C = (3, 3)", "D = (4, 1/4)", "E = (5, 1/5)", "l = {A, B, C, D, E}", "b = false", "p = PolyLine(l, b)"], "steps": [{"action": "initial"}, {"action": "move", "label": "E", "x": 4.0, "y": 0.25}]},
+    {"id": "geomextras-directionvector-001", "group": "geomextras", "script": ["v = (3, 2)", "d = Direction(v)"], "steps": [{"action": "initial"}, {"action": "move", "label": "v", "x": 0.0, "y": 0.0}, {"action": "move", "label": "v", "x": -2.0, "y": 3.0}]}
+  ]
+}

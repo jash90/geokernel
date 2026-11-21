@@ -701,3 +701,43 @@ mismatches = ["0:script line 1"]
 id = "vectorforms-nestedcross-001"
 reason = "GeoGebra multiplies and subtracts row lists inside the cross product, producing a list for the third component. The kernel's cross product computes scalar and coordinate entries, and its list arithmetic does not support nested operands."
 mismatches = ["0:a"]
+
+[[gap]]
+id = "geomextras-conicparts-001"
+reason = "Arc with two points is restricted to circle objects. The conic arc implementation needs to project each point to the ellipse parameter."
+mismatches = ["0:script line 4"]
+
+[[gap]]
+id = "geomextras-conicparts-002"
+reason = "Sector with two points checks for the circle kind. A general conic that classifies as a circle still fails that check."
+mismatches = ["0:script line 4"]
+
+[[gap]]
+id = "geomextras-pointlist-007"
+reason = "GeoGebra appends point A as the list gains a row and retains it undefined when the list shrinks. The kernel only creates output slots for the initial rows."
+mismatches = ["1:A", "2:A"]
+
+[[gap]]
+id = "geomextras-rigidpoints-001"
+reason = "GeoGebra replaces B and C in place. The kernel creates dependent polygon vertices and preserves the original point objects and their other dependants."
+mismatches = ["1:B", "1:C", "2:B", "2:C"]
+
+[[gap]]
+id = "geomextras-lengthpoint-001"
+reason = "GeoGebra returns the length of the position vector. The current vector tests require Length(point) to be rejected."
+mismatches = ["0:script line 2"]
+
+[[gap]]
+id = "geomextras-polygonlist-001"
+reason = "Polygon dispatch expects point objects as separate arguments. A list-backed polygon needs to read the current list contents and update its vertices and sides as the list changes."
+mismatches = ["0:script line 7"]
+
+[[gap]]
+id = "geomextras-polylinelist-001"
+reason = "PolyLine dispatch expects point objects as separate arguments. A list-backed polyline needs to read the current list contents and update its vertices as the list changes."
+mismatches = ["0:script line 7"]
+
+[[gap]]
+id = "geomextras-polylinelist-002"
+reason = "The boolean argument is ignored by the reference list form. The kernel lacks the list-backed polyline that this form also needs."
+mismatches = ["0:script line 8"]
