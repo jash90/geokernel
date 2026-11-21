@@ -1,0 +1,477 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "geomextras-pointlist-001",
+      "group": "geomextras",
+      "script": [
+        "a = 1",
+        "b = 2",
+        "l = {a, b}",
+        "P = Point(l)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "b", "value": -2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 2.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 2.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": -2.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": -2.0 }
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": -2.0 }
+        }
+      ]
+    },
+    {
+      "id": "geomextras-pointlist-002",
+      "group": "geomextras",
+      "script": [
+        "a = 1",
+        "b = 2",
+        "l = {{a, b}, {b, a}}",
+        "P = Point(l)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "b", "value": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 2.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 2.0 },
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              }
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "b": { "type": "number", "defined": true, "value": 2.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": -2.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 2.0 },
+                  { "type": "number", "defined": true, "value": -2.0 }
+                ]
+              }
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": -2.0, "y": 2.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 2.0, "y": -2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": -2.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": -2.0 }
+                ]
+              }
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 0.0, "y": -2.0 }
+        }
+      ]
+    },
+    {
+      "id": "geomextras-pointlist-003",
+      "group": "geomextras",
+      "script": [
+        "a = 1",
+        "l = If(a > 0, {{a, 2}, {3, a}}, {{a, 2}})",
+        "P = Point(l)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 3.0 },
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              }
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              }
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "P_{2}": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 3.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 3.0 },
+                  { "type": "number", "defined": true, "value": 3.0 }
+                ]
+              }
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": 3.0, "y": 2.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 }
+        }
+      ]
+    },
+    {
+      "id": "geomextras-pointlist-004",
+      "group": "geomextras",
+      "script": [
+        "P = Point({1, 2})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "geomextras-pointlist-005",
+      "group": "geomextras",
+      "script": [
+        "Q = Point({{1, 2}, {3, 4}})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "Q_{1}": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "Q_{2}": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 }
+        }
+      ]
+    },
+    {
+      "id": "geomextras-pointlist-006",
+      "group": "geomextras",
+      "script": [
+        "R = Point({1, 2, 3})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "geomextras-pointlist-007",
+      "group": "geomextras",
+      "script": [
+        "a = 1",
+        "l = If(a > 0, {{a, 2}}, {{a, 2}, {3, 4}})",
+        "P = Point(l)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              }
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 3.0 },
+                  { "type": "number", "defined": true, "value": 4.0 }
+                ]
+              }
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              }
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "A": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "geomextras-pointlist-008",
+      "group": "geomextras",
+      "script": [
+        "a = 1",
+        "l = If(a > 0, {{a, 2}, {3, 4}}, {{a, 2}, {3, 4, 5}})",
+        "P = Point(l)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 3.0 },
+                  { "type": "number", "defined": true, "value": 4.0 }
+                ]
+              }
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 3.0 },
+                  { "type": "number", "defined": true, "value": 4.0 },
+                  { "type": "number", "defined": true, "value": 5.0 }
+                ]
+              }
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "P_{2}": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 3.0 },
+                  { "type": "number", "defined": true, "value": 4.0 }
+                ]
+              }
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 }
+        }
+      ]
+    }
+  ]
+}

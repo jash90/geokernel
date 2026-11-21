@@ -4,7 +4,7 @@
 //! adaptive Gauss-Legendre quadrature that backs every numeric integral: a
 //! 3-point and a 5-point rule, each run until two successive interval
 //! refinements agree, and an adaptive bisection whenever the two rules
-//! disagree beyond `1e-8` relative. The scheme is deliberately kept (down to
+//! disagree beyond `1e-8` absolute. The scheme is deliberately kept (down to
 //! the iteration and evaluation budgets that leave it no choice but to
 //! bisect) because GeoGebra is the specification and the golden data
 //! records its numbers: on eccentric ellipses its result is a few units in
@@ -12,6 +12,11 @@
 //! it beyond the golden tolerance. This module is written from scratch from
 //! the standard published Gauss-Legendre nodes and weights; no GeoGebra or
 //! commons-math code is used.
+
+// The ellipse circumference series follows EllipticArcLength.java at
+// GeoGebra commit 112919f2d450ec7430a5cd3b65dba226fdc43b74.
+// Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
+// Licensed by GeoGebra GmbH under the EUPL 1.2.
 
 use super::conic_nd::ConicData;
 use std::f64::consts::PI;
@@ -85,9 +90,56 @@ pub(crate) fn arc_length(d: &ConicData, start: f64, end: f64) -> f64 {
     }
 }
 
+/// The circumference of an ellipse using `EllipticArcLength.getEllipseCircumference`.
+pub(crate) fn circumference([major, minor]: [f64; 2]) -> f64 {
+    let k = minor / major;
+    if k < 0.392 {
+        // Cayley's series in the squared ratio of the axes.
+        let mut q = (4.0 / k).ln() - 0.5;
+        let k2 = k * k;
+        let mut term = 0.5 * k2;
+        let mut sum = 1.0 + term * q;
+        let mut r = 0.5;
+        let mut s = 0.5;
+        for n in (3..=41).step_by(2).map(f64::from) {
+            term *= r;
+            r = n / (n + 1.0);
+            term = term * k2 * r;
+            q -= s;
+            s = 1.0 / (n * n + n);
+            q -= s;
+            let next = sum + term * q;
+            if next == sum {
+                break;
+            }
+            sum = next;
+        }
+        4.0 * major * sum
+    } else {
+        // Gauss–Kummer series. The coefficient of h^(2n) is
+        // the square of the generalized binomial coefficient (1/2 choose n).
+        let h = (major - minor) / (major + minor);
+        let h2 = h * h;
+        let mut hn = h2;
+        let mut coefficient = 1.0;
+        let mut sum = 1.0;
+        for n in (1..17).map(f64::from) {
+            let ratio = (n - 1.5) / n;
+            coefficient *= ratio * ratio;
+            let next = sum + coefficient * hn;
+            if next == sum {
+                break;
+            }
+            sum = next;
+            hn *= h2;
+        }
+        sum * ((major + minor) * PI)
+    }
+}
+
 /// `AlgoIntegralDefinite.numericIntegration`: the empty interval integrates
 /// to zero, a reversed one changes the sign.
-fn numeric_integration(f: &impl Fn(f64) -> f64, a: f64, b: f64) -> f64 {
+pub(crate) fn numeric_integration(f: &impl Fn(f64) -> f64, a: f64, b: f64) -> f64 {
     // GGB-2318: f(x) = If(x < 0, 0, x <= 2, x)
     if a == b {
         return 0.0;
@@ -106,7 +158,7 @@ fn numeric_integration(f: &impl Fn(f64) -> f64, a: f64, b: f64) -> f64 {
 /// the integral is NaN (and the part undefined).
 fn do_adaptive_gauss_quad(f: &impl Fn(f64) -> f64, a: f64, b: f64, calls: &mut usize) -> f64 {
     *calls += 1;
-    if *calls > MAX_GAUSS_QUAD_CALLS {
+    if *calls > MAX_GAUSS_QUAD_CALLS || a >= b {
         return f64::NAN;
     }
     let first = match integrate(f, a, b, &ABSCISSAS_3, &WEIGHTS_3) {
@@ -152,12 +204,22 @@ fn integrate(
     loop {
         let t = stage(f, min, max, n, abscissas, weights, &mut evals)?;
         let delta = (t - oldt).abs();
-        let convergence = ABSOLUTE_ACCURACY.max(RELATIVE_ACCURACY * (oldt.abs() + t.abs()) * 0.5);
+        let relative = RELATIVE_ACCURACY * (oldt.abs() + t.abs()) * 0.5;
+        let convergence = if relative.is_nan() {
+            relative
+        } else {
+            ABSOLUTE_ACCURACY.max(relative)
+        };
         if iterations + 1 >= MINIMAL_ITERATIONS && delta <= convergence {
             return Ok(t);
         }
         // grow the interval count, at most fourfold but always a little
-        let ratio = 4.0_f64.min((delta / convergence).powf(0.5 / abscissas.len() as f64));
+        let ratio = (delta / convergence).powf(0.5 / abscissas.len() as f64);
+        let ratio = if ratio.is_nan() {
+            ratio
+        } else {
+            ratio.min(4.0)
+        };
         n = (((ratio * n as f64) as i32).max(n as i32 + 1)) as usize;
         oldt = t;
         if iterations >= MAXIMAL_ITERATIONS {

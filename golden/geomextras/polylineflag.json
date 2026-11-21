@@ -1,0 +1,95 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "geomextras-polylineflag-001",
+      "group": "geomextras",
+      "script": [
+        "A = (1, 1)",
+        "C = (3, 1/3)",
+        "E = (5, 1/5)",
+        "a = 1",
+        "b = a < 0",
+        "p = PolyLine(A, C, E, b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "E", "x": 3.0, "y": 0.333333 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "move", "label": "C", "x": 1.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 0.3333333333333333 },
+          "E": { "type": "point", "defined": true, "x": 5.0, "y": 0.2 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "p": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [1.0, 1.0],
+              [3.0, 0.3333333333333333],
+              [5.0, 0.2]
+            ],
+            "length": 4.112624623895307
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 0.3333333333333333 },
+          "E": { "type": "point", "defined": true, "x": 3.0, "y": 0.333333 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "p": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [1.0, 1.0],
+              [3.0, 0.3333333333333333],
+              [3.0, 0.333333]
+            ],
+            "length": 2.108185440112253
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 0.3333333333333333 },
+          "E": { "type": "point", "defined": true, "x": 3.0, "y": 0.333333 },
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [1.0, 1.0],
+              [3.0, 0.3333333333333333],
+              [3.0, 0.333333]
+            ],
+            "length": 2.108185440112253
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "E": { "type": "point", "defined": true, "x": 3.0, "y": 0.333333 },
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [1.0, 1.0],
+              [1.0, 1.0],
+              [3.0, 0.333333]
+            ],
+            "length": 2.1081852121881988
+          }
+        }
+      ]
+    }
+  ]
+}

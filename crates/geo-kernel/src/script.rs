@@ -55,6 +55,7 @@ use crate::algo::intersect;
 use crate::algo::lines::LineDef;
 use crate::algo::measure::MeasureDef;
 use crate::algo::point::PointDef;
+use crate::algo::polygon::PolygonDef;
 use crate::algo::predicate::PredicateDef;
 use crate::algo::transform::TransformDef;
 use crate::algo::vector::VectorDef;
@@ -91,8 +92,8 @@ pub fn load(src: &str) -> Result<Construction, ScriptError> {
     Ok(c)
 }
 
-/// Runs one line. Returns the first new object, or `Ok(None)` if the line
-/// creates nothing.
+/// Runs one line. Returns the first output, or `Ok(None)` if the line
+/// creates nothing. Internal objects for inline arguments precede the outputs.
 pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
     let line = raw.split('#').next().unwrap_or("").trim();
     if line.is_empty() {
@@ -145,8 +146,33 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
 /// The definition of a labelled line after its name has been read and
 /// checked: the forms of the module documentation other than arithmetic.
 fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Option<Id>, String> {
+    let start = c.checkpoint();
+    let Some(call) = resolve_geometry_arguments(c, rhs) else {
+        return define_resolved(c, name, rhs);
+    };
+    let result = define_resolved(c, name, &call);
+    if result.is_err() {
+        c.discard_since(start);
+    }
+    result
+}
+
+fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option<Id>, String> {
     if let Some(def) = parse_forced(rhs) {
         return c.add(name, def?).map(Some).map_err(|e| e.to_string());
+    }
+    if rhs.starts_with("Vertex") {
+        if let Some((func, args)) = split_call(rhs) {
+            if let Some(def) = PointDef::parse_segment_vertex(c, func, &args) {
+                return c
+                    .add(name, Def::Point(def?))
+                    .map(Some)
+                    .map_err(|e| e.to_string());
+            }
+        }
+    }
+    if let Some(result) = exec_polyline_flag(c, name, rhs) {
+        return result;
     }
     if let Some(result) = crate::algo::polygon::exec(c, name, rhs) {
         return result;
@@ -253,6 +279,46 @@ fn slider(c: &mut Construction, name: &str, args: &[&str]) -> Result<Id, String>
     c.add_slider(name, min, max).map_err(|e| e.to_string())
 }
 
+/// `CmdPolyLine` reads its trailing flag at creation. A false flag leaves
+/// the ordinary point-based polyline, including its live point dependencies.
+fn exec_polyline_flag(
+    c: &mut Construction,
+    name: &str,
+    rhs: &str,
+) -> Option<Result<Option<Id>, String>> {
+    if !rhs.starts_with("PolyLine") {
+        return None;
+    }
+    let ("PolyLine", args) = split_call(rhs)? else {
+        return None;
+    };
+    let [first, _, .., flag] = args.as_slice() else {
+        return None;
+    };
+    if !c.id(first).is_some_and(|id| c.kind(id) == Kind::Point) {
+        return None;
+    }
+    let flag = match c.id(flag) {
+        Some(id) if c.kind(id) == Kind::Boolean => match c.value(id) {
+            Value::Bool(flag) => flag,
+            _ => return Some(Err("`PolyLine` needs a defined boolean flag".into())),
+        },
+        Some(_) => return None,
+        None => match *flag {
+            "false" => false,
+            "true" => true,
+            _ => return None,
+        },
+    };
+    if flag {
+        return Some(Err(
+            "the pen stroke form of `PolyLine` is unsupported".into()
+        ));
+    }
+    let (points, _) = rhs.rsplit_once(',')?;
+    crate::algo::polygon::exec(c, name, &format!("{points})"))
+}
+
 /// Whether `rhs` is exactly one call `Name(...)` of a command: the bracket
 /// after the name closes at the end, and the name is neither a built-in
 /// function nor an object.
@@ -319,6 +385,45 @@ pub(crate) fn split_call(rhs: &str) -> Option<(&str, Vec<&str>)> {
     Some((rhs[..open].trim(), args))
 }
 
+/// Give inline numeric and list inputs a live dependency, as for the
+/// named inputs of these commands. Their normal dispatch reads the labels.
+fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String> {
+    let (name, _) = rhs.split_once('(')?;
+    if !matches!(
+        name.trim(),
+        "Tangent" | "Length" | "Vertex" | "Point" | "Barycenter"
+    ) {
+        return None;
+    }
+    let (func, mut args) = split_call(rhs)?;
+    let is_kind = |arg, kind| c.id(arg).is_some_and(|id| c.kind(id) == kind);
+    let inputs: &[(usize, Kind)] = match (func, args.as_slice()) {
+        ("Tangent", [_, f]) if is_kind(f, Kind::Function) => &[(0, Kind::Number)],
+        ("Length", [f, _, _]) if is_kind(f, Kind::Function) => {
+            &[(1, Kind::Number), (2, Kind::Number)]
+        }
+        ("Vertex", [s, _]) if is_kind(s, Kind::Segment) => &[(1, Kind::Number)],
+        ("Point", [_]) => &[(0, Kind::List)],
+        ("Barycenter", [_, _]) => &[(0, Kind::List), (1, Kind::List)],
+        _ => return None,
+    };
+    let replacements: Vec<_> = inputs
+        .iter()
+        .filter_map(|&(index, kind)| {
+            let arg = args[index];
+            if c.id(arg).is_some() || crate::algo::polygon::decimal(arg).is_some() {
+                return None;
+            }
+            let label = format!("\0arg{}", c.len());
+            crate::expr::argument_object(c, arg, &label, kind).then_some((index, label))
+        })
+        .collect();
+    for (index, label) in &replacements {
+        args[*index] = label;
+    }
+    (!replacements.is_empty()).then(|| format!("{func}({})", args.join(", ")))
+}
+
 /// Asks the groups for a command that creates several objects.
 fn parse_multi(c: &Construction, rhs: &str) -> Option<Result<Vec<Def>, String>> {
     fn wrap<G: Group>(r: Result<Vec<G>, String>, f: fn(G) -> Def) -> Result<Vec<Def>, String> {
@@ -345,6 +450,9 @@ fn parse_multi(c: &Construction, rhs: &str) -> Option<Result<Vec<Def>, String>> 
     }
     if let Some(r) = MeasureDef::parse_multi(c, func, &args) {
         return Some(wrap(r, Def::Measure));
+    }
+    if let Some(r) = PointDef::parse_multi(c, func, &args) {
+        return Some(wrap(r, Def::Point));
     }
     if let Some(r) = TransformDef::parse_multi(c, func, &args) {
         return Some(wrap(r, Def::Transform));
@@ -503,6 +611,7 @@ fn probe(c: &Construction, def: &Def) -> Result<bool, String> {
         Def::Lines(d) => run(c, d),
         Def::Conic(d) => run(c, d),
         Def::Measure(d) => run(c, d),
+        Def::Point(d) => run(c, d),
         Def::AngleObject(d) => run(c, d),
         Def::Transform(d) => run(c, d),
         Def::ConicPart(d) => run(c, d),
@@ -655,6 +764,11 @@ pub(crate) fn parse_def(c: &Construction, rhs: &str) -> Result<Def, String> {
     if !(func == "Angle" && args.len() == 3) {
         if let Some(def) = AngleDef::parse(c, func, &args) {
             return def.map(Def::AngleObject);
+        }
+    }
+    if let ("Circumference", [polygon]) = (func, args.as_slice()) {
+        if let Some(id) = c.id(polygon).filter(|&id| c.kind(id) == Kind::Polygon) {
+            return Ok(Def::Polygon(PolygonDef::Perimeter(id)));
         }
     }
     if let Some(def) = MeasureDef::parse(c, func, &args) {
@@ -967,6 +1081,19 @@ fn exec_labelled(c: &mut Construction, line: &str) -> Result<Option<Id>, String>
 mod tests {
     use super::*;
     use crate::kernel::Value;
+
+    #[test]
+    fn inline_conic_coefficients_stay_within_the_evaluation_budget() {
+        let mut c = Construction::new();
+        let before = crate::expr::work_done();
+        let id = exec(&mut c, "k = Conic({1, 0.5, -1, 0, 0, 0})")
+            .unwrap()
+            .unwrap();
+        assert_eq!(c.len(), 1);
+        assert_eq!(c.kind(id), Kind::Conic);
+        assert!(c.conic(id).is_some());
+        assert!(crate::expr::work_done() - before < crate::expr::MAX_EVALUATION_WORK);
+    }
 
     #[test]
     fn vector_labels_follow_string_util_is_lower_case() {

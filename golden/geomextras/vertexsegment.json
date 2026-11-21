@@ -1,0 +1,178 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "geomextras-vertexsegment-001",
+      "group": "geomextras",
+      "script": [
+        "A = (1, 0)",
+        "B = (0, 1)",
+        "s = Segment(A, B)",
+        "n = 1",
+        "V = Vertex(s, n)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 1.5 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 },
+        { "action": "set_number", "label": "n", "value": 3.0 },
+        { "action": "set_number", "label": "n", "value": 1.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "s": { "type": "segment", "defined": true, "x1": 1.0, "y1": 0.0, "x2": 0.0, "y2": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "V": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "s": { "type": "segment", "defined": true, "x1": 1.0, "y1": 0.0, "x2": 0.0, "y2": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 1.5 },
+          "V": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "s": { "type": "segment", "defined": true, "x1": 1.0, "y1": 0.0, "x2": 3.0, "y2": 4.0 },
+          "n": { "type": "number", "defined": true, "value": 1.5 },
+          "V": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "s": { "type": "segment", "defined": true, "x1": 1.0, "y1": 0.0, "x2": 3.0, "y2": 4.0 },
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "V": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "s": { "type": "segment", "defined": true, "x1": 1.0, "y1": 0.0, "x2": 3.0, "y2": 4.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "V": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "s": { "type": "segment", "defined": true, "x1": 3.0, "y1": 4.0, "x2": 3.0, "y2": 4.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "V": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 }
+        }
+      ]
+    },
+    {
+      "id": "geomextras-vertexsegment-002",
+      "group": "geomextras",
+      "script": [
+        "a = 1",
+        "A = (0, 0)",
+        "B = (2, sqrt(a))",
+        "s = Segment(A, B)",
+        "n = 1",
+        "V = Vertex(s, n)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 4.0 },
+        { "action": "set_number", "label": "n", "value": 2.0 },
+        { "action": "set_number", "label": "a", "value": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 2.0, "y2": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "V": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": false },
+          "s": { "type": "segment", "defined": false },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "V": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": false },
+          "s": { "type": "segment", "defined": false },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "V": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": false },
+          "s": { "type": "segment", "defined": false },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "V": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "s": { "type": "segment", "defined": true, "x1": 3.0, "y1": 4.0, "x2": 2.0, "y2": 2.0 },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "V": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "geomextras-vertexsegment-003",
+      "group": "geomextras",
+      "script": [
+        "A = (1, 0)",
+        "B = (0, 1)",
+        "s = Segment(A, B)",
+        "a = 1",
+        "V = Vertex(s, a + 1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "s": { "type": "segment", "defined": true, "x1": 1.0, "y1": 0.0, "x2": 0.0, "y2": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "V": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "s": { "type": "segment", "defined": true, "x1": 1.0, "y1": 0.0, "x2": 0.0, "y2": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "V": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "s": { "type": "segment", "defined": true, "x1": 1.0, "y1": 0.0, "x2": 0.0, "y2": 1.0 },
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "V": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "s": { "type": "segment", "defined": true, "x1": 1.0, "y1": 0.0, "x2": 3.0, "y2": 4.0 },
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "V": { "type": "point", "defined": false }
+        }
+      ]
+    }
+  ]
+}
