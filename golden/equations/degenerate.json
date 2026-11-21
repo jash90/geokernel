@@ -503,6 +503,41 @@
           }
         }
       ]
+    },
+    {
+      "id": "equations-degenerate-012",
+      "group": "equations",
+      "script": [
+        "c: y = x^2 + y",
+        "d: x^2 + 2x y + y^2 = x^2"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "double_line",
+            "matrix": [-1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-1.0, 0.0, 0.0],
+              [-1.0, 0.0, 0.0]
+            ]
+          },
+          "d": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "intersecting_lines",
+            "matrix": [0.0, 1.0, 0.0, 1.0, 0.0, 0.0],
+            "lines": [
+              [1.7013016167040798, 0.85065080835204, 0.0],
+              [-1.1102230246251565E-16, -1.9021130325903073, -0.0]
+            ]
+          }
+        }
+      ]
     }
   ]
 }

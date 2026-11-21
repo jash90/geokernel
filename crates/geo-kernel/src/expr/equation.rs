@@ -22,7 +22,10 @@
 //! `Equation.initEquation` builds it with `Polynomial.fromNode`. The terms
 //! keep GeoGebra's order, and their coefficients are trees of the merged
 //! arena that read the objects the equation names: a term may hold the `m`
-//! of `y = m x + b`.
+//! of `y = m x + b`. The call of a function whose argument reads `x` or `y`
+//! is expanded into the body of the function with the argument substituted
+//! (`makePolyTreeFromFunction`), so `h(x) = y` with `h(x) = 2x` is the line
+//! `y = 2x`.
 //!
 //! What the degree of the normal form makes of the equation
 //! (`AlgebraProcessor.processEquation`):
@@ -34,8 +37,9 @@
 //!   ey + f = 0` (`GeoConic(coeffs)`);
 //! - anything else, or an equation that is no polynomial (`sin(x) = 0`):
 //!   `y = <rhs in x>` makes a function, as an `f(x) = ...` line does;
-//!   everything else would be an implicit curve, which this kernel does
-//!   not have and refuses.
+//!   everything else would be an implicit curve or, when an exponent reads
+//!   an object (`x^n`), an implicit polynomial, which this kernel does not
+//!   have and refuses.
 //!
 //! The line or conic is dependent when a coefficient reads an object, as
 //! `AlgoDependentLine` and `AlgoDependentConic` are: the construction
@@ -44,7 +48,7 @@
 //! them when an object changes and classifies the conic again.
 
 use super::parse;
-use super::{children, eval, math, shift_children, types, Bin, Entry, Lit, Node, Raw, Ty};
+use super::{children, eval, math, shift_children, types, Bin, Entry, Lit, Node, Raw, Ty, NONE};
 use crate::algo;
 use crate::algo::conic_nd::ConicData;
 use crate::kernel::{Construction, Def, EquationDef, EquationRecord, Error, Id, Kind, Value};
@@ -59,12 +63,17 @@ const MAX_ALLOWED_DEGREE: f64 = 300.0;
 /// cannot grow without end.
 const MAX_TERMS: usize = 4096;
 
+/// Upper bound on the nodes the bodies of the function calls of one
+/// equation may add to the arena, so that nested calls cannot grow without
+/// end.
+const MAX_FUNCTION_NODES: usize = 4096;
+
 /// Defines `name: lhs = rhs` as the line, conic or function the equation
 /// makes, as GeoGebra's algebra processor does. The equation must have one
 /// top-level `=`; inequalities are refused.
 pub(crate) fn define(c: &mut Construction, name: &str, text: &str) -> Result<Id, String> {
     let (lhs_text, rhs_text) = split_equation(text)?;
-    let lhs = parse::parse_equation(c, lhs_text)?;
+    let lhs = parse::parse_equation_left(c, lhs_text)?;
     let rhs = parse::parse_equation(c, rhs_text)?;
     for (side, parsed) in [("left", &lhs), ("right", &rhs)] {
         if !matches!(parsed.tys[parsed.root as usize], Ty::Num(_)) {
@@ -81,10 +90,27 @@ pub(crate) fn define(c: &mut Construction, name: &str, text: &str) -> Result<Id,
     let mut lits = lhs.lits;
     lits.extend(rhs.lits);
     let rhs_root = rhs.root + offset;
-    let mut builder = Builder { nodes, lits };
+    let mut builder = Builder {
+        nodes,
+        lits,
+        function_nodes: MAX_FUNCTION_NODES,
+    };
 
-    let Some(poly) = build_normal(&mut builder, lhs.root, rhs_root) else {
-        return function_or_refuse(c, name, lhs_text, rhs_text, rhs.uses_y);
+    let poly = match build_normal(c, &mut builder, lhs.root, rhs_root) {
+        Ok(poly) => poly,
+        Err(why) => {
+            let what = match why {
+                NotPolynomial::VariableDegree => {
+                    "a variable exponent, like `x^n`, would make an implicit \
+                     polynomial, which is not supported: write the exponent \
+                     as a number"
+                }
+                NotPolynomial::ImplicitCurve => {
+                    "implicit curves are not supported: write a line or a conic in x and y"
+                }
+            };
+            return function_or_refuse(c, name, lhs_text, rhs_text, rhs.uses_y, what);
+        }
     };
     match poly.degree() {
         0 | 1 => {
@@ -100,36 +126,49 @@ pub(crate) fn define(c: &mut Construction, name: &str, text: &str) -> Result<Id,
             )?;
             add(c, name, true, coeffs).map_err(|e| e.to_string())
         }
-        _ => function_or_refuse(c, name, lhs_text, rhs_text, rhs.uses_y),
+        _ => function_or_refuse(
+            c,
+            name,
+            lhs_text,
+            rhs_text,
+            rhs.uses_y,
+            "implicit curves are not supported: write a line or a conic in x and y",
+        ),
     }
 }
 
-/// The normal form `lhs - rhs` of both sides, expanded, or `None` when
-/// either side is no polynomial in `x` and `y`. GeoGebra negates the right
-/// side and adds the left one to it, which fixes the order of the terms.
-fn build_normal(b: &mut Builder, lhs: u32, rhs: u32) -> Option<Poly> {
-    let (Ok(left), Ok(right)) = (b.expand(lhs), b.expand(rhs)) else {
-        return None;
-    };
-    let mut normal = right.negated(b).ok()?;
-    normal.add(&left, b).ok()?;
-    Some(normal)
+/// The normal form `lhs - rhs` of both sides, expanded, or why either side
+/// is no polynomial in `x` and `y`. GeoGebra negates the right side and
+/// adds the left one to it, which fixes the order of the terms.
+fn build_normal(
+    c: &Construction,
+    b: &mut Builder,
+    lhs: u32,
+    rhs: u32,
+) -> Result<Poly, NotPolynomial> {
+    let left = b.expand(c, lhs)?;
+    let right = b.expand(c, rhs)?;
+    let mut normal = right.negated(b)?;
+    normal.add(&left, b)?;
+    Ok(normal)
 }
 
 /// `AlgebraProcessor.functionOrImplicitPoly` for an equation this kernel
-/// has no implicit curve for: `y = <rhs in x>` makes a function, exactly as
-/// an `f(x) = ...` line does; everything else is refused.
+/// has no implicit curve or implicit polynomial for: `y = <rhs in x>` makes
+/// a function, exactly as an `f(x) = ...` line does; everything else is
+/// refused with `what`.
 fn function_or_refuse(
     c: &mut Construction,
     name: &str,
     lhs_text: &str,
     rhs_text: &str,
     rhs_uses_y: bool,
+    what: &str,
 ) -> Result<Id, String> {
     if lhs_text.trim() == "y" && !rhs_uses_y {
         return super::define_function(c, name, rhs_text.trim());
     }
-    Err("implicit curves are not supported: write a line or a conic in x and y".into())
+    Err(what.into())
 }
 
 /// The coefficient trees of the monomials `vars` of the polynomial
@@ -182,6 +221,41 @@ fn split_equation(text: &str) -> Result<(&str, &str), String> {
 
 // The polynomial expansion.
 
+/// Rewrites every child index of `node` with `map` ([`shift_children`]'s
+/// shape, for copying a tree into the builder's arena).
+fn map_children(
+    node: &mut Node,
+    mut map: impl FnMut(u32) -> Result<u32, NotPolynomial>,
+) -> Result<(), NotPolynomial> {
+    let mut visit = |c: &mut u32| -> Result<(), NotPolynomial> {
+        if *c != NONE {
+            *c = map(*c)?;
+        }
+        Ok(())
+    };
+    match node {
+        Node::Tuple(a, b) | Node::Polar(a, b) | Node::Bin(_, a, b) | Node::ListOp(_, a, b) => {
+            visit(a)?;
+            visit(b)?;
+        }
+        Node::Un(_, a) | Node::Apply(_, a) | Node::Item(a) => visit(a)?,
+        Node::If(_, a, b, c) | Node::Range(a, b, c) => {
+            visit(a)?;
+            visit(b)?;
+            visit(c)?;
+        }
+        Node::Seq(a, b, c, d, _) => {
+            visit(a)?;
+            visit(b)?;
+            visit(c)?;
+            visit(d)?;
+        }
+        Node::List(first, _) => visit(first)?,
+        _ => {}
+    }
+    Ok(())
+}
+
 /// One monomial: the degrees of `x` and `y` and the root of its
 /// coefficient tree, an index into the builder's arena.
 #[derive(Clone, Copy)]
@@ -198,15 +272,23 @@ struct Term {
 #[derive(Clone)]
 struct Poly(Vec<Term>);
 
-/// Why an expression is no polynomial in `x` and `y`: the equation would
-/// be an implicit curve.
-struct NotPolynomial;
+/// Why an expression is no polynomial in `x` and `y`.
+enum NotPolynomial {
+    /// The equation would be an implicit curve.
+    ImplicitCurve,
+    /// An exponent reads an object (`x^n`): GeoGebra makes an implicit
+    /// polynomial of its value, which this kernel does not have.
+    VariableDegree,
+}
 
 /// The merged arena of the two sides of an equation, which the coefficient
 /// trees of its terms are built in.
 struct Builder {
     nodes: Vec<Node>,
     lits: Vec<Lit>,
+    /// How many more nodes the bodies of function calls may add (see
+    /// [`MAX_FUNCTION_NODES`]).
+    function_nodes: usize,
 }
 
 impl Builder {
@@ -222,7 +304,7 @@ impl Builder {
 
     /// `ExpressionNode.makePolynomialTree` of the subtree at `i`, with the
     /// operations of `Polynomial.apply` and `Term` on the coefficients.
-    fn expand(&mut self, i: u32) -> Result<Poly, NotPolynomial> {
+    fn expand(&mut self, c: &Construction, i: u32) -> Result<Poly, NotPolynomial> {
         match self.node(i) {
             Node::Var => Ok(Poly(vec![Term {
                 x: 1,
@@ -235,40 +317,56 @@ impl Builder {
                 coeff: self.push(Node::Num(1.0)),
             }])),
             Node::Bin(Bin::Add, a, b) => {
-                let mut p = self.expand(a)?;
-                let q = self.expand(b)?;
+                let mut p = self.expand(c, a)?;
+                let q = self.expand(c, b)?;
                 p.add(&q, self)?;
                 Ok(p)
             }
             Node::Bin(Bin::Sub, a, b) => {
-                let mut p = self.expand(a)?;
-                let q = self.expand(b)?;
+                let mut p = self.expand(c, a)?;
+                let q = self.expand(c, b)?;
                 p.sub(&q, self)?;
                 Ok(p)
             }
             Node::Bin(Bin::Mul, a, b) => {
-                let mut p = self.expand(a)?;
-                let q = self.expand(b)?;
+                let mut p = self.expand(c, a)?;
+                let q = self.expand(c, b)?;
                 p.mul(&q, self)?;
                 Ok(p)
             }
             Node::Bin(Bin::Div, a, b) => {
-                let mut p = self.expand(a)?;
-                let q = self.expand(b)?;
+                let mut p = self.expand(c, a)?;
+                let q = self.expand(c, b)?;
                 if q.degree() != 0 {
                     // `Polynomial.apply`: dividing by a variable makes the
                     // equation no polynomial
-                    return Err(NotPolynomial);
+                    return Err(NotPolynomial::ImplicitCurve);
                 }
                 let divisor = q.constant();
                 p.apply_coefficients(self, |b, coeff| b.divide(coeff, divisor))?;
                 Ok(p)
             }
-            Node::Bin(Bin::Pow, base, exponent) => self.power(base, exponent),
+            Node::Bin(Bin::Pow, base, exponent) => self.power(c, base, exponent),
+            Node::Apply(f, arg) => {
+                // `makePolyTreeFromFunction`: a call whose argument reads
+                // `x` or `y` is the body of the function, its variable
+                // replaced by the argument; any other call is one constant
+                // coefficient, like the operations below
+                if self.contains_var(arg) {
+                    let body = self.inline_function(c, f, arg)?;
+                    self.expand(c, body)
+                } else {
+                    Ok(Poly(vec![Term {
+                        x: 0,
+                        y: 0,
+                        coeff: i,
+                    }]))
+                }
+            }
             // anything else is one constant coefficient, as
             // `makePolynomialTree` wraps a non-polynomial operation in one
             // term; a variable inside it makes the equation no polynomial
-            _ if self.contains_var(i) => Err(NotPolynomial),
+            _ if self.contains_var(i) => Err(NotPolynomial::ImplicitCurve),
             _ => Ok(Poly(vec![Term {
                 x: 0,
                 y: 0,
@@ -277,16 +375,51 @@ impl Builder {
         }
     }
 
+    /// The body of the function `f`, copied into this arena with its
+    /// variable replaced by `arg`: `h(x) = 2x` in `f: h(x) = y` gives the
+    /// line `y = 2x`.
+    fn inline_function(&mut self, c: &Construction, f: Id, arg: u32) -> Result<u32, NotPolynomial> {
+        let body = match (c.def(f), c.value(f)) {
+            (Def::Expr(d), Value::Function) => super::entry(c, d),
+            _ => return Err(NotPolynomial::ImplicitCurve),
+        };
+        let root = body.root;
+        self.copy_body(body, root, arg, 0)
+    }
+
+    /// One node of that body at `i`, its children copied the same way.
+    fn copy_body(
+        &mut self,
+        body: &Entry,
+        i: u32,
+        arg: u32,
+        depth: u32,
+    ) -> Result<u32, NotPolynomial> {
+        if depth > parse::MAX_NESTING || self.function_nodes == 0 {
+            return Err(NotPolynomial::ImplicitCurve);
+        }
+        self.function_nodes -= 1;
+        if matches!(body.nodes[i as usize], Node::Var) {
+            return Ok(arg);
+        }
+        let mut node = body.nodes[i as usize];
+        let deeper = depth + 1;
+        map_children(&mut node, |child| self.copy_body(body, child, arg, deeper))?;
+        let copy = self.push(node);
+        self.lits[copy as usize] = body.lits[i as usize].clone();
+        Ok(copy)
+    }
+
     /// `Polynomial.apply(POWER, ...)`: the exponent must be a constant
     /// integer in `[0, MAX_ALLOWED_DEGREE]`, or the base must be a constant
     /// whose one coefficient is raised as a tree. An exponent that reads an
-    /// object (`x^n`) has a variable degree, which makes an implicit curve
-    /// upstream.
-    fn power(&mut self, base: u32, exponent: u32) -> Result<Poly, NotPolynomial> {
-        let mut p = self.expand(base)?;
-        let e = self.expand(exponent)?;
+    /// object (`x^n`) has a variable degree, which makes an implicit
+    /// polynomial upstream.
+    fn power(&mut self, c: &Construction, base: u32, exponent: u32) -> Result<Poly, NotPolynomial> {
+        let mut p = self.expand(c, base)?;
+        let e = self.expand(c, exponent)?;
         if e.degree() != 0 {
-            return Err(NotPolynomial);
+            return Err(NotPolynomial::ImplicitCurve);
         }
         let exp_coeff = e.constant();
         if p.degree() == 0 {
@@ -296,13 +429,13 @@ impl Builder {
             return Ok(p);
         }
         if self.contains_object(exp_coeff) {
-            return Err(NotPolynomial);
+            return Err(NotPolynomial::VariableDegree);
         }
         let Some(power) = self.constant_value(exp_coeff) else {
-            return Err(NotPolynomial);
+            return Err(NotPolynomial::ImplicitCurve);
         };
         if !math::is_integer(power) || !(0.0..=MAX_ALLOWED_DEGREE).contains(&power) {
-            return Err(NotPolynomial);
+            return Err(NotPolynomial::ImplicitCurve);
         }
         p.pow(power as u32, self)?;
         Ok(p)
@@ -521,10 +654,10 @@ impl Poly {
         for ti in &self.0 {
             for tj in &e.0 {
                 if out.len() >= MAX_TERMS {
-                    return Err(NotPolynomial);
+                    return Err(NotPolynomial::ImplicitCurve);
                 }
-                let x = ti.x.checked_add(tj.x).ok_or(NotPolynomial)?;
-                let y = ti.y.checked_add(tj.y).ok_or(NotPolynomial)?;
+                let x = ti.x.checked_add(tj.x).ok_or(NotPolynomial::ImplicitCurve)?;
+                let y = ti.y.checked_add(tj.y).ok_or(NotPolynomial::ImplicitCurve)?;
                 let coeff = b.multiply(ti.coeff, tj.coeff);
                 out.push(Term { x, y, coeff });
             }
@@ -569,18 +702,23 @@ impl Poly {
         self.simplify(b)
     }
 
-    /// `Polynomial.simplify`: the terms of one monomial are summed, a term
-    /// whose coefficient is the constant 0 is dropped, and a polynomial of
-    /// no terms keeps a single constant 0.
+    /// `Polynomial.simplify`: the terms of one monomial are summed and the
+    /// merged ones consumed (upstream nulls every `t[j]`, also when the sum
+    /// is 0 and the first term is dropped), a term whose coefficient is the
+    /// constant 0 is dropped, and a polynomial of no terms keeps a single
+    /// constant 0.
     fn simplify(&mut self, b: &mut Builder) -> Result<(), NotPolynomial> {
         let mut kept: Vec<Term> = Vec::with_capacity(self.0.len());
+        let mut consumed = vec![false; self.0.len()];
         for i in 0..self.0.len() {
-            let mut term = self.0[i];
-            if kept.iter().any(|t| t.x == term.x && t.y == term.y) {
+            if consumed[i] {
                 continue;
             }
-            for other in &self.0[i + 1..] {
+            consumed[i] = true;
+            let mut term = self.0[i];
+            for (j, other) in self.0.iter().enumerate().skip(i + 1) {
                 if (other.x, other.y) == (term.x, term.y) {
+                    consumed[j] = true;
                     term.coeff = b.add(term.coeff, other.coeff);
                 }
             }
@@ -924,13 +1062,123 @@ mod tests {
     }
 
     #[test]
-    fn an_exponent_must_be_a_whole_constant() {
-        for script in ["a: x^n = 1\n", "a: x^0.5 = 1\n", "a: x^-1 = 1\n"] {
+    fn a_variable_exponent_is_refused_with_its_own_message() {
+        // GeoGebra makes an implicit polynomial of `x^n`, which this kernel
+        // does not have
+        let mut c = Construction::new();
+        exec(&mut c, "n = 2").unwrap();
+        let err = exec(&mut c, "a: x^n = 1").unwrap_err();
+        assert!(err.contains("variable exponent"), "{err}");
+        assert!(!err.contains("implicit curves"), "{err}");
+        let err = exec(&mut c, "a: x^n + y = 1").unwrap_err();
+        assert!(err.contains("variable exponent"), "{err}");
+        // `y = <rhs in x>` is still the function form, whatever the exponent
+        exec(&mut c, "f: y = x^n").unwrap();
+        assert_eq!(c.kind(c.id("f").unwrap()), Kind::Function);
+        // an exponent that is no number at all makes an implicit curve
+        for script in ["a: x^0.5 = 1\n", "a: x^-1 = 1\n", "a: x^x = 1\n"] {
             let mut c = Construction::new();
-            exec(&mut c, "n = 2").unwrap();
             let err = exec(&mut c, script).unwrap_err();
             assert!(err.contains("implicit curves"), "{script}: {err}");
         }
+    }
+
+    #[test]
+    fn terms_merged_to_zero_disappear_together() {
+        let c = load(
+            "a: x = x\n\
+             b: x + y = x + y\n\
+             d: x = x + 1\n\
+             e: 2x + y = 2x + 5\n\
+             f: x^2 - x^2 + y = 1\n\
+             g: x^2 + y^2 = 1 + x^2\n\
+             h: (x + 1)(x - 1) = y\n\
+             k: y = x^2 + y\n\
+             l: x^2 + 2x y + y^2 = x^2\n\
+             m: (x + y)(x - y) = 1\n",
+        )
+        .unwrap();
+        // the cancelled monomials leave no term behind: `x = x` is the
+        // undefined line (0, 0, 0) and `x = x + 1` the undefined (0, 0, -1)
+        for label in ["a", "b", "d"] {
+            assert_eq!(c.kind(c.id(label).unwrap()), Kind::Line, "{label}");
+            assert_eq!(c.value(c.id(label).unwrap()), Value::Undefined, "{label}");
+        }
+        assert_eq!(line(&c, "e"), (0.0, 1.0, -5.0));
+        assert_eq!(line(&c, "f"), (0.0, 1.0, -1.0));
+        assert_eq!(conic(&c, "g").ty, ConicType::ParallelLines);
+        assert_eq!(conic(&c, "g").matrix, [0.0, 1.0, -1.0, 0.0, 0.0, 0.0]);
+        assert_eq!(conic(&c, "h").ty, ConicType::Parabola);
+        assert_eq!(conic(&c, "h").matrix, [1.0, 0.0, -1.0, 0.0, 0.0, -0.5]);
+        assert_eq!(conic(&c, "k").ty, ConicType::DoubleLine);
+        assert_eq!(conic(&c, "l").ty, ConicType::IntersectingLines);
+        assert_eq!(conic(&c, "m").ty, ConicType::Hyperbola);
+        assert_eq!(conic(&c, "m").matrix, [1.0, -1.0, -1.0, 0.0, 0.0, 0.0]);
+    }
+
+    #[test]
+    fn a_constant_folded_zero_coefficient_drops_the_merged_term() {
+        let mut c = load("a = 1\nf: x + a = x + 2\n").unwrap();
+        // the merged `x` terms are consumed although their sum folds to the
+        // constant 0, so `a - 2` alone remains: the undefined line (0, 0, -1)
+        assert_eq!(c.kind(c.id("f").unwrap()), Kind::Line);
+        assert_eq!(c.value(c.id("f").unwrap()), Value::Undefined);
+        c.set_number(c.id("a").unwrap(), 4.0).unwrap();
+        assert_eq!(c.value(c.id("f").unwrap()), Value::Undefined);
+        // a merged term that keeps a variable survives the fold
+        let c = load("a = 1\nf: x + a x = x + 2\n").unwrap();
+        assert_eq!(line(&c, "f"), (1.0, 0.0, -2.0));
+    }
+
+    #[test]
+    fn digit_prefixed_names_and_coordinate_calls_read_as_products() {
+        let c = load(
+            "a: 2xy = 1\n\
+             b: 2 xy = 3\n\
+             d: x(y) = 1\n\
+             e: x(y + 1) = 1\n\
+             g: y = x(x + 1)\n\
+             h: y(x) = 1\n\
+             k: x(3) = 1\n",
+        )
+        .unwrap();
+        // `2xy` is 2*x*y; `xy` alone on the left stays one unknown name
+        assert_eq!(conic(&c, "a").ty, ConicType::Hyperbola);
+        assert_eq!(conic(&c, "b").ty, ConicType::Hyperbola);
+        assert_eq!(conic(&c, "d").ty, ConicType::Hyperbola);
+        // x(y + 1) = x y + x
+        assert_eq!(conic(&c, "e").ty, ConicType::Hyperbola);
+        assert_eq!(conic(&c, "g").ty, ConicType::Parabola);
+        assert_eq!(conic(&c, "h").ty, ConicType::Hyperbola);
+        assert_eq!(line(&c, "k"), (3.0, 0.0, -1.0));
+        let mut c = Construction::new();
+        let err = exec(&mut c, "a: xy = 1").unwrap_err();
+        assert!(err.contains("unknown object `xy`"), "{err}");
+    }
+
+    #[test]
+    fn a_function_call_whose_argument_is_a_variable_is_expanded() {
+        let c = load("h(x) = 2x\nf: h(x) = y\ng: y + 1 = h(x)\n").unwrap();
+        assert_eq!(line(&c, "f"), (2.0, -1.0, 0.0));
+        assert_eq!(line(&c, "g"), (-2.0, 1.0, 1.0));
+        let c = load("h(x) = x^2\nf: x^2 + y = h(x)\n").unwrap();
+        assert_eq!(line(&c, "f"), (0.0, 1.0, 0.0));
+        // the expansion follows the objects the function reads
+        let mut c = load("w = 2\nh(x) = w x\nf: h(x) = y\n").unwrap();
+        assert_eq!(line(&c, "f"), (2.0, -1.0, 0.0));
+        c.set_number(c.id("w").unwrap(), -3.0).unwrap();
+        assert_eq!(line(&c, "f"), (-3.0, -1.0, 0.0));
+        // a call of a constant argument is one constant coefficient
+        let c = load("h(x) = 2x\nf: h(2) = 4\n").unwrap();
+        assert_eq!(c.value(c.id("f").unwrap()), Value::Undefined);
+        // a body that is no polynomial makes no line
+        let mut c = Construction::new();
+        exec(&mut c, "h(x) = sin(x)").unwrap();
+        let err = exec(&mut c, "f: h(x) = y").unwrap_err();
+        assert!(err.contains("implicit curves"), "{err}");
+        // `y = <rhs in x>` stays the function form
+        exec(&mut c, "f: y = h(x)").unwrap();
+        assert_eq!(c.kind(c.id("f").unwrap()), Kind::Function);
     }
 
     #[test]

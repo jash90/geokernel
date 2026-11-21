@@ -493,6 +493,233 @@
           "h": { "type": "line", "defined": true, "a": -2.0, "b": 1.0, "c": 1.0 }
         }
       ]
+    },
+    {
+      "id": "equations-lines-021",
+      "group": "equations",
+      "script": [
+        "f: x = x",
+        "g: x + y = x + y",
+        "h: x = x + 1",
+        "k: 2x + y = 2x + 5"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": { "type": "line", "defined": false },
+          "g": { "type": "line", "defined": false },
+          "h": { "type": "line", "defined": false },
+          "k": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -5.0 }
+        }
+      ]
+    },
+    {
+      "id": "equations-lines-022",
+      "group": "equations",
+      "script": [
+        "f: x^2 - x^2 + y = 1"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.0 }
+        }
+      ]
+    },
+    {
+      "id": "equations-lines-023",
+      "group": "equations",
+      "script": [
+        "a = 1",
+        "f: x + a = x + 2"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "f": { "type": "line", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": { "type": "line", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": { "type": "line", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "equations-lines-024",
+      "group": "equations",
+      "script": [
+        "h(x) = 2x",
+        "f: h(x) = y",
+        "g: y + 1 = h(x)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -16.0],
+              [-4.0, -8.0],
+              [-2.0, -4.0],
+              [-1.0, -2.0],
+              [-0.5, -1.0],
+              [0.0, 0.0],
+              [0.5, 1.0],
+              [1.0, 2.0],
+              [2.0, 4.0],
+              [4.0, 8.0],
+              [8.0, 16.0]
+            ]
+          },
+          "f": { "type": "line", "defined": true, "a": 2.0, "b": -1.0, "c": 0.0 },
+          "g": { "type": "line", "defined": true, "a": -2.0, "b": 1.0, "c": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "equations-lines-025",
+      "group": "equations",
+      "script": [
+        "h(x) = x^2",
+        "f: x^2 + y = h(x)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "f": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "equations-lines-026",
+      "group": "equations",
+      "script": [
+        "w = 2",
+        "h(x) = w x",
+        "f: h(x) = y"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "w", "value": -3.0 },
+        { "action": "set_number", "label": "w", "value": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "w": { "type": "number", "defined": true, "value": 2.0 },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -16.0],
+              [-4.0, -8.0],
+              [-2.0, -4.0],
+              [-1.0, -2.0],
+              [-0.5, -1.0],
+              [0.0, 0.0],
+              [0.5, 1.0],
+              [1.0, 2.0],
+              [2.0, 4.0],
+              [4.0, 8.0],
+              [8.0, 16.0]
+            ]
+          },
+          "f": { "type": "line", "defined": true, "a": 2.0, "b": -1.0, "c": 0.0 }
+        },
+        {
+          "w": { "type": "number", "defined": true, "value": -3.0 },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 24.0],
+              [-4.0, 12.0],
+              [-2.0, 6.0],
+              [-1.0, 3.0],
+              [-0.5, 1.5],
+              [0.0, -0.0],
+              [0.5, -1.5],
+              [1.0, -3.0],
+              [2.0, -6.0],
+              [4.0, -12.0],
+              [8.0, -24.0]
+            ]
+          },
+          "f": { "type": "line", "defined": true, "a": -3.0, "b": -1.0, "c": 0.0 }
+        },
+        {
+          "w": { "type": "number", "defined": true, "value": 0.0 },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.0],
+              [-4.0, -0.0],
+              [-2.0, -0.0],
+              [-1.0, -0.0],
+              [-0.5, -0.0],
+              [0.0, 0.0],
+              [0.5, 0.0],
+              [1.0, 0.0],
+              [2.0, 0.0],
+              [4.0, 0.0],
+              [8.0, 0.0]
+            ]
+          },
+          "f": { "type": "line", "defined": true, "a": 0.0, "b": -1.0, "c": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "equations-lines-027",
+      "group": "equations",
+      "script": [
+        "f: x(3) = 1",
+        "g: y(5) = 1"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": { "type": "line", "defined": true, "a": 3.0, "b": 0.0, "c": -1.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 5.0, "c": -1.0 }
+        }
+      ]
     }
   ]
 }

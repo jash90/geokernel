@@ -63,6 +63,23 @@ case("lines", [pt("A", 1, 1), num("q", 2), "g: y = x(A) + q"],
      [mv("A", 5, 0), setn("q", -1)])
 case("lines", [num("m", 1), num("q", 1), "g: y = m x + q", "h: y = -1 / m x + q"],
      [setn("m", 2), setn("q", -1), setn("m", -0.5)])
+# the terms one monomial sums to cancel: every merged term goes, also when
+# the sum folds to the constant 0, so `x = x` is the undefined line (0, 0, 0)
+# and `x = x + 1` the undefined line (0, 0, -1)
+case("lines", ["f: x = x", "g: x + y = x + y", "h: x = x + 1",
+               "k: 2x + y = 2x + 5"], [])
+case("lines", ["f: x^2 - x^2 + y = 1"], [])
+case("lines", [num("a", 1), "f: x + a = x + 2"],
+     [setn("a", 2), setn("a", 0)])
+# a function call whose argument is `x` is the body of the function, so
+# `h(x) = y` is the line `y = 2x`; the line follows the objects h reads
+case("lines", ["h(x) = 2x", "f: h(x) = y", "g: y + 1 = h(x)"], [])
+case("lines", ["h(x) = x^2", "f: x^2 + y = h(x)"], [])
+case("lines", [num("w", 2), "h(x) = w x", "f: h(x) = y"],
+     [setn("w", -3), setn("w", 0)])
+# x(...) and y(...) applied to something that is not a point or a vector is
+# the product with the variable (`replaceXYZnodes`)
+case("lines", ["f: x(3) = 1", "g: y(5) = 1"], [])
 
 # ---------------------------------------------------------------- conics
 # A quadratic equation makes a conic with the coefficients of
@@ -96,6 +113,13 @@ case("conics", [pt("A", 0, 0), "c: x^2 + y^2 + x(A) x + y(A) y = 4"],
      [mv("A", 2, 0), mv("A", -1, 3), mv("A", 0, -2)])
 case("conics", [num("r", 2), pt("A", 1, 1), "c: (x - x(A))^2 + (y - y(A))^2 = r^2"],
      [setn("r", 4), mv("A", -2, -1), setn("r", 0), setn("r", 3)])
+# the terms one monomial sums to cancel across the two sides
+case("conics", ["c: x^2 + y^2 = 1 + x^2", "d: (x + 1)(x - 1) = y",
+                "e: (x + y)(x - y) = 1"], [])
+# a digit-prefixed name of letters is a product of single letters (`2xy` is
+# `2*x*y`), and x(...)/y(...) of a non-point multiplies
+case("conics", ["c: 2xy = 1", "d: 2 xy = 3", "e: x(y) = 1", "f: x(y + 1) = 1",
+                "g: y = x(x + 1)"], [])
 
 # ------------------------------------------------------------- degenerate
 # Conics that fall apart: two crossing lines, a double line, parallel
@@ -117,6 +141,9 @@ case("degenerate", [num("q", 0), "c: y^2 = q^2"],
      [setn("q", 2), setn("q", 0), setn("q", -3)])
 case("degenerate", [num("m", 1), num("q", 1), "c: m x^2 + q y^2 = 1"],
      [setn("q", 0), setn("m", 0), setn("q", -1), setn("m", 2)])
+# the cancelled terms make the conic fall apart: `y = x^2 + y` is the double
+# line x^2 = 0 and the merged x^2 terms leave two crossing lines
+case("degenerate", ["c: y = x^2 + y", "d: x^2 + 2x y + y^2 = x^2"], [])
 
 # --------------------------------------------------------------- functions
 # `y = <rhs in x>` that is no line and no conic makes a function, like
@@ -130,6 +157,10 @@ case("functions", [num("m", 1), "f: y = m x + sin(x)"],
      [setn("m", 2), setn("m", -1), setn("m", 0)])
 case("functions", [num("q", 1), "f: y = abs(x) + q"],
      [setn("q", -1), setn("q", 3)])
+# a variable exponent is fine in the function form (the equation form of it
+# would be an implicit polynomial, which the kernel refuses)
+case("functions", [num("n", 2), "f: y = x^n"],
+     [setn("n", 3), setn("n", 1)])
 
 # ------------------------------------------------------------------ mixed
 # Equations together with the rest of a construction: other objects read
