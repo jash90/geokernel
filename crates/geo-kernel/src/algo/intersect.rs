@@ -206,6 +206,9 @@ pub(crate) fn exec_selected(
                     | (Kind::Circle, Kind::Circle)
             ) =>
         {
+            if matches!(*selector, "1" | "2") {
+                return None;
+            }
             let p = format!("Intersect({first}, {second}, 1)");
             let q = format!("Intersect({first}, {second}, 2)");
             match selector_kind(c, selector) {
@@ -213,9 +216,6 @@ pub(crate) fn exec_selected(
                     "If(x({p}) == x({p}), If(abs({q} - {selector})^2 < abs({p} - {selector})^2, {q}, {p}), {q})"
                 ),
                 Ok(kind) if kind.is_number() => {
-                    if matches!(*selector, "1" | "2") {
-                        return None;
-                    }
                     // The Java cast saturates at the minimum signed int.
                     // Subtracting one then wraps, so that index is out of range.
                     // Close to 2 and 3, the reciprocal tests the sign without
