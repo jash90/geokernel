@@ -90,6 +90,16 @@ case("line", [pt("A", 0, 0), pt("B", 1, 1), "l = Line(A, B)", "P = Point(l)", pt
 # the line becomes undefined (A on B) and comes back
 case("line", [pt("A", 0, 0), pt("B", 4, 2), "l = Line(A, B)"] + mid("l"),
      [mv("B", 0, 0), mv("B", 2, -2)])
+# Sampling gives each transformed line its own fixed start point.
+line = [pt("A", 0, 0), pt("B", 4, 2), "l = Line(A, B)"]
+case("line", line + [pt("C", 1, 1), pt("D", 3, 0), "u = Vector(C, D)", "m = Translate(l, u)"]
+     + mid("m", "E"), [mv("A", 1, 1), mv("C", 0, 0), mv("B", 0, 3)])
+case("line", line + [pt("O", 0, 1), num("k", 2), "m = Dilate(l, k, O)"]
+     + mid("m", "E"), [mv("A", 1, 1), mv("O", 0, 0), setn("k", 3), mv("B", 0, 3)])
+case("line", line + [pt("C", 1, 3), num("w", 0.7), "m = Rotate(l, w, C)"]
+     + mid("m", "E"), [mv("A", 1, 1), mv("B", 0, 3), mv("C", 0, 0), setn("w", 1.1)])
+case("line", line + [pt("C", 1, 3), "m = Reflect(l, C)"]
+     + mid("m", "E"), [mv("A", 1, 1), mv("C", 0, 0), mv("B", 0, 3)])
 
 # ------------------------------------------------------ arcs
 topic("arc")
@@ -150,5 +160,9 @@ case("slider", ["a = Slider(-3, 3)", pt("O", 0, 0), num("r", 2), "c = Circle(O, 
 # a locus far outside the view
 case("slider", ["a = Slider(0, 10)", pt("A", 1, 1), "Q = (20 * a, a^2)", "L = Locus(Q, a)"],
      [setn("a", 5)])
+case("slider", ["a = Slider(2, 2)", "Q = (a, a^2 / 2)", "L = Locus(Q, a)"], [])
+case("slider", ["a = Slider(2, 1)", "Q = (a, a^2 / 2)"], [])
+case("slider", ["a = Slider(0, 2 * pi)", "Q = (cos(a), sin(a))", "L = Locus(Q, a)"],
+     [setn("a", 3)])
 
 cases.write()

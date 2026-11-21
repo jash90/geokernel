@@ -737,7 +737,7 @@ impl Best {
 /// The start point of a line, in homogeneous coordinates, as the algorithm
 /// that made it sets it with `GeoLine.setStartPoint`; `None` for a line
 /// without one. A start point that is undefined now has NaN coordinates.
-fn line_start(c: &Construction, line: Id) -> Option<(f64, f64, f64)> {
+fn defined_line_start(c: &Construction, line: Id) -> Option<(f64, f64, f64)> {
     use super::conic_parts::ConicPartDef;
     use super::lines::LineDef;
     use super::vector::VectorDef;
@@ -790,6 +790,28 @@ fn line_start(c: &Construction, line: Id) -> Option<(f64, f64, f64)> {
         }
         _ => return None,
     })
+}
+
+fn line_start(c: &Construction, line: Id) -> Option<(f64, f64, f64)> {
+    defined_line_start(c, line).or_else(|| {
+        let &(x, y, _) = c.frozen_line_starts.get(&line)?;
+        Some((x, y, 1.0))
+    })
+}
+
+/// `GeoLine.PathMoverLine.init` installs the foot from the origin once,
+/// on the actual line. Later moves of the line leave this point in place.
+pub(crate) fn freeze_line_start(c: &mut Construction, path: Id) {
+    if let Geom::Line {
+        g: (a, b, z),
+        start: None,
+    } = geom(c, path)
+    {
+        let norm = a * a + b * b;
+        let order = c.frozen_line_starts.len();
+        c.frozen_line_starts
+            .insert(path, (-z * a / norm, -z * b / norm, order));
+    }
 }
 
 /// The path `path` as the path code reads it now.
@@ -996,7 +1018,7 @@ fn path_parameter(c: &Construction, point: Id) -> Option<Value> {
 pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
     use super::point::PointDef;
     let inputs = |path: Id| match c.kind(path) {
-        Kind::Line if line_start(c, path).is_some() => c.read_ids(&c.def(path)),
+        Kind::Line if defined_line_start(c, path).is_some() => c.read_ids(&c.def(path)),
         Kind::Polygon | Kind::PolyLine => c.read_ids(&c.def(path)),
         _ => Vec::new(),
     };

@@ -347,7 +347,7 @@ pub fn render(c: &Construction, view: View, width: u32, height: u32) -> String {
                     }
                     pts.clear();
                 };
-                for p in &locus.points {
+                for p in locus.points.iter() {
                     if !p.line_to {
                         flush(&mut pts);
                     }

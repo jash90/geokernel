@@ -1,7 +1,7 @@
 //! `Locus(Q, P)` and `Locus(Q, slider)`: what holds for any sampling. The
 //! points themselves are compared with GeoGebra's in `golden/locus`.
 
-use geo_kernel::{script, Construction, Id, Value};
+use geo_kernel::{script, Construction, Id, Kind, Value};
 
 fn build(lines: &[&str]) -> Construction {
     let mut c = Construction::new();
@@ -167,8 +167,23 @@ fn sliders_start_at_zero_in_their_interval_and_stay_in_it() {
     assert_eq!(v(&c, "a"), Value::Number(4.0));
     c.set_number(id(&c, "a"), -3.0).unwrap();
     assert_eq!(v(&c, "a"), Value::Number(1.0));
-    assert!(script::exec(&mut c, "e = Slider(2, 1)").is_err());
     assert!(script::exec(&mut c, "e = Slider(1)").is_err());
+}
+
+#[test]
+fn a_reversed_slider_starts_undefined_and_cannot_drive_a_locus() {
+    let mut c = build(&["a = Slider(2, 1)", "Q = (a, 1)", "b = Slider(0, -1)"]);
+    let a = id(&c, "a");
+    assert_eq!(c.kind(a), Kind::Number);
+    assert_eq!(c.value(a), Value::Undefined);
+    assert!(script::exec(&mut c, "L = Locus(Q, a)").is_err());
+    c.set_number(a, 2.0).unwrap();
+    assert_eq!(c.value(a), Value::Number(1.0));
+    assert_eq!(c.value(id(&c, "Q")), Value::Point { x: 1.0, y: 1.0 });
+    assert!(script::exec(&mut c, "L = Locus(Q, a)").is_err());
+    let b = id(&c, "b");
+    c.set_number(b, -1.0).unwrap();
+    assert_eq!(c.value(b), Value::Number(0.0));
 }
 
 #[test]
@@ -231,4 +246,38 @@ fn rolling_back_forgets_loci_and_sliders() {
     assert_eq!(c.value(a), Value::Number(10.0));
     script::exec(&mut c, "L = Locus(Q, P)").unwrap();
     assert!(c.locus(id(&c, "L")).unwrap().defined);
+}
+
+#[test]
+fn rolling_back_the_first_locus_releases_its_lines_start() {
+    let input = [
+        "A = (0, 0)",
+        "B = (4, 2)",
+        "l = Line(A, B)",
+        "C = (1, 1)",
+        "D = (3, 0)",
+        "u = Vector(C, D)",
+        "m = Translate(l, u)",
+        "P = Point(m)",
+        "E = (1, 3)",
+        "Q = Midpoint(P, E)",
+    ];
+    let mut frozen = build(&input);
+    script::exec(&mut frozen, "L = Locus(Q, P)").unwrap();
+    let mut rolled_back = build(&input);
+    let at = rolled_back.checkpoint();
+    script::exec(&mut rolled_back, "L = Locus(Q, P)").unwrap();
+    rolled_back.rollback(at).unwrap();
+    let mut fresh = build(&input);
+    for c in [&mut frozen, &mut rolled_back, &mut fresh] {
+        c.move_point(id(c, "A"), 1.0, 1.0).unwrap();
+    }
+    let Value::Point { x, y } = frozen.value(id(&frozen, "P")) else {
+        panic!("missing point on the transformed line");
+    };
+    assert!((x - 0.8).abs() < 1e-9 && (y + 1.6).abs() < 1e-9, "{x}, {y}");
+    assert_eq!(
+        rolled_back.value(id(&rolled_back, "P")),
+        fresh.value(id(&fresh, "P"))
+    );
 }

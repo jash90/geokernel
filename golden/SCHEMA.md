@@ -158,12 +158,15 @@ bit larger than the view decides which steps far outside it are refined. So
 the points depend on the window of the view. The harness records them in the
 window of the headless application, which it checks whenever it records a
 locus: x from -4.3 to 11.700000000000001, y from -5.7 to 6.3, 50 pixels per
-unit on both axes, only the first graphics view shown. A locus is recomputed
+unit on both axes, only the first graphics view shown. The desktop app supplies
+its current sampling window. A locus is recomputed
 when its path or a free object its point depends on changes, but not when
 the point on the path moves (GeoGebra leaves that point out of the inputs it
 updates from). A slider is a script line `a = Slider(min, max)` or
-`a = Slider(min, max, increment)` with number literals: a free number that
-starts at 0 put into `[min, max]` and that `set_number` keeps in it.
+`a = Slider(min, max, increment)` with constant number expressions: a free
+number that starts at 0 clamped to `[min, max]`. A one-value interval fixes
+the number at that value. Reversed bounds give an initially undefined
+number and cannot drive a locus.
 GeoGebra also stops sampling a locus when one update of the construction
 takes longer than 500 ms, which makes the points depend on the machine; no
 case comes near it, and `geo-kernel` has no such limit.

@@ -425,7 +425,7 @@ pub fn compare_locus(
         (Some(_), Value::Undefined, _) | (Some(_), _, None) => {
             return Err("expected a value, kernel is undefined".into())
         }
-        (Some(ExpectedData::Locus(want)), Value::Locus { .. }, Some(d)) => (want, &d.points),
+        (Some(ExpectedData::Locus(want)), Value::Locus { .. }, Some(d)) => (want, d.points.iter()),
         _ => return Err("kernel value has a different shape than its kind".into()),
     };
     if want.len() != got.len() {

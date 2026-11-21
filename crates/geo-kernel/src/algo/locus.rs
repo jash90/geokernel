@@ -34,10 +34,9 @@
 //! joined to the one before it only when it is close (`lineTo`), so a jump
 //! or an undefined stretch of `Q` starts a new piece (`moveTo`). "Close" and
 //! "too far" are measured in pixels of the graphics view. Upstream reads the
-//! view the locus is shown in; this kernel always uses the window of the
-//! headless application the golden data come from ([`View::headless`]), so
-//! the points do not depend on the window of the app, and zooming does not
-//! sample again. Upstream also stops sampling when one update of the
+//! view the locus is shown in. A construction uses the reference headless
+//! window until the app supplies its own with [`Construction::set_locus_view`].
+//! Upstream also stops sampling when one update of the
 //! construction takes longer than 500 ms (`MAX_TIME_FOR_ONE_STEP`); a time
 //! limit would make the points depend on the machine, so it is left out, and
 //! only the limits on the number of points and steps are kept.
@@ -52,6 +51,7 @@ use crate::algo::conic_nd::ConicType;
 use crate::algo::path::{self, inf_function, inverse_inf_function, Geom, PathDef, PathState};
 use crate::algo::{Group, Parents, NUMBER, POINT};
 use crate::kernel::{Construction, Def, Error, Id, Kind, Value};
+use std::sync::Arc;
 
 /// `PathMover.MIN_STEPS`.
 const MIN_STEPS: f64 = 128.0;
@@ -108,11 +108,17 @@ pub struct LocusPoint {
 /// The points of a locus (`GeoLocus`); empty when the locus is undefined.
 #[derive(Clone, Debug, Default)]
 pub struct LocusData {
-    pub points: Vec<LocusPoint>,
+    pub points: Arc<Vec<LocusPoint>>,
     pub defined: bool,
+    bounds: Option<[f64; 4]>,
 }
 
 impl LocusData {
+    /// Bounds of the finite samples, in the order xmin, xmax, ymin, ymax.
+    pub fn bounds(&self) -> Option<[f64; 4]> {
+        self.bounds
+    }
+
     pub(crate) fn value(&self) -> Value {
         if self.defined {
             Value::Locus {
@@ -131,7 +137,7 @@ impl LocusData {
             && self
                 .points
                 .iter()
-                .zip(&o.points)
+                .zip(o.points.iter())
                 .all(|(p, q)| b(p.x, q.x) && b(p.y, q.y) && p.line_to == q.line_to)
     }
 }
@@ -142,6 +148,44 @@ impl Construction {
         match self.defs.get(id.0)? {
             Def::Locus(_) => self.locus_slot(id.0).map(|slot| &self.loci[slot].1),
             _ => None,
+        }
+    }
+
+    pub fn has_loci(&self) -> bool {
+        !self.loci.is_empty()
+    }
+
+    /// The supplied sampling window and scales. `None` uses the headless view.
+    pub fn locus_view(&self) -> Option<[f64; 6]> {
+        self.locus_view
+    }
+
+    /// Sets the sampling window and cascades updates from the loci. The
+    /// scales are in pixels per world unit. Invalid views are ignored.
+    pub fn set_locus_view(
+        &mut self,
+        xmin: f64,
+        xmax: f64,
+        ymin: f64,
+        ymax: f64,
+        xscale: f64,
+        yscale: f64,
+    ) {
+        let view = [xmin, xmax, ymin, ymax, xscale, yscale];
+        if !view.iter().all(|v| v.is_finite())
+            || !(xmax > xmin && ymax > ymin && xscale > 0.0 && yscale > 0.0)
+            || self.locus_view == Some(view)
+        {
+            return;
+        }
+        self.locus_view = Some(view);
+        if self.has_loci() {
+            let mut dirty = std::mem::take(&mut self.dirty);
+            dirty.fit(self.defs.len());
+            for &(i, _) in &self.loci {
+                dirty.insert(i);
+            }
+            self.propagate_dirty(dirty, 0);
         }
     }
 
@@ -166,18 +210,17 @@ impl Construction {
         if !(min.is_finite() && max.is_finite()) {
             return Err(Error::NotFinite);
         }
-        if min >= max {
-            return Err(Error::NotFinite);
-        }
-        let value = if 0.0 < min {
-            min
-        } else if 0.0 > max {
-            max
-        } else {
+        let reversed = min > max;
+        let value = if reversed {
             0.0
+        } else {
+            0.0_f64.clamp(min, max)
         };
         let id = self.add(label, Def::Number(value))?;
         self.sliders.push((id.0, min, max));
+        if reversed {
+            self.values[id.0] = Value::Undefined;
+        }
         Ok(id)
     }
 
@@ -454,6 +497,7 @@ fn record_path(c: &mut Construction, q: Id, p: Id) -> LocusData {
     } else {
         st.set_t(min);
     }
+    path::freeze_line_start(c, path);
     let copy = PathCopy { id: p, path, st };
     let mover = Mover::new(copy.st.parameter(), min, max, closed, false);
     let data = sample(c, q, &chain, copy, mover, false);
@@ -837,8 +881,7 @@ impl View {
     pub(crate) const HEADLESS: [f64; 6] = [-4.3, 11.700000000000001, -5.7, 6.3, 50.0, 50.0];
 
     /// `updateScreenBorders` and `setMaxDistances` for the shown view.
-    fn headless() -> Self {
-        let [xmin, xmax, ymin, ymax, xscale, yscale] = Self::HEADLESS;
+    fn new([xmin, xmax, ymin, ymax, xscale, yscale]: [f64; 6]) -> Self {
         let mut v = View {
             visible: [true, false, false],
             max_x: [0.0; 3],
@@ -1020,7 +1063,7 @@ fn sample<M: Moving>(
     mover: Mover,
     slider: bool,
 ) -> LocusData {
-    let view = View::headless();
+    let view = View::new(c.locus_view.unwrap_or(View::HEADLESS));
     let views = view.count();
     let mut run = Run {
         q,
@@ -1121,9 +1164,21 @@ fn sample<M: Moving>(
         let line_to = run.distance_small(v, either);
         run.insert(v, line_to);
     }
+    let mut bounds: Option<[f64; 4]> = None;
+    for p in &run.points {
+        if p.x.is_finite() && p.y.is_finite() {
+            bounds = Some(match bounds {
+                Some([xmin, xmax, ymin, ymax]) => {
+                    [xmin.min(p.x), xmax.max(p.x), ymin.min(p.y), ymax.max(p.y)]
+                }
+                None => [p.x, p.x, p.y, p.y],
+            });
+        }
+    }
     LocusData {
-        points: run.points,
+        points: Arc::new(run.points),
         defined: true,
+        bounds,
     }
 }
 
@@ -1156,7 +1211,11 @@ impl Group for LocusDef {
             }
             LocusDef::Slider { .. } => {
                 c.expect(mover, NUMBER)?;
-                if c.slider_interval(mover).is_none() {
+                if !c
+                    .slider_interval(mover)
+                    .is_some_and(|(min, max)| min <= max)
+                    || !c.value(mover).is_defined()
+                {
                     return Err(wrong(NUMBER));
                 }
             }

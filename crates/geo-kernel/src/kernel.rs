@@ -605,6 +605,7 @@ pub struct Checkpoint {
     len: usize,
     lists: usize,
     exprs: usize,
+    frozen_line_starts: usize,
     /// How many rollbacks the construction had made when it was taken.
     generation: u64,
 }
@@ -666,6 +667,12 @@ pub struct Construction {
     /// The points of the loci, with the index of each object, in creation
     /// order.
     loci: Vec<(usize, LocusData)>,
+    /// The graphics window used to sample loci. A headless construction
+    /// uses the reference window.
+    locus_view: Option<[f64; 6]>,
+    /// Line starts installed by the path mover, with their insertion order
+    /// so a rollback can remove starts added to pre-existing lines.
+    pub(crate) frozen_line_starts: HashMap<Id, (f64, f64, usize)>,
     /// The intervals of the free numbers made by `Slider`, with the index of
     /// each number, in creation order.
     sliders: Vec<(usize, f64, f64)>,
@@ -953,6 +960,7 @@ impl Construction {
             len: self.defs.len(),
             lists: self.lists.len(),
             exprs: self.exprs.len(),
+            frozen_line_starts: self.frozen_line_starts.len(),
             generation: self.generation,
         }
     }
@@ -1003,6 +1011,8 @@ impl Construction {
     /// at or before it and stays valid, and the generation does not change.
     pub(crate) fn discard_since(&mut self, at: Checkpoint) {
         debug_assert_eq!(at.generation, self.generation, "a checkpoint of this call");
+        self.frozen_line_starts
+            .retain(|_, &mut (_, _, order)| order < at.frozen_line_starts);
         while self.defs.len() > at.len {
             let id = self.defs.len() - 1;
             let def = self.defs[id];
@@ -1336,7 +1346,7 @@ impl Construction {
             }) => old,
             _ => unreachable!("the definition is a free scalar"),
         };
-        if !had_decimal && old.to_bits() == v.to_bits() {
+        if !had_decimal && old.to_bits() == v.to_bits() && self.values[id.0].is_defined() {
             return Ok(0);
         }
         self.defs[id.0] = new_def;
@@ -1360,9 +1370,11 @@ impl Construction {
         for &child in &self.children[start.0] {
             dirty.insert(child.0);
         }
+        self.propagate_dirty(dirty, start.0)
+    }
 
+    fn propagate_dirty(&mut self, mut dirty: DirtySet, mut from: usize) -> usize {
         let mut recomputed = 0;
-        let mut from = start.0;
         while let Some(i) = dirty.pop_first(from) {
             // children only add larger indices
             from = i + 1;

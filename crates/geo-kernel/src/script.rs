@@ -195,21 +195,24 @@ fn define(c: &mut Construction, name: &str, rhs: &str) -> Result<Id, String> {
     c.add(name, def).map_err(|e| e.to_string())
 }
 
-/// `Slider(min, max)` and `Slider(min, max, increment)` with number
-/// literals (`CmdSlider`); the increment only matters for dragging, which
+/// `Slider(min, max)` and `Slider(min, max, increment)` with constant number
+/// expressions (`CmdSlider`); the increment only matters for dragging, which
 /// the kernel does not do, so it is checked and dropped.
 fn slider(c: &mut Construction, name: &str, args: &[&str]) -> Result<Id, String> {
+    let number = |arg| {
+        crate::expr::constant_number(c, arg)
+            .filter(|&(_, angle)| !angle)
+            .map(|(value, _)| value)
+            .ok_or_else(|| format!("expected a constant number, got `{arg}`"))
+    };
     let (min, max) = match args {
-        [min, max] => (parse_number(min)?, parse_number(max)?),
+        [min, max] => (number(min)?, number(max)?),
         [min, max, step] => {
-            parse_number(step)?;
-            (parse_number(min)?, parse_number(max)?)
+            number(step)?;
+            (number(min)?, number(max)?)
         }
         _ => return Err(format!("`Slider` does not take {} argument(s)", args.len())),
     };
-    if min.partial_cmp(&max) != Some(std::cmp::Ordering::Less) {
-        return Err(format!("a slider needs min < max, got {min} and {max}"));
-    }
     c.add_slider(name, min, max).map_err(|e| e.to_string())
 }
 

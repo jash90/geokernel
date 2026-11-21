@@ -18,7 +18,7 @@ List,LIST,List,yes,no,no,no,no,no,no,no,
 Axis,AXIS,,no,no,no,no,no,no,no,no,the window draws the axes from the view settings
 Text,TEXT,,no,no,no,no,no,no,no,no,
 Formula,FORMULA,,no,no,no,no,no,no,no,no,
-Locus,LOCUS,Locus,yes,yes,yes,no,no,no,no,no,Locus(point; point) and Locus(point; slider); sampled in the window of the headless app
+Locus,LOCUS,Locus,yes,yes,yes,no,no,no,no,no,Locus(point; point) and Locus(point; slider); samples follow the graphics view
 CurveCartesian,CURVE_CARTESIAN,,no,no,no,no,no,no,no,no,
 ImplicitCurve,IMPLICIT_POLY,,no,no,no,no,no,no,no,no,
 FunctionNVar,FUNCTION_NVAR,,no,no,no,no,no,no,no,no,
