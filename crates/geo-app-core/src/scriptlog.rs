@@ -44,9 +44,14 @@ pub struct Entry {
 }
 
 impl Entry {
-    /// The definition after the first `=`, as typed.
+    /// The definition after the first `:` or `=`, as typed. An equation
+    /// line keeps its `:` (`a: 2x + 3y = 6`), so its definition is the
+    /// whole equation.
     pub fn rhs(&self) -> &str {
-        self.line.split_once('=').map_or("", |(_, r)| r.trim())
+        self.line
+            .find([':', '='])
+            .and_then(|i| self.line.get(i + 1..))
+            .map_or("", str::trim)
     }
 }
 
@@ -65,15 +70,15 @@ enum Op {
 
 /// Rewrites `f: Line(A, B)` as `f = Line(A, B)` and removes a trailing `#`
 /// comment. Blank input gives an empty string. A `:` counts only when it comes
-/// before any `=`.
+/// before any `=`; an equation (`f: 2x + 3y = 6`, whose `=` is part of the
+/// definition) keeps its `:`, which the script of the kernel reads.
 pub fn normalize(input: &str) -> String {
     let line = input.split('#').next().unwrap_or("").trim();
     let colon = line.find(':');
     let eq = line.find('=');
     match (colon, eq) {
-        (Some(c), e) if e.is_none_or(|e| c < e) => {
-            format!("{} = {}", line[..c].trim(), line[c + 1..].trim())
-        }
+        (Some(c), None) => format!("{} = {}", line[..c].trim(), line[c + 1..].trim()),
+        (Some(c), Some(e)) if c < e => format!("{}: {}", line[..c].trim(), line[c + 1..].trim()),
         _ => line.to_owned(),
     }
 }
@@ -123,10 +128,14 @@ pub struct Rejected {
     pub dependent: bool,
 }
 
-/// The labels a definition line names before its `=`: `A`, `f` of
+/// The labels a definition line names before its `:` or `=`: `A`, `f` of
 /// `f(x)`, or those of `{t_{1}, t_{2}}` (an empty slot names nothing).
+/// An equation line names its label before the `:` of `a: 2x + 3y = 6`.
 fn defined_labels(line: &str) -> impl Iterator<Item = &str> {
-    let lhs = line.split_once('=').map_or("", |(l, _)| l.trim());
+    let lhs = line
+        .find([':', '='])
+        .and_then(|i| line.get(..i))
+        .map_or("", str::trim);
     let lhs = match lhs.strip_prefix('{').and_then(|l| l.strip_suffix('}')) {
         Some(list) => list,
         None => lhs.strip_suffix("(x)").map_or(lhs, str::trim_end),
@@ -734,6 +743,20 @@ mod tests {
         assert_eq!(normalize("# only a comment"), "");
         assert_eq!(normalize("   "), "");
         assert_eq!(normalize("A = (1, 2)"), "A = (1, 2)");
+        // an equation keeps its `:`, which tells the kernel it is one
+        assert_eq!(normalize("a: 2x + 3y = 6"), "a: 2x + 3y = 6");
+        assert_eq!(normalize(" a : y = 2x + 1 # line"), "a: y = 2x + 1");
+    }
+
+    #[test]
+    fn an_equation_line_defines_its_label_and_keeps_its_equation() {
+        let (c, log) = Log::load("m = 2\nb = 1\na: y = m x + b\n").unwrap();
+        let a = c.id("a").unwrap();
+        assert_eq!(c.kind(a), geo_kernel::Kind::Line);
+        assert_eq!(log.rhs_of("a"), Some("y = m x + b"));
+        let replayed = log.rebuild().unwrap();
+        assert_eq!(replayed.0.value(replayed.0.id("a").unwrap()), c.value(a));
+        assert_eq!(defined_labels("a: 2x + 3y = 6").collect::<Vec<_>>(), ["a"]);
     }
 
     fn sample() -> (Construction, Log) {

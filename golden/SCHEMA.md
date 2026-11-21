@@ -54,7 +54,7 @@ One JSON object per file, stored under `golden/<group>/`.
 | --- | --- | --- |
 | `id` | string | Unique within the whole `golden/` tree. |
 | `group` | string | Command group, equal to the directory name. |
-| `script` | array of string | GeoGebra input-bar lines with English command names, run in order. Every line has the form `label = definition`, so every object has an explicit label. |
+| `script` | array of string | GeoGebra input-bar lines with English command names, run in order. Every line has the form `label = definition` or, for an equation, `label: lhs = rhs`, so every object has an explicit label. |
 | `steps` | array of Step | The first step is always `initial`. |
 | `snapshots` | array of Snapshot | Same length as `steps`. `snapshots[i]` is the state after `steps[i]`. |
 
@@ -236,6 +236,16 @@ added in schema 1.
 
 Schema 2 distinguishes `angle` from `number`, including inside lists. Only
 schema 1 permits an expected number to match an angle in the kernel.
+
+Script lines may also be equations in `x` and `y` (group `equations`),
+written `label: lhs = rhs` as GeoGebra's input bar reads them: a linear
+equation makes a `line` (the raw coefficients of its normal form `lhs -
+rhs`), a quadratic one a `conic` (recorded like every general conic), and
+`y = <rhs in x>` of any other kind a `function`. An equation whose
+coefficients read objects is a dependent object; the steps change the
+numbers it reads and move the points it reads. Equations and these forms
+were added the same way: no existing file changed and the schema version
+stays 1.
 
 ## Known gaps
 

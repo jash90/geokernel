@@ -1,0 +1,760 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "equations-lines-001",
+      "group": "equations",
+      "script": [
+        "f: 2x + 3y = 6"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": { "type": "line", "defined": true, "a": 2.0, "b": 3.0, "c": -6.0 }
+        }
+      ]
+    },
+    {
+      "id": "equations-lines-002",
+      "group": "equations",
+      "script": [
+        "g: y = 2x + 1"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": -2.0, "b": 1.0, "c": -1.0 }
+        }
+      ]
+    },
+    {
+      "id": "equations-lines-003",
+      "group": "equations",
+      "script": [
+        "h: x = 3"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "h": { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -3.0 }
+        }
+      ]
+    },
+    {
+      "id": "equations-lines-004",
+      "group": "equations",
+      "script": [
+        "k: 3x - y + 2 = 0"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": { "type": "line", "defined": true, "a": 3.0, "b": -1.0, "c": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "equations-lines-005",
+      "group": "equations",
+      "script": [
+        "l: 2 = y",
+        "f: x + y = 0"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": -1.0, "c": 2.0 },
+          "f": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "equations-lines-006",
+      "group": "equations",
+      "script": [
+        "f: 2(x + y) = 6",
+        "g: x - 2y = 1"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": { "type": "line", "defined": true, "a": 2.0, "b": 2.0, "c": -6.0 },
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": -2.0, "c": -1.0 }
+        }
+      ]
+    },
+    {
+      "id": "equations-lines-007",
+      "group": "equations",
+      "script": [
+        "f: sqrt(2) x + y = 1"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": { "type": "line", "defined": true, "a": 1.4142135623730951, "b": 1.0, "c": -1.0 }
+        }
+      ]
+    },
+    {
+      "id": "equations-lines-008",
+      "group": "equations",
+      "script": [
+        "f: y = 2 x + 1 x",
+        "g: y = 3 x"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": { "type": "line", "defined": true, "a": -3.0, "b": 1.0, "c": 0.0 },
+          "g": { "type": "line", "defined": true, "a": -3.0, "b": 1.0, "c": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "equations-lines-009",
+      "group": "equations",
+      "script": [
+        "f: 0x + 0y = 1"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": { "type": "line", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "equations-lines-010",
+      "group": "equations",
+      "script": [
+        "f: 0x + y = 2"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -2.0 }
+        }
+      ]
+    },
+    {
+      "id": "equations-lines-011",
+      "group": "equations",
+      "script": [
+        "m = 2",
+        "q = 1",
+        "g: y = m x + q"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "m", "value": 3.0 },
+        { "action": "set_number", "label": "q", "value": -2.0 },
+        { "action": "set_number", "label": "m", "value": 0.0 },
+        { "action": "set_number", "label": "m", "value": -1.5 }
+      ],
+      "snapshots": [
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "q": { "type": "number", "defined": true, "value": 1.0 },
+          "g": { "type": "line", "defined": true, "a": -2.0, "b": 1.0, "c": -1.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 3.0 },
+          "q": { "type": "number", "defined": true, "value": 1.0 },
+          "g": { "type": "line", "defined": true, "a": -3.0, "b": 1.0, "c": -1.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 3.0 },
+          "q": { "type": "number", "defined": true, "value": -2.0 },
+          "g": { "type": "line", "defined": true, "a": -3.0, "b": 1.0, "c": 2.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 0.0 },
+          "q": { "type": "number", "defined": true, "value": -2.0 },
+          "g": { "type": "line", "defined": true, "a": -0.0, "b": 1.0, "c": 2.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": -1.5 },
+          "q": { "type": "number", "defined": true, "value": -2.0 },
+          "g": { "type": "line", "defined": true, "a": 1.5, "b": 1.0, "c": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "equations-lines-012",
+      "group": "equations",
+      "script": [
+        "m = 1",
+        "g: m x = 2"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "m", "value": 0.0 },
+        { "action": "set_number", "label": "m", "value": 1.0 },
+        { "action": "set_number", "label": "m", "value": -4.0 }
+      ],
+      "snapshots": [
+        {
+          "m": { "type": "number", "defined": true, "value": 1.0 },
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -2.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 0.0 },
+          "g": { "type": "line", "defined": false }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 1.0 },
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -2.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": -4.0 },
+          "g": { "type": "line", "defined": true, "a": -4.0, "b": 0.0, "c": -2.0 }
+        }
+      ]
+    },
+    {
+      "id": "equations-lines-013",
+      "group": "equations",
+      "script": [
+        "q = 1",
+        "g: q x + 2y = q + 4"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "q", "value": 0.0 },
+        { "action": "set_number", "label": "q", "value": -3.5 }
+      ],
+      "snapshots": [
+        {
+          "q": { "type": "number", "defined": true, "value": 1.0 },
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 2.0, "c": -5.0 }
+        },
+        {
+          "q": { "type": "number", "defined": true, "value": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 2.0, "c": -4.0 }
+        },
+        {
+          "q": { "type": "number", "defined": true, "value": -3.5 },
+          "g": { "type": "line", "defined": true, "a": -3.5, "b": 2.0, "c": -0.5 }
+        }
+      ]
+    },
+    {
+      "id": "equations-lines-014",
+      "group": "equations",
+      "script": [
+        "m = 1",
+        "g: y = m x"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "m", "value": 0.0 },
+        { "action": "set_number", "label": "m", "value": -1.0 },
+        { "action": "set_number", "label": "m", "value": 0.5 }
+      ],
+      "snapshots": [
+        {
+          "m": { "type": "number", "defined": true, "value": 1.0 },
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": 0.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 0.0 },
+          "g": { "type": "line", "defined": true, "a": -0.0, "b": 1.0, "c": 0.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": -1.0 },
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": 0.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 0.5 },
+          "g": { "type": "line", "defined": true, "a": -0.5, "b": 1.0, "c": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "equations-lines-015",
+      "group": "equations",
+      "script": [
+        "m = 2",
+        "q = -3",
+        "g: m (x + q) = m y"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "m", "value": -1.0 },
+        { "action": "set_number", "label": "q", "value": 0.0 },
+        { "action": "set_number", "label": "m", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "q": { "type": "number", "defined": true, "value": -3.0 },
+          "g": { "type": "line", "defined": true, "a": 2.0, "b": -2.0, "c": -6.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": -1.0 },
+          "q": { "type": "number", "defined": true, "value": -3.0 },
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": 3.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": -1.0 },
+          "q": { "type": "number", "defined": true, "value": 0.0 },
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": -0.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 3.0 },
+          "q": { "type": "number", "defined": true, "value": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 3.0, "b": -3.0, "c": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "equations-lines-016",
+      "group": "equations",
+      "script": [
+        "A = (1, 5)",
+        "g: x(A) + y = 2"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": 3.0, "y": 0.0 },
+        { "action": "move", "label": "A", "x": -1.0, "y": -4.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.0, "y": -4.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -3.0 }
+        }
+      ]
+    },
+    {
+      "id": "equations-lines-017",
+      "group": "equations",
+      "script": [
+        "A = (2, -1)",
+        "g: x(A) x + y(A) y = 2"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": 1.0, "y": 1.0 },
+        { "action": "move", "label": "A", "x": -3.0, "y": 0.5 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": -1.0 },
+          "g": { "type": "line", "defined": true, "a": 2.0, "b": -1.0, "c": -2.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -2.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 0.5 },
+          "g": { "type": "line", "defined": true, "a": -3.0, "b": 0.5, "c": -2.0 }
+        }
+      ]
+    },
+    {
+      "id": "equations-lines-018",
+      "group": "equations",
+      "script": [
+        "A = (1, 1)",
+        "B = (4, 5)",
+        "g: (y(A) - y(B)) x + (x(B) - x(A)) y = 3"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 2.0, "y": 2.0 },
+        { "action": "move", "label": "A", "x": 1.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 5.0 },
+          "g": { "type": "line", "defined": true, "a": -4.0, "b": 3.0, "c": -3.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 5.0 },
+          "g": { "type": "line", "defined": true, "a": -5.0, "b": 4.0, "c": -3.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "g": { "type": "line", "defined": true, "a": -2.0, "b": 2.0, "c": -3.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": -3.0 }
+        }
+      ]
+    },
+    {
+      "id": "equations-lines-019",
+      "group": "equations",
+      "script": [
+        "A = (1, 1)",
+        "q = 2",
+        "g: y = x(A) + q"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": 5.0, "y": 0.0 },
+        { "action": "set_number", "label": "q", "value": -1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "q": { "type": "number", "defined": true, "value": 2.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -3.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 },
+          "q": { "type": "number", "defined": true, "value": 2.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -7.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 },
+          "q": { "type": "number", "defined": true, "value": -1.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -4.0 }
+        }
+      ]
+    },
+    {
+      "id": "equations-lines-020",
+      "group": "equations",
+      "script": [
+        "m = 1",
+        "q = 1",
+        "g: y = m x + q",
+        "h: y = -1 / m x + q"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "m", "value": 2.0 },
+        { "action": "set_number", "label": "q", "value": -1.0 },
+        { "action": "set_number", "label": "m", "value": -0.5 }
+      ],
+      "snapshots": [
+        {
+          "m": { "type": "number", "defined": true, "value": 1.0 },
+          "q": { "type": "number", "defined": true, "value": 1.0 },
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": -1.0 },
+          "h": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "q": { "type": "number", "defined": true, "value": 1.0 },
+          "g": { "type": "line", "defined": true, "a": -2.0, "b": 1.0, "c": -1.0 },
+          "h": { "type": "line", "defined": true, "a": 0.5, "b": 1.0, "c": -1.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "q": { "type": "number", "defined": true, "value": -1.0 },
+          "g": { "type": "line", "defined": true, "a": -2.0, "b": 1.0, "c": 1.0 },
+          "h": { "type": "line", "defined": true, "a": 0.5, "b": 1.0, "c": 1.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": -0.5 },
+          "q": { "type": "number", "defined": true, "value": -1.0 },
+          "g": { "type": "line", "defined": true, "a": 0.5, "b": 1.0, "c": 1.0 },
+          "h": { "type": "line", "defined": true, "a": -2.0, "b": 1.0, "c": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "equations-lines-021",
+      "group": "equations",
+      "script": [
+        "f: x = x",
+        "g: x + y = x + y",
+        "h: x = x + 1",
+        "k: 2x + y = 2x + 5"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": { "type": "line", "defined": false },
+          "g": { "type": "line", "defined": false },
+          "h": { "type": "line", "defined": false },
+          "k": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -5.0 }
+        }
+      ]
+    },
+    {
+      "id": "equations-lines-022",
+      "group": "equations",
+      "script": [
+        "f: x^2 - x^2 + y = 1"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.0 }
+        }
+      ]
+    },
+    {
+      "id": "equations-lines-023",
+      "group": "equations",
+      "script": [
+        "a = 1",
+        "f: x + a = x + 2"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "f": { "type": "line", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": { "type": "line", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": { "type": "line", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "equations-lines-024",
+      "group": "equations",
+      "script": [
+        "h(x) = 2x",
+        "f: h(x) = y",
+        "g: y + 1 = h(x)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -16.0],
+              [-4.0, -8.0],
+              [-2.0, -4.0],
+              [-1.0, -2.0],
+              [-0.5, -1.0],
+              [0.0, 0.0],
+              [0.5, 1.0],
+              [1.0, 2.0],
+              [2.0, 4.0],
+              [4.0, 8.0],
+              [8.0, 16.0]
+            ]
+          },
+          "f": { "type": "line", "defined": true, "a": 2.0, "b": -1.0, "c": 0.0 },
+          "g": { "type": "line", "defined": true, "a": -2.0, "b": 1.0, "c": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "equations-lines-025",
+      "group": "equations",
+      "script": [
+        "h(x) = x^2",
+        "f: x^2 + y = h(x)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "f": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "equations-lines-026",
+      "group": "equations",
+      "script": [
+        "w = 2",
+        "h(x) = w x",
+        "f: h(x) = y"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "w", "value": -3.0 },
+        { "action": "set_number", "label": "w", "value": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "w": { "type": "number", "defined": true, "value": 2.0 },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -16.0],
+              [-4.0, -8.0],
+              [-2.0, -4.0],
+              [-1.0, -2.0],
+              [-0.5, -1.0],
+              [0.0, 0.0],
+              [0.5, 1.0],
+              [1.0, 2.0],
+              [2.0, 4.0],
+              [4.0, 8.0],
+              [8.0, 16.0]
+            ]
+          },
+          "f": { "type": "line", "defined": true, "a": 2.0, "b": -1.0, "c": 0.0 }
+        },
+        {
+          "w": { "type": "number", "defined": true, "value": -3.0 },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 24.0],
+              [-4.0, 12.0],
+              [-2.0, 6.0],
+              [-1.0, 3.0],
+              [-0.5, 1.5],
+              [0.0, -0.0],
+              [0.5, -1.5],
+              [1.0, -3.0],
+              [2.0, -6.0],
+              [4.0, -12.0],
+              [8.0, -24.0]
+            ]
+          },
+          "f": { "type": "line", "defined": true, "a": -3.0, "b": -1.0, "c": 0.0 }
+        },
+        {
+          "w": { "type": "number", "defined": true, "value": 0.0 },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.0],
+              [-4.0, -0.0],
+              [-2.0, -0.0],
+              [-1.0, -0.0],
+              [-0.5, -0.0],
+              [0.0, 0.0],
+              [0.5, 0.0],
+              [1.0, 0.0],
+              [2.0, 0.0],
+              [4.0, 0.0],
+              [8.0, 0.0]
+            ]
+          },
+          "f": { "type": "line", "defined": true, "a": 0.0, "b": -1.0, "c": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "equations-lines-027",
+      "group": "equations",
+      "script": [
+        "f: x(3) = 1",
+        "g: y(5) = 1"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": { "type": "line", "defined": true, "a": 3.0, "b": 0.0, "c": -1.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 5.0, "c": -1.0 }
+        }
+      ]
+    },
+    {
+      "id": "equations-lines-028",
+      "group": "equations",
+      "script": [
+        "h(x) = 2x",
+        "f: y = h(2)",
+        "g: y = h(1) x"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -16.0],
+              [-4.0, -8.0],
+              [-2.0, -4.0],
+              [-1.0, -2.0],
+              [-0.5, -1.0],
+              [0.0, 0.0],
+              [0.5, 1.0],
+              [1.0, 2.0],
+              [2.0, 4.0],
+              [4.0, 8.0],
+              [8.0, 16.0]
+            ]
+          },
+          "f": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -4.0 },
+          "g": { "type": "line", "defined": true, "a": -2.0, "b": 1.0, "c": 0.0 }
+        }
+      ]
+    }
+  ]
+}
