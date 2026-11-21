@@ -549,19 +549,19 @@ fn root_near(f: impl Fn(f64) -> f64, derivative: impl Fn(f64) -> f64, seed: f64)
     } else {
         (0.9 * lo + 0.1 * hi).midpoint(hi)
     };
-    // Each Newton step uses two of the solver's 100 evaluations.
+    // Each Newton step uses two of the 100 evaluations. Verify the residual
+    // within that budget, including for candidates with a small last step.
+    let mut converged = false;
     for _ in 0..50 {
         let y = f(x);
-        if y == 0.0 {
-            return Some(x);
+        if y == 0.0 || converged {
+            return (y.abs() < MIN_PRECISION).then_some(x);
         }
         let next = x - y / derivative(x);
         if !next.is_finite() {
             return None;
         }
-        if (next - x).abs() <= 1e-6 {
-            return accepted(next).then_some(next);
-        }
+        converged = (next - x).abs() <= 1e-6;
         x = next;
     }
     None

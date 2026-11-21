@@ -158,7 +158,7 @@ pub(crate) fn neg_power_integers(base0: f64, a: f64, b: f64) -> Option<f64> {
 
 /// `MyDouble.sin`: zero is snapped for arguments away from zero.
 pub(crate) fn sin(v: f64) -> f64 {
-    let r = v.sin();
+    let r = libm::sin(v);
     if v.abs() > 0.1 && is_zero(r) {
         0.0
     } else {
@@ -168,7 +168,7 @@ pub(crate) fn sin(v: f64) -> f64 {
 
 /// `MyDouble.cos`.
 pub(crate) fn cos(v: f64) -> f64 {
-    let r = v.cos();
+    let r = libm::cos(v);
     if is_zero(r) {
         0.0
     } else {
