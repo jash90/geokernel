@@ -1,0 +1,226 @@
+{
+  "schema": 1,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "geomforms-tangent-001",
+      "group": "geomforms",
+      "script": [
+        "A = (-3, 0)",
+        "B = (3, 0)",
+        "P = (-4, 4)",
+        "Q = (4, 4)",
+        "r = 5",
+        "k = Ellipse(A, B, r)",
+        "l = Line(P, Q)",
+        "s = Ray(P, Q)",
+        "u = IsTangent(l, k)",
+        "v = IsTangent(s, k)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "r", "value": 4.0 },
+        { "action": "move", "label": "Q", "x": -4.0, "y": 4.0 },
+        { "action": "move", "label": "P", "x": -4.0, "y": 0.0 },
+        { "action": "set_number", "label": "r", "value": 3.0 },
+        { "action": "set_number", "label": "r", "value": 5.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": -4.0, "y": 4.0 },
+          "Q": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [256.0, 400.0, -6400.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [5.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 8.0, "c": -32.0 },
+          "s": { "type": "ray", "defined": true, "x": -4.0, "y": 4.0, "a": 0.0, "b": 8.0, "c": -32.0 },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": -4.0, "y": 4.0 },
+          "Q": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 4.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [112.0, 256.0, -1792.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [4.0, 2.6457513110645907],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 8.0, "c": -32.0 },
+          "s": { "type": "ray", "defined": true, "x": -4.0, "y": 4.0, "a": 0.0, "b": 8.0, "c": -32.0 },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": -4.0, "y": 4.0 },
+          "Q": { "type": "point", "defined": true, "x": -4.0, "y": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 4.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [112.0, 256.0, -1792.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [4.0, 2.6457513110645907],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "l": { "type": "line", "defined": false },
+          "s": { "type": "ray", "defined": false },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": -4.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": -4.0, "y": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 4.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [112.0, 256.0, -1792.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [4.0, 2.6457513110645907],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "l": { "type": "line", "defined": true, "a": -4.0, "b": 0.0, "c": -16.0 },
+          "s": { "type": "ray", "defined": true, "x": -4.0, "y": 0.0, "a": -4.0, "b": 0.0, "c": -16.0 },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": -4.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": -4.0, "y": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 3.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "double_line",
+            "matrix": [0.0, 144.0, 0.0, 0.0, -0.0, -0.0],
+            "lines": [
+              [-0.0, 1.0, -0.0],
+              [-0.0, 1.0, -0.0]
+            ]
+          },
+          "l": { "type": "line", "defined": true, "a": -4.0, "b": 0.0, "c": -16.0 },
+          "s": { "type": "ray", "defined": true, "x": -4.0, "y": 0.0, "a": -4.0, "b": 0.0, "c": -16.0 },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": -4.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": -4.0, "y": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [256.0, 400.0, -6400.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [5.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "l": { "type": "line", "defined": true, "a": -4.0, "b": 0.0, "c": -16.0 },
+          "s": { "type": "ray", "defined": true, "x": -4.0, "y": 0.0, "a": -4.0, "b": 0.0, "c": -16.0 },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "geomforms-tangent-002",
+      "group": "geomforms",
+      "script": [
+        "A = (0, 0)",
+        "B = (0, 2)",
+        "P = (-4, 2)",
+        "Q = (-2, 2)",
+        "k = Circle(A, B)",
+        "l = Ray(P, Q)",
+        "u = IsTangent(l, k)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "Q", "x": -5.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 3.0 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "P": { "type": "point", "defined": true, "x": -4.0, "y": 2.0 },
+          "Q": { "type": "point", "defined": true, "x": -2.0, "y": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "l": { "type": "ray", "defined": true, "x": -4.0, "y": 2.0, "a": 0.0, "b": 2.0, "c": -4.0 },
+          "u": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "P": { "type": "point", "defined": true, "x": -4.0, "y": 2.0 },
+          "Q": { "type": "point", "defined": true, "x": -5.0, "y": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "l": { "type": "ray", "defined": true, "x": -4.0, "y": 2.0, "a": 0.0, "b": -1.0, "c": 2.0 },
+          "u": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "P": { "type": "point", "defined": true, "x": -4.0, "y": 2.0 },
+          "Q": { "type": "point", "defined": true, "x": -5.0, "y": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 3.0 },
+          "l": { "type": "ray", "defined": true, "x": -4.0, "y": 2.0, "a": 0.0, "b": -1.0, "c": 2.0 },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": -4.0, "y": 2.0 },
+          "Q": { "type": "point", "defined": true, "x": -5.0, "y": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.0 },
+          "l": { "type": "ray", "defined": true, "x": -4.0, "y": 2.0, "a": 0.0, "b": -1.0, "c": 2.0 },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    }
+  ]
+}

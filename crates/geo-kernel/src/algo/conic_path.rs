@@ -10,7 +10,9 @@
 //! parameter range, for circles and general conics.
 
 use super::conic_nd::{my_length, ConicData, ConicType};
-use super::path::{inverse_inf_function, line_path_changed, line_point_changed, PathState};
+use super::path::{
+    inf_function, inverse_inf_function, line_path_changed, line_point_changed, PathState,
+};
 use std::f64::consts::PI;
 
 /// The number GeoGebra gives each conic type (`GeoConicNDConstants`), which
@@ -32,7 +34,7 @@ pub(crate) fn range(d: &ConicData) -> (f64, f64) {
 }
 
 /// `GeoConicND.coordsRWtoEV`: real world to eigenvector coordinates.
-fn rw_to_ev(d: &ConicData, p: &mut PathState) {
+pub(crate) fn rw_to_ev(d: &ConicData, p: &mut PathState) {
     let (mut x, mut y, z) = p.coords();
     let [mx, my] = d.midpoint;
     x -= z * mx;
@@ -93,6 +95,18 @@ pub(crate) fn point_changed(d: &ConicData, p: &mut PathState) {
             p.set_coords_2d(ha * t.cos(), hb * t.sin(), 1.0);
             ev_to_rw(d, p);
         }
+        ConicType::Ellipse | ConicType::Hyperbola | ConicType::Parabola => {
+            rw_to_ev(d, p);
+            let (x, y, z) = p.coords();
+            let (x, y) = (x / z, y / z);
+            let t = match d.ty {
+                ConicType::Ellipse => ellipse_parameter(d.half_axes, x, y),
+                ConicType::Hyperbola => hyperbola_parameter(d.half_axes, x, y),
+                _ => parabola_parameter(d.p, x, y),
+            };
+            p.set_t(t);
+            curved_at(d, p);
+        }
         _ => p.set_coords_2d(f64::NAN, f64::NAN, f64::NAN),
     }
 }
@@ -133,6 +147,82 @@ pub(crate) fn path_changed(d: &ConicData, p: &mut PathState) {
             p.set_coords_2d(ha * t.cos(), hb * t.sin(), 1.0);
             ev_to_rw(d, p);
         }
+        ConicType::Ellipse | ConicType::Hyperbola | ConicType::Parabola => curved_at(d, p),
         _ => p.set_coords_2d(f64::NAN, f64::NAN, f64::NAN),
     }
+}
+
+/// The first-quadrant solution of the ellipse normal equation. Axis cases
+/// choose the same one of the equal minima as GeoGebra.
+fn ellipse_parameter([a, b]: [f64; 2], x: f64, y: f64) -> f64 {
+    let (px, py) = (x.abs(), y.abs());
+    let c2 = a * a - b * b;
+    let mut t = if px < crate::tol::STANDARD_PRECISION {
+        PI / 2.0
+    } else if py < crate::tol::STANDARD_PRECISION {
+        (a * px / c2).min(1.0).acos()
+    } else {
+        super::curve::bisect(0.0, PI / 2.0, |t| {
+            let (sin, cos) = t.sin_cos();
+            a * px * sin - b * py * cos - c2 * sin * cos
+        })
+    };
+    if x < 0.0 {
+        t = PI - t;
+    }
+    if y < 0.0 {
+        -t
+    } else {
+        t
+    }
+}
+
+fn hyperbola_parameter([a, b]: [f64; 2], x: f64, y: f64) -> f64 {
+    let (px, py) = (x.abs(), y.abs());
+    let c2 = a * a + b * b;
+    let eps = crate::tol::STANDARD_PRECISION;
+    let u = if py < eps {
+        (a * px / c2).max(1.0).acosh().sinh()
+    } else if px < eps {
+        b * py / c2
+    } else {
+        super::curve::bisect(0.0, (a * px + b * py) / c2, |u| {
+            c2 * u - a * px * u / (1.0 + u * u).sqrt() - b * py
+        })
+    };
+    let s = if y < 0.0 { -u.asinh() } else { u.asinh() };
+    inverse_inf_function(s) + if x < 0.0 { 2.0 } else { 0.0 }
+}
+
+fn parabola_parameter(p: f64, x: f64, y: f64) -> f64 {
+    let py = y.abs();
+    if py < crate::tol::STANDARD_PRECISION {
+        return (2.0 * (x - p) / p).max(0.0).sqrt();
+    }
+    let bound = (2.0 * x.abs() / p).sqrt() + (2.0 * py / p).cbrt() + 1.0;
+    let t = super::curve::bisect(0.0, bound, |t| p * t * t * t / 2.0 + (p - x) * t - py);
+    if y < 0.0 {
+        -t
+    } else {
+        t
+    }
+}
+
+fn curved_at(d: &ConicData, p: &mut PathState) {
+    let t = p.parameter();
+    let [a, b] = d.half_axes;
+    let (x, y) = match d.ty {
+        ConicType::Ellipse => (a * t.cos(), b * t.sin()),
+        ConicType::Hyperbola if t > 1.0 => {
+            let s = inf_function(t - 2.0);
+            (-a * s.cosh(), b * s.sinh())
+        }
+        ConicType::Hyperbola => {
+            let s = inf_function(t);
+            (a * s.cosh(), b * s.sinh())
+        }
+        _ => (d.p * t * t / 2.0, d.p * t),
+    };
+    p.set_coords_2d(x, y, 1.0);
+    ev_to_rw(d, p);
 }

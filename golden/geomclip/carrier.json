@@ -1,0 +1,982 @@
+{
+  "schema": 1,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "geomclip-carrier-001",
+      "group": "geomclip",
+      "script": [
+        "A = (0, 0)",
+        "B = (6, 0)",
+        "C = (6, 5)",
+        "D = (0, 5)",
+        "p = Polygon(A, B, C, D)",
+        "U = (-2, 2)",
+        "V = (9, 2)",
+        "l = Line(U, V)",
+        "s = IntersectPath(l, p)",
+        "t = IntersectPath(p, l)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "U", "x": -2.0, "y": 0.0 },
+        { "action": "move", "label": "V", "x": 8.0, "y": 0.0 },
+        { "action": "move", "label": "V", "x": -2.0, "y": 0.0 },
+        { "action": "move", "label": "V", "x": 8.0, "y": 7.0 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 6.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [6.0, 0.0],
+              [6.0, 5.0],
+              [0.0, 5.0]
+            ],
+            "area": 30.0,
+            "signed_area": 30.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 6.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 6.0, "y1": 0.0, "x2": 6.0, "y2": 5.0 },
+          "c": { "type": "segment", "defined": true, "x1": 6.0, "y1": 5.0, "x2": 0.0, "y2": 5.0 },
+          "d": { "type": "segment", "defined": true, "x1": 0.0, "y1": 5.0, "x2": 0.0, "y2": 0.0 },
+          "U": { "type": "point", "defined": true, "x": -2.0, "y": 2.0 },
+          "V": { "type": "point", "defined": true, "x": 9.0, "y": 2.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 11.0, "c": -22.0 },
+          "s_{1}": { "type": "segment", "defined": true, "x1": 0.0, "y1": 2.0, "x2": 6.0, "y2": 2.0 },
+          "t_{1}": { "type": "segment", "defined": true, "x1": 0.0, "y1": 2.0, "x2": 6.0, "y2": 2.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 6.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [6.0, 0.0],
+              [6.0, 5.0],
+              [0.0, 5.0]
+            ],
+            "area": 30.0,
+            "signed_area": 30.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 6.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 6.0, "y1": 0.0, "x2": 6.0, "y2": 5.0 },
+          "c": { "type": "segment", "defined": true, "x1": 6.0, "y1": 5.0, "x2": 0.0, "y2": 5.0 },
+          "d": { "type": "segment", "defined": true, "x1": 0.0, "y1": 5.0, "x2": 0.0, "y2": 0.0 },
+          "U": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "V": { "type": "point", "defined": true, "x": 9.0, "y": 2.0 },
+          "l": { "type": "line", "defined": true, "a": -2.0, "b": 11.0, "c": -4.0 },
+          "s_{1}": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.36363636363636365, "x2": 6.0, "y2": 1.4545454545454546 },
+          "t_{1}": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.36363636363636365, "x2": 6.0, "y2": 1.4545454545454546 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 6.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [6.0, 0.0],
+              [6.0, 5.0],
+              [0.0, 5.0]
+            ],
+            "area": 30.0,
+            "signed_area": 30.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 6.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 6.0, "y1": 0.0, "x2": 6.0, "y2": 5.0 },
+          "c": { "type": "segment", "defined": true, "x1": 6.0, "y1": 5.0, "x2": 0.0, "y2": 5.0 },
+          "d": { "type": "segment", "defined": true, "x1": 0.0, "y1": 5.0, "x2": 0.0, "y2": 0.0 },
+          "U": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "V": { "type": "point", "defined": true, "x": 8.0, "y": 0.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 10.0, "c": -0.0 },
+          "s_{1}": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 6.0, "y2": 0.0 },
+          "t_{1}": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 6.0, "y2": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 6.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [6.0, 0.0],
+              [6.0, 5.0],
+              [0.0, 5.0]
+            ],
+            "area": 30.0,
+            "signed_area": 30.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 6.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 6.0, "y1": 0.0, "x2": 6.0, "y2": 5.0 },
+          "c": { "type": "segment", "defined": true, "x1": 6.0, "y1": 5.0, "x2": 0.0, "y2": 5.0 },
+          "d": { "type": "segment", "defined": true, "x1": 0.0, "y1": 5.0, "x2": 0.0, "y2": 0.0 },
+          "U": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "V": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "l": { "type": "line", "defined": false },
+          "s_{1}": { "type": "segment", "defined": false },
+          "t_{1}": { "type": "segment", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 6.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [6.0, 0.0],
+              [6.0, 5.0],
+              [0.0, 5.0]
+            ],
+            "area": 30.0,
+            "signed_area": 30.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 6.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 6.0, "y1": 0.0, "x2": 6.0, "y2": 5.0 },
+          "c": { "type": "segment", "defined": true, "x1": 6.0, "y1": 5.0, "x2": 0.0, "y2": 5.0 },
+          "d": { "type": "segment", "defined": true, "x1": 0.0, "y1": 5.0, "x2": 0.0, "y2": 0.0 },
+          "U": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "V": { "type": "point", "defined": true, "x": 8.0, "y": 7.0 },
+          "l": { "type": "line", "defined": true, "a": -7.0, "b": 10.0, "c": -14.0 },
+          "s_{1}": { "type": "segment", "defined": true, "x1": 8.881784197001252E-16, "y1": 1.4000000000000004, "x2": 5.142857142857143, "y2": 5.0 },
+          "t_{1}": { "type": "segment", "defined": true, "x1": 8.881784197001252E-16, "y1": 1.4000000000000004, "x2": 5.142857142857143, "y2": 5.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 6.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [0.0, 0.0],
+              [6.0, 5.0],
+              [0.0, 5.0]
+            ],
+            "area": 15.0,
+            "signed_area": 15.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 6.0, "y2": 5.0 },
+          "c": { "type": "segment", "defined": true, "x1": 6.0, "y1": 5.0, "x2": 0.0, "y2": 5.0 },
+          "d": { "type": "segment", "defined": true, "x1": 0.0, "y1": 5.0, "x2": 0.0, "y2": 0.0 },
+          "U": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "V": { "type": "point", "defined": true, "x": 8.0, "y": 7.0 },
+          "l": { "type": "line", "defined": true, "a": -7.0, "b": 10.0, "c": -14.0 },
+          "s_{1}": { "type": "segment", "defined": true, "x1": 8.881784197001252E-16, "y1": 1.4000000000000004, "x2": 5.142857142857143, "y2": 5.0 },
+          "t_{1}": { "type": "segment", "defined": true, "x1": 8.881784197001252E-16, "y1": 1.4000000000000004, "x2": 5.142857142857143, "y2": 5.0 }
+        }
+      ]
+    },
+    {
+      "id": "geomclip-carrier-002",
+      "group": "geomclip",
+      "script": [
+        "A = (0, 0)",
+        "B = (6, 0)",
+        "C = (6, 5)",
+        "D = (0, 5)",
+        "p = Polygon(A, B, C, D)",
+        "U = (9, 2)",
+        "V = (-2, 2)",
+        "l = Line(U, V)",
+        "s = IntersectPath(l, p)",
+        "t = IntersectPath(p, l)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "U", "x": -2.0, "y": 0.0 },
+        { "action": "move", "label": "V", "x": 8.0, "y": 0.0 },
+        { "action": "move", "label": "V", "x": -2.0, "y": 0.0 },
+        { "action": "move", "label": "V", "x": 8.0, "y": 7.0 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 6.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [6.0, 0.0],
+              [6.0, 5.0],
+              [0.0, 5.0]
+            ],
+            "area": 30.0,
+            "signed_area": 30.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 6.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 6.0, "y1": 0.0, "x2": 6.0, "y2": 5.0 },
+          "c": { "type": "segment", "defined": true, "x1": 6.0, "y1": 5.0, "x2": 0.0, "y2": 5.0 },
+          "d": { "type": "segment", "defined": true, "x1": 0.0, "y1": 5.0, "x2": 0.0, "y2": 0.0 },
+          "U": { "type": "point", "defined": true, "x": 9.0, "y": 2.0 },
+          "V": { "type": "point", "defined": true, "x": -2.0, "y": 2.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": -11.0, "c": 22.0 },
+          "s_{1}": { "type": "segment", "defined": true, "x1": 6.0, "y1": 2.0, "x2": 0.0, "y2": 2.0 },
+          "t_{1}": { "type": "segment", "defined": true, "x1": 6.0, "y1": 2.0, "x2": 0.0, "y2": 2.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 6.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [6.0, 0.0],
+              [6.0, 5.0],
+              [0.0, 5.0]
+            ],
+            "area": 30.0,
+            "signed_area": 30.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 6.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 6.0, "y1": 0.0, "x2": 6.0, "y2": 5.0 },
+          "c": { "type": "segment", "defined": true, "x1": 6.0, "y1": 5.0, "x2": 0.0, "y2": 5.0 },
+          "d": { "type": "segment", "defined": true, "x1": 0.0, "y1": 5.0, "x2": 0.0, "y2": 0.0 },
+          "U": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "V": { "type": "point", "defined": true, "x": -2.0, "y": 2.0 },
+          "l": { "type": "line", "defined": true, "a": -2.0, "b": 0.0, "c": -4.0 },
+          "s_{1}": { "type": "segment", "defined": false },
+          "t_{1}": { "type": "segment", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 6.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [6.0, 0.0],
+              [6.0, 5.0],
+              [0.0, 5.0]
+            ],
+            "area": 30.0,
+            "signed_area": 30.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 6.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 6.0, "y1": 0.0, "x2": 6.0, "y2": 5.0 },
+          "c": { "type": "segment", "defined": true, "x1": 6.0, "y1": 5.0, "x2": 0.0, "y2": 5.0 },
+          "d": { "type": "segment", "defined": true, "x1": 0.0, "y1": 5.0, "x2": 0.0, "y2": 0.0 },
+          "U": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "V": { "type": "point", "defined": true, "x": 8.0, "y": 0.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 10.0, "c": -0.0 },
+          "s_{1}": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 6.0, "y2": 0.0 },
+          "t_{1}": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 6.0, "y2": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 6.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [6.0, 0.0],
+              [6.0, 5.0],
+              [0.0, 5.0]
+            ],
+            "area": 30.0,
+            "signed_area": 30.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 6.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 6.0, "y1": 0.0, "x2": 6.0, "y2": 5.0 },
+          "c": { "type": "segment", "defined": true, "x1": 6.0, "y1": 5.0, "x2": 0.0, "y2": 5.0 },
+          "d": { "type": "segment", "defined": true, "x1": 0.0, "y1": 5.0, "x2": 0.0, "y2": 0.0 },
+          "U": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "V": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "l": { "type": "line", "defined": false },
+          "s_{1}": { "type": "segment", "defined": false },
+          "t_{1}": { "type": "segment", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 6.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [6.0, 0.0],
+              [6.0, 5.0],
+              [0.0, 5.0]
+            ],
+            "area": 30.0,
+            "signed_area": 30.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 6.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 6.0, "y1": 0.0, "x2": 6.0, "y2": 5.0 },
+          "c": { "type": "segment", "defined": true, "x1": 6.0, "y1": 5.0, "x2": 0.0, "y2": 5.0 },
+          "d": { "type": "segment", "defined": true, "x1": 0.0, "y1": 5.0, "x2": 0.0, "y2": 0.0 },
+          "U": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "V": { "type": "point", "defined": true, "x": 8.0, "y": 7.0 },
+          "l": { "type": "line", "defined": true, "a": -7.0, "b": 10.0, "c": -14.0 },
+          "s_{1}": { "type": "segment", "defined": true, "x1": 8.881784197001252E-16, "y1": 1.4000000000000004, "x2": 5.142857142857143, "y2": 5.0 },
+          "t_{1}": { "type": "segment", "defined": true, "x1": 8.881784197001252E-16, "y1": 1.4000000000000004, "x2": 5.142857142857143, "y2": 5.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 6.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [0.0, 0.0],
+              [6.0, 5.0],
+              [0.0, 5.0]
+            ],
+            "area": 15.0,
+            "signed_area": 15.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 6.0, "y2": 5.0 },
+          "c": { "type": "segment", "defined": true, "x1": 6.0, "y1": 5.0, "x2": 0.0, "y2": 5.0 },
+          "d": { "type": "segment", "defined": true, "x1": 0.0, "y1": 5.0, "x2": 0.0, "y2": 0.0 },
+          "U": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "V": { "type": "point", "defined": true, "x": 8.0, "y": 7.0 },
+          "l": { "type": "line", "defined": true, "a": -7.0, "b": 10.0, "c": -14.0 },
+          "s_{1}": { "type": "segment", "defined": true, "x1": 8.881784197001252E-16, "y1": 1.4000000000000004, "x2": 5.142857142857143, "y2": 5.0 },
+          "t_{1}": { "type": "segment", "defined": true, "x1": 8.881784197001252E-16, "y1": 1.4000000000000004, "x2": 5.142857142857143, "y2": 5.0 }
+        }
+      ]
+    },
+    {
+      "id": "geomclip-carrier-003",
+      "group": "geomclip",
+      "script": [
+        "A = (0, 0)",
+        "B = (6, 0)",
+        "C = (6, 5)",
+        "D = (0, 5)",
+        "p = Polygon(A, B, C, D)",
+        "U = (2, 2)",
+        "V = (5, 3)",
+        "l = Ray(U, V)",
+        "s = IntersectPath(l, p)",
+        "t = IntersectPath(p, l)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "U", "x": -2.0, "y": 0.0 },
+        { "action": "move", "label": "V", "x": 8.0, "y": 0.0 },
+        { "action": "move", "label": "V", "x": -2.0, "y": 0.0 },
+        { "action": "move", "label": "V", "x": 8.0, "y": 7.0 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 6.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [6.0, 0.0],
+              [6.0, 5.0],
+              [0.0, 5.0]
+            ],
+            "area": 30.0,
+            "signed_area": 30.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 6.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 6.0, "y1": 0.0, "x2": 6.0, "y2": 5.0 },
+          "c": { "type": "segment", "defined": true, "x1": 6.0, "y1": 5.0, "x2": 0.0, "y2": 5.0 },
+          "d": { "type": "segment", "defined": true, "x1": 0.0, "y1": 5.0, "x2": 0.0, "y2": 0.0 },
+          "U": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "V": { "type": "point", "defined": true, "x": 5.0, "y": 3.0 },
+          "l": { "type": "ray", "defined": true, "x": 2.0, "y": 2.0, "a": -1.0, "b": 3.0, "c": -4.0 },
+          "s_{1}": { "type": "segment", "defined": true, "x1": 2.0, "y1": 2.0, "x2": 6.0, "y2": 3.333333333333333 },
+          "t_{1}": { "type": "segment", "defined": true, "x1": 2.0, "y1": 2.0, "x2": 6.0, "y2": 3.333333333333333 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 6.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [6.0, 0.0],
+              [6.0, 5.0],
+              [0.0, 5.0]
+            ],
+            "area": 30.0,
+            "signed_area": 30.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 6.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 6.0, "y1": 0.0, "x2": 6.0, "y2": 5.0 },
+          "c": { "type": "segment", "defined": true, "x1": 6.0, "y1": 5.0, "x2": 0.0, "y2": 5.0 },
+          "d": { "type": "segment", "defined": true, "x1": 0.0, "y1": 5.0, "x2": 0.0, "y2": 0.0 },
+          "U": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "V": { "type": "point", "defined": true, "x": 5.0, "y": 3.0 },
+          "l": { "type": "ray", "defined": true, "x": -2.0, "y": 0.0, "a": -3.0, "b": 7.0, "c": -6.0 },
+          "s_{1}": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.8571428571428571, "x2": 6.0, "y2": 3.4285714285714284 },
+          "t_{1}": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.8571428571428571, "x2": 6.0, "y2": 3.4285714285714284 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 6.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [6.0, 0.0],
+              [6.0, 5.0],
+              [0.0, 5.0]
+            ],
+            "area": 30.0,
+            "signed_area": 30.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 6.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 6.0, "y1": 0.0, "x2": 6.0, "y2": 5.0 },
+          "c": { "type": "segment", "defined": true, "x1": 6.0, "y1": 5.0, "x2": 0.0, "y2": 5.0 },
+          "d": { "type": "segment", "defined": true, "x1": 0.0, "y1": 5.0, "x2": 0.0, "y2": 0.0 },
+          "U": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "V": { "type": "point", "defined": true, "x": 8.0, "y": 0.0 },
+          "l": { "type": "ray", "defined": true, "x": -2.0, "y": 0.0, "a": 0.0, "b": 10.0, "c": -0.0 },
+          "s_{1}": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 6.0, "y2": 0.0 },
+          "t_{1}": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 6.0, "y2": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 6.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [6.0, 0.0],
+              [6.0, 5.0],
+              [0.0, 5.0]
+            ],
+            "area": 30.0,
+            "signed_area": 30.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 6.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 6.0, "y1": 0.0, "x2": 6.0, "y2": 5.0 },
+          "c": { "type": "segment", "defined": true, "x1": 6.0, "y1": 5.0, "x2": 0.0, "y2": 5.0 },
+          "d": { "type": "segment", "defined": true, "x1": 0.0, "y1": 5.0, "x2": 0.0, "y2": 0.0 },
+          "U": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "V": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "l": { "type": "ray", "defined": false },
+          "s_{1}": { "type": "segment", "defined": false },
+          "t_{1}": { "type": "segment", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 6.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [6.0, 0.0],
+              [6.0, 5.0],
+              [0.0, 5.0]
+            ],
+            "area": 30.0,
+            "signed_area": 30.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 6.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 6.0, "y1": 0.0, "x2": 6.0, "y2": 5.0 },
+          "c": { "type": "segment", "defined": true, "x1": 6.0, "y1": 5.0, "x2": 0.0, "y2": 5.0 },
+          "d": { "type": "segment", "defined": true, "x1": 0.0, "y1": 5.0, "x2": 0.0, "y2": 0.0 },
+          "U": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "V": { "type": "point", "defined": true, "x": 8.0, "y": 7.0 },
+          "l": { "type": "ray", "defined": true, "x": -2.0, "y": 0.0, "a": -7.0, "b": 10.0, "c": -14.0 },
+          "s_{1}": { "type": "segment", "defined": true, "x1": 8.881784197001252E-16, "y1": 1.4000000000000004, "x2": 5.142857142857143, "y2": 5.0 },
+          "t_{1}": { "type": "segment", "defined": true, "x1": 8.881784197001252E-16, "y1": 1.4000000000000004, "x2": 5.142857142857143, "y2": 5.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 6.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [0.0, 0.0],
+              [6.0, 5.0],
+              [0.0, 5.0]
+            ],
+            "area": 15.0,
+            "signed_area": 15.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 6.0, "y2": 5.0 },
+          "c": { "type": "segment", "defined": true, "x1": 6.0, "y1": 5.0, "x2": 0.0, "y2": 5.0 },
+          "d": { "type": "segment", "defined": true, "x1": 0.0, "y1": 5.0, "x2": 0.0, "y2": 0.0 },
+          "U": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "V": { "type": "point", "defined": true, "x": 8.0, "y": 7.0 },
+          "l": { "type": "ray", "defined": true, "x": -2.0, "y": 0.0, "a": -7.0, "b": 10.0, "c": -14.0 },
+          "s_{1}": { "type": "segment", "defined": true, "x1": 8.881784197001252E-16, "y1": 1.4000000000000004, "x2": 5.142857142857143, "y2": 5.0 },
+          "t_{1}": { "type": "segment", "defined": true, "x1": 8.881784197001252E-16, "y1": 1.4000000000000004, "x2": 5.142857142857143, "y2": 5.0 }
+        }
+      ]
+    },
+    {
+      "id": "geomclip-carrier-004",
+      "group": "geomclip",
+      "script": [
+        "A = (0, 0)",
+        "B = (6, 0)",
+        "C = (6, 5)",
+        "D = (0, 5)",
+        "p = Polygon(A, B, C, D)",
+        "U = (2, 2)",
+        "V = (8, 4)",
+        "l = Segment(U, V)",
+        "s = IntersectPath(l, p)",
+        "t = IntersectPath(p, l)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "U", "x": -2.0, "y": 0.0 },
+        { "action": "move", "label": "V", "x": 8.0, "y": 0.0 },
+        { "action": "move", "label": "V", "x": -2.0, "y": 0.0 },
+        { "action": "move", "label": "V", "x": 8.0, "y": 7.0 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 6.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [6.0, 0.0],
+              [6.0, 5.0],
+              [0.0, 5.0]
+            ],
+            "area": 30.0,
+            "signed_area": 30.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 6.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 6.0, "y1": 0.0, "x2": 6.0, "y2": 5.0 },
+          "c": { "type": "segment", "defined": true, "x1": 6.0, "y1": 5.0, "x2": 0.0, "y2": 5.0 },
+          "d": { "type": "segment", "defined": true, "x1": 0.0, "y1": 5.0, "x2": 0.0, "y2": 0.0 },
+          "U": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "V": { "type": "point", "defined": true, "x": 8.0, "y": 4.0 },
+          "l": { "type": "segment", "defined": true, "x1": 2.0, "y1": 2.0, "x2": 8.0, "y2": 4.0 },
+          "s_{1}": { "type": "segment", "defined": true, "x1": 2.0, "y1": 2.0, "x2": 6.0, "y2": 3.333333333333333 },
+          "t_{1}": { "type": "segment", "defined": true, "x1": 2.0, "y1": 2.0, "x2": 6.0, "y2": 3.333333333333333 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 6.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [6.0, 0.0],
+              [6.0, 5.0],
+              [0.0, 5.0]
+            ],
+            "area": 30.0,
+            "signed_area": 30.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 6.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 6.0, "y1": 0.0, "x2": 6.0, "y2": 5.0 },
+          "c": { "type": "segment", "defined": true, "x1": 6.0, "y1": 5.0, "x2": 0.0, "y2": 5.0 },
+          "d": { "type": "segment", "defined": true, "x1": 0.0, "y1": 5.0, "x2": 0.0, "y2": 0.0 },
+          "U": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "V": { "type": "point", "defined": true, "x": 8.0, "y": 4.0 },
+          "l": { "type": "segment", "defined": true, "x1": -2.0, "y1": 0.0, "x2": 8.0, "y2": 4.0 },
+          "s_{1}": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.8, "x2": 6.0, "y2": 3.2 },
+          "t_{1}": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.8, "x2": 6.0, "y2": 3.2 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 6.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [6.0, 0.0],
+              [6.0, 5.0],
+              [0.0, 5.0]
+            ],
+            "area": 30.0,
+            "signed_area": 30.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 6.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 6.0, "y1": 0.0, "x2": 6.0, "y2": 5.0 },
+          "c": { "type": "segment", "defined": true, "x1": 6.0, "y1": 5.0, "x2": 0.0, "y2": 5.0 },
+          "d": { "type": "segment", "defined": true, "x1": 0.0, "y1": 5.0, "x2": 0.0, "y2": 0.0 },
+          "U": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "V": { "type": "point", "defined": true, "x": 8.0, "y": 0.0 },
+          "l": { "type": "segment", "defined": true, "x1": -2.0, "y1": 0.0, "x2": 8.0, "y2": 0.0 },
+          "s_{1}": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 6.0, "y2": 0.0 },
+          "t_{1}": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 6.0, "y2": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 6.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [6.0, 0.0],
+              [6.0, 5.0],
+              [0.0, 5.0]
+            ],
+            "area": 30.0,
+            "signed_area": 30.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 6.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 6.0, "y1": 0.0, "x2": 6.0, "y2": 5.0 },
+          "c": { "type": "segment", "defined": true, "x1": 6.0, "y1": 5.0, "x2": 0.0, "y2": 5.0 },
+          "d": { "type": "segment", "defined": true, "x1": 0.0, "y1": 5.0, "x2": 0.0, "y2": 0.0 },
+          "U": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "V": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "l": { "type": "segment", "defined": true, "x1": -2.0, "y1": 0.0, "x2": -2.0, "y2": 0.0 },
+          "s_{1}": { "type": "segment", "defined": false },
+          "t_{1}": { "type": "segment", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 6.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [6.0, 0.0],
+              [6.0, 5.0],
+              [0.0, 5.0]
+            ],
+            "area": 30.0,
+            "signed_area": 30.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 6.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 6.0, "y1": 0.0, "x2": 6.0, "y2": 5.0 },
+          "c": { "type": "segment", "defined": true, "x1": 6.0, "y1": 5.0, "x2": 0.0, "y2": 5.0 },
+          "d": { "type": "segment", "defined": true, "x1": 0.0, "y1": 5.0, "x2": 0.0, "y2": 0.0 },
+          "U": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "V": { "type": "point", "defined": true, "x": 8.0, "y": 7.0 },
+          "l": { "type": "segment", "defined": true, "x1": -2.0, "y1": 0.0, "x2": 8.0, "y2": 7.0 },
+          "s_{1}": { "type": "segment", "defined": true, "x1": 8.881784197001252E-16, "y1": 1.4000000000000004, "x2": 5.142857142857143, "y2": 5.0 },
+          "t_{1}": { "type": "segment", "defined": true, "x1": 8.881784197001252E-16, "y1": 1.4000000000000004, "x2": 5.142857142857143, "y2": 5.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 6.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [0.0, 0.0],
+              [6.0, 5.0],
+              [0.0, 5.0]
+            ],
+            "area": 15.0,
+            "signed_area": 15.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 6.0, "y2": 5.0 },
+          "c": { "type": "segment", "defined": true, "x1": 6.0, "y1": 5.0, "x2": 0.0, "y2": 5.0 },
+          "d": { "type": "segment", "defined": true, "x1": 0.0, "y1": 5.0, "x2": 0.0, "y2": 0.0 },
+          "U": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "V": { "type": "point", "defined": true, "x": 8.0, "y": 7.0 },
+          "l": { "type": "segment", "defined": true, "x1": -2.0, "y1": 0.0, "x2": 8.0, "y2": 7.0 },
+          "s_{1}": { "type": "segment", "defined": true, "x1": 8.881784197001252E-16, "y1": 1.4000000000000004, "x2": 5.142857142857143, "y2": 5.0 },
+          "t_{1}": { "type": "segment", "defined": true, "x1": 8.881784197001252E-16, "y1": 1.4000000000000004, "x2": 5.142857142857143, "y2": 5.0 }
+        }
+      ]
+    },
+    {
+      "id": "geomclip-carrier-005",
+      "group": "geomclip",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 0)",
+        "C = (5, 5)",
+        "D = (3, 5)",
+        "E = (3, 2)",
+        "F = (2, 2)",
+        "G = (2, 5)",
+        "H = (0, 5)",
+        "p = Polygon(A, B, C, D, E, F, G, H)",
+        "U = (-2, 3)",
+        "V = (8, 3)",
+        "l = Line(U, V)",
+        "s = IntersectPath(l, p)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "U", "x": -2.0, "y": 4.0 },
+        { "action": "move", "label": "V", "x": 8.0, "y": 4.0 },
+        { "action": "move", "label": "U", "x": -2.0, "y": 8.0 },
+        { "action": "move", "label": "V", "x": 8.0, "y": 8.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 3.0, "y": 5.0 },
+          "E": { "type": "point", "defined": true, "x": 3.0, "y": 2.0 },
+          "F": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "G": { "type": "point", "defined": true, "x": 2.0, "y": 5.0 },
+          "H": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [5.0, 0.0],
+              [5.0, 5.0],
+              [3.0, 5.0],
+              [3.0, 2.0],
+              [2.0, 2.0],
+              [2.0, 5.0],
+              [0.0, 5.0]
+            ],
+            "area": 22.0,
+            "signed_area": 22.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 5.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 5.0, "y1": 0.0, "x2": 5.0, "y2": 5.0 },
+          "c": { "type": "segment", "defined": true, "x1": 5.0, "y1": 5.0, "x2": 3.0, "y2": 5.0 },
+          "d": { "type": "segment", "defined": true, "x1": 3.0, "y1": 5.0, "x2": 3.0, "y2": 2.0 },
+          "e": { "type": "segment", "defined": true, "x1": 3.0, "y1": 2.0, "x2": 2.0, "y2": 2.0 },
+          "f": { "type": "segment", "defined": true, "x1": 2.0, "y1": 2.0, "x2": 2.0, "y2": 5.0 },
+          "g": { "type": "segment", "defined": true, "x1": 2.0, "y1": 5.0, "x2": 0.0, "y2": 5.0 },
+          "h": { "type": "segment", "defined": true, "x1": 0.0, "y1": 5.0, "x2": 0.0, "y2": 0.0 },
+          "U": { "type": "point", "defined": true, "x": -2.0, "y": 3.0 },
+          "V": { "type": "point", "defined": true, "x": 8.0, "y": 3.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 10.0, "c": -30.0 },
+          "s_{2}": { "type": "segment", "defined": true, "x1": 0.0, "y1": 3.0, "x2": 2.0, "y2": 3.0 },
+          "s_{1}": { "type": "segment", "defined": true, "x1": 3.0, "y1": 3.0, "x2": 5.0, "y2": 3.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 3.0, "y": 5.0 },
+          "E": { "type": "point", "defined": true, "x": 3.0, "y": 2.0 },
+          "F": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "G": { "type": "point", "defined": true, "x": 2.0, "y": 5.0 },
+          "H": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [5.0, 0.0],
+              [5.0, 5.0],
+              [3.0, 5.0],
+              [3.0, 2.0],
+              [2.0, 2.0],
+              [2.0, 5.0],
+              [0.0, 5.0]
+            ],
+            "area": 22.0,
+            "signed_area": 22.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 5.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 5.0, "y1": 0.0, "x2": 5.0, "y2": 5.0 },
+          "c": { "type": "segment", "defined": true, "x1": 5.0, "y1": 5.0, "x2": 3.0, "y2": 5.0 },
+          "d": { "type": "segment", "defined": true, "x1": 3.0, "y1": 5.0, "x2": 3.0, "y2": 2.0 },
+          "e": { "type": "segment", "defined": true, "x1": 3.0, "y1": 2.0, "x2": 2.0, "y2": 2.0 },
+          "f": { "type": "segment", "defined": true, "x1": 2.0, "y1": 2.0, "x2": 2.0, "y2": 5.0 },
+          "g": { "type": "segment", "defined": true, "x1": 2.0, "y1": 5.0, "x2": 0.0, "y2": 5.0 },
+          "h": { "type": "segment", "defined": true, "x1": 0.0, "y1": 5.0, "x2": 0.0, "y2": 0.0 },
+          "U": { "type": "point", "defined": true, "x": -2.0, "y": 4.0 },
+          "V": { "type": "point", "defined": true, "x": 8.0, "y": 3.0 },
+          "l": { "type": "line", "defined": true, "a": 1.0, "b": 10.0, "c": -38.0 },
+          "s_{2}": { "type": "segment", "defined": true, "x1": 0.0, "y1": 3.8, "x2": 2.0, "y2": 3.6 },
+          "s_{1}": { "type": "segment", "defined": true, "x1": 3.0, "y1": 3.5, "x2": 5.0, "y2": 3.3 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 3.0, "y": 5.0 },
+          "E": { "type": "point", "defined": true, "x": 3.0, "y": 2.0 },
+          "F": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "G": { "type": "point", "defined": true, "x": 2.0, "y": 5.0 },
+          "H": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [5.0, 0.0],
+              [5.0, 5.0],
+              [3.0, 5.0],
+              [3.0, 2.0],
+              [2.0, 2.0],
+              [2.0, 5.0],
+              [0.0, 5.0]
+            ],
+            "area": 22.0,
+            "signed_area": 22.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 5.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 5.0, "y1": 0.0, "x2": 5.0, "y2": 5.0 },
+          "c": { "type": "segment", "defined": true, "x1": 5.0, "y1": 5.0, "x2": 3.0, "y2": 5.0 },
+          "d": { "type": "segment", "defined": true, "x1": 3.0, "y1": 5.0, "x2": 3.0, "y2": 2.0 },
+          "e": { "type": "segment", "defined": true, "x1": 3.0, "y1": 2.0, "x2": 2.0, "y2": 2.0 },
+          "f": { "type": "segment", "defined": true, "x1": 2.0, "y1": 2.0, "x2": 2.0, "y2": 5.0 },
+          "g": { "type": "segment", "defined": true, "x1": 2.0, "y1": 5.0, "x2": 0.0, "y2": 5.0 },
+          "h": { "type": "segment", "defined": true, "x1": 0.0, "y1": 5.0, "x2": 0.0, "y2": 0.0 },
+          "U": { "type": "point", "defined": true, "x": -2.0, "y": 4.0 },
+          "V": { "type": "point", "defined": true, "x": 8.0, "y": 4.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 10.0, "c": -40.0 },
+          "s_{2}": { "type": "segment", "defined": true, "x1": 0.0, "y1": 4.0, "x2": 2.0, "y2": 4.0 },
+          "s_{1}": { "type": "segment", "defined": true, "x1": 3.0, "y1": 4.0, "x2": 5.0, "y2": 4.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 3.0, "y": 5.0 },
+          "E": { "type": "point", "defined": true, "x": 3.0, "y": 2.0 },
+          "F": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "G": { "type": "point", "defined": true, "x": 2.0, "y": 5.0 },
+          "H": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [5.0, 0.0],
+              [5.0, 5.0],
+              [3.0, 5.0],
+              [3.0, 2.0],
+              [2.0, 2.0],
+              [2.0, 5.0],
+              [0.0, 5.0]
+            ],
+            "area": 22.0,
+            "signed_area": 22.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 5.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 5.0, "y1": 0.0, "x2": 5.0, "y2": 5.0 },
+          "c": { "type": "segment", "defined": true, "x1": 5.0, "y1": 5.0, "x2": 3.0, "y2": 5.0 },
+          "d": { "type": "segment", "defined": true, "x1": 3.0, "y1": 5.0, "x2": 3.0, "y2": 2.0 },
+          "e": { "type": "segment", "defined": true, "x1": 3.0, "y1": 2.0, "x2": 2.0, "y2": 2.0 },
+          "f": { "type": "segment", "defined": true, "x1": 2.0, "y1": 2.0, "x2": 2.0, "y2": 5.0 },
+          "g": { "type": "segment", "defined": true, "x1": 2.0, "y1": 5.0, "x2": 0.0, "y2": 5.0 },
+          "h": { "type": "segment", "defined": true, "x1": 0.0, "y1": 5.0, "x2": 0.0, "y2": 0.0 },
+          "U": { "type": "point", "defined": true, "x": -2.0, "y": 8.0 },
+          "V": { "type": "point", "defined": true, "x": 8.0, "y": 4.0 },
+          "l": { "type": "line", "defined": true, "a": 4.0, "b": 10.0, "c": -72.0 },
+          "s_{2}": { "type": "segment", "defined": false },
+          "s_{1}": { "type": "segment", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 3.0, "y": 5.0 },
+          "E": { "type": "point", "defined": true, "x": 3.0, "y": 2.0 },
+          "F": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "G": { "type": "point", "defined": true, "x": 2.0, "y": 5.0 },
+          "H": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [5.0, 0.0],
+              [5.0, 5.0],
+              [3.0, 5.0],
+              [3.0, 2.0],
+              [2.0, 2.0],
+              [2.0, 5.0],
+              [0.0, 5.0]
+            ],
+            "area": 22.0,
+            "signed_area": 22.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 5.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 5.0, "y1": 0.0, "x2": 5.0, "y2": 5.0 },
+          "c": { "type": "segment", "defined": true, "x1": 5.0, "y1": 5.0, "x2": 3.0, "y2": 5.0 },
+          "d": { "type": "segment", "defined": true, "x1": 3.0, "y1": 5.0, "x2": 3.0, "y2": 2.0 },
+          "e": { "type": "segment", "defined": true, "x1": 3.0, "y1": 2.0, "x2": 2.0, "y2": 2.0 },
+          "f": { "type": "segment", "defined": true, "x1": 2.0, "y1": 2.0, "x2": 2.0, "y2": 5.0 },
+          "g": { "type": "segment", "defined": true, "x1": 2.0, "y1": 5.0, "x2": 0.0, "y2": 5.0 },
+          "h": { "type": "segment", "defined": true, "x1": 0.0, "y1": 5.0, "x2": 0.0, "y2": 0.0 },
+          "U": { "type": "point", "defined": true, "x": -2.0, "y": 8.0 },
+          "V": { "type": "point", "defined": true, "x": 8.0, "y": 8.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 10.0, "c": -80.0 },
+          "s_{2}": { "type": "segment", "defined": false },
+          "s_{1}": { "type": "segment", "defined": false }
+        }
+      ]
+    }
+  ]
+}

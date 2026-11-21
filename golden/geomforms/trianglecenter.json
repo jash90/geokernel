@@ -1,0 +1,1306 @@
+{
+  "schema": 1,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "geomforms-trianglecenter-001",
+      "group": "geomforms",
+      "script": [
+        "A = (-2, 1)",
+        "B = (6, -1)",
+        "C = (1, 5)",
+        "n = 1",
+        "X = TriangleCenter(A, B, C, n)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 2.0, "y": 0.0 },
+        { "action": "move", "label": "C", "x": -2.0, "y": 1.0 },
+        { "action": "move", "label": "C", "x": 1.0, "y": 5.0 },
+        { "action": "set_number", "label": "n", "value": 1.9 },
+        { "action": "set_number", "label": "n", "value": 2.0 },
+        { "action": "set_number", "label": "n", "value": 3054.0 },
+        { "action": "set_number", "label": "n", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "X": { "type": "point", "defined": true, "x": 1.0745258653726208, "y": 2.091581585550951 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "X": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "X": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "X": { "type": "point", "defined": true, "x": 1.0745258653726208, "y": 2.091581585550951 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 1.9 },
+          "X": { "type": "point", "defined": true, "x": 1.0745258653726208, "y": 2.091581585550951 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "X": { "type": "point", "defined": true, "x": 1.6666666666666667, "y": 1.6666666666666665 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 3054.0 },
+          "X": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "X": { "type": "point", "defined": true, "x": 1.0745258653726208, "y": 2.091581585550951 }
+        }
+      ]
+    },
+    {
+      "id": "geomforms-trianglecenter-002",
+      "group": "geomforms",
+      "script": [
+        "A = (-2, 1)",
+        "B = (6, -1)",
+        "C = (1, 5)",
+        "n = 2",
+        "X = TriangleCenter(A, B, C, n)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 2.0, "y": 0.0 },
+        { "action": "move", "label": "C", "x": -2.0, "y": 1.0 },
+        { "action": "move", "label": "C", "x": 1.0, "y": 5.0 },
+        { "action": "set_number", "label": "n", "value": 1.9 },
+        { "action": "set_number", "label": "n", "value": 2.0 },
+        { "action": "set_number", "label": "n", "value": 3054.0 },
+        { "action": "set_number", "label": "n", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "X": { "type": "point", "defined": true, "x": 1.6666666666666667, "y": 1.6666666666666665 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "X": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "X": { "type": "point", "defined": true, "x": 0.6666666666666669, "y": 0.3333333333333333 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "X": { "type": "point", "defined": true, "x": 1.6666666666666667, "y": 1.6666666666666665 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 1.9 },
+          "X": { "type": "point", "defined": true, "x": 1.0745258653726208, "y": 2.091581585550951 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "X": { "type": "point", "defined": true, "x": 1.6666666666666667, "y": 1.6666666666666665 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 3054.0 },
+          "X": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "X": { "type": "point", "defined": true, "x": 1.6666666666666667, "y": 1.6666666666666665 }
+        }
+      ]
+    },
+    {
+      "id": "geomforms-trianglecenter-003",
+      "group": "geomforms",
+      "script": [
+        "A = (-2, 1)",
+        "B = (6, -1)",
+        "C = (1, 5)",
+        "n = 3",
+        "X = TriangleCenter(A, B, C, n)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 2.0, "y": 0.0 },
+        { "action": "move", "label": "C", "x": -2.0, "y": 1.0 },
+        { "action": "move", "label": "C", "x": 1.0, "y": 5.0 },
+        { "action": "set_number", "label": "n", "value": 1.9 },
+        { "action": "set_number", "label": "n", "value": 2.0 },
+        { "action": "set_number", "label": "n", "value": 3054.0 },
+        { "action": "set_number", "label": "n", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "X": { "type": "point", "defined": true, "x": 2.236842105263158, "y": 0.9473684210526314 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "X": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "X": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "X": { "type": "point", "defined": true, "x": 2.236842105263158, "y": 0.9473684210526314 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 1.9 },
+          "X": { "type": "point", "defined": true, "x": 1.0745258653726208, "y": 2.091581585550951 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "X": { "type": "point", "defined": true, "x": 1.6666666666666667, "y": 1.6666666666666665 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 3054.0 },
+          "X": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "X": { "type": "point", "defined": true, "x": 2.236842105263158, "y": 0.9473684210526314 }
+        }
+      ]
+    },
+    {
+      "id": "geomforms-trianglecenter-004",
+      "group": "geomforms",
+      "script": [
+        "A = (-2, 1)",
+        "B = (6, -1)",
+        "C = (1, 5)",
+        "n = 4",
+        "X = TriangleCenter(A, B, C, n)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 2.0, "y": 0.0 },
+        { "action": "move", "label": "C", "x": -2.0, "y": 1.0 },
+        { "action": "move", "label": "C", "x": 1.0, "y": 5.0 },
+        { "action": "set_number", "label": "n", "value": 1.9 },
+        { "action": "set_number", "label": "n", "value": 2.0 },
+        { "action": "set_number", "label": "n", "value": 3054.0 },
+        { "action": "set_number", "label": "n", "value": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 4.0 },
+          "X": { "type": "point", "defined": true, "x": 0.5263157894736844, "y": 3.1052631578947367 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 4.0 },
+          "X": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 4.0 },
+          "X": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 4.0 },
+          "X": { "type": "point", "defined": true, "x": 0.5263157894736844, "y": 3.1052631578947367 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 1.9 },
+          "X": { "type": "point", "defined": true, "x": 1.0745258653726208, "y": 2.091581585550951 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "X": { "type": "point", "defined": true, "x": 1.6666666666666667, "y": 1.6666666666666665 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 3054.0 },
+          "X": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 4.0 },
+          "X": { "type": "point", "defined": true, "x": 0.5263157894736844, "y": 3.1052631578947367 }
+        }
+      ]
+    },
+    {
+      "id": "geomforms-trianglecenter-005",
+      "group": "geomforms",
+      "script": [
+        "A = (-2, 1)",
+        "B = (6, -1)",
+        "C = (1, 5)",
+        "n = 5",
+        "X = TriangleCenter(A, B, C, n)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 2.0, "y": 0.0 },
+        { "action": "move", "label": "C", "x": -2.0, "y": 1.0 },
+        { "action": "move", "label": "C", "x": 1.0, "y": 5.0 },
+        { "action": "set_number", "label": "n", "value": 1.9 },
+        { "action": "set_number", "label": "n", "value": 2.0 },
+        { "action": "set_number", "label": "n", "value": 3054.0 },
+        { "action": "set_number", "label": "n", "value": 5.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 5.0 },
+          "X": { "type": "point", "defined": true, "x": 1.381578947368421, "y": 2.026315789473684 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 5.0 },
+          "X": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 5.0 },
+          "X": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 5.0 },
+          "X": { "type": "point", "defined": true, "x": 1.381578947368421, "y": 2.026315789473684 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 1.9 },
+          "X": { "type": "point", "defined": true, "x": 1.0745258653726208, "y": 2.091581585550951 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "X": { "type": "point", "defined": true, "x": 1.6666666666666667, "y": 1.6666666666666665 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 3054.0 },
+          "X": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 5.0 },
+          "X": { "type": "point", "defined": true, "x": 1.381578947368421, "y": 2.026315789473684 }
+        }
+      ]
+    },
+    {
+      "id": "geomforms-trianglecenter-006",
+      "group": "geomforms",
+      "script": [
+        "A = (-2, 1)",
+        "B = (6, -1)",
+        "C = (1, 5)",
+        "n = 6",
+        "X = TriangleCenter(A, B, C, n)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 2.0, "y": 0.0 },
+        { "action": "move", "label": "C", "x": -2.0, "y": 1.0 },
+        { "action": "move", "label": "C", "x": 1.0, "y": 5.0 },
+        { "action": "set_number", "label": "n", "value": 1.9 },
+        { "action": "set_number", "label": "n", "value": 2.0 },
+        { "action": "set_number", "label": "n", "value": 3054.0 },
+        { "action": "set_number", "label": "n", "value": 6.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 6.0 },
+          "X": { "type": "point", "defined": true, "x": 0.6233766233766235, "y": 2.4415584415584415 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 6.0 },
+          "X": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 6.0 },
+          "X": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 6.0 },
+          "X": { "type": "point", "defined": true, "x": 0.6233766233766235, "y": 2.4415584415584415 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 1.9 },
+          "X": { "type": "point", "defined": true, "x": 1.0745258653726208, "y": 2.091581585550951 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "X": { "type": "point", "defined": true, "x": 1.6666666666666667, "y": 1.6666666666666665 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 3054.0 },
+          "X": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 6.0 },
+          "X": { "type": "point", "defined": true, "x": 0.6233766233766235, "y": 2.4415584415584415 }
+        }
+      ]
+    },
+    {
+      "id": "geomforms-trianglecenter-007",
+      "group": "geomforms",
+      "script": [
+        "A = (-2, 1)",
+        "B = (6, -1)",
+        "C = (1, 5)",
+        "n = 9",
+        "X = TriangleCenter(A, B, C, n)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 2.0, "y": 0.0 },
+        { "action": "move", "label": "C", "x": -2.0, "y": 1.0 },
+        { "action": "move", "label": "C", "x": 1.0, "y": 5.0 },
+        { "action": "set_number", "label": "n", "value": 1.9 },
+        { "action": "set_number", "label": "n", "value": 2.0 },
+        { "action": "set_number", "label": "n", "value": 3054.0 },
+        { "action": "set_number", "label": "n", "value": 9.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 9.0 },
+          "X": { "type": "point", "defined": true, "x": 2.100966727733745, "y": 1.2953250202125335 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 9.0 },
+          "X": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 9.0 },
+          "X": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 9.0 },
+          "X": { "type": "point", "defined": true, "x": 2.100966727733745, "y": 1.2953250202125335 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 1.9 },
+          "X": { "type": "point", "defined": true, "x": 1.0745258653726208, "y": 2.091581585550951 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "X": { "type": "point", "defined": true, "x": 1.6666666666666667, "y": 1.6666666666666665 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 3054.0 },
+          "X": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 9.0 },
+          "X": { "type": "point", "defined": true, "x": 2.100966727733745, "y": 1.2953250202125335 }
+        }
+      ]
+    },
+    {
+      "id": "geomforms-trianglecenter-008",
+      "group": "geomforms",
+      "script": [
+        "A = (-2, 1)",
+        "B = (6, -1)",
+        "C = (1, 5)",
+        "n = 13",
+        "X = TriangleCenter(A, B, C, n)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 2.0, "y": 0.0 },
+        { "action": "move", "label": "C", "x": -2.0, "y": 1.0 },
+        { "action": "move", "label": "C", "x": 1.0, "y": 5.0 },
+        { "action": "set_number", "label": "n", "value": 1.9 },
+        { "action": "set_number", "label": "n", "value": 2.0 },
+        { "action": "set_number", "label": "n", "value": 3054.0 },
+        { "action": "set_number", "label": "n", "value": 13.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 13.0 },
+          "X": { "type": "point", "defined": true, "x": 0.841412440791807, "y": 2.4159380517441846 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 13.0 },
+          "X": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 13.0 },
+          "X": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 13.0 },
+          "X": { "type": "point", "defined": true, "x": 0.841412440791807, "y": 2.4159380517441846 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 1.9 },
+          "X": { "type": "point", "defined": true, "x": 1.0745258653726208, "y": 2.091581585550951 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "X": { "type": "point", "defined": true, "x": 1.6666666666666667, "y": 1.6666666666666665 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 3054.0 },
+          "X": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 13.0 },
+          "X": { "type": "point", "defined": true, "x": 0.841412440791807, "y": 2.4159380517441846 }
+        }
+      ]
+    },
+    {
+      "id": "geomforms-trianglecenter-009",
+      "group": "geomforms",
+      "script": [
+        "A = (-2, 1)",
+        "B = (6, -1)",
+        "C = (1, 5)",
+        "n = 99",
+        "X = TriangleCenter(A, B, C, n)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 2.0, "y": 0.0 },
+        { "action": "move", "label": "C", "x": -2.0, "y": 1.0 },
+        { "action": "move", "label": "C", "x": 1.0, "y": 5.0 },
+        { "action": "set_number", "label": "n", "value": 1.9 },
+        { "action": "set_number", "label": "n", "value": 2.0 },
+        { "action": "set_number", "label": "n", "value": 3054.0 },
+        { "action": "set_number", "label": "n", "value": 99.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 99.0 },
+          "X": { "type": "point", "defined": true, "x": 6.319974953036944, "y": -0.18472135253600397 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 99.0 },
+          "X": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 99.0 },
+          "X": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 99.0 },
+          "X": { "type": "point", "defined": true, "x": 6.319974953036944, "y": -0.18472135253600397 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 1.9 },
+          "X": { "type": "point", "defined": true, "x": 1.0745258653726208, "y": 2.091581585550951 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "X": { "type": "point", "defined": true, "x": 1.6666666666666667, "y": 1.6666666666666665 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 3054.0 },
+          "X": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 99.0 },
+          "X": { "type": "point", "defined": true, "x": 6.319974953036944, "y": -0.18472135253600397 }
+        }
+      ]
+    },
+    {
+      "id": "geomforms-trianglecenter-010",
+      "group": "geomforms",
+      "script": [
+        "A = (-2, 1)",
+        "B = (6, -1)",
+        "C = (1, 5)",
+        "n = 100",
+        "X = TriangleCenter(A, B, C, n)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 2.0, "y": 0.0 },
+        { "action": "move", "label": "C", "x": -2.0, "y": 1.0 },
+        { "action": "move", "label": "C", "x": 1.0, "y": 5.0 },
+        { "action": "set_number", "label": "n", "value": 1.9 },
+        { "action": "set_number", "label": "n", "value": 2.0 },
+        { "action": "set_number", "label": "n", "value": 3054.0 },
+        { "action": "set_number", "label": "n", "value": 100.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 100.0 },
+          "X": { "type": "point", "defined": true, "x": 6.381419757738576, "y": 0.066415987243297 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 100.0 },
+          "X": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 100.0 },
+          "X": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 100.0 },
+          "X": { "type": "point", "defined": true, "x": 6.381419757738576, "y": 0.066415987243297 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 1.9 },
+          "X": { "type": "point", "defined": true, "x": 1.0745258653726208, "y": 2.091581585550951 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "X": { "type": "point", "defined": true, "x": 1.6666666666666667, "y": 1.6666666666666665 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 3054.0 },
+          "X": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 100.0 },
+          "X": { "type": "point", "defined": true, "x": 6.381419757738576, "y": 0.066415987243297 }
+        }
+      ]
+    },
+    {
+      "id": "geomforms-trianglecenter-011",
+      "group": "geomforms",
+      "script": [
+        "A = (-2, 1)",
+        "B = (6, -1)",
+        "C = (1, 5)",
+        "n = 354",
+        "X = TriangleCenter(A, B, C, n)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 2.0, "y": 0.0 },
+        { "action": "move", "label": "C", "x": -2.0, "y": 1.0 },
+        { "action": "move", "label": "C", "x": 1.0, "y": 5.0 },
+        { "action": "set_number", "label": "n", "value": 1.9 },
+        { "action": "set_number", "label": "n", "value": 2.0 },
+        { "action": "set_number", "label": "n", "value": 3054.0 },
+        { "action": "set_number", "label": "n", "value": 354.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 354.0 },
+          "X": { "type": "point", "defined": true, "x": 0.9095100829207241, "y": 2.2540272471974174 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 354.0 },
+          "X": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 354.0 },
+          "X": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 354.0 },
+          "X": { "type": "point", "defined": true, "x": 0.9095100829207241, "y": 2.2540272471974174 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 1.9 },
+          "X": { "type": "point", "defined": true, "x": 1.0745258653726208, "y": 2.091581585550951 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "X": { "type": "point", "defined": true, "x": 1.6666666666666667, "y": 1.6666666666666665 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 3054.0 },
+          "X": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 354.0 },
+          "X": { "type": "point", "defined": true, "x": 0.9095100829207241, "y": 2.2540272471974174 }
+        }
+      ]
+    },
+    {
+      "id": "geomforms-trianglecenter-012",
+      "group": "geomforms",
+      "script": [
+        "A = (-2, 1)",
+        "B = (6, -1)",
+        "C = (1, 5)",
+        "n = 999",
+        "X = TriangleCenter(A, B, C, n)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 2.0, "y": 0.0 },
+        { "action": "move", "label": "C", "x": -2.0, "y": 1.0 },
+        { "action": "move", "label": "C", "x": 1.0, "y": 5.0 },
+        { "action": "set_number", "label": "n", "value": 1.9 },
+        { "action": "set_number", "label": "n", "value": 2.0 },
+        { "action": "set_number", "label": "n", "value": 3054.0 },
+        { "action": "set_number", "label": "n", "value": 999.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 999.0 },
+          "X": { "type": "point", "defined": true, "x": 0.7600274792912525, "y": 2.4011816592810287 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 999.0 },
+          "X": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 999.0 },
+          "X": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 999.0 },
+          "X": { "type": "point", "defined": true, "x": 0.7600274792912525, "y": 2.4011816592810287 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 1.9 },
+          "X": { "type": "point", "defined": true, "x": 1.0745258653726208, "y": 2.091581585550951 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "X": { "type": "point", "defined": true, "x": 1.6666666666666667, "y": 1.6666666666666665 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 3054.0 },
+          "X": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 999.0 },
+          "X": { "type": "point", "defined": true, "x": 0.7600274792912525, "y": 2.4011816592810287 }
+        }
+      ]
+    },
+    {
+      "id": "geomforms-trianglecenter-013",
+      "group": "geomforms",
+      "script": [
+        "A = (-2, 1)",
+        "B = (6, -1)",
+        "C = (1, 5)",
+        "n = 1500",
+        "X = TriangleCenter(A, B, C, n)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 2.0, "y": 0.0 },
+        { "action": "move", "label": "C", "x": -2.0, "y": 1.0 },
+        { "action": "move", "label": "C", "x": 1.0, "y": 5.0 },
+        { "action": "set_number", "label": "n", "value": 1.9 },
+        { "action": "set_number", "label": "n", "value": 2.0 },
+        { "action": "set_number", "label": "n", "value": 3054.0 },
+        { "action": "set_number", "label": "n", "value": 1500.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 1500.0 },
+          "X": { "type": "point", "defined": true, "x": 1.004121733863233, "y": 2.1214514332929717 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 1500.0 },
+          "X": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 1500.0 },
+          "X": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 1500.0 },
+          "X": { "type": "point", "defined": true, "x": 1.004121733863233, "y": 2.1214514332929717 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 1.9 },
+          "X": { "type": "point", "defined": true, "x": 1.0745258653726208, "y": 2.091581585550951 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "X": { "type": "point", "defined": true, "x": 1.6666666666666667, "y": 1.6666666666666665 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 3054.0 },
+          "X": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 1500.0 },
+          "X": { "type": "point", "defined": true, "x": 1.004121733863233, "y": 2.1214514332929717 }
+        }
+      ]
+    },
+    {
+      "id": "geomforms-trianglecenter-014",
+      "group": "geomforms",
+      "script": [
+        "A = (-2, 1)",
+        "B = (6, -1)",
+        "C = (1, 5)",
+        "n = 2201",
+        "X = TriangleCenter(A, B, C, n)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 2.0, "y": 0.0 },
+        { "action": "move", "label": "C", "x": -2.0, "y": 1.0 },
+        { "action": "move", "label": "C", "x": 1.0, "y": 5.0 },
+        { "action": "set_number", "label": "n", "value": 1.9 },
+        { "action": "set_number", "label": "n", "value": 2.0 },
+        { "action": "set_number", "label": "n", "value": 3054.0 },
+        { "action": "set_number", "label": "n", "value": 2201.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 2201.0 },
+          "X": { "type": "point", "defined": true, "x": -0.4789067007354523, "y": 4.510071440114241 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 2201.0 },
+          "X": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 2201.0 },
+          "X": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 2201.0 },
+          "X": { "type": "point", "defined": true, "x": -0.4789067007354523, "y": 4.510071440114241 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 1.9 },
+          "X": { "type": "point", "defined": true, "x": 1.0745258653726208, "y": 2.091581585550951 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "X": { "type": "point", "defined": true, "x": 1.6666666666666667, "y": 1.6666666666666665 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 3054.0 },
+          "X": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 2201.0 },
+          "X": { "type": "point", "defined": true, "x": -0.4789067007354523, "y": 4.510071440114241 }
+        }
+      ]
+    },
+    {
+      "id": "geomforms-trianglecenter-015",
+      "group": "geomforms",
+      "script": [
+        "A = (-2, 1)",
+        "B = (6, -1)",
+        "C = (1, 5)",
+        "n = 2925",
+        "X = TriangleCenter(A, B, C, n)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 2.0, "y": 0.0 },
+        { "action": "move", "label": "C", "x": -2.0, "y": 1.0 },
+        { "action": "move", "label": "C", "x": 1.0, "y": 5.0 },
+        { "action": "set_number", "label": "n", "value": 1.9 },
+        { "action": "set_number", "label": "n", "value": 2.0 },
+        { "action": "set_number", "label": "n", "value": 3054.0 },
+        { "action": "set_number", "label": "n", "value": 2925.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 2925.0 },
+          "X": { "type": "point", "defined": true, "x": 4.585758017102298, "y": 2.084267375624612 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 2925.0 },
+          "X": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 2925.0 },
+          "X": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 2925.0 },
+          "X": { "type": "point", "defined": true, "x": 4.585758017102298, "y": 2.084267375624612 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 1.9 },
+          "X": { "type": "point", "defined": true, "x": 1.0745258653726208, "y": 2.091581585550951 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "X": { "type": "point", "defined": true, "x": 1.6666666666666667, "y": 1.6666666666666665 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 3054.0 },
+          "X": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 2925.0 },
+          "X": { "type": "point", "defined": true, "x": 4.585758017102298, "y": 2.084267375624612 }
+        }
+      ]
+    },
+    {
+      "id": "geomforms-trianglecenter-016",
+      "group": "geomforms",
+      "script": [
+        "A = (-2, 1)",
+        "B = (6, -1)",
+        "C = (1, 5)",
+        "n = 3053",
+        "X = TriangleCenter(A, B, C, n)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 2.0, "y": 0.0 },
+        { "action": "move", "label": "C", "x": -2.0, "y": 1.0 },
+        { "action": "move", "label": "C", "x": 1.0, "y": 5.0 },
+        { "action": "set_number", "label": "n", "value": 1.9 },
+        { "action": "set_number", "label": "n", "value": 2.0 },
+        { "action": "set_number", "label": "n", "value": 3054.0 },
+        { "action": "set_number", "label": "n", "value": 3053.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 3053.0 },
+          "X": { "type": "point", "defined": true, "x": -0.9089115422558369, "y": 3.86057218020388 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 3053.0 },
+          "X": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 3053.0 },
+          "X": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 3053.0 },
+          "X": { "type": "point", "defined": true, "x": -0.9089115422558369, "y": 3.86057218020388 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 1.9 },
+          "X": { "type": "point", "defined": true, "x": 1.0745258653726208, "y": 2.091581585550951 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "X": { "type": "point", "defined": true, "x": 1.6666666666666667, "y": 1.6666666666666665 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 3054.0 },
+          "X": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 3053.0 },
+          "X": { "type": "point", "defined": true, "x": -0.9089115422558369, "y": 3.86057218020388 }
+        }
+      ]
+    },
+    {
+      "id": "geomforms-trianglecenter-017",
+      "group": "geomforms",
+      "script": [
+        "A = (0, 0)",
+        "B = (4, 0)",
+        "C = (0, 3)",
+        "X = TriangleCenter(A, B, C, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": 4.0, "y": 0.0 },
+        { "action": "move", "label": "C", "x": 4.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "X": { "type": "point", "defined": true, "x": 1.3333333333333333, "y": 1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "X": { "type": "point", "defined": true, "x": 2.6666666666666665, "y": 1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "X": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 }
+        }
+      ]
+    }
+  ]
+}

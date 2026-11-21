@@ -46,7 +46,7 @@
 //! line that degenerated to all-zero coefficients (see [`raw_line`]).
 
 use super::vector::VectorDef;
-use super::{normalized_coefficients, Group, Parents, CIRCLE, POINT};
+use super::{normalized_coefficients, Group, Parents, POINT};
 use crate::kernel::{Construction, Def, Error, Id, Kind, Value};
 use crate::script::object;
 use crate::tol::{MIN_PRECISION, STANDARD_PRECISION};
@@ -415,12 +415,17 @@ fn tangent(c: &Construction, line: Id, circle: Id) -> bool {
             return true;
         }
     }
-    let Some((cx, cy, r)) = c.circle(circle) else {
+    if let Def::ConicPart(d) = c.def(line) {
+        if super::conic_parts::tangent_point_on(c, d, circle).is_some() {
+            return true;
+        }
+    }
+    let Some(d) = super::conic_object(c, circle) else {
         return false;
     };
     let g = raw_line(c, line);
     let (x, y, z) = normalized_coefficients(g, 2.0, 0.5);
-    let m = circle_matrix(cx, cy, r);
+    let m = d.matrix;
     // An arbitrary point of the line.
     let (px, py) = if x.abs() > y.abs() {
         (-z / x, 0.0)
@@ -493,8 +498,8 @@ impl Group for PredicateDef {
                 c.expect(b, ANY)
             }
             PredicateDef::Tangent { line, circle } => {
-                c.expect(line, LINE_LIKE)?;
-                c.expect(circle, CIRCLE)
+                c.expect(line, super::CARRIERS)?;
+                c.expect(circle, super::CONIC_OBJECTS)
             }
         }
     }

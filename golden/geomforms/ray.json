@@ -1,0 +1,280 @@
+{
+  "schema": 1,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "geomforms-ray-001",
+      "group": "geomforms",
+      "script": [
+        "A = (-2, 3)",
+        "B = (4, 1)",
+        "P = (3, 7)",
+        "r = Ray(A, B)",
+        "l = Line(P, r)",
+        "m = OrthogonalLine(P, r)",
+        "t = Slope(r)",
+        "d = Distance(P, r)",
+        "u = Distance(r, P)",
+        "v = Distance(l, r)",
+        "W = ClosestPoint(r, m)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "P", "x": -2.0, "y": 3.0 },
+        { "action": "move", "label": "B", "x": -2.0, "y": 3.0 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 6.0 },
+        { "action": "move", "label": "P", "x": -4.0, "y": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 3.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 1.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 7.0 },
+          "r": { "type": "ray", "defined": true, "x": -2.0, "y": 3.0, "a": 2.0, "b": 6.0, "c": -14.0 },
+          "l": { "type": "line", "defined": true, "a": 2.0, "b": 6.0, "c": -48.0 },
+          "m": { "type": "line", "defined": true, "a": -6.0, "b": 2.0, "c": 4.0 },
+          "t": { "type": "number", "defined": true, "value": -0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 5.375872022286245 },
+          "u": { "type": "number", "defined": true, "value": 5.375872022286245 },
+          "v": { "type": "number", "defined": true, "value": 5.375872022286244 },
+          "W": { "type": "point", "defined": true, "x": 1.3, "y": 1.9 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 3.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 1.0 },
+          "P": { "type": "point", "defined": true, "x": -2.0, "y": 3.0 },
+          "r": { "type": "ray", "defined": true, "x": -2.0, "y": 3.0, "a": 2.0, "b": 6.0, "c": -14.0 },
+          "l": { "type": "line", "defined": true, "a": 2.0, "b": 6.0, "c": -14.0 },
+          "m": { "type": "line", "defined": true, "a": -6.0, "b": 2.0, "c": -18.0 },
+          "t": { "type": "number", "defined": true, "value": -0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "u": { "type": "number", "defined": true, "value": 0.0 },
+          "v": { "type": "number", "defined": true, "value": 0.0 },
+          "W": { "type": "point", "defined": true, "x": -2.0, "y": 3.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 3.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": 3.0 },
+          "P": { "type": "point", "defined": true, "x": -2.0, "y": 3.0 },
+          "r": { "type": "ray", "defined": false },
+          "l": { "type": "line", "defined": false },
+          "m": { "type": "line", "defined": false },
+          "t": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": false },
+          "u": { "type": "number", "defined": false },
+          "v": { "type": "number", "defined": false },
+          "W": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 3.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 6.0 },
+          "P": { "type": "point", "defined": true, "x": -2.0, "y": 3.0 },
+          "r": { "type": "ray", "defined": true, "x": -2.0, "y": 3.0, "a": -3.0, "b": 2.0, "c": -12.0 },
+          "l": { "type": "line", "defined": true, "a": -3.0, "b": 2.0, "c": -12.0 },
+          "m": { "type": "line", "defined": true, "a": -2.0, "b": -3.0, "c": 5.0 },
+          "t": { "type": "number", "defined": true, "value": 1.5 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "u": { "type": "number", "defined": true, "value": 0.0 },
+          "v": { "type": "number", "defined": true, "value": 0.0 },
+          "W": { "type": "point", "defined": true, "x": -2.0, "y": 3.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 3.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 6.0 },
+          "P": { "type": "point", "defined": true, "x": -4.0, "y": 2.0 },
+          "r": { "type": "ray", "defined": true, "x": -2.0, "y": 3.0, "a": -3.0, "b": 2.0, "c": -12.0 },
+          "l": { "type": "line", "defined": true, "a": -3.0, "b": 2.0, "c": -16.0 },
+          "m": { "type": "line", "defined": true, "a": -2.0, "b": -3.0, "c": -2.0 },
+          "t": { "type": "number", "defined": true, "value": 1.5 },
+          "d": { "type": "number", "defined": true, "value": 2.23606797749979 },
+          "u": { "type": "number", "defined": true, "value": 2.23606797749979 },
+          "v": { "type": "number", "defined": true, "value": 1.109400392450458 },
+          "W": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "geomforms-ray-002",
+      "group": "geomforms",
+      "script": [
+        "A = (1, 1)",
+        "B = (1, 5)",
+        "P = (0, 0)",
+        "r = Ray(A, B)",
+        "l = Line(P, r)",
+        "m = OrthogonalLine(P, r)",
+        "t = Slope(r)",
+        "d = Distance(P, r)",
+        "u = Distance(r, P)",
+        "v = Distance(l, r)",
+        "W = ClosestPoint(r, m)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "P", "x": 1.0, "y": 1.0 },
+        { "action": "move", "label": "B", "x": 1.0, "y": 1.0 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 6.0 },
+        { "action": "move", "label": "P", "x": -4.0, "y": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "ray", "defined": true, "x": 1.0, "y": 1.0, "a": -4.0, "b": 0.0, "c": 4.0 },
+          "l": { "type": "line", "defined": true, "a": -4.0, "b": 0.0, "c": 0.0 },
+          "m": { "type": "line", "defined": true, "a": 0.0, "b": -4.0, "c": 0.0 },
+          "t": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "u": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "v": { "type": "number", "defined": true, "value": 1.0 },
+          "W": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "r": { "type": "ray", "defined": true, "x": 1.0, "y": 1.0, "a": -4.0, "b": 0.0, "c": 4.0 },
+          "l": { "type": "line", "defined": true, "a": -4.0, "b": 0.0, "c": 4.0 },
+          "m": { "type": "line", "defined": true, "a": 0.0, "b": -4.0, "c": 4.0 },
+          "t": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "u": { "type": "number", "defined": true, "value": 0.0 },
+          "v": { "type": "number", "defined": true, "value": 0.0 },
+          "W": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "r": { "type": "ray", "defined": false },
+          "l": { "type": "line", "defined": false },
+          "m": { "type": "line", "defined": false },
+          "t": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": false },
+          "u": { "type": "number", "defined": false },
+          "v": { "type": "number", "defined": false },
+          "W": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 6.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "r": { "type": "ray", "defined": true, "x": 1.0, "y": 1.0, "a": -5.0, "b": -1.0, "c": 6.0 },
+          "l": { "type": "line", "defined": true, "a": -5.0, "b": -1.0, "c": 6.0 },
+          "m": { "type": "line", "defined": true, "a": 1.0, "b": -5.0, "c": 4.0 },
+          "t": { "type": "number", "defined": true, "value": -5.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "u": { "type": "number", "defined": true, "value": 0.0 },
+          "v": { "type": "number", "defined": true, "value": 0.0 },
+          "W": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 6.0 },
+          "P": { "type": "point", "defined": true, "x": -4.0, "y": 2.0 },
+          "r": { "type": "ray", "defined": true, "x": 1.0, "y": 1.0, "a": -5.0, "b": -1.0, "c": 6.0 },
+          "l": { "type": "line", "defined": true, "a": -5.0, "b": -1.0, "c": -18.0 },
+          "m": { "type": "line", "defined": true, "a": 1.0, "b": -5.0, "c": 14.0 },
+          "t": { "type": "number", "defined": true, "value": -5.0 },
+          "d": { "type": "number", "defined": true, "value": 4.706787243316416 },
+          "u": { "type": "number", "defined": true, "value": 4.706787243316416 },
+          "v": { "type": "number", "defined": true, "value": 4.706787243316416 },
+          "W": { "type": "point", "defined": true, "x": 0.6153846153846154, "y": 2.923076923076923 }
+        }
+      ]
+    },
+    {
+      "id": "geomforms-ray-003",
+      "group": "geomforms",
+      "script": [
+        "A = (3, 2)",
+        "B = (-4, 2)",
+        "P = (-3, 2)",
+        "r = Ray(A, B)",
+        "l = Line(P, r)",
+        "m = OrthogonalLine(P, r)",
+        "t = Slope(r)",
+        "d = Distance(P, r)",
+        "u = Distance(r, P)",
+        "v = Distance(l, r)",
+        "W = ClosestPoint(r, m)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "P", "x": 3.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 6.0 },
+        { "action": "move", "label": "P", "x": -4.0, "y": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": -4.0, "y": 2.0 },
+          "P": { "type": "point", "defined": true, "x": -3.0, "y": 2.0 },
+          "r": { "type": "ray", "defined": true, "x": 3.0, "y": 2.0, "a": 0.0, "b": -7.0, "c": 14.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": -7.0, "c": 14.0 },
+          "m": { "type": "line", "defined": true, "a": 7.0, "b": 0.0, "c": 21.0 },
+          "t": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "u": { "type": "number", "defined": true, "value": 0.0 },
+          "v": { "type": "number", "defined": true, "value": 0.0 },
+          "W": { "type": "point", "defined": true, "x": -3.0, "y": 2.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": -4.0, "y": 2.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 2.0 },
+          "r": { "type": "ray", "defined": true, "x": 3.0, "y": 2.0, "a": 0.0, "b": -7.0, "c": 14.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": -7.0, "c": 14.0 },
+          "m": { "type": "line", "defined": true, "a": 7.0, "b": 0.0, "c": -21.0 },
+          "t": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "u": { "type": "number", "defined": true, "value": 0.0 },
+          "v": { "type": "number", "defined": true, "value": 0.0 },
+          "W": { "type": "point", "defined": true, "x": 3.0, "y": 2.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 2.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 2.0 },
+          "r": { "type": "ray", "defined": false },
+          "l": { "type": "line", "defined": false },
+          "m": { "type": "line", "defined": false },
+          "t": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": false },
+          "u": { "type": "number", "defined": false },
+          "v": { "type": "number", "defined": false },
+          "W": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 6.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 2.0 },
+          "r": { "type": "ray", "defined": true, "x": 3.0, "y": 2.0, "a": -4.0, "b": -3.0, "c": 18.0 },
+          "l": { "type": "line", "defined": true, "a": -4.0, "b": -3.0, "c": 18.0 },
+          "m": { "type": "line", "defined": true, "a": 3.0, "b": -4.0, "c": -1.0 },
+          "t": { "type": "number", "defined": true, "value": -1.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "u": { "type": "number", "defined": true, "value": 0.0 },
+          "v": { "type": "number", "defined": true, "value": 0.0 },
+          "W": { "type": "point", "defined": true, "x": 3.0, "y": 2.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 6.0 },
+          "P": { "type": "point", "defined": true, "x": -4.0, "y": 2.0 },
+          "r": { "type": "ray", "defined": true, "x": 3.0, "y": 2.0, "a": -4.0, "b": -3.0, "c": 18.0 },
+          "l": { "type": "line", "defined": true, "a": -4.0, "b": -3.0, "c": -10.0 },
+          "m": { "type": "line", "defined": true, "a": 3.0, "b": -4.0, "c": 20.0 },
+          "t": { "type": "number", "defined": true, "value": -1.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 5.6 },
+          "u": { "type": "number", "defined": true, "value": 5.6 },
+          "v": { "type": "number", "defined": true, "value": 5.6 },
+          "W": { "type": "point", "defined": true, "x": 0.48, "y": 5.36 }
+        }
+      ]
+    }
+  ]
+}

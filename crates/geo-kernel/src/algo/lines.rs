@@ -1,5 +1,8 @@
 // Parts of this file are translated from GeoGebra (https://github.com/geogebra/geogebra),
 // commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdLine.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdOrthogonalLine.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoOrthoLinePointConic.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdLineBisector.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdAngularBisector.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdTangent.java
@@ -43,6 +46,14 @@ use crate::tol::{MAX_PRECISION, MIN_PRECISION, STANDARD_PRECISION};
 /// Lines built from other objects: bisectors, tangents and polars.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum LineDef {
+    /// The parallel or perpendicular through a point to the carrier of a ray.
+    ThroughRay {
+        point: Id,
+        ray: Id,
+        perpendicular: bool,
+    },
+    /// The line through a point and its projection onto a conic.
+    NormalToConic { point: Id, conic: Id },
     /// Perpendicular bisector of two points (`LineBisector(A, B)`).
     BisectorPoints(Id, Id),
     /// Perpendicular bisector of a segment (`LineBisector(s)`).
@@ -69,6 +80,8 @@ impl Group for LineDef {
 
     fn parents(&self) -> Parents {
         match *self {
+            LineDef::ThroughRay { point, ray, .. } => Parents::of(&[point, ray]),
+            LineDef::NormalToConic { point, conic } => Parents::of(&[point, conic]),
             LineDef::BisectorPoints(p, q) => Parents::of(&[p, q]),
             LineDef::BisectorSegment(s) => Parents::of(&[s]),
             LineDef::AngleBisectorPoints { leg1, vertex, leg2 } => {
@@ -84,6 +97,14 @@ impl Group for LineDef {
 
     fn check(&self, c: &Construction) -> Result<(), Error> {
         match *self {
+            LineDef::ThroughRay { point, ray, .. } => {
+                c.expect(point, POINT)?;
+                c.expect(ray, &[Kind::Ray])
+            }
+            LineDef::NormalToConic { point, conic } => {
+                c.expect(point, POINT)?;
+                c.expect(conic, super::CONIC_OBJECTS)
+            }
             LineDef::BisectorPoints(p, q) => {
                 c.expect(p, POINT)?;
                 c.expect(q, POINT)
@@ -126,6 +147,23 @@ impl Group for LineDef {
 
     fn compute(&self, c: &Construction) -> Option<Value> {
         match *self {
+            LineDef::ThroughRay {
+                point,
+                ray,
+                perpendicular,
+            } => {
+                if perpendicular {
+                    super::basic::perpendicular(c, point, ray)
+                } else {
+                    super::basic::parallel(c, point, ray)
+                }
+            }
+            LineDef::NormalToConic { point, conic } => {
+                let p = c.point(point)?;
+                let (x, y) = super::point::closest_coords(c, conic, p)?;
+                let (a, b, z) = super::join(p, (x, y));
+                line_value(a, b, z)
+            }
             LineDef::BisectorPoints(p, q) => {
                 let (ax, ay) = c.point(p)?;
                 let (bx, by) = c.point(q)?;
@@ -162,6 +200,21 @@ impl Group for LineDef {
 
     fn parse(c: &Construction, func: &str, args: &[&str]) -> Option<Result<Self, String>> {
         Some(match func {
+            "Line" | "OrthogonalLine" | "PerpendicularLine" | "Perpendicular" => {
+                let &[p, direction] = args else { return None };
+                let (point, to) = (c.id(p)?, c.id(direction)?);
+                match c.kind(to) {
+                    Kind::Ray => Ok(LineDef::ThroughRay {
+                        point,
+                        ray: to,
+                        perpendicular: func != "Line",
+                    }),
+                    kind if func != "Line" && super::CONIC_OBJECTS.contains(&kind) => {
+                        Ok(LineDef::NormalToConic { point, conic: to })
+                    }
+                    _ => return None,
+                }
+            }
             "LineBisector" | "PerpendicularBisector" => parse_line_bisector(c, func, args),
             "AngularBisector" | "AngleBisector" => match args.len() {
                 3 => {
