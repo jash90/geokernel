@@ -677,6 +677,14 @@ fn legacy_angle_numbers(schema: u32) -> Result<bool, String> {
     }
 }
 
+/// Parses one snapshot object from JSON, in the format of `golden/SCHEMA.md`
+/// (the `object` field of a verified t-pair output). Angles keep the current
+/// encoding: they are recorded as the angle type there.
+pub fn expected_from_json(v: &serde_json::Value) -> Result<Expected, String> {
+    let raw: RawObject = serde_json::from_value(v.clone()).map_err(|e| format!("object: {e}"))?;
+    Expected::try_from(raw)
+}
+
 /// Apply the file's angle encoding to a snapshot read outside a replay case,
 /// such as a snapshot paired with an exported construction.
 pub fn set_snapshot_schema(

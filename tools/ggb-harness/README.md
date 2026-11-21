@@ -34,6 +34,9 @@ python3 tools/ggb-harness/cases/make_expr.py    # rewrite cases/expr.json
 python3 tools/ggb-harness/cases/make_logic.py   # rewrite cases/logic.json
 python3 tools/ggb-harness/cases/make_lists.py   # rewrite cases/lists.json
 python3 tools/ggb-harness/cases/make_equations.py  # rewrite cases/equations.json
+python3 -I tools/extract-t-pairs/extract_t_pairs.py \
+    --source "$GEOGEBRA_SRC" --out golden/t-pairs   # re-extract the upstream pairs
+tools/ggb-harness/harness.sh tpairs   # replay them in GeoGebra, rewrite golden/t-pairs/verified.jsonl
 ```
 
 `build` runs `gradlew -p source/shared :common-jre:ggbHarnessClasspath` with
@@ -148,6 +151,38 @@ gives.
 - GeoGebra gives an object that is undefined when it is created no label until
   it becomes defined, so no line may refer to such an object. The harness
   keeps a reference to it and records it like any other object.
+
+## Test-driven development with the upstream tests
+
+`golden/t-pairs/` holds the input/expected pairs of GeoGebra's own kernel
+tests (`CommandsTest`, `ArithmeticTest`, `RedefineTest`, ...), and
+`verified.jsonl` records what GeoGebra actually returned for every step when
+`tools/ggb-harness/harness.sh tpairs` replayed the methods. The Rust runner
+`crates/geo-golden/tests/tpairs.rs` replays the same steps on `geo-kernel`
+and compares the values and the strings against that file. Steps the kernel
+cannot pass yet are listed in `crates/geo-golden/t-pairs-gaps.toml`.
+
+Before implementing a command or fixing one:
+
+```sh
+# the red pairs of that command, with the reason of each:
+GEOKERNEL_TPAIRS_COMMAND=Midpoint cargo test -p geo-golden --test tpairs -- --nocapture
+# implement, then watch the pairs leave the gaps list:
+cargo test -p geo-golden --test tpairs
+```
+
+A gap entry whose step starts passing fails the test as stale: delete it.
+After a change that is expected to move pairs, regenerate the list with
+`GEOKERNEL_TPAIRS_BLESS=1 cargo test -p geo-golden --test tpairs` (the run
+itself stays red; the next plain run must be green) and review the diff —
+the reason strings are generated, the categories may need a human eye.
+
+The upstream tests sometimes use the old input syntax (`Length[f]`,
+`label:input`); the runner rewrites those forms before executing, exactly as
+GeoGebra's parser accepts both. What it cannot repair it reports: an
+incomplete context (the method moved a point or changed a setting between
+the steps), a redefine (the step assigns to an existing label), or an
+inline equation as an argument (`Intersect(x = 4, y = 4)`).
 
 ## Chain timing
 

@@ -1093,7 +1093,7 @@ final class Session {
         }
     }
 
-    private static Map<String, Object> describe(GeoElement geo, String type) {
+    static Map<String, Object> describe(GeoElement geo, String type) {
         Map<String, Object> obj = new LinkedHashMap<>();
         obj.put("type", type);
         if (geo instanceof GeoBoolean) {
