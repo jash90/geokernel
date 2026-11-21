@@ -12,3 +12,9 @@ geo-kernel = { path = "../geo-kernel" }
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }
 toml = "0.8"
+
+[dev-dependencies]
+# The kind table test (tests/kinds.rs) checks hit tests, algebra text and
+# the importer against docs/kinds.csv.
+geo-app-core = { path = "../geo-app-core" }
+geo-import = { path = "../geo-import" }
