@@ -138,15 +138,22 @@ fn a_failed_final_step_takes_the_placed_points_away() {
 }
 
 #[test]
-fn a_second_click_on_a_just_placed_point_hits_it_and_makes_no_second_point() {
+fn a_second_click_deselects_a_pending_point_and_keeps_it_in_the_tool_use() {
     let mut h = harness("A = (-3, -3)\n");
     h.state_mut().select_tool(Tool::Circle);
     click(&mut h, world(1.0, 1.0));
     click(&mut h, world(1.0, 1.0));
     assert_eq!(labels(&h), ["A", "B"], "no zero-radius circle");
-    assert_eq!(h.state().tool.picks().len(), 1);
+    assert!(h.state().tool.picks().is_empty());
+    assert_eq!(h.state().wb.undo_depth(), (0, 0));
     click(&mut h, world(3.0, 1.0));
+    assert_eq!(labels(&h), ["A", "B", "C"]);
+    click(&mut h, world(1.0, 1.0));
     assert_eq!(labels(&h), ["A", "B", "C", "c"]);
+    assert_eq!(h.state().wb.definition("c"), Some("Circle(C, B)"));
+    assert_eq!(h.state().wb.undo_depth(), (1, 0));
+    undo(&mut h);
+    assert_eq!(labels(&h), ["A"]);
 }
 
 /// A press and its release in one frame, as a touch tap or a frame hitch

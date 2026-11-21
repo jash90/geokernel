@@ -189,7 +189,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     let pick_at = |app: &App, pos: (f64, f64)| -> Option<Id> {
         let c = app.wb.construction();
         hit::pick(c, &t, pos, &hover_reach, app.wb.selected, |id| {
-            shown(app, id) && (move_tool || app.tool.accepts_object(c.label(id), c.kind(id)))
+            shown(app, id) && (move_tool || app.accepts_tool_hit(id))
         })
     };
     // What a press of the move tool at `pos` (in the area as it was, with

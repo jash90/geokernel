@@ -17,6 +17,8 @@
 
 mod recipe;
 
+pub(crate) use recipe::intersection_pair;
+
 use crate::describe::exact;
 use crate::labels::next_label;
 use geo_kernel::kernel::Kind;
@@ -31,6 +33,7 @@ pub enum Tool {
     Segment,
     Ray,
     Vector,
+    VectorFromPoint,
     Perpendicular,
     Parallel,
     Bisector,
@@ -39,11 +42,25 @@ pub enum Tool {
     Polar,
     Polygon,
     RegularPolygon,
+    Polyline,
+    VectorPolygon,
     Circle,
     CircleRadius,
     Circle3,
+    Semicircle,
+    CircularArc,
+    CircumcircularArc,
+    CircularSector,
+    CircumcircularSector,
+    Compasses,
+    Ellipse,
+    Hyperbola,
+    Parabola,
+    Conic5,
     Angle,
     Distance,
+    Area,
+    Slope,
     ReflectLine,
     ReflectPoint,
     ReflectCircle,
@@ -58,12 +75,17 @@ pub enum Tool {
 }
 
 /// The tool groups of the toolbar, in the order of the reference toolbar.
-/// Groups whose tools the kernel cannot serve yet (conics, sliders and
-/// texts) are left out.
+/// Groups for sliders and texts are left out.
 pub const GROUPS: &[&[Tool]] = &[
     &[Tool::Move],
     &[Tool::Point, Tool::Intersect, Tool::Midpoint],
-    &[Tool::Line, Tool::Segment, Tool::Ray, Tool::Vector],
+    &[
+        Tool::Line,
+        Tool::Segment,
+        Tool::Ray,
+        Tool::Vector,
+        Tool::VectorFromPoint,
+    ],
     &[
         Tool::Perpendicular,
         Tool::Parallel,
@@ -72,9 +94,25 @@ pub const GROUPS: &[&[Tool]] = &[
         Tool::Tangents,
         Tool::Polar,
     ],
-    &[Tool::Polygon, Tool::RegularPolygon],
-    &[Tool::Circle, Tool::CircleRadius, Tool::Circle3],
-    &[Tool::Angle, Tool::Distance],
+    &[
+        Tool::Polygon,
+        Tool::RegularPolygon,
+        Tool::Polyline,
+        Tool::VectorPolygon,
+    ],
+    &[
+        Tool::Circle,
+        Tool::CircleRadius,
+        Tool::Compasses,
+        Tool::Circle3,
+        Tool::Semicircle,
+        Tool::CircularArc,
+        Tool::CircumcircularArc,
+        Tool::CircularSector,
+        Tool::CircumcircularSector,
+    ],
+    &[Tool::Ellipse, Tool::Hyperbola, Tool::Parabola, Tool::Conic5],
+    &[Tool::Angle, Tool::Distance, Tool::Area, Tool::Slope],
     &[
         Tool::ReflectLine,
         Tool::ReflectPoint,
@@ -163,8 +201,12 @@ pub struct NumberRequest {
 pub enum Outcome {
     /// The pick was taken; more are needed.
     Pending,
+    /// The picks changed without finishing the tool use.
+    SelectionChanged,
     /// Run these script lines as one change.
     Run(Vec<String>),
+    /// Build a vector polygon, positioning each vertex relative to the first.
+    VectorPolygon { picks: Vec<Pick>, copy_offset: f64 },
     /// Add this new point (a pending point of the tool use), put it at
     /// `at` when given (a point on a path goes where the pointer was), then
     /// go on with `then`.
@@ -218,8 +260,20 @@ pub fn new_points_on_objects(tool: Tool, picks: &[Pick]) -> bool {
         | Tool::Circle
         | Tool::CircleRadius
         | Tool::Circle3
+        | Tool::Semicircle
+        | Tool::CircularArc
+        | Tool::CircumcircularArc
+        | Tool::CircularSector
+        | Tool::CircumcircularSector
+        | Tool::Ellipse
+        | Tool::Hyperbola
+        | Tool::Conic5
+        | Tool::Polyline
         | Tool::Polygon
         | Tool::RegularPolygon => true,
+        Tool::Compasses => picks
+            .iter()
+            .any(|p| matches!(p.kind(), Kind::Circle | Kind::Segment)),
         Tool::Perpendicular | Tool::Parallel => picks
             .iter()
             .any(|p| matches!(p.kind(), Kind::Line | Kind::Segment)),
@@ -229,12 +283,17 @@ pub fn new_points_on_objects(tool: Tool, picks: &[Pick]) -> bool {
 
 /// Whether the tool makes its object from a press, a drag and a release as
 /// well as from two clicks: the release is the second point
-/// (`EuclidianController.isModeCreatingObjectsByDrag`; the semicircle tool
-/// of that list does not exist here).
+/// (`EuclidianController.isModeCreatingObjectsByDrag`).
 pub fn creates_by_drag(tool: Tool) -> bool {
     matches!(
         tool,
-        Tool::Line | Tool::Segment | Tool::Ray | Tool::Vector | Tool::Circle | Tool::RegularPolygon
+        Tool::Line
+            | Tool::Segment
+            | Tool::Ray
+            | Tool::Vector
+            | Tool::Circle
+            | Tool::Semicircle
+            | Tool::RegularPolygon
     )
 }
 
@@ -281,32 +340,26 @@ impl ToolState {
             .any(|p| matches!(p, Pick::Object { label: l, .. } if l == label))
     }
 
-    /// Whether picking `label` now closes the polygon being drawn.
+    /// Whether picking `label` again completes the chain of vertices.
     fn closes_on(&self, label: &str) -> bool {
-        self.tool == Tool::Polygon
-            && self.picks.len() >= 3
+        matches!(
+            self.tool,
+            Tool::Polygon | Tool::Polyline | Tool::VectorPolygon
+        ) && self.picks.len() >= 3
             && matches!(self.picks.first(), Some(Pick::Object { label: l, .. }) if l == label)
-    }
-
-    /// The polygon through the picks so far, closed by the last click.
-    fn close_polygon(&mut self, is_taken: &dyn Fn(&str) -> bool) -> Outcome {
-        self.build(None, is_taken)
     }
 
     fn kinds(&self) -> Vec<Kind> {
         self.picks.iter().map(Pick::kind).collect()
     }
 
-    /// Whether the next click may pick an existing object of this kind
-    /// (`label` is checked so that the same object is not taken twice).
+    /// Whether the next click may pick or deselect an existing object.
     pub fn accepts_object(&self, label: &str, kind: Kind) -> bool {
         match self.tool {
             Tool::Move | Tool::MoveView | Tool::ZoomIn | Tool::ZoomOut => false,
             Tool::Delete | Tool::ShowHide => true,
             _ if self.asking.is_some() => false,
-            // The first vertex again closes the polygon.
-            Tool::Polygon if self.closes_on(label) => true,
-            _ if self.picked(label) => false,
+            _ if self.picked(label) => true,
             tool => recipe::accepts(tool, &self.kinds(), Some(kind)),
         }
     }
@@ -365,6 +418,26 @@ impl ToolState {
             _ if self.asking.is_some() => return Outcome::Ignored,
             _ => {}
         }
+        if let Some((label, kind)) = hit {
+            if self.tool == Tool::Area && matches!(kind, Kind::Polygon | Kind::Arc) {
+                return Outcome::Ignored;
+            }
+            if self.tool == Tool::VectorPolygon && kind == Kind::Polygon {
+                self.picks = vec![Pick::Object {
+                    label: label.to_owned(),
+                    kind,
+                }];
+                return self.build(None, is_taken);
+            }
+            let compass_center =
+                self.tool == Tool::Compasses && self.picks.len() == 2 && kind == Kind::Point;
+            if !self.closes_on(label) && !compass_center {
+                if let Some(i) = self.picks.iter().position(|pick| pick.label() == label) {
+                    self.picks.remove(i);
+                    return Outcome::SelectionChanged;
+                }
+            }
+        }
         // A point placed on empty space (or on an object the tool cannot
         // take) is added to the construction at once, as a pending point of
         // the tool use (the window runs it so): cancelling the tool takes it
@@ -403,7 +476,7 @@ impl ToolState {
         };
         let closes = matches!(&pick, Pick::Object { label, .. } if self.closes_on(label));
         let then = if closes {
-            self.close_polygon(is_taken)
+            self.build(None, is_taken)
         } else {
             self.picks.push(pick);
             match recipe::finish(self.tool, &self.kinds()) {
@@ -430,6 +503,12 @@ impl ToolState {
     /// is not in the construction yet.
     fn build(&mut self, number: Option<f64>, is_taken: &dyn Fn(&str) -> bool) -> Outcome {
         let picks = std::mem::take(&mut self.picks);
+        if self.tool == Tool::VectorPolygon {
+            return Outcome::VectorPolygon {
+                picks,
+                copy_offset: 0.0,
+            };
+        }
         let taken = |l: &str| is_taken(l) || picks.iter().any(|p| p.label() == l);
         let lines = recipe::build(self.tool, &picks, number, &taken);
         if lines.is_empty() {

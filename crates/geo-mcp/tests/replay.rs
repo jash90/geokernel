@@ -111,6 +111,46 @@ const LANDED: &[(u8, &[&str])] = &[
             "delete_tool_stroke_erases_crossed_object",
         ],
     ),
+    (
+        10,
+        &[
+            "tool_semicircle_reuses_diameter_points",
+            "tool_circular_arc_three_clicks",
+            "tool_circumcircular_arc_three_clicks",
+            "tool_circular_sector_three_clicks",
+            "tool_circumcircular_sector_three_clicks",
+            "tool_ellipse_foci_and_point",
+            "tool_hyperbola_foci_and_point",
+            "tool_parabola_line_then_focus",
+            "tool_conic_five_points",
+            "tool_polyline_finished_on_first_vertex",
+            "tool_slope_selects_line",
+            "tool_vector_from_point_translates_endpoint",
+            "tool_compasses_reuses_segment_radius",
+            "tool_vector_polygon_from_vertices",
+        ],
+    ),
+    (
+        11,
+        &[
+            "compasses_uses_two_existing_points",
+            "compasses_copies_a_circle_radius",
+            "compasses_copies_an_arc_radius",
+            "area_measures_a_polygon",
+            "area_measures_a_circle",
+            "area_picks_the_top_arc_over_a_coincident_circle",
+            "area_picks_the_top_circle_over_a_coincident_arc",
+            "vector_from_point_picks_vector_first",
+            "parabola_uses_segment_directrix",
+            "parabola_uses_ray_directrix",
+            "conic_five_points_deselects_a_repeated_pick",
+            "semicircle_reversed_click_order",
+            "polyline_deselects_first_with_two_picks",
+            "polyline_deselects_nonfirst_with_three_picks",
+            "vector_polygon_copies_mid_use",
+            "vector_polygon_copies_a_lone_polygon",
+        ],
+    ),
 ];
 
 /// The scenarios whose observed behaviour the owner does not follow: our
@@ -299,6 +339,21 @@ fn tool_name(mode: i64) -> Option<&'static str> {
         40 => "move_view",
         41 => "zoom_in",
         42 => "zoom_out",
+        12 => "conic5",
+        20 => "circular_arc",
+        21 => "circular_sector",
+        22 => "circumcircular_arc",
+        23 => "circumcircular_sector",
+        24 => "semicircle",
+        37 => "vector_from_point",
+        49 => "area",
+        50 => "slope",
+        53 => "compasses",
+        55 => "ellipse",
+        56 => "hyperbola",
+        57 => "parabola",
+        65 => "polyline",
+        70 => "vector_polygon",
         _ => return None,
     })
 }
@@ -433,6 +488,16 @@ fn side_differs(d: &str, o: &Value, st: &Value) -> Option<String> {
 /// `Parallel` where the reference writes `OrthogonalLine` and `Line` with
 /// a point and a line (the kernel takes both spellings).
 fn our_definition(d: &str, st: &Value) -> String {
+    for (observed, canonical) in [
+        ("CircleArc(", "CircularArc"),
+        ("CircleSector(", "CircularSector"),
+        ("CircumcircleArc(", "CircumcircularArc"),
+        ("CircumcircleSector(", "CircumcircularSector"),
+    ] {
+        if let Some(args) = d.strip_prefix(observed) {
+            return format!("{canonical}({args}");
+        }
+    }
     if let Some(args) = d.strip_prefix("OrthogonalLine(") {
         return format!("Perpendicular({args}");
     }
@@ -445,6 +510,30 @@ fn our_definition(d: &str, st: &Value) -> String {
         }
     }
     d.to_owned()
+}
+
+/// The measurements the app can expose. The reference web build creates
+/// text and anchor points for Area labels, and uses a generic numeric label.
+/// The app exposes conic measurements under the controller's area prefix.
+fn supported_area_outcome(observed: &Value) -> Option<Value> {
+    let mut expected = observed.clone();
+    let created = expected.get_mut("created")?.as_array_mut()?;
+    let displayed_text = created.iter().any(|o| o["type"] == "text");
+    created.retain(|o| o["type"] == "numeric");
+    if displayed_text && created.is_empty() {
+        expected["undo_steps_added"] = json!(0);
+    } else {
+        for measure in created {
+            let definition = measure["definition"].as_str().unwrap();
+            let input = definition
+                .strip_prefix("Area(")
+                .unwrap()
+                .strip_suffix(')')
+                .unwrap();
+            measure["label"] = json!(format!("area{}", input.replace(['_', '{', '}'], "")));
+        }
+    }
+    Some(expected)
 }
 
 /// What a replay ended with: the state before and after, how many undo
@@ -564,6 +653,14 @@ fn replay(s: &Value, idle: bool, rules: &str) -> Result<Outcome, String> {
 fn compare(expected: &Value, out: &Outcome, undo: bool) -> Vec<String> {
     let (before, st) = (&out.before, &out.after);
     let mut diffs = out.diffs.clone();
+    if let Some(picks) = expected.get("picks") {
+        if &st["tool"]["picks"] != picks {
+            diffs.push(format!(
+                "tool picks {} instead of {picks}",
+                st["tool"]["picks"]
+            ));
+        }
+    }
     if let Some(objects) = expected.get("objects") {
         compare_objects(st, objects, "", &mut diffs);
         // No object listed: the scenario ends with no objects at all.
@@ -736,6 +833,12 @@ fn compare_created(
                 ));
             }
         }
+        if let Some(n) = c.get("number") {
+            let value = &o["coords"]["value"];
+            if !same(num(value), num(n)) {
+                diffs.push(format!("{label} is {value} instead of {n} {when}"));
+            }
+        }
         if let Some(d) = c.get("definition").and_then(Value::as_str) {
             if d.starts_with("Segment(") && d.matches(", ").count() == 2 {
                 if let Some(diff) = side_differs(d, o, st) {
@@ -828,7 +931,14 @@ fn the_observed_pointer_scenarios_replay() {
     };
     for s in fixture["scenarios"].as_array().unwrap() {
         let name = s["name"].as_str().unwrap();
-        let expected = &s["expected"];
+        assert!(
+            s["source"].as_str().is_some(),
+            "{name}: missing observation source"
+        );
+        let area_outcome = (s["tool_mode"] == 49)
+            .then(|| supported_area_outcome(&s["expected"]))
+            .flatten();
+        let expected = area_outcome.as_ref().unwrap_or(&s["expected"]);
         let status = match part(name) {
             None => {
                 failed.push(name.to_owned());
@@ -910,7 +1020,7 @@ fn the_observed_pointer_scenarios_replay() {
         count += 1;
     }
     assert_eq!(count, names.len());
-    assert_eq!((replayed, ours), (52, 2), "scenarios replayed");
+    assert_eq!((replayed, ours), (82, 2), "scenarios replayed");
     assert_eq!(
         skipped.into_iter().collect::<Vec<_>>(),
         [(4, 12), (5, 1), (6, 1), (8, 1)],

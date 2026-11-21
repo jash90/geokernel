@@ -586,7 +586,7 @@ mod tests {
     }
 
     #[test]
-    fn a_function_has_a_row_with_its_definition_and_is_not_picked() {
+    fn a_function_has_a_row_with_its_definition_and_can_be_picked() {
         let mut wb = Workbench::from_script("A = (5, 5)\nf(x) = x^2\n").unwrap();
         let c = wb.construction();
         let f = c.id("f").unwrap();
@@ -596,14 +596,12 @@ mod tests {
             "the window draws it"
         );
         let t = crate::interact::ViewTransform::fit(c, 400.0, 400.0);
-        // Picking functions is not there yet: presses on the parabola find
-        // nothing.
         for (x, y) in [(0.0, 0.0), (1.0, 1.0), (2.0, 4.0)] {
             let at = t.world_to_screen(x, y);
-            let reach = crate::hit::Reach::square(30.0);
+            let reach = crate::hit::Reach::square(3.0);
             assert_eq!(
                 crate::hit::pick(c, &t, at, &reach, None, |id| id == f),
-                None
+                Some(f)
             );
         }
         let rows = wb.rows();

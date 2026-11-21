@@ -13,6 +13,7 @@
 //! frame asked for an immediate repaint.
 
 use crate::app::App;
+use crate::geom::ToEgui;
 use crate::headless::{self, Repaint};
 use crate::style;
 use crate::theme;
@@ -196,8 +197,21 @@ impl Window {
             rect.min.x + rect.width() / 2.0,
             rect.min.y + rect.height() / 2.0,
         );
-        (0..400)
-            .map(|i| center + 3.0 * i as f32 * vec2((i as f32).cos(), (i as f32).sin()))
+        let inside = rect.egui().shrink(45.0);
+        let spiral =
+            (0..400).map(|i| center + 3.0 * i as f32 * vec2((i as f32).cos(), (i as f32).sin()));
+        let grid = (0..30).flat_map(|row| {
+            (0..30).map(move |col| {
+                inside.min
+                    + vec2(
+                        inside.width() * col as f32 / 30.0,
+                        inside.height() * row as f32 / 30.0,
+                    )
+            })
+        });
+        spiral
+            .chain(grid)
+            .filter(|p| inside.contains(*p))
             .find(|p| {
                 let local = ((p.x - rect.min.x) as f64, (p.y - rect.min.y) as f64);
                 // Wider than the mouse's 3 px square: a point within 16 px

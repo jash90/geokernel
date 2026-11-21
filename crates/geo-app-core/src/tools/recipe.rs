@@ -30,6 +30,18 @@ fn transformable(k: Option<Kind>) -> bool {
     )
 }
 
+/// Which currently supported path pair creates an intersection, and whether
+/// there are two outputs the point tool can choose between.
+pub(crate) fn intersection_pair(a: Kind, b: Kind) -> Option<bool> {
+    match (a, b) {
+        (Kind::Line, Kind::Line) => Some(false),
+        (Kind::Line, Kind::Circle | Kind::Conic)
+        | (Kind::Circle | Kind::Conic, Kind::Line)
+        | (Kind::Circle, Kind::Circle) => Some(true),
+        _ => None,
+    }
+}
+
 /// Whether `cand` (`None`: a new point on empty space) may be the next pick
 /// after `picks`.
 pub(super) fn accepts(tool: Tool, picks: &[Kind], cand: Option<Kind>) -> bool {
@@ -38,14 +50,17 @@ pub(super) fn accepts(tool: Tool, picks: &[Kind], cand: Option<Kind>) -> bool {
     let has = |f: fn(Option<Kind>) -> bool| picks.iter().any(|&k| f(Some(k)));
     match tool {
         Tool::Point => n == 0 && cand.is_none(),
-        // The kernel intersects whole lines and circles only.
-        Tool::Intersect => n < 2 && matches!(cand, Some(Kind::Line | Kind::Circle)),
+        Tool::Intersect => match (first, cand) {
+            (None, Some(Kind::Line | Kind::Circle | Kind::Conic)) => true,
+            (Some(a), Some(b)) => n == 1 && intersection_pair(a, b).is_some(),
+            _ => false,
+        },
         Tool::Midpoint => match n {
             0 => point(cand) || matches!(cand, Some(Kind::Segment | Kind::Circle)),
             1 => point(cand),
             _ => false,
         },
-        Tool::Line | Tool::Segment | Tool::Ray | Tool::Vector | Tool::Circle => {
+        Tool::Line | Tool::Segment | Tool::Ray | Tool::Vector | Tool::Circle | Tool::Semicircle => {
             n < 2 && point(cand)
         }
         Tool::Bisector => match n {
@@ -53,9 +68,50 @@ pub(super) fn accepts(tool: Tool, picks: &[Kind], cand: Option<Kind>) -> bool {
             1 => point(cand),
             _ => false,
         },
-        Tool::Circle3 => n < 3 && point(cand),
-        // Closing on the first vertex is handled by the tool state.
+        Tool::Circle3
+        | Tool::CircularArc
+        | Tool::CircumcircularArc
+        | Tool::CircularSector
+        | Tool::CircumcircularSector
+        | Tool::Ellipse
+        | Tool::Hyperbola => n < 3 && point(cand),
+        Tool::Conic5 => n < 5 && point(cand),
+        // Clicking the first vertex again is handled by the tool state.
         Tool::Polygon => point(cand),
+        Tool::Polyline => n < 500 && point(cand),
+        Tool::VectorPolygon => (n < 1000 && point(cand)) || cand == Some(Kind::Polygon),
+        Tool::Compasses => match picks {
+            [] | [Kind::Point] => point(cand) || matches!(cand, Some(Kind::Segment | Kind::Circle)),
+            [Kind::Segment | Kind::Circle]
+            | [Kind::Point, Kind::Point | Kind::Segment | Kind::Circle] => point(cand),
+            _ => false,
+        },
+        Tool::Parabola => match first {
+            None => point(cand) || matches!(cand, Some(Kind::Line | Kind::Segment | Kind::Ray)),
+            Some(Kind::Point) => {
+                n == 1 && matches!(cand, Some(Kind::Line | Kind::Segment | Kind::Ray))
+            }
+            Some(_) => n == 1 && point(cand),
+        },
+        Tool::Area => {
+            n == 0
+                && matches!(
+                    cand,
+                    Some(Kind::Polygon | Kind::Circle | Kind::Conic | Kind::Arc | Kind::Sector)
+                )
+        }
+        Tool::Slope => {
+            n == 0
+                && matches!(
+                    cand,
+                    Some(Kind::Line | Kind::Segment | Kind::Ray | Kind::Function)
+                )
+        }
+        Tool::VectorFromPoint => match first {
+            None => matches!(cand, Some(Kind::Point | Kind::Vector)),
+            Some(Kind::Point) => n == 1 && cand == Some(Kind::Vector),
+            Some(_) => n == 1 && existing_point(cand),
+        },
         Tool::RegularPolygon => n < 2 && point(cand),
         Tool::CircleRadius => n == 0 && point(cand),
         Tool::Perpendicular | Tool::Parallel => {
@@ -142,7 +198,19 @@ pub(super) fn finish(tool: Tool, picks: &[Kind]) -> Option<Finish> {
         Tool::Point => n == 1,
         Tool::Midpoint | Tool::Bisector => n == 2 || (n == 1 && first != Some(Kind::Point)),
         Tool::Distance => n == 2 || (n == 1 && matches!(first, Some(Kind::Segment | Kind::Circle))),
-        Tool::Circle3 => n == 3,
+        Tool::Circle3
+        | Tool::CircularArc
+        | Tool::CircumcircularArc
+        | Tool::CircularSector
+        | Tool::CircumcircularSector
+        | Tool::Ellipse
+        | Tool::Hyperbola => n == 3,
+        Tool::Conic5 => n == 5,
+        Tool::Area | Tool::Slope => n == 1,
+        Tool::Compasses => matches!(
+            picks,
+            [Kind::Segment | Kind::Circle, Kind::Point] | [Kind::Point, _, Kind::Point]
+        ),
         Tool::Angle => match first {
             Some(Kind::Point) => n == 3,
             Some(Kind::Polygon) => n == 1,
@@ -158,8 +226,8 @@ pub(super) fn finish(tool: Tool, picks: &[Kind]) -> Option<Finish> {
                 degrees: false,
             }))
         }
-        // A polygon is finished by clicking its first vertex again.
-        Tool::Polygon => false,
+        Tool::Polygon | Tool::Polyline => false,
+        Tool::VectorPolygon => picks == [Kind::Polygon],
         Tool::RegularPolygon => {
             return (n == 2).then_some(Finish::Ask(NumberRequest {
                 title: text::tool_caption(Tool::RegularPolygon),
@@ -237,9 +305,27 @@ pub(super) fn build(
         Polygon(usize),
         Greek,
         Prime,
+        Slope,
+        Area,
     }
+    let construct = |command: &str, args: &[String], kind: Kind| {
+        (format!("{command}({})", args.join(", ")), Name::Fresh(kind))
+    };
     let (rhs, name) = match tool {
-        Tool::Point => return lines,
+        Tool::Point | Tool::VectorPolygon => return lines,
+        Tool::Intersect if kinds.contains(&Kind::Conic) => {
+            let (line, conic) = if kinds[0] == Kind::Line {
+                (a(0), a(1))
+            } else {
+                (a(1), a(0))
+            };
+            for index in [1, 2] {
+                let label = next_label(Kind::Point, |l| taken(l, &allocated));
+                lines.push(format!("{label} = Intersect({line}, {conic}, {index})"));
+                allocated.push(label);
+            }
+            return lines;
+        }
         Tool::Intersect => (
             format!("Intersect({}, {})", a(0), a(1)),
             Name::Fresh(Kind::Point),
@@ -269,6 +355,49 @@ pub(super) fn build(
             format!("Circle({})", args.join(", ")),
             Name::Fresh(Kind::Circle),
         ),
+        Tool::Semicircle => construct("Semicircle", &args, Kind::Arc),
+        Tool::CircularArc => construct("CircularArc", &args, Kind::Arc),
+        Tool::CircumcircularArc => construct("CircumcircularArc", &args, Kind::Arc),
+        Tool::CircularSector => construct("CircularSector", &args, Kind::Sector),
+        Tool::CircumcircularSector => construct("CircumcircularSector", &args, Kind::Sector),
+        Tool::Ellipse => construct("Ellipse", &args, Kind::Conic),
+        Tool::Hyperbola => construct("Hyperbola", &args, Kind::Conic),
+        Tool::Conic5 => construct("Conic", &args, Kind::Conic),
+        Tool::Parabola => (
+            format!("Parabola({})", point_first()),
+            Name::Fresh(Kind::Conic),
+        ),
+        Tool::Polyline => construct("PolyLine", &args, Kind::PolyLine),
+        Tool::Area => (format!("Area({})", a(0)), Name::Area),
+        Tool::Slope => (format!("Slope({})", a(0)), Name::Slope),
+        Tool::Compasses => {
+            let center = a(args.len() - 1);
+            let radius = match kinds.as_slice() {
+                [Kind::Segment, _] => args[0].clone(),
+                [Kind::Point, Kind::Segment, _] => args[1].clone(),
+                [Kind::Circle, _] => format!("Radius({})", a(0)),
+                [Kind::Point, Kind::Circle, _] => format!("Radius({})", a(1)),
+                _ => format!("Segment({}, {})", a(0), a(1)),
+            };
+            (
+                format!("Circle({center}, {radius})"),
+                Name::Fresh(Kind::Circle),
+            )
+        }
+        Tool::VectorFromPoint => {
+            let (point, vector) = if kinds[0] == Kind::Point {
+                (a(0), a(1))
+            } else {
+                (a(1), a(0))
+            };
+            let endpoint = primed(point, Kind::Point, |l| taken(l, &allocated));
+            lines.push(format!("{endpoint} = Translate({point}, {vector})"));
+            allocated.push(endpoint.clone());
+            (
+                format!("Vector({point}, {endpoint})"),
+                Name::Fresh(Kind::Vector),
+            )
+        }
         Tool::CircleRadius => (
             format!("Circle({}, {num})", a(0)),
             Name::Fresh(Kind::Circle),
@@ -338,9 +467,29 @@ pub(super) fn build(
         Name::Greek => next_greek(|l| taken(l, &allocated)),
         Name::Polygon(n) => polygon_label(n, |l| taken(l, &allocated)),
         Name::Prime => primed(a(0), kinds[0], |l| taken(l, &allocated)),
+        Name::Slope => numbered_name("m".to_owned(), |l| taken(l, &allocated)),
+        Name::Area => numbered_name(format!("area{}", a(0).replace(['_', '{', '}'], "")), |l| {
+            taken(l, &allocated)
+        }),
     };
     lines.push(format!("{label} = {rhs}"));
     lines
+}
+
+fn numbered_name(base: String, is_taken: impl Fn(&str) -> bool) -> String {
+    if !is_taken(&base) {
+        return base;
+    }
+    (1..)
+        .map(|i| {
+            if i < 10 {
+                format!("{base}_{i}")
+            } else {
+                format!("{base}_{{{i}}}")
+            }
+        })
+        .find(|l| !is_taken(l))
+        .unwrap()
 }
 
 /// What the next click should be (the text is in `crate::text`).
@@ -379,7 +528,36 @@ pub(super) fn hint(tool: Tool, picks: &[Kind]) -> Hint {
         (Tool::Circle, 0) => Hint::CenterOfCircle,
         (Tool::Circle, _) => Hint::PointOnCircle,
         (Tool::CircleRadius, _) => Hint::CenterOfCircle,
-        (Tool::Circle3, _) => Hint::ThreePointsOfCircle,
+        (Tool::Circle3 | Tool::CircumcircularArc | Tool::CircumcircularSector, _) => {
+            Hint::ThreePointsOfCircle
+        }
+        (Tool::Semicircle, 0) => Hint::Point,
+        (Tool::Semicircle, _) => Hint::SecondPoint,
+        (Tool::CircularArc | Tool::CircularSector, 0) => Hint::CenterOfCircle,
+        (Tool::CircularArc | Tool::CircularSector, 1) => Hint::StartOfArc,
+        (Tool::CircularArc | Tool::CircularSector, _) => Hint::EndOfArc,
+        (Tool::Ellipse | Tool::Hyperbola, 0) => Hint::FirstFocus,
+        (Tool::Ellipse | Tool::Hyperbola, 1) => Hint::SecondFocus,
+        (Tool::Ellipse | Tool::Hyperbola, _) => Hint::PointOnConic,
+        (Tool::Parabola, 0) => Hint::FocusOrDirectrix,
+        (Tool::Parabola, _) if first == Some(Kind::Point) => Hint::Directrix,
+        (Tool::Parabola, _) => Hint::Focus,
+        (Tool::Conic5, 0) => Hint::FivePoints,
+        (Tool::Conic5, _) => Hint::NextPoint,
+        (Tool::Compasses, 0) => Hint::TwoPointsSegmentOrCircle,
+        (Tool::Compasses, 1) if first == Some(Kind::Point) => Hint::TwoPointsSegmentOrCircle,
+        (Tool::Compasses, _) => Hint::CenterOfCircle,
+        (Tool::Polyline, 0) => Hint::FirstVertex,
+        (Tool::Polyline, 1 | 2) => Hint::NextVertex,
+        (Tool::Polyline, _) => Hint::NextVertexOrFinish,
+        (Tool::VectorPolygon, 0) => Hint::VectorPolygonStart,
+        (Tool::VectorPolygon, 1 | 2) => Hint::NextVertex,
+        (Tool::VectorPolygon, _) => Hint::NextVertexOrClose,
+        (Tool::Area, _) => Hint::AreaObject,
+        (Tool::Slope, _) => Hint::SlopeObject,
+        (Tool::VectorFromPoint, 0) => Hint::PointOrVector,
+        (Tool::VectorFromPoint, _) if first == Some(Kind::Point) => Hint::Vector,
+        (Tool::VectorFromPoint, _) => Hint::Point,
         (Tool::Polygon, 0) => Hint::FirstVertex,
         (Tool::Polygon, 1 | 2) => Hint::NextVertex,
         (Tool::Polygon, _) => Hint::NextVertexOrClose,

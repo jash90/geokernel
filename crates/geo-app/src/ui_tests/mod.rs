@@ -97,8 +97,10 @@ fn click(h: &mut Harness<'_, App>, pos: Pos2) {
 }
 
 fn labels(h: &Harness<'_, App>) -> Vec<String> {
-    let c = h.state().wb.construction();
-    c.ids().map(|id| c.label(id).to_owned()).collect()
+    let wb = &h.state().wb;
+    wb.object_ids()
+        .map(|id| wb.construction().label(id).to_owned())
+        .collect()
 }
 
 #[test]
@@ -509,14 +511,18 @@ fn the_point_tool_on_an_existing_point_selects_it() {
 }
 
 #[test]
-fn a_second_click_on_the_same_point_does_not_create_a_duplicate() {
+fn a_second_click_on_the_same_point_deselects_without_creating_a_duplicate() {
     let mut h = harness("A = (0, 0)\n");
     h.state_mut().tool.set_tool(Tool::Line);
     click(&mut h, world(0.0, 0.0));
     click(&mut h, world(0.0, 0.0));
     assert_eq!(labels(&h), ["A"], "nothing created yet");
+    assert!(h.state().tool.picks().is_empty());
     click(&mut h, world(3.0, 0.0));
+    assert_eq!(labels(&h), ["A", "B"]);
+    click(&mut h, world(0.0, 0.0));
     assert_eq!(labels(&h), ["A", "B", "f"]);
+    assert_eq!(h.state().wb.definition("f"), Some("Line(B, A)"));
 }
 
 #[test]
