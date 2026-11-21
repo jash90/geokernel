@@ -789,6 +789,8 @@ dependencies = [
  "geo-app-core",
  "geo-kernel",
  "image",
+ "serde",
+ "toml 0.8.23",
 ]
 
 [[package]]

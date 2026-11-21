@@ -16,6 +16,7 @@ mod gestures;
 mod pointer;
 mod tangents;
 mod tools;
+mod upstream_tools;
 
 /// The harness puts this margin around the root ui.
 const MARGIN: f32 = 8.0;
