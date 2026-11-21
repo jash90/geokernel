@@ -439,4 +439,111 @@ mod tests {
         assert!(app.erase_at(&t(), (x + 14.0, y), 5.0));
         assert_eq!(labels(&app), ["A", "B"]);
     }
+
+    fn picks(app: &App) -> Vec<String> {
+        app.tool
+            .picks()
+            .iter()
+            .map(|p| p.label().to_owned())
+            .collect()
+    }
+
+    fn type_line(app: &mut App, line: &str) {
+        app.input = line.to_owned();
+        app.submit_input();
+    }
+
+    /// The segment tool holding its first point A (pending), with one step
+    /// to redo (a typed `Y`, undone).
+    fn segment_use_with_a_redo() -> App {
+        let mut app = app("Z = (9, 9)\n", Tool::Segment);
+        let r = reach(&app);
+        type_line(&mut app, "Y = (8, 8)");
+        assert!(app.undo());
+        assert_eq!(app.wb.undo_depth(), (0, 1));
+        app.press_tool(&t(), at(1.0, 1.0), &r);
+        assert_eq!(picks(&app), ["A"]);
+        assert_eq!(labels(&app), ["Z", "A"]);
+        app
+    }
+
+    /// Undo in the middle of a use takes only the use back and leaves the
+    /// redo stack as it was (`Kernel.undo`, `restoreStateForModeStarting`).
+    #[test]
+    fn undo_mid_use_takes_only_the_use_back() {
+        let mut app = segment_use_with_a_redo();
+        assert!(app.can_undo());
+        assert!(app.undo());
+        assert!(picks(&app).is_empty());
+        assert_eq!(labels(&app), ["Z"]);
+        assert_eq!(app.wb.undo_depth(), (0, 1));
+        assert!(!app.can_undo());
+        assert!(app.redo());
+        assert_eq!(labels(&app), ["Z", "Y"]);
+        assert_eq!(app.wb.undo_depth(), (1, 0));
+    }
+
+    /// Redo in the middle of a use ends it unfinished, then redoes.
+    #[test]
+    fn redo_mid_use_takes_the_use_back_then_redoes() {
+        let mut app = segment_use_with_a_redo();
+        assert!(app.redo());
+        assert!(picks(&app).is_empty());
+        assert_eq!(labels(&app), ["Z", "Y"]);
+        assert_eq!(app.wb.undo_depth(), (1, 0));
+        assert!(app.undo());
+        assert_eq!(labels(&app), ["Z"]);
+        assert!(!app.can_undo());
+    }
+
+    /// A line typed in the middle of a use: one that fails changes nothing
+    /// and the use goes on; one that runs takes the use back (its point does
+    /// not survive as an orphan) and is the only step.
+    #[test]
+    fn a_line_typed_mid_use_keeps_the_use_only_when_it_fails() {
+        let mut app = app("Z = (9, 9)\n", Tool::Segment);
+        let r = reach(&app);
+        app.press_tool(&t(), at(1.0, 1.0), &r);
+        type_line(&mut app, "Nonsense((");
+        assert!(app.input_error.is_some());
+        assert_eq!(picks(&app), ["A"]);
+        assert_eq!(labels(&app), ["Z", "A"]);
+        assert_eq!(app.wb.undo_depth(), (0, 0));
+        // The use can still finish, as one step.
+        let press = app.press_tool(&t(), at(2.0, 2.0), &r);
+        app.release_tool(press, &t(), at(2.0, 2.0), &r);
+        assert!(picks(&app).is_empty());
+        assert_eq!(labels(&app), ["Z", "A", "B", "f"]);
+        assert_eq!(app.wb.undo_depth(), (1, 0));
+        assert!(app.undo());
+        assert_eq!(labels(&app), ["Z"]);
+
+        app.press_tool(&t(), at(1.0, 1.0), &r);
+        type_line(&mut app, "Y = (8, 8)");
+        assert!(picks(&app).is_empty());
+        assert_eq!(labels(&app), ["Z", "Y"]);
+        app.select_tool(Tool::Move);
+        assert_eq!(labels(&app), ["Z", "Y"]);
+        assert_eq!(app.wb.undo_depth(), (1, 0));
+        assert!(app.undo());
+        assert_eq!(labels(&app), ["Z"]);
+    }
+
+    /// A tool switch in the middle of the eraser's stroke stops it, and
+    /// what it deleted is stored as one step (`storeUndoAfterDrag` runs at
+    /// the release whatever the mode). Escape reaches the same end through
+    /// the gesture's stop; this is any other switch.
+    #[test]
+    fn a_tool_switch_mid_stroke_ends_the_eraser() {
+        let mut app = app(CIRCLE_AND_LINE, Tool::Delete);
+        app.erasing = true;
+        app.wb.begin_gesture();
+        assert!(app.erase_at(&t(), at(0.0, 1.0), 4.0));
+        assert_eq!(labels(&app), ["O", "P", "c", "Q", "R"]);
+        app.select_tool(Tool::Move);
+        assert!(!app.erasing);
+        assert_eq!(app.wb.undo_depth(), (1, 0));
+        assert!(app.undo());
+        assert_eq!(labels(&app), ["O", "P", "c", "Q", "R", "f"]);
+    }
 }

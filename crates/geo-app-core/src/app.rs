@@ -208,6 +208,13 @@ impl App {
         self.tool.reset();
         self.tool_press = None;
         self.wb.cancel_tool_use();
+        // An eraser stroke stops here (the reference's drag goes to the new
+        // mode's handler); what it deleted so far stays as one undo step
+        // (`storeUndoAfterDrag` runs at the release whatever the mode).
+        if self.erasing {
+            self.erasing = false;
+            self.wb.end_gesture();
+        }
     }
 
     /// Undo from the toolbar or the keyboard. In the middle of a tool use it
@@ -253,6 +260,11 @@ impl App {
     pub fn submit_input(&mut self) {
         match self.wb.run_line(&self.input) {
             Ok(()) => {
+                // A tool use that does not finish ends (its points went
+                // with it, `Workbench::run_lines`); a failed line changes
+                // nothing, the use goes on.
+                self.tool.reset();
+                self.tool_press = None;
                 self.input.clear();
                 self.input_cursor = 0;
                 self.input_error = None;

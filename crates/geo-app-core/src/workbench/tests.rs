@@ -545,10 +545,10 @@ fn a_failed_tool_step_keeps_the_points_of_the_earlier_picks_pending() {
 }
 
 #[test]
-fn other_changes_complete_a_tool_use_first() {
+fn other_changes_take_an_unfinished_tool_use_back() {
     // A typed line, a deletion, a visibility toggle or a drag in the middle
-    // of a tool use: the pending points become a step of their own, then
-    // the change is one more.
+    // of a tool use: the use does not finish, so its points go (the rule for
+    // what the reference leaves open), and the change is the only step.
     for change in 0..4 {
         let mut w = Workbench::from_script("Z = (9, 9)\n").unwrap();
         w.run_tool_lines(&lines(&["A = (1, 1)"])).unwrap();
@@ -564,10 +564,56 @@ fn other_changes_complete_a_tool_use_first() {
             }
         }
         assert!(!w.tool_use_pending(), "change {change}");
-        assert_eq!(w.undo_depth(), (2, 0), "change {change}");
-        assert!(w.undo() && w.undo());
+        assert!(w.construction().id("A").is_none(), "change {change}");
+        assert_eq!(w.undo_depth(), (1, 0), "change {change}");
+        assert!(w.undo(), "change {change}");
+        assert!(!w.undo(), "change {change}");
         assert_eq!(labels(&w), ["Z"], "change {change}");
+        assert_eq!(
+            w.construction().value(z),
+            Value::Point { x: 9.0, y: 9.0 },
+            "change {change}"
+        );
     }
+}
+
+#[test]
+fn a_line_that_fails_mid_use_leaves_the_use_open() {
+    let mut w = Workbench::from_script("Z = (9, 9)\n").unwrap();
+    w.run_tool_lines(&lines(&["A = (1, 1)"])).unwrap();
+    assert!(w.run_line("Nonsense((").is_err());
+    assert!(w.tool_use_pending());
+    assert_eq!(labels(&w), ["Z", "A"]);
+    assert_eq!(w.undo_depth(), (0, 0));
+    // The use goes on and is still one step when it finishes.
+    w.run_tool_lines(&lines(&["B = (2, 2)", "f = Segment(A, B)"]))
+        .unwrap();
+    w.end_tool_use();
+    assert_eq!(w.undo_depth(), (1, 0));
+    assert!(w.undo());
+    assert_eq!(labels(&w), ["Z"]);
+}
+
+#[test]
+fn a_line_typed_mid_use_takes_the_labels_of_the_points_it_removed() {
+    let mut w = Workbench::from_script("Z = (9, 9)\n").unwrap();
+    w.run_tool_lines(&lines(&["A = (1, 1)"])).unwrap();
+    w.run_line("(3, 3)").unwrap();
+    assert_eq!(labels(&w), ["Z", "A"]);
+    let a = w.construction().id("A").unwrap();
+    assert_eq!(w.construction().value(a), Value::Point { x: 3.0, y: 3.0 });
+    assert_eq!(w.undo_depth(), (1, 0));
+}
+
+#[test]
+fn deleting_a_point_of_the_open_use_takes_the_use_back() {
+    let mut w = Workbench::from_script("Z = (9, 9)\n").unwrap();
+    w.run_tool_lines(&lines(&["A = (1, 1)"])).unwrap();
+    let a = w.construction().id("A").unwrap();
+    w.delete(a);
+    assert!(!w.tool_use_pending());
+    assert_eq!(labels(&w), ["Z"]);
+    assert_eq!(w.undo_depth(), (0, 0));
 }
 
 #[test]

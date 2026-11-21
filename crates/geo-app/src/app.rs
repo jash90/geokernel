@@ -20,6 +20,8 @@ pub fn open(app: &mut App, path: &Path) {
         Ok(()) => {
             app.load_error = None;
             app.drag = None;
+            // The tool's picks belonged to the other document.
+            app.reset_tool();
             app.view_request = Some(ViewRequest::Initial);
         }
         Err(e) => app.load_error = Some(e),

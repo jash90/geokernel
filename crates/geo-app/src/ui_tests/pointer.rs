@@ -85,6 +85,8 @@ fn a_press_on_a_dependent_point_neither_moves_it_nor_pans() {
     drag(&mut h, from, to);
     assert!(close(top_left(&h), corner), "the view panned");
     assert!(close(point(&h, "A"), (0.0, 0.0)));
+    // The press picked A and the release made the line's second point.
+    assert_eq!(labels(&h), ["A", "B", "M", "C", "f"]);
     // The move-view tool pans even from a point.
     h.state_mut().select_tool(Tool::MoveView);
     let (from, to) = (on_screen(&h, 0.0, 0.0), on_screen(&h, 1.0, 0.0));
@@ -95,12 +97,25 @@ fn a_press_on_a_dependent_point_neither_moves_it_nor_pans() {
         "the move-view tool did not pan"
     );
     let corner = top_left(&h);
-    // Away from objects a drag of a tool whose press picks nothing still
-    // pans (the line tool's press makes a point there, spec E1).
-    h.state_mut().select_tool(Tool::Intersect);
+    // Away from objects the line tool's drag does not pan either: the press
+    // places the first point, the release the second, and the line is made
+    // (spec E1, `createNewPoint` on press, `wrapMouseReleased`).
+    h.state_mut().select_tool(Tool::Line);
     let (from, to) = (on_screen(&h, -3.0, 3.0), on_screen(&h, -1.0, 3.0));
     drag(&mut h, from, to);
-    assert!(!close(top_left(&h), corner));
+    assert!(close(top_left(&h), corner), "the view panned");
+    assert_eq!(labels(&h), ["A", "B", "M", "C", "f", "D", "E", "g"]);
+    assert!(close(point(&h, "D"), (-3.0, 3.0)), "{:?}", point(&h, "D"));
+    assert!(close(point(&h, "E"), (-1.0, 3.0)), "{:?}", point(&h, "E"));
+    assert!(h.state().tool.picks().is_empty());
+    // A construction tool whose press there picks nothing still pans, and
+    // makes nothing.
+    h.state_mut().select_tool(Tool::Intersect);
+    let (from, to) = (on_screen(&h, -3.0, -1.0), on_screen(&h, -1.0, -1.0));
+    drag(&mut h, from, to);
+    assert!(!close(top_left(&h), corner), "the drag did not pan");
+    assert_eq!(labels(&h), ["A", "B", "M", "C", "f", "D", "E", "g"]);
+    assert!(h.state().tool.picks().is_empty());
 }
 
 #[test]

@@ -234,8 +234,13 @@ impl Workbench {
     /// Runs what the user typed: `f = Line(A, B)`, `f: Line(A, B)`, or just a
     /// definition, which gets the next free label of its kind.
     pub fn run_line(&mut self, input: &str) -> Result<(), String> {
-        let line = self.with_label(normalize(input));
-        self.run_lines(std::slice::from_ref(&line))?;
+        // The label is chosen once the open tool use is taken back, so that
+        // it does not skip the labels of its points.
+        let line = self.outside_tool_use(|w| {
+            let line = w.with_label(normalize(input));
+            w.exec_lines(std::slice::from_ref(&line), false)
+                .map(|()| line)
+        })?;
         if !line.is_empty() {
             self.history.push(input.trim());
         }
@@ -261,11 +266,41 @@ impl Workbench {
     }
 
     /// Runs several script lines as one undo step. If one fails, nothing of
-    /// the whole group stays. A tool use in progress is completed first
-    /// (its pending points become a step of their own).
+    /// the whole group stays. A tool use in progress does not finish: its
+    /// points go first (see `outside_tool_use`).
     pub fn run_lines(&mut self, lines: &[String]) -> Result<(), String> {
-        self.end_tool_use();
-        self.exec_lines(lines, false)
+        self.outside_tool_use(|w| w.exec_lines(lines, false))
+    }
+
+    /// Runs `change`, a change that does not come from the open tool use
+    /// (typed input, a row's delete or show/hide), after taking that use
+    /// back: a tool use that does not finish removes its points and records
+    /// no undo step (the rule of `restoreStateForModeStarting`; the
+    /// reference stores such a change with the pending points in it,
+    /// `AlgebraProcessor` / `DefaultDeletionExecutor` calling
+    /// `storeUndoInfo`, while the mode's own undo point would still remove
+    /// them, which leaves no consistent state to follow). When `change`
+    /// fails, nothing happened: the use and its points are put back as
+    /// they were.
+    fn outside_tool_use<T>(
+        &mut self,
+        change: impl FnOnce(&mut Self) -> Result<T, String>,
+    ) -> Result<T, String> {
+        let Some(t) = self.tool_use.take() else {
+            return change(self);
+        };
+        if !t.changed {
+            return change(self);
+        }
+        let pending = self.copy(&self.log);
+        if let Err(why) = self.restore(self.copy(&t.snapshot)) {
+            self.keep_unrevertable(&why);
+            return change(self);
+        }
+        change(self).inspect_err(|_| match self.restore(pending) {
+            Ok(()) => self.tool_use = Some(t),
+            Err(why) => self.keep_unrevertable(&why),
+        })
     }
 
     /// Runs the lines of a construction tool's pick inside its tool use
@@ -438,11 +473,20 @@ impl Workbench {
         if id.index() >= self.construction.len() {
             return false;
         }
-        self.end_tool_use();
         let label = self.construction.label(id).to_owned();
+        // An object the open tool use placed goes with the use.
+        self.outside_tool_use(|w| match w.construction.id(&label) {
+            Some(_) if w.delete_label(&label) => Ok(()),
+            Some(_) => Err(String::new()),
+            None => Ok(()),
+        })
+        .is_ok()
+    }
+
+    fn delete_label(&mut self, label: &str) -> bool {
         let snapshot = self.copy(&self.log);
         let mut next = self.copy(&snapshot);
-        if !next.remove(&label) {
+        if !next.remove(label) {
             return false;
         }
         // A deletion inside a gesture (the eraser's stroke) keeps it: the
@@ -508,11 +552,13 @@ impl Workbench {
     }
 
     /// Marks the start of a drag: its moves become a single undo step.
-    /// A tool use in progress is completed first: the drag is a step of its
-    /// own (`EuclidianController.storeUndoInfo` ran when the tool made its
-    /// object, the drag is stored at its release).
+    /// A tool use in progress does not finish: its points go first (see
+    /// `outside_tool_use`). The point tool's use is complete by then (its
+    /// press placed the point), so its drag is a step of its own, as in the
+    /// reference (the point's `storeUndoInfo` and the drag's update action
+    /// at the release, `wrapMouseReleasedND`).
     pub fn begin_gesture(&mut self) {
-        self.end_tool_use();
+        self.cancel_tool_use();
         self.gesture = Some(Gesture {
             snapshot: self.copy(&self.log),
             committed: false,
@@ -549,7 +595,6 @@ impl Workbench {
 
     /// Records the undo step for a change that is about to be logged.
     fn note_change(&mut self) {
-        self.end_tool_use();
         self.note_change_with(|w| w.copy(&w.log));
     }
 
@@ -603,11 +648,16 @@ impl Workbench {
             return;
         }
         let label = self.construction.label(id).to_owned();
-        self.end_tool_use();
-        self.undo.record(self.copy(&self.log));
-        if !self.log.hidden.remove(&label) {
-            self.log.hidden.insert(label);
-        }
+        let _ = self.outside_tool_use(|w| {
+            // An object the open tool use placed went with it.
+            if w.construction.id(&label).is_some() {
+                w.undo.record(w.copy(&w.log));
+                if !w.log.hidden.remove(&label) {
+                    w.log.hidden.insert(label);
+                }
+            }
+            Ok(())
+        });
     }
 
     pub fn move_point(&mut self, id: Id, x: f64, y: f64) -> bool {
@@ -622,6 +672,16 @@ impl Workbench {
     }
 
     fn set_point(&mut self, id: Id, x: f64, y: f64, in_tool: bool) -> bool {
+        if !in_tool && self.tool_use_pending() {
+            // A drag is not part of the use: the use does not finish. The
+            // point may be one of its own, gone with it.
+            let label = self.construction.label(id).to_owned();
+            self.cancel_tool_use();
+            match self.construction.id(&label) {
+                Some(again) if again == id => {}
+                _ => return false,
+            }
+        }
         if id.index() >= self.construction.len() {
             return false;
         }
@@ -729,7 +789,15 @@ impl Workbench {
         // that set is a change too, and it goes into the journal.
         let same = matches!(self.construction.value(id), Value::Number(old) if old.to_bits() == v.to_bits())
             && self.construction.expression(id).is_none();
-        if self.construction.set_number(id, v).is_err() || same {
+        if same {
+            return false;
+        }
+        if self.tool_use_pending() {
+            // Not part of the open tool use (its points come after every
+            // number): the use does not finish.
+            self.cancel_tool_use();
+        }
+        if self.construction.set_number(id, v).is_err() {
             return false;
         }
         self.note_change();

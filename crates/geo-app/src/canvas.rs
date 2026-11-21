@@ -121,7 +121,13 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         app.tool_press = None;
         app.label_rects.borrow_mut().clear();
         gesture.forget_target();
-        app.tool.reset();
+        // A tool's picks are labels: they outlive the rebuild unless one
+        // of them went (a change from outside takes an unfinished tool use
+        // back, a failed one puts it back as it was).
+        let c = app.wb.construction();
+        if app.tool.picks().iter().any(|p| c.id(p.label()).is_none()) {
+            app.reset_tool();
+        }
     }
     let mut cam = app.camera.unwrap_or(Camera::STANDARD);
     let to_local = |pos: egui::Pos2| {

@@ -801,6 +801,154 @@ fn the_delete_tools_stroke_erases_what_it_crosses_as_one_step() {
     assert_eq!(camera(&h), cam, "the short stroke panned");
 }
 
+fn escape_key() -> Event {
+    Event::Key {
+        key: egui::Key::Escape,
+        physical_key: None,
+        pressed: true,
+        repeat: false,
+        modifiers: Modifiers::NONE,
+    }
+}
+
+/// A press at `from`, a drag to `to` well beyond the click threshold after
+/// the reference app's move delay, and the release there.
+fn slow_drag(h: &mut Harness<'_, App>, time: f64, from: Pos2, to: Pos2) {
+    frame_at(h, time, vec![Event::PointerMoved(from)]);
+    frame_at(
+        h,
+        time + 0.05,
+        vec![press(from, PointerButton::Primary, true)],
+    );
+    for i in 1..=8 {
+        let pos = from + (to - from) * (i as f32 / 8.0);
+        frame_at(
+            h,
+            time + 0.2 + 0.02 * f64::from(i),
+            vec![Event::PointerMoved(pos)],
+        );
+    }
+    frame_at(
+        h,
+        time + 0.5,
+        vec![press(to, PointerButton::Primary, false)],
+    );
+    h.run();
+}
+
+/// Escape in the middle of the eraser's stroke switches to the move tool
+/// and the stroke stops there: what it crossed before stays deleted, as one
+/// undo step (the reference deletes as the stroke goes and stores the
+/// stroke at the release whatever the mode, `storeUndoAfterDrag`); what it
+/// crosses afterwards stays, and the rest of the drag does not pan. Fails if
+/// the stroke went on erasing after Escape.
+#[test]
+fn escape_mid_stroke_stops_the_eraser_and_keeps_what_it_deleted() {
+    let src = "A = (-2, 0)\nB = (2, 0)\nf = Segment(A, B)\n\
+               C = (-2, 2)\nD = (2, 2)\ng = Segment(C, D)\n";
+    let mut h = harness(src);
+    h.state_mut().select_tool(Tool::Delete);
+    let cam = camera(&h);
+    let from = world(0.3, -1.0);
+    frame_at(&mut h, 10.0, vec![Event::PointerMoved(from)]);
+    frame_at(
+        &mut h,
+        10.05,
+        vec![press(from, PointerButton::Primary, true)],
+    );
+    let mut pos = from;
+    for i in 0..6 {
+        pos = world(0.3, -1.0 + 0.25 * f64::from(i + 1));
+        frame_at(
+            &mut h,
+            10.2 + 0.02 * f64::from(i),
+            vec![Event::PointerMoved(pos)],
+        );
+    }
+    assert_eq!(labels(&h), ["A", "B", "C", "D", "g"], "f was crossed");
+    frame_at(&mut h, 10.4, vec![escape_key()]);
+    assert_eq!(h.state().tool.tool(), Tool::Move);
+    for i in 0..10 {
+        pos = world(0.3, 0.5 + 0.25 * f64::from(i + 1));
+        frame_at(
+            &mut h,
+            10.5 + 0.02 * f64::from(i),
+            vec![Event::PointerMoved(pos)],
+        );
+    }
+    frame_at(
+        &mut h,
+        10.8,
+        vec![press(pos, PointerButton::Primary, false)],
+    );
+    h.run();
+    assert_eq!(labels(&h), ["A", "B", "C", "D", "g"]);
+    assert_eq!(camera(&h), cam, "the rest of the drag panned");
+    assert!(!h.state().erasing);
+    assert_eq!(h.state().wb.undo_depth(), (1, 0), "the stroke is stored");
+    undo(&mut h);
+    assert_eq!(labels(&h), ["A", "B", "f", "C", "D", "g"]);
+    assert!(!h.state().wb.can_undo(), "one step for the stroke");
+    // The move tool's next drag across g from empty space pans, it erases
+    // nothing.
+    slow_drag(&mut h, 20.0, world(0.3, 1.0), world(0.3, 3.0));
+    assert_eq!(labels(&h), ["A", "B", "f", "C", "D", "g"]);
+    assert_ne!(camera(&h), cam, "the move tool's drag did not pan");
+}
+
+/// The point tool's press-drag-release is two undo steps, the new point,
+/// then its move, as in the reference (the press makes the point and
+/// `processMode` stores it; the release beyond the threshold stores the
+/// drag, `modeTriggersUndoOnDragGeo`). The segment tool's is one: the press
+/// and the release are picks of one use, stored at its end. Fails if the
+/// two tools' steps were made alike.
+#[test]
+fn a_press_drag_release_is_two_steps_for_the_point_tool_and_one_for_the_segment_tool() {
+    let mut h = harness("Z = (-3, -3)\n");
+    h.state_mut().select_tool(Tool::Point);
+    slow_drag(&mut h, 10.0, world(1.0, 1.0), world(3.0, 1.0));
+    assert_eq!(labels(&h), ["Z", "A"]);
+    assert_eq!(point(&h, "A"), (3.0, 1.0));
+    assert_eq!(h.state().wb.undo_depth(), (2, 0));
+    undo(&mut h);
+    assert_eq!(labels(&h), ["Z", "A"]);
+    assert_eq!(
+        point(&h, "A"),
+        (1.0, 1.0),
+        "the first undo takes the move back"
+    );
+    undo(&mut h);
+    assert_eq!(labels(&h), ["Z"]);
+
+    h.state_mut().select_tool(Tool::Segment);
+    slow_drag(&mut h, 20.0, world(1.0, 1.0), world(3.0, 1.0));
+    assert_eq!(labels(&h), ["Z", "A", "B", "f"]);
+    assert_eq!(h.state().wb.undo_depth(), (1, 0));
+    undo(&mut h);
+    assert_eq!(labels(&h), ["Z"]);
+}
+
+/// Deleting from the algebra row in the middle of a tool use: the use does
+/// not finish, so its point goes and the picks with it; the deletion is the
+/// only step. Fails when the pending point stayed as a step of its own.
+#[test]
+fn a_row_deletion_mid_use_takes_the_use_back() {
+    let mut h = harness("Z = (-3, -3)\n");
+    h.state_mut().select_tool(Tool::Segment);
+    click(&mut h, world(1.0, 1.0));
+    assert_eq!(labels(&h), ["Z", "A"]);
+    assert_eq!(h.state().tool.picks().len(), 1);
+    click(&mut h, row_menu(0.0, false));
+    h.get_by_label("Usuń").click();
+    h.run();
+    assert!(labels(&h).is_empty());
+    assert!(h.state().tool.picks().is_empty());
+    assert_eq!(h.state().wb.undo_depth(), (1, 0));
+    undo(&mut h);
+    assert_eq!(labels(&h), ["Z"]);
+    assert!(!h.state().wb.can_undo());
+}
+
 /// A drag of a point that stays within the click threshold is an undo
 /// step under the owner's rule; the reference app keeps its motion but no
 /// step (spec F2, `interact::EVERY_DRAG_IS_A_STEP`). Fails if the switch
