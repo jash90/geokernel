@@ -13,7 +13,7 @@ use geo_kernel::algo::conic_nd::{ConicData, ConicType};
 use geo_kernel::algo::general_conic::GeneralConicDef;
 use geo_kernel::kernel::Def;
 use geo_kernel::script::{exec, is_vector_label, multi_output_count};
-use geo_kernel::{Construction, Value};
+use geo_kernel::{Construction, Kind, Value};
 use std::collections::{BTreeMap, BTreeSet};
 
 /// The longest text a reason may quote from the file, in characters.
@@ -147,8 +147,6 @@ struct Converter {
     /// Every label the file names anywhere, so a label the importer makes up
     /// for a helper object cannot collide with one read later.
     file_labels: BTreeSet<String>,
-    /// Labels the importer has made up for helper objects so far.
-    helpers: BTreeSet<String>,
 }
 
 /// One script line and the labels it has to create.
@@ -215,6 +213,11 @@ impl Converter {
                 "`{}` is not a label the script can use",
                 quote(bad)
             )),
+            None if matches!(name, "Ray" | "Arc" | "Sector")
+                && inputs.iter().any(|arg| bracketed(arg.trim()).is_some()) =>
+            {
+                return self.nested_command(name, inputs, outputs);
+            }
             None => self.steps(name, inputs, outputs),
         };
         match steps {
@@ -334,18 +337,6 @@ impl Converter {
         if name.is_empty() || !name.bytes().all(|b| b.is_ascii_alphanumeric()) {
             return Err(format!("`{}` is not a command name", quote(name)));
         }
-        // `Ray(A', Vector[<Transform>[Direction[g], ...]])` and
-        // `Arc(<Transform>[k, ...], P', Q')`: the image of `Ray(A, u)` and of
-        // `Arc(k, P, Q)` / `Sector(k, P, Q)`, which GeoGebra saves with the
-        // transformed direction (the transformed conic) as a nested command
-        // call, however deep the chain of images goes. The kernel has no
-        // nested calls, so every nested call becomes an object of the script
-        // first, under labels of the importer's own choosing.
-        if matches!(name, "Ray" | "Arc" | "Sector") {
-            if let Some(steps) = self.nested_calls(name, inputs, outputs) {
-                return steps;
-            }
-        }
         let mut args = Vec::with_capacity(inputs.len());
         for arg in inputs {
             for token in tokens(arg) {
@@ -397,90 +388,105 @@ impl Converter {
         }])
     }
 
-    /// The steps of a command whose file writes a nested command call as an
-    /// argument (`None` when no argument is one). The calls are unwound
-    /// innermost first: every `<Cmd>[args]` becomes an object `Cmd(args)` of
-    /// the script whose label takes the call's place, with labels no label of
-    /// the file can collide with.
-    fn nested_calls(
+    /// GeoGebra saves the transformed direction of a ray and the conic
+    /// of an arc or sector as nested calls. Commit their helpers only when
+    /// the outer command succeeds.
+    fn nested_command(
         &mut self,
         name: &str,
         inputs: &[String],
         outputs: &[String],
-    ) -> Option<Result<Vec<Step>, String>> {
-        if !inputs.iter().any(|arg| bracketed(arg.trim()).is_some()) {
-            return None;
-        }
-        // the whole command reads these labels; a skipped one takes the
-        // object with it, as for any other argument
-        for token in inputs.iter().flat_map(|arg| tokens(arg)) {
-            if self.skipped.contains_key(token) {
-                return Some(Err(format!(
-                    "depends on the skipped object `{}`",
-                    quote(token)
-                )));
+    ) -> Result<(), ImportError> {
+        let labels: Vec<String> = outputs.iter().filter(|l| !l.is_empty()).cloned().collect();
+        let checkpoint = self.kernel.checkpoint();
+        let mut helpers = Vec::new();
+        let args = inputs
+            .iter()
+            .map(|arg| self.expand_call(arg.trim(), &mut helpers))
+            .collect::<Result<Vec<_>, _>>();
+        let result = match args {
+            Ok(args) => {
+                let line = format!("{} = {name}({})", labels[0], args.join(", "));
+                self.run(&line, &labels)?.map(|()| line)
+            }
+            Err(reason) => Err(reason),
+        };
+        match result {
+            Ok(line) => {
+                for (label, line) in helpers {
+                    self.out.hidden.push(label);
+                    self.out.script.push(line);
+                }
+                self.out.script.push(line);
+            }
+            Err(reason) => {
+                self.kernel
+                    .rollback(checkpoint)
+                    .map_err(|e| ImportError::Internal(e.to_string()))?;
+                for label in labels {
+                    self.skip(&label, name, reason.clone());
+                }
             }
         }
-        let mut steps = Vec::new();
-        let args = match inputs
-            .iter()
-            .map(|arg| self.expand_call(arg.trim(), &mut steps))
-            .collect::<Result<Vec<_>, _>>()
-        {
-            Ok(args) => args,
-            Err(reason) => return Some(Err(reason)),
-        };
-        let labelled: Vec<String> = outputs.iter().filter(|l| !l.is_empty()).cloned().collect();
-        steps.push(Step {
-            line: format!("{} = {}({})", labelled[0], name, args.join(", ")),
-            labels: labelled,
-            auto: false,
-        });
-        Some(Ok(steps))
+        Ok(())
     }
 
-    /// One argument of the file: a label or number as it is, or the label of
-    /// the object the script makes for a nested call. `Vector[v]` only names
-    /// the vector `v` (GeoGebra wraps the direction of a saved ray in it), so
-    /// it becomes its argument and makes no object of its own.
-    fn expand_call(&mut self, arg: &str, steps: &mut Vec<Step>) -> Result<String, String> {
+    /// Lower the innermost calls first, so `Vector[...]` can distinguish a
+    /// vector it wraps from a point whose position vector it constructs.
+    fn expand_call(
+        &mut self,
+        arg: &str,
+        helpers: &mut Vec<(String, String)>,
+    ) -> Result<String, String> {
         let Some((command, body)) = bracketed(arg) else {
-            return pass_argument(arg);
+            let arg = pass_argument(arg)?;
+            if self.skipped.contains_key(&arg) {
+                return Err(format!("depends on the skipped object `{}`", quote(&arg)));
+            }
+            return Ok(arg);
         };
-        let parts = split_parts(body);
-        if command == "Vector" && parts.len() == 1 {
-            return self.expand_call(parts[0].trim(), steps);
+        if !command.bytes().all(|b| b.is_ascii_alphanumeric()) {
+            return Err(format!("invalid nested command name `{}`", quote(command)));
         }
-        let args = parts
+        let args = split_parts(body)
             .iter()
-            .map(|p| self.expand_call(p.trim(), steps))
+            .map(|part| self.expand_call(part.trim(), helpers))
             .collect::<Result<Vec<_>, _>>()?;
+        if let ("Vector", [arg]) = (command, args.as_slice()) {
+            if self
+                .kernel
+                .id(arg)
+                .is_some_and(|id| self.kernel.kind(id) == Kind::Vector)
+            {
+                return Ok(arg.clone());
+            }
+        }
         let prefix = if command == "Direction" { "dir" } else { "img" };
         let label = self.helper_label(prefix);
-        steps.push(Step {
-            line: format!("{label} = {command}({})", args.join(", ")),
-            labels: vec![label.clone()],
-            auto: false,
-        });
+        let line = format!("{label} = {command}({})", args.join(", "));
+        let before = self.kernel.len();
+        exec(&mut self.kernel, &line)?;
+        if self.kernel.len() != before + 1 || self.kernel.id(&label).is_none() {
+            return Err(format!(
+                "nested command `{}` must create one object",
+                quote(command)
+            ));
+        }
+        helpers.push((label.clone(), line));
         Ok(label)
     }
 
     /// A label for a helper object: `prefix`, then `prefix_1`, `prefix_2`, ...,
-    /// the first one neither the file nor the scratch construction nor an
-    /// earlier helper uses.
-    fn helper_label(&mut self, prefix: &str) -> String {
-        let taken = |c: &Converter, label: &str| {
-            c.file_labels.contains(label)
-                || c.helpers.contains(label)
-                || c.kernel.id(label).is_some()
-        };
+    /// the first one neither the file nor the scratch construction uses.
+    fn helper_label(&self, prefix: &str) -> String {
+        let taken =
+            |label: &str| self.file_labels.contains(label) || self.kernel.id(label).is_some();
         let mut label = prefix.to_string();
         let mut index = 0;
-        while taken(self, &label) {
+        while taken(&label) {
             index += 1;
             label = format!("{prefix}_{index}");
         }
-        self.helpers.insert(label.clone());
         label
     }
 
@@ -927,4 +933,70 @@ fn cross_check(el: &Element, value: &Value, image: bool) -> Option<(String, Stri
         _ => None,
     };
     (agrees == Some(false)).then(report).flatten()
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::import;
+    use geo_kernel::{script, Value};
+
+    #[test]
+    fn saved_transform_ray_uses_hidden_helpers() {
+        let imported = import(include_bytes!(
+            "../../../golden/ggb/transform/transform-dilate-007.xml"
+        ))
+        .unwrap();
+        assert!(imported.skipped.is_empty(), "{:?}", imported.skipped);
+        let c = script::load(&imported.script.join("\n")).unwrap();
+        for helper in ["dir", "img"] {
+            assert!(c.id(helper).is_some());
+            assert!(imported.hidden.iter().any(|label| label == helper));
+        }
+    }
+
+    #[test]
+    fn skipped_arc_leaves_no_helpers() {
+        let imported = import(include_bytes!(
+            "../../../golden/ggb/transform/transform-arcpart-005.xml"
+        ))
+        .unwrap();
+        assert_eq!(imported.skipped.len(), 1, "{:?}", imported.skipped);
+        assert_eq!(imported.skipped[0].label, "m");
+        let c = script::load(&imported.script.join("\n")).unwrap();
+        assert!(c
+            .ids()
+            .all(|id| !c.label(id).starts_with('\0') && c.label(id) != "img"));
+    }
+
+    #[test]
+    fn saved_ray_uses_the_position_vector_of_a_point() {
+        let imported = import(include_bytes!(
+            "../../../golden/transformsfix/import-ray.xml"
+        ))
+        .unwrap();
+        assert!(imported.skipped.is_empty(), "{:?}", imported.skipped);
+        let mut c = script::load(&imported.script.join("\n")).unwrap();
+        let ray = c.id("r").unwrap();
+        assert_eq!(
+            c.value(ray),
+            Value::Ray {
+                x: 1.0,
+                y: 2.0,
+                a: -4.0,
+                b: 3.0,
+                c: -2.0
+            }
+        );
+        c.move_point(c.id("B").unwrap(), -1.0, 3.0).unwrap();
+        assert_eq!(
+            c.value(ray),
+            Value::Ray {
+                x: 1.0,
+                y: 2.0,
+                a: -3.0,
+                b: -1.0,
+                c: 5.0
+            }
+        );
+    }
 }

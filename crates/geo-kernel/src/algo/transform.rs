@@ -45,8 +45,12 @@
 //! image after the ray instead of the command) and `Shear` or `Stretch` of
 //! a polyline (GeoGebra rejects it too).
 
+use super::arc::ArcDef;
+use super::general_conic::GeneralConicDef;
+use super::polygon::{area_of, has_fixed_vertices};
+use super::vector::VectorDef;
 use super::{line_value, Group, Parents, CIRCLE, LINE_LIKE, NUMBER, NUMBER_OR_ANGLE, POINT};
-use crate::kernel::{Construction, Error, Id, Kind, Value};
+use crate::kernel::{Construction, Def, Error, Id, Kind, Value};
 use crate::script::object;
 use crate::tol::STANDARD_PRECISION;
 
@@ -62,6 +66,14 @@ const TRANSFORMABLE: &[Kind] = &[
     Kind::PolyLine,
 ];
 const VECTOR: &[Kind] = &[Kind::Vector];
+pub(crate) fn shear_axis(shear: bool) -> &'static [Kind] {
+    if shear {
+        &[Kind::Line, Kind::Segment, Kind::Ray, Kind::Vector]
+    } else {
+        LINE_LIKE
+    }
+}
+
 /// What `Shear` and `Stretch` accept: no polyline (`isMatrixTransformable`).
 const SHEARABLE: &[Kind] = &[
     Kind::Point,
@@ -117,8 +129,8 @@ pub enum TransformDef {
         factor: Id,
         center: Option<Id>,
     },
-    /// `Shear(object, line, ratio)` and `Stretch(object, line, ratio)`; the
-    /// object is a point, a line or a segment and `axis` a line or a segment.
+    /// `Shear(object, axis, ratio)` and `Stretch(object, line, ratio)`.
+    /// A shear axis can also be a vector.
     ShearStretch {
         kind: Kind,
         src: Id,
@@ -381,24 +393,6 @@ fn ray_image(c: &Construction, def: &TransformDef, map: &Map) -> Option<Value> {
     ray_value(start, (-d.1, d.0, start.0 * d.1 - start.1 * d.0))
 }
 
-/// `AlgoPolygon.calcAreaWithSign` over the moved vertices: half the sum of
-/// `GeoPoint.det` over the closed sequence. `None` for fewer than two
-/// points (an image of an empty polygon, which GeoGebra holds undefined).
-fn moved_area(points: &[(f64, f64)]) -> Option<f64> {
-    let (&first, rest) = points.split_first()?;
-    if rest.is_empty() {
-        return None;
-    }
-    let mut prev = first;
-    let mut sum = 0.0;
-    for &p in rest {
-        sum += prev.0 * p.1 - p.0 * prev.1;
-        prev = p;
-    }
-    sum += prev.0 * first.1 - first.0 * prev.1;
-    Some(sum / 2.0)
-}
-
 impl TransformDef {
     fn center(c: &Construction, center: Option<Id>) -> Option<(f64, f64)> {
         match center {
@@ -534,52 +528,86 @@ impl TransformOf {
                 let r = c.number(factor)?;
                 Some(Map::Dilate { r, sx, sy })
             }
-            TransformOf::Shear { axis, ratio } => {
+            TransformOf::Shear { axis, .. } if c.kind(axis) == Kind::Vector => {
+                vector_matrix(c, axis, true)
+            }
+            TransformOf::Shear { axis, ratio } | TransformOf::Stretch { axis, ratio } => {
                 let (la, lb, lc) = c.raw_carrier(axis)?;
-                let n = c.number(ratio)?;
-                shear_matrix(la, lb, lc, n, true)
-            }
-            TransformOf::Stretch { axis, ratio } => {
-                let (la, lb, lc) = c.raw_carrier(axis)?;
-                let n = c.number(ratio)?;
-                shear_matrix(la, lb, lc, n, false)
-            }
-            TransformOf::StretchVector(vector) => {
-                let Value::Vector { x: vx, y: vy } = c.value(vector) else {
-                    return None;
+                let (qx, qy) = if la.abs() > lb.abs() {
+                    (lc / la, 0.0)
+                } else {
+                    (0.0, lc / lb)
                 };
-                let (qx, qy) = match crate::algo::vector::start(c, vector) {
-                    Some((sx, sy)) => (-sx, -sy),
-                    None => (0.0, 0.0),
-                };
-                // the point of the vector moves to the origin and the
-                // stretch is by the vector's length along it
-                let len = my_length(vx, vy);
-                let (cos, s) = (-vy / len, vx / len);
-                let m = [
-                    cos * cos + s * s * len,
-                    cos * s * (1.0 - len),
-                    cos * s * (1.0 - len),
-                    s * s + cos * cos * len,
-                ];
-                Some(Map::Matrix { qx, qy, m })
+                let len = my_length(la, lb);
+                matrix(
+                    qx,
+                    qy,
+                    lb / len,
+                    -la / len,
+                    c.number(ratio)?,
+                    matches!(self, Self::Shear { .. }),
+                )
             }
+            TransformOf::StretchVector(vector) => vector_matrix(c, vector, false),
             TransformOf::Invert(_) => None,
         }
     }
 }
 
-/// The matrix of `Shear` and `Stretch` along the line `(la, lb, lc)` by the
-/// ratio `n` (`AlgoShearOrStretch.compute`), which moves a point of the line
-/// to the origin first and back afterwards.
-fn shear_matrix(la: f64, lb: f64, lc: f64, n: f64, shear: bool) -> Option<Map> {
-    let (qx, qy) = if la.abs() > lb.abs() {
-        (lc / la, 0.0)
-    } else {
-        (0.0, lc / lb)
+/// A vector shear depends on the axis start even if the vector's coordinates
+/// stay equal, such as when the point in Translate(v, P) moves.
+pub(super) fn shear_start_parent(c: &Construction, def: &Def) -> Option<Id> {
+    let mut axis = match *def {
+        Def::Transform(TransformDef::ShearStretch {
+            axis, shear: true, ..
+        })
+        | Def::GeneralConic(GeneralConicDef::ShearStretch {
+            axis, shear: true, ..
+        })
+        | Def::Arc(ArcDef::Transform {
+            def: TransformOf::Shear { axis, .. },
+            ..
+        }) => axis,
+        _ => return None,
     };
-    let len = my_length(la, lb);
-    let (s, cos) = (-la / len, lb / len);
+    while c.kind(axis) == Kind::Vector {
+        match c.def(axis) {
+            Def::Vector(VectorDef::Between(start, _) | VectorDef::TranslateTo { start, .. }) => {
+                return Some(start)
+            }
+            Def::Vector(VectorDef::Translate { src, .. }) => axis = src,
+            Def::Vector(
+                VectorDef::Direction(line)
+                | VectorDef::Unit(line)
+                | VectorDef::Ortho(line)
+                | VectorDef::UnitOrtho(line),
+            ) => match c.def(line) {
+                Def::Line(start, _) => return Some(start),
+                _ if matches!(c.kind(line), Kind::Ray | Kind::Segment) => return Some(line),
+                _ => axis = line,
+            },
+            _ => return None,
+        }
+    }
+    None
+}
+
+/// The vector branch of `AlgoShearOrStretch.compute`: the axis goes
+/// through the vector's start point, and its length is the factor.
+fn vector_matrix(c: &Construction, axis: Id, shear: bool) -> Option<Map> {
+    let Value::Vector { x, y } = c.value(axis) else {
+        return None;
+    };
+    let (sx, sy) = crate::algo::vector::start(c, axis)?;
+    let len = my_length(x, y);
+    matrix(-sx, -sy, -y / len, x / len, len, shear)
+}
+
+/// `AlgoShearOrStretch.compute` after moving the axis to the origin.
+fn matrix(qx: f64, qy: f64, cos: f64, s: f64, n: f64, shear: bool) -> Option<Map> {
+    if !cos.is_finite() || !s.is_finite() {
+        return None;
+    }
     let m = if shear {
         [
             1.0 - cos * s * n,
@@ -673,11 +701,11 @@ impl Group for TransformDef {
                 src,
                 axis,
                 ratio,
-                ..
+                shear,
             } => {
                 c.expect(src, of_kind(kind))?;
                 c.expect(src, SHEARABLE)?;
-                c.expect(axis, LINE_LIKE)?;
+                c.expect(axis, shear_axis(shear))?;
                 c.expect(ratio, NUMBER_OR_ANGLE)
             }
             TransformDef::StretchVector { kind, src, vector } => {
@@ -734,15 +762,40 @@ impl Group for TransformDef {
                 _ => None,
             },
             Kind::Polygon => {
+                let src = source_of(self);
                 let map = map?;
-                let mut points = Vec::new();
-                for v in c.vertices(source_of(self)) {
-                    let (x, y) = v?;
-                    points.push(map.point(x, y));
+                if has_fixed_vertices(c, src) {
+                    let vertices = c.vertices(src).map(|p| p.map(|(x, y)| map.point(x, y)));
+                    return Some(Value::Polygon {
+                        area: area_of(vertices)?,
+                    });
                 }
-                Some(Value::Polygon {
-                    area: moved_area(&points)?,
-                })
+                let Value::Polygon { area } = c.value(src) else {
+                    return None;
+                };
+                // `GeoPolygon` flips the stored area in either mirror and
+                // scales it on dilation or stretch. Fixed-vertex images
+                // instead go through the polygon command.
+                let scale = match (self, map) {
+                    (_, Map::Point { .. } | Map::Line { .. }) => -1.0,
+                    (_, Map::Dilate { r, .. }) => r * r,
+                    (
+                        Self::ShearStretch {
+                            ratio,
+                            shear: false,
+                            ..
+                        },
+                        _,
+                    ) => c.number(*ratio)?,
+                    (Self::StretchVector { vector, .. }, _) => {
+                        let Value::Vector { x, y } = c.value(*vector) else {
+                            return None;
+                        };
+                        my_length(x, y)
+                    }
+                    _ => 1.0,
+                };
+                Some(Value::Polygon { area: area * scale })
             }
             Kind::PolyLine => {
                 // the image runs through the points like the source
@@ -822,8 +875,17 @@ pub(crate) fn parse_transform_for(
     }
 
     if matches!(func, "Shear" | "Stretch") {
-        if !matches!(second_kind, Kind::Line | Kind::Segment | Kind::Ray) {
-            return Err(format!("`{}` is a {second_kind}, expected a line", args[1]));
+        let shear = func == "Shear";
+        if !shear_axis(shear).contains(&second_kind) {
+            let expected = if shear {
+                "a line or a vector"
+            } else {
+                "a line"
+            };
+            return Err(format!(
+                "`{}` is a {second_kind}, expected {expected}",
+                args[1]
+            ));
         }
         let ratio = object(c, args[2])?;
         if !c.kind(ratio).is_number() {
@@ -838,7 +900,7 @@ pub(crate) fn parse_transform_for(
             src,
             axis: second,
             ratio,
-            shear: func == "Shear",
+            shear,
         });
     }
 

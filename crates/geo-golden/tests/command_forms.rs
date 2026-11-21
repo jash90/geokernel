@@ -19,7 +19,7 @@ use geo_golden::model::Case;
 use geo_golden::table::Table;
 use geo_golden::{gaps, model, repo_root};
 use geo_kernel::Kind;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 const MATRIX_COLUMNS: [&str; 8] = [
     "command",
@@ -103,6 +103,58 @@ fn forms_csv_lists_the_in_scope_commands_of_the_matrix() {
     }
 }
 
+/// Required source kinds for each wildcard transformation signature.
+fn transformation_kinds(command: &str, form: &str) -> Option<&'static [Kind]> {
+    use Kind::{Arc, Circle, Conic, Line, Point, PolyLine, Polygon, Ray, Sector, Segment, Vector};
+
+    const INVERSION: &[Kind] = &[Point, Line, Segment, Circle, Arc, Sector];
+    const AFFINE: &[Kind] = &[
+        Point, Line, Segment, Circle, Ray, Vector, Polygon, PolyLine, Arc, Sector, Conic,
+    ];
+    const AXIS: &[Kind] = &[
+        Point, Line, Segment, Circle, Ray, Vector, Polygon, Arc, Sector, Conic,
+    ];
+    match (command, form) {
+        ("Mirror", "any,circle") => Some(INVERSION),
+        ("Mirror", "any,point" | "any,line")
+        | ("Rotate", "any,number" | "any,number,point")
+        | ("Translate", "any,vector") => Some(AFFINE),
+        ("Shear", "any,line,number" | "any,vector,number")
+        | ("Stretch", "any,vector" | "any,line,number") => Some(AXIS),
+        _ => None,
+    }
+}
+
+fn transformed_kinds<'a>(
+    case: &'a Case,
+    names: &'a BTreeMap<String, String>,
+    command: &'a str,
+    suffix: &'a str,
+) -> impl Iterator<Item = Kind> + 'a {
+    let labels = kinds_of(case);
+    case.script.iter().filter_map(move |line| {
+        let (label, rhs) = line.split_once('=')?;
+        let (call, args) = rhs.trim().split_once('(')?;
+        if names.get(call)? != command
+            || !case
+                .snapshots
+                .iter()
+                .any(|objects| objects.get(label.trim()).is_some_and(|o| o.data.is_some()))
+        {
+            return None;
+        }
+        let args = forms::split_args(args.trim_end().strip_suffix(')')?);
+        let (src, rest) = args.split_first()?;
+        let rest: Vec<_> = rest
+            .iter()
+            .map(|arg| forms::arg_kind(arg, &labels))
+            .collect();
+        forms::form_matches(suffix, &rest)
+            .then(|| forms::arg_kind(src, &labels))
+            .flatten()
+    })
+}
+
 #[test]
 fn every_evidence_row_is_backed() {
     let f = forms();
@@ -128,12 +180,14 @@ fn every_evidence_row_is_backed() {
             }
             continue;
         }
-        if forms::is_wildcard(&e.form) {
+        let required = transformation_kinds(&e.command, &e.form);
+        if forms::is_wildcard(&e.form) && required.is_none() {
             errors.push(format!(
-                "{what}: a form with a wildcard argument is not done by golden cases"
+                "{what}: golden cases do not cover this wildcard form"
             ));
             continue;
         }
+        let mut covered = BTreeSet::new();
         for id in &e.cases {
             let Some(case) = cases.get(id) else {
                 errors.push(format!("{what}: no golden case `{id}`"));
@@ -143,6 +197,16 @@ fn every_evidence_row_is_backed() {
                 errors.push(format!("{what}: `{id}` is a known gap"));
             } else if !forms::script_calls(&case.script, &names, &e.command) {
                 errors.push(format!("{what}: `{id}` does not use the command"));
+            } else if let Some(required) = required {
+                let suffix = e.form.strip_prefix("any,").unwrap();
+                let kinds: Vec<_> = transformed_kinds(case, &names, &e.command, suffix)
+                    .filter(|kind| required.contains(kind))
+                    .map(|kind| kind.to_string())
+                    .collect();
+                if kinds.is_empty() {
+                    errors.push(format!("{what}: `{id}` has no defined image in this form"));
+                }
+                covered.extend(kinds);
             } else if !forms::script_uses_form(
                 &case.script,
                 &kinds_of(case),
@@ -151,6 +215,13 @@ fn every_evidence_row_is_backed() {
                 &e.form,
             ) {
                 errors.push(format!("{what}: `{id}` does not call it in this form"));
+            }
+        }
+        if let Some(required) = required {
+            for kind in required {
+                if !covered.contains(&kind.to_string()) {
+                    errors.push(format!("{what}: no case for source kind {kind}"));
+                }
             }
         }
     }

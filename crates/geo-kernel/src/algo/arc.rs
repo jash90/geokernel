@@ -40,7 +40,7 @@ use super::conic_nd::{my_length, ConicData, ConicType};
 use super::conic_path::{self, type_number};
 use super::general_conic::transform_conic;
 use super::path::{conic_parameter, line_path_changed, line_point_changed, PathState};
-use super::transform::{invert_point, parse_transform_for, TransformOf};
+use super::transform::{invert_point, parse_transform_for, shear_axis, TransformOf};
 use super::{join, Group, Parents, LINE_LIKE, NUMBER_OR_ANGLE, POINT};
 use crate::kernel::{Construction, Def, Error, Id, Kind, Value};
 use crate::script::object;
@@ -611,12 +611,11 @@ impl ArcDef {
                 // conic is transformed; a map that preserves angles keeps the
                 // parameters, the others read them from the images of the
                 // part's end points
-                let Some(s) = c.arc(src) else {
+                let Some(s) = c.arc(src).filter(|s| s.defined && s.conic.defined) else {
                     a.set_undefined();
                     return a;
                 };
                 a.conic = s.conic;
-                a.conic.defined = s.conic.defined && c.value(src).is_defined();
                 transform_conic(c, &def, &mut a.conic);
                 if !a.conic.defined {
                     a.set_undefined();
@@ -644,7 +643,7 @@ impl ArcDef {
                     return a;
                 }
                 // `AlgoTranslate`: the parameters always stay
-                let Some(s) = c.arc(src) else {
+                let Some(s) = c.arc(src).filter(|s| s.defined && s.conic.defined) else {
                     a.set_undefined();
                     return a;
                 };
@@ -653,7 +652,6 @@ impl ArcDef {
                     return a;
                 };
                 a.conic = s.conic;
-                a.conic.defined = s.conic.defined && c.value(src).is_defined();
                 a.conic.translate(vx, vy);
                 if !a.conic.defined {
                     a.set_undefined();
@@ -677,16 +675,18 @@ impl ArcDef {
                 }
                 // `AlgoMirror` at a circle: `transformLimitedConic` with the
                 // inversion's rule for the orientation
-                let Some(s) = c.arc(src) else {
+                let Some(s) = c.arc(src).filter(|s| s.defined && s.conic.defined) else {
                     a.set_undefined();
                     return a;
                 };
-                let Some(k) = c.conic(circle) else {
+                let Some(k) = c.conic(circle).filter(|k| k.defined) else {
                     a.set_undefined();
                     return a;
                 };
+                if k.ty == ConicType::SinglePoint {
+                    return s;
+                }
                 a.conic = s.conic;
-                a.conic.defined = s.conic.defined && c.value(src).is_defined();
                 a.conic.mirror_conic(&k, false);
                 // `GeoConic.mirror(GeoConicND)` leaves a conic that is
                 // neither a circle nor a pair of lines alone (it clears the
@@ -878,6 +878,9 @@ fn mapped_point(c: &Construction, steps: &[PartStep], p: (f64, f64)) -> Option<(
 /// [`mapped_point`] runs it (`getTransformedConic` of every step).
 fn mapped_conic(c: &Construction, steps: &[PartStep], d: &mut ConicData) {
     for step in steps {
+        if !d.defined {
+            return;
+        }
         match *step {
             PartStep::Map(def) => transform_conic(c, &def, d),
             PartStep::Translate(by) => {
@@ -980,9 +983,18 @@ fn set_parameters_from_images(
     let p1 = map.point(p1.0, p1.1);
     // the images lie on the image conic, where the projection reads their
     // parameter off (`pointChangedUnlimited`)
-    let d = conic_parameter(&a.conic, p0, false);
-    let e = conic_parameter(&a.conic, p1, false);
+    let d = full_part_parameter(&a.conic, p0);
+    let e = full_part_parameter(&a.conic, p1);
     a.set_parameters(true, d, e, positive);
+}
+
+/// `transformLimitedConic` projects onto a temporary full turn and converts
+/// the resulting path parameter back to radians. A small negative angle
+/// can round to one full turn here.
+fn full_part_parameter(conic: &ConicData, p: (f64, f64)) -> f64 {
+    let angle = conic_parameter(conic, p, false);
+    let angle = if angle < 0.0 { angle + PI_2 } else { angle };
+    (angle / PI_2) * PI_2
 }
 
 /// The point of the part `a` at the path parameter `t` in `[0, 1]`
@@ -996,7 +1008,7 @@ fn part_point(a: &ArcData, t: f64) -> (f64, f64) {
     // `GeoConicND.coordsEVtoRW`
     let [e0, e1] = a.conic.eigenvec;
     let [mx, my] = a.conic.midpoint;
-    (mx + ex * e0[0] + ey * e1[0], my + ex * e0[1] + ey * e1[1])
+    (ex * e0[0] + ey * e1[0] + mx, ex * e0[1] + ey * e1[1] + my)
 }
 
 /// `GeoConicPart.isOnPath` for a part of a circle: whether the point lies on
@@ -1259,7 +1271,7 @@ impl Group for ArcDef {
                         }
                     }
                     TransformOf::Shear { axis, ratio } | TransformOf::Stretch { axis, ratio } => {
-                        c.expect(axis, LINE_LIKE)?;
+                        c.expect(axis, shear_axis(matches!(def, TransformOf::Shear { .. })))?;
                         c.expect(ratio, NUMBER_OR_ANGLE)
                     }
                     TransformOf::StretchVector(vector) => c.expect(vector, &[Kind::Vector]),
