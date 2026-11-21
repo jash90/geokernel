@@ -108,6 +108,13 @@ impl Workbench {
         &self.construction
     }
 
+    pub fn set_locus_view(&mut self, view: crate::interact::ViewTransform) {
+        let v = view.view();
+        let scale = view.scale();
+        self.construction
+            .set_locus_view(v.xmin, v.xmax, v.ymin, v.ymax, scale, scale);
+    }
+
     /// Objects exposed to the algebra view and document clients.
     pub fn object_ids(&self) -> impl Iterator<Item = Id> + '_ {
         crate::scriptlog::object_ids(&self.construction)

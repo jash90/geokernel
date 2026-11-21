@@ -4,13 +4,14 @@
 //! is compared with `snapshots[0]` of the same golden case under the rules of
 //! `golden/SCHEMA.md`, with the comparison of `geo-golden`.
 
-use geo_golden::compare::{compare_object, numbers_agree};
+use geo_golden::compare::{compare_arc, compare_conic, compare_object, numbers_agree};
 use geo_golden::model::ExpectedData;
 use geo_golden::model::{self, Case};
 use geo_golden::{gaps, repo_root};
 use geo_import::import;
 use geo_kernel::script::exec;
 use geo_kernel::Construction;
+use geo_kernel::Kind;
 use geo_kernel::Value;
 use serde::Deserialize;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
@@ -18,29 +19,32 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 /// At the time of writing (see the assertions below for the exact counts).
-const MIN_FILES: usize = 1339;
-const MIN_ZIPS: usize = 31;
-const MIN_COMPARED: usize = 10390;
+const MIN_FILES: usize = 1636;
+const MIN_ZIPS: usize = 37;
+const MIN_COMPARED: usize = 13085;
 /// Objects the importer may skip in the whole corpus (listed in `EXPECTED_SKIPPED`).
 const MAX_SKIPPED: usize = 10;
-/// Every object the importer may skip, as `case:label`. Three are a `Ray`
-/// whose file writes an expression as an argument (`ga` of `vector-chain-002`
-/// and `t` of `vector-translate-014` and `-015`); `gb`, `d` and `q` of
-/// `vector-chain-002` depend on them. `polygon-small-001` is `Polygon(A)`
-/// of one point, which GeoGebra saves with the list `{A}` as its argument (an
-/// expression), and the three objects measured on it. Nothing else may be
-/// skipped.
+/// Every object the importer may skip, as `case:label`. `polygon-small-001`
+/// is `Polygon(A)` of one point, which GeoGebra saves with the list `{A}` as
+/// its argument (an expression), and the three objects measured on it. The
+/// `m` of the `arcpart`/`secpart` cases is the image of `Arc(k, P, Q)` /
+/// `Sector(k, P, Q)` under a shear or a stretch: GeoGebra saves it as
+/// `Arc(Shear[k, n, f], P', Q')`, the part of an elliptic conic, which the
+/// kernel refuses on purpose (a part is taken of a circle). Nothing else may
+/// be skipped: the image of `Ray(A, u)`, which GeoGebra saves as
+/// `Ray(A', Vector[<transform>[Direction[g]]])`, and the images whose
+/// conic stays a circle are read as objects of the script first.
 const EXPECTED_SKIPPED: &[&str] = &[
-    "vector-chain-002:d",
-    "vector-chain-002:ga",
-    "vector-chain-002:gb",
-    "vector-chain-002:q",
     "polygon-small-001:p",
     "polygon-small-001:ar",
     "polygon-small-001:pe",
     "polygon-small-001:M",
-    "vector-translate-014:t",
-    "vector-translate-015:t",
+    "transform-arcpart-005:m",
+    "transform-arcpart-006:m",
+    "transform-arcpart-007:m",
+    "transform-secpart-005:m",
+    "transform-secpart-006:m",
+    "transform-secpart-007:m",
 ];
 
 /// An entry of `known-import-gaps.toml`.
@@ -261,7 +265,18 @@ fn compare_case(
             continue;
         };
         let vertices: Vec<_> = c.vertices(id).collect();
-        match compare_object(expected, c.kind(id), &c.value(id), &vertices) {
+        // Parts of conics and general conics are compared through their
+        // records, as `geo_golden` does when it replays the case.
+        let compared = match c.kind(id) {
+            Kind::Arc | Kind::Sector => {
+                compare_arc(expected, c.kind(id), &c.value(id), c.arc(id).as_ref())
+            }
+            Kind::Conic => {
+                compare_conic(expected, c.kind(id), &c.value(id), c.conic(id).as_ref()).0
+            }
+            _ => compare_object(expected, c.kind(id), &c.value(id), &vertices),
+        };
+        match compared {
             Ok(_) => totals.objects_compared += 1,
             Err(why) => {
                 let key = format!("0:{label}");
@@ -444,13 +459,17 @@ fn imported_constructions_agree_with_the_golden_snapshots() {
     );
     for key in totals.skipped_by_reason.keys() {
         assert!(
-            key.contains("is an expression") || key.contains("depends on a skipped object"),
+            key.contains("is an expression")
+                || key.contains("depends on a skipped object")
+                // the part of an elliptic conic, which the kernel refuses on
+                // purpose (see `EXPECTED_SKIPPED`)
+                || key.contains("expected a circle"),
             "an undocumented reason for skipping: {key}"
         );
     }
     assert_eq!(
         totals.skipped_by_group.keys().collect::<Vec<_>>(),
-        ["polygon", "vector"]
+        ["polygon", "transform"]
     );
     assert!(
         totals.unlabelled <= MAX_UNLABELLED,

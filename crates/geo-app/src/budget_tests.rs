@@ -28,7 +28,7 @@ const SCREEN: (f32, f32) = (1400.0, 900.0);
 const DT: f64 = 1.0 / 60.0;
 
 /// The benchmark's grid cell: three free points, a free segment, a line, a
-/// circle, a triangle with its three sides, a midpoint and an intersection.
+/// circle, a triangle with its three sides, a midpoint and one indexed intersection.
 fn grid(cells: usize) -> (String, String) {
     let cols = (cells as f64).sqrt().ceil() as usize;
     let half = (cols as f64 - 1.0) * 5.0 / 2.0;
@@ -47,7 +47,7 @@ fn grid(cells: usize) -> (String, String) {
             format!("{} = Circle({pp}, {q})", p("k")),
             format!("{} = Polygon({pp}, {q}, {r})", p("t")),
             format!("{} = Midpoint({q}, {r})", p("M")),
-            format!("{} = Intersect({}, {})", p("I"), p("l"), p("k")),
+            format!("{} = Intersect({}, {}, 1)", p("I"), p("l"), p("k")),
         ] {
             s += &line;
             s.push('\n');
@@ -511,6 +511,27 @@ fn frame_counters_stay_within_the_budget() {
     assert!(get(&large, "drag_point").rows_formatted <= 12);
     // Zoomed in four times, a sixteenth of the area: the shapes follow.
     assert!(get(&large, "idle_zoomed_4x").shapes * 3 < get(&large, "idle").shapes);
+}
+
+#[test]
+fn locus_frames_stay_within_the_budget() {
+    let (mut script, mid) = grid(83);
+    script +=
+        "A = (0, 0)\nr = 0\nc = Circle(A, r)\nP = Point(c)\nQ = (x(P), y(P))\nL = Locus(Q, P)\n";
+    let mut w = Window::with(&script, mid);
+    let c = w.app.wb.construction();
+    assert_eq!(c.len(), 1002);
+    assert_eq!(c.value(c.id("L").unwrap()), Value::Locus { len: 10_001 });
+    let idle = w.settled(1);
+    println!("locus idle: {idle:?}");
+    // The cached stroke cap measured 2395 shapes, 964 texts, 88811
+    // vertices and 2655 allocations of 518425 bytes. Drawing each repeated
+    // sample added about 80000 vertices and 262 kB of allocations.
+    assert!(idle.shapes <= 2_450 && idle.texts <= 1_000, "{idle:?}");
+    assert!(idle.vertices <= 92_000, "{idle:?}");
+    assert!(idle.allocs <= 2_850 && idle.bytes <= 560_000, "{idle:?}");
+    assert_eq!((idle.rows_formatted, idle.rows_built), (0, 0));
+    assert!(!idle.immediate);
 }
 
 /// The benchmark's grid of 45 cells (540 objects, with the triangles'

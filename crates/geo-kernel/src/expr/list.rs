@@ -144,11 +144,11 @@ pub enum Element<'a> {
 
 impl<'a> List<'a> {
     pub(crate) fn new(slots: &'a [Slot], len: u32) -> List<'a> {
-        List {
-            slots,
-            start: 0,
-            len,
-        }
+        Self::from_run(slots, 0, len)
+    }
+
+    pub(super) fn from_run(slots: &'a [Slot], start: u32, len: u32) -> List<'a> {
+        List { slots, start, len }
     }
 
     pub fn len(&self) -> usize {

@@ -1,0 +1,292 @@
+<?xml version="1.0" encoding="utf-8"?>
+<geogebra format="5.0" version="5.4.936.0" app="classic" platform="a" xsi:noNamespaceSchemaLocation="https://www.geogebra.org/apps/xsd/ggb.xsd" xmlns="" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<gui>
+	<window width="800" height="600"/>
+	<labelingStyle val="3"/>
+	<font size="12"/>
+</gui>
+<euclidianView>
+	<viewNumber viewNo="1"/>
+	<size width="800" height="600"/>
+	<coordSystem xZero="215" yZero="315" scale="50" yscale="50"/>
+	<evSettings axes="true" grid="false" gridIsBold="false" pointCapturing="3" rightAngleStyle="1" checkboxSize="26" gridType="3"/>
+	<bgColor r="255" g="255" b="255"/>
+	<axesColor r="28" g="28" b="31"/>
+	<gridColor r="180" g="179" b="186"/>
+	<lineStyle axes="1" grid="0"/>
+	<axis id="0" show="true" label="" unitLabel="" tickStyle="1" showNumbers="true"/>
+	<axis id="1" show="true" label="" unitLabel="" tickStyle="1" showNumbers="true"/>
+</euclidianView>
+<algebraView>
+	<mode val="1"/>
+</algebraView>
+<kernel>
+	<continuous val="false"/>
+	<usePathAndRegionParameters val="true"/>
+	<decimals val="2"/>
+	<angleUnit val="degree"/>
+	<algebraStyle val="0" spreadsheet="0"/>
+	<coordStyle val="0"/>
+</kernel>
+<tableview min="0" max="0" step="0"/>
+<scripting blocked="false" disabled="false"/>
+<construction title="" author="" date="">
+<expression label="M" exp="(-4.59, 7.99)" type="point"/>
+<element type="point" label="M">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="1" playing="false"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="-4.59" y="7.99" z="1"/>
+</element>
+<expression label="r" exp="0.56"/>
+<element type="numeric" label="r">
+	<value val="0.56"/>
+	<show object="false" label="true"/>
+</element>
+<command name="Circle">
+	<input a0="M" a1="r"/>
+	<output a0="k"/>
+</command>
+<element type="conic" label="k">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="specific"/>
+	<eigenvectors x0="1" y0="0" z0="1" x1="0" y1="1" z1="1"/>
+	<matrix A0="1" A1="1" A2="84.5946" A3="0" A4="4.59" A5="-7.99"/>
+</element>
+<expression label="P" exp="(5.98, -0.93)" type="point"/>
+<element type="point" label="P">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="1" playing="false"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="5.98" y="-0.93" z="1"/>
+</element>
+<expression label="Q" exp="(7.91, -3.52)" type="point"/>
+<element type="point" label="Q">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="1" playing="false"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="7.91" y="-3.52" z="1"/>
+</element>
+<command name="Arc">
+	<input a0="k" a1="P" a2="Q"/>
+	<output a0="g"/>
+</command>
+<element type="conicpart" label="g">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="specific"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<eigenvectors x0="1" y0="0" z0="1" x1="0" y1="1" z1="1"/>
+	<matrix A0="1" A1="1" A2="84.5946" A3="0" A4="4.59" A5="-7.99"/>
+</element>
+<expression label="X" exp="(-5.16, 7.01)" type="point"/>
+<element type="point" label="X">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="1" playing="false"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="-5.16" y="7.01" z="1"/>
+</element>
+<expression label="w" exp="0.9"/>
+<element type="numeric" label="w">
+	<value val="0.9"/>
+	<show object="false" label="true"/>
+</element>
+<expression label="f" exp="-1.5"/>
+<element type="numeric" label="f">
+	<value val="-1.5"/>
+	<show object="false" label="true"/>
+</element>
+<command name="Mirror">
+	<input a0="P" a1="X"/>
+	<output a0="P&apos;"/>
+</command>
+<element type="point" label="P&apos;">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="-16.3" y="14.95" z="1"/>
+</element>
+<command name="Mirror">
+	<input a0="Q" a1="X"/>
+	<output a0="Q&apos;"/>
+</command>
+<element type="point" label="Q&apos;">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="-18.23" y="17.54" z="1"/>
+</element>
+<command name="Arc">
+	<input a0="Mirror[k, X]" a1="P&apos;" a2="Q&apos;"/>
+	<output a0="m"/>
+</command>
+<element type="conicpart" label="m">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="specific"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<eigenvectors x0="-1" y0="0" z0="1" x1="0" y1="-1" z1="1"/>
+	<matrix A0="1" A1="1" A2="68.88019999999999" A3="0" A4="5.73" A5="-6.029999999999999"/>
+</element>
+<command name="Rotate">
+	<input a0="P&apos;" a1="w" a2="X"/>
+	<output a0="P&apos;&apos;"/>
+</command>
+<element type="point" label="P&apos;&apos;">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="-18.30435070897742" y="3.219321374818909" z="1"/>
+</element>
+<command name="Rotate">
+	<input a0="Q&apos;" a1="w" a2="X"/>
+	<output a0="Q&apos;&apos;"/>
+</command>
+<element type="point" label="Q&apos;&apos;">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="-21.532874643674983" y="3.3174702570588863" z="1"/>
+</element>
+<command name="Arc">
+	<input a0="Rotate[Mirror[k, X], w, X]" a1="P&apos;&apos;" a2="Q&apos;&apos;"/>
+	<output a0="mb"/>
+</command>
+<element type="conicpart" label="mb">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="specific"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<eigenvectors x0="-0.6216099682706644" y0="-0.7833269096274834" z0="1" x1="0.7833269096274834" y1="-0.6216099682706644" z1="1"/>
+	<matrix A0="1" A1="1" A2="57.67115245849813" A3="0" A4="4.746657310479345" A5="-5.954325892607082"/>
+</element>
+<command name="Dilate">
+	<input a0="P&apos;&apos;" a1="f" a2="X"/>
+	<output a0="P&apos;&apos;&apos;"/>
+</command>
+<element type="point" label="P&apos;&apos;&apos;">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="14.556526063466128" y="12.696017937771636" z="1"/>
+</element>
+<command name="Dilate">
+	<input a0="Q&apos;&apos;" a1="f" a2="X"/>
+	<output a0="Q&apos;&apos;&apos;"/>
+</command>
+<element type="point" label="Q&apos;&apos;&apos;">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="19.399311965512474" y="12.548794614411669" z="1"/>
+</element>
+<command name="Arc">
+	<input a0="Dilate[Rotate[Mirror[k, X], w, X], f, X]" a1="P&apos;&apos;&apos;" a2="Q&apos;&apos;&apos;"/>
+	<output a0="mc"/>
+</command>
+<element type="conicpart" label="mc">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="specific"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<eigenvectors x0="1" y0="0" z0="1" x1="0" y1="1" z1="1"/>
+	<matrix A0="1.7777777777777777" A1="1.7777777777777777" A2="189.42470455511608" A3="0" A4="10.275580505388413" A5="-15.277353175270001"/>
+</element>
+<command name="Mirror">
+	<input a0="P&apos;&apos;&apos;" a1="X"/>
+	<output a0="A"/>
+</command>
+<element type="point" label="A">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="-24.87652606346613" y="1.3239820622283638" z="1"/>
+</element>
+<command name="Mirror">
+	<input a0="Q&apos;&apos;&apos;" a1="X"/>
+	<output a0="B"/>
+</command>
+<element type="point" label="B">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="-29.719311965512475" y="1.4712053855883305" z="1"/>
+</element>
+<command name="Arc">
+	<input a0="Mirror[Dilate[Rotate[Mirror[k, X], w, X], f, X], X]" a1="A" a2="B"/>
+	<output a0="md"/>
+</command>
+<element type="conicpart" label="md">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="specific"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<eigenvectors x0="-1" y0="0" z0="1" x1="0" y1="-1" z1="1"/>
+	<matrix A0="1.7777777777777777" A1="1.7777777777777777" A2="87.7380510004395" A3="0" A4="8.071086161278254" A5="-9.647091269174442"/>
+</element>
+</construction>
+</geogebra>

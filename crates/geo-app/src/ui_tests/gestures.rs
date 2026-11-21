@@ -118,6 +118,77 @@ fn a_drag_with_the_secondary_button_pans_and_leaves_points_alone() {
 }
 
 #[test]
+fn panning_to_a_distant_locus_draws_its_circle() {
+    let mut h = harness(
+        "A = (0, 0)\nr = 1\nc = Circle(A, r)\nP = Point(c)\nQ = (30 + 2 * x(P), 2 * y(P))\nL = Locus(Q, P)\n",
+    );
+    h.state_mut().camera = Some(crate::view::Camera::STANDARD);
+    h.state_mut().decor.axes = false;
+    h.state_mut().decor.grid = false;
+    let wb = &mut h.state_mut().wb;
+    for label in ["A", "c", "P", "Q"] {
+        wb.toggle_visible(wb.construction().id(label).unwrap());
+    }
+    let from = world(1.0, 1.0);
+    let to = from - egui::vec2(1500.0, 0.0);
+    frame_at(&mut h, 10.0, vec![Event::PointerMoved(from)]);
+    frame_at(
+        &mut h,
+        10.1,
+        vec![press(from, PointerButton::Secondary, true)],
+    );
+    frame_at(&mut h, 10.3, vec![Event::PointerMoved(to)]);
+    frame_at(
+        &mut h,
+        10.4,
+        vec![press(to, PointerButton::Secondary, false)],
+    );
+    frame_at(&mut h, 11.0, vec![]);
+    frame_at(&mut h, 11.1, vec![]);
+
+    let cam = h.state().camera.unwrap();
+    assert!((cam.cx - 30.0).abs() < 1e-9, "camera at {cam:?}");
+    let center = h.state().view.unwrap().0.egui().center();
+    let region = egui::Rect::from_center_size(center, egui::vec2(250.0, 250.0));
+    let output = h.output();
+    let meshes = h
+        .ctx
+        .tessellate(output.shapes.clone(), output.pixels_per_point);
+    let color = crate::theme::CURVE;
+    let mut bounds = egui::Rect::NOTHING;
+    for primitive in meshes {
+        if let egui::epaint::Primitive::Mesh(mesh) = primitive.primitive {
+            for vertex in mesh
+                .vertices
+                .iter()
+                .filter(|v| v.color == color && region.contains(v.pos))
+            {
+                bounds.extend_with(vertex.pos);
+            }
+        }
+    }
+    assert!((195.0..210.0).contains(&bounds.width()), "{bounds:?}");
+    assert!((195.0..210.0).contains(&bounds.height()), "{bounds:?}");
+    let c = h.state().wb.construction();
+    let fit = crate::view::content_bounds(c).unwrap();
+    assert!(fit.ymin <= -1.99 && fit.ymax >= 1.99, "{fit:?}");
+
+    let drawn = |h: &Harness<'_, App>| {
+        h.output().shapes.iter().find_map(|s| match &s.shape {
+            egui::Shape::Mesh(mesh) if region.contains_rect(mesh.calc_bounds()) => mesh
+                .vertices
+                .iter()
+                .any(|v| v.color == color)
+                .then(|| mesh.clone()),
+            _ => None,
+        })
+    };
+    let mesh = drawn(&h).expect("locus mesh");
+    frame_at(&mut h, 11.2, vec![]);
+    assert!(std::sync::Arc::ptr_eq(&mesh, &drawn(&h).unwrap()));
+}
+
+#[test]
 fn a_secondary_click_does_nothing() {
     let mut h = harness("A = (0, 0)\n");
     h.state_mut().tool.set_tool(Tool::Point);

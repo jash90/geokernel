@@ -31,8 +31,8 @@
 <tableview min="0" max="0" step="0"/>
 <scripting blocked="false" disabled="false"/>
 <construction title="" author="" date="">
-<expression label="P" exp="(4.21, -1.18)" type="point"/>
-<element type="point" label="P">
+<expression label="A" exp="(-1.19, -7.45)" type="point"/>
+<element type="point" label="A">
 	<show object="true" label="true"/>
 	<objColor r="77" g="77" b="255" alpha="0"/>
 	<layer val="0"/>
@@ -40,9 +40,84 @@
 	<animation step="0.1" type="1" playing="false"/>
 	<pointSize val="5"/>
 	<pointStyle val="0"/>
-	<coords x="4.21" y="-1.18" z="1"/>
+	<coords x="-1.19" y="-7.45" z="1"/>
 </element>
-<expression label="C" exp="(1, 1)" type="point"/>
+<expression label="B" exp="(-1.32, 6.19)" type="point"/>
+<element type="point" label="B">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="1" playing="false"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="-1.32" y="6.19" z="1"/>
+</element>
+<expression label="E" exp="(-6.76, 2.55)" type="point"/>
+<element type="point" label="E">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="1" playing="false"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="-6.76" y="2.55" z="1"/>
+</element>
+<command name="Polygon">
+	<input a0="A" a1="B" a2="E"/>
+	<output a0="p" a1="e" a2="a" a3="b"/>
+</command>
+<element type="polygon" label="p">
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<show object="true" label="false"/>
+	<objColor r="153" g="51" b="0" alpha="0.10000000149011612"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+</element>
+<element type="segment" label="e">
+	<show object="true" label="false"/>
+	<objColor r="153" g="51" b="0" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<auxiliary val="false"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="implicit"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<startStyle val="default"/>
+	<endStyle val="default"/>
+	<coords x="-13.64" y="-0.13000000000000012" z="-17.200100000000003"/>
+</element>
+<element type="segment" label="a">
+	<show object="true" label="false"/>
+	<objColor r="153" g="51" b="0" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<auxiliary val="false"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="implicit"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<startStyle val="default"/>
+	<endStyle val="default"/>
+	<coords x="3.6400000000000006" y="-5.4399999999999995" z="38.4784"/>
+</element>
+<element type="segment" label="b">
+	<show object="true" label="false"/>
+	<objColor r="153" g="51" b="0" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<auxiliary val="false"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="implicit"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<startStyle val="default"/>
+	<endStyle val="default"/>
+	<coords x="10" y="5.57" z="53.3965"/>
+</element>
+<expression label="C" exp="(-6, 3.43)" type="point"/>
 <element type="point" label="C">
 	<show object="true" label="true"/>
 	<objColor r="77" g="77" b="255" alpha="0"/>
@@ -51,9 +126,9 @@
 	<animation step="0.1" type="1" playing="false"/>
 	<pointSize val="5"/>
 	<pointStyle val="0"/>
-	<coords x="1" y="1" z="1"/>
+	<coords x="-6" y="3.43" z="1"/>
 </element>
-<expression label="D" exp="(5, 2)" type="point"/>
+<expression label="D" exp="(7.64, 4.75)" type="point"/>
 <element type="point" label="D">
 	<show object="true" label="true"/>
 	<objColor r="77" g="77" b="255" alpha="0"/>
@@ -62,38 +137,121 @@
 	<animation step="0.1" type="1" playing="false"/>
 	<pointSize val="5"/>
 	<pointStyle val="0"/>
-	<coords x="5" y="2" z="1"/>
+	<coords x="7.64" y="4.75" z="1"/>
 </element>
-<command name="Line">
+<command name="Segment">
 	<input a0="C" a1="D"/>
 	<output a0="n"/>
 </command>
-<element type="line" label="n">
+<element type="segment" label="n">
 	<show object="true" label="false"/>
 	<objColor r="28" g="28" b="31" alpha="0"/>
 	<layer val="0"/>
 	<labelMode val="0"/>
 	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
 	<eqnStyle style="implicit"/>
-	<coords x="-1" y="4" z="-3"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<startStyle val="default"/>
+	<endStyle val="default"/>
+	<coords x="-1.3199999999999998" y="13.64" z="-54.705200000000005"/>
 </element>
-<expression label="f" exp="1.7"/>
+<expression label="f" exp="-1.5"/>
 <element type="numeric" label="f">
-	<value val="1.7"/>
+	<value val="-1.5"/>
 	<show object="false" label="true"/>
 </element>
 <command name="Stretch">
-	<input a0="P" a1="n" a2="f"/>
-	<output a0="m"/>
+	<input a0="A" a1="n" a2="f"/>
+	<output a0="A&apos;"/>
 </command>
-<element type="point" label="m">
+<element type="point" label="A&apos;">
 	<show object="true" label="true"/>
 	<objColor r="77" g="77" b="255" alpha="0"/>
 	<layer val="0"/>
 	<labelMode val="0"/>
 	<pointSize val="5"/>
 	<pointStyle val="0"/>
-	<coords x="4.701235294117647" y="-3.144941176470588" z="1"/>
+	<coords x="-3.909407216494845" y="20.6505412371134" z="1"/>
+</element>
+<command name="Stretch">
+	<input a0="B" a1="n" a2="f"/>
+	<output a0="B&apos;"/>
+</command>
+<element type="point" label="B&apos;">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="-0.7670103092783507" y="0.47577319587628875" z="1"/>
+</element>
+<command name="Stretch">
+	<input a0="E" a1="n" a2="f"/>
+	<output a0="E&apos;"/>
+</command>
+<element type="point" label="E&apos;">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="-6.953298969072165" y="4.547422680412372" z="1"/>
+</element>
+<command name="Polygon">
+	<input a0="A&apos;" a1="B&apos;" a2="E&apos;"/>
+	<output a0="m" a1="e&apos;" a2="a&apos;" a3="b&apos;"/>
+</command>
+<element type="polygon" label="m">
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<show object="true" label="false"/>
+	<objColor r="153" g="51" b="0" alpha="0.10000000149011612"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+</element>
+<element type="segment" label="e&apos;">
+	<show object="true" label="false"/>
+	<objColor r="153" g="51" b="0" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<auxiliary val="false"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="implicit"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<startStyle val="default"/>
+	<endStyle val="default"/>
+	<coords x="20.17476804123711" y="3.1423969072164946" z="13.979186855670106"/>
+</element>
+<element type="segment" label="a&apos;">
+	<show object="true" label="false"/>
+	<objColor r="153" g="51" b="0" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<auxiliary val="false"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="implicit"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<startStyle val="default"/>
+	<endStyle val="default"/>
+	<coords x="-4.071649484536083" y="-6.1862886597938145" z="-0.17972680412371211"/>
+</element>
+<element type="segment" label="b&apos;">
+	<show object="true" label="false"/>
+	<objColor r="153" g="51" b="0" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<auxiliary val="false"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="implicit"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<startStyle val="default"/>
+	<endStyle val="default"/>
+	<coords x="-16.10311855670103" y="3.04389175257732" z="-125.81166005154638"/>
 </element>
 </construction>
 </geogebra>

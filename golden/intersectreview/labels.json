@@ -1,0 +1,167 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "intersectreview-labels-001",
+      "group": "intersectreview",
+      "script": [
+        "A = (0, 0)",
+        "B = (2, 0)",
+        "p = PolyLine(A, B)",
+        "G = (0, 1)",
+        "H = (1, 1)",
+        "g = Line(G, H)",
+        "R = Intersect(g, p)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "H", "x": 1.0, "y": -1.0 },
+        { "action": "move", "label": "H", "x": 1.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "p": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [2.0, 0.0]
+            ],
+            "length": 2.0
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.0 },
+          "R_{1}": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "p": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [2.0, 0.0]
+            ],
+            "length": 2.0
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": -1.0 },
+          "g": { "type": "line", "defined": true, "a": 2.0, "b": 1.0, "c": -1.0 },
+          "R_{1}": { "type": "point", "defined": true, "x": 0.5, "y": -0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "p": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [2.0, 0.0]
+            ],
+            "length": 2.0
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.0 },
+          "R_{1}": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "intersectreview-labels-002",
+      "group": "intersectreview",
+      "script": [
+        "A = (2, 0)",
+        "B = (3, 1)",
+        "p = PolyLine(A, B)",
+        "O = (0, 0)",
+        "r = 2",
+        "k = Circle(O, r)",
+        "R = Intersect(k, p)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "r", "value": 1.0 },
+        { "action": "set_number", "label": "r", "value": 2.5 },
+        { "action": "set_number", "label": "r", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "p": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [2.0, 0.0],
+              [3.0, 1.0]
+            ],
+            "length": 1.4142135623730951
+          },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "R": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "p": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [2.0, 0.0],
+              [3.0, 1.0]
+            ],
+            "length": 1.4142135623730951
+          },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 1.0 },
+          "R": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "p": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [2.0, 0.0],
+              [3.0, 1.0]
+            ],
+            "length": 1.4142135623730951
+          },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 2.5 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.5 },
+          "R": { "type": "point", "defined": true, "x": 2.457737973711325, "y": 0.4577379737113252 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "p": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [2.0, 0.0],
+              [3.0, 1.0]
+            ],
+            "length": 1.4142135623730951
+          },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "R": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+        }
+      ]
+    }
+  ]
+}

@@ -75,19 +75,23 @@ PARTIAL = {
     "Slope": "Slope(line, segment, ray or function)",
     "AffineRatio": "AffineRatio(point, point, point)",
     "CrossRatio": "CrossRatio(point, point, point, point)",
+    "Cross": (
+        "point or vector pairs and flat list pairs of equal length 2 or 3 "
+        "(vectorforms-listcross-001 and vectorforms-listcross-002)"
+    ),
     "Angle": (
         "Angle(angle); Angle(number); Angle(point); Angle(vector); Angle(conic); Angle(polygon); "
         "Angle(point, point); Angle(point, vector); Angle(vector, point); Angle(vector, vector); "
         "Angle(line, line); Angle(point, point, point); Angle(point, point, number)"
     ),
-    "Mirror": "point, line, segment, circle or conic in a point or a line; point in a circle",
-    "Rotate": "point, line, segment, circle or conic by an angle, about the origin or a point",
-    "Dilate": "point, line, segment, circle or conic by a factor, from the origin or a point",
-    "Shear": "point, line or segment with a line and a ratio",
-    "Stretch": "point, line or segment with a line and a ratio",
+    "Mirror": "point, line, segment, ray, vector, polygon, polyline, circle, conic, arc or sector in a point or a line; point, line, segment, circle, arc or sector in a circle (inversion)",
+    "Rotate": "point, line, segment, ray, vector, polygon, polyline, circle, conic, arc or sector by an angle, about the origin or a point",
+    "Dilate": "point, line, segment, ray, vector, polygon, polyline, circle, conic, arc or sector by a factor, from the origin or a point",
+    "Shear": "point, line, segment, ray, vector, polygon, circle, conic, arc or sector with a line and a ratio",
+    "Stretch": "point, line, segment, ray, vector, polygon, circle, conic, arc or sector with a line and a ratio, or by a vector",
     "Vector": "Vector(point, point); Vector(point); a free (x, y) under a lower-case label",
     "Ray": "Ray(point, point); Ray(point, vector)",
-    "Translate": "point, line, segment, circle, conic, ray or vector by a vector",
+    "Translate": "point, line, segment, circle, conic, ray, vector, polygon, polyline, arc or sector by a vector",
     "Direction": "Direction(line, segment or ray)",
     "UnitVector": "UnitVector(vector, line, segment or ray)",
     "OrthogonalVector": "OrthogonalVector(vector, line, segment or ray)",

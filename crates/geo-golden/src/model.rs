@@ -32,6 +32,7 @@ pub enum Step {
     Initial,
     Move { label: String, x: f64, y: f64 },
     SetNumber { label: String, value: f64 },
+    Reject { line: String },
 }
 
 #[derive(Deserialize)]
@@ -42,6 +43,7 @@ struct RawStep {
     x: Option<f64>,
     y: Option<f64>,
     value: Option<f64>,
+    line: Option<String>,
 }
 
 impl<'de> Deserialize<'de> for Step {
@@ -49,6 +51,9 @@ impl<'de> Deserialize<'de> for Step {
         use serde::de::Error;
         let raw = RawStep::deserialize(d)?;
         let need = |name: &str| D::Error::custom(format!("step `{}` needs `{name}`", raw.action));
+        if raw.action != "reject" && raw.line.is_some() {
+            return Err(D::Error::custom("only step `reject` takes `line`"));
+        }
         match raw.action.as_str() {
             "initial" => {
                 if raw.label.is_some() || raw.x.is_some() || raw.y.is_some() || raw.value.is_some()
@@ -74,6 +79,15 @@ impl<'de> Deserialize<'de> for Step {
                 Ok(Step::SetNumber {
                     label: raw.label.clone().ok_or_else(|| need("label"))?,
                     value: raw.value.ok_or_else(|| need("value"))?,
+                })
+            }
+            "reject" => {
+                if raw.label.is_some() || raw.x.is_some() || raw.y.is_some() || raw.value.is_some()
+                {
+                    return Err(D::Error::custom("step `reject` takes only `line`"));
+                }
+                Ok(Step::Reject {
+                    line: raw.line.ok_or_else(|| need("line"))?,
                 })
             }
             other => Err(D::Error::custom(format!("unknown action `{other}`"))),
@@ -159,6 +173,8 @@ pub enum ExpectedData {
     },
     /// The elements in order, each recorded like an object.
     List(Vec<Expected>),
+    /// The points of a locus in order.
+    Locus(Vec<LocusPoint>),
     /// A general conic: its type name (`ConicType::name`), its raw matrix
     /// `[A00, A11, A22, A01, A02, A12]` and the parts its type records.
     Conic {
@@ -176,6 +192,10 @@ pub enum ExpectedData {
         curve: Option<ArcCurve>,
     },
 }
+
+/// A point of a locus: `(x, y)`, `None` for an undefined point, and whether
+/// it is joined to the point before it.
+pub type LocusPoint = (Option<(f64, f64)>, bool);
 
 /// What an arc or sector of a circle or ellipse records besides its value
 /// (`golden/SCHEMA.md`).
@@ -402,6 +422,29 @@ fn vertices(v: &serde_json::Value, holes: bool) -> Result<Vec<Option<(f64, f64)>
         .collect()
 }
 
+/// The points of a locus: `[x, y, lineTo]` each, `x` and `y` both null for
+/// an undefined point.
+fn locus_points(v: &serde_json::Value) -> Result<Vec<LocusPoint>, String> {
+    v.as_array()
+        .ok_or_else(|| format!("`points` must be a list, got {v}"))?
+        .iter()
+        .map(|p| match p.as_array().map(Vec::as_slice) {
+            Some([x, y, line_to]) => {
+                let line_to = line_to
+                    .as_bool()
+                    .ok_or_else(|| format!("a locus point needs a boolean lineTo, got {p}"))?;
+                let at = match (x.is_null(), y.is_null()) {
+                    (true, true) => None,
+                    (false, false) => Some((number("x", x)?, number("y", y)?)),
+                    _ => return Err(format!("a locus point has one null coordinate: {p}")),
+                };
+                Ok((at, line_to))
+            }
+            _ => Err(format!("a locus point must be [x, y, lineTo], got {p}")),
+        })
+        .collect()
+}
+
 /// The samples of a defined function: exactly one per [`SAMPLE_XS`], in order.
 fn function_samples(raw: &RawObject) -> Result<ExpectedData, String> {
     if !raw.fields.is_empty() {
@@ -446,6 +489,7 @@ impl TryFrom<RawObject> for Expected {
             "conic" => (Kind::Conic, &[]),
             "arc" => (Kind::Arc, &[]),
             "sector" => (Kind::Sector, &[]),
+            "locus" => (Kind::Locus, &["points"]),
             other => return Err(format!("unknown object type `{other}`")),
         };
         if raw.samples.is_some() && (kind != Kind::Function || !raw.defined) {
@@ -523,6 +567,13 @@ impl TryFrom<RawObject> for Expected {
                     vertices: vertices(&raw.fields["vertices"], true)?,
                     length: number("length", &raw.fields["length"])?,
                 }),
+            });
+        }
+        if kind == Kind::Locus {
+            return Ok(Expected {
+                legacy_angle_number: false,
+                kind,
+                data: Some(ExpectedData::Locus(locus_points(&raw.fields["points"])?)),
             });
         }
         if kind == Kind::List {
@@ -683,10 +734,11 @@ fn validate_case(case: &Case) -> Result<(), String> {
     if labels.len() != case.script.len() {
         return Err("script lines must each define a distinct `label = ...`".into());
     }
-    let mut first: Option<BTreeSet<String>> = None;
+    let mut previous_keys: Option<BTreeSet<String>> = None;
+    let mut boundary_prefixes = BTreeSet::new();
     for (i, snap) in case.snapshots.iter().enumerate() {
         let keys: BTreeSet<String> = snap.keys().cloned().collect();
-        match &first {
+        match &previous_keys {
             None => {
                 // The sides and new vertices of a polygon get labels of
                 // their own (see `golden/SCHEMA.md`).
@@ -707,6 +759,20 @@ fn validate_case(case: &Case) -> Result<(), String> {
                     }
                     if let Some((label, "Difference" | "IntersectPath", _)) = command_args(line) {
                         clip_prefixes.insert(label_prefix(label));
+                    }
+                    if let Some((label, "Intersect", args)) = command_args(line) {
+                        if let [a, b] = args.as_slice() {
+                            let kind = |name: &str| snap.get(name).map(|o| o.kind);
+                            let boundary = |k| matches!(k, Some(Kind::Polygon | Kind::PolyLine));
+                            let carrier =
+                                |k| matches!(k, Some(Kind::Line | Kind::Segment | Kind::Ray));
+                            let (a, b) = (kind(a), kind(b));
+                            if boundary(a) && (boundary(b) || carrier(b))
+                                || boundary(b) && carrier(a)
+                            {
+                                boundary_prefixes.insert(label_prefix(label));
+                            }
+                        }
                     }
                     if let Some((label, "Angle", args)) = command_args(line) {
                         match args.as_slice() {
@@ -753,10 +819,20 @@ fn validate_case(case: &Case) -> Result<(), String> {
                     }
                 };
                 check_keys(&keys, &outputs, created).map_err(|e| format!("snapshot {i}: {e}"))?;
-                first = Some(keys);
+                previous_keys = Some(keys);
             }
-            Some(f) if *f != keys => {
-                return Err(format!("snapshot {i} labels differ from snapshot 0"));
+            Some(previous) if *previous != keys => {
+                // Boundary algorithms retain all earlier labels and can
+                // publish new indexed point labels on a move.
+                if !previous.is_subset(&keys)
+                    || keys.difference(previous).any(|key| {
+                        snap[key].kind != Kind::Point
+                            || !indexed_prefix(key).is_some_and(|p| boundary_prefixes.contains(p))
+                    })
+                {
+                    return Err(format!("snapshot {i} labels differ from snapshot 0"));
+                }
+                previous_keys = Some(keys);
             }
             Some(_) => {}
         }
@@ -811,6 +887,53 @@ struct PolygonNames {
 impl PolygonNames {
     fn of(script: &[String], kind: impl Fn(&str) -> Option<Kind>) -> PolygonNames {
         let mut names = PolygonNames::default();
+        // A fixed-vertex polygon image is made from the labelled images of
+        // its points. Track possible labels through every step in the chain.
+        // None represents an indexed label, whose image takes a default label.
+        let mut polygons: BTreeMap<&str, BTreeSet<Option<String>>> = BTreeMap::new();
+        for line in script {
+            let Some((label, command, args)) = command_args(line) else {
+                continue;
+            };
+            if command == "Polygon"
+                && args.len() >= 3
+                && args
+                    .iter()
+                    .all(|arg| kind(arg) == Some(Kind::Point) || names.point(arg))
+            {
+                polygons.insert(label, args.iter().map(|v| Some(v.to_string())).collect());
+                continue;
+            }
+            let Some(vertices) = transformed_arg(line).and_then(|src| polygons.get(src)) else {
+                continue;
+            };
+            let mut image = BTreeSet::new();
+            for vertex in vertices {
+                if let Some(vertex) = vertex
+                    .as_ref()
+                    .filter(|v| !v.contains('_') && !v.ends_with("'''"))
+                {
+                    let prime = format!("{vertex}'");
+                    if names.points.contains(&prime) || kind(&prime) == Some(Kind::Point) {
+                        names.indexed_points.insert(prime.clone());
+                        names.indexed_segments.insert(prime.to_lowercase());
+                        image.insert(None);
+                    }
+                    names.points.insert(prime.clone());
+                    names.segments.insert(prime.to_lowercase());
+                    image.insert(Some(prime));
+                } else {
+                    names.default_points();
+                    for base in POINT_LABELS {
+                        names.indexed_segments.insert(base.to_lowercase());
+                        image.insert(Some(base.to_string()));
+                    }
+                    image.insert(None);
+                }
+            }
+            names.default_segments();
+            polygons.insert(label, image);
+        }
         for line in script {
             let Some((_, command, args)) = command_args(line) else {
                 continue;
@@ -929,6 +1052,23 @@ fn command_args(line: &str) -> Option<(&str, &str, Vec<&str>)> {
     let (name, inner) = rhs.trim().split_once('(')?;
     let args = inner.strip_suffix(')')?.split(',').map(str::trim).collect();
     Some((label.trim(), name.trim(), args))
+}
+
+/// The transformed object of a script line `name = Mirror(p, ...)` and the
+/// other transformations, when the line creates the sides of a polygon's
+/// image as well (`Transform.transformPoly`).
+fn transformed_arg(line: &str) -> Option<&str> {
+    let (_, rhs) = line.split('#').next()?.split_once('=')?;
+    let rhs = rhs.trim();
+    let (func, rest) = rhs.split_once('(')?;
+    if !matches!(
+        func,
+        "Mirror" | "Reflect" | "Rotate" | "Dilate" | "Shear" | "Stretch" | "Translate"
+    ) {
+        return None;
+    }
+    let inner = rest.strip_suffix(')')?;
+    inner.split(',').map(str::trim).next()
 }
 
 /// Snapshot keys must match the script labels: each label is either a key
@@ -1161,6 +1301,24 @@ mod tests {
             script_labels(&["f(x) = x^2".to_string(), "v = f(2)".to_string()]),
             set(&["f", "v"])
         );
+    }
+
+    #[test]
+    fn transformed_polygon_sides_are_created_labels() {
+        let script = vec![
+            "A = (4.7, -3.93)".to_string(),
+            "B = (-7.04, -4.69)".to_string(),
+            "E = (4.14, 4.51)".to_string(),
+            "p = Polygon(A, B, E)".to_string(),
+            "Q = (0.71, -2.15)".to_string(),
+            "m = Mirror(p, Q)".to_string(),
+        ];
+        let names = PolygonNames::of(&script, |l| {
+            (l == "A" || l == "B" || l == "E" || l == "Q").then_some(Kind::Point)
+        });
+        assert!(names.segment("a'"));
+        assert!(names.segment("b'"));
+        assert!(names.segment("e'"));
     }
 
     fn check_keys_(keys: &BTreeSet<String>, labels: &BTreeSet<String>) -> Result<(), String> {

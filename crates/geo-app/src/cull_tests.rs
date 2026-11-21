@@ -33,7 +33,7 @@ impl Rng {
 /// `cells` cells in a square grid, each with every kind the canvas draws:
 /// points, a segment, a line, a ray, a circle, an ellipse, a vector, an
 /// angle, a polygon with its sides, a regular polygon, a polyline, a
-/// midpoint and an intersection; once, a hyperbola, a parabola and two
+/// midpoint and one indexed intersection; once, a hyperbola, a parabola and two
 /// functions (named `Unbounded...`). Labels are long enough to stick out of
 /// the area.
 fn scene(cells: usize) -> String {
@@ -60,7 +60,7 @@ fn scene(cells: usize) -> String {
             format!("{} = Polygon({c}, {a}, 5)", p("q")),
             format!("{} = PolyLine({a}, {c}, {b})", p("pl")),
             format!("{} = Midpoint({b}, {c})", p("M")),
-            format!("{} = Intersect({}, {})", p("I"), p("l"), p("k")),
+            format!("{} = Intersect({}, {}, 1)", p("I"), p("l"), p("k")),
         ] {
             s += &line;
             s.push('\n');

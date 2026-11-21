@@ -1,0 +1,160 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "intersections-boundsreview-001",
+      "group": "intersections",
+      "script": [
+        "A = (0, 0)",
+        "B = (100, 0)",
+        "n = 100.0005",
+        "C = (n, -1)",
+        "D = (n, 1)",
+        "g = Segment(A, B)",
+        "h = Segment(C, D)",
+        "R = Intersect(g, h)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 100.00150000000001 },
+        { "action": "set_number", "label": "n", "value": 100.0005 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 100.0, "y": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 100.0005 },
+          "C": { "type": "point", "defined": true, "x": 100.0005, "y": -1.0 },
+          "D": { "type": "point", "defined": true, "x": 100.0005, "y": 1.0 },
+          "g": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 100.0, "y2": 0.0 },
+          "h": { "type": "segment", "defined": true, "x1": 100.0005, "y1": -1.0, "x2": 100.0005, "y2": 1.0 },
+          "R": { "type": "point", "defined": true, "x": 100.00050000000002, "y": -0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 100.0, "y": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 100.00150000000001 },
+          "C": { "type": "point", "defined": true, "x": 100.00150000000001, "y": -1.0 },
+          "D": { "type": "point", "defined": true, "x": 100.00150000000001, "y": 1.0 },
+          "g": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 100.0, "y2": 0.0 },
+          "h": { "type": "segment", "defined": true, "x1": 100.00150000000001, "y1": -1.0, "x2": 100.00150000000001, "y2": 1.0 },
+          "R": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 100.0, "y": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 100.0005 },
+          "C": { "type": "point", "defined": true, "x": 100.0005, "y": -1.0 },
+          "D": { "type": "point", "defined": true, "x": 100.0005, "y": 1.0 },
+          "g": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 100.0, "y2": 0.0 },
+          "h": { "type": "segment", "defined": true, "x1": 100.0005, "y1": -1.0, "x2": 100.0005, "y2": 1.0 },
+          "R": { "type": "point", "defined": true, "x": 100.00050000000002, "y": -0.0 }
+        }
+      ]
+    },
+    {
+      "id": "intersections-boundsreview-002",
+      "group": "intersections",
+      "script": [
+        "A = (0, 0)",
+        "B = (100, 0)",
+        "n = -0.0005",
+        "C = (n, -1)",
+        "D = (n, 1)",
+        "g = Ray(A, B)",
+        "h = Segment(C, D)",
+        "R = Intersect(g, h)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": -0.0015 },
+        { "action": "set_number", "label": "n", "value": -5.0E-4 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 100.0, "y": 0.0 },
+          "n": { "type": "number", "defined": true, "value": -5.0E-4 },
+          "C": { "type": "point", "defined": true, "x": -5.0E-4, "y": -1.0 },
+          "D": { "type": "point", "defined": true, "x": -5.0E-4, "y": 1.0 },
+          "g": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": 0.0, "b": 100.0, "c": 0.0 },
+          "h": { "type": "segment", "defined": true, "x1": -5.0E-4, "y1": -1.0, "x2": -5.0E-4, "y2": 1.0 },
+          "R": { "type": "point", "defined": true, "x": -5.0E-4, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 100.0, "y": 0.0 },
+          "n": { "type": "number", "defined": true, "value": -0.0015 },
+          "C": { "type": "point", "defined": true, "x": -0.0015, "y": -1.0 },
+          "D": { "type": "point", "defined": true, "x": -0.0015, "y": 1.0 },
+          "g": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": 0.0, "b": 100.0, "c": 0.0 },
+          "h": { "type": "segment", "defined": true, "x1": -0.0015, "y1": -1.0, "x2": -0.0015, "y2": 1.0 },
+          "R": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 100.0, "y": 0.0 },
+          "n": { "type": "number", "defined": true, "value": -5.0E-4 },
+          "C": { "type": "point", "defined": true, "x": -5.0E-4, "y": -1.0 },
+          "D": { "type": "point", "defined": true, "x": -5.0E-4, "y": 1.0 },
+          "g": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": 0.0, "b": 100.0, "c": 0.0 },
+          "h": { "type": "segment", "defined": true, "x1": -5.0E-4, "y1": -1.0, "x2": -5.0E-4, "y2": 1.0 },
+          "R": { "type": "point", "defined": true, "x": -5.0E-4, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "intersections-boundsreview-003",
+      "group": "intersections",
+      "script": [
+        "A = (0, 0)",
+        "B = (2, 0)",
+        "n = 2.00001",
+        "C = (n, -1)",
+        "D = (n, 1)",
+        "g = Segment(A, B)",
+        "h = Segment(C, D)",
+        "R = Intersect(g, h)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 2.00101 },
+        { "action": "set_number", "label": "n", "value": 2.00001 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 2.00001 },
+          "C": { "type": "point", "defined": true, "x": 2.00001, "y": -1.0 },
+          "D": { "type": "point", "defined": true, "x": 2.00001, "y": 1.0 },
+          "g": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "h": { "type": "segment", "defined": true, "x1": 2.00001, "y1": -1.0, "x2": 2.00001, "y2": 1.0 },
+          "R": { "type": "point", "defined": true, "x": 2.00001, "y": -0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 2.00101 },
+          "C": { "type": "point", "defined": true, "x": 2.00101, "y": -1.0 },
+          "D": { "type": "point", "defined": true, "x": 2.00101, "y": 1.0 },
+          "g": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "h": { "type": "segment", "defined": true, "x1": 2.00101, "y1": -1.0, "x2": 2.00101, "y2": 1.0 },
+          "R": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 2.00001 },
+          "C": { "type": "point", "defined": true, "x": 2.00001, "y": -1.0 },
+          "D": { "type": "point", "defined": true, "x": 2.00001, "y": 1.0 },
+          "g": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "h": { "type": "segment", "defined": true, "x1": 2.00001, "y1": -1.0, "x2": 2.00001, "y2": 1.0 },
+          "R": { "type": "point", "defined": true, "x": 2.00001, "y": -0.0 }
+        }
+      ]
+    }
+  ]
+}

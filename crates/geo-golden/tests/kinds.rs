@@ -33,7 +33,7 @@
 //!   object of the kind; `yes` or `partial` is declared.
 //!
 //! Declared, not checked: `tool`; `export` (there is no file writer, so the
-//! column must be `no` everywhere); `svg` of the kinds in [`SVG_UNCHECKED`].
+//! column must be `no` everywhere).
 //! A row without a kernel kind is `no` in every column.
 
 use geo_app_core::describe;
@@ -128,12 +128,6 @@ fn kernel_kinds() -> Vec<String> {
     }
     kinds
 }
-
-/// Kinds whose SVG cell cannot be checked: no golden line creates an object
-/// of the kind alone, so its effect on the image cannot be separated (every
-/// `Polygon` line creates the sides as well). The test fails once a line
-/// exists, so the entry does not go stale.
-const SVG_UNCHECKED: [&str; 1] = ["Polygon"];
 
 fn table() -> Vec<BTreeMap<String, String>> {
     let t =
@@ -520,12 +514,6 @@ fn checked_cells_agree_with_the_code() {
     let mut errors = Vec::new();
     for r in &rows {
         let k = &r["kernel_kind"];
-        let svg_unchecked = SVG_UNCHECKED.contains(&k.as_str());
-        if svg_unchecked && s.single.contains_key(k) {
-            errors.push(format!(
-                "{k}: a golden line now creates it alone; drop it from SVG_UNCHECKED"
-            ));
-        }
         // An exact value, or only whether the code handles the kind at all.
         let mut exact = |col: &str, actual: Option<&str>| match actual {
             Some(a) if a != r[col] => {
@@ -541,18 +529,16 @@ fn checked_cells_agree_with_the_code() {
             "kernel_golden",
             Some(if s.recorded.contains(k) { "yes" } else { "no" }),
         );
-        if !svg_unchecked {
-            exact(
-                "svg",
-                s.single.get(k).and_then(|v| {
-                    grade(
-                        v.iter()
-                            .filter(|l| has_something_to_draw(l))
-                            .map(|l| svg_draws(l)),
-                    )
-                }),
-            );
-        }
+        exact(
+            "svg",
+            s.single.get(k).and_then(|v| {
+                grade(
+                    v.iter()
+                        .filter(|l| has_something_to_draw(l))
+                        .map(|l| svg_draws(l)),
+                )
+            }),
+        );
         let objects: Vec<(Construction, Id)> = s
             .any
             .get(k)

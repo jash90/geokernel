@@ -838,6 +838,9 @@ dependencies = [
 [[package]]
 name = "geo-kernel"
 version = "0.1.0"
+dependencies = [
+ "libm",
+]
 
 [[package]]
 name = "geo-mcp"

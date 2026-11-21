@@ -1,7 +1,8 @@
 //! Replays a golden case on `geo-kernel` and compares every snapshot.
 
 use crate::compare::{
-    compare_arc, compare_conic, compare_list, compare_sampled, line_scale_agrees, Sign,
+    compare_arc, compare_conic, compare_list, compare_locus, compare_sampled, line_scale_agrees,
+    Sign,
 };
 use crate::model::{Case, Step};
 use geo_kernel::{script, Construction, Kind};
@@ -86,6 +87,17 @@ pub fn replay(case: &Case) -> CaseOutcome {
                 }
                 continue;
             }
+            if c.kind(id) == Kind::Locus {
+                if let Err(why) = compare_locus(expected, Kind::Locus, &actual, c.locus(id)) {
+                    out.mismatches.push(failure(
+                        i,
+                        label,
+                        &format!("{expected:?}"),
+                        format!("{actual:?} ({why})"),
+                    ));
+                }
+                continue;
+            }
             if c.kind(id) == geo_kernel::Kind::Conic {
                 let data = c.conic(id);
                 let (result, agreement) =
@@ -147,6 +159,14 @@ fn apply(c: &mut Construction, step: &Step) -> Result<(), String> {
             c.set_number(id, *value)
                 .map(drop)
                 .map_err(|e| format!("set `{label}`: {e}"))
+        }
+        Step::Reject { line } => {
+            let len = c.len();
+            if script::exec(c, line).is_err() && c.len() == len {
+                Ok(())
+            } else {
+                Err(format!("expected rejection without new objects: {line}"))
+            }
         }
     }
 }

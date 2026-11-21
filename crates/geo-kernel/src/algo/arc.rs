@@ -38,11 +38,13 @@ use std::f64::consts::PI;
 use super::conic::{circumcircle, Circumcircle};
 use super::conic_nd::{my_length, ConicData, ConicType};
 use super::conic_path::{self, type_number};
+use super::general_conic::transform_conic;
 use super::path::{conic_parameter, line_path_changed, line_point_changed, PathState};
-use super::{join, Group, Parents, POINT};
+use super::transform::{invert_point, parse_transform_for, shear_axis, TransformOf};
+use super::{join, Group, Parents, LINE_LIKE, NUMBER_OR_ANGLE, POINT};
 use crate::kernel::{Construction, Def, Error, Id, Kind, Value};
 use crate::script::object;
-use crate::tol::STANDARD_PRECISION;
+use crate::tol::{MAX_PRECISION, STANDARD_PRECISION};
 
 /// Homogeneous coordinates of a point or the coefficients of a line.
 type Hom = (f64, f64, f64);
@@ -117,6 +119,25 @@ pub enum ArcDef {
     /// (`AlgoCircumferenceConic`): the arc and its chord, or the arc and two
     /// radii.
     Perimeter(Id),
+    /// `Mirror`, `Rotate`, `Dilate`, `Shear` and `Stretch` of a part. The
+    /// image keeps the part's parameters when the map preserves angles
+    /// (reflection, rotation) and recomputes them from the images of its end
+    /// points otherwise (`AlgoTransformation.transformLimitedPath`).
+    Transform {
+        kind: Kind,
+        src: Id,
+        def: TransformOf,
+    },
+    /// `Translate(a, v)`: the parameters always stay (a translation
+    /// preserves them).
+    TranslatePart { kind: Kind, src: Id, by: Id },
+    /// `Mirror(a, k)`: the inversion of a part in a circle. The parameters
+    /// are recomputed from the images of the end points, and the orientation
+    /// flips when the mirror's centre lies inside the part's circle.
+    InvertPart { kind: Kind, src: Id, circle: Id },
+    /// `Mirror(s, k)`: the inversion of a segment in a circle, which is the
+    /// arc of the image circle between the images of the end points.
+    InvertSegment { src: Id, circle: Id },
 }
 
 /// GeoGebra's `GeoConicPart` with its `GeoConicPartParameters`: the conic
@@ -493,6 +514,11 @@ impl ArcDef {
             | ArcDef::Circum { sector, .. }
             | ArcDef::ConicPoints { sector, .. }
             | ArcDef::ConicParameters { sector, .. } => sector,
+            ArcDef::Transform { kind, .. }
+            | ArcDef::TranslatePart { kind, .. }
+            | ArcDef::InvertPart { kind, .. } => kind == Kind::Sector,
+            // the image of a segment under inversion is always an arc
+            ArcDef::InvertSegment { .. } => false,
             _ => false,
         }
     }
@@ -545,14 +571,7 @@ impl ArcDef {
                     a.set_undefined();
                     return a;
                 };
-                match circumcircle(pa, pb, pc) {
-                    Circumcircle::Circle { cx, cy, r } => {
-                        a.conic = ConicData::circle(cx, cy, r);
-                        circum_circle(&mut a, pa, pb, pc);
-                    }
-                    Circumcircle::Lines => circum_degenerate(&mut a, pa, pb, pc),
-                    Circumcircle::Undefined => a.set_undefined(),
-                }
+                circum_record(&mut a, pa, pb, pc);
             }
             ArcDef::ConicPoints { conic, p, q, .. } => {
                 // `AlgoConicPartConicPoints`
@@ -577,10 +596,445 @@ impl ArcDef {
                 let t = c.number(t).unwrap_or(f64::NAN);
                 a.set_parameters(conic_defined(c, conic, &d), s, t, true);
             }
+            ArcDef::Transform { src, def, .. } => {
+                // `Transform.transform` runs `createTransformedObject` again
+                // for an image, so a part that GeoGebra builds from points is
+                // rebuilt from the images of them through the whole chain
+                let mut steps = Vec::new();
+                if let Some(base) = part_source(c, src, &mut steps) {
+                    steps.push(PartStep::Map(def));
+                    rebuilt_record(c, &mut a, base, &steps);
+                    return a;
+                }
+                // `AlgoTransformation.compute` with `transformLimitedPath`:
+                // the image starts as a copy of the part (`setOutGeo`) whose
+                // conic is transformed; a map that preserves angles keeps the
+                // parameters, the others read them from the images of the
+                // part's end points
+                let Some(s) = c.arc(src).filter(|s| s.defined && s.conic.defined) else {
+                    a.set_undefined();
+                    return a;
+                };
+                a.conic = s.conic;
+                transform_conic(c, &def, &mut a.conic);
+                if !a.conic.defined {
+                    a.set_undefined();
+                    return a;
+                }
+                let positive = part_orientation(c, &def, &s);
+                if keeps_parameters(&def) {
+                    // `transformLimitedPath` passes the ends swapped for a
+                    // negative source, so the image keeps its parameter range
+                    if positive {
+                        a.set_parameters(true, s.start, s.end, true);
+                    } else {
+                        a.set_parameters(true, s.end, s.start, false);
+                    }
+                } else {
+                    set_parameters_from_images(c, &mut a, &s, &def, positive);
+                }
+            }
+            ArcDef::TranslatePart { src, by, .. } => {
+                // `TransformTranslate` rebuilds a part made from points
+                let mut steps = Vec::new();
+                if let Some(base) = part_source(c, src, &mut steps) {
+                    steps.push(PartStep::Translate(by));
+                    rebuilt_record(c, &mut a, base, &steps);
+                    return a;
+                }
+                // `AlgoTranslate`: the parameters always stay
+                let Some(s) = c.arc(src).filter(|s| s.defined && s.conic.defined) else {
+                    a.set_undefined();
+                    return a;
+                };
+                let Value::Vector { x: vx, y: vy } = c.value(by) else {
+                    a.set_undefined();
+                    return a;
+                };
+                a.conic = s.conic;
+                a.conic.translate(vx, vy);
+                if !a.conic.defined {
+                    a.set_undefined();
+                    return a;
+                }
+                // the ends swap for a negative source, as above
+                if s.positive {
+                    a.set_parameters(true, s.start, s.end, true);
+                } else {
+                    a.set_parameters(true, s.end, s.start, false);
+                }
+            }
+            ArcDef::InvertPart { src, circle, .. } => {
+                // `TransformMirror` at a circle rebuilds a part made from
+                // points like every transformation does
+                let mut steps = Vec::new();
+                if let Some(base) = part_source(c, src, &mut steps) {
+                    steps.push(PartStep::Invert(circle));
+                    rebuilt_record(c, &mut a, base, &steps);
+                    return a;
+                }
+                // `AlgoMirror` at a circle: `transformLimitedConic` with the
+                // inversion's rule for the orientation
+                let Some(s) = c.arc(src).filter(|s| s.defined && s.conic.defined) else {
+                    a.set_undefined();
+                    return a;
+                };
+                let Some(k) = c.conic(circle).filter(|k| k.defined) else {
+                    a.set_undefined();
+                    return a;
+                };
+                a.conic = s.conic;
+                // The zero-radius mirror clears the part's value without
+                // changing its conic. The full-turn projection below
+                // computes the value again, including the orientation.
+                if k.ty != ConicType::SinglePoint {
+                    a.conic.mirror_conic(&k, false);
+                    // GeoConic.mirror leaves these conics in place and
+                    // clears only the part's value.
+                    if !a.conic.defined
+                        && matches!(
+                            a.conic.ty,
+                            ConicType::Ellipse
+                                | ConicType::Hyperbola
+                                | ConicType::Parabola
+                                | ConicType::IntersectingLines
+                        )
+                    {
+                        a.conic.defined = true;
+                    }
+                }
+                if !a.conic.defined {
+                    a.set_undefined();
+                    return a;
+                }
+                // `AlgoMirror.swapOrientation`: the ends swap when the
+                // mirror's centre does not lie outside the part's circle
+                let dist = my_length(
+                    s.conic.midpoint[0] - k.midpoint[0],
+                    s.conic.midpoint[1] - k.midpoint[1],
+                );
+                let positive = !matches!(
+                    dist.partial_cmp(&(s.conic.half_axes[0] + STANDARD_PRECISION)),
+                    Some(std::cmp::Ordering::Greater)
+                );
+                // the ends' images are their inversions, not a map's points,
+                // and are projected onto the image conic (the unchanged one
+                // for a conic the inversion leaves alone)
+                let centre = (k.midpoint[0], k.midpoint[1], k.half_axes[0]);
+                let (Some(p0), Some(p1)) = (
+                    invert_point(part_point(&s, 0.0), centre),
+                    invert_point(part_point(&s, 1.0), centre),
+                ) else {
+                    a.set_undefined();
+                    return a;
+                };
+                let d = full_part_parameter(&a.conic, p0);
+                let e = full_part_parameter(&a.conic, p1);
+                a.set_parameters(true, d, e, positive);
+            }
+            ArcDef::InvertSegment { src, circle } => {
+                // `AlgoMirror.transformLimitedPath` for a segment: the image
+                // is the arc of the image circle between the images of the
+                // end points
+                let Some(k) = c.conic(circle) else {
+                    a.set_undefined();
+                    return a;
+                };
+                let Value::Segment { x1, y1, x2, y2 } = c.value(src) else {
+                    a.set_undefined();
+                    return a;
+                };
+                let (rx, ry, rz) = join((x1, y1), (x2, y2));
+                a.conic = ConicData::new();
+                a.conic.from_line([rx, ry, rz], Some((x1, y1)));
+                a.conic.mirror_conic(&k, true);
+                if !a.conic.defined || a.conic.ty != ConicType::Circle {
+                    a.set_undefined();
+                    return a;
+                }
+                let centre = (k.midpoint[0], k.midpoint[1]);
+                let radius = k.half_axes[0];
+                let (Some(p1), Some(p2)) = (
+                    invert_point((x1, y1), (centre.0, centre.1, radius)),
+                    invert_point((x2, y2), (centre.0, centre.1, radius)),
+                ) else {
+                    a.set_undefined();
+                    return a;
+                };
+                let d = full_part_parameter(&a.conic, p1);
+                let e = full_part_parameter(&a.conic, p2);
+                // the arc runs the way around that does not take in the
+                // mirror's centre, which lies on the image circle
+                let mut probe = ArcData::new(false);
+                probe.conic = a.conic;
+                probe.set_parameters(true, d, e, true);
+                let positive = !probe_contains(&probe, centre);
+                a.set_parameters(true, d, e, positive);
+            }
             ArcDef::Length(_) | ArcDef::Area(_) | ArcDef::Perimeter(_) => a.set_undefined(),
         }
         a
     }
+}
+
+/// Whether the image keeps the source's parameters: a map that preserves
+/// angles maps the part's circle onto the image circle, so the parameters
+/// stay (`AlgoRotate`, `AlgoTranslate` and `AlgoMirror` at a point or a line
+/// run the plain `transformLimitedPath`).
+fn keeps_parameters(def: &TransformOf) -> bool {
+    matches!(
+        def,
+        TransformOf::MirrorPoint(_) | TransformOf::MirrorLine(_) | TransformOf::Rotate { .. }
+    )
+}
+
+/// `swapOrientation` of the transformation of a part: the source's
+/// orientation, which a stretch by a negative ratio turns (`n < 0` flips the
+/// ends of the image; a shear and a stretch along a vector keep them).
+fn part_orientation(c: &Construction, def: &TransformOf, s: &ArcData) -> bool {
+    let mut positive = s.positive;
+    if let TransformOf::Stretch { ratio, .. } = *def {
+        if c.number(ratio).is_some_and(|n| n < 0.0) {
+            positive = !positive;
+        }
+    }
+    positive
+}
+
+/// One transformation between a part that GeoGebra rebuilds from points and
+/// its image (`isAllEndpointsLabelsSet` makes `Transform.transform` rebuild
+/// again for an image, so the chain reaches from the base to the image).
+enum PartStep {
+    /// A map of the plane: `Mirror` in a point or a line, `Rotate`, `Dilate`,
+    /// `Shear`, `Stretch`.
+    Map(TransformOf),
+    /// `Translate` by a vector.
+    Translate(Id),
+    /// `Mirror` in a circle: the inversion.
+    Invert(Id),
+}
+
+/// The part an image is rebuilt from: a circumcircular part from its three
+/// points, or `Arc`/`Sector` between two points from its conic and the two
+/// points (`GeoConicPart.createTransformedObject`). No other part is rebuilt
+/// (`AlgoConicPartCircle`, `AlgoSemicircle` and `AlgoConicPartConicParameters`
+/// label no points their image could run through).
+enum PartSource {
+    Circum { a: Id, b: Id, c: Id },
+    ConicPoints { conic: Id, p: Id, q: Id },
+}
+
+/// The part the image `id` is rebuilt from, with the transformations between
+/// them, innermost first; `None` for a part that is not rebuilt from points.
+fn part_source(c: &Construction, id: Id, steps: &mut Vec<PartStep>) -> Option<PartSource> {
+    let base = match c.def(id) {
+        Def::Arc(ArcDef::Circum { a, b, c, .. }) => PartSource::Circum { a, b, c },
+        Def::Arc(ArcDef::ConicPoints { conic, p, q, .. }) => {
+            PartSource::ConicPoints { conic, p, q }
+        }
+        Def::Arc(ArcDef::Transform { src, def, .. }) => {
+            let base = part_source(c, src, steps)?;
+            steps.push(PartStep::Map(def));
+            base
+        }
+        Def::Arc(ArcDef::TranslatePart { src, by, .. }) => {
+            let base = part_source(c, src, steps)?;
+            steps.push(PartStep::Translate(by));
+            base
+        }
+        Def::Arc(ArcDef::InvertPart { src, circle, .. }) => {
+            let base = part_source(c, src, steps)?;
+            steps.push(PartStep::Invert(circle));
+            base
+        }
+        _ => return None,
+    };
+    Some(base)
+}
+
+/// The image of the point `p` under the chain of `steps`, innermost first;
+/// `None` for an undefined image (an input of a step, or a point the
+/// inversion sends to infinity).
+fn mapped_point(c: &Construction, steps: &[PartStep], p: (f64, f64)) -> Option<(f64, f64)> {
+    let mut p = p;
+    for step in steps {
+        p = match *step {
+            PartStep::Map(def) => def.map(c)?.point(p.0, p.1),
+            PartStep::Translate(by) => {
+                let Value::Vector { x, y } = c.value(by) else {
+                    return None;
+                };
+                (p.0 + x, p.1 + y)
+            }
+            PartStep::Invert(k) => {
+                let d = c.conic(k)?;
+                invert_point(p, (d.midpoint[0], d.midpoint[1], d.half_axes[0]))?
+            }
+        };
+    }
+    Some(p)
+}
+
+/// The conic `d` under the chain of `steps`, in the same order as
+/// [`mapped_point`] runs it (`getTransformedConic` of every step).
+fn mapped_conic(c: &Construction, steps: &[PartStep], d: &mut ConicData) {
+    for step in steps {
+        if !d.defined {
+            return;
+        }
+        match *step {
+            PartStep::Map(def) => transform_conic(c, &def, d),
+            PartStep::Translate(by) => {
+                if let Value::Vector { x, y } = c.value(by) {
+                    d.translate(x, y);
+                } else {
+                    d.defined = false;
+                }
+            }
+            PartStep::Invert(k) => match c.conic(k) {
+                Some(m) => d.mirror_conic(&m, false),
+                None => d.defined = false,
+            },
+        }
+    }
+}
+
+/// `GeoConicPart.createTransformedObject`: the image of a circumcircular
+/// part is the circumcircular part of the images of its three points, and
+/// the image of `Arc(k, P, Q)` is `Arc(k', P', Q')` with the transformed
+/// conic and the projections of the images of `P` and `Q` onto it, which
+/// `AlgoConicPartConicPoints` gives the positive orientation whatever the
+/// source's is.
+fn rebuilt_record(c: &Construction, a: &mut ArcData, base: PartSource, steps: &[PartStep]) {
+    match base {
+        PartSource::Circum {
+            a: ia,
+            b: ib,
+            c: ic,
+        } => {
+            let (Some(pa), Some(pb), Some(pc)) = (c.point(ia), c.point(ib), c.point(ic)) else {
+                a.set_undefined();
+                return;
+            };
+            match (
+                mapped_point(c, steps, pa),
+                mapped_point(c, steps, pb),
+                mapped_point(c, steps, pc),
+            ) {
+                (Some(pa), Some(pb), Some(pc)) => circum_record(a, pa, pb, pc),
+                _ => a.set_undefined(),
+            }
+        }
+        PartSource::ConicPoints { conic, p, q } => {
+            let Some(d) = c.conic(conic) else {
+                a.set_undefined();
+                return;
+            };
+            a.conic = d;
+            a.conic.defined = conic_defined(c, conic, &d);
+            mapped_conic(c, steps, &mut a.conic);
+            if !a.conic.defined {
+                a.set_undefined();
+                return;
+            }
+            // the images of the points, projected onto the image conic
+            let nan = (f64::NAN, f64::NAN);
+            let pp = c.point(p).and_then(|p| mapped_point(c, steps, p));
+            let qq = c.point(q).and_then(|q| mapped_point(c, steps, q));
+            let s = conic_parameter(&a.conic, pp.unwrap_or(nan), false);
+            let t = conic_parameter(&a.conic, qq.unwrap_or(nan), false);
+            a.set_parameters(true, s, t, true);
+        }
+    }
+}
+
+/// `AlgoConicPartCircumcircleND.compute`: the record of the circumcircular
+/// part through `pa`, `pb` and `pc`.
+fn circum_record(a: &mut ArcData, pa: (f64, f64), pb: (f64, f64), pc: (f64, f64)) {
+    match circumcircle(pa, pb, pc) {
+        Circumcircle::Circle { cx, cy, r } => {
+            a.conic = ConicData::circle(cx, cy, r);
+            circum_circle(a, pa, pb, pc);
+        }
+        Circumcircle::Lines => circum_degenerate(a, pa, pb, pc),
+        Circumcircle::Undefined => a.set_undefined(),
+    }
+}
+
+/// `AlgoTransformation.transformLimitedConic`: the start and end parameter of
+/// the image are the parameters of the images of the source's points at the
+/// path parameters 0 and 1.
+fn set_parameters_from_images(
+    c: &Construction,
+    a: &mut ArcData,
+    s: &ArcData,
+    def: &TransformOf,
+    positive: bool,
+) {
+    let map = match def.map(c) {
+        Some(map) => map,
+        None => {
+            a.set_undefined();
+            return;
+        }
+    };
+    let p0 = part_point(s, 0.0);
+    let p1 = part_point(s, 1.0);
+    let p0 = map.point(p0.0, p0.1);
+    let p1 = map.point(p1.0, p1.1);
+    // the images lie on the image conic, where the projection reads their
+    // parameter off (`pointChangedUnlimited`)
+    let d = full_part_parameter(&a.conic, p0);
+    let e = full_part_parameter(&a.conic, p1);
+    a.set_parameters(true, d, e, positive);
+}
+
+/// `transformLimitedConic` projects onto a temporary full turn and converts
+/// the resulting path parameter back to radians. A small negative angle
+/// can round to one full turn here.
+fn full_part_parameter(conic: &ConicData, p: (f64, f64)) -> f64 {
+    let angle = conic_parameter(conic, p, false);
+    let angle = if angle < 0.0 { angle + PI_2 } else { angle };
+    (angle / PI_2) * PI_2
+}
+
+/// The point of the part `a` at the path parameter `t` in `[0, 1]`
+/// (`GeoConicPart.getPointParam`).
+fn part_point(a: &ArcData, t: f64) -> (f64, f64) {
+    let t = if a.positive { t } else { 1.0 - t };
+    let angle = a.start + t * a.extent;
+    let [ha, hb] = a.conic.half_axes;
+    let ex = ha * angle.cos();
+    let ey = hb * angle.sin();
+    // `GeoConicND.coordsEVtoRW`
+    let [e0, e1] = a.conic.eigenvec;
+    let [mx, my] = a.conic.midpoint;
+    (ex * e0[0] + ey * e1[0] + mx, ex * e0[1] + ey * e1[1] + my)
+}
+
+/// `GeoConicPart.isOnPath` for a part of a circle: whether the point lies on
+/// the part's circle and its parameter is in `[0, 1]`.
+fn probe_contains(a: &ArcData, (px, py): (f64, f64)) -> bool {
+    let mut eps = STANDARD_PRECISION;
+    if !a.conic.on_full_conic((px, py), eps) {
+        return false;
+    }
+    // `GeoConicPartParameters.setEllipseParameter`
+    let mut param = conic_parameter(&a.conic, (px, py), false);
+    if param < 0.0 {
+        param += PI_2;
+    }
+    let mut t = param - a.start;
+    if t < 0.0 {
+        t += PI_2;
+    }
+    t /= a.extent;
+    // adapt eps for very large circles (almost a line)
+    let ha = a.conic.half_axes[0];
+    if ha > 100.0 {
+        eps = MAX_PRECISION.max(eps / ha);
+    }
+    t >= -eps && t <= 1.0 + eps
 }
 
 /// `AlgoConicPartCircumcircleND.compute` for a circle or a single point.
@@ -645,6 +1099,112 @@ fn number(v: f64) -> Option<Value> {
     v.is_finite().then_some(Value::Number(v))
 }
 
+/// A transformation of a part of a conic, which this group claims before the
+/// plain one does: `Mirror`, `Rotate`, `Dilate`, `Shear` and `Stretch` of an
+/// arc or a sector, `Translate` of one, and `Mirror` of a segment in a
+/// circle, whose image is an arc. `None` leaves the command to the other
+/// groups.
+fn parse_transform_command(
+    c: &Construction,
+    func: &str,
+    args: &[&str],
+) -> Option<Result<ArcDef, String>> {
+    let src = object(c, args.first()?).ok()?;
+    let kind = c.kind(src);
+    if !PART.contains(&kind) {
+        // only the inversion of a segment, which is an arc rather than a
+        // segment
+        let in_a_circle = matches!(func, "Mirror" | "Reflect")
+            && c.id(args.get(1)?)
+                .is_some_and(|m| c.kind(m) == Kind::Circle);
+        if kind != Kind::Segment || !in_a_circle {
+            return None;
+        }
+        let circle = object(c, args[1]).ok()?;
+        return Some(Ok(ArcDef::InvertSegment { src, circle }));
+    }
+    Some(part_transform(c, func, args, kind, src))
+}
+
+/// The parents of the transformation `def` of the part `src`.
+fn parents_of(def: &TransformOf, src: Id) -> Parents {
+    match *def {
+        TransformOf::MirrorPoint(center) => Parents::of(&[src, center]),
+        TransformOf::MirrorLine(mirror) => Parents::of(&[src, mirror]),
+        TransformOf::Invert(circle) => Parents::of(&[src, circle]),
+        TransformOf::StretchVector(vector) => Parents::of(&[src, vector]),
+        TransformOf::Rotate {
+            angle: second,
+            center,
+        }
+        | TransformOf::Dilate {
+            factor: second,
+            center,
+        } => match center {
+            Some(q) => Parents::of(&[src, second, Id(q as usize)]),
+            None => Parents::of(&[src, second]),
+        },
+        TransformOf::Shear { axis, ratio } | TransformOf::Stretch { axis, ratio } => {
+            Parents::of(&[src, axis, ratio])
+        }
+    }
+}
+
+/// Parses the transformation of the part `src` of kind `kind`.
+fn part_transform(
+    c: &Construction,
+    func: &str,
+    args: &[&str],
+    kind: Kind,
+    src: Id,
+) -> Result<ArcDef, String> {
+    // the inversion of a part in a circle keeps a record of its own
+    if matches!(func, "Mirror" | "Reflect") && args.len() == 2 {
+        if let Ok(second) = object(c, args[1]) {
+            if c.kind(second) == Kind::Circle {
+                // CmdMirror requires a circle at dispatch for conic parts.
+                if c.conic(second)
+                    .is_some_and(|k| k.ty == ConicType::SinglePoint)
+                {
+                    return Err(format!(
+                        "`{}` is a zero-radius circle, expected a circle with positive radius",
+                        args[1]
+                    ));
+                }
+                return Ok(ArcDef::InvertPart {
+                    kind,
+                    src,
+                    circle: second,
+                });
+            }
+        }
+    }
+    if func == "Translate" {
+        if args.len() != 2 {
+            return Err(format!(
+                "`Translate` does not take {} argument(s)",
+                args.len()
+            ));
+        }
+        let second = object(c, args[1])?;
+        if c.kind(second) != Kind::Vector {
+            return Err(format!(
+                "`{}` is a {}, expected a vector",
+                args[1],
+                c.kind(second)
+            ));
+        }
+        return Ok(ArcDef::TranslatePart {
+            kind,
+            src,
+            by: second,
+        });
+    }
+    let def = parse_transform_for(c, func, args, PART)?;
+    let (_, _, of) = def.parts();
+    Ok(ArcDef::Transform { kind, src, def: of })
+}
+
 impl Group for ArcDef {
     fn kind(&self) -> Kind {
         match *self {
@@ -663,6 +1223,11 @@ impl Group for ArcDef {
             ArcDef::Semicircle { a, b } => Parents::of(&[a, b]),
             ArcDef::ConicPoints { conic, p, q, .. } => Parents::of(&[conic, p, q]),
             ArcDef::ConicParameters { conic, s, t, .. } => Parents::of(&[conic, s, t]),
+            ArcDef::Transform { src, def, .. } => parents_of(&def, src),
+            ArcDef::TranslatePart { src, by, .. } => Parents::of(&[src, by]),
+            ArcDef::InvertPart { src, circle, .. } | ArcDef::InvertSegment { src, circle } => {
+                Parents::of(&[src, circle])
+            }
             ArcDef::Length(a) | ArcDef::Area(a) | ArcDef::Perimeter(a) => Parents::of(&[a]),
         }
     }
@@ -694,6 +1259,47 @@ impl Group for ArcDef {
                 c.expect(conic, CONIC)?;
                 c.expect(s, NUMBER)?;
                 c.expect(t, NUMBER)
+            }
+            // the transformation's own checks, with the source read here
+            ArcDef::Transform { src, def, .. } => {
+                c.expect(src, PART)?;
+                match def {
+                    TransformOf::MirrorPoint(center) => c.expect(center, POINT),
+                    TransformOf::MirrorLine(mirror) => c.expect(mirror, LINE_LIKE),
+                    TransformOf::Rotate {
+                        angle: second,
+                        center,
+                    }
+                    | TransformOf::Dilate {
+                        factor: second,
+                        center,
+                    } => {
+                        c.expect(second, NUMBER_OR_ANGLE)?;
+                        match center {
+                            Some(q) => c.expect(Id(q as usize), POINT),
+                            None => Ok(()),
+                        }
+                    }
+                    TransformOf::Shear { axis, ratio } | TransformOf::Stretch { axis, ratio } => {
+                        c.expect(axis, shear_axis(matches!(def, TransformOf::Shear { .. })))?;
+                        c.expect(ratio, NUMBER_OR_ANGLE)
+                    }
+                    TransformOf::StretchVector(vector) => c.expect(vector, &[Kind::Vector]),
+                    // the inversion of a part is `ArcDef::InvertPart`
+                    TransformOf::Invert(_) => Ok(()),
+                }
+            }
+            ArcDef::TranslatePart { src, by, .. } => {
+                c.expect(src, PART)?;
+                c.expect(by, &[Kind::Vector])
+            }
+            ArcDef::InvertPart { src, circle, .. } => {
+                c.expect(src, PART)?;
+                c.expect(circle, CIRCLE)
+            }
+            ArcDef::InvertSegment { src, circle } => {
+                c.expect(src, &[Kind::Segment])?;
+                c.expect(circle, CIRCLE)
             }
             ArcDef::Length(a) | ArcDef::Area(a) | ArcDef::Perimeter(a) => c.expect(a, PART),
         }
@@ -731,6 +1337,9 @@ impl Group for ArcDef {
                     "Area" => ArcDef::Area(a),
                     _ => ArcDef::Perimeter(a),
                 }));
+            }
+            "Mirror" | "Reflect" | "Rotate" | "Dilate" | "Shear" | "Stretch" | "Translate" => {
+                return parse_transform_command(c, func, args);
             }
             _ => return None,
         };
@@ -776,5 +1385,211 @@ impl Group for ArcDef {
                 sector,
             },
         }))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::script::{exec, load};
+
+    #[test]
+    fn a_conic_part_cannot_start_inverted_in_a_zero_radius_circle() {
+        let mut c = load(
+            "M = (1, 1)\nrr = 2\nk = Circle(M, rr)\nps = 0.5\npe = 2\n\
+             a = Arc(k, ps, pe)\nb = Sector(k, ps, pe)\nO = (5, 5)\nqq = 0\nh = Circle(O, qq)",
+        )
+        .unwrap();
+        for part in ["a", "b"] {
+            let err = exec(&mut c, &format!("m = Mirror({part}, h)")).unwrap_err();
+            assert!(err.contains("zero-radius circle"), "{err}");
+            assert!(c.id("m").is_none());
+        }
+    }
+
+    fn record(c: &Construction, label: &str) -> ArcData {
+        c.arc(c.id(label).unwrap()).unwrap()
+    }
+
+    fn close(a: f64, b: f64) -> bool {
+        (a - b).abs() < 1e-12
+    }
+
+    fn with(script: &str) -> String {
+        format!(
+            "M = (1, 1)\nP = (4, 1)\nQ = (1, 3)\nO = (-3, 1)\nS = (0, 1)\n\
+             k = Circle(O, S)\nw = 0.7\nf = 2\nn = Line(M, Q)\nv = Vector(M, Q)\n{script}"
+        )
+    }
+
+    #[test]
+    fn parts_keep_their_parameters_under_angle_preserving_maps() {
+        let c = load(&with(
+            "a = CircularArc(M, P, Q)\nb = Mirror(a, n)\nc = Rotate(a, w)\n\
+             d = Translate(a, v)\ne = Dilate(a, f)\n",
+        ))
+        .unwrap();
+        let a = record(&c, "a");
+        for label in ["b", "c", "d"] {
+            let img = record(&c, label);
+            assert!(close(img.start, a.start), "{label}");
+            assert!(close(img.end, a.end), "{label}");
+            assert_eq!(img.positive, a.positive, "{label}");
+        }
+        // a dilation reads the parameters from the images of the ends: the
+        // extent stays (the factor is positive), the arc length doubles
+        let e = record(&c, "e");
+        assert!(close(e.extent, a.extent));
+        let (Value::Arc { length: l }, Value::Arc { length: m }) =
+            (c.value(c.id("a").unwrap()), c.value(c.id("e").unwrap()))
+        else {
+            panic!();
+        };
+        assert!(close(m, 2.0 * l));
+    }
+
+    #[test]
+    fn a_dilation_by_a_negative_factor_swaps_the_ends() {
+        let c = load(&with(
+            "a = CircularArc(M, P, Q)\ng = -2\nb = Dilate(a, g)\nc = Stretch(a, n, g)\n",
+        ))
+        .unwrap();
+        let a = record(&c, "a");
+        // a dilation keeps the orientation whatever the factor; a stretch by
+        // a negative ratio swaps the ends
+        // (`AlgoShearOrStretch.swapOrientation`)
+        let b = record(&c, "b");
+        assert_eq!(b.positive, a.positive);
+        assert!(close(b.extent, a.extent));
+        let c = record(&c, "c");
+        assert_eq!(c.positive, !a.positive);
+        assert!(close(c.extent, a.extent));
+    }
+
+    #[test]
+    fn a_sheared_part_gets_its_parameters_from_the_images_of_its_ends() {
+        let c = load(&with(
+            "a = CircularSector(M, P, Q)\nb = Shear(a, n, w)\nc = Stretch(a, v)\n",
+        ))
+        .unwrap();
+        assert_eq!(c.kind(c.id("b").unwrap()), Kind::Sector);
+        assert_eq!(c.kind(c.id("c").unwrap()), Kind::Sector);
+        // a shear keeps the circle's shape at the ends: start and end are
+        // the images of the old ones, which the record's conic confirms
+        let a = record(&c, "a");
+        let b = record(&c, "b");
+        assert_ne!(b.conic.ty, ConicType::Circle);
+        assert!(b.defined);
+        assert!(close(a.start, 0.0) || a.start > 0.0);
+    }
+
+    #[test]
+    fn the_inversion_of_a_part_and_of_a_segment() {
+        let c = load(&with(
+            "a = CircularArc(M, P, Q)\nb = Mirror(a, k)\n\
+             A = (2, 2)\nB = (5, 2)\ns = Segment(A, B)\ni = Mirror(s, k)\n",
+        ))
+        .unwrap();
+        assert_eq!(c.kind(c.id("b").unwrap()), Kind::Arc);
+        assert!(record(&c, "b").defined);
+        // the image of a segment is an arc through the mirror's centre
+        assert_eq!(c.kind(c.id("i").unwrap()), Kind::Arc);
+        let i = record(&c, "i");
+        assert!(i.defined);
+        assert_eq!(i.conic.ty, ConicType::Circle);
+        // the mirror's centre lies on the image circle, outside the arc
+        let o = c.point(c.id("O").unwrap()).unwrap();
+        let dist =
+            ((i.conic.midpoint[0] - o.0).powi(2) + (i.conic.midpoint[1] - o.1).powi(2)).sqrt();
+        assert!(close(dist, i.conic.half_axes[0]));
+    }
+
+    #[test]
+    fn transformations_of_parts_parse_and_reject() {
+        // every form parses on a part of a conic
+        for line in [
+            "b = Mirror(a, n)",
+            "b = Rotate(a, w, M)",
+            "b = Dilate(a, f)",
+            "b = Shear(a, n, w)",
+            "b = Stretch(a, n, w)",
+            "b = Stretch(a, v)",
+            "b = Translate(a, v)",
+            "b = Mirror(a, k)",
+        ] {
+            let mut c = load(&with("a = CircularArc(M, P, Q)\n")).unwrap();
+            exec(&mut c, line).unwrap_or_else(|e| panic!("{line}: {e}"));
+        }
+        // and on a segment under inversion
+        let mut c = load(&with("A = (2, 2)\nB = (5, 2)\ns = Segment(A, B)\n")).unwrap();
+        exec(&mut c, "b = Mirror(s, k)").unwrap();
+        let mut c = load(&with("a = CircularArc(M, P, Q)\n")).unwrap();
+        let mut err = |line: &str| exec(&mut c, line).unwrap_err();
+        assert!(err("b = Translate(a, n)").contains("expected a vector"));
+        assert!(err("b = Rotate(a, w, n)").contains("expected a point"));
+        assert!(err("b = Shear(a, n)").contains("does not take 2"));
+        assert!(err("b = Stretch(a, n, w, M)").contains("does not take 4"));
+        assert!(err("b = Mirror(a, w)").contains("expected a mirror"));
+    }
+
+    #[test]
+    fn a_negative_image_keeps_its_range_under_a_translate_or_rotate() {
+        // `transformLimitedPath` passes the ends of a negative part swapped,
+        // so a translate or a rotate of it keeps its parameter range instead
+        // of turning into the part round the other side of the conic
+        let c = load(&with(
+            "a = CircularArc(M, P, Q)\ng = -2\nb = Stretch(a, n, g)\nt = Translate(b, v)\n\
+             r = Rotate(b, w)\n",
+        ))
+        .unwrap();
+        let b = record(&c, "b");
+        assert!(!b.positive);
+        for label in ["t", "r"] {
+            let img = record(&c, label);
+            assert!(!img.positive, "{label}");
+            assert!(close(img.start, b.start), "{label}");
+            assert!(close(img.end, b.end), "{label}");
+        }
+        // a translate changes no length
+        let (Value::Arc { length: l }, Value::Arc { length: m }) =
+            (c.value(c.id("b").unwrap()), c.value(c.id("t").unwrap()))
+        else {
+            panic!();
+        };
+        assert!(close(m, l));
+    }
+
+    #[test]
+    fn circumcircular_parts_are_rebuilt_from_the_transformed_points() {
+        // the image of a circumcircular part is the same part through the
+        // images of the three points, also when the map is no similarity
+        // (a shear), which the transformed conic alone cannot express
+        let c = load(&with(
+            "g = CircumcircularArc(O, Q, P)\nX = Shear(O, n, f)\nY = Shear(Q, n, f)\n\
+             Z = Shear(P, n, f)\nh = CircumcircularArc(X, Y, Z)\nm = Shear(g, n, f)\n",
+        ))
+        .unwrap();
+        let (m, h) = (record(&c, "m"), record(&c, "h"));
+        assert!(close(m.start, h.start));
+        assert!(close(m.end, h.end));
+        assert_eq!(m.positive, h.positive);
+        let (Value::Arc { length: l }, Value::Arc { length: k }) =
+            (c.value(c.id("m").unwrap()), c.value(c.id("h").unwrap()))
+        else {
+            panic!();
+        };
+        assert!(close(k, l));
+        // a mirror in a line is the same part through the mirrored points
+        let c = load(&with(
+            "g = CircumcircularSector(O, Q, P)\nX = Mirror(O, n)\nY = Mirror(Q, n)\n\
+             Z = Mirror(P, n)\nh = CircumcircularSector(X, Y, Z)\nm = Mirror(g, n)\n",
+        ))
+        .unwrap();
+        let (Value::Sector { area: l }, Value::Sector { area: k }) =
+            (c.value(c.id("m").unwrap()), c.value(c.id("h").unwrap()))
+        else {
+            panic!();
+        };
+        assert!(close(k, l));
     }
 }

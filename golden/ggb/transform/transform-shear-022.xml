@@ -31,7 +31,7 @@
 <tableview min="0" max="0" step="0"/>
 <scripting blocked="false" disabled="false"/>
 <construction title="" author="" date="">
-<expression label="A" exp="(3, -1)" type="point"/>
+<expression label="A" exp="(-3.88, 6.32)" type="point"/>
 <element type="point" label="A">
 	<show object="true" label="true"/>
 	<objColor r="77" g="77" b="255" alpha="0"/>
@@ -40,9 +40,9 @@
 	<animation step="0.1" type="1" playing="false"/>
 	<pointSize val="5"/>
 	<pointStyle val="0"/>
-	<coords x="3" y="-1" z="1"/>
+	<coords x="-3.88" y="6.32" z="1"/>
 </element>
-<expression label="B" exp="(3, 5)" type="point"/>
+<expression label="B" exp="(6.48, -3.23)" type="point"/>
 <element type="point" label="B">
 	<show object="true" label="true"/>
 	<objColor r="77" g="77" b="255" alpha="0"/>
@@ -51,22 +51,34 @@
 	<animation step="0.1" type="1" playing="false"/>
 	<pointSize val="5"/>
 	<pointStyle val="0"/>
-	<coords x="3" y="5" z="1"/>
+	<coords x="6.48" y="-3.23" z="1"/>
 </element>
-<command name="Line">
-	<input a0="A" a1="B"/>
-	<output a0="l"/>
+<expression label="F" exp="(7.26, -1.25)" type="point"/>
+<element type="point" label="F">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="1" playing="false"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="7.26" y="-1.25" z="1"/>
+</element>
+<command name="Ellipse">
+	<input a0="A" a1="F" a2="B"/>
+	<output a0="c"/>
 </command>
-<element type="line" label="l">
+<element type="conic" label="c">
 	<show object="true" label="false"/>
 	<objColor r="28" g="28" b="31" alpha="0"/>
 	<layer val="0"/>
 	<labelMode val="0"/>
 	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
 	<eqnStyle style="implicit"/>
-	<coords x="-6" y="0" z="18"/>
+	<eigenvectors x0="0.8271059837333559" y0="-0.562045987150943" z0="1" x1="0.562045987150943" y1="0.8271059837333559" z1="1"/>
+	<matrix A0="555.7267940557341" A1="822.9055940557341" A2="-11704.762907631768" A3="337.3192" A4="-1794.282453954191" A5="-2656.1351289312865"/>
 </element>
-<expression label="C" exp="(0, 1)" type="point"/>
+<expression label="C" exp="(5.08, -7.18)" type="point"/>
 <element type="point" label="C">
 	<show object="true" label="true"/>
 	<objColor r="77" g="77" b="255" alpha="0"/>
@@ -75,9 +87,9 @@
 	<animation step="0.1" type="1" playing="false"/>
 	<pointSize val="5"/>
 	<pointStyle val="0"/>
-	<coords x="0" y="1" z="1"/>
+	<coords x="5.08" y="-7.18" z="1"/>
 </element>
-<expression label="D" exp="(4, 3)" type="point"/>
+<expression label="D" exp="(2.81, 6.47)" type="point"/>
 <element type="point" label="D">
 	<show object="true" label="true"/>
 	<objColor r="77" g="77" b="255" alpha="0"/>
@@ -86,38 +98,43 @@
 	<animation step="0.1" type="1" playing="false"/>
 	<pointSize val="5"/>
 	<pointStyle val="0"/>
-	<coords x="4" y="3" z="1"/>
+	<coords x="2.81" y="6.47" z="1"/>
 </element>
-<command name="Line">
+<command name="Segment">
 	<input a0="C" a1="D"/>
 	<output a0="n"/>
 </command>
-<element type="line" label="n">
+<element type="segment" label="n">
 	<show object="true" label="false"/>
 	<objColor r="28" g="28" b="31" alpha="0"/>
 	<layer val="0"/>
 	<labelMode val="0"/>
 	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
 	<eqnStyle style="implicit"/>
-	<coords x="-2" y="4" z="-4"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<startStyle val="default"/>
+	<endStyle val="default"/>
+	<coords x="-13.649999999999999" y="-2.27" z="53.04339999999999"/>
 </element>
-<expression label="f" exp="1.5"/>
+<expression label="f" exp="-1.5"/>
 <element type="numeric" label="f">
-	<value val="1.5"/>
+	<value val="-1.5"/>
 	<show object="false" label="true"/>
 </element>
 <command name="Shear">
-	<input a0="l" a1="n" a2="f"/>
+	<input a0="c" a1="n" a2="f"/>
 	<output a0="m"/>
 </command>
-<element type="line" label="m">
+<element type="conic" label="m">
 	<show object="true" label="false"/>
 	<objColor r="28" g="28" b="31" alpha="0"/>
 	<layer val="0"/>
 	<labelMode val="0"/>
 	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
 	<eqnStyle style="implicit"/>
-	<coords x="-9.600000000000001" y="7.199999999999999" z="10.800000000000004"/>
+	<eigenvectors x0="0.44280323820279566" y0="0.8966188109989207" z0="1" x1="-0.8966188109989207" y1="0.44280323820279566" z1="1"/>
+	<matrix A0="1387.731769507655" A1="493.4207557812448" A2="-15091.537170088608" A3="-584.1311613204939" A4="-2975.0826582876575" A5="1265.892224916363"/>
 </element>
 </construction>
 </geogebra>

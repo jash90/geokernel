@@ -331,7 +331,40 @@ pub fn render(c: &Construction, view: View, width: u32, height: u32) -> String {
                 }
                 let _ = writeln!(angles, r#" Z"/>"#);
             }
-            Value::Number(_) | Value::Bool(_) | Value::List { .. } | Value::Undefined => {}
+            Value::Locus { .. } => {
+                let Some(locus) = c.locus(id) else {
+                    continue;
+                };
+                // A point without `line_to` starts a new piece.
+                let mut pts = String::new();
+                let mut flush = |pts: &mut String| {
+                    if pts.matches(' ').count() > 1 {
+                        let _ = writeln!(
+                            segments,
+                            r##"<polyline points="{}" fill="none"/>"##,
+                            pts.trim_end()
+                        );
+                    }
+                    pts.clear();
+                };
+                for p in locus.points.iter() {
+                    if !p.line_to {
+                        flush(&mut pts);
+                    }
+                    // an undefined point (NaN) is a break too
+                    if p.x.is_finite() && p.y.is_finite() {
+                        let _ = write!(pts, "{:.2},{:.2} ", sx(p.x), sy(p.y));
+                    } else {
+                        flush(&mut pts);
+                    }
+                }
+                flush(&mut pts);
+            }
+            Value::Number(_)
+            | Value::Bool(_)
+            | Value::List { .. }
+            | Value::HomogeneousPoint { .. }
+            | Value::Undefined => {}
         }
     }
 

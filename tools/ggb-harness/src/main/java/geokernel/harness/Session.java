@@ -16,11 +16,18 @@ import org.geogebra.common.jre.headless.AppCommon;
 import org.geogebra.common.jre.headless.LocalizationCommon;
 import org.geogebra.common.jre.headless.Utf8Control;
 import org.geogebra.common.kernel.Kernel;
+import org.geogebra.common.kernel.algos.AlgoConicPartCircle;
+import org.geogebra.common.kernel.algos.AlgoConicPartCircumcircle;
+import org.geogebra.common.kernel.algos.AlgoConicPartConicPoints;
+import org.geogebra.common.kernel.MyPoint;
 import org.geogebra.common.kernel.algos.AlgoElement;
+import org.geogebra.common.kernel.algos.AlgoIntersectLinePolyLine;
+import org.geogebra.common.kernel.algos.AlgoIntersectPolyLines;
 import org.geogebra.common.kernel.algos.AlgoJoinPointsRay;
 import org.geogebra.common.kernel.algos.AlgoPointOnPath;
 import org.geogebra.common.kernel.algos.AlgoPointInRegion;
 import org.geogebra.common.kernel.algos.AlgoRayPointVector;
+import org.geogebra.common.kernel.algos.AlgoSemicircle;
 import org.geogebra.common.kernel.commands.AlgebraProcessor;
 import org.geogebra.common.kernel.geos.GeoConic;
 import org.geogebra.common.kernel.geos.GeoConicPart;
@@ -28,6 +35,7 @@ import org.geogebra.common.kernel.geos.GeoElement;
 import org.geogebra.common.kernel.geos.GeoFunction;
 import org.geogebra.common.kernel.geos.GeoLine;
 import org.geogebra.common.kernel.geos.GeoList;
+import org.geogebra.common.kernel.geos.GeoLocus;
 import org.geogebra.common.kernel.geos.GeoBoolean;
 import org.geogebra.common.kernel.geos.GeoAngle;
 import org.geogebra.common.kernel.geos.GeoNumeric;
@@ -42,6 +50,7 @@ import org.geogebra.common.kernel.kernelND.GeoConicNDConstants;
 import org.geogebra.common.kernel.kernelND.GeoElementND;
 import org.geogebra.common.kernel.kernelND.GeoPointND;
 import org.geogebra.common.kernel.matrix.Coords;
+import org.geogebra.common.main.App;
 import org.geogebra.common.main.error.ErrorHandler;
 import org.geogebra.common.main.settings.config.AppConfigDefault;
 import org.geogebra.common.util.AsyncOperation;
@@ -63,6 +72,13 @@ final class Session {
     private static final Pattern LABEL = Pattern.compile("[A-Za-z]+(?:_\\{[A-Za-z0-9]+\\})?");
     /** Where a function is sampled, in this order (see golden/SCHEMA.md). */
     static final double[] SAMPLES = {-8, -4, -2, -1, -0.5, 0, 0.5, 1, 2, 4, 8};
+    /**
+     * The window of the graphics view a locus is sampled in: xmin, xmax,
+     * ymin, ymax and the pixels per unit on both axes. A locus depends on it
+     * (see golden/SCHEMA.md), so the harness checks that GeoGebra still uses
+     * it whenever it records one.
+     */
+    static final double[] LOCUS_VIEW = {-4.3, 11.700000000000001, -5.7, 6.3, 50, 50};
     private static final Pattern NUMBER = Pattern.compile("^-?\\d+(\\.\\d+)?$");
     private static final Pattern POINT =
             Pattern.compile("^\\(-?\\d+(\\.\\d+)?, -?\\d+(\\.\\d+)?\\)$");
@@ -87,8 +103,15 @@ final class Session {
      * `circle`.
      */
     private final Set<GeoElement> conics = Collections.newSetFromMap(new IdentityHashMap<>());
+    private final boolean trackBoundaryGrowth;
+    private final Map<AlgoElement, String> growingIntersections = new LinkedHashMap<>();
 
     Session() {
+        this(false);
+    }
+
+    Session(boolean trackBoundaryGrowth) {
+        this.trackBoundaryGrowth = trackBoundaryGrowth;
         LocalizationCommon loc = new LocalizationCommon(2);
         loc.setResourceBundleControl(new Utf8Control());
         app = new AppCommon(loc, new AwtFactoryCommon(), new AppConfigDefault());
@@ -98,6 +121,21 @@ final class Session {
 
     Kernel kernel() {
         return kernel;
+    }
+
+    /** Checks that GeoGebra reports an error and creates no output. */
+    void reject(String line) {
+        Matcher matcher = LINE.matcher(line);
+        if (!matcher.matches() || kernel.lookupLabel(matcher.group(1)) != null) {
+            throw new IllegalArgumentException("expected an assignment to a new label: " + line);
+        }
+        CommandErrorHandler errors = new CommandErrorHandler(line, true);
+        GeoElementND[] out = processor.processAlgebraCommandNoExceptionHandling(
+                line, false, errors, false, null);
+        if (!errors.reported || (out != null && out.length != 0)
+                || kernel.lookupLabel(matcher.group(1)) != null) {
+            throw new IllegalStateException("GeoGebra did not reject: " + line);
+        }
     }
 
     /** Runs one `label = definition` or `label: equation` line and checks
@@ -131,7 +169,17 @@ final class Session {
             throw new IllegalArgumentException("label used twice: " + label);
         }
         GeoElementND[] out = processor.processAlgebraCommandNoExceptionHandling(
-                line, false, new ThrowingErrorHandler(line), false, null);
+                line, false, new CommandErrorHandler(line, false), false, null);
+        if (trackBoundaryGrowth && out != null && out.length > 0) {
+            GeoElement first = out[0].toGeoElement();
+            AlgoElement parent = first.getParentAlgorithm();
+            if (parent instanceof AlgoIntersectLinePolyLine
+                    || parent instanceof AlgoIntersectPolyLines) {
+                growingIntersections.put(parent, label.split("_", 2)[0] + "_{");
+                recordGrowingIntersections();
+                return first;
+            }
+        }
         if ((out == null || out.length == 0) && definition.startsWith("Segment(")
                 && definition.chars().filter(ch -> ch == ',').count() == 2) {
             return null;
@@ -156,6 +204,11 @@ final class Session {
         if (out != null && out.length == 2 && isMultiOutput(definition)) {
             return runMulti(line, expected, out);
         }
+        if (out != null && out.length > 0 && definition.startsWith("Intersect(")
+                && (out.length > 1 || (out[0].isLabelSet()
+                && !label.equals(out[0].getLabelSimple())))) {
+            return runMulti(line, expected, out);
+        }
         if (out != null && out.length >= 1 && isPerVertex(definition)) {
             return runMulti(line, expected, out);
         }
@@ -166,11 +219,18 @@ final class Session {
             }
             return runPolygon(line, label, out);
         }
+        // A transformed polygon creates its sides as well, like `Polygon`
+        // (the images of its vertices are helper objects without an output
+        // slot, so they are not recorded).
+        if (out != null && out.length >= 1 && isTransformedPoly(definition)) {
+            return runPolygon(line, label, out);
+        }
         // A transformed segment or ray with labelled end points also creates
         // the image points (see `transformedOutputs`); the segment or ray is
         // the first output. Any other object gives exactly one output.
-        if (out == null || out.length != transformedOutputs(transformed, definition)) {
-            throw new IllegalStateException("unexpected number of objects from: " + line);
+        if (out == null || out.length != transformedOutputs(definition)) {
+            throw new IllegalStateException("unexpected number of objects from: " + line
+                    + " (got " + (out == null ? "none" : String.valueOf(out.length)) + ")");
         }
         GeoElement geo = out[0].toGeoElement();
         if (geo instanceof GeoAngle && definition.startsWith("Angle(")
@@ -208,17 +268,38 @@ final class Session {
                 ? !readsObjects(definition) && !callsCommand(definition)
                 : (expected.equals("point") || expected.equals("vector"))
                         && POINT.matcher(definition).matches()
-                        || expected.equals("number") && NUMBER.matcher(definition).matches()
+                        || definition.startsWith("Vector($vector(") && geo instanceof GeoVector
+                        || expected.equals("number") && (NUMBER.matcher(definition).matches()
+                                || definition.startsWith("Slider("))
                         || expected.equals("angle") && definition.startsWith("Angle(")
                                 && definition.endsWith("°)");
         if (free != geo.isIndependent()) {
             throw new IllegalStateException("unexpected dependency state for: " + line);
+        }
+        if (actual.equals("locus")) {
+            checkLocusView();
         }
         objects.put(label, geo);
         if ("conic".equals(actual)) {
             conics.add(geo);
         }
         return geo;
+    }
+
+    /**
+     * Checks that a locus is sampled in {@link #LOCUS_VIEW}: only the first
+     * graphics view is shown (no second graphics view and no 3D view), and the construction is not continuous (a
+     * continuous one samples a path more than once).
+     */
+    private void checkLocusView() {
+        double[] view = {kernel.getXmin(0), kernel.getXmax(0), kernel.getYmin(0),
+                kernel.getYmax(0), kernel.getXscale(0), kernel.getYscale(0)};
+        if (!Arrays.equals(view, LOCUS_VIEW) || !app.showView(App.VIEW_EUCLIDIAN)
+                || app.hasEuclidianView2(1)
+                || app.isEuclidianView3Dinited() || kernel.isContinuous()) {
+            throw new IllegalStateException("a locus is sampled in an unexpected view: "
+                    + Arrays.toString(view));
+        }
     }
 
     private GeoElement runFixedAngle(String line, String label, GeoElementND[] out) {
@@ -419,11 +500,30 @@ final class Session {
 
     /** Records every scripted object, in script order. */
     Map<String, Object> snapshot() {
+        recordGrowingIntersections();
         Map<String, Object> snap = new LinkedHashMap<>();
         for (Map.Entry<String, GeoElement> e : objects.entrySet()) {
             snap.put(e.getKey(), describe(e.getValue(), schemaType(e.getValue())));
         }
         return snap;
+    }
+
+    private void recordGrowingIntersections() {
+        for (Map.Entry<AlgoElement, String> entry : growingIntersections.entrySet()) {
+            for (GeoElement geo : entry.getKey().getOutput()) {
+                String label = geo.getLabelSimple();
+                if (!geo.isLabelSet() || label == null || !label.startsWith(entry.getValue())) {
+                    continue;
+                }
+                if (!(geo instanceof GeoPoint)) {
+                    throw new IllegalStateException("expected an intersection point: " + label);
+                }
+                GeoElement previous = objects.putIfAbsent(label, geo);
+                if (previous != null && previous != geo) {
+                    throw new IllegalStateException("label used twice: " + label);
+                }
+            }
+        }
     }
 
     private GeoElement lookup(String label) {
@@ -466,6 +566,10 @@ final class Session {
         Matcher m = CALL.matcher(definition);
         while (m.find()) {
             if (objects.containsKey(m.group(1))) {
+                continue;
+            }
+            if (m.group(1).equals("Dot") || m.group(1).equals("Cross")) {
+                // The command processor rewrites these calls to arithmetic operations.
                 continue;
             }
             if (m.group(1).equals("If") && conditionsReadX(definition, m.end())) {
@@ -594,14 +698,67 @@ final class Session {
         if (geo instanceof GeoFunction) {
             return "function";
         }
+        if (geo instanceof GeoLocus) {
+            return "locus";
+        }
         throw new IllegalStateException("unsupported object " + geo.getClass().getSimpleName());
     }
 
     /**
      * The schema type of a transformation (the image has the kind of the
      * transformed object); null when the definition is not a transformation.
+     * An inversion in a circle changes the kind: a line becomes a conic, and
+     * a segment, a ray or a part of a conic becomes an arc.
      */
     private String transformedType(String definition) {
+        if (transformCommand(definition) == null) {
+            return null;
+        }
+        GeoElement source = transformedSource(definition);
+        String cmd = transformCommand(definition);
+        // Shear and Stretch of a circle give a general conic (an ellipse
+        // usually), which is recorded like one
+        if (("Shear".equals(cmd) || "Stretch".equals(cmd))
+                && source instanceof GeoConic && !(source instanceof GeoConicPart)
+                && isCircleType((GeoConic) source)) {
+            return "conic";
+        }
+        if (isInverse(definition)) {
+            switch (schemaType(source)) {
+                case "point":
+                    return "point";
+                case "line":
+                    // a circle through the centre of the mirror
+                    return "conic";
+                case "circle":
+                    // the kernel keeps the image a circle (GeoGebra holds a
+                    // GeoConic that is one)
+                    return "circle";
+                case "segment":
+                case "ray":
+                case "arc":
+                    return "arc";
+                case "sector":
+                    return "sector";
+                default:
+                    throw new IllegalStateException("inversion of a "
+                            + schemaType(source) + " is not recorded: " + definition);
+            }
+        }
+        return schemaType(source);
+    }
+
+    /** Whether the conic is a circle or a single point (recorded as a circle). */
+    private static boolean isCircleType(GeoConic c) {
+        int t = c.getType();
+        return t == GeoConic.CONIC_CIRCLE || t == GeoConic.CONIC_SINGLE_POINT;
+    }
+
+    /**
+     * The name of the transformation command of the definition, or null when
+     * the definition is not one call of such a command.
+     */
+    private static String transformCommand(String definition) {
         Matcher m = COMMAND.matcher(definition);
         if (!m.matches()) {
             return null;
@@ -614,11 +771,62 @@ final class Session {
             case "Shear":
             case "Stretch":
             case "Translate":
-                break;
+                return m.group(1);
             default:
                 return null;
         }
-        return schemaType(transformedSource(definition));
+    }
+
+    /** Whether the definition mirrors in a circle (an inversion). */
+    private boolean isInverse(String definition) {
+        if (!"Mirror".equals(transformCommand(definition))
+                && !"Reflect".equals(transformCommand(definition))) {
+            return false;
+        }
+        List<String> args = arguments(definition);
+        GeoElement mirror = args.size() > 1 ? objects.get(args.get(1).trim()) : null;
+        return mirror instanceof GeoConic && !(mirror instanceof GeoConicPart);
+    }
+
+    /** Whether the definition transforms a polygon (it creates the sides too). */
+    private boolean isTransformedPoly(String definition) {
+        if (transformCommand(definition) == null
+                || !(transformedSource(definition) instanceof GeoPolygon)) {
+            return false;
+        }
+        if (isInverse(definition)) {
+            throw new IllegalStateException(
+                    "inversion of a polygon is not recorded: " + definition);
+        }
+        return true;
+    }
+
+    /**
+     * The arguments of the call the definition is, split at the commas of
+     * depth 0, without the surrounding brackets.
+     */
+    private static List<String> arguments(String definition) {
+        List<String> args = new ArrayList<>();
+        int depth = 0;
+        int start = definition.indexOf('(') + 1;
+        for (int i = start; i < definition.length(); i++) {
+            char ch = definition.charAt(i);
+            if (ch == '(' || ch == '{' || ch == '[') {
+                depth++;
+            } else if (ch == ')' || ch == '}' || ch == ']') {
+                if (depth == 0) {
+                    if (i > start) {
+                        args.add(definition.substring(start, i));
+                    }
+                    return args;
+                }
+                depth--;
+            } else if (ch == ',' && depth == 0) {
+                args.add(definition.substring(start, i));
+                start = i + 1;
+            }
+        }
+        return args;
     }
 
     /** The object a transformation command transforms: its first argument. */
@@ -633,22 +841,48 @@ final class Session {
     }
 
     /**
-     * How many objects a definition creates. A transformed segment creates
-     * the images of its two end points too; a transformed ray creates the
-     * images of the points it was made from: two for `Ray(A, B)`, one (the
-     * start point) for `Ray(A, v)`. Everything else creates one object.
+     * How many objects a definition creates, counted by its transformed
+     * source. A transformed segment creates the images of its two end points
+     * too; a transformed ray creates the images of the points it was made
+     * from: two for `Ray(A, B)`, one (the start point) for `Ray(A, v)`; a
+     * transformed part of a conic creates the images of the points it was
+     * made from as well. An inverted segment stands alone. Everything else
+     * creates one object.
      */
-    private int transformedOutputs(String transformed, String definition) {
-        if ("segment".equals(transformed)) {
-            return 3;
+    private int transformedOutputs(String definition) {
+        if (transformCommand(definition) == null) {
+            return 1;
         }
-        if ("ray".equals(transformed)) {
+        boolean inverse = isInverse(definition);
+        String source = schemaType(transformedSource(definition));
+        if ("segment".equals(source)) {
+            return inverse ? 1 : 3;
+        }
+        if ("ray".equals(source)) {
             AlgoElement parent = transformedSource(definition).getParentAlgorithm();
             if (parent instanceof AlgoJoinPointsRay) {
                 return 3;
             }
             if (parent instanceof AlgoRayPointVector) {
                 return 2;
+            }
+        }
+        if ("arc".equals(source) || "sector".equals(source)) {
+            // only the parts whose end points carry labels are rebuilt from
+            // the images of those points; the others are transformed as a
+            // whole (GeoConicPart.isAllEndpointsLabelsSet)
+            GeoConicPart part = (GeoConicPart) transformedSource(definition);
+            if (!part.isAllEndpointsLabelsSet()) {
+                return 1;
+            }
+            AlgoElement parent = part.getParentAlgorithm();
+            if (parent instanceof AlgoConicPartCircle
+                    || parent instanceof AlgoConicPartCircumcircle) {
+                return 4;
+            }
+            if (parent instanceof AlgoConicPartConicPoints
+                    || parent instanceof AlgoSemicircle) {
+                return 3;
             }
         }
         return 1;
@@ -727,6 +961,10 @@ final class Session {
         String arguments = definition.substring(definition.indexOf('(') + 1, definition.length() - 1);
         GeoElement first = objects.get(arguments.split(",", 2)[0].trim());
         switch (command) {
+            case "ApplyMatrix":
+                List<String> args = arguments(definition);
+                GeoElement target = args.size() == 2 ? objects.get(args.get(1).trim()) : null;
+                return target == null ? null : schemaType(target);
             case "Polar":
                 return first instanceof GeoLine ? "point" : "line";
             case "Center":
@@ -753,6 +991,10 @@ final class Session {
                 return "line";
             case "Segment":
                 return "segment";
+            case "Locus":
+                return "locus";
+            case "Slider":
+                return "number";
             case "Intersect":
             case "ClosestPoint":
             case "Trilinear":
@@ -888,7 +1130,7 @@ final class Session {
 
     /** Whether a field is finite: a number, or a list of finite fields or nulls; a name is. */
     private static boolean finite(Object v) {
-        if (v == null || v instanceof String) {
+        if (v == null || v instanceof String || v instanceof Boolean) {
             return true;
         }
         if (v instanceof List) {
@@ -1013,6 +1255,19 @@ final class Session {
                 f.put("length", poly.getLength());
                 return f;
             }
+            case "locus": {
+                // every point with its flag: drawn with a line from the
+                // point before it, or starting a new piece; an undefined
+                // point (upstream can append one at the end) has null
+                // coordinates
+                List<Object> points = new ArrayList<>();
+                for (MyPoint p : ((GeoLocus) geo).getPoints()) {
+                    points.add(Arrays.asList(Double.isFinite(p.x) ? (Object) p.x : null,
+                            Double.isFinite(p.y) ? (Object) p.y : null, p.getLineTo()));
+                }
+                f.put("points", points);
+                return f;
+            }
             default:
                 throw new IllegalStateException(type);
         }
@@ -1130,22 +1385,28 @@ final class Session {
         return f;
     }
 
-    /** Turns every GeoGebra error report into an exception. */
-    private static final class ThrowingErrorHandler implements ErrorHandler {
+    /** Captures expected command errors and throws on unexpected ones. */
+    private static final class CommandErrorHandler implements ErrorHandler {
         private final String line;
+        private final boolean expectError;
+        private boolean reported;
 
-        ThrowingErrorHandler(String line) {
+        CommandErrorHandler(String line, boolean expectError) {
             this.line = line;
+            this.expectError = expectError;
         }
 
         @Override
         public void showError(String msg) {
-            throw new IllegalStateException("GeoGebra error in '" + line + "': " + msg);
+            if (!expectError) {
+                throw new IllegalStateException("GeoGebra error in '" + line + "': " + msg);
+            }
+            reported = true;
         }
 
         @Override
         public void showCommandError(String command, String message) {
-            throw new IllegalStateException("GeoGebra error in '" + line + "': " + message);
+            showError(message);
         }
 
         @Override

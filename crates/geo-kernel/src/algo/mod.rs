@@ -48,6 +48,9 @@ pub(crate) const CARRIERS: &[Kind] = &[Kind::Line, Kind::Segment, Kind::Ray];
 pub(crate) const CONIC_OBJECTS: &[Kind] = &[Kind::Circle, Kind::Conic, Kind::Arc, Kind::Sector];
 pub(crate) const CIRCLE: &[Kind] = &[Kind::Circle];
 pub(crate) const NUMBER: &[Kind] = &[Kind::Number];
+/// What a transformation reads as a number: `Rotate`, `Dilate`, `Shear` and
+/// `Stretch` take a `GeoNumberValue`, which an angle is too.
+pub(crate) const NUMBER_OR_ANGLE: &[Kind] = &[Kind::Number, Kind::Angle];
 
 /// The most objects one definition can read.
 pub(crate) const MAX_PARENTS: usize = 6;

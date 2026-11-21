@@ -66,6 +66,8 @@ pub struct App {
     pub rules: OwnerRules,
     /// `None` until the first frame, when the size of the area is known.
     pub camera: Option<Camera>,
+    /// Time of the last camera-driven locus update.
+    pub locus_sample_time: Option<f64>,
     pub view_request: Option<ViewRequest>,
     pub drag: Option<Drag>,
     /// The pointer automaton of the graphics view.
@@ -127,6 +129,7 @@ impl App {
             wb,
             rules: OwnerRules::OURS,
             camera: None,
+            locus_sample_time: None,
             view_request: Some(ViewRequest::Initial),
             drag: None,
             gesture: Gesture::new(&Metrics::desktop()),

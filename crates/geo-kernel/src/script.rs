@@ -51,6 +51,7 @@ use crate::algo::arc::ArcDef;
 use crate::algo::conic::ConicDef;
 use crate::algo::conic_parts::ConicPartDef;
 use crate::algo::general_conic::GeneralConicDef;
+use crate::algo::intersect;
 use crate::algo::lines::LineDef;
 use crate::algo::measure::MeasureDef;
 use crate::algo::point::PointDef;
@@ -59,6 +60,7 @@ use crate::algo::transform::TransformDef;
 use crate::algo::vector::VectorDef;
 use crate::algo::Group;
 use crate::kernel::angle::{self, AngleDef, AngleSource};
+use crate::kernel::locus::LocusDef;
 use crate::kernel::{Construction, Def, Id, Kind, Value};
 use std::fmt;
 
@@ -155,6 +157,12 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
     if let Some(result) = ConicDef::exec_interval(c, name, rhs) {
         return result;
     }
+    if let Some(result) = intersect::exec_selected(c, name, rhs) {
+        return result;
+    }
+    if let Some(result) = define_vector_call(c, name, rhs) {
+        return result;
+    }
     // GeoGebra returns an already labelled angle unchanged.
     if rhs.starts_with("Angle") {
         if let Some(("Angle", args)) = split_call(rhs) {
@@ -165,22 +173,55 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
             }
         }
     }
+    define_expression_or_command(c, name, rhs).map(Some)
+}
+
+fn define_expression_or_command(c: &mut Construction, name: &str, rhs: &str) -> Result<Id, String> {
     match define(c, name, rhs) {
         Ok(id) => {
             if matches!(c.def(id), Def::Number(_)) {
                 // a decimal literal keeps its exact decimal
                 crate::expr::record_literal(c, id, rhs);
             }
-            Ok(Some(id))
+            Ok(id)
         }
         // A call of a command keeps the command's own error.
         Err(e) if is_single_call(c, rhs) => Err(e),
-        Err(_) => crate::expr::define(c, name, rhs, is_vector_label(name)).map(Some),
+        Err(_) => {
+            let vector = is_vector_label(name)
+                || rhs.split_once('(').is_some_and(|(name, _)| {
+                    VectorDef::vector_result(name.trim()) && call_closes_at_end(rhs, name.len())
+                });
+            crate::expr::define(c, name, rhs, vector)
+        }
+    }
+}
+
+/// `CmdVector` keeps a labelled vector and labels an anonymous one.
+fn define_vector_call(
+    c: &mut Construction,
+    name: &str,
+    rhs: &str,
+) -> Option<Result<Option<Id>, String>> {
+    let (command, rest) = rhs.split_once('(')?;
+    if command.trim() != "Vector" || !call_closes_at_end(rhs, command.len()) {
+        return None;
+    }
+    let arg = rest.strip_suffix(')')?.trim();
+    if c.id(arg).is_some_and(|id| c.kind(id) == Kind::Vector) {
+        return Some(Ok(None));
+    }
+    match parse_forced(arg)? {
+        Ok(def @ Def::Vector(_)) => Some(c.add(name, def).map(Some).map_err(|e| e.to_string())),
+        _ => None,
     }
 }
 
 /// The forms of the module documentation other than arithmetic.
 fn define(c: &mut Construction, name: &str, rhs: &str) -> Result<Id, String> {
+    if let Some(("Slider", args)) = split_call(rhs) {
+        return slider(c, name, &args);
+    }
     if let Some(defs) = parse_multi(c, rhs) {
         return add_outputs(c, name, defs?);
     }
@@ -189,6 +230,27 @@ fn define(c: &mut Construction, name: &str, rhs: &str) -> Result<Id, String> {
         def => def,
     };
     c.add(name, def).map_err(|e| e.to_string())
+}
+
+/// `Slider(min, max)` and `Slider(min, max, increment)` with constant number
+/// expressions (`CmdSlider`); the increment only matters for dragging, which
+/// the kernel does not do, so it is checked and dropped.
+fn slider(c: &mut Construction, name: &str, args: &[&str]) -> Result<Id, String> {
+    let number = |arg| {
+        crate::expr::constant_number(c, arg)
+            .filter(|&(_, angle)| !angle)
+            .map(|(value, _)| value)
+            .ok_or_else(|| format!("expected a constant number, got `{arg}`"))
+    };
+    let (min, max) = match args {
+        [min, max] => (number(min)?, number(max)?),
+        [min, max, step] => {
+            number(step)?;
+            (number(min)?, number(max)?)
+        }
+        _ => return Err(format!("`Slider` does not take {} argument(s)", args.len())),
+    };
+    c.add_slider(name, min, max).map_err(|e| e.to_string())
 }
 
 /// Whether `rhs` is exactly one call `Name(...)` of a command: the bracket
@@ -208,6 +270,10 @@ fn is_single_call(c: &Construction, rhs: &str) -> bool {
     {
         return false;
     }
+    call_closes_at_end(rhs, open)
+}
+
+fn call_closes_at_end(rhs: &str, open: usize) -> bool {
     let mut depth = 0usize;
     for (i, ch) in rhs.char_indices().skip_while(|&(i, _)| i < open) {
         match ch {
@@ -232,10 +298,25 @@ pub(crate) fn split_call(rhs: &str) -> Option<(&str, Vec<&str>)> {
     }
     let open = rhs.find('(')?;
     let inner = rhs[open + 1..].strip_suffix(')')?;
-    Some((
-        rhs[..open].trim(),
-        inner.split(',').map(str::trim).collect(),
-    ))
+    let mut args = Vec::new();
+    let mut start = 0;
+    let mut depth = 0usize;
+    for (i, ch) in inner.char_indices() {
+        match ch {
+            '(' | '{' | '[' => depth += 1,
+            ')' | '}' | ']' => depth = depth.checked_sub(1)?,
+            ',' if depth == 0 => {
+                args.push(inner[start..i].trim());
+                start = i + 1;
+            }
+            _ => {}
+        }
+    }
+    if depth != 0 {
+        return None;
+    }
+    args.push(inner[start..].trim());
+    Some((rhs[..open].trim(), args))
 }
 
 /// Asks the groups for a command that creates several objects.
@@ -244,6 +325,9 @@ fn parse_multi(c: &Construction, rhs: &str) -> Option<Result<Vec<Def>, String>> 
         r.map(|defs| defs.into_iter().map(f).collect())
     }
     let (func, args) = split_call(rhs)?;
+    if let Some(defs) = intersect::parse_multi(c, func, &args) {
+        return Some(Ok(defs));
+    }
     if func == "Angle" {
         if let Some(defs) = angle::fixed(c, &args) {
             return Some(defs.map(|defs| defs.into_iter().map(Def::AngleObject).collect()));
@@ -275,8 +359,9 @@ fn parse_multi(c: &Construction, rhs: &str) -> Option<Result<Vec<Def>, String>> 
 /// - two or more outputs defined at creation: every defined output is
 ///   created and gets the next free indexed label (`t_{1}`, `t_{2}`, ...);
 ///   `Vertex` of a hyperbola labels its two defined vertices only;
-/// - exactly one defined: only that output is created, labelled `name`;
-/// - none defined: only the first output is created, labelled `name`.
+/// - exactly one defined: only that output is created, indexed for a
+///   polygonal boundary intersection and labelled `name` otherwise;
+/// - none defined: only the first output is created, using the same rule.
 ///
 /// The set of created objects is fixed at creation: an output that was not
 /// created is not added later, even when it becomes defined.
@@ -330,20 +415,34 @@ fn add_outputs(c: &mut Construction, name: &str, defs: Vec<Def>) -> Result<Id, S
         };
     }
     let count = defined.iter().filter(|&&d| d).count();
-    if count < 2 {
-        let k = defined.iter().position(|&d| d).unwrap_or(0);
-        return c.add(name, defs[k]).map_err(|e| e.to_string());
-    }
+    let indexed = matches!(defs.first(), Some(Def::IntersectBoundary(d)) if d.labels_indexed());
     // Construction.getIndexLabel: the prefix is the name up to the first `_`.
     let prefix = match name.split('_').next() {
         Some(p) if !p.is_empty() => p,
         _ => "a",
     };
+    if count < 2 {
+        let k = defined.iter().position(|&d| d).unwrap_or(0);
+        return if indexed {
+            c.add(&index_label(c, prefix), defs[k])
+        } else {
+            c.add(name, defs[k])
+        }
+        .map_err(|e| e.to_string());
+    }
+    let at = c.checkpoint();
     let mut first = None;
     for (def, _) in defs.into_iter().zip(defined).filter(|&(_, d)| d) {
         let label = index_label(c, prefix);
-        let id = c.add(&label, def).map_err(|e| e.to_string())?;
-        first.get_or_insert(id);
+        match intersect::add_labelled_output(c, &label, def) {
+            Ok(id) => {
+                first.get_or_insert(id);
+            }
+            Err(e) => {
+                c.discard_since(at);
+                return Err(e);
+            }
+        }
     }
     first.ok_or_else(|| "the command creates no object".into())
 }
@@ -409,6 +508,18 @@ fn probe(c: &Construction, def: &Def) -> Result<bool, String> {
         Def::ConicPart(d) => run(c, d),
         Def::Path(d) => run(c, d),
         Def::Arc(d) => run(c, d),
+        Def::IntersectLineCircle {
+            line,
+            circle,
+            which,
+        } => {
+            c.check(def).map_err(|e| e.to_string())?;
+            Ok(intersect::probe_line_circle(c, *line, *circle, *which))
+        }
+        Def::IntersectConics(_) | Def::IntersectBoundary(_) => c
+            .evaluate(*def)
+            .map(|v| v != Value::Undefined)
+            .map_err(|e| e.to_string()),
         _ => Ok(true),
     }
 }
@@ -431,7 +542,8 @@ fn is_finite(v: &Value) -> bool {
         Value::Conic { .. } => true,
         Value::Arc { length } => length.is_finite(),
         Value::Sector { area } => area.is_finite(),
-        Value::Undefined => false,
+        Value::Locus { .. } => true,
+        Value::HomogeneousPoint { .. } | Value::Undefined => false,
     }
 }
 
@@ -516,6 +628,9 @@ pub(crate) fn parse_def(c: &Construction, rhs: &str) -> Result<Def, String> {
     let args: Vec<&str> = inner.split(',').map(str::trim).collect();
     let obj = |s: &str| object(c, s);
 
+    if let Some(def) = intersect::parse_selected(c, func, &args) {
+        return def;
+    }
     // Groups are asked first, so that a group can add a new form of a
     // built-in command (for example `Circle` with three points). General
     // conics come first: they claim the transformations of conics.
@@ -556,6 +671,9 @@ pub(crate) fn parse_def(c: &Construction, rhs: &str) -> Result<Def, String> {
     }
     if let Some(def) = crate::algo::path::PathDef::parse(c, func, &args) {
         return def.map(Def::Path);
+    }
+    if let Some(def) = LocusDef::parse(c, func, &args) {
+        return def.map(Def::Locus);
     }
 
     match (func, args.len()) {
@@ -601,6 +719,9 @@ pub(crate) fn parse_def(c: &Construction, rhs: &str) -> Result<Def, String> {
         ("Intersect", 2 | 3) => {
             let first = obj(args[0])?;
             let second = obj(args[1])?;
+            if let Some(def) = intersect::parse_lines(c, first, second, args.get(2).copied()) {
+                return def;
+            }
             let which = match args.get(2) {
                 None => 0,
                 Some(&"1") => 0,
@@ -610,7 +731,6 @@ pub(crate) fn parse_def(c: &Construction, rhs: &str) -> Result<Def, String> {
                 }
             };
             match (c.kind(first), c.kind(second)) {
-                (Kind::Line, Kind::Line) => Ok(Def::IntersectLines(first, second)),
                 (Kind::Line, Kind::Circle) => Ok(Def::IntersectLineCircle {
                     line: first,
                     circle: second,
@@ -829,13 +949,13 @@ fn exec_labelled(c: &mut Construction, line: &str) -> Result<Option<Id>, String>
     let mut first = None;
     for (slot, def) in slots.iter().zip(defs) {
         if !slot.is_empty() {
-            match c.add(slot, def) {
+            match intersect::add_labelled_output(c, slot, def) {
                 Ok(id) => {
                     first.get_or_insert(id);
                 }
                 Err(e) => {
                     c.discard_since(at);
-                    return Err(e.to_string());
+                    return Err(e);
                 }
             }
         }
@@ -889,7 +1009,7 @@ mod tests {
              r = 5\n\
              k1 = Circle(A, r)\n\
              k2 = Circle(B, r)\n\
-             P = Intersect(k1, k2)      # first point\n\
+             P = Intersect(k1, k2, 1)   # first point\n\
              Q = Intersect(k1, k2, 2)\n\
              d = Distance(P, Q)\n",
         )

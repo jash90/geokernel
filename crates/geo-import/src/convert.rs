@@ -13,7 +13,7 @@ use geo_kernel::algo::conic_nd::{ConicData, ConicType};
 use geo_kernel::algo::general_conic::GeneralConicDef;
 use geo_kernel::kernel::Def;
 use geo_kernel::script::{exec, is_vector_label, multi_output_count};
-use geo_kernel::{Construction, Value};
+use geo_kernel::{Construction, Kind, Value};
 use std::collections::{BTreeMap, BTreeSet};
 
 /// The longest text a reason may quote from the file, in characters.
@@ -39,6 +39,24 @@ pub fn quote(text: &str) -> String {
 pub fn convert(doc: Document) -> Result<Imported, ImportError> {
     let mut c = Converter::default();
     let mut flags = Flags::default();
+    for item in &doc.items {
+        match item {
+            Item::Expression { label, .. } => {
+                c.file_labels.insert(label.clone());
+            }
+            // A command that makes several objects: every output is a label.
+            Item::Command { outputs, .. } => {
+                for output in outputs {
+                    if !output.is_empty() {
+                        c.file_labels.insert(output.clone());
+                    }
+                }
+            }
+            Item::Element(el) => {
+                c.file_labels.insert(el.label.clone());
+            }
+        }
+    }
     for item in doc.items {
         match item {
             Item::Expression { label, exp } => {
@@ -126,6 +144,9 @@ struct Converter {
     skipped: BTreeMap<String, String>,
     /// `<expression>` texts waiting for their element.
     expressions: BTreeMap<String, String>,
+    /// Every label the file names anywhere, so a label the importer makes up
+    /// for a helper object cannot collide with one read later.
+    file_labels: BTreeSet<String>,
 }
 
 /// One script line and the labels it has to create.
@@ -192,6 +213,11 @@ impl Converter {
                 "`{}` is not a label the script can use",
                 quote(bad)
             )),
+            None if matches!(name, "Ray" | "Arc" | "Sector")
+                && inputs.iter().any(|arg| bracketed(arg.trim()).is_some()) =>
+            {
+                return self.nested_command(name, inputs, outputs);
+            }
             None => self.steps(name, inputs, outputs),
         };
         match steps {
@@ -303,7 +329,7 @@ impl Converter {
 
     /// The script lines of a command, or why there are none.
     fn steps(
-        &self,
+        &mut self,
         name: &str,
         inputs: &[String],
         outputs: &[String],
@@ -360,6 +386,108 @@ impl Converter {
             labels: labelled,
             auto: false,
         }])
+    }
+
+    /// GeoGebra saves the transformed direction of a ray and the conic
+    /// of an arc or sector as nested calls. Commit their helpers only when
+    /// the outer command succeeds.
+    fn nested_command(
+        &mut self,
+        name: &str,
+        inputs: &[String],
+        outputs: &[String],
+    ) -> Result<(), ImportError> {
+        let labels: Vec<String> = outputs.iter().filter(|l| !l.is_empty()).cloned().collect();
+        let checkpoint = self.kernel.checkpoint();
+        let mut helpers = Vec::new();
+        let args = inputs
+            .iter()
+            .map(|arg| self.expand_call(arg.trim(), &mut helpers))
+            .collect::<Result<Vec<_>, _>>();
+        let result = match args {
+            Ok(args) => {
+                let line = format!("{} = {name}({})", labels[0], args.join(", "));
+                self.run(&line, &labels)?.map(|()| line)
+            }
+            Err(reason) => Err(reason),
+        };
+        match result {
+            Ok(line) => {
+                for (label, line) in helpers {
+                    self.out.hidden.push(label);
+                    self.out.script.push(line);
+                }
+                self.out.script.push(line);
+            }
+            Err(reason) => {
+                self.kernel
+                    .rollback(checkpoint)
+                    .map_err(|e| ImportError::Internal(e.to_string()))?;
+                for label in labels {
+                    self.skip(&label, name, reason.clone());
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// Lower the innermost calls first, so `Vector[...]` can distinguish a
+    /// vector it wraps from a point whose position vector it constructs.
+    fn expand_call(
+        &mut self,
+        arg: &str,
+        helpers: &mut Vec<(String, String)>,
+    ) -> Result<String, String> {
+        let Some((command, body)) = bracketed(arg) else {
+            let arg = pass_argument(arg)?;
+            if self.skipped.contains_key(&arg) {
+                return Err(format!("depends on the skipped object `{}`", quote(&arg)));
+            }
+            return Ok(arg);
+        };
+        if !command.bytes().all(|b| b.is_ascii_alphanumeric()) {
+            return Err(format!("invalid nested command name `{}`", quote(command)));
+        }
+        let args = split_parts(body)
+            .iter()
+            .map(|part| self.expand_call(part.trim(), helpers))
+            .collect::<Result<Vec<_>, _>>()?;
+        if let ("Vector", [arg]) = (command, args.as_slice()) {
+            if self
+                .kernel
+                .id(arg)
+                .is_some_and(|id| self.kernel.kind(id) == Kind::Vector)
+            {
+                return Ok(arg.clone());
+            }
+        }
+        let prefix = if command == "Direction" { "dir" } else { "img" };
+        let label = self.helper_label(prefix);
+        let line = format!("{label} = {command}({})", args.join(", "));
+        let before = self.kernel.len();
+        exec(&mut self.kernel, &line)?;
+        if self.kernel.len() != before + 1 || self.kernel.id(&label).is_none() {
+            return Err(format!(
+                "nested command `{}` must create one object",
+                quote(command)
+            ));
+        }
+        helpers.push((label.clone(), line));
+        Ok(label)
+    }
+
+    /// A label for a helper object: `prefix`, then `prefix_1`, `prefix_2`, ...,
+    /// the first one neither the file nor the scratch construction uses.
+    fn helper_label(&self, prefix: &str) -> String {
+        let taken =
+            |label: &str| self.file_labels.contains(label) || self.kernel.id(label).is_some();
+        let mut label = prefix.to_string();
+        let mut index = 0;
+        while taken(&label) {
+            index += 1;
+            label = format!("{prefix}_{index}");
+        }
+        label
     }
 
     fn element(&mut self, el: Element) -> Result<(), ImportError> {
@@ -566,6 +694,43 @@ fn tokens(arg: &str) -> impl Iterator<Item = &str> {
         .filter(|t| !t.is_empty())
 }
 
+/// `Name[body]` as GeoGebra writes a nested command call: the name before the
+/// first `[` and everything between that bracket and the matching `]` at the
+/// end (a `]` inside the body belongs to an inner call). `None` when the
+/// argument is not that form.
+fn bracketed(arg: &str) -> Option<(&str, &str)> {
+    let (name, rest) = arg.split_once('[')?;
+    let body = rest.strip_suffix(']')?;
+    (!name.is_empty() && !body.is_empty()).then_some((name, body))
+}
+
+/// The top-level comma-separated parts of a saved argument list, keeping
+/// bracketed calls and parenthesised points together.
+fn split_parts(s: &str) -> Vec<String> {
+    let mut parts = Vec::new();
+    let mut depth = 0usize;
+    let mut current = String::new();
+    for ch in s.chars() {
+        match ch {
+            '[' | '(' => {
+                depth += 1;
+                current.push(ch);
+            }
+            ']' | ')' => {
+                depth = depth.saturating_sub(1);
+                current.push(ch);
+            }
+            ',' if depth == 0 => {
+                parts.push(current.clone());
+                current.clear();
+            }
+            _ => current.push(ch),
+        }
+    }
+    parts.push(current);
+    parts
+}
+
 const TOLERANCE: f64 = 1e-9;
 
 /// `|p - q| <= 1e-9 * max(1, |p|, |q|)`, the comparison of the golden files.
@@ -695,7 +860,15 @@ fn saved_defined(el: &Element) -> Option<bool> {
             .coords
             .as_ref()
             .map(|_| coords3(el).is_some_and(|[a, b, _]| a != 0.0 || b != 0.0)),
-        "conic" => saved_circle(el).map(|c| c.is_some()),
+        // A saved matrix of finite numbers is a defined conic, whatever
+        // conic it is (`saved_circle` reads only the circles among them);
+        // a matrix with no numbers in it is not.
+        "conic" => el.matrix.as_ref().map(|m| {
+            m.iter()
+                .map(|t| num(t))
+                .collect::<Option<Vec<f64>>>()
+                .is_some_and(|v| v.iter().all(|x| x.is_finite()) && v.iter().any(|x| *x != 0.0))
+        }),
         "numeric" | "angle" => el.value.as_ref().map(|v| num(v).is_some()),
         "boolean" => el
             .value
@@ -760,4 +933,70 @@ fn cross_check(el: &Element, value: &Value, image: bool) -> Option<(String, Stri
         _ => None,
     };
     (agrees == Some(false)).then(report).flatten()
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::import;
+    use geo_kernel::{script, Value};
+
+    #[test]
+    fn saved_transform_ray_uses_hidden_helpers() {
+        let imported = import(include_bytes!(
+            "../../../golden/ggb/transform/transform-dilate-007.xml"
+        ))
+        .unwrap();
+        assert!(imported.skipped.is_empty(), "{:?}", imported.skipped);
+        let c = script::load(&imported.script.join("\n")).unwrap();
+        for helper in ["dir", "img"] {
+            assert!(c.id(helper).is_some());
+            assert!(imported.hidden.iter().any(|label| label == helper));
+        }
+    }
+
+    #[test]
+    fn skipped_arc_leaves_no_helpers() {
+        let imported = import(include_bytes!(
+            "../../../golden/ggb/transform/transform-arcpart-005.xml"
+        ))
+        .unwrap();
+        assert_eq!(imported.skipped.len(), 1, "{:?}", imported.skipped);
+        assert_eq!(imported.skipped[0].label, "m");
+        let c = script::load(&imported.script.join("\n")).unwrap();
+        assert!(c
+            .ids()
+            .all(|id| !c.label(id).starts_with('\0') && c.label(id) != "img"));
+    }
+
+    #[test]
+    fn saved_ray_uses_the_position_vector_of_a_point() {
+        let imported = import(include_bytes!(
+            "../../../golden/transformsfix/import-ray.xml"
+        ))
+        .unwrap();
+        assert!(imported.skipped.is_empty(), "{:?}", imported.skipped);
+        let mut c = script::load(&imported.script.join("\n")).unwrap();
+        let ray = c.id("r").unwrap();
+        assert_eq!(
+            c.value(ray),
+            Value::Ray {
+                x: 1.0,
+                y: 2.0,
+                a: -4.0,
+                b: 3.0,
+                c: -2.0
+            }
+        );
+        c.move_point(c.id("B").unwrap(), -1.0, 3.0).unwrap();
+        assert_eq!(
+            c.value(ray),
+            Value::Ray {
+                x: 1.0,
+                y: 2.0,
+                a: -3.0,
+                b: -1.0,
+                c: 5.0
+            }
+        );
+    }
 }
