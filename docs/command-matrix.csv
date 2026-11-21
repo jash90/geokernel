@@ -22,13 +22,13 @@ NextPrime,,algebra,P2,todo,1,0,
 RightSide,,algebra,P2,todo,3,0,
 PreviousPrime,,algebra,P2,todo,1,0,
 IsFactored,,algebra,P2,todo,1,0,
-Line,,geometry,P0,partial,5,4,"Line(point, point); Line(point, line, segment or ray); Line(point, vector)"
+Line,,geometry,P0,done,5,5,"Line(point, point); Line(point, line, segment or ray); Line(point, vector)"
 Ray,,geometry,P1,done,2,2,"Ray(point, point); Ray(point, vector)"
 AngularBisector,,geometry,P1,done,2,2,"AngularBisector(point, point, point); AngularBisector(line, line)"
-OrthogonalLine,,geometry,P0,partial,5,3,"OrthogonalLine(point, line, segment or ray); OrthogonalLine(point, vector); OrthogonalLine(point, conic or conic part)"
+OrthogonalLine,,geometry,P0,done,5,5,"OrthogonalLine(point, line, segment or ray); OrthogonalLine(point, vector); OrthogonalLine(point, conic or conic part)"
 Tangent,,geometry,P1,partial,11,2,"Tangent(point, circle or conic); Tangent(line or segment, circle or conic)"
-Segment,,geometry,P0,partial,3,1,"Segment(point, point); Segment(point, length); Segment(point, point, polygon) creates no output"
-Slope,,geometry,P1,partial,2,1,"Slope(line, segment, ray or function)"
+Segment,,geometry,P0,done,3,3,"Segment(point, point); Segment(point, length); Segment(point, point, polygon) creates no output"
+Slope,,geometry,P1,done,2,2,"Slope(line, segment, ray or function)"
 Angle,,geometry,P1,partial,13,2,"Angle(point, point, point); Angle(polygon)"
 InteriorAngles,,geometry,P1,done,1,1,InteriorAngles(polygon)
 Direction,,geometry,P1,partial,2,1,"Direction(line, segment or ray)"
@@ -36,11 +36,11 @@ Point,,geometry,P1,todo,4,0,"Point(path); Point(path, parameter) on a line, segm
 Midpoint,,geometry,P0,partial,4,3,"Midpoint(point, point); Midpoint(segment); Midpoint(circle or conic)"
 LineBisector,,geometry,P1,done,2,2,"LineBisector(point, point); LineBisector(segment)"
 Intersect,,geometry,P0,partial,65,4,line/line; line/circle; circle/circle; line/conic; optional index 1 or 2
-IntersectPath,,geometry,P1,todo,9,0,"Polygon and line, segment, ray or conic in either order; two polygons"
+IntersectPath,,geometry,P1,partial,9,4,"Polygon and line, segment, ray or conic in either order; two polygons"
 IntersectRegion,,english,P2,todo,9,0,
 Distance,,geometry,P0,partial,4,2,"Distance(point, point); point and path in either order (line, segment, ray, conic, arc, sector, polygon, polyline, function or point list); two line carriers"
 Length,,geometry,P1,partial,11,3,Length(segment); Length(vector); Length(list); Length(arc or sector)
-Radius,,geometry,P1,todo,1,0,Radius(conic or conic part); defined for circle and single-point types
+Radius,,geometry,P1,done,1,1,Radius(conic or conic part); defined for circle and single-point types
 Type,,geometry,P1,todo,0,0,
 CircleArc,,geometry,P1,done,1,1,"CircularArc(centre, point, point)"
 Arc,,geometry,P1,partial,2,1,"Arc(circle, point, point); Arc(circle or conic, parameter, parameter)"
@@ -49,13 +49,13 @@ CircleSector,,geometry,P1,done,1,1,"CircularSector(centre, point, point)"
 CircumcircleSector,,geometry,P1,done,1,1,"CircumcircularSector(point, point, point)"
 CircumcircleArc,,geometry,P1,done,1,1,"CircumcircularArc(point, point, point)"
 Polygon,,geometry,P1,partial,3,2,"Polygon of three or more points; Polygon(point, point, number of vertices)"
-RigidPolygon,,geometry,P1,todo,3,0,"RigidPolygon(polygon); RigidPolygon(polygon, x offset, y offset); RigidPolygon of three or more points (separate constrained vertices)"
-Area,,geometry,P1,partial,3,2,"Area(conic, arc, sector or polygon); Area of three or more points"
+RigidPolygon,,geometry,P1,partial,3,2,"RigidPolygon(polygon); RigidPolygon(polygon, x offset, y offset); RigidPolygon of three or more points (separate constrained vertices)"
+Area,,geometry,P1,done,3,3,"Area(conic, arc, sector or polygon); Area of three or more points"
 Circumference,,geometry,P1,todo,3,0,Circumference(circle); Circumference(arc or sector)
 Perimeter,,geometry,P1,partial,3,1,Perimeter(circle); Perimeter(polygon); Perimeter(arc or sector)
 Locus,,geometry,P1,todo,4,0,
 Centroid,,geometry,P1,done,1,1,Centroid(polygon)
-TriangleCenter,,geometry,P1,todo,1,0,"TriangleCenter(point, point, point, index)"
+TriangleCenter,,geometry,P1,done,1,1,"TriangleCenter(point, point, point, index)"
 Barycenter,,geometry,P1,todo,1,0,
 Trilinear,,geometry,P1,done,1,1,"Trilinear(point, point, point, number, number, number)"
 Cubic,,geometry,P1,todo,1,0,
@@ -78,11 +78,11 @@ ArePerpendicular,,geometry,P1,done,1,1,"ArePerpendicular of two lines, segments 
 AreEqual,,geometry,P1,todo,1,0,AreEqual of two objects of any kind the kernel has
 AreConcurrent,,geometry,P1,done,1,1,"AreConcurrent of three lines, segments or rays"
 AreCongruent,,geometry,P1,todo,1,0,AreCongruent of two objects of any kind the kernel has
-IsTangent,,geometry,P1,todo,1,0,"IsTangent(line, segment or ray, conic or conic part)"
+IsTangent,,geometry,P1,done,1,1,"IsTangent(line, segment or ray, conic or conic part)"
 LocusEquation,,geometry,P1,todo,3,0,
 Envelope,,geometry,P1,todo,1,0,
 Volume,,3d,,out_of_scope,,,
-Difference,,geometry,P1,todo,2,0,"Difference(polygon, polygon); Difference(polygon, polygon, boolean)"
+Difference,,geometry,P1,done,2,2,"Difference(polygon, polygon); Difference(polygon, polygon, boolean)"
 Text,,text,P2,todo,7,0,
 LaTeX,,text,P2,todo,3,0,
 LetterToUnicode,,text,P2,todo,1,0,
@@ -443,7 +443,7 @@ LinearEccentricity,Excentricity,conic,P1,done,,,
 MajorAxis,FirstAxis,conic,P1,done,,,
 SemiMajorAxisLength,FirstAxisLength,conic,P1,done,,,
 PerpendicularBisector,LineBisector,geometry,P1,done,,,
-PerpendicularLine,OrthogonalLine,geometry,P0,partial,,,
+PerpendicularLine,OrthogonalLine,geometry,P0,done,,,
 PerpendicularVector,OrthogonalVector,vector,P2,partial,,,
 MinorAxis,SecondAxis,conic,P1,done,,,
 SemiMinorAxisLength,SecondAxisLength,conic,P1,done,,,

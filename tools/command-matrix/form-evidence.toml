@@ -638,3 +638,93 @@ cases = ["polygon-regular-015", "polygon-shrink-001", "polygon-triangle-022"]
 command = "Vertex"
 form = "polyline,number"
 cases = ["polygon-polyline-001", "polygon-polyline-002", "polygon-polyline-003"]
+
+[[form]]
+command = "Area"
+form = "conic"
+cases = ["geomforms-area-001", "geomforms-area-003"]
+
+[[form]]
+command = "Difference"
+form = "polygon,polygon"
+cases = ["geomclip-difference-003", "geomclip-difference-005", "geomclip-difference-007"]
+
+[[form]]
+command = "Difference"
+form = "polygon,polygon,boolean"
+cases = ["geomclip-difference-004", "geomclip-difference-008"]
+
+[[form]]
+command = "IntersectPath"
+form = "line,polygon"
+cases = ["geomclip-carrier-001", "geomclip-carrier-002", "geomclip-carrier-005"]
+
+[[form]]
+command = "IntersectPath"
+form = "polygon,line"
+cases = ["geomclip-carrier-001", "geomclip-carrier-002"]
+
+[[form]]
+command = "IntersectPath"
+form = "conic,polygon"
+cases = ["geomclip-conic-003"]
+
+[[form]]
+command = "IntersectPath"
+form = "polygon,polygon"
+cases = ["geomclip-polygon-001", "geomclip-polygon-002"]
+
+[[form]]
+command = "IsTangent"
+form = "line,conic"
+cases = ["geomforms-tangent-001"]
+
+[[form]]
+command = "Line"
+form = "point,ray"
+cases = ["geomforms-ray-001", "geomforms-ray-002", "geomforms-ray-003"]
+
+[[form]]
+command = "OrthogonalLine"
+form = "point,ray"
+cases = ["geomforms-ray-001", "geomforms-ray-002", "geomforms-ray-003"]
+
+[[form]]
+command = "OrthogonalLine"
+form = "point,conic"
+cases = ["geomforms-normal-002"]
+
+[[form]]
+command = "Radius"
+form = "conic"
+cases = ["geomforms-area-001", "geomforms-area-003"]
+
+[[form]]
+command = "RigidPolygon"
+form = "polygon"
+cases = ["geomforms-rigidpolygon-002"]
+
+[[form]]
+command = "RigidPolygon"
+form = "polygon,number,number"
+cases = ["geomforms-rigidpolygon-003"]
+
+[[form]]
+command = "Segment"
+form = "point,number"
+cases = ["geomforms-segment-001", "geomforms-segment-002", "geomforms-segment-003"]
+
+[[form]]
+command = "Segment"
+form = "point,point,polygon"
+cases = ["geomforms-segment-005"]
+
+[[form]]
+command = "Slope"
+form = "function"
+cases = ["geomforms-slope-001", "geomforms-slope-002", "geomforms-slope-003"]
+
+[[form]]
+command = "TriangleCenter"
+form = "point,point,point,number"
+cases = ["geomforms-trianglecenter-001", "geomforms-trianglecenter-002", "geomforms-trianglecenter-003"]
