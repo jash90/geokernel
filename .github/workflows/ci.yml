@@ -13,18 +13,25 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  # Formatting, lints, the full test suite and the Android check run on the
+  # project's own macOS runner for pushes and for pull requests from this
+  # repository. Pull requests from forks never reach that machine: they run
+  # the same job on a GitHub-hosted Linux runner instead.
   check:
-    runs-on: ubuntu-latest
+    runs-on: ${{ (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted", "geokernel"]') || 'ubuntu-latest' }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
+      # The self-hosted runner keeps its target directory between runs.
       - uses: Swatinem/rust-cache@v2
+        if: runner.environment == 'github-hosted'
 
       # System packages needed to build the application crate on Linux.
       - name: Install system packages
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends libxkbcommon-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev
@@ -47,18 +54,23 @@ jobs:
           cargo check --target aarch64-linux-android -p geo-kernel -p geo-import -p geo-app-core
 
   # The desktop release targets macOS, Windows and Linux; the job above covers
-  # Linux, this one builds and tests the workspace on the other two systems.
+  # macOS, this one builds and tests the workspace on the other two systems.
   desktop:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
+      - name: Install system packages
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libxkbcommon-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev
       - name: Test
         run: cargo test --workspace
       - name: Build application
