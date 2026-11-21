@@ -45,7 +45,7 @@
 use super::conic_nd::{my_length, ConicData, ConicType};
 use super::transform::{center_of, TransformOf};
 use super::vector;
-use super::{Group, Parents, NUMBER, POINT};
+use super::{Group, Parents, NUMBER, NUMBER_OR_ANGLE, POINT};
 use crate::expr::{Element, ExprDef, List};
 use crate::kernel::{Construction, Error, Id, IdList, Kind, Value};
 use crate::script::object;
@@ -230,10 +230,15 @@ impl GeneralConicDef {
                 if !set_out(c, src, &mut d) {
                     return d;
                 }
-                let phi = c.number(angle).unwrap_or(f64::NAN);
+                // an undefined angle or centre fills the record with NaN, which
+                // the golden files count as an undefined object
+                let Some((phi, center)) = rotated_by(c, angle, center) else {
+                    d.defined = false;
+                    return d;
+                };
                 match center {
                     None => d.rotate(phi, None),
-                    Some(q) => d.rotate(phi, Some(pt(q))),
+                    Some(q) => d.rotate(phi, Some(q)),
                 }
             }
             GeneralConicDef::Dilate {
@@ -245,10 +250,19 @@ impl GeneralConicDef {
                 if !set_out(c, src, &mut d) {
                     return d;
                 }
-                let r = c.number(factor).unwrap_or(f64::NAN);
+                let Some(r) = c.number(factor) else {
+                    d.defined = false;
+                    return d;
+                };
                 let s = match center {
                     None => (0.0, 0.0),
-                    Some(q) => pt(q),
+                    Some(q) => match c.point(q) {
+                        Some(p) => p,
+                        None => {
+                            d.defined = false;
+                            return d;
+                        }
+                    },
                 };
                 d.dilate(r, s);
             }
@@ -448,12 +462,26 @@ fn vector(c: &Construction, id: Id) -> Option<(f64, f64)> {
     }
 }
 
+/// The angle a rotation runs by and the centre it runs about, as one tuple
+/// (`None` for the origin); `None` when either is undefined.
+fn rotated_by(
+    c: &Construction,
+    angle: Id,
+    center: Option<Id>,
+) -> Option<(f64, Option<(f64, f64)>)> {
+    let phi = c.number(angle)?;
+    let center = match center {
+        None => None,
+        Some(q) => Some(c.point(q)?),
+    };
+    Some((phi, center))
+}
+
 /// Applies the transformation `def` of [`record`](GeneralConicDef::record) to
 /// `d`, which starts as a copy of the source's record (`setOutGeo`); an
 /// undefined input leaves `d` undefined. The parts of conics call this with
 /// the conic of their own record, which starts the same way.
 pub(crate) fn transform_conic(c: &Construction, def: &TransformOf, d: &mut ConicData) {
-    let nan = (f64::NAN, f64::NAN);
     match *def {
         TransformOf::MirrorPoint(center) => {
             // `AlgoMirror`: an undefined mirror makes the image undefined
@@ -469,17 +497,22 @@ pub(crate) fn transform_conic(c: &Construction, def: &TransformOf, d: &mut Conic
             _ => d.defined = false,
         },
         TransformOf::Rotate { angle, center } => {
-            let phi = c.number(angle).unwrap_or(f64::NAN);
-            match center_of(center) {
-                None => d.rotate(phi, None),
-                Some(q) => d.rotate(phi, Some(c.point(q).unwrap_or(nan))),
+            // an undefined angle or centre leaves no image (the parts of
+            // conics read this record, so the flag ends their parameters)
+            match rotated_by(c, angle, center_of(center)) {
+                Some((phi, None)) => d.rotate(phi, None),
+                Some((phi, Some(q))) => d.rotate(phi, Some(q)),
+                None => d.defined = false,
             }
         }
         TransformOf::Dilate { factor, center } => {
-            let r = c.number(factor).unwrap_or(f64::NAN);
-            let s = match center_of(center) {
-                None => (0.0, 0.0),
-                Some(q) => c.point(q).unwrap_or(nan),
+            let (r, s) = match (c.number(factor), center_of(center).map(|q| c.point(q))) {
+                (Some(r), None) => (r, (0.0, 0.0)),
+                (Some(r), Some(Some(q))) => (r, q),
+                _ => {
+                    d.defined = false;
+                    return;
+                }
             };
             d.dilate(r, s);
         }
@@ -679,7 +712,7 @@ impl Group for GeneralConicDef {
                 center,
             } => {
                 c.expect(src, kind_of(kind)?)?;
-                c.expect(second, NUMBER)?;
+                c.expect(second, NUMBER_OR_ANGLE)?;
                 match center {
                     Some(q) => c.expect(q, POINT),
                     None => Ok(()),
@@ -702,7 +735,7 @@ impl Group for GeneralConicDef {
             } => {
                 c.expect(src, kind_of(kind)?)?;
                 c.expect(axis, LINE_OR_RAY)?;
-                c.expect(ratio, NUMBER)
+                c.expect(ratio, NUMBER_OR_ANGLE)
             }
             GeneralConicDef::StretchVector { kind, src, vector } => {
                 c.expect(src, kind_of(kind)?)?;
@@ -910,7 +943,7 @@ fn parse_transform_args(
                 return Err(format!("`{}` is a {second_kind}, expected a line", args[1]));
             }
             let ratio = object(c, args[2])?;
-            if c.kind(ratio) != Kind::Number {
+            if !c.kind(ratio).is_number() {
                 return Err(format!(
                     "`{}` is a {}, expected a number",
                     args[2],
@@ -926,7 +959,8 @@ fn parse_transform_args(
             })
         }
         _ => {
-            if second_kind != Kind::Number {
+            // a `GeoNumberValue`, which an angle is too
+            if !second_kind.is_number() {
                 return Err(format!(
                     "`{}` is a {second_kind}, expected a number",
                     args[1]

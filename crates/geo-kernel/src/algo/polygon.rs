@@ -1231,9 +1231,9 @@ fn vertex_image_label(label: &str, depth: usize) -> Option<String> {
 /// `Mirror(p, l)`, `Rotate(p, a, Q)`, ... of a polygon or polyline made
 /// from three or more points: the image, then the sides of a polygon's
 /// image, named after the labels of its transformed vertices as the polygon
-/// command names them (`polygonND` over the transformed points). The
-/// transformed vertices themselves are helper objects without labels here,
-/// so a side whose vertex's image has no label is left out.
+/// command names them (`polygonND` over the transformed points; a vertex
+/// whose image has no label to give leaves the side a default label, as it
+/// does for unlabelled points).
 fn transform_line(
     c: &mut Construction,
     name: &str,
@@ -1270,6 +1270,24 @@ fn transform_line(
         };
         let depth = chain_depth(c, src);
         let n = pts.len();
+        // The label of the image of every vertex: the vertex's label with as
+        // many apostrophes as the chain is deep. Past three transformations
+        // (or for an indexed label) GeoGebra gives the image a default point
+        // label instead (`transformedGeoLabel` returns null and
+        // `transformPoints` labels the point itself); the sides are named
+        // after those labels as the polygon command names them.
+        let mut vertex_taken = Taken::new();
+        let image_labels: Vec<String> = pts
+            .iter()
+            .map(|&p| match vertex_image_label(c.label(p), depth) {
+                Some(label) => label,
+                None => {
+                    let label = next_indexed_label(c, &vertex_taken, POINT_LABELS);
+                    vertex_taken.insert(label.clone());
+                    label
+                }
+            })
+            .collect();
         for i in 0..n {
             // the side as the polygon line created it, from vertex i to the
             // next one
@@ -1280,11 +1298,8 @@ fn transform_line(
             let Some(side) = side_of_image(c, src, side) else {
                 continue;
             };
-            let named_after = if n == 3 { pts[(i + 2) % 3] } else { pts[i] };
-            let Some(label) = vertex_image_label(c.label(named_after), depth) else {
-                continue;
-            };
-            let label = side_label(c, &plan.taken, &label);
+            let named_after = if n == 3 { (i + 2) % 3 } else { i };
+            let label = side_label(c, &plan.taken, &image_labels[named_after]);
             // the same transformation of the side
             let side_def = match def {
                 Def::Transform(d) => Def::Transform(d.of(Kind::Segment, side)),
@@ -2182,5 +2197,44 @@ mod tests {
         );
         let e = run(&mut c, "a = Area(pl)").unwrap_err();
         assert!(e.contains("expected a circle"), "{e}");
+    }
+
+    #[test]
+    fn a_fourth_image_names_its_sides_after_default_point_labels() {
+        // past three transformations GeoGebra stops deriving the side labels
+        // from the vertex labels: the vertex images get default point labels
+        // and the sides are named after those
+        let mut c = load(
+            "A = (0, 5)\nB = (4, 0)\nE = (4, 3)\nQ = (1, 1)\nw = 0.5\nX = (-1, 2)\n\
+             Y = (2, -3)\nn = Line(X, Y)\np = Polygon(A, B, E)\nq = Mirror(p, Q)\n\
+             r = Rotate(q, w)\ns = Dilate(r, w)\n",
+        )
+        .unwrap();
+        let n = c.len();
+        run(&mut c, "t = Shear(s, n, w)").unwrap();
+        // the vertex images are labelled C, D, F (A, B and E are taken)
+        assert_eq!(labels(&c, n), ["t", "f", "c", "d"]);
+    }
+
+    #[test]
+    fn a_polyline_translated_by_an_undefined_vector_keeps_length_zero() {
+        let mut c = load(
+            "A = (0, 0)\nB = (3, 4)\nC = (6, 0)\nD = (2, 2)\nt = PolyLine(A, B, C)\n\
+             q = Vector(D, C)\nu = UnitVector(q)\nm = Translate(t, u)\n",
+        )
+        .unwrap();
+        assert_eq!(
+            c.value(c.id("m").unwrap()),
+            Value::PolyLine { length: 10.0 }
+        );
+        // a zero vector has no unit vector: the image stays a polyline whose
+        // vertices are undefined, with no length
+        c.move_point(c.id("C").unwrap(), 2.0, 2.0).unwrap();
+        assert_eq!(c.value(c.id("m").unwrap()), Value::PolyLine { length: 0.0 });
+        c.move_point(c.id("C").unwrap(), 6.0, 0.0).unwrap();
+        assert_eq!(
+            c.value(c.id("m").unwrap()),
+            Value::PolyLine { length: 10.0 }
+        );
     }
 }

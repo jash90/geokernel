@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="utf-8"?>
+<geogebra format="5.0" version="5.4.936.0" app="classic" platform="a" xsi:noNamespaceSchemaLocation="https://www.geogebra.org/apps/xsd/ggb.xsd" xmlns="" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<gui>
+	<window width="800" height="600"/>
+	<labelingStyle val="3"/>
+	<font size="12"/>
+</gui>
+<euclidianView>
+	<viewNumber viewNo="1"/>
+	<size width="800" height="600"/>
+	<coordSystem xZero="215" yZero="315" scale="50" yscale="50"/>
+	<evSettings axes="true" grid="false" gridIsBold="false" pointCapturing="3" rightAngleStyle="1" checkboxSize="26" gridType="3"/>
+	<bgColor r="255" g="255" b="255"/>
+	<axesColor r="28" g="28" b="31"/>
+	<gridColor r="180" g="179" b="186"/>
+	<lineStyle axes="1" grid="0"/>
+	<axis id="0" show="true" label="" unitLabel="" tickStyle="1" showNumbers="true"/>
+	<axis id="1" show="true" label="" unitLabel="" tickStyle="1" showNumbers="true"/>
+</euclidianView>
+<algebraView>
+	<mode val="1"/>
+</algebraView>
+<kernel>
+	<continuous val="false"/>
+	<usePathAndRegionParameters val="true"/>
+	<decimals val="2"/>
+	<angleUnit val="degree"/>
+	<algebraStyle val="0" spreadsheet="0"/>
+	<coordStyle val="0"/>
+</kernel>
+<tableview min="0" max="0" step="0"/>
+<scripting blocked="false" disabled="false"/>
+<construction title="" author="" date="">
+<expression label="A" exp="(7.09, 4.93)" type="point"/>
+<element type="point" label="A">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="1" playing="false"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="7.09" y="4.93" z="1"/>
+</element>
+<expression label="B" exp="(3.77, 7.49)" type="point"/>
+<element type="point" label="B">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="1" playing="false"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="3.77" y="7.49" z="1"/>
+</element>
+<expression label="C" exp="(-4.1, 6.29)" type="point"/>
+<element type="point" label="C">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="1" playing="false"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="-4.1" y="6.29" z="1"/>
+</element>
+<command name="CircumcircleSector">
+	<input a0="A" a1="B" a2="C"/>
+	<output a0="g"/>
+</command>
+<element type="conicpart" label="g">
+	<show object="true" label="false"/>
+	<objColor r="153" g="51" b="0" alpha="0.10000000149011612"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="specific"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<eigenvectors x0="1" y0="0" z0="1" x1="0" y1="1" z1="1"/>
+	<matrix A0="1" A1="1" A2="-59.98181248342392" A3="0" A4="-0.8452870972019629" A5="-0.26420045418379673"/>
+</element>
+<expression label="X" exp="(7.71, -3.87)" type="point"/>
+<element type="point" label="X">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="1" playing="false"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="7.71" y="-3.87" z="1"/>
+</element>
+<expression label="w" exp="0.9"/>
+<element type="numeric" label="w">
+	<value val="0.9"/>
+	<show object="false" label="true"/>
+</element>
+<expression label="f" exp="-1.5"/>
+<element type="numeric" label="f">
+	<value val="-1.5"/>
+	<show object="false" label="true"/>
+</element>
+<command name="Mirror">
+	<input a0="A" a1="X"/>
+	<output a0="A&apos;"/>
+</command>
+<element type="point" label="A&apos;">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="8.33" y="-12.67" z="1"/>
+</element>
+<command name="Mirror">
+	<input a0="B" a1="X"/>
+	<output a0="B&apos;"/>
+</command>
+<element type="point" label="B&apos;">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="11.65" y="-15.23" z="1"/>
+</element>
+<command name="Mirror">
+	<input a0="C" a1="X"/>
+	<output a0="C&apos;"/>
+</command>
+<element type="point" label="C&apos;">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="19.52" y="-14.030000000000001" z="1"/>
+</element>
+<command name="CircumcircleSector">
+	<input a0="A&apos;" a1="B&apos;" a2="C&apos;"/>
+	<output a0="m"/>
+</command>
+<element type="conicpart" label="m">
+	<show object="true" label="false"/>
+	<objColor r="153" g="51" b="0" alpha="0.10000000149011612"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="specific"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<eigenvectors x0="1" y0="0" z0="1" x1="0" y1="1" z1="1"/>
+	<matrix A0="1" A1="1" A2="215.72335646963273" A3="0" A4="-14.574712902798037" A5="8.004200454183797"/>
+</element>
+<command name="Rotate">
+	<input a0="A&apos;" a1="w" a2="X"/>
+	<output a0="A&apos;&apos;"/>
+</command>
+<element type="point" label="A&apos;&apos;">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="14.988674985049666" y="-8.854505036812807" z="1"/>
+</element>
+<command name="Rotate">
+	<input a0="B&apos;" a1="w" a2="X"/>
+	<output a0="B&apos;&apos;"/>
+</command>
+<element type="point" label="B&apos;&apos;">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="19.05773696835463" y="-7.845181215622462" z="1"/>
+</element>
+<command name="Rotate">
+	<input a0="C&apos;" a1="w" a2="X"/>
+	<output a0="C&apos;&apos;"/>
+</command>
+<element type="point" label="C&apos;&apos;">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="23.009815127091777" y="-0.9344664749293727" z="1"/>
+</element>
+<command name="CircumcircleSector">
+	<input a0="A&apos;&apos;" a1="B&apos;&apos;" a2="C&apos;&apos;"/>
+	<output a0="mb"/>
+</command>
+<element type="conicpart" label="mb">
+	<show object="true" label="false"/>
+	<objColor r="153" g="51" b="0" alpha="0.10000000149011612"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="specific"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<eigenvectors x0="1" y0="0" z0="1" x1="0" y1="1" z1="1"/>
+	<matrix A0="1" A1="1" A2="171.87749741478066" A3="0" A4="-15.215604435251837" A5="1.062545869521059"/>
+</element>
+<command name="Dilate">
+	<input a0="A&apos;&apos;" a1="f" a2="X"/>
+	<output a0="A&apos;&apos;&apos;"/>
+</command>
+<element type="point" label="A&apos;&apos;&apos;">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="-3.208012477574499" y="3.6067575552192093" z="1"/>
+</element>
+<command name="Dilate">
+	<input a0="B&apos;&apos;" a1="f" a2="X"/>
+	<output a0="B&apos;&apos;&apos;"/>
+</command>
+<element type="point" label="B&apos;&apos;&apos;">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="-9.311605452531943" y="2.0927718234336936" z="1"/>
+</element>
+<command name="Dilate">
+	<input a0="C&apos;&apos;" a1="f" a2="X"/>
+	<output a0="C&apos;&apos;&apos;"/>
+</command>
+<element type="point" label="C&apos;&apos;&apos;">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="-15.23972269063767" y="-8.273300287605942" z="1"/>
+</element>
+<command name="CircumcircleSector">
+	<input a0="A&apos;&apos;&apos;" a1="B&apos;&apos;&apos;" a2="C&apos;&apos;&apos;"/>
+	<output a0="mc"/>
+</command>
+<element type="conicpart" label="mc">
+	<show object="true" label="false"/>
+	<objColor r="153" g="51" b="0" alpha="0.10000000149011612"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="specific"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<eigenvectors x0="1" y0="0" z0="1" x1="0" y1="1" z1="1"/>
+	<matrix A0="1" A1="1" A2="-58.827101148029726" A3="0" A4="3.5484066528777563" A5="8.081181195718418"/>
+</element>
+<command name="Mirror">
+	<input a0="A&apos;&apos;&apos;" a1="X"/>
+	<output a0="D"/>
+</command>
+<element type="point" label="D">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="18.6280124775745" y="-11.34675755521921" z="1"/>
+</element>
+<command name="Mirror">
+	<input a0="B&apos;&apos;&apos;" a1="X"/>
+	<output a0="E"/>
+</command>
+<element type="point" label="E">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="24.731605452531944" y="-9.832771823433694" z="1"/>
+</element>
+<command name="Mirror">
+	<input a0="C&apos;&apos;&apos;" a1="X"/>
+	<output a0="F"/>
+</command>
+<element type="point" label="F">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="30.659722690637672" y="0.5333002876059414" z="1"/>
+</element>
+<command name="CircumcircleSector">
+	<input a0="D" a1="E" a2="F"/>
+	<output a0="md"/>
+</command>
+<element type="conicpart" label="md">
+	<show object="true" label="false"/>
+	<objColor r="153" g="51" b="0" alpha="0.10000000149011612"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="specific"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<eigenvectors x0="1" y0="0" z0="1" x1="0" y1="1" z1="1"/>
+	<matrix A0="1" A1="1" A2="223.1930751169992" A3="0" A4="-18.968406652877757" A5="-0.3411811957184188"/>
+</element>
+</construction>
+</geogebra>

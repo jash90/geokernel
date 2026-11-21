@@ -45,9 +45,8 @@
 //! image after the ray instead of the command) and `Shear` or `Stretch` of
 //! a polyline (GeoGebra rejects it too).
 
-use super::vector::VectorDef;
-use super::{join, line_value, Group, Parents, CIRCLE, LINE_LIKE, NUMBER, POINT};
-use crate::kernel::{Construction, Def, Error, Id, Kind, Value};
+use super::{line_value, Group, Parents, CIRCLE, LINE_LIKE, NUMBER, NUMBER_OR_ANGLE, POINT};
+use crate::kernel::{Construction, Error, Id, Kind, Value};
 use crate::script::object;
 use crate::tol::STANDARD_PRECISION;
 
@@ -363,31 +362,20 @@ fn ray_value(start: (f64, f64), (x, y, z): (f64, f64, f64)) -> Option<Value> {
     })
 }
 
-/// The image of a ray: GeoGebra rebuilds it from the images of the points
-/// it was made from (`GeoRay.createTransformedObject`), so the image of
-/// `Ray(A, B)` is `Ray(A', B')` and the image of `Ray(A, v)` starts at `A'`
-/// and points along the image of `v`.
+/// The image of a ray: the image of its start point and the image of its
+/// direction, as `GeoRay.createTransformedObject` rebuilds it from the image
+/// of the point and of the direction vector it was made from. Reading both
+/// off the source's value covers an image of an image the same way: the
+/// rebuilt ray is what the next transformation sees.
 fn ray_image(c: &Construction, def: &TransformDef, map: &Map) -> Option<Value> {
-    match c.def(source_of(def)) {
-        Def::Vector(VectorDef::RayPoints(p, q)) => {
-            let (pp, qq) = (c.point(p)?, c.point(q)?);
-            let s = map.point(pp.0, pp.1);
-            let e = map.point(qq.0, qq.1);
-            ray_value(s, join(s, e))
-        }
-        Def::Vector(VectorDef::RayVector(p, v)) => {
-            let pp = c.point(p)?;
-            let Value::Vector { x: vx, y: vy } = c.value(v) else {
-                return None;
-            };
-            // `AlgoUnitVectorLine` reads the ray's raw direction, which the
-            // transformation turns; the image ray is made from it
-            let d = map.vector(vx, vy);
-            let s = map.point(pp.0, pp.1);
-            ray_value(s, (-d.1, d.0, s.0 * d.1 - s.1 * d.0))
-        }
-        _ => None,
-    }
+    let Value::Ray { x, y, a, b, .. } = c.value(source_of(def)) else {
+        return None;
+    };
+    let start = map.point(x, y);
+    // the direction `(b, -a)` of the raw line, turned by the map's linear
+    // part (`GeoVector.rotate`, `mirror`, `matrixTransform`)
+    let d = map.vector(b, -a);
+    ray_value(start, (-d.1, d.0, start.0 * d.1 - start.1 * d.0))
 }
 
 /// `AlgoPolygon.calcAreaWithSign` over the moved vertices: half the sum of
@@ -687,7 +675,7 @@ impl Group for TransformDef {
                 c.expect(src, of_kind(kind))?;
                 c.expect(src, SHEARABLE)?;
                 c.expect(axis, LINE_LIKE)?;
-                c.expect(ratio, NUMBER)
+                c.expect(ratio, NUMBER_OR_ANGLE)
             }
             TransformDef::StretchVector { kind, src, vector } => {
                 c.expect(src, of_kind(kind))?;
@@ -708,7 +696,7 @@ impl Group for TransformDef {
             } => {
                 c.expect(src, of_kind(kind))?;
                 c.expect(src, TRANSFORMABLE)?;
-                c.expect(second, NUMBER)?;
+                c.expect(second, NUMBER_OR_ANGLE)?;
                 match center {
                     Some(q) => c.expect(q, POINT),
                     None => Ok(()),
@@ -1091,5 +1079,23 @@ mod tests {
         let b = c.id("B").unwrap();
         c.move_point(b, 0.0, 0.0).unwrap();
         assert_eq!(value(&c, "m"), Value::Undefined);
+    }
+
+    #[test]
+    fn the_image_of_an_image_of_a_ray_is_a_ray() {
+        // a ray built from a point and a vector (not from two points) is
+        // rebuilt from the images of both, however deep the chain goes
+        let c = load(
+            "A = (1, 2)\nu = (2, 1)\nC = (-2, 4)\nD = (3, -3)\nn = Line(C, D)\nw = 0.9\n\
+             g = Ray(A, u)\nm = Mirror(g, n)\nr = Rotate(m, w)\nt = Translate(r, u)\n",
+        )
+        .unwrap();
+        assert_eq!(c.kind(c.id("r").unwrap()), Kind::Ray);
+        for label in ["m", "r", "t"] {
+            assert!(
+                matches!(value(&c, label), Value::Ray { .. }),
+                "{label} is not a ray"
+            );
+        }
     }
 }

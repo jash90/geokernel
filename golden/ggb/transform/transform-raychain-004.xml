@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="utf-8"?>
+<geogebra format="5.0" version="5.4.936.0" app="classic" platform="a" xsi:noNamespaceSchemaLocation="https://www.geogebra.org/apps/xsd/ggb.xsd" xmlns="" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<gui>
+	<window width="800" height="600"/>
+	<labelingStyle val="3"/>
+	<font size="12"/>
+</gui>
+<euclidianView>
+	<viewNumber viewNo="1"/>
+	<size width="800" height="600"/>
+	<coordSystem xZero="215" yZero="315" scale="50" yscale="50"/>
+	<evSettings axes="true" grid="false" gridIsBold="false" pointCapturing="3" rightAngleStyle="1" checkboxSize="26" gridType="3"/>
+	<bgColor r="255" g="255" b="255"/>
+	<axesColor r="28" g="28" b="31"/>
+	<gridColor r="180" g="179" b="186"/>
+	<lineStyle axes="1" grid="0"/>
+	<axis id="0" show="true" label="" unitLabel="" tickStyle="1" showNumbers="true"/>
+	<axis id="1" show="true" label="" unitLabel="" tickStyle="1" showNumbers="true"/>
+</euclidianView>
+<algebraView>
+	<mode val="1"/>
+</algebraView>
+<kernel>
+	<continuous val="false"/>
+	<usePathAndRegionParameters val="true"/>
+	<decimals val="2"/>
+	<angleUnit val="degree"/>
+	<algebraStyle val="0" spreadsheet="0"/>
+	<coordStyle val="0"/>
+</kernel>
+<tableview min="0" max="0" step="0"/>
+<scripting blocked="false" disabled="false"/>
+<construction title="" author="" date="">
+<expression label="A" exp="(0.79, 4.23)" type="point"/>
+<element type="point" label="A">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="1" playing="false"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="0.79" y="4.23" z="1"/>
+</element>
+<expression label="B" exp="(-2.03, -0.26)" type="point"/>
+<element type="point" label="B">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="1" playing="false"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="-2.03" y="-0.26" z="1"/>
+</element>
+<expression label="u" exp="(-1.16, -1.93)" type="vector"/>
+<element type="vector" label="u">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="0" playing="false"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<coordStyle style="cartesian"/>
+	<coords x="-1.16" y="-1.93" z="0"/>
+</element>
+<command name="Ray">
+	<input a0="A" a1="u"/>
+	<output a0="g"/>
+</command>
+<element type="ray" label="g">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="implicit"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<coords x="1.93" y="-1.16" z="3.3821000000000003"/>
+</element>
+<expression label="C" exp="(-5.41, 3.59)" type="point"/>
+<element type="point" label="C">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="1" playing="false"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="-5.41" y="3.59" z="1"/>
+</element>
+<expression label="D" exp="(-2.01, -7.86)" type="point"/>
+<element type="point" label="D">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="1" playing="false"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="-2.01" y="-7.86" z="1"/>
+</element>
+<command name="Line">
+	<input a0="C" a1="D"/>
+	<output a0="n"/>
+</command>
+<element type="line" label="n">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="implicit"/>
+	<coords x="11.45" y="3.4000000000000004" z="49.7385"/>
+</element>
+<expression label="w" exp="0.9"/>
+<element type="numeric" label="w">
+	<value val="0.9"/>
+	<show object="false" label="true"/>
+</element>
+<expression label="f" exp="-1.5"/>
+<element type="numeric" label="f">
+	<value val="-1.5"/>
+	<show object="false" label="true"/>
+</element>
+<expression label="X" exp="(6.23, -3.07)" type="point"/>
+<element type="point" label="X">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="1" playing="false"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="6.23" y="-3.07" z="1"/>
+</element>
+<command name="Mirror">
+	<input a0="A" a1="n"/>
+	<output a0="A&apos;"/>
+</command>
+<element type="point" label="A&apos;">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="-10.954511697187417" y="0.7425467449399799" z="1"/>
+</element>
+<command name="Ray">
+	<input a0="A&apos;" a1="Vector[Mirror[Direction[g], n]]"/>
+	<output a0="m"/>
+</command>
+<element type="ray" label="m">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="implicit"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<coords x="0.9841368614737576" y="2.0253332165074918" z="9.276834173311133"/>
+</element>
+<command name="Rotate">
+	<input a0="A&apos;" a1="w" a2="X"/>
+	<output a0="A&apos;&apos;"/>
+</command>
+<element type="point" label="A&apos;&apos;">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="-7.438534230359686" y="-14.161173380062593" z="1"/>
+</element>
+<command name="Ray">
+	<input a0="A&apos;&apos;" a1="Vector[Rotate[Direction[m], w, X]]"/>
+	<output a0="mb"/>
+</command>
+<element type="ray" label="mb">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="implicit"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<coords x="-0.9747487262180107" y="2.0298682027994737" z="21.49461379254723"/>
+</element>
+<command name="Dilate">
+	<input a0="A&apos;&apos;" a1="f" a2="X"/>
+	<output a0="A&apos;&apos;&apos;"/>
+</command>
+<element type="point" label="A&apos;&apos;&apos;">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="26.732801345539528" y="13.566760070093888" z="1"/>
+</element>
+<command name="Ray">
+	<input a0="A&apos;&apos;&apos;" a1="Vector[Dilate[Direction[mb], f, X]]"/>
+	<output a0="mc"/>
+</command>
+<element type="ray" label="mc">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="implicit"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<coords x="1.462123089327016" y="-3.0448023041992105" z="2.221456232234047"/>
+</element>
+<expression label="v" exp="(-1.8, 2.22)" type="vector"/>
+<element type="vector" label="v">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="0" playing="false"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<coordStyle style="cartesian"/>
+	<coords x="-1.8" y="2.22" z="0"/>
+</element>
+<command name="Translate">
+	<input a0="A&apos;&apos;&apos;" a1="v"/>
+	<output a0="E"/>
+</command>
+<element type="point" label="E">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="24.932801345539527" y="15.786760070093889" z="1"/>
+</element>
+<command name="Ray">
+	<input a0="E" a1="Vector[Translate[Direction[mc], v]]"/>
+	<output a0="md"/>
+</command>
+<element type="ray" label="md">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="implicit"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<coords x="1.462123089327016" y="-3.0448023041992105" z="11.612738908344923"/>
+</element>
+</construction>
+</geogebra>
