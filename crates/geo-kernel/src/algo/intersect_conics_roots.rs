@@ -238,11 +238,25 @@ fn newton(coefficients: &[f64], derivative: &[f64], mut x: f64) -> Option<f64> {
 /// Brent's bracketed root search, with bisection when inverse
 /// interpolation would not shrink the bracket fast enough.
 fn brent(coefficients: &[f64], left: f64, right: f64) -> Option<f64> {
-    if left >= right {
+    bracketed_root(
+        &|x| evaluate_polynomial(coefficients, x),
+        left,
+        right,
+        left + 0.5 * (right - left),
+        ROOT_ABSOLUTE_ACCURACY,
+    )
+}
+
+pub(in crate::algo::intersect) fn bracketed_root(
+    f: &impl Fn(f64) -> f64,
+    left: f64,
+    right: f64,
+    middle: f64,
+    absolute_accuracy: f64,
+) -> Option<f64> {
+    if !(left < middle && middle < right) {
         return None;
     }
-    let f = |x| evaluate_polynomial(coefficients, x);
-    let middle = left + 0.5 * (right - left);
     let fm = f(middle);
     if fm.abs() <= ROOT_VALUE_ACCURACY {
         return Some(middle);
@@ -251,14 +265,14 @@ fn brent(coefficients: &[f64], left: f64, right: f64) -> Option<f64> {
     if fl.abs() <= ROOT_VALUE_ACCURACY {
         return Some(left);
     }
-    let (mut a, mut fa, mut b, mut fb) = if fl * fm < 0.0 {
+    let (mut a, mut fa, mut b, mut fb) = if fl.is_finite() && fm.is_finite() && fl * fm < 0.0 {
         (left, fl, middle, fm)
     } else {
         let fr = f(right);
         if fr.abs() <= ROOT_VALUE_ACCURACY {
             return Some(right);
         }
-        if fm * fr >= 0.0 {
+        if fm * fr >= 0.0 || !fm.is_finite() || !fr.is_finite() {
             return None;
         }
         (middle, fm, right, fr)
@@ -271,7 +285,7 @@ fn brent(coefficients: &[f64], left: f64, right: f64) -> Option<f64> {
             (a, b, c) = (b, c, b);
             (fa, fb, fc) = (fb, fc, fb);
         }
-        let accuracy = 2.0 * ROOT_RELATIVE_ACCURACY * b.abs() + ROOT_ABSOLUTE_ACCURACY;
+        let accuracy = 2.0 * ROOT_RELATIVE_ACCURACY * b.abs() + absolute_accuracy;
         let half = 0.5 * (c - b);
         if half.abs() <= accuracy || fb.abs() <= f64::from_bits(1) {
             return Some(b);
@@ -412,4 +426,66 @@ pub(crate) fn polynomial_roots(coefficients: [f64; 5]) -> ([f64; 4], usize) {
     };
     roots[count] = 0.0;
     (roots, count + usize::from(shift != 0))
+}
+
+/// Real roots of the polynomial obtained by substituting a graph into
+/// another equation. Above degree four, use the same Laguerre iteration and
+/// deflation as the quartic solver, then polish against the original input.
+pub(in crate::algo::intersect) fn graph_roots(coefficients: &[f64]) -> Vec<f64> {
+    if coefficients.iter().any(|a| !a.is_finite()) {
+        return Vec::new();
+    }
+    let Some(degree) = coefficients.iter().rposition(|&a| a != 0.0) else {
+        return Vec::new();
+    };
+    let coefficients = &coefficients[..=degree];
+    let mut roots = if degree <= 4 {
+        let mut input = [0.0; 5];
+        input[..=degree].copy_from_slice(coefficients);
+        let (roots, count) = polynomial_roots(input);
+        roots[..count].to_vec()
+    } else {
+        let shift = coefficients.iter().position(|&a| a != 0.0).unwrap_or(0);
+        let mut working: Vec<_> = coefficients[shift..]
+            .iter()
+            .map(|&a| Complex(a, 0.0))
+            .collect();
+        let mut remaining = 1000;
+        let mut results = Vec::with_capacity(degree);
+        if shift > 0 {
+            results.push(0.0);
+        }
+        for degree in (1..working.len()).rev() {
+            let Some(root) = laguerre(&working[..=degree], &mut remaining) else {
+                break;
+            };
+            results.push(root.0);
+            let mut carry = working[degree];
+            for a in working[..degree].iter_mut().rev() {
+                let next = a.add(carry.mul(root));
+                *a = carry;
+                carry = next;
+            }
+        }
+        results.sort_by(f64::total_cmp);
+        let derivative: Vec<_> = coefficients
+            .iter()
+            .enumerate()
+            .skip(1)
+            .map(|(i, a)| i as f64 * a)
+            .collect();
+        let value = |x| evaluate_polynomial(coefficients, x).abs();
+        for x in &mut results {
+            if let Some(refined) = newton(coefficients, &derivative, *x) {
+                if value(refined) < value(*x) {
+                    *x = refined;
+                }
+            }
+        }
+        results.retain(|&x| value(x) < 1e-5 * evaluate_polynomial(&derivative, x).abs().max(1.0));
+        results
+    };
+    roots.sort_by(f64::total_cmp);
+    roots.dedup_by(|a, b| (*a - *b).abs() < STANDARD_PRECISION);
+    roots
 }

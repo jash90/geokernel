@@ -20,7 +20,7 @@ use crate::algo::vector::{matrix, VectorDef};
 use crate::expr::eval::{combine, number_of, slot_val, Ctx, Env, Val};
 use crate::expr::list::Slot;
 use crate::expr::parse::{list_form, Parser};
-use crate::expr::{self, math, Bin, Elem, IfMode, ListOp, Node, Ty, Un, NONE};
+use crate::expr::{self, math, Bin, Elem, Entry, IfMode, ListOp, Node, Raw, Ty, Un, NONE};
 use crate::kernel::{Construction, Def, Id, Kind, Value};
 
 /// The commands of this group (see `commands::is_command`).
@@ -443,4 +443,162 @@ fn derivative(ctx: &Ctx<'_, false>, i: u32) -> Option<f64> {
         }
         _ => return None,
     })
+}
+
+impl Construction {
+    /// Coefficients of the numerator and denominator of a rational graph.
+    /// The caller checks roots against the original graph, which may have
+    /// holes at roots introduced by clearing a denominator.
+    pub(crate) fn function_fraction(&self, id: Id) -> Option<(Vec<f64>, Vec<f64>)> {
+        let ctx = function_context(self, id, &Env::None)?;
+        Some(fraction(&ctx, ctx.e.root)?.into_parts())
+    }
+}
+
+/// Ascending coefficients, with trailing zeros removed after each operation.
+struct Fraction {
+    numerator: Vec<f64>,
+    denominator: Vec<f64>,
+}
+
+impl Fraction {
+    fn polynomial(numerator: Vec<f64>) -> Self {
+        Self {
+            numerator,
+            denominator: vec![1.0],
+        }
+    }
+
+    fn into_parts(self) -> (Vec<f64>, Vec<f64>) {
+        (self.numerator, self.denominator)
+    }
+
+    fn add(self, rhs: Self, sign: f64) -> Option<Self> {
+        let mut numerator = multiply(&self.numerator, &rhs.denominator)?;
+        let other = multiply(&rhs.numerator, &self.denominator)?;
+        numerator.resize(numerator.len().max(other.len()), 0.0);
+        for (a, b) in numerator.iter_mut().zip(other) {
+            *a += sign * b;
+        }
+        trim(&mut numerator);
+        Some(Self {
+            numerator,
+            denominator: multiply(&self.denominator, &rhs.denominator)?,
+        })
+    }
+
+    fn mul(self, rhs: &Self) -> Option<Self> {
+        Some(Self {
+            numerator: multiply(&self.numerator, &rhs.numerator)?,
+            denominator: multiply(&self.denominator, &rhs.denominator)?,
+        })
+    }
+
+    fn compose(coefficients: &[f64], arg: &Self) -> Option<Self> {
+        coefficients
+            .iter()
+            .rev()
+            .try_fold(Self::polynomial(vec![0.0]), |result, &coefficient| {
+                result
+                    .mul(arg)?
+                    .add(Self::polynomial(vec![coefficient]), 1.0)
+            })
+    }
+
+    fn divide(self, rhs: Self) -> Option<Self> {
+        self.mul(&Self {
+            numerator: rhs.denominator,
+            denominator: rhs.numerator,
+        })
+    }
+}
+
+const MAX_GRAPH_DEGREE: usize = 300;
+
+fn trim(coefficients: &mut Vec<f64>) {
+    while coefficients.len() > 1 && coefficients.last() == Some(&0.0) {
+        coefficients.pop();
+    }
+}
+
+fn multiply(a: &[f64], b: &[f64]) -> Option<Vec<f64>> {
+    let len = a.len() + b.len() - 1;
+    if len > MAX_GRAPH_DEGREE + 1 {
+        return None;
+    }
+    let mut product = vec![0.0; len];
+    for (i, a) in a.iter().enumerate().filter(|(_, a)| **a != 0.0) {
+        for (j, b) in b.iter().enumerate() {
+            product[i + j] += a * b;
+        }
+    }
+    trim(&mut product);
+    Some(product)
+}
+
+fn fraction(ctx: &Ctx<'_, false>, i: u32) -> Option<Fraction> {
+    if !has_variable(ctx, i) {
+        return Some(Fraction::polynomial(vec![ctx.full_number(i)]));
+    }
+    match ctx.node(i) {
+        Node::Var => Some(Fraction::polynomial(vec![0.0, 1.0])),
+        Node::Apply(f, arg) => {
+            let arg = fraction(ctx, arg)?;
+            let (numerator, denominator) = ctx.c.function_fraction(f)?;
+            Fraction::compose(&numerator, &arg)?.divide(Fraction::compose(&denominator, &arg)?)
+        }
+        Node::Bin(Bin::Pow, a, b) if !has_variable(ctx, b) => {
+            let exponent = ctx.full_number(b);
+            if exponent.fract() != 0.0 || exponent.abs() > MAX_GRAPH_DEGREE as f64 {
+                return None;
+            }
+            let mut base = fraction(ctx, a)?;
+            if exponent < 0.0 {
+                std::mem::swap(&mut base.numerator, &mut base.denominator);
+            }
+            (0..exponent.abs() as usize)
+                .try_fold(Fraction::polynomial(vec![1.0]), |power, _| power.mul(&base))
+        }
+        Node::Bin(op @ (Bin::Add | Bin::Sub | Bin::Mul | Bin::Div), a, b) => {
+            let a = fraction(ctx, a)?;
+            let b = fraction(ctx, b)?;
+            match op {
+                Bin::Add => a.add(b, 1.0),
+                Bin::Sub => a.add(b, -1.0),
+                Bin::Div => a.divide(b),
+                _ => a.mul(&b),
+            }
+        }
+        _ => None,
+    }
+}
+
+impl Construction {
+    /// Store an argument tree without creating a labelled construction object.
+    pub(crate) fn store_intersection_argument(
+        &mut self,
+        text: &str,
+    ) -> Result<(u32, Kind), String> {
+        let parsed = crate::expr::parse::parse(self, text)?;
+        let kind = match (parsed.uses_var, parsed.tys[parsed.root as usize]) {
+            (false, Ty::Num(1)) => Kind::Angle,
+            (false, Ty::Num(_)) => Kind::Number,
+            (false, Ty::Vec) => Kind::Point,
+            _ => return Err(format!("invalid intersection argument `{text}`")),
+        };
+        let index = u32::try_from(self.exprs.entries.len())
+            .map_err(|_| "too many expression arguments".to_string())?;
+        self.exprs.entries.push(Entry::new(parsed, false));
+        Ok((index, kind))
+    }
+
+    pub(crate) fn intersection_argument_parents(&self, index: u32) -> Option<&[Id]> {
+        Some(&self.exprs.entries.get(index as usize)?.parents)
+    }
+
+    pub(crate) fn intersection_argument_value(&self, index: u32) -> Option<Raw> {
+        let entry = self.exprs.entries.get(index as usize)?;
+        let lists = entry.lists.then(|| expr::eval::Lists::new(Vec::new()));
+        Some(expr::eval::root(self, entry, lists.as_ref()).0)
+    }
 }

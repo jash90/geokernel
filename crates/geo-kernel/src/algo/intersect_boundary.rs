@@ -26,9 +26,69 @@ const FUNCTION: &[Kind] = &[Kind::Function];
 type Point = (f64, f64);
 type Line = (f64, f64, f64);
 
+use super::functions::FunctionIntersection;
+
+/// One output slot of an intersection with a graph or polygonal boundary.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct BoundaryDef(Intersection);
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Intersection {
+    Edges(EdgeIntersection),
+    Function(FunctionIntersection),
+}
+
+impl BoundaryDef {
+    pub(super) fn function(def: FunctionIntersection) -> Def {
+        Def::IntersectBoundary(Self(Intersection::Function(def)))
+    }
+
+    pub(crate) fn labels_indexed(self) -> bool {
+        matches!(self.0, Intersection::Edges(d) if d.labels_indexed())
+    }
+
+    pub(crate) fn hidden_parents(self, c: &Construction) -> Vec<Id> {
+        match self.0 {
+            Intersection::Edges(d) => d.hidden_parents(c),
+            Intersection::Function(d) => d.hidden_parents(c),
+        }
+    }
+}
+
+impl Group for BoundaryDef {
+    fn kind(&self) -> Kind {
+        Kind::Point
+    }
+
+    fn parents(&self) -> Parents {
+        match &self.0 {
+            Intersection::Edges(d) => d.parents(),
+            Intersection::Function(d) => d.parents(),
+        }
+    }
+
+    fn check(&self, c: &Construction) -> Result<(), Error> {
+        match &self.0 {
+            Intersection::Edges(d) => d.check(c),
+            Intersection::Function(d) => d.check(c),
+        }
+    }
+
+    fn compute(&self, c: &Construction) -> Option<Value> {
+        match &self.0 {
+            Intersection::Edges(d) => d.compute(c),
+            Intersection::Function(d) => d.compute(c),
+        }
+    }
+
+    fn parse(c: &Construction, name: &str, args: &[&str]) -> Option<Result<Self, String>> {
+        EdgeIntersection::parse(c, name, args).map(|d| d.map(|d| Self(Intersection::Edges(d))))
+    }
+}
+
 /// One output slot of an intersection with a polygonal boundary.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct BoundaryDef {
+struct EdgeIntersection {
     first: Id,
     second: Id,
     which: usize,
@@ -44,7 +104,7 @@ enum Family {
     Seeded(Id),
 }
 
-impl BoundaryDef {
+impl EdgeIntersection {
     /// The edge algorithms label all slots through an output handler. The
     /// conic dispatcher labels its outputs through `LabelManager` instead.
     pub(crate) fn labels_indexed(self) -> bool {
@@ -144,7 +204,7 @@ impl BoundaryDef {
     }
 }
 
-impl Group for BoundaryDef {
+impl Group for EdgeIntersection {
     fn kind(&self) -> Kind {
         Kind::Point
     }
@@ -241,7 +301,7 @@ pub(crate) fn parse_multi(c: &Construction, name: &str, args: &[&str]) -> Option
             return None;
         }
     };
-    let d = BoundaryDef {
+    let d = EdgeIntersection {
         first,
         second,
         which: 0,
@@ -254,7 +314,7 @@ pub(crate) fn parse_multi(c: &Construction, name: &str, args: &[&str]) -> Option
     });
     Some(
         (0..count.max(1))
-            .map(|which| BoundaryDef { which, ..d })
+            .map(|which| BoundaryDef(Intersection::Edges(EdgeIntersection { which, ..d })))
             .collect(),
     )
 }
@@ -333,15 +393,15 @@ fn edges(c: &Construction, poly: Id) -> impl Iterator<Item = Edge> + '_ {
 }
 
 #[derive(Clone, Copy)]
-struct Carrier {
-    line: Line,
+pub(super) struct Carrier {
+    pub(super) line: Line,
     origin: Point,
     min: f64,
     max: f64,
 }
 
 impl Carrier {
-    fn of(c: &Construction, id: Id) -> Option<Self> {
+    pub(super) fn of(c: &Construction, id: Id) -> Option<Self> {
         let line @ (a, b, d) = c.raw_carrier(id)?;
         let (origin, min, max) = match c.value(id) {
             Value::Line { .. } => (
@@ -370,7 +430,7 @@ impl Carrier {
         })
     }
 
-    fn incident(self, p: Point, eps: f64) -> bool {
+    pub(super) fn incident(self, p: Point, eps: f64) -> bool {
         on_line(self.line, p, eps)
             && (self.min - eps..=self.max + eps).contains(&parameter(self.line, self.origin, p))
     }

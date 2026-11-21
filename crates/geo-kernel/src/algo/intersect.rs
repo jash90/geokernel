@@ -49,6 +49,10 @@ use crate::tol::{MAX_PRECISION, MIN_PRECISION, STANDARD_PRECISION};
 pub(crate) mod boundary;
 #[path = "intersect_conics.rs"]
 mod conics;
+#[path = "intersect_function_roots.rs"]
+mod function_roots;
+#[path = "intersect_functions.rs"]
+mod functions;
 #[path = "intersect_pair.rs"]
 pub(crate) mod pair;
 
@@ -82,6 +86,13 @@ pub(crate) fn parse_lines(
 
 /// Output slots for an unindexed line/conic intersection in either order.
 pub(crate) fn parse_multi(c: &Construction, name: &str, args: &[&str]) -> Option<Vec<Def>> {
+    if let Some(defs) = functions::FunctionIntersection::multi(c, name, args) {
+        return Some(
+            defs.into_iter()
+                .map(boundary::BoundaryDef::function)
+                .collect(),
+        );
+    }
     if let Some(def) = pair::PairDef::multi(c, name, args) {
         return Some(
             (0..4)
@@ -199,6 +210,22 @@ pub(crate) fn exec_selected(
     let [first, second, tail @ ..] = args.as_slice() else {
         return None;
     };
+    let checkpoint = c.checkpoint();
+    if let Some(defs) = functions::FunctionIntersection::selected(c, &args) {
+        let result = defs.and_then(|defs| {
+            crate::script::add_outputs(
+                c,
+                label,
+                defs.into_iter()
+                    .map(boundary::BoundaryDef::function)
+                    .collect(),
+            )
+        });
+        if result.is_err() {
+            c.discard_since(checkpoint);
+        }
+        return Some(result.map(Some));
+    }
     let (first_id, second_id) = (c.id(first)?, c.id(second)?);
     let (a, b) = (c.kind(first_id), c.kind(second_id));
     if let [selector] = tail {

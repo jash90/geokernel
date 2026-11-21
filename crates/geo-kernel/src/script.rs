@@ -366,7 +366,7 @@ fn parse_multi(c: &Construction, rhs: &str) -> Option<Result<Vec<Def>, String>> 
 /// The set of created objects is fixed at creation: an output that was not
 /// created is not added later, even when it becomes defined.
 /// Returns the id of the first object created.
-fn add_outputs(c: &mut Construction, name: &str, defs: Vec<Def>) -> Result<Id, String> {
+pub(crate) fn add_outputs(c: &mut Construction, name: &str, defs: Vec<Def>) -> Result<Id, String> {
     if c.id(name).is_some() {
         return Err(format!("object `{name}` already exists"));
     }
