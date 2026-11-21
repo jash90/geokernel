@@ -111,6 +111,25 @@ const LANDED: &[(u8, &[&str])] = &[
             "delete_tool_stroke_erases_crossed_object",
         ],
     ),
+    (
+        10,
+        &[
+            "tool_semicircle_reuses_diameter_points",
+            "tool_circular_arc_three_clicks",
+            "tool_circumcircular_arc_three_clicks",
+            "tool_circular_sector_three_clicks",
+            "tool_circumcircular_sector_three_clicks",
+            "tool_ellipse_foci_and_point",
+            "tool_hyperbola_foci_and_point",
+            "tool_parabola_line_then_focus",
+            "tool_conic_five_points",
+            "tool_polyline_finished_on_first_vertex",
+            "tool_slope_selects_line",
+            "tool_vector_from_point_translates_endpoint",
+            "tool_compasses_reuses_segment_radius",
+            "tool_vector_polygon_from_vertices",
+        ],
+    ),
 ];
 
 /// The scenarios whose observed behaviour the owner does not follow: our
@@ -299,6 +318,20 @@ fn tool_name(mode: i64) -> Option<&'static str> {
         40 => "move_view",
         41 => "zoom_in",
         42 => "zoom_out",
+        12 => "conic5",
+        20 => "circular_arc",
+        21 => "circular_sector",
+        22 => "circumcircular_arc",
+        23 => "circumcircular_sector",
+        24 => "semicircle",
+        37 => "vector_from_point",
+        50 => "slope",
+        53 => "compasses",
+        55 => "ellipse",
+        56 => "hyperbola",
+        57 => "parabola",
+        65 => "polyline",
+        70 => "vector_polygon",
         _ => return None,
     })
 }
@@ -433,6 +466,16 @@ fn side_differs(d: &str, o: &Value, st: &Value) -> Option<String> {
 /// `Parallel` where the reference writes `OrthogonalLine` and `Line` with
 /// a point and a line (the kernel takes both spellings).
 fn our_definition(d: &str, st: &Value) -> String {
+    for (observed, canonical) in [
+        ("CircleArc(", "CircularArc"),
+        ("CircleSector(", "CircularSector"),
+        ("CircumcircleArc(", "CircumcircularArc"),
+        ("CircumcircleSector(", "CircumcircularSector"),
+    ] {
+        if let Some(args) = d.strip_prefix(observed) {
+            return format!("{canonical}({args}");
+        }
+    }
     if let Some(args) = d.strip_prefix("OrthogonalLine(") {
         return format!("Perpendicular({args}");
     }
@@ -910,7 +953,7 @@ fn the_observed_pointer_scenarios_replay() {
         count += 1;
     }
     assert_eq!(count, names.len());
-    assert_eq!((replayed, ours), (52, 2), "scenarios replayed");
+    assert_eq!((replayed, ours), (66, 2), "scenarios replayed");
     assert_eq!(
         skipped.into_iter().collect::<Vec<_>>(),
         [(4, 12), (5, 1), (6, 1), (8, 1)],

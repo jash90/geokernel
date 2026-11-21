@@ -440,13 +440,18 @@ impl Workbench {
             self.notice = Some(format!("Nie można odtworzyć konstrukcji: {e}"));
             return Err(e);
         }
-        let (c, mut kept) = match self.replay(&log) {
+        let (c, kept) = match self.replay(&log) {
             Ok(r) => r,
             Err(e) => {
                 self.notice = Some(format!("Nie można odtworzyć konstrukcji: {e}"));
                 return Err(e);
             }
         };
+        self.install_replay(c, kept);
+        Ok(())
+    }
+
+    fn install_replay(&mut self, c: Construction, mut kept: Log) {
         let selected = self
             .selected
             .filter(|id| id.index() < self.construction.len())
@@ -463,7 +468,6 @@ impl Workbench {
         self.notice = None;
         self.version += 1;
         self.rebuilds += 1;
-        Ok(())
     }
 
     /// Deletes an object and everything that depends on it, as one undo step.
@@ -812,3 +816,4 @@ mod file;
 mod rows;
 #[cfg(test)]
 mod tests;
+mod vector_polygon;

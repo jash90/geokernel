@@ -136,32 +136,33 @@ fn frame_counts_are_unchanged() {
     // The algebra list lays out only the rows in its visible part: the
     // rows below it (61 shapes in this example, 79 with the keyboard open)
     // are no longer painted and clipped away. Vertices and indices, that
-    // is the picture, are what they were.
+    // is the picture, are what they were. The conic toolbar group adds
+    // seven shapes, 206 vertices and 879 indices to each scene.
     let expected: &[(&str, Counts)] = &[
         (
             "idle",
             Counts {
-                shapes: 517,
-                vertices: 12790,
-                indices: 52767,
+                shapes: 524,
+                vertices: 12996,
+                indices: 53646,
                 immediate_repaints: 0,
             },
         ),
         (
             "hover",
             Counts {
-                shapes: 519,
-                vertices: 12930,
-                indices: 53484,
+                shapes: 526,
+                vertices: 13136,
+                indices: 54363,
                 immediate_repaints: 1,
             },
         ),
         (
             "drag",
             Counts {
-                shapes: 520,
-                vertices: 13110,
-                indices: 54243,
+                shapes: 527,
+                vertices: 13316,
+                indices: 55122,
                 immediate_repaints: 1,
             },
         ),
@@ -171,18 +172,18 @@ fn frame_counts_are_unchanged() {
             // indices), whatever the size of the construction.
             "segment preview",
             Counts {
-                shapes: 523,
-                vertices: 13014,
-                indices: 53367,
+                shapes: 530,
+                vertices: 13220,
+                indices: 54246,
                 immediate_repaints: 1,
             },
         ),
         (
             "keyboard",
             Counts {
-                shapes: 550,
-                vertices: 14914,
-                indices: 62493,
+                shapes: 557,
+                vertices: 15120,
+                indices: 63372,
                 immediate_repaints: 0,
             },
         ),

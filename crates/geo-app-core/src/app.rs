@@ -314,6 +314,18 @@ impl App {
                     self.reset_tool();
                 }
             },
+            Outcome::VectorPolygon { picks, copy_offset } => {
+                match self.wb.make_vector_polygon(&picks, copy_offset) {
+                    Ok(id) => {
+                        self.tool_error = None;
+                        self.wb.selected = Some(id);
+                    }
+                    Err(e) => {
+                        self.tool_error = Some(errors::polish(&e));
+                        self.reset_tool();
+                    }
+                }
+            }
             Outcome::AskNumber(request) => {
                 self.number_text = crate::describe::n2(request.default);
                 self.tool_error = None;

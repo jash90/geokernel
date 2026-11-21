@@ -6594,6 +6594,1018 @@
     "undo_steps_added": 0,
     "keyboard_stays_open": true
    }
+  },
+  {
+   "name": "tool_semicircle_reuses_diameter_points",
+   "group": "H",
+   "row": "H1",
+   "tool_mode": 24,
+   "initial_script": [
+    "A=(-3,0)",
+    "B=(3,0)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      -3,
+      -0.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      -3,
+      -0.01
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_down",
+     "pos": [
+      3,
+      -0.01
+     ]
+    },
+    {
+     "t": 330,
+     "type": "mouse_up",
+     "pos": [
+      3,
+      -0.01
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "c",
+      "definition": "Semicircle(A, B)"
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 24
+   }
+  },
+  {
+   "name": "tool_circular_arc_three_clicks",
+   "group": "H",
+   "row": "H2",
+   "tool_mode": 20,
+   "initial_script": [
+    "A=(0,0)",
+    "B=(3,0)",
+    "C=(0,3)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      -0.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      -0.01
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_down",
+     "pos": [
+      3,
+      -0.01
+     ]
+    },
+    {
+     "t": 330,
+     "type": "mouse_up",
+     "pos": [
+      3,
+      -0.01
+     ]
+    },
+    {
+     "t": 600,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      2.99
+     ]
+    },
+    {
+     "t": 630,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      2.99
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "c",
+      "definition": "CircleArc(A, B, C)"
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 20
+   }
+  },
+  {
+   "name": "tool_circumcircular_arc_three_clicks",
+   "group": "H",
+   "row": "H3",
+   "tool_mode": 22,
+   "initial_script": [
+    "A=(-3,0)",
+    "B=(0,3)",
+    "C=(3,0)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      -3,
+      -0.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      -3,
+      -0.01
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      2.99
+     ]
+    },
+    {
+     "t": 330,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      2.99
+     ]
+    },
+    {
+     "t": 600,
+     "type": "mouse_down",
+     "pos": [
+      3,
+      -0.01
+     ]
+    },
+    {
+     "t": 630,
+     "type": "mouse_up",
+     "pos": [
+      3,
+      -0.01
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "c",
+      "definition": "CircumcircleArc(A, B, C)"
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 22
+   }
+  },
+  {
+   "name": "tool_circular_sector_three_clicks",
+   "group": "H",
+   "row": "H4",
+   "tool_mode": 21,
+   "initial_script": [
+    "A=(0,0)",
+    "B=(3,0)",
+    "C=(0,3)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      -0.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      -0.01
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_down",
+     "pos": [
+      3,
+      -0.01
+     ]
+    },
+    {
+     "t": 330,
+     "type": "mouse_up",
+     "pos": [
+      3,
+      -0.01
+     ]
+    },
+    {
+     "t": 600,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      2.99
+     ]
+    },
+    {
+     "t": 630,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      2.99
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "c",
+      "definition": "CircleSector(A, B, C)"
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 21
+   }
+  },
+  {
+   "name": "tool_circumcircular_sector_three_clicks",
+   "group": "H",
+   "row": "H5",
+   "tool_mode": 23,
+   "initial_script": [
+    "A=(-3,0)",
+    "B=(0,3)",
+    "C=(3,0)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      -3,
+      -0.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      -3,
+      -0.01
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      2.99
+     ]
+    },
+    {
+     "t": 330,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      2.99
+     ]
+    },
+    {
+     "t": 600,
+     "type": "mouse_down",
+     "pos": [
+      3,
+      -0.01
+     ]
+    },
+    {
+     "t": 630,
+     "type": "mouse_up",
+     "pos": [
+      3,
+      -0.01
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "c",
+      "definition": "CircumcircleSector(A, B, C)"
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 23
+   }
+  },
+  {
+   "name": "tool_ellipse_foci_and_point",
+   "group": "H",
+   "row": "H6",
+   "tool_mode": 55,
+   "initial_script": [
+    "A=(-2,0)",
+    "B=(2,0)",
+    "C=(0,3)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      -2,
+      -0.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      -2,
+      -0.01
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_down",
+     "pos": [
+      2,
+      -0.01
+     ]
+    },
+    {
+     "t": 330,
+     "type": "mouse_up",
+     "pos": [
+      2,
+      -0.01
+     ]
+    },
+    {
+     "t": 600,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      2.99
+     ]
+    },
+    {
+     "t": 630,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      2.99
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "c",
+      "definition": "Ellipse(A, B, C)"
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 55
+   }
+  },
+  {
+   "name": "tool_hyperbola_foci_and_point",
+   "group": "H",
+   "row": "H7",
+   "tool_mode": 56,
+   "initial_script": [
+    "A=(-3,0)",
+    "B=(3,0)",
+    "C=(1,2)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      -3,
+      -0.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      -3,
+      -0.01
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_down",
+     "pos": [
+      3,
+      -0.01
+     ]
+    },
+    {
+     "t": 330,
+     "type": "mouse_up",
+     "pos": [
+      3,
+      -0.01
+     ]
+    },
+    {
+     "t": 600,
+     "type": "mouse_down",
+     "pos": [
+      1,
+      1.99
+     ]
+    },
+    {
+     "t": 630,
+     "type": "mouse_up",
+     "pos": [
+      1,
+      1.99
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "c",
+      "definition": "Hyperbola(A, B, C)"
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 56
+   }
+  },
+  {
+   "name": "tool_parabola_line_then_focus",
+   "group": "H",
+   "row": "H8",
+   "tool_mode": 57,
+   "initial_script": [
+    "A=(-3,-2)",
+    "B=(3,-2)",
+    "f=Line(A,B)",
+    "C=(0,2)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      -2.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      -2.01
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      1.99
+     ]
+    },
+    {
+     "t": 330,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      1.99
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "c",
+      "definition": "Parabola(C, f)"
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 57
+   }
+  },
+  {
+   "name": "tool_conic_five_points",
+   "group": "H",
+   "row": "H9",
+   "tool_mode": 12,
+   "initial_script": [
+    "A=(-3,0)",
+    "B=(3,0)",
+    "C=(0,3)",
+    "D=(0,-3)",
+    "E=(1,1)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      -3,
+      -0.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      -3,
+      -0.01
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_down",
+     "pos": [
+      3,
+      -0.01
+     ]
+    },
+    {
+     "t": 330,
+     "type": "mouse_up",
+     "pos": [
+      3,
+      -0.01
+     ]
+    },
+    {
+     "t": 600,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      2.99
+     ]
+    },
+    {
+     "t": 630,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      2.99
+     ]
+    },
+    {
+     "t": 900,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      -3.01
+     ]
+    },
+    {
+     "t": 930,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      -3.01
+     ]
+    },
+    {
+     "t": 1200,
+     "type": "mouse_down",
+     "pos": [
+      1,
+      0.99
+     ]
+    },
+    {
+     "t": 1230,
+     "type": "mouse_up",
+     "pos": [
+      1,
+      0.99
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "c",
+      "definition": "Conic(A, B, C, D, E)"
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 12
+   }
+  },
+  {
+   "name": "tool_polyline_finished_on_first_vertex",
+   "group": "H",
+   "row": "H10",
+   "tool_mode": 65,
+   "initial_script": [
+    "A=(-3,0)",
+    "B=(0,3)",
+    "C=(3,0)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      -3,
+      -0.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      -3,
+      -0.01
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      2.99
+     ]
+    },
+    {
+     "t": 330,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      2.99
+     ]
+    },
+    {
+     "t": 600,
+     "type": "mouse_down",
+     "pos": [
+      3,
+      -0.01
+     ]
+    },
+    {
+     "t": 630,
+     "type": "mouse_up",
+     "pos": [
+      3,
+      -0.01
+     ]
+    },
+    {
+     "t": 900,
+     "type": "mouse_down",
+     "pos": [
+      -3,
+      -0.01
+     ]
+    },
+    {
+     "t": 930,
+     "type": "mouse_up",
+     "pos": [
+      -3,
+      -0.01
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "f",
+      "definition": "PolyLine(A, B, C)"
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 65
+   }
+  },
+  {
+   "name": "tool_slope_selects_line",
+   "group": "H",
+   "row": "H11",
+   "tool_mode": 50,
+   "initial_script": [
+    "A=(-3,-1)",
+    "B=(3,2)",
+    "f=Line(A,B)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      0.49
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      0.49
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "m",
+      "definition": "Slope(f)"
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 50
+   }
+  },
+  {
+   "name": "tool_vector_from_point_translates_endpoint",
+   "group": "H",
+   "row": "H12",
+   "tool_mode": 37,
+   "initial_script": [
+    "A=(-3,0)",
+    "B=(3,0)",
+    "u=Vector(A,B)",
+    "C=(0,3)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      -0.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      -0.01
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      2.99
+     ]
+    },
+    {
+     "t": 330,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      2.99
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "C'",
+      "definition": "Translate(C, u)",
+      "point": [
+       6,
+       3
+      ]
+     },
+     {
+      "label": "v",
+      "definition": "Vector(C, C')"
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 37
+   }
+  },
+  {
+   "name": "tool_compasses_reuses_segment_radius",
+   "group": "H",
+   "row": "H13",
+   "tool_mode": 53,
+   "initial_script": [
+    "A=(-3,0)",
+    "B=(3,0)",
+    "f=Segment(A,B)",
+    "C=(0,3)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      -0.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      -0.01
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      2.99
+     ]
+    },
+    {
+     "t": 330,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      2.99
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "c",
+      "definition": "Circle(C, f)"
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 53
+   }
+  },
+  {
+   "name": "tool_vector_polygon_from_vertices",
+   "group": "H",
+   "row": "H14",
+   "tool_mode": 70,
+   "initial_script": [
+    "A=(-3,0)",
+    "B=(0,3)",
+    "C=(3,0)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      -3,
+      -0.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      -3,
+      -0.01
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      2.99
+     ]
+    },
+    {
+     "t": 330,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      2.99
+     ]
+    },
+    {
+     "t": 600,
+     "type": "mouse_down",
+     "pos": [
+      3,
+      -0.01
+     ]
+    },
+    {
+     "t": 630,
+     "type": "mouse_up",
+     "pos": [
+      3,
+      -0.01
+     ]
+    },
+    {
+     "t": 900,
+     "type": "mouse_down",
+     "pos": [
+      -3,
+      -0.01
+     ]
+    },
+    {
+     "t": 930,
+     "type": "mouse_up",
+     "pos": [
+      -3,
+      -0.01
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "a"
+     },
+     {
+      "label": "b"
+     },
+     {
+      "label": "c"
+     },
+     {
+      "label": "d"
+     },
+     {
+      "label": "t1",
+      "definition": "Polygon(A, B, C)"
+     },
+     {
+      "label": "c_1",
+      "definition": "Segment(A, B, t1)"
+     },
+     {
+      "label": "a_1",
+      "definition": "Segment(B, C, t1)"
+     },
+     {
+      "label": "b_1",
+      "definition": "Segment(C, A, t1)"
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 70,
+    "objects": {
+     "A": [
+      -3,
+      0
+     ],
+     "B": [
+      0,
+      3
+     ],
+     "C": [
+      3,
+      0
+     ]
+    }
+   }
   }
  ]
 }

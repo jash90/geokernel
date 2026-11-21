@@ -21,10 +21,23 @@ fn every_tool_works_with_real_clicks() {
             Tool::AngleBisector | Tool::Angle => vec![a, c, b],
             Tool::Tangents | Tool::Polar | Tool::ReflectCircle => vec![c, k],
             Tool::CircleRadius => vec![a],
-            Tool::Circle3 => vec![a, b, c],
+            Tool::Circle3
+            | Tool::CircularArc
+            | Tool::CircumcircularArc
+            | Tool::CircularSector
+            | Tool::CircumcircularSector
+            | Tool::Compasses
+            | Tool::Ellipse
+            | Tool::Hyperbola => vec![a, b, c],
+            Tool::Semicircle => vec![a, b],
+            Tool::Conic5 => vec![a, b, c, (4.0, -2.0), (6.0, -2.0)],
+            Tool::Parabola => vec![f, c],
+            Tool::Area => vec![k],
+            Tool::Slope => vec![f],
+            Tool::VectorFromPoint => vec![u, c],
             Tool::ReflectPoint | Tool::Rotate | Tool::Dilate => vec![c, a],
             Tool::Translate => vec![c, u],
-            Tool::Polygon => vec![a, b, c, a],
+            Tool::Polygon | Tool::Polyline | Tool::VectorPolygon => vec![a, b, c, a],
             Tool::RegularPolygon => vec![a, b],
             _ => vec![a, c],
         }
@@ -51,6 +64,21 @@ fn every_tool_works_with_real_clicks() {
             Tool::Circle => ("c", Kind::Circle, "Circle(A, C)"),
             Tool::CircleRadius => ("c", Kind::Circle, "Circle(A, a)"),
             Tool::Circle3 => ("c", Kind::Circle, "Circle(A, B, C)"),
+            Tool::Semicircle => ("c", Kind::Arc, "Semicircle(A, B)"),
+            Tool::CircularArc => ("c", Kind::Arc, "CircularArc(A, B, C)"),
+            Tool::CircumcircularArc => ("c", Kind::Arc, "CircumcircularArc(A, B, C)"),
+            Tool::CircularSector => ("c", Kind::Sector, "CircularSector(A, B, C)"),
+            Tool::CircumcircularSector => ("c", Kind::Sector, "CircumcircularSector(A, B, C)"),
+            Tool::Compasses => ("c", Kind::Circle, "Circle(C, a)"),
+            Tool::Ellipse => ("c", Kind::Conic, "Ellipse(A, B, C)"),
+            Tool::Hyperbola => ("c", Kind::Conic, "Hyperbola(A, B, C)"),
+            Tool::Parabola => ("c", Kind::Conic, "Parabola(C, f)"),
+            Tool::Conic5 => ("c", Kind::Conic, "Conic(A, B, C, D, E)"),
+            Tool::Polyline => ("g", Kind::PolyLine, "PolyLine(A, B, C)"),
+            Tool::Area => ("a", Kind::Number, "Area(k)"),
+            Tool::Slope => ("m", Kind::Number, "Slope(f)"),
+            Tool::VectorFromPoint => ("v", Kind::Vector, "Vector(C, C')"),
+            Tool::VectorPolygon => ("t1", Kind::Polygon, "Polygon(A, B, C)"),
             Tool::Angle => ("α", Kind::Angle, "Angle(A, C, B)"),
             Tool::Distance => ("a", Kind::Number, "Distance(A, C)"),
             Tool::ReflectLine => ("C'", Kind::Point, "Reflect(C, f)"),
@@ -64,7 +92,12 @@ fn every_tool_works_with_real_clicks() {
     };
     let mut failures = Vec::new();
     for tool in Tool::all().filter(|t| !t.is_direct()) {
-        let mut h = harness(TOOL_SCENE);
+        let scene = if tool == Tool::VectorPolygon {
+            "A = (-6, -3)\nB = (-2, -3)\nC = (-4, 1)\n"
+        } else {
+            TOOL_SCENE
+        };
+        let mut h = harness(scene);
         h.state_mut().select_tool(tool);
         let clicks = plan(tool);
         let (last, first) = clicks.split_last().unwrap();
@@ -72,6 +105,7 @@ fn every_tool_works_with_real_clicks() {
             click(&mut h, world(x, y));
         }
         let before = labels(&h);
+        assert_eq!(h.state().wb.undo_depth(), (0, 0), "{tool:?}");
         click(&mut h, world(last.0, last.1));
         if h.state().tool.asking().is_some() {
             // The number dialog: take the value it offers.
@@ -81,6 +115,7 @@ fn every_tool_works_with_real_clicks() {
         let after = labels(&h);
         let (label, kind, rhs) = expected(tool);
         let app = h.state();
+        assert_eq!(app.wb.undo_depth(), (1, 0), "{tool:?}");
         let c = app.wb.construction();
         let made = c.id(label).map(|id| (c.kind(id), app.wb.definition(label)));
         if made != Some((kind, Some(rhs))) {
@@ -272,4 +307,285 @@ fn the_direct_tools_act_on_one_click() {
     h.state_mut().select_tool(Tool::ZoomOut);
     click(&mut h, world(1.0, 1.0));
     assert!(h.state().camera.unwrap().scale < zoomed);
+}
+
+#[test]
+fn new_curve_tools_group_free_points_and_result_in_one_step() {
+    let a = (-4.0, 0.0);
+    let b = (2.0, 0.0);
+    let c = (1.0, 3.0);
+    let d = (-2.0, -2.0);
+    let e = (4.0, 3.0);
+    for (tool, points, label, definition) in [
+        (Tool::Semicircle, vec![a, b], "c", "Semicircle(A, B)"),
+        (
+            Tool::CircularArc,
+            vec![a, b, c],
+            "c",
+            "CircularArc(A, B, C)",
+        ),
+        (
+            Tool::CircumcircularArc,
+            vec![a, b, c],
+            "c",
+            "CircumcircularArc(A, B, C)",
+        ),
+        (
+            Tool::CircularSector,
+            vec![a, b, c],
+            "c",
+            "CircularSector(A, B, C)",
+        ),
+        (
+            Tool::CircumcircularSector,
+            vec![a, b, c],
+            "c",
+            "CircumcircularSector(A, B, C)",
+        ),
+        (Tool::Compasses, vec![a, b, c], "c", "Circle(C, a)"),
+        (Tool::Ellipse, vec![a, b, c], "c", "Ellipse(A, B, C)"),
+        (Tool::Hyperbola, vec![a, b, c], "c", "Hyperbola(A, B, C)"),
+        (
+            Tool::Conic5,
+            vec![a, b, c, d, e],
+            "c",
+            "Conic(A, B, C, D, E)",
+        ),
+        (Tool::Polyline, vec![a, b, c, a], "f", "PolyLine(A, B, C)"),
+        (
+            Tool::VectorPolygon,
+            vec![a, b, c, a],
+            "t1",
+            "Polygon(A, B, C)",
+        ),
+    ] {
+        let mut h = harness("");
+        h.state_mut().select_tool(tool);
+        let (last, earlier) = points.split_last().unwrap();
+        for &(x, y) in earlier {
+            click(&mut h, world(x, y));
+            assert_eq!(h.state().wb.undo_depth(), (0, 0), "{tool:?}");
+        }
+        click(&mut h, world(last.0, last.1));
+        assert_eq!(h.state().wb.definition(label), Some(definition), "{tool:?}");
+        assert_eq!(h.state().wb.undo_depth(), (1, 0), "{tool:?}");
+        let after = labels(&h);
+        undo(&mut h);
+        assert!(labels(&h).is_empty(), "{tool:?}");
+        redo(&mut h);
+        assert_eq!(labels(&h), after, "{tool:?}");
+    }
+}
+
+#[test]
+fn compasses_copies_radii_and_can_reuse_a_radius_point_as_center() {
+    let scene = "A=(-4,0)\nB=(2,0)\nC=(4,3)\nf=Segment(A,B)\nk=Circle(A,B)";
+    for (clicks, definition, measure) in [
+        (vec![(-1.0, 0.0), (4.0, 3.0)], "Circle(C, f)", None),
+        (
+            vec![(-4.0, 6.0), (4.0, 3.0)],
+            "Circle(C, a)",
+            Some("Radius(k)"),
+        ),
+        (
+            vec![(-4.0, 0.0), (2.0, 0.0), (2.0, 0.0)],
+            "Circle(B, a)",
+            Some("Distance(A, B)"),
+        ),
+    ] {
+        let mut h = harness(scene);
+        h.state_mut().select_tool(Tool::Compasses);
+        for (x, y) in clicks {
+            click(&mut h, world(x, y));
+        }
+        assert_eq!(h.state().wb.definition("c"), Some(definition));
+        assert_eq!(h.state().wb.definition("a"), measure);
+        let c = h.state().wb.construction();
+        assert!(matches!(
+            c.value(c.id("c").unwrap()),
+            Value::Circle { r: 6.0, .. }
+        ));
+        assert_eq!(h.state().wb.undo_depth(), (1, 0));
+        undo(&mut h);
+        assert!(h.state().wb.construction().id("c").is_none());
+    }
+}
+
+#[test]
+fn parabola_creates_a_free_focus_in_either_order() {
+    for clicks in [[(0.0, 2.0), (0.0, -2.0)], [(0.0, -2.0), (0.0, 2.0)]] {
+        let mut h = harness("A=(-4,-2)\nB=(4,-2)\nf=Line(A,B)");
+        h.state_mut().select_tool(Tool::Parabola);
+        click(&mut h, world(clicks[0].0, clicks[0].1));
+        assert_eq!(h.state().wb.undo_depth(), (0, 0));
+        click(&mut h, world(clicks[1].0, clicks[1].1));
+        assert_eq!(h.state().wb.definition("c"), Some("Parabola(C, f)"));
+        assert_eq!(h.state().wb.definition("C"), Some("(0, 2)"));
+        assert_eq!(h.state().wb.undo_depth(), (1, 0));
+        undo(&mut h);
+        assert_eq!(labels(&h), ["A", "B", "f"]);
+    }
+}
+
+#[test]
+fn vector_from_point_creates_a_translated_endpoint_in_one_step() {
+    let mut h = harness(TOOL_SCENE);
+    let before = labels(&h);
+    h.state_mut().select_tool(Tool::VectorFromPoint);
+    click(&mut h, world(0.0, 2.0));
+    assert_eq!(labels(&h), before);
+    click(&mut h, world(-4.0, 1.0));
+    click(&mut h, world(-5.0, 3.5));
+    assert_eq!(h.state().wb.definition("C'"), Some("Translate(C, u)"));
+    assert_eq!(h.state().wb.definition("v"), Some("Vector(C, C')"));
+    assert_eq!(h.state().wb.undo_depth(), (1, 0));
+    undo(&mut h);
+    assert_eq!(labels(&h), before);
+}
+
+#[test]
+fn vector_polygon_redefines_free_vertices_and_undo_restores_them() {
+    let mut h = harness("A=(-3,0)\nB=(0,3)\nC=(3,0)\nD=(0,-2)\nn=x(D)");
+    h.state_mut().select_tool(Tool::VectorPolygon);
+    for (x, y) in [
+        (-3.0, 0.0),
+        (0.0, -2.0),
+        (0.0, 3.0),
+        (3.0, 0.0),
+        (-3.0, 0.0),
+    ] {
+        click(&mut h, world(x, y));
+    }
+    assert_eq!(h.state().wb.undo_depth(), (1, 0));
+    assert_eq!(h.state().wb.definition("B"), Some("(a + x(A), b + y(A))"));
+    assert_eq!(h.state().wb.definition("t1"), Some("Polygon(A, B, C)"));
+    let wb = &mut h.state_mut().wb;
+    assert!(wb.move_point(wb.construction().id("A").unwrap(), -1.0, 1.0));
+    let c = wb.construction();
+    assert_eq!(c.value(c.id("B").unwrap()), Value::Point { x: 2.0, y: 4.0 });
+    assert_eq!(c.value(c.id("C").unwrap()), Value::Point { x: 5.0, y: 1.0 });
+    undo(&mut h);
+    undo(&mut h);
+    let c = h.state().wb.construction();
+    assert!(c.def(c.id("B").unwrap()).is_free());
+    assert!(c.def(c.id("C").unwrap()).is_free());
+    assert_eq!(labels(&h), ["A", "B", "C", "D", "n"]);
+}
+
+#[test]
+fn vector_polygon_copies_an_existing_polygon_with_its_own_anchor() {
+    let mut h = harness("A=(-3,0)\nB=(0,3)\nC=(3,0)\nt1=Polygon(A,B,C)");
+    let before = labels(&h);
+    h.state_mut().select_tool(Tool::VectorPolygon);
+    click(&mut h, world(0.0, 1.0));
+    assert_eq!(h.state().wb.definition("t2"), Some("Polygon(D, E, F)"));
+    let c = h.state().wb.construction();
+    let a = c.value(c.id("A").unwrap());
+    let d = c.value(c.id("D").unwrap());
+    assert_ne!(a, d);
+    assert_eq!(h.state().wb.undo_depth(), (1, 0));
+    undo(&mut h);
+    assert_eq!(labels(&h), before);
+}
+
+#[test]
+fn move_picks_only_the_nearby_outline_of_conics_parts_and_functions() {
+    let cases = [
+        (
+            "A=(-2,0)\nB=(2,0)\nC=(0,3)\nc=Ellipse(A,B,C)",
+            "c",
+            (-13.0_f64.sqrt(), 0.0),
+            (0.0, 1.0),
+        ),
+        (
+            "A=(-3,0)\nB=(3,0)\nc=Semicircle(A,B)",
+            "c",
+            (0.0, 3.0),
+            (0.0, -3.0),
+        ),
+        (
+            "A=(0,0)\nB=(3,0)\nC=(0,3)\nc=CircularSector(A,B,C)",
+            "c",
+            (1.5, 0.0),
+            (1.5, 1.0),
+        ),
+        ("f(x)=x^2", "f", (1.0, 1.0), (1.0, 2.0)),
+    ];
+    for (script, label, near, far) in cases {
+        let mut h = harness(script);
+        click(&mut h, world(far.0, far.1));
+        assert_eq!(h.state().wb.selected, None, "{script}");
+        let mut pos = world(near.0, near.1);
+        pos.y -= 3.0;
+        click(&mut h, pos);
+        let wb = &h.state().wb;
+        assert_eq!(wb.selected, wb.construction().id(label), "{script}");
+        assert_eq!(wb.undo_depth(), (0, 0));
+    }
+}
+
+#[test]
+fn a_point_on_a_circular_part_uses_the_path_and_is_undoable() {
+    for command in ["CircularArc", "CircularSector"] {
+        let mut h = harness(&format!("A=(0,0)\nB=(3,0)\nC=(0,3)\nc={command}(A,B,C)"));
+        h.state_mut().select_tool(Tool::Point);
+        let coordinate = 3.0 / 2.0_f64.sqrt();
+        click(&mut h, world(coordinate, coordinate));
+        let wb = &h.state().wb;
+        assert_eq!(wb.definition("D"), Some("Point(c)"));
+        let c = wb.construction();
+        let Value::Point { x, y } = c.value(c.id("D").unwrap()) else {
+            panic!("missing point")
+        };
+        assert!((x.hypot(y) - 3.0).abs() < 1e-9);
+        assert!(x > 0.0 && y > 0.0);
+        assert_eq!(wb.undo_depth(), (1, 0));
+        undo(&mut h);
+        assert_eq!(labels(&h), ["A", "B", "C", "c"]);
+    }
+}
+
+#[test]
+fn intersect_picks_a_conic_and_line_and_makes_both_intersections_atomically() {
+    let mut h =
+        harness("A=(-2,0)\nB=(2,0)\nC=(0,3)\nc=Ellipse(A,B,C)\nD=(-6,1)\nE=(6,1)\nf=Line(D,E)");
+    h.state_mut().select_tool(Tool::Intersect);
+    click(&mut h, world(13.0_f64.sqrt(), 0.0));
+    assert_eq!(h.state().wb.undo_depth(), (0, 0));
+    click(&mut h, world(0.0, 1.0));
+    assert_eq!(h.state().wb.definition("F"), Some("Intersect(f, c, 1)"));
+    assert_eq!(h.state().wb.definition("G"), Some("Intersect(f, c, 2)"));
+    assert_eq!(h.state().wb.undo_depth(), (1, 0));
+    undo(&mut h);
+    assert_eq!(labels(&h), ["A", "B", "C", "c", "D", "E", "f"]);
+}
+
+#[test]
+fn slope_picks_a_function_graph_and_measures_the_derivative_at_zero() {
+    let mut h = harness("f(x)=x^2+3x");
+    h.state_mut().select_tool(Tool::Slope);
+    click(&mut h, world(1.0, 4.0));
+    let wb = &h.state().wb;
+    assert_eq!(wb.definition("m"), Some("Slope(f)"));
+    let c = wb.construction();
+    let Value::Number(n) = c.value(c.id("m").unwrap()) else {
+        panic!("missing slope")
+    };
+    assert!((n - 3.0).abs() < 1e-9, "{n}");
+    assert_eq!(wb.undo_depth(), (1, 0));
+    undo(&mut h);
+    assert_eq!(labels(&h), ["f"]);
+}
+
+#[test]
+fn area_measures_a_sector_but_ignores_an_arc() {
+    for (command, expected) in [("CircularSector", Some("Area(c)")), ("CircularArc", None)] {
+        let mut h = harness(&format!("A=(0,0)\nB=(3,0)\nC=(0,3)\nc={command}(A,B,C)"));
+        h.state_mut().select_tool(Tool::Area);
+        let coordinate = 3.0 / 2.0_f64.sqrt();
+        click(&mut h, world(coordinate, coordinate));
+        let wb = &h.state().wb;
+        assert_eq!(wb.definition("a"), expected);
+        assert_eq!(wb.undo_depth(), (usize::from(expected.is_some()), 0));
+    }
 }

@@ -267,8 +267,14 @@ fn every_offered_tool_combination_runs_in_the_kernel() {
         failures.len(),
         failures.join("\n")
     );
-    // A polygon needs a fourth click to close; it has its own test.
-    for tool in Tool::all().filter(|t| !t.is_direct() && *t != Tool::Polygon) {
+    // Longer point sequences have their own click tests.
+    for tool in Tool::all().filter(|t| {
+        !t.is_direct()
+            && !matches!(
+                t,
+                Tool::Polygon | Tool::Polyline | Tool::VectorPolygon | Tool::Conic5
+            )
+    }) {
         assert!(
             ran.get(&tool).copied().unwrap_or(0) > 0,
             "{tool:?} never finished"

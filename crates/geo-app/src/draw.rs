@@ -17,7 +17,7 @@ use crate::theme;
 use eframe::egui::{vec2, Align2, Color32, FontId, Mesh, Painter, Pos2, Rect, Shape, Stroke};
 use geo_app_core::geom;
 use geo_kernel::algo::vector;
-use geo_kernel::kernel::{Construction, Id, Value};
+use geo_kernel::kernel::{Construction, Id, Kind, Value};
 use geo_kernel::ConicType;
 use std::borrow::Cow;
 use std::cell::RefCell;
@@ -197,8 +197,12 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
         })
         .collect();
     let mut labels: Vec<Label> = Vec::new();
-    // Conics and functions, made when the frame has one.
-    let is_curve = |id: Id| matches!(c.value(id), Value::Conic { .. } | Value::Function);
+    // Curved outlines are tessellated and kept between frames.
+    let is_curve = |id: Id| match c.value(id) {
+        Value::Conic { .. } | Value::Function | Value::Arc { .. } | Value::Sector { .. } => true,
+        Value::Undefined => matches!(c.kind(id), Kind::Arc | Kind::Sector),
+        _ => false,
+    };
     let curves = (ids.iter().any(|&id| is_curve(id))
         || [scene.hovered, scene.selected]
             .into_iter()
@@ -425,7 +429,7 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
         }
     }
     if let Some(curves) = &curves {
-        for &id in &ids {
+        for id in ids.iter().copied().filter(|&id| is_curve(id)) {
             let Some(drawn) = curves.get(c, id, color(id)) else {
                 continue;
             };

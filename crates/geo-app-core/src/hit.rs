@@ -27,7 +27,8 @@
 //!   (`DrawPoint.hit`, `SELECTION_RADIUS_MIN`); a line, segment, ray or
 //!   vector when its line crosses the square (`Line2D.intersects`); a circle
 //!   when its stroked outline crosses the square (`DrawConic.hit`; circles
-//!   are not filled, so their inside is never hit); a polygon when the
+//!   are not filled, so their inside is never hit). Other curves use the
+//!   same stroked-boundary square; a polygon is hit when the
 //!   square crosses its outline, or lies inside it (it is filled; for a
 //!   filled polygon wider than 20 px the square is the mouse's,
 //!   `DrawPolygon.hit`, `getFillingHitThreshold`);
@@ -44,8 +45,10 @@
 
 use crate::interact::ViewTransform;
 use crate::metrics::Metrics;
-use geo_kernel::algo::vector;
+use geo_kernel::algo::{arc::ArcData, vector};
 use geo_kernel::kernel::{Construction, Id, Kind, Value};
+use geo_kernel::{ConicData, ConicType};
+use std::f64::consts::TAU;
 
 /// The width the window draws curves with (`draw::CURVE_WIDTH` in the
 /// window), which is part of a circle's stroked outline.
@@ -219,6 +222,16 @@ pub fn hit(
             let w = 0.5 * CURVE_STROKE;
             boundary(near <= rad + w && far >= rad - w)
         }
+        // Degenerate parts may have drawable rays despite an infinite measure.
+        Value::Arc { .. } | Value::Sector { .. } | Value::Undefined => {
+            let part = c.arc(id)?;
+            boundary(part_meets_square(&part, tr, p, t + CURVE_STROKE / 2.0))
+        }
+        Value::Conic { .. } => {
+            let d = c.conic(id)?;
+            boundary(conic_meets_square(&d, tr, p, t + CURVE_STROKE / 2.0))
+        }
+        Value::Function => boundary(function_meets_square(c, id, tr, p, t + CURVE_STROKE / 2.0)),
         Value::Number(_) if c.kind(id) == Kind::Angle => {
             let angle = c.angle_geometry(id)?;
             let center = to_screen(angle.center.0, angle.center.1);
@@ -268,6 +281,198 @@ pub fn hit(
     }
 }
 
+/// A conic's quadratic in its own coordinate system avoids cancellation
+/// from the expanded world coefficients of a translated curve.
+fn conic_meets_square(d: &ConicData, tr: &ViewTransform, p: (f64, f64), t: f64) -> bool {
+    if !d.defined {
+        return false;
+    }
+    let (x, y) = tr.screen_to_world(p.0, p.1);
+    let [mx, my] = d.midpoint;
+    let h = t / tr.scale();
+    let [e0, e1] = d.eigenvec;
+    let [a, b] = d.half_axes;
+    let (dx, dy) = (x - mx, y - my);
+    let (u2, v2, u1, constant) = match d.ty {
+        ConicType::Circle | ConicType::Ellipse => {
+            if dx.abs() > (a * e0[0]).abs() + (b * e1[0]).abs() + h
+                || dy.abs() > (a * e0[1]).abs() + (b * e1[1]).abs() + h
+            {
+                return false;
+            }
+            (1.0 / a / a, 1.0 / b / b, 0.0, -1.0)
+        }
+        ConicType::Hyperbola => (1.0 / a / a, -1.0 / b / b, 0.0, -1.0),
+        ConicType::Parabola => (0.0, 1.0, -2.0 * d.p, 0.0),
+        ConicType::SinglePoint => return dx.hypot(dy) <= h,
+        ty if ty.has_lines() => {
+            return d.lines.iter().any(|&[a, b, c]| {
+                (a != 0.0 || b != 0.0) && (a * x + b * y + c).abs() <= h * (a.abs() + b.abs())
+            });
+        }
+        _ => return false,
+    };
+    let eigen = |x, y| (x * e0[0] + y * e0[1], x * e1[0] + y * e1[1]);
+    let (u, v) = eigen(dx, dy);
+    let mut min = f64::INFINITY;
+    let mut max = f64::NEG_INFINITY;
+    let mut include = |f: f64| {
+        min = min.min(f);
+        max = max.max(f);
+    };
+    let value = |u: f64, v: f64| (u2 * u + u1) * u + (v2 * v) * v + constant;
+    // Along each side, the extrema occur at the corners or at the
+    // stationary point of a one-variable quadratic.
+    for (du, dv, eu, ev) in [(e0[0], e1[0], e0[1], e1[1]), (e0[1], e1[1], e0[0], e1[0])] {
+        let q = (u2 * du) * du + (v2 * dv) * dv;
+        for sign in [-1.0, 1.0] {
+            let (u, v) = (u + sign * h * eu, v + sign * h * ev);
+            include(value(u - h * du, v - h * dv));
+            include(value(u + h * du, v + h * dv));
+            let linear = (u2 * u + u1 / 2.0) * du + (v2 * v) * dv;
+            let extremum = -linear / q;
+            if extremum.abs() <= h {
+                include(value(u + extremum * du, v + extremum * dv));
+            }
+        }
+    }
+    if matches!(d.ty, ConicType::Circle | ConicType::Ellipse) && dx.abs() <= h && dy.abs() <= h {
+        include(constant);
+    }
+    min <= 0.0 && max >= 0.0
+}
+
+/// A point on a curved conic part, using its conic's parameter.
+pub fn part_at(part: &ArcData, angle: f64) -> (f64, f64) {
+    let [a, b] = part.conic.half_axes;
+    let [e0, e1] = part.conic.eigenvec;
+    let [x, y] = part.conic.midpoint;
+    let (sin, cos) = angle.sin_cos();
+    let (u, v) = (a * cos, b * sin);
+    (x + u * e0[0] + v * e1[0], y + u * e0[1] + v * e1[1])
+}
+
+/// Parameters where the rim crosses a vertical (axis 0) or horizontal
+/// (axis 1) line at `offset` from the centre.
+pub fn part_axis_crossings(part: &ArcData, axis: usize, offset: f64) -> impl Iterator<Item = f64> {
+    let [e0, e1] = part.conic.eigenvec;
+    let [a, b] = part.conic.half_axes;
+    let (a, b) = (a * e0[axis], b * e1[axis]);
+    let r = a.hypot(b);
+    let angles = (offset.abs() <= r && r > 0.0).then(|| {
+        let base = b.atan2(a);
+        let half = (offset / r).acos();
+        [base - half, base + half]
+    });
+    let (start, extent) = (part.start, part.extent);
+    angles.into_iter().flatten().filter_map(move |angle| {
+        let t = (angle - start).rem_euclid(TAU);
+        (t <= extent).then_some(start + t)
+    })
+}
+
+fn part_meets_square(part: &ArcData, tr: &ViewTransform, p: (f64, f64), t: f64) -> bool {
+    if !part.defined {
+        return false;
+    }
+    let screen = |(x, y)| tr.world_to_screen(x, y);
+    if let Some([a, b]) = part.segment() {
+        if part.positive {
+            return segment_meets_square(screen(a), screen(b), p, t);
+        }
+        let (dx, dy) = (b.0 - a.0, b.1 - a.1);
+        let length = dx.hypot(dy);
+        if length == 0.0 || !length.is_finite() {
+            return false;
+        }
+        let far = 1e7 / (tr.scale() * length);
+        return segment_meets_square(screen(a), screen((a.0 - far * dx, a.1 - far * dy)), p, t)
+            || segment_meets_square(screen(b), screen((b.0 + far * dx, b.1 + far * dy)), p, t);
+    }
+    if !part.is_curved() || !conic_meets_square(&part.conic, tr, p, t) && !part.sector {
+        return false;
+    }
+    let start = screen(part_at(part, part.start));
+    let end = screen(part_at(part, part.start + part.extent));
+    let inside = |(x, y): (f64, f64)| (x - p.0).abs() <= t && (y - p.1).abs() <= t;
+    if inside(start) || inside(end) {
+        return true;
+    }
+    let [mx, my] = part.conic.midpoint;
+    if part.sector {
+        let center = screen((mx, my));
+        if segment_meets_square(center, start, p, t) || segment_meets_square(center, end, p, t) {
+            return true;
+        }
+    }
+    // Intersections of the ellipse with each edge x = k or y = k satisfy
+    // A cos(angle) + B sin(angle) = k, relative to the ellipse's centre.
+    let (px, py) = tr.screen_to_world(p.0, p.1);
+    let h = t / tr.scale();
+    for (axis, d, other) in [(0, px - mx, py), (1, py - my, px)] {
+        for k in [d - h, d + h] {
+            if part_axis_crossings(part, axis, k).any(|angle| {
+                let (x, y) = part_at(part, angle);
+                let coordinate = if axis == 0 { y } else { x };
+                (coordinate - other).abs() <= h
+            }) {
+                return true;
+            }
+        }
+    }
+    false
+}
+
+fn function_meets_square(
+    c: &Construction,
+    id: Id,
+    tr: &ViewTransform,
+    p: (f64, f64),
+    t: f64,
+) -> bool {
+    let (x, y) = tr.screen_to_world(p.0, p.1);
+    let h = t / tr.scale();
+    let eval = |x: f64| c.function_value(id, x).map_or(f64::NAN, |v| v - y);
+    let center = eval(x);
+    if center.abs() <= h {
+        return true;
+    }
+    // Probe the small horizontal interval under the pointer. In a steep
+    // crossing, bisect until an actual graph point is inside the square.
+    // A jump or asymptote can straddle it without ever reaching it.
+    for direction in [-1.0, 1.0] {
+        let mut a = x;
+        let mut fa = center;
+        for fraction in [0.25, 0.5, 0.75, 1.0] {
+            let b = x + direction * h * fraction;
+            let fb = eval(b);
+            if fb.abs() <= h {
+                return true;
+            }
+            if fa.is_finite() && fb.is_finite() && fa.is_sign_positive() != fb.is_sign_positive() {
+                let (mut l, mut r) = (a, b);
+                for _ in 0..32 {
+                    let m = f64::midpoint(l, r);
+                    let fm = eval(m);
+                    if fm.abs() <= h {
+                        return true;
+                    }
+                    if !fm.is_finite() || m == l || m == r {
+                        break;
+                    }
+                    if fm.is_sign_positive() == fa.is_sign_positive() {
+                        l = m;
+                    } else {
+                        r = m;
+                    }
+                }
+            }
+            (a, fa) = (b, fb);
+        }
+    }
+    false
+}
+
 /// The vertices of a polygon or polyline on the screen, `None` when one of
 /// them is undefined.
 pub fn screen_vertices(c: &Construction, id: Id, t: &ViewTransform) -> Option<Vec<(f64, f64)>> {
@@ -286,7 +491,8 @@ fn type_priority(kind: Kind) -> u8 {
         Kind::Vector => 120,
         Kind::Segment | Kind::Ray => 110,
         Kind::Line => 100,
-        Kind::Circle => 70,
+        Kind::Function => 90,
+        Kind::Circle | Kind::Conic | Kind::Arc | Kind::Sector => 70,
         Kind::PolyLine => 51,
         Kind::Polygon => 50,
         Kind::Angle => 49,
