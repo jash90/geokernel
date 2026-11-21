@@ -1,0 +1,307 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "conicforms-coefficients-001",
+      "group": "conicforms",
+      "script": [
+        "a = 4",
+        "b = 1",
+        "cc = -16",
+        "d = 0",
+        "ee = 0",
+        "ff = 0",
+        "k = Conic(a, b, cc, d, ee, ff)",
+        "C = Center(k)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "d", "value": 2.0 },
+        { "action": "set_number", "label": "cc", "value": 0.0 },
+        { "action": "set_number", "label": "d", "value": 0.0 },
+        { "action": "set_number", "label": "b", "value": -1.0 },
+        { "action": "set_number", "label": "cc", "value": -16.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "cc": { "type": "number", "defined": true, "value": -16.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "ee": { "type": "number", "defined": true, "value": 0.0 },
+          "ff": { "type": "number", "defined": true, "value": 0.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [4.0, 1.0, -16.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [4.0, 2.0],
+            "eigenvectors": [
+              [-0.0, 1.0],
+              [-1.0, -0.0]
+            ]
+          },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "cc": { "type": "number", "defined": true, "value": -16.0 },
+          "d": { "type": "number", "defined": true, "value": 2.0 },
+          "ee": { "type": "number", "defined": true, "value": 0.0 },
+          "ff": { "type": "number", "defined": true, "value": 0.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [4.0, 1.0, -16.0, 1.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [4.790421352508633, 1.9283490171895825],
+            "eigenvectors": [
+              [0.2897841486884302, -0.9570920264890529],
+              [0.9570920264890529, 0.2897841486884302]
+            ]
+          },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "cc": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 2.0 },
+          "ee": { "type": "number", "defined": true, "value": 0.0 },
+          "ff": { "type": "number", "defined": true, "value": 0.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "single_point",
+            "matrix": [4.0, 1.0, 0.0, 1.0, 0.0, 0.0],
+            "point": [0.0, 0.0]
+          },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "cc": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "ee": { "type": "number", "defined": true, "value": 0.0 },
+          "ff": { "type": "number", "defined": true, "value": 0.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "single_point",
+            "matrix": [4.0, 1.0, 0.0, 0.0, 0.0, 0.0],
+            "point": [0.0, 0.0]
+          },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": -1.0 },
+          "cc": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "ee": { "type": "number", "defined": true, "value": 0.0 },
+          "ff": { "type": "number", "defined": true, "value": 0.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "intersecting_lines",
+            "matrix": [4.0, -1.0, 0.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-2.0, 1.0, -0.0],
+              [2.0, 1.0, 0.0]
+            ]
+          },
+          "C": { "type": "point", "defined": true, "x": -0.0, "y": -0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": -1.0 },
+          "cc": { "type": "number", "defined": true, "value": -16.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "ee": { "type": "number", "defined": true, "value": 0.0 },
+          "ff": { "type": "number", "defined": true, "value": 0.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [4.0, -1.0, -16.0, 0.0, 0.0, 0.0],
+            "midpoint": [-0.0, -0.0],
+            "half_axes": [2.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "C": { "type": "point", "defined": true, "x": -0.0, "y": -0.0 }
+        }
+      ]
+    },
+    {
+      "id": "conicforms-coefficients-002",
+      "group": "conicforms",
+      "script": [
+        "a = 4",
+        "k = Conic(a, 1, -16, 0, 0, 0)",
+        "m = Conic(4, 1, -16, 0, 0, 0)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -4.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [4.0, 1.0, -16.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [4.0, 2.0],
+            "eigenvectors": [
+              [-0.0, 1.0],
+              [-1.0, -0.0]
+            ]
+          },
+          "m": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [4.0, 1.0, -16.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [4.0, 2.0],
+            "eigenvectors": [
+              [-0.0, 1.0],
+              [-1.0, -0.0]
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -4.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-4.0, 1.0, -16.0, 0.0, 0.0, 0.0],
+            "midpoint": [-0.0, -0.0],
+            "half_axes": [4.0, 2.0],
+            "eigenvectors": [
+              [-0.0, 1.0],
+              [-1.0, -0.0]
+            ]
+          },
+          "m": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [4.0, 1.0, -16.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [4.0, 2.0],
+            "eigenvectors": [
+              [-0.0, 1.0],
+              [-1.0, -0.0]
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -16.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [4.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "m": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [4.0, 1.0, -16.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [4.0, 2.0],
+            "eigenvectors": [
+              [-0.0, 1.0],
+              [-1.0, -0.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "conicforms-coefficients-003",
+      "group": "conicforms",
+      "script": [
+        "A = (0, -4)",
+        "k = Conic(1, 1, y(A), 0, 0, 0)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "A", "x": 0.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 0.0, "y": -2.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": -4.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "single_point",
+            "matrix": [1.0, 1.0, 0.0, 0.0, 0.0, 0.0],
+            "point": [0.0, 0.0]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "empty",
+            "matrix": [1.0, 1.0, 4.0, 0.0, 0.0, 0.0]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": -2.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -2.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.4142135623730951, 1.4142135623730951],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

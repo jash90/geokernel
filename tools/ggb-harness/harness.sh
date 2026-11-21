@@ -53,9 +53,14 @@ case "$cmd" in
     commit="$(git -C "$ggb" rev-parse HEAD)"
     if [ "$#" -gt 0 ]; then
       files=()
-      for group in "$@"; do files+=("$here/cases/$group.json"); done
+      for group in "$@"; do
+        files+=("$here/cases/$group.json")
+        reference="$here/cases/reference/$group.json"
+        if [ -f "$reference" ]; then files+=("$reference"); fi
+      done
     else
-      files=("$here"/cases/*.json)
+      shopt -s nullglob
+      files=("$here"/cases/*.json "$here"/cases/reference/*.json)
     fi
     for file in "${files[@]}"; do
       java "${java_opts[@]}" -cp "$build/classes:$(cat "$build/classpath.txt")" \

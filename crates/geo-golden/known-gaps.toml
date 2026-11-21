@@ -287,3 +287,48 @@ mismatches = [
   "3:I", "3:J", "3:K", "3:L", "3:i", "3:j", "3:k", "3:l",
   "3:s_{1}",
 ]
+
+[[gap]]
+id = "axes-functions-001"
+reason = "The axis resolves as a line. Intersect of a function and a line has no kernel dispatch or polynomial root algorithm."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "conicforms-namedinterval-001"
+reason = "A named inequality is a boolean-valued function in GeoGebra. Kernel functions are numeric, so the named input fails before Center can read its bounds."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "conicforms-coefficients-001"
+reason = "The stateful Conic dispatcher currently accepts only five points. It rejects six numeric coefficient objects."
+mismatches = ["0:script line 7"]
+
+[[gap]]
+id = "conicforms-coefficients-002"
+reason = "The stateful Conic dispatcher currently accepts only five points. It rejects numeric coefficient objects mixed with literals."
+mismatches = ["0:script line 2"]
+
+[[gap]]
+id = "conicforms-coefficients-003"
+reason = "The stateful Conic dispatcher currently accepts only five points. It rejects a coefficient expression that depends on a point."
+mismatches = ["0:script line 2"]
+
+[[gap]]
+id = "conicforms-list-001"
+reason = "The stateful Conic dispatcher rejects a flat list of six coefficients."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "conicforms-list-002"
+reason = "The stateful Conic dispatcher rejects a three-by-three matrix supplied as a nested list."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "conicforms-list-003"
+reason = "The stateful Conic dispatcher rejects the dependent coefficient list before its length can change."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "conicforms-list-004"
+reason = "The stateful Conic dispatcher rejects an inline coefficient list."
+mismatches = ["0:script line 2"]

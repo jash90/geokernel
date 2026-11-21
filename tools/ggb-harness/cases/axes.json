@@ -1,0 +1,6 @@
+{
+  "cases": [
+    {"id": "axes-lines-001", "group": "axes", "script": ["A = (2, 3)", "B = (5, -3)", "f = Line(A, B)", "P = Intersect(f, xAxis)", "O = Intersect(yAxis, xAxis)", "R = Reflect(A, yAxis)", "n = PerpendicularLine(A, xAxis)", "d = Distance(A, xAxis)", "elevation = Distance(yAxis, A)"], "steps": [{"action": "initial"}, {"action": "move", "label": "A", "x": 2.0, "y": 0.0}, {"action": "move", "label": "B", "x": 5.0, "y": 0.0}, {"action": "move", "label": "A", "x": 0.0, "y": 0.0}, {"action": "move", "label": "B", "x": 0.0, "y": 0.0}, {"action": "move", "label": "A", "x": -1.0, "y": -2.0}, {"action": "move", "label": "B", "x": 5.0, "y": 2.0}]},
+    {"id": "axes-conics-001", "group": "axes", "script": ["A = (1, 1)", "r = 3", "k = Circle(A, r)", "P = Intersect(k, xAxis, 1)", "Q = Intersect(yAxis, k, 2)", "F = (0, 2)", "p = Parabola(F, xAxis)", "T = Intersect(p, yAxis, 1)", "d = Distance(F, xAxis)"], "steps": [{"action": "initial"}, {"action": "set_number", "label": "r", "value": 1.0}, {"action": "set_number", "label": "r", "value": 0.0}, {"action": "set_number", "label": "r", "value": 4.0}, {"action": "move", "label": "F", "x": 1.0, "y": 0.0}, {"action": "move", "label": "F", "x": 2.0, "y": -4.0}]}
+  ]
+}

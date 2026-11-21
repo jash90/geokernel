@@ -53,6 +53,11 @@ order, one case per line. Ids have the form `<group>-<topic>-<nnn>`; the
 cases of one topic go to `golden/<group>/<topic>.json`. New cases must be appended to a topic so
 existing ids keep their meaning.
 
+Cases whose scripts use a command the kernel cannot run yet live in
+`cases/reference/`. The golden runner includes them, and the Rust golden
+test checks their exact failures against `known-gaps.toml`. Use a separate
+topic from the runnable cases, since each topic has one output file.
+
 For every case `GoldenGenerator`:
 
 1. creates a fresh headless app: `AppCommon` with `LocalizationCommon`,

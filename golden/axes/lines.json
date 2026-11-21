@@ -1,0 +1,124 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "axes-lines-001",
+      "group": "axes",
+      "script": [
+        "A = (2, 3)",
+        "B = (5, -3)",
+        "f = Line(A, B)",
+        "P = Intersect(f, xAxis)",
+        "O = Intersect(yAxis, xAxis)",
+        "R = Reflect(A, yAxis)",
+        "n = PerpendicularLine(A, xAxis)",
+        "d = Distance(A, xAxis)",
+        "elevation = Distance(yAxis, A)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": 2.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 5.0, "y": 0.0 },
+        { "action": "move", "label": "A", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "A", "x": -1.0, "y": -2.0 },
+        { "action": "move", "label": "B", "x": 5.0, "y": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": -3.0 },
+          "f": { "type": "line", "defined": true, "a": 6.0, "b": 3.0, "c": -21.0 },
+          "xAxis": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 3.5, "y": -0.0 },
+          "yAxis": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 0.0 },
+          "O": { "type": "point", "defined": true, "x": -0.0, "y": -0.0 },
+          "R": { "type": "point", "defined": true, "x": -1.9999999999999996, "y": 3.0000000000000004 },
+          "n": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 2.0 },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "elevation": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": -3.0 },
+          "f": { "type": "line", "defined": true, "a": 3.0, "b": 3.0, "c": -6.0 },
+          "xAxis": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": -0.0 },
+          "yAxis": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 0.0 },
+          "O": { "type": "point", "defined": true, "x": -0.0, "y": -0.0 },
+          "R": { "type": "point", "defined": true, "x": -2.0, "y": 2.4492935982947064E-16 },
+          "n": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 2.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "elevation": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 },
+          "f": { "type": "line", "defined": true, "a": 0.0, "b": 3.0, "c": 0.0 },
+          "xAxis": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "P": { "type": "point", "defined": false },
+          "yAxis": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 0.0 },
+          "O": { "type": "point", "defined": true, "x": -0.0, "y": -0.0 },
+          "R": { "type": "point", "defined": true, "x": -2.0, "y": 2.4492935982947064E-16 },
+          "n": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 2.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "elevation": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 },
+          "f": { "type": "line", "defined": true, "a": 0.0, "b": 5.0, "c": 0.0 },
+          "xAxis": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "P": { "type": "point", "defined": false },
+          "yAxis": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 0.0 },
+          "O": { "type": "point", "defined": true, "x": -0.0, "y": -0.0 },
+          "R": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "n": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "elevation": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "f": { "type": "line", "defined": false },
+          "xAxis": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "P": { "type": "point", "defined": false },
+          "yAxis": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 0.0 },
+          "O": { "type": "point", "defined": true, "x": -0.0, "y": -0.0 },
+          "R": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "n": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "elevation": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.0, "y": -2.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "f": { "type": "line", "defined": true, "a": -2.0, "b": 1.0, "c": 0.0 },
+          "xAxis": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "P": { "type": "point", "defined": true, "x": -0.0, "y": -0.0 },
+          "yAxis": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 0.0 },
+          "O": { "type": "point", "defined": true, "x": -0.0, "y": -0.0 },
+          "R": { "type": "point", "defined": true, "x": 0.9999999999999998, "y": -2.0 },
+          "n": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": -1.0 },
+          "d": { "type": "number", "defined": true, "value": 2.0 },
+          "elevation": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.0, "y": -2.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 2.0 },
+          "f": { "type": "line", "defined": true, "a": -4.0, "b": 6.0, "c": 8.0 },
+          "xAxis": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": -0.0 },
+          "yAxis": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 0.0 },
+          "O": { "type": "point", "defined": true, "x": -0.0, "y": -0.0 },
+          "R": { "type": "point", "defined": true, "x": 0.9999999999999998, "y": -2.0 },
+          "n": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": -1.0 },
+          "d": { "type": "number", "defined": true, "value": 2.0 },
+          "elevation": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    }
+  ]
+}
