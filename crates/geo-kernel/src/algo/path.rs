@@ -829,7 +829,7 @@ impl Construction {
         let mut starts: Vec<(usize, String, f64, f64)> = self
             .frozen_line_starts
             .iter()
-            .filter_map(|(&id, &(x, y, order))| Some((order, self.label(id).to_owned(), x, y)))
+            .map(|(&id, &(x, y, order))| (order, self.label(id).to_owned(), x, y))
             .collect();
         starts.sort_by_key(|&(order, ..)| order);
         starts

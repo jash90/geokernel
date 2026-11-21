@@ -461,15 +461,9 @@ impl Log {
         }
     }
 
-    /// `rebuild` as it was before the journal shared its storage: every
-    /// kept line recorded anew. The oracle of the tests of `rebuild`.
-    #[cfg(test)]
-    pub(crate) fn rebuild_reference(&self) -> Result<(Construction, Log), String> {
-        self.rebuild_reference_with(&[])
-    }
-
-    /// [`Self::rebuild_reference`] with carried frozen line starts, the
-    /// oracle of the tests of `rebuild_with`.
+    /// `rebuild_with` as it was before the journal shared its storage:
+    /// every kept line recorded anew. The oracle of the tests of
+    /// `rebuild_with`.
     #[cfg(test)]
     pub(crate) fn rebuild_reference_with(
         &self,

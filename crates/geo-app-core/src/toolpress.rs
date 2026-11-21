@@ -563,11 +563,10 @@ mod tests {
             let mut app = app(SRC, tool);
             let r = reach(&app);
             let press = app.press_tool(&t(), at(1.5, 1.2), &r);
-            assert!(press.acted, "{tool:?}");
-            let p = press.point.expect("a point was picked");
+            assert!(press.acted && !press.deferred, "{tool:?}");
             let c = app.wb.construction();
             assert_eq!(
-                c.def(p),
+                c.def(c.id("A").expect("the pick made a point")),
                 Def::Path(PathDef::On {
                     path: c.id("k").unwrap()
                 }),

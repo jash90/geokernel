@@ -172,8 +172,11 @@ impl Construction {
         yscale: f64,
     ) {
         let view = [xmin, xmax, ymin, ymax, xscale, yscale];
-        if !view.iter().all(|v| v.is_finite())
-            || !(xmax > xmin && ymax > ymin && xscale > 0.0 && yscale > 0.0)
+        if !(view.iter().all(|v| v.is_finite())
+            && xmax > xmin
+            && ymax > ymin
+            && xscale > 0.0
+            && yscale > 0.0)
             || self.locus_view == Some(view)
         {
             return;

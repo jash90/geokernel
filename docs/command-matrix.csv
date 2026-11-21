@@ -32,7 +32,7 @@ Slope,,geometry,P1,done,2,2,"Slope(line, segment, ray or function)"
 Angle,,geometry,P1,done,13,13,"Angle(angle); Angle(number); Angle(point); Angle(vector); Angle(conic); Angle(polygon); Angle(point, point); Angle(point, vector); Angle(vector, point); Angle(vector, vector); Angle(line, line); Angle(point, point, point); Angle(point, point, number)"
 InteriorAngles,,geometry,P1,done,1,1,InteriorAngles(polygon)
 Direction,,geometry,P1,partial,2,1,"Direction(line, segment or ray)"
-Point,,geometry,P1,todo,4,0,"Point(path); Point(path, parameter) on a line, segment, ray, circle, polygon, polyline, circular arc or sector"
+Point,,geometry,P1,todo,4,0,"Point(path); Point(path, parameter) on a line, segment, ray, circle, conic, polygon, polyline, arc or sector"
 Midpoint,,geometry,P0,done,4,4,"Midpoint(point, point); Midpoint(segment); Midpoint(circle or conic)"
 LineBisector,,geometry,P1,done,2,2,"LineBisector(point, point); LineBisector(segment)"
 Intersect,,geometry,P0,partial,65,8,line/line; line/circle; circle/circle; line/conic; optional index 1 or 2
