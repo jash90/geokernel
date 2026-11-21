@@ -8,6 +8,9 @@
 //! it: `Length` of a list (of anything else it is the command of the script
 //! parser).
 
+#[path = "../../algo/conic_coefficients.rs"]
+mod conic_coefficients;
+
 use crate::expr::eval::{Ctx, Val};
 use crate::expr::parse::{list_form, Parser};
 use crate::expr::{Elem, ListOp, Node, Ty};

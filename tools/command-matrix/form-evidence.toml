@@ -215,6 +215,16 @@ form = "point,point,point,point,point"
 cases = ["conics-fivepoints-001", "conics-fivepoints-002", "conics-fivepoints-003"]
 
 [[form]]
+command = "Conic"
+form = "list"
+cases = ["conicforms-list-001", "conicforms-list-002", "conicforms-list-003", "conicforms-list-004"]
+
+[[form]]
+command = "Conic"
+form = "number,number,number,number,number,number"
+cases = ["conicforms-coefficients-001", "conicforms-coefficients-002"]
+
+[[form]]
 command = "CrossRatio"
 form = "point,point,point,point"
 cases = ["measure-cross-001", "measure-cross-002", "measure-cross-003"]
