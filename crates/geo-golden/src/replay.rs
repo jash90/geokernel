@@ -160,6 +160,14 @@ fn apply(c: &mut Construction, step: &Step) -> Result<(), String> {
                 .map(drop)
                 .map_err(|e| format!("set `{label}`: {e}"))
         }
+        Step::Reject { line } => {
+            let len = c.len();
+            if script::exec(c, line).is_err() && c.len() == len {
+                Ok(())
+            } else {
+                Err(format!("expected rejection without new objects: {line}"))
+            }
+        }
     }
 }
 

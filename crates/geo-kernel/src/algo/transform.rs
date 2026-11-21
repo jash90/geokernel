@@ -317,6 +317,7 @@ impl Map {
             | Value::Arc { .. }
             | Value::Sector { .. }
             | Value::Locus { .. }
+            | Value::HomogeneousPoint { .. }
             | Value::Undefined => None,
         }
     }
@@ -714,6 +715,15 @@ impl Group for TransformDef {
             return Some(Value::Point { x, y });
         }
         let map = self.map(c);
+        if let (Kind::Point, Some(Map::Dilate { r, sx, sy })) = (self.kind(), map) {
+            let (x, y, z) = c.stored_value(source_of(self)).point_coords()?;
+            let offset = 1.0 - r;
+            return Some(Value::homogeneous_point(
+                r * x + offset * sx * z,
+                r * y + offset * sy * z,
+                z,
+            ));
+        }
         match self.kind() {
             Kind::Ray => ray_image(c, self, &map?),
             Kind::Vector => match (c.value(source_of(self)), map) {

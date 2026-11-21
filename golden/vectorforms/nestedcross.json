@@ -1,0 +1,37 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "vectorforms-nestedcross-001",
+      "group": "vectorforms",
+      "script": [
+        "a = Cross({{1, 2}, {3, 4}}, {{5, 6}, {7, 8}})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": -8.0 },
+                  { "type": "number", "defined": true, "value": -8.0 }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

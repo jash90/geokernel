@@ -64,7 +64,7 @@
 
 use super::commands;
 use super::decimal::Dec;
-use super::list::{copy_tree, Slot};
+use super::list::{copy_tree, List, Slot};
 use super::math::{self, PI_180};
 use super::{Bin, Entry, ListOp, Node, Raw, Ty, Un};
 use crate::algo::intersect::Hint;
@@ -264,6 +264,36 @@ impl Lists {
             i += 1;
         }
         true
+    }
+
+    /// Borrows a list as a flattened tree, copying only when nested entries
+    /// may point into other list objects.
+    pub(super) fn with_list<T>(
+        &self,
+        c: &Construction,
+        start: u32,
+        len: u32,
+        f: impl FnOnce(List<'_>) -> Option<T>,
+    ) -> Option<T> {
+        if self.objects.borrow().1 == 0 {
+            return f(List::from_run(&self.arena.borrow(), start, len));
+        }
+        if start >> OBJECT_SHIFT != 0 {
+            let id = self.objects.borrow().0[(start >> OBJECT_SHIFT) as usize - 1];
+            let Def::Expr(d) = c.def(id) else {
+                unreachable!("a list object read in place has an expression");
+            };
+            return f(List::from_run(
+                &super::entry(c, d).items,
+                start & OFFSET,
+                len,
+            ));
+        }
+        let mut items = Vec::new();
+        if !self.copy_out(c, start, len, &mut items) {
+            return None;
+        }
+        f(List::new(&items, len))
     }
 
     pub(super) fn set(&self, i: u32, slot: Slot) {
@@ -853,11 +883,11 @@ impl<const M: bool> Ctx<'_, M> {
             }
             Node::Un(Un::Sin, a) => {
                 self.charge(FUNCTION);
-                self.fast(a).sin()
+                libm::sin(self.fast(a))
             }
             Node::Un(Un::Cos, a) => {
                 self.charge(FUNCTION);
-                self.fast(a).cos()
+                libm::cos(self.fast(a))
             }
             Node::Un(Un::Sqrt, a) => self.fast(a).sqrt(),
             Node::Var => match *self.env {
@@ -1311,7 +1341,7 @@ pub(super) fn slot_val(s: Slot) -> Val {
 }
 
 /// One element of `MyList.apply` of a two-operand operation.
-fn combine(op: Bin, x: Val, y: Val) -> Slot {
+pub(super) fn combine(op: Bin, x: Val, y: Val) -> Slot {
     let number = |v: Val| match v {
         Val::B(b, _) => Val::N(bool_number(b)),
         v => v,

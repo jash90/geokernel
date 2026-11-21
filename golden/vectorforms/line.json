@@ -1,0 +1,32 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "vectorforms-line-001",
+      "group": "vectorforms",
+      "script": [
+        "g: -2x + 3y + 1 = 0",
+        "h: 3x = 4y",
+        "v = Direction(g)",
+        "u = UnitVector(h)",
+        "w = PerpendicularVector(h)",
+        "k = UnitPerpendicularVector(h)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": -2.0, "b": 3.0, "c": 1.0 },
+          "h": { "type": "line", "defined": true, "a": 3.0, "b": -4.0, "c": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 3.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": -0.8, "y": -0.6 },
+          "w": { "type": "vector", "defined": true, "x": 3.0, "y": -4.0 },
+          "k": { "type": "vector", "defined": true, "x": 0.6, "y": -0.8 }
+        }
+      ]
+    }
+  ]
+}

@@ -21,6 +21,8 @@ import org.geogebra.common.kernel.algos.AlgoConicPartCircumcircle;
 import org.geogebra.common.kernel.algos.AlgoConicPartConicPoints;
 import org.geogebra.common.kernel.MyPoint;
 import org.geogebra.common.kernel.algos.AlgoElement;
+import org.geogebra.common.kernel.algos.AlgoIntersectLinePolyLine;
+import org.geogebra.common.kernel.algos.AlgoIntersectPolyLines;
 import org.geogebra.common.kernel.algos.AlgoJoinPointsRay;
 import org.geogebra.common.kernel.algos.AlgoPointOnPath;
 import org.geogebra.common.kernel.algos.AlgoPointInRegion;
@@ -101,8 +103,15 @@ final class Session {
      * `circle`.
      */
     private final Set<GeoElement> conics = Collections.newSetFromMap(new IdentityHashMap<>());
+    private final boolean trackBoundaryGrowth;
+    private final Map<AlgoElement, String> growingIntersections = new LinkedHashMap<>();
 
     Session() {
+        this(false);
+    }
+
+    Session(boolean trackBoundaryGrowth) {
+        this.trackBoundaryGrowth = trackBoundaryGrowth;
         LocalizationCommon loc = new LocalizationCommon(2);
         loc.setResourceBundleControl(new Utf8Control());
         app = new AppCommon(loc, new AwtFactoryCommon(), new AppConfigDefault());
@@ -112,6 +121,21 @@ final class Session {
 
     Kernel kernel() {
         return kernel;
+    }
+
+    /** Checks that GeoGebra reports an error and creates no output. */
+    void reject(String line) {
+        Matcher matcher = LINE.matcher(line);
+        if (!matcher.matches() || kernel.lookupLabel(matcher.group(1)) != null) {
+            throw new IllegalArgumentException("expected an assignment to a new label: " + line);
+        }
+        CommandErrorHandler errors = new CommandErrorHandler(line, true);
+        GeoElementND[] out = processor.processAlgebraCommandNoExceptionHandling(
+                line, false, errors, false, null);
+        if (!errors.reported || (out != null && out.length != 0)
+                || kernel.lookupLabel(matcher.group(1)) != null) {
+            throw new IllegalStateException("GeoGebra did not reject: " + line);
+        }
     }
 
     /** Runs one `label = definition` or `label: equation` line and checks
@@ -145,7 +169,17 @@ final class Session {
             throw new IllegalArgumentException("label used twice: " + label);
         }
         GeoElementND[] out = processor.processAlgebraCommandNoExceptionHandling(
-                line, false, new ThrowingErrorHandler(line), false, null);
+                line, false, new CommandErrorHandler(line, false), false, null);
+        if (trackBoundaryGrowth && out != null && out.length > 0) {
+            GeoElement first = out[0].toGeoElement();
+            AlgoElement parent = first.getParentAlgorithm();
+            if (parent instanceof AlgoIntersectLinePolyLine
+                    || parent instanceof AlgoIntersectPolyLines) {
+                growingIntersections.put(parent, label.split("_", 2)[0] + "_{");
+                recordGrowingIntersections();
+                return first;
+            }
+        }
         if ((out == null || out.length == 0) && definition.startsWith("Segment(")
                 && definition.chars().filter(ch -> ch == ',').count() == 2) {
             return null;
@@ -170,7 +204,9 @@ final class Session {
         if (out != null && out.length == 2 && isMultiOutput(definition)) {
             return runMulti(line, expected, out);
         }
-        if (out != null && out.length > 1 && definition.startsWith("Intersect(")) {
+        if (out != null && out.length > 0 && definition.startsWith("Intersect(")
+                && (out.length > 1 || (out[0].isLabelSet()
+                && !label.equals(out[0].getLabelSimple())))) {
             return runMulti(line, expected, out);
         }
         if (out != null && out.length >= 1 && isPerVertex(definition)) {
@@ -232,6 +268,7 @@ final class Session {
                 ? !readsObjects(definition) && !callsCommand(definition)
                 : (expected.equals("point") || expected.equals("vector"))
                         && POINT.matcher(definition).matches()
+                        || definition.startsWith("Vector($vector(") && geo instanceof GeoVector
                         || expected.equals("number") && (NUMBER.matcher(definition).matches()
                                 || definition.startsWith("Slider("))
                         || expected.equals("angle") && definition.startsWith("Angle(")
@@ -463,11 +500,30 @@ final class Session {
 
     /** Records every scripted object, in script order. */
     Map<String, Object> snapshot() {
+        recordGrowingIntersections();
         Map<String, Object> snap = new LinkedHashMap<>();
         for (Map.Entry<String, GeoElement> e : objects.entrySet()) {
             snap.put(e.getKey(), describe(e.getValue(), schemaType(e.getValue())));
         }
         return snap;
+    }
+
+    private void recordGrowingIntersections() {
+        for (Map.Entry<AlgoElement, String> entry : growingIntersections.entrySet()) {
+            for (GeoElement geo : entry.getKey().getOutput()) {
+                String label = geo.getLabelSimple();
+                if (!geo.isLabelSet() || label == null || !label.startsWith(entry.getValue())) {
+                    continue;
+                }
+                if (!(geo instanceof GeoPoint)) {
+                    throw new IllegalStateException("expected an intersection point: " + label);
+                }
+                GeoElement previous = objects.putIfAbsent(label, geo);
+                if (previous != null && previous != geo) {
+                    throw new IllegalStateException("label used twice: " + label);
+                }
+            }
+        }
     }
 
     private GeoElement lookup(String label) {
@@ -510,6 +566,10 @@ final class Session {
         Matcher m = CALL.matcher(definition);
         while (m.find()) {
             if (objects.containsKey(m.group(1))) {
+                continue;
+            }
+            if (m.group(1).equals("Dot") || m.group(1).equals("Cross")) {
+                // The command processor rewrites these calls to arithmetic operations.
                 continue;
             }
             if (m.group(1).equals("If") && conditionsReadX(definition, m.end())) {
@@ -901,6 +961,10 @@ final class Session {
         String arguments = definition.substring(definition.indexOf('(') + 1, definition.length() - 1);
         GeoElement first = objects.get(arguments.split(",", 2)[0].trim());
         switch (command) {
+            case "ApplyMatrix":
+                List<String> args = arguments(definition);
+                GeoElement target = args.size() == 2 ? objects.get(args.get(1).trim()) : null;
+                return target == null ? null : schemaType(target);
             case "Polar":
                 return first instanceof GeoLine ? "point" : "line";
             case "Center":
@@ -1321,22 +1385,28 @@ final class Session {
         return f;
     }
 
-    /** Turns every GeoGebra error report into an exception. */
-    private static final class ThrowingErrorHandler implements ErrorHandler {
+    /** Captures expected command errors and throws on unexpected ones. */
+    private static final class CommandErrorHandler implements ErrorHandler {
         private final String line;
+        private final boolean expectError;
+        private boolean reported;
 
-        ThrowingErrorHandler(String line) {
+        CommandErrorHandler(String line, boolean expectError) {
             this.line = line;
+            this.expectError = expectError;
         }
 
         @Override
         public void showError(String msg) {
-            throw new IllegalStateException("GeoGebra error in '" + line + "': " + msg);
+            if (!expectError) {
+                throw new IllegalStateException("GeoGebra error in '" + line + "': " + msg);
+            }
+            reported = true;
         }
 
         @Override
         public void showCommandError(String command, String message) {
-            throw new IllegalStateException("GeoGebra error in '" + line + "': " + message);
+            showError(message);
         }
 
         @Override

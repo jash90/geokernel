@@ -160,6 +160,9 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
     if let Some(result) = intersect::exec_selected(c, name, rhs) {
         return result;
     }
+    if let Some(result) = define_vector_call(c, name, rhs) {
+        return result;
+    }
     // GeoGebra returns an already labelled angle unchanged.
     if rhs.starts_with("Angle") {
         if let Some(("Angle", args)) = split_call(rhs) {
@@ -170,17 +173,47 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
             }
         }
     }
+    define_expression_or_command(c, name, rhs).map(Some)
+}
+
+fn define_expression_or_command(c: &mut Construction, name: &str, rhs: &str) -> Result<Id, String> {
     match define(c, name, rhs) {
         Ok(id) => {
             if matches!(c.def(id), Def::Number(_)) {
                 // a decimal literal keeps its exact decimal
                 crate::expr::record_literal(c, id, rhs);
             }
-            Ok(Some(id))
+            Ok(id)
         }
         // A call of a command keeps the command's own error.
         Err(e) if is_single_call(c, rhs) => Err(e),
-        Err(_) => crate::expr::define(c, name, rhs, is_vector_label(name)).map(Some),
+        Err(_) => {
+            let vector = is_vector_label(name)
+                || rhs.split_once('(').is_some_and(|(name, _)| {
+                    VectorDef::vector_result(name.trim()) && call_closes_at_end(rhs, name.len())
+                });
+            crate::expr::define(c, name, rhs, vector)
+        }
+    }
+}
+
+/// `CmdVector` keeps a labelled vector and labels an anonymous one.
+fn define_vector_call(
+    c: &mut Construction,
+    name: &str,
+    rhs: &str,
+) -> Option<Result<Option<Id>, String>> {
+    let (command, rest) = rhs.split_once('(')?;
+    if command.trim() != "Vector" || !call_closes_at_end(rhs, command.len()) {
+        return None;
+    }
+    let arg = rest.strip_suffix(')')?.trim();
+    if c.id(arg).is_some_and(|id| c.kind(id) == Kind::Vector) {
+        return Some(Ok(None));
+    }
+    match parse_forced(arg)? {
+        Ok(def @ Def::Vector(_)) => Some(c.add(name, def).map(Some).map_err(|e| e.to_string())),
+        _ => None,
     }
 }
 
@@ -237,6 +270,10 @@ fn is_single_call(c: &Construction, rhs: &str) -> bool {
     {
         return false;
     }
+    call_closes_at_end(rhs, open)
+}
+
+fn call_closes_at_end(rhs: &str, open: usize) -> bool {
     let mut depth = 0usize;
     for (i, ch) in rhs.char_indices().skip_while(|&(i, _)| i < open) {
         match ch {
@@ -322,8 +359,9 @@ fn parse_multi(c: &Construction, rhs: &str) -> Option<Result<Vec<Def>, String>> 
 /// - two or more outputs defined at creation: every defined output is
 ///   created and gets the next free indexed label (`t_{1}`, `t_{2}`, ...);
 ///   `Vertex` of a hyperbola labels its two defined vertices only;
-/// - exactly one defined: only that output is created, labelled `name`;
-/// - none defined: only the first output is created, labelled `name`.
+/// - exactly one defined: only that output is created, indexed for a
+///   polygonal boundary intersection and labelled `name` otherwise;
+/// - none defined: only the first output is created, using the same rule.
 ///
 /// The set of created objects is fixed at creation: an output that was not
 /// created is not added later, even when it becomes defined.
@@ -377,15 +415,21 @@ fn add_outputs(c: &mut Construction, name: &str, defs: Vec<Def>) -> Result<Id, S
         };
     }
     let count = defined.iter().filter(|&&d| d).count();
-    if count < 2 {
-        let k = defined.iter().position(|&d| d).unwrap_or(0);
-        return c.add(name, defs[k]).map_err(|e| e.to_string());
-    }
+    let indexed = matches!(defs.first(), Some(Def::IntersectBoundary(d)) if d.labels_indexed());
     // Construction.getIndexLabel: the prefix is the name up to the first `_`.
     let prefix = match name.split('_').next() {
         Some(p) if !p.is_empty() => p,
         _ => "a",
     };
+    if count < 2 {
+        let k = defined.iter().position(|&d| d).unwrap_or(0);
+        return if indexed {
+            c.add(&index_label(c, prefix), defs[k])
+        } else {
+            c.add(name, defs[k])
+        }
+        .map_err(|e| e.to_string());
+    }
     let at = c.checkpoint();
     let mut first = None;
     for (def, _) in defs.into_iter().zip(defined).filter(|&(_, d)| d) {
@@ -472,6 +516,10 @@ fn probe(c: &Construction, def: &Def) -> Result<bool, String> {
             c.check(def).map_err(|e| e.to_string())?;
             Ok(intersect::probe_line_circle(c, *line, *circle, *which))
         }
+        Def::IntersectConics(_) | Def::IntersectBoundary(_) => c
+            .evaluate(*def)
+            .map(|v| v != Value::Undefined)
+            .map_err(|e| e.to_string()),
         _ => Ok(true),
     }
 }
@@ -495,7 +543,7 @@ fn is_finite(v: &Value) -> bool {
         Value::Arc { length } => length.is_finite(),
         Value::Sector { area } => area.is_finite(),
         Value::Locus { .. } => true,
-        Value::Undefined => false,
+        Value::HomogeneousPoint { .. } | Value::Undefined => false,
     }
 }
 
@@ -580,6 +628,9 @@ pub(crate) fn parse_def(c: &Construction, rhs: &str) -> Result<Def, String> {
     let args: Vec<&str> = inner.split(',').map(str::trim).collect();
     let obj = |s: &str| object(c, s);
 
+    if let Some(def) = intersect::parse_selected(c, func, &args) {
+        return def;
+    }
     // Groups are asked first, so that a group can add a new form of a
     // built-in command (for example `Circle` with three points). General
     // conics come first: they claim the transformations of conics.
@@ -958,7 +1009,7 @@ mod tests {
              r = 5\n\
              k1 = Circle(A, r)\n\
              k2 = Circle(B, r)\n\
-             P = Intersect(k1, k2)      # first point\n\
+             P = Intersect(k1, k2, 1)   # first point\n\
              Q = Intersect(k1, k2, 2)\n\
              d = Distance(P, Q)\n",
         )

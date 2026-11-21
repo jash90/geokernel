@@ -67,13 +67,13 @@ pub(super) fn binary(op: Bin, a: f64, b: f64) -> f64 {
 
 /// Whether the result of the list command `op` is a list.
 pub(super) fn makes_list(op: ListOp) -> bool {
-    list::makes_list(op)
+    op == ListOp::Cross || list::makes_list(op)
 }
 
 /// Whether the second operand of the list command `op` is an object rather
 /// than a number.
 pub(super) fn takes_object(op: ListOp) -> bool {
-    list::takes_object(op)
+    matches!(op, ListOp::Dot | ListOp::Cross) || list::takes_object(op)
 }
 
 /// The type of the list command `op` of the list `l`, whose elements are
@@ -125,5 +125,9 @@ pub(super) fn list_fn<const M: bool>(
     l: u32,
     n: u32,
 ) -> Option<(u32, u32)> {
-    ctx.list_fn(op, l, n)
+    if op == ListOp::Cross {
+        geometry::cross_lists(ctx, l, n)
+    } else {
+        ctx.list_fn(op, l, n)
+    }
 }

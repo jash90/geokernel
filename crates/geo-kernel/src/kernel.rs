@@ -43,6 +43,10 @@ use crate::algo::conic::ConicDef;
 use crate::algo::conic_nd::{ConicData, ConicType};
 use crate::algo::conic_parts::ConicPartDef;
 use crate::algo::general_conic::GeneralConicDef;
+use crate::algo::intersect::{
+    boundary::BoundaryDef,
+    pair::{PairDef, PairState},
+};
 use crate::algo::lines::LineDef;
 use crate::algo::measure::MeasureDef;
 use crate::algo::path::{PathDef, PathState};
@@ -176,6 +180,14 @@ pub enum Value {
         x: f64,
         y: f64,
     },
+    /// Stored coordinates of a projective point. The public value of a
+    /// point is its Cartesian projection, when finite.
+    #[doc(hidden)]
+    HomogeneousPoint {
+        x: f64,
+        y: f64,
+        z: f64,
+    },
     /// `a*x + b*y + c = 0` with the raw coefficients GeoGebra's `GeoLine`
     /// holds (its `x`, `y`, `z`) for the same definition. They are not
     /// normalised: the algorithm that makes the line decides their scale, and
@@ -261,6 +273,45 @@ pub enum Value {
 }
 
 impl Value {
+    /// `GeoPoint.updateCoords` makes the scale positive for finite points.
+    pub(crate) fn homogeneous_point(x: f64, y: f64, z: f64) -> Self {
+        if x.is_nan() || y.is_nan() || z.is_nan() {
+            return Self::Undefined;
+        }
+        let (x, y, z) = if z < 0.0 && !point_at_infinity(x, y, z) {
+            (-x, -y, -z)
+        } else {
+            (x, y, z)
+        };
+        if z == 1.0 && x.is_finite() && y.is_finite() {
+            Self::Point { x, y }
+        } else {
+            Self::HomogeneousPoint { x, y, z }
+        }
+    }
+
+    pub(crate) fn point_coords(self) -> Option<(f64, f64, f64)> {
+        match self {
+            Self::Point { x, y } => Some((x, y, 1.0)),
+            Self::HomogeneousPoint { x, y, z } => Some((x, y, z)),
+            _ => None,
+        }
+    }
+
+    pub(crate) fn cartesian(self) -> Self {
+        match self {
+            Self::HomogeneousPoint { x, y, z } if !point_at_infinity(x, y, z) => {
+                let (x, y) = (x / z, y / z);
+                if x.is_finite() && y.is_finite() {
+                    return Self::Point { x, y };
+                }
+                Self::Undefined
+            }
+            Self::HomogeneousPoint { .. } => Self::Undefined,
+            _ => self,
+        }
+    }
+
     pub fn is_defined(&self) -> bool {
         !matches!(self, Value::Undefined)
     }
@@ -280,6 +331,7 @@ impl Value {
     fn is_finite(&self) -> bool {
         match *self {
             Value::Point { x, y } => x.is_finite() && y.is_finite(),
+            Value::HomogeneousPoint { x, y, z } => !(x.is_nan() || y.is_nan() || z.is_nan()),
             Value::Line { a, b, c } => a.is_finite() && b.is_finite() && c.is_finite(),
             Value::Segment { x1, y1, x2, y2 } => {
                 x1.is_finite() && y1.is_finite() && x2.is_finite() && y2.is_finite()
@@ -300,6 +352,12 @@ impl Value {
             | Value::Undefined => true,
         }
     }
+}
+
+/// `DoubleUtil.isEpsilon(z, x, y)` for non-NaN homogeneous coordinates.
+pub(crate) fn point_at_infinity(x: f64, y: f64, z: f64) -> bool {
+    let tol = crate::tol::STANDARD_PRECISION;
+    z.abs() <= tol && z.abs() <= x.abs() * tol && z.abs() <= y.abs() * tol
 }
 
 /// How an object is defined.
@@ -370,6 +428,10 @@ pub enum Def {
         which: u8,
         special: Option<bool>,
     },
+    /// One output of two conics, with its branch history in the construction.
+    IntersectConics(PairDef),
+    /// One output of an intersection with a polygon or polyline.
+    IntersectBoundary(BoundaryDef),
     /// Bisectors and tangents.
     Lines(LineDef),
     /// Circles and their parts.
@@ -466,6 +528,8 @@ impl Def {
             Def::Vector(d) => d.kind(),
             Def::Predicate(d) => d.kind(),
             Def::Point(d) => d.kind(),
+            Def::IntersectConics(d) => d.kind(),
+            Def::IntersectBoundary(d) => d.kind(),
             Def::Expr(d) => d.kind(),
             Def::Polygon(d) => d.kind(),
             Def::GeneralConic(d) => d.kind(),
@@ -536,6 +600,8 @@ impl Def {
             Def::CircleRadius { center, radius } => Parents::of(&[center, radius]),
             Def::IntersectLineCircle { line, circle, .. } => Parents::of(&[line, circle]),
             Def::IntersectCircles { c1, c2, .. } => Parents::of(&[c1, c2]),
+            Def::IntersectConics(d) => d.parents(),
+            Def::IntersectBoundary(d) => d.parents(),
             Def::Lines(d) => d.parents(),
             Def::Conic(d) => d.parents(),
             Def::Measure(d) => d.parents(),
@@ -655,6 +721,9 @@ pub struct Construction {
     /// The conic records of the [`Def::GeneralConic`] objects, with the
     /// index of each object, in creation order.
     conics: Vec<(usize, ConicData)>,
+    /// The output permutation and previous positions of conic intersections.
+    conic_intersections: Vec<(usize, PairState)>,
+    continuous_conic_intersections: bool,
     /// The states of the points on paths, with the index of each point, in
     /// creation order.
     paths: Vec<(usize, PathState)>,
@@ -809,10 +878,20 @@ impl Construction {
     }
 
     pub fn def(&self, id: Id) -> Def {
-        self.defs
+        let def = self
+            .defs
             .get(id.0)
             .copied()
-            .unwrap_or_else(|| axis::get(id).expect("object id").def)
+            .unwrap_or_else(|| axis::get(id).expect("object id").def);
+        match def {
+            Def::IntersectConics(d) => {
+                let slot = self
+                    .conic_intersection_slot(id.0)
+                    .expect("conic intersection state");
+                Def::IntersectConics(d.with_state(&self.conic_intersections[slot].1))
+            }
+            _ => def,
+        }
     }
 
     pub fn kind(&self, id: Id) -> Kind {
@@ -828,6 +907,12 @@ impl Construction {
     }
 
     pub fn value(&self, id: Id) -> Value {
+        self.stored_value(id).cartesian()
+    }
+
+    /// Includes homogeneous coordinates so algorithms that read the raw
+    /// fields see scale changes even when the Cartesian value is unchanged.
+    pub(crate) fn stored_value(&self, id: Id) -> Value {
         self.values
             .get(id.0)
             .copied()
@@ -950,7 +1035,7 @@ impl Construction {
         self.check(&def)?;
         let def = algo::intersect::prepare(self, def);
         let hint = algo::intersect::hint(self, &def);
-        Ok(self.compute_with(def, |_| hint))
+        Ok(self.compute_with(def, |_| hint).cartesian())
     }
 
     /// The current length of the construction and of its lists, to return to
@@ -1042,6 +1127,10 @@ impl Construction {
         }
         self.lists.truncate(at.lists.min(self.lists.len()));
         self.exprs.truncate(at.exprs, at.len);
+        self.conic_intersections.truncate(
+            self.conic_intersections
+                .partition_point(|&(owner, _)| owner < at.len),
+        );
         while self
             .conics
             .last()
@@ -1122,6 +1211,12 @@ impl Construction {
         self.hints.push(algo::intersect::hint(self, &def));
         let value = match def {
             Def::Expr(d) => expr::update(self, d).0,
+            Def::IntersectConics(d) => {
+                let mut state = self.create_conic_intersection(d);
+                let value = state.value(d, self).unwrap_or(Value::Undefined);
+                self.conic_intersections.push((id.0, state));
+                value
+            }
             Def::GeneralConic(d) => {
                 let data = d.record(self, &ConicData::new());
                 self.conics.push((id.0, data));
@@ -1399,6 +1494,11 @@ impl Construction {
                         continue;
                     }
                 }
+                Def::IntersectConics(d) => {
+                    if !self.update_conic_intersection(i, d) {
+                        continue;
+                    }
+                }
                 Def::Path(d) if d.has_state() => {
                     if !self.update_path(i, d) {
                         continue;
@@ -1467,6 +1567,61 @@ impl Construction {
         self.conics[slot].1 = new;
         self.values[i] = algo::general_conic::value(d.kind(), &new);
         true
+    }
+
+    /// Match intersection branches of two `Kind::Circle` objects to their
+    /// previous positions on edits. Other conics retain their default mode.
+    pub fn set_conic_intersections_continuous(&mut self, continuous: bool) {
+        self.continuous_conic_intersections = continuous;
+    }
+
+    fn conic_intersection_slot(&self, i: usize) -> Option<usize> {
+        self.conic_intersections
+            .binary_search_by_key(&i, |&(owner, _)| owner)
+            .ok()
+    }
+
+    fn create_conic_intersection(&self, d: PairDef) -> PairState {
+        let previous = d
+            .previous(self)
+            .and_then(|id| self.conic_intersection_slot(id.0))
+            .map(|slot| &self.conic_intersections[slot].1);
+        d.create(self, previous, self.continuous_conic_intersections)
+    }
+
+    pub(crate) fn preview_conic_intersection(&self, d: PairDef) -> Option<Value> {
+        let d = d.oriented(self);
+        self.create_conic_intersection(d).value(d, self)
+    }
+
+    #[inline(never)]
+    fn update_conic_intersection(&mut self, i: usize, d: PairDef) -> bool {
+        let Some(slot) = self.conic_intersection_slot(i) else {
+            return false;
+        };
+        // The latest output carries the parent solver state. This also lets
+        // an indexed output added after the full intersection initialize the
+        // parent's permutation. Removing it on rollback leaves the earlier
+        // parent state intact.
+        let latest = d
+            .previous(self)
+            .and_then(|id| self.conic_intersection_slot(id.0))
+            .unwrap_or(slot);
+        let mut parent = std::mem::take(&mut self.conic_intersections[latest].1);
+        parent.refresh(d, self, self.continuous_conic_intersections);
+        let new = if latest == slot {
+            parent.value(d, self)
+        } else {
+            let mut output = parent.for_output(&self.conic_intersections[slot].1);
+            let value = output.value(d, self);
+            self.conic_intersections[slot].1 = output;
+            value
+        }
+        .unwrap_or(Value::Undefined);
+        self.conic_intersections[latest].1 = parent;
+        let changed = new != self.values[i];
+        self.values[i] = new;
+        changed
     }
 
     /// Recomputes the state of the point on a path `i`; tells whether its
@@ -1699,6 +1854,8 @@ impl Construction {
                 self.expect(c2, CIRCLE)?;
                 check_index(which)
             }
+            Def::IntersectConics(d) => d.check(self),
+            Def::IntersectBoundary(d) => d.check(self),
             Def::Lines(d) => d.check(self),
             Def::Conic(d) => d.check(self),
             Def::Measure(d) => d.check(self),
@@ -1759,7 +1916,7 @@ impl Construction {
     /// parsed; it stands for the entry in `hints` that an object has.
     #[inline(never)]
     pub(crate) fn command_value(&self, def: Def, hint: algo::intersect::Hint) -> Option<Value> {
-        self.try_compute(def, |_| hint)
+        self.try_compute(def, |_| hint).map(Value::cartesian)
     }
 
     /// `None` means the object is undefined for the current inputs.
@@ -1793,6 +1950,8 @@ impl Construction {
                 which,
                 special,
             } => algo::intersect::circles(self, c1, c2, which, special == Some(true), hint(self)),
+            Def::IntersectConics(d) => d.compute(self),
+            Def::IntersectBoundary(d) => d.compute(self),
             Def::Lines(d) => d.compute(self),
             Def::Conic(d) => d.compute(self),
             Def::Measure(d) => d.compute(self),

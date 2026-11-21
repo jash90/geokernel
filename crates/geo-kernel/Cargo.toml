@@ -6,6 +6,7 @@ edition.workspace = true
 license.workspace = true
 repository.workspace = true
 
-# No dependencies on purpose: the kernel is plain std Rust and knows nothing
-# about any user interface.
 [dependencies]
+# Use the same trigonometric rounding on each target. Seeded root finding
+# can amplify a one-bit difference enough to select a different intersection.
+libm = { version = "0.2.16", default-features = false, features = ["force-soft-floats"] }

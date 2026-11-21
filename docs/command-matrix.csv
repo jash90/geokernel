@@ -31,11 +31,11 @@ Segment,,geometry,P0,done,3,3,"Segment(point, point); Segment(point, length); Se
 Slope,,geometry,P1,done,2,2,"Slope(line, segment, ray or function)"
 Angle,,geometry,P1,done,13,13,"Angle(angle); Angle(number); Angle(point); Angle(vector); Angle(conic); Angle(polygon); Angle(point, point); Angle(point, vector); Angle(vector, point); Angle(vector, vector); Angle(line, line); Angle(point, point, point); Angle(point, point, number)"
 InteriorAngles,,geometry,P1,done,1,1,InteriorAngles(polygon)
-Direction,,geometry,P1,partial,2,1,"Direction(line, segment or ray)"
+Direction,,geometry,P1,done,2,2,"Direction(line, segment or ray)"
 Point,,geometry,P1,todo,4,0,"Point(path); Point(path, parameter) on a line, segment, ray, circle, conic, polygon, polyline, arc or sector"
 Midpoint,,geometry,P0,done,4,4,"Midpoint(point, point); Midpoint(segment); Midpoint(circle or conic)"
 LineBisector,,geometry,P1,done,2,2,"LineBisector(point, point); LineBisector(segment)"
-Intersect,,geometry,P0,partial,65,8,line/line; line/circle; circle/circle; line/conic; optional index 1 or 2
+Intersect,,geometry,P0,partial,65,31,line/line; line/circle; circle/circle; line/conic; optional index 1 or 2
 IntersectPath,,geometry,P1,partial,9,4,"Polygon and line, segment, ray or conic in either order; two polygons"
 IntersectRegion,,english,P2,todo,9,0,
 Distance,,geometry,P0,partial,4,2,"Distance(point, point); point and path in either order (line, segment, ray, conic, arc, sector, polygon, polyline, function or point list); two line carriers"
@@ -327,18 +327,18 @@ InverseLogNormal,,probability,,out_of_scope,,,
 RandomPolynomial,,probability,,out_of_scope,,,
 RandomDiscrete,,probability,,out_of_scope,,,
 RandomPointIn,,probability,,out_of_scope,,,
-ApplyMatrix,,vector,P2,todo,10,0,
-UnitVector,,vector,P2,partial,3,2,"UnitVector(vector, line, segment or ray)"
-Vector,,vector,P2,partial,3,2,"Vector(point, point); Vector(point); a free (x, y) under a lower-case label"
-UnitOrthogonalVector,,vector,P2,partial,3,2,"UnitOrthogonalVector(vector, line, segment or ray)"
-OrthogonalVector,,vector,P2,partial,3,2,"OrthogonalVector(vector, line, segment or ray)"
+ApplyMatrix,,vector,P2,partial,10,3,
+UnitVector,,vector,P2,done,3,3,"UnitVector(vector, line, segment or ray)"
+Vector,,vector,P2,done,3,3,"Vector(point, point); Vector(point); a free (x, y) under a lower-case label"
+UnitOrthogonalVector,,vector,P2,done,3,3,"UnitOrthogonalVector(vector, line, segment or ray)"
+OrthogonalVector,,vector,P2,done,3,3,"OrthogonalVector(vector, line, segment or ray)"
 Invert,,vector,P2,todo,2,0,
 Transpose,,vector,P2,todo,3,0,
 ReducedRowEchelonForm,,vector,P2,todo,3,0,
-Determinant,,vector,P2,todo,1,0,
-Identity,,vector,P2,todo,1,0,
-Dimension,,vector,P2,todo,3,0,
-MatrixRank,,vector,P2,todo,1,0,
+Determinant,,vector,P2,done,1,1,
+Identity,,vector,P2,done,1,1,
+Dimension,,vector,P2,partial,3,2,
+MatrixRank,,vector,P2,done,1,1,
 Mirror,,transformation,P1,todo,3,0,"point, line, segment, ray, vector, polygon, polyline, circle, conic, arc or sector in a point or a line; point, line, segment, circle, arc or sector in a circle (inversion)"
 Dilate,,transformation,P1,partial,19,6,"point, line, segment, ray, vector, polygon, polyline, circle, conic, arc or sector by a factor, from the origin or a point"
 Rotate,,transformation,P1,todo,2,0,"point, line, segment, ray, vector, polygon, polyline, circle, conic, arc or sector by an angle, about the origin or a point"
@@ -444,10 +444,10 @@ MajorAxis,FirstAxis,conic,P1,done,,,
 SemiMajorAxisLength,FirstAxisLength,conic,P1,done,,,
 PerpendicularBisector,LineBisector,geometry,P1,done,,,
 PerpendicularLine,OrthogonalLine,geometry,P0,done,,,
-PerpendicularVector,OrthogonalVector,vector,P2,partial,,,
+PerpendicularVector,OrthogonalVector,vector,P2,done,,,
 MinorAxis,SecondAxis,conic,P1,done,,,
 SemiMinorAxisLength,SecondAxisLength,conic,P1,done,,,
-UnitPerpendicularVector,UnitOrthogonalVector,vector,P2,partial,,,
+UnitPerpendicularVector,UnitOrthogonalVector,vector,P2,done,,,
 CorrelationCoefficient,PMCC,statistics,,out_of_scope,,,
 FitLine,FitLineY,statistics,,out_of_scope,,,
 BinomialCoefficient,nCr,english,P2,todo,,,
@@ -513,7 +513,7 @@ CIFactor,,cas,,out_of_scope,,,
 IFactor,,algebra,P2,todo,1,0,
 IntegralSymbolic,,cas,,out_of_scope,,,
 CommonDenominator,,algebra,P2,todo,2,0,
-Cross,,algebra,P2,todo,4,0,
+Cross,,algebra,P2,partial,5,4,point or vector pairs and flat list pairs of equal length 2 or 3 (vectorforms-listcross-001 and vectorforms-listcross-002)
 CSolutions,,algebra,P2,todo,10,0,
 CSolve,,algebra,P2,todo,10,0,
 Dot,,algebra,P2,todo,1,0,

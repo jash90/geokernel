@@ -410,6 +410,121 @@ form = "conic,line,point"
 cases = ["intersections-lineconicseed-002", "intersections-lineconicseed-006"]
 
 [[form]]
+command = "Intersect"
+form = "conic,conic"
+cases = ["intersections-conics-001", "intersectconics-pencil-001", "intersectconics-pencil-002"]
+
+[[form]]
+command = "Intersect"
+form = "conic,conic,number"
+cases = ["intersections-conics-002", "intersectconics-index-001", "intersectconics-index-002"]
+
+[[form]]
+command = "Intersect"
+form = "conic,conic,point"
+cases = ["intersections-conics-003", "intersectconics-seed-001", "intersectconics-seed-002"]
+
+[[form]]
+command = "Intersect"
+form = "line,polyline"
+cases = ["intersections-boundary-001", "intersectconics-lineboundary-001"]
+
+[[form]]
+command = "Intersect"
+form = "polyline,line"
+cases = ["intersections-boundary-002", "intersectconics-lineboundary-002"]
+
+[[form]]
+command = "Intersect"
+form = "line,polygon"
+cases = ["intersections-boundary-003", "intersectconics-lineboundary-003"]
+
+[[form]]
+command = "Intersect"
+form = "polygon,line"
+cases = ["intersections-boundary-004", "intersectconics-lineboundary-004"]
+
+[[form]]
+command = "Intersect"
+form = "polyline,polyline"
+cases = ["intersections-boundary-005", "intersectconics-pathboundary-001"]
+
+[[form]]
+command = "Intersect"
+form = "polyline,polygon"
+cases = ["intersections-boundary-006", "intersectconics-pathboundary-002"]
+
+[[form]]
+command = "Intersect"
+form = "polygon,polyline"
+cases = ["intersections-boundary-007", "intersectconics-pathboundary-003"]
+
+[[form]]
+command = "Intersect"
+form = "polygon,polygon"
+cases = ["intersections-boundary-008", "intersectconics-pathboundary-004"]
+
+[[form]]
+command = "Intersect"
+form = "polyline,conic"
+cases = ["intersections-boundaryconic-001", "intersectconics-conicboundary-002"]
+
+[[form]]
+command = "Intersect"
+form = "conic,polyline"
+cases = ["intersections-boundaryconic-002", "intersectconics-conicboundary-001"]
+
+[[form]]
+command = "Intersect"
+form = "polygon,conic"
+cases = ["intersections-boundaryconic-003", "intersectconics-conicboundary-004"]
+
+[[form]]
+command = "Intersect"
+form = "conic,polygon"
+cases = ["intersections-boundaryconic-004", "intersectconics-conicboundary-003"]
+
+[[form]]
+command = "Intersect"
+form = "polyline,function"
+cases = ["intersections-boundaryfunction-001"]
+
+[[form]]
+command = "Intersect"
+form = "function,polyline"
+cases = ["intersections-boundaryfunction-002"]
+
+[[form]]
+command = "Intersect"
+form = "polygon,function"
+cases = ["intersections-boundaryfunction-003"]
+
+[[form]]
+command = "Intersect"
+form = "function,polygon"
+cases = ["intersections-boundaryfunction-004"]
+
+[[form]]
+command = "Intersect"
+form = "polyline,function,point"
+cases = ["intersections-boundaryseed-001", "intersections-boundaryseed-005"]
+
+[[form]]
+command = "Intersect"
+form = "function,polyline,point"
+cases = ["intersections-boundaryseed-002", "intersections-boundaryseed-006"]
+
+[[form]]
+command = "Intersect"
+form = "polygon,function,point"
+cases = ["intersections-boundaryseed-003", "intersections-boundaryseed-007"]
+
+[[form]]
+command = "Intersect"
+form = "function,polygon,point"
+cases = ["intersections-boundaryseed-004", "intersections-boundaryseed-008"]
+
+[[form]]
 command = "Join"
 form = "list"
 cases = ["lists-join-010", "lists-join-011", "lists-objects-045"]
@@ -848,3 +963,88 @@ cases = ["geomforms-slope-001", "geomforms-slope-002", "geomforms-slope-003"]
 command = "TriangleCenter"
 form = "point,point,point,number"
 cases = ["geomforms-trianglecenter-001", "geomforms-trianglecenter-002", "geomforms-trianglecenter-003"]
+
+[[form]]
+command = "ApplyMatrix"
+form = "list,point"
+cases = ["vectorforms-images-001", "vectorforms-images-002", "vectorforms-images-003"]
+
+[[form]]
+command = "ApplyMatrix"
+form = "list,vector"
+cases = ["vectorforms-images-001", "vectorforms-images-002"]
+
+[[form]]
+command = "ApplyMatrix"
+form = "list,line"
+cases = ["vectorforms-images-001", "vectorforms-images-002"]
+
+[[form]]
+command = "Cross"
+form = "point,point"
+cases = ["vectorforms-products-001", "vectorforms-products-003"]
+
+[[form]]
+command = "Cross"
+form = "point,vector"
+cases = ["vectorforms-products-001"]
+
+[[form]]
+command = "Cross"
+form = "vector,point"
+cases = ["vectorforms-products-001"]
+
+[[form]]
+command = "Cross"
+form = "vector,vector"
+cases = ["vectorforms-products-001"]
+
+[[form]]
+command = "Determinant"
+form = "list"
+cases = ["vectorforms-matrixnumbers-001", "vectorforms-matrixnumbers-003"]
+
+[[form]]
+command = "Dimension"
+form = "point"
+cases = ["vectorforms-coordinates-001", "vectorforms-coordinates-003", "vectorforms-coordinates-005"]
+
+[[form]]
+command = "Dimension"
+form = "vector"
+cases = ["vectorforms-position-002", "vectorforms-coordinates-003"]
+
+[[form]]
+command = "Direction"
+form = "vector"
+cases = ["vectorforms-position-002", "vectorforms-coordinates-003"]
+
+[[form]]
+command = "Identity"
+form = "number"
+cases = ["vectorforms-identity-001"]
+
+[[form]]
+command = "MatrixRank"
+form = "list"
+cases = ["vectorforms-matrixnumbers-001", "vectorforms-matrixnumbers-003"]
+
+[[form]]
+command = "OrthogonalVector"
+form = "point"
+cases = ["vectorforms-coordinates-001", "vectorforms-coordinates-003", "vectorforms-coordinates-004", "vectorforms-coordinates-005"]
+
+[[form]]
+command = "UnitOrthogonalVector"
+form = "point"
+cases = ["vectorforms-coordinates-001", "vectorforms-coordinates-003", "vectorforms-coordinates-004", "vectorforms-coordinates-005"]
+
+[[form]]
+command = "UnitVector"
+form = "point"
+cases = ["vectorforms-coordinates-001", "vectorforms-coordinates-003", "vectorforms-coordinates-004", "vectorforms-coordinates-005"]
+
+[[form]]
+command = "Vector"
+form = "vector"
+cases = ["vectorforms-position-001", "vectorforms-position-002", "vectorforms-coordinates-003"]
