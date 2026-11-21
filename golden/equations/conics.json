@@ -1,0 +1,947 @@
+{
+  "schema": 1,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "equations-conics-001",
+      "group": "equations",
+      "script": [
+        "c: x^2 + y^2 = 9"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -9.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [3.0, 3.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "equations-conics-002",
+      "group": "equations",
+      "script": [
+        "c: (x - 1)^2 + (y + 2)^2 = 4"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, 1.0, 0.0, -1.0, 2.0],
+            "midpoint": [1.0, -2.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "equations-conics-003",
+      "group": "equations",
+      "script": [
+        "c: x^2/4 + y^2/9 = 1"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1.0, 0.4444444444444444, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [3.0, 2.0],
+            "eigenvectors": [
+              [-0.0, 1.0],
+              [-1.0, -0.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "equations-conics-004",
+      "group": "equations",
+      "script": [
+        "c: y = x^2 - 3"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [-1.0, 0.0, 3.0, 0.0, 0.0, 0.5],
+            "vertex": [0.0, -3.0],
+            "p": 0.5,
+            "eigenvectors": [
+              [0.0, 1.0],
+              [-1.0, 0.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "equations-conics-005",
+      "group": "equations",
+      "script": [
+        "c: x y = 1"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [0.0, 0.0, -2.0, 1.0, 0.0, 0.0],
+            "midpoint": [-0.0, -0.0],
+            "half_axes": [1.4142135623730951, 1.4142135623730951],
+            "eigenvectors": [
+              [-0.7071067811865475, -0.7071067811865475],
+              [0.7071067811865475, -0.7071067811865475]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "equations-conics-006",
+      "group": "equations",
+      "script": [
+        "c: 3x^2 - 2x y + y^2 + x - 5 = 0"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [3.0, 1.0, -5.0, -1.0, 0.5, 0.0],
+            "midpoint": [-0.25, -0.25],
+            "half_axes": [2.957857713545575, 1.2251847805204503],
+            "eigenvectors": [
+              [0.3826834323650897, 0.9238795325112868],
+              [-0.9238795325112868, 0.3826834323650897]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "equations-conics-007",
+      "group": "equations",
+      "script": [
+        "c: x^2 - 4y^2 = 4"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [1.0, -4.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [-0.0, -0.0],
+            "half_axes": [2.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "equations-conics-008",
+      "group": "equations",
+      "script": [
+        "c: y^2 = 4x",
+        "d: x^2 = 4y"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [0.0, 1.0, 0.0, 0.0, -2.0, 0.0],
+            "vertex": [0.0, -0.0],
+            "p": 2.0,
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "d": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [1.0, 0.0, 0.0, 0.0, 0.0, -2.0],
+            "vertex": [-0.0, 0.0],
+            "p": 2.0,
+            "eigenvectors": [
+              [0.0, 1.0],
+              [-1.0, 0.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "equations-conics-009",
+      "group": "equations",
+      "script": [
+        "c: (x + y)^2 + x = 1"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [1.0, 1.0, -1.0, 1.0, 0.5, 0.0],
+            "vertex": [0.9375, -1.1875],
+            "p": 0.17677669529663687,
+            "eigenvectors": [
+              [-0.7071067811865475, 0.7071067811865475],
+              [0.7071067811865475, 0.7071067811865475]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "equations-conics-010",
+      "group": "equations",
+      "script": [
+        "c: 2(x^2 + y^2) = 8",
+        "d: (2x - 1)^2 + (2y + 3)^2 = 16"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [2.0, 2.0, -8.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "d": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [4.0, 4.0, -6.0, 0.0, -2.0, 6.0],
+            "midpoint": [0.5, -1.5],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "equations-conics-011",
+      "group": "equations",
+      "script": [
+        "r = 3",
+        "c: x^2 + y^2 = r^2"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "r", "value": 5.0 },
+        { "action": "set_number", "label": "r", "value": 0.0 },
+        { "action": "set_number", "label": "r", "value": 1.0 },
+        { "action": "set_number", "label": "r", "value": -2.0 }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "value": 3.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -9.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [3.0, 3.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -25.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [5.0, 5.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "single_point",
+            "matrix": [1.0, 1.0, -0.0, 0.0, 0.0, 0.0],
+            "point": [0.0, 0.0]
+          }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": -2.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "equations-conics-012",
+      "group": "equations",
+      "script": [
+        "r = 3",
+        "s = 1",
+        "c: x^2 / r^2 + y^2 / s^2 = 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "s", "value": 2.0 },
+        { "action": "set_number", "label": "r", "value": 1.0 },
+        { "action": "set_number", "label": "s", "value": 0.5 },
+        { "action": "set_number", "label": "r", "value": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "value": 3.0 },
+          "s": { "type": "number", "defined": true, "value": 1.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [0.1111111111111111, 1.0, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [3.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 3.0 },
+          "s": { "type": "number", "defined": true, "value": 2.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [0.4444444444444444, 1.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [3.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "s": { "type": "number", "defined": true, "value": 2.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1.0, 0.25, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 1.0],
+            "eigenvectors": [
+              [-0.0, 1.0],
+              [-1.0, -0.0]
+            ]
+          }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "s": { "type": "number", "defined": true, "value": 0.5 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1.0, 4.0, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.0, 0.5],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 4.0 },
+          "s": { "type": "number", "defined": true, "value": 0.5 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [0.0625, 4.0, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [4.0, 0.5],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "equations-conics-013",
+      "group": "equations",
+      "script": [
+        "p = 2",
+        "c: y^2 = 2 p x"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "p", "value": 1.0 },
+        { "action": "set_number", "label": "p", "value": 0.0 },
+        { "action": "set_number", "label": "p", "value": -1.0 },
+        { "action": "set_number", "label": "p", "value": 0.25 }
+      ],
+      "snapshots": [
+        {
+          "p": { "type": "number", "defined": true, "value": 2.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [0.0, 1.0, 0.0, 0.0, -2.0, 0.0],
+            "vertex": [0.0, -0.0],
+            "p": 2.0,
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          }
+        },
+        {
+          "p": { "type": "number", "defined": true, "value": 1.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [0.0, 1.0, 0.0, 0.0, -1.0, 0.0],
+            "vertex": [0.0, -0.0],
+            "p": 1.0,
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          }
+        },
+        {
+          "p": { "type": "number", "defined": true, "value": 0.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "double_line",
+            "matrix": [0.0, 1.0, 0.0, 0.0, -0.0, 0.0],
+            "lines": [
+              [-0.0, 1.0, 0.0],
+              [-0.0, 1.0, 0.0]
+            ]
+          }
+        },
+        {
+          "p": { "type": "number", "defined": true, "value": -1.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [0.0, 1.0, 0.0, 0.0, 1.0, 0.0],
+            "vertex": [0.0, 0.0],
+            "p": 1.0,
+            "eigenvectors": [
+              [-1.0, -0.0],
+              [-0.0, 1.0]
+            ]
+          }
+        },
+        {
+          "p": { "type": "number", "defined": true, "value": 0.25 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [0.0, 1.0, 0.0, 0.0, -0.25, 0.0],
+            "vertex": [0.0, -0.0],
+            "p": 0.25,
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "equations-conics-014",
+      "group": "equations",
+      "script": [
+        "m = 1",
+        "c: y = m x^2"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "m", "value": -1.0 },
+        { "action": "set_number", "label": "m", "value": 0.0 },
+        { "action": "set_number", "label": "m", "value": 0.5 }
+      ],
+      "snapshots": [
+        {
+          "m": { "type": "number", "defined": true, "value": 1.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [-1.0, 0.0, 0.0, 0.0, 0.0, 0.5],
+            "vertex": [0.0, -0.0],
+            "p": 0.5,
+            "eigenvectors": [
+              [0.0, 1.0],
+              [-1.0, 0.0]
+            ]
+          }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": -1.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [1.0, 0.0, 0.0, 0.0, 0.0, 0.5],
+            "vertex": [0.0, 0.0],
+            "p": 0.5,
+            "eigenvectors": [
+              [-0.0, -1.0],
+              [-1.0, 0.0]
+            ]
+          }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 0.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "double_line",
+            "matrix": [-0.0, 0.0, 0.0, 0.0, 0.0, 0.5],
+            "lines": [
+              [0.0, 1.0, -0.0],
+              [0.0, 1.0, -0.0]
+            ]
+          }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 0.5 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [-1.0, 0.0, 0.0, 0.0, 0.0, 1.0],
+            "vertex": [0.0, -0.0],
+            "p": 1.0,
+            "eigenvectors": [
+              [0.0, 1.0],
+              [-1.0, 0.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "equations-conics-015",
+      "group": "equations",
+      "script": [
+        "s = 1",
+        "c: x^2 + s y^2 = s"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "s", "value": 2.0 },
+        { "action": "set_number", "label": "s", "value": 0.5 },
+        { "action": "set_number", "label": "s", "value": -1.0 }
+      ],
+      "snapshots": [
+        {
+          "s": { "type": "number", "defined": true, "value": 1.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          }
+        },
+        {
+          "s": { "type": "number", "defined": true, "value": 2.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1.0, 2.0, -2.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.4142135623730951, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          }
+        },
+        {
+          "s": { "type": "number", "defined": true, "value": 0.5 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1.0, 0.5, -0.5, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.0, 0.7071067811865476],
+            "eigenvectors": [
+              [-0.0, 1.0],
+              [-1.0, -0.0]
+            ]
+          }
+        },
+        {
+          "s": { "type": "number", "defined": true, "value": -1.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [1.0, -1.0, 1.0, 0.0, 0.0, 0.0],
+            "midpoint": [-0.0, -0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [-0.0, 1.0],
+              [-1.0, -0.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "equations-conics-016",
+      "group": "equations",
+      "script": [
+        "A = (1, -2)",
+        "c: (x - x(A))^2 + (y - y(A))^2 = 4"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": -3.0, "y": 1.0 },
+        { "action": "move", "label": "A", "x": 0.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": -2.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, 1.0, 0.0, -1.0, 2.0],
+            "midpoint": [1.0, -2.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 1.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, 6.0, 0.0, 3.0, -1.0],
+            "midpoint": [-3.0, 1.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -4.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "equations-conics-017",
+      "group": "equations",
+      "script": [
+        "A = (0, 0)",
+        "c: x^2 + y^2 + x(A) x + y(A) y = 4"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": 2.0, "y": 0.0 },
+        { "action": "move", "label": "A", "x": -1.0, "y": 3.0 },
+        { "action": "move", "label": "A", "x": 0.0, "y": -2.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -4.0, 0.0, 1.0, 0.0],
+            "midpoint": [-1.0, 0.0],
+            "half_axes": [2.23606797749979, 2.23606797749979],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.0, "y": 3.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -4.0, 0.0, -0.5, 1.5],
+            "midpoint": [0.5, -1.5],
+            "half_axes": [2.5495097567963922, 2.5495097567963922],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": -2.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -4.0, 0.0, 0.0, -1.0],
+            "midpoint": [-0.0, 1.0],
+            "half_axes": [2.23606797749979, 2.23606797749979],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "equations-conics-018",
+      "group": "equations",
+      "script": [
+        "r = 2",
+        "A = (1, 1)",
+        "c: (x - x(A))^2 + (y - y(A))^2 = r^2"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "r", "value": 4.0 },
+        { "action": "move", "label": "A", "x": -2.0, "y": -1.0 },
+        { "action": "set_number", "label": "r", "value": 0.0 },
+        { "action": "set_number", "label": "r", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -2.0, 0.0, -1.0, -1.0],
+            "midpoint": [1.0, 1.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 4.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -14.0, 0.0, -1.0, -1.0],
+            "midpoint": [1.0, 1.0],
+            "half_axes": [4.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 4.0 },
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": -1.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -11.0, 0.0, 2.0, 1.0],
+            "midpoint": [-2.0, -1.0],
+            "half_axes": [4.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": -1.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "single_point",
+            "matrix": [1.0, 1.0, 5.0, 0.0, 2.0, 1.0],
+            "point": [-2.0, -1.0]
+          }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": -1.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -4.0, 0.0, 2.0, 1.0],
+            "midpoint": [-2.0, -1.0],
+            "half_axes": [3.0, 3.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

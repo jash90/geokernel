@@ -54,7 +54,7 @@ pub(crate) fn check(
             Node::Num(_) | Node::MinusOne => (Ty::Num(0), 1, 1, 0),
             Node::Bool(_) => (Ty::Bool, 1, 1, 0),
             Node::Degree => (Ty::Num(1), 1, 1, 0),
-            Node::Var => (Ty::Num(0), 1, 1, 1),
+            Node::Var | Node::VarY => (Ty::Num(0), 1, 1, 1),
             Node::Obj(id) => (object_type(c, id)?, 1, 1, 0),
             Node::Cmd(def, _) => (result_type(def.kind(), is_angle_def(c, &def))?, 1, 1, 0),
             Node::FnName(_) => return Err("a function name needs an argument".into()),

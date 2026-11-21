@@ -364,6 +364,35 @@ pub enum Def {
     /// keeps an [`ArcData`] record in the construction (see
     /// [`Construction::arc`]).
     Arc(ArcDef),
+    /// A line or conic defined by an equation in `x` and `y`
+    /// (`a: 2x + 3y = 6`, `y = m x + b`); the construction keeps the trees
+    /// of its coefficients (see [`crate::expr`]). Like [`Def::Expr`], the
+    /// handle is valid only in the construction that made it.
+    Equation(EquationDef),
+}
+
+/// A line or conic defined by an equation in `x` and `y`: which of the two
+/// it is, and where the construction keeps its coefficient trees (see
+/// [`Construction::equation_coefficients`]).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct EquationDef {
+    pub(crate) conic: bool,
+    pub(crate) index: u32,
+}
+
+impl EquationDef {
+    /// Whether the equation makes a conic; a line otherwise.
+    pub fn is_conic(&self) -> bool {
+        self.conic
+    }
+}
+
+/// The record of one [`Def::Equation`] object: the indices of the entries
+/// of its coefficient trees, three for a line and six for a conic, in the
+/// equation form's order.
+#[derive(Clone, Debug, PartialEq)]
+pub struct EquationRecord {
+    pub(crate) coeffs: Vec<u32>,
 }
 
 impl Def {
@@ -391,6 +420,13 @@ impl Def {
             Def::ConicPart(d) => d.kind(),
             Def::Path(d) => d.kind(),
             Def::Arc(d) => d.kind(),
+            Def::Equation(d) => {
+                if d.is_conic() {
+                    Kind::Conic
+                } else {
+                    Kind::Line
+                }
+            }
         }
     }
 
@@ -424,12 +460,15 @@ impl Def {
     }
 
     /// The objects this definition reads. An expression reads the objects
-    /// of its tree, which [`expr::parents`] lists.
+    /// of its tree, which [`expr::parents`] lists, and an equation those of
+    /// its coefficients ([`expr::equation::parents`]).
     pub(crate) fn parents(&self) -> Parents {
         match *self {
-            Def::FreePoint { .. } | Def::Number(_) | Def::Angle(_) | Def::Expr(_) => {
-                Parents::none()
-            }
+            Def::FreePoint { .. }
+            | Def::Number(_)
+            | Def::Angle(_)
+            | Def::Expr(_)
+            | Def::Equation(_) => Parents::none(),
             Def::Line(p, q)
             | Def::Segment(p, q)
             | Def::Midpoint(p, q)
@@ -564,6 +603,9 @@ pub struct Construction {
     /// The records of the arcs and sectors, with the index of each object,
     /// in creation order.
     arcs: Vec<(usize, ArcData)>,
+    /// The records of the [`Def::Equation`] objects, with the index of each
+    /// object, in creation order (see [`EquationRecord`]).
+    pub(crate) equations: Vec<(usize, EquationRecord)>,
 }
 
 /// The objects waiting to be recomputed during an update; empty between
@@ -860,6 +902,13 @@ impl Construction {
         while self.arcs.last().is_some_and(|&(owner, _)| owner >= at.len) {
             self.arcs.pop();
         }
+        while self
+            .equations
+            .last()
+            .is_some_and(|&(owner, _)| owner >= at.len)
+        {
+            self.equations.pop();
+        }
         // Labels became free again, so the hints may be too high.
         self.label_hints
             .get_mut()
@@ -877,6 +926,9 @@ impl Construction {
         ids.extend(algo::predicate::hidden_parents(self, def));
         ids.extend(algo::polygon::hidden_parents(self, def));
         ids.extend(expr::parents(self, def));
+        if let Def::Equation(d) = *def {
+            ids.extend(expr::equation::parents(self, d));
+        }
         ids.extend_from_slice(def.parents().as_slice());
         if let Some(list) = def.list() {
             ids.extend_from_slice(self.list(list));
@@ -914,6 +966,13 @@ impl Construction {
                 let record = d.record(self);
                 self.arcs.push((id.0, record));
                 algo::arc::value(d.kind() == Kind::Sector, &record)
+            }
+            Def::Equation(d) => {
+                let (value, record) = crate::expr::equation::initialize(self, d);
+                if let Some(record) = record {
+                    self.conics.push((id.0, record));
+                }
+                value
             }
             _ => self.compute(def, id.0),
         };
@@ -1139,6 +1198,11 @@ impl Construction {
                         continue;
                     }
                 }
+                Def::Equation(d) => {
+                    if !self.update_equation(i, d) {
+                        continue;
+                    }
+                }
                 _ => {
                     let new = self.compute(def, i);
                     if new == self.values[i] {
@@ -1220,6 +1284,33 @@ impl Construction {
         }
         self.arcs[slot].1 = new;
         self.values[i] = algo::arc::value(d.kind() == Kind::Sector, &new);
+        true
+    }
+
+    /// Recomputes the equation object `i` from its coefficients; tells
+    /// whether its children must follow: whether any coefficient changed,
+    /// bit for bit. A conic is classified again from its record, as
+    /// `AlgoDependentConic.compute` calls `setCoeffs`. Out of line like
+    /// [`Self::update_expr`].
+    #[inline(never)]
+    fn update_equation(&mut self, i: usize, d: EquationDef) -> bool {
+        let prev = if d.is_conic() {
+            self.conic_slot(i)
+                .map(|slot| self.conics[slot].1)
+                .unwrap_or_default()
+        } else {
+            ConicData::new()
+        };
+        let (changed, value, record) = crate::expr::equation::recompute(self, d, prev);
+        if !changed {
+            return false;
+        }
+        if let Some(record) = record {
+            if let Some(slot) = self.conic_slot(i) {
+                self.conics[slot].1 = record;
+            }
+        }
+        self.values[i] = value;
         true
     }
 
@@ -1317,11 +1408,27 @@ impl Construction {
     /// record. A record may be undefined ([`ConicData::defined`]).
     pub fn conic(&self, id: Id) -> Option<ConicData> {
         match self.defs.get(id.0)? {
-            Def::GeneralConic(_) => self.conic_slot(id.0).map(|slot| self.conics[slot].1),
+            Def::GeneralConic(_) | Def::Equation(_) => {
+                self.conic_slot(id.0).map(|slot| self.conics[slot].1)
+            }
             _ => match self.values[id.0] {
                 Value::Circle { cx, cy, r } => Some(ConicData::circle(cx, cy, r)),
                 _ => None,
             },
+        }
+    }
+
+    /// The coefficient entries of the equation object `id` (see
+    /// [`Def::Equation`]), `None` for any other object. The entries are
+    /// indices into the construction's expression table; a number of
+    /// `Vec<u32>` length 3 makes a line and length 6 a conic.
+    pub fn equation_coefficients(&self, id: Id) -> Option<Vec<u32>> {
+        match self.defs.get(id.0)? {
+            Def::Equation(d) => self
+                .equations
+                .get(d.index as usize)
+                .map(|(_, r)| r.coeffs.clone()),
+            _ => None,
         }
     }
 
@@ -1389,6 +1496,8 @@ impl Construction {
             Def::ConicPart(d) => d.check(self),
             Def::Path(d) => d.check(self),
             Def::Arc(d) => d.check(self),
+            // the coefficient entries were checked when they were parsed
+            Def::Equation(d) => crate::expr::equation::check(self, d),
         }
     }
 
@@ -1472,6 +1581,7 @@ impl Construction {
             Def::ConicPart(d) => d.compute(self),
             Def::Path(d) => d.compute(self),
             Def::Arc(d) => d.compute(self),
+            Def::Equation(d) => Some(expr::equation::current(self, d)),
         }
     }
 

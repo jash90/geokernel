@@ -671,6 +671,9 @@ impl<const M: bool> Ctx<'_, M> {
                 // the argument in place of `x`: it keeps its decimal
                 Env::Arg(caller, a) => caller.full(a),
             },
+            // an equation's `y` never survives into a tree that is
+            // evaluated as a number (see `equation`)
+            Node::VarY => Ex::plain(N(f64::NAN)),
             Node::Obj(id) => object_ex(self.c, id),
             Node::Cmd(def, hint) => Ex {
                 obj: true,
@@ -745,6 +748,7 @@ impl<const M: bool> Ctx<'_, M> {
         match self.node(i) {
             Node::Obj(_)
             | Node::Var
+            | Node::VarY
             | Node::Cmd(..)
             | Node::Apply(..)
             | Node::If(..)
@@ -861,6 +865,7 @@ impl<const M: bool> Ctx<'_, M> {
                 Env::Value(x) => x,
                 Env::Arg(caller, a) => caller.fast(a),
             },
+            Node::VarY => f64::NAN,
             Node::Apply(f, a) if self.e.function => self.apply(f, a, true),
             Node::Obj(id) => object(self.c, id).num(),
             _ => self.full_number(i),

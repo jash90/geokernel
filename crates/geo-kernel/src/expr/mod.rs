@@ -71,6 +71,8 @@
 
 mod commands;
 mod decimal;
+/// Equations in `x` and `y` as lines and conics (see the module docs).
+pub(crate) mod equation;
 mod eval;
 #[doc(hidden)]
 pub use eval::{work_done, MAX_ELEMENTS, MAX_EVALUATION_WORK, MAX_OVERRUN};
@@ -115,8 +117,15 @@ pub(crate) enum Node {
     /// The degree sign, `π/180` with one angle dimension.
     Degree,
     Obj(Id),
-    /// The variable `x` of a function.
+    /// The variable `x` of a function, and of an equation in `x` and `y`
+    /// (see [`equation`]).
     Var,
+    /// The variable `y` of an equation in `x` and `y`; GeoGebra's
+    /// `FunctionVariable` "y", which the parser of an equation reads
+    /// (`Equation.initEquation`). Never in the tree of a function or a
+    /// plain expression: only [`equation`] makes this node, and it leaves
+    /// no `y` in the coefficient trees it builds.
+    VarY,
     /// A command computed inside the expression, with the intersection
     /// hint it got when the expression was parsed.
     Cmd(Def, Hint),
@@ -533,6 +542,38 @@ pub(crate) fn children(node: &Node) -> impl Iterator<Item = u32> {
     fixed.into_iter().filter(|&c| c != NONE).chain(run)
 }
 
+/// Adds `by` to every child index of `node`, in place: the two sides of an
+/// equation are parsed into one arena, so the nodes of the second keep
+/// pointing at their children after they follow the first side's (see
+/// [`equation`]). [`NONE`] stays.
+pub(crate) fn shift_children(node: &mut Node, by: u32) {
+    let shift = |c: &mut u32| {
+        if *c != NONE {
+            *c += by;
+        }
+    };
+    match node {
+        Node::Tuple(a, b) | Node::Polar(a, b) | Node::Bin(_, a, b) | Node::ListOp(_, a, b) => {
+            shift(a);
+            shift(b);
+        }
+        Node::Un(_, a) | Node::Apply(_, a) | Node::Item(a) => shift(a),
+        Node::If(_, a, b, c) | Node::Range(a, b, c) => {
+            shift(a);
+            shift(b);
+            shift(c);
+        }
+        Node::Seq(a, b, c, d, _) => {
+            shift(a);
+            shift(b);
+            shift(c);
+            shift(d);
+        }
+        Node::List(first, _) => shift(first),
+        _ => {}
+    }
+}
+
 /// Whether a node makes or reads a list, which a command does in GeoGebra.
 fn is_list_node(node: &Node) -> bool {
     matches!(
@@ -733,6 +774,7 @@ fn reparse(
         parents,
         inputs,
         uses_var,
+        uses_y: false,
         depth: depth[r],
         cost: cost[r],
         vars: vars[r],

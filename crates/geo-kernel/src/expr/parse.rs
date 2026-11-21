@@ -33,7 +33,7 @@ use std::f64::consts::{E, PI};
 
 /// Brackets, bars and calls nested deeper than this are rejected, so that
 /// parsing never overflows the stack.
-const MAX_NESTING: u32 = 64;
+pub(crate) const MAX_NESTING: u32 = 64;
 /// Expression trees deeper than this are rejected (evaluation recurses).
 pub(crate) const MAX_DEPTH: u32 = 256;
 /// Upper bound on the nodes one evaluation visits, functions expanded.
@@ -56,6 +56,8 @@ pub(crate) struct Parsed {
     pub(crate) inputs: Vec<Id>,
     /// Whether the variable `x` occurs.
     pub(crate) uses_var: bool,
+    /// Whether the variable `y` of an equation occurs (see [`equation`]).
+    pub(crate) uses_y: bool,
     pub(crate) depth: u32,
     pub(crate) cost: u64,
     /// How many times one evaluation reads `x`.
@@ -63,6 +65,17 @@ pub(crate) struct Parsed {
 }
 
 pub(crate) fn parse(c: &Construction, src: &str) -> Result<Parsed, String> {
+    parse_in(c, src, false)
+}
+
+/// [`parse`] with the variables an equation may read: `x` and `y` are
+/// GeoGebra's function variables, not objects (`Equation.initEquation`
+/// replaces the `x`, `y` and `z` nodes).
+pub(crate) fn parse_equation(c: &Construction, src: &str) -> Result<Parsed, String> {
+    parse_in(c, src, true)
+}
+
+fn parse_in(c: &Construction, src: &str, equation: bool) -> Result<Parsed, String> {
     let preprocessed = split_bars(src);
     let src: &str = &preprocessed;
     let mut p = Parser {
@@ -78,6 +91,8 @@ pub(crate) fn parse(c: &Construction, src: &str) -> Result<Parsed, String> {
         parents: Vec::new(),
         inputs: Vec::new(),
         uses_var: false,
+        uses_y: false,
+        equation,
         locals: Vec::new(),
     };
     if p.toks.is_empty() {
@@ -106,6 +121,7 @@ pub(crate) fn parse(c: &Construction, src: &str) -> Result<Parsed, String> {
         parents: p.parents,
         inputs: p.inputs,
         uses_var: p.uses_var,
+        uses_y: p.uses_y,
     })
 }
 
@@ -126,6 +142,10 @@ pub(super) struct Parser<'a> {
     parents: Vec<Id>,
     inputs: Vec<Id>,
     uses_var: bool,
+    uses_y: bool,
+    /// Whether `y` reads as the second variable of an equation, not as the
+    /// coordinate function (see [`parse_equation`]).
+    equation: bool,
     /// The variables of the `Sequence`s being parsed, outermost first.
     pub(super) locals: Vec<String>,
 }
@@ -677,6 +697,10 @@ impl Parser<'_> {
             "x" if !call => {
                 self.uses_var = true;
                 Some(Node::Var)
+            }
+            "y" if self.equation && !call && free("y") => {
+                self.uses_y = true;
+                Some(Node::VarY)
             }
             _ => None,
         };

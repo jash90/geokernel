@@ -23,6 +23,8 @@
 //! t = Tangent(P, k)       # two tangents t_{1} and t_{2} when both are defined at creation
 //! c = a + 2*b             # arithmetic (see `crate::expr`) where no form above applies
 //! f(x) = x^2 - a          # a function of x
+//! a: 2x + 3y = 6          # a line, a conic or a function as an equation in x and y
+//! g: y = m x + b          # the input bar's equation form; see `crate::expr::equation`
 //! {t_{1}, t_{2}} = Tangent(P, k)   # the same, with the output labels stated
 //! {, g} = AngularBisector(l, m)    # only the second output is created, as `g`
 //! t_{1} = (1, 2)         # a label may have the indexed form `prefix_{letters, digits}`
@@ -95,6 +97,25 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
     if line.starts_with('{') {
         return exec_labelled(c, line);
     }
+    // `name: definition`, the input bar's other form of a labelled line.
+    // A definition with `=` in it is an equation (`a: 2x + 3y = 6`); the
+    // rest is the same as after `=`.
+    if let Some((name, rhs)) = line.split_once(':') {
+        let name = name.trim();
+        if !is_output_label(name) {
+            return Err(format!("`{name}` is not a valid object name"));
+        }
+        check_label(name)?;
+        let rhs = rhs.trim();
+        if rhs.contains('=') {
+            return crate::expr::equation::define(c, name, rhs).map(Some);
+        }
+        if rhs.contains('<') || rhs.contains('>') {
+            // what the input bar would make an inequality of
+            return Err("inequalities are not supported".into());
+        }
+        return define_after_label(c, name, rhs);
+    }
     let (name, rhs) = line.split_once('=').ok_or("expected `name = definition`")?;
     let name = name.trim();
     // `f(x) = ...`: a function of `x`
@@ -109,7 +130,12 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
         return Err(format!("`{name}` is not a valid object name"));
     }
     check_label(name)?;
-    let rhs = rhs.trim();
+    define_after_label(c, name, rhs.trim())
+}
+
+/// The definition of a labelled line after its name has been read and
+/// checked: the forms of the module documentation other than arithmetic.
+fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Option<Id>, String> {
     if let Some(def) = parse_forced(rhs) {
         return c.add(name, def?).map(Some).map_err(|e| e.to_string());
     }

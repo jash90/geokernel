@@ -32,6 +32,7 @@ python3 tools/ggb-harness/cases/make_lines.py   # rewrite cases/lines.json (one 
 python3 tools/ggb-harness/cases/make_expr.py    # rewrite cases/expr.json
 python3 tools/ggb-harness/cases/make_logic.py   # rewrite cases/logic.json
 python3 tools/ggb-harness/cases/make_lists.py   # rewrite cases/lists.json
+python3 tools/ggb-harness/cases/make_equations.py  # rewrite cases/equations.json
 ```
 
 `build` runs `gradlew -p source/shared :common-jre:ggbHarnessClasspath` with
