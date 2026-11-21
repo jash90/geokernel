@@ -1,0 +1,89 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "axes-functions-001",
+      "group": "axes",
+      "script": [
+        "a = 2",
+        "f(x) = x - a",
+        "P = Intersect(f, xAxis)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -3.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -10.0],
+              [-4.0, -6.0],
+              [-2.0, -4.0],
+              [-1.0, -3.0],
+              [-0.5, -2.5],
+              [0.0, -2.0],
+              [0.5, -1.5],
+              [1.0, -1.0],
+              [2.0, 0.0],
+              [4.0, 2.0],
+              [8.0, 6.0]
+            ]
+          },
+          "xAxis": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0],
+              [-4.0, -4.0],
+              [-2.0, -2.0],
+              [-1.0, -1.0],
+              [-0.5, -0.5],
+              [0.0, 0.0],
+              [0.5, 0.5],
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [4.0, 4.0],
+              [8.0, 8.0]
+            ]
+          },
+          "xAxis": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -3.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -5.0],
+              [-4.0, -1.0],
+              [-2.0, 1.0],
+              [-1.0, 2.0],
+              [-0.5, 2.5],
+              [0.0, 3.0],
+              [0.5, 3.5],
+              [1.0, 4.0],
+              [2.0, 5.0],
+              [4.0, 7.0],
+              [8.0, 11.0]
+            ]
+          },
+          "xAxis": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "P": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 }
+        }
+      ]
+    }
+  ]
+}

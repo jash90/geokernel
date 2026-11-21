@@ -106,6 +106,13 @@ final class Session {
         String label = m.group(1);
         boolean functionLine = m.group(2) != null;
         String definition = m.group(3).trim();
+        Matcher references = LABEL.matcher(definition);
+        while (references.find()) {
+            String reference = references.group();
+            if (reference.equals("xAxis") || reference.equals("yAxis")) {
+                objects.putIfAbsent(reference, kernel.lookupLabel(reference));
+            }
+        }
         String transformed = functionLine ? null : transformedType(definition);
         String expected = functionLine ? "function"
                 : transformed != null ? transformed : expectedType(label, definition);
@@ -562,7 +569,7 @@ final class Session {
         if (geo instanceof GeoVector) {
             return "vector";
         }
-        if (geo instanceof GeoFunction && !((GeoFunction) geo).isBooleanFunction()) {
+        if (geo instanceof GeoFunction) {
             return "function";
         }
         throw new IllegalStateException("unsupported object " + geo.getClass().getSimpleName());
@@ -680,7 +687,7 @@ final class Session {
      * (anything that is not a literal or one call of a known command); its
      * type is checked by `expressionType`.
      */
-    private static String expectedType(String label, String definition) {
+    private String expectedType(String label, String definition) {
         if (POINT.matcher(definition).matches()) {
             return StringUtil.isLowerCase(label.charAt(0)) ? "vector" : "point";
         }
@@ -694,7 +701,17 @@ final class Session {
         if (!m.matches()) {
             throw new IllegalStateException("not a call: " + definition);
         }
-        switch (m.group(1)) {
+        String command = m.group(1);
+        String arguments = definition.substring(definition.indexOf('(') + 1, definition.length() - 1);
+        GeoElement first = objects.get(arguments.split(",", 2)[0].trim());
+        switch (command) {
+            case "Polar":
+                return first instanceof GeoLine ? "point" : "line";
+            case "Center":
+            case "Midpoint":
+                return VARIABLE_X.matcher(arguments).find()
+                        || first instanceof GeoFunction && ((GeoFunction) first).isBooleanFunction()
+                        ? "number" : "point";
             case "Line":
             case "PerpendicularLine":
             case "Diameter":
@@ -705,7 +722,6 @@ final class Session {
             case "AngularBisector":
             case "AngleBisector":
             case "Tangent":
-            case "Polar":
             case "Axes":
             case "MajorAxis":
             case "FirstAxis":
@@ -715,8 +731,6 @@ final class Session {
                 return "line";
             case "Segment":
                 return "segment";
-            case "Midpoint":
-            case "Center":
             case "Intersect":
             case "ClosestPoint":
             case "Trilinear":
@@ -833,7 +847,7 @@ final class Session {
             if (f.isDefined()) {
                 List<Object> samples = new ArrayList<>();
                 for (double x : SAMPLES) {
-                    double v = f.value(x);
+                    double v = f.isBooleanFunction() ? (f.evaluateBoolean(x) ? 1.0 : 0.0) : f.value(x);
                     samples.add(Arrays.asList(x, Double.isFinite(v) ? (Object) v : null));
                 }
                 obj.put("samples", samples);

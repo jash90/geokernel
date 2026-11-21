@@ -150,6 +150,21 @@ form = "conic"
 cases = ["conics-readers-001", "conics-readers-002", "conics-readers-003"]
 
 [[form]]
+command = "Center"
+form = "segment"
+cases = ["conicforms-center-001", "conicforms-center-002"]
+
+[[form]]
+command = "Center"
+form = "inequality"
+cases = ["conicforms-interval-001", "conicforms-interval-002"]
+
+[[form]]
+command = "Center"
+form = "point,point"
+cases = ["conicforms-center-001", "conicforms-center-002"]
+
+[[form]]
 command = "Centroid"
 form = "polygon"
 cases = ["polygon-derived-001", "polygon-derived-002", "polygon-derived-003"]
@@ -518,6 +533,11 @@ cases = ["polygon-derived-001", "polygon-derived-002", "polygon-derived-003"]
 command = "Polar"
 form = "point,conic"
 cases = ["conics-tangent-003", "conics-tangent-006", "conics-tangent-009"]
+
+[[form]]
+command = "Polar"
+form = "line,conic"
+cases = ["conicforms-pole-001", "conicforms-pole-002"]
 
 [[form]]
 command = "PolyLine"

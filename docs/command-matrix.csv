@@ -168,8 +168,8 @@ FirstAxisLength,,conic,P1,done,1,1,"FirstAxisLength(conic), as a number"
 Parabola,,conic,P1,done,1,1,"Parabola(focus, directrix line)"
 Focus,,conic,P1,done,1,1,Focus(conic)
 Parameter,,conic,P1,done,1,1,Parameter(parabola)
-Center,,conic,P1,partial,4,1,Center(circle or conic); Center(segment)
-Polar,,conic,P1,partial,2,1,"Polar(point, circle or conic)"
+Center,,conic,P1,done,4,4,Center(circle or conic); Center(segment)
+Polar,,conic,P1,done,2,2,"Polar(point, circle or conic)"
 Excentricity,,conic,P1,done,1,1,Excentricity(conic)
 Eccentricity,,conic,P1,done,1,1,Eccentricity(conic)
 Axes,,conic,P1,done,1,1,Axes(conic)

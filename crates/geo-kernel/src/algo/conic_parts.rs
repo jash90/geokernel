@@ -18,12 +18,14 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoTangentLineND.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoTangentLine.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoPolarLine.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoPolarPoint.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDiameterLine.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDiameterVector.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/kernelND/GeoConicND.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoVec3D.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdIntersect.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/Commands.java
+//   source/shared/common/src/main/java/org/geogebra/common/util/GgbMat.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
@@ -83,6 +85,8 @@ pub enum ConicPartDef {
     TangentLine { line: Id, conic: Id, which: u8 },
     /// `Polar(P, k)`.
     Polar { point: Id, conic: Id },
+    /// `Polar(g, k)`: the pole of a line with respect to a conic.
+    Pole { line: Id, conic: Id },
     /// `Diameter(g, k)` and `Diameter(v, k)` (`ConjugateDiameter`): the
     /// diameter conjugate to the direction of a line, segment, ray or vector.
     Diameter { direction: Id, conic: Id },
@@ -100,6 +104,7 @@ impl ConicPartDef {
             | ConicPartDef::TangentPoint { conic, .. }
             | ConicPartDef::TangentLine { conic, .. }
             | ConicPartDef::Polar { conic, .. }
+            | ConicPartDef::Pole { conic, .. }
             | ConicPartDef::Diameter { conic, .. } => conic,
             ConicPartDef::Center(conic)
             | ConicPartDef::Eccentricity(conic)
@@ -144,6 +149,7 @@ impl Group for ConicPartDef {
             ConicPartDef::IntersectLine { .. }
             | ConicPartDef::Center(_)
             | ConicPartDef::Focus { .. }
+            | ConicPartDef::Pole { .. }
             | ConicPartDef::Vertex { .. } => Kind::Point,
             ConicPartDef::Axis { .. }
             | ConicPartDef::Directrix { .. }
@@ -161,7 +167,8 @@ impl Group for ConicPartDef {
     fn parents(&self) -> Parents {
         match *self {
             ConicPartDef::IntersectLine { line, conic, .. }
-            | ConicPartDef::TangentLine { line, conic, .. } => Parents::of(&[line, conic]),
+            | ConicPartDef::TangentLine { line, conic, .. }
+            | ConicPartDef::Pole { line, conic } => Parents::of(&[line, conic]),
             ConicPartDef::TangentPoint { point, conic, .. }
             | ConicPartDef::Polar { point, conic } => Parents::of(&[point, conic]),
             ConicPartDef::Diameter { direction, conic } => Parents::of(&[direction, conic]),
@@ -172,7 +179,9 @@ impl Group for ConicPartDef {
     fn check(&self, c: &Construction) -> Result<(), Error> {
         match *self {
             ConicPartDef::IntersectLine { line, .. } => c.expect(line, LINE)?,
-            ConicPartDef::TangentLine { line, .. } => c.expect(line, LINE_LIKE_OR_RAY)?,
+            ConicPartDef::TangentLine { line, .. } | ConicPartDef::Pole { line, .. } => {
+                c.expect(line, LINE_LIKE_OR_RAY)?
+            }
             ConicPartDef::TangentPoint { point, .. } | ConicPartDef::Polar { point, .. } => {
                 c.expect(point, POINT)?
             }
@@ -221,6 +230,7 @@ impl Group for ConicPartDef {
                 let g = polar(&d, c.point(point)?);
                 line_value(g[0], g[1], g[2])
             }
+            ConicPartDef::Pole { line, .. } => pole(&d, c.raw_carrier(line)?),
             ConicPartDef::Diameter { direction, .. } => {
                 let (vx, vy) = match c.value(direction) {
                     Value::Vector { x, y } => (x, y),
@@ -289,10 +299,9 @@ impl Group for ConicPartDef {
                     point: first,
                     conic,
                 }),
-                ("Polar", Kind::Line | Kind::Segment) => Err(
-                    "the pole of a line (`Polar` of a line and a conic) is not supported yet"
-                        .into(),
-                ),
+                ("Polar", Kind::Line | Kind::Segment | Kind::Ray) => {
+                    Ok(ConicPartDef::Pole { line: first, conic })
+                }
                 (_, Kind::Line | Kind::Segment | Kind::Ray | Kind::Vector) if func != "Polar" => {
                     Ok(ConicPartDef::Diameter {
                         direction: first,
@@ -388,6 +397,41 @@ fn polar(d: &ConicData, (px, py): (f64, f64)) -> [f64; 3] {
         m[3] * px + m[1] * py + m[5],
         m[4] * px + m[5] * py + m[2],
     ]
+}
+
+/// `GeoConicND.polarPoint`: solve the conic matrix against the line's
+/// coefficients. As in `GgbMat.inverseImmediate`, use partial pivoting
+/// and treat a pivot below the standard precision as singular.
+fn pole(d: &ConicData, (a, b, c): (f64, f64, f64)) -> Option<Value> {
+    let [xx, yy, constant, xy, x, y] = d.matrix;
+    let mut rows = [[xx, xy, x, a], [xy, yy, y, b], [x, y, constant, c]];
+    for col in 0..3 {
+        let mut pivot = col;
+        for row in col + 1..3 {
+            if rows[row][col].abs() > rows[pivot][col].abs() {
+                pivot = row;
+            }
+        }
+        if rows[pivot][col].abs() < STANDARD_PRECISION {
+            return None;
+        }
+        rows.swap(col, pivot);
+        let leading = rows[col];
+        for row in &mut rows[col + 1..] {
+            let factor = row[col] / leading[col];
+            for j in col + 1..4 {
+                row[j] -= factor * leading[j];
+            }
+        }
+    }
+    let z = rows[2][3] / rows[2][2];
+    let y = (rows[1][3] - rows[1][2] * z) / rows[1][1];
+    let x = (rows[0][3] - rows[0][1] * y - rows[0][2] * z) / rows[0][0];
+    if super::conic::is_epsilon(z, x, y) {
+        return None;
+    }
+    let (x, y) = (x / z, y / z);
+    (x.is_finite() && y.is_finite()).then_some(Value::Point { x, y })
 }
 
 /// `GeoConicND.diameterLine(vx, vy)`; it does not check whether the conic
