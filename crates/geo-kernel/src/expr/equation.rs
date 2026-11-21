@@ -579,9 +579,9 @@ impl Poly {
             if kept.iter().any(|t| t.x == term.x && t.y == term.y) {
                 continue;
             }
-            for j in i + 1..self.0.len() {
-                if (self.0[j].x, self.0[j].y) == (term.x, term.y) {
-                    term.coeff = b.add(term.coeff, self.0[j].coeff);
+            for other in &self.0[i + 1..] {
+                if (other.x, other.y) == (term.x, term.y) {
+                    term.coeff = b.add(term.coeff, other.coeff);
                 }
             }
             // `simplify` drops a term only of a constant coefficient 0; a
