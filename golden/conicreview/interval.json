@@ -1,0 +1,121 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "conicreview-interval-001",
+      "group": "conicreview",
+      "script": [
+        "a = 1",
+        "P = (4, 0)",
+        "m = Midpoint(a < x < 3)",
+        "n = Midpoint((x > a) && (x < x(P)))",
+        "q = Center(a < x < x(P))"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "move", "label": "P", "x": 0.0, "y": 0.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "move", "label": "P", "x": 2.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "P": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "n": { "type": "number", "defined": true, "value": 2.5 },
+          "q": { "type": "number", "defined": true, "value": 2.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "P": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "m": { "type": "number", "defined": true, "value": 3.0 },
+          "n": { "type": "number", "defined": true, "value": 3.5 },
+          "q": { "type": "number", "defined": true, "value": 3.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "m": { "type": "number", "defined": true, "value": 3.0 },
+          "n": { "type": "number", "defined": false },
+          "q": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "m": { "type": "number", "defined": true, "value": 1.0 },
+          "n": { "type": "number", "defined": true, "value": -0.5 },
+          "q": { "type": "number", "defined": true, "value": -0.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "m": { "type": "number", "defined": true, "value": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 0.5 },
+          "q": { "type": "number", "defined": true, "value": 0.5 }
+        }
+      ]
+    },
+    {
+      "id": "conicreview-interval-002",
+      "group": "conicreview",
+      "script": [
+        "a = 1",
+        "b = 3",
+        "d = Center(x < x + 1)",
+        "ee = Center(x < 2x)",
+        "f = Center(x^2 < 4)",
+        "g = Center(x <= 3 || x >= 5)",
+        "h = Center(!(x > 3))",
+        "j = Center(a < x < b < 5)",
+        "k = Center(x == 3)",
+        "m = Midpoint(x < 2x)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -3.0 },
+        { "action": "set_number", "label": "b", "value": 6.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "d": { "type": "number", "defined": false },
+          "ee": { "type": "number", "defined": false },
+          "f": { "type": "number", "defined": false },
+          "g": { "type": "number", "defined": false },
+          "h": { "type": "number", "defined": false },
+          "j": { "type": "number", "defined": false },
+          "k": { "type": "number", "defined": false },
+          "m": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -3.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "d": { "type": "number", "defined": false },
+          "ee": { "type": "number", "defined": false },
+          "f": { "type": "number", "defined": false },
+          "g": { "type": "number", "defined": false },
+          "h": { "type": "number", "defined": false },
+          "j": { "type": "number", "defined": false },
+          "k": { "type": "number", "defined": false },
+          "m": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -3.0 },
+          "b": { "type": "number", "defined": true, "value": 6.0 },
+          "d": { "type": "number", "defined": false },
+          "ee": { "type": "number", "defined": false },
+          "f": { "type": "number", "defined": false },
+          "g": { "type": "number", "defined": false },
+          "h": { "type": "number", "defined": false },
+          "j": { "type": "number", "defined": false },
+          "k": { "type": "number", "defined": false },
+          "m": { "type": "number", "defined": false }
+        }
+      ]
+    }
+  ]
+}

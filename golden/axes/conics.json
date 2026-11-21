@@ -1,0 +1,174 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "axes-conics-001",
+      "group": "axes",
+      "script": [
+        "A = (1, 1)",
+        "r = 3",
+        "k = Circle(A, r)",
+        "P = Intersect(k, xAxis, 1)",
+        "Q = Intersect(yAxis, k, 2)",
+        "F = (0, 2)",
+        "p = Parabola(F, xAxis)",
+        "T = Intersect(p, yAxis, 1)",
+        "d = Distance(F, xAxis)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "r", "value": 1.0 },
+        { "action": "set_number", "label": "r", "value": 0.0 },
+        { "action": "set_number", "label": "r", "value": 4.0 },
+        { "action": "move", "label": "F", "x": 1.0, "y": 0.0 },
+        { "action": "move", "label": "F", "x": 2.0, "y": -4.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 1.0, "r": 3.0 },
+          "xAxis": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "P": { "type": "point", "defined": true, "x": -1.82842712474619, "y": 0.0 },
+          "yAxis": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 0.0, "y": 3.8284271247461903 },
+          "F": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [1.0, 0.0, 4.0, -0.0, -0.0, -2.0],
+            "vertex": [0.0, 1.0],
+            "p": 2.0,
+            "eigenvectors": [
+              [0.0, 1.0],
+              [-1.0, 0.0]
+            ]
+          },
+          "T": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 1.0, "r": 1.0 },
+          "xAxis": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": -0.0 },
+          "yAxis": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 0.0 },
+          "Q": { "type": "point", "defined": false },
+          "F": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [1.0, 0.0, 4.0, -0.0, -0.0, -2.0],
+            "vertex": [0.0, 1.0],
+            "p": 2.0,
+            "eigenvectors": [
+              [0.0, 1.0],
+              [-1.0, 0.0]
+            ]
+          },
+          "T": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 1.0, "r": 0.0 },
+          "xAxis": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "P": { "type": "point", "defined": false },
+          "yAxis": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 0.0 },
+          "Q": { "type": "point", "defined": false },
+          "F": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [1.0, 0.0, 4.0, -0.0, -0.0, -2.0],
+            "vertex": [0.0, 1.0],
+            "p": 2.0,
+            "eigenvectors": [
+              [0.0, 1.0],
+              [-1.0, 0.0]
+            ]
+          },
+          "T": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 4.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 1.0, "r": 4.0 },
+          "xAxis": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "P": { "type": "point", "defined": true, "x": -2.872983346207417, "y": 0.0 },
+          "yAxis": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 0.0, "y": 4.872983346207417 },
+          "F": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [1.0, 0.0, 4.0, -0.0, -0.0, -2.0],
+            "vertex": [0.0, 1.0],
+            "p": 2.0,
+            "eigenvectors": [
+              [0.0, 1.0],
+              [-1.0, 0.0]
+            ]
+          },
+          "T": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 4.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 1.0, "r": 4.0 },
+          "xAxis": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "P": { "type": "point", "defined": true, "x": -2.872983346207417, "y": 0.0 },
+          "yAxis": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 0.0, "y": 4.872983346207417 },
+          "F": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "double_line",
+            "matrix": [1.0, 0.0, 1.0, -0.0, -1.0, -0.0],
+            "lines": [
+              [-1.0, 0.0, 1.0],
+              [-1.0, 0.0, 1.0]
+            ]
+          },
+          "T": { "type": "point", "defined": false },
+          "d": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 4.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 1.0, "r": 4.0 },
+          "xAxis": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "P": { "type": "point", "defined": true, "x": -2.872983346207417, "y": 0.0 },
+          "yAxis": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 0.0, "y": 4.872983346207417 },
+          "F": { "type": "point", "defined": true, "x": 2.0, "y": -4.0 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [1.0, 0.0, 20.0, -0.0, -2.0, 4.0],
+            "vertex": [2.0, -2.0],
+            "p": 4.0,
+            "eigenvectors": [
+              [-0.0, -1.0],
+              [-1.0, 0.0]
+            ]
+          },
+          "T": { "type": "point", "defined": true, "x": 0.0, "y": -2.5 },
+          "d": { "type": "number", "defined": true, "value": 4.0 }
+        }
+      ]
+    }
+  ]
+}

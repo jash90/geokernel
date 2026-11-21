@@ -1,6 +1,7 @@
 // Parts of this file are translated from GeoGebra (https://github.com/geogebra/geogebra),
 // commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoConicFivePoints.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoConicFromCoeffList.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoEllipseHyperbolaFociPointND.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoConicFociLengthND.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoParabolaPointLine.java
@@ -36,14 +37,14 @@
 //! circle of its record, and it is undefined when GeoGebra's image is no
 //! longer a circle or a single point.
 //!
-//! Not supported: `Conic` of a list or of six coefficients, `Ellipse` and
-//! `Hyperbola` with a segment as the axis length, the special case of
-//! `Conic` through five points that lie on a parabola by construction, and
-//! points with a homogeneous coordinate other than 1 (every point of the
-//! kernel has `z = 1`).
+//! Not supported: `Ellipse` and `Hyperbola` with a segment as the axis
+//! length, the special case of `Conic` through five points that lie on a
+//! parabola by construction, and points with a homogeneous coordinate
+//! other than 1 (every point of the kernel has `z = 1`).
 
 use super::conic_nd::{ConicData, ConicType};
 use super::{Group, Parents, NUMBER, POINT};
+use crate::expr::{Element, ExprDef, List};
 use crate::kernel::{Construction, Error, Id, IdList, Kind, Value};
 use crate::script::object;
 
@@ -56,6 +57,11 @@ pub enum GeneralConicDef {
     /// `Conic(A, B, C, D, E)`: the conic through five points, read from a
     /// stored list.
     FivePoints(IdList),
+    /// `Conic(list)` with a named list of coefficients or matrix rows.
+    CoefficientList(Id),
+    /// `Conic(list)` with an inline list, or `Conic` of six numbers.
+    /// As with a standalone expression, the handle belongs to its construction.
+    CoefficientExpr { expression: ExprDef, reads: IdList },
     /// `Ellipse(F, G, P)` or `Hyperbola(F, G, P)`: foci and a point.
     FociPoint {
         f1: Id,
@@ -154,6 +160,12 @@ impl GeneralConicDef {
                 }
                 d.set_five_points(p);
             }
+            GeneralConicDef::CoefficientList(id) => {
+                set_coefficient_matrix(&mut d, c.elements(id).and_then(coefficient_matrix));
+            }
+            GeneralConicDef::CoefficientExpr { expression, .. } => {
+                set_coefficient_matrix(&mut d, Self::coefficient_expression_matrix(c, expression));
+            }
             GeneralConicDef::FociPoint {
                 f1,
                 f2,
@@ -251,6 +263,53 @@ impl GeneralConicDef {
     }
 }
 
+fn set_coefficient_matrix(d: &mut ConicData, matrix: Option<[f64; 6]>) {
+    if let Some(matrix) = matrix {
+        d.set_matrix(matrix);
+    } else {
+        d.defined = false;
+    }
+}
+
+/// `AlgoConicFromCoeffList` and `GeoConicND.setCoeffs`. A flat list is
+/// ordered as x², y², constant, xy, x, y. A matrix contributes its diagonal
+/// and the average of each pair of opposite off-diagonal entries.
+pub(crate) fn coefficient_matrix(list: List<'_>) -> Option<[f64; 6]> {
+    fn number(element: Option<Element<'_>>) -> f64 {
+        match element {
+            Some(Element::Value(_, Value::Number(v))) => v,
+            Some(Element::Value(_, Value::Bool(v))) => f64::from(u8::from(v)),
+            _ => f64::NAN,
+        }
+    }
+
+    match list.len() {
+        6 => Some(std::array::from_fn(|i| {
+            let v = number(list.get(i));
+            if i < 3 {
+                v
+            } else {
+                v / 2.0
+            }
+        })),
+        3 => {
+            let get = |row, col| match list.get(row) {
+                Some(Element::List(row)) => number(row.get(col)),
+                _ => f64::NAN,
+            };
+            Some([
+                get(0, 0),
+                get(1, 1),
+                get(2, 2),
+                (get(0, 1) + get(1, 0)) / 2.0,
+                (get(0, 2) + get(2, 0)) / 2.0,
+                (get(1, 2) + get(2, 1)) / 2.0,
+            ])
+        }
+        _ => None,
+    }
+}
+
 /// `AlgoTransformation.setOutGeo`: the image starts as a copy of the
 /// source's record. Returns whether the copy is defined; the transformation
 /// stops when it is not. A source whose record is defined but whose value
@@ -281,6 +340,8 @@ impl Group for GeneralConicDef {
     fn kind(&self) -> Kind {
         match *self {
             GeneralConicDef::FivePoints(_)
+            | GeneralConicDef::CoefficientList(_)
+            | GeneralConicDef::CoefficientExpr { .. }
             | GeneralConicDef::FociPoint { .. }
             | GeneralConicDef::FociLength { .. }
             | GeneralConicDef::Parabola { .. } => Kind::Conic,
@@ -294,7 +355,10 @@ impl Group for GeneralConicDef {
 
     fn parents(&self) -> Parents {
         match *self {
-            GeneralConicDef::FivePoints(_) => Parents::none(),
+            GeneralConicDef::FivePoints(_) | GeneralConicDef::CoefficientExpr { .. } => {
+                Parents::none()
+            }
+            GeneralConicDef::CoefficientList(id) => Parents::of(&[id]),
             GeneralConicDef::FociPoint {
                 f1, f2, through, ..
             } => Parents::of(&[f1, f2, through]),
@@ -323,7 +387,8 @@ impl Group for GeneralConicDef {
 
     fn list(&self) -> Option<IdList> {
         match *self {
-            GeneralConicDef::FivePoints(list) => Some(list),
+            GeneralConicDef::FivePoints(list)
+            | GeneralConicDef::CoefficientExpr { reads: list, .. } => Some(list),
             _ => None,
         }
     }
@@ -331,6 +396,12 @@ impl Group for GeneralConicDef {
     fn with_list(self, list: IdList) -> Self {
         match self {
             GeneralConicDef::FivePoints(_) => GeneralConicDef::FivePoints(list),
+            GeneralConicDef::CoefficientExpr { expression, .. } => {
+                GeneralConicDef::CoefficientExpr {
+                    expression,
+                    reads: list,
+                }
+            }
             other => other,
         }
     }
@@ -347,6 +418,10 @@ impl Group for GeneralConicDef {
                     return Err(Error::UnknownObject);
                 }
                 c.expect_list(list, POINT)
+            }
+            GeneralConicDef::CoefficientList(id) => c.expect(id, &[Kind::List]),
+            GeneralConicDef::CoefficientExpr { expression, .. } => {
+                crate::expr::check_handle(c, expression)
             }
             GeneralConicDef::FociPoint {
                 f1, f2, through, ..
@@ -575,36 +650,20 @@ fn parse_transform_args(
     }
 }
 
-/// Runs `name = Conic(A, B, C, D, E)`, which needs a stored list; `None`
-/// for any other line.
+/// Runs the three input forms of `Conic`. Other commands use their own dispatch.
 pub(crate) fn exec(
     c: &mut Construction,
     name: &str,
     rhs: &str,
 ) -> Option<Result<Option<Id>, String>> {
-    let (func, args) = crate::script::split_call(rhs)?;
-    if func != "Conic" {
+    let (func, args) = rhs.split_once('(')?;
+    if func.trim() != "Conic" {
         return None;
     }
-    if args.len() != 5 {
-        return Some(Err(format!(
-            "`Conic` takes five points, not {} argument(s)",
-            args.len()
-        )));
-    }
-    let mut ids = Vec::with_capacity(5);
-    for arg in &args {
-        match point_arg(c, arg) {
-            Ok(id) => ids.push(id),
-            Err(e) => return Some(Err(e)),
-        }
-    }
     Some(
-        c.add_with_list(name, &ids, |l| {
-            crate::kernel::Def::GeneralConic(GeneralConicDef::FivePoints(l))
-        })
-        .map(Some)
-        .map_err(|e| e.to_string()),
+        args.strip_suffix(')')
+            .ok_or_else(|| "missing closing `)`".into())
+            .and_then(|args| GeneralConicDef::add_from_arguments(c, name, args).map(Some)),
     )
 }
 
@@ -615,6 +674,29 @@ mod tests {
 
     fn conic(c: &Construction, label: &str) -> ConicData {
         c.conic(c.id(label).unwrap()).unwrap()
+    }
+
+    #[test]
+    fn inline_coefficients_create_one_object_and_roll_back_with_it() {
+        let mut c = load("a = -4\n").unwrap();
+        let start = c.checkpoint();
+        let result = crate::script::exec(&mut c, "k = Conic(1, 1, a, 0, 0, 0)")
+            .unwrap()
+            .unwrap();
+        assert_eq!(result.index(), 1);
+        assert_eq!(c.len(), 2);
+        assert!(crate::script::exec(&mut c, "k = Conic({1, 1, -9, 0, 0, 0})").is_err());
+        assert_eq!(c.len(), 2);
+        c.rollback(start).unwrap();
+
+        let result = crate::script::exec(&mut c, "k = Conic({1, 4, a, 0, 0, 0})")
+            .unwrap()
+            .unwrap();
+        assert_eq!(result.index(), 1);
+        c.set_number(c.id("a").unwrap(), -9.0).unwrap();
+        let record = c.conic(result).unwrap();
+        assert_eq!(record.ty, ConicType::Ellipse);
+        assert_eq!(record.matrix, [1.0, 4.0, -9.0, 0.0, 0.0, 0.0]);
     }
 
     #[test]

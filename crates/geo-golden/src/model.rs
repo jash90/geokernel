@@ -683,6 +683,13 @@ fn validate_case(case: &Case) -> Result<(), String> {
                 let mut clip_prefixes = BTreeSet::new();
                 let mut rotated_prefixes = BTreeSet::new();
                 for line in &case.script {
+                    if let Some((_, rhs)) = line.split('#').next().and_then(|s| s.split_once('=')) {
+                        for name in rhs.split(|ch: char| !ch.is_alphanumeric() && ch != '_') {
+                            if matches!(name, "xAxis" | "yAxis") {
+                                outputs.insert(name.to_string());
+                            }
+                        }
+                    }
                     if let Some((label, "Difference" | "IntersectPath", _)) = command_args(line) {
                         clip_prefixes.insert(label_prefix(label));
                     }

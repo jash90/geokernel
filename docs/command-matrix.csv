@@ -33,7 +33,7 @@ Angle,,geometry,P1,done,13,13,"Angle(angle); Angle(number); Angle(point); Angle(
 InteriorAngles,,geometry,P1,done,1,1,InteriorAngles(polygon)
 Direction,,geometry,P1,partial,2,1,"Direction(line, segment or ray)"
 Point,,geometry,P1,todo,4,0,"Point(path); Point(path, parameter) on a line, segment, ray, circle, polygon, polyline, circular arc or sector"
-Midpoint,,geometry,P0,partial,4,3,"Midpoint(point, point); Midpoint(segment); Midpoint(circle or conic)"
+Midpoint,,geometry,P0,done,4,4,"Midpoint(point, point); Midpoint(segment); Midpoint(circle or conic)"
 LineBisector,,geometry,P1,done,2,2,"LineBisector(point, point); LineBisector(segment)"
 Intersect,,geometry,P0,partial,65,4,line/line; line/circle; circle/circle; line/conic; optional index 1 or 2
 IntersectPath,,geometry,P1,partial,9,4,"Polygon and line, segment, ray or conic in either order; two polygons"
@@ -159,7 +159,7 @@ SecondAxisLength,,conic,P1,done,1,1,"SecondAxisLength(conic), as a number"
 SecondAxis,,conic,P1,done,1,1,SecondAxis(conic)
 Directrix,,conic,P1,done,1,1,Directrix(conic)
 Diameter,,conic,P1,done,2,2,"Diameter(line or segment, circle or conic)"
-Conic,,conic,P1,partial,3,1,"Conic(point, point, point, point, point)"
+Conic,,conic,P1,done,3,3,"Conic(point, point, point, point, point)"
 FirstAxis,,conic,P1,done,1,1,FirstAxis(conic)
 Circle,,conic,P0,done,3,3,"Circle(centre, point); Circle(centre, radius); Circle(centre, segment); Circle(point, point, point)"
 Incircle,,conic,P1,done,1,1,"Incircle(point, point, point)"
@@ -168,8 +168,8 @@ FirstAxisLength,,conic,P1,done,1,1,"FirstAxisLength(conic), as a number"
 Parabola,,conic,P1,done,1,1,"Parabola(focus, directrix line)"
 Focus,,conic,P1,done,1,1,Focus(conic)
 Parameter,,conic,P1,done,1,1,Parameter(parabola)
-Center,,conic,P1,partial,4,1,Center(circle or conic); Center(segment)
-Polar,,conic,P1,partial,2,1,"Polar(point, circle or conic)"
+Center,,conic,P1,done,4,4,Center(circle or conic); Center(segment)
+Polar,,conic,P1,done,2,2,"Polar(point, circle or conic)"
 Excentricity,,conic,P1,done,1,1,Excentricity(conic)
 Eccentricity,,conic,P1,done,1,1,Eccentricity(conic)
 Axes,,conic,P1,done,1,1,Axes(conic)

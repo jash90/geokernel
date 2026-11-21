@@ -150,6 +150,21 @@ form = "conic"
 cases = ["conics-readers-001", "conics-readers-002", "conics-readers-003"]
 
 [[form]]
+command = "Center"
+form = "segment"
+cases = ["conicforms-center-001", "conicforms-center-002"]
+
+[[form]]
+command = "Center"
+form = "inequality"
+cases = ["conicforms-interval-001", "conicforms-interval-002"]
+
+[[form]]
+command = "Center"
+form = "point,point"
+cases = ["conicforms-center-001", "conicforms-center-002"]
+
+[[form]]
 command = "Centroid"
 form = "polygon"
 cases = ["polygon-derived-001", "polygon-derived-002", "polygon-derived-003"]
@@ -198,6 +213,16 @@ cases = ["points-pathpair-001"]
 command = "Conic"
 form = "point,point,point,point,point"
 cases = ["conics-fivepoints-001", "conics-fivepoints-002", "conics-fivepoints-003"]
+
+[[form]]
+command = "Conic"
+form = "list"
+cases = ["conicforms-list-001", "conicforms-list-002", "conicforms-list-003", "conicforms-list-004"]
+
+[[form]]
+command = "Conic"
+form = "number,number,number,number,number,number"
+cases = ["conicforms-coefficients-001", "conicforms-coefficients-002"]
 
 [[form]]
 command = "CrossRatio"
@@ -451,6 +476,11 @@ cases = ["conic-midseg-001", "conic-midseg-002", "conic-midseg-003"]
 
 [[form]]
 command = "Midpoint"
+form = "interval"
+cases = ["conicreview-interval-001"]
+
+[[form]]
+command = "Midpoint"
 form = "point,point"
 cases = ["arcs-chain-001", "conic-midseg-001", "conic-midseg-002"]
 
@@ -518,6 +548,11 @@ cases = ["polygon-derived-001", "polygon-derived-002", "polygon-derived-003"]
 command = "Polar"
 form = "point,conic"
 cases = ["conics-tangent-003", "conics-tangent-006", "conics-tangent-009"]
+
+[[form]]
+command = "Polar"
+form = "line,conic"
+cases = ["conicforms-pole-001", "conicforms-pole-002"]
 
 [[form]]
 command = "PolyLine"

@@ -185,7 +185,7 @@ pub(crate) fn circumcircle(
 
 /// `DoubleUtil.isEpsilon(e, x, y)`: whether `e` is negligible against
 /// the tolerance and against both `x` and `y`.
-fn is_epsilon(e: f64, x: f64, y: f64) -> bool {
+pub(super) fn is_epsilon(e: f64, x: f64, y: f64) -> bool {
     let e = e.abs();
     !(e > STANDARD_PRECISION
         || e > x.abs() * STANDARD_PRECISION
@@ -347,6 +347,7 @@ impl Group for ConicDef {
                         .to_string()),
                     }
                 })),
+                2 => None,
                 _ if func == "Midpoint" => None,
                 _ => count_error(),
             },
@@ -487,7 +488,7 @@ mod tests {
     fn rejects_wrong_arguments() {
         assert!(err(&format!("{TRI}r = 2\nk = Circle(A, B, r)\n")).contains("is a number"));
         assert!(err(&format!("{TRI}k = Incircle(A, B)\n")).contains("does not take 2"));
-        assert!(err(&format!("{TRI}k = Center(A, B)\n")).contains("does not take 2"));
+        assert!(err(&format!("{TRI}k = Center(A, B, C)\n")).contains("does not take 3"));
         assert!(err(&format!("{TRI}k = Center(A)\n")).contains("is a point"));
         assert!(err(&format!("{TRI}k = Midpoint(A)\n")).contains("is a point"));
         assert!(err(&format!("{TRI}k = Diameter(A)\n")).contains("does not take 1"));
