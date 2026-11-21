@@ -66,7 +66,7 @@ public final class GoldenGenerator {
 
         for (Map.Entry<String, List<Object>> e : byFile.entrySet()) {
             Map<String, Object> file = new LinkedHashMap<>();
-            file.put("schema", 1L);
+            file.put("schema", 2L);
             file.put("generator", "ggb-harness");
             file.put("upstream_commit", commit);
             file.put("cases", e.getValue());
@@ -80,7 +80,7 @@ public final class GoldenGenerator {
     }
 
     private static Map<String, Object> runCase(Map<?, ?> input, Stats stats) {
-        Session session = new Session("angle".equals(input.get("group")));
+        Session session = new Session();
         List<?> script = (List<?>) input.get("script");
         List<?> steps = (List<?>) input.get("steps");
         for (Object line : script) {

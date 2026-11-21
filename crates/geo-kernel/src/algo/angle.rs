@@ -404,6 +404,20 @@ fn rotate(p: XY, q: XY, by: f64) -> XY {
     )
 }
 
+/// `GeoVec3D.linDep`: normalize all three coefficients before comparing
+/// the cross products with the inclusive `DoubleUtil.isEqual` bounds.
+fn linearly_dependent(g: (f64, f64, f64), h: (f64, f64, f64)) -> bool {
+    let unit = |(a, b, c): (f64, f64, f64)| {
+        let norm = a.abs().max(b.abs()).max(c.abs());
+        (a / norm, b / norm, c / norm)
+    };
+    let (a, b, c) = unit(g);
+    let (d, e, f) = unit(h);
+    let equal =
+        |x: f64, y: f64| x == y || (x - STANDARD_PRECISION <= y && y <= x + STANDARD_PRECISION);
+    equal(a * e, d * b) && equal(c * e, f * b) && equal(a * f, d * c)
+}
+
 impl AngleSource {
     pub(crate) fn has_geometry(self) -> bool {
         !matches!(self, Self::Free(_) | Self::Numeric(_) | Self::Copy(_))
@@ -477,21 +491,9 @@ impl AngleSource {
             Self::Directions(a, _) => (origin(c, a)?, direction(c, a)?),
             Self::Conic(id) => (algo::conic_object(c, id)?.midpoint.into(), (1.0, 0.0)),
             Self::Lines(g, h) => {
-                let (a, b, k) = c.raw_carrier(g)?;
-                let (d, e, l) = c.raw_carrier(h)?;
-                let det = a * e - b * d;
-                let center = if det != 0.0 {
-                    ((b * l - k * e) / det, (k * d - a * l) / det)
-                } else {
-                    let norm = a.abs().max(b.abs()).max(k.abs());
-                    let other = d.abs().max(e.abs()).max(l.abs());
-                    let equal = ((a / norm) * (l / other) - (k / norm) * (d / other)).abs()
-                        < STANDARD_PRECISION
-                        && ((b / norm) * (l / other) - (k / norm) * (e / other)).abs()
-                            < STANDARD_PRECISION;
-                    if !equal {
-                        return None;
-                    }
+                let g_line @ (a, b, k) = c.raw_carrier(g)?;
+                let h_line @ (d, e, l) = c.raw_carrier(h)?;
+                let center = if linearly_dependent(g_line, h_line) {
                     let start = |id| match c.def(id) {
                         Def::Line(p, _)
                         | Def::Parallel { through: p, .. }
@@ -503,6 +505,12 @@ impl AngleSource {
                         },
                     };
                     start(h).or_else(|| start(g))?
+                } else {
+                    let det = a * e - b * d;
+                    if det == 0.0 {
+                        return None;
+                    }
+                    ((b * l - k * e) / det, (k * d - a * l) / det)
                 };
                 (center, (b, -a))
             }
@@ -599,6 +607,33 @@ impl AngleGeometry {
 mod tests {
     use super::*;
     use crate::script::{exec, load};
+
+    #[test]
+    fn dependent_lines_draw_at_the_second_line_start() {
+        let c = load(
+            "A = (0.011099999999999999, 0.025899999999999996)\n\
+             B = (0.40109999999999996, 0.9359)\n\
+             C = (-0.25889999999999996, -0.6041)\n\
+             D = (0.6411, 1.4959)\n\
+             f = Line(A, B)\ng = Line(D, C)\nang = Angle(f, g)\n",
+        )
+        .unwrap();
+        let angle = c.angle_geometry(c.id("ang").unwrap()).unwrap();
+        assert!((angle.sweep - PI).abs() < 1e-9);
+        assert_eq!(Some(angle.center), c.point(c.id("D").unwrap()));
+    }
+
+    #[test]
+    fn dependent_lines_use_the_first_start_when_the_second_is_a_polar() {
+        let c = load(
+            "A = (0.35, 1)\nB = (0.2, 2)\nO = (0, 0)\nT = (1, 0)\nP = (2, 0.3)\n\
+             f = Line(A, B)\nk = Circle(O, T)\ng = Polar(P, k)\nang = Angle(f, g)\n",
+        )
+        .unwrap();
+        let angle = c.angle_geometry(c.id("ang").unwrap()).unwrap();
+        assert!((angle.sweep - PI).abs() < 1e-9);
+        assert_eq!(Some(angle.center), c.point(c.id("A").unwrap()));
+    }
 
     #[test]
     fn fixed_angle_outputs_can_be_named_explicitly_and_update_together() {

@@ -71,7 +71,6 @@ final class Session {
     private final AppCommon app;
     private final Kernel kernel;
     private final AlgebraProcessor processor;
-    private final boolean recordAngleKind;
     /**
      * Scripted objects by label. GeoGebra gives an object that is undefined
      * when it is created no label until it becomes defined, so snapshots hold
@@ -87,11 +86,6 @@ final class Session {
     private final Set<GeoElement> conics = Collections.newSetFromMap(new IdentityHashMap<>());
 
     Session() {
-        this(false);
-    }
-
-    Session(boolean recordAngleKind) {
-        this.recordAngleKind = recordAngleKind;
         LocalizationCommon loc = new LocalizationCommon(2);
         loc.setResourceBundleControl(new Utf8Control());
         app = new AppCommon(loc, new AwtFactoryCommon(), new AppConfigDefault());
@@ -522,9 +516,6 @@ final class Session {
 
     /** The schema type of a scripted object: `conic` for a general conic, else {@link #typeOf}. */
     private String schemaType(GeoElement geo) {
-        if (recordAngleKind && geo instanceof GeoAngle) {
-            return "angle";
-        }
         return conics.contains(geo) ? "conic" : typeOf(geo);
     }
 
@@ -558,6 +549,9 @@ final class Session {
         }
         if (geo instanceof GeoPoint) {
             return "point";
+        }
+        if (geo instanceof GeoAngle) {
+            return "angle";
         }
         if (geo instanceof GeoNumeric) {
             return "number";
@@ -686,7 +680,7 @@ final class Session {
      * (anything that is not a literal or one call of a known command); its
      * type is checked by `expressionType`.
      */
-    private String expectedType(String label, String definition) {
+    private static String expectedType(String label, String definition) {
         if (POINT.matcher(definition).matches()) {
             return StringUtil.isLowerCase(label.charAt(0)) ? "vector" : "point";
         }
@@ -768,7 +762,7 @@ final class Session {
                 return "number";
             case "Angle":
             case "InteriorAngles":
-                return recordAngleKind ? "angle" : "number";
+                return "angle";
             case "Circle":
             case "Incircle":
                 return "circle";

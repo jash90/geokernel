@@ -91,12 +91,15 @@ Snapshot encoding:
 | `GeoSegment` | `segment` with its start point and end point |
 | `GeoConic` from `Circle` | `circle` with the midpoint and the first half-axis |
 | `GeoNumeric` | `number` |
-| `GeoAngle` | `angle` with a radian `value` in the `angle` group, `number` in the legacy groups |
+| `GeoAngle` | `angle` with a radian `value` |
 | `GeoVector` | `vector` with `x`, `y` |
 | `GeoRay` | `ray` with the inhomogeneous start point `x`, `y` and the raw fields `x`, `y`, `z` as `a`, `b`, `c`; a start point at infinity is undefined |
 | `GeoFunction` | `function` with `samples`, the values of `GeoFunction.value` at the sample points (`null` where not finite) |
 | `GeoPolygon` | `polygon` with `getPoints()` as `vertices`, `getArea()` as `area` and `getAreaWithSign()` as `signed_area`; a vertex that is undefined or at infinity makes it undefined |
 | `GeoPolyLine` | `polyline` with `getPointsND()` as `vertices` (`null` for an undefined point or a point at infinity) and `getLength()` as `length` |
+
+New files use schema 2, which records angles separately in every group.
+Schema 1 files use the legacy numeric encoding for angles.
 
 `defined` is GeoGebra's `isDefined()` and, in addition, every recorded field
 must be finite. A circle of radius 0 is a single-point conic in GeoGebra; it is

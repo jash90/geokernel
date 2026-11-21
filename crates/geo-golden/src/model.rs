@@ -88,6 +88,19 @@ pub struct Expected {
     pub kind: Kind,
     /// `None` when the object is undefined.
     pub data: Option<ExpectedData>,
+    /// A number recorded when the file format also encoded angles as numbers.
+    pub(crate) legacy_angle_number: bool,
+}
+
+impl Expected {
+    fn set_angle_encoding(&mut self, legacy: bool) {
+        self.legacy_angle_number = legacy && self.kind == Kind::Number;
+        if let Some(ExpectedData::List(elements)) = &mut self.data {
+            for element in elements {
+                element.set_angle_encoding(legacy);
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -445,22 +458,29 @@ impl TryFrom<RawObject> for Expected {
             if !raw.fields.is_empty() {
                 return Err(format!("undefined {} carries numeric fields", raw.ty));
             }
-            return Ok(Expected { kind, data: None });
+            return Ok(Expected {
+                kind,
+                data: None,
+                legacy_angle_number: false,
+            });
         }
         if kind == Kind::Function {
             return Ok(Expected {
+                legacy_angle_number: false,
                 kind,
                 data: Some(function_samples(&raw)?),
             });
         }
         if kind == Kind::Conic {
             return Ok(Expected {
+                legacy_angle_number: false,
                 kind,
                 data: Some(conic_data(&raw)?),
             });
         }
         if matches!(kind, Kind::Arc | Kind::Sector) {
             return Ok(Expected {
+                legacy_angle_number: false,
                 kind,
                 data: Some(arc_data(&raw)?),
             });
@@ -476,6 +496,7 @@ impl TryFrom<RawObject> for Expected {
         if kind == Kind::Boolean {
             return match raw.fields["value"].as_bool() {
                 Some(b) => Ok(Expected {
+                    legacy_angle_number: false,
                     kind,
                     data: Some(ExpectedData::Bool(b)),
                 }),
@@ -485,6 +506,7 @@ impl TryFrom<RawObject> for Expected {
         if kind == Kind::Polygon {
             let vertices = vertices(&raw.fields["vertices"], false)?;
             return Ok(Expected {
+                legacy_angle_number: false,
                 kind,
                 data: Some(ExpectedData::Polygon {
                     vertices: vertices.into_iter().flatten().collect(),
@@ -495,6 +517,7 @@ impl TryFrom<RawObject> for Expected {
         }
         if kind == Kind::PolyLine {
             return Ok(Expected {
+                legacy_angle_number: false,
                 kind,
                 data: Some(ExpectedData::PolyLine {
                     vertices: vertices(&raw.fields["vertices"], true)?,
@@ -510,6 +533,7 @@ impl TryFrom<RawObject> for Expected {
                 .map(|e| Expected::deserialize(e).map_err(|err| format!("list element: {err}")))
                 .collect::<Result<Vec<_>, _>>()?;
             return Ok(Expected {
+                legacy_angle_number: false,
                 kind,
                 data: Some(ExpectedData::List(elements)),
             });
@@ -557,6 +581,7 @@ impl TryFrom<RawObject> for Expected {
             other => return Err(format!("no golden data format for {other:?}")),
         };
         Ok(Expected {
+            legacy_angle_number: false,
             kind,
             data: Some(data),
         })
@@ -586,15 +611,37 @@ pub fn line_label(lhs: &str) -> String {
         .to_string()
 }
 
+fn legacy_angle_numbers(schema: u32) -> Result<bool, String> {
+    match schema {
+        1 => Ok(true),
+        2 => Ok(false),
+        _ => Err(format!("unsupported schema {schema}")),
+    }
+}
+
+/// Apply the file's angle encoding to a snapshot read outside a replay case,
+/// such as a snapshot paired with an exported construction.
+pub fn set_snapshot_schema(
+    schema: u32,
+    snapshot: &mut BTreeMap<String, Expected>,
+) -> Result<(), String> {
+    let legacy = legacy_angle_numbers(schema)?;
+    for expected in snapshot.values_mut() {
+        expected.set_angle_encoding(legacy);
+    }
+    Ok(())
+}
+
 /// Parses and validates one file. `source` is only used in messages.
 pub fn parse_file(text: &str, source: &str) -> Result<File, String> {
     let mut file: File =
         serde_json::from_str(text).map_err(|e| format!("{source}: malformed JSON: {e}"))?;
-    if file.schema != 1 {
-        return Err(format!("{source}: unsupported schema {}", file.schema));
-    }
+    legacy_angle_numbers(file.schema).map_err(|e| format!("{source}: {e}"))?;
     for case in &mut file.cases {
         case.generator = file.generator.clone();
+        for snapshot in &mut case.snapshots {
+            set_snapshot_schema(file.schema, snapshot).map_err(|e| format!("{source}: {e}"))?;
+        }
         validate_case(case).map_err(|e| format!("{source}: case `{}`: {e}", case.id))?;
     }
     Ok(file)
@@ -987,7 +1034,7 @@ mod tests {
     fn malformed_files_fail_loudly() {
         for bad in [
             "not json",
-            &GOOD.replace("\"schema\":1", "\"schema\":2"),
+            &GOOD.replace("\"schema\":1", "\"schema\":3"),
             &GOOD.replace("\"y\":0.0", "\"z\":0.0"),
             &GOOD.replace("\"initial\"", "\"teleport\""),
             &GOOD.replace("\"A\":{", "\"B\":{"),
