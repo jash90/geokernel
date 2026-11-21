@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "generator": "ggb-harness",
   "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
   "cases": [
@@ -718,6 +718,41 @@
         {
           "f": { "type": "line", "defined": true, "a": 3.0, "b": 0.0, "c": -1.0 },
           "g": { "type": "line", "defined": true, "a": 0.0, "b": 5.0, "c": -1.0 }
+        }
+      ]
+    },
+    {
+      "id": "equations-lines-028",
+      "group": "equations",
+      "script": [
+        "h(x) = 2x",
+        "f: y = h(2)",
+        "g: y = h(1) x"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -16.0],
+              [-4.0, -8.0],
+              [-2.0, -4.0],
+              [-1.0, -2.0],
+              [-0.5, -1.0],
+              [0.0, 0.0],
+              [0.5, 1.0],
+              [1.0, 2.0],
+              [2.0, 4.0],
+              [4.0, 8.0],
+              [8.0, 16.0]
+            ]
+          },
+          "f": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -4.0 },
+          "g": { "type": "line", "defined": true, "a": -2.0, "b": 1.0, "c": 0.0 }
         }
       ]
     }

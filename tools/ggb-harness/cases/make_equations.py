@@ -80,6 +80,10 @@ case("lines", [num("w", 2), "h(x) = w x", "f: h(x) = y"],
 # x(...) and y(...) applied to something that is not a point or a vector is
 # the product with the variable (`replaceXYZnodes`)
 case("lines", ["f: x(3) = 1", "g: y(5) = 1"], [])
+# a call whose argument is a constant stays one constant coefficient, so
+# the equation keeps its degree: `y = h(2)` is the line y = 4 and
+# `y = h(1) x` the line y = 2x
+case("lines", ["h(x) = 2x", "f: y = h(2)", "g: y = h(1) x"], [])
 
 # ---------------------------------------------------------------- conics
 # A quadratic equation makes a conic with the coefficients of
@@ -161,6 +165,22 @@ case("functions", [num("q", 1), "f: y = abs(x) + q"],
 # would be an implicit polynomial, which the kernel refuses)
 case("functions", [num("n", 2), "f: y = x^n"],
      [setn("n", 3), setn("n", 1)])
+# a function applied to an argument that reads x makes the equation
+# function dependent (`isFunctionDependent`), so `y = <rhs>` is a function
+# however polynomial the body of the function expands to: `y = h(x)` with
+# `h(x) = x^2` is a function, not a parabola, and `y = h(x)` with
+# `h(x) = 2x` a function, not a line
+case("functions", ["h(x) = x^2", "f: y = h(x)"], [])
+case("functions", ["h(x) = x^2", "f: y = h(x) + 1"], [])
+case("functions", ["h(x) = 2x", "f: y = h(x)"], [])
+# through a second function: the body of g applies h to its own variable
+case("functions", ["h(x) = x + 1", "g(x) = h(x)^2", "f: y = g(x)"], [])
+# the function reads an object: the function follows its steps, also when
+# the body empties or the equation gains a plain polynomial term
+case("functions", [num("a", 2), "h(x) = a x^2", "f: y = h(x) + x"],
+     [setn("a", -1), setn("a", 0)])
+case("functions", [num("a", 2), "h(x) = a x", "f: y = h(x)"],
+     [setn("a", 0), setn("a", -3)])
 
 # ------------------------------------------------------------------ mixed
 # Equations together with the rest of a construction: other objects read

@@ -27,8 +27,19 @@
 //! (`makePolyTreeFromFunction`), so `h(x) = y` with `h(x) = 2x` is the line
 //! `y = 2x`.
 //!
-//! What the degree of the normal form makes of the equation
-//! (`AlgebraProcessor.processEquation`):
+//! What the equation makes (`AlgebraProcessor.processEquation`). First
+//! comes function dependence: applying a function to an argument that
+//! reads `x` marks the equation (`isFunctionDependent`, set by
+//! `makePolyTreeFromFunction` while the normal form is built), and
+//! `y = <rhs in x>` then makes a function — as an `f(x) = ...` line does —
+//! however polynomial the body of the function expands to: `y = h(x)`
+//! with `h(x) = x^2` is a function, not a parabola. A call with a
+//! constant argument leaves a plain equation (`y = h(1) x` is a line),
+//! and so does every other function-dependent equation, whose implicit
+//! curve of degree 1 or 2 GeoGebra still shows as a line or a conic
+//! (`h(x) = y` with `h(x) = 2x` is the line `y = 2x`).
+//!
+//! The degree of the normal form makes of the rest:
 //!
 //! - degree 0 or 1: a line with the raw coefficients `(coeff(x), coeff(y),
 //!   constant)` of the normal form (`GeoLine(a, b, c)`), however small they
@@ -94,6 +105,7 @@ pub(crate) fn define(c: &mut Construction, name: &str, text: &str) -> Result<Id,
         nodes,
         lits,
         function_nodes: MAX_FUNCTION_NODES,
+        function_dependent: false,
     };
 
     let poly = match build_normal(c, &mut builder, lhs.root, rhs_root) {
@@ -112,6 +124,16 @@ pub(crate) fn define(c: &mut Construction, name: &str, text: &str) -> Result<Id,
             return function_or_refuse(c, name, lhs_text, rhs_text, rhs.uses_y, what);
         }
     };
+    // `processEquation` checks `isFunctionDependent` before the degree: a
+    // right side that applies a function to an argument reading `x` keeps
+    // `y = <rhs>` a function, however polynomial the body of the function
+    // expands to (`y = h(x)` with `h(x) = x^2`). Every other
+    // function-dependent equation would be an implicit curve, of which
+    // GeoGebra shows the degree 1 and 2 ones as the line and the conic the
+    // degree makes below.
+    if builder.function_dependent && is_function_form(lhs_text, rhs.uses_y) {
+        return super::define_function(c, name, rhs_text.trim());
+    }
     match poly.degree() {
         0 | 1 => {
             let coeffs = coefficients(c, &mut builder, &poly, &[(1, 0), (0, 1), (0, 0)])?;
@@ -153,6 +175,13 @@ fn build_normal(
     Ok(normal)
 }
 
+/// `functionOrImplicitPoly`: whether the equation is the implicit function
+/// form `y = <rhs>` whose right side reads no `y`, the form that makes a
+/// function.
+fn is_function_form(lhs_text: &str, rhs_uses_y: bool) -> bool {
+    lhs_text.trim() == "y" && !rhs_uses_y
+}
+
 /// `AlgebraProcessor.functionOrImplicitPoly` for an equation this kernel
 /// has no implicit curve or implicit polynomial for: `y = <rhs in x>` makes
 /// a function, exactly as an `f(x) = ...` line does; everything else is
@@ -165,7 +194,7 @@ fn function_or_refuse(
     rhs_uses_y: bool,
     what: &str,
 ) -> Result<Id, String> {
-    if lhs_text.trim() == "y" && !rhs_uses_y {
+    if is_function_form(lhs_text, rhs_uses_y) {
         return super::define_function(c, name, rhs_text.trim());
     }
     Err(what.into())
@@ -289,6 +318,11 @@ struct Builder {
     /// How many more nodes the bodies of function calls may add (see
     /// [`MAX_FUNCTION_NODES`]).
     function_nodes: usize,
+    /// Whether the expansion applied a function to an argument that reads
+    /// `x` or `y` (`Equation.isFunctionDependent`, set by
+    /// `makePolyTreeFromFunction`): such an equation is no plain line or
+    /// conic, however polynomial its normal form is.
+    function_dependent: bool,
 }
 
 impl Builder {
@@ -350,9 +384,12 @@ impl Builder {
             Node::Apply(f, arg) => {
                 // `makePolyTreeFromFunction`: a call whose argument reads
                 // `x` or `y` is the body of the function, its variable
-                // replaced by the argument; any other call is one constant
-                // coefficient, like the operations below
+                // replaced by the argument, and the equation becomes
+                // function dependent (`setFunctionDependent`); any other
+                // call is one constant coefficient, like the operations
+                // below
                 if self.contains_var(arg) {
+                    self.function_dependent = true;
                     let body = self.inline_function(c, f, arg)?;
                     self.expand(c, body)
                 } else {
@@ -1213,6 +1250,58 @@ mod tests {
         // `y = <rhs in x>` stays the function form
         exec(&mut c, "f: y = h(x)").unwrap();
         assert_eq!(c.kind(c.id("f").unwrap()), Kind::Function);
+    }
+
+    #[test]
+    fn a_function_applied_to_x_keeps_y_eq_rhs_a_function() {
+        // `processEquation` checks `isFunctionDependent` before the degree:
+        // a right side that applies a function to an argument reading `x`
+        // makes `y = <rhs>` a function, however polynomial the body of the
+        // function expands to, also through a second function and with an
+        // object in the body
+        let c = load(
+            "h(x) = x^2\n\
+             f: y = h(x)\n\
+             g: y = h(x) + 1\n\
+             k(x) = x + 1\n\
+             q(x) = k(x)^2\n\
+             p: y = q(x)\n\
+             a = 2\n\
+             w(x) = a x^2\n\
+             r: y = w(x) + x\n\
+             m = 2\n\
+             n(x) = m x\n\
+             s: y = n(x)",
+        )
+        .unwrap();
+        for label in ["f", "g", "p", "r", "s"] {
+            let id = c.id(label).unwrap();
+            assert_eq!(c.kind(id), Kind::Function, "`{label}`");
+            assert!(matches!(c.def(id), Def::Expr(_)), "`{label}`");
+        }
+        assert_eq!(c.function_value(c.id("f").unwrap(), 3.0), Some(9.0));
+        assert_eq!(c.function_value(c.id("g").unwrap(), 3.0), Some(10.0));
+        assert_eq!(c.function_value(c.id("p").unwrap(), 2.0), Some(9.0));
+        assert_eq!(c.function_value(c.id("r").unwrap(), 2.0), Some(10.0));
+        assert_eq!(c.function_value(c.id("s").unwrap(), 3.0), Some(6.0));
+        // a step that empties the body keeps the function a function
+        let mut c = load("a = 2\nh(x) = a x\nf: y = h(x)").unwrap();
+        assert_eq!(c.kind(c.id("f").unwrap()), Kind::Function);
+        assert_eq!(c.function_value(c.id("f").unwrap(), 5.0), Some(10.0));
+        c.set_number(c.id("a").unwrap(), 0.0).unwrap();
+        assert_eq!(c.kind(c.id("f").unwrap()), Kind::Function);
+        assert_eq!(c.function_value(c.id("f").unwrap(), 5.0), Some(0.0));
+    }
+
+    #[test]
+    fn a_call_of_a_constant_argument_keeps_a_line() {
+        // `y = h(2)` and `y = h(1) x` apply the function to a constant, so
+        // the equation is not function dependent and stays a line, like
+        // every function-dependent equation that is not `y = <rhs>`
+        let c = load("h(x) = 2x\nf: y = h(2)\ng: y = h(1) x\nk: h(x) = y").unwrap();
+        assert_eq!(line(&c, "f"), (0.0, 1.0, -4.0));
+        assert_eq!(line(&c, "g"), (-2.0, 1.0, 0.0));
+        assert_eq!(line(&c, "k"), (2.0, -1.0, 0.0));
     }
 
     #[test]
