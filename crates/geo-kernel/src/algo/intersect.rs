@@ -55,6 +55,8 @@ mod conics;
 mod function_roots;
 #[path = "intersect_functions.rs"]
 mod functions;
+#[path = "intersect_growth.rs"]
+pub(crate) mod growth;
 #[path = "intersect_pair.rs"]
 pub(crate) mod pair;
 

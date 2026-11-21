@@ -11,6 +11,7 @@ use crate::style::{Palette, Sides};
 use crate::undo::Undo;
 pub use file::{import_notice, rejected_notice, SNAPSHOT_VERSION};
 use geo_kernel::kernel::{Construction, Id, Kind, Value};
+use geo_kernel::script::BoundaryOutputs;
 use std::collections::BTreeMap;
 use std::sync::OnceLock;
 
@@ -56,6 +57,7 @@ struct ToolUse {
 pub struct Workbench {
     construction: Construction,
     log: Log,
+    boundary_outputs: BoundaryOutputs,
     version: u64,
     /// Counts the times the construction was rebuilt or replaced. Object ids
     /// are only valid within one such period.
@@ -212,6 +214,7 @@ impl Workbench {
 
     /// Makes `c` and `log` the whole document.
     fn replace(&mut self, c: Construction, log: Log) {
+        self.boundary_outputs = log.boundary_outputs(&c);
         self.construction = c;
         self.objects_changed();
         self.log = log;
@@ -383,9 +386,17 @@ impl Workbench {
             // Only lines that succeeded go into the log: a failed one would
             // fail again on every replay.
             match exec_definition(&mut self.construction, &line) {
-                Ok(_) => {
+                Ok(first) => {
                     if self.construction.len() > before {
                         self.log.record(&self.construction, before, &line);
+                        if let Some(first) = first {
+                            self.boundary_outputs.record(
+                                &self.construction,
+                                &line,
+                                first,
+                                self.construction.len() - before,
+                            );
+                        }
                     }
                 }
                 Err(e) => {
@@ -472,6 +483,7 @@ impl Workbench {
         // with its label moved.
         kept.hidden.retain(|l| c.id(l).is_some());
         self.label_offsets.retain(|l, _| c.id(l).is_some());
+        self.boundary_outputs = kept.boundary_outputs(&c);
         self.construction = c;
         self.objects_changed();
         self.log = kept;
@@ -710,7 +722,10 @@ impl Workbench {
         };
         let old = bits(self.construction.value(id));
         let same = old == Some((x.to_bits(), y.to_bits()));
-        if self.construction.move_point(id, x, y).is_err() || same {
+        let Ok(recomputed) = self.construction.move_point(id, x, y) else {
+            return false;
+        };
+        if same {
             return false;
         }
         // A point on a path goes where the kernel projects the position: it
@@ -726,8 +741,22 @@ impl Workbench {
         }
         let label = self.construction.label(id).to_owned();
         self.log.record_set(&label, Setting::Point(x, y));
+        if recomputed > 0 {
+            self.grow_boundary_outputs(id);
+        }
         self.version += 1;
         true
+    }
+
+    fn grow_boundary_outputs(&mut self, changed: Id) {
+        let before = self.construction.len();
+        self.log
+            .grow_boundary_outputs(&mut self.construction, &mut self.boundary_outputs, changed);
+        if self.construction.len() != before {
+            self.objects_changed();
+            // Existing outputs acquire new siblings for the same command.
+            self.rows_at = None;
+        }
     }
 
     /// The point that `rhs` (such as `Intersect(c, f, 2)`) would make now,
@@ -815,12 +844,15 @@ impl Workbench {
             // number): the use does not finish.
             self.cancel_tool_use();
         }
-        if self.construction.set_number(id, v).is_err() {
+        let Ok(recomputed) = self.construction.set_number(id, v) else {
             return false;
-        }
+        };
         self.note_change();
         let label = self.construction.label(id).to_owned();
         self.log.record_set(&label, Setting::Number(v));
+        if recomputed > 0 {
+            self.grow_boundary_outputs(id);
+        }
         self.version += 1;
         true
     }

@@ -487,33 +487,6 @@ id = "intersectfunctions-automatic-002"
 reason = "The automatic function and line solver starts each update at x=0. AlgoIntersectFunctionLineNewton moves its unnamed seed to the last successful root; the reference follows that branch as the parameter changes."
 mismatches = ["2:R", "3:R", "4:R"]
 
-# intersectreview
-
-[[gap]]
-id = "intersectreview-growth-001"
-reason = "The intersection of line and polygon gains crossings after a move. The reference adds indexed output labels then. The kernel keeps the first slot created by the command because the workbench journal does not record output births on moves."
-mismatches = ["1:R_{2}", "2:R_{2}", "2:R_{3}", "2:R_{4}", "3:R_{2}", "3:R_{3}", "3:R_{4}", "4:R_{2}", "4:R_{3}", "4:R_{4}"]
-
-[[gap]]
-id = "intersectreview-growth-002"
-reason = "The intersection of segment and polyline gains crossings after a move. The reference adds indexed output labels then. The kernel keeps the first slot created by the command because the workbench journal does not record output births on moves."
-mismatches = ["2:R_{2}", "2:R_{3}", "3:R_{2}", "3:R_{3}", "4:R_{2}", "4:R_{3}"]
-
-[[gap]]
-id = "intersectreview-growth-003"
-reason = "The intersection of ray and polygon gains crossings after a move. The reference adds indexed output labels then. The kernel keeps the first slot created by the command because the workbench journal does not record output births on moves."
-mismatches = ["1:R_{2}", "2:R_{2}", "2:R_{3}", "2:R_{4}", "3:R_{2}", "3:R_{3}", "3:R_{4}", "4:R_{2}", "4:R_{3}", "4:R_{4}"]
-
-[[gap]]
-id = "intersectreview-growth-004"
-reason = "The intersection of two polylines gains crossings after a move. The reference adds indexed output labels then. The kernel keeps the first slot created by the command because the workbench journal does not record output births on moves."
-mismatches = ["2:R_{2}", "2:R_{3}", "3:R_{2}", "3:R_{3}", "4:R_{2}", "4:R_{3}"]
-
-[[gap]]
-id = "intersectreview-growth-005"
-reason = "The intersection of two polygons gains crossings after a move. The reference adds indexed output labels then. The kernel keeps the first slot created by the command because the workbench journal does not record output births on moves."
-mismatches = ["1:R_{2}", "2:R_{2}", "2:R_{3}", "2:R_{4}", "3:R_{2}", "3:R_{3}", "3:R_{4}", "3:R_{5}", "3:R_{6}", "4:R_{2}", "4:R_{3}", "4:R_{4}", "4:R_{5}", "4:R_{6}", "4:R_{7}", "4:R_{8}"]
-
 [[gap]]
 id = "vectorforms-identity-002"
 reason = "AlgoIdentity marks its list undefined at size zero and never marks it defined again. After the size returns to two, the kernel's list expression recomputes a defined identity matrix."

@@ -473,7 +473,7 @@ cases = ["intersections-boundary-002", "intersectconics-lineboundary-002"]
 [[form]]
 command = "Intersect"
 form = "line,polygon"
-cases = ["intersections-boundary-003", "intersectconics-lineboundary-003"]
+cases = ["intersections-boundary-003", "intersectconics-lineboundary-003", "intersectreview-growth-001", "intersectgrowth-slider-001"]
 
 [[form]]
 command = "Intersect"
@@ -483,7 +483,7 @@ cases = ["intersections-boundary-004", "intersectconics-lineboundary-004"]
 [[form]]
 command = "Intersect"
 form = "polyline,polyline"
-cases = ["intersections-boundary-005", "intersectconics-pathboundary-001"]
+cases = ["intersections-boundary-005", "intersectconics-pathboundary-001", "intersectreview-growth-004"]
 
 [[form]]
 command = "Intersect"
@@ -498,7 +498,7 @@ cases = ["intersections-boundary-007", "intersectconics-pathboundary-003"]
 [[form]]
 command = "Intersect"
 form = "polygon,polygon"
-cases = ["intersections-boundary-008", "intersectconics-pathboundary-004"]
+cases = ["intersections-boundary-008", "intersectconics-pathboundary-004", "intersectreview-growth-005"]
 
 [[form]]
 command = "Intersect"

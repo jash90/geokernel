@@ -20,12 +20,15 @@
 //! sides of a polygon, the outputs of `Tangent`): `p = Polygon(A, B, C)
 //! # labels: p, a_1, b, c`. The list is a comment, so the text stays a
 //! plain script; `load_tolerant` checks it.
+//! A crossing revealed by a move is saved as a slot definition after that
+//! move. Its exact label and its origin survive further moves and replay.
 
 use geo_kernel::algo::measure::MeasureDef;
 use geo_kernel::kernel::{Construction, Def, Id};
+use geo_kernel::script::{boundary_slot_owner, restore_boundary_labels, BoundaryOutputs};
 use shared::Chain;
 pub use shared::Labels;
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
 mod shared;
 
@@ -34,6 +37,16 @@ pub const DIRECTIVES: [&str; 3] = ["SetCoords", "SetValue", "SetVisibleInView"];
 
 /// Starts the list of labels after a definition in a snapshot.
 const LABELS: &str = "# labels: ";
+
+fn has_recorded_growth(src: &str) -> bool {
+    src.lines().any(|line| {
+        line.split('#')
+            .next()
+            .and_then(|line| line.split_once('='))
+            .and_then(|(_, rhs)| boundary_slot_owner(rhs.trim()))
+            .is_some()
+    })
+}
 
 /// One accepted line and the objects it created.
 #[derive(Clone, Debug, PartialEq)]
@@ -53,6 +66,21 @@ impl Entry {
             .and_then(|i| self.line.get(i + 1..))
             .map_or("", str::trim)
     }
+
+    fn replay(&self, c: &mut Construction) -> Result<Option<Id>, String> {
+        if self.rhs().starts_with("Intersect") {
+            let labels: Vec<_> = self.labels.iter().map(String::as_str).collect();
+            if let Some(result) = restore_boundary_labels(c, &self.line, &labels) {
+                return result;
+            }
+        }
+        exec_definition(c, &self.line)
+    }
+}
+
+pub(crate) struct GrownOutputs<'a> {
+    pub labels: Vec<String>,
+    pub rhs: &'a str,
 }
 
 /// A new value of a free object.
@@ -296,6 +324,54 @@ impl Log {
         });
     }
 
+    pub(crate) fn boundary_outputs(&self, c: &Construction) -> BoundaryOutputs {
+        let entries: Vec<_> = self
+            .entries_rev()
+            .filter(|e| e.rhs().starts_with("Intersect") || boundary_slot_owner(e.rhs()).is_some())
+            .collect();
+        let mut groups = BoundaryOutputs::default();
+        for e in entries.into_iter().rev() {
+            if let Some(first) = e.labels.first().and_then(|label| c.id(label)) {
+                groups.record(c, &e.line, first, e.labels.len());
+            }
+        }
+        groups
+    }
+
+    pub(crate) fn grow_boundary_outputs(
+        &mut self,
+        c: &mut Construction,
+        groups: &mut BoundaryOutputs,
+        changed: Id,
+    ) {
+        groups.grow(c, changed, |c, id, line| self.record(c, id.index(), line));
+    }
+
+    pub(crate) fn grown_groups(&self) -> Vec<GrownOutputs<'_>> {
+        let mut births: BTreeMap<&str, Vec<String>> = BTreeMap::new();
+        let mut groups = Vec::new();
+        for e in self.entries_rev() {
+            if let Some(owner) = boundary_slot_owner(e.rhs()) {
+                births
+                    .entry(owner)
+                    .or_default()
+                    .extend(e.labels.iter().rev().cloned());
+            } else if let Some(born) = e
+                .labels
+                .first()
+                .and_then(|label| births.remove(label.as_str()))
+            {
+                let mut labels = e.labels.clone();
+                labels.extend(born.into_iter().rev());
+                groups.push(GrownOutputs {
+                    labels,
+                    rhs: e.rhs(),
+                });
+            }
+        }
+        groups
+    }
+
     /// Every label with the definition of the line that created it.
     pub fn definitions(&self) -> impl Iterator<Item = (&str, &str)> {
         self.entries()
@@ -304,9 +380,16 @@ impl Log {
 
     /// The definition text of the entry that created `label`.
     pub fn rhs_of(&self, label: &str) -> Option<&str> {
-        self.definitions()
-            .find(|(l, _)| *l == label)
-            .map(|(_, r)| r)
+        let definition = |name| {
+            self.definitions()
+                .find(|(label, _)| *label == name)
+                .map(|(_, rhs)| rhs)
+        };
+        let rhs = definition(label)?;
+        match boundary_slot_owner(rhs) {
+            Some(owner) => definition(owner),
+            None => Some(rhs),
+        }
     }
 
     /// The label lists of the lines that created several objects.
@@ -332,8 +415,20 @@ impl Log {
         let Some(entry) = self.entries().find(|e| e.labels.iter().any(|l| l == label)) else {
             return false;
         };
-        let labels = entry.labels.clone();
+        let grown = (entry.rhs().starts_with("Intersect")
+            || boundary_slot_owner(entry.rhs()).is_some())
+        .then(|| {
+            self.grown_groups()
+                .into_iter()
+                .find(|group| group.labels.iter().any(|member| member == label))
+        })
+        .flatten();
+        let (grouped, labels) = match grown {
+            Some(group) => (true, group.labels),
+            None => (false, entry.labels.clone()),
+        };
         self.ops.retain(|op| match op {
+            Op::Define(e) if grouped => !e.labels.iter().any(|label| labels.contains(label)),
             Op::Define(e) => e.labels != labels,
             Op::Set { label, .. } => !labels.contains(label),
         });
@@ -362,7 +457,7 @@ impl Log {
             match op {
                 Op::Define(e) => {
                     let before = c.len();
-                    match exec_definition(&mut c, &e.line) {
+                    match e.replay(&mut c) {
                         Ok(_) => {
                             let made: Vec<&str> =
                                 outputs(&c, before).map(|id| c.label(id)).collect();
@@ -454,7 +549,7 @@ impl Log {
             match op {
                 Op::Define(e) => {
                     let before = c.len();
-                    match exec_definition(&mut c, &e.line) {
+                    match e.replay(&mut c) {
                         Ok(_) => {
                             let made: Vec<&str> =
                                 outputs(&c, before).map(|id| c.label(id)).collect();
@@ -582,7 +677,7 @@ impl Log {
     }
 
     /// Applies a directive line to `c` and records it.
-    fn apply(&mut self, c: &mut Construction, d: Directive) -> Result<(), String> {
+    fn apply(&mut self, c: &mut Construction, d: Directive) -> Result<Option<Id>, String> {
         let label = match d {
             Directive::Coords(l, ..) | Directive::Value(l, _) | Directive::Visible(l, _) => l,
         };
@@ -596,12 +691,12 @@ impl Log {
                 } else {
                     self.hidden.insert(label.to_owned());
                 }
-                return Ok(());
+                return Ok(None);
             }
         };
         let to = result.map_err(|e| format!("`{label}`: {e}"))?;
         self.record_set(label, to);
-        Ok(())
+        Ok(Some(id))
     }
 
     /// Builds a log and construction from a script, keeping every line that
@@ -621,6 +716,8 @@ impl Log {
     pub fn load_tolerant(src: &str, checked: bool) -> (Construction, Log, Vec<Rejected>) {
         let mut c = Construction::new();
         let mut log = Log::default();
+        let mut groups = BoundaryOutputs::default();
+        let grow = !checked && !has_recorded_growth(src);
         let mut rejected = Vec::new();
         let mut gone: BTreeSet<String> = BTreeSet::new();
         for (i, raw) in src.lines().enumerate() {
@@ -650,10 +747,20 @@ impl Log {
                 Err(format!("`{label}` was left out before"))
             } else {
                 match parsed {
-                    Some(d) => d.and_then(|d| log.apply(&mut c, d)),
+                    Some(d) => d.and_then(|d| {
+                        if let Some(id) = log.apply(&mut c, d)?.filter(|_| grow) {
+                            log.grow_boundary_outputs(&mut c, &mut groups, id);
+                        }
+                        Ok(())
+                    }),
                     None => check_names(&line).and_then(|()| {
                         let expected = (checked || listed.is_some()).then_some(named.as_slice());
-                        log.define_checked(&mut c, &line, expected)
+                        let before = c.len();
+                        let first = log.define_checked(&mut c, &line, expected)?;
+                        if let Some(id) = first.filter(|_| grow && c.len() > before) {
+                            groups.record(&c, &line, id, c.len() - before);
+                        }
+                        Ok(())
                     }),
                 }
             };
@@ -679,7 +786,7 @@ impl Log {
         c: &mut Construction,
         line: &str,
         expected: Option<&[&str]>,
-    ) -> Result<(), String> {
+    ) -> Result<Option<Id>, String> {
         let at = c.checkpoint();
         let before = c.len();
         // The checkpoint was taken just above and nothing rolls the
@@ -689,9 +796,10 @@ impl Log {
             Ok(()) => reason,
             Err(e) => format!("{reason}; {e}"),
         };
-        if let Err(e) = exec_definition(c, line) {
-            return Err(undo(c, e));
-        }
+        let result = expected
+            .and_then(|labels| restore_boundary_labels(c, line, labels))
+            .unwrap_or_else(|| exec_definition(c, line));
+        let first = result.map_err(|reason| undo(c, reason))?;
         if let Some(expected) = expected {
             if !outputs(c, before)
                 .map(|id| c.label(id))
@@ -703,7 +811,7 @@ impl Log {
             }
         }
         self.record(c, before, line);
-        Ok(())
+        Ok(first)
     }
 
     /// Builds a log and construction from a whole script. The error carries
@@ -711,6 +819,8 @@ impl Log {
     pub fn load(src: &str) -> Result<(Construction, Log), String> {
         let mut c = Construction::new();
         let mut log = Log::default();
+        let mut groups = BoundaryOutputs::default();
+        let grow = !has_recorded_growth(src);
         for (i, raw) in src.lines().enumerate() {
             let line = normalize(raw);
             if line.is_empty() {
@@ -718,13 +828,27 @@ impl Log {
             }
             let at = |e: String| format!("line {}: {e}", i + 1);
             if let Some(d) = directive(&line) {
-                log.apply(&mut c, d.map_err(at)?).map_err(at)?;
+                if let Some(changed) = log.apply(&mut c, d.map_err(at)?).map_err(at)? {
+                    if grow {
+                        log.grow_boundary_outputs(&mut c, &mut groups, changed);
+                    }
+                }
                 continue;
             }
             check_names(&line).map_err(at)?;
             let before = c.len();
-            exec_definition(&mut c, &line).map_err(at)?;
+            let labels = raw
+                .split_once(LABELS)
+                .map(|(_, labels)| labels.split(',').map(str::trim).collect::<Vec<_>>());
+            let first = labels
+                .as_ref()
+                .and_then(|labels| restore_boundary_labels(&mut c, &line, labels))
+                .unwrap_or_else(|| exec_definition(&mut c, &line))
+                .map_err(at)?;
             log.record(&c, before, &line);
+            if let Some(id) = first.filter(|_| grow && c.len() > before) {
+                groups.record(&c, &line, id, c.len() - before);
+            }
         }
         Ok((c, log))
     }

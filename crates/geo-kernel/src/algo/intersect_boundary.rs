@@ -56,6 +56,37 @@ impl BoundaryDef {
             Intersection::Function(d) => d.hidden_parents(c),
         }
     }
+
+    fn growth_anchor(self) -> Option<EdgeIntersection> {
+        match self.0 {
+            Intersection::Edges(
+                d @ EdgeIntersection {
+                    which: 0,
+                    family: Family::Line | Family::Pair,
+                    ..
+                },
+            ) => Some(d),
+            _ => None,
+        }
+    }
+
+    pub(super) fn can_grow(self) -> bool {
+        self.growth_anchor().is_some()
+    }
+
+    pub(super) fn grown_size(self, c: &Construction) -> Option<usize> {
+        let mut count = 0;
+        self.growth_anchor()?.points(c, |_| {
+            count += 1;
+            true
+        });
+        Some(count)
+    }
+
+    pub(super) fn grown_slot(self, which: usize) -> Option<Self> {
+        let def = self.growth_anchor()?;
+        Some(Self(Intersection::Edges(EdgeIntersection { which, ..def })))
+    }
 }
 
 impl Group for BoundaryDef {

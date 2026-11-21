@@ -645,3 +645,89 @@ fn every_deletion_of_one_gesture_is_one_undo_step() {
     assert!(w.undo());
     assert_eq!(labels(&w), ["A", "B", "C"]);
 }
+const BOUNDARY_GROWTH: &str = "A = (0, 0)\nB = (2, 0)\nC = (2, 2)\nD = (0, 2)\n\
+    p = Polygon(A, B, C, D)\nG = (-1, 3)\nH = (3, 3)\ng = Line(G, H)\nR = Intersect(g, p)";
+
+#[test]
+fn a_boundary_output_born_during_a_drag_survives_replay() {
+    let mut w = Workbench::from_script(BOUNDARY_GROWTH).unwrap();
+    let point = w.construction().id("G").unwrap();
+    assert!(w.construction().id("R_{2}").is_none());
+    w.begin_gesture();
+    assert!(w.move_point(point, -1.0, 1.0));
+    let born = w.construction().id("R_{2}").unwrap();
+    assert!(matches!(w.construction().value(born), Value::Point { .. }));
+    assert!(w.move_point(point, -1.0, 3.0));
+    w.end_gesture();
+    assert_eq!(w.construction().value(born), Value::Undefined);
+
+    assert!(w.undo());
+    assert!(w.construction().id("R_{2}").is_none());
+    assert!(w.redo());
+    assert_eq!(
+        w.construction()
+            .value(w.construction().id("R_{2}").unwrap()),
+        Value::Undefined
+    );
+
+    let mut saved = Workbench::default();
+    saved
+        .load_bytes(w.snapshot_text().as_bytes(), "construction")
+        .unwrap();
+    let born = saved.construction().id("R_{2}").unwrap();
+    assert_eq!(saved.construction().value(born), Value::Undefined);
+    assert_eq!(saved.definition("R_{2}"), Some("Intersect(g, p)"));
+    assert_eq!(
+        saved
+            .rows()
+            .iter()
+            .find(|row| row.id == born)
+            .unwrap()
+            .siblings,
+        ["R_{1}"]
+    );
+    saved.run_line("S = Midpoint(R_{1}, R_{2})").unwrap();
+    assert!(saved.delete(born));
+    for label in ["R_{1}", "R_{2}", "S"] {
+        assert!(saved.construction().id(label).is_none());
+    }
+    assert!(saved.undo());
+    assert!(saved.construction().id("R_{2}").is_some());
+}
+
+#[test]
+fn a_boundary_output_grown_by_a_slider_keeps_its_label_after_deletion() {
+    let src = "A = (0, 0)\nB = (2, 0)\nC = (2, 2)\nD = (0, 2)\np = Polygon(A, B, C, D)\n\
+        n = 3\ng: y = n\nR_{1} = (8, 9)\nR = Intersect(g, p)";
+    let mut w = Workbench::from_script(src).unwrap();
+    let number = w.construction().id("n").unwrap();
+    assert!(w.construction().id("R_{2}").is_some());
+    assert!(w.set_number(number, 1.0));
+    assert!(w.set_number(number, 3.0));
+    assert!(w.construction().id("R_{3}").is_some());
+
+    assert!(w.delete(w.construction().id("R_{1}").unwrap()));
+    assert!(w.construction().id("R_{1}").is_none());
+    for label in ["R_{2}", "R_{3}"] {
+        let id = w.construction().id(label).unwrap();
+        assert_eq!(w.construction().value(id), Value::Undefined);
+    }
+    let text = w.snapshot_text();
+    let mut restored = Workbench::default();
+    assert!(restored.restore_text(&text).unwrap().is_empty());
+    assert_eq!(restored.snapshot_text(), text);
+    let mut w = Workbench::from_script(&text).unwrap();
+    let number = w.construction().id("n").unwrap();
+    assert!(w.set_number(number, 1.0));
+    assert!(w.construction().id("R_{1}").is_none());
+    let id = w.construction().id("R_{3}").unwrap();
+    assert!(matches!(w.construction().value(id), Value::Point { .. }));
+}
+
+#[test]
+fn script_moves_can_reveal_boundary_outputs_used_by_later_lines() {
+    let script = format!("{BOUNDARY_GROWTH}\nSetCoords(G, -1, 1)\nS = Midpoint(R_{{1}}, R_{{2}})");
+    let w = Workbench::from_script(&script).unwrap();
+    let id = w.construction().id("S").unwrap();
+    assert!(matches!(w.construction().value(id), Value::Point { .. }));
+}
