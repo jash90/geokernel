@@ -1,0 +1,187 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "transformsreview-polyline-001",
+      "group": "transformsreview",
+      "script": [
+        "A = (0, 0)",
+        "B = (3, 0.5)",
+        "E = (4, 3)",
+        "p = PolyLine(A, B, E)",
+        "w = 0.5",
+        "m = Rotate(p, w)",
+        "s = Segment(A', B')",
+        "v = (2, 1)",
+        "n = Translate(m, v)",
+        "t = Segment(B'', E'')"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "w", "value": 1.2 },
+        { "action": "move", "label": "B", "x": 2.0, "y": 3.0 },
+        { "action": "move", "label": "v", "x": 4.0, "y": -1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.5 },
+          "E": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "p": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [3.0, 0.5],
+              [4.0, 3.0]
+            ],
+            "length": 5.7339636687163615
+          },
+          "w": { "type": "number", "defined": true, "value": 0.5 },
+          "m": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [2.3930349163690168, 1.8770678967577954],
+              [2.072053631748882, 4.55044984008793]
+            ],
+            "length": 5.7339636687163615
+          },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 2.3930349163690168, "y2": 1.8770678967577954 },
+          "v": { "type": "vector", "defined": true, "x": 2.0, "y": 1.0 },
+          "n": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [2.0, 1.0],
+              [4.393034916369016, 2.8770678967577954],
+              [4.072053631748882, 5.55044984008793]
+            ],
+            "length": 5.7339636687163615
+          },
+          "t": { "type": "segment", "defined": true, "x1": 4.393034916369016, "y1": 2.8770678967577954, "x2": 4.072053631748882, "y2": 5.55044984008793 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.5 },
+          "E": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "p": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [3.0, 0.5],
+              [4.0, 3.0]
+            ],
+            "length": 5.7339636687163615
+          },
+          "w": { "type": "number", "defined": true, "value": 1.2 },
+          "m": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [0.6210537204464077, 2.9772961351400156],
+              [-1.3466862399949844, 4.815229607298926]
+            ],
+            "length": 5.7339636687163615
+          },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 0.6210537204464077, "y2": 2.9772961351400156 },
+          "v": { "type": "vector", "defined": true, "x": 2.0, "y": 1.0 },
+          "n": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [2.0, 1.0],
+              [2.6210537204464077, 3.9772961351400156],
+              [0.6533137600050156, 5.815229607298926]
+            ],
+            "length": 5.7339636687163615
+          },
+          "t": { "type": "segment", "defined": true, "x1": 2.6210537204464077, "y1": 3.9772961351400156, "x2": 0.6533137600050156, "y2": 5.815229607298926 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "E": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "p": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [2.0, 3.0],
+              [4.0, 3.0]
+            ],
+            "length": 5.60555127546399
+          },
+          "w": { "type": "number", "defined": true, "value": 1.2 },
+          "m": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [-2.0714017489483316, 2.9511514353644737],
+              [-1.3466862399949844, 4.815229607298926]
+            ],
+            "length": 5.60555127546399
+          },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": -2.0714017489483316, "y2": 2.9511514353644737 },
+          "v": { "type": "vector", "defined": true, "x": 2.0, "y": 1.0 },
+          "n": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [2.0, 1.0],
+              [-0.07140174894833162, 3.9511514353644737],
+              [0.6533137600050156, 5.815229607298926]
+            ],
+            "length": 5.60555127546399
+          },
+          "t": { "type": "segment", "defined": true, "x1": -0.07140174894833162, "y1": 3.9511514353644737, "x2": 0.6533137600050156, "y2": 5.815229607298926 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "E": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "p": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [2.0, 3.0],
+              [4.0, 3.0]
+            ],
+            "length": 5.60555127546399
+          },
+          "w": { "type": "number", "defined": true, "value": 1.2 },
+          "m": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [-2.0714017489483316, 2.9511514353644737],
+              [-1.3466862399949844, 4.815229607298926]
+            ],
+            "length": 5.60555127546399
+          },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": -2.0714017489483316, "y2": 2.9511514353644737 },
+          "v": { "type": "vector", "defined": true, "x": 4.0, "y": -1.0 },
+          "n": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [4.0, -1.0],
+              [1.9285982510516684, 1.9511514353644737],
+              [2.6533137600050156, 3.8152296072989262]
+            ],
+            "length": 5.60555127546399
+          },
+          "t": { "type": "segment", "defined": true, "x1": 1.9285982510516684, "y1": 1.9511514353644737, "x2": 2.6533137600050156, "y2": 3.8152296072989262 }
+        }
+      ]
+    }
+  ]
+}
