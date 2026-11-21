@@ -390,6 +390,26 @@ fn the_input_row_shows_errors_in_polish() {
     );
 }
 
+/// A line that fails in the middle of a tool use changes nothing: the
+/// pending point and the pick survive the rebuilds, and the use still
+/// finishes as one step. Fails when the line made the point permanent or
+/// when the rebuild dropped the picks.
+#[test]
+fn a_failed_line_in_the_middle_of_a_tool_use_lets_the_use_go_on() {
+    let mut h = harness("Z = (-3, -3)\n");
+    h.state_mut().select_tool(Tool::Segment);
+    click(&mut h, world(1.0, 1.0));
+    assert_eq!(labels(&h), ["Z", "A"]);
+    type_command(&mut h, 2.0 * ROW, "Nonsense((");
+    assert!(h.state().input_error.is_some());
+    assert_eq!(labels(&h), ["Z", "A"]);
+    assert_eq!(h.state().tool.picks().len(), 1);
+    assert_eq!(h.state().wb.undo_depth(), (0, 0));
+    click(&mut h, world(2.0, 1.0));
+    assert_eq!(labels(&h), ["Z", "A", "B", "f"]);
+    assert_eq!(h.state().wb.undo_depth(), (1, 0));
+}
+
 #[test]
 fn the_row_menu_deletes_the_object_and_its_dependents() {
     let mut h = harness("A = (0, 0)\nB = (2, 0)\nf = Line(A, B)\n");
