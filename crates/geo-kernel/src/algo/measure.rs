@@ -44,7 +44,9 @@
 //! [`STANDARD_PRECISION`]; the same tests are used here so that degenerate
 //! cases switch at the same threshold.
 
-use super::{Group, Parents, CIRCLE, LINE_LIKE, POINT};
+use super::conic_nd::ConicType;
+use super::point::{closest_coords, CLOSEST_PATH};
+use super::{conic_object, Group, Parents, CARRIERS, CIRCLE, CONIC_OBJECTS, POINT};
 use crate::kernel::{Construction, Error, Id, Kind, Value};
 use crate::script::object;
 use crate::tol::STANDARD_PRECISION;
@@ -57,19 +59,19 @@ const SEGMENT: &[Kind] = &[Kind::Segment];
 pub enum MeasureDef {
     /// `Length(segment)`.
     Length(Id),
-    /// `Radius(circle)`.
+    /// `Radius(conic)` of a circle or single-point conic.
     Radius(Id),
     /// `Circumference(circle)` and `Perimeter(circle)`.
     Circumference(Id),
-    /// `Area(circle)`.
+    /// `Area(conic)` of a bounded full conic.
     CircleArea(Id),
     /// `Area(P, Q, R)`: area of the triangle.
     Area3(Id, Id, Id),
     /// `Area(P, Q, R, S)`: area of the quadrilateral through the points in order.
     Area4(Id, Id, Id, Id),
-    /// `Slope(line or segment)`.
+    /// `Slope(line)` or the derivative of a function at zero.
     Slope(Id),
-    /// `Distance(point, line or segment)` in either order of the arguments.
+    /// `Distance(point, path)` in either order of the arguments.
     DistancePointPath { point: Id, path: Id },
     /// `Distance(line, line)`; segments count as the lines they lie on.
     DistanceLines(Id, Id),
@@ -257,17 +259,18 @@ impl Group for MeasureDef {
     fn check(&self, c: &Construction) -> Result<(), Error> {
         match *self {
             MeasureDef::Length(s) => c.expect(s, SEGMENT),
-            MeasureDef::Radius(k) | MeasureDef::Circumference(k) | MeasureDef::CircleArea(k) => {
-                c.expect(k, CIRCLE)
+            MeasureDef::Radius(k) | MeasureDef::CircleArea(k) => c.expect(k, CONIC_OBJECTS),
+            MeasureDef::Circumference(k) => c.expect(k, CIRCLE),
+            MeasureDef::Slope(l) => {
+                c.expect(l, &[Kind::Line, Kind::Segment, Kind::Ray, Kind::Function])
             }
-            MeasureDef::Slope(l) => c.expect(l, LINE_LIKE),
             MeasureDef::DistancePointPath { point, path } => {
                 c.expect(point, POINT)?;
-                c.expect(path, LINE_LIKE)
+                c.expect(path, CLOSEST_PATH)
             }
             MeasureDef::DistanceLines(g, h) => {
-                c.expect(g, LINE_LIKE)?;
-                c.expect(h, LINE_LIKE)
+                c.expect(g, CARRIERS)?;
+                c.expect(h, CARRIERS)
             }
             MeasureDef::Area3(a, b, d) | MeasureDef::AffineRatio(a, b, d) => {
                 c.expect(a, POINT)?;
@@ -295,7 +298,17 @@ impl Group for MeasureDef {
                 Value::Segment { x1, y1, x2, y2 } => number(segment_length(x1, y1, x2, y2)),
                 _ => None,
             },
-            MeasureDef::Radius(k) => number(circle_radius(c, k)?),
+            MeasureDef::Radius(k) => {
+                if c.kind(k) == Kind::Circle {
+                    return number(circle_radius(c, k)?);
+                }
+                let d = conic_object(c, k)?;
+                match d.ty {
+                    ConicType::Circle => number(d.half_axes[0]),
+                    ConicType::SinglePoint => number(0.0),
+                    _ => None,
+                }
+            }
             MeasureDef::Circumference(k) => {
                 let r = circle_radius(c, k)?;
                 // A circle of radius 0 is a single point: no circumference.
@@ -306,8 +319,16 @@ impl Group for MeasureDef {
                 }
             }
             MeasureDef::CircleArea(k) => {
-                let r = circle_radius(c, k)?;
-                number(r * r * PI)
+                let d = c.conic(k)?;
+                if !d.defined {
+                    return None;
+                }
+                let [a, b] = d.half_axes;
+                match d.ty {
+                    ConicType::Circle | ConicType::SinglePoint => number(a * a * PI),
+                    ConicType::Ellipse => number(a * b * PI),
+                    _ => None,
+                }
             }
             MeasureDef::Area3(a, b, d) => {
                 let pts = [c.point(a)?, c.point(b)?, c.point(d)?];
@@ -318,6 +339,11 @@ impl Group for MeasureDef {
                 number(polygon_area(&pts).abs())
             }
             MeasureDef::Slope(l) => {
+                if c.kind(l) == Kind::Function {
+                    let f = |x| c.function_value(l, x).unwrap_or(f64::NAN);
+                    let derivative = super::curve::slope(f, 0.0);
+                    return derivative.is_finite().then_some(Value::Number(derivative));
+                }
                 let (x, y, _) = c.raw_carrier(l)?;
                 number(slope(x, y)?)
             }
@@ -331,7 +357,10 @@ impl Group for MeasureDef {
                     Value::Segment { x1, y1, x2, y2 } => {
                         number(point_segment_distance(p, x1, y1, x2, y2))
                     }
-                    _ => None,
+                    _ => {
+                        let q = closest_coords(c, path, p)?;
+                        number(my_length(p.0 - q.0, p.1 - q.1))
+                    }
                 }
             }
             MeasureDef::DistanceLines(g, h) => {
@@ -416,21 +445,21 @@ impl Group for MeasureDef {
     }
 }
 
-/// `Distance(point, line or segment)`, either order, and `Distance(line, line)`.
-/// Every other shape (two points, a circle, an unknown object) is left to the
-/// built-in command, which also reports the errors.
+/// `Distance(point, path)`, either argument order, and `Distance(line, line)`.
+/// The built-in command handles the distance between two points.
 fn parse_distance(c: &Construction, args: &[&str]) -> Option<Result<MeasureDef, String>> {
     if args.len() != 2 {
         return None;
     }
     let (first, second) = (c.id(args[0])?, c.id(args[1])?);
-    let line_like = |id: Id| matches!(c.kind(id), Kind::Line | Kind::Segment);
+    let line_like = |id: Id| CARRIERS.contains(&c.kind(id));
+    let path = |id: Id| CLOSEST_PATH.contains(&c.kind(id));
     let def = match (c.kind(first), c.kind(second)) {
-        (Kind::Point, _) if line_like(second) => MeasureDef::DistancePointPath {
+        (Kind::Point, _) if path(second) => MeasureDef::DistancePointPath {
             point: first,
             path: second,
         },
-        (_, Kind::Point) if line_like(first) => MeasureDef::DistancePointPath {
+        (_, Kind::Point) if path(first) => MeasureDef::DistancePointPath {
             point: second,
             path: first,
         },
@@ -514,6 +543,7 @@ mod tests {
     #[test]
     fn wrong_argument_counts_and_kinds_are_errors() {
         let mut c = load(BASE).unwrap();
+        exec(&mut c, "r = 2").unwrap();
         for (line, text) in [
             ("d = Length(s, s)", "`Length` does not take 2 argument(s)"),
             ("d = Radius(k, k)", "`Radius` does not take 2 argument(s)"),
@@ -537,7 +567,7 @@ mod tests {
             ),
             ("d = Area(A, B, k)", "`k` is a circle, expected a point"),
             ("d = Angle(A, l, B)", "`l` is a line, expected a point"),
-            ("d = Distance(P, k)", "`k` is a circle"),
+            ("d = Distance(P, r)", "`r` is a number"),
             ("d = Length(Z)", "unknown object `Z`"),
         ] {
             let err = exec(&mut c, line).unwrap_err();

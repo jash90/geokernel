@@ -2,6 +2,9 @@
 // commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdPolygon.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdPolyLine.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/scripting/CmdRigidPolygon.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/PolygonFactory.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDispatcher.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdArea.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdPerimeter.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdVertex.java
@@ -60,6 +63,7 @@
 //! creates all of its objects or none.
 
 use super::measure::{angle_of_points, segment_length};
+use super::polygon_clip::{ClipDef, ClipOutput};
 use super::{Group, Parents, NUMBER, POINT};
 use crate::kernel::{Construction, Def, Error, Id, IdList, Kind, Value};
 use crate::script::{object, split_call};
@@ -82,21 +86,21 @@ pub enum Count {
 }
 
 impl Count {
-    fn value(self, c: &Construction) -> f64 {
+    pub(crate) fn value(self, c: &Construction) -> f64 {
         match self {
             Count::Literal(v) => v,
             Count::Object(id) => c.number(id).unwrap_or(f64::NAN),
         }
     }
 
-    fn id(self) -> Option<Id> {
+    pub(crate) fn id(self) -> Option<Id> {
         match self {
             Count::Object(id) => Some(id),
             Count::Literal(_) => None,
         }
     }
 
-    fn check(self, c: &Construction) -> Result<(), Error> {
+    pub(crate) fn check(self, c: &Construction) -> Result<(), Error> {
         match self {
             Count::Object(id) => c.expect(id, NUMBER),
             Count::Literal(v) if v.is_finite() => Ok(()),
@@ -114,6 +118,17 @@ pub enum PolygonDef {
     AreaPoints(IdList),
     /// `Polygon(A, B, C, ...)`, also with two points or one (`AlgoPolygon`).
     Polygon(IdList),
+    /// A polygon, vertex or segment produced by clipping a polygon.
+    Clip(ClipDef),
+    /// A vertex in a rigid polygon made from points, in its initial local frame.
+    RigidVertex { anchor: Id, x: f64, y: f64 },
+    /// A vertex in a rigid copy whose shape follows its source polygon.
+    RigidCopyVertex {
+        poly: Id,
+        anchor: Id,
+        bearing: f64,
+        k: u32,
+    },
     /// `Polygon(A, B, n)`: the regular polygon with `round(n)` vertices
     /// counter-clockwise from `A` and `B` (`AlgoPolygonRegular`).
     Regular { a: Id, b: Id, n: Count },
@@ -264,10 +279,11 @@ impl Regular {
 }
 
 /// Where the vertices of a polygon or polyline come from.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 enum Shape<'a> {
     Points(&'a [Id]),
     Regular(Regular),
+    Clipped(Vec<(f64, f64)>),
     Empty,
 }
 
@@ -283,6 +299,9 @@ impl<'a> Shape<'a> {
                     None => Shape::Empty,
                 }
             }
+            Def::Polygon(PolygonDef::Clip(d)) if d.kind() == Kind::Polygon => {
+                d.vertices(c).map_or(Shape::Empty, Shape::Clipped)
+            }
             _ => Shape::Empty,
         }
     }
@@ -291,6 +310,7 @@ impl<'a> Shape<'a> {
         match self {
             Shape::Points(ids) => ids.len(),
             Shape::Regular(r) => r.n,
+            Shape::Clipped(vertices) => vertices.len(),
             Shape::Empty => 0,
         }
     }
@@ -299,6 +319,7 @@ impl<'a> Shape<'a> {
         match self {
             Shape::Points(ids) => c.point(*ids.get(k)?),
             Shape::Regular(r) => (k < r.n).then(|| r.vertex(k)),
+            Shape::Clipped(vertices) => vertices.get(k).copied(),
             Shape::Empty => None,
         }
     }
@@ -350,7 +371,7 @@ fn poly_defined(c: &Construction, poly: Id) -> bool {
 
 /// The objects that decide the vertices of a polygon or polyline: the points
 /// of its list, or `A`, `B` and `n` of a regular polygon.
-fn inputs(c: &Construction, poly: Id) -> Vec<Id> {
+pub(crate) fn inputs(c: &Construction, poly: Id) -> Vec<Id> {
     match c.def(poly) {
         Def::Polygon(PolygonDef::Polygon(list) | PolygonDef::PolyLine(list)) => {
             c.list(list).to_vec()
@@ -358,6 +379,11 @@ fn inputs(c: &Construction, poly: Id) -> Vec<Id> {
         Def::Polygon(PolygonDef::Regular { a, b, n }) => {
             let mut ids = vec![a, b];
             ids.extend(n.id());
+            ids
+        }
+        Def::Polygon(PolygonDef::Clip(d)) => {
+            let mut ids = d.parents().as_slice().to_vec();
+            ids.extend(d.hidden_parents(c));
             ids
         }
         _ => Vec::new(),
@@ -370,12 +396,14 @@ fn inputs(c: &Construction, poly: Id) -> Vec<Id> {
 /// the vertices move.
 pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
     match *def {
+        Def::Polygon(PolygonDef::Clip(d)) => d.hidden_parents(c),
         Def::Polygon(
             PolygonDef::Perimeter(poly)
             | PolygonDef::Centroid(poly)
             | PolygonDef::Vertex { poly, .. }
             | PolygonDef::VertexAt { poly, .. }
-            | PolygonDef::Angle { poly, .. },
+            | PolygonDef::Angle { poly, .. }
+            | PolygonDef::RigidCopyVertex { poly, .. },
         ) => inputs(c, poly),
         _ => Vec::new(),
     }
@@ -388,10 +416,12 @@ fn point(p: (f64, f64)) -> Option<Value> {
 impl Group for PolygonDef {
     fn kind(&self) -> Kind {
         match self {
+            PolygonDef::Clip(d) => d.kind(),
             PolygonDef::AreaPoints(_) | PolygonDef::Area(_) | PolygonDef::Perimeter(_) => {
                 Kind::Number
             }
             PolygonDef::Angle { .. } => Kind::Number,
+            PolygonDef::RigidVertex { .. } | PolygonDef::RigidCopyVertex { .. } => Kind::Point,
             PolygonDef::Polygon(_) | PolygonDef::Regular { .. } => Kind::Polygon,
             PolygonDef::PolyLine(_) => Kind::PolyLine,
             PolygonDef::RegularSide { .. } => Kind::Segment,
@@ -404,6 +434,9 @@ impl Group for PolygonDef {
 
     fn parents(&self) -> Parents {
         match *self {
+            PolygonDef::Clip(d) => d.parents(),
+            PolygonDef::RigidVertex { anchor, .. } => Parents::of(&[anchor]),
+            PolygonDef::RigidCopyVertex { poly, anchor, .. } => Parents::of(&[poly, anchor]),
             PolygonDef::AreaPoints(_) | PolygonDef::Polygon(_) | PolygonDef::PolyLine(_) => {
                 Parents::none()
             }
@@ -445,6 +478,19 @@ impl Group for PolygonDef {
 
     fn check(&self, c: &Construction) -> Result<(), Error> {
         match *self {
+            PolygonDef::Clip(d) => d.check(c),
+            PolygonDef::RigidVertex { anchor, x, y } => {
+                c.expect(anchor, POINT)?;
+                if x.is_finite() && y.is_finite() {
+                    Ok(())
+                } else {
+                    Err(Error::NotFinite)
+                }
+            }
+            PolygonDef::RigidCopyVertex { poly, anchor, .. } => {
+                c.expect(poly, &[Kind::Polygon])?;
+                c.expect(anchor, POINT)
+            }
             PolygonDef::AreaPoints(list)
             | PolygonDef::Polygon(list)
             | PolygonDef::PolyLine(list) => {
@@ -476,6 +522,26 @@ impl Group for PolygonDef {
 
     fn compute(&self, c: &Construction) -> Option<Value> {
         match *self {
+            PolygonDef::Clip(d) => d.compute(c),
+            PolygonDef::RigidVertex { anchor, x, y } => {
+                let (ax, ay) = c.point(anchor)?;
+                point((ax + x, ay + y))
+            }
+            PolygonDef::RigidCopyVertex {
+                poly,
+                anchor,
+                bearing,
+                k,
+            } => {
+                let shape = Shape::of(c, poly);
+                let p = shape.vertex(c, 0)?;
+                let q = shape.vertex(c, 1)?;
+                let vertex = shape.vertex(c, k as usize)?;
+                let (x, y) = (vertex.0 - p.0, vertex.1 - p.1);
+                let (sin, cos) = (bearing - (q.1 - p.1).atan2(q.0 - p.0)).sin_cos();
+                let (ax, ay) = c.point(anchor)?;
+                point((ax + x * cos - y * sin, ay + x * sin + y * cos))
+            }
             PolygonDef::AreaPoints(list) => {
                 Some(Value::Number(signed_area(c, c.list(list))?.abs()))
             }
@@ -950,6 +1016,27 @@ pub(crate) fn exec(
     let kind_of = |c: &Construction, arg: &str| c.id(arg).map(|id| c.kind(id));
     let result = match func {
         "Polygon" => polygon_line(c, name, &args),
+        "RigidPolygon" => rigid_polygon_line(c, name, &args),
+        "IntersectPath" | "Difference" => clip_line(c, name, func, &args),
+        "Segment" if let [a, b, polygon] = args.as_slice() => {
+            let checked = (|| {
+                points(c, &[*a, *b])?;
+                let polygon = object(c, polygon)?;
+                c.expect(polygon, &[Kind::Polygon])
+                    .map_err(|e| e.to_string())?;
+                Ok(None)
+            })();
+            return Some(checked);
+        }
+        "Segment"
+            if n == 2
+                && match kind_of(c, args[1]) {
+                    Some(k) => k == Kind::Number,
+                    None => decimal(args[1]).is_some(),
+                } =>
+        {
+            fixed_segment_line(c, name, args[0], args[1])
+        }
         "PolyLine" => {
             // `CmdPolyLine`: a single argument must be a list.
             if n < 2 {
@@ -1014,7 +1101,7 @@ fn decimal(arg: &str) -> Option<f64> {
 
 /// A number argument: the label of a number object (an existing label
 /// wins) or a decimal literal.
-fn count_arg(c: &Construction, arg: &str) -> Result<Count, String> {
+pub(crate) fn count_arg(c: &Construction, arg: &str) -> Result<Count, String> {
     if let Some(id) = c.id(arg) {
         c.expect(id, NUMBER).map_err(|e| e.to_string())?;
         return Ok(Count::Object(id));
@@ -1070,6 +1157,157 @@ fn defined(c: &Construction, def: Def) -> Result<bool, String> {
         .map_err(|e| e.to_string())
 }
 
+/// `AlgoDispatcher.segmentFixed` constructs the endpoint on an internal circle.
+fn fixed_segment_line(c: &mut Construction, name: &str, a: &str, n: &str) -> Result<Id, String> {
+    use super::path::PathDef;
+    let plan = Plan::new(c, name)?;
+    let start = object(c, a)?;
+    let length = count_arg(c, n)?;
+    let label = next_indexed_label(c, &plan.taken, POINT_LABELS);
+    let checkpoint = c.checkpoint();
+    let end = c
+        .add(&label, Def::Path(PathDef::FixedEndpoint { start, length }))
+        .map_err(|e| e.to_string())?;
+    c.add(name, Def::Segment(start, end))
+        .map(|_| end)
+        .map_err(|e| {
+            c.discard_since(checkpoint);
+            e.to_string()
+        })
+}
+
+fn clip_line(c: &mut Construction, name: &str, func: &str, args: &[&str]) -> Result<Id, String> {
+    let mut plan = Plan::new(c, name)?;
+    let def = ClipDef::parse(c, func, args)?;
+    let prefix = name
+        .split('_')
+        .next()
+        .filter(|s| !s.is_empty())
+        .unwrap_or("a");
+    if def.kind() == Kind::Segment {
+        let count = def.segments(c).len();
+        if count == 0 {
+            plan.first(name, Planned::Def(Def::Polygon(PolygonDef::Clip(def))));
+            return plan.commit(c);
+        }
+        for i in 0..count {
+            let label = planned_index_label(c, &plan.taken, prefix);
+            let index = if def.is_carrier() { count - 1 - i } else { i };
+            plan.push(
+                label,
+                Planned::Def(Def::Polygon(PolygonDef::Clip(
+                    def.slot(ClipOutput::Segment, index),
+                ))),
+            );
+        }
+    } else {
+        let rings = def.rings(c);
+        let vertices = rings.iter().map(Vec::len).sum();
+        for i in 0..rings.len().max(1) {
+            let label = planned_index_label(c, &plan.taken, prefix);
+            plan.push(
+                label,
+                Planned::Def(Def::Polygon(PolygonDef::Clip(
+                    def.slot(ClipOutput::Polygon, i),
+                ))),
+            );
+        }
+        plan.taken.remove(name);
+        for (labels, output) in [
+            (POINT_LABELS, ClipOutput::Point),
+            (LINE_LABELS, ClipOutput::Edge),
+        ] {
+            for i in 0..vertices {
+                let label = next_indexed_label(c, &plan.taken, labels);
+                plan.push(
+                    label,
+                    Planned::Def(Def::Polygon(PolygonDef::Clip(def.slot(output, i)))),
+                );
+            }
+        }
+    }
+    plan.commit(c)
+}
+
+/// Rigid copies keep an independent first vertex and the bearing of the
+/// copied first side. A polygon made from points keeps its creation offsets.
+fn rigid_polygon_line(c: &mut Construction, name: &str, args: &[&str]) -> Result<Id, String> {
+    let mut plan = Plan::new(c, name)?;
+    let checkpoint = c.checkpoint();
+    let first = Id(c.len());
+    let result = (|| {
+        let source = args
+            .first()
+            .and_then(|label| c.id(label))
+            .filter(|&id| c.kind(id) == Kind::Polygon);
+        let mut side_names = Vec::new();
+        let mut vertices = Vec::new();
+        if let Some(poly) = source {
+            let (dx, dy) = match args {
+                // The headless default view has a right edge of 11.7.
+                [_] => (11.7 / 15.0, -11.7 / 15.0),
+                [_, x, y] => (count_arg(c, x)?.value(c), count_arg(c, y)?.value(c)),
+                _ => return Err("`RigidPolygon` of a polygon takes zero or two offsets".into()),
+            };
+            let shape = Shape::of(c, poly);
+            let n = shape.len();
+            let p = shape
+                .vertex(c, 0)
+                .ok_or("the source polygon has no first vertex")?;
+            let q = shape
+                .vertex(c, 1)
+                .ok_or("the source polygon has no second vertex")?;
+            let bearing = (q.1 - p.1).atan2(q.0 - p.0);
+            let label = next_indexed_label(c, &plan.taken, POINT_LABELS);
+            let anchor = c
+                .add(
+                    &label,
+                    Def::FreePoint {
+                        x: p.0 + dx,
+                        y: p.1 + dy,
+                    },
+                )
+                .map_err(|e| e.to_string())?;
+            vertices.push(anchor);
+            for k in 1..n {
+                let label = next_indexed_label(c, &plan.taken, POINT_LABELS);
+                let d = PolygonDef::RigidCopyVertex {
+                    poly,
+                    anchor,
+                    bearing,
+                    k: k as u32,
+                };
+                vertices.push(c.add(&label, Def::Polygon(d)).map_err(|e| e.to_string())?);
+            }
+            side_names.clone_from(&vertices);
+        } else {
+            if args.len() < 3 {
+                return Err("`RigidPolygon` needs a polygon or at least three points".into());
+            }
+            side_names = points(c, args)?;
+            let anchor = side_names[0];
+            let a = c.point(anchor).ok_or("the first point is undefined")?;
+            vertices.push(anchor);
+            for &id in &side_names[1..] {
+                let p = c.point(id).ok_or("a vertex is undefined")?;
+                let label = next_indexed_label(c, &plan.taken, POINT_LABELS);
+                let d = PolygonDef::RigidVertex {
+                    anchor,
+                    x: p.0 - a.0,
+                    y: p.1 - a.1,
+                };
+                vertices.push(c.add(&label, Def::Polygon(d)).map_err(|e| e.to_string())?);
+            }
+        }
+        plan_polygon_sides(c, &mut plan, name, &vertices, &side_names)?;
+        plan.commit(c).map(|_| first)
+    })();
+    if result.is_err() {
+        c.discard_since(checkpoint);
+    }
+    result
+}
+
 /// `CmdPolygon`.
 fn polygon_line(c: &mut Construction, name: &str, args: &[&str]) -> Result<Id, String> {
     let n = arg_count(args);
@@ -1091,22 +1329,33 @@ fn polygon_line(c: &mut Construction, name: &str, args: &[&str]) -> Result<Id, S
         }
     }
     let ids = points(c, args)?;
-    plan.first(name, Planned::List(ids.clone(), PolygonDef::Polygon));
+    plan_polygon_sides(c, &mut plan, name, &ids, &ids)?;
+    plan.commit(c)
+}
+
+fn plan_polygon_sides(
+    c: &Construction,
+    plan: &mut Plan,
+    name: &str,
+    ids: &[Id],
+    side_names: &[Id],
+) -> Result<(), String> {
+    let n = ids.len();
+    plan.first(name, Planned::List(ids.to_vec(), PolygonDef::Polygon));
     // `Polygon(A)` makes a polygon from a list, which has no sides.
     if n >= 2 {
         for i in 0..n {
             let side = Def::Segment(ids[i], ids[(i + 1) % n]);
-            // GeoGebra labels only the sides that are defined now.
             if !defined(c, side)? {
                 continue;
             }
             // `GeoPolygon.defaultSegmentLabels`
-            let named_after = if n == 3 { ids[(i + 2) % 3] } else { ids[i] };
+            let named_after = side_names[if n == 3 { (i + 2) % 3 } else { i }];
             let label = side_label(c, &plan.taken, named_after);
             plan.push(label, Planned::Def(side));
         }
     }
-    plan.commit(c)
+    Ok(())
 }
 
 /// `Polygon(A, B, n)` (`AlgoPolygonRegularND`): the polygon, its new

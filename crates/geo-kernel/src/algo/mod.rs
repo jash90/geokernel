@@ -23,14 +23,17 @@ pub mod conic;
 pub mod conic_nd;
 pub mod conic_parts;
 pub(crate) mod conic_path;
+pub(crate) mod curve;
 pub(crate) mod elliptic;
 pub mod general_conic;
 pub mod intersect;
+mod kimberling;
 pub mod lines;
 pub mod measure;
 pub mod path;
 pub mod point;
 pub mod polygon;
+pub mod polygon_clip;
 pub mod predicate;
 pub mod transform;
 pub mod vector;
@@ -41,6 +44,8 @@ use crate::tol::{EPS, STANDARD_PRECISION};
 pub(crate) const POINT: &[Kind] = &[Kind::Point];
 pub(crate) const LINE: &[Kind] = &[Kind::Line];
 pub(crate) const LINE_LIKE: &[Kind] = &[Kind::Line, Kind::Segment];
+pub(crate) const CARRIERS: &[Kind] = &[Kind::Line, Kind::Segment, Kind::Ray];
+pub(crate) const CONIC_OBJECTS: &[Kind] = &[Kind::Circle, Kind::Conic, Kind::Arc, Kind::Sector];
 pub(crate) const CIRCLE: &[Kind] = &[Kind::Circle];
 pub(crate) const NUMBER: &[Kind] = &[Kind::Number];
 
@@ -188,4 +193,9 @@ pub(crate) fn line_through(p: (f64, f64), q: (f64, f64)) -> Option<(f64, f64, f6
     }
     let (a, b) = (-dy / len, dx / len);
     Some((a, b, -(a * p.0 + b * p.1)))
+}
+
+/// The full conic behind a conic object, including the carrier of a conic part.
+pub(crate) fn conic_object(c: &crate::Construction, id: Id) -> Option<conic_nd::ConicData> {
+    c.arc(id).map(|arc| arc.conic).or_else(|| c.conic(id))
 }

@@ -2,6 +2,7 @@
 // commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/CmdClosestPoint.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoClosestPoint.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/barycentric/AlgoKimberling.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoClosestPointLines.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersectLines.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/barycentric/CmdTrilinear.java
@@ -17,21 +18,32 @@
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
-//! Points computed from other objects: `ClosestPoint(path, point)` for a
-//! line, segment, ray or circle, and `Trilinear(A, B, C, a, b, c)`.
+//! Closest points on paths, trilinear coordinates and triangle centers.
 //!
 //! `ClosestPoint` calls the `pointChanged` code of the path on a copy of the
 //! point, as `AlgoClosestPoint` does.
 
-use super::{Group, Parents, POINT};
+use super::polygon::Count;
+use super::{Group, Parents, CARRIERS, POINT};
 use crate::kernel::{Construction, Error, Id, Kind, Value};
 use crate::script::object;
 use crate::tol::STANDARD_PRECISION;
 
 const NUMBER: &[Kind] = &[Kind::Number];
-const LINE: &[Kind] = &[Kind::Line];
 /// The paths `ClosestPoint` accepts.
-const PATH: &[Kind] = &[Kind::Line, Kind::Segment, Kind::Ray, Kind::Circle];
+pub(crate) const CLOSEST_PATH: &[Kind] = &[
+    Kind::Line,
+    Kind::Segment,
+    Kind::Ray,
+    Kind::Circle,
+    Kind::Conic,
+    Kind::Arc,
+    Kind::Sector,
+    Kind::Polygon,
+    Kind::PolyLine,
+    Kind::Function,
+    Kind::List,
+];
 
 /// Points computed from other objects.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -44,6 +56,8 @@ pub enum PointDef {
     /// `Trilinear(A, B, C, a, b, c)`: the three points, then the three
     /// numbers. The handles are stored as `u32` to keep [`crate::Def`] small.
     Trilinear { ids: [u32; 6] },
+    /// `TriangleCenter(A, B, C, n)`.
+    TriangleCenter { a: Id, b: Id, c: Id, index: Count },
 }
 
 fn id_of(raw: u32) -> Id {
@@ -129,8 +143,41 @@ fn closest_on_circle(cx: f64, cy: f64, r: f64, p: (f64, f64)) -> Value {
     }
 }
 
-fn closest(c: &Construction, path: Id, point: Id) -> Option<Value> {
-    let p = c.point(point)?;
+pub(crate) fn closest_coords(c: &Construction, path: Id, p: (f64, f64)) -> Option<(f64, f64)> {
+    if c.kind(path) == Kind::Function {
+        return super::curve::closest(c, path, p);
+    }
+    if c.kind(path) == Kind::List {
+        return closest_list(c.elements(path)?, p);
+    }
+    let Value::Point { x, y } = closest_point_value(c, path, p)? else {
+        return None;
+    };
+    Some((x, y))
+}
+
+fn closest_list(list: crate::expr::List<'_>, p: (f64, f64)) -> Option<(f64, f64)> {
+    use crate::expr::Element;
+    let mut best = None;
+    let mut distance = f64::INFINITY;
+    for element in list.iter() {
+        let q = match element {
+            Element::Value(Kind::Point, Value::Point { x, y }) => Some((x, y)),
+            Element::List(nested) => closest_list(nested, p),
+            _ => None,
+        };
+        if let Some((x, y)) = q {
+            let d = (x - p.0).hypot(y - p.1);
+            if d < distance {
+                distance = d;
+                best = q;
+            }
+        }
+    }
+    best
+}
+
+fn closest_point_value(c: &Construction, path: Id, p: (f64, f64)) -> Option<Value> {
     match c.value(path) {
         Value::Line { a, b, c: z } => {
             let (foot, _) = project((a, b, z), (0.0, 0.0), p);
@@ -171,7 +218,7 @@ fn closest(c: &Construction, path: Id, point: Id) -> Option<Value> {
             })
         }
         Value::Circle { cx, cy, r } => Some(closest_on_circle(cx, cy, r, p)),
-        _ => None,
+        _ => super::path::project(c, path, p),
     }
 }
 
@@ -190,6 +237,35 @@ fn trilinear(c: &Construction, ids: [u32; 6]) -> Option<Value> {
     let wa = c.number(id_of(ids[3]))? * side_a;
     let wb = c.number(id_of(ids[4]))? * side_b;
     let wc = c.number(id_of(ids[5]))? * side_c;
+    barycentric(pa, pb, pc, [wa, wb, wc])
+}
+
+fn triangle_center(c: &Construction, a: Id, b: Id, d: Id, index: Count) -> Option<Value> {
+    let (pa, pb, pc) = (c.point(a)?, c.point(b)?, c.point(d)?);
+    let dist = |a: (f64, f64), b: (f64, f64)| super::length(a.0 - b.0, a.1 - b.1);
+    let (a, b, d) = (dist(pb, pc), dist(pc, pa), dist(pa, pb));
+    let min = a.min(b).min(d);
+    let (a, b, d) = (a / min, b / min, d / min);
+    let k = index.value(c) as i32;
+    let weights = [
+        super::kimberling::weight(k, a, b, d),
+        super::kimberling::weight(k, b, d, a),
+        super::kimberling::weight(k, d, a, b),
+    ];
+    let sum = weights[0] + weights[1] + weights[2];
+    if sum.is_nan() || is_zero(sum) {
+        None
+    } else {
+        barycentric(pa, pb, pc, weights)
+    }
+}
+
+fn barycentric(
+    pa: (f64, f64),
+    pb: (f64, f64),
+    pc: (f64, f64),
+    [wa, wb, wc]: [f64; 3],
+) -> Option<Value> {
     let w = wa + wb + wc;
     // The barycentric combination of the homogeneous vectors (x, y, 0, 1).
     let (ka, kb, kc) = (wa / w, wb / w, wc / w);
@@ -215,18 +291,31 @@ impl Group for PointDef {
             PointDef::Closest { path, point } => Parents::of(&[path, point]),
             PointDef::LineIntersection { first, second } => Parents::of(&[first, second]),
             PointDef::Trilinear { ids } => Parents::of(&ids.map(id_of)),
+            PointDef::TriangleCenter { a, b, c, index } => {
+                if let Some(id) = index.id() {
+                    Parents::of(&[a, b, c, id])
+                } else {
+                    Parents::of(&[a, b, c])
+                }
+            }
         }
     }
 
     fn check(&self, c: &Construction) -> Result<(), Error> {
         match *self {
             PointDef::Closest { path, point } => {
-                c.expect(path, PATH)?;
+                c.expect(path, CLOSEST_PATH)?;
                 c.expect(point, POINT)
             }
             PointDef::LineIntersection { first, second } => {
-                c.expect(first, LINE)?;
-                c.expect(second, LINE)
+                c.expect(first, CARRIERS)?;
+                c.expect(second, CARRIERS)
+            }
+            PointDef::TriangleCenter { a, b, c: d, index } => {
+                c.expect(a, POINT)?;
+                c.expect(b, POINT)?;
+                c.expect(d, POINT)?;
+                index.check(c)
             }
             PointDef::Trilinear { ids } => {
                 for &raw in &ids[..3] {
@@ -242,11 +331,15 @@ impl Group for PointDef {
 
     fn compute(&self, c: &Construction) -> Option<Value> {
         match *self {
-            PointDef::Closest { path, point } => closest(c, path, point),
+            PointDef::Closest { path, point } => {
+                let (x, y) = closest_coords(c, path, c.point(point)?)?;
+                Some(Value::Point { x, y })
+            }
             PointDef::LineIntersection { first, second } => {
-                super::intersect::lines(c, first, second)
+                super::intersect::closest_lines(c, first, second)
             }
             PointDef::Trilinear { ids } => trilinear(c, ids),
+            PointDef::TriangleCenter { a, b, c: d, index } => triangle_center(c, a, b, d, index),
         }
     }
 
@@ -261,7 +354,8 @@ impl Group for PointDef {
                     (Ok(a), Ok(b)) => (a, b),
                     (Err(e), _) | (_, Err(e)) => return Some(Err(e)),
                 };
-                let is_path = |id: Id| PATH.contains(&c.kind(id));
+                let is_path = |id: Id| CLOSEST_PATH.contains(&c.kind(id));
+                let is_line = |id: Id| CARRIERS.contains(&c.kind(id));
                 Some(match (c.kind(first), c.kind(second)) {
                     (_, Kind::Point) if is_path(first) => Ok(PointDef::Closest {
                         path: first,
@@ -272,7 +366,10 @@ impl Group for PointDef {
                         point: first,
                     }),
                     // `AlgoClosestPointLines(g, h)` is made with the arguments swapped.
-                    (Kind::Line, Kind::Line) => Ok(PointDef::LineIntersection {
+                    (Kind::Line, Kind::Segment) | (Kind::Segment, Kind::Line) => Err(format!(
+                        "`{func}` of a line and a segment is unsupported"
+                    )),
+                    _ if is_line(first) && is_line(second) => Ok(PointDef::LineIntersection {
                         first: second,
                         second: first,
                     }),
@@ -280,15 +377,26 @@ impl Group for PointDef {
                         "`{func}` of two paths is only supported for two lines, give a path and a point"
                     )),
                     (_, Kind::Point) => Err(format!(
-                        "`{}` is a {}, expected a line, segment, ray or circle",
+                        "`{}` is a {}, expected a path",
                         c.label(first),
                         c.kind(first)
                     )),
                     _ => Err(format!(
-                        "`{func}` needs a line, segment, ray or circle and a point"
+                        "`{func}` needs a path and a point"
                     )),
                 })
             }
+            "TriangleCenter" => Some((|| {
+                let &[a, b, d, index] = args else {
+                    return Err(format!("`{func}` does not take {n} argument(s)"));
+                };
+                Ok(PointDef::TriangleCenter {
+                    a: object(c, a)?,
+                    b: object(c, b)?,
+                    c: object(c, d)?,
+                    index: super::polygon::count_arg(c, index)?,
+                })
+            })()),
             "Trilinear" => {
                 if n != 6 {
                     return Some(Err(format!("`{func}` does not take {n} argument(s)")));

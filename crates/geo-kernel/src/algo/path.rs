@@ -44,7 +44,8 @@
 //! stored parameter (`Path.pathChanged`, called by `AlgoPointOnPath`).
 
 use super::arc::ArcData;
-use super::conic_nd::{my_length, ConicData};
+use super::conic_nd::{my_length, ConicData, ConicType};
+use super::polygon::Count;
 use super::{join, Group, Parents, POINT};
 use crate::kernel::{Construction, Def, Error, Id, Kind, Value};
 use crate::script::object;
@@ -68,6 +69,10 @@ const NUMBER: &[Kind] = &[Kind::Number];
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum PathDef {
+    /// `PointIn(region)`, with parameters for the interior or boundary.
+    InRegion { region: Id },
+    /// The second endpoint of `Segment(A, length)` on its internal circle.
+    FixedEndpoint { start: Id, length: Count },
     /// `Point(path)`: a point on `path` that the user can move along it.
     On { path: Id },
     /// `Point(path, t)`: the point at the parameter `t` from 0 to 1 along
@@ -96,6 +101,45 @@ pub struct PathState {
     ty: i32,
     temp_t: f64,
     temp_ty: i32,
+    region: RegionState,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum RegionState {
+    Boundary,
+    PartEdge,
+    Conic(f64, f64),
+    Polygon {
+        second: usize,
+        third: usize,
+        u: f64,
+        v: f64,
+    },
+}
+
+impl RegionState {
+    fn same(self, other: Self) -> bool {
+        let same = |a: f64, b: f64| a.to_bits() == b.to_bits();
+        match (self, other) {
+            (Self::Boundary, Self::Boundary) | (Self::PartEdge, Self::PartEdge) => true,
+            (Self::Conic(u, v), Self::Conic(x, y)) => same(u, x) && same(v, y),
+            (
+                Self::Polygon {
+                    second,
+                    third,
+                    u,
+                    v,
+                },
+                Self::Polygon {
+                    second: s,
+                    third: t,
+                    u: x,
+                    v: y,
+                },
+            ) => second == s && third == t && same(u, x) && same(v, y),
+            _ => false,
+        }
+    }
 }
 
 impl PathState {
@@ -111,6 +155,7 @@ impl PathState {
             ty: -1,
             temp_t: f64::NAN,
             temp_ty: -1,
+            region: RegionState::Boundary,
         }
     }
 
@@ -136,6 +181,7 @@ impl PathState {
             && self.ty == o.ty
             && b(self.temp_t, o.temp_t)
             && self.temp_ty == o.temp_ty
+            && self.region.same(o.region)
     }
 
     /// Whether every field is a number or NaN that the state can hold:
@@ -704,7 +750,10 @@ fn line_start(c: &Construction, line: Id) -> Option<(f64, f64, f64)> {
         | Def::Parallel { through: p, .. }
         | Def::Vector(VectorDef::LineVector(p, _) | VectorDef::OrthoLineVector(p, _))
         | Def::Lines(
-            LineDef::AngleBisectorPoints { vertex: p, .. } | LineDef::TangentPoint { point: p, .. },
+            LineDef::AngleBisectorPoints { vertex: p, .. }
+            | LineDef::TangentPoint { point: p, .. }
+            | LineDef::ThroughRay { point: p, .. }
+            | LineDef::NormalToConic { point: p, .. },
         )
         | Def::ConicPart(ConicPartDef::TangentPoint { point: p, .. }) => hom(c.point(p)),
         Def::Lines(LineDef::BisectorPoints(a, b)) => mid(c.point(a), c.point(b)),
@@ -779,6 +828,19 @@ pub(crate) fn geom(c: &Construction, path: Id) -> Geom<'_> {
     }
 }
 
+/// Projection used when a command copies a point onto a path.
+pub(crate) fn project(c: &Construction, id: Id, (x, y): (f64, f64)) -> Option<Value> {
+    let path = geom(c, id);
+    if !path.is_defined() {
+        return None;
+    }
+    let mut state = PathState::new();
+    state.set_coords(&path, x, y);
+    path.point_changed(&mut state);
+    state.update_coords();
+    state.value()
+}
+
 /// `AlgoPointOnPath.compute`: a parameter given as a number is put on the
 /// path first; then the point follows the path, or becomes undefined with
 /// it.
@@ -801,13 +863,15 @@ impl PathDef {
         match self {
             PathDef::On { path } => Some((path, None)),
             PathDef::OnParam { path, param } => Some((path, Some(param))),
-            PathDef::Parameter { .. } => None,
+            PathDef::Parameter { .. }
+            | PathDef::InRegion { .. }
+            | PathDef::FixedEndpoint { .. } => None,
         }
     }
 
     /// Whether this defines a point on a path, which has a [`PathState`].
     pub(crate) fn has_state(self) -> bool {
-        self.path_and_param().is_some()
+        !matches!(self, PathDef::Parameter { .. })
     }
 
     /// The state of a new point (`AlgoDispatcher.point` with a path): placed
@@ -815,6 +879,22 @@ impl PathDef {
     /// a random point; this kernel does not (see `DIFFERENCES.md`).
     pub(crate) fn create(self, c: &Construction) -> PathState {
         let mut st = PathState::new();
+        match self {
+            PathDef::InRegion { region } => {
+                st.place_in_region(c, region, (0.0, 0.0));
+                if st.region == RegionState::PartEdge {
+                    let p = (st.x, st.y);
+                    st.place_in_region(c, region, p);
+                }
+                return st;
+            }
+            PathDef::FixedEndpoint { start, length } => {
+                let (x, y) = c.point(start).unwrap_or((f64::NAN, f64::NAN));
+                st.set_coords(&fixed_circle(c, start, length), x + length.value(c), y);
+                return st;
+            }
+            _ => {}
+        }
         let Some((path, param)) = self.path_and_param() else {
             return st;
         };
@@ -833,8 +913,16 @@ impl PathDef {
     /// The state after the path or the parameter changed.
     pub(crate) fn update(self, c: &Construction, old: &PathState) -> PathState {
         let mut st = *old;
-        if let Some((path, param)) = self.path_and_param() {
-            follow(c, &geom(c, path), param, &mut st);
+        match self {
+            PathDef::InRegion { region } => st.follow_region(c, region),
+            PathDef::FixedEndpoint { start, length } => {
+                follow(c, &fixed_circle(c, start, length), None, &mut st);
+            }
+            _ => {
+                if let Some((path, param)) = self.path_and_param() {
+                    follow(c, &geom(c, path), param, &mut st);
+                }
+            }
         }
         st
     }
@@ -908,7 +996,13 @@ pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
         _ => Vec::new(),
     };
     match *def {
-        Def::Path(PathDef::On { path } | PathDef::OnParam { path, .. }) => inputs(path),
+        Def::Path(
+            PathDef::On { path }
+            | PathDef::OnParam { path, .. }
+            | PathDef::InRegion { region: path },
+        )
+        | Def::Point(PointDef::Closest { path, .. })
+        | Def::Measure(super::measure::MeasureDef::DistancePointPath { path, .. }) => inputs(path),
         Def::Path(PathDef::Parameter { point }) => match c.def(point) {
             Def::Path(PathDef::On { path } | PathDef::OnParam { path, .. }) => {
                 let mut ids = inputs(path);
@@ -931,14 +1025,24 @@ pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
 impl Group for PathDef {
     fn kind(&self) -> Kind {
         match self {
-            PathDef::On { .. } | PathDef::OnParam { .. } => Kind::Point,
+            PathDef::On { .. }
+            | PathDef::OnParam { .. }
+            | PathDef::InRegion { .. }
+            | PathDef::FixedEndpoint { .. } => Kind::Point,
             PathDef::Parameter { .. } => Kind::Number,
         }
     }
 
     fn parents(&self) -> Parents {
         match *self {
-            PathDef::On { path } => Parents::of(&[path]),
+            PathDef::On { path } | PathDef::InRegion { region: path } => Parents::of(&[path]),
+            PathDef::FixedEndpoint { start, length } => {
+                if let Some(length) = length.id() {
+                    Parents::of(&[start, length])
+                } else {
+                    Parents::of(&[start])
+                }
+            }
             PathDef::OnParam { path, param } => Parents::of(&[path, param]),
             PathDef::Parameter { point } => Parents::of(&[point]),
         }
@@ -946,6 +1050,11 @@ impl Group for PathDef {
 
     fn check(&self, c: &Construction) -> Result<(), Error> {
         match *self {
+            PathDef::InRegion { region } => c.expect(region, REGIONS),
+            PathDef::FixedEndpoint { start, length } => {
+                c.expect(start, POINT)?;
+                length.check(c)
+            }
             PathDef::On { path } => {
                 c.expect(path, PATH)?;
                 super::arc::expect_point_path(c, path)
@@ -980,6 +1089,8 @@ impl Group for PathDef {
             }
         };
         Some(match (func, args) {
+            ("PointIn", [region]) => object(c, region).map(|region| PathDef::InRegion { region }),
+            ("PointIn", _) => Err("`PointIn` takes one region".into()),
             ("Point", [p]) => path(p).map(|path| PathDef::On { path }),
             ("Point", [p, t]) => (|| {
                 let path = path(p)?;
@@ -1004,4 +1115,271 @@ impl Group for PathDef {
             _ => return None,
         })
     }
+}
+
+const REGIONS: &[Kind] = &[
+    Kind::Polygon,
+    Kind::Circle,
+    Kind::Conic,
+    Kind::Arc,
+    Kind::Sector,
+];
+
+fn fixed_circle(c: &Construction, start: Id, length: Count) -> Geom<'_> {
+    let r = length.value(c);
+    match c.point(start) {
+        Some((x, y)) if r.is_finite() && r >= 0.0 => Geom::Conic(ConicData::circle(x, y, r)),
+        _ => Geom::Undefined,
+    }
+}
+
+impl PathState {
+    fn place_in_region(&mut self, c: &Construction, region: Id, p: (f64, f64)) {
+        self.set_coords_2d(p.0, p.1, 1.0);
+        if c.kind(region) == Kind::Polygon {
+            let vertices: Vec<_> = c.vertices(region).collect();
+            if let Some(vertices) = vertices.into_iter().collect::<Option<Vec<_>>>() {
+                if polygon_contains(&vertices, p) {
+                    if let Some((second, third)) = polygon_basis(&vertices) {
+                        let a = vertices[0];
+                        let (u, v) = (sub(vertices[second], a), sub(vertices[third], a));
+                        let q = sub(p, a);
+                        let determinant = cross(u, v);
+                        self.region = RegionState::Polygon {
+                            second,
+                            third,
+                            u: cross(q, v) / determinant,
+                            v: cross(u, q) / determinant,
+                        };
+                        return;
+                    }
+                }
+            }
+        } else if let Some(d) = super::conic_object(c, region) {
+            if conic_contains(&d, p) && c.arc(region).is_none_or(|a| part_contains(&a, p)) {
+                super::conic_path::rw_to_ev(&d, self);
+                let (x, y, _) = self.coords();
+                let [a, b] = conic_region_axes(&d);
+                if a != 0.0 && b != 0.0 {
+                    self.region = RegionState::Conic(x / a, y / b);
+                    self.set_coords_2d(p.0, p.1, 1.0);
+                    return;
+                }
+            } else if let Some(arc) = c.arc(region) {
+                self.region = if conic_contains(&d, p) {
+                    RegionState::PartEdge
+                } else {
+                    RegionState::Boundary
+                };
+                project_part(&arc, self, p);
+                return;
+            }
+        }
+        self.region = RegionState::Boundary;
+        self.set_coords(&geom(c, region), p.0, p.1);
+    }
+
+    fn follow_region(&mut self, c: &Construction, region: Id) {
+        let path = geom(c, region);
+        if !path.is_defined() {
+            self.set_undefined();
+            return;
+        }
+        match self.region {
+            RegionState::Boundary => {
+                path.path_changed(self);
+            }
+            RegionState::PartEdge => self.place_in_region(c, region, (self.x, self.y)),
+            RegionState::Conic(u, v) => {
+                let Some(d) = super::conic_object(c, region) else {
+                    self.set_undefined();
+                    return;
+                };
+                let [a, b] = conic_region_axes(&d);
+                self.set_coords_2d(u * a, v * b, 1.0);
+                super::conic_path::ev_to_rw(&d, self);
+                let q = (self.x, self.y);
+                if !conic_contains(&d, q) || c.arc(region).is_some_and(|a| !part_contains(&a, q)) {
+                    self.place_in_region(c, region, q);
+                    if self.region == RegionState::PartEdge {
+                        self.region = RegionState::Conic(u, v);
+                        if let Some(arc) = c.arc(region) {
+                            if !part_contains(&arc, (self.x, self.y)) {
+                                arc.point_changed(self);
+                            }
+                        }
+                    }
+                }
+            }
+            RegionState::Polygon {
+                second,
+                third,
+                u,
+                v,
+            } => {
+                let vertices: Option<Vec<_>> = c.vertices(region).collect();
+                let Some(vertices) = vertices else {
+                    self.set_undefined();
+                    return;
+                };
+                let basis = vertices.get(second).zip(vertices.get(third));
+                let Some((&b, &d)) = basis else {
+                    self.place_in_region(c, region, (self.x, self.y));
+                    return;
+                };
+                let a = vertices[0];
+                let (ab, ad) = (sub(b, a), sub(d, a));
+                let p = (a.0 + u * ab.0 + v * ad.0, a.1 + u * ab.1 + v * ad.1);
+                if !polygon_contains(&vertices, p) {
+                    self.place_in_region(c, region, p);
+                } else {
+                    self.set_coords_2d(p.0, p.1, 1.0);
+                }
+            }
+        }
+        self.update_coords();
+    }
+}
+
+fn conic_region_axes(d: &ConicData) -> [f64; 2] {
+    if d.ty == ConicType::Parabola {
+        [1.0, d.p.sqrt()]
+    } else {
+        d.half_axes
+    }
+}
+
+pub(crate) fn conic_contains(d: &ConicData, (x, y): (f64, f64)) -> bool {
+    let [a, b, z, h, g, f] = d.matrix;
+    let evaluate =
+        |x: f64, y: f64| x * (a * x + h * y + 2.0 * g) + y * (h * x + b * y + 2.0 * f) + z;
+    let [mx, my] = d.midpoint;
+    let sign = match d.ty {
+        ConicType::IntersectingLines => evaluate(
+            mx + d.lines[0][0] + d.lines[1][0],
+            my + d.lines[0][1] + d.lines[1][1],
+        ),
+        ConicType::Hyperbola => -evaluate(mx, my),
+        ConicType::Parabola => evaluate(mx + d.p * d.eigenvec[0][0], my + d.p * d.eigenvec[0][1]),
+        ConicType::SinglePoint => evaluate(mx + 1.0, my),
+        _ => evaluate(mx, my),
+    };
+    evaluate(x, y) / sign >= -STANDARD_PRECISION
+}
+
+pub(crate) fn part_end(a: &ArcData, t: f64) -> (f64, f64) {
+    let mut p = PathState::new();
+    let [x, y] = a.conic.half_axes;
+    p.set_coords_2d(x * t.cos(), y * t.sin(), 1.0);
+    super::conic_path::ev_to_rw(&a.conic, &mut p);
+    (p.x, p.y)
+}
+
+pub(crate) fn part_contains(a: &ArcData, p: (f64, f64)) -> bool {
+    if a.sector {
+        let mut state = PathState::new();
+        state.set_coords_2d(p.0, p.1, 1.0);
+        super::conic_path::rw_to_ev(&a.conic, &mut state);
+        let [ha, hb] = a.conic.half_axes;
+        let positive = |t: f64| {
+            if t < 0.0 {
+                t + std::f64::consts::TAU
+            } else {
+                t
+            }
+        };
+        let t = positive((ha * state.y).atan2(hb * state.x));
+        positive(t - a.start) <= a.extent + STANDARD_PRECISION
+    } else {
+        let start = part_end(a, a.start);
+        let end = part_end(a, a.end);
+        cross(sub(end, start), sub(p, start)) <= STANDARD_PRECISION
+    }
+}
+
+fn project_part(a: &ArcData, state: &mut PathState, p: (f64, f64)) {
+    let start = part_end(a, a.start);
+    let end = part_end(a, a.end);
+    let [x, y] = a.conic.midpoint;
+    let center = (x, y);
+    let mut boundary = *state;
+    a.point_changed(&mut boundary);
+    let mut best = if a.sector { center } else { start };
+    let mut distance = my_length(best.0 - p.0, best.1 - p.1);
+    for q in [start, end] {
+        let d = my_length(q.0 - p.0, q.1 - p.1);
+        if d < distance {
+            best = q;
+            distance = d;
+        }
+    }
+    let segments = if a.sector {
+        [(center, start), (center, end)]
+    } else {
+        [(start, end), (end, end)]
+    };
+    for (start, end) in segments {
+        let mut foot = *state;
+        Seg::new(start, end).point_changed(&mut foot);
+        let d = my_length(foot.x - p.0, foot.y - p.1);
+        if d < distance {
+            best = (foot.x, foot.y);
+            distance = d;
+        }
+    }
+    if !conic_contains(&a.conic, p) {
+        let d = my_length(boundary.x - p.0, boundary.y - p.1);
+        if d < distance {
+            best = (boundary.x, boundary.y);
+        }
+    }
+    state.set_coords_2d(best.0, best.1, 1.0);
+    let mut parameter = *state;
+    a.point_changed(&mut parameter);
+    state.t = parameter.t;
+    state.ty = parameter.ty;
+    state.temp_t = state.t;
+    state.temp_ty = state.ty;
+}
+
+fn sub(a: (f64, f64), b: (f64, f64)) -> (f64, f64) {
+    (a.0 - b.0, a.1 - b.1)
+}
+
+fn cross(a: (f64, f64), b: (f64, f64)) -> f64 {
+    a.0 * b.1 - a.1 * b.0
+}
+
+fn polygon_basis(vertices: &[(f64, f64)]) -> Option<(usize, usize)> {
+    let &origin = vertices.first()?;
+    let second = vertices.iter().position(|&p| {
+        let (x, y) = sub(p, origin);
+        x.abs() >= STANDARD_PRECISION || y.abs() >= STANDARD_PRECISION
+    })?;
+    let u = sub(vertices[second], origin);
+    let third = (second + 1..vertices.len())
+        .rev()
+        .find(|&i| cross(u, sub(vertices[i], origin)).abs() >= STANDARD_PRECISION)?;
+    Some((second, third))
+}
+
+pub(crate) fn polygon_contains(vertices: &[(f64, f64)], p: (f64, f64)) -> bool {
+    let Some(&last) = vertices.last() else {
+        return false;
+    };
+    let mut prev = sub(last, p);
+    let mut inside = false;
+    for &vertex in vertices {
+        let next = sub(vertex, p);
+        let det = cross(prev, next);
+        if det.abs() < STANDARD_PRECISION && prev.0 * next.0 + prev.1 * next.1 <= STANDARD_PRECISION
+        {
+            return true;
+        }
+        if (prev.1 > 0.0) != (next.1 > 0.0) && det / (next.1 - prev.1) > 0.0 {
+            inside = !inside;
+        }
+        prev = next;
+    }
+    inside
 }
