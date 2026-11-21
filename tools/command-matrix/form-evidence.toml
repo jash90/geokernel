@@ -247,7 +247,7 @@ cases = ["transform-dilate-001"]
 [[form]]
 command = "Dilate"
 form = "line,number"
-cases = ["transform-dilate-002", "transform-dilate-019", "transform-dilate-036"]
+cases = ["transform-dilate-002", "transform-dilate-052", "transform-dilate-054"]
 
 [[form]]
 command = "Dilate"
@@ -257,12 +257,12 @@ cases = ["conics-transform-004", "conics-transform-012", "conics-transform-020"]
 [[form]]
 command = "Dilate"
 form = "point,number,point"
-cases = ["transform-dilate-006", "transform-dilate-011", "vector-rawscale-005"]
+cases = ["transform-dilate-014", "transform-dilate-027", "vector-rawscale-005"]
 
 [[form]]
 command = "Dilate"
 form = "line,number,point"
-cases = ["intersect-groups-005", "transform-chain-001", "transform-dilate-007"]
+cases = ["intersect-groups-005", "transform-chain-001", "transform-dilate-015"]
 
 [[form]]
 command = "Dilate"

@@ -31,7 +31,7 @@
 <tableview min="0" max="0" step="0"/>
 <scripting blocked="false" disabled="false"/>
 <construction title="" author="" date="">
-<expression label="A" exp="(-7.02, 5.45)" type="point"/>
+<expression label="A" exp="(-6.38, -5.81)" type="point"/>
 <element type="point" label="A">
 	<show object="true" label="true"/>
 	<objColor r="77" g="77" b="255" alpha="0"/>
@@ -40,9 +40,9 @@
 	<animation step="0.1" type="1" playing="false"/>
 	<pointSize val="5"/>
 	<pointStyle val="0"/>
-	<coords x="-7.02" y="5.45" z="1"/>
+	<coords x="-6.38" y="-5.81" z="1"/>
 </element>
-<expression label="B" exp="(-5.52, 2.09)" type="point"/>
+<expression label="B" exp="(-7.87, 6.77)" type="point"/>
 <element type="point" label="B">
 	<show object="true" label="true"/>
 	<objColor r="77" g="77" b="255" alpha="0"/>
@@ -51,27 +51,29 @@
 	<animation step="0.1" type="1" playing="false"/>
 	<pointSize val="5"/>
 	<pointStyle val="0"/>
-	<coords x="-5.52" y="2.09" z="1"/>
+	<coords x="-7.87" y="6.77" z="1"/>
 </element>
-<command name="Line">
+<command name="Ray">
 	<input a0="A" a1="B"/>
-	<output a0="l"/>
+	<output a0="g"/>
 </command>
-<element type="line" label="l">
+<element type="ray" label="g">
 	<show object="true" label="false"/>
 	<objColor r="28" g="28" b="31" alpha="0"/>
 	<layer val="0"/>
 	<labelMode val="0"/>
 	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
 	<eqnStyle style="implicit"/>
-	<coords x="3.3600000000000003" y="1.5" z="15.412200000000002"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<coords x="-12.579999999999998" y="-1.4900000000000002" z="-88.9173"/>
 </element>
-<expression label="f" exp="2"/>
+<expression label="f" exp="1.5"/>
 <element type="numeric" label="f">
-	<value val="2"/>
+	<value val="1.5"/>
 	<show object="false" label="true"/>
 </element>
-<expression label="Q" exp="(-4.36, 5.67)" type="point"/>
+<expression label="Q" exp="(-3.29, -4.57)" type="point"/>
 <element type="point" label="Q">
 	<show object="true" label="true"/>
 	<objColor r="77" g="77" b="255" alpha="0"/>
@@ -80,33 +82,48 @@
 	<animation step="0.1" type="1" playing="false"/>
 	<pointSize val="5"/>
 	<pointStyle val="0"/>
-	<coords x="-4.36" y="5.67" z="1"/>
+	<coords x="-3.29" y="-4.57" z="1"/>
 </element>
 <command name="Dilate">
-	<input a0="l" a1="f" a2="Q"/>
+	<input a0="A" a1="f" a2="Q"/>
+	<output a0="A&apos;"/>
+</command>
+<element type="point" label="A&apos;">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="-7.925000000000001" y="-6.43" z="1"/>
+</element>
+<command name="Dilate">
+	<input a0="B" a1="f" a2="Q"/>
+	<output a0="B&apos;"/>
+</command>
+<element type="point" label="B&apos;">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="-10.16" y="12.44" z="1"/>
+</element>
+<command name="Ray">
+	<input a0="A&apos;" a1="B&apos;"/>
 	<output a0="m"/>
 </command>
-<element type="line" label="m">
+<element type="ray" label="m">
 	<show object="true" label="false"/>
 	<objColor r="28" g="28" b="31" alpha="0"/>
 	<layer val="0"/>
 	<labelMode val="0"/>
 	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
 	<eqnStyle style="implicit"/>
-	<coords x="6.720000000000001" y="3" z="49.3596"/>
-</element>
-<command name="Dilate">
-	<input a0="m" a1="f"/>
-	<output a0="n"/>
-</command>
-<element type="line" label="n">
-	<show object="true" label="false"/>
-	<objColor r="28" g="28" b="31" alpha="0"/>
-	<layer val="0"/>
-	<labelMode val="0"/>
-	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
-	<eqnStyle style="implicit"/>
-	<coords x="13.440000000000001" y="6" z="197.4384"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<coords x="-18.869999999999997" y="-2.2349999999999994" z="-163.9158"/>
 </element>
 </construction>
 </geogebra>

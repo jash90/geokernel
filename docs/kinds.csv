@@ -5,9 +5,9 @@ Segment,SEGMENT,Segment,yes,yes,yes,yes,yes,yes,yes,no,
 Ray,RAY,Ray,yes,yes,yes,yes,yes,yes,yes,no,
 Vector,VECTOR,Vector,yes,yes,yes,yes,yes,yes,yes,no,
 Circle,CONIC,Circle,yes,yes,yes,yes,yes,yes,yes,no,a circle is a conic upstream; the kernel keeps it as its own kind
-Conic,CONIC,Conic,yes,yes,yes,yes,yes,yes,no,no,the SVG view fits bounded conics. The import fixtures have no conic and the importer refuses free conics
-Arc,CONICPART,Arc,yes,yes,yes,partial,yes,no,no,no,
-Sector,CONICPART,Sector,yes,yes,yes,yes,yes,no,no,no,
+Conic,CONIC,Conic,yes,yes,yes,yes,yes,yes,yes,no,the SVG view fits bounded conics; the importer refuses free conics, but the image of a conic under a transformation imports
+Arc,CONICPART,Arc,yes,yes,yes,partial,yes,no,yes,no,
+Sector,CONICPART,Sector,yes,yes,yes,yes,yes,no,yes,no,
 Number,NUMERIC,Number,yes,no,no,no,yes,yes,yes,no,no sliders
 Angle,ANGLE,Angle,yes,partial,partial,partial,yes,yes,partial,no,angles with drawable geometry have a sector or right-angle marker; import supports angles made by commands
 Boolean,BOOLEAN,Boolean,yes,no,no,no,no,partial,partial,no,the algebra text is the debug form of the value; only booleans a command makes are imported

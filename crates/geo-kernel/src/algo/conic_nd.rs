@@ -816,6 +816,131 @@ impl ConicData {
         self.set_positive_orientation(old);
     }
 
+    /// `GeoConicND.matrixTransform(a00, a01, a10, a11)` (shear and stretch).
+    pub fn matrix_transform(&mut self, a00: f64, a01: f64, a10: f64, a11: f64) {
+        let det = a00 * a11 - a01 * a10;
+        let det2 = det * det;
+        let m = &mut self.matrix;
+        let a0 = a11 * (a11 * m[0] - a10 * m[3]) - a10 * (a11 * m[3] - a10 * m[1]);
+        let a3 = a00 * (a11 * m[3] - a10 * m[1]) - a01 * (a11 * m[0] - a10 * m[3]);
+        let a1 = a00 * (a00 * m[1] - a01 * m[3]) - a01 * (a00 * m[3] - a01 * m[0]);
+        let a4 = a11 * m[4] - a10 * m[5];
+        m[5] = (a00 * m[5] - a01 * m[4]) / det;
+        m[0] = a0 / det2;
+        m[1] = a1 / det2;
+        m[3] = a3 / det2;
+        m[4] = a4 / det;
+        self.classify(false);
+    }
+
+    /// `GeoConic.fromLine`: this conic becomes the line `g`, whose start
+    /// point (the first point of a segment or ray, or `None` for the point
+    /// of a plain line closest to the origin, `setStandardStartPoint`)
+    /// becomes the midpoint. GeoGebra keeps a line as its private single-line
+    /// type; the kernel holds it as a double line until the inversion below
+    /// classifies it again.
+    pub fn from_line(&mut self, g: [f64; 3], start: Option<(f64, f64)>) {
+        self.lines[0] = g;
+        self.lines[1] = g;
+        self.defined = true;
+        self.ty = ConicType::DoubleLine;
+        self.eigenvec[0] = [-g[1], g[0]];
+        self.midpoint = match start {
+            Some((x, y)) => [x, y],
+            None => {
+                let [x, y, z] = g;
+                if x != 0.0 || y != 0.0 {
+                    [-z * x / (x * x + y * y), -z * y / (x * x + y * y)]
+                } else {
+                    [0.0, 0.0]
+                }
+            }
+        };
+    }
+
+    /// `GeoConic.mirror(conic)`: the inversion of this conic in the circle
+    /// `c`. The image of a circle is a circle or a line; the image of a line
+    /// (a record made by [`Self::from_line`], `from_a_line`) is a circle
+    /// through the centre of the mirror, or the line itself when it passes
+    /// through that centre (GeoGebra's single-line type, which the kernel
+    /// reports as undefined).
+    pub fn mirror_conic(&mut self, c: &ConicData, from_a_line: bool) {
+        if c.ty == ConicType::SinglePoint {
+            self.defined = false;
+            return;
+        }
+        if c.ty == ConicType::Circle
+            && (from_a_line || matches!(self.ty, ConicType::SinglePoint | ConicType::Circle))
+        {
+            let (x1, y1) = (c.midpoint[0], c.midpoint[1]);
+            let r2 = self.half_axes[0];
+            let (x2, y2) = (self.midpoint[0], self.midpoint[1]);
+            let dist = ((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2)).sqrt();
+            if is_zero(r2) && is_zero(dist) {
+                self.defined = false;
+                return;
+            }
+            let r1 = c.half_axes[0];
+            if from_a_line {
+                // the image of a line
+                let [lx, ly, lz] = self.lines[0];
+                let (perp_x, perp_y) = if lx == 0.0 {
+                    (x1, -lz / ly)
+                } else {
+                    let perp_y = -(lx * ly * x1 - lx * lx * y1 + ly * lz) / (lx * lx + ly * ly);
+                    let perp_x = (-lz - ly * perp_y) / lx;
+                    (perp_x, perp_y)
+                };
+                let dist2 = (perp_x - x1) * (perp_x - x1) + (perp_y - y1) * (perp_y - y1);
+                if !is_zero(dist2) {
+                    let sf = r1 * r1 / dist2;
+                    let mx = x1 + sf * (perp_x - x1) / 2.0;
+                    let my = y1 + sf * (perp_y - y1) / 2.0;
+                    let radius = sf / 2.0 * dist2.sqrt();
+                    self.defined = true;
+                    self.set_sphere(mx, my, radius);
+                } else {
+                    // the line passes through the centre: GeoGebra keeps it
+                    self.defined = false;
+                }
+                return;
+            }
+            if is_equal(dist, r2) {
+                // the circle passes through the centre of the mirror: a line
+                let (dx, dy) = (x2 - x1, y2 - y1);
+                let k = r1 * r1 / 2.0 / r2 / r2;
+                let (x3, y3) = (x1 + k * dx, y1 + k * dy);
+                self.matrix[4] = dx * 0.5;
+                self.matrix[5] = dy * 0.5;
+                self.matrix[2] = -dx * x3 - dy * y3;
+                self.matrix[0] = 0.0;
+                self.matrix[1] = 0.0;
+                self.matrix[3] = 0.0;
+                // GeoGebra writes its single-line type over the double line
+                // the classification finds; the kernel keeps the double line
+                self.classify(true);
+                return;
+            }
+            let x = r1 * r1 / (dist - r2);
+            let y = r1 * r1 / (dist + r2);
+            // radius of the image circle
+            let r3 = (y - x).abs() / 2.0;
+            let (cx, cy) = if is_zero(dist) {
+                (x1, y1)
+            } else {
+                let t = (x.min(y) + r3) / dist;
+                (x1 + (x2 - x1) * t, y1 + (y2 - y1) * t)
+            };
+            self.set_sphere(cx, cy, r3);
+            return;
+        }
+        if c.ty == ConicType::ParallelLines {
+            self.mirror_line(c.lines[0]);
+        } else {
+            self.defined = false;
+        }
+    }
+
     /// `GeoConicND.doDilate(factor)`.
     fn do_dilate(&mut self, factor: f64) {
         let r = 1.0 / factor;

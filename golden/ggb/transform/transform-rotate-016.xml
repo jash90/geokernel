@@ -31,8 +31,8 @@
 <tableview min="0" max="0" step="0"/>
 <scripting blocked="false" disabled="false"/>
 <construction title="" author="" date="">
-<expression label="P" exp="(1.14, 0.65)" type="point"/>
-<element type="point" label="P">
+<expression label="A" exp="(5.22, 3.59)" type="point"/>
+<element type="point" label="A">
 	<show object="true" label="true"/>
 	<objColor r="77" g="77" b="255" alpha="0"/>
 	<layer val="0"/>
@@ -40,14 +40,42 @@
 	<animation step="0.1" type="1" playing="false"/>
 	<pointSize val="5"/>
 	<pointStyle val="0"/>
-	<coords x="1.14" y="0.65" z="1"/>
+	<coords x="5.22" y="3.59" z="1"/>
 </element>
-<expression label="w" exp="0.3"/>
+<expression label="B" exp="(-7.29, 4.33)" type="point"/>
+<element type="point" label="B">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="1" playing="false"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="-7.29" y="4.33" z="1"/>
+</element>
+<command name="Segment">
+	<input a0="A" a1="B"/>
+	<output a0="s"/>
+</command>
+<element type="segment" label="s">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="implicit"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<startStyle val="default"/>
+	<endStyle val="default"/>
+	<coords x="-0.7400000000000002" y="-12.51" z="48.7737"/>
+</element>
+<expression label="w" exp="1.2"/>
 <element type="numeric" label="w">
-	<value val="0.3"/>
+	<value val="1.2"/>
 	<show object="false" label="true"/>
 </element>
-<expression label="Q" exp="(100000.5, -200000.25)" type="point"/>
+<expression label="Q" exp="(7.23, -2.91)" type="point"/>
 <element type="point" label="Q">
 	<show object="true" label="true"/>
 	<objColor r="77" g="77" b="255" alpha="0"/>
@@ -56,20 +84,50 @@
 	<animation step="0.1" type="1" playing="false"/>
 	<pointSize val="5"/>
 	<pointStyle val="0"/>
-	<coords x="100000.5" y="-200000.25" z="1"/>
+	<coords x="7.23" y="-2.91" z="1"/>
 </element>
 <command name="Rotate">
-	<input a0="P" a1="w" a2="Q"/>
-	<output a0="m"/>
+	<input a0="A" a1="w" a2="Q"/>
+	<output a0="A&apos;"/>
 </command>
-<element type="point" label="m">
+<element type="point" label="A&apos;">
 	<show object="true" label="true"/>
 	<objColor r="77" g="77" b="255" alpha="0"/>
 	<layer val="0"/>
 	<labelMode val="0"/>
 	<pointSize val="5"/>
 	<pointStyle val="0"/>
-	<coords x="-54636.84479766147" y="-38483.923905240285" z="1"/>
+	<coords x="0.44340685471491526" y="-2.428073158695747" z="1"/>
+</element>
+<command name="Rotate">
+	<input a0="B" a1="w" a2="Q"/>
+	<output a0="B&apos;"/>
+</command>
+<element type="point" label="B&apos;">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="-4.779397577404019" y="-13.819737385833008" z="1"/>
+</element>
+<command name="Segment">
+	<input a0="A&apos;" a1="B&apos;"/>
+	<output a0="m"/>
+</command>
+<element type="segment" label="m">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="implicit"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<startStyle val="default"/>
+	<endStyle val="default"/>
+	<coords x="11.39166422713726" y="-5.222804432118934" z="-17.732493259668516"/>
 </element>
 </construction>
 </geogebra>

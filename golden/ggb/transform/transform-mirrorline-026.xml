@@ -31,7 +31,7 @@
 <tableview min="0" max="0" step="0"/>
 <scripting blocked="false" disabled="false"/>
 <construction title="" author="" date="">
-<expression label="A" exp="(-0.5, 7.81)" type="point"/>
+<expression label="A" exp="(-2.45, -2.98)" type="point"/>
 <element type="point" label="A">
 	<show object="true" label="true"/>
 	<objColor r="77" g="77" b="255" alpha="0"/>
@@ -40,9 +40,9 @@
 	<animation step="0.1" type="1" playing="false"/>
 	<pointSize val="5"/>
 	<pointStyle val="0"/>
-	<coords x="-0.5" y="7.81" z="1"/>
+	<coords x="-2.45" y="-2.98" z="1"/>
 </element>
-<expression label="B" exp="(0.05, 1.55)" type="point"/>
+<expression label="B" exp="(-2.86, 3.97)" type="point"/>
 <element type="point" label="B">
 	<show object="true" label="true"/>
 	<objColor r="77" g="77" b="255" alpha="0"/>
@@ -51,22 +51,34 @@
 	<animation step="0.1" type="1" playing="false"/>
 	<pointSize val="5"/>
 	<pointStyle val="0"/>
-	<coords x="0.05" y="1.55" z="1"/>
+	<coords x="-2.86" y="3.97" z="1"/>
 </element>
-<command name="Line">
-	<input a0="A" a1="B"/>
-	<output a0="l"/>
+<expression label="F" exp="(-3.8, -0.8)" type="point"/>
+<element type="point" label="F">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="1" playing="false"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="-3.8" y="-0.8" z="1"/>
+</element>
+<command name="Ellipse">
+	<input a0="A" a1="F" a2="B"/>
+	<output a0="c"/>
 </command>
-<element type="line" label="l">
+<element type="conic" label="c">
 	<show object="true" label="false"/>
 	<objColor r="28" g="28" b="31" alpha="0"/>
 	<layer val="0"/>
 	<labelMode val="0"/>
 	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
 	<eqnStyle style="implicit"/>
-	<coords x="6.26" y="0.55" z="-1.1655"/>
+	<eigenvectors x0="0.5264888675107638" y0="-0.850182023091075" z0="1" x1="0.850182023091075" y1="0.5264888675107638" z1="1"/>
+	<matrix A0="551.9210094150067" A1="540.2014094150067" A2="-11167.056637093965" A3="11.771999999999995" A4="1747.0022344218958" A5="1057.7681637943626"/>
 </element>
-<expression label="C" exp="(1, 1)" type="point"/>
+<expression label="C" exp="(0.04, -6.65)" type="point"/>
 <element type="point" label="C">
 	<show object="true" label="true"/>
 	<objColor r="77" g="77" b="255" alpha="0"/>
@@ -75,9 +87,9 @@
 	<animation step="0.1" type="1" playing="false"/>
 	<pointSize val="5"/>
 	<pointStyle val="0"/>
-	<coords x="1" y="1" z="1"/>
+	<coords x="0.04" y="-6.65" z="1"/>
 </element>
-<expression label="D" exp="(1.000001, 1)" type="point"/>
+<expression label="D" exp="(3.16, -5.31)" type="point"/>
 <element type="point" label="D">
 	<show object="true" label="true"/>
 	<objColor r="77" g="77" b="255" alpha="0"/>
@@ -86,7 +98,7 @@
 	<animation step="0.1" type="1" playing="false"/>
 	<pointSize val="5"/>
 	<pointStyle val="0"/>
-	<coords x="1.000001" y="1" z="1"/>
+	<coords x="3.16" y="-5.31" z="1"/>
 </element>
 <command name="Line">
 	<input a0="C" a1="D"/>
@@ -99,20 +111,21 @@
 	<labelMode val="0"/>
 	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
 	<eqnStyle style="implicit"/>
-	<coords x="0" y="9.999999999177334E-7" z="-9.999999999177334E-7"/>
+	<coords x="-1.3400000000000007" y="3.12" z="20.801600000000004"/>
 </element>
 <command name="Mirror">
-	<input a0="l" a1="n"/>
+	<input a0="c" a1="n"/>
 	<output a0="m"/>
 </command>
-<element type="line" label="m">
+<element type="conic" label="m">
 	<show object="true" label="false"/>
 	<objColor r="28" g="28" b="31" alpha="0"/>
 	<layer val="0"/>
 	<labelMode val="0"/>
 	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
 	<eqnStyle style="implicit"/>
-	<coords x="-6.26" y="0.55" z="0.06549999999999989"/>
+	<eigenvectors x0="-0.2540496255753587" y0="0.9671911846915375" z0="1" x1="0.9671911846915375" y1="0.2540496255753587" z1="1"/>
+	<matrix A0="557.5136013491831" A1="534.6088174808303" A2="61995.25704187144" A3="6.462194598277957" A4="-652.8957081586648" A5="6525.876224799675"/>
 </element>
 </construction>
 </geogebra>

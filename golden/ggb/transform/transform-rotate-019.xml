@@ -31,7 +31,7 @@
 <tableview min="0" max="0" step="0"/>
 <scripting blocked="false" disabled="false"/>
 <construction title="" author="" date="">
-<expression label="A" exp="(123456.789, 98765.4321)" type="point"/>
+<expression label="A" exp="(-0.77, -0.69)" type="point"/>
 <element type="point" label="A">
 	<show object="true" label="true"/>
 	<objColor r="77" g="77" b="255" alpha="0"/>
@@ -40,59 +40,90 @@
 	<animation step="0.1" type="1" playing="false"/>
 	<pointSize val="5"/>
 	<pointStyle val="0"/>
-	<coords x="123456.789" y="98765.4321" z="1"/>
+	<coords x="-0.77" y="-0.69" z="1"/>
 </element>
-<expression label="r" exp="3"/>
-<element type="numeric" label="r">
-	<value val="3"/>
-	<show object="false" label="true"/>
+<expression label="B" exp="(-4.25, 5.2)" type="point"/>
+<element type="point" label="B">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="1" playing="false"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="-4.25" y="5.2" z="1"/>
 </element>
-<command name="Circle">
-	<input a0="A" a1="r"/>
-	<output a0="k"/>
+<command name="Ray">
+	<input a0="A" a1="B"/>
+	<output a0="g"/>
 </command>
-<element type="conic" label="k">
+<element type="ray" label="g">
 	<show object="true" label="false"/>
 	<objColor r="28" g="28" b="31" alpha="0"/>
 	<layer val="0"/>
 	<labelMode val="0"/>
 	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
-	<eqnStyle style="specific"/>
-	<eigenvectors x0="1" y0="0" z0="1" x1="0" y1="1" z1="1"/>
-	<matrix A0="1" A1="1" A2="2.4996189319090233E10" A3="0" A4="-123456.789" A5="-98765.4321"/>
+	<eqnStyle style="implicit"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<coords x="-5.890000000000001" y="-3.48" z="-6.9365000000000006"/>
 </element>
-<expression label="w" exp="1.570796"/>
+<expression label="w" exp="1.2"/>
 <element type="numeric" label="w">
-	<value val="1.570796"/>
+	<value val="1.2"/>
 	<show object="false" label="true"/>
 </element>
+<expression label="Q" exp="(6.49, 5.11)" type="point"/>
+<element type="point" label="Q">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="1" playing="false"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="6.49" y="5.11" z="1"/>
+</element>
 <command name="Rotate">
-	<input a0="k" a1="w"/>
+	<input a0="A" a1="w" a2="Q"/>
+	<output a0="A&apos;"/>
+</command>
+<element type="point" label="A&apos;">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="9.265109401109264" y="-3.7582787400867685" z="1"/>
+</element>
+<command name="Rotate">
+	<input a0="B" a1="w" a2="Q"/>
+	<output a0="B&apos;"/>
+</command>
+<element type="point" label="B&apos;">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="2.5143941991834753" y="-4.867487585385111" z="1"/>
+</element>
+<command name="Ray">
+	<input a0="A&apos;" a1="B&apos;"/>
 	<output a0="m"/>
 </command>
-<element type="conic" label="m">
+<element type="ray" label="m">
 	<show object="true" label="false"/>
 	<objColor r="28" g="28" b="31" alpha="0"/>
 	<layer val="0"/>
 	<labelMode val="0"/>
 	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
-	<eqnStyle style="specific"/>
-	<eigenvectors x0="3.2679489653813835E-7" y0="0.9999999999999466" z0="1" x1="-0.9999999999999466" y1="3.2679489653813835E-7" z1="1"/>
-	<matrix A0="1" A1="1" A2="2.4996189319090233E10" A3="0" A4="98765.39175494615" A5="-123456.82127603258"/>
-</element>
-<command name="Rotate">
-	<input a0="k" a1="w" a2="A"/>
-	<output a0="n"/>
-</command>
-<element type="conic" label="n">
-	<show object="true" label="false"/>
-	<objColor r="28" g="28" b="31" alpha="0"/>
-	<layer val="0"/>
-	<labelMode val="0"/>
-	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
-	<eqnStyle style="specific"/>
-	<eigenvectors x0="3.2679489653813835E-7" y0="0.9999999999999466" z0="1" x1="-0.9999999999999466" y1="3.2679489653813835E-7" z1="1"/>
-	<matrix A0="1" A1="1" A2="2.4996189319090233E10" A3="0" A4="-123456.789" A5="-98765.4321"/>
+	<eqnStyle style="implicit"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<coords x="1.1092088452983422" y="-6.7507152019257886" z="-35.648010724145465"/>
 </element>
 </construction>
 </geogebra>
