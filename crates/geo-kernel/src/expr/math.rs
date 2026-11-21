@@ -414,6 +414,35 @@ pub(crate) fn gamma(x: f64) -> f64 {
     -PI / (x * ln_gamma(-x).exp() * (PI * x).sin())
 }
 
+/// `MyMath2.psi` (`Gamma.digamma` of GeoGebra's commons-math build): the
+/// digamma function, by recursion up to 49 and an asymptotic series past
+/// it. The recursion folds from 49 downwards, as evaluating the recursive
+/// formula does; far below zero, where GeoGebra would not stop either, the
+/// result is `NaN`.
+pub(crate) fn digamma(x: f64) -> f64 {
+    if x.is_nan() || x.is_infinite() {
+        return x;
+    }
+    if x > 0.0 && x <= 1e-5 {
+        return -std::f64::consts::EULER_GAMMA - 1.0 / x;
+    }
+    if x >= 49.0 {
+        let inv = 1.0 / (x * x);
+        return x.ln()
+            - 0.5 / x
+            - inv * (0.083_333_333_333_333_33 + inv * (0.008_333_333_333_333_333 - inv / 252.0));
+    }
+    if x < -1e6 {
+        return f64::NAN;
+    }
+    let steps = (49.0 - x).ceil() as u32;
+    let mut value = digamma((x + f64::from(steps)).max(49.0));
+    for step in (0..steps).rev() {
+        value -= 1.0 / (x + f64::from(step));
+    }
+    value
+}
+
 /// `ln Γ(x)` for `x > 0` by the Lanczos approximation (`g = 7`, nine
 /// coefficients). GeoGebra calls a library routine here; see
 /// `DIFFERENCES.md`.

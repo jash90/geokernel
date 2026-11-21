@@ -1246,3 +1246,68 @@ cases = ["vectorforms-coordinates-001", "vectorforms-coordinates-003", "vectorfo
 command = "Vector"
 form = "vector"
 cases = ["vectorforms-position-001", "vectorforms-position-002", "vectorforms-coordinates-003"]
+
+[[form]]
+command = "Barycenter"
+form = "list,list"
+cases = ["geomextras-barycenter-001", "geomextras-barycenter-002", "geomextras-barycenter-003", "geomextras-barycenter-004", "geomextras-barycenter-005"]
+
+[[form]]
+command = "Circumference"
+form = "conic"
+cases = ["geomextras-perimeterconic-001"]
+
+[[form]]
+command = "Circumference"
+form = "polygon"
+cases = ["geomextras-circumferencepolygon-001"]
+
+[[form]]
+command = "Length"
+form = "function,number,number"
+cases = ["geomextras-lengthfunction-001", "geomextras-lengthfunction-002", "geomextras-lengthfunction-003", "geomextras-lengthfunction-004", "geomextras-lengthfunction-005", "geomextras-lengthfunction-006", "geomextras-lengthfunction-007", "geomextras-lengthfunction-008", "geomextras-lengthfunction-009", "geomextras-lengthfunction-010", "geomextras-lengthfunction-011", "geomextras-lengthfunction-012"]
+
+[[form]]
+command = "Length"
+form = "function,point,point"
+cases = ["geomextras-lengthfunction-001"]
+
+[[form]]
+command = "Perimeter"
+form = "conic"
+cases = ["geomextras-perimeterconic-001"]
+
+[[form]]
+command = "Point"
+form = "list"
+cases = ["geomextras-pointlist-001", "geomextras-pointlist-002", "geomextras-pointlist-003", "geomextras-pointlist-004", "geomextras-pointlist-005", "geomextras-pointlist-006", "geomextras-pointlist-008"]
+
+[[form]]
+command = "Point"
+form = "point,vector"
+cases = ["geomextras-pointvector-001"]
+
+[[form]]
+command = "Tangent"
+form = "conic,point"
+cases = ["geomextras-tangentreverse-001"]
+
+[[form]]
+command = "Tangent"
+form = "function,point"
+cases = ["geomextras-tangentfunction-001"]
+
+[[form]]
+command = "Tangent"
+form = "number,function"
+cases = ["geomextras-tangentfunction-001", "geomextras-tangentfunction-003", "geomextras-tangentfunction-004", "geomextras-tangentfunction-005", "geomextras-tangentfunction-006", "geomextras-tangentfunction-007", "geomextras-tangentfunction-008"]
+
+[[form]]
+command = "Tangent"
+form = "point,function"
+cases = ["geomextras-tangentfunction-001", "geomextras-tangentfunction-002"]
+
+[[form]]
+command = "Vertex"
+form = "segment,number"
+cases = ["geomextras-vertexsegment-001", "geomextras-vertexsegment-002", "geomextras-vertexsegment-003"]

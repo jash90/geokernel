@@ -1265,7 +1265,7 @@ fn arg_count(args: &[&str]) -> usize {
 
 /// A plain decimal literal such as `5`, `-2` or `3.5`. Words such as `inf`
 /// or `nan` and exponents are not literals here.
-fn decimal(arg: &str) -> Option<f64> {
+pub(crate) fn decimal(arg: &str) -> Option<f64> {
     let digits = arg.strip_prefix('-').unwrap_or(arg);
     let (whole, fraction) = digits.split_once('.').unwrap_or((digits, ""));
     let all_digits = |s: &str| s.bytes().all(|b| b.is_ascii_digit());

@@ -109,9 +109,10 @@ fn check_line(c: &mut Construction, line: &str) -> Result<bool, Problem> {
                     detail: format!("{len} objects before and after"),
                 });
             }
-            if first.index() != len {
+            let expected = c.ids().skip(len).find(|&id| !c.label(id).starts_with('\0'));
+            if Some(first) != expected {
                 return Err(Problem {
-                    key: "Ok(Some(id)) is not the first new object".into(),
+                    key: "Ok(Some(id)) is not the first new output".into(),
                     detail: format!("id {} with {len} objects before", first.index()),
                 });
             }

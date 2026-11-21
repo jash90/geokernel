@@ -1,0 +1,1186 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "geomextras-lengthfunction-001",
+      "group": "geomextras",
+      "script": [
+        "f(x) = 3*x/4",
+        "a = 0",
+        "b = 4",
+        "P = (0, 1)",
+        "Q = (4, 4)",
+        "d = Length(f, a, b)",
+        "s = Length(f, P, Q)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "value": 0.0 },
+        { "action": "set_number", "label": "b", "value": -4.0 },
+        { "action": "move", "label": "Q", "x": 0.0, "y": 1.0 },
+        { "action": "move", "label": "Q", "x": -4.0, "y": 7.0 }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -6.0],
+              [-4.0, -3.0],
+              [-2.0, -1.5],
+              [-1.0, -0.75],
+              [-0.5, -0.375],
+              [0.0, 0.0],
+              [0.5, 0.375],
+              [1.0, 0.75],
+              [2.0, 1.5],
+              [4.0, 3.0],
+              [8.0, 6.0]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "Q": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 },
+          "d": { "type": "number", "defined": true, "value": 5.0 },
+          "s": { "type": "number", "defined": true, "value": 5.0 }
+        },
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -6.0],
+              [-4.0, -3.0],
+              [-2.0, -1.5],
+              [-1.0, -0.75],
+              [-0.5, -0.375],
+              [0.0, 0.0],
+              [0.5, 0.375],
+              [1.0, 0.75],
+              [2.0, 1.5],
+              [4.0, 3.0],
+              [8.0, 6.0]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "Q": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "s": { "type": "number", "defined": true, "value": 5.0 }
+        },
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -6.0],
+              [-4.0, -3.0],
+              [-2.0, -1.5],
+              [-1.0, -0.75],
+              [-0.5, -0.375],
+              [0.0, 0.0],
+              [0.5, 0.375],
+              [1.0, 0.75],
+              [2.0, 1.5],
+              [4.0, 3.0],
+              [8.0, 6.0]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": -4.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "Q": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 },
+          "d": { "type": "number", "defined": true, "value": 5.0 },
+          "s": { "type": "number", "defined": true, "value": 5.0 }
+        },
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -6.0],
+              [-4.0, -3.0],
+              [-2.0, -1.5],
+              [-1.0, -0.75],
+              [-0.5, -0.375],
+              [0.0, 0.0],
+              [0.5, 0.375],
+              [1.0, 0.75],
+              [2.0, 1.5],
+              [4.0, 3.0],
+              [8.0, 6.0]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": -4.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "Q": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 5.0 },
+          "s": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -6.0],
+              [-4.0, -3.0],
+              [-2.0, -1.5],
+              [-1.0, -0.75],
+              [-0.5, -0.375],
+              [0.0, 0.0],
+              [0.5, 0.375],
+              [1.0, 0.75],
+              [2.0, 1.5],
+              [4.0, 3.0],
+              [8.0, 6.0]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": -4.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "Q": { "type": "point", "defined": true, "x": -4.0, "y": 7.0 },
+          "d": { "type": "number", "defined": true, "value": 5.0 },
+          "s": { "type": "number", "defined": true, "value": 5.0 }
+        }
+      ]
+    },
+    {
+      "id": "geomextras-lengthfunction-002",
+      "group": "geomextras",
+      "script": [
+        "a = 1",
+        "b = 4",
+        "f(x) = x^2",
+        "g(x) = sqrt(x)",
+        "d = Length(f, a, b)",
+        "s = Length(g, a, b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 },
+        { "action": "set_number", "label": "b", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, 0.0],
+              [0.5, 0.7071067811865476],
+              [1.0, 1.0],
+              [2.0, 1.4142135623730951],
+              [4.0, 2.0],
+              [8.0, 2.8284271247461903]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 15.339690709233338 },
+          "s": { "type": "number", "defined": true, "value": 3.1678409048882736 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, 0.0],
+              [0.5, 0.7071067811865476],
+              [1.0, 1.0],
+              [2.0, 1.4142135623730951],
+              [4.0, 2.0],
+              [8.0, 2.8284271247461903]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 18.29757642268873 },
+          "s": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, 0.0],
+              [0.5, 0.7071067811865476],
+              [1.0, 1.0],
+              [2.0, 1.4142135623730951],
+              [4.0, 2.0],
+              [8.0, 2.8284271247461903]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 15.339690709233338 },
+          "s": { "type": "number", "defined": true, "value": 3.1678409048882736 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, 0.0],
+              [0.5, 0.7071067811865476],
+              [1.0, 1.0],
+              [2.0, 1.4142135623730951],
+              [4.0, 2.0],
+              [8.0, 2.8284271247461903]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "s": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "geomextras-lengthfunction-003",
+      "group": "geomextras",
+      "script": [
+        "a = 1",
+        "f(x) = a*x^2 + 100000000000000000000",
+        "d = Length(f, 0, 4)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0E20],
+              [-4.0, 1.0E20],
+              [-2.0, 1.0E20],
+              [-1.0, 1.0E20],
+              [-0.5, 1.0E20],
+              [0.0, 1.0E20],
+              [0.5, 1.0E20],
+              [1.0, 1.0E20],
+              [2.0, 1.0E20],
+              [4.0, 1.0E20],
+              [8.0, 1.0E20]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 16.81863356996481 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0E20],
+              [-4.0, 1.0E20],
+              [-2.0, 1.0E20],
+              [-1.0, 1.0E20],
+              [-0.5, 1.0E20],
+              [0.0, 1.0E20],
+              [0.5, 1.0E20],
+              [1.0, 1.0E20],
+              [2.0, 1.0E20],
+              [4.0, 1.0E20],
+              [8.0, 1.0E20]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0E20],
+              [-4.0, 1.0E20],
+              [-2.0, 1.0E20],
+              [-1.0, 1.0E20],
+              [-0.5, 1.0E20],
+              [0.0, 1.0E20],
+              [0.5, 1.0E20],
+              [1.0, 1.0E20],
+              [2.0, 1.0E20],
+              [4.0, 1.0E20],
+              [8.0, 1.0E20]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 32.49577795408939 }
+        }
+      ]
+    },
+    {
+      "id": "geomextras-lengthfunction-004",
+      "group": "geomextras",
+      "script": [
+        "a = 1",
+        "b = 4",
+        "f(x) = sqrt(x)",
+        "d = Length(f, a, b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, 0.0],
+              [0.5, 0.7071067811865476],
+              [1.0, 1.0],
+              [2.0, 1.4142135623730951],
+              [4.0, 2.0],
+              [8.0, 2.8284271247461903]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 3.1678409048882736 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, 0.0],
+              [0.5, 0.7071067811865476],
+              [1.0, 1.0],
+              [2.0, 1.4142135623730951],
+              [4.0, 2.0],
+              [8.0, 2.8284271247461903]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 4.646783762400771 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, 0.0],
+              [0.5, 0.7071067811865476],
+              [1.0, 1.0],
+              [2.0, 1.4142135623730951],
+              [4.0, 2.0],
+              [8.0, 2.8284271247461903]
+            ]
+          },
+          "d": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, 0.0],
+              [0.5, 0.7071067811865476],
+              [1.0, 1.0],
+              [2.0, 1.4142135623730951],
+              [4.0, 2.0],
+              [8.0, 2.8284271247461903]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 3.1678409048882736 }
+        }
+      ]
+    },
+    {
+      "id": "geomextras-lengthfunction-005",
+      "group": "geomextras",
+      "script": [
+        "a = 0",
+        "b = 120",
+        "f(x) = sin(x)",
+        "d = Length(f, a, b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "value": 150.0 },
+        { "action": "set_number", "label": "b", "value": 300.0 },
+        { "action": "set_number", "label": "b", "value": 600.0 },
+        { "action": "set_number", "label": "b", "value": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 120.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.9893582466233818],
+              [-4.0, 0.7568024953079282],
+              [-2.0, -0.9092974268256817],
+              [-1.0, -0.8414709848078965],
+              [-0.5, -0.479425538604203],
+              [0.0, 0.0],
+              [0.5, 0.479425538604203],
+              [1.0, 0.8414709848078965],
+              [2.0, 0.9092974268256817],
+              [4.0, -0.7568024953079282],
+              [8.0, 0.9893582466233818]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 146.01693243955725 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 150.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.9893582466233818],
+              [-4.0, 0.7568024953079282],
+              [-2.0, -0.9092974268256817],
+              [-1.0, -0.8414709848078965],
+              [-0.5, -0.479425538604203],
+              [0.0, 0.0],
+              [0.5, 0.479425538604203],
+              [1.0, 0.8414709848078965],
+              [2.0, 0.9092974268256817],
+              [4.0, -0.7568024953079282],
+              [8.0, 0.9893582466233818]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 182.29789084219385 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 300.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.9893582466233818],
+              [-4.0, 0.7568024953079282],
+              [-2.0, -0.9092974268256817],
+              [-1.0, -0.8414709848078965],
+              [-0.5, -0.479425538604203],
+              [0.0, 0.0],
+              [0.5, 0.479425538604203],
+              [1.0, 0.8414709848078965],
+              [2.0, 0.9092974268256817],
+              [4.0, -0.7568024953079282],
+              [8.0, 0.9893582466233818]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 364.80678852569747 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 600.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.9893582466233818],
+              [-4.0, 0.7568024953079282],
+              [-2.0, -0.9092974268256817],
+              [-1.0, -0.8414709848078965],
+              [-0.5, -0.479425538604203],
+              [0.0, 0.0],
+              [0.5, 0.479425538604203],
+              [1.0, 0.8414709848078965],
+              [2.0, 0.9092974268256817],
+              [4.0, -0.7568024953079282],
+              [8.0, 0.9893582466233818]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 729.595283863451 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.9893582466233818],
+              [-4.0, 0.7568024953079282],
+              [-2.0, -0.9092974268256817],
+              [-1.0, -0.8414709848078965],
+              [-0.5, -0.479425538604203],
+              [0.0, 0.0],
+              [0.5, 0.479425538604203],
+              [1.0, 0.8414709848078965],
+              [2.0, 0.9092974268256817],
+              [4.0, -0.7568024953079282],
+              [8.0, 0.9893582466233818]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 4.966615839742438 }
+        }
+      ]
+    },
+    {
+      "id": "geomextras-lengthfunction-006",
+      "group": "geomextras",
+      "script": [
+        "a = 0",
+        "b = 10",
+        "f(x) = sin(10x)",
+        "d = Length(f, a, b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "value": 100.0 },
+        { "action": "set_number", "label": "b", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 10.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.9938886539233751],
+              [-4.0, -0.7451131604793488],
+              [-2.0, -0.9129452507276277],
+              [-1.0, 0.5440211108893698],
+              [-0.5, 0.9589242746631385],
+              [0.0, 0.0],
+              [0.5, -0.9589242746631385],
+              [1.0, -0.5440211108893698],
+              [2.0, 0.9129452507276277],
+              [4.0, 0.7451131604793488],
+              [8.0, -0.9938886539233751]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 64.83012279095425 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 100.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.9938886539233751],
+              [-4.0, -0.7451131604793488],
+              [-2.0, -0.9129452507276277],
+              [-1.0, 0.5440211108893698],
+              [-0.5, 0.9589242746631385],
+              [0.0, 0.0],
+              [0.5, -0.9589242746631385],
+              [1.0, -0.5440211108893698],
+              [2.0, 0.9129452507276277],
+              [4.0, 0.7451131604793488],
+              [8.0, -0.9938886539233751]
+            ]
+          },
+          "d": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.9938886539233751],
+              [-4.0, -0.7451131604793488],
+              [-2.0, -0.9129452507276277],
+              [-1.0, 0.5440211108893698],
+              [-0.5, 0.9589242746631385],
+              [0.0, 0.0],
+              [0.5, -0.9589242746631385],
+              [1.0, -0.5440211108893698],
+              [2.0, 0.9129452507276277],
+              [4.0, 0.7451131604793488],
+              [8.0, -0.9938886539233751]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 19.417959918945566 }
+        }
+      ]
+    },
+    {
+      "id": "geomextras-lengthfunction-007",
+      "group": "geomextras",
+      "script": [
+        "a = 0",
+        "b = 1",
+        "f(x) = tan(x)",
+        "d = Length(f, a, b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "value": 1.5707963 },
+        { "action": "set_number", "label": "b", "value": 1.5707963267948966 },
+        { "action": "set_number", "label": "b", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 6.799711455220379],
+              [-4.0, -1.1578212823495777],
+              [-2.0, 2.185039863261519],
+              [-1.0, -1.5574077246549023],
+              [-0.5, -0.5463024898437905],
+              [0.0, 0.0],
+              [0.5, 0.5463024898437905],
+              [1.0, 1.5574077246549023],
+              [2.0, -2.185039863261519],
+              [4.0, 1.1578212823495777],
+              [8.0, -6.799711455220379]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 1.876079934211047 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 1.5707963 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 6.799711455220379],
+              [-4.0, -1.1578212823495777],
+              [-2.0, 2.185039863261519],
+              [-1.0, -1.5574077246549023],
+              [-0.5, -0.5463024898437905],
+              [0.0, 0.0],
+              [0.5, 0.5463024898437905],
+              [1.0, 1.5574077246549023],
+              [2.0, -2.185039863261519],
+              [4.0, 1.1578212823495777],
+              [8.0, -6.799711455220379]
+            ]
+          },
+          "d": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 1.5707963267948966 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 6.799711455220379],
+              [-4.0, -1.1578212823495777],
+              [-2.0, 2.185039863261519],
+              [-1.0, -1.5574077246549023],
+              [-0.5, -0.5463024898437905],
+              [0.0, 0.0],
+              [0.5, 0.5463024898437905],
+              [1.0, 1.5574077246549023],
+              [2.0, -2.185039863261519],
+              [4.0, 1.1578212823495777],
+              [8.0, -6.799711455220379]
+            ]
+          },
+          "d": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 6.799711455220379],
+              [-4.0, -1.1578212823495777],
+              [-2.0, 2.185039863261519],
+              [-1.0, -1.5574077246549023],
+              [-0.5, -0.5463024898437905],
+              [0.0, 0.0],
+              [0.5, 0.5463024898437905],
+              [1.0, 1.5574077246549023],
+              [2.0, -2.185039863261519],
+              [4.0, 1.1578212823495777],
+              [8.0, -6.799711455220379]
+            ]
+          },
+          "d": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "geomextras-lengthfunction-008",
+      "group": "geomextras",
+      "script": [
+        "a = -1",
+        "b = 1",
+        "f(x) = x^(2/3)",
+        "d = Length(f, a, b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "value": 8.0 },
+        { "action": "set_number", "label": "a", "value": -8.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 3.9999999999999996],
+              [-4.0, 2.519842099789746],
+              [-2.0, 1.5874010519681994],
+              [-1.0, 1.0],
+              [-0.5, 0.6299605249474366],
+              [0.0, 0.0],
+              [0.5, 0.6299605249474366],
+              [1.0, 1.0],
+              [2.0, 1.5874010519681994],
+              [4.0, 2.519842099789746],
+              [8.0, 3.9999999999999996]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 2.8794197467298313 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "number", "defined": true, "value": 8.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 3.9999999999999996],
+              [-4.0, 2.519842099789746],
+              [-2.0, 1.5874010519681994],
+              [-1.0, 1.0],
+              [-0.5, 0.6299605249474366],
+              [0.0, 0.0],
+              [0.5, 0.6299605249474366],
+              [1.0, 1.0],
+              [2.0, 1.5874010519681994],
+              [4.0, 2.519842099789746],
+              [8.0, 3.9999999999999996]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 10.513125150241938 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -8.0 },
+          "b": { "type": "number", "defined": true, "value": 8.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 3.9999999999999996],
+              [-4.0, 2.519842099789746],
+              [-2.0, 1.5874010519681994],
+              [-1.0, 1.0],
+              [-0.5, 0.6299605249474366],
+              [0.0, 0.0],
+              [0.5, 0.6299605249474366],
+              [1.0, 1.0],
+              [2.0, 1.5874010519681994],
+              [4.0, 2.519842099789746],
+              [8.0, 3.9999999999999996]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 18.146830578745366 }
+        }
+      ]
+    },
+    {
+      "id": "geomextras-lengthfunction-009",
+      "group": "geomextras",
+      "script": [
+        "f(x) = sin(x)/x",
+        "a = 0",
+        "b = 1",
+        "d = Length(f, a, b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.12366978082792272],
+              [-4.0, -0.18920062382698205],
+              [-2.0, 0.45464871341284085],
+              [-1.0, 0.8414709848078965],
+              [-0.5, 0.958851077208406],
+              [0.0, null],
+              [0.5, 0.958851077208406],
+              [1.0, 0.8414709848078965],
+              [2.0, 0.45464871341284085],
+              [4.0, -0.18920062382698205],
+              [8.0, 0.12366978082792272]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0162025445723561 }
+        },
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.12366978082792272],
+              [-4.0, -0.18920062382698205],
+              [-2.0, 0.45464871341284085],
+              [-1.0, 0.8414709848078965],
+              [-0.5, 0.958851077208406],
+              [0.0, null],
+              [0.5, 0.958851077208406],
+              [1.0, 0.8414709848078965],
+              [2.0, 0.45464871341284085],
+              [4.0, -0.18920062382698205],
+              [8.0, 0.12366978082792272]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": 2.0890621440157404 }
+        }
+      ]
+    },
+    {
+      "id": "geomextras-lengthfunction-010",
+      "group": "geomextras",
+      "script": [
+        "f(x) = (x^2 - 1)/(x - 1)",
+        "a = 1",
+        "b = 2",
+        "d = Length(f, a, b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -7.0],
+              [-4.0, -3.0],
+              [-2.0, -1.0],
+              [-1.0, -0.0],
+              [-0.5, 0.5],
+              [0.0, 1.0],
+              [0.5, 1.5],
+              [1.0, null],
+              [2.0, 3.0],
+              [4.0, 5.0],
+              [8.0, 9.0]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": 1.4142135623731025 }
+        },
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -7.0],
+              [-4.0, -3.0],
+              [-2.0, -1.0],
+              [-1.0, -0.0],
+              [-0.5, 0.5],
+              [0.0, 1.0],
+              [0.5, 1.5],
+              [1.0, null],
+              [2.0, 3.0],
+              [4.0, 5.0],
+              [8.0, 9.0]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": 2.828427124746197 }
+        },
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -7.0],
+              [-4.0, -3.0],
+              [-2.0, -1.0],
+              [-1.0, -0.0],
+              [-0.5, 0.5],
+              [0.0, 1.0],
+              [0.5, 1.5],
+              [1.0, null],
+              [2.0, 3.0],
+              [4.0, 5.0],
+              [8.0, 9.0]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": 1.4142135623731025 }
+        }
+      ]
+    },
+    {
+      "id": "geomextras-lengthfunction-011",
+      "group": "geomextras",
+      "script": [
+        "f(x) = x*ln(x)",
+        "a = 0",
+        "b = 1",
+        "d = Length(f, a, b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, null],
+              [0.5, -0.34657359027997264],
+              [1.0, 0.0],
+              [2.0, 1.3862943611198906],
+              [4.0, 5.545177444479562],
+              [8.0, 16.635532333438686]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.3143907203712966 }
+        },
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, null],
+              [0.5, -0.34657359027997264],
+              [1.0, 0.0],
+              [2.0, 1.3862943611198906],
+              [4.0, 5.545177444479562],
+              [8.0, 16.635532333438686]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": 3.0277821039066772 }
+        }
+      ]
+    },
+    {
+      "id": "geomextras-lengthfunction-012",
+      "group": "geomextras",
+      "script": [
+        "a = 2",
+        "f(x) = sqrt(1 + x^2)",
+        "d = Length(f, 0, 1e5)",
+        "e = Length(f, 0, 2a)",
+        "s = Length(f, 0, 1E5)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 8.06225774829855],
+              [-4.0, 4.123105625617661],
+              [-2.0, 2.23606797749979],
+              [-1.0, 1.4142135623730951],
+              [-0.5, 1.118033988749895],
+              [0.0, 1.0],
+              [0.5, 1.118033988749895],
+              [1.0, 1.4142135623730951],
+              [2.0, 2.23606797749979],
+              [4.0, 4.123105625617661],
+              [8.0, 8.06225774829855]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 18.648057076605106 },
+          "e": { "type": "number", "defined": true, "value": 5.144613089989232 },
+          "s": { "type": "number", "defined": true, "value": 141420.7571707283 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 8.06225774829855],
+              [-4.0, 4.123105625617661],
+              [-2.0, 2.23606797749979],
+              [-1.0, 1.4142135623730951],
+              [-0.5, 1.118033988749895],
+              [0.0, 1.0],
+              [0.5, 1.118033988749895],
+              [1.0, 1.4142135623730951],
+              [2.0, 2.23606797749979],
+              [4.0, 4.123105625617661],
+              [8.0, 8.06225774829855]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 18.648057076605106 },
+          "e": { "type": "number", "defined": true, "value": 7.944666395125398 },
+          "s": { "type": "number", "defined": true, "value": 141420.7571707283 }
+        }
+      ]
+    }
+  ]
+}

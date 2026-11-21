@@ -736,6 +736,7 @@ fn validate_case(case: &Case) -> Result<(), String> {
     }
     let mut previous_keys: Option<BTreeSet<String>> = None;
     let mut boundary_prefixes = BTreeSet::new();
+    let mut has_point_list = false;
     for (i, snap) in case.snapshots.iter().enumerate() {
         let keys: BTreeSet<String> = snap.keys().cloned().collect();
         match &previous_keys {
@@ -773,6 +774,11 @@ fn validate_case(case: &Case) -> Result<(), String> {
                                 boundary_prefixes.insert(label_prefix(label));
                             }
                         }
+                    }
+                    if let Some((_, "Point", args)) = command_args(line) {
+                        has_point_list |= matches!(args.as_slice(), [arg]
+                            if arg.starts_with('{')
+                                || snap.get(*arg).is_some_and(|o| o.kind == Kind::List));
                     }
                     if let Some((label, "Angle", args)) = command_args(line) {
                         match args.as_slice() {
@@ -822,12 +828,13 @@ fn validate_case(case: &Case) -> Result<(), String> {
                 previous_keys = Some(keys);
             }
             Some(previous) if *previous != keys => {
-                // Boundary algorithms retain all earlier labels and can
-                // publish new indexed point labels on a move.
+                // These algorithms retain their earlier outputs and can
+                // publish new point labels on a move.
                 if !previous.is_subset(&keys)
                     || keys.difference(previous).any(|key| {
                         snap[key].kind != Kind::Point
-                            || !indexed_prefix(key).is_some_and(|p| boundary_prefixes.contains(p))
+                            || !(indexed_prefix(key).is_some_and(|p| boundary_prefixes.contains(p))
+                                || has_point_list && POINT_LABELS.contains(&label_prefix(key)))
                     })
                 {
                     return Err(format!("snapshot {i} labels differ from snapshot 0"));

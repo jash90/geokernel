@@ -1,0 +1,92 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "geomextras-tangentreverse-001",
+      "group": "geomextras",
+      "script": [
+        "k = Conic({1, 0.5, -1, 0, 0, 0})",
+        "P = (1, 1)",
+        "t = Tangent(k, P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "P", "x": 1.0, "y": 0.0 },
+        { "action": "move", "label": "P", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "P", "x": -3.0, "y": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1.0, 0.5, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.4142135623730951, 1.0],
+            "eigenvectors": [
+              [-0.0, 1.0],
+              [-1.0, -0.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "t_{1}": { "type": "line", "defined": true, "a": -0.33333333333333326, "b": -0.6666666666666666, "c": 0.9999999999999999 },
+          "t_{2}": { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -1.0 }
+        },
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1.0, 0.5, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.4142135623730951, 1.0],
+            "eigenvectors": [
+              [-0.0, 1.0],
+              [-1.0, -0.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "t_{1}": { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -1.0 },
+          "t_{2}": { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -1.0 }
+        },
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1.0, 0.5, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.4142135623730951, 1.0],
+            "eigenvectors": [
+              [-0.0, 1.0],
+              [-1.0, -0.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "t_{1}": { "type": "line", "defined": false },
+          "t_{2}": { "type": "line", "defined": false }
+        },
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1.0, 0.5, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.4142135623730951, 1.0],
+            "eigenvectors": [
+              [-0.0, 1.0],
+              [-1.0, -0.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": -3.0, "y": 2.0 },
+          "t_{1}": { "type": "line", "defined": true, "a": 3.037855260454431, "b": 2.3207149131818565, "c": 4.47213595499958 },
+          "t_{2}": { "type": "line", "defined": true, "a": 0.5985083759092058, "b": 3.133830541363598, "c": -4.472135954999579 }
+        }
+      ]
+    }
+  ]
+}
