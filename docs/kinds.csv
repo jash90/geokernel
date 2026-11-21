@@ -1,0 +1,30 @@
+kind,upstream,kernel_kind,kernel_golden,svg,app_draw,pointer_hit,tool,algebra_text,import,export,notes
+Point,POINT,Point,yes,yes,yes,yes,yes,yes,yes,no,
+Line,LINE,Line,yes,yes,yes,yes,yes,yes,yes,no,
+Segment,SEGMENT,Segment,yes,yes,yes,yes,yes,yes,yes,no,
+Ray,RAY,Ray,yes,yes,yes,yes,yes,yes,yes,no,
+Vector,VECTOR,Vector,yes,yes,yes,yes,yes,yes,yes,no,
+Circle,CONIC,Circle,yes,yes,yes,yes,yes,yes,yes,no,a circle is a conic upstream; the kernel keeps it as its own kind
+Conic,CONIC,Conic,yes,yes,yes,no,no,yes,no,no,no file of golden/ggb holds a conic; the importer refuses free conics
+Arc,CONICPART,Arc,yes,yes,no,no,no,no,no,no,
+Sector,CONICPART,Sector,yes,yes,no,no,no,no,no,no,
+Number,NUMERIC,Number,yes,no,partial,no,yes,yes,yes,no,the window draws an angle as a sector; no sliders
+Angle,ANGLE,,no,no,no,no,no,no,no,no,the kernel keeps an angle as a number
+Boolean,BOOLEAN,Boolean,yes,no,no,no,no,partial,partial,no,the algebra text is the debug form of the value; only booleans a command makes are imported
+Function,FUNCTION,Function,yes,yes,yes,no,no,yes,no,no,
+Polygon,POLYGON,Polygon,yes,yes,yes,yes,yes,yes,yes,no,
+PolyLine,POLYLINE,PolyLine,yes,yes,yes,yes,no,yes,yes,no,
+List,LIST,List,yes,no,no,no,no,no,no,no,
+Axis,AXIS,,no,no,no,no,no,no,no,no,the window draws the axes from the view settings
+Text,TEXT,,no,no,no,no,no,no,no,no,
+Formula,FORMULA,,no,no,no,no,no,no,no,no,
+Locus,LOCUS,,no,no,no,no,no,no,no,no,
+CurveCartesian,CURVE_CARTESIAN,,no,no,no,no,no,no,no,no,
+ImplicitCurve,IMPLICIT_POLY,,no,no,no,no,no,no,no,no,
+FunctionNVar,FUNCTION_NVAR,,no,no,no,no,no,no,no,no,
+Image,IMAGE,,no,no,no,no,no,no,no,no,
+PieChart,PIECHART,,no,no,no,no,no,no,no,no,
+InputBox,TEXTFIELD,,no,no,no,no,no,no,no,no,
+Button,BUTTON,,no,no,no,no,no,no,no,no,out of 1.0 (scripting is out of scope)
+PenStroke,PENSTROKE,,no,no,no,no,no,no,no,no,
+Turtle,TURTLE,,no,no,no,no,no,no,no,no,out of 1.0 (scripting is out of scope)

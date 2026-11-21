@@ -811,6 +811,8 @@ dependencies = [
 name = "geo-golden"
 version = "0.1.0"
 dependencies = [
+ "geo-app-core",
+ "geo-import",
  "geo-kernel",
  "serde",
  "serde_json",
