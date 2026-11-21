@@ -399,16 +399,40 @@ pub fn difference_rows(md: &str) -> Vec<DifferenceRow> {
     out
 }
 
-/// Checks a `difference` reference against the rows of `DIFFERENCES.md`: the
-/// row must exist and its reason must be a disposition, not "Not
-/// implemented".
-pub fn check_difference(reference: &str, rows: &[DifferenceRow]) -> Result<(), String> {
+/// How a row of `DIFFERENCES.md` names a form it disposes of: the command
+/// as the matrix names it with the form's tokens as arguments, in backticks,
+/// such as `` `Mod(function, function)` `` or `` `AxisStepX()` ``.
+pub fn form_key(command: &str, form: &str) -> String {
+    let args = if form == "()" {
+        String::new()
+    } else {
+        form.split(',').collect::<Vec<_>>().join(", ")
+    };
+    format!("`{command}({args})`")
+}
+
+/// Checks a `difference` reference of the form `form` of `command` against
+/// the rows of `DIFFERENCES.md`: the row must exist, its first cell must
+/// name the form with [`form_key`], and its reason must be a disposition,
+/// not "Not implemented".
+pub fn check_difference(
+    reference: &str,
+    command: &str,
+    form: &str,
+    rows: &[DifferenceRow],
+) -> Result<(), String> {
     let Some((section, area)) = reference.split_once(": ") else {
         return Err(format!("`{reference}` is not `section-slug: Area text`"));
     };
     let Some(row) = rows.iter().find(|r| r.section == section && r.area == area) else {
         return Err(format!("no row `{area}` under the heading `{section}`"));
     };
+    let key = form_key(command, form);
+    if !row.area.contains(&key) {
+        return Err(format!(
+            "the row `{area}` does not name the form; its first cell must contain {key}"
+        ));
+    }
     if row.reason.starts_with("Not implemented") {
         return Err(format!(
             "the row `{area}` only says the form is not implemented; that is no disposition"
@@ -546,18 +570,26 @@ mod tests {
     }
 
     #[test]
-    fn difference_references_need_a_row_with_a_disposition() {
-        let md = "# Deliberate differences\n\n| Area | GeoGebra | geokernel | Reason |\n| --- | --- | --- | --- |\n| `Foo` of a \\| bar | x | y | Kept on purpose. |\n\n## General conics (`plot`)\n\n| Area | GeoGebra | geokernel | Reason |\n| --- | --- | --- | --- |\n| Forms of the conic commands | a | Refused. | Not implemented. |\n";
+    fn difference_references_need_a_row_about_the_form_with_a_disposition() {
+        let md = "# Deliberate differences\n\n| Area | GeoGebra | geokernel | Reason |\n| --- | --- | --- | --- |\n| `Mod(function, function)` of a \\| bar | x | y | Kept on purpose. |\n| `Div(number, number)` near 0 | x | y | Kept on purpose. |\n\n## General conics (`plot`)\n\n| Area | GeoGebra | geokernel | Reason |\n| --- | --- | --- | --- |\n| `Conic(list)` | a | Refused. | Not implemented. |\n";
         let rows = difference_rows(md);
-        assert_eq!(rows.len(), 2);
+        assert_eq!(rows.len(), 3);
         assert_eq!(rows[0].section, "deliberate-differences");
-        assert_eq!(rows[0].area, "`Foo` of a | bar");
-        assert_eq!(rows[1].section, "general-conics-plot");
-        assert!(check_difference("deliberate-differences: `Foo` of a | bar", &rows).is_ok());
+        assert_eq!(rows[0].area, "`Mod(function, function)` of a | bar");
+        assert_eq!(rows[2].section, "general-conics-plot");
+        assert_eq!(form_key("AxisStepX", "()"), "`AxisStepX()`");
+        let mod_row = "deliberate-differences: `Mod(function, function)` of a | bar";
+        assert!(check_difference(mod_row, "Mod", "function,function", &rows).is_ok());
+        // a row about another command or another form of the same command
+        assert!(check_difference(mod_row, "Div", "function,function", &rows).is_err());
+        assert!(check_difference(mod_row, "Mod", "number,number", &rows).is_err());
+        let div_row = "deliberate-differences: `Div(number, number)` near 0";
+        assert!(check_difference(div_row, "Mod", "function,function", &rows).is_err());
+        // a row that only says "Not implemented"
         assert!(
-            check_difference("general-conics-plot: Forms of the conic commands", &rows).is_err()
+            check_difference("general-conics-plot: `Conic(list)`", "Conic", "list", &rows).is_err()
         );
-        assert!(check_difference("general-conics-plot: Nothing", &rows).is_err());
-        assert!(check_difference("no separator", &rows).is_err());
+        assert!(check_difference("general-conics-plot: Nothing", "Conic", "list", &rows).is_err());
+        assert!(check_difference("no separator", "Conic", "list", &rows).is_err());
     }
 }

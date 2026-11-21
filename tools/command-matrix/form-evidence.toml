@@ -9,7 +9,8 @@
 #
 # or, instead of `cases`, `difference = "section-slug: Area text"`: a row of
 # DIFFERENCES.md (the slug of the heading it is under and its first cell)
-# whose reason is a disposition, not "Not implemented".
+# whose first cell names the form, such as `Mod(function, function)` in
+# backticks, and whose reason is a disposition, not "Not implemented".
 #
 # crates/geo-golden/tests/command_forms.rs checks every row: each case exists,
 # is not a known gap, and calls the command with arguments of exactly the

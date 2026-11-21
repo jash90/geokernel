@@ -4,7 +4,8 @@
 //!   in-scope commands of `docs/command-matrix.csv`;
 //! * every row of `tools/command-matrix/form-evidence.toml` names golden
 //!   cases that exist, are not known gaps and call the command in that form,
-//!   or a row of `DIFFERENCES.md` with a disposition;
+//!   or a row of `DIFFERENCES.md` that names the form (`` `Mod(function,
+//!   function)` `` in its first cell) and gives it a disposition;
 //! * `forms_total`, `forms_done` and the `done` status of the matrix agree
 //!   with those two files (CI has no upstream checkout, so this is what keeps
 //!   the matrix from going stale there).
@@ -122,7 +123,7 @@ fn every_evidence_row_is_backed() {
             continue;
         }
         if let Some(d) = &e.difference {
-            if let Err(msg) = forms::check_difference(d, &differences) {
+            if let Err(msg) = forms::check_difference(d, &e.command, &e.form, &differences) {
                 errors.push(format!("{what}: DIFFERENCES.md: {msg}"));
             }
             continue;
@@ -186,15 +187,17 @@ fn matrix_counts_agree_with_forms_and_evidence() {
                 "`{command}`: forms {got}/{total}, forms.csv and the evidence give {want_done}/{want_total}"
             ));
         }
-        let complete = want_total > 0 && want_done == want_total;
-        if complete != (status == "done") {
+        // The counts alone decide the status.
+        let want_status = if want_total > 0 && want_done == want_total {
+            "done"
+        } else if want_done > 0 {
+            "partial"
+        } else {
+            "todo"
+        };
+        if status != want_status {
             errors.push(format!(
-                "`{command}`: status `{status}` with {want_done}/{want_total}"
-            ));
-        }
-        if want_done > 0 && !complete && status != "partial" {
-            errors.push(format!(
-                "`{command}`: status `{status}` with {want_done}/{want_total}"
+                "`{command}`: status `{status}` with {want_done}/{want_total}, expected `{want_status}`"
             ));
         }
     }

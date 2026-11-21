@@ -288,10 +288,14 @@ def build_rows(commands_java, constants_java, forms=None, done=None):
         if status != "out_of_scope":
             n_forms = len(forms.get(name, ("", []))[1])
             n_done = done.get(name, 0)
+            # The counts alone decide: a hand-listed partial with no done
+            # form is todo (its notes still list what the kernel covers).
             if n_forms and n_done == n_forms:
                 status = "done"
             elif n_done:
                 status = "partial"
+            else:
+                status = "todo"
             total, got = str(n_forms), str(n_done)
         rows[name] = (group, priority, status, total, got, notes)
     out = []

@@ -443,8 +443,12 @@ fn twenty_thousand_polygons() {
     // label search allocates each candidate it tries. Allocations do not
     // depend on the speed of the machine, unlike the time bound this
     // replaces. The quadratic term already dominates at a few thousand
-    // polygons, so the ratio is taken there, where a regression fails in
-    // seconds; then the full size must still import.
+    // polygons, so the ratio is taken there, where a regression fails within
+    // about a minute (the quadratic import of 4000 polygons is slow, not the
+    // check). Then the full size must still import, under two guards that
+    // are generous on purpose so no machine trips them: at most 1000
+    // allocations a polygon (about 100 today), and done within ten minutes,
+    // which catches a hang or quadratic work that does not allocate.
     let (half, a) = allocations(|| import(polygons(2_000).as_bytes()).unwrap());
     let (full, b) = allocations(|| import(polygons(4_000).as_bytes()).unwrap());
     assert_eq!(half.script.len(), 2_003);
@@ -454,8 +458,20 @@ fn twenty_thousand_polygons() {
         ratio < 2.5,
         "2000 polygons: {a} allocations, 4000: {b} (ratio {ratio:.2}, linear is 2)"
     );
-    let big = import(polygons(20_000).as_bytes()).unwrap();
-    assert_eq!(big.script.len(), 20_003);
+    const N: usize = 20_000;
+    let (tx, rx) = std::sync::mpsc::channel();
+    std::thread::spawn(move || {
+        let xml = polygons(N);
+        let _ = tx.send(allocations(|| import(xml.as_bytes()).unwrap().script.len()));
+    });
+    let (lines, n) = rx
+        .recv_timeout(Duration::from_secs(600))
+        .unwrap_or_else(|e| panic!("{N} polygons: no import within ten minutes ({e})"));
+    assert_eq!(lines, N + 3);
+    assert!(
+        n <= 1000 * N as u64,
+        "{N} polygons: {n} allocations, over 1000 a polygon"
+    );
 }
 
 /// An archive with a comment, built by hand around a stored entry.

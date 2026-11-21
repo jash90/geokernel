@@ -52,14 +52,14 @@ class BuildMatrixTest(unittest.TestCase):
                           "Stadium", "Segment"])
 
     def test_normal_entry(self):
-        self.assertEqual(self.by_name["Line"][1:5], ["", "geometry", "P0", "partial"])
+        self.assertEqual(self.by_name["Line"][1:5], ["", "geometry", "P0", "todo"])
 
     def test_multiline_entry_group(self):
         self.assertEqual(self.by_name["CellRange"][1:5], ["", "spreadsheet", "", "out_of_scope"])
 
     def test_alias_inherits_from_target(self):
         row = self.by_name["PerpendicularLine"]
-        self.assertEqual(row[1:5], ["OrthogonalLine", "geometry", "P0", "partial"])
+        self.assertEqual(row[1:5], ["OrthogonalLine", "geometry", "P0", "todo"])
         self.assertEqual(row[5], "")
 
     def test_unclassified_group_is_todo_p2(self):
@@ -84,7 +84,8 @@ class BuildMatrixTest(unittest.TestCase):
         self.assertEqual(by["Line"][4:7], ["partial", "2", "1"])
         self.assertEqual(by["OrthogonalLine"][4:7], ["done", "1", "1"])
         self.assertEqual(by["Mystery"][4:7], ["done", "1", "1"])
-        self.assertEqual(by["Segment"][4:7], ["partial", "1", "0"])
+        # a hand-listed partial with no done form is todo
+        self.assertEqual(by["Segment"][4:7], ["todo", "1", "0"])
         # an alias copies the status, not the counts
         self.assertEqual(by["PerpendicularLine"][4:7], ["done", "", ""])
         self.assertEqual(by["CellRange"][4:7], ["out_of_scope", "", ""])

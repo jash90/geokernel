@@ -44,7 +44,9 @@ left out. The file must list exactly the in-scope commands of the matrix.
 
 `form-evidence.toml` has one row per done form: golden case ids that call the
 command in that form, or a row of `DIFFERENCES.md` (`section-slug: Area text`)
-whose reason gives the form a disposition ("Not implemented" is none). The
+that names the form in its first cell, as the command with the form's tokens
+in backticks (`` `Mod(function, function)` ``, `` `AxisStepX()` ``), and whose
+reason gives it a disposition ("Not implemented" is none). The
 test `crates/geo-golden/tests/command_forms.rs` checks each row: the case
 exists, is not in `known-gaps.toml`, calls the command (by its name or an
 alias) with arguments of exactly the form's kinds, read from the case's first
@@ -64,8 +66,8 @@ accepts. To list candidate cases for new rows:
    `out_of_scope`, priority empty, whatever their group.
 1. Groups `3d`, `spreadsheet`, `probability`, `cas`, `scripting`,
    `statistics`: status `out_of_scope`, priority empty.
-2. Hand-listed exceptions the kernel already covers in part: status
-   `partial`, `notes` lists the covered forms; an alias copies its target.
+2. Hand-listed exceptions the kernel already covers in part: `notes` lists
+   the covered forms (the status comes from rule 5); an alias copies its target.
    The list lives in `PARTIAL` in the script and comes from
    `crates/geo-kernel/src/script.rs` and the group files in
    `crates/geo-kernel/src/algo/`. The priority is `P0` for the commands of
@@ -75,7 +77,9 @@ accepts. To list candidate cases for new rows:
 4. Everything else: status `todo`, priority `P2`. This includes groups the
    script cannot place confidently (currently `english`); the script
    reports them.
-5. The forms decide last, for every row in scope: `done` when the command has
-   at least one form and every form is done; `partial` when some are (or the
-   command is a hand-listed partial); otherwise rules 2-4. A command with no
-   2D form is never `done`.
+5. The forms decide the status of every row in scope, after rules 2-4 set
+   the priority and notes: `done` when the command has at least one form and
+   every form is done, `partial` when some are, `todo` when none is. A
+   command with no 2D form is never `done`. A hand-listed partial whose
+   forms are not done yet (for example forms with a wildcard argument) is
+   `todo`; its `notes` still list what the kernel covers.
