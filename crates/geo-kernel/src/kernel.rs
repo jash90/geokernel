@@ -33,8 +33,11 @@
 pub mod angle;
 #[path = "algo/axis.rs"]
 mod axis;
+#[path = "algo/locus.rs"]
+pub mod locus;
 
 use self::angle::{AngleDef, AngleGeometry, AngleSource, AngleStyle};
+use self::locus::{LocusData, LocusDef};
 use crate::algo::arc::{ArcData, ArcDef};
 use crate::algo::conic::ConicDef;
 use crate::algo::conic_nd::{ConicData, ConicType};
@@ -128,6 +131,10 @@ pub enum Kind {
     Arc,
     /// A sector of a circle or conic, read like an arc.
     Sector,
+    /// The path a point traces while another point moves along a path or a
+    /// slider runs through its interval; its points are read with
+    /// [`Construction::locus`].
+    Locus,
 }
 
 impl Kind {
@@ -156,6 +163,7 @@ impl fmt::Display for Kind {
             Kind::Conic => "conic",
             Kind::Arc => "arc",
             Kind::Sector => "sector",
+            Kind::Locus => "locus",
         })
     }
 }
@@ -242,6 +250,11 @@ pub enum Value {
     Sector {
         area: f64,
     },
+    /// A defined locus with its number of points. The points are not
+    /// copied into the value; read them with [`Construction::locus`].
+    Locus {
+        len: u32,
+    },
     /// The object does not exist for the current positions
     /// (for example two circles that no longer meet).
     Undefined,
@@ -280,7 +293,11 @@ impl Value {
             Value::PolyLine { length } => length.is_finite(),
             Value::Arc { length } => length.is_finite(),
             Value::Sector { area } => area.is_finite(),
-            Value::Function | Value::List { .. } | Value::Conic { .. } | Value::Undefined => true,
+            Value::Function
+            | Value::List { .. }
+            | Value::Conic { .. }
+            | Value::Locus { .. }
+            | Value::Undefined => true,
         }
     }
 }
@@ -388,6 +405,9 @@ pub enum Def {
     /// keeps an [`ArcData`] record in the construction (see
     /// [`Construction::arc`]).
     Arc(ArcDef),
+    /// `Locus(Q, P)` and `Locus(Q, slider)`; the construction keeps the
+    /// points of each locus (see [`Construction::locus`]).
+    Locus(LocusDef),
 }
 
 impl Def {
@@ -423,6 +443,7 @@ impl Def {
             Def::ConicPart(d) => d.kind(),
             Def::Path(d) => d.kind(),
             Def::Arc(d) => d.kind(),
+            Def::Locus(d) => d.kind(),
         }
     }
 
@@ -490,6 +511,7 @@ impl Def {
             Def::ConicPart(d) => d.parents(),
             Def::Path(d) => d.parents(),
             Def::Arc(d) => d.parents(),
+            Def::Locus(d) => d.parents(),
         }
     }
 }
@@ -600,6 +622,12 @@ pub struct Construction {
     /// The records of the arcs and sectors, with the index of each object,
     /// in creation order.
     arcs: Vec<(usize, ArcData)>,
+    /// The points of the loci, with the index of each object, in creation
+    /// order.
+    loci: Vec<(usize, LocusData)>,
+    /// The intervals of the free numbers made by `Slider`, with the index of
+    /// each number, in creation order.
+    sliders: Vec<(usize, f64, f64)>,
 }
 
 /// The objects waiting to be recomputed during an update; empty between
@@ -968,6 +996,16 @@ impl Construction {
         while self.arcs.last().is_some_and(|&(owner, _)| owner >= at.len) {
             self.arcs.pop();
         }
+        while self.loci.last().is_some_and(|&(owner, _)| owner >= at.len) {
+            self.loci.pop();
+        }
+        while self
+            .sliders
+            .last()
+            .is_some_and(|&(owner, _, _)| owner >= at.len)
+        {
+            self.sliders.pop();
+        }
         // Labels became free again, so the hints may be too high.
         self.label_hints
             .get_mut()
@@ -979,6 +1017,9 @@ impl Construction {
     /// reads (for example the line an intersection was prepared with), and
     /// its list. An object may appear more than once.
     pub(crate) fn read_ids(&self, def: &Def) -> Vec<Id> {
+        if let Def::Locus(d) = *def {
+            return locus::reads(self, d);
+        }
         let mut ids = algo::intersect::hidden_parents(self, def);
         ids.extend(algo::path::hidden_parents(self, def));
         ids.extend(algo::vector::hidden_parents(self, def));
@@ -1026,6 +1067,12 @@ impl Construction {
                 let record = d.record(self);
                 self.arcs.push((id.0, record));
                 algo::arc::value(d.kind() == Kind::Sector, &record)
+            }
+            Def::Locus(d) => {
+                let data = locus::record(self, d);
+                let value = data.value();
+                self.loci.push((id.0, data));
+                value
             }
             _ => self.compute(def, id.0),
         };
@@ -1204,6 +1251,20 @@ impl Construction {
         if !v.is_finite() {
             return Err(Error::NotFinite);
         }
+        // A slider keeps its value in its interval (`GeoNumeric.setValue`).
+        let (new_def, v) = match (new_def, self.slider_interval(id)) {
+            (Def::Number(_), Some((min, max))) => {
+                let v = if v < min {
+                    min
+                } else if v > max {
+                    max
+                } else {
+                    v
+                };
+                (Def::Number(v), v)
+            }
+            (d, _) => (d, v),
+        };
         // A changed number loses its exact decimal (`GeoNumeric.setValue`),
         // which changes what reads it even when the value stays.
         let had_decimal = expr::forget_decimal(self, id);
@@ -1267,6 +1328,11 @@ impl Construction {
                 }
                 Def::Arc(d) if d.has_record() => {
                     if !self.update_arc(i, d) {
+                        continue;
+                    }
+                }
+                Def::Locus(d) => {
+                    if !self.update_locus(i, d) {
                         continue;
                     }
                 }
@@ -1522,6 +1588,7 @@ impl Construction {
             Def::ConicPart(d) => d.check(self),
             Def::Path(d) => d.check(self),
             Def::Arc(d) => d.check(self),
+            Def::Locus(d) => d.check(self),
         }
     }
 
@@ -1612,6 +1679,7 @@ impl Construction {
             Def::ConicPart(d) => d.compute(self),
             Def::Path(d) => d.compute(self),
             Def::Arc(d) => d.compute(self),
+            Def::Locus(d) => d.compute(self),
         }
     }
 

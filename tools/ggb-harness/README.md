@@ -80,7 +80,12 @@ For every case `GoldenGenerator`:
    polygon must be defined when it is created. A fixed `Angle(A, B, n)`
    records the angle and the rotated point under its own label.
    `Angle(a)` of an existing angle returns the same object; the harness
-   records it once under its original label;
+   records it once under its original label. `a = Slider(min, max)` must
+   make a free number. Whenever a line makes a locus, the harness checks
+   that GeoGebra samples it in the window of the headless application
+   (`Session.LOCUS_VIEW`: x from -4.3 to 11.700000000000001, y from -5.7 to
+   6.3, 50 pixels per unit, no second graphics view and no 3D view, not
+   continuous), as the points depend on it;
 3. records a snapshot, then applies each step and records a snapshot after it.
    `move` calls `GeoPoint.setCoords(x, y, 1)` (for a free vector
    `GeoVector.setCoords(x, y, 0)`) and `updateCascade()`;
@@ -102,6 +107,7 @@ Snapshot encoding:
 | `GeoFunction` | `function` with `samples`, the values of `GeoFunction.value` at the sample points (`null` where not finite) |
 | `GeoPolygon` | `polygon` with `getPoints()` as `vertices`, `getArea()` as `area` and `getAreaWithSign()` as `signed_area`; a vertex that is undefined or at infinity makes it undefined |
 | `GeoPolyLine` | `polyline` with `getPointsND()` as `vertices` (`null` for an undefined point or a point at infinity) and `getLength()` as `length` |
+| `GeoLocus` | `locus` with `getPoints()` as `points`, each `[x, y, getLineTo()]` (`x` and `y` `null` when not finite) |
 
 New files use schema 2, which records angles separately in every group.
 Schema 1 files use the legacy numeric encoding for angles.

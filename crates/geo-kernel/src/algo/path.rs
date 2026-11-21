@@ -196,7 +196,7 @@ impl PathState {
 
     /// `GeoPoint.isDefined` after `updateCoords`: no coordinate is NaN (a
     /// point at infinity is defined).
-    fn is_defined(&self) -> bool {
+    pub(crate) fn is_defined(&self) -> bool {
         let infinite = !self.z.is_nan() && is_epsilon(self.z, self.x, self.y);
         if infinite {
             !(self.x.is_nan() || self.y.is_nan())
@@ -206,7 +206,7 @@ impl PathState {
     }
 
     /// `GeoPoint.updateCoords`: a finite point gets a positive `z`.
-    fn update_coords(&mut self) {
+    pub(crate) fn update_coords(&mut self) {
         let infinite = !self.z.is_nan() && is_epsilon(self.z, self.x, self.y);
         if !infinite && self.is_defined() && self.z < 0.0 {
             self.x = -self.x;
@@ -218,7 +218,7 @@ impl PathState {
     /// The value of the point: undefined when a coordinate is NaN, when the
     /// point is at infinity and when a coordinate is infinite (the end of a
     /// line at the parameter 0 or 1), which the kernel does not represent.
-    fn value(&self) -> Option<Value> {
+    pub(crate) fn value(&self) -> Option<Value> {
         let (x, y, z) = (self.x, self.y, self.z);
         if x.is_nan() || y.is_nan() || z.is_nan() || is_epsilon(z, x, y) {
             return None;
@@ -267,7 +267,12 @@ impl PathState {
 
     /// `GeoPoint.setCoords(x, y, 1)` for a point on a path.
     fn set_coords(&mut self, path: &Geom<'_>, x: f64, y: f64) {
-        self.set_coords_2d(x, y, 1.0);
+        self.set_coords_hom(path, x, y, 1.0);
+    }
+
+    /// `GeoPoint.setCoords(x, y, z)` for a point on a path.
+    pub(crate) fn set_coords_hom(&mut self, path: &Geom<'_>, x: f64, y: f64, z: f64) {
+        self.set_coords_2d(x, y, z);
         // remember the path parameter for the undefined case
         self.temp_t = self.t;
         self.temp_ty = self.ty;
@@ -572,7 +577,7 @@ impl Geom<'_> {
     /// `isDefined` of the path. An arc whose value is not finite (two rays,
     /// a sector of a degenerate conic) is defined, as `GeoConicPart.isDefined`
     /// says.
-    fn is_defined(&self) -> bool {
+    pub(crate) fn is_defined(&self) -> bool {
         match self {
             Geom::Undefined => false,
             Geom::Arc(a) => a.defined,
@@ -581,7 +586,7 @@ impl Geom<'_> {
     }
 
     /// `Path.getMinParameter` and `Path.getMaxParameter`.
-    fn range(&self) -> (f64, f64) {
+    pub(crate) fn range(&self) -> (f64, f64) {
         match self {
             Geom::Undefined => (0.0, 0.0),
             Geom::Line { .. } => (f64::NEG_INFINITY, f64::INFINITY),
@@ -619,7 +624,7 @@ impl Geom<'_> {
     }
 
     /// `Path.pathChanged`: puts the point at its parameter.
-    fn path_changed(&self, p: &mut PathState) {
+    pub(crate) fn path_changed(&self, p: &mut PathState) {
         match self {
             Geom::Undefined => p.set_coords_2d(f64::NAN, f64::NAN, f64::NAN),
             Geom::Line { g, start } => line_path_changed(*g, *start, p),

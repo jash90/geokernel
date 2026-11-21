@@ -53,7 +53,7 @@ RigidPolygon,,geometry,P1,partial,3,2,"RigidPolygon(polygon); RigidPolygon(polyg
 Area,,geometry,P1,done,3,3,"Area(conic, arc, sector or polygon); Area of three or more points"
 Circumference,,geometry,P1,todo,3,0,Circumference(circle); Circumference(arc or sector)
 Perimeter,,geometry,P1,partial,3,1,Perimeter(circle); Perimeter(polygon); Perimeter(arc or sector)
-Locus,,geometry,P1,todo,4,0,
+Locus,,geometry,P1,partial,4,2,
 Centroid,,geometry,P1,done,1,1,Centroid(polygon)
 TriangleCenter,,geometry,P1,done,1,1,"TriangleCenter(point, point, point, index)"
 Barycenter,,geometry,P1,todo,1,0,

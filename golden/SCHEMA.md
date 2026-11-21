@@ -119,6 +119,7 @@ carries no numeric fields. When it is `true` it carries exactly these:
 | `polyline` | `vertices`, `length` | `vertices` is the list of vertices in order, each `[x, y]`, or `null` for an undefined point (GeoGebra leaves a hole there). `length` is the sum of the lengths of the pieces between two defined points. |
 | `list` | `elements` | The elements in order, each an Object of its own (`number`, `angle`, `point`, `vector`, `boolean` or `list`, defined or not): `{ "type": "list", "defined": true, "elements": [{ "type": "number", "defined": true, "value": 1.0 }, { "type": "list", "defined": true, "elements": [] }] }`. An element that is a point or vector carries `x` and `y` like an object. |
 | `conic` | `conic_type`, `matrix`, and the parts of the type (below) | A general conic: an object made by `Conic`, `Ellipse`, `Hyperbola` or `Parabola`, or the image of one under a transformation. Every other conic object of GeoGebra is a `circle`, an `arc` or a `sector`. |
+| `locus` | `points` | The points of a locus made by `Locus(Q, P)` (`P` a point on a path) or `Locus(Q, a)` (`a` a slider), in order, each `[x, y, lineTo]`: `lineTo` is `true` when the point is joined to the one before it and `false` when it starts a new piece. `x` and `y` are both `null` for an undefined point, which GeoGebra may append at the end. See below for the view the points depend on. |
 | `arc`, `sector` | `value`, `conic_type`, and further fields of the type (below) | A part of a circle or conic (GeoGebra's `GeoConicPart`), made by `CircularArc`, `CircumcircularArc`, `Semicircle` or `Arc` (an `arc`), or by `CircularSector`, `CircumcircularSector` or `Sector` (a `sector`). `value` is the length of an arc and the area of a sector. |
 
 A `conic` carries `conic_type`, a string, and `matrix`, the six numbers
@@ -149,6 +150,23 @@ GeoGebra keeps the start and end parameters, the arc length, the area and,
 for a single point, the orientation of a part of any other type from an
 earlier update, so they depend on the history of the construction and are
 not recorded.
+
+GeoGebra samples a locus in steps it measures in pixels of the graphics
+view: a step is refined while the next point is more than 5 pixels away, a
+point is joined to the one before it only when it is close, and the area a
+bit larger than the view decides which steps far outside it are refined. So
+the points depend on the window of the view. The harness records them in the
+window of the headless application, which it checks whenever it records a
+locus: x from -4.3 to 11.700000000000001, y from -5.7 to 6.3, 50 pixels per
+unit on both axes, only the first graphics view shown. A locus is recomputed
+when its path or a free object its point depends on changes, but not when
+the point on the path moves (GeoGebra leaves that point out of the inputs it
+updates from). A slider is a script line `a = Slider(min, max)` or
+`a = Slider(min, max, increment)` with number literals: a free number that
+starts at 0 put into `[min, max]` and that `set_number` keeps in it.
+GeoGebra also stops sampling a locus when one update of the construction
+takes longer than 500 ms, which makes the points depend on the machine; no
+case comes near it, and `geo-kernel` has no such limit.
 
 All numbers are finite JSON numbers that round-trip to the same `f64`.
 A value that is not finite in GeoGebra is recorded as `defined: false`.
@@ -191,6 +209,10 @@ These rules are applied by the Rust side (`crates/geo-golden`).
   conic type and the orientation must be equal, and the further numbers of a
   part of a circle or an ellipse must agree with the kernel's record
   (`Construction::arc`), raw.
+- Loci: the number of points must be equal, and each point must agree with
+  the kernel's (`Construction::locus`) like two numbers per coordinate, with
+  the same `lineTo`; a `null` point must meet coordinates that are not
+  finite.
 - Lists: the number of elements must be equal, and each element is
   compared like an object of its type, nested lists recursively
   (`Construction::elements`).
@@ -233,6 +255,9 @@ list commands such as `Length`, `Sum`, `Sort`, `Join` and `Sequence`, and
 element-wise arithmetic. A constant boolean
 or list is an object like any other but cannot be set. The type `list` was
 added in schema 1.
+
+The type `locus` and the `Slider` line were added the same way, in schema
+2: no existing file changed and the schema version stays 2.
 
 Schema 2 distinguishes `angle` from `number`, including inside lists. Only
 schema 1 permits an expected number to match an angle in the kernel.

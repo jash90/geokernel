@@ -1,7 +1,8 @@
 //! Replays a golden case on `geo-kernel` and compares every snapshot.
 
 use crate::compare::{
-    compare_arc, compare_conic, compare_list, compare_sampled, line_scale_agrees, Sign,
+    compare_arc, compare_conic, compare_list, compare_locus, compare_sampled, line_scale_agrees,
+    Sign,
 };
 use crate::model::{Case, Step};
 use geo_kernel::{script, Construction, Kind};
@@ -77,6 +78,17 @@ pub fn replay(case: &Case) -> CaseOutcome {
             if matches!(c.kind(id), geo_kernel::Kind::Arc | geo_kernel::Kind::Sector) {
                 let data = c.arc(id);
                 if let Err(why) = compare_arc(expected, c.kind(id), &actual, data.as_ref()) {
+                    out.mismatches.push(failure(
+                        i,
+                        label,
+                        &format!("{expected:?}"),
+                        format!("{actual:?} ({why})"),
+                    ));
+                }
+                continue;
+            }
+            if c.kind(id) == Kind::Locus {
+                if let Err(why) = compare_locus(expected, Kind::Locus, &actual, c.locus(id)) {
                     out.mismatches.push(failure(
                         i,
                         label,
