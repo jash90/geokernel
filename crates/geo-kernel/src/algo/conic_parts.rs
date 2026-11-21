@@ -51,6 +51,7 @@ const LINE_LIKE_OR_RAY: &[Kind] = &[Kind::Line, Kind::Segment, Kind::Ray];
 const DIRECTION: &[Kind] = &[Kind::Line, Kind::Segment, Kind::Ray, Kind::Vector];
 
 const CONIC: &[Kind] = &[Kind::Conic];
+const CIRCLE_OR_CONIC: &[Kind] = &[Kind::Circle, Kind::Conic];
 
 /// Objects computed from a general conic.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -188,7 +189,12 @@ impl Group for ConicPartDef {
             ConicPartDef::Diameter { direction, .. } => c.expect(direction, DIRECTION)?,
             _ => {}
         }
-        c.expect(self.conic(), CONIC)?;
+        let conics = if matches!(self, Self::Pole { .. }) {
+            CIRCLE_OR_CONIC
+        } else {
+            CONIC
+        };
+        c.expect(self.conic(), conics)?;
         if self.which() < self.outputs() {
             Ok(())
         } else {
@@ -293,15 +299,21 @@ impl Group for ConicPartDef {
         }
         if let ("Polar" | "Diameter" | "ConjugateDiameter", [first, second]) = (func, args) {
             let first = c.id(first)?;
-            let conic = c.id(second).filter(|&k| c.kind(k) == Kind::Conic)?;
+            let conic = c.id(second)?;
+            if func == "Polar"
+                && CIRCLE_OR_CONIC.contains(&c.kind(conic))
+                && LINE_LIKE_OR_RAY.contains(&c.kind(first))
+            {
+                return Some(Ok(Self::Pole { line: first, conic }));
+            }
+            if c.kind(conic) != Kind::Conic {
+                return None;
+            }
             return Some(match (func, c.kind(first)) {
                 ("Polar", Kind::Point) => Ok(ConicPartDef::Polar {
                     point: first,
                     conic,
                 }),
-                ("Polar", Kind::Line | Kind::Segment | Kind::Ray) => {
-                    Ok(ConicPartDef::Pole { line: first, conic })
-                }
                 (_, Kind::Line | Kind::Segment | Kind::Ray | Kind::Vector) if func != "Polar" => {
                     Ok(ConicPartDef::Diameter {
                         direction: first,

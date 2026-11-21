@@ -1,0 +1,181 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "conicreview-circlepole-001",
+      "group": "conicreview",
+      "script": [
+        "rr = 2",
+        "O = (0, 0)",
+        "A = (1, 0)",
+        "B = (1, 2)",
+        "k = Circle(O, rr)",
+        "g = Line(A, B)",
+        "s = Segment(A, B)",
+        "r = Ray(A, B)",
+        "P = Polar(g, k)",
+        "Q = Polar(s, k)",
+        "R = Polar(r, k)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "rr", "value": 3.0 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 1.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 1.0, "y": 2.0 },
+        { "action": "set_number", "label": "rr", "value": 0.0 },
+        { "action": "set_number", "label": "rr", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "rr": { "type": "number", "defined": true, "value": 2.0 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "g": { "type": "line", "defined": true, "a": -2.0, "b": 0.0, "c": 2.0 },
+          "s": { "type": "segment", "defined": true, "x1": 1.0, "y1": 0.0, "x2": 1.0, "y2": 2.0 },
+          "r": { "type": "ray", "defined": true, "x": 1.0, "y": 0.0, "a": -2.0, "b": 0.0, "c": 2.0 },
+          "P": { "type": "point", "defined": true, "x": 4.0, "y": -0.0 },
+          "Q": { "type": "point", "defined": true, "x": 4.0, "y": -0.0 },
+          "R": { "type": "point", "defined": true, "x": 4.0, "y": -0.0 }
+        },
+        {
+          "rr": { "type": "number", "defined": true, "value": 3.0 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 3.0 },
+          "g": { "type": "line", "defined": true, "a": -2.0, "b": 0.0, "c": 2.0 },
+          "s": { "type": "segment", "defined": true, "x1": 1.0, "y1": 0.0, "x2": 1.0, "y2": 2.0 },
+          "r": { "type": "ray", "defined": true, "x": 1.0, "y": 0.0, "a": -2.0, "b": 0.0, "c": 2.0 },
+          "P": { "type": "point", "defined": true, "x": 9.0, "y": -0.0 },
+          "Q": { "type": "point", "defined": true, "x": 9.0, "y": -0.0 },
+          "R": { "type": "point", "defined": true, "x": 9.0, "y": -0.0 }
+        },
+        {
+          "rr": { "type": "number", "defined": true, "value": 3.0 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 3.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": -1.0, "c": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 1.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 },
+          "r": { "type": "ray", "defined": true, "x": 1.0, "y": 0.0, "a": 0.0, "b": -1.0, "c": 0.0 },
+          "P": { "type": "point", "defined": false },
+          "Q": { "type": "point", "defined": false },
+          "R": { "type": "point", "defined": false }
+        },
+        {
+          "rr": { "type": "number", "defined": true, "value": 3.0 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 3.0 },
+          "g": { "type": "line", "defined": false },
+          "s": { "type": "segment", "defined": true, "x1": 1.0, "y1": 0.0, "x2": 1.0, "y2": 0.0 },
+          "r": { "type": "ray", "defined": false },
+          "P": { "type": "point", "defined": false },
+          "Q": { "type": "point", "defined": false },
+          "R": { "type": "point", "defined": false }
+        },
+        {
+          "rr": { "type": "number", "defined": true, "value": 3.0 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 3.0 },
+          "g": { "type": "line", "defined": true, "a": -2.0, "b": 0.0, "c": 2.0 },
+          "s": { "type": "segment", "defined": true, "x1": 1.0, "y1": 0.0, "x2": 1.0, "y2": 2.0 },
+          "r": { "type": "ray", "defined": true, "x": 1.0, "y": 0.0, "a": -2.0, "b": 0.0, "c": 2.0 },
+          "P": { "type": "point", "defined": true, "x": 9.0, "y": -0.0 },
+          "Q": { "type": "point", "defined": true, "x": 9.0, "y": -0.0 },
+          "R": { "type": "point", "defined": true, "x": 9.0, "y": -0.0 }
+        },
+        {
+          "rr": { "type": "number", "defined": true, "value": 0.0 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.0 },
+          "g": { "type": "line", "defined": true, "a": -2.0, "b": 0.0, "c": 2.0 },
+          "s": { "type": "segment", "defined": true, "x1": 1.0, "y1": 0.0, "x2": 1.0, "y2": 2.0 },
+          "r": { "type": "ray", "defined": true, "x": 1.0, "y": 0.0, "a": -2.0, "b": 0.0, "c": 2.0 },
+          "P": { "type": "point", "defined": false },
+          "Q": { "type": "point", "defined": false },
+          "R": { "type": "point", "defined": false }
+        },
+        {
+          "rr": { "type": "number", "defined": true, "value": 2.0 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "g": { "type": "line", "defined": true, "a": -2.0, "b": 0.0, "c": 2.0 },
+          "s": { "type": "segment", "defined": true, "x1": 1.0, "y1": 0.0, "x2": 1.0, "y2": 2.0 },
+          "r": { "type": "ray", "defined": true, "x": 1.0, "y": 0.0, "a": -2.0, "b": 0.0, "c": 2.0 },
+          "P": { "type": "point", "defined": true, "x": 4.0, "y": -0.0 },
+          "Q": { "type": "point", "defined": true, "x": 4.0, "y": -0.0 },
+          "R": { "type": "point", "defined": true, "x": 4.0, "y": -0.0 }
+        }
+      ]
+    },
+    {
+      "id": "conicreview-circlepole-002",
+      "group": "conicreview",
+      "script": [
+        "O = (1, 2)",
+        "rr = 2",
+        "k = Circle(O, rr)",
+        "P = Polar(xAxis, k)",
+        "Q = Polar(yAxis, k)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "O", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "O", "x": -3.0, "y": 1.0 },
+        { "action": "set_number", "label": "rr", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "rr": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 2.0 },
+          "xAxis": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "yAxis": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": -3.0, "y": 2.0 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "rr": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "xAxis": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "P": { "type": "point", "defined": false },
+          "yAxis": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 0.0 },
+          "Q": { "type": "point", "defined": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": -3.0, "y": 1.0 },
+          "rr": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": -3.0, "cy": 1.0, "r": 2.0 },
+          "xAxis": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "P": { "type": "point", "defined": true, "x": -3.0, "y": -3.0 },
+          "yAxis": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": -1.6666666666666667, "y": 1.0 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": -3.0, "y": 1.0 },
+          "rr": { "type": "number", "defined": true, "value": 1.0 },
+          "k": { "type": "circle", "defined": true, "cx": -3.0, "cy": 1.0, "r": 1.0 },
+          "xAxis": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "P": { "type": "point", "defined": true, "x": -3.0, "y": -0.0 },
+          "yAxis": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": -2.6666666666666665, "y": 1.0 }
+        }
+      ]
+    }
+  ]
+}

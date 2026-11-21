@@ -476,6 +476,11 @@ cases = ["conic-midseg-001", "conic-midseg-002", "conic-midseg-003"]
 
 [[form]]
 command = "Midpoint"
+form = "interval"
+cases = ["conicreview-interval-001"]
+
+[[form]]
+command = "Midpoint"
 form = "point,point"
 cases = ["arcs-chain-001", "conic-midseg-001", "conic-midseg-002"]
 

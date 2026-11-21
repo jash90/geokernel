@@ -2,7 +2,7 @@
 //! supplies inputs to one conic, without adding a separate list object.
 
 use crate::algo::general_conic::{coefficient_matrix, GeneralConicDef};
-use crate::expr::{self, eval, parse, Entry, ExprDef, List, Node, Slot, Ty};
+use crate::expr::{self, eval, parse, Element, Entry, ExprDef, List, Node, Slot, Ty};
 use crate::kernel::angle::AngleStyle;
 use crate::kernel::{Construction, Def, Error, Id, Kind};
 use std::cell::RefCell;
@@ -48,6 +48,7 @@ impl GeneralConicDef {
                     return Err("`Conic` expects a coefficient list".into());
                 }
                 if let Node::Obj(id) = parsed.nodes[arg as usize] {
+                    validate_matrix(c.elements(id))?;
                     return c
                         .add(label, Def::GeneralConic(Self::CoefficientList(id)))
                         .map_err(|e| e.to_string());
@@ -69,31 +70,54 @@ impl GeneralConicDef {
         if parsed.uses_var {
             return Err("`Conic` coefficients must be independent of the function variable".into());
         }
-        add_inline_list(c, label, parsed).map_err(|e| e.to_string())
+        add_inline_list(c, label, parsed)
     }
 
     pub(crate) fn coefficient_expression_matrix(
         c: &Construction,
         expression: ExprDef,
     ) -> Option<[f64; 6]> {
-        let (arena, mut out) = LIST_SCRATCH.take();
-        let lists = eval::Lists::new(arena);
-        out.clear();
-        let matrix = eval::root_list(c, expr::entry(c, expression), &lists, &mut out)
-            .and_then(|len| coefficient_matrix(List::new(&out, len)));
-        LIST_SCRATCH.set((lists.into_arena(), out));
-        matrix
+        with_list(c, expr::entry(c, expression), |list| {
+            list.and_then(coefficient_matrix)
+        })
     }
+}
+
+fn with_list<T>(c: &Construction, entry: &Entry, read: impl FnOnce(Option<List<'_>>) -> T) -> T {
+    let (arena, mut out) = LIST_SCRATCH.take();
+    let lists = eval::Lists::new(arena);
+    out.clear();
+    let len = eval::root_list(c, entry, &lists, &mut out);
+    let result = read(len.map(|len| List::new(&out, len)));
+    LIST_SCRATCH.set((lists.into_arena(), out));
+    result
+}
+
+/// The three-row form reads the first three entries of every list row.
+/// A missing entry in a list row is an input error at creation.
+fn validate_matrix(list: Option<List<'_>>) -> Result<(), String> {
+    if list.is_some_and(|list| {
+        list.len() == 3
+            && list
+                .iter()
+                .any(|item| matches!(item, Element::List(row) if row.len() < 3))
+    }) {
+        return Err("a conic coefficient matrix row needs at least three entries".into());
+    }
+    Ok(())
 }
 
 fn add_inline_list(
     c: &mut Construction,
     label: &str,
     mut parsed: parse::Parsed,
-) -> Result<Id, Error> {
-    let index = u32::try_from(c.exprs.entries.len()).map_err(|_| Error::UnknownObject)?;
+) -> Result<Id, String> {
+    let index =
+        u32::try_from(c.exprs.entries.len()).map_err(|_| Error::UnknownObject.to_string())?;
     let parents = std::mem::take(&mut parsed.parents);
-    c.exprs.entries.push(Entry::new(parsed, false));
+    let entry = Entry::new(parsed, false);
+    with_list(c, &entry, validate_matrix)?;
+    c.exprs.entries.push(entry);
     let expression = ExprDef {
         kind: Kind::List,
         index,
@@ -107,5 +131,5 @@ fn add_inline_list(
     if result.is_err() {
         c.exprs.entries.pop();
     }
-    result
+    result.map_err(|e| e.to_string())
 }

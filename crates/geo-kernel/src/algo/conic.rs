@@ -24,9 +24,6 @@ use crate::kernel::{Construction, Error, Id, Kind, Value};
 use crate::script::object;
 use crate::tol::STANDARD_PRECISION;
 
-#[path = "conic_interval.rs"]
-pub(crate) mod interval;
-
 /// Circles and their parts.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum ConicDef {

@@ -33,7 +33,7 @@ Angle,,geometry,P1,done,13,13,"Angle(angle); Angle(number); Angle(point); Angle(
 InteriorAngles,,geometry,P1,done,1,1,InteriorAngles(polygon)
 Direction,,geometry,P1,partial,2,1,"Direction(line, segment or ray)"
 Point,,geometry,P1,todo,4,0,"Point(path); Point(path, parameter) on a line, segment, ray, circle, polygon, polyline, circular arc or sector"
-Midpoint,,geometry,P0,partial,4,3,"Midpoint(point, point); Midpoint(segment); Midpoint(circle or conic)"
+Midpoint,,geometry,P0,done,4,4,"Midpoint(point, point); Midpoint(segment); Midpoint(circle or conic)"
 LineBisector,,geometry,P1,done,2,2,"LineBisector(point, point); LineBisector(segment)"
 Intersect,,geometry,P0,partial,65,4,line/line; line/circle; circle/circle; line/conic; optional index 1 or 2
 IntersectPath,,geometry,P1,partial,9,4,"Polygon and line, segment, ray or conic in either order; two polygons"

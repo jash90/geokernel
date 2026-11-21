@@ -5,99 +5,109 @@
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
-use crate::kernel::{Construction, Id};
+use crate::algo::conic::ConicDef;
+use crate::expr::{self, parse, Bin, IfMode, Node, Ty, Un, NONE};
+use crate::kernel::{Construction, Id, Kind};
 
-/// `CmdMidpoint` also accepts a one-variable inequality. Bind its inline
-/// bounds through the ordinary expression engine, so the center updates
-/// whenever a number or point in a bound changes.
-pub(crate) fn exec(
-    c: &mut Construction,
-    label: &str,
-    rhs: &str,
-) -> Option<Result<Option<Id>, String>> {
-    let (command, arg) = rhs.split_once('(')?;
-    if command.trim() != "Center" {
-        return None;
-    }
-    let mut lower = Vec::new();
-    let mut upper = Vec::new();
-    bounds(arg.strip_suffix(')')?, &mut lower, &mut upper)?;
-    let low = combined("Max", lower, "-∞");
-    let high = combined("Min", upper, "∞");
-    // GeoIntervalUtil rejects every negative width. Taking the square
-    // root makes the test exact even though expression comparisons
-    // themselves use a tolerance.
-    let expr = format!("If(sqrt({high} - {low}) >= 0, ({low} + {high}) / 2)");
-    Some(crate::expr::define(c, label, &expr, false).map(Some))
-}
-
-/// GeoIntervalUtil walks conjunctions and only extracts comparisons between
-/// the function variable itself and a bound independent of that variable.
-fn bounds<'a>(src: &'a str, lower: &mut Vec<&'a str>, upper: &mut Vec<&'a str>) -> Option<()> {
-    let mut src = src.trim();
-    while let Some(inner) = strip_group(src) {
-        src = inner;
-    }
-    let mut depth = 0i32;
-    let mut comparisons = Vec::new();
-    for (i, ch) in src.char_indices() {
-        match ch {
-            '(' => depth += 1,
-            ')' => depth -= 1,
-            '∧' | '&' if depth == 0 => {
-                let sep = if ch == '∧' { "∧" } else { "&&" };
-                let right = src[i..].strip_prefix(sep)?;
-                bounds(&src[..i], lower, upper)?;
-                return bounds(right, lower, upper);
-            }
-            '<' | '>' | '≤' | '≥' if depth == 0 => {
-                let end = i + ch.len_utf8();
-                let end = end + usize::from(src[end..].starts_with('='));
-                comparisons.push((i, end, matches!(ch, '<' | '≤')));
-            }
-            _ => {}
+impl ConicDef {
+    /// `CmdMidpoint` accepts a one-variable boolean function. The script
+    /// can supply it inline in either `Center` or `Midpoint`.
+    pub(crate) fn exec_interval(
+        c: &mut Construction,
+        label: &str,
+        rhs: &str,
+    ) -> Option<Result<Option<Id>, String>> {
+        let (command, arg) = rhs.split_once('(')?;
+        if !matches!(command.trim(), "Center" | "Midpoint") {
+            return None;
         }
-    }
-    if comparisons.is_empty() {
-        return None;
-    }
-    let mut start = 0;
-    for (index, &(i, end, less)) in comparisons.iter().enumerate() {
-        let stop = comparisons.get(index + 1).map_or(src.len(), |op| op.0);
-        let first = src[start..i].trim();
-        let second = src[end..stop].trim();
-        let (small, large) = if less {
-            (first, second)
-        } else {
-            (second, first)
+        let mut parsed = parse::parse(c, arg.strip_suffix(')')?).ok()?;
+        if !parsed.uses_var || parsed.tys[parsed.root as usize] != Ty::Bool {
+            return None;
+        }
+        let bounds = Bounds::read(&parsed.nodes, parsed.root);
+        // The result is a number. The inequality's free variable is only
+        // used to find the bounds and has no value in the resulting tree.
+        for node in &mut parsed.nodes {
+            if matches!(node, Node::Var) {
+                *node = Node::Num(f64::NAN);
+            }
+        }
+        let root = match bounds {
+            Some(bounds) => bounds.midpoint(&mut parsed),
+            None => push(&mut parsed, Node::Num(f64::NAN)),
         };
-        match (small, large) {
-            ("x", bound) if !bound.is_empty() && bound != "x" => upper.push(bound),
-            (bound, "x") if !bound.is_empty() && bound != "x" => lower.push(bound),
-            _ => return None,
-        }
-        start = end;
+        let result = expr::reparse(c, Kind::Number, &parsed.nodes, &parsed.lits, root)
+            .ok_or_else(|| "the interval midpoint expression is too complex".to_string())
+            .and_then(|parsed| expr::add(c, label, parsed, Kind::Number));
+        Some(result.map(Some))
     }
-    Some(())
 }
 
-fn strip_group(src: &str) -> Option<&str> {
-    let inner = src.strip_prefix('(')?.strip_suffix(')')?;
-    let mut depth = 0i32;
-    for ch in inner.chars() {
-        match ch {
-            '(' => depth += 1,
-            ')' if depth == 0 => return None,
-            ')' => depth -= 1,
-            _ => {}
-        }
-    }
-    (depth == 0).then_some(inner.trim())
+#[derive(Default)]
+struct Bounds {
+    lower: Vec<u32>,
+    upper: Vec<u32>,
 }
 
-fn combined(command: &str, bounds: Vec<&str>, default: &str) -> String {
-    let bracketed = bounds.into_iter().map(|bound| format!("({bound})"));
-    bracketed
-        .reduce(|a, b| format!("{command}({a}, {b})"))
-        .unwrap_or_else(|| default.to_string())
+impl Bounds {
+    /// GeoIntervalUtil walks conjunctions of comparisons between the
+    /// function variable itself and an expression independent of it.
+    fn read(nodes: &[Node], root: u32) -> Option<Self> {
+        let mut uses_var = Vec::with_capacity(nodes.len());
+        for node in nodes {
+            uses_var.push(
+                matches!(node, Node::Var)
+                    || expr::children(node).any(|child| uses_var[child as usize]),
+            );
+        }
+        let mut bounds = Self::default();
+        let mut pending = vec![root];
+        while let Some(id) = pending.pop() {
+            let (small, large) = match nodes[id as usize] {
+                Node::Bin(Bin::And, left, right) => {
+                    pending.extend([right, left]);
+                    continue;
+                }
+                Node::Bin(Bin::Less | Bin::LessEqual, a, b)
+                | Node::Bin(Bin::Greater | Bin::GreaterEqual, b, a) => (a, b),
+                _ => return None,
+            };
+            match (nodes[small as usize], nodes[large as usize]) {
+                (Node::Var, _) if !uses_var[large as usize] => bounds.upper.push(large),
+                (_, Node::Var) if !uses_var[small as usize] => bounds.lower.push(small),
+                _ => return None,
+            }
+        }
+        Some(bounds)
+    }
+
+    fn midpoint(self, parsed: &mut parse::Parsed) -> u32 {
+        let low = combine(parsed, self.lower, Bin::Max, f64::NEG_INFINITY);
+        let high = combine(parsed, self.upper, Bin::Min, f64::INFINITY);
+        let sum = push(parsed, Node::Bin(Bin::Add, low, high));
+        let two = push(parsed, Node::Num(2.0));
+        let midpoint = push(parsed, Node::Bin(Bin::Div, sum, two));
+
+        // The square root is NaN for every negative width, even one
+        // smaller than the expression engine's comparison tolerance.
+        let width = push(parsed, Node::Bin(Bin::Sub, high, low));
+        let root = push(parsed, Node::Un(Un::Sqrt, width));
+        let zero = push(parsed, Node::Num(0.0));
+        let valid = push(parsed, Node::Bin(Bin::GreaterEqual, root, zero));
+        push(parsed, Node::If(IfMode::Algo, valid, midpoint, NONE))
+    }
+}
+
+fn combine(parsed: &mut parse::Parsed, bounds: Vec<u32>, op: Bin, empty: f64) -> u32 {
+    bounds
+        .into_iter()
+        .reduce(|a, b| push(parsed, Node::Bin(op, a, b)))
+        .unwrap_or_else(|| push(parsed, Node::Num(empty)))
+}
+
+fn push(parsed: &mut parse::Parsed, node: Node) -> u32 {
+    parsed.nodes.push(node);
+    parsed.lits.push(Default::default());
+    (parsed.nodes.len() - 1) as u32
 }

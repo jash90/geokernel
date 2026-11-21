@@ -312,7 +312,7 @@ pub fn script_uses_form(
     definitions(script).any(|rhs| {
         calls(rhs).iter().any(|(name, args)| {
             names.get(name).is_some_and(|c| c == command) && {
-                if form == "inequality" {
+                if matches!(form, "inequality" | "interval") {
                     return matches!(args.as_slice(), [arg] if inline_inequality(arg));
                 }
                 let kinds: Vec<Option<Kind>> = args.iter().map(|a| arg_kind(a, labels)).collect();

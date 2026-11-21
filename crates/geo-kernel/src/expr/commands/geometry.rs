@@ -10,6 +10,8 @@
 
 #[path = "../../algo/conic_coefficients.rs"]
 mod conic_coefficients;
+#[path = "../../algo/conic_interval.rs"]
+mod conic_interval;
 
 use crate::expr::eval::{Ctx, Val};
 use crate::expr::parse::{list_form, Parser};

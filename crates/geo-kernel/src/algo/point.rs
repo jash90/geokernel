@@ -397,19 +397,20 @@ impl Group for PointDef {
                     index: super::polygon::count_arg(c, index)?,
                 })
             })()),
-            "Trilinear" => {
+            "Trilinear" => Some((|| {
                 if n != 6 {
-                    return Some(Err(format!("`{func}` does not take {n} argument(s)")));
+                    return Err(format!("`{func}` does not take {n} argument(s)"));
                 }
                 let mut ids = [0u32; 6];
-                for (slot, arg) in ids.iter_mut().zip(args) {
-                    match object(c, arg) {
-                        Ok(id) => *slot = id.index() as u32,
-                        Err(e) => return Some(Err(e)),
-                    }
+                for (i, (slot, arg)) in ids.iter_mut().zip(args).enumerate() {
+                    let id = object(c, arg)?;
+                    let expected = if i < 3 { POINT } else { NUMBER };
+                    c.expect(id, expected).map_err(|e| e.to_string())?;
+                    *slot =
+                        u32::try_from(id.index()).map_err(|_| Error::UnknownObject.to_string())?;
                 }
-                Some(Ok(PointDef::Trilinear { ids }))
-            }
+                Ok(PointDef::Trilinear { ids })
+            })()),
             _ => None,
         }
     }

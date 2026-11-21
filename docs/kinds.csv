@@ -5,7 +5,7 @@ Segment,SEGMENT,Segment,yes,yes,yes,yes,yes,yes,yes,no,
 Ray,RAY,Ray,yes,yes,yes,yes,yes,yes,yes,no,
 Vector,VECTOR,Vector,yes,yes,yes,yes,yes,yes,yes,no,
 Circle,CONIC,Circle,yes,yes,yes,yes,yes,yes,yes,no,a circle is a conic upstream; the kernel keeps it as its own kind
-Conic,CONIC,Conic,yes,partial,yes,no,no,yes,no,no,the fitted SVG view can omit a conic outside its bounds. The import fixtures have no conic and the importer refuses free conics
+Conic,CONIC,Conic,yes,yes,yes,no,no,yes,no,no,the SVG view fits bounded conics. The import fixtures have no conic and the importer refuses free conics
 Arc,CONICPART,Arc,yes,yes,no,no,no,no,no,no,
 Sector,CONICPART,Sector,yes,yes,no,no,no,no,no,no,
 Number,NUMERIC,Number,yes,no,no,no,yes,yes,yes,no,no sliders

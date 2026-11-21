@@ -121,7 +121,7 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
     if let Some(result) = crate::algo::general_conic::exec(c, name, rhs) {
         return result;
     }
-    if let Some(result) = crate::algo::conic::interval::exec(c, name, rhs) {
+    if let Some(result) = ConicDef::exec_interval(c, name, rhs) {
         return result;
     }
     // GeoGebra returns an already labelled angle unchanged.
