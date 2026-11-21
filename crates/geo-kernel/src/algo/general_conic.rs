@@ -42,9 +42,8 @@
 //! parabola by construction, and points with a homogeneous coordinate
 //! other than 1 (every point of the kernel has `z = 1`).
 
-use super::conic_nd::{my_length, ConicData, ConicType};
-use super::transform::{center_of, TransformOf};
-use super::vector;
+use super::conic_nd::{ConicData, ConicType};
+use super::transform::{center_of, shear_axis, Map, TransformOf};
 use super::{Group, Parents, NUMBER, NUMBER_OR_ANGLE, POINT};
 use crate::expr::{Element, ExprDef, List};
 use crate::kernel::{Construction, Error, Id, IdList, Kind, Value};
@@ -298,72 +297,21 @@ impl GeneralConicDef {
                 shear,
                 ..
             } => {
-                let Some((la, lb, lc)) = c.raw_carrier(axis) else {
-                    d.defined = false;
-                    return d;
-                };
-                let Some(n) = c.number(ratio) else {
-                    d.defined = false;
-                    return d;
-                };
                 if !set_out(c, src, &mut d) {
                     return d;
                 }
-                // `AlgoShearOrStretch.compute`: a point of the axis moves to
-                // the origin, the matrix is applied, and the point is added
-                // back (the point is `GeoLine`'s, not a point of the line).
-                let (qx, qy) = if la.abs() > lb.abs() {
-                    (lc / la, 0.0)
+                let def = if shear {
+                    TransformOf::Shear { axis, ratio }
                 } else {
-                    (0.0, lc / lb)
+                    TransformOf::Stretch { axis, ratio }
                 };
-                let len = my_length(la, lb);
-                let (s, cos) = (-la / len, lb / len);
-                // translate(q), matrix, translate(-q): the point q = (z/x, 0)
-                // of the raw coefficients is minus the point of the line on
-                // the axis (`Coords negativeStartPoint`)
-                d.translate(qx, qy);
-                let m = if shear {
-                    [
-                        1.0 - cos * s * n,
-                        cos * cos * n,
-                        -s * s * n,
-                        1.0 + s * cos * n,
-                    ]
-                } else {
-                    [
-                        cos * cos + s * s * n,
-                        cos * s * (1.0 - n),
-                        cos * s * (1.0 - n),
-                        s * s + cos * cos * n,
-                    ]
-                };
-                d.matrix_transform(m[0], m[1], m[2], m[3]);
-                d.translate(-qx, -qy);
+                transform_conic(c, &def, &mut d);
             }
-            GeneralConicDef::StretchVector {
-                src, vector: vid, ..
-            } => {
-                let Some((vx, vy)) = vector(c, vid) else {
-                    d.defined = false;
-                    return d;
-                };
+            GeneralConicDef::StretchVector { src, vector, .. } => {
                 if !set_out(c, src, &mut d) {
                     return d;
                 }
-                // the same as above, around the start point of the vector
-                let (sx, sy) = vector::start(c, vid).unwrap_or((0.0, 0.0));
-                let len = my_length(vx, vy);
-                let (cos, s) = (-vy / len, vx / len);
-                d.translate(-sx, -sy);
-                let m = [
-                    cos * cos + s * s * len,
-                    cos * s * (1.0 - len),
-                    cos * s * (1.0 - len),
-                    s * s + cos * cos * len,
-                ];
-                d.matrix_transform(m[0], m[1], m[2], m[3]);
-                d.translate(sx, sy);
+                transform_conic(c, &TransformOf::StretchVector(vector), &mut d);
             }
             GeneralConicDef::Invert { src, circle, .. } => {
                 let Some(k) = c.conic(circle) else {
@@ -482,6 +430,9 @@ fn rotated_by(
 /// undefined input leaves `d` undefined. The parts of conics call this with
 /// the conic of their own record, which starts the same way.
 pub(crate) fn transform_conic(c: &Construction, def: &TransformOf, d: &mut ConicData) {
+    if !d.defined {
+        return;
+    }
     match *def {
         TransformOf::MirrorPoint(center) => {
             // `AlgoMirror`: an undefined mirror makes the image undefined
@@ -516,62 +467,18 @@ pub(crate) fn transform_conic(c: &Construction, def: &TransformOf, d: &mut Conic
             };
             d.dilate(r, s);
         }
-        TransformOf::Shear { axis, ratio } | TransformOf::Stretch { axis, ratio } => {
-            let shear = matches!(def, TransformOf::Shear { .. });
-            match (c.raw_carrier(axis), c.number(ratio)) {
-                (Some((la, lb, lc)), Some(n)) => {
-                    // `AlgoShearOrStretch.compute`: a point of the axis moves
-                    // to the origin, the matrix is applied, and the point is
-                    // added back (the point is `GeoLine`'s, not a point of
-                    // the line).
-                    let (qx, qy) = if la.abs() > lb.abs() {
-                        (lc / la, 0.0)
-                    } else {
-                        (0.0, lc / lb)
-                    };
-                    let len = my_length(la, lb);
-                    let (s, cos) = (-la / len, lb / len);
-                    // translate(q), matrix, translate(-q); see the record
-                    d.translate(qx, qy);
-                    let m = if shear {
-                        [
-                            1.0 - cos * s * n,
-                            cos * cos * n,
-                            -s * s * n,
-                            1.0 + s * cos * n,
-                        ]
-                    } else {
-                        [
-                            cos * cos + s * s * n,
-                            cos * s * (1.0 - n),
-                            cos * s * (1.0 - n),
-                            s * s + cos * cos * n,
-                        ]
-                    };
-                    d.matrix_transform(m[0], m[1], m[2], m[3]);
-                    d.translate(-qx, -qy);
-                }
-                _ => d.defined = false,
-            }
-        }
-        TransformOf::StretchVector(vid) => {
-            match vector(c, vid) {
-                Some((vx, vy)) => {
-                    // the same as above, around the start point of the vector
-                    let (sx, sy) = vector::start(c, vid).unwrap_or((0.0, 0.0));
-                    let len = my_length(vx, vy);
-                    let (cos, s) = (-vy / len, vx / len);
-                    d.translate(-sx, -sy);
-                    let m = [
-                        cos * cos + s * s * len,
-                        cos * s * (1.0 - len),
-                        cos * s * (1.0 - len),
-                        s * s + cos * cos * len,
-                    ];
-                    d.matrix_transform(m[0], m[1], m[2], m[3]);
-                    d.translate(sx, sy);
-                }
-                None => d.defined = false,
+        TransformOf::Shear { .. } | TransformOf::Stretch { .. } | TransformOf::StretchVector(_) => {
+            if let Some(Map::Matrix {
+                qx,
+                qy,
+                m: [m00, m01, m10, m11],
+            }) = def.map(c)
+            {
+                d.translate(qx, qy);
+                d.matrix_transform(m00, m01, m10, m11);
+                d.translate(-qx, -qy);
+            } else {
+                d.defined = false;
             }
         }
         // the inversion of a part is computed by the part itself
@@ -731,10 +638,10 @@ impl Group for GeneralConicDef {
                 src,
                 axis,
                 ratio,
-                ..
+                shear,
             } => {
                 c.expect(src, kind_of(kind)?)?;
-                c.expect(axis, LINE_OR_RAY)?;
+                c.expect(axis, shear_axis(shear))?;
                 c.expect(ratio, NUMBER_OR_ANGLE)
             }
             GeneralConicDef::StretchVector { kind, src, vector } => {
@@ -939,8 +846,17 @@ fn parse_transform_args(
                     vector: second,
                 });
             }
-            if !matches!(second_kind, Kind::Line | Kind::Segment | Kind::Ray) {
-                return Err(format!("`{}` is a {second_kind}, expected a line", args[1]));
+            let shear = func == "Shear";
+            if !shear_axis(shear).contains(&second_kind) {
+                let expected = if shear {
+                    "a line or a vector"
+                } else {
+                    "a line"
+                };
+                return Err(format!(
+                    "`{}` is a {second_kind}, expected {expected}",
+                    args[1]
+                ));
             }
             let ratio = object(c, args[2])?;
             if !c.kind(ratio).is_number() {
@@ -955,7 +871,7 @@ fn parse_transform_args(
                 src,
                 axis: second,
                 ratio,
-                shear: func == "Shear",
+                shear,
             })
         }
         _ => {

@@ -71,6 +71,7 @@
 
 mod commands;
 mod decimal;
+pub(crate) mod derivative;
 /// Equations in `x` and `y` as lines and conics (see the module docs).
 pub(crate) mod equation;
 mod eval;
@@ -436,6 +437,7 @@ pub(crate) struct Entry {
     lists: bool,
     /// The elements of a list result (see [`list`]).
     items: Vec<Slot>,
+    coordinate_layout: Option<list::CoordinateLayout>,
     depth: u32,
     cost: u64,
     vars: u64,
@@ -449,6 +451,7 @@ impl Entry {
             has_if,
             lists,
             items: Vec::new(),
+            coordinate_layout: None,
             nodes: p.nodes,
             lits: p.lits,
             tys: p.tys,
@@ -890,6 +893,12 @@ pub(crate) fn update_lists(c: &mut Construction, d: ExprDef) -> (Value, bool) {
         e.items.clear();
         e.items.extend_from_slice(&items);
     }
+    if items_changed || !e.raw.same(out.raw) {
+        e.coordinate_layout = match out.raw {
+            Raw::List(len) => list::CoordinateLayout::of(List::new(&items, len)),
+            _ => None,
+        };
+    }
     c.exprs.out = items;
     let v = value(d, out.raw);
     let changed = store(c, d, out);
@@ -967,6 +976,17 @@ pub(crate) fn list(c: &Construction, id: Id) -> Option<List<'_>> {
     }
 }
 
+pub(crate) fn coordinate_rows(c: &Construction, id: Id) -> Option<list::CoordinateRows<'_>> {
+    let (Def::Expr(d), Value::List { len }) = (c.def(id), c.value(id)) else {
+        return None;
+    };
+    let e = entry(c, d);
+    Some(list::CoordinateRows::new(
+        List::new(&e.items, len),
+        e.coordinate_layout?,
+    ))
+}
+
 /// Stores the result of [`evaluate`]; tells whether it changed. A function
 /// always counts as changed: its values depend on its inputs even when it
 /// stays defined.
@@ -1010,6 +1030,19 @@ pub(crate) fn value(d: ExprDef, raw: Raw) -> Value {
         (Kind::List, Raw::List(len)) => Value::List { len },
         _ => Value::Undefined,
     }
+}
+
+/// Adds a live dependency for an inline command argument of the given kind.
+pub(crate) fn argument_object(c: &mut Construction, text: &str, label: &str, kind: Kind) -> bool {
+    let Ok(parsed) = parse::parse_argument(c, text) else {
+        return false;
+    };
+    let kind = match (kind, parsed.tys[parsed.root as usize]) {
+        (Kind::Number, Ty::Num(1)) => Kind::Angle,
+        (Kind::Number, Ty::Num(_)) | (Kind::List, Ty::List(_)) => kind,
+        _ => return false,
+    };
+    !parsed.uses_var && add(c, label, parsed, kind).is_ok()
 }
 
 /// Evaluates a self-contained scalar argument without adding a construction

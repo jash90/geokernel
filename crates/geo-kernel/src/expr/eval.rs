@@ -115,7 +115,12 @@ thread_local! {
 /// Evaluates `f` without a work bound (the element bound stays).
 #[cfg(test)]
 pub(super) fn unbounded<T>(f: impl FnOnce() -> T) -> T {
-    let old = LIMIT.with(|l| l.replace(u64::MAX));
+    with_work_limit(u64::MAX, f)
+}
+
+#[cfg(test)]
+pub(super) fn with_work_limit<T>(limit: u64, f: impl FnOnce() -> T) -> T {
+    let old = LIMIT.with(|l| l.replace(limit));
     let r = f();
     LIMIT.with(|l| l.set(old));
     r
@@ -558,7 +563,7 @@ pub(super) struct Ctx<'a, const M: bool> {
 }
 
 impl<'a, const M: bool> Ctx<'a, M> {
-    fn new(c: &'a Construction, e: &'a Entry, env: &'a Env<'a, M>) -> Ctx<'a, M> {
+    pub(super) fn new(c: &'a Construction, e: &'a Entry, env: &'a Env<'a, M>) -> Ctx<'a, M> {
         Ctx {
             c,
             e,
@@ -847,7 +852,7 @@ impl<const M: bool> Ctx<'_, M> {
     }
 
     /// `ExpressionNode.evaluateDouble`.
-    fn fast(&self, i: u32) -> f64 {
+    pub(super) fn fast(&self, i: u32) -> f64 {
         if M && self.stop(FAST_VISIT) {
             return f64::NAN;
         }
