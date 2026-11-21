@@ -13,9 +13,10 @@
 #
 # crates/geo-golden/tests/command_forms.rs checks every row: each case exists,
 # is not a known gap, and calls the command with arguments of exactly the
-# form's kinds; forms with a wildcard argument (any, path, region) cannot be
-# done by cases. `forms_done` in docs/command-matrix.csv counts these rows;
-# regenerate the matrix after editing (README.md in this directory).
+# form's kinds (a segment is no `line`, a circle no `conic`); forms with a
+# wildcard argument (any, path, region) cannot be done by cases.
+# `forms_done` in docs/command-matrix.csv counts these rows; regenerate the
+# matrix after editing (README.md in this directory).
 
 [[form]]
 command = "AffineRatio"
@@ -45,12 +46,7 @@ cases = ["intersect-groups-002", "intersect-startpoint-001", "intersect-startpoi
 [[form]]
 command = "Arc"
 form = "conic,number,number"
-cases = ["arcs-conicparams-001", "arcs-conicparams-002", "arcs-conicparams-005"]
-
-[[form]]
-command = "Arc"
-form = "conic,point,point"
-cases = ["arcs-conicpoints-001", "arcs-conicpoints-002", "arcs-conicpoints-005"]
+cases = ["arcs-conicparams-007"]
 
 [[form]]
 command = "AreCollinear"
@@ -79,11 +75,6 @@ cases = ["predicates-perpendicular-001", "predicates-perpendicular-002", "predic
 
 [[form]]
 command = "Area"
-form = "conic"
-cases = ["measure-area-001", "measure-area-002", "measure-area-003"]
-
-[[form]]
-command = "Area"
 form = "polygon"
 cases = ["polygon-derived-001", "polygon-derived-002", "polygon-derived-003"]
 
@@ -100,7 +91,7 @@ cases = ["conics-readers-001", "conics-readers-002", "conics-readers-003"]
 [[form]]
 command = "Center"
 form = "conic"
-cases = ["conic-center-001", "conic-center-002", "conic-center-003"]
+cases = ["conics-readers-001", "conics-readers-002", "conics-readers-003"]
 
 [[form]]
 command = "Centroid"
@@ -143,11 +134,6 @@ form = "point,point,point"
 cases = ["arcs-circum-003", "arcs-circum-004", "arcs-circum-007"]
 
 [[form]]
-command = "Circumference"
-form = "conic"
-cases = ["measure-circumference-001", "measure-circumference-002", "measure-circumference-003"]
-
-[[form]]
 command = "ClosestPoint"
 form = "line,line"
 cases = ["points-pathpair-001"]
@@ -165,7 +151,7 @@ cases = ["measure-cross-001", "measure-cross-002", "measure-cross-003"]
 [[form]]
 command = "Diameter"
 form = "line,conic"
-cases = ["conic-diameter-001", "conic-diameter-002", "conic-diameter-003"]
+cases = ["conics-tangent-003", "conics-tangent-006", "conics-tangent-009"]
 
 [[form]]
 command = "Diameter"
@@ -323,16 +309,6 @@ form = "conic,line,number"
 cases = ["conics-intersection-001", "conics-intersection-002", "conics-intersection-003"]
 
 [[form]]
-command = "Intersect"
-form = "conic,conic,number"
-cases = ["geometry-chain-020", "geometry-chain-021", "geometry-chain-022"]
-
-[[form]]
-command = "IsTangent"
-form = "line,conic"
-cases = ["predicates-tangent-001", "predicates-tangent-002", "predicates-tangent-003"]
-
-[[form]]
 command = "Join"
 form = "list"
 cases = ["lists-join-010", "lists-join-011", "lists-objects-045"]
@@ -410,7 +386,7 @@ cases = ["expr-special-017", "expr-special-019", "expr-special-021"]
 [[form]]
 command = "Midpoint"
 form = "conic"
-cases = ["conic-center-001", "conic-center-002", "conic-center-003"]
+cases = ["conics-readers-001", "conics-readers-002", "conics-readers-003"]
 
 [[form]]
 command = "Midpoint"
@@ -483,11 +459,6 @@ form = "polygon"
 cases = ["polygon-derived-001", "polygon-derived-002", "polygon-derived-003"]
 
 [[form]]
-command = "Perimeter"
-form = "conic"
-cases = ["measure-circumference-001", "measure-circumference-002", "measure-circumference-003"]
-
-[[form]]
 command = "Polar"
 form = "point,conic"
 cases = ["conics-tangent-003", "conics-tangent-006", "conics-tangent-009"]
@@ -518,11 +489,6 @@ form = "list,number"
 cases = ["lists-stats-003"]
 
 [[form]]
-command = "Radius"
-form = "conic"
-cases = ["expr-cmd-009", "measure-radius-001", "measure-radius-002"]
-
-[[form]]
 command = "Ray"
 form = "point,point"
 cases = ["conics-parabola-010", "conics-tangent-015", "paths-closest-003"]
@@ -550,12 +516,7 @@ cases = ["conics-readers-001", "conics-readers-002", "conics-readers-003"]
 [[form]]
 command = "Sector"
 form = "conic,number,number"
-cases = ["arcs-conicparams-003", "arcs-conicparams-004", "arcs-conicparams-005"]
-
-[[form]]
-command = "Sector"
-form = "conic,point,point"
-cases = ["arcs-conicpoints-003", "arcs-conicpoints-004", "arcs-conicpoints-005"]
+cases = ["arcs-conicparams-006"]
 
 [[form]]
 command = "Segment"
@@ -601,11 +562,6 @@ cases = ["lists-objects-029", "lists-objects-031", "lists-stats-015"]
 command = "Sum"
 form = "list,number"
 cases = ["lists-objects-030", "lists-stats-018", "lists-sum-005"]
-
-[[form]]
-command = "Tangent"
-form = "conic,point"
-cases = ["lines-oncircle-003", "lines-tangent-002"]
 
 [[form]]
 command = "Tangent"

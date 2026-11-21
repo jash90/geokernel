@@ -48,9 +48,10 @@ whose reason gives the form a disposition ("Not implemented" is none). The
 test `crates/geo-golden/tests/command_forms.rs` checks each row: the case
 exists, is not in `known-gaps.toml`, calls the command (by its name or an
 alias) with arguments of exactly the form's kinds, read from the case's first
-snapshot (a number literal or expression of numbers is a `number`, a bare name
-that is no label a local variable, a nested call unknown); a segment does not
-count for `line`, a circle counts for `conic`. A form with a wildcard
+snapshot (a number literal or an expression of numbers is a `number`, a
+nested call or a name that is no label is unknown and fits no form); a
+segment does not count for `line` nor a circle for `conic`, since the kernel
+keeps them as kinds of their own. A form with a wildcard
 argument is never done by cases: one case cannot show every kind the form
 accepts. To list candidate cases for new rows:
 

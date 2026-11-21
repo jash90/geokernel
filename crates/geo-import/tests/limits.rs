@@ -442,16 +442,20 @@ fn twenty_thousand_polygons() {
     // rescan of the construction per line, makes it quadratic, and the
     // label search allocates each candidate it tries. Allocations do not
     // depend on the speed of the machine, unlike the time bound this
-    // replaces.
-    let (half, a) = allocations(|| import(polygons(10_000).as_bytes()).unwrap());
-    let (full, b) = allocations(|| import(polygons(20_000).as_bytes()).unwrap());
-    assert_eq!(half.script.len(), 10_003);
-    assert_eq!(full.script.len(), 20_003);
+    // replaces. The quadratic term already dominates at a few thousand
+    // polygons, so the ratio is taken there, where a regression fails in
+    // seconds; then the full size must still import.
+    let (half, a) = allocations(|| import(polygons(2_000).as_bytes()).unwrap());
+    let (full, b) = allocations(|| import(polygons(4_000).as_bytes()).unwrap());
+    assert_eq!(half.script.len(), 2_003);
+    assert_eq!(full.script.len(), 4_003);
     let ratio = b as f64 / a as f64;
     assert!(
         ratio < 2.5,
-        "10000 polygons: {a} allocations, 20000: {b} (ratio {ratio:.2}, linear is 2)"
+        "2000 polygons: {a} allocations, 4000: {b} (ratio {ratio:.2}, linear is 2)"
     );
+    let big = import(polygons(20_000).as_bytes()).unwrap();
+    assert_eq!(big.script.len(), 20_003);
 }
 
 /// An archive with a comment, built by hand around a stored entry.

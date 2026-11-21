@@ -114,8 +114,10 @@ pub fn is_wildcard(form: &str) -> bool {
 }
 
 /// The form tokens an argument of kind `k` satisfies. Exact kinds only: a
-/// segment is not taken for `line` (upstream `isGeoLine` would accept it,
-/// but the form with a line argument is not shown by a segment).
+/// segment is not taken for `line` and a circle not for `conic` (upstream
+/// accepts both, but the kernel keeps them as kinds of their own, so a case
+/// with a segment or a circle does not show the form for a general line or
+/// conic).
 fn tokens_of(k: Kind) -> &'static [&'static str] {
     match k {
         Kind::Point => &["point"],
@@ -125,8 +127,7 @@ fn tokens_of(k: Kind) -> &'static [&'static str] {
         Kind::Line => &["line"],
         Kind::Segment => &["segment"],
         Kind::Ray => &["ray"],
-        // A circle is a conic upstream (`GeoConic`).
-        Kind::Circle => &["conic", "circle"],
+        Kind::Circle => &["circle"],
         Kind::Conic => &["conic"],
         Kind::Polygon => &["polygon"],
         Kind::PolyLine => &["polyline"],
@@ -231,18 +232,11 @@ pub fn calls(expr: &str) -> Vec<(String, Vec<String>)> {
     out
 }
 
-/// Whether `s` is a label as golden scripts write them (`A`, `a_1`, `p_{12}`).
-fn is_name(s: &str) -> bool {
-    let mut it = s.chars();
-    it.next().is_some_and(char::is_alphabetic)
-        && s.chars().all(|c| is_ident_char(c) || c == '{' || c == '}')
-}
-
 /// The kind of an argument, where it can be told without the kernel: a
 /// label of the case, a number written with digits, operators and number
 /// labels, a comparison (a boolean), a list in braces, a pair of numbers (a
-/// point), or a name that is no label (a local variable such as the `k` of
-/// `Sequence`, a number). Anything else, such as a nested call, is unknown.
+/// point). Anything else, such as a nested call or a name that is no label
+/// (the `x` of a function, the variable of `Sequence`), is unknown.
 pub fn arg_kind(arg: &str, labels: &BTreeMap<String, Kind>) -> Option<Kind> {
     let a = arg.trim();
     if let Some(&k) = labels.get(a) {
@@ -250,9 +244,6 @@ pub fn arg_kind(arg: &str, labels: &BTreeMap<String, Kind>) -> Option<Kind> {
     }
     if a == "true" || a == "false" {
         return Some(Kind::Boolean);
-    }
-    if is_name(a) {
-        return Some(Kind::Number);
     }
     if a.starts_with('{') && closing(a, 0) == Some(a.len()) {
         return Some(Kind::List);
@@ -471,7 +462,7 @@ mod tests {
         assert!(form_matches("point,point,...", &[p, p, p, p]));
         assert!(!form_matches("point,point,...", &[p]));
         assert!(form_matches("point,number,...", &[p, n, n]));
-        assert!(form_matches("conic", &[Some(Kind::Circle)]));
+        assert!(!form_matches("conic", &[Some(Kind::Circle)]));
         assert!(!form_matches("line", &[Some(Kind::Segment)]));
         assert!(!form_matches("number", &[None]));
         assert!(is_wildcard("any,vector") && is_wildcard("point,path") && !is_wildcard("point"));
@@ -505,7 +496,7 @@ mod tests {
         assert_eq!(arg_kind("-2.5", &l), Some(Kind::Number));
         assert_eq!(arg_kind("2a + 1", &l), Some(Kind::Number));
         assert_eq!(arg_kind("a^2 - pi", &l), Some(Kind::Number));
-        assert_eq!(arg_kind("k", &l), Some(Kind::Number));
+        assert_eq!(arg_kind("k", &l), None);
         assert_eq!(arg_kind("a < 3", &l), Some(Kind::Boolean));
         assert_eq!(arg_kind("true", &l), Some(Kind::Boolean));
         assert_eq!(arg_kind("(1, a)", &l), Some(Kind::Point));
