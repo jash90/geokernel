@@ -64,9 +64,9 @@ fn shortcuts(app: &mut App, ctx: &egui::Context) {
             )
         });
         if redo {
-            app.wb.redo();
+            app.redo();
         } else if undo {
-            app.wb.undo();
+            app.undo();
         }
         if escape {
             if app.drag.is_some() {
@@ -195,7 +195,7 @@ fn number_dialog(app: &mut App, ctx: &egui::Context) {
             };
             app.apply_outcome(outcome);
         }
-        Some(None) => app.tool.reset(),
+        Some(None) => app.reset_tool(),
         None => {}
     }
 }

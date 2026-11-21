@@ -103,8 +103,10 @@ fn a_press_on_a_dependent_point_neither_moves_it_nor_pans() {
 }
 
 #[test]
-fn placed_points_survive_a_failed_final_step() {
-    // The kernel refuses a regular polygon of a million vertices.
+fn a_failed_final_step_takes_the_placed_points_away() {
+    // The kernel refuses a regular polygon of a million vertices. The tool
+    // use ends unfinished, so its pending points go with it (spec E5/F1:
+    // they belong to the use, not to steps of their own).
     let mut h = harness("A = (-3, -3)\n");
     h.state_mut().select_tool(Tool::RegularPolygon);
     click(&mut h, world(0.0, 2.0));
@@ -113,9 +115,10 @@ fn placed_points_survive_a_failed_final_step() {
     h.state_mut().number_text = "1000000".into();
     h.key_press(egui::Key::Enter);
     h.run();
-    assert_eq!(labels(&h), ["A", "B", "C"], "the points stay, nothing else");
+    assert_eq!(labels(&h), ["A"], "nothing of the use stays");
     assert!(h.state().tool_error.is_some());
     assert!(h.state().tool.picks().is_empty());
+    assert_eq!(h.state().wb.undo_depth(), (0, 0));
 }
 
 #[test]

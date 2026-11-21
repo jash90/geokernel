@@ -102,21 +102,21 @@ fn labels(h: &Harness<'_, App>) -> Vec<String> {
 }
 
 #[test]
-fn line_tool_makes_each_point_and_the_line_their_own_undo_steps() {
+fn a_line_tool_use_with_its_two_new_points_is_one_undo_step() {
+    // Spec F1 (`storeUndoInfoAndStateForModeStarting`): the points are made
+    // at once but are no steps of their own.
     let mut h = harness("A = (-5.64, 4.44)\n");
     h.state_mut().tool.set_tool(Tool::Line);
     click(&mut h, world(1.0, 1.0));
     assert_eq!(labels(&h), ["A", "B"], "the first point is made at once");
+    assert_eq!(h.state().wb.undo_depth(), (0, 0), "and is no step");
     click(&mut h, world(3.0, -2.0));
     assert_eq!(labels(&h), ["A", "B", "C", "f"]);
     let app = h.state_mut();
-    for left in [["A", "B", "C"].as_slice(), &["A", "B"], &["A"]] {
-        assert!(app.wb.undo());
-        let c = app.wb.construction();
-        let now: Vec<&str> = c.ids().map(|id| c.label(id)).collect();
-        assert_eq!(now, left);
-    }
-    assert!(!app.wb.undo());
+    assert_eq!(app.wb.undo_depth(), (1, 0));
+    assert!(app.undo());
+    assert_eq!(labels(&h), ["A"]);
+    assert!(!h.state_mut().undo());
 }
 
 #[test]

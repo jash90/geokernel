@@ -477,3 +477,125 @@ fn label_offsets_stay_out_of_undo_and_go_with_their_object() {
     let b = w.construction().id("B").unwrap();
     assert_eq!(w.label_offset(b), None);
 }
+
+fn lines(src: &[&str]) -> Vec<String> {
+    src.iter().map(|l| l.to_string()).collect()
+}
+
+#[test]
+fn a_tool_use_with_its_new_points_is_one_undo_step() {
+    // Spec F1: the points a tool places are no steps of their own; the
+    // completed use is one step (`storeUndoInfoAndStateForModeStarting`).
+    let mut w = Workbench::from_script("Z = (9, 9)\n").unwrap();
+    w.run_tool_lines(&lines(&["A = (1, 1)"])).unwrap();
+    assert!(w.tool_use_pending());
+    assert_eq!(w.undo_depth(), (0, 0), "the first click is no step");
+    w.run_tool_lines(&lines(&["B = (4, 3)"])).unwrap();
+    w.run_tool_lines(&lines(&["f = Line(A, B)"])).unwrap();
+    w.end_tool_use();
+    assert!(!w.tool_use_pending());
+    assert_eq!(w.undo_depth(), (1, 0));
+    assert!(w.undo());
+    assert_eq!(labels(&w), ["Z"]);
+    assert!(w.redo());
+    assert_eq!(labels(&w), ["Z", "A", "B", "f"]);
+}
+
+#[test]
+fn a_cancelled_tool_use_takes_its_points_away_and_is_no_step() {
+    // Spec E5: Escape or a tool switch removes the pending points.
+    let mut w = Workbench::from_script("Z = (9, 9)\n").unwrap();
+    w.run_line("Y = (8, 8)").unwrap();
+    assert!(w.undo());
+    assert_eq!(w.undo_depth(), (0, 1));
+    w.run_tool_lines(&lines(&["A = (1, 1)"])).unwrap();
+    assert!(w.cancel_tool_use());
+    assert_eq!(labels(&w), ["Z"]);
+    assert_eq!(w.undo_depth(), (0, 1), "no step, and the redo step stays");
+    assert!(!w.cancel_tool_use(), "nothing more to cancel");
+}
+
+#[test]
+fn undo_in_the_middle_of_a_tool_use_only_takes_the_use_back() {
+    // Spec F4: `Kernel.undo` restores the state from before the tool use
+    // and undoes no step.
+    let mut w = Workbench::from_script("Z = (9, 9)\n").unwrap();
+    w.run_line("Y = (8, 8)").unwrap();
+    w.run_tool_lines(&lines(&["A = (1, 1)"])).unwrap();
+    w.run_tool_lines(&lines(&["B = (2, 1)"])).unwrap();
+    assert!(w.can_undo());
+    assert!(w.undo());
+    assert_eq!(labels(&w), ["Z", "Y"]);
+    assert_eq!(w.undo_depth(), (1, 0));
+    assert!(w.undo());
+    assert_eq!(labels(&w), ["Z"]);
+}
+
+#[test]
+fn a_failed_tool_step_keeps_the_points_of_the_earlier_picks_pending() {
+    let mut w = Workbench::from_script("Z = (9, 9)\n").unwrap();
+    w.run_tool_lines(&lines(&["A = (1, 1)"])).unwrap();
+    assert!(w
+        .run_tool_lines(&lines(&["B = (2, 1)", "f = Line(A, Nope)"]))
+        .is_err());
+    assert_eq!(labels(&w), ["Z", "A"]);
+    assert!(w.tool_use_pending());
+    assert!(w.cancel_tool_use());
+    assert_eq!(labels(&w), ["Z"]);
+}
+
+#[test]
+fn other_changes_complete_a_tool_use_first() {
+    // A typed line, a deletion, a visibility toggle or a drag in the middle
+    // of a tool use: the pending points become a step of their own, then
+    // the change is one more.
+    for change in 0..4 {
+        let mut w = Workbench::from_script("Z = (9, 9)\n").unwrap();
+        w.run_tool_lines(&lines(&["A = (1, 1)"])).unwrap();
+        let z = w.construction().id("Z").unwrap();
+        match change {
+            0 => w.run_line("Y = (8, 8)").unwrap(),
+            1 => assert!(w.delete(z)),
+            2 => w.toggle_visible(z),
+            _ => {
+                w.begin_gesture();
+                assert!(w.move_point(z, 7.0, 7.0));
+                w.end_gesture();
+            }
+        }
+        assert!(!w.tool_use_pending(), "change {change}");
+        assert_eq!(w.undo_depth(), (2, 0), "change {change}");
+        assert!(w.undo() && w.undo());
+        assert_eq!(labels(&w), ["Z"], "change {change}");
+    }
+}
+
+#[test]
+fn a_point_put_where_the_pointer_was_belongs_to_the_tool_use() {
+    let mut w = Workbench::from_script("Z = (9, 9)\n").unwrap();
+    w.run_tool_lines(&lines(&["A = (1, 1)"])).unwrap();
+    let a = w.construction().id("A").unwrap();
+    assert!(w.move_pending_point(a, 2.0, 2.0));
+    assert_eq!(w.undo_depth(), (0, 0));
+    w.end_tool_use();
+    assert_eq!(w.undo_depth(), (1, 0));
+    assert!(w.undo());
+    assert_eq!(labels(&w), ["Z"]);
+}
+
+#[test]
+fn every_deletion_of_one_gesture_is_one_undo_step() {
+    // The eraser's stroke (spec E11) deletes several objects as one step
+    // (`ModeDeleteLocus.storeUndoAfterDrag`).
+    let mut w = Workbench::from_script("A = (1, 1)\nB = (2, 2)\nC = (3, 3)\n").unwrap();
+    w.begin_gesture();
+    let a = w.construction().id("A").unwrap();
+    assert!(w.delete(a));
+    let b = w.construction().id("B").unwrap();
+    assert!(w.delete(b));
+    w.end_gesture();
+    assert_eq!(labels(&w), ["C"]);
+    assert_eq!(w.undo_depth(), (1, 0));
+    assert!(w.undo());
+    assert_eq!(labels(&w), ["A", "B", "C"]);
+}

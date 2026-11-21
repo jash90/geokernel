@@ -41,6 +41,17 @@ struct Gesture {
     committed: bool,
 }
 
+/// A construction tool in use: the state before its first pick
+/// (`Kernel.storeStateForModeStarting`). The points it places stay in the
+/// construction as pending points with no undo step of their own; the
+/// completed use is one step (`storeUndoInfoAndStateForModeStarting`), and
+/// a use that ends unfinished takes its points away again
+/// (`restoreStateForModeStarting`).
+struct ToolUse {
+    snapshot: Log,
+    changed: bool,
+}
+
 #[derive(Default)]
 pub struct Workbench {
     construction: Construction,
@@ -53,6 +64,7 @@ pub struct Workbench {
     pub history: History,
     undo: Undo<Log>,
     gesture: Option<Gesture>,
+    tool_use: Option<ToolUse>,
     /// A problem to tell the user (for example a failed rebuild).
     pub notice: Option<String>,
     /// The labels moved away from their place, by object label: the offset
@@ -150,6 +162,7 @@ impl Workbench {
         let logs: Vec<&Log> = std::iter::once(&self.log)
             .chain(self.undo.states())
             .chain(self.gesture.as_ref().map(|g| &g.snapshot))
+            .chain(self.tool_use.as_ref().map(|t| &t.snapshot))
             .collect();
         let listed = logs.iter().map(|l| l.len()).sum();
         (Log::distinct_entries(logs), listed)
@@ -194,6 +207,7 @@ impl Workbench {
         self.selected = None;
         self.undo.clear();
         self.gesture = None;
+        self.tool_use = None;
         self.notice = None;
         self.version += 1;
         self.rebuilds += 1;
@@ -247,8 +261,66 @@ impl Workbench {
     }
 
     /// Runs several script lines as one undo step. If one fails, nothing of
-    /// the whole group stays.
+    /// the whole group stays. A tool use in progress is completed first
+    /// (its pending points become a step of their own).
     pub fn run_lines(&mut self, lines: &[String]) -> Result<(), String> {
+        self.end_tool_use();
+        self.exec_lines(lines, false)
+    }
+
+    /// Runs the lines of a construction tool's pick inside its tool use
+    /// (opened here if it is not): they become part of the one undo step of
+    /// the completed use, or go with it when it is cancelled. If one fails,
+    /// nothing of these lines stays (what earlier picks placed does).
+    pub fn run_tool_lines(&mut self, lines: &[String]) -> Result<(), String> {
+        self.begin_tool_use();
+        self.exec_lines(lines, true)
+    }
+
+    /// Opens a tool use when none is open (see `ToolUse`).
+    pub fn begin_tool_use(&mut self) {
+        if self.tool_use.is_none() {
+            self.tool_use = Some(ToolUse {
+                snapshot: self.copy(&self.log),
+                changed: false,
+            });
+        }
+    }
+
+    /// The open tool use placed something that is not an undo step yet.
+    pub fn tool_use_pending(&self) -> bool {
+        self.tool_use.as_ref().is_some_and(|t| t.changed)
+    }
+
+    /// Completes the open tool use: what it made is one undo step
+    /// (`EuclidianController.storeUndoInfo` after `processMode`). A use that
+    /// changed nothing records nothing.
+    pub fn end_tool_use(&mut self) {
+        if let Some(t) = self.tool_use.take() {
+            if t.changed {
+                self.undo.record(t.snapshot);
+            }
+        }
+    }
+
+    /// Ends the open tool use unfinished: the points it placed go, and no
+    /// undo step is recorded (`Kernel.restoreStateForInitNewMode`, Escape or
+    /// a tool switch; `Kernel.undo` in the middle of a tool). Returns
+    /// whether anything was taken away.
+    pub fn cancel_tool_use(&mut self) -> bool {
+        let Some(t) = self.tool_use.take() else {
+            return false;
+        };
+        if !t.changed {
+            return false;
+        }
+        if let Err(why) = self.restore(t.snapshot) {
+            self.keep_unrevertable(&why);
+        }
+        true
+    }
+
+    fn exec_lines(&mut self, lines: &[String], in_tool: bool) -> Result<(), String> {
         let snapshot = self.copy(&self.log);
         let n0 = self.construction.len();
         let mut failure = None;
@@ -291,7 +363,10 @@ impl Workbench {
             }
             None => {
                 if changed {
-                    self.undo.record(snapshot);
+                    match &mut self.tool_use {
+                        Some(t) if in_tool => t.changed = true,
+                        _ => self.undo.record(snapshot),
+                    }
                     self.version += 1;
                 }
                 Ok(())
@@ -317,6 +392,7 @@ impl Workbench {
         }
         self.undo.clear_redo();
         self.gesture = None;
+        self.tool_use = None;
         self.version += 1;
         self.notice = Some(format!("Nie można cofnąć ostatniej zmiany: {why}"));
     }
@@ -362,21 +438,29 @@ impl Workbench {
         if id.index() >= self.construction.len() {
             return false;
         }
+        self.end_tool_use();
         let label = self.construction.label(id).to_owned();
         let snapshot = self.copy(&self.log);
         let mut next = self.copy(&snapshot);
         if !next.remove(&label) {
             return false;
         }
-        if self.restore(next).is_err() {
+        // A deletion inside a gesture (the eraser's stroke) keeps it: the
+        // whole stroke is one undo step.
+        let gesture = self.gesture.take();
+        let restored = self.restore(next);
+        self.gesture = gesture;
+        if restored.is_err() {
             return false;
         }
-        self.undo.record(snapshot);
+        self.note_change_from(snapshot);
         true
     }
 
+    /// Whether `undo` does something: a step to go back to, or the pending
+    /// points of a tool use to take away.
     pub fn can_undo(&self) -> bool {
-        self.undo.can_undo()
+        self.tool_use_pending() || self.undo.can_undo()
     }
 
     pub fn can_redo(&self) -> bool {
@@ -388,7 +472,13 @@ impl Workbench {
         self.undo.depth()
     }
 
+    /// Steps back. In the middle of a tool use this only takes its pending
+    /// points away and is no real undo (`Kernel.undo` calls
+    /// `restoreStateForModeStarting`).
     pub fn undo(&mut self) -> bool {
+        if self.tool_use.is_some() {
+            return self.cancel_tool_use();
+        }
         let Some(prev) = self.undo.undo(self.copy(&self.log)) else {
             return false;
         };
@@ -400,7 +490,13 @@ impl Workbench {
         true
     }
 
+    /// Steps forward; a tool use in progress is cancelled first (its pending
+    /// points were never a step that the redo steps follow from).
     pub fn redo(&mut self) -> bool {
+        if !self.undo.can_redo() {
+            return false;
+        }
+        self.cancel_tool_use();
         let Some(next) = self.undo.redo(self.copy(&self.log)) else {
             return false;
         };
@@ -412,7 +508,11 @@ impl Workbench {
     }
 
     /// Marks the start of a drag: its moves become a single undo step.
+    /// A tool use in progress is completed first: the drag is a step of its
+    /// own (`EuclidianController.storeUndoInfo` ran when the tool made its
+    /// object, the drag is stored at its release).
     pub fn begin_gesture(&mut self) {
+        self.end_tool_use();
         self.gesture = Some(Gesture {
             snapshot: self.copy(&self.log),
             committed: false,
@@ -440,6 +540,18 @@ impl Workbench {
 
     /// Records the undo step for a change that is about to be logged.
     fn note_change(&mut self) {
+        self.end_tool_use();
+        self.note_change_with(|w| w.copy(&w.log));
+    }
+
+    /// Records the undo step for a change made from the state `before`:
+    /// the gesture's one step if a gesture is in progress, else a step of
+    /// its own.
+    fn note_change_from(&mut self, before: Log) {
+        self.note_change_with(move |_| before);
+    }
+
+    fn note_change_with(&mut self, before: impl FnOnce(&Self) -> Log) {
         match &self.gesture {
             Some(g) if !g.committed => {
                 let snapshot = self.copy(&g.snapshot);
@@ -449,7 +561,10 @@ impl Workbench {
                 }
             }
             Some(_) => {}
-            None => self.undo.record(self.copy(&self.log)),
+            None => {
+                let before = before(self);
+                self.undo.record(before);
+            }
         }
     }
 
@@ -479,6 +594,7 @@ impl Workbench {
             return;
         }
         let label = self.construction.label(id).to_owned();
+        self.end_tool_use();
         self.undo.record(self.copy(&self.log));
         if !self.log.hidden.remove(&label) {
             self.log.hidden.insert(label);
@@ -486,6 +602,17 @@ impl Workbench {
     }
 
     pub fn move_point(&mut self, id: Id, x: f64, y: f64) -> bool {
+        self.set_point(id, x, y, false)
+    }
+
+    /// Puts a point that the open tool use placed at `(x, y)` (a point on a
+    /// path created where the pointer was), as part of that use.
+    pub fn move_pending_point(&mut self, id: Id, x: f64, y: f64) -> bool {
+        self.begin_tool_use();
+        self.set_point(id, x, y, true)
+    }
+
+    fn set_point(&mut self, id: Id, x: f64, y: f64, in_tool: bool) -> bool {
         if id.index() >= self.construction.len() {
             return false;
         }
@@ -499,7 +626,12 @@ impl Workbench {
         if self.construction.move_point(id, x, y).is_err() || same {
             return false;
         }
-        self.note_change();
+        // The journal does not have the move yet: the undo step is taken
+        // from it as it is.
+        match &mut self.tool_use {
+            Some(t) if in_tool => t.changed = true,
+            _ => self.note_change(),
+        }
         let label = self.construction.label(id).to_owned();
         self.log.record_set(&label, Setting::Point(x, y));
         self.version += 1;
