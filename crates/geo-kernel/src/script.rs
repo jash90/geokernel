@@ -261,10 +261,25 @@ pub(crate) fn split_call(rhs: &str) -> Option<(&str, Vec<&str>)> {
     }
     let open = rhs.find('(')?;
     let inner = rhs[open + 1..].strip_suffix(')')?;
-    Some((
-        rhs[..open].trim(),
-        inner.split(',').map(str::trim).collect(),
-    ))
+    let mut args = Vec::new();
+    let mut start = 0;
+    let mut depth = 0usize;
+    for (i, ch) in inner.char_indices() {
+        match ch {
+            '(' | '{' | '[' => depth += 1,
+            ')' | '}' | ']' => depth = depth.checked_sub(1)?,
+            ',' if depth == 0 => {
+                args.push(inner[start..i].trim());
+                start = i + 1;
+            }
+            _ => {}
+        }
+    }
+    if depth != 0 {
+        return None;
+    }
+    args.push(inner[start..].trim());
+    Some((rhs[..open].trim(), args))
 }
 
 /// Asks the groups for a command that creates several objects.
@@ -371,11 +386,19 @@ fn add_outputs(c: &mut Construction, name: &str, defs: Vec<Def>) -> Result<Id, S
         Some(p) if !p.is_empty() => p,
         _ => "a",
     };
+    let at = c.checkpoint();
     let mut first = None;
     for (def, _) in defs.into_iter().zip(defined).filter(|&(_, d)| d) {
         let label = index_label(c, prefix);
-        let id = c.add(&label, def).map_err(|e| e.to_string())?;
-        first.get_or_insert(id);
+        match intersect::add_labelled_output(c, &label, def) {
+            Ok(id) => {
+                first.get_or_insert(id);
+            }
+            Err(e) => {
+                c.discard_since(at);
+                return Err(e);
+            }
+        }
     }
     first.ok_or_else(|| "the command creates no object".into())
 }
@@ -441,6 +464,14 @@ fn probe(c: &Construction, def: &Def) -> Result<bool, String> {
         Def::ConicPart(d) => run(c, d),
         Def::Path(d) => run(c, d),
         Def::Arc(d) => run(c, d),
+        Def::IntersectLineCircle {
+            line,
+            circle,
+            which,
+        } => {
+            c.check(def).map_err(|e| e.to_string())?;
+            Ok(intersect::probe_line_circle(c, *line, *circle, *which))
+        }
         _ => Ok(true),
     }
 }
@@ -867,13 +898,13 @@ fn exec_labelled(c: &mut Construction, line: &str) -> Result<Option<Id>, String>
     let mut first = None;
     for (slot, def) in slots.iter().zip(defs) {
         if !slot.is_empty() {
-            match c.add(slot, def) {
+            match intersect::add_labelled_output(c, slot, def) {
                 Ok(id) => {
                     first.get_or_insert(id);
                 }
                 Err(e) => {
                     c.discard_since(at);
-                    return Err(e.to_string());
+                    return Err(e);
                 }
             }
         }

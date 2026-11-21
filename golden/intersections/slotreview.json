@@ -1,0 +1,918 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "intersections-slotreview-001",
+      "group": "intersections",
+      "script": [
+        "F = (-3, 0)",
+        "G = (3, 0)",
+        "r = 5",
+        "k = Ellipse(F, G, r)",
+        "A = (0, 0)",
+        "B = (1, 0.1)",
+        "g = Line(A, B)",
+        "R = Intersect(k, g)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": -1.0, "y": -0.1 },
+        { "action": "move", "label": "B", "x": 1.0, "y": 0.1 },
+        { "action": "move", "label": "B", "x": -1.0, "y": -0.1 }
+      ],
+      "snapshots": [
+        {
+          "F": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [256.0, 400.0, -6400.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [5.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.1 },
+          "g": { "type": "line", "defined": true, "a": -0.1, "b": 1.0, "c": 0.0 },
+          "R_{1}": { "type": "point", "defined": true, "x": -4.961389383568338, "y": -0.49613893835683376 },
+          "R_{2}": { "type": "point", "defined": true, "x": 4.9613893835683385, "y": 0.49613893835683387 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [256.0, 400.0, -6400.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [5.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": -1.0, "y": -0.1 },
+          "g": { "type": "line", "defined": true, "a": 0.1, "b": -1.0, "c": 0.0 },
+          "R_{1}": { "type": "point", "defined": true, "x": -4.9613893835683385, "y": -0.49613893835683387 },
+          "R_{2}": { "type": "point", "defined": true, "x": 4.961389383568338, "y": 0.49613893835683376 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [256.0, 400.0, -6400.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [5.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.1 },
+          "g": { "type": "line", "defined": true, "a": -0.1, "b": 1.0, "c": 0.0 },
+          "R_{1}": { "type": "point", "defined": true, "x": 4.9613893835683385, "y": 0.49613893835683387 },
+          "R_{2}": { "type": "point", "defined": true, "x": -4.961389383568338, "y": -0.49613893835683376 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [256.0, 400.0, -6400.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [5.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": -1.0, "y": -0.1 },
+          "g": { "type": "line", "defined": true, "a": 0.1, "b": -1.0, "c": 0.0 },
+          "R_{1}": { "type": "point", "defined": true, "x": -4.9613893835683385, "y": -0.49613893835683387 },
+          "R_{2}": { "type": "point", "defined": true, "x": 4.961389383568338, "y": 0.49613893835683376 }
+        }
+      ]
+    },
+    {
+      "id": "intersections-slotreview-002",
+      "group": "intersections",
+      "script": [
+        "F = (-3, 0)",
+        "G = (3, 0)",
+        "r = 5",
+        "k = Ellipse(F, G, r)",
+        "A = (0, 0)",
+        "B = (1, 0.1)",
+        "g = Line(A, B)",
+        "R = Intersect(g, k)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": -1.0, "y": -0.1 },
+        { "action": "move", "label": "B", "x": 1.0, "y": 0.1 },
+        { "action": "move", "label": "B", "x": -1.0, "y": -0.1 }
+      ],
+      "snapshots": [
+        {
+          "F": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [256.0, 400.0, -6400.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [5.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.1 },
+          "g": { "type": "line", "defined": true, "a": -0.1, "b": 1.0, "c": 0.0 },
+          "R_{1}": { "type": "point", "defined": true, "x": -4.961389383568338, "y": -0.49613893835683376 },
+          "R_{2}": { "type": "point", "defined": true, "x": 4.9613893835683385, "y": 0.49613893835683387 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [256.0, 400.0, -6400.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [5.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": -1.0, "y": -0.1 },
+          "g": { "type": "line", "defined": true, "a": 0.1, "b": -1.0, "c": 0.0 },
+          "R_{1}": { "type": "point", "defined": true, "x": -4.9613893835683385, "y": -0.49613893835683387 },
+          "R_{2}": { "type": "point", "defined": true, "x": 4.961389383568338, "y": 0.49613893835683376 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [256.0, 400.0, -6400.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [5.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.1 },
+          "g": { "type": "line", "defined": true, "a": -0.1, "b": 1.0, "c": 0.0 },
+          "R_{1}": { "type": "point", "defined": true, "x": 4.9613893835683385, "y": 0.49613893835683387 },
+          "R_{2}": { "type": "point", "defined": true, "x": -4.961389383568338, "y": -0.49613893835683376 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [256.0, 400.0, -6400.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [5.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": -1.0, "y": -0.1 },
+          "g": { "type": "line", "defined": true, "a": 0.1, "b": -1.0, "c": 0.0 },
+          "R_{1}": { "type": "point", "defined": true, "x": -4.9613893835683385, "y": -0.49613893835683387 },
+          "R_{2}": { "type": "point", "defined": true, "x": 4.961389383568338, "y": 0.49613893835683376 }
+        }
+      ]
+    },
+    {
+      "id": "intersections-slotreview-003",
+      "group": "intersections",
+      "script": [
+        "O = (0, 0)",
+        "r = 5",
+        "k = Circle(O, r)",
+        "A = (0, 0)",
+        "B = (1, 0.1)",
+        "g = Line(A, B)",
+        "R = Intersect(g, k)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": -1.0, "y": -0.1 },
+        { "action": "move", "label": "B", "x": 1.0, "y": 0.1 },
+        { "action": "move", "label": "B", "x": -1.0, "y": -0.1 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.1 },
+          "g": { "type": "line", "defined": true, "a": -0.1, "b": 1.0, "c": 0.0 },
+          "R_{1}": { "type": "point", "defined": true, "x": -4.975185951049945, "y": -0.4975185951049945 },
+          "R_{2}": { "type": "point", "defined": true, "x": 4.975185951049946, "y": 0.49751859510499463 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": -1.0, "y": -0.1 },
+          "g": { "type": "line", "defined": true, "a": 0.1, "b": -1.0, "c": 0.0 },
+          "R_{1}": { "type": "point", "defined": true, "x": -4.975185951049946, "y": -0.49751859510499463 },
+          "R_{2}": { "type": "point", "defined": true, "x": 4.975185951049945, "y": 0.4975185951049945 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.1 },
+          "g": { "type": "line", "defined": true, "a": -0.1, "b": 1.0, "c": 0.0 },
+          "R_{1}": { "type": "point", "defined": true, "x": 4.975185951049946, "y": 0.49751859510499463 },
+          "R_{2}": { "type": "point", "defined": true, "x": -4.975185951049945, "y": -0.4975185951049945 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": -1.0, "y": -0.1 },
+          "g": { "type": "line", "defined": true, "a": 0.1, "b": -1.0, "c": 0.0 },
+          "R_{1}": { "type": "point", "defined": true, "x": -4.975185951049946, "y": -0.49751859510499463 },
+          "R_{2}": { "type": "point", "defined": true, "x": 4.975185951049945, "y": 0.4975185951049945 }
+        }
+      ]
+    },
+    {
+      "id": "intersections-slotreview-004",
+      "group": "intersections",
+      "script": [
+        "O = (0, 0)",
+        "r = 5",
+        "k = Circle(O, r)",
+        "A = (0, 0)",
+        "B = (1, 0.1)",
+        "g = Line(A, B)",
+        "R = Intersect(k, g)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": -1.0, "y": -0.1 },
+        { "action": "move", "label": "B", "x": 1.0, "y": 0.1 },
+        { "action": "move", "label": "B", "x": -1.0, "y": -0.1 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.1 },
+          "g": { "type": "line", "defined": true, "a": -0.1, "b": 1.0, "c": 0.0 },
+          "R_{1}": { "type": "point", "defined": true, "x": -4.975185951049945, "y": -0.4975185951049945 },
+          "R_{2}": { "type": "point", "defined": true, "x": 4.975185951049946, "y": 0.49751859510499463 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": -1.0, "y": -0.1 },
+          "g": { "type": "line", "defined": true, "a": 0.1, "b": -1.0, "c": 0.0 },
+          "R_{1}": { "type": "point", "defined": true, "x": -4.975185951049946, "y": -0.49751859510499463 },
+          "R_{2}": { "type": "point", "defined": true, "x": 4.975185951049945, "y": 0.4975185951049945 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.1 },
+          "g": { "type": "line", "defined": true, "a": -0.1, "b": 1.0, "c": 0.0 },
+          "R_{1}": { "type": "point", "defined": true, "x": 4.975185951049946, "y": 0.49751859510499463 },
+          "R_{2}": { "type": "point", "defined": true, "x": -4.975185951049945, "y": -0.4975185951049945 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": -1.0, "y": -0.1 },
+          "g": { "type": "line", "defined": true, "a": 0.1, "b": -1.0, "c": 0.0 },
+          "R_{1}": { "type": "point", "defined": true, "x": -4.975185951049946, "y": -0.49751859510499463 },
+          "R_{2}": { "type": "point", "defined": true, "x": 4.975185951049945, "y": 0.4975185951049945 }
+        }
+      ]
+    },
+    {
+      "id": "intersections-slotreview-005",
+      "group": "intersections",
+      "script": [
+        "k: x^2 - y^2 = 1",
+        "G = (0, 1)",
+        "H = (1, 0)",
+        "g = Line(G, H)",
+        "R = Intersect(k, g)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "H", "x": 1.0, "y": 0.5 },
+        { "action": "move", "label": "H", "x": 1.0, "y": 0.0 },
+        { "action": "move", "label": "H", "x": 1.0, "y": 0.5 }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [1.0, -1.0, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [-0.0, -0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "R": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 }
+        },
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [1.0, -1.0, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [-0.0, -0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.5 },
+          "g": { "type": "line", "defined": true, "a": 0.5, "b": 1.0, "c": -1.0 },
+          "R": { "type": "point", "defined": true, "x": -2.4305008740430605, "y": 2.2152504370215302 }
+        },
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [1.0, -1.0, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [-0.0, -0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "R": { "type": "point", "defined": false }
+        },
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [1.0, -1.0, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [-0.0, -0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.5 },
+          "g": { "type": "line", "defined": true, "a": 0.5, "b": 1.0, "c": -1.0 },
+          "R": { "type": "point", "defined": true, "x": -2.4305008740430605, "y": 2.2152504370215302 }
+        }
+      ]
+    },
+    {
+      "id": "intersections-slotreview-006",
+      "group": "intersections",
+      "script": [
+        "k: x^2 - y^2 = 1",
+        "G = (0, 1)",
+        "H = (1, 0)",
+        "g = Line(G, H)",
+        "R = Intersect(k, g, 1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "H", "x": 1.0, "y": 0.5 },
+        { "action": "move", "label": "H", "x": 1.0, "y": 0.0 },
+        { "action": "move", "label": "H", "x": 1.0, "y": 0.5 }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [1.0, -1.0, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [-0.0, -0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "R": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 }
+        },
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [1.0, -1.0, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [-0.0, -0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.5 },
+          "g": { "type": "line", "defined": true, "a": 0.5, "b": 1.0, "c": -1.0 },
+          "R": { "type": "point", "defined": true, "x": -2.4305008740430605, "y": 2.2152504370215302 }
+        },
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [1.0, -1.0, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [-0.0, -0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "R": { "type": "point", "defined": false }
+        },
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [1.0, -1.0, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [-0.0, -0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.5 },
+          "g": { "type": "line", "defined": true, "a": 0.5, "b": 1.0, "c": -1.0 },
+          "R": { "type": "point", "defined": true, "x": -2.4305008740430605, "y": 2.2152504370215302 }
+        }
+      ]
+    },
+    {
+      "id": "intersections-slotreview-007",
+      "group": "intersections",
+      "script": [
+        "k: x^2 - y^2 = 1",
+        "G = (0, 1)",
+        "H = (1, 0)",
+        "g = Line(G, H)",
+        "R = Intersect(k, g, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "H", "x": 1.0, "y": 0.5 },
+        { "action": "move", "label": "H", "x": 1.0, "y": 0.0 },
+        { "action": "move", "label": "H", "x": 1.0, "y": 0.5 }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [1.0, -1.0, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [-0.0, -0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "R": { "type": "point", "defined": false }
+        },
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [1.0, -1.0, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [-0.0, -0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.5 },
+          "g": { "type": "line", "defined": true, "a": 0.5, "b": 1.0, "c": -1.0 },
+          "R": { "type": "point", "defined": true, "x": 1.097167540709727, "y": 0.4514162296451365 }
+        },
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [1.0, -1.0, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [-0.0, -0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "R": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 }
+        },
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [1.0, -1.0, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [-0.0, -0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.5 },
+          "g": { "type": "line", "defined": true, "a": 0.5, "b": 1.0, "c": -1.0 },
+          "R": { "type": "point", "defined": true, "x": 1.097167540709727, "y": 0.4514162296451365 }
+        }
+      ]
+    },
+    {
+      "id": "intersections-slotreview-008",
+      "group": "intersections",
+      "script": [
+        "O = (0, 0)",
+        "r = 5",
+        "k = Circle(O, r)",
+        "n = 0",
+        "A = (-6, n)",
+        "B = (6, n)",
+        "g = Line(A, B)",
+        "R = Intersect(g, k)",
+        "S = Intersect(g, k, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 5.0 },
+        { "action": "set_number", "label": "n", "value": 6.0 },
+        { "action": "set_number", "label": "n", "value": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 12.0, "c": -0.0 },
+          "R_{1}": { "type": "point", "defined": true, "x": -5.0, "y": 0.0 },
+          "R_{2}": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 },
+          "S": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 5.0 },
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 5.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 5.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 12.0, "c": -60.0 },
+          "R_{1}": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 },
+          "R_{2}": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 },
+          "S": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 6.0 },
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 6.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 6.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 12.0, "c": -72.0 },
+          "R_{1}": { "type": "point", "defined": false },
+          "R_{2}": { "type": "point", "defined": false },
+          "S": { "type": "point", "defined": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 12.0, "c": -0.0 },
+          "R_{1}": { "type": "point", "defined": true, "x": -5.0, "y": 0.0 },
+          "R_{2}": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 },
+          "S": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "intersections-slotreview-009",
+      "group": "intersections",
+      "script": [
+        "O = (0, 0)",
+        "r = 5",
+        "k = Circle(O, r)",
+        "n = 0",
+        "A = (-6, n)",
+        "B = (6, n)",
+        "g = Line(A, B)",
+        "R = Intersect(k, g)",
+        "S = Intersect(k, g, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 5.0 },
+        { "action": "set_number", "label": "n", "value": 6.0 },
+        { "action": "set_number", "label": "n", "value": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 12.0, "c": -0.0 },
+          "R_{1}": { "type": "point", "defined": true, "x": -5.0, "y": 0.0 },
+          "R_{2}": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 },
+          "S": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 5.0 },
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 5.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 5.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 12.0, "c": -60.0 },
+          "R_{1}": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 },
+          "R_{2}": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 },
+          "S": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 6.0 },
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 6.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 6.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 12.0, "c": -72.0 },
+          "R_{1}": { "type": "point", "defined": false },
+          "R_{2}": { "type": "point", "defined": false },
+          "S": { "type": "point", "defined": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 12.0, "c": -0.0 },
+          "R_{1}": { "type": "point", "defined": true, "x": -5.0, "y": 0.0 },
+          "R_{2}": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 },
+          "S": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "intersections-slotreview-010",
+      "group": "intersections",
+      "script": [
+        "F = (-3, 0)",
+        "G = (3, 0)",
+        "r = 5",
+        "k = Ellipse(F, G, r)",
+        "A = (0, 0)",
+        "B = (1, 0.1)",
+        "g = Line(A, B)",
+        "R = Intersect(g, k)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 1.0, "y": 0.2 }
+      ],
+      "snapshots": [
+        {
+          "F": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [256.0, 400.0, -6400.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [5.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.1 },
+          "g": { "type": "line", "defined": true, "a": -0.1, "b": 1.0, "c": 0.0 },
+          "R_{1}": { "type": "point", "defined": true, "x": -4.961389383568338, "y": -0.49613893835683376 },
+          "R_{2}": { "type": "point", "defined": true, "x": 4.9613893835683385, "y": 0.49613893835683387 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [256.0, 400.0, -6400.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [5.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.2 },
+          "g": { "type": "line", "defined": true, "a": -0.2, "b": 1.0, "c": 0.0 },
+          "R_{1}": { "type": "point", "defined": true, "x": -4.85071250072666, "y": -0.970142500145332 },
+          "R_{2}": { "type": "point", "defined": true, "x": 4.850712500726659, "y": 0.9701425001453319 }
+        }
+      ]
+    },
+    {
+      "id": "intersections-slotreview-011",
+      "group": "intersections",
+      "script": [
+        "O = (0, 0)",
+        "r = 5",
+        "k = Circle(O, r)",
+        "A = (0, 0)",
+        "B = (1, 0.1)",
+        "g = Line(A, B)",
+        "R = Intersect(g, k)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 1.0, "y": 0.2 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.1 },
+          "g": { "type": "line", "defined": true, "a": -0.1, "b": 1.0, "c": 0.0 },
+          "R_{1}": { "type": "point", "defined": true, "x": -4.975185951049945, "y": -0.4975185951049945 },
+          "R_{2}": { "type": "point", "defined": true, "x": 4.975185951049946, "y": 0.49751859510499463 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.2 },
+          "g": { "type": "line", "defined": true, "a": -0.2, "b": 1.0, "c": 0.0 },
+          "R_{1}": { "type": "point", "defined": true, "x": -4.9029033784546, "y": -0.9805806756909201 },
+          "R_{2}": { "type": "point", "defined": true, "x": 4.902903378454601, "y": 0.9805806756909203 }
+        }
+      ]
+    },
+    {
+      "id": "intersections-slotreview-012",
+      "group": "intersections",
+      "script": [
+        "O = (0, 0)",
+        "r = 5",
+        "k = Circle(O, r)",
+        "n = 0",
+        "A = (-6, n)",
+        "B = (6, n)",
+        "g = Line(A, B)",
+        "R = Intersect(g, k, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 5.0 },
+        { "action": "set_number", "label": "n", "value": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 12.0, "c": -0.0 },
+          "R": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 5.0 },
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 5.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 5.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 12.0, "c": -60.0 },
+          "R": { "type": "point", "defined": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 12.0, "c": -0.0 },
+          "R": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 }
+        }
+      ]
+    }
+  ]
+}

@@ -73,26 +73,85 @@ pub(crate) fn parse_lines(
     }))
 }
 
-/// Output slots for the conic-first form of a line/conic intersection.
+/// Output slots for an unindexed line/conic intersection in either order.
 pub(crate) fn parse_multi(c: &Construction, name: &str, args: &[&str]) -> Option<Vec<Def>> {
     let ("Intersect", [first, second]) = (name, args) else {
         return None;
     };
     let (first, second) = (c.id(first)?, c.id(second)?);
-    match (c.kind(first), c.kind(second)) {
-        (Kind::Conic, Kind::Line) => Some(
-            (0..2)
-                .map(|which| {
-                    Def::ConicPart(ConicPartDef::IntersectLine {
-                        line: second,
-                        conic: first,
-                        which,
-                    })
-                })
-                .collect(),
-        ),
-        _ => None,
+    let (line, conic) = match (c.kind(first), c.kind(second)) {
+        (Kind::Line, Kind::Circle | Kind::Conic) => (first, second),
+        (Kind::Circle | Kind::Conic, Kind::Line) => (second, first),
+        _ => return None,
+    };
+    let defs = if c.kind(conic) == Kind::Circle {
+        let first = Def::IntersectLineCircle {
+            line,
+            circle: conic,
+            which: 0,
+        };
+        if defined_as_tangent(c.def(line), conic) {
+            vec![first]
+        } else {
+            vec![
+                first,
+                Def::IntersectLineCircle {
+                    line,
+                    circle: conic,
+                    which: 1,
+                },
+            ]
+        }
+    } else {
+        (0..2)
+            .map(|which| Def::ConicPart(ConicPartDef::IntersectLine { line, conic, which }))
+            .collect()
+    };
+    Some(defs)
+}
+
+/// Whether this line/circle output has coordinates at creation.
+pub(crate) fn probe_line_circle(c: &Construction, line: Id, circle: Id, which: u8) -> bool {
+    line_circle(c, line, circle, which, Hint::Lookup).is_some()
+}
+
+/// Keeps a second labelled output at a tangent, where the indexed solver
+/// returns only one point.
+pub(crate) fn add_labelled_output(
+    c: &mut Construction,
+    name: &str,
+    def: Def,
+) -> Result<Id, String> {
+    let (line, conic) = match def {
+        Def::IntersectLineCircle {
+            line,
+            circle,
+            which: 1,
+        } => (line, circle),
+        Def::ConicPart(ConicPartDef::IntersectLine {
+            line,
+            conic,
+            which: 1,
+        }) => (line, conic),
+        _ => return c.add(name, def).map_err(|e| e.to_string()),
+    };
+    let (line, conic) = (c.label(line), c.label(conic));
+    let p = format!("Intersect({line}, {conic}, 1)");
+    let q = format!("Intersect({line}, {conic}, 2)");
+    let expression = format!("If(x({q}) == x({q}), {q}, If(IsTangent({line}, {conic}), {p}))");
+    crate::expr::define(c, name, &expression, false)
+}
+
+fn selector_kind(c: &mut Construction, text: &str) -> Result<Kind, String> {
+    if let Some(id) = c.id(text) {
+        return Ok(c.kind(id));
     }
+    // The expression parser checks the input's type even when its value
+    // happens to be undefined. The probe leaves no construction object.
+    let at = c.checkpoint();
+    let result = crate::expr::define(c, "\0intersect-selector", text, false).map(|id| c.kind(id));
+    c.discard_since(at);
+    result
 }
 
 /// Compose existing intersection points with a live selector, or test
@@ -112,7 +171,19 @@ pub(crate) fn exec_selected(
     let [first, second, tail @ ..] = args.as_slice() else {
         return None;
     };
-    let (a, b) = (c.kind(c.id(first)?), c.kind(c.id(second)?));
+    let (first_id, second_id) = (c.id(first)?, c.id(second)?);
+    let (a, b) = (c.kind(first_id), c.kind(second_id));
+    if let [selector] = tail {
+        if let Some(def) = parse_lines(c, first_id, second_id, None) {
+            return Some((|| {
+                let kind = selector_kind(c, selector)?;
+                if !(kind.is_number() || (a, b, kind) == (Kind::Line, Kind::Line, Kind::Point)) {
+                    return Err(format!("invalid line intersection selector `{selector}`"));
+                }
+                c.add(label, def?).map(Some).map_err(|e| e.to_string())
+            })());
+        }
+    }
     let expression = match tail {
         [] => {
             let (path, point) = match (a, b) {
@@ -137,27 +208,27 @@ pub(crate) fn exec_selected(
         {
             let p = format!("Intersect({first}, {second}, 1)");
             let q = format!("Intersect({first}, {second}, 2)");
-            match c.id(selector).map(|id| c.kind(id)) {
-                Some(Kind::Point) => format!(
+            match selector_kind(c, selector) {
+                Ok(Kind::Point) => format!(
                     "If(x({p}) == x({p}), If(abs({q} - {selector})^2 < abs({p} - {selector})^2, {q}, {p}), {q})"
                 ),
-                Some(kind) if kind.is_number() => {
-                    format!("If({selector} >= 2, If({selector} < 3, {q}), {p})")
-                }
-                None => {
-                    let n = crate::expr::plain_number(selector)?;
+                Ok(kind) if kind.is_number() => {
                     if matches!(*selector, "1" | "2") {
                         return None;
                     }
-                    if n < 2.0 {
-                        p
-                    } else if n < 3.0 {
-                        q
-                    } else {
-                        format!("If(false, {p})")
-                    }
+                    // The Java cast saturates at the minimum signed int.
+                    // Subtracting one then wraps, so that index is out of range.
+                    // Close to 2 and 3, the reciprocal tests the sign without
+                    // the comparison tolerance rounding across the threshold.
+                    let s = format!("({selector})");
+                    format!(
+                        "If({s} + 2147483648 <= 0, If(false, {p}), \
+                         If({s} >= 2 && !(1 / ({s} - 2) < 0), \
+                         If({s} < 3 || 1 / ({s} - 3) < 0, {q}), {p}))"
+                    )
                 }
-                _ => return None,
+                Ok(_) => return Some(Err(format!("invalid intersection selector `{selector}`"))),
+                Err(e) => return Some(Err(e)),
             }
         }
         _ => return None,
@@ -346,23 +417,32 @@ pub(crate) fn closest_lines(c: &Construction, l: Id, m: Id) -> Option<Value> {
     let Value::Point { x, y } = point else {
         return None;
     };
-    let on_path = |id| {
-        if c.kind(id) == crate::Kind::Line {
-            return true;
-        }
-        match super::path::project(c, id, (x, y)) {
-            Some(Value::Point { x: px, y: py }) => {
-                (px - x).abs() < MIN_PRECISION && (py - y).abs() < MIN_PRECISION
-            }
-            _ => false,
-        }
-    };
     // A recomputation treats both signs of zero as equal. Store a canonical
     // zero so the point has the same coordinates after a fresh replay.
-    (on_path(l) && on_path(m)).then_some(Value::Point {
+    (within_carrier(c, l, (x, y)) && within_carrier(c, m, (x, y))).then_some(Value::Point {
         x: if x == 0.0 { 0.0 } else { x },
         y: if y == 0.0 { 0.0 } else { y },
     })
+}
+
+/// GeoSegment and GeoRay compare the projected path parameter to the bounds.
+fn within_carrier(c: &Construction, id: Id, (x, y): (f64, f64)) -> bool {
+    let (sx, sy, a, b, z, max) = match c.value(id) {
+        Value::Line { .. } => return true,
+        Value::Ray { x, y, a, b, c } => (x, y, a, b, c, f64::INFINITY),
+        Value::Segment { x1, y1, .. } => {
+            let (a, b, z) = c.raw_carrier(id).expect("a segment has a raw carrier");
+            (x1, y1, a, b, z, 1.0 + MIN_PRECISION)
+        }
+        _ => return false,
+    };
+    let offset = -(z + a * x + b * y) / (a * a + b * b);
+    let t = if a.abs() <= b.abs() {
+        (x + offset * a - sx) / b
+    } else {
+        (sy - (y + offset * b)) / a
+    };
+    (-MIN_PRECISION..=max).contains(&t)
 }
 
 fn cross_lines((a1, b1, c1): (f64, f64, f64), (a2, b2, c2): (f64, f64, f64)) -> Option<Value> {
@@ -1212,6 +1292,42 @@ mod tests {
             Value::Undefined => None,
             other => panic!("{label} is not a point: {other:?}"),
         }
+    }
+
+    #[test]
+    fn segment_intersection_uses_the_path_parameter_at_the_endpoint() {
+        let c = load(
+            "A = (0, 0)\nB = (100, 0)\nC = (100.0005, -1)\nD = (100.0005, 1)\n\
+             g = Segment(A, B)\nh = Segment(C, D)\nR = Intersect(g, h)",
+        )
+        .unwrap();
+        assert!(close(xy(&c, "R"), 100.0005, 0.0));
+    }
+
+    #[test]
+    fn a_live_index_overflows_when_subtracting_one_from_the_java_minimum() {
+        let mut c =
+            load("O = (0, 0)\nr = 5\nk = Circle(O, r)\nn = 1\nR = Intersect(xAxis, k, n)").unwrap();
+        let n = c.id("n").unwrap();
+        assert!(xy(&c, "R").is_some());
+        c.set_number(n, -2147483647.0).unwrap();
+        assert!(xy(&c, "R").is_some());
+        c.set_number(n, -2147483648.0).unwrap();
+        assert_eq!(xy(&c, "R"), None);
+    }
+
+    #[test]
+    fn both_labelled_intersections_survive_tangency() {
+        let mut c = load(
+            "O = (0, 0)\nr = 5\nk = Circle(O, r)\nn = 0\nA = (-6, n)\nB = (6, n)\ng = Line(A, B)\n\
+             R = Intersect(g, k)",
+        )
+        .unwrap();
+        assert_eq!(xy(&c, "R_{1}"), Some((-5.0, 0.0)));
+        assert_eq!(xy(&c, "R_{2}"), Some((5.0, 0.0)));
+        c.set_number(c.id("n").unwrap(), 5.0).unwrap();
+        assert_eq!(xy(&c, "R_{1}"), Some((0.0, 5.0)));
+        assert_eq!(xy(&c, "R_{2}"), Some((0.0, 5.0)));
     }
 
     fn close(p: Option<(f64, f64)>, x: f64, y: f64) -> bool {
