@@ -677,3 +677,59 @@ fn deleting_a_locus_keeps_the_frozen_start_of_its_line() {
         "its parameter keeps the frozen start"
     );
 }
+
+/// Moves recorded before the locus were made with no frozen start on the
+/// line: the live foot of the line was the origin (`PathMoverLine` before
+/// `init` installed the start point). A rebuild of a deletion must not
+/// install the carried start before the entry that froze it, or those moves
+/// replay from a different origin and the point ends up elsewhere. Moves
+/// after the locus are measured from the frozen start, as in GeoGebra, which
+/// does not rebuild on a deletion at all.
+#[test]
+fn a_deletion_keeps_a_point_moved_before_the_locus() {
+    let src = "M = (0, 0)\nR = (2, 0)\nk = Circle(M, R)\nQ = (5, 1)\nh = Polar(Q, k)\n\
+               P = Point(h)\nB = (1, 3)\nC = Midpoint(P, B)\nZ = (7, 7)\n";
+    let mut w = Workbench::from_script(src).unwrap();
+    let p = w.construction().id("P").unwrap();
+    let q = w.construction().id("Q").unwrap();
+    // before the locus: P moves along h, then h itself moves and P follows
+    assert!(w.move_point(p, 1.0, 1.0));
+    assert!(w.move_point(q, 3.0, 2.0));
+    // the locus freezes the foot of h as it is then
+    w.run_line("L = Locus(C, P)").unwrap();
+    // after the locus: h moves again and P follows from the frozen start
+    assert!(w.move_point(q, 4.0, 1.0));
+    let at = w.construction().value(p);
+    let z = w.construction().id("Z").unwrap();
+    assert!(w.delete(z));
+    assert_eq!(
+        w.construction().value(p),
+        at,
+        "P stays exactly where it was before the deletion"
+    );
+}
+
+/// The same with the locus itself deleted: the carried start belongs after
+/// the moves the locus found in place (they replayed with no start, the live
+/// foot of the line) and before the moves made after it (measured from the
+/// start, as the frozen start stays with the line in GeoGebra).
+#[test]
+fn deleting_the_locus_keeps_a_point_moved_before_it() {
+    let src = "M = (0, 0)\nR = (2, 0)\nk = Circle(M, R)\nQ = (5, 1)\nh = Polar(Q, k)\n\
+               P = Point(h)\nB = (1, 3)\nC = Midpoint(P, B)\n";
+    let mut w = Workbench::from_script(src).unwrap();
+    let p = w.construction().id("P").unwrap();
+    let q = w.construction().id("Q").unwrap();
+    assert!(w.move_point(p, 1.0, 1.0));
+    assert!(w.move_point(q, 3.0, 2.0));
+    w.run_line("L = Locus(C, P)").unwrap();
+    assert!(w.move_point(q, 4.0, 1.0));
+    let at = w.construction().value(p);
+    let l = w.construction().id("L").unwrap();
+    assert!(w.delete(l));
+    assert_eq!(
+        w.construction().value(p),
+        at,
+        "P stays exactly where it was before the deletion"
+    );
+}

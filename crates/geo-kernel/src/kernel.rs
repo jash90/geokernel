@@ -740,8 +740,11 @@ pub struct Construction {
     /// uses the reference window.
     locus_view: Option<[f64; 6]>,
     /// Line starts installed by the path mover, with their insertion order
-    /// so a rollback can remove starts added to pre-existing lines.
-    pub(crate) frozen_line_starts: HashMap<Id, (f64, f64, usize)>,
+    /// so a rollback can remove starts added to pre-existing lines. The
+    /// `Option<Id>` is the locus that installed the start, so a rebuild that
+    /// drops the locus knows which starts it has to place itself; a start a
+    /// rebuild installed carries no locus.
+    pub(crate) frozen_line_starts: HashMap<Id, (f64, f64, usize, Option<Id>)>,
     /// The intervals of the free numbers made by `Slider`, with the index of
     /// each number, in creation order.
     sliders: Vec<(usize, f64, f64)>,
@@ -1105,7 +1108,7 @@ impl Construction {
     pub(crate) fn discard_since(&mut self, at: Checkpoint) {
         debug_assert_eq!(at.generation, self.generation, "a checkpoint of this call");
         self.frozen_line_starts
-            .retain(|_, &mut (_, _, order)| order < at.frozen_line_starts);
+            .retain(|_, &mut (_, _, order, _)| order < at.frozen_line_starts);
         while self.defs.len() > at.len {
             let id = self.defs.len() - 1;
             let def = self.defs[id];
@@ -1240,7 +1243,7 @@ impl Construction {
                 value
             }
             Def::Locus(d) => {
-                let data = locus::record(self, d);
+                let data = locus::record(self, d, id);
                 let value = data.value();
                 self.loci.push((id.0, data));
                 value

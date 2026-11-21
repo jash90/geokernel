@@ -152,7 +152,7 @@ impl Workbench {
     fn replay_with(
         &self,
         log: &Log,
-        carried: &[(String, f64, f64)],
+        carried: &[(String, f64, f64, usize)],
     ) -> Result<(Construction, Log), String> {
         #[cfg(test)]
         if self.break_replay.is_some() || self.unshared {
@@ -461,7 +461,11 @@ impl Workbench {
     /// [`Self::restore`], carrying the frozen line starts of the current
     /// construction over the replay (a deletion keeps them, as GeoGebra
     /// keeps the start a locus installed on the line).
-    fn restore_with(&mut self, log: Log, carried: &[(String, f64, f64)]) -> Result<(), String> {
+    fn restore_with(
+        &mut self,
+        log: Log,
+        carried: &[(String, f64, f64, usize)],
+    ) -> Result<(), String> {
         #[cfg(test)]
         if let Some(e) = self.fail_rebuilds.clone() {
             self.notice = Some(format!("Nie można odtworzyć konstrukcji: {e}"));
@@ -517,14 +521,27 @@ impl Workbench {
     fn delete_label(&mut self, label: &str) -> bool {
         let snapshot = self.copy(&self.log);
         let mut next = self.copy(&snapshot);
+        // Where the entry about to go was, so what it froze on the lines
+        // that stay is installed at the same place again (GeoGebra installed
+        // it on the line itself and keeps it when the locus goes).
+        let Some((at, made)) = next.define_entry(label) else {
+            return false;
+        };
+        let made: Vec<String> = made.to_vec();
         if !next.remove(label) {
             return false;
         }
         // A deletion inside a gesture (the eraser's stroke) keeps it: the
         // whole stroke is one undo step.
-        // The start points the loci froze on lines stay with their lines
-        // when the locus goes (GeoGebra installed them on the line itself).
-        let carried = self.construction.frozen_line_starts();
+        // Only the starts the deleted entry froze have to be carried: every
+        // locus that stays freezes its start again as its own line replays.
+        let carried: Vec<_> = self
+            .construction
+            .frozen_line_starts()
+            .into_iter()
+            .filter(|(_, _, _, owner)| made.iter().any(|m| m == owner))
+            .map(|(line, x, y, _)| (line, x, y, at))
+            .collect();
         let gesture = self.gesture.take();
         let restored = self.restore_with(next, &carried);
         self.gesture = gesture;

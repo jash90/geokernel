@@ -800,14 +800,15 @@ fn defined_line_start(c: &Construction, line: Id) -> Option<(f64, f64, f64)> {
 
 fn line_start(c: &Construction, line: Id) -> Option<(f64, f64, f64)> {
     defined_line_start(c, line).or_else(|| {
-        let &(x, y, _) = c.frozen_line_starts.get(&line)?;
+        let &(x, y, _, _) = c.frozen_line_starts.get(&line)?;
         Some((x, y, 1.0))
     })
 }
 
 /// `GeoLine.PathMoverLine.init` installs the foot from the origin once,
 /// on the actual line. Later moves of the line leave this point in place.
-pub(crate) fn freeze_line_start(c: &mut Construction, path: Id) {
+/// `owner` is the locus whose computation installed it.
+pub(crate) fn freeze_line_start(c: &mut Construction, path: Id, owner: Id) {
     if let Geom::Line {
         g: (a, b, z),
         start: None,
@@ -816,31 +817,41 @@ pub(crate) fn freeze_line_start(c: &mut Construction, path: Id) {
         let norm = a * a + b * b;
         let order = c.frozen_line_starts.len();
         c.frozen_line_starts
-            .insert(path, (-z * a / norm, -z * b / norm, order));
+            .insert(path, (-z * a / norm, -z * b / norm, order, Some(owner)));
     }
 }
 
 impl Construction {
     /// The start points a locus froze on lines without one, as
-    /// `(label, x, y)` in the order they were frozen: the state of the lines
-    /// that a rebuild can carry over (GeoGebra keeps the installed start
-    /// when the locus is deleted).
-    pub fn frozen_line_starts(&self) -> Vec<(String, f64, f64)> {
-        let mut starts: Vec<(usize, String, f64, f64)> = self
+    /// `(label, x, y, owner)` in the order they were frozen: the state of the
+    /// lines that a rebuild can carry over (GeoGebra keeps the installed
+    /// start when the locus is deleted). `owner` is the label of the locus
+    /// that installed it, so a rebuild that drops that locus entry knows
+    /// which starts it has to place itself.
+    pub fn frozen_line_starts(&self) -> Vec<(String, f64, f64, String)> {
+        let mut starts: Vec<(usize, String, f64, f64, String)> = self
             .frozen_line_starts
             .iter()
-            .map(|(&id, &(x, y, order))| (order, self.label(id).to_owned(), x, y))
+            .map(|(&id, &(x, y, order, owner))| {
+                let owner = owner
+                    .filter(|&o| o.index() < self.len())
+                    .map(|o| self.label(o).to_owned())
+                    .unwrap_or_default();
+                (order, self.label(id).to_owned(), x, y, owner)
+            })
             .collect();
         starts.sort_by_key(|&(order, ..)| order);
         starts
             .into_iter()
-            .map(|(_, label, x, y)| (label, x, y))
+            .map(|(_, label, x, y, owner)| (label, x, y, owner))
             .collect()
     }
 
     /// Freezes `(x, y)` as the start point of the line `label`, when it is a
     /// line that no algorithm gave a start point: [`Self::frozen_line_starts`]
-    /// read it back bit for bit. Returns whether it was installed.
+    /// read it back bit for bit (without an owner: the entry that froze it
+    /// is gone when a rebuild installs one). Returns whether it was
+    /// installed.
     pub fn set_frozen_line_start(&mut self, label: &str, x: f64, y: f64) -> bool {
         let Some(id) = self.id(label) else {
             return false;
@@ -849,7 +860,7 @@ impl Construction {
             return false;
         }
         let order = self.frozen_line_starts.len();
-        self.frozen_line_starts.insert(id, (x, y, order));
+        self.frozen_line_starts.insert(id, (x, y, order, None));
         true
     }
 }

@@ -341,6 +341,20 @@ impl Log {
         true
     }
 
+    /// The journal position of the entry that created `label`, with every
+    /// label that entry made: the position a rebuild has to place at what
+    /// that entry froze, before the operations that follow it.
+    pub(crate) fn define_entry(&self, label: &str) -> Option<(usize, &[String])> {
+        let ops = self.ops.items();
+        let at = ops
+            .iter()
+            .position(|op| matches!(op, Op::Define(e) if e.labels.iter().any(|l| l == label)))?;
+        match &ops[at] {
+            Op::Define(e) => Some((at, &e.labels[..])),
+            _ => None,
+        }
+    }
+
     /// Replays the journal on a fresh construction. Every line must create
     /// the labels it created before; a line that fails is dropped only when
     /// it uses an object that was removed (or dropped itself), otherwise the
@@ -351,17 +365,22 @@ impl Log {
 
     /// [`Self::rebuild`], carrying the start points a locus froze on lines
     /// without one (`Construction::frozen_line_starts` of the construction
-    /// before the rebuild). They are installed as soon as their line is made,
-    /// so the moves after them replay from the start the point was moved
-    /// from: GeoGebra keeps such a start when the locus that installed it is
-    /// deleted, because it lives on the line.
+    /// before the rebuild), each with the journal position of the entry that
+    /// froze it. A start is installed right before that position: the moves
+    /// before it were made with no start and replay from the live foot of
+    /// the line, the moves after it from the frozen start — the origins the
+    /// construction being replaced had. GeoGebra keeps such a start when the
+    /// locus that installed it is deleted, because it lives on the line.
     pub fn rebuild_with(
         &self,
-        carried: &[(String, f64, f64)],
+        carried: &[(String, f64, f64, usize)],
     ) -> Result<(Construction, Log), String> {
         let mut c = Construction::new();
         let mut kept = Log::default();
         let mut gone = self.removed.clone();
+        let mut carried: Vec<_> = carried.to_vec();
+        carried.sort_by_key(|s| s.3);
+        let mut next = 0;
         // While nothing is dropped or merged, `kept` is the first `same`
         // ops of the journal and shares their storage (see `shared.rs`).
         let ops = self.ops.items();
@@ -372,6 +391,11 @@ impl Log {
             }
         };
         for (i, op) in ops.iter().enumerate() {
+            while next < carried.len() && carried[next].3 == i {
+                let (label, x, y, _) = &carried[next];
+                c.set_frozen_line_start(label, *x, *y);
+                next += 1;
+            }
             match op {
                 Op::Define(e) => {
                     let before = c.len();
@@ -384,11 +408,6 @@ impl Log {
                                     "`{}` created {made:?} instead of {:?}",
                                     e.line, e.labels
                                 ));
-                            }
-                            for (label, x, y) in carried {
-                                if e.labels.iter().any(|m| m == label) {
-                                    c.set_frozen_line_start(label, *x, *y);
-                                }
                             }
                             // What `record` would make of it is `e` itself.
                             match &mut same {
@@ -434,6 +453,13 @@ impl Log {
                 }
             }
         }
+        // Starts the entry that froze them placed last of all: everything
+        // the journal still holds was made before them.
+        while next < carried.len() {
+            let (label, x, y, _) = &carried[next];
+            c.set_frozen_line_start(label, *x, *y);
+            next += 1;
+        }
         if let Some(n) = same {
             kept.ops = self.ops.prefix(n);
         }
@@ -467,12 +493,20 @@ impl Log {
     #[cfg(test)]
     pub(crate) fn rebuild_reference_with(
         &self,
-        carried: &[(String, f64, f64)],
+        carried: &[(String, f64, f64, usize)],
     ) -> Result<(Construction, Log), String> {
         let mut c = Construction::new();
         let mut kept = Log::default();
         let mut gone = self.removed.clone();
-        for op in self.ops.items() {
+        let mut carried: Vec<_> = carried.to_vec();
+        carried.sort_by_key(|s| s.3);
+        let mut next = 0;
+        for (i, op) in self.ops.items().iter().enumerate() {
+            while next < carried.len() && carried[next].3 == i {
+                let (label, x, y, _) = &carried[next];
+                c.set_frozen_line_start(label, *x, *y);
+                next += 1;
+            }
             match op {
                 Op::Define(e) => {
                     let before = c.len();
@@ -485,11 +519,6 @@ impl Log {
                                     "`{}` created {made:?} instead of {:?}",
                                     e.line, e.labels
                                 ));
-                            }
-                            for (label, x, y) in carried {
-                                if e.labels.iter().any(|m| m == label) {
-                                    c.set_frozen_line_start(label, *x, *y);
-                                }
                             }
                             kept.record(&c, before, &e.line);
                         }
@@ -516,6 +545,11 @@ impl Log {
                     kept.record_set(label, *to);
                 }
             }
+        }
+        while next < carried.len() {
+            let (label, x, y, _) = &carried[next];
+            c.set_frozen_line_start(label, *x, *y);
+            next += 1;
         }
         kept.hidden = self.hidden.clone();
         Ok((c, kept))

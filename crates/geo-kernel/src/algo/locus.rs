@@ -238,7 +238,7 @@ impl Construction {
         let Some(slot) = self.locus_slot(i) else {
             return false;
         };
-        let new = record(self, d);
+        let new = record(self, d, Id(i));
         if new.same(&self.loci[slot].1) {
             return false;
         }
@@ -457,16 +457,18 @@ fn recompute(c: &mut Construction, i: usize) {
     }
 }
 
-/// The points of a locus for the current construction.
-pub(crate) fn record(c: &mut Construction, d: LocusDef) -> LocusData {
+/// The points of a locus for the current construction. `owner` is the locus
+/// object being computed: a line whose start it freezes remembers it, so a
+/// rebuild that drops this entry knows what it has to place itself.
+pub(crate) fn record(c: &mut Construction, d: LocusDef, owner: Id) -> LocusData {
     match d {
-        LocusDef::Path { point, mover } => record_path(c, point, mover),
+        LocusDef::Path { point, mover } => record_path(c, point, mover, owner),
         LocusDef::Slider { point, slider } => record_slider(c, point, slider),
     }
 }
 
 /// `AlgoLocusND.compute` for `Locus(Q, P)`.
-fn record_path(c: &mut Construction, q: Id, p: Id) -> LocusData {
+fn record_path(c: &mut Construction, q: Id, p: Id, owner: Id) -> LocusData {
     let (Def::Path(def), Some(path), Some(state)) = (c.def(p), path_of(c, p), c.path_state(p))
     else {
         return LocusData::default();
@@ -500,7 +502,7 @@ fn record_path(c: &mut Construction, q: Id, p: Id) -> LocusData {
     } else {
         st.set_t(min);
     }
-    path::freeze_line_start(c, path);
+    path::freeze_line_start(c, path, owner);
     let copy = PathCopy { id: p, path, st };
     let mover = Mover::new(copy.st.parameter(), min, max, closed, false);
     let data = sample(c, q, &chain, copy, mover, false);
