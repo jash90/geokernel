@@ -201,6 +201,8 @@ pub struct NumberRequest {
 pub enum Outcome {
     /// The pick was taken; more are needed.
     Pending,
+    /// The picks changed without finishing the tool use.
+    SelectionChanged,
     /// Run these script lines as one change.
     Run(Vec<String>),
     /// Build a vector polygon, positioning each vertex relative to the first.
@@ -351,16 +353,13 @@ impl ToolState {
         self.picks.iter().map(Pick::kind).collect()
     }
 
-    /// Whether the next click may pick an existing object of this kind
-    /// (`label` is checked so that the same object is not taken twice).
+    /// Whether the next click may pick or deselect an existing object.
     pub fn accepts_object(&self, label: &str, kind: Kind) -> bool {
         match self.tool {
             Tool::Move | Tool::MoveView | Tool::ZoomIn | Tool::ZoomOut => false,
             Tool::Delete | Tool::ShowHide => true,
             _ if self.asking.is_some() => false,
-            _ if self.closes_on(label) => true,
-            Tool::Compasses if self.picks.len() == 2 && kind == Kind::Point => true,
-            _ if self.picked(label) => false,
+            _ if self.picked(label) => true,
             tool => recipe::accepts(tool, &self.kinds(), Some(kind)),
         }
     }
@@ -418,6 +417,26 @@ impl ToolState {
             (Tool::Point, Some((label, Kind::Point))) => return Outcome::Select(label.to_owned()),
             _ if self.asking.is_some() => return Outcome::Ignored,
             _ => {}
+        }
+        if let Some((label, kind)) = hit {
+            if self.tool == Tool::Area && matches!(kind, Kind::Polygon | Kind::Arc) {
+                return Outcome::Ignored;
+            }
+            if self.tool == Tool::VectorPolygon && kind == Kind::Polygon {
+                self.picks = vec![Pick::Object {
+                    label: label.to_owned(),
+                    kind,
+                }];
+                return self.build(None, is_taken);
+            }
+            let compass_center =
+                self.tool == Tool::Compasses && self.picks.len() == 2 && kind == Kind::Point;
+            if !self.closes_on(label) && !compass_center {
+                if let Some(i) = self.picks.iter().position(|pick| pick.label() == label) {
+                    self.picks.remove(i);
+                    return Outcome::SelectionChanged;
+                }
+            }
         }
         // A point placed on empty space (or on an object the tool cannot
         // take) is added to the construction at once, as a pending point of

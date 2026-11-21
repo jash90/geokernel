@@ -144,30 +144,40 @@ impl App {
         best.map(|(_, n)| Some(n))
     }
 
+    fn tool_pick_kind(&self, id: Id) -> Kind {
+        let c = self.wb.construction();
+        let kind = c.kind(id);
+        if self.tool.tool() != Tool::Compasses {
+            return kind;
+        }
+        let circular = match kind {
+            Kind::Conic => c
+                .conic(id)
+                .is_some_and(|d| d.ty == geo_kernel::ConicType::Circle),
+            Kind::Arc | Kind::Sector => c
+                .arc(id)
+                .is_some_and(|part| part.conic.ty == geo_kernel::ConicType::Circle),
+            _ => false,
+        };
+        if circular {
+            Kind::Circle
+        } else {
+            kind
+        }
+    }
+
+    /// Whether the object can participate in the active tool's next pick.
+    pub fn accepts_tool_hit(&self, id: Id) -> bool {
+        self.tool
+            .accepts_object(self.wb.construction().label(id), self.tool_pick_kind(id))
+    }
+
     /// One click of a construction tool at `pos`, with the picks it allows.
     fn tool_click(&mut self, t: &ViewTransform, pos: (f64, f64), reach: &Reach) -> Outcome {
         let tool = self.tool.tool();
         let c = self.wb.construction();
         let mut id = hit::pick(c, t, pos, reach, None, |id| self.hittable(id));
-        let kind = |id| {
-            if tool == Tool::Compasses
-                && c.kind(id) == Kind::Conic
-                && c.conic(id)
-                    .is_some_and(|d| d.ty == geo_kernel::ConicType::Circle)
-            {
-                Kind::Circle
-            } else {
-                c.kind(id)
-            }
-        };
-        let accepts = |id| self.tool.accepts_object(c.label(id), kind(id));
-        if tool == Tool::Area {
-            // Area checks for a polygon before considering a conic.
-            id = hit::pick(c, t, pos, reach, None, |id| {
-                self.hittable(id) && c.kind(id) == Kind::Polygon
-            })
-            .or(id);
-        }
+        let accepts = |id| self.accepts_tool_hit(id);
         if matches!(
             tool,
             Tool::Area | Tool::Slope | Tool::Intersect | Tool::Parabola | Tool::VectorFromPoint
@@ -180,6 +190,18 @@ impl App {
         }
         let picks = self.tool.picks();
         if let Some(id) = id {
+            if tool == Tool::Compasses
+                && !accepts(id)
+                && matches!(
+                    self.tool_pick_kind(id),
+                    Kind::Conic | Kind::Arc | Kind::Sector
+                )
+                && (picks.is_empty() || matches!(picks, [point] if point.kind() == Kind::Point))
+            {
+                self.tool.reset();
+                self.apply_outcome(Outcome::SelectionChanged);
+                return Outcome::SelectionChanged;
+            }
             if tool == Tool::Compasses && !accepts(id) && !new_points_on_objects(tool, picks) {
                 // The radius comes from existing objects, unless the click is empty.
                 return Outcome::Ignored;
@@ -194,17 +216,23 @@ impl App {
             {
                 return Outcome::Ignored;
             }
-            if tool == Tool::VectorPolygon && !picks.is_empty() && c.kind(id) != Kind::Point {
+            if tool == Tool::VectorPolygon
+                && !picks.is_empty()
+                && !matches!(c.kind(id), Kind::Point | Kind::Polygon)
+            {
                 return Outcome::Ignored;
             }
             if tool == Tool::Parabola
-                && matches!(kind(id), Kind::Line | Kind::Segment | Kind::Ray)
+                && matches!(
+                    self.tool_pick_kind(id),
+                    Kind::Line | Kind::Segment | Kind::Ray
+                )
                 && !accepts(id)
             {
                 return Outcome::Ignored;
             }
         }
-        let hit = id.map(|id| (c.label(id).to_owned(), kind(id)));
+        let hit = id.map(|id| (c.label(id).to_owned(), self.tool_pick_kind(id)));
         let new_point = if self.tool.accepts_new_point()
             && id.is_none_or(|id| c.kind(id) != Kind::Point && !accepts(id))
         {

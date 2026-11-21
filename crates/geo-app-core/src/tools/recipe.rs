@@ -79,7 +79,7 @@ pub(super) fn accepts(tool: Tool, picks: &[Kind], cand: Option<Kind>) -> bool {
         // Clicking the first vertex again is handled by the tool state.
         Tool::Polygon => point(cand),
         Tool::Polyline => n < 500 && point(cand),
-        Tool::VectorPolygon => (n < 500 && point(cand)) || (n == 0 && cand == Some(Kind::Polygon)),
+        Tool::VectorPolygon => (n < 1000 && point(cand)) || cand == Some(Kind::Polygon),
         Tool::Compasses => match picks {
             [] | [Kind::Point] => point(cand) || matches!(cand, Some(Kind::Segment | Kind::Circle)),
             [Kind::Segment | Kind::Circle]
@@ -97,7 +97,7 @@ pub(super) fn accepts(tool: Tool, picks: &[Kind], cand: Option<Kind>) -> bool {
             n == 0
                 && matches!(
                     cand,
-                    Some(Kind::Polygon | Kind::Circle | Kind::Conic | Kind::Sector)
+                    Some(Kind::Polygon | Kind::Circle | Kind::Conic | Kind::Arc | Kind::Sector)
                 )
         }
         Tool::Slope => {
@@ -306,6 +306,7 @@ pub(super) fn build(
         Greek,
         Prime,
         Slope,
+        Area,
     }
     let construct = |command: &str, args: &[String], kind: Kind| {
         (format!("{command}({})", args.join(", ")), Name::Fresh(kind))
@@ -367,24 +368,16 @@ pub(super) fn build(
             Name::Fresh(Kind::Conic),
         ),
         Tool::Polyline => construct("PolyLine", &args, Kind::PolyLine),
-        Tool::Area => construct("Area", &args, Kind::Number),
+        Tool::Area => (format!("Area({})", a(0)), Name::Area),
         Tool::Slope => (format!("Slope({})", a(0)), Name::Slope),
         Tool::Compasses => {
             let center = a(args.len() - 1);
             let radius = match kinds.as_slice() {
                 [Kind::Segment, _] => args[0].clone(),
                 [Kind::Point, Kind::Segment, _] => args[1].clone(),
-                _ => {
-                    let rhs = match kinds.as_slice() {
-                        [Kind::Circle, _] => format!("Radius({})", a(0)),
-                        [Kind::Point, Kind::Circle, _] => format!("Radius({})", a(1)),
-                        _ => format!("Distance({}, {})", a(0), a(1)),
-                    };
-                    let label = next_label(Kind::Number, |l| taken(l, &allocated));
-                    lines.push(format!("{label} = {rhs}"));
-                    allocated.push(label.clone());
-                    label
-                }
+                [Kind::Circle, _] => format!("Radius({})", a(0)),
+                [Kind::Point, Kind::Circle, _] => format!("Radius({})", a(1)),
+                _ => format!("Segment({}, {})", a(0), a(1)),
             };
             (
                 format!("Circle({center}, {radius})"),
@@ -474,19 +467,29 @@ pub(super) fn build(
         Name::Greek => next_greek(|l| taken(l, &allocated)),
         Name::Polygon(n) => polygon_label(n, |l| taken(l, &allocated)),
         Name::Prime => primed(a(0), kinds[0], |l| taken(l, &allocated)),
-        Name::Slope => std::iter::once("m".to_owned())
-            .chain((1..).map(|i| {
-                if i < 10 {
-                    format!("m_{i}")
-                } else {
-                    format!("m_{{{i}}}")
-                }
-            }))
-            .find(|l| !taken(l, &allocated))
-            .unwrap(),
+        Name::Slope => numbered_name("m".to_owned(), |l| taken(l, &allocated)),
+        Name::Area => numbered_name(format!("area{}", a(0).replace(['_', '{', '}'], "")), |l| {
+            taken(l, &allocated)
+        }),
     };
     lines.push(format!("{label} = {rhs}"));
     lines
+}
+
+fn numbered_name(base: String, is_taken: impl Fn(&str) -> bool) -> String {
+    if !is_taken(&base) {
+        return base;
+    }
+    (1..)
+        .map(|i| {
+            if i < 10 {
+                format!("{base}_{i}")
+            } else {
+                format!("{base}_{{{i}}}")
+            }
+        })
+        .find(|l| !is_taken(l))
+        .unwrap()
 }
 
 /// What the next click should be (the text is in `crate::text`).

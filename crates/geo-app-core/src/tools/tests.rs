@@ -69,19 +69,22 @@ fn line_tool_over_two_new_points_runs_three_lines() {
 }
 
 #[test]
-fn existing_points_are_reused_and_not_picked_twice() {
+fn a_second_click_on_a_segment_endpoint_deselects_it() {
     let mut s = ToolState::new(Tool::Segment);
     assert_eq!(
         s.click(obj("A", Kind::Point), (0.0, 0.0), &|l| l == "A"),
         Outcome::Pending
     );
-    assert!(!s.accepts_object("A", Kind::Point));
+    assert!(s.accepts_object("A", Kind::Point));
     assert!(s.accepts_object("B", Kind::Point));
-    // The same point again falls through to a new point? No: the click
-    // landed on a point, so it is ignored.
     assert_eq!(
         s.click(obj("A", Kind::Point), (0.0, 0.0), &|l| l == "A"),
-        Outcome::Ignored
+        Outcome::SelectionChanged
+    );
+    assert!(s.picks().is_empty());
+    assert_eq!(
+        s.click(obj("A", Kind::Point), (0.0, 0.0), &|l| l == "A"),
+        Outcome::Pending
     );
     let out = s.click(obj("B", Kind::Point), (1.0, 1.0), &|l| l == "A" || l == "B");
     assert_eq!(out, Outcome::Run(vec!["f = Segment(A, B)".into()]));
@@ -142,9 +145,14 @@ fn intersect_needs_two_distinct_objects_and_makes_a_point() {
     );
     assert_eq!(
         s.click(obj("h", Kind::Line), (0.0, 0.0), &none),
-        Outcome::Ignored
+        Outcome::SelectionChanged
     );
+    assert!(s.picks().is_empty());
     assert!(!s.accepts_object("A", Kind::Point));
+    assert_eq!(
+        s.click(obj("h", Kind::Line), (0.0, 0.0), &none),
+        Outcome::Pending
+    );
     let out = s.click(obj("i", Kind::Line), (0.0, 0.0), &|l| l == "h" || l == "i");
     assert_eq!(out, Outcome::Run(vec!["A = Intersect(h, i)".into()]));
 }
@@ -327,8 +335,9 @@ fn a_polygon_closes_on_its_first_vertex_and_runs_in_the_kernel() {
         s.click(obj("B", Kind::Point), (4.0, 0.0), &t),
         Outcome::Pending
     ));
-    // The first vertex cannot close a polygon of two vertices.
-    assert!(!s.accepts_object("A", Kind::Point));
+    // The first vertex can be deselected before the polygon can close.
+    assert!(s.accepts_object("A", Kind::Point));
+    assert!(!s.closes_on("A"));
     assert_eq!(
         s.click(None, (4.0, 3.0), &t),
         place("C = (4, 3)", Outcome::Pending)
@@ -339,10 +348,8 @@ fn a_polygon_closes_on_its_first_vertex_and_runs_in_the_kernel() {
     );
     let t = |l: &str| ["A", "B", "C", "D"].contains(&l);
     assert!(s.accepts_object("A", Kind::Point));
-    assert!(
-        !s.accepts_object("B", Kind::Point),
-        "only the first vertex closes"
-    );
+    assert!(s.accepts_object("B", Kind::Point));
+    assert!(!s.closes_on("B"), "only the first vertex closes");
     let Outcome::Run(lines) = s.click(obj("A", Kind::Point), (0.0, 0.0), &t) else {
         panic!("clicking A again closes the polygon");
     };
@@ -420,4 +427,24 @@ fn angle_tool_builds_line_vector_and_polygon_angles() {
         }
         assert_eq!(all_lines(output), [expected]);
     }
+}
+
+#[test]
+fn vector_polygon_accepts_up_to_a_thousand_vertices() {
+    let mut state = ToolState::new(Tool::VectorPolygon);
+    for i in 0..1000 {
+        let p = format!("P_{i}");
+        assert_eq!(
+            state.click(Some((&p, Kind::Point)), (0.0, 0.0), &|_| false),
+            Outcome::Pending,
+            "{p}"
+        );
+    }
+    assert_eq!(state.picks().len(), 1000);
+    assert_eq!(
+        state.click(Some(("Extra", Kind::Point)), (0.0, 0.0), &|_| false),
+        Outcome::Ignored
+    );
+    assert!(!state.accepts_new_point());
+    assert!(state.accepts_object("P_0", Kind::Point));
 }

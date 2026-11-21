@@ -5,7 +5,7 @@
 use crate::describe;
 use crate::history::History;
 use crate::labels::next_label;
-use crate::scriptlog::{normalize, Log, Setting};
+use crate::scriptlog::{exec_definition, normalize, Log, Setting};
 use crate::snap::check_decimal_fraction;
 use crate::style::{Palette, Sides};
 use crate::undo::Undo;
@@ -106,6 +106,11 @@ impl Workbench {
 
     pub fn construction(&self) -> &Construction {
         &self.construction
+    }
+
+    /// Objects exposed to the algebra view and document clients.
+    pub fn object_ids(&self) -> impl Iterator<Item = Id> + '_ {
+        crate::scriptlog::object_ids(&self.construction)
     }
 
     /// The colours of the objects. The sides of the polygons they need are
@@ -255,9 +260,8 @@ impl Workbench {
             return line;
         }
         let kind = self.log.rebuild().ok().and_then(|(mut scratch, _)| {
-            let before = scratch.len();
-            geo_kernel::script::exec(&mut scratch, &format!("Probe_ = {line}")).ok()?;
-            scratch.ids().nth(before).map(|id| scratch.kind(id))
+            let id = exec_definition(&mut scratch, &format!("Probe_ = {line}")).ok()??;
+            Some(scratch.kind(id))
         });
         let label = next_label(kind.unwrap_or(Kind::Line), |l| {
             self.construction.id(l).is_some()
@@ -371,7 +375,7 @@ impl Workbench {
             let before = self.construction.len();
             // Only lines that succeeded go into the log: a failed one would
             // fail again on every replay.
-            match geo_kernel::script::exec(&mut self.construction, &line) {
+            match exec_definition(&mut self.construction, &line) {
                 Ok(_) => {
                     if self.construction.len() > before {
                         self.log.record(&self.construction, before, &line);
@@ -642,8 +646,11 @@ impl Workbench {
     }
 
     pub fn is_visible(&self, id: Id) -> bool {
-        id.index() >= self.construction.len()
-            || !self.log.hidden.contains(self.construction.label(id))
+        if id.index() >= self.construction.len() {
+            return true;
+        }
+        let label = self.construction.label(id);
+        !crate::scriptlog::is_internal_label(label) && !self.log.hidden.contains(label)
     }
 
     /// Shows or hides an object in the drawing, as one undo step.
