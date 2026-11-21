@@ -45,3 +45,21 @@ jobs:
         run: |
           rustup target add aarch64-linux-android
           cargo check --target aarch64-linux-android -p geo-kernel -p geo-import -p geo-app-core
+
+  # The desktop release targets macOS, Windows and Linux; the job above covers
+  # Linux, this one builds and tests the workspace on the other two systems.
+  desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Test
+        run: cargo test --workspace
+      - name: Build application
+        run: cargo build --release -p geo-app

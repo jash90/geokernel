@@ -1183,7 +1183,13 @@ fn files_open_by_path_and_odd_paths_are_refused() {
         json!({"path": format!("{dir}/triangle.geo")}),
     );
     assert!(!objects(&st).is_empty());
-    for path in [dir, "/dev/null"] {
+    // A device file is the other kind of non-regular path; Windows has no `/dev/null`.
+    let odd: &[&str] = if cfg!(unix) {
+        &[dir, "/dev/null"]
+    } else {
+        &[dir]
+    };
+    for &path in odd {
         let e = call_err(&mut s, "open", json!({ "path": path }));
         assert!(e.contains("not a regular file"), "{e}");
     }
