@@ -1,0 +1,528 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "angle-polygon-001",
+      "group": "angle",
+      "script": [
+        "A = (0, 0)",
+        "B = (4, 0)",
+        "C = (2, 1)",
+        "D = (0, 3)",
+        "pp = Polygon(A, B, C, D)",
+        "ang = Angle(pp)",
+        "inside = InteriorAngles(pp)",
+        "total = inside_{1} + inside_{2} + inside_{3} + inside_{4}"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": -4.0, "y": 0.0 },
+        { "action": "move", "label": "C", "x": -2.0, "y": 1.0 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 4.0, "y": 0.0 },
+        { "action": "move", "label": "C", "x": 2.0, "y": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "pp": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [4.0, 0.0],
+              [2.0, 1.0],
+              [0.0, 3.0]
+            ],
+            "area": 5.0,
+            "signed_area": 5.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 4.0, "y1": 0.0, "x2": 2.0, "y2": 1.0 },
+          "c": { "type": "segment", "defined": true, "x1": 2.0, "y1": 1.0, "x2": 0.0, "y2": 3.0 },
+          "d": { "type": "segment", "defined": true, "x1": 0.0, "y1": 3.0, "x2": 0.0, "y2": 0.0 },
+          "ang_{1}": { "type": "angle", "defined": true, "value": 1.5707963267948966 },
+          "ang_{2}": { "type": "angle", "defined": true, "value": 0.4636476090008061 },
+          "ang_{3}": { "type": "angle", "defined": true, "value": 3.4633432079864352 },
+          "ang_{4}": { "type": "angle", "defined": true, "value": 0.7853981633974483 },
+          "inside_{1}": { "type": "angle", "defined": true, "value": 1.5707963267948966 },
+          "inside_{2}": { "type": "angle", "defined": true, "value": 0.4636476090008061 },
+          "inside_{3}": { "type": "angle", "defined": true, "value": 3.4633432079864352 },
+          "inside_{4}": { "type": "angle", "defined": true, "value": 0.7853981633974483 },
+          "total": { "type": "angle", "defined": true, "value": 6.283185307179586 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": -4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "pp": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [-4.0, 0.0],
+              [2.0, 1.0],
+              [0.0, 3.0]
+            ],
+            "area": 1.0,
+            "signed_area": 1.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": -4.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": -4.0, "y1": 0.0, "x2": 2.0, "y2": 1.0 },
+          "c": { "type": "segment", "defined": true, "x1": 2.0, "y1": 1.0, "x2": 0.0, "y2": 3.0 },
+          "d": { "type": "segment", "defined": true, "x1": 0.0, "y1": 3.0, "x2": 0.0, "y2": 0.0 },
+          "ang_{1}": { "type": "angle", "defined": true, "value": 4.71238898038469 },
+          "ang_{2}": { "type": "angle", "defined": true, "value": 6.118036629764959 },
+          "ang_{3}": { "type": "angle", "defined": true, "value": 0.9505468408120751 },
+          "ang_{4}": { "type": "angle", "defined": true, "value": 0.7853981633974483 },
+          "inside_{1}": { "type": "angle", "defined": true, "value": 4.71238898038469 },
+          "inside_{2}": { "type": "angle", "defined": true, "value": 6.118036629764959 },
+          "inside_{3}": { "type": "angle", "defined": true, "value": 0.9505468408120751 },
+          "inside_{4}": { "type": "angle", "defined": true, "value": 0.7853981633974483 },
+          "total": { "type": "angle", "defined": true, "value": 12.566370614359172 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": -4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "pp": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 1.0],
+              [0.0, 3.0]
+            ],
+            "area": 5.0,
+            "signed_area": -5.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": -4.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": -4.0, "y1": 0.0, "x2": -2.0, "y2": 1.0 },
+          "c": { "type": "segment", "defined": true, "x1": -2.0, "y1": 1.0, "x2": 0.0, "y2": 3.0 },
+          "d": { "type": "segment", "defined": true, "x1": 0.0, "y1": 3.0, "x2": 0.0, "y2": 0.0 },
+          "ang_{1}": { "type": "angle", "defined": true, "value": 4.71238898038469 },
+          "ang_{2}": { "type": "angle", "defined": true, "value": 5.81953769817878 },
+          "ang_{3}": { "type": "angle", "defined": true, "value": 2.819842099193151 },
+          "ang_{4}": { "type": "angle", "defined": true, "value": 5.497787143782138 },
+          "inside_{1}": { "type": "angle", "defined": true, "value": 1.5707963267948966 },
+          "inside_{2}": { "type": "angle", "defined": true, "value": 0.4636476090008061 },
+          "inside_{3}": { "type": "angle", "defined": true, "value": 3.4633432079864352 },
+          "inside_{4}": { "type": "angle", "defined": true, "value": 0.7853981633974483 },
+          "total": { "type": "angle", "defined": true, "value": 6.283185307179586 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "pp": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [0.0, 0.0],
+              [-2.0, 1.0],
+              [0.0, 3.0]
+            ],
+            "area": 3.0,
+            "signed_area": -3.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": -2.0, "y2": 1.0 },
+          "c": { "type": "segment", "defined": true, "x1": -2.0, "y1": 1.0, "x2": 0.0, "y2": 3.0 },
+          "d": { "type": "segment", "defined": true, "x1": 0.0, "y1": 3.0, "x2": 0.0, "y2": 0.0 },
+          "ang_{1}": { "type": "angle", "defined": false },
+          "ang_{2}": { "type": "angle", "defined": false },
+          "ang_{3}": { "type": "angle", "defined": true, "value": 5.034139534781332 },
+          "ang_{4}": { "type": "angle", "defined": true, "value": 5.497787143782138 },
+          "inside_{1}": { "type": "angle", "defined": false },
+          "inside_{2}": { "type": "angle", "defined": false },
+          "inside_{3}": { "type": "angle", "defined": true, "value": 1.2490457723982544 },
+          "inside_{4}": { "type": "angle", "defined": true, "value": 0.7853981633974483 },
+          "total": { "type": "angle", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "pp": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [4.0, 0.0],
+              [-2.0, 1.0],
+              [0.0, 3.0]
+            ],
+            "area": 1.0,
+            "signed_area": -1.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 4.0, "y1": 0.0, "x2": -2.0, "y2": 1.0 },
+          "c": { "type": "segment", "defined": true, "x1": -2.0, "y1": 1.0, "x2": 0.0, "y2": 3.0 },
+          "d": { "type": "segment", "defined": true, "x1": 0.0, "y1": 3.0, "x2": 0.0, "y2": 0.0 },
+          "ang_{1}": { "type": "angle", "defined": true, "value": 1.5707963267948966 },
+          "ang_{2}": { "type": "angle", "defined": true, "value": 0.16514867741462683 },
+          "ang_{3}": { "type": "angle", "defined": true, "value": 5.332638466367511 },
+          "ang_{4}": { "type": "angle", "defined": true, "value": 5.497787143782138 },
+          "inside_{1}": { "type": "angle", "defined": true, "value": 4.71238898038469 },
+          "inside_{2}": { "type": "angle", "defined": true, "value": 6.118036629764959 },
+          "inside_{3}": { "type": "angle", "defined": true, "value": 0.9505468408120751 },
+          "inside_{4}": { "type": "angle", "defined": true, "value": 0.7853981633974483 },
+          "total": { "type": "angle", "defined": true, "value": 12.566370614359172 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "pp": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [4.0, 0.0],
+              [2.0, 2.0],
+              [0.0, 3.0]
+            ],
+            "area": 7.0,
+            "signed_area": 7.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 4.0, "y1": 0.0, "x2": 2.0, "y2": 2.0 },
+          "c": { "type": "segment", "defined": true, "x1": 2.0, "y1": 2.0, "x2": 0.0, "y2": 3.0 },
+          "d": { "type": "segment", "defined": true, "x1": 0.0, "y1": 3.0, "x2": 0.0, "y2": 0.0 },
+          "ang_{1}": { "type": "angle", "defined": true, "value": 1.5707963267948966 },
+          "ang_{2}": { "type": "angle", "defined": true, "value": 0.7853981633974483 },
+          "ang_{3}": { "type": "angle", "defined": true, "value": 2.819842099193151 },
+          "ang_{4}": { "type": "angle", "defined": true, "value": 1.1071487177940904 },
+          "inside_{1}": { "type": "angle", "defined": true, "value": 1.5707963267948966 },
+          "inside_{2}": { "type": "angle", "defined": true, "value": 0.7853981633974483 },
+          "inside_{3}": { "type": "angle", "defined": true, "value": 2.819842099193151 },
+          "inside_{4}": { "type": "angle", "defined": true, "value": 1.1071487177940904 },
+          "total": { "type": "angle", "defined": true, "value": 6.283185307179586 }
+        }
+      ]
+    },
+    {
+      "id": "angle-polygon-002",
+      "group": "angle",
+      "script": [
+        "A = (0, 0)",
+        "B = (3, 0)",
+        "nn = 5",
+        "pp = Polygon(A, B, nn)",
+        "ang = Angle(pp)",
+        "inside = InteriorAngles(pp)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 3.0, "y": 2.0 },
+        { "action": "set_number", "label": "nn", "value": 3.0 },
+        { "action": "set_number", "label": "nn", "value": 7.0 },
+        { "action": "set_number", "label": "nn", "value": 5.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "nn": { "type": "number", "defined": true, "value": 5.0 },
+          "pp": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [3.0, 0.0],
+              [3.9270509831248424, 2.85316954888546],
+              [1.5000000000000004, 4.616525305762879],
+              [-0.9270509831248419, 2.853169548885461]
+            ],
+            "area": 15.4842966053007,
+            "signed_area": 15.4842966053007
+          },
+          "f": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "g": { "type": "segment", "defined": true, "x1": 3.0, "y1": 0.0, "x2": 3.9270509831248424, "y2": 2.85316954888546 },
+          "h": { "type": "segment", "defined": true, "x1": 3.9270509831248424, "y1": 2.85316954888546, "x2": 1.5000000000000004, "y2": 4.616525305762879 },
+          "i": { "type": "segment", "defined": true, "x1": 1.5000000000000004, "y1": 4.616525305762879, "x2": -0.9270509831248419, "y2": 2.853169548885461 },
+          "j": { "type": "segment", "defined": true, "x1": -0.9270509831248419, "y1": 2.853169548885461, "x2": 0.0, "y2": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 3.9270509831248424, "y": 2.85316954888546 },
+          "D": { "type": "point", "defined": true, "x": 1.5000000000000004, "y": 4.616525305762879 },
+          "E": { "type": "point", "defined": true, "x": -0.9270509831248419, "y": 2.853169548885461 },
+          "ang_{1}": { "type": "angle", "defined": true, "value": 1.8849555921538759 },
+          "ang_{2}": { "type": "angle", "defined": true, "value": 1.884955592153876 },
+          "ang_{3}": { "type": "angle", "defined": true, "value": 1.884955592153876 },
+          "ang_{4}": { "type": "angle", "defined": true, "value": 1.8849555921538763 },
+          "ang_{5}": { "type": "angle", "defined": true, "value": 1.8849555921538759 },
+          "inside_{1}": { "type": "angle", "defined": true, "value": 1.8849555921538759 },
+          "inside_{2}": { "type": "angle", "defined": true, "value": 1.884955592153876 },
+          "inside_{3}": { "type": "angle", "defined": true, "value": 1.884955592153876 },
+          "inside_{4}": { "type": "angle", "defined": true, "value": 1.8849555921538763 },
+          "inside_{5}": { "type": "angle", "defined": true, "value": 1.8849555921538759 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 2.0 },
+          "nn": { "type": "number", "defined": true, "value": 5.0 },
+          "pp": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [3.0, 2.0],
+              [2.024937950534536, 5.471203537635354],
+              [-1.5776835371752527, 5.61652530576288],
+              [-2.829164015715149, 2.2351355601355665]
+            ],
+            "area": 22.366206207656568,
+            "signed_area": 22.366206207656568
+          },
+          "f": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 2.0 },
+          "g": { "type": "segment", "defined": true, "x1": 3.0, "y1": 2.0, "x2": 2.024937950534536, "y2": 5.471203537635354 },
+          "h": { "type": "segment", "defined": true, "x1": 2.024937950534536, "y1": 5.471203537635354, "x2": -1.5776835371752527, "y2": 5.61652530576288 },
+          "i": { "type": "segment", "defined": true, "x1": -1.5776835371752527, "y1": 5.61652530576288, "x2": -2.829164015715149, "y2": 2.2351355601355665 },
+          "j": { "type": "segment", "defined": true, "x1": -2.829164015715149, "y1": 2.2351355601355665, "x2": 0.0, "y2": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.024937950534536, "y": 5.471203537635354 },
+          "D": { "type": "point", "defined": true, "x": -1.5776835371752527, "y": 5.61652530576288 },
+          "E": { "type": "point", "defined": true, "x": -2.829164015715149, "y": 2.2351355601355665 },
+          "ang_{1}": { "type": "angle", "defined": true, "value": 1.8849555921538759 },
+          "ang_{2}": { "type": "angle", "defined": true, "value": 1.884955592153876 },
+          "ang_{3}": { "type": "angle", "defined": true, "value": 1.8849555921538763 },
+          "ang_{4}": { "type": "angle", "defined": true, "value": 1.8849555921538759 },
+          "ang_{5}": { "type": "angle", "defined": true, "value": 1.884955592153876 },
+          "inside_{1}": { "type": "angle", "defined": true, "value": 1.8849555921538759 },
+          "inside_{2}": { "type": "angle", "defined": true, "value": 1.884955592153876 },
+          "inside_{3}": { "type": "angle", "defined": true, "value": 1.8849555921538763 },
+          "inside_{4}": { "type": "angle", "defined": true, "value": 1.8849555921538759 },
+          "inside_{5}": { "type": "angle", "defined": true, "value": 1.884955592153876 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 2.0 },
+          "nn": { "type": "number", "defined": true, "value": 3.0 },
+          "pp": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [3.0, 2.0],
+              [-0.23205080756887686, 3.598076211353317]
+            ],
+            "area": 5.629165124598851,
+            "signed_area": 5.629165124598851
+          },
+          "f": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 2.0 },
+          "g": { "type": "segment", "defined": true, "x1": 3.0, "y1": 2.0, "x2": -0.23205080756887686, "y2": 3.598076211353317 },
+          "h": { "type": "segment", "defined": true, "x1": -0.23205080756887686, "y1": 3.598076211353317, "x2": 0.0, "y2": 0.0 },
+          "i": { "type": "segment", "defined": false },
+          "j": { "type": "segment", "defined": false },
+          "C": { "type": "point", "defined": true, "x": -0.23205080756887686, "y": 3.598076211353317 },
+          "D": { "type": "point", "defined": false },
+          "E": { "type": "point", "defined": false },
+          "ang_{1}": { "type": "angle", "defined": true, "value": 1.0471975511965976 },
+          "ang_{2}": { "type": "angle", "defined": true, "value": 1.047197551196598 },
+          "ang_{3}": { "type": "angle", "defined": true, "value": 1.0471975511965976 },
+          "ang_{4}": { "type": "angle", "defined": false },
+          "ang_{5}": { "type": "angle", "defined": false },
+          "inside_{1}": { "type": "angle", "defined": true, "value": 1.0471975511965976 },
+          "inside_{2}": { "type": "angle", "defined": true, "value": 1.047197551196598 },
+          "inside_{3}": { "type": "angle", "defined": true, "value": 1.0471975511965976 },
+          "inside_{4}": { "type": "angle", "defined": false },
+          "inside_{5}": { "type": "angle", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 2.0 },
+          "nn": { "type": "number", "defined": true, "value": 7.0 },
+          "pp": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [3.0, 2.0],
+              [3.3068064406401416, 5.592474051121556],
+              [0.6893878144075516, 8.072215919754399],
+              [-2.881286267534822, 7.571929401302235],
+              [-4.716425393006964, 4.468340448144723],
+              [-3.434132370512261, 1.098514843686623]
+            ],
+            "area": 47.24086177202066,
+            "signed_area": 47.24086177202066
+          },
+          "f": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 2.0 },
+          "g": { "type": "segment", "defined": true, "x1": 3.0, "y1": 2.0, "x2": 3.3068064406401416, "y2": 5.592474051121556 },
+          "h": { "type": "segment", "defined": true, "x1": 3.3068064406401416, "y1": 5.592474051121556, "x2": 0.6893878144075516, "y2": 8.072215919754399 },
+          "i": { "type": "segment", "defined": true, "x1": 0.6893878144075516, "y1": 8.072215919754399, "x2": -2.881286267534822, "y2": 7.571929401302235 },
+          "j": { "type": "segment", "defined": true, "x1": -2.881286267534822, "y1": 7.571929401302235, "x2": -4.716425393006964, "y2": 4.468340448144723 },
+          "C": { "type": "point", "defined": true, "x": 3.3068064406401416, "y": 5.592474051121556 },
+          "D": { "type": "point", "defined": true, "x": 0.6893878144075516, "y": 8.072215919754399 },
+          "E": { "type": "point", "defined": true, "x": -2.881286267534822, "y": 7.571929401302235 },
+          "ang_{1}": { "type": "angle", "defined": true, "value": 2.243994752564138 },
+          "ang_{2}": { "type": "angle", "defined": true, "value": 2.2439947525641384 },
+          "ang_{3}": { "type": "angle", "defined": true, "value": 2.243994752564138 },
+          "ang_{4}": { "type": "angle", "defined": true, "value": 2.243994752564138 },
+          "ang_{5}": { "type": "angle", "defined": true, "value": 2.2439947525641384 },
+          "inside_{1}": { "type": "angle", "defined": true, "value": 2.243994752564138 },
+          "inside_{2}": { "type": "angle", "defined": true, "value": 2.2439947525641384 },
+          "inside_{3}": { "type": "angle", "defined": true, "value": 2.243994752564138 },
+          "inside_{4}": { "type": "angle", "defined": true, "value": 2.243994752564138 },
+          "inside_{5}": { "type": "angle", "defined": true, "value": 2.2439947525641384 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 2.0 },
+          "nn": { "type": "number", "defined": true, "value": 5.0 },
+          "pp": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [3.0, 2.0],
+              [2.024937950534536, 5.471203537635354],
+              [-1.5776835371752527, 5.61652530576288],
+              [-2.829164015715149, 2.2351355601355665]
+            ],
+            "area": 22.366206207656568,
+            "signed_area": 22.366206207656568
+          },
+          "f": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 2.0 },
+          "g": { "type": "segment", "defined": true, "x1": 3.0, "y1": 2.0, "x2": 2.024937950534536, "y2": 5.471203537635354 },
+          "h": { "type": "segment", "defined": true, "x1": 2.024937950534536, "y1": 5.471203537635354, "x2": -1.5776835371752527, "y2": 5.61652530576288 },
+          "i": { "type": "segment", "defined": true, "x1": -1.5776835371752527, "y1": 5.61652530576288, "x2": -2.829164015715149, "y2": 2.2351355601355665 },
+          "j": { "type": "segment", "defined": true, "x1": -2.829164015715149, "y1": 2.2351355601355665, "x2": 0.0, "y2": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.024937950534536, "y": 5.471203537635354 },
+          "D": { "type": "point", "defined": true, "x": -1.5776835371752527, "y": 5.61652530576288 },
+          "E": { "type": "point", "defined": true, "x": -2.829164015715149, "y": 2.2351355601355665 },
+          "ang_{1}": { "type": "angle", "defined": true, "value": 1.8849555921538759 },
+          "ang_{2}": { "type": "angle", "defined": true, "value": 1.884955592153876 },
+          "ang_{3}": { "type": "angle", "defined": true, "value": 1.8849555921538763 },
+          "ang_{4}": { "type": "angle", "defined": true, "value": 1.8849555921538759 },
+          "ang_{5}": { "type": "angle", "defined": true, "value": 1.884955592153876 },
+          "inside_{1}": { "type": "angle", "defined": true, "value": 1.8849555921538759 },
+          "inside_{2}": { "type": "angle", "defined": true, "value": 1.884955592153876 },
+          "inside_{3}": { "type": "angle", "defined": true, "value": 1.8849555921538763 },
+          "inside_{4}": { "type": "angle", "defined": true, "value": 1.8849555921538759 },
+          "inside_{5}": { "type": "angle", "defined": true, "value": 1.884955592153876 }
+        }
+      ]
+    },
+    {
+      "id": "angle-polygon-003",
+      "group": "angle",
+      "script": [
+        "A = (0, 0)",
+        "B = (1, 1)",
+        "C = (2, 2)",
+        "D = (3, 3)",
+        "pp = Polygon(A, B, C, D)",
+        "ang = Angle(pp)",
+        "inside = InteriorAngles(pp)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 0.0, "y": 1.0 },
+        { "action": "move", "label": "B", "x": 2.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "pp": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [3.0, 3.0]
+            ],
+            "area": 0.0,
+            "signed_area": 0.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 1.0, "y2": 1.0 },
+          "b": { "type": "segment", "defined": true, "x1": 1.0, "y1": 1.0, "x2": 2.0, "y2": 2.0 },
+          "c": { "type": "segment", "defined": true, "x1": 2.0, "y1": 2.0, "x2": 3.0, "y2": 3.0 },
+          "d": { "type": "segment", "defined": true, "x1": 3.0, "y1": 3.0, "x2": 0.0, "y2": 0.0 },
+          "ang_{1}": { "type": "angle", "defined": true, "value": 0.0 },
+          "ang_{2}": { "type": "angle", "defined": true, "value": 3.141592653589793 },
+          "ang_{3}": { "type": "angle", "defined": true, "value": 3.141592653589793 },
+          "ang_{4}": { "type": "angle", "defined": true, "value": 0.0 },
+          "inside_{1}": { "type": "angle", "defined": true, "value": 0.0 },
+          "inside_{2}": { "type": "angle", "defined": true, "value": 3.141592653589793 },
+          "inside_{3}": { "type": "angle", "defined": true, "value": 3.141592653589793 },
+          "inside_{4}": { "type": "angle", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "pp": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [0.0, 1.0],
+              [2.0, 2.0],
+              [3.0, 3.0]
+            ],
+            "area": 1.0,
+            "signed_area": -1.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 0.0, "y2": 1.0 },
+          "b": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 2.0, "y2": 2.0 },
+          "c": { "type": "segment", "defined": true, "x1": 2.0, "y1": 2.0, "x2": 3.0, "y2": 3.0 },
+          "d": { "type": "segment", "defined": true, "x1": 3.0, "y1": 3.0, "x2": 0.0, "y2": 0.0 },
+          "ang_{1}": { "type": "angle", "defined": true, "value": 5.497787143782138 },
+          "ang_{2}": { "type": "angle", "defined": true, "value": 4.2487413713838835 },
+          "ang_{3}": { "type": "angle", "defined": true, "value": 2.819842099193151 },
+          "ang_{4}": { "type": "angle", "defined": true, "value": 0.0 },
+          "inside_{1}": { "type": "angle", "defined": true, "value": 0.7853981633974483 },
+          "inside_{2}": { "type": "angle", "defined": true, "value": 2.0344439357957027 },
+          "inside_{3}": { "type": "angle", "defined": true, "value": 3.4633432079864352 },
+          "inside_{4}": { "type": "angle", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "pp": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [2.0, 0.0],
+              [2.0, 2.0],
+              [3.0, 3.0]
+            ],
+            "area": 2.0,
+            "signed_area": 2.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 2.0, "y2": 2.0 },
+          "c": { "type": "segment", "defined": true, "x1": 2.0, "y1": 2.0, "x2": 3.0, "y2": 3.0 },
+          "d": { "type": "segment", "defined": true, "x1": 3.0, "y1": 3.0, "x2": 0.0, "y2": 0.0 },
+          "ang_{1}": { "type": "angle", "defined": true, "value": 0.7853981633974483 },
+          "ang_{2}": { "type": "angle", "defined": true, "value": 1.5707963267948966 },
+          "ang_{3}": { "type": "angle", "defined": true, "value": 3.9269908169872414 },
+          "ang_{4}": { "type": "angle", "defined": true, "value": 0.0 },
+          "inside_{1}": { "type": "angle", "defined": true, "value": 0.7853981633974483 },
+          "inside_{2}": { "type": "angle", "defined": true, "value": 1.5707963267948966 },
+          "inside_{3}": { "type": "angle", "defined": true, "value": 3.9269908169872414 },
+          "inside_{4}": { "type": "angle", "defined": true, "value": 0.0 }
+        }
+      ]
+    }
+  ]
+}

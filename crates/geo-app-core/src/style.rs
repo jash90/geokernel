@@ -5,7 +5,7 @@ use crate::geom::Rgba;
 use crate::palette;
 use geo_kernel::algo::measure::MeasureDef;
 use geo_kernel::algo::polygon::PolygonDef;
-use geo_kernel::kernel::{Construction, Def, Id, Value};
+use geo_kernel::kernel::{Construction, Def, Id, Kind, Value};
 
 /// The drawn radius of a free point, in points (point size 5).
 pub const FREE_POINT_RADIUS: f32 = 5.0;
@@ -21,10 +21,13 @@ pub fn color(c: &Construction, id: Id) -> Rgba {
 }
 
 fn color_with(c: &Construction, id: Id, side: impl Fn(Id, Id) -> bool) -> Rgba {
-    match (c.value(id), c.def(id)) {
+    let def = c.def(id);
+    if def.kind() == Kind::Angle {
+        return palette::ANGLE;
+    }
+    match (c.value(id), def) {
         (Value::Point { .. }, def) if def.is_free() => palette::FREE_POINT,
         (Value::Point { .. }, _) => palette::DEPENDENT_POINT,
-        (_, Def::Measure(MeasureDef::Angle(..))) => palette::ANGLE,
         (Value::Polygon { .. }, _) => palette::POLYGON,
         (_, Def::Polygon(PolygonDef::RegularSide { .. })) => palette::POLYGON,
         (_, Def::Segment(a, b)) if side(a, b) => palette::POLYGON,

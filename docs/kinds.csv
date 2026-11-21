@@ -8,8 +8,8 @@ Circle,CONIC,Circle,yes,yes,yes,yes,yes,yes,yes,no,a circle is a conic upstream;
 Conic,CONIC,Conic,yes,yes,yes,no,no,yes,no,no,no file of golden/ggb holds a conic; the importer refuses free conics
 Arc,CONICPART,Arc,yes,yes,no,no,no,no,no,no,
 Sector,CONICPART,Sector,yes,yes,no,no,no,no,no,no,
-Number,NUMERIC,Number,yes,no,partial,no,yes,yes,yes,no,the window draws an angle as a sector; no sliders
-Angle,ANGLE,,no,no,no,no,no,no,no,no,the kernel keeps an angle as a number
+Number,NUMERIC,Number,yes,no,no,no,yes,yes,yes,no,no sliders
+Angle,ANGLE,Angle,yes,partial,partial,partial,yes,yes,partial,no,angles with drawable geometry have a sector or right-angle marker; import supports angles made by commands
 Boolean,BOOLEAN,Boolean,yes,no,no,no,no,partial,partial,no,the algebra text is the debug form of the value; only booleans a command makes are imported
 Function,FUNCTION,Function,yes,yes,yes,no,no,yes,no,no,
 Polygon,POLYGON,Polygon,yes,yes,yes,yes,yes,yes,yes,no,

@@ -16,7 +16,6 @@
 
 use super::commands;
 use super::{Bin, Elem, IfMode, Node, Ty, Un, NONE};
-use crate::algo::measure::MeasureDef;
 use crate::kernel::{Construction, Def, Id, Kind};
 
 /// Types, depths, costs and variable counts of the nodes reachable from
@@ -56,7 +55,7 @@ pub(crate) fn check(
             Node::Degree => (Ty::Num(1), 1, 1, 0),
             Node::Var => (Ty::Num(0), 1, 1, 1),
             Node::Obj(id) => (object_type(c, id)?, 1, 1, 0),
-            Node::Cmd(def, _) => (result_type(def.kind(), is_angle_def(c, &def))?, 1, 1, 0),
+            Node::Cmd(def, _) => (result_type(def.kind())?, 1, 1, 0),
             Node::FnName(_) => return Err("a function name needs an argument".into()),
             Node::Tuple(a, b) | Node::Polar(a, b) => {
                 let (a, b) = (a as usize, b as usize);
@@ -203,20 +202,10 @@ pub(crate) fn check(
     Ok((tys, depth, cost, vars))
 }
 
-/// Whether a number object is an angle: GeoGebra gives angles one angle
-/// dimension, which makes `floor`, `ceil` and `round` work in degrees.
-fn is_angle_def(c: &Construction, def: &Def) -> bool {
-    match *def {
-        Def::Measure(MeasureDef::Angle(..)) | Def::Angle(_) => true,
-        Def::Expr(d) => super::is_angle(c, d),
-        _ => false,
-    }
-}
-
 fn object_type(c: &Construction, id: Id) -> Result<Ty, String> {
     match (c.kind(id), c.def(id)) {
         (Kind::List, Def::Expr(d)) => Ok(super::entry(c, d).root_ty()),
-        (kind, def) => result_type(kind, is_angle_def(c, &def)),
+        (kind, _) => result_type(kind),
     }
 }
 
@@ -259,9 +248,10 @@ pub(super) fn of_numbers(numbers: bool) -> Result<Ty, String> {
     Ok(Ty::Num(0))
 }
 
-fn result_type(kind: Kind, angle: bool) -> Result<Ty, String> {
+fn result_type(kind: Kind) -> Result<Ty, String> {
     match kind {
-        Kind::Number => Ok(Ty::Num(i8::from(angle))),
+        Kind::Number => Ok(Ty::Num(0)),
+        Kind::Angle => Ok(Ty::Num(1)),
         Kind::Point | Kind::Vector => Ok(Ty::Vec),
         Kind::Boolean => Ok(Ty::Bool),
         other => Err(format!("a {other} cannot be used in an expression")),

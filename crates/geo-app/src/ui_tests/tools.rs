@@ -51,7 +51,7 @@ fn every_tool_works_with_real_clicks() {
             Tool::Circle => ("c", Kind::Circle, "Circle(A, C)"),
             Tool::CircleRadius => ("c", Kind::Circle, "Circle(A, a)"),
             Tool::Circle3 => ("c", Kind::Circle, "Circle(A, B, C)"),
-            Tool::Angle => ("α", Kind::Number, "Angle(A, C, B)"),
+            Tool::Angle => ("α", Kind::Angle, "Angle(A, C, B)"),
             Tool::Distance => ("a", Kind::Number, "Distance(A, C)"),
             Tool::ReflectLine => ("C'", Kind::Point, "Reflect(C, f)"),
             Tool::ReflectPoint => ("C'", Kind::Point, "Reflect(C, A)"),

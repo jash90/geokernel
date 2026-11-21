@@ -87,6 +87,7 @@ mod wide;
 
 use crate::algo::intersect::Hint;
 use crate::algo::vector::VectorDef;
+use crate::kernel::angle::AngleStyle;
 use crate::kernel::{Construction, Def, Error, Id, Kind, Value};
 use decimal::Dec;
 
@@ -95,6 +96,7 @@ use decimal::Dec;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ExprDef {
     kind: Kind,
+    pub(crate) angle_style: AngleStyle,
     index: u32,
 }
 
@@ -486,6 +488,7 @@ enum Form {
         nodes: Vec<Node>,
         lits: Vec<Lit>,
         root: u32,
+        angle_style: AngleStyle,
     },
     /// A free number with its exact decimal (see [`Table`]).
     Exact { def: Def, dec: Dec },
@@ -615,11 +618,12 @@ pub(crate) fn expression(c: &Construction, id: Id) -> Option<Expression> {
                     nodes: e.nodes.clone(),
                     lits: e.lits.clone(),
                     root: e.root,
+                    angle_style: d.angle_style,
                 },
             })
         }
         def @ (Def::Number(_) | Def::Angle(_)) => Some(Expression {
-            kind: Kind::Number,
+            kind: def.kind(),
             form: Form::Exact {
                 def,
                 dec: free_decimal(c, id)?.clone(),
@@ -638,8 +642,13 @@ pub(crate) fn add_expression(
     name: &str,
     e: &Expression,
 ) -> Result<Id, Error> {
-    let (nodes, lits, root) = match &e.form {
-        Form::Tree { nodes, lits, root } => (nodes, lits, *root),
+    let (nodes, lits, root, angle_style) = match &e.form {
+        Form::Tree {
+            nodes,
+            lits,
+            root,
+            angle_style,
+        } => (nodes, lits, *root, *angle_style),
         Form::Exact { def, dec } => {
             let id = c.add(name, *def)?;
             set_free_decimal(c, id, dec.clone());
@@ -649,7 +658,7 @@ pub(crate) fn add_expression(
     let parsed = reparse(c, e.kind, nodes, lits, root).ok_or(Error::UnknownObject)?;
     let fits = matches!(
         (e.kind, parsed.tys[parsed.root as usize]),
-        (Kind::Function | Kind::Number, Ty::Num(_))
+        (Kind::Function | Kind::Number | Kind::Angle, Ty::Num(_))
             | (Kind::Boolean, Ty::Bool)
             | (Kind::Point | Kind::Vector, Ty::Vec)
             | (Kind::List, Ty::List(_))
@@ -657,7 +666,7 @@ pub(crate) fn add_expression(
     if !fits {
         return Err(Error::UnknownObject);
     }
-    add_parsed(c, name, parsed, e.kind)
+    add_parsed(c, name, parsed, e.kind, angle_style)
 }
 
 /// What [`parse::parse`] would have given for a tree, or `None` when the
@@ -737,11 +746,6 @@ fn reparse(
         cost: cost[r],
         vars: vars[r],
     })
-}
-
-/// Whether an expression object is an angle (one angle dimension).
-pub(crate) fn is_angle(c: &Construction, d: ExprDef) -> bool {
-    entry(c, d).root_ty() == Ty::Num(1)
 }
 
 /// Depth, cost and variable count of a function object's tree.
@@ -860,7 +864,9 @@ fn inputs_defined(c: &Construction, e: &Entry) -> bool {
 
 fn object_defined(c: &Construction, id: Id) -> bool {
     match (c.kind(id), c.def(id)) {
-        (Kind::Number, Def::Expr(d)) => !matches!(raw(c, d), Raw::Num(v) if v.is_nan()),
+        (Kind::Number | Kind::Angle, Def::Expr(d)) => {
+            !matches!(raw(c, d), Raw::Num(v) if v.is_nan())
+        }
         _ => c.value(id).is_defined(),
     }
 }
@@ -946,6 +952,7 @@ pub(crate) fn raw(c: &Construction, d: ExprDef) -> Raw {
 pub(crate) fn value(d: ExprDef, raw: Raw) -> Value {
     match (d.kind, raw) {
         (Kind::Number, Raw::Num(v)) if v.is_finite() => Value::Number(v),
+        (Kind::Angle, Raw::Num(v)) if v.is_finite() => Value::Number(d.angle_style.value(v)),
         (Kind::Point, Raw::Vec(x, y)) if x.is_finite() && y.is_finite() => Value::Point { x, y },
         (Kind::Vector, Raw::Vec(x, y)) if x.is_finite() && y.is_finite() => Value::Vector { x, y },
         (Kind::Function, Raw::Num(v)) if !v.is_nan() => Value::Function,
@@ -954,6 +961,21 @@ pub(crate) fn value(d: ExprDef, raw: Raw) -> Value {
         (Kind::Boolean, Raw::Num(v)) => Value::Bool(v == 1.0),
         (Kind::List, Raw::List(len)) => Value::List { len },
         _ => Value::Undefined,
+    }
+}
+
+/// Evaluates a self-contained scalar argument without adding a construction
+/// object. The second result marks a value entered with an angle dimension.
+pub(crate) fn constant_number(c: &Construction, text: &str) -> Option<(f64, bool)> {
+    let parsed = parse::parse(c, text).ok()?;
+    if parsed.uses_var || !parsed.parents.is_empty() {
+        return None;
+    }
+    let entry = Entry::new(parsed, false);
+    let (raw, _) = eval::root(c, &entry, None);
+    match raw {
+        Raw::Num(v) if v.is_finite() => Some((v, entry.root_ty() == Ty::Num(1))),
+        _ => None,
     }
 }
 
@@ -971,6 +993,7 @@ pub(crate) fn define(
         return function(c, name, parsed);
     }
     let kind = match parsed.tys[parsed.root as usize] {
+        Ty::Num(1) => Kind::Angle,
         Ty::Num(_) => Kind::Number,
         Ty::Vec if vector_label => Kind::Vector,
         Ty::Vec => Kind::Point,
@@ -1000,7 +1023,7 @@ fn function(c: &mut Construction, name: &str, parsed: parse::Parsed) -> Result<I
 }
 
 fn add(c: &mut Construction, name: &str, parsed: parse::Parsed, kind: Kind) -> Result<Id, String> {
-    add_parsed(c, name, parsed, kind).map_err(|e| e.to_string())
+    add_parsed(c, name, parsed, kind, AngleStyle::Unbounded).map_err(|e| e.to_string())
 }
 
 fn add_parsed(
@@ -1008,6 +1031,7 @@ fn add_parsed(
     name: &str,
     parsed: parse::Parsed,
     kind: Kind,
+    angle_style: AngleStyle,
 ) -> Result<Id, Error> {
     let function = kind == Kind::Function;
     // `AlgebraProcessor.processNumber`: independent unless it reads an
@@ -1042,7 +1066,7 @@ fn add_parsed(
         };
         if let Some(def) = free {
             let id = c.add(name, def)?;
-            if let (Some(d), Kind::Number, Raw::Num(v)) = (dec, kind, raw) {
+            if let (Some(d), Kind::Number | Kind::Angle, Raw::Num(v)) = (dec, kind, raw) {
                 if let Some(d) = d.get(v) {
                     set_free_decimal(c, id, d.into_owned());
                 }
@@ -1053,7 +1077,14 @@ fn add_parsed(
     let index = u32::try_from(c.exprs.entries.len()).map_err(|_| Error::UnknownObject)?;
     c.exprs.entries.push(entry);
     c.exprs.pending = Some(index);
-    let result = c.add(name, Def::Expr(ExprDef { kind, index }));
+    let result = c.add(
+        name,
+        Def::Expr(ExprDef {
+            kind,
+            index,
+            angle_style,
+        }),
+    );
     c.exprs.pending = None;
     if result.is_err() {
         c.exprs.entries.pop();

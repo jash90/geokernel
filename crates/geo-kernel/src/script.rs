@@ -56,6 +56,7 @@ use crate::algo::predicate::PredicateDef;
 use crate::algo::transform::TransformDef;
 use crate::algo::vector::VectorDef;
 use crate::algo::Group;
+use crate::kernel::angle::{self, AngleDef, AngleSource};
 use crate::kernel::{Construction, Def, Id, Kind, Value};
 use std::fmt;
 
@@ -86,7 +87,8 @@ pub fn load(src: &str) -> Result<Construction, ScriptError> {
     Ok(c)
 }
 
-/// Runs one line. Blank lines and comments return `Ok(None)`.
+/// Runs one line. Returns the first new object, or `Ok(None)` if the line
+/// creates nothing.
 pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
     let line = raw.split('#').next().unwrap_or("").trim();
     if line.is_empty() {
@@ -118,6 +120,16 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
     }
     if let Some(result) = crate::algo::general_conic::exec(c, name, rhs) {
         return result;
+    }
+    // GeoGebra returns an already labelled angle unchanged.
+    if rhs.starts_with("Angle") {
+        if let Some(("Angle", args)) = split_call(rhs) {
+            if let [arg] = args.as_slice() {
+                if c.id(arg).is_some_and(|id| c.kind(id) == Kind::Angle) {
+                    return Ok(None);
+                }
+            }
+        }
     }
     match define(c, name, rhs) {
         Ok(id) => {
@@ -198,6 +210,11 @@ fn parse_multi(c: &Construction, rhs: &str) -> Option<Result<Vec<Def>, String>> 
         r.map(|defs| defs.into_iter().map(f).collect())
     }
     let (func, args) = split_call(rhs)?;
+    if func == "Angle" {
+        if let Some(defs) = angle::fixed(c, &args) {
+            return Some(defs.map(|defs| defs.into_iter().map(Def::AngleObject).collect()));
+        }
+    }
     // asked first: `Tangent` of a conic is not a circle tangent
     if let Some(r) = ConicPartDef::parse_multi(c, func, &args) {
         return Some(wrap(r, Def::ConicPart));
@@ -233,6 +250,26 @@ fn parse_multi(c: &Construction, rhs: &str) -> Option<Result<Vec<Def>, String>> 
 fn add_outputs(c: &mut Construction, name: &str, defs: Vec<Def>) -> Result<Id, String> {
     if c.id(name).is_some() {
         return Err(format!("object `{name}` already exists"));
+    }
+    if let [first @ Def::AngleObject(AngleDef {
+        source: AngleSource::Fixed {
+            from, point: false, ..
+        },
+        ..
+    }), second] = defs[..]
+    {
+        let point = rotated_point_label(c, from, name);
+        // The rotated point is made even when the angle is undefined.
+        probe(c, &first)?;
+        probe(c, &second)?;
+        let at = c.checkpoint();
+        let result = c
+            .add(name, first)
+            .and_then(|id| c.add(&point, second).map(|_| id));
+        if result.is_err() {
+            c.discard_since(at);
+        }
+        return result.map_err(|e| e.to_string());
     }
     let mut defined = Vec::with_capacity(defs.len());
     for def in &defs {
@@ -277,6 +314,36 @@ fn add_outputs(c: &mut Construction, name: &str, defs: Vec<Def>) -> Result<Id, S
     first.ok_or_else(|| "the command creates no object".into())
 }
 
+/// The point made by the fixed-angle macro uses the rotation's usual
+/// primed label, or a default point label for an indexed source.
+fn rotated_point_label(c: &Construction, from: Id, angle: &str) -> String {
+    let name = c.label(from);
+    if !name.contains('_') && !name.ends_with("'''") {
+        let candidate = format!("{name}'");
+        if candidate != angle && c.id(&candidate).is_none() {
+            return candidate;
+        }
+        if candidate != angle {
+            return index_label(c, &candidate);
+        }
+    }
+    for n in 0.. {
+        for ch in 'A'..='Z' {
+            let label = if n == 0 {
+                ch.to_string()
+            } else if n < 10 {
+                format!("{ch}_{n}")
+            } else {
+                format!("{ch}_{{{n}}}")
+            };
+            if label != angle && c.id(&label).is_none() {
+                return label;
+            }
+        }
+    }
+    unreachable!("the label sequence is infinite")
+}
+
 /// `Construction.buildIndexedLabel`: the first `p_{n}` that is free, where
 /// for `n < 10` the short form `p_n` must be free too.
 pub(crate) fn index_label(c: &Construction, prefix: &str) -> String {
@@ -303,6 +370,7 @@ fn probe(c: &Construction, def: &Def) -> Result<bool, String> {
         Def::Lines(d) => run(c, d),
         Def::Conic(d) => run(c, d),
         Def::Measure(d) => run(c, d),
+        Def::AngleObject(d) => run(c, d),
         Def::Transform(d) => run(c, d),
         Def::ConicPart(d) => run(c, d),
         Def::Path(d) => run(c, d),
@@ -435,6 +503,11 @@ pub(crate) fn parse_def(c: &Construction, rhs: &str) -> Result<Def, String> {
     if let Some(def) = ConicDef::parse(c, func, &args) {
         return def.map(Def::Conic);
     }
+    if !(func == "Angle" && args.len() == 3) {
+        if let Some(def) = AngleDef::parse(c, func, &args) {
+            return def.map(Def::AngleObject);
+        }
+    }
     if let Some(def) = MeasureDef::parse(c, func, &args) {
         return def.map(Def::Measure);
     }
@@ -479,7 +552,7 @@ pub(crate) fn parse_def(c: &Construction, rhs: &str) -> Result<Def, String> {
         ("Circle", 2) => {
             let center = obj(args[0])?;
             let second = obj(args[1])?;
-            Ok(if c.kind(second) == Kind::Number {
+            Ok(if c.kind(second).is_number() {
                 Def::CircleRadius {
                     center,
                     radius: second,

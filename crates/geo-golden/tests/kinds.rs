@@ -379,6 +379,7 @@ fn draw_needle(kind: &str) -> String {
     match kind {
         // lines are drawn through `Value::unit_line`
         "Line" => "unit_line".into(),
+        "Angle" => "angle_geometry".into(),
         "Boolean" => "Value::Bool".into(),
         k => format!("Value::{k}"),
     }

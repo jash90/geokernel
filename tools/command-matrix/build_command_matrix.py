@@ -75,7 +75,11 @@ PARTIAL = {
     "Slope": "Slope(line, segment, ray or function)",
     "AffineRatio": "AffineRatio(point, point, point)",
     "CrossRatio": "CrossRatio(point, point, point, point)",
-    "Angle": "Angle(point, point, point); Angle(polygon)",
+    "Angle": (
+        "Angle(angle); Angle(number); Angle(point); Angle(vector); Angle(conic); Angle(polygon); "
+        "Angle(point, point); Angle(point, vector); Angle(vector, point); Angle(vector, vector); "
+        "Angle(line, line); Angle(point, point, point); Angle(point, point, number)"
+    ),
     "Mirror": "point, line, segment, circle or conic in a point or a line; point in a circle",
     "Rotate": "point, line, segment, circle or conic by an angle, about the origin or a point",
     "Dilate": "point, line, segment, circle or conic by a factor, from the origin or a point",

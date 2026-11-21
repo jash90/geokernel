@@ -123,6 +123,7 @@ fn tokens_of(k: Kind) -> &'static [&'static str] {
         Kind::Point => &["point"],
         Kind::Vector => &["vector"],
         Kind::Number => &["number"],
+        Kind::Angle => &["angle"],
         Kind::Boolean => &["boolean"],
         Kind::Line => &["line"],
         Kind::Segment => &["segment"],

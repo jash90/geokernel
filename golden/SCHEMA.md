@@ -1,4 +1,4 @@
-# Golden data format (schema version 1)
+# Golden data format
 
 Golden data records what GeoGebra computes for a script of commands and a
 sequence of moves. The Rust tests replay the same script and moves on
@@ -18,7 +18,7 @@ One JSON object per file, stored under `golden/<group>/`.
 
 ```json
 {
-  "schema": 1,
+  "schema": 2,
   "generator": "ggb-harness",
   "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
   "cases": []
@@ -27,7 +27,7 @@ One JSON object per file, stored under `golden/<group>/`.
 
 | Field | Type | Meaning |
 | --- | --- | --- |
-| `schema` | integer | Always `1` for this version. |
+| `schema` | integer | `1` stores angles as numbers. `2` records the angle type explicitly. |
 | `generator` | string | `ggb-harness` for golden data, `format-sample` for the fixture. |
 | `upstream_commit` | string or null | Full GeoGebra commit the values were recorded from. `null` only in the fixture. |
 | `cases` | array of Case | See below. |
@@ -110,13 +110,14 @@ carries no numeric fields. When it is `true` it carries exactly these:
 | `segment` | `x1`, `y1`, `x2`, `y2` | Start point and end point, in that order. |
 | `circle` | `cx`, `cy`, `r` | Centre and radius. |
 | `number` | `value` | The numeric value. |
+| `angle` | `value` | The angle in radians, recorded in schema 2. |
 | `vector` | `x`, `y` | The vector's coordinates. Where GeoGebra draws it from (its start point) is not recorded. |
 | `ray` | `x`, `y`, `a`, `b`, `c` | Start point `(x, y)` and the raw GeoGebra coefficients of the line `a*x + b*y + c = 0` it lies on, not normalised. The ray points along `(b, -a)`. |
 | `boolean` | `value` | `true` or `false`, a JSON boolean. `defined` is `false` only for the prover-only "unknown" state. |
 | `function` | `samples` | The values at `x` = -8, -4, -2, -1, -0.5, 0, 0.5, 1, 2, 4, 8, as pairs `[x, y]` in this order: `{ "type": "function", "defined": true, "samples": [[-8.0, 82.0], [-4.0, 26.0], ..., [0.5, null], ...] }`. `y` is `null` where GeoGebra's value (`GeoFunction.value`) is not finite. An undefined function carries no `samples`. |
 | `polygon` | `vertices`, `area`, `signed_area` | `vertices` is the list of vertices in order, each `[x, y]`. `area` is GeoGebra's area (never negative), `signed_area` the area with its sign: positive when the vertices run counter-clockwise. |
 | `polyline` | `vertices`, `length` | `vertices` is the list of vertices in order, each `[x, y]`, or `null` for an undefined point (GeoGebra leaves a hole there). `length` is the sum of the lengths of the pieces between two defined points. |
-| `list` | `elements` | The elements in order, each an Object of its own (`number`, `point`, `vector`, `boolean` or `list`, defined or not): `{ "type": "list", "defined": true, "elements": [{ "type": "number", "defined": true, "value": 1.0 }, { "type": "list", "defined": true, "elements": [] }] }`. An element that is a point or vector carries `x` and `y` like an object. |
+| `list` | `elements` | The elements in order, each an Object of its own (`number`, `angle`, `point`, `vector`, `boolean` or `list`, defined or not): `{ "type": "list", "defined": true, "elements": [{ "type": "number", "defined": true, "value": 1.0 }, { "type": "list", "defined": true, "elements": [] }] }`. An element that is a point or vector carries `x` and `y` like an object. |
 | `conic` | `conic_type`, `matrix`, and the parts of the type (below) | A general conic: an object made by `Conic`, `Ellipse`, `Hyperbola` or `Parabola`, or the image of one under a transformation. Every other conic object of GeoGebra is a `circle`, an `arc` or a `sector`. |
 | `arc`, `sector` | `value`, `conic_type`, and further fields of the type (below) | A part of a circle or conic (GeoGebra's `GeoConicPart`), made by `CircularArc`, `CircumcircularArc`, `Semicircle` or `Arc` (an `arc`), or by `CircularSector`, `CircumcircularSector` or `Sector` (a `sector`). `value` is the length of an arc and the area of a sector. |
 
@@ -231,7 +232,10 @@ Expressions may also compare and combine booleans and pick a branch with
 list commands such as `Length`, `Sum`, `Sort`, `Join` and `Sequence`, and
 element-wise arithmetic. A constant boolean
 or list is an object like any other but cannot be set. The type `list` was
-added the same way: no existing file changed and the schema version stays 1.
+added in schema 1.
+
+Schema 2 distinguishes `angle` from `number`, including inside lists. Only
+schema 1 permits an expected number to match an angle in the kernel.
 
 ## Known gaps
 

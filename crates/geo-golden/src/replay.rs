@@ -150,3 +150,34 @@ fn apply(c: &mut Construction, step: &Step) -> Result<(), String> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::model::parse_file;
+
+    #[test]
+    fn only_legacy_files_accept_an_angle_as_a_number() {
+        let fixture = r#"{"schema":1,"generator":"format-sample","upstream_commit":null,
+          "cases":[{"id":"sample","group":"expr","script":["a = 0°"],
+          "steps":[{"action":"initial"}],
+          "snapshots":[{"a":{"type":"number","defined":true,"value":0}}]}]}"#;
+        let legacy = parse_file(fixture, "legacy example").unwrap();
+        assert!(replay(&legacy.cases[0]).mismatches.is_empty());
+
+        let current = fixture.replace("\"schema\":1", "\"schema\":2");
+        let current = parse_file(&current, "current example").unwrap();
+        let outcome = replay(&current.cases[0]);
+        assert_eq!(outcome.mismatches.len(), 1);
+        assert_eq!(outcome.mismatches[0].label, "a");
+        assert!(outcome.mismatches[0]
+            .actual
+            .contains("type mismatch: expected number, got angle"));
+
+        let typed = fixture
+            .replace("\"schema\":1", "\"schema\":2")
+            .replace("\"type\":\"number\"", "\"type\":\"angle\"");
+        let typed = parse_file(&typed, "angle example").unwrap();
+        assert!(replay(&typed.cases[0]).mismatches.is_empty());
+    }
+}

@@ -29,7 +29,7 @@ OrthogonalLine,,geometry,P0,done,5,5,"OrthogonalLine(point, line, segment or ray
 Tangent,,geometry,P1,partial,11,2,"Tangent(point, circle or conic); Tangent(line or segment, circle or conic)"
 Segment,,geometry,P0,done,3,3,"Segment(point, point); Segment(point, length); Segment(point, point, polygon) creates no output"
 Slope,,geometry,P1,done,2,2,"Slope(line, segment, ray or function)"
-Angle,,geometry,P1,partial,13,2,"Angle(point, point, point); Angle(polygon)"
+Angle,,geometry,P1,done,13,13,"Angle(angle); Angle(number); Angle(point); Angle(vector); Angle(conic); Angle(polygon); Angle(point, point); Angle(point, vector); Angle(vector, point); Angle(vector, vector); Angle(line, line); Angle(point, point, point); Angle(point, point, number)"
 InteriorAngles,,geometry,P1,done,1,1,InteriorAngles(polygon)
 Direction,,geometry,P1,partial,2,1,"Direction(line, segment or ray)"
 Point,,geometry,P1,todo,4,0,"Point(path); Point(path, parameter) on a line, segment, ray, circle, polygon, polyline, circular arc or sector"

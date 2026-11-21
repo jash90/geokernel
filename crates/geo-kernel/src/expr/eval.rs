@@ -1267,7 +1267,7 @@ pub(super) fn number_of(slot: Slot) -> Option<f64> {
     match (slot.kind, slot.value) {
         (_, Value::Number(v)) => Some(v),
         (_, Value::Bool(b)) => Some(bool_number(b)),
-        (Kind::Number, _) => Some(f64::NAN),
+        (Kind::Number | Kind::Angle, _) => Some(f64::NAN),
         _ => None,
     }
 }
@@ -1472,11 +1472,13 @@ fn round(special: bool, dec: Option<&Exact>, x: f64, digits: f64, deg: bool) -> 
 /// An object as an operand, with its decimal (see [`Ex`]).
 fn object_ex(c: &Construction, id: Id) -> Ex {
     let val = object(c, id);
-    if c.kind(id) != Kind::Number {
+    if !c.kind(id).is_number() {
         return Ex::plain(val);
     }
     let (dec, special) = match c.def(id) {
-        Def::Expr(d) => (super::entry(c, d).dec.clone(), false),
+        Def::Expr(d) if d.angle_style == super::AngleStyle::Unbounded => {
+            (super::entry(c, d).dec.clone(), false)
+        }
         Def::Number(_) => {
             let d = super::free_decimal(c, id).cloned().map(Exact::Dec);
             let special = d.is_some();
@@ -1532,8 +1534,16 @@ fn object(c: &Construction, id: Id) -> Val {
             Raw::Vec(x, y) => Val::V(x, y),
             Raw::List(_) => Val::N(nan),
         },
-        (Kind::Number, _, Value::Number(v)) => Val::N(v),
-        (Kind::Number, _, _) => Val::N(nan),
+        (Kind::Angle, Def::Expr(d), Value::Undefined)
+            if d.angle_style == super::AngleStyle::Unbounded =>
+        {
+            match super::raw(c, d) {
+                Raw::Num(v) => Val::N(v),
+                _ => Val::N(nan),
+            }
+        }
+        (Kind::Number | Kind::Angle, _, Value::Number(v)) => Val::N(v),
+        (Kind::Number | Kind::Angle, _, _) => Val::N(nan),
         (Kind::Point, _, Value::Point { x, y }) | (Kind::Vector, _, Value::Vector { x, y }) => {
             Val::V(x, y)
         }
@@ -1553,7 +1563,7 @@ fn command(c: &Construction, def: Def, hint: Hint) -> Val {
         Some(Value::Point { x, y } | Value::Vector { x, y }) => Val::V(x, y),
         Some(Value::Bool(b)) => Val::B(b, true),
         _ if def.kind() == Kind::Boolean => Val::B(false, true),
-        _ if def.kind() == Kind::Number => Val::N(nan),
+        _ if def.kind().is_number() => Val::N(nan),
         _ => Val::V(nan, nan),
     }
 }

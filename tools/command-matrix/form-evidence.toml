@@ -26,13 +26,68 @@ cases = ["measure-affine-001", "measure-affine-002", "measure-affine-003"]
 
 [[form]]
 command = "Angle"
+form = "angle"
+cases = ["angle-numeric-001"]
+
+[[form]]
+command = "Angle"
+form = "number"
+cases = ["angle-numeric-001"]
+
+[[form]]
+command = "Angle"
+form = "point"
+cases = ["angle-directions-001"]
+
+[[form]]
+command = "Angle"
+form = "vector"
+cases = ["angle-directions-001"]
+
+[[form]]
+command = "Angle"
+form = "conic"
+cases = ["angle-conic-001"]
+
+[[form]]
+command = "Angle"
 form = "polygon"
 cases = ["polygon-angles-001", "polygon-angles-002", "polygon-angles-003"]
 
 [[form]]
 command = "Angle"
+form = "point,point"
+cases = ["angle-directions-001"]
+
+[[form]]
+command = "Angle"
+form = "point,vector"
+cases = ["angle-directions-001"]
+
+[[form]]
+command = "Angle"
+form = "vector,point"
+cases = ["angle-directions-001"]
+
+[[form]]
+command = "Angle"
+form = "vector,vector"
+cases = ["angle-directions-001"]
+
+[[form]]
+command = "Angle"
+form = "line,line"
+cases = ["angle-lines-001"]
+
+[[form]]
+command = "Angle"
 form = "point,point,point"
 cases = ["expr-cmd-012", "expr-deg-009", "expr-deg-010"]
+
+[[form]]
+command = "Angle"
+form = "point,point,number"
+cases = ["angle-fixed-001"]
 
 [[form]]
 command = "AngularBisector"
