@@ -43,16 +43,20 @@ pub struct OwnerRules {
     pub side_takes_the_polygon: bool,
     /// `interact::REFUSED_DRAG_NOTICE`.
     pub refused_drag_notice: bool,
+    /// `interact::EVERY_DRAG_IS_A_STEP`.
+    pub every_drag_is_a_step: bool,
 }
 
 impl OwnerRules {
     pub const OURS: OwnerRules = OwnerRules {
         side_takes_the_polygon: crate::hit::SIDE_TAKES_THE_POLYGON,
         refused_drag_notice: crate::interact::REFUSED_DRAG_NOTICE,
+        every_drag_is_a_step: crate::interact::EVERY_DRAG_IS_A_STEP,
     };
     pub const REFERENCE: OwnerRules = OwnerRules {
         side_takes_the_polygon: false,
         refused_drag_notice: false,
+        every_drag_is_a_step: false,
     };
 }
 
@@ -100,6 +104,10 @@ pub struct App {
     /// what the user saw, even if the area changes in that frame.
     pub view: Option<(Rect, ViewTransform)>,
     pub press_view: Option<(Rect, ViewTransform)>,
+    /// What the construction tool's press did, until its release.
+    pub tool_press: Option<crate::toolpress::ToolPress>,
+    /// The delete tool's drag is erasing (spec E11).
+    pub erasing: bool,
     /// A text field had the keyboard in the previous frame.
     pub was_typing: bool,
     /// Where the labels were painted in the last frame, in the area's
@@ -145,6 +153,8 @@ impl App {
             seen_rebuilds: 0,
             view: None,
             press_view: None,
+            tool_press: None,
+            erasing: false,
             was_typing: false,
             label_rects: RefCell::new(Vec::new()),
         }
@@ -180,11 +190,62 @@ impl App {
         self.gesture = Gesture::new(&metrics);
     }
 
-    /// Makes `tool` the active tool and the one its group shows.
+    /// Makes `tool` the active tool and the one its group shows. A tool use
+    /// in progress ends unfinished: its pending points go
+    /// (`EuclidianController.initNewMode`).
     pub fn select_tool(&mut self, tool: Tool) {
+        self.reset_tool();
         self.tool.set_tool(tool);
         self.group_tools[tool.group()] = tool;
         self.tool_error = None;
+    }
+
+    /// Ends the use of the active tool unfinished: its picks are dropped and
+    /// the points it placed are taken away, with no undo step (Escape, a
+    /// tool switch, a cancelled number dialog, a failed final step;
+    /// `Kernel.restoreStateForInitNewMode`).
+    pub fn reset_tool(&mut self) {
+        self.tool.reset();
+        self.tool_press = None;
+        self.wb.cancel_tool_use();
+        // An eraser stroke stops here (the reference's drag goes to the new
+        // mode's handler); what it deleted so far stays as one undo step
+        // (`storeUndoAfterDrag` runs at the release whatever the mode).
+        if self.erasing {
+            self.erasing = false;
+            self.wb.end_gesture();
+        }
+    }
+
+    /// Undo from the toolbar or the keyboard. In the middle of a tool use it
+    /// only takes the use back: the pending points go and the picks are
+    /// dropped, and no step is undone (`Kernel.undo`,
+    /// `restoreStateForModeStarting`).
+    pub fn undo(&mut self) -> bool {
+        if self.tool_in_use() {
+            self.reset_tool();
+            return true;
+        }
+        self.wb.undo()
+    }
+
+    /// Redo; a tool use in progress ends unfinished first.
+    pub fn redo(&mut self) -> bool {
+        if !self.wb.can_redo() {
+            return false;
+        }
+        self.reset_tool();
+        self.wb.redo()
+    }
+
+    /// Whether undo has something to do: a step, or a tool use to take back.
+    pub fn can_undo(&self) -> bool {
+        self.tool_in_use() || self.wb.can_undo()
+    }
+
+    /// The active tool holds picks or waits for its number.
+    fn tool_in_use(&self) -> bool {
+        !self.tool.picks().is_empty() || self.tool.asking().is_some()
     }
 
     /// Leaves the active tool for the move tool, clears the selection and
@@ -199,6 +260,11 @@ impl App {
     pub fn submit_input(&mut self) {
         match self.wb.run_line(&self.input) {
             Ok(()) => {
+                // A tool use that does not finish ends (its points went
+                // with it, `Workbench::run_lines`); a failed line changes
+                // nothing, the use goes on.
+                self.tool.reset();
+                self.tool_press = None;
                 self.input.clear();
                 self.input_cursor = 0;
                 self.input_error = None;
@@ -209,28 +275,43 @@ impl App {
         self.focus_input = true;
     }
 
-    /// Runs what a finished tool asks for.
+    /// Runs what a tool's pick asks for. The lines of a construction tool
+    /// run inside its tool use; once the tool holds no picks any more (it
+    /// made its object) the use is one undo step
+    /// (`EuclidianController.processMode` stores the undo info when the
+    /// kernel changed). A failed step ends the use unfinished.
     pub fn apply_outcome(&mut self, outcome: Outcome) {
+        self.apply_pick(outcome);
+        if !self.tool_in_use() {
+            self.wb.end_tool_use();
+        }
+    }
+
+    fn apply_pick(&mut self, outcome: Outcome) {
         match outcome {
-            Outcome::Place { line, then } => match self.wb.run_lines(&[line]) {
+            Outcome::Place { line, at, then } => match self.wb.run_tool_lines(&[line]) {
                 Ok(()) => {
                     self.tool_error = None;
-                    self.wb.selected = self.wb.construction().ids().last();
-                    self.apply_outcome(*then);
+                    let new = self.wb.construction().ids().last();
+                    if let (Some(id), Some((x, y))) = (new, at) {
+                        self.wb.move_pending_point(id, x, y);
+                    }
+                    self.wb.selected = new;
+                    self.apply_pick(*then);
                 }
                 Err(e) => {
                     self.tool_error = Some(errors::polish(&e));
-                    self.tool.reset();
+                    self.reset_tool();
                 }
             },
-            Outcome::Run(lines) => match self.wb.run_lines(&lines) {
+            Outcome::Run(lines) => match self.wb.run_tool_lines(&lines) {
                 Ok(()) => {
                     self.tool_error = None;
                     self.wb.selected = self.wb.construction().ids().last();
                 }
                 Err(e) => {
                     self.tool_error = Some(errors::polish(&e));
-                    self.tool.reset();
+                    self.reset_tool();
                 }
             },
             Outcome::AskNumber(request) => {
