@@ -147,6 +147,9 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
     if let Some(result) = crate::algo::general_conic::exec(c, name, rhs) {
         return result;
     }
+    if let Some(result) = ConicDef::exec_interval(c, name, rhs) {
+        return result;
+    }
     // GeoGebra returns an already labelled angle unchanged.
     if rhs.starts_with("Angle") {
         if let Some(("Angle", args)) = split_call(rhs) {
@@ -565,7 +568,7 @@ pub(crate) fn parse_def(c: &Construction, rhs: &str) -> Result<Def, String> {
             })
         }
         ("Segment", 2) => Ok(Def::Segment(obj(args[0])?, obj(args[1])?)),
-        ("Midpoint", 2) => Ok(Def::Midpoint(obj(args[0])?, obj(args[1])?)),
+        ("Midpoint" | "Center", 2) => Ok(Def::Midpoint(obj(args[0])?, obj(args[1])?)),
         ("Distance", 2) => Ok(Def::Distance(obj(args[0])?, obj(args[1])?)),
         ("Perpendicular" | "PerpendicularLine" | "OrthogonalLine", 2) => Ok(Def::Perpendicular {
             through: obj(args[0])?,

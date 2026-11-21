@@ -1,5 +1,6 @@
 //! Draws a construction as an SVG image.
 
+use crate::algo::conic_nd::ConicType;
 use crate::algo::vector::start;
 use crate::kernel::{Construction, Kind, Value};
 use std::fmt::Write;
@@ -14,7 +15,7 @@ pub struct View {
 }
 
 impl View {
-    /// A view that contains every point, segment and circle, with a margin.
+    /// A view fitted to points and bounded shapes, with a margin.
     pub fn fit(c: &Construction) -> View {
         let mut v = View {
             xmin: f64::INFINITY,
@@ -38,6 +39,26 @@ impl View {
                 Value::Circle { cx, cy, r } => {
                     grow(cx - r, cy - r);
                     grow(cx + r, cy + r);
+                }
+                Value::Conic {
+                    ty: ConicType::SinglePoint | ConicType::Circle | ConicType::Ellipse,
+                } => {
+                    if let Some(conic) = c.conic(id) {
+                        let [x, y] = conic.midpoint;
+                        if conic.ty == ConicType::SinglePoint {
+                            grow(x, y);
+                            continue;
+                        }
+                        let [a, b] = conic.half_axes;
+                        let [[ux, uy], [vx, vy]] = conic.eigenvec;
+                        let dx = (a * ux).hypot(b * vx);
+                        let dy = (a * uy).hypot(b * vy);
+                        let [xmin, ymin, xmax, ymax] = [x - dx, y - dy, x + dx, y + dy];
+                        if [xmin, ymin, xmax, ymax].into_iter().all(f64::is_finite) {
+                            grow(xmin, ymin);
+                            grow(xmax, ymax);
+                        }
+                    }
                 }
                 Value::Ray { x, y, .. } => grow(x, y),
                 Value::Polygon { .. } | Value::PolyLine { .. } => {

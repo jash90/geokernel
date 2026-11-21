@@ -66,8 +66,11 @@ class Cases:
     def rp(self, lo=-8.0, hi=8.0):
         return (self.r2(lo, hi), self.r2(lo, hi))
 
-    def write(self):
+    def write(self, directory=None):
         out = Path(__file__).with_name(f"{self.group}.json")
+        if directory is not None:
+            out = out.parent / directory / out.name
+            out.parent.mkdir(exist_ok=True)
         lines = ",\n".join("    " + json.dumps(c, separators=(", ", ": ")) for c in self.cases)
         out.write_text('{\n  "cases": [\n' + lines + "\n  ]\n}\n")
         print(f"{len(self.cases)} cases written to {out.name}")

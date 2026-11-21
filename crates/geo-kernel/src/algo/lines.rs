@@ -341,9 +341,6 @@ fn parse_polar(c: &Construction, func: &str, args: &[&str]) -> Result<LineDef, S
             point: ids[0],
             circle: ids[1],
         }),
-        (Kind::Line | Kind::Segment, Kind::Circle) => {
-            Err("the pole of a line (`Polar` of a line and a circle) is not supported yet".into())
-        }
         _ => Err(bad_kinds(c, func, &ids)),
     }
 }
@@ -879,7 +876,7 @@ mod tests {
             ("f = Tangent(A, B)", "does not take a point, a point"),
             ("f = Tangent(k, l)", "does not take a circle, a line"),
             ("f = Tangent(k, k)", "not supported"),
-            ("f = Polar(l, k)", "not supported"),
+            ("f = Polar(k, k)", "does not take a circle, a circle"),
             ("f = Polar(A, B)", "does not take a point, a point"),
             ("f = Tangent(P, Z)", "unknown object `Z`"),
         ] {

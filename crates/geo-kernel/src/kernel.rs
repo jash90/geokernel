@@ -31,6 +31,8 @@
 
 #[path = "algo/angle.rs"]
 pub mod angle;
+#[path = "algo/axis.rs"]
+mod axis;
 
 use self::angle::{AngleDef, AngleGeometry, AngleSource, AngleStyle};
 use crate::algo::arc::{ArcData, ArcDef};
@@ -58,6 +60,8 @@ use std::fmt;
 pub struct Id(pub(crate) usize);
 
 impl Id {
+    /// The slot of a constructed object. Built-in axes have reserved ids
+    /// outside the range of construction slots.
     pub fn index(self) -> usize {
         self.0
     }
@@ -285,6 +289,10 @@ impl Value {
 #[non_exhaustive]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Def {
+    /// The built-in horizontal coordinate axis.
+    XAxis,
+    /// The built-in vertical coordinate axis.
+    YAxis,
     /// A point the user can drag.
     FreePoint {
         x: f64,
@@ -419,7 +427,11 @@ impl Def {
             | Def::IntersectLines(..)
             | Def::IntersectLineCircle { .. }
             | Def::IntersectCircles { .. } => Kind::Point,
-            Def::Line(..) | Def::Perpendicular { .. } | Def::Parallel { .. } => Kind::Line,
+            Def::XAxis
+            | Def::YAxis
+            | Def::Line(..)
+            | Def::Perpendicular { .. }
+            | Def::Parallel { .. } => Kind::Line,
             Def::Segment(..) => Kind::Segment,
             Def::CircleThrough { .. } | Def::CircleRadius { .. } => Kind::Circle,
             Def::Number(_) | Def::Distance(..) => Kind::Number,
@@ -484,7 +496,9 @@ impl Def {
     /// its coefficients ([`expr::equation::parents`]).
     pub(crate) fn parents(&self) -> Parents {
         match *self {
-            Def::FreePoint { .. }
+            Def::XAxis
+            | Def::YAxis
+            | Def::FreePoint { .. }
             | Def::Number(_)
             | Def::Angle(_)
             | Def::Expr(_)
@@ -741,29 +755,40 @@ impl Construction {
         self.defs.is_empty()
     }
 
-    /// All objects in creation order.
+    /// All objects in creation order, excluding the built-in axes.
     pub fn ids(&self) -> impl Iterator<Item = Id> {
         (0..self.defs.len()).map(Id)
     }
 
     pub fn id(&self, label: &str) -> Option<Id> {
-        self.by_label.get(label).copied()
+        self.by_label
+            .get(label)
+            .copied()
+            .or_else(|| axis::lookup(label))
     }
 
     pub fn label(&self, id: Id) -> &str {
-        &self.labels[id.0]
+        self.labels
+            .get(id.0)
+            .map_or_else(|| axis::get(id).expect("object id").label, String::as_str)
     }
 
     pub fn def(&self, id: Id) -> Def {
-        self.defs[id.0]
+        self.defs
+            .get(id.0)
+            .copied()
+            .unwrap_or_else(|| axis::get(id).expect("object id").def)
     }
 
     pub fn kind(&self, id: Id) -> Kind {
-        self.defs[id.0].kind()
+        self.def(id).kind()
     }
 
     pub fn value(&self, id: Id) -> Value {
-        self.values[id.0]
+        self.values
+            .get(id.0)
+            .copied()
+            .unwrap_or_else(|| axis::get(id).expect("object id").value)
     }
 
     /// The interval of an angle, including an unbounded numeric angle.
@@ -873,7 +898,7 @@ impl Construction {
 
     /// The objects computed from `id`.
     pub(crate) fn children(&self, id: Id) -> &[Id] {
-        &self.children[id.0]
+        self.children.get(id.0).map_or(&[], Vec::as_slice)
     }
 
     /// Checks a definition and computes the value it would have if it were
@@ -955,9 +980,10 @@ impl Construction {
             let def = self.defs[id];
             for parent in self.read_ids(&def) {
                 // Children are linked in creation order: the newest are last.
-                let children = &mut self.children[parent.0];
-                while children.last().is_some_and(|c| c.0 >= id) {
-                    children.pop();
+                if let Some(children) = self.children.get_mut(parent.0) {
+                    while children.last().is_some_and(|c| c.0 >= id) {
+                        children.pop();
+                    }
                 }
             }
             self.defs.pop();
@@ -1023,8 +1049,11 @@ impl Construction {
         if label.is_empty() {
             return Err(Error::EmptyLabel);
         }
-        if self.by_label.contains_key(label) {
+        if self.id(label).is_some() {
             return Err(Error::DuplicateLabel(label.to_string()));
+        }
+        if let Some(axis) = axis::definition(def) {
+            return Err(Error::DuplicateLabel(axis.label.to_string()));
         }
         self.check(&def)?;
         let def = algo::intersect::prepare(self, def);
@@ -1063,7 +1092,9 @@ impl Construction {
         parents.sort_unstable();
         parents.dedup();
         for parent in parents {
-            self.children[parent.0].push(id);
+            if let Some(children) = self.children.get_mut(parent.0) {
+                children.push(id);
+            }
         }
         self.defs.push(def);
         self.values.push(value);
@@ -1157,6 +1188,9 @@ impl Construction {
     /// its `special` flag is set; with the flag false, moving that point
     /// still recomputes the intersection, which does not change.
     pub fn move_point(&mut self, id: Id, x: f64, y: f64) -> Result<usize, Error> {
+        if let Some(axis) = axis::get(id) {
+            return Err(Error::NotFree(axis.label.to_string()));
+        }
         let def = self.defs.get(id.0).ok_or(Error::UnknownObject)?;
         if let Def::Path(d @ PathDef::On { .. }) = *def {
             return self.move_on_path(id, d, x, y);
@@ -1212,6 +1246,9 @@ impl Construction {
     /// Changes a free number and recomputes everything that depends on it.
     /// Returns how many dependent objects were recomputed.
     pub fn set_number(&mut self, id: Id, v: f64) -> Result<usize, Error> {
+        if let Some(axis) = axis::get(id) {
+            return Err(Error::NotFree(axis.label.to_string()));
+        }
         let def = *self.defs.get(id.0).ok_or(Error::UnknownObject)?;
         let new_def = match def {
             Def::Number(_) => Def::Number(v),
@@ -1527,6 +1564,7 @@ impl Construction {
 
     pub(crate) fn check(&self, def: &Def) -> Result<(), Error> {
         match *def {
+            Def::XAxis | Def::YAxis => Ok(()),
             Def::FreePoint { x, y } => {
                 if x.is_finite() && y.is_finite() {
                     Ok(())
@@ -1596,13 +1634,18 @@ impl Construction {
     }
 
     pub(crate) fn expect(&self, id: Id, expected: &'static [Kind]) -> Result<(), Error> {
-        let def = self.defs.get(id.0).ok_or(Error::UnknownObject)?;
+        let def = self
+            .defs
+            .get(id.0)
+            .copied()
+            .or_else(|| axis::get(id).map(|axis| axis.def))
+            .ok_or(Error::UnknownObject)?;
         let found = def.kind();
         if expected.contains(&found) || (found == Kind::Angle && expected.contains(&Kind::Number)) {
             Ok(())
         } else {
             Err(Error::WrongKind {
-                label: self.labels[id.0].clone(),
+                label: self.label(id).to_string(),
                 expected,
                 found,
             })
@@ -1640,6 +1683,7 @@ impl Construction {
         hint: impl Fn(&Self) -> algo::intersect::Hint,
     ) -> Option<Value> {
         match def {
+            Def::XAxis | Def::YAxis => axis::definition(def).map(|axis| axis.value),
             Def::FreePoint { x, y } => Some(Value::Point { x, y }),
             Def::Number(v) | Def::Angle(v) => Some(Value::Number(v)),
             Def::Line(p, q) => algo::basic::line(self, p, q),
@@ -1681,7 +1725,7 @@ impl Construction {
     }
 
     pub(crate) fn point(&self, id: Id) -> Option<(f64, f64)> {
-        match self.values[id.0] {
+        match self.value(id) {
             Value::Point { x, y } => Some((x, y)),
             _ => None,
         }
@@ -1690,13 +1734,13 @@ impl Construction {
     /// A line with `(a, b)` of unit length (see [`Value::unit_line`]).
     #[allow(dead_code)] // part of the accessor set; every rule here reads lines raw
     pub(crate) fn line(&self, id: Id) -> Option<(f64, f64, f64)> {
-        self.values[id.0].unit_line()
+        self.value(id).unit_line()
     }
 
     /// A line's raw coefficients, as GeoGebra holds them (see [`Value::Line`]).
     /// For code that follows an upstream formula on raw coefficients.
     pub(crate) fn raw_line(&self, id: Id) -> Option<(f64, f64, f64)> {
-        match self.values[id.0] {
+        match self.value(id) {
             Value::Line { a, b, c } => Some((a, b, c)),
             _ => None,
         }
@@ -1706,7 +1750,7 @@ impl Construction {
     /// unit length. `None` for a segment whose end points coincide.
     #[allow(dead_code)] // part of the accessor set; every rule here reads carriers raw
     pub(crate) fn carrier(&self, id: Id) -> Option<(f64, f64, f64)> {
-        match self.values[id.0] {
+        match self.value(id) {
             Value::Segment { x1, y1, x2, y2 } => line_through((x1, y1), (x2, y2)),
             v => v.unit_line(),
         }
@@ -1717,7 +1761,7 @@ impl Construction {
     /// to its end point, which is what GeoGebra's `GeoSegment` holds; they are
     /// all zero when the end points coincide.
     pub(crate) fn raw_carrier(&self, id: Id) -> Option<(f64, f64, f64)> {
-        match self.values[id.0] {
+        match self.value(id) {
             Value::Line { a, b, c } | Value::Ray { a, b, c, .. } => Some((a, b, c)),
             Value::Segment { x1, y1, x2, y2 } => Some(join((x1, y1), (x2, y2))),
             _ => None,
@@ -1725,14 +1769,14 @@ impl Construction {
     }
 
     pub(crate) fn circle(&self, id: Id) -> Option<(f64, f64, f64)> {
-        match self.values[id.0] {
+        match self.value(id) {
             Value::Circle { cx, cy, r } => Some((cx, cy, r)),
             _ => None,
         }
     }
 
     pub(crate) fn number(&self, id: Id) -> Option<f64> {
-        match self.values[id.0] {
+        match self.value(id) {
             Value::Number(v) => Some(v),
             _ => None,
         }

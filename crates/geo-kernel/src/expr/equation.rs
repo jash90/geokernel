@@ -1042,6 +1042,40 @@ mod tests {
     }
 
     #[test]
+    fn equations_that_mention_an_axis() {
+        // `xAxis` and `yAxis` stay reserved names inside equations: a
+        // command that reads the axis line still gives its number
+        // (`y = Slope(xAxis)` is the line y = 0, `y = Distance(A, yAxis)`
+        // with A = (3, 0) the line y = 3, as in GeoGebra), while the axis
+        // itself is no number, so an equation that reads it as one is
+        // refused — GeoGebra refuses these lines too (``Illegal
+        // multiplication -1 * yAxis``). So is a line that would relabel
+        // an axis.
+        let c = load("A = (3, 0)\na: y = Slope(xAxis)\nb: y = Distance(A, yAxis)\n").unwrap();
+        assert_eq!(line(&c, "a"), (0.0, 1.0, 0.0));
+        assert_eq!(line(&c, "b"), (0.0, 1.0, -3.0));
+        for refused in [
+            "c: xAxis = yAxis",
+            "d: y = xAxis",
+            "e: xAxis + y = 1",
+            "f: 2xAxis = 3",
+            "g: y = x(xAxis)",
+            "xAxis: 2x = 4",
+            "yAxis = 3",
+        ] {
+            let Err(why) = load(refused) else {
+                panic!("`{refused}` should be refused");
+            };
+            assert!(
+                why.message.contains("cannot be used in an expression")
+                    || why.message.contains("already exists"),
+                "`{refused}` refused with `{}`",
+                why.message
+            );
+        }
+    }
+
+    #[test]
     fn an_equation_may_read_the_coordinates_of_a_point() {
         let mut c = load("A = (1, 5)\na: x(A) + y = 2\n").unwrap();
         // `x(A)` is no variable of the equation: it belongs to the

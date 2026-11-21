@@ -1,0 +1,5 @@
+{
+  "cases": [
+    {"id": "axes-functions-001", "group": "axes", "script": ["a = 2", "f(x) = x - a", "P = Intersect(f, xAxis)"], "steps": [{"action": "initial"}, {"action": "set_number", "label": "a", "value": 0.0}, {"action": "set_number", "label": "a", "value": -3.0}]}
+  ]
+}

@@ -312,11 +312,25 @@ pub fn script_uses_form(
     definitions(script).any(|rhs| {
         calls(rhs).iter().any(|(name, args)| {
             names.get(name).is_some_and(|c| c == command) && {
+                if matches!(form, "inequality" | "interval") {
+                    return matches!(args.as_slice(), [arg] if inline_inequality(arg));
+                }
                 let kinds: Vec<Option<Kind>> = args.iter().map(|a| arg_kind(a, labels)).collect();
                 form_matches(form, &kinds)
             }
         })
     })
+}
+
+/// An inline one-variable inequality, as opposed to a scalar comparison
+/// or the coordinate extractor `x(P)`.
+fn inline_inequality(arg: &str) -> bool {
+    arg.contains(['<', '>', '≤', '≥'])
+        && arg.match_indices('x').any(|(i, _)| {
+            !arg[..i].ends_with(is_ident_char)
+                && !arg[i + 1..].starts_with(is_ident_char)
+                && !arg[i + 1..].trim_start().starts_with('(')
+        })
 }
 
 /// Whether a script calls `command` at all.
