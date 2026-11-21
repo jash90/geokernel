@@ -249,6 +249,27 @@ def split_args(toks, open_idx, close_idx):
     return args
 
 
+def method_starts(toks):
+    """Map the index of every method body's '{' to the method name."""
+    method_at = {}
+    for k, t in enumerate(toks):
+        if (t.kind == "id" and k > 0 and k + 1 < len(toks)
+                and toks[k + 1].val == "(" and toks[k + 1].kind == "op"
+                and ((toks[k - 1].kind == "id"
+                      and toks[k - 1].val not in NOT_A_TYPE)
+                     or toks[k - 1].val in (">", "]"))):
+            j = match_paren(toks, k + 1)
+            if j < 0:
+                continue
+            j += 1
+            while j < len(toks) and (toks[j].kind == "id"
+                                     or toks[j].val in (",", ".")):
+                j += 1
+            if j < len(toks) and toks[j].val == "{":
+                method_at[j] = (t.val, k)
+    return method_at
+
+
 def enclosing_methods(toks):
     """For every token index, the name of the innermost enclosing method."""
     method_at = {}
@@ -340,6 +361,154 @@ def extract_file(text, rel, constants, used, other):
                                   ("test", methods[k]), ("input", vals[0]),
                                   ("expected", vals[1:])]))
     return pairs, skipped, found, decls
+
+
+# ------------------------------------------------------------ method scripts
+
+# Calls that change the construction and can be replayed from literals:
+# `t` and `tRound` (input, expected...) and `add` (input only).
+REPLAYED = ("t", "tRound", "add")
+# Statements that only check state and change nothing: assertions, logging
+# and inputs that must fail (a failed input leaves the construction as it
+# was).
+CHECKS_RE = re.compile(r"^(assert\w*|Log|shouldFail|checkError)$")
+SHOULD_FAIL_RE = re.compile(r"^AlgebraTestHelper\.shouldFail\(")
+# Settings the harness applies: the random seed and the CAS switch.
+SEED_RE = re.compile(r"^(?:app|getApp\(\))\.setRandomSeed\((\d+)\);$")
+CAS_RE = re.compile(
+    r"^AlgebraTestHelper\.enableCAS\((?:app|getApp\(\)), (true|false)\);$")
+TEST_ANNOTATIONS = ("Test", "ParameterizedTest")
+
+
+def statements(toks, lo, hi):
+    """Token ranges [start, end) of the top-level statements in toks(lo, hi)."""
+    out, k = [], lo + 1
+    while k < hi:
+        start, depth = k, 0
+        while k < hi:
+            v = toks[k].val if toks[k].kind == "op" else None
+            if v in ("(", "["):
+                depth += 1
+            elif v in (")", "]"):
+                depth -= 1
+            elif v == "{":
+                k = match_paren(toks, k)
+                if k < 0:
+                    return out
+                nxt = toks[k + 1] if k + 1 < hi else None
+                ends = depth == 0 and not (
+                    nxt is not None and (nxt.val in (
+                        "else", "catch", "finally", "while") or (
+                        nxt.kind == "op" and nxt.val in (")", ",", ";", "."))))
+                if ends:
+                    k += 1
+                    break
+            elif v == ";" and depth == 0:
+                k += 1
+                break
+            k += 1
+        out.append((start, k))
+    return out
+
+
+def is_test_method(toks, name_idx):
+    """True if the method declared at toks[name_idx] carries @Test or
+    @ParameterizedTest among the annotations before its modifiers."""
+    k = name_idx - 1
+    while k > 0:
+        t = toks[k]
+        if t.kind == "op" and t.val in (";", "}", "{"):
+            return False
+        if (t.kind == "id" and t.val in TEST_ANNOTATIONS
+                and toks[k - 1].val == "@"):
+            return True
+        k -= 1
+    return False
+
+
+def replayed_call(toks, s, e):
+    """(helper, open paren index, close paren index) when the statement
+    toks[s:e] is a single replayed call, `name(...);`, optionally assigned:
+    `Type x = add(...);` or `x = add(...);`. None otherwise."""
+    body = toks[s:e]
+    if not body or body[-1].val != ";":
+        return None
+    k = s
+    eq = [j for j in range(s, e) if toks[j].kind == "op" and toks[j].val == "="]
+    if eq:
+        first = eq[0]
+        if any(toks[j].kind != "id" and toks[j].val not in ("<", ">", ",", ".")
+               for j in range(s, first)):
+            return None
+        k = first + 1
+    t = toks[k]
+    if (t.kind != "id" or t.val not in REPLAYED or k + 1 >= e
+            or toks[k + 1].val != "("):
+        return None
+    close = match_paren(toks, k + 1)
+    if close != e - 2:
+        return None
+    return t.val, k + 1, close
+
+
+def extract_scripts(text, rel, constants, pair_lines):
+    """One record per method that holds an extracted pair: every top-level
+    statement in source order, as a step the harness can replay (`t`,
+    `tRound`, `add` with literal arguments; `seed` and `cas` for the random
+    seed and the CAS switch), a check that changes nothing (`assert...`,
+    `Log...`, an input that must fail; left out), or `other`, which the
+    harness cannot replay.
+    A method with an `other` step, or that is not itself a test, is not
+    complete: its pairs may depend on state the replay does not build."""
+    toks = lex(text)
+    one_param_helper = has_one_param_helper(toks)
+    records, outer_end = [], -1
+    for open_idx, (name, name_idx) in sorted(method_starts(toks).items()):
+        close = match_paren(toks, open_idx)
+        if close < 0 or open_idx < outer_end:
+            continue
+        lines_inside = {toks[j].line for j in range(open_idx, close + 1)}
+        if not lines_inside & pair_lines:
+            continue
+        outer_end = close
+        steps, complete = [], is_test_method(toks, name_idx)
+        for s, e in statements(toks, open_idx, close):
+            first = toks[s]
+            raw = " ".join(text[first.start:toks[e - 1].end].split())
+            if ((first.kind == "id" and CHECKS_RE.match(first.val))
+                    or SHOULD_FAIL_RE.match(raw)):
+                continue
+            seed, cas = SEED_RE.match(raw), CAS_RE.match(raw)
+            if seed or cas:
+                steps.append(OrderedDict([
+                    ("line", first.line), ("call", "seed" if seed else "cas"),
+                    ("value", int(seed.group(1)) if seed
+                     else cas.group(1) == "true")]))
+                continue
+            call = replayed_call(toks, s, e)
+            step = None
+            if call is not None:
+                helper, op, cl = call
+                args = split_args(toks, op, cl)
+                try:
+                    vals = [eval_arg(a, constants, Counter()) for a in args]
+                except (Skip, ValueError):
+                    vals = None
+                one_arg_t = helper == "t" and one_param_helper and len(args) == 1
+                if vals and not one_arg_t and (helper != "add" or len(vals) == 1):
+                    step = OrderedDict([("line", toks[op - 1].line),
+                                        ("call", helper), ("input", vals[0])])
+                    if helper != "add":
+                        step["expected"] = vals[1:]
+            if step is None:
+                complete = False
+                step = OrderedDict([("line", first.line), ("call", "other"),
+                                    ("source", raw[:160])])
+            steps.append(step)
+        records.append(OrderedDict([("file", rel), ("test", name),
+                                    ("complete", complete),
+                                    ("steps", steps)]))
+    return records
 
 
 def skip_row(rel, t, reason, source):
@@ -447,7 +616,7 @@ def main(argv=None):
         files += [os.path.join(dp, f) for f in fns if f.endswith(".java")]
     files.sort(key=lambda p: os.path.relpath(p, args.source).replace(os.sep, "/"))
 
-    all_pairs, all_skipped, per_file = [], [], {}
+    all_pairs, all_skipped, all_scripts, per_file = [], [], [], {}
     used, other = Counter(), Counter()
     found = decls = grep_start = grep_any = 0
     start_re = re.compile(r'^\s*t\("')
@@ -466,10 +635,14 @@ def main(argv=None):
             per_file[rel] = (fo, len(pairs), len(skipped))
         all_pairs += pairs
         all_skipped += skipped
+        if pairs:
+            all_scripts += extract_scripts(text, rel, constants,
+                                           {p["line"] for p in pairs})
 
     os.makedirs(args.out, exist_ok=True)
     dump_jsonl(os.path.join(args.out, "t-pairs.jsonl"), all_pairs)
     dump_jsonl(os.path.join(args.out, "skipped.jsonl"), all_skipped)
+    dump_jsonl(os.path.join(args.out, "scripts.jsonl"), all_scripts)
     stats = {
         "commit": head or "unknown", "scope": args.scope,
         "grep_linestart": grep_start, "grep_anywhere": grep_any,
@@ -477,7 +650,7 @@ def main(argv=None):
         "skipped": len(all_skipped),
         "reasons": Counter(category(s["reason"]) for s in all_skipped),
         "other": other, "used": used, "unicode_file": unicode_rel,
-        "per_file": per_file,
+        "per_file": per_file, "scripts": all_scripts,
     }
     write_report(os.path.join(args.out, "REPORT.md"), stats)
     print("found=%d extracted=%d skipped=%d grep_linestart=%d"
