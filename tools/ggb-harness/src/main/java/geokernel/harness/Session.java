@@ -56,6 +56,9 @@ final class Session {
 
     private static final Pattern LINE =
             Pattern.compile("^([A-Za-z]+(?:_\\{[A-Za-z0-9]+\\})?)(\\(x\\))? = (.+)$");
+    /** `label: lhs = rhs`, an equation line (its `=` belongs to the definition). */
+    private static final Pattern EQUATION =
+            Pattern.compile("^([A-Za-z]+(?:_\\{[A-Za-z0-9]+\\})?): (.+)$");
     /** A label as the script lines write it, to find the objects an expression reads. */
     private static final Pattern LABEL = Pattern.compile("[A-Za-z]+(?:_\\{[A-Za-z0-9]+\\})?");
     /** Where a function is sampled, in this order (see golden/SCHEMA.md). */
@@ -97,15 +100,23 @@ final class Session {
         return kernel;
     }
 
-    /** Runs one `label = definition` line and checks what GeoGebra created. */
+    /** Runs one `label = definition` or `label: equation` line and checks
+     * what GeoGebra created. */
     GeoElement run(String line) {
         Matcher m = LINE.matcher(line);
+        boolean equationLine = false;
         if (!m.matches()) {
-            throw new IllegalArgumentException("not of the form 'label = definition': " + line);
+            m = EQUATION.matcher(line);
+            if (m.matches() && m.group(2).contains("=")) {
+                equationLine = true;
+            } else {
+                throw new IllegalArgumentException(
+                        "not of the form 'label = definition': " + line);
+            }
         }
         String label = m.group(1);
-        boolean functionLine = m.group(2) != null;
-        String definition = m.group(3).trim();
+        boolean functionLine = !equationLine && m.group(2) != null;
+        String definition = m.group(equationLine ? 2 : 3).trim();
         Matcher references = LABEL.matcher(definition);
         while (references.find()) {
             String reference = references.group();
@@ -173,16 +184,27 @@ final class Session {
             throw new IllegalStateException("GeoGebra labelled '" + line + "' as "
                     + geo.getLabelSimple());
         }
-        String actual = "conic".equals(expected) && geo instanceof GeoConic ? "conic" : schemaType(geo);
         boolean expression = expected == null;
-        if (expression) {
+        if (equationLine) {
+            // an equation makes a line, a conic or (of `y = ...` alone) a
+            // function, and every conic of one is recorded as a general conic
+            String type = geo instanceof GeoConic && !(geo instanceof GeoConicPart)
+                    ? "conic" : typeOf(geo);
+            if (!type.equals("line") && !type.equals("conic") && !type.equals("function")) {
+                throw new IllegalStateException("expected a line, a conic or a function from '"
+                        + line + "', got " + geo.getClass().getSimpleName());
+            }
+            expected = type;
+        }
+        String actual = "conic".equals(expected) && geo instanceof GeoConic ? "conic" : schemaType(geo);
+        if (expression && !equationLine) {
             expected = expressionType(label, actual, line);
         }
         if (!expected.equals(actual)) {
             throw new IllegalStateException("expected a " + expected + " from '" + line
                     + "', got " + geo.getClass().getSimpleName());
         }
-        boolean free = expression || functionLine
+        boolean free = expression || equationLine || functionLine
                 ? !readsObjects(definition) && !callsCommand(definition)
                 : (expected.equals("point") || expected.equals("vector"))
                         && POINT.matcher(definition).matches()
@@ -193,7 +215,7 @@ final class Session {
             throw new IllegalStateException("unexpected dependency state for: " + line);
         }
         objects.put(label, geo);
-        if (actual.equals("conic")) {
+        if ("conic".equals(actual)) {
             conics.add(geo);
         }
         return geo;

@@ -594,10 +594,17 @@ pub fn script_labels(script: &[String]) -> BTreeSet<String> {
     script
         .iter()
         .filter_map(|l| {
-            l.split('#')
-                .next()?
-                .split_once('=')
-                .map(|(n, _)| line_label(n))
+            let line = l.split('#').next()?;
+            // the label stands before the `:` of an equation line
+            // (`a: 2x + 3y = 6`, whose `=` belongs to the equation) or the
+            // `=` of any other line
+            let sep = match (line.find(':'), line.find('=')) {
+                (Some(c), Some(e)) if c < e => c,
+                (_, Some(e)) => e,
+                (Some(c), None) => c,
+                (None, None) => return None,
+            };
+            Some(line_label(&line[..sep]))
         })
         .collect()
 }

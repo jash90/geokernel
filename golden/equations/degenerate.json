@@ -1,0 +1,543 @@
+{
+  "schema": 1,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "equations-degenerate-001",
+      "group": "equations",
+      "script": [
+        "c: x^2 - y^2 = 0"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "intersecting_lines",
+            "matrix": [1.0, -1.0, 0.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-1.0, 1.0, -0.0],
+              [1.0, 1.0, 0.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "equations-degenerate-002",
+      "group": "equations",
+      "script": [
+        "c: x^2 = 4"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parallel_lines",
+            "matrix": [1.0, 0.0, -4.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-1.0, 0.0, -2.0],
+              [-1.0, 0.0, 2.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "equations-degenerate-003",
+      "group": "equations",
+      "script": [
+        "c: x^2 - 2x y + y^2 = 0"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "double_line",
+            "matrix": [1.0, 1.0, 0.0, -1.0, 0.0, 0.0],
+            "lines": [
+              [0.7071067811865475, -0.7071067811865475, 0.0],
+              [0.7071067811865475, -0.7071067811865475, 0.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "equations-degenerate-004",
+      "group": "equations",
+      "script": [
+        "c: (x + 1)^2 + y^2 = 0"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "single_point",
+            "matrix": [1.0, 1.0, 1.0, 0.0, 1.0, 0.0],
+            "point": [-1.0, 0.0]
+          }
+        }
+      ]
+    },
+    {
+      "id": "equations-degenerate-005",
+      "group": "equations",
+      "script": [
+        "c: x^2 + y^2 = -4"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "empty",
+            "matrix": [1.0, 1.0, 4.0, 0.0, 0.0, 0.0]
+          }
+        }
+      ]
+    },
+    {
+      "id": "equations-degenerate-006",
+      "group": "equations",
+      "script": [
+        "c: x^2 + 2x y + y^2 = 1",
+        "d: (x + y)^2 - 1 = 0"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parallel_lines",
+            "matrix": [1.0, 1.0, -1.0, 1.0, 0.0, 0.0],
+            "lines": [
+              [0.7071067811865475, 0.7071067811865475, -0.7071067811865476],
+              [0.7071067811865475, 0.7071067811865475, 0.7071067811865476]
+            ]
+          },
+          "d": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parallel_lines",
+            "matrix": [1.0, 1.0, -1.0, 1.0, 0.0, 0.0],
+            "lines": [
+              [0.7071067811865475, 0.7071067811865475, -0.7071067811865476],
+              [0.7071067811865475, 0.7071067811865475, 0.7071067811865476]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "equations-degenerate-007",
+      "group": "equations",
+      "script": [
+        "r = 3",
+        "c: x^2 + y^2 = r^2",
+        "f: 0x + 0y = 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "r", "value": 0.0 },
+        { "action": "set_number", "label": "r", "value": 1.0 },
+        { "action": "set_number", "label": "r", "value": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "value": 3.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -9.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [3.0, 3.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "f": { "type": "line", "defined": false }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "single_point",
+            "matrix": [1.0, 1.0, -0.0, 0.0, 0.0, 0.0],
+            "point": [0.0, 0.0]
+          },
+          "f": { "type": "line", "defined": false }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "f": { "type": "line", "defined": false }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "single_point",
+            "matrix": [1.0, 1.0, -0.0, 0.0, 0.0, 0.0],
+            "point": [0.0, 0.0]
+          },
+          "f": { "type": "line", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "equations-degenerate-008",
+      "group": "equations",
+      "script": [
+        "m = 1",
+        "c: x^2 - m y^2 = 0"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "m", "value": 4.0 },
+        { "action": "set_number", "label": "m", "value": 0.0 },
+        { "action": "set_number", "label": "m", "value": -1.0 }
+      ],
+      "snapshots": [
+        {
+          "m": { "type": "number", "defined": true, "value": 1.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "intersecting_lines",
+            "matrix": [1.0, -1.0, 0.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-1.0, 1.0, -0.0],
+              [1.0, 1.0, 0.0]
+            ]
+          }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 4.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "intersecting_lines",
+            "matrix": [1.0, -4.0, 0.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-0.5, 1.0, -0.0],
+              [0.5, 1.0, 0.0]
+            ]
+          }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 0.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "double_line",
+            "matrix": [1.0, -0.0, 0.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-1.0, 0.0, -0.0],
+              [-1.0, 0.0, -0.0]
+            ]
+          }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": -1.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "single_point",
+            "matrix": [1.0, 1.0, 0.0, 0.0, 0.0, 0.0],
+            "point": [0.0, 0.0]
+          }
+        }
+      ]
+    },
+    {
+      "id": "equations-degenerate-009",
+      "group": "equations",
+      "script": [
+        "s = 1",
+        "c: x^2 + s y^2 = 0"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "s", "value": -1.0 },
+        { "action": "set_number", "label": "s", "value": 0.0 },
+        { "action": "set_number", "label": "s", "value": -4.0 }
+      ],
+      "snapshots": [
+        {
+          "s": { "type": "number", "defined": true, "value": 1.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "single_point",
+            "matrix": [1.0, 1.0, 0.0, 0.0, 0.0, 0.0],
+            "point": [0.0, 0.0]
+          }
+        },
+        {
+          "s": { "type": "number", "defined": true, "value": -1.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "intersecting_lines",
+            "matrix": [1.0, -1.0, 0.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-1.0, 1.0, -0.0],
+              [1.0, 1.0, 0.0]
+            ]
+          }
+        },
+        {
+          "s": { "type": "number", "defined": true, "value": 0.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "double_line",
+            "matrix": [1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-1.0, 0.0, -0.0],
+              [-1.0, 0.0, -0.0]
+            ]
+          }
+        },
+        {
+          "s": { "type": "number", "defined": true, "value": -4.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "intersecting_lines",
+            "matrix": [1.0, -4.0, 0.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-0.5, 1.0, -0.0],
+              [0.5, 1.0, 0.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "equations-degenerate-010",
+      "group": "equations",
+      "script": [
+        "q = 0",
+        "c: y^2 = q^2"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "q", "value": 2.0 },
+        { "action": "set_number", "label": "q", "value": 0.0 },
+        { "action": "set_number", "label": "q", "value": -3.0 }
+      ],
+      "snapshots": [
+        {
+          "q": { "type": "number", "defined": true, "value": 0.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "double_line",
+            "matrix": [0.0, 1.0, -0.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-0.0, 1.0, 0.0],
+              [-0.0, 1.0, 0.0]
+            ]
+          }
+        },
+        {
+          "q": { "type": "number", "defined": true, "value": 2.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parallel_lines",
+            "matrix": [0.0, 1.0, -4.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-0.0, 1.0, -2.0],
+              [-0.0, 1.0, 2.0]
+            ]
+          }
+        },
+        {
+          "q": { "type": "number", "defined": true, "value": 0.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "double_line",
+            "matrix": [0.0, 1.0, -0.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-0.0, 1.0, 0.0],
+              [-0.0, 1.0, 0.0]
+            ]
+          }
+        },
+        {
+          "q": { "type": "number", "defined": true, "value": -3.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parallel_lines",
+            "matrix": [0.0, 1.0, -9.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-0.0, 1.0, -3.0],
+              [-0.0, 1.0, 3.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "equations-degenerate-011",
+      "group": "equations",
+      "script": [
+        "m = 1",
+        "q = 1",
+        "c: m x^2 + q y^2 = 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "q", "value": 0.0 },
+        { "action": "set_number", "label": "m", "value": 0.0 },
+        { "action": "set_number", "label": "q", "value": -1.0 },
+        { "action": "set_number", "label": "m", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "m": { "type": "number", "defined": true, "value": 1.0 },
+          "q": { "type": "number", "defined": true, "value": 1.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 1.0 },
+          "q": { "type": "number", "defined": true, "value": 0.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parallel_lines",
+            "matrix": [1.0, 0.0, -1.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-1.0, 0.0, -1.0],
+              [-1.0, 0.0, 1.0]
+            ]
+          }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 0.0 },
+          "q": { "type": "number", "defined": true, "value": 0.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "empty",
+            "matrix": [0.0, 0.0, -1.0, 0.0, 0.0, 0.0]
+          }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 0.0 },
+          "q": { "type": "number", "defined": true, "value": -1.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "empty",
+            "matrix": [0.0, -1.0, -1.0, 0.0, 0.0, 0.0]
+          }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "q": { "type": "number", "defined": true, "value": -1.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [2.0, -1.0, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [-0.0, -0.0],
+            "half_axes": [0.7071067811865476, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "equations-degenerate-012",
+      "group": "equations",
+      "script": [
+        "c: y = x^2 + y",
+        "d: x^2 + 2x y + y^2 = x^2"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "double_line",
+            "matrix": [-1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-1.0, 0.0, 0.0],
+              [-1.0, 0.0, 0.0]
+            ]
+          },
+          "d": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "intersecting_lines",
+            "matrix": [0.0, 1.0, 0.0, 1.0, 0.0, 0.0],
+            "lines": [
+              [1.7013016167040798, 0.85065080835204, 0.0],
+              [-1.1102230246251565E-16, -1.9021130325903073, -0.0]
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

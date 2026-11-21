@@ -33,7 +33,7 @@ use std::f64::consts::{E, PI};
 
 /// Brackets, bars and calls nested deeper than this are rejected, so that
 /// parsing never overflows the stack.
-const MAX_NESTING: u32 = 64;
+pub(crate) const MAX_NESTING: u32 = 64;
 /// Expression trees deeper than this are rejected (evaluation recurses).
 pub(crate) const MAX_DEPTH: u32 = 256;
 /// Upper bound on the nodes one evaluation visits, functions expanded.
@@ -56,6 +56,8 @@ pub(crate) struct Parsed {
     pub(crate) inputs: Vec<Id>,
     /// Whether the variable `x` occurs.
     pub(crate) uses_var: bool,
+    /// Whether the variable `y` of an equation occurs (see [`equation`]).
+    pub(crate) uses_y: bool,
     pub(crate) depth: u32,
     pub(crate) cost: u64,
     /// How many times one evaluation reads `x`.
@@ -63,12 +65,42 @@ pub(crate) struct Parsed {
 }
 
 pub(crate) fn parse(c: &Construction, src: &str) -> Result<Parsed, String> {
+    parse_in(c, src, false, false)
+}
+
+/// [`parse`] with the variables an equation may read: `x` and `y` are
+/// GeoGebra's function variables, not objects (`Equation.initEquation`
+/// replaces the `x`, `y` and `z` nodes).
+pub(crate) fn parse_equation(c: &Construction, src: &str) -> Result<Parsed, String> {
+    parse_in(c, src, true, false)
+}
+
+/// [`parse_equation`] for the left side of an equation: exactly as
+/// `Equation.initEquation` resolves a lone variable on the left as a whole,
+/// so `xy = 1` is no equation in `x·y` while `2xy = 1` is one.
+pub(crate) fn parse_equation_left(c: &Construction, src: &str) -> Result<Parsed, String> {
+    parse_in(c, src, true, true)
+}
+
+fn parse_in(c: &Construction, src: &str, equation: bool, left: bool) -> Result<Parsed, String> {
     let preprocessed = split_bars(src);
     let src: &str = &preprocessed;
+    let toks = tokens(src)?;
+    // a name that is no object and no command reads as a product of
+    // single-letter variables (`VariableReplacerAlgorithm`), never when the
+    // name alone is the whole left side
+    let whole_name = left
+        && matches!(
+            &toks[..],
+            [Token {
+                tok: Tok::Name { call: false, .. },
+                ..
+            }]
+        );
     let mut p = Parser {
         c,
         src,
-        toks: tokens(src)?,
+        toks,
         pos: 0,
         nodes: Vec::new(),
         lits: Vec::new(),
@@ -78,6 +110,9 @@ pub(crate) fn parse(c: &Construction, src: &str) -> Result<Parsed, String> {
         parents: Vec::new(),
         inputs: Vec::new(),
         uses_var: false,
+        uses_y: false,
+        equation,
+        split_names: equation && !whole_name,
         locals: Vec::new(),
     };
     if p.toks.is_empty() {
@@ -106,6 +141,7 @@ pub(crate) fn parse(c: &Construction, src: &str) -> Result<Parsed, String> {
         parents: p.parents,
         inputs: p.inputs,
         uses_var: p.uses_var,
+        uses_y: p.uses_y,
     })
 }
 
@@ -126,6 +162,13 @@ pub(super) struct Parser<'a> {
     parents: Vec<Id>,
     inputs: Vec<Id>,
     uses_var: bool,
+    uses_y: bool,
+    /// Whether `y` reads as the second variable of an equation, not as the
+    /// coordinate function (see [`parse_equation`]).
+    equation: bool,
+    /// Whether a name that resolves as nothing may read as a product of
+    /// single-letter variables (see [`parse_in`]).
+    split_names: bool,
     /// The variables of the `Sequence`s being parsed, outermost first.
     pub(super) locals: Vec<String>,
 }
@@ -678,6 +721,10 @@ impl Parser<'_> {
                 self.uses_var = true;
                 Some(Node::Var)
             }
+            "y" if self.equation && !call && free("y") => {
+                self.uses_y = true;
+                Some(Node::VarY)
+            }
             _ => None,
         };
         if let Some(node) = constant {
@@ -689,9 +736,32 @@ impl Parser<'_> {
             _ => None,
         };
         if let (Some(op), true) = (coordinate, call) {
-            // `x(A)`: never an object, `x` and `y` are not labels
-            return match self.arguments()?[..] {
-                [a] => Ok(self.push(Node::Un(op, a))),
+            let args = self.arguments()?;
+            return match args[..] {
+                [a] => {
+                    // `replaceXYZnodes` of an equation: `x(y)` applied to
+                    // something that is not a point or a vector is the
+                    // product `x·y`, so `y = x(x+1)` is the parabola
+                    // y = x² + x and `x(y) = 1` the hyperbola xy = 1
+                    let multiplies =
+                        self.equation && !self.is_point_or_vector(a) && (op == Un::X || free("y"));
+                    if multiplies {
+                        let var = match op {
+                            Un::Y => {
+                                self.uses_y = true;
+                                self.push(Node::VarY)
+                            }
+                            _ => {
+                                self.uses_var = true;
+                                self.push(Node::Var)
+                            }
+                        };
+                        Ok(self.push(Node::Bin(Bin::Mul, var, a)))
+                    } else {
+                        // `x(A)`: never an object, `x` and `y` are not labels
+                        Ok(self.push(Node::Un(op, a)))
+                    }
+                }
                 _ => Err(format!("`{text}` takes one argument")),
             };
         }
@@ -748,6 +818,18 @@ impl Parser<'_> {
         if call {
             return self.command();
         }
+        if self.split_names && text.len() > 1 && text.bytes().all(|b| b.is_ascii_alphabetic()) {
+            // `VariableReplacerAlgorithm`: inside an equation a name of
+            // letters that resolves as nothing is a product of one-letter
+            // variables (`2xy` is `2*x*y`), while `xy` alone on the left
+            // stays one unknown name
+            let mut product = self.name(&text[..1], false)?;
+            for k in 1..text.len() {
+                let right = self.name(&text[k..k + 1], false)?;
+                product = self.implicit_product(product, right);
+            }
+            return Ok(product);
+        }
         Err(format!("unknown object `{text}`"))
     }
 
@@ -789,6 +871,12 @@ impl Parser<'_> {
     /// Whether the subtree at `i` is a list.
     fn is_list(&self, i: u32) -> bool {
         matches!(check(self.c, &self.nodes, i), Ok((tys, ..)) if matches!(tys[i as usize], Ty::List(_)))
+    }
+
+    /// Whether the subtree at `i` is a point or a vector, the argument
+    /// `x(...)` and `y(...)` read as a coordinate of.
+    fn is_point_or_vector(&self, i: u32) -> bool {
+        matches!(check(self.c, &self.nodes, i), Ok((tys, ..)) if matches!(tys[i as usize], Ty::Vec))
     }
 
     /// `( expression, expression, ... )` after a function name.
