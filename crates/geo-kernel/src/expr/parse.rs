@@ -25,7 +25,7 @@ use super::lex::{split_bars, tokens, Tok, Token};
 use super::math::{self, PI_180};
 use super::names::{binary_builtin, builtin_name, unary_builtin};
 use super::types::check;
-use super::{children, Bin, IfMode, ListOp, Lit, Node, Ty, Un, NONE};
+use super::{Bin, ListOp, Lit, Node, Ty, Un, NONE};
 use crate::algo::{intersect, vector};
 use crate::kernel::{Construction, Id, Kind};
 use std::f64::consts::{E, PI};
@@ -108,12 +108,12 @@ pub(crate) fn parse(c: &Construction, src: &str) -> Result<Parsed, String> {
     })
 }
 
-struct Parser<'a> {
+pub(super) struct Parser<'a> {
     c: &'a Construction,
     src: &'a str,
-    toks: Vec<Token>,
-    pos: usize,
-    nodes: Vec<Node>,
+    pub(super) toks: Vec<Token>,
+    pub(super) pos: usize,
+    pub(super) nodes: Vec<Node>,
     lits: Vec<Lit>,
     /// Literals written as such, which `unaryMinus` negates in place
     /// (`-0.1`); a bracketed one (`-(0.1)`) or a letter constant (`-π`) is
@@ -126,7 +126,7 @@ struct Parser<'a> {
     inputs: Vec<Id>,
     uses_var: bool,
     /// The variables of the `Sequence`s being parsed, outermost first.
-    locals: Vec<String>,
+    pub(super) locals: Vec<String>,
 }
 
 impl Parser<'_> {
@@ -134,7 +134,7 @@ impl Parser<'_> {
         self.toks.get(self.pos).map(|t| &t.tok)
     }
 
-    fn eat(&mut self, tok: &Tok) -> bool {
+    pub(super) fn eat(&mut self, tok: &Tok) -> bool {
         if self.peek() == Some(tok) {
             self.pos += 1;
             true
@@ -143,7 +143,7 @@ impl Parser<'_> {
         }
     }
 
-    fn expect(&mut self, tok: &Tok, what: &str) -> Result<(), String> {
+    pub(super) fn expect(&mut self, tok: &Tok, what: &str) -> Result<(), String> {
         if self.eat(tok) {
             Ok(())
         } else {
@@ -151,7 +151,7 @@ impl Parser<'_> {
         }
     }
 
-    fn push(&mut self, node: Node) -> u32 {
+    pub(super) fn push(&mut self, node: Node) -> u32 {
         self.nodes.push(node);
         self.lits.push(Lit::default());
         self.bare.push(false);
@@ -169,7 +169,7 @@ impl Parser<'_> {
         i
     }
 
-    fn node(&self, i: u32) -> Node {
+    pub(super) fn node(&self, i: u32) -> Node {
         self.nodes[i as usize]
     }
 
@@ -183,7 +183,7 @@ impl Parser<'_> {
     }
 
     /// `expressionnode`: implications of disjunctions, left associative.
-    fn expression(&mut self) -> Result<u32, String> {
+    pub(super) fn expression(&mut self) -> Result<u32, String> {
         let mut left = self.disjunction()?;
         while self.eat(&Tok::Implies) {
             let right = self.disjunction()?;
@@ -752,51 +752,6 @@ impl Parser<'_> {
         Err(format!("unknown object `{text}`"))
     }
 
-    /// `If(c, a)`, `If(c, a, b)` and `If(c1, a1, c2, a2, ..., [else])`
-    /// (`CmdIf`). With `x` in a condition it is the operation of a
-    /// function (`IF`, `IF_ELSE`, `IF_LIST`); otherwise the command
-    /// `AlgoIf`.
-    fn if_command(&mut self) -> Result<u32, String> {
-        let args = self.arguments()?;
-        if args.len() < 2 {
-            return Err("`If` needs a condition and a value".into());
-        }
-        let pairs = args.len() / 2;
-        let conditions_read_x = (0..pairs).any(|k| self.reads(args[2 * k], true));
-        let mode = match (conditions_read_x, args.len()) {
-            (false, _) => IfMode::Algo,
-            (true, 3) if !self.reads(args[0], false) => IfMode::Else,
-            (true, _) => IfMode::List,
-        };
-        let mut rest = if args.len() % 2 == 1 {
-            args[args.len() - 1]
-        } else {
-            NONE
-        };
-        for k in (0..pairs).rev() {
-            rest = self.push(Node::If(mode, args[2 * k], args[2 * k + 1], rest));
-        }
-        Ok(rest)
-    }
-
-    /// Whether the subtree at `i` reads `x` (`variable`) or an object.
-    fn reads(&self, i: u32, variable: bool) -> bool {
-        let mut stack = vec![i];
-        while let Some(j) = stack.pop() {
-            let node = self.node(j);
-            let found = if variable {
-                matches!(node, Node::Var)
-            } else {
-                matches!(node, Node::Obj(_) | Node::Apply(..) | Node::Cmd(..))
-            };
-            if found {
-                return true;
-            }
-            stack.extend(children(&node));
-        }
-        false
-    }
-
     /// The list commands: `Sequence` and `Element`, and `Length` and `Sum`
     /// of a list (of anything else they are the commands of the script
     /// parser). `None` when `text` is none of these.
@@ -867,73 +822,8 @@ impl Parser<'_> {
         matches!(check(self.c, &self.nodes, i), Ok((tys, ..)) if matches!(tys[i as usize], Ty::List(_)))
     }
 
-    /// `Sequence(n)`, `Sequence(a, b)`, `Sequence(a, b, step)` and
-    /// `Sequence(expression, k, from, to[, step])` (`CmdSequence`): with
-    /// four or five arguments the second is the variable, which the
-    /// expression reads and which hides an object of the same name.
-    fn sequence(&mut self) -> Result<u32, String> {
-        let variable = self.sequence_variable()?;
-        let Some(variable) = variable else {
-            return match self.arguments()?[..] {
-                [n] => Ok(self.push(Node::Range(NONE, n, NONE))),
-                [a, b] => Ok(self.push(Node::Range(a, b, NONE))),
-                [a, b, s] => Ok(self.push(Node::Range(a, b, s))),
-                _ => Err("`Sequence` takes one to five arguments".into()),
-            };
-        };
-        self.expect(&Tok::LParen, "(")?;
-        let depth = self.locals.len() as u32;
-        self.locals.push(variable);
-        let expression = self.expression();
-        self.locals.pop();
-        let expression = expression?;
-        self.expect(&Tok::Comma, ",")?;
-        self.pos += 1;
-        self.expect(&Tok::Comma, ",")?;
-        let from = self.expression()?;
-        self.expect(&Tok::Comma, ",")?;
-        let to = self.expression()?;
-        let step = if self.eat(&Tok::Comma) {
-            self.expression()?
-        } else {
-            NONE
-        };
-        self.expect(&Tok::RParen, ")")?;
-        Ok(self.push(Node::Seq(expression, from, to, step, depth)))
-    }
-
-    /// The variable of a `Sequence` with four or five arguments, found
-    /// before its expression is parsed; `None` with fewer arguments.
-    fn sequence_variable(&self) -> Result<Option<String>, String> {
-        let mut depth = 0usize;
-        let mut commas = Vec::new();
-        for (j, t) in self.toks.iter().enumerate().skip(self.pos) {
-            match t.tok {
-                Tok::LParen | Tok::LBrace => depth += 1,
-                Tok::RParen | Tok::RBrace => {
-                    depth = depth.saturating_sub(1);
-                    if depth == 0 {
-                        break;
-                    }
-                }
-                Tok::Comma if depth == 1 => commas.push(j),
-                _ => {}
-            }
-        }
-        if commas.len() < 3 {
-            return Ok(None);
-        }
-        if commas.len() > 4 {
-            return Err("`Sequence` takes one to five arguments".into());
-        }
-        match &self.toks[commas[0] + 1].tok {
-            Tok::Name { text, call: false } if commas[1] == commas[0] + 2 => Ok(Some(text.clone())),
-            _ => Err("the second argument of `Sequence` must be a variable".into()),
-        }
-    }
-
     /// `( expression, expression, ... )` after a function name.
-    fn arguments(&mut self) -> Result<Vec<u32>, String> {
+    pub(super) fn arguments(&mut self) -> Result<Vec<u32>, String> {
         self.expect(&Tok::LParen, "(")?;
         let mut args = vec![self.expression()?];
         while self.eat(&Tok::Comma) {

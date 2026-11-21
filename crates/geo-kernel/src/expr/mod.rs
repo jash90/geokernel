@@ -56,6 +56,7 @@
 //! [`Construction::expression`] and add it with
 //! [`Construction::add_expression`]; the tree is checked again there.
 
+mod commands;
 mod decimal;
 mod eval;
 #[doc(hidden)]
@@ -68,7 +69,6 @@ pub use list::{Element, List};
 pub(crate) mod math;
 mod names;
 mod parse;
-mod twonum;
 mod types;
 mod wide;
 
@@ -273,7 +273,7 @@ pub(crate) enum Bin {
     /// `log(b, x)`: the base comes first.
     LogB,
     Round2,
-    /// The commands of two numbers (see [`twonum`]).
+    /// The commands of two numbers (see [`commands`]).
     Mod,
     /// `Div`, the integer quotient.
     IntDiv,

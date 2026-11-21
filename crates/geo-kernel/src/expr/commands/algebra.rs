@@ -7,6 +7,7 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoLCM.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoMax.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoMin.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoListMinMax.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
@@ -14,7 +15,8 @@
 //! `GCD`, `LCM`, `Max` and `Min` (`AlgoTwoNumFunction`). An undefined
 //! (`NaN`) argument gives an undefined result.
 
-use super::math::{check_integer, is_equal, is_integer, is_zero, java_round};
+use crate::expr::eval::{number_of, Ctx};
+use crate::expr::math::{check_integer, is_equal, is_integer, is_zero, java_round};
 
 /// `MyDouble.LARGEST_INTEGER`, 2^53.
 const LARGEST_INTEGER: f64 = 9_007_199_254_740_992.0;
@@ -141,6 +143,44 @@ pub(crate) fn min(a: f64, b: f64) -> f64 {
         }
     } else {
         a.min(b)
+    }
+}
+
+impl<const M: bool> Ctx<'_, M> {
+    /// `AlgoListMinMax`: the least or greatest element; an empty list, or
+    /// one with an element that is no number, has none.
+    pub(crate) fn min_max(&self, min: bool, l: u32) -> f64 {
+        let Some(lists) = self.lists else {
+            return f64::NAN;
+        };
+        let Some((start, len)) = self.list(l) else {
+            return f64::NAN;
+        };
+        if len == 0 {
+            return f64::NAN;
+        }
+        let mut best = if min {
+            f64::INFINITY
+        } else {
+            f64::NEG_INFINITY
+        };
+        if !lists.charge(u64::from(len)) {
+            return f64::NAN;
+        }
+        for k in 0..len {
+            let Some(v) = number_of(lists.read(self.c, start + k)) else {
+                return f64::NAN;
+            };
+            // `Math.min` and `Math.max`: NaN wins
+            best = if v.is_nan() || best.is_nan() {
+                f64::NAN
+            } else if min {
+                best.min(v)
+            } else {
+                best.max(v)
+            };
+        }
+        best
     }
 }
 
