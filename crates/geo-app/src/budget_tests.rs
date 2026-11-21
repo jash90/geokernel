@@ -28,7 +28,7 @@ const SCREEN: (f32, f32) = (1400.0, 900.0);
 const DT: f64 = 1.0 / 60.0;
 
 /// The benchmark's grid cell: three free points, a free segment, a line, a
-/// circle, a triangle with its three sides, a midpoint and an intersection.
+/// circle, a triangle with its three sides, a midpoint and one indexed intersection.
 fn grid(cells: usize) -> (String, String) {
     let cols = (cells as f64).sqrt().ceil() as usize;
     let half = (cols as f64 - 1.0) * 5.0 / 2.0;
@@ -47,7 +47,7 @@ fn grid(cells: usize) -> (String, String) {
             format!("{} = Circle({pp}, {q})", p("k")),
             format!("{} = Polygon({pp}, {q}, {r})", p("t")),
             format!("{} = Midpoint({q}, {r})", p("M")),
-            format!("{} = Intersect({}, {})", p("I"), p("l"), p("k")),
+            format!("{} = Intersect({}, {}, 1)", p("I"), p("l"), p("k")),
         ] {
             s += &line;
             s.push('\n');

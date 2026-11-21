@@ -1,0 +1,636 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "intersections-conicline-001",
+      "group": "intersections",
+      "script": [
+        "F = (-3, 0)",
+        "G = (3, 0)",
+        "radius = 5",
+        "k = Ellipse(F, G, radius)",
+        "A = (-6, 0)",
+        "B = (6, 0)",
+        "g = Line(A, B)",
+        "R = Intersect(k, g)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": -6.0, "y": 8.0 },
+        { "action": "move", "label": "B", "x": 6.0, "y": 8.0 },
+        { "action": "move", "label": "A", "x": -6.0, "y": 4.0 },
+        { "action": "move", "label": "B", "x": 6.0, "y": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "F": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "radius": { "type": "number", "defined": true, "value": 5.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [256.0, 400.0, -6400.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [5.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 12.0, "c": -0.0 },
+          "R_{1}": { "type": "point", "defined": true, "x": -5.0, "y": 0.0 },
+          "R_{2}": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "radius": { "type": "number", "defined": true, "value": 5.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [256.0, 400.0, -6400.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [5.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 8.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 8.0, "b": 12.0, "c": -48.0 },
+          "R_{1}": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "R_{2}": { "type": "point", "defined": true, "x": 4.918032786885246, "y": 0.721311475409836 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "radius": { "type": "number", "defined": true, "value": 5.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [256.0, 400.0, -6400.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [5.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 8.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 8.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 12.0, "c": -96.0 },
+          "R_{1}": { "type": "point", "defined": false },
+          "R_{2}": { "type": "point", "defined": false }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "radius": { "type": "number", "defined": true, "value": 5.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [256.0, 400.0, -6400.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [5.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 8.0 },
+          "g": { "type": "line", "defined": true, "a": -4.0, "b": 12.0, "c": -72.0 },
+          "R_{1}": { "type": "point", "defined": false },
+          "R_{2}": { "type": "point", "defined": false }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "radius": { "type": "number", "defined": true, "value": 5.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [256.0, 400.0, -6400.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [5.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 4.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 12.0, "c": -48.0 },
+          "R_{1}": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "R_{2}": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 }
+        }
+      ]
+    },
+    {
+      "id": "intersections-conicline-002",
+      "group": "intersections",
+      "script": [
+        "F = (-3, 0)",
+        "G = (3, 0)",
+        "radius = 5",
+        "k = Ellipse(F, G, radius)",
+        "A = (-6, 0)",
+        "B = (6, 0)",
+        "g = Line(A, B)",
+        "n = 1",
+        "R = Intersect(k, g, n)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 2.0 },
+        { "action": "set_number", "label": "n", "value": 3.0 },
+        { "action": "set_number", "label": "n", "value": -2.0 },
+        { "action": "move", "label": "A", "x": -6.0, "y": 8.0 },
+        { "action": "move", "label": "B", "x": 6.0, "y": 8.0 }
+      ],
+      "snapshots": [
+        {
+          "F": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "radius": { "type": "number", "defined": true, "value": 5.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [256.0, 400.0, -6400.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [5.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 12.0, "c": -0.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "R": { "type": "point", "defined": true, "x": -5.0, "y": 0.0 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "radius": { "type": "number", "defined": true, "value": 5.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [256.0, 400.0, -6400.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [5.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 12.0, "c": -0.0 },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "R": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "radius": { "type": "number", "defined": true, "value": 5.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [256.0, 400.0, -6400.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [5.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 12.0, "c": -0.0 },
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "R": { "type": "point", "defined": false }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "radius": { "type": "number", "defined": true, "value": 5.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [256.0, 400.0, -6400.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [5.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 12.0, "c": -0.0 },
+          "n": { "type": "number", "defined": true, "value": -2.0 },
+          "R": { "type": "point", "defined": true, "x": -5.0, "y": 0.0 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "radius": { "type": "number", "defined": true, "value": 5.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [256.0, 400.0, -6400.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [5.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 8.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 8.0, "b": 12.0, "c": -48.0 },
+          "n": { "type": "number", "defined": true, "value": -2.0 },
+          "R": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "radius": { "type": "number", "defined": true, "value": 5.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [256.0, 400.0, -6400.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [5.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 8.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 8.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 12.0, "c": -96.0 },
+          "n": { "type": "number", "defined": true, "value": -2.0 },
+          "R": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "intersections-conicline-003",
+      "group": "intersections",
+      "script": [
+        "F = (-3, 0)",
+        "G = (3, 0)",
+        "radius = 5",
+        "k = Ellipse(F, G, radius)",
+        "A = (-6, 0)",
+        "B = (6, 0)",
+        "g = Line(A, B)",
+        "R = Intersect(k, g)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 6.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 6.0, "y": -2.0 }
+      ],
+      "snapshots": [
+        {
+          "F": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "radius": { "type": "number", "defined": true, "value": 5.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [256.0, 400.0, -6400.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [5.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 12.0, "c": -0.0 },
+          "R_{1}": { "type": "point", "defined": true, "x": -5.0, "y": 0.0 },
+          "R_{2}": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "radius": { "type": "number", "defined": true, "value": 5.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [256.0, 400.0, -6400.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [5.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 2.0 },
+          "g": { "type": "line", "defined": true, "a": -2.0, "b": 12.0, "c": -12.0 },
+          "R_{1}": { "type": "point", "defined": true, "x": -4.995619696773929, "y": 0.16739671720434524 },
+          "R_{2}": { "type": "point", "defined": true, "x": 4.496451643529337, "y": 1.7494086072548893 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "radius": { "type": "number", "defined": true, "value": 5.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [256.0, 400.0, -6400.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [5.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": -2.0 },
+          "g": { "type": "line", "defined": true, "a": 2.0, "b": 12.0, "c": 12.0 },
+          "R_{1}": { "type": "point", "defined": true, "x": -4.995619696773929, "y": -0.16739671720434524 },
+          "R_{2}": { "type": "point", "defined": true, "x": 4.496451643529337, "y": -1.7494086072548893 }
+        }
+      ]
+    },
+    {
+      "id": "intersections-conicline-004",
+      "group": "intersections",
+      "script": [
+        "F = (-3, 0)",
+        "G = (3, 0)",
+        "radius = 5",
+        "k = Ellipse(F, G, radius)",
+        "A = (-6, 4)",
+        "B = (6, 4)",
+        "g = Line(A, B)",
+        "R = Intersect(k, g)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 6.0, "y": 8.0 },
+        { "action": "move", "label": "A", "x": -6.0, "y": 8.0 }
+      ],
+      "snapshots": [
+        {
+          "F": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "radius": { "type": "number", "defined": true, "value": 5.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [256.0, 400.0, -6400.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [5.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 4.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 12.0, "c": -48.0 },
+          "R": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "radius": { "type": "number", "defined": true, "value": 5.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [256.0, 400.0, -6400.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [5.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 8.0 },
+          "g": { "type": "line", "defined": true, "a": -4.0, "b": 12.0, "c": -72.0 },
+          "R": { "type": "point", "defined": false }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "radius": { "type": "number", "defined": true, "value": 5.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [256.0, 400.0, -6400.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [5.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 8.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 8.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 12.0, "c": -96.0 },
+          "R": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "intersections-conicline-005",
+      "group": "intersections",
+      "script": [
+        "F = (-3, 0)",
+        "G = (3, 0)",
+        "radius = 5",
+        "k = Ellipse(F, G, radius)",
+        "A = (-6, 0)",
+        "B = (6, 0)",
+        "g = Line(A, B)",
+        "R = Intersect(k, g, 9)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": -6.0, "y": 1.0 },
+        { "action": "move", "label": "B", "x": 6.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "F": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "radius": { "type": "number", "defined": true, "value": 5.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [256.0, 400.0, -6400.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [5.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 12.0, "c": -0.0 },
+          "R": { "type": "point", "defined": false }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "radius": { "type": "number", "defined": true, "value": 5.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [256.0, 400.0, -6400.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [5.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 12.0, "c": -6.0 },
+          "R": { "type": "point", "defined": false }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "radius": { "type": "number", "defined": true, "value": 5.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [256.0, 400.0, -6400.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [5.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 1.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 12.0, "c": -12.0 },
+          "R": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "intersections-conicline-006",
+      "group": "intersections",
+      "script": [
+        "F = (-3, 0)",
+        "G = (3, 0)",
+        "radius = 5",
+        "k = Ellipse(F, G, radius)",
+        "A = (-6, 0)",
+        "B = (6, 0)",
+        "g = Line(A, B)",
+        "R = Intersect(g, k, 9)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": -6.0, "y": 1.0 },
+        { "action": "move", "label": "B", "x": 6.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "F": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "radius": { "type": "number", "defined": true, "value": 5.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [256.0, 400.0, -6400.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [5.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 12.0, "c": -0.0 },
+          "R": { "type": "point", "defined": false }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "radius": { "type": "number", "defined": true, "value": 5.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [256.0, 400.0, -6400.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [5.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 12.0, "c": -6.0 },
+          "R": { "type": "point", "defined": false }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "radius": { "type": "number", "defined": true, "value": 5.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [256.0, 400.0, -6400.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [5.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 1.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 12.0, "c": -12.0 },
+          "R": { "type": "point", "defined": false }
+        }
+      ]
+    }
+  ]
+}
