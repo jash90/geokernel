@@ -145,6 +145,15 @@ impl Workbench {
 
     /// `log` replayed (see `Log::rebuild`).
     fn replay(&self, log: &Log) -> Result<(Construction, Log), String> {
+        self.replay_with(log, &[])
+    }
+
+    /// [`Self::replay`], carrying frozen line starts (see `Log::rebuild_with`).
+    fn replay_with(
+        &self,
+        log: &Log,
+        carried: &[(String, f64, f64)],
+    ) -> Result<(Construction, Log), String> {
         #[cfg(test)]
         if self.break_replay.is_some() || self.unshared {
             let log = match self.break_replay {
@@ -152,12 +161,12 @@ impl Workbench {
                 None => log.clone(),
             };
             return if self.unshared {
-                log.rebuild_reference()
+                log.rebuild_reference_with(carried)
             } else {
-                log.rebuild()
+                log.rebuild_with(carried)
             };
         }
-        log.rebuild()
+        log.rebuild_with(carried)
     }
 
     /// See the field of the same name.
@@ -446,12 +455,19 @@ impl Workbench {
     /// Replays `log` into a new construction, keeping the selection by label.
     /// If the replay fails the previous state stays and `notice` says why.
     fn restore(&mut self, log: Log) -> Result<(), String> {
+        self.restore_with(log, &[])
+    }
+
+    /// [`Self::restore`], carrying the frozen line starts of the current
+    /// construction over the replay (a deletion keeps them, as GeoGebra
+    /// keeps the start a locus installed on the line).
+    fn restore_with(&mut self, log: Log, carried: &[(String, f64, f64)]) -> Result<(), String> {
         #[cfg(test)]
         if let Some(e) = self.fail_rebuilds.clone() {
             self.notice = Some(format!("Nie można odtworzyć konstrukcji: {e}"));
             return Err(e);
         }
-        let (c, kept) = match self.replay(&log) {
+        let (c, kept) = match self.replay_with(&log, carried) {
             Ok(r) => r,
             Err(e) => {
                 self.notice = Some(format!("Nie można odtworzyć konstrukcji: {e}"));
@@ -506,8 +522,11 @@ impl Workbench {
         }
         // A deletion inside a gesture (the eraser's stroke) keeps it: the
         // whole stroke is one undo step.
+        // The start points the loci froze on lines stay with their lines
+        // when the locus goes (GeoGebra installed them on the line itself).
+        let carried = self.construction.frozen_line_starts();
         let gesture = self.gesture.take();
-        let restored = self.restore(next);
+        let restored = self.restore_with(next, &carried);
         self.gesture = gesture;
         if restored.is_err() {
             return false;

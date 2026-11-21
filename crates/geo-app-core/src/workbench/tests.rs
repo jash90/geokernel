@@ -645,3 +645,35 @@ fn every_deletion_of_one_gesture_is_one_undo_step() {
     assert!(w.undo());
     assert_eq!(labels(&w), ["A", "B", "C"]);
 }
+
+/// A locus freezes the start point of a line without one (the foot from the
+/// origin, `PathMoverLine.init` installing `setStandardStartPoint`): the
+/// parameter of a point on the line is measured from it. GeoGebra keeps that
+/// start when the locus is deleted (it was installed on the line itself), so
+/// the point stays where it was; the rebuild of a deletion keeps it too.
+#[test]
+fn deleting_a_locus_keeps_the_frozen_start_of_its_line() {
+    let src = "M = (0, 0)\nR = (2, 0)\nk = Circle(M, R)\nQ = (5, 1)\nh = Polar(Q, k)\n\
+               P = Point(h)\nt = PathParameter(P)\nB = (1, 3)\nC = Midpoint(P, B)\nL = Locus(C, P)\n";
+    let mut w = Workbench::from_script(src).unwrap();
+    let p = w.construction().id("P").unwrap();
+    let t = w.construction().id("t").unwrap();
+    let q = w.construction().id("Q").unwrap();
+    // the line moves after the locus froze its start: the parameter of P is
+    // measured from the start it had then, which stays with the line
+    assert!(w.move_point(q, 3.0, 2.0));
+    assert!(w.move_point(p, 1.0, 1.0));
+    let (at, param) = (w.construction().value(p), w.construction().value(t));
+    let l = w.construction().id("L").unwrap();
+    assert!(w.delete(l));
+    assert_eq!(
+        w.construction().value(p),
+        at,
+        "the point stays where it was"
+    );
+    assert_eq!(
+        w.construction().value(t),
+        param,
+        "its parameter keeps the frozen start"
+    );
+}

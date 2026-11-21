@@ -54,12 +54,15 @@ use crate::tol::STANDARD_PRECISION;
 /// `PathMover.OPEN_BORDER_OFFSET`.
 const OPEN_BORDER_OFFSET: f64 = 1e-5;
 
-/// The kinds of objects a point can be put on.
+/// The kinds of objects a point can be put on. A conic is a path in
+/// GeoGebra whatever its type (`GeoConicND` implements `Path`; the behaviour
+/// per type is [`super::conic_path`]).
 pub(crate) const PATH: &[Kind] = &[
     Kind::Line,
     Kind::Segment,
     Kind::Ray,
     Kind::Circle,
+    Kind::Conic,
     Kind::Polygon,
     Kind::PolyLine,
     Kind::Arc,
@@ -581,6 +584,9 @@ impl Geom<'_> {
         match self {
             Geom::Undefined => false,
             Geom::Arc(a) => a.defined,
+            // a conic that is undefined still carries its record, which a
+            // move of a point on it projects onto (`Geom::Conic` below)
+            Geom::Conic(d) => d.defined,
             _ => true,
         }
     }
@@ -814,12 +820,58 @@ pub(crate) fn freeze_line_start(c: &mut Construction, path: Id) {
     }
 }
 
+impl Construction {
+    /// The start points a locus froze on lines without one, as
+    /// `(label, x, y)` in the order they were frozen: the state of the lines
+    /// that a rebuild can carry over (GeoGebra keeps the installed start
+    /// when the locus is deleted).
+    pub fn frozen_line_starts(&self) -> Vec<(String, f64, f64)> {
+        let mut starts: Vec<(usize, String, f64, f64)> = self
+            .frozen_line_starts
+            .iter()
+            .filter_map(|(&id, &(x, y, order))| Some((order, self.label(id).to_owned(), x, y)))
+            .collect();
+        starts.sort_by_key(|&(order, ..)| order);
+        starts
+            .into_iter()
+            .map(|(_, label, x, y)| (label, x, y))
+            .collect()
+    }
+
+    /// Freezes `(x, y)` as the start point of the line `label`, when it is a
+    /// line that no algorithm gave a start point: [`Self::frozen_line_starts`]
+    /// read it back bit for bit. Returns whether it was installed.
+    pub fn set_frozen_line_start(&mut self, label: &str, x: f64, y: f64) -> bool {
+        let Some(id) = self.id(label) else {
+            return false;
+        };
+        if self.kind(id) != Kind::Line || defined_line_start(self, id).is_some() {
+            return false;
+        }
+        let order = self.frozen_line_starts.len();
+        self.frozen_line_starts.insert(id, (x, y, order));
+        true
+    }
+}
+
 /// The path `path` as the path code reads it now.
 pub(crate) fn geom(c: &Construction, path: Id) -> Geom<'_> {
     // an arc is read as it is even when undefined: `setCoords` still asks
     // it to place the point (see `Geom::is_defined`)
     if let Some(a) = c.arc(path) {
         return Geom::Arc(a);
+    }
+    // a general conic keeps the parts of its last defined state when its
+    // classification fails (`classifyConic` returns before it rewrites
+    // them), so a point moved on an undefined one is still projected onto
+    // that record (`GeoPoint.setCoords` asks `pointChanged` whatever the
+    // path's state); only the update of a point on it sees it undefined
+    // (`AlgoPointOnPath` checks `isDefined`, [`Geom::is_defined`])
+    if c.kind(path) == Kind::Conic {
+        if let Some(d) = c.conic(path) {
+            return Geom::Conic(d);
+        }
+        return Geom::Undefined;
     }
     let value = c.value(path);
     if !value.is_defined() {
@@ -839,7 +891,7 @@ pub(crate) fn geom(c: &Construction, path: Id) -> Geom<'_> {
             start: (x, y),
         },
         (_, Value::Segment { x1, y1, x2, y2 }) => Geom::Segment(Seg::new((x1, y1), (x2, y2))),
-        (Kind::Circle | Kind::Conic, _) => match c.conic(path) {
+        (Kind::Circle, _) => match c.conic(path) {
             Some(d) if d.defined => Geom::Conic(d),
             _ => Geom::Undefined,
         },
@@ -1109,8 +1161,8 @@ impl Group for PathDef {
                 Ok(id)
             } else {
                 Err(format!(
-                    "`Point` needs a line, segment, ray, circle, polygon, polyline, arc \
-                     or sector, and `{label}` is a {}",
+                    "`Point` needs a line, segment, ray, circle, conic, polygon, \
+                     polyline, arc or sector, and `{label}` is a {}",
                     c.kind(id)
                 ))
             }

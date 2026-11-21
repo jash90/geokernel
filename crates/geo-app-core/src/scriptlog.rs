@@ -346,6 +346,19 @@ impl Log {
     /// it uses an object that was removed (or dropped itself), otherwise the
     /// whole rebuild fails and the caller keeps its previous state.
     pub fn rebuild(&self) -> Result<(Construction, Log), String> {
+        self.rebuild_with(&[])
+    }
+
+    /// [`Self::rebuild`], carrying the start points a locus froze on lines
+    /// without one (`Construction::frozen_line_starts` of the construction
+    /// before the rebuild). They are installed as soon as their line is made,
+    /// so the moves after them replay from the start the point was moved
+    /// from: GeoGebra keeps such a start when the locus that installed it is
+    /// deleted, because it lives on the line.
+    pub fn rebuild_with(
+        &self,
+        carried: &[(String, f64, f64)],
+    ) -> Result<(Construction, Log), String> {
         let mut c = Construction::new();
         let mut kept = Log::default();
         let mut gone = self.removed.clone();
@@ -371,6 +384,11 @@ impl Log {
                                     "`{}` created {made:?} instead of {:?}",
                                     e.line, e.labels
                                 ));
+                            }
+                            for (label, x, y) in carried {
+                                if e.labels.iter().any(|m| m == label) {
+                                    c.set_frozen_line_start(label, *x, *y);
+                                }
                             }
                             // What `record` would make of it is `e` itself.
                             match &mut same {
@@ -447,6 +465,16 @@ impl Log {
     /// kept line recorded anew. The oracle of the tests of `rebuild`.
     #[cfg(test)]
     pub(crate) fn rebuild_reference(&self) -> Result<(Construction, Log), String> {
+        self.rebuild_reference_with(&[])
+    }
+
+    /// [`Self::rebuild_reference`] with carried frozen line starts, the
+    /// oracle of the tests of `rebuild_with`.
+    #[cfg(test)]
+    pub(crate) fn rebuild_reference_with(
+        &self,
+        carried: &[(String, f64, f64)],
+    ) -> Result<(Construction, Log), String> {
         let mut c = Construction::new();
         let mut kept = Log::default();
         let mut gone = self.removed.clone();
@@ -463,6 +491,11 @@ impl Log {
                                     "`{}` created {made:?} instead of {:?}",
                                     e.line, e.labels
                                 ));
+                            }
+                            for (label, x, y) in carried {
+                                if e.labels.iter().any(|m| m == label) {
+                                    c.set_frozen_line_start(label, *x, *y);
+                                }
                             }
                             kept.record(&c, before, &e.line);
                         }

@@ -819,6 +819,14 @@ impl Construction {
         self.def(id).kind()
     }
 
+    /// Whether `id` names an object of this construction, an axis included.
+    /// An id of a deleted object (the construction shrank, or a rebuild
+    /// renumbered everything after it) is not one, and the accessors above
+    /// panic on it.
+    pub fn exists(&self, id: Id) -> bool {
+        id.0 < self.defs.len() || axis::get(id).is_some()
+    }
+
     pub fn value(&self, id: Id) -> Value {
         self.values
             .get(id.0)
