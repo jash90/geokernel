@@ -31,8 +31,8 @@
 <tableview min="0" max="0" step="0"/>
 <scripting blocked="false" disabled="false"/>
 <construction title="" author="" date="">
-<expression label="P" exp="(-5.33, 7.8)" type="point"/>
-<element type="point" label="P">
+<expression label="A" exp="(-5.33, 7.8)" type="point"/>
+<element type="point" label="A">
 	<show object="true" label="true"/>
 	<objColor r="77" g="77" b="255" alpha="0"/>
 	<layer val="0"/>
@@ -42,13 +42,8 @@
 	<pointStyle val="0"/>
 	<coords x="-5.33" y="7.8" z="1"/>
 </element>
-<expression label="w" exp="1.2"/>
-<element type="numeric" label="w">
-	<value val="1.2"/>
-	<show object="false" label="true"/>
-</element>
-<expression label="Q" exp="(5.71, 2.8)" type="point"/>
-<element type="point" label="Q">
+<expression label="B" exp="(5.71, 2.8)" type="point"/>
+<element type="point" label="B">
 	<show object="true" label="true"/>
 	<objColor r="77" g="77" b="255" alpha="0"/>
 	<layer val="0"/>
@@ -58,18 +53,66 @@
 	<pointStyle val="0"/>
 	<coords x="5.71" y="2.8" z="1"/>
 </element>
-<command name="Rotate">
-	<input a0="P" a1="w" a2="Q"/>
-	<output a0="m"/>
+<command name="Ray">
+	<input a0="A" a1="B"/>
+	<output a0="g"/>
 </command>
-<element type="point" label="m">
+<element type="ray" label="g">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="implicit"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<coords x="5" y="11.04" z="-59.461999999999996"/>
+</element>
+<expression label="w" exp="0.7"/>
+<element type="numeric" label="w">
+	<value val="0.7"/>
+	<show object="false" label="true"/>
+</element>
+<command name="Rotate">
+	<input a0="A" a1="w"/>
+	<output a0="A&apos;"/>
+</command>
+<element type="point" label="A&apos;">
 	<show object="true" label="true"/>
 	<objColor r="77" g="77" b="255" alpha="0"/>
 	<layer val="0"/>
 	<labelMode val="0"/>
 	<pointSize val="5"/>
 	<pointStyle val="0"/>
-	<coords x="-2.9506250392586084" y="-5.67792273669481" z="1"/>
+	<coords x="-9.101506818680313" y="2.5320887878421168" z="1"/>
+</element>
+<command name="Rotate">
+	<input a0="B" a1="w"/>
+	<output a0="B&apos;"/>
+</command>
+<element type="point" label="B&apos;">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="2.5634393651288945" y="5.820041118523783" z="1"/>
+</element>
+<command name="Ray">
+	<input a0="A&apos;" a1="B&apos;"/>
+	<output a0="m"/>
+</command>
+<element type="ray" label="m">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="implicit"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<coords x="-3.287952330681666" y="11.664946183809208" z="-59.461999999999996"/>
 </element>
 </construction>
 </geogebra>

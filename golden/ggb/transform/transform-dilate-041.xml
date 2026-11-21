@@ -31,7 +31,7 @@
 <tableview min="0" max="0" step="0"/>
 <scripting blocked="false" disabled="false"/>
 <construction title="" author="" date="">
-<expression label="A" exp="(0, 0)" type="point"/>
+<expression label="A" exp="(1, 1)" type="point"/>
 <element type="point" label="A">
 	<show object="true" label="true"/>
 	<objColor r="77" g="77" b="255" alpha="0"/>
@@ -40,60 +40,45 @@
 	<animation step="0.1" type="1" playing="false"/>
 	<pointSize val="5"/>
 	<pointStyle val="0"/>
-	<coords x="0" y="0" z="1"/>
+	<coords x="1" y="1" z="1"/>
 </element>
-<expression label="B" exp="(0.3, 0.4)" type="point"/>
-<element type="point" label="B">
-	<show object="true" label="true"/>
-	<objColor r="77" g="77" b="255" alpha="0"/>
-	<layer val="0"/>
-	<labelMode val="0"/>
-	<animation step="0.1" type="1" playing="false"/>
-	<pointSize val="5"/>
-	<pointStyle val="0"/>
-	<coords x="0.3" y="0.4" z="1"/>
-</element>
-<command name="Line">
-	<input a0="A" a1="B"/>
-	<output a0="l"/>
-</command>
-<element type="line" label="l">
-	<show object="true" label="false"/>
-	<objColor r="28" g="28" b="31" alpha="0"/>
-	<layer val="0"/>
-	<labelMode val="0"/>
-	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
-	<eqnStyle style="implicit"/>
-	<coords x="-0.4" y="0.3" z="0"/>
-</element>
-<expression label="f" exp="2"/>
-<element type="numeric" label="f">
-	<value val="2"/>
+<expression label="r" exp="1"/>
+<element type="numeric" label="r">
+	<value val="1"/>
 	<show object="false" label="true"/>
 </element>
-<expression label="Q" exp="(1, 2)" type="point"/>
-<element type="point" label="Q">
-	<show object="true" label="true"/>
-	<objColor r="77" g="77" b="255" alpha="0"/>
-	<layer val="0"/>
-	<labelMode val="0"/>
-	<animation step="0.1" type="1" playing="false"/>
-	<pointSize val="5"/>
-	<pointStyle val="0"/>
-	<coords x="1" y="2" z="1"/>
-</element>
-<command name="Dilate">
-	<input a0="l" a1="f" a2="Q"/>
-	<output a0="m"/>
+<command name="Circle">
+	<input a0="A" a1="r"/>
+	<output a0="k"/>
 </command>
-<element type="line" label="m">
+<element type="conic" label="k">
 	<show object="true" label="false"/>
 	<objColor r="28" g="28" b="31" alpha="0"/>
 	<layer val="0"/>
 	<labelMode val="0"/>
 	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
-	<eqnStyle style="implicit"/>
-	<coords x="-0.8" y="0.6" z="0.3999999999999999"/>
+	<eqnStyle style="specific"/>
+	<eigenvectors x0="1" y0="0" z0="1" x1="0" y1="1" z1="1"/>
+	<matrix A0="1" A1="1" A2="1" A3="0" A4="-1" A5="-1"/>
+</element>
+<expression label="f" exp="150"/>
+<element type="numeric" label="f">
+	<value val="150"/>
+	<show object="false" label="true"/>
+</element>
+<command name="Dilate">
+	<input a0="k" a1="f"/>
+	<output a0="m"/>
+</command>
+<element type="conic" label="m">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="specific"/>
+	<eigenvectors x0="1" y0="0" z0="1" x1="0" y1="1" z1="1"/>
+	<matrix A0="1.4563555555555558" A1="1.4563555555555558" A2="32768" A3="0" A4="-218.45333333333335" A5="-218.45333333333335"/>
 </element>
 </construction>
 </geogebra>

@@ -4,13 +4,14 @@
 //! is compared with `snapshots[0]` of the same golden case under the rules of
 //! `golden/SCHEMA.md`, with the comparison of `geo-golden`.
 
-use geo_golden::compare::{compare_object, numbers_agree};
+use geo_golden::compare::{compare_arc, compare_conic, compare_object, numbers_agree};
 use geo_golden::model::ExpectedData;
 use geo_golden::model::{self, Case};
 use geo_golden::{gaps, repo_root};
 use geo_import::import;
 use geo_kernel::script::exec;
 use geo_kernel::Construction;
+use geo_kernel::Kind;
 use geo_kernel::Value;
 use serde::Deserialize;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
@@ -18,18 +19,20 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 /// At the time of writing (see the assertions below for the exact counts).
-const MIN_FILES: usize = 1339;
-const MIN_ZIPS: usize = 31;
-const MIN_COMPARED: usize = 10390;
+const MIN_FILES: usize = 1559;
+const MIN_ZIPS: usize = 36;
+const MIN_COMPARED: usize = 12262;
 /// Objects the importer may skip in the whole corpus (listed in `EXPECTED_SKIPPED`).
-const MAX_SKIPPED: usize = 10;
+const MAX_SKIPPED: usize = 33;
 /// Every object the importer may skip, as `case:label`. Three are a `Ray`
 /// whose file writes an expression as an argument (`ga` of `vector-chain-002`
 /// and `t` of `vector-translate-014` and `-015`); `gb`, `d` and `q` of
 /// `vector-chain-002` depend on them. `polygon-small-001` is `Polygon(A)`
 /// of one point, which GeoGebra saves with the list `{A}` as its argument (an
-/// expression), and the three objects measured on it. Nothing else may be
-/// skipped.
+/// expression), and the three objects measured on it. The 23 `m` of the
+/// `transform-*` cases are the image of `Ray(A, u)` under a transformation,
+/// which GeoGebra saves as `Ray(A', Vector[<transform>[Direction[g]]])`, an
+/// expression as the ray's direction. Nothing else may be skipped.
 const EXPECTED_SKIPPED: &[&str] = &[
     "vector-chain-002:d",
     "vector-chain-002:ga",
@@ -41,6 +44,29 @@ const EXPECTED_SKIPPED: &[&str] = &[
     "polygon-small-001:M",
     "vector-translate-014:t",
     "vector-translate-015:t",
+    "transform-dilate-007:m",
+    "transform-dilate-020:m",
+    "transform-mirrorline-007:m",
+    "transform-mirrorline-020:m",
+    "transform-mirrorpoint-013:m",
+    "transform-mirrorpoint-014:m",
+    "transform-rotate-007:m",
+    "transform-rotate-020:m",
+    "transform-shear-006:m",
+    "transform-shear-017:m",
+    "transform-shear-028:m",
+    "transform-shear-039:m",
+    "transform-shear-050:m",
+    "transform-shear-061:m",
+    "transform-shear-072:m",
+    "transform-stretch-006:m",
+    "transform-stretch-017:m",
+    "transform-stretch-028:m",
+    "transform-stretch-039:m",
+    "transform-stretch-050:m",
+    "transform-stretch-061:m",
+    "transform-stretch-072:m",
+    "transform-stretchvec-006:m",
 ];
 
 /// An entry of `known-import-gaps.toml`.
@@ -261,7 +287,18 @@ fn compare_case(
             continue;
         };
         let vertices: Vec<_> = c.vertices(id).collect();
-        match compare_object(expected, c.kind(id), &c.value(id), &vertices) {
+        // Parts of conics and general conics are compared through their
+        // records, as `geo_golden` does when it replays the case.
+        let compared = match c.kind(id) {
+            Kind::Arc | Kind::Sector => {
+                compare_arc(expected, c.kind(id), &c.value(id), c.arc(id).as_ref())
+            }
+            Kind::Conic => {
+                compare_conic(expected, c.kind(id), &c.value(id), c.conic(id).as_ref()).0
+            }
+            _ => compare_object(expected, c.kind(id), &c.value(id), &vertices),
+        };
+        match compared {
             Ok(_) => totals.objects_compared += 1,
             Err(why) => {
                 let key = format!("0:{label}");
@@ -450,7 +487,7 @@ fn imported_constructions_agree_with_the_golden_snapshots() {
     }
     assert_eq!(
         totals.skipped_by_group.keys().collect::<Vec<_>>(),
-        ["polygon", "vector"]
+        ["polygon", "transform", "vector"]
     );
     assert!(
         totals.unlabelled <= MAX_UNLABELLED,

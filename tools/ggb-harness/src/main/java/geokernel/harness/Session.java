@@ -16,11 +16,15 @@ import org.geogebra.common.jre.headless.AppCommon;
 import org.geogebra.common.jre.headless.LocalizationCommon;
 import org.geogebra.common.jre.headless.Utf8Control;
 import org.geogebra.common.kernel.Kernel;
+import org.geogebra.common.kernel.algos.AlgoConicPartCircle;
+import org.geogebra.common.kernel.algos.AlgoConicPartCircumcircle;
+import org.geogebra.common.kernel.algos.AlgoConicPartConicPoints;
 import org.geogebra.common.kernel.algos.AlgoElement;
 import org.geogebra.common.kernel.algos.AlgoJoinPointsRay;
 import org.geogebra.common.kernel.algos.AlgoPointOnPath;
 import org.geogebra.common.kernel.algos.AlgoPointInRegion;
 import org.geogebra.common.kernel.algos.AlgoRayPointVector;
+import org.geogebra.common.kernel.algos.AlgoSemicircle;
 import org.geogebra.common.kernel.commands.AlgebraProcessor;
 import org.geogebra.common.kernel.geos.GeoConic;
 import org.geogebra.common.kernel.geos.GeoConicPart;
@@ -148,11 +152,18 @@ final class Session {
             }
             return runPolygon(line, label, out);
         }
+        // A transformed polygon creates its sides as well, like `Polygon`
+        // (the images of its vertices are helper objects without an output
+        // slot, so they are not recorded).
+        if (out != null && out.length >= 1 && isTransformedPoly(definition)) {
+            return runPolygon(line, label, out);
+        }
         // A transformed segment or ray with labelled end points also creates
         // the image points (see `transformedOutputs`); the segment or ray is
         // the first output. Any other object gives exactly one output.
-        if (out == null || out.length != transformedOutputs(transformed, definition)) {
-            throw new IllegalStateException("unexpected number of objects from: " + line);
+        if (out == null || out.length != transformedOutputs(definition)) {
+            throw new IllegalStateException("unexpected number of objects from: " + line
+                    + " (got " + (out == null ? "none" : String.valueOf(out.length)) + ")");
         }
         GeoElement geo = out[0].toGeoElement();
         if (geo instanceof GeoAngle && definition.startsWith("Angle(")
@@ -571,8 +582,58 @@ final class Session {
     /**
      * The schema type of a transformation (the image has the kind of the
      * transformed object); null when the definition is not a transformation.
+     * An inversion in a circle changes the kind: a line becomes a conic, and
+     * a segment, a ray or a part of a conic becomes an arc.
      */
     private String transformedType(String definition) {
+        if (transformCommand(definition) == null) {
+            return null;
+        }
+        GeoElement source = transformedSource(definition);
+        String cmd = transformCommand(definition);
+        // Shear and Stretch of a circle give a general conic (an ellipse
+        // usually), which is recorded like one
+        if (("Shear".equals(cmd) || "Stretch".equals(cmd))
+                && source instanceof GeoConic && !(source instanceof GeoConicPart)
+                && isCircleType((GeoConic) source)) {
+            return "conic";
+        }
+        if (isInverse(definition)) {
+            switch (schemaType(source)) {
+                case "point":
+                    return "point";
+                case "line":
+                    // a circle through the centre of the mirror
+                    return "conic";
+                case "circle":
+                    // the kernel keeps the image a circle (GeoGebra holds a
+                    // GeoConic that is one)
+                    return "circle";
+                case "segment":
+                case "ray":
+                case "arc":
+                    return "arc";
+                case "sector":
+                    return "sector";
+                default:
+                    throw new IllegalStateException("inversion of a "
+                            + schemaType(source) + " is not recorded: " + definition);
+            }
+        }
+        return schemaType(source);
+    }
+
+    /** Whether the conic is a circle or a single point (recorded as a circle). */
+    private static boolean isCircleType(GeoConic c) {
+        int t = c.getType();
+        return t == GeoConic.CONIC_CIRCLE || t == GeoConic.CONIC_SINGLE_POINT;
+    }
+
+    /**
+     * The name of the transformation command of the definition, or null when
+     * the definition is not one call of such a command.
+     */
+    private static String transformCommand(String definition) {
         Matcher m = COMMAND.matcher(definition);
         if (!m.matches()) {
             return null;
@@ -585,11 +646,62 @@ final class Session {
             case "Shear":
             case "Stretch":
             case "Translate":
-                break;
+                return m.group(1);
             default:
                 return null;
         }
-        return schemaType(transformedSource(definition));
+    }
+
+    /** Whether the definition mirrors in a circle (an inversion). */
+    private boolean isInverse(String definition) {
+        if (!"Mirror".equals(transformCommand(definition))
+                && !"Reflect".equals(transformCommand(definition))) {
+            return false;
+        }
+        List<String> args = arguments(definition);
+        GeoElement mirror = args.size() > 1 ? objects.get(args.get(1).trim()) : null;
+        return mirror instanceof GeoConic && !(mirror instanceof GeoConicPart);
+    }
+
+    /** Whether the definition transforms a polygon (it creates the sides too). */
+    private boolean isTransformedPoly(String definition) {
+        if (transformCommand(definition) == null
+                || !(transformedSource(definition) instanceof GeoPolygon)) {
+            return false;
+        }
+        if (isInverse(definition)) {
+            throw new IllegalStateException(
+                    "inversion of a polygon is not recorded: " + definition);
+        }
+        return true;
+    }
+
+    /**
+     * The arguments of the call the definition is, split at the commas of
+     * depth 0, without the surrounding brackets.
+     */
+    private static List<String> arguments(String definition) {
+        List<String> args = new ArrayList<>();
+        int depth = 0;
+        int start = definition.indexOf('(') + 1;
+        for (int i = start; i < definition.length(); i++) {
+            char ch = definition.charAt(i);
+            if (ch == '(' || ch == '{' || ch == '[') {
+                depth++;
+            } else if (ch == ')' || ch == '}' || ch == ']') {
+                if (depth == 0) {
+                    if (i > start) {
+                        args.add(definition.substring(start, i));
+                    }
+                    return args;
+                }
+                depth--;
+            } else if (ch == ',' && depth == 0) {
+                args.add(definition.substring(start, i));
+                start = i + 1;
+            }
+        }
+        return args;
     }
 
     /** The object a transformation command transforms: its first argument. */
@@ -604,22 +716,48 @@ final class Session {
     }
 
     /**
-     * How many objects a definition creates. A transformed segment creates
-     * the images of its two end points too; a transformed ray creates the
-     * images of the points it was made from: two for `Ray(A, B)`, one (the
-     * start point) for `Ray(A, v)`. Everything else creates one object.
+     * How many objects a definition creates, counted by its transformed
+     * source. A transformed segment creates the images of its two end points
+     * too; a transformed ray creates the images of the points it was made
+     * from: two for `Ray(A, B)`, one (the start point) for `Ray(A, v)`; a
+     * transformed part of a conic creates the images of the points it was
+     * made from as well. An inverted segment stands alone. Everything else
+     * creates one object.
      */
-    private int transformedOutputs(String transformed, String definition) {
-        if ("segment".equals(transformed)) {
-            return 3;
+    private int transformedOutputs(String definition) {
+        if (transformCommand(definition) == null) {
+            return 1;
         }
-        if ("ray".equals(transformed)) {
+        boolean inverse = isInverse(definition);
+        String source = schemaType(transformedSource(definition));
+        if ("segment".equals(source)) {
+            return inverse ? 1 : 3;
+        }
+        if ("ray".equals(source)) {
             AlgoElement parent = transformedSource(definition).getParentAlgorithm();
             if (parent instanceof AlgoJoinPointsRay) {
                 return 3;
             }
             if (parent instanceof AlgoRayPointVector) {
                 return 2;
+            }
+        }
+        if ("arc".equals(source) || "sector".equals(source)) {
+            // only the parts whose end points carry labels are rebuilt from
+            // the images of those points; the others are transformed as a
+            // whole (GeoConicPart.isAllEndpointsLabelsSet)
+            GeoConicPart part = (GeoConicPart) transformedSource(definition);
+            if (!part.isAllEndpointsLabelsSet()) {
+                return 1;
+            }
+            AlgoElement parent = part.getParentAlgorithm();
+            if (parent instanceof AlgoConicPartCircle
+                    || parent instanceof AlgoConicPartCircumcircle) {
+                return 4;
+            }
+            if (parent instanceof AlgoConicPartConicPoints
+                    || parent instanceof AlgoSemicircle) {
+                return 3;
             }
         }
         return 1;

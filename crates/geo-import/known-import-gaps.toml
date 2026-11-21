@@ -44,14 +44,14 @@ imported = 0.7905682291879723
 reason = "Distance(g, f) of two lines with raw coefficients near 1e-6; the file lists the lines in the opposite order"
 
 [[gap]]
-id = "transform-mirrorline-032"
+id = "transform-mirrorline-048"
 label = "e"
 golden = 4.69574275274956
 imported = 5.366563145999496
 reason = "Distance(m, n) of two lines with raw coefficients near 1e-6; the file lists the lines in the opposite order"
 
 [[gap]]
-id = "transform-rotate-021"
+id = "transform-rotate-037"
 label = "e"
 golden = 0.526691643295513
 imported = 0.5884701140321686
@@ -64,7 +64,7 @@ reason = "Distance(l, n) of two lines with raw coefficients near 1e-6; the file 
 # must agree with the golden one, and the saved text is pinned exactly.
 
 [[reclassified]]
-id = "transform-dilate-032"
+id = "transform-dilate-048"
 label = "n"
 saved = "matrix [0.25, 0.25, 9.9999999936, 0, 0.5, -1.5]"
 reason = "n = Dilate(m, 2) of the single point m (a circle of radius 8e-5 that GeoGebra classifies as a point) is a single point of radius 0 in GeoGebra and in the kernel; the saved matrix, classified afresh, is a circle of radius 1.6e-4"

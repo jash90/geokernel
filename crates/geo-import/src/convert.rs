@@ -695,7 +695,15 @@ fn saved_defined(el: &Element) -> Option<bool> {
             .coords
             .as_ref()
             .map(|_| coords3(el).is_some_and(|[a, b, _]| a != 0.0 || b != 0.0)),
-        "conic" => saved_circle(el).map(|c| c.is_some()),
+        // A saved matrix of finite numbers is a defined conic, whatever
+        // conic it is (`saved_circle` reads only the circles among them);
+        // a matrix with no numbers in it is not.
+        "conic" => el.matrix.as_ref().map(|m| {
+            m.iter()
+                .map(|t| num(t))
+                .collect::<Option<Vec<f64>>>()
+                .is_some_and(|v| v.iter().all(|x| x.is_finite()) && v.iter().any(|x| *x != 0.0))
+        }),
         "numeric" | "angle" => el.value.as_ref().map(|v| num(v).is_some()),
         "boolean" => el
             .value
