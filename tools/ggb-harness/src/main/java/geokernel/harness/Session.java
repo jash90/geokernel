@@ -19,6 +19,7 @@ import org.geogebra.common.kernel.Kernel;
 import org.geogebra.common.kernel.algos.AlgoConicPartCircle;
 import org.geogebra.common.kernel.algos.AlgoConicPartCircumcircle;
 import org.geogebra.common.kernel.algos.AlgoConicPartConicPoints;
+import org.geogebra.common.kernel.MyPoint;
 import org.geogebra.common.kernel.algos.AlgoElement;
 import org.geogebra.common.kernel.algos.AlgoJoinPointsRay;
 import org.geogebra.common.kernel.algos.AlgoPointOnPath;
@@ -32,6 +33,7 @@ import org.geogebra.common.kernel.geos.GeoElement;
 import org.geogebra.common.kernel.geos.GeoFunction;
 import org.geogebra.common.kernel.geos.GeoLine;
 import org.geogebra.common.kernel.geos.GeoList;
+import org.geogebra.common.kernel.geos.GeoLocus;
 import org.geogebra.common.kernel.geos.GeoBoolean;
 import org.geogebra.common.kernel.geos.GeoAngle;
 import org.geogebra.common.kernel.geos.GeoNumeric;
@@ -46,6 +48,7 @@ import org.geogebra.common.kernel.kernelND.GeoConicNDConstants;
 import org.geogebra.common.kernel.kernelND.GeoElementND;
 import org.geogebra.common.kernel.kernelND.GeoPointND;
 import org.geogebra.common.kernel.matrix.Coords;
+import org.geogebra.common.main.App;
 import org.geogebra.common.main.error.ErrorHandler;
 import org.geogebra.common.main.settings.config.AppConfigDefault;
 import org.geogebra.common.util.AsyncOperation;
@@ -67,6 +70,13 @@ final class Session {
     private static final Pattern LABEL = Pattern.compile("[A-Za-z]+(?:_\\{[A-Za-z0-9]+\\})?");
     /** Where a function is sampled, in this order (see golden/SCHEMA.md). */
     static final double[] SAMPLES = {-8, -4, -2, -1, -0.5, 0, 0.5, 1, 2, 4, 8};
+    /**
+     * The window of the graphics view a locus is sampled in: xmin, xmax,
+     * ymin, ymax and the pixels per unit on both axes. A locus depends on it
+     * (see golden/SCHEMA.md), so the harness checks that GeoGebra still uses
+     * it whenever it records one.
+     */
+    static final double[] LOCUS_VIEW = {-4.3, 11.700000000000001, -5.7, 6.3, 50, 50};
     private static final Pattern NUMBER = Pattern.compile("^-?\\d+(\\.\\d+)?$");
     private static final Pattern POINT =
             Pattern.compile("^\\(-?\\d+(\\.\\d+)?, -?\\d+(\\.\\d+)?\\)$");
@@ -219,17 +229,37 @@ final class Session {
                 ? !readsObjects(definition) && !callsCommand(definition)
                 : (expected.equals("point") || expected.equals("vector"))
                         && POINT.matcher(definition).matches()
-                        || expected.equals("number") && NUMBER.matcher(definition).matches()
+                        || expected.equals("number") && (NUMBER.matcher(definition).matches()
+                                || definition.startsWith("Slider("))
                         || expected.equals("angle") && definition.startsWith("Angle(")
                                 && definition.endsWith("°)");
         if (free != geo.isIndependent()) {
             throw new IllegalStateException("unexpected dependency state for: " + line);
+        }
+        if (actual.equals("locus")) {
+            checkLocusView();
         }
         objects.put(label, geo);
         if ("conic".equals(actual)) {
             conics.add(geo);
         }
         return geo;
+    }
+
+    /**
+     * Checks that a locus is sampled in {@link #LOCUS_VIEW}: only the first
+     * graphics view is shown (no second graphics view and no 3D view), and the construction is not continuous (a
+     * continuous one samples a path more than once).
+     */
+    private void checkLocusView() {
+        double[] view = {kernel.getXmin(0), kernel.getXmax(0), kernel.getYmin(0),
+                kernel.getYmax(0), kernel.getXscale(0), kernel.getYscale(0)};
+        if (!Arrays.equals(view, LOCUS_VIEW) || !app.showView(App.VIEW_EUCLIDIAN)
+                || app.hasEuclidianView2(1)
+                || app.isEuclidianView3Dinited() || kernel.isContinuous()) {
+            throw new IllegalStateException("a locus is sampled in an unexpected view: "
+                    + Arrays.toString(view));
+        }
     }
 
     private GeoElement runFixedAngle(String line, String label, GeoElementND[] out) {
@@ -605,6 +635,9 @@ final class Session {
         if (geo instanceof GeoFunction) {
             return "function";
         }
+        if (geo instanceof GeoLocus) {
+            return "locus";
+        }
         throw new IllegalStateException("unsupported object " + geo.getClass().getSimpleName());
     }
 
@@ -891,6 +924,10 @@ final class Session {
                 return "line";
             case "Segment":
                 return "segment";
+            case "Locus":
+                return "locus";
+            case "Slider":
+                return "number";
             case "Intersect":
             case "ClosestPoint":
             case "Trilinear":
@@ -1026,7 +1063,7 @@ final class Session {
 
     /** Whether a field is finite: a number, or a list of finite fields or nulls; a name is. */
     private static boolean finite(Object v) {
-        if (v == null || v instanceof String) {
+        if (v == null || v instanceof String || v instanceof Boolean) {
             return true;
         }
         if (v instanceof List) {
@@ -1149,6 +1186,19 @@ final class Session {
                 }
                 f.put("vertices", vertices);
                 f.put("length", poly.getLength());
+                return f;
+            }
+            case "locus": {
+                // every point with its flag: drawn with a line from the
+                // point before it, or starting a new piece; an undefined
+                // point (upstream can append one at the end) has null
+                // coordinates
+                List<Object> points = new ArrayList<>();
+                for (MyPoint p : ((GeoLocus) geo).getPoints()) {
+                    points.add(Arrays.asList(Double.isFinite(p.x) ? (Object) p.x : null,
+                            Double.isFinite(p.y) ? (Object) p.y : null, p.getLineTo()));
+                }
+                f.put("points", points);
                 return f;
             }
             default:

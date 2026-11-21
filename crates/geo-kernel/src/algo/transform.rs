@@ -89,6 +89,7 @@ fn of_kind(kind: Kind) -> &'static [Kind] {
         Kind::Conic => &[Kind::Conic],
         Kind::Arc => &[Kind::Arc],
         Kind::Sector => &[Kind::Sector],
+        Kind::Locus => &[Kind::Locus],
     }
 }
 
@@ -315,6 +316,7 @@ impl Map {
             | Value::Conic { .. }
             | Value::Arc { .. }
             | Value::Sector { .. }
+            | Value::Locus { .. }
             | Value::Undefined => None,
         }
     }
