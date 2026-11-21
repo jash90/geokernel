@@ -180,6 +180,14 @@ impl Log {
         })
     }
 
+    /// The accepted lines, newest first, without collecting them.
+    pub(crate) fn entries_rev(&self) -> impl Iterator<Item = &Entry> {
+        self.ops.items_rev().filter_map(|op| match op {
+            Op::Define(e) => Some(e),
+            Op::Set { .. } => None,
+        })
+    }
+
     /// Records `line` as the origin of the objects with index `from..` in `c`.
     pub fn record(&mut self, c: &Construction, from: usize, line: &str) {
         let labels: Vec<String> = c
