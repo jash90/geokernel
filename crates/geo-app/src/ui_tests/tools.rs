@@ -42,12 +42,11 @@ fn every_tool_works_with_real_clicks() {
             _ => vec![a, c],
         }
     };
-    // The object each tool makes: label, kind and definition (its
-    // parents by label).
+    // The first output of each tool: label, kind and definition.
     let expected = |tool: Tool| -> (&str, Kind, &str) {
         match tool {
             Tool::Point => ("F", Kind::Point, "(0, 2)"),
-            Tool::Intersect => ("F", Kind::Point, "Intersect(f, k)"),
+            Tool::Intersect => ("F_{1}", Kind::Point, "Intersect(f, k)"),
             Tool::Midpoint => ("F", Kind::Point, "Midpoint(A, B)"),
             Tool::Line => ("g", Kind::Line, "Line(A, C)"),
             Tool::Segment => ("g", Kind::Segment, "Segment(A, C)"),
@@ -117,11 +116,27 @@ fn every_tool_works_with_real_clicks() {
         let app = h.state();
         assert_eq!(app.wb.undo_depth(), (1, 0), "{tool:?}");
         let c = app.wb.construction();
-        let made = c.id(label).map(|id| (c.kind(id), app.wb.definition(label)));
-        if made != Some((kind, Some(rhs))) {
-            failures.push(format!(
-                "{tool:?}: {label} is {made:?}, not {kind:?} = {rhs}"
-            ));
+        let intersection_labels = [label, "F_{2}"];
+        let expected_labels = if tool == Tool::Intersect {
+            let added: Vec<_> = after
+                .iter()
+                .filter(|name| !before.contains(name))
+                .map(String::as_str)
+                .collect();
+            if added != intersection_labels {
+                failures.push(format!("{tool:?}: expected both points, got {added:?}"));
+            }
+            &intersection_labels[..]
+        } else {
+            std::slice::from_ref(&label)
+        };
+        for &label in expected_labels {
+            let made = c.id(label).map(|id| (c.kind(id), app.wb.definition(label)));
+            if made != Some((kind, Some(rhs))) {
+                failures.push(format!(
+                    "{tool:?}: expected {label} as {kind:?} = {rhs}, got {made:?}"
+                ));
+            }
         }
         if !app.tool.picks().is_empty() || app.tool_error.is_some() {
             failures.push(format!(

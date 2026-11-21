@@ -297,3 +297,610 @@ mismatches = ["0:script line 3"]
 id = "conicforms-namedinterval-001"
 reason = "A named inequality is a boolean-valued function in GeoGebra. Kernel functions are numeric, so the named input fails before Center can read its bounds."
 mismatches = ["0:script line 3"]
+
+# intersections
+
+[[gap]]
+id = "intersections-boundary-001"
+reason = "The kernel has no reactive output slots for intersections with polygon or polyline edges. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 9"]
+
+[[gap]]
+id = "intersections-boundary-002"
+reason = "The kernel has no reactive output slots for intersections with polygon or polyline edges. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 9"]
+
+[[gap]]
+id = "intersections-boundary-003"
+reason = "The kernel has no reactive output slots for intersections with polygon or polyline edges. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 9"]
+
+[[gap]]
+id = "intersections-boundary-004"
+reason = "The kernel has no reactive output slots for intersections with polygon or polyline edges. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 9"]
+
+[[gap]]
+id = "intersections-boundary-005"
+reason = "The kernel has no reactive output slots for intersections with polygon or polyline edges. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 11"]
+
+[[gap]]
+id = "intersections-boundary-006"
+reason = "The kernel has no reactive output slots for intersections with polygon or polyline edges. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 11"]
+
+[[gap]]
+id = "intersections-boundary-007"
+reason = "The kernel has no reactive output slots for intersections with polygon or polyline edges. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 11"]
+
+[[gap]]
+id = "intersections-boundary-008"
+reason = "The kernel has no reactive output slots for intersections with polygon or polyline edges. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 11"]
+
+[[gap]]
+id = "intersections-boundaryconic-001"
+reason = "The kernel has no conic intersections with polygon or polyline edge lists. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 9"]
+
+[[gap]]
+id = "intersections-boundaryconic-002"
+reason = "The kernel has no conic intersections with polygon or polyline edge lists. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 9"]
+
+[[gap]]
+id = "intersections-boundaryconic-003"
+reason = "The kernel has no conic intersections with polygon or polyline edge lists. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 9"]
+
+[[gap]]
+id = "intersections-boundaryconic-004"
+reason = "The kernel has no conic intersections with polygon or polyline edge lists. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 9"]
+
+[[gap]]
+id = "intersections-boundaryfunction-001"
+reason = "The kernel has no polynomial root solver for polygon or polyline edges. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 8"]
+
+[[gap]]
+id = "intersections-boundaryfunction-002"
+reason = "The kernel has no polynomial root solver for polygon or polyline edges. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 8"]
+
+[[gap]]
+id = "intersections-boundaryfunction-003"
+reason = "The kernel has no polynomial root solver for polygon or polyline edges. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 8"]
+
+[[gap]]
+id = "intersections-boundaryfunction-004"
+reason = "The kernel has no polynomial root solver for polygon or polyline edges. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 8"]
+
+[[gap]]
+id = "intersections-boundaryseed-001"
+reason = "The kernel has no seeded numerical root solver for polygon or polyline edges. Intersect rejects this pair before creating its point."
+mismatches = ["0:script line 8"]
+
+[[gap]]
+id = "intersections-boundaryseed-002"
+reason = "The kernel has no seeded numerical root solver for polygon or polyline edges. Intersect rejects this pair before creating its point."
+mismatches = ["0:script line 8"]
+
+[[gap]]
+id = "intersections-boundaryseed-003"
+reason = "The kernel has no seeded numerical root solver for polygon or polyline edges. Intersect rejects this pair before creating its point."
+mismatches = ["0:script line 8"]
+
+[[gap]]
+id = "intersections-boundaryseed-004"
+reason = "The kernel has no seeded numerical root solver for polygon or polyline edges. Intersect rejects this pair before creating its point."
+mismatches = ["0:script line 8"]
+
+[[gap]]
+id = "intersections-boundaryseed-005"
+reason = "The kernel has no seeded numerical root solver for polygon or polyline edges. Intersect rejects this pair before creating its point."
+mismatches = ["0:script line 8"]
+
+[[gap]]
+id = "intersections-boundaryseed-006"
+reason = "The kernel has no seeded numerical root solver for polygon or polyline edges. Intersect rejects this pair before creating its point."
+mismatches = ["0:script line 8"]
+
+[[gap]]
+id = "intersections-boundaryseed-007"
+reason = "The kernel has no seeded numerical root solver for polygon or polyline edges. Intersect rejects this pair before creating its point."
+mismatches = ["0:script line 8"]
+
+[[gap]]
+id = "intersections-boundaryseed-008"
+reason = "The kernel has no seeded numerical root solver for polygon or polyline edges. Intersect rejects this pair before creating its point."
+mismatches = ["0:script line 8"]
+
+[[gap]]
+id = "intersections-boundedconicreview-001"
+reason = "The parser reaches the carrier/conic type check and rejects a segment with a circle. The intersection solver accepts only an infinite line as the carrier."
+mismatches = ["0:script line 9"]
+
+[[gap]]
+id = "intersections-boundedconicreview-002"
+reason = "The parser reaches the carrier/conic type check and rejects a circle with a segment. The intersection solver accepts only an infinite line as the carrier."
+mismatches = ["0:script line 9"]
+
+[[gap]]
+id = "intersections-boundedconicreview-003"
+reason = "The selector dispatch excludes segment/circle pairs. The fallback parser treats n as a literal index and rejects it."
+mismatches = ["0:script line 9"]
+
+[[gap]]
+id = "intersections-boundedconicreview-004"
+reason = "The parser reaches the carrier/conic type check and rejects a circle with a segment. The intersection solver accepts only an infinite line as the carrier."
+mismatches = ["0:script line 9"]
+
+[[gap]]
+id = "intersections-boundedconicreview-005"
+reason = "The selector dispatch excludes segment/circle pairs. The fallback parser splits the literal seed at its comma and rejects the resulting four arguments."
+mismatches = ["0:script line 9"]
+
+[[gap]]
+id = "intersections-boundedconicreview-006"
+reason = "The selector dispatch excludes circle/segment pairs. The fallback parser treats P as a literal index and rejects it."
+mismatches = ["0:script line 9"]
+
+[[gap]]
+id = "intersections-boundedconicreview-007"
+reason = "The parser reaches the carrier/conic type check and rejects a segment with a conic. The intersection solver accepts only an infinite line as the carrier."
+mismatches = ["0:script line 10"]
+
+[[gap]]
+id = "intersections-boundedconicreview-008"
+reason = "The parser reaches the carrier/conic type check and rejects a conic with a segment. The intersection solver accepts only an infinite line as the carrier."
+mismatches = ["0:script line 10"]
+
+[[gap]]
+id = "intersections-boundedconicreview-009"
+reason = "The selector dispatch excludes segment/conic pairs. The fallback parser treats n as a literal index and rejects it."
+mismatches = ["0:script line 10"]
+
+[[gap]]
+id = "intersections-boundedconicreview-010"
+reason = "The parser reaches the carrier/conic type check and rejects a conic with a segment. The intersection solver accepts only an infinite line as the carrier."
+mismatches = ["0:script line 10"]
+
+[[gap]]
+id = "intersections-boundedconicreview-011"
+reason = "The selector dispatch excludes segment/conic pairs. The fallback parser splits the literal seed at its comma and rejects the resulting four arguments."
+mismatches = ["0:script line 10"]
+
+[[gap]]
+id = "intersections-boundedconicreview-012"
+reason = "The selector dispatch excludes conic/segment pairs. The fallback parser treats P as a literal index and rejects it."
+mismatches = ["0:script line 10"]
+
+[[gap]]
+id = "intersections-boundedconicreview-013"
+reason = "The parser reaches the carrier/conic type check and rejects a ray with a circle. The intersection solver accepts only an infinite line as the carrier."
+mismatches = ["0:script line 9"]
+
+[[gap]]
+id = "intersections-boundedconicreview-014"
+reason = "The parser reaches the carrier/conic type check and rejects a circle with a ray. The intersection solver accepts only an infinite line as the carrier."
+mismatches = ["0:script line 9"]
+
+[[gap]]
+id = "intersections-boundedconicreview-015"
+reason = "The selector dispatch excludes ray/circle pairs. The fallback parser treats n as a literal index and rejects it."
+mismatches = ["0:script line 9"]
+
+[[gap]]
+id = "intersections-boundedconicreview-016"
+reason = "The parser reaches the carrier/conic type check and rejects a circle with a ray. The intersection solver accepts only an infinite line as the carrier."
+mismatches = ["0:script line 9"]
+
+[[gap]]
+id = "intersections-boundedconicreview-017"
+reason = "The selector dispatch excludes ray/circle pairs. The fallback parser splits the literal seed at its comma and rejects the resulting four arguments."
+mismatches = ["0:script line 9"]
+
+[[gap]]
+id = "intersections-boundedconicreview-018"
+reason = "The selector dispatch excludes circle/ray pairs. The fallback parser treats P as a literal index and rejects it."
+mismatches = ["0:script line 9"]
+
+[[gap]]
+id = "intersections-boundedconicreview-019"
+reason = "The parser reaches the carrier/conic type check and rejects a ray with a conic. The intersection solver accepts only an infinite line as the carrier."
+mismatches = ["0:script line 10"]
+
+[[gap]]
+id = "intersections-boundedconicreview-020"
+reason = "The parser reaches the carrier/conic type check and rejects a conic with a ray. The intersection solver accepts only an infinite line as the carrier."
+mismatches = ["0:script line 10"]
+
+[[gap]]
+id = "intersections-boundedconicreview-021"
+reason = "The selector dispatch excludes ray/conic pairs. The fallback parser treats n as a literal index and rejects it."
+mismatches = ["0:script line 10"]
+
+[[gap]]
+id = "intersections-boundedconicreview-022"
+reason = "The parser reaches the carrier/conic type check and rejects a conic with a ray. The intersection solver accepts only an infinite line as the carrier."
+mismatches = ["0:script line 10"]
+
+[[gap]]
+id = "intersections-boundedconicreview-023"
+reason = "The selector dispatch excludes ray/conic pairs. The fallback parser splits the literal seed at its comma and rejects the resulting four arguments."
+mismatches = ["0:script line 10"]
+
+[[gap]]
+id = "intersections-boundedconicreview-024"
+reason = "The selector dispatch excludes conic/ray pairs. The fallback parser treats P as a literal index and rejects it."
+mismatches = ["0:script line 10"]
+
+[[gap]]
+id = "intersections-conics-001"
+reason = "The kernel has no solver or output slots for intersections of two general conics. Intersect rejects this pair before creating its point output."
+mismatches = ["0:script line 6"]
+
+[[gap]]
+id = "intersections-conics-002"
+reason = "The kernel has no solver or output slots for intersections of two general conics. Intersect rejects this pair before creating its point output."
+mismatches = ["0:script line 6"]
+
+[[gap]]
+id = "intersections-conics-003"
+reason = "The kernel has no solver or output slots for intersections of two general conics. Intersect rejects this pair before creating its point output."
+mismatches = ["0:script line 6"]
+
+[[gap]]
+id = "intersections-functionconic-001"
+reason = "The kernel does not substitute a function into a conic and solve the resulting polynomial. Intersect rejects this pair before creating its point output."
+mismatches = ["0:script line 5"]
+
+[[gap]]
+id = "intersections-functionconic-002"
+reason = "The kernel does not substitute a function into a conic and solve the resulting polynomial. Intersect rejects this pair before creating its point output."
+mismatches = ["0:script line 5"]
+
+[[gap]]
+id = "intersections-functionconic-003"
+reason = "The kernel does not substitute a function into a conic and solve the resulting polynomial. Intersect rejects this pair before creating its point output."
+mismatches = ["0:script line 5"]
+
+[[gap]]
+id = "intersections-functionconic-004"
+reason = "The kernel does not substitute a function into a conic and solve the resulting polynomial. Intersect rejects this pair before creating its point output."
+mismatches = ["0:script line 5"]
+
+[[gap]]
+id = "intersections-functionline-001"
+reason = "The kernel has no function/line root solver or point output slots for this pair. Intersect rejects the call before creating its point output."
+mismatches = ["0:script line 8"]
+
+[[gap]]
+id = "intersections-functionline-002"
+reason = "The kernel has no function/line root solver or point output slots for this pair. Intersect rejects the call before creating its point output."
+mismatches = ["0:script line 8"]
+
+[[gap]]
+id = "intersections-functionline-003"
+reason = "The kernel has no function/line root solver or point output slots for this pair. Intersect rejects the call before creating its point output."
+mismatches = ["0:script line 8"]
+
+[[gap]]
+id = "intersections-functionline-004"
+reason = "The kernel has no function/line root solver or point output slots for this pair. Intersect rejects the call before creating its point output."
+mismatches = ["0:script line 8"]
+
+[[gap]]
+id = "intersections-functionline-005"
+reason = "The kernel has no function/line root solver or point output slots for this pair. Intersect rejects the call before creating its point output."
+mismatches = ["0:script line 8"]
+
+[[gap]]
+id = "intersections-functionline-006"
+reason = "The kernel has no function/line root solver or point output slots for this pair. Intersect rejects the call before creating its point output."
+mismatches = ["0:script line 8"]
+
+[[gap]]
+id = "intersections-functionline-007"
+reason = "The kernel has no function/line root solver or point output slots for this pair. Intersect rejects the call before creating its point output."
+mismatches = ["0:script line 5"]
+
+[[gap]]
+id = "intersections-functionline-008"
+reason = "The kernel has no function/line root solver or point output slots for this pair. Intersect rejects the call before creating its point output."
+mismatches = ["0:script line 2"]
+
+[[gap]]
+id = "intersections-functionline-009"
+reason = "The kernel has no function/line root solver or point output slots for this pair. Intersect rejects the call before creating its point output."
+mismatches = ["0:script line 5"]
+
+[[gap]]
+id = "intersections-functionline-010"
+reason = "The kernel has no function/line root solver or point output slots for this pair. Intersect rejects the call before creating its point output."
+mismatches = ["0:script line 7"]
+
+[[gap]]
+id = "intersections-functions-001"
+reason = "The kernel has no polynomial difference or seeded numerical solver for two functions. Intersect rejects the call before creating its point output."
+mismatches = ["0:script line 6"]
+
+[[gap]]
+id = "intersections-functions-002"
+reason = "The kernel has no polynomial difference or seeded numerical solver for two functions. Intersect rejects the call before creating its point output."
+mismatches = ["0:script line 6"]
+
+[[gap]]
+id = "intersections-functions-003"
+reason = "The kernel has no polynomial difference or seeded numerical solver for two functions. Intersect rejects the call before creating its point output."
+mismatches = ["0:script line 6"]
+
+[[gap]]
+id = "intersections-functions-004"
+reason = "The kernel has no polynomial difference or seeded numerical solver for two functions. Intersect rejects the call before creating its point output."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "intersections-functions-005"
+reason = "The kernel has no polynomial difference or seeded numerical solver for two functions. Intersect rejects the call before creating its point output."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "intersections-functions-006"
+reason = "The kernel has no polynomial difference or seeded numerical solver for two functions. Intersect rejects the call before creating its point output."
+mismatches = ["0:script line 4"]
+
+[[gap]]
+id = "intersections-interval-001"
+reason = "The kernel has no interval root search for the difference of two functions. Intersect rejects the four-argument call before creating its point outputs."
+mismatches = ["0:script line 6"]
+
+[[gap]]
+id = "intersections-interval-002"
+reason = "The kernel has no interval root search for the difference of two functions. Intersect rejects the four-argument call before creating its point outputs."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "intersections-limitedconic-001"
+reason = "The live-selector dispatch excludes segment/circle pairs. The fallback parser rejects the named index before it creates a point."
+mismatches = ["0:script line 8"]
+
+[[gap]]
+id = "intersections-limitedconic-002"
+reason = "A circular arc has a distinct kind, so this call bypasses the point-selector dispatch. The fallback parser reads the point label as an index and rejects it."
+mismatches = ["0:script line 9"]
+
+[[gap]]
+id = "intersections-selectorreview-010"
+reason = "An undefined seed causes the kernel to pick the first defined root. GeoGebra's single-output intersection keeps the last slot selected by its seed until the seed is defined again."
+mismatches = ["1:R"]
+
+[[gap]]
+id = "intersections-slotreview-001"
+reason = "Line/conic outputs use the current line direction. GeoGebra matches the two roots to their previous positions on the first update and keeps the resulting permutation on subsequent updates."
+mismatches = ["1:R_{1}", "1:R_{2}", "2:R_{1}", "2:R_{2}", "3:R_{1}", "3:R_{2}"]
+
+[[gap]]
+id = "intersections-slotreview-002"
+reason = "Line/conic outputs use the current line direction. GeoGebra matches the two roots to their previous positions on the first update and keeps the resulting permutation on subsequent updates."
+mismatches = ["1:R_{1}", "1:R_{2}", "2:R_{1}", "2:R_{2}", "3:R_{1}", "3:R_{2}"]
+
+[[gap]]
+id = "intersections-slotreview-003"
+reason = "Line/conic outputs use the current line direction. GeoGebra matches the two roots to their previous positions on the first update and keeps the resulting permutation on subsequent updates."
+mismatches = ["1:R_{1}", "1:R_{2}", "2:R_{1}", "2:R_{2}", "3:R_{1}", "3:R_{2}"]
+
+[[gap]]
+id = "intersections-slotreview-004"
+reason = "Line/conic outputs use the current line direction. GeoGebra matches the two roots to their previous positions on the first update and keeps the resulting permutation on subsequent updates."
+mismatches = ["1:R_{1}", "1:R_{2}", "2:R_{1}", "2:R_{2}", "3:R_{1}", "3:R_{2}"]
+
+[[gap]]
+id = "intersections-slotreview-005"
+reason = "The general-conic solver puts a lone finite root in slot 1 on every update. After two distinct roots have been seen, GeoGebra keeps the fixed permutation and this root returns in slot 2."
+mismatches = ["2:R"]
+
+[[gap]]
+id = "intersections-slotreview-006"
+reason = "The general-conic solver puts a lone finite root in slot 1 on every update. After two distinct roots have been seen, GeoGebra keeps the fixed permutation and this root returns in slot 2."
+mismatches = ["2:R"]
+
+[[gap]]
+id = "intersections-slotreview-007"
+reason = "The general-conic solver puts a lone finite root in slot 1 on every update. After two distinct roots have been seen, GeoGebra keeps the fixed permutation and this root returns in slot 2."
+mismatches = ["2:R"]
+
+[[gap]]
+id = "intersections-slotreview-008"
+reason = "The indexed point recomputes with the single-output solver, which drops the duplicate root at tangency. GeoGebra's indexed point reads the shared intersection whose second slot already has a label."
+mismatches = ["1:S"]
+
+[[gap]]
+id = "intersections-slotreview-009"
+reason = "The indexed point recomputes with the single-output solver, which drops the duplicate root at tangency. GeoGebra's indexed point reads the shared intersection whose second slot already has a label."
+mismatches = ["1:S"]
+
+[[gap]]
+id = "intersections-upstreamconics-001"
+reason = "The kernel has no solver or output slots for intersections of two general conics. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "intersections-upstreamconics-002"
+reason = "The kernel has no solver or output slots for intersections of two general conics. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "intersections-upstreamconics-003"
+reason = "The kernel has no solver or output slots for intersections of two general conics. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "intersections-upstreamconics-004"
+reason = "The kernel has no solver or output slots for intersections of two general conics. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "intersections-upstreamconics-005"
+reason = "The kernel has no solver or output slots for intersections of two general conics. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "intersections-upstreamconics-006"
+reason = "The kernel has no solver or output slots for intersections of two general conics. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "intersections-upstreamconics-007"
+reason = "The kernel has no solver or output slots for intersections of two general conics. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "intersections-upstreamconics-008"
+reason = "The kernel has no solver or output slots for intersections of two general conics. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "intersections-upstreamconics-009"
+reason = "The kernel has no solver or output slots for intersections of two general conics. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "intersections-upstreamconics-010"
+reason = "The kernel has no solver or output slots for intersections of two general conics. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "intersections-upstreamconics-011"
+reason = "The kernel has no solver or output slots for intersections of two general conics. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "intersections-upstreamconics-012"
+reason = "The kernel has no solver or output slots for intersections of two general conics. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "intersections-upstreamconics-013"
+reason = "The kernel has no solver or output slots for intersections of two general conics. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "intersections-upstreamconics-014"
+reason = "The kernel has no solver or output slots for intersections of two general conics. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "intersections-upstreamconics-015"
+reason = "The kernel has no solver or output slots for intersections of two general conics. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "intersections-upstreamconics-016"
+reason = "The kernel has no solver or output slots for intersections of two general conics. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "intersections-upstreamconics-017"
+reason = "The kernel has no solver or output slots for intersections of two general conics. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "intersections-upstreamconics-018"
+reason = "The kernel has no solver or output slots for intersections of two general conics. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "intersections-upstreamconics-019"
+reason = "The kernel has no solver or output slots for intersections of two general conics. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "intersections-upstreamconics-020"
+reason = "The kernel has no solver or output slots for intersections of two general conics. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "intersections-upstreamconics-021"
+reason = "The kernel has no solver or output slots for intersections of two general conics. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "intersections-upstreamconics-022"
+reason = "The kernel has no solver or output slots for intersections of two general conics. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "intersections-upstreamconics-023"
+reason = "The kernel has no solver or output slots for intersections of two general conics. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "intersections-upstreamconics-024"
+reason = "The kernel has no solver or output slots for intersections of two general conics. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "intersections-upstreamconics-025"
+reason = "The kernel has no solver or output slots for intersections of two general conics. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "intersections-upstreamconics-026"
+reason = "The kernel has no solver or output slots for intersections of two general conics. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "intersections-upstreamconics-027"
+reason = "The kernel has no solver or output slots for intersections of two general conics. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "intersections-upstreamconics-028"
+reason = "The kernel has no solver or output slots for intersections of two general conics. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "intersections-upstreamconics-029"
+reason = "The kernel has no solver or output slots for intersections of two general conics. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "intersections-upstreamconics-030"
+reason = "The kernel has no solver or output slots for intersections of two general conics. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "intersections-upstreamconics-031"
+reason = "The kernel has no solver or output slots for intersections of two general conics. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "intersections-upstreamconics-032"
+reason = "The kernel has no solver or output slots for intersections of two general conics. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "intersections-upstreamconics-033"
+reason = "The kernel has no solver or output slots for intersections of two general conics. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "intersections-upstreamconics-034"
+reason = "The kernel has no solver or output slots for intersections of two general conics. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "intersections-upstreamconics-035"
+reason = "The kernel has no solver or output slots for intersections of two general conics. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "intersections-upstreamconics-036"
+reason = "The kernel has no solver or output slots for intersections of two general conics. Intersect rejects this pair before creating its point outputs."
+mismatches = ["0:script line 3"]

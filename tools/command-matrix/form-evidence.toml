@@ -390,6 +390,26 @@ form = "conic,line,number"
 cases = ["conics-intersection-001", "conics-intersection-002", "conics-intersection-003"]
 
 [[form]]
+command = "Intersect"
+form = "line,line,number"
+cases = ["intersections-lines-001", "intersections-lines-002", "intersections-lines-006"]
+
+[[form]]
+command = "Intersect"
+form = "conic,line"
+cases = ["intersections-conicline-003", "intersections-conicline-004"]
+
+[[form]]
+command = "Intersect"
+form = "line,conic,point"
+cases = ["intersections-lineconicseed-001", "intersections-lineconicseed-005"]
+
+[[form]]
+command = "Intersect"
+form = "conic,line,point"
+cases = ["intersections-lineconicseed-002", "intersections-lineconicseed-006"]
+
+[[form]]
 command = "Join"
 form = "list"
 cases = ["lists-join-010", "lists-join-011", "lists-objects-045"]

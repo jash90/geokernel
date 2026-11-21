@@ -955,14 +955,16 @@ fn intersections_lie_on_both_objects() {
                     expect_near(&format!("{n} on the circle"), dist(q, o), r, 20.0)?;
                 }
                 expect_near("chord length", dist(p1, p2), chord, 20.0)?;
-                if !same_point(pt(&c, "P"), p1, 20.0) {
-                    return Err("Intersect(l, k) is not the first point".into());
-                }
                 for (x, y) in [("R1", p1), ("R2", p2)] {
                     if !same_point(pt(&c, x), y, 20.0) {
                         return Err(format!(
                             "{x} differs from the intersection with the other argument order"
                         ));
+                    }
+                }
+                for (label, indexed) in [("P_{1}", p1), ("P_{2}", p2)] {
+                    if !same_point(pt(&c, label), indexed, 20.0) {
+                        return Err(format!("{label} differs from its indexed intersection"));
                     }
                 }
                 Ok(())
