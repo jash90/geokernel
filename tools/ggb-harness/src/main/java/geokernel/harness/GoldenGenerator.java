@@ -19,6 +19,8 @@ import java.util.TreeMap;
  * <p>Usage: {@code GoldenGenerator <cases.json> <golden dir> <upstream commit>}.
  * A case id has the form {@code <group>-<topic>-<number>}; all cases of one
  * topic go to {@code <golden dir>/<group>/<topic>.json}.
+ * A case may set {@code track_boundary_growth} to record indexed outputs
+ * from line or boundary crossings when the reference first labels them.
  */
 public final class GoldenGenerator {
 
@@ -80,7 +82,8 @@ public final class GoldenGenerator {
     }
 
     private static Map<String, Object> runCase(Map<?, ?> input, Stats stats) {
-        Session session = new Session();
+        boolean growth = Boolean.TRUE.equals(input.get("track_boundary_growth"));
+        Session session = new Session(growth);
         List<?> script = (List<?>) input.get("script");
         List<?> steps = (List<?>) input.get("steps");
         for (Object line : script) {
@@ -143,8 +146,9 @@ public final class GoldenGenerator {
         golden.put("script", new ArrayList<>(script));
         golden.put("steps", outSteps);
         golden.put("snapshots", snapshots);
-        if (input.size() != 4) {
-            throw new IllegalArgumentException("a case input has exactly id, group, script, steps");
+        if (input.size() != (growth ? 5 : 4)) {
+            throw new IllegalArgumentException(
+                    "unexpected fields in the case input");
         }
         return golden;
     }

@@ -590,9 +590,29 @@ id = "intersections-slotreview-009"
 reason = "The indexed point recomputes with the single-output solver, which drops the duplicate root at tangency. GeoGebra's indexed point reads the shared intersection whose second slot already has a label."
 mismatches = ["1:S"]
 
-# intersectconics
+# intersectreview
 
 [[gap]]
-id = "intersectconics-pencil-003"
-reason = "At double tangency, the elimination polynomial is 4(x^2 - 12.5)^2. The reference uses Apache Commons Math's complex Laguerre solver, which splits each repeated root, and Newton/Brent polishing keeps the splits. The kernel returns the two double contacts, so the four slot coordinates differ by about 7e-8 to 1.1e-7 at this step."
-mismatches = ["1:R_{1}", "1:R_{2}", "1:R_{3}", "1:R_{4}"]
+id = "intersectreview-growth-001"
+reason = "The intersection of line and polygon gains crossings after a move. The reference adds indexed output labels then. The kernel keeps the first slot created by the command because the workbench journal does not record output births on moves."
+mismatches = ["1:R_{2}", "2:R_{2}", "2:R_{3}", "2:R_{4}", "3:R_{2}", "3:R_{3}", "3:R_{4}", "4:R_{2}", "4:R_{3}", "4:R_{4}"]
+
+[[gap]]
+id = "intersectreview-growth-002"
+reason = "The intersection of segment and polyline gains crossings after a move. The reference adds indexed output labels then. The kernel keeps the first slot created by the command because the workbench journal does not record output births on moves."
+mismatches = ["2:R_{2}", "2:R_{3}", "3:R_{2}", "3:R_{3}", "4:R_{2}", "4:R_{3}"]
+
+[[gap]]
+id = "intersectreview-growth-003"
+reason = "The intersection of ray and polygon gains crossings after a move. The reference adds indexed output labels then. The kernel keeps the first slot created by the command because the workbench journal does not record output births on moves."
+mismatches = ["1:R_{2}", "2:R_{2}", "2:R_{3}", "2:R_{4}", "3:R_{2}", "3:R_{3}", "3:R_{4}", "4:R_{2}", "4:R_{3}", "4:R_{4}"]
+
+[[gap]]
+id = "intersectreview-growth-004"
+reason = "The intersection of two polylines gains crossings after a move. The reference adds indexed output labels then. The kernel keeps the first slot created by the command because the workbench journal does not record output births on moves."
+mismatches = ["2:R_{2}", "2:R_{3}", "3:R_{2}", "3:R_{3}", "4:R_{2}", "4:R_{3}"]
+
+[[gap]]
+id = "intersectreview-growth-005"
+reason = "The intersection of two polygons gains crossings after a move. The reference adds indexed output labels then. The kernel keeps the first slot created by the command because the workbench journal does not record output births on moves."
+mismatches = ["1:R_{2}", "2:R_{2}", "2:R_{3}", "2:R_{4}", "3:R_{2}", "3:R_{3}", "3:R_{4}", "3:R_{5}", "3:R_{6}", "4:R_{2}", "4:R_{3}", "4:R_{4}", "4:R_{5}", "4:R_{6}", "4:R_{7}", "4:R_{8}"]

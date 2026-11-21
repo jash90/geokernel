@@ -1501,8 +1501,8 @@ impl Construction {
         true
     }
 
-    /// Match conic intersection branches to their previous positions on edits.
-    /// By default the permutation is fixed after its initial assignment.
+    /// Match intersection branches of two `Kind::Circle` objects to their
+    /// previous positions on edits. Other conics retain their default mode.
     pub fn set_conic_intersections_continuous(&mut self, continuous: bool) {
         self.continuous_conic_intersections = continuous;
     }
@@ -1531,11 +1531,26 @@ impl Construction {
         let Some(slot) = self.conic_intersection_slot(i) else {
             return false;
         };
-        let mut state = std::mem::take(&mut self.conic_intersections[slot].1);
-        let new = state
-            .update(d, self, self.continuous_conic_intersections)
-            .unwrap_or(Value::Undefined);
-        self.conic_intersections[slot].1 = state;
+        // The latest output carries the parent solver state. This also lets
+        // an indexed output added after the full intersection initialize the
+        // parent's permutation. Removing it on rollback leaves the earlier
+        // parent state intact.
+        let latest = d
+            .previous(self)
+            .and_then(|id| self.conic_intersection_slot(id.0))
+            .unwrap_or(slot);
+        let mut parent = std::mem::take(&mut self.conic_intersections[latest].1);
+        parent.refresh(d, self, self.continuous_conic_intersections);
+        let new = if latest == slot {
+            parent.value(d, self)
+        } else {
+            let mut output = parent.for_output(&self.conic_intersections[slot].1);
+            let value = output.value(d, self);
+            self.conic_intersections[slot].1 = output;
+            value
+        }
+        .unwrap_or(Value::Undefined);
+        self.conic_intersections[latest].1 = parent;
         let changed = new != self.values[i];
         self.values[i] = new;
         changed

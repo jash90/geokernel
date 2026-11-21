@@ -230,7 +230,9 @@ pub(crate) fn exec_selected(
             if matches!(
                 (a, b),
                 (Kind::Line, Kind::Circle | Kind::Conic) | (Kind::Circle | Kind::Conic, Kind::Line)
-            ) =>
+            ) || (a, b) == (Kind::Circle, Kind::Circle)
+                && c.id(selector).is_none()
+                && crate::expr::plain_number(selector).is_none() =>
         {
             if matches!(*selector, "1" | "2") {
                 return None;

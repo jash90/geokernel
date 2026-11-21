@@ -118,6 +118,7 @@ impl PairDef {
         previous: Option<&PairState>,
         continuous: bool,
     ) -> PairState {
+        let continuous = continuous && self.plain_circles(c);
         let fixed_circles = self.plain_circles(c) && !continuous;
         if let Some(saved) = self.saved {
             let mut state = PairState {
@@ -287,13 +288,13 @@ pub(crate) struct PairState {
 }
 
 impl PairState {
-    fn refresh(&mut self, def: PairDef, c: &Construction, continuous: bool) {
+    pub(crate) fn refresh(&mut self, def: PairDef, c: &Construction, continuous: bool) {
         let operands = [Operand::get(c, def.first), Operand::get(c, def.second)];
         if !Operand::same(operands[0], self.operands[0])
             || !Operand::same(operands[1], self.operands[1])
         {
             self.operands = operands;
-            self.recompute(continuous);
+            self.recompute(continuous && def.plain_circles(c));
         }
     }
 
@@ -308,14 +309,10 @@ impl PairState {
         }
     }
 
-    pub(crate) fn update(
-        &mut self,
-        def: PairDef,
-        c: &Construction,
-        continuous: bool,
-    ) -> Option<Value> {
-        self.refresh(def, c, continuous);
-        self.value(def, c)
+    pub(crate) fn for_output(&self, old: &Self) -> Self {
+        let mut output = self.clone();
+        output.nearest = old.nearest;
+        output
     }
 
     pub(crate) fn value(&mut self, def: PairDef, c: &Construction) -> Option<Value> {
@@ -377,7 +374,7 @@ fn closest(points: [Pt; 4], (x, y): (f64, f64)) -> usize {
 
 #[cfg(test)]
 mod tests {
-    use crate::kernel::Value;
+    use crate::kernel::{Construction, Value};
     use crate::script;
 
     #[test]
@@ -423,5 +420,36 @@ mod tests {
         ))
         .unwrap();
         assert_eq!(c.value(q), fresh.value(fresh.id("Q").unwrap()));
+    }
+
+    #[test]
+    fn rebuilt_index_keeps_the_candidate_order_of_its_full_pair() {
+        let mut c = script::load(concat!(
+            "A = (0, -1)\nB = (1, -1)\nd = Line(A, B)\nF = (0, 1)\n",
+            "G = (-3, 0)\nH = (3, 0)\nQ = (2, 1)\nk = Parabola(F, d)\n",
+            "h = Hyperbola(G, H, Q)\nR = Intersect(k, h)\nn = 2\n",
+            "S = Intersect(k, h, n)",
+        ))
+        .unwrap();
+        let mut rebuilt = Construction::new();
+        for id in c.ids() {
+            rebuilt.add(c.label(id), c.def(id)).unwrap();
+        }
+        for source in [&mut c, &mut rebuilt] {
+            let value = |c: &Construction, label| c.value(c.id(label).unwrap());
+            assert_eq!(value(source, "S"), value(source, "R_{2}"));
+            source.set_number(source.id("n").unwrap(), 3.0).unwrap();
+            assert_eq!(value(source, "S"), value(source, "R_{3}"));
+            source
+                .move_point(source.id("F").unwrap(), -1.371405, 4.129732)
+                .unwrap();
+            assert_eq!(value(source, "S"), value(source, "R_{3}"));
+        }
+        for label in ["R_{1}", "R_{2}", "R_{3}", "R_{4}", "S"] {
+            assert_eq!(
+                c.value(c.id(label).unwrap()),
+                rebuilt.value(rebuilt.id(label).unwrap())
+            );
+        }
     }
 }

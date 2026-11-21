@@ -324,7 +324,7 @@ fn parse_multi(c: &Construction, rhs: &str) -> Option<Result<Vec<Def>, String>> 
 ///   `Vertex` of a hyperbola labels its two defined vertices only;
 /// - exactly one defined: only that output is created, indexed for a
 ///   polygonal boundary intersection and labelled `name` otherwise;
-/// - none defined: only the first output is created, labelled `name`.
+/// - none defined: only the first output is created, using the same rule.
 ///
 /// The set of created objects is fixed at creation: an output that was not
 /// created is not added later, even when it becomes defined.
@@ -379,15 +379,20 @@ fn add_outputs(c: &mut Construction, name: &str, defs: Vec<Def>) -> Result<Id, S
     }
     let count = defined.iter().filter(|&&d| d).count();
     let indexed = matches!(defs.first(), Some(Def::IntersectBoundary(d)) if d.labels_indexed());
-    if count == 0 || count == 1 && !indexed {
-        let k = defined.iter().position(|&d| d).unwrap_or(0);
-        return c.add(name, defs[k]).map_err(|e| e.to_string());
-    }
     // Construction.getIndexLabel: the prefix is the name up to the first `_`.
     let prefix = match name.split('_').next() {
         Some(p) if !p.is_empty() => p,
         _ => "a",
     };
+    if count < 2 {
+        let k = defined.iter().position(|&d| d).unwrap_or(0);
+        return if indexed {
+            c.add(&index_label(c, prefix), defs[k])
+        } else {
+            c.add(name, defs[k])
+        }
+        .map_err(|e| e.to_string());
+    }
     let at = c.checkpoint();
     let mut first = None;
     for (def, _) in defs.into_iter().zip(defined).filter(|&(_, d)| d) {

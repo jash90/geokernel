@@ -21,6 +21,8 @@ import org.geogebra.common.kernel.algos.AlgoConicPartCircumcircle;
 import org.geogebra.common.kernel.algos.AlgoConicPartConicPoints;
 import org.geogebra.common.kernel.MyPoint;
 import org.geogebra.common.kernel.algos.AlgoElement;
+import org.geogebra.common.kernel.algos.AlgoIntersectLinePolyLine;
+import org.geogebra.common.kernel.algos.AlgoIntersectPolyLines;
 import org.geogebra.common.kernel.algos.AlgoJoinPointsRay;
 import org.geogebra.common.kernel.algos.AlgoPointOnPath;
 import org.geogebra.common.kernel.algos.AlgoPointInRegion;
@@ -101,8 +103,15 @@ final class Session {
      * `circle`.
      */
     private final Set<GeoElement> conics = Collections.newSetFromMap(new IdentityHashMap<>());
+    private final boolean trackBoundaryGrowth;
+    private final Map<AlgoElement, String> growingIntersections = new LinkedHashMap<>();
 
     Session() {
+        this(false);
+    }
+
+    Session(boolean trackBoundaryGrowth) {
+        this.trackBoundaryGrowth = trackBoundaryGrowth;
         LocalizationCommon loc = new LocalizationCommon(2);
         loc.setResourceBundleControl(new Utf8Control());
         app = new AppCommon(loc, new AwtFactoryCommon(), new AppConfigDefault());
@@ -146,6 +155,16 @@ final class Session {
         }
         GeoElementND[] out = processor.processAlgebraCommandNoExceptionHandling(
                 line, false, new ThrowingErrorHandler(line), false, null);
+        if (trackBoundaryGrowth && out != null && out.length > 0) {
+            GeoElement first = out[0].toGeoElement();
+            AlgoElement parent = first.getParentAlgorithm();
+            if (parent instanceof AlgoIntersectLinePolyLine
+                    || parent instanceof AlgoIntersectPolyLines) {
+                growingIntersections.put(parent, label.split("_", 2)[0] + "_{");
+                recordGrowingIntersections();
+                return first;
+            }
+        }
         if ((out == null || out.length == 0) && definition.startsWith("Segment(")
                 && definition.chars().filter(ch -> ch == ',').count() == 2) {
             return null;
@@ -465,11 +484,30 @@ final class Session {
 
     /** Records every scripted object, in script order. */
     Map<String, Object> snapshot() {
+        recordGrowingIntersections();
         Map<String, Object> snap = new LinkedHashMap<>();
         for (Map.Entry<String, GeoElement> e : objects.entrySet()) {
             snap.put(e.getKey(), describe(e.getValue(), schemaType(e.getValue())));
         }
         return snap;
+    }
+
+    private void recordGrowingIntersections() {
+        for (Map.Entry<AlgoElement, String> entry : growingIntersections.entrySet()) {
+            for (GeoElement geo : entry.getKey().getOutput()) {
+                String label = geo.getLabelSimple();
+                if (!geo.isLabelSet() || label == null || !label.startsWith(entry.getValue())) {
+                    continue;
+                }
+                if (!(geo instanceof GeoPoint)) {
+                    throw new IllegalStateException("expected an intersection point: " + label);
+                }
+                GeoElement previous = objects.putIfAbsent(label, geo);
+                if (previous != null && previous != geo) {
+                    throw new IllegalStateException("label used twice: " + label);
+                }
+            }
+        }
     }
 
     private GeoElement lookup(String label) {

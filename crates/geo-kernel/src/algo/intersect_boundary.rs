@@ -45,8 +45,13 @@ enum Family {
 }
 
 impl BoundaryDef {
+    /// The edge algorithms label all slots through an output handler. The
+    /// conic dispatcher labels its outputs through `LabelManager` instead.
     pub(crate) fn labels_indexed(self) -> bool {
-        !matches!(self.family, Family::Seeded(_))
+        matches!(
+            self.family,
+            Family::Line | Family::Pair | Family::Polynomial
+        )
     }
 
     pub(crate) fn hidden_parents(&self, c: &Construction) -> Vec<Id> {

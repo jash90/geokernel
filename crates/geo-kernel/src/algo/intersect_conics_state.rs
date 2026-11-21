@@ -8,7 +8,8 @@
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
 use super::{
-    compact, distinct, points_equal, solve, with_bilinear_multiplicity, ConicData, Points, Pt,
+    compact, distinct, pack_order, points_equal, solve, unpack_order, ConicData, Points, Pt,
+    RawScratch, IDENTITY,
 };
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -21,7 +22,8 @@ enum Phase {
 /// The compact part of the branch state needed to rebuild the current slots.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) struct SavedSlots {
-    order: [u8; 4],
+    order: u8,
+    scratch_order: u8,
     phase: Phase,
     labelled_second: bool,
 }
@@ -31,6 +33,8 @@ pub(crate) struct SavedSlots {
 #[derive(Clone, Debug)]
 pub(crate) struct Intersection {
     pencil: ConicData,
+    scratch: RawScratch,
+    restored_scratch: Option<u8>,
     current: Points,
     previous: Points,
     age: [u32; 4],
@@ -45,12 +49,14 @@ impl Default for Intersection {
     fn default() -> Self {
         Self {
             pencil: ConicData::new(),
+            scratch: RawScratch::default(),
+            restored_scratch: None,
             current: [None; 4],
             previous: [None; 4],
             age: [0; 4],
             labelled: [false; 4],
             alive: [false; 4],
-            order: [0, 1, 2, 3],
+            order: IDENTITY,
             first: true,
             needs_permutation: true,
         }
@@ -65,7 +71,8 @@ impl Intersection {
 
     pub(crate) fn saved_slots(&self) -> SavedSlots {
         SavedSlots {
-            order: self.order.map(|i| i as u8),
+            order: pack_order(self.order),
+            scratch_order: self.scratch.order,
             phase: if self.first {
                 Phase::First
             } else if self.needs_permutation {
@@ -78,7 +85,8 @@ impl Intersection {
     }
 
     pub(crate) fn restore_slots(&mut self, saved: SavedSlots) {
-        self.order = saved.order.map(usize::from);
+        self.order = unpack_order(saved.order);
+        self.restored_scratch = Some(saved.scratch_order);
         self.first = saved.phase != Phase::Fixed;
         self.needs_permutation = self.first;
         self.labelled[1] = saved.labelled_second;
@@ -89,6 +97,7 @@ impl Intersection {
     }
 
     pub(crate) fn undefined(&mut self) -> Points {
+        self.restored_scratch = None;
         self.current = [None; 4];
         self.current
     }
@@ -116,10 +125,14 @@ impl Intersection {
         if !a.defined || !b.defined {
             return self.undefined();
         }
-        let mut candidates = solve(a, b, &mut self.pencil, continuous);
-        if self.needs_permutation && self.current.iter().all(Option::is_some) {
-            candidates = with_bilinear_multiplicity(a, b, candidates);
+        let mut candidates = solve(a, b, &mut self.pencil, &mut self.scratch, continuous);
+        if let Some(order) = self.restored_scratch.take() {
+            // The stored branch permutation expects the parent's raw
+            // scratch order, which can differ from a fresh solution.
+            candidates = unpack_order(order).map(|slot| candidates[slot]);
+            self.scratch.order = order;
         }
+        self.scratch.points = candidates;
         let on_path = candidates.map(|p| p.is_some_and(&on_paths));
 
         if self.first {

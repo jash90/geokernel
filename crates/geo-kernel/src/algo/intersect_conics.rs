@@ -14,11 +14,14 @@ use crate::algo::intersect::{
     check_decimal_fraction, line_conic_points, normalized_coefficients, points_equal, Pt,
 };
 use crate::algo::{arc::ArcData, path::conic_parameter};
+#[path = "intersect_conics_distance.rs"]
+mod distance;
 #[path = "intersect_conics_roots.rs"]
 mod roots;
 #[path = "intersect_conics_state.rs"]
 mod state;
 
+use self::distance::distance;
 use self::roots::cubic;
 pub(crate) use self::roots::polynomial_roots;
 pub(crate) use self::state::Intersection;
@@ -28,6 +31,35 @@ use crate::tol::{MAX_PRECISION, MIN_PRECISION, STANDARD_PRECISION};
 
 type Matrix = [f64; 6];
 type Points = [Pt; 4];
+
+const IDENTITY: [usize; 4] = [0, 1, 2, 3];
+
+fn pack_order(order: [usize; 4]) -> u8 {
+    order
+        .into_iter()
+        .enumerate()
+        .fold(0, |bits, (i, slot)| bits | (slot as u8) << (i * 2))
+}
+
+fn unpack_order(bits: u8) -> [usize; 4] {
+    std::array::from_fn(|i| usize::from(bits >> (i * 2) & 3))
+}
+
+#[derive(Clone, Copy, Debug)]
+struct RawScratch {
+    points: Points,
+    /// Positions of the current candidates in an uncached solution.
+    order: u8,
+}
+
+impl Default for RawScratch {
+    fn default() -> Self {
+        Self {
+            points: [None; 4],
+            order: pack_order(IDENTITY),
+        }
+    }
+}
 
 /// Check incidence with the curved path of an arc or a sector. A collinear
 /// circumcircular arc can also define a bounded segment.
@@ -62,7 +94,14 @@ pub(crate) fn on_part(part: &ArcData, point: (f64, f64)) -> bool {
     (-eps..=1.0 + eps).contains(&parameter)
 }
 
-fn solve(a: &ConicData, b: &ConicData, pencil: &mut ConicData, continuous: bool) -> Points {
+fn solve(
+    a: &ConicData,
+    b: &ConicData,
+    pencil: &mut ConicData,
+    scratch: &mut RawScratch,
+    continuous: bool,
+) -> Points {
+    scratch.order = pack_order(IDENTITY);
     if !a.defined || !b.defined || proportional(&a.matrix, &b.matrix) {
         return [None; 4];
     }
@@ -78,10 +117,15 @@ fn solve(a: &ConicData, b: &ConicData, pencil: &mut ConicData, continuous: bool)
         [None; 4]
     };
 
-    if !test_points(a, b, &mut p, MIN_PRECISION) {
+    let degenerate_input = a.ty.has_lines() || b.ty.has_lines();
+    let found = test_points(a, b, &mut p, MIN_PRECISION);
+    if degenerate_input {
+        scratch.points = p;
+    }
+    if !found {
         let mut eps = MAX_PRECISION;
         while eps <= MIN_PRECISION {
-            p = intersect(a, b, pencil, eps);
+            p = intersect(a, b, pencil, scratch, eps);
             if p.iter().any(Option::is_some) {
                 break;
             }
@@ -111,32 +155,6 @@ fn distinct(mut p: Points) -> Points {
         p[1] = None;
     }
     p
-}
-
-/// Both real branches of the bilinear elimination quartic can touch the
-/// other conic. Preserve the two pairs of roots when assigning an existing
-/// set of four outputs at this transition.
-fn with_bilinear_multiplicity(a: &ConicData, b: &ConicData, points: Points) -> Points {
-    let [Some(p), Some(q), None, None] = points else {
-        return points;
-    };
-    let bilinear = |m: Matrix| m[0] == 0.0 && m[1] == 0.0 && m[3] != 0.0;
-    if !(bilinear(a.matrix) && b.matrix[3] == 0.0 || bilinear(b.matrix) && a.matrix[3] == 0.0) {
-        return points;
-    }
-    let normal = |[a, b, _, d, e, f]: Matrix, (x, y): (f64, f64)| {
-        normalize([a * x + d * y + e, d * x + b * y + f])
-    };
-    let tangent = |point| {
-        let [x, y] = normal(a.matrix, point);
-        let [u, v] = normal(b.matrix, point);
-        (x * v - y * u).abs() <= 8.0 * f64::EPSILON
-    };
-    if tangent(p) && tangent(q) {
-        [Some(p), Some(p), Some(q), Some(q)]
-    } else {
-        points
-    }
 }
 
 fn proportional(a: &Matrix, b: &Matrix) -> bool {
@@ -199,21 +217,6 @@ fn with_degenerate(conic: &ConicData, degenerate: &ConicData, eps: f64) -> Point
     }
 }
 
-/// Local estimate of the point's distance to the conic. It is only used
-/// to decide whether replacing a computed point by a nearby decimal
-/// fraction reduces the residual on both conics.
-fn distance(conic: &ConicData, (x, y): (f64, f64)) -> f64 {
-    let [a, b, c, d, e, f] = conic.matrix;
-    let fx = a * x + d * y + e;
-    let fy = d * x + b * y + f;
-    let error = (x * fx + y * fy + e * x + f * y + c).abs();
-    if error == 0.0 {
-        0.0
-    } else {
-        error / fx.hypot(fy)
-    }
-}
-
 fn test_points(a: &ConicData, b: &ConicData, p: &mut Points, eps: f64) -> bool {
     for slot in p.iter_mut() {
         let Some((x, y)) = *slot else { continue };
@@ -236,12 +239,18 @@ fn test_points(a: &ConicData, b: &ConicData, p: &mut Points, eps: f64) -> bool {
     p.iter().any(Option::is_some)
 }
 
-fn intersect(a: &ConicData, b: &ConicData, pencil: &mut ConicData, eps: f64) -> Points {
+fn intersect(
+    a: &ConicData,
+    b: &ConicData,
+    pencil: &mut ConicData,
+    scratch: &mut RawScratch,
+    eps: f64,
+) -> Points {
     let m = a.matrix;
     let n = b.matrix;
     let minor = |i: usize, j: usize| (m[i] * n[j] - m[j] * n[i]).abs();
     if minor(0, 1) < eps && minor(0, 3) < eps && minor(1, 3) < eps {
-        return equal_quadratic_parts(a, b, eps);
+        return equal_quadratic_parts(a, b, &mut scratch.points, eps);
     }
 
     // Eliminate a variable directly when one equation is linear in it.
@@ -250,7 +259,7 @@ fn intersect(a: &ConicData, b: &ConicData, pencil: &mut ConicData, eps: f64) -> 
         let m = first.matrix;
         let n = second.matrix;
         if m[0] == 0.0 && m[1] == 0.0 && n[3] == 0.0 {
-            return solve_bilinear(first, second, eps);
+            return solve_bilinear(first, second, scratch, eps);
         }
     }
     for (first, second) in [(a, b), (b, a)] {
@@ -258,10 +267,10 @@ fn intersect(a: &ConicData, b: &ConicData, pencil: &mut ConicData, eps: f64) -> 
         let n = second.matrix;
         if m[3] == 0.0 && n[3] == 0.0 {
             if m[1] == 0.0 {
-                return solve_axis_parabola(first, second, true, eps);
+                return solve_axis_parabola(first, second, scratch, true, eps);
             }
             if m[0] == 0.0 {
-                return solve_axis_parabola(first, second, false, eps);
+                return solve_axis_parabola(first, second, scratch, false, eps);
             }
         }
     }
@@ -270,7 +279,7 @@ fn intersect(a: &ConicData, b: &ConicData, pencil: &mut ConicData, eps: f64) -> 
             let m = first.matrix;
             let n = second.matrix;
             if m[usize::from(!vertical)] == 0.0 && n[0] == 0.0 && n[1] == 0.0 {
-                return solve_one_quadratic(first, second, vertical, eps);
+                return solve_one_quadratic(first, second, scratch, vertical, eps);
             }
         }
     }
@@ -283,7 +292,7 @@ fn intersect(a: &ConicData, b: &ConicData, pencil: &mut ConicData, eps: f64) -> 
     }
 }
 
-fn equal_quadratic_parts(a: &ConicData, b: &ConicData, eps: f64) -> Points {
+fn equal_quadratic_parts(a: &ConicData, b: &ConicData, scratch: &mut Points, eps: f64) -> Points {
     let m = a.matrix;
     let n = b.matrix;
     let (i, sign) = if m[0] == 0.0 && n[0] == 0.0 && m[1] == 0.0 && n[1] == 0.0 {
@@ -296,10 +305,9 @@ fn equal_quadratic_parts(a: &ConicData, b: &ConicData, eps: f64) -> Points {
     let entry = |j: usize| sign * (m[j] * n[i] - m[i] * n[j]);
     let line = [2.0 * entry(4), 2.0 * entry(5), entry(2)];
     for conic in [a, b] {
-        let [p, q] = on_line(line, conic, eps);
-        let mut p = [p, q, None, None];
-        if test_points(a, b, &mut p, MIN_PRECISION) {
-            return p;
+        scratch[..2].copy_from_slice(&on_line(line, conic, eps));
+        if test_points(a, b, scratch, MIN_PRECISION) {
+            return *scratch;
         }
     }
     [None; 4]
@@ -355,8 +363,8 @@ fn degenerate_pencil(
     [None; 4]
 }
 
-fn solve_bilinear(a: &ConicData, b: &ConicData, eps: f64) -> Points {
-    let mut p = [None; 4];
+fn solve_bilinear(a: &ConicData, b: &ConicData, scratch: &mut RawScratch, eps: f64) -> Points {
+    let mut candidates = AxisSolutions::default();
     for vertical in [true, false] {
         let [_, _, c, d, e, f] = axis_matrix(a.matrix, vertical);
         let [k, l, m, _, o, q] = axis_matrix(b.matrix, vertical);
@@ -369,9 +377,17 @@ fn solve_bilinear(a: &ConicData, b: &ConicData, eps: f64) -> Points {
             4.0 * d * d * k,
         ];
         let (roots, count) = polynomial_roots(coefficients);
-        intersect_axes(a, b, &roots[..count], vertical, eps, &mut p);
+        intersect_axes(
+            a,
+            b,
+            &roots[..count],
+            vertical,
+            eps,
+            &mut scratch.points,
+            &mut candidates,
+        );
     }
-    p
+    candidates.finish(scratch)
 }
 
 fn axis_matrix([a, b, c, d, e, f]: Matrix, vertical: bool) -> Matrix {
@@ -382,7 +398,13 @@ fn axis_matrix([a, b, c, d, e, f]: Matrix, vertical: bool) -> Matrix {
     }
 }
 
-fn solve_axis_parabola(a: &ConicData, b: &ConicData, vertical: bool, eps: f64) -> Points {
+fn solve_axis_parabola(
+    a: &ConicData,
+    b: &ConicData,
+    scratch: &mut RawScratch,
+    vertical: bool,
+    eps: f64,
+) -> Points {
     let [s, _, c, _, e, f] = axis_matrix(a.matrix, vertical);
     let [k, l, m, _, o, q] = axis_matrix(b.matrix, vertical);
     let coefficients = [
@@ -394,12 +416,26 @@ fn solve_axis_parabola(a: &ConicData, b: &ConicData, vertical: bool, eps: f64) -
     ];
     let (mut roots, count) = polynomial_roots(coefficients);
     roots[..count].sort_by(f64::total_cmp);
-    let mut p = [None; 4];
-    intersect_axes(a, b, &roots[..count], vertical, eps, &mut p);
-    p
+    let mut candidates = AxisSolutions::default();
+    intersect_axes(
+        a,
+        b,
+        &roots[..count],
+        vertical,
+        eps,
+        &mut scratch.points,
+        &mut candidates,
+    );
+    candidates.finish(scratch)
 }
 
-fn solve_one_quadratic(a: &ConicData, b: &ConicData, vertical: bool, eps: f64) -> Points {
+fn solve_one_quadratic(
+    a: &ConicData,
+    b: &ConicData,
+    scratch: &mut RawScratch,
+    vertical: bool,
+    eps: f64,
+) -> Points {
     let [_, s, c, d, e, f] = axis_matrix(a.matrix, vertical);
     let [_, _, m, n, o, q] = axis_matrix(b.matrix, vertical);
     let coefficients = [
@@ -414,9 +450,58 @@ fn solve_one_quadratic(a: &ConicData, b: &ConicData, vertical: bool, eps: f64) -
         8.0 * n * n * e - 8.0 * n * o * d,
     ];
     let (roots, count) = cubic(coefficients, eps);
-    let mut p = [None; 4];
-    intersect_axes(a, b, &roots[..count], vertical, eps, &mut p);
-    p
+    let mut candidates = AxisSolutions::default();
+    intersect_axes(
+        a,
+        b,
+        &roots[..count],
+        vertical,
+        eps,
+        &mut scratch.points,
+        &mut candidates,
+    );
+    candidates.finish(scratch)
+}
+
+#[derive(Default)]
+struct AxisSolutions {
+    with_history: Points,
+    fresh: Points,
+}
+
+impl AxisSolutions {
+    fn collect(&mut self, scratch: &Points) {
+        fn insert(points: &mut Points, candidates: &[Pt]) {
+            for &point in candidates.iter().flatten() {
+                if !points.iter().any(|&p| points_equal(p, Some(point))) {
+                    if let Some(slot) = points.iter_mut().find(|slot| slot.is_none()) {
+                        *slot = Some(point);
+                    }
+                }
+            }
+        }
+        insert(&mut self.with_history, scratch);
+        insert(&mut self.fresh, &scratch[..2]);
+    }
+
+    fn finish(self, scratch: &mut RawScratch) -> Points {
+        if self.with_history != self.fresh {
+            let mut available = [true; 4];
+            let mut order = IDENTITY;
+            for (i, point) in self.with_history.into_iter().enumerate() {
+                let Some(slot) = (0..4).find(|&slot| {
+                    available[slot]
+                        && (point == self.fresh[slot] || points_equal(point, self.fresh[slot]))
+                }) else {
+                    return self.with_history;
+                };
+                order[i] = slot;
+                available[slot] = false;
+            }
+            scratch.order = pack_order(order);
+        }
+        self.with_history
+    }
 }
 
 fn intersect_axes(
@@ -425,7 +510,8 @@ fn intersect_axes(
     roots: &[f64],
     vertical: bool,
     eps: f64,
-    p: &mut Points,
+    scratch: &mut Points,
+    candidates: &mut AxisSolutions,
 ) {
     for &root in roots {
         let line = if vertical {
@@ -434,18 +520,11 @@ fn intersect_axes(
             [0.0, 1.0, -root]
         };
         for conic in [a, b] {
-            let [r, s] = on_line(line, conic, eps);
-            let mut candidates = [r, s, None, None];
-            test_points(a, b, &mut candidates, 10.0 * eps);
-            for candidate in candidates.into_iter().flatten() {
-                if !p.iter().any(|&prior| points_equal(prior, Some(candidate))) {
-                    if let Some(slot) = p.iter_mut().find(|slot| slot.is_none()) {
-                        *slot = Some(candidate);
-                    } else {
-                        return;
-                    }
-                }
-            }
+            // The line-conic solver writes only the first two scratch slots.
+            // The other two can still supply valid points and affect order.
+            scratch[..2].copy_from_slice(&on_line(line, conic, eps));
+            test_points(a, b, scratch, 10.0 * eps);
+            candidates.collect(scratch);
         }
     }
 }
