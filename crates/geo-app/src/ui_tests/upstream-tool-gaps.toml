@@ -1,0 +1,123 @@
+# Controller-test scenarios the window cannot pass yet.
+#
+# [[gap]] entries name a ported scenario of upstream_tools.rs and must keep
+# disagreeing with it: when the scenario starts passing, the entry is stale
+# and the test fails. The [[missing]] entries are the upstream test methods
+# whose tool the window does not have at all (pen, shapes, masks, inline
+# texts); they are an audit list: when one of those tools lands, port its
+# scenario and drop the entry.
+
+[[gap]]
+id = "mirrorAtPointTool"
+category = "behaviour"
+reason = "upstream clicks empty space twice and the reflection tool makes a new point each time; the window's reflect-at-point tool picks existing objects only and ignores a click on empty space, so nothing is created"
+
+[[gap]]
+id = "mirrorAtLineTool"
+category = "behaviour"
+reason = "upstream clicks empty space to make the point to reflect and again on the line; the window's reflect-at-line tool ignores a click on empty space"
+
+[[gap]]
+id = "deleteTool"
+category = "app-bug"
+reason = "deleting the clicked line leaves the pointer's hovered id stale and the next frame's paint panics reading the deleted object's value (draw.rs builds the curve layer for hovered and selected ids without checking the id still exists)"
+
+[[gap]]
+id = "rotateByAngleToolMultiplePointsToExistingPoint"
+category = "selection"
+reason = "upstream drag-selects two points in a box, then rotates both by 180deg around an existing point; the window has no box selection, so only one point rotates"
+
+[[gap]]
+id = "rotateByAngleToolMultiplePointsToNewPoint"
+category = "selection"
+reason = "upstream drag-selects two points and rotates them by 270deg around a new point; no box selection in the window"
+
+[[gap]]
+id = "rotateByAngleToolObjectToExistingPoint"
+category = "unsupported-kind"
+reason = "upstream clicks a polygon and rotates it by 270deg; the rotate tool accepts points, lines, segments and circles only"
+
+[[gap]]
+id = "rotateByAngleToolMultipleObjectsToNewPoint"
+category = "selection"
+reason = "upstream drag-selects two circles and rotates them by 180deg around a new point; no box selection in the window"
+
+[[missing]]
+method = "EuclidianControllerTest.penTool"
+tool = "pen"
+reason = "no pen tool"
+
+[[missing]]
+method = "EuclidianControllerTest.penToolNotes"
+tool = "pen"
+reason = "no pen tool (notes config)"
+
+[[missing]]
+method = "EuclidianControllerTest.shapeRectangleTool"
+tool = "shape-rectangle"
+reason = "no shape tools"
+
+[[missing]]
+method = "EuclidianControllerTest.shapeParallelogramTool"
+tool = "shape-parallelogram"
+reason = "no shape tools"
+
+[[missing]]
+method = "EuclidianControllerTest.shapeStadiumTool"
+tool = "shape-stadium"
+reason = "no shape tools"
+
+[[missing]]
+method = "EuclidianControllerTest.shapeCurveTool"
+tool = "shape-curve"
+reason = "no shape tools"
+
+[[missing]]
+method = "EuclidianControllerTest.inlineTextTool"
+tool = "media-text"
+reason = "no inline text"
+
+[[missing]]
+method = "EuclidianControllerTest.inlineTextToolKeepsDraggedSizeWhenZoomed"
+tool = "media-text"
+reason = "no inline text"
+
+[[missing]]
+method = "EuclidianControllerTest.inlineToolsKeepDraggedSizeWhenZoomed"
+tool = "equation"
+reason = "no inline equation/mind-map objects"
+
+[[missing]]
+method = "EuclidianControllerTest.inlineStickyNoteSize"
+tool = "sticky-note"
+reason = "no sticky notes"
+
+[[missing]]
+method = "ModeDeleteTest.eraserTest"
+tool = "eraser"
+reason = "no eraser or pen strokes"
+
+[[missing]]
+method = "ModeDeleteTest.eraseWholeStrokeTest"
+tool = "eraser"
+reason = "no eraser or pen strokes"
+
+[[missing]]
+method = "ModeDeleteTest.eraseStrokeGrouped"
+tool = "eraser"
+reason = "no eraser or pen strokes"
+
+[[missing]]
+method = "ModeDeleteTest.eraserTestStraight"
+tool = "eraser"
+reason = "no eraser or pen strokes"
+
+[[missing]]
+method = "ModeShapeTest.shapeMaskTool"
+tool = "mask"
+reason = "no mask tool"
+
+[[missing]]
+method = "ModeShapeTest.maskShouldBeInFrontOfObjects"
+tool = "mask"
+reason = "no mask tool"
