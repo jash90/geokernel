@@ -876,46 +876,55 @@ struct PolygonNames {
     indexed_segments: BTreeSet<String>,
 }
 
-/// The points a script line `name = Polygon(a, b, ...)` is made from (not
-/// the `n` of a regular polygon, whose own vertices are labelled by
-/// GeoGebra, not after its arguments).
-fn polygon_args(line: &str) -> Option<Vec<&str>> {
-    let (label, command, args) = command_args(line)?;
-    let regular = args.iter().any(|arg| arg.parse::<f64>().is_ok());
-    (!label.is_empty() && command == "Polygon" && !regular).then_some(args)
-}
-
 impl PolygonNames {
     fn of(script: &[String], kind: impl Fn(&str) -> Option<Kind>) -> PolygonNames {
         let mut names = PolygonNames::default();
-        // the polygons made from points by their label, whose images the
-        // transformations below move with their sides
-        let mut polygons: BTreeMap<String, Vec<String>> = BTreeMap::new();
-        let label_of = |line: &str| -> Option<String> {
-            let lhs = line.split('#').next()?;
-            lhs.split_once('=').map(|(n, _)| line_label(n))
-        };
+        // A fixed-vertex polygon image is made from the labelled images of
+        // its points. Track possible labels through every step in the chain.
+        // None represents an indexed label, whose image takes a default label.
+        let mut polygons: BTreeMap<&str, BTreeSet<Option<String>>> = BTreeMap::new();
         for line in script {
-            if let Some(args) = polygon_args(line) {
-                if let Some(label) = label_of(line) {
-                    polygons.insert(label, args.iter().map(|a| a.to_string()).collect());
-                }
-            } else if let Some(src) = transformed_arg(line) {
-                if let Some(label) = label_of(line) {
-                    if let Some(vertices) = polygons.get(src).cloned() {
-                        // the sides of the image are named after the labels
-                        // of the transformed vertices (`A'` gives `a'`, and
-                        // the image of an image `A''`), or after the default
-                        // segment labels
-                        for vertex in &vertices {
-                            names.segments.insert(format!("{vertex}'").to_lowercase());
-                        }
-                        names.default_segments();
-                        let image: Vec<String> = vertices.iter().map(|v| format!("{v}'")).collect();
-                        polygons.insert(label, image);
+            let Some((label, command, args)) = command_args(line) else {
+                continue;
+            };
+            if command == "Polygon"
+                && args.len() >= 3
+                && args
+                    .iter()
+                    .all(|arg| kind(arg) == Some(Kind::Point) || names.point(arg))
+            {
+                polygons.insert(label, args.iter().map(|v| Some(v.to_string())).collect());
+                continue;
+            }
+            let Some(vertices) = transformed_arg(line).and_then(|src| polygons.get(src)) else {
+                continue;
+            };
+            let mut image = BTreeSet::new();
+            for vertex in vertices {
+                if let Some(vertex) = vertex
+                    .as_ref()
+                    .filter(|v| !v.contains('_') && !v.ends_with("'''"))
+                {
+                    let prime = format!("{vertex}'");
+                    if names.points.contains(&prime) || kind(&prime) == Some(Kind::Point) {
+                        names.indexed_points.insert(prime.clone());
+                        names.indexed_segments.insert(prime.to_lowercase());
+                        image.insert(None);
                     }
+                    names.points.insert(prime.clone());
+                    names.segments.insert(prime.to_lowercase());
+                    image.insert(Some(prime));
+                } else {
+                    names.default_points();
+                    for base in POINT_LABELS {
+                        names.indexed_segments.insert(base.to_lowercase());
+                        image.insert(Some(base.to_string()));
+                    }
+                    image.insert(None);
                 }
             }
+            names.default_segments();
+            polygons.insert(label, image);
         }
         for line in script {
             let Some((_, command, args)) = command_args(line) else {
