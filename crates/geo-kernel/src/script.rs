@@ -57,6 +57,7 @@ use crate::algo::transform::TransformDef;
 use crate::algo::vector::VectorDef;
 use crate::algo::Group;
 use crate::kernel::angle::{self, AngleDef, AngleSource};
+use crate::kernel::locus::LocusDef;
 use crate::kernel::{Construction, Def, Id, Kind, Value};
 use std::fmt;
 
@@ -150,6 +151,9 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
 
 /// The forms of the module documentation other than arithmetic.
 fn define(c: &mut Construction, name: &str, rhs: &str) -> Result<Id, String> {
+    if let Some(("Slider", args)) = split_call(rhs) {
+        return slider(c, name, &args);
+    }
     if let Some(defs) = parse_multi(c, rhs) {
         return add_outputs(c, name, defs?);
     }
@@ -158,6 +162,24 @@ fn define(c: &mut Construction, name: &str, rhs: &str) -> Result<Id, String> {
         def => def,
     };
     c.add(name, def).map_err(|e| e.to_string())
+}
+
+/// `Slider(min, max)` and `Slider(min, max, increment)` with number
+/// literals (`CmdSlider`); the increment only matters for dragging, which
+/// the kernel does not do, so it is checked and dropped.
+fn slider(c: &mut Construction, name: &str, args: &[&str]) -> Result<Id, String> {
+    let (min, max) = match args {
+        [min, max] => (parse_number(min)?, parse_number(max)?),
+        [min, max, step] => {
+            parse_number(step)?;
+            (parse_number(min)?, parse_number(max)?)
+        }
+        _ => return Err(format!("`Slider` does not take {} argument(s)", args.len())),
+    };
+    if min.partial_cmp(&max) != Some(std::cmp::Ordering::Less) {
+        return Err(format!("a slider needs min < max, got {min} and {max}"));
+    }
+    c.add_slider(name, min, max).map_err(|e| e.to_string())
 }
 
 /// Whether `rhs` is exactly one call `Name(...)` of a command: the bracket
@@ -400,6 +422,7 @@ fn is_finite(v: &Value) -> bool {
         Value::Conic { .. } => true,
         Value::Arc { length } => length.is_finite(),
         Value::Sector { area } => area.is_finite(),
+        Value::Locus { .. } => true,
         Value::Undefined => false,
     }
 }
@@ -525,6 +548,9 @@ pub(crate) fn parse_def(c: &Construction, rhs: &str) -> Result<Def, String> {
     }
     if let Some(def) = crate::algo::path::PathDef::parse(c, func, &args) {
         return def.map(Def::Path);
+    }
+    if let Some(def) = LocusDef::parse(c, func, &args) {
+        return def.map(Def::Locus);
     }
 
     match (func, args.len()) {

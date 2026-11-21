@@ -159,6 +159,8 @@ pub enum ExpectedData {
     },
     /// The elements in order, each recorded like an object.
     List(Vec<Expected>),
+    /// The points of a locus in order.
+    Locus(Vec<LocusPoint>),
     /// A general conic: its type name (`ConicType::name`), its raw matrix
     /// `[A00, A11, A22, A01, A02, A12]` and the parts its type records.
     Conic {
@@ -176,6 +178,10 @@ pub enum ExpectedData {
         curve: Option<ArcCurve>,
     },
 }
+
+/// A point of a locus: `(x, y)`, `None` for an undefined point, and whether
+/// it is joined to the point before it.
+pub type LocusPoint = (Option<(f64, f64)>, bool);
 
 /// What an arc or sector of a circle or ellipse records besides its value
 /// (`golden/SCHEMA.md`).
@@ -402,6 +408,29 @@ fn vertices(v: &serde_json::Value, holes: bool) -> Result<Vec<Option<(f64, f64)>
         .collect()
 }
 
+/// The points of a locus: `[x, y, lineTo]` each, `x` and `y` both null for
+/// an undefined point.
+fn locus_points(v: &serde_json::Value) -> Result<Vec<LocusPoint>, String> {
+    v.as_array()
+        .ok_or_else(|| format!("`points` must be a list, got {v}"))?
+        .iter()
+        .map(|p| match p.as_array().map(Vec::as_slice) {
+            Some([x, y, line_to]) => {
+                let line_to = line_to
+                    .as_bool()
+                    .ok_or_else(|| format!("a locus point needs a boolean lineTo, got {p}"))?;
+                let at = match (x.is_null(), y.is_null()) {
+                    (true, true) => None,
+                    (false, false) => Some((number("x", x)?, number("y", y)?)),
+                    _ => return Err(format!("a locus point has one null coordinate: {p}")),
+                };
+                Ok((at, line_to))
+            }
+            _ => Err(format!("a locus point must be [x, y, lineTo], got {p}")),
+        })
+        .collect()
+}
+
 /// The samples of a defined function: exactly one per [`SAMPLE_XS`], in order.
 fn function_samples(raw: &RawObject) -> Result<ExpectedData, String> {
     if !raw.fields.is_empty() {
@@ -446,6 +475,7 @@ impl TryFrom<RawObject> for Expected {
             "conic" => (Kind::Conic, &[]),
             "arc" => (Kind::Arc, &[]),
             "sector" => (Kind::Sector, &[]),
+            "locus" => (Kind::Locus, &["points"]),
             other => return Err(format!("unknown object type `{other}`")),
         };
         if raw.samples.is_some() && (kind != Kind::Function || !raw.defined) {
@@ -523,6 +553,13 @@ impl TryFrom<RawObject> for Expected {
                     vertices: vertices(&raw.fields["vertices"], true)?,
                     length: number("length", &raw.fields["length"])?,
                 }),
+            });
+        }
+        if kind == Kind::Locus {
+            return Ok(Expected {
+                legacy_angle_number: false,
+                kind,
+                data: Some(ExpectedData::Locus(locus_points(&raw.fields["points"])?)),
             });
         }
         if kind == Kind::List {

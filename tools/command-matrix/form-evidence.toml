@@ -455,6 +455,16 @@ form = "point,point"
 cases = ["intersect-groups-001", "intersect-startpoint-005", "lines-bisector-001"]
 
 [[form]]
+command = "Locus"
+form = "point,point"
+cases = ["locus-circle-001", "locus-segment-001", "locus-line-001", "locus-arc-001", "locus-polygon-001", "locus-undefined-001"]
+
+[[form]]
+command = "Locus"
+form = "point,number"
+cases = ["locus-slider-001", "locus-slider-002", "locus-slider-005"]
+
+[[form]]
 command = "Max"
 form = "list"
 cases = ["lists-objects-034", "lists-stats-006", "lists-stats-008"]

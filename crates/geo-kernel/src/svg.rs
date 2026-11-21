@@ -331,6 +331,30 @@ pub fn render(c: &Construction, view: View, width: u32, height: u32) -> String {
                 }
                 let _ = writeln!(angles, r#" Z"/>"#);
             }
+            Value::Locus { .. } => {
+                let Some(locus) = c.locus(id) else {
+                    continue;
+                };
+                // A point without `line_to` starts a new piece.
+                let mut pts = String::new();
+                let mut flush = |pts: &mut String| {
+                    if pts.matches(' ').count() > 1 {
+                        let _ = writeln!(
+                            segments,
+                            r##"<polyline points="{}" fill="none"/>"##,
+                            pts.trim_end()
+                        );
+                    }
+                    pts.clear();
+                };
+                for p in &locus.points {
+                    if !p.line_to {
+                        flush(&mut pts);
+                    }
+                    let _ = write!(pts, "{:.2},{:.2} ", sx(p.x), sy(p.y));
+                }
+                flush(&mut pts);
+            }
             Value::Number(_) | Value::Bool(_) | Value::List { .. } | Value::Undefined => {}
         }
     }
