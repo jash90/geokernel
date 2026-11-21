@@ -1,0 +1,683 @@
+# The 2D forms of commands that are done, and the evidence for each.
+#
+# One row per form of tools/command-matrix/forms.csv:
+#
+# [[form]]
+# command = "Midpoint"          # the command as named in docs/command-matrix.csv
+# form = "point,point"          # one form of forms.csv, exactly as written there
+# cases = ["conic-midseg-001"]  # golden cases that call it in this form
+#
+# or, instead of `cases`, `difference = "section-slug: Area text"`: a row of
+# DIFFERENCES.md (the slug of the heading it is under and its first cell)
+# whose reason is a disposition, not "Not implemented".
+#
+# crates/geo-golden/tests/command_forms.rs checks every row: each case exists,
+# is not a known gap, and calls the command with arguments of exactly the
+# form's kinds; forms with a wildcard argument (any, path, region) cannot be
+# done by cases. `forms_done` in docs/command-matrix.csv counts these rows;
+# regenerate the matrix after editing (README.md in this directory).
+
+[[form]]
+command = "AffineRatio"
+form = "point,point,point"
+cases = ["measure-affine-001", "measure-affine-002", "measure-affine-003"]
+
+[[form]]
+command = "Angle"
+form = "polygon"
+cases = ["polygon-angles-001", "polygon-angles-002", "polygon-angles-003"]
+
+[[form]]
+command = "Angle"
+form = "point,point,point"
+cases = ["expr-cmd-012", "expr-deg-009", "expr-deg-010"]
+
+[[form]]
+command = "AngularBisector"
+form = "line,line"
+cases = ["conic-diameter-009", "intersect-groups-007", "lines-anglelines-001"]
+
+[[form]]
+command = "AngularBisector"
+form = "point,point,point"
+cases = ["intersect-groups-002", "intersect-startpoint-001", "intersect-startpoint-002"]
+
+[[form]]
+command = "Arc"
+form = "conic,number,number"
+cases = ["arcs-conicparams-001", "arcs-conicparams-002", "arcs-conicparams-005"]
+
+[[form]]
+command = "Arc"
+form = "conic,point,point"
+cases = ["arcs-conicpoints-001", "arcs-conicpoints-002", "arcs-conicpoints-005"]
+
+[[form]]
+command = "AreCollinear"
+form = "point,point,point"
+cases = ["logic-boolobj-002", "predicates-collinear-001", "predicates-collinear-002"]
+
+[[form]]
+command = "AreConcurrent"
+form = "line,line,line"
+cases = ["predicates-concurrent-001", "predicates-concurrent-002", "predicates-concurrent-003"]
+
+[[form]]
+command = "AreConcyclic"
+form = "point,point,point,point"
+cases = ["predicates-concyclic-001", "predicates-concyclic-002", "predicates-concyclic-003"]
+
+[[form]]
+command = "AreParallel"
+form = "line,line"
+cases = ["predicates-equal-028", "predicates-parallel-001", "predicates-parallel-002"]
+
+[[form]]
+command = "ArePerpendicular"
+form = "line,line"
+cases = ["predicates-perpendicular-001", "predicates-perpendicular-002", "predicates-perpendicular-003"]
+
+[[form]]
+command = "Area"
+form = "conic"
+cases = ["measure-area-001", "measure-area-002", "measure-area-003"]
+
+[[form]]
+command = "Area"
+form = "polygon"
+cases = ["polygon-derived-001", "polygon-derived-002", "polygon-derived-003"]
+
+[[form]]
+command = "Area"
+form = "point,point,point,..."
+cases = ["expr-cmd-006", "expr-fncmd-005", "expr-ptcmd-017"]
+
+[[form]]
+command = "Axes"
+form = "conic"
+cases = ["conics-readers-001", "conics-readers-002", "conics-readers-003"]
+
+[[form]]
+command = "Center"
+form = "conic"
+cases = ["conic-center-001", "conic-center-002", "conic-center-003"]
+
+[[form]]
+command = "Centroid"
+form = "polygon"
+cases = ["polygon-derived-001", "polygon-derived-002", "polygon-derived-003"]
+
+[[form]]
+command = "Circle"
+form = "point,number"
+cases = ["arcs-conicparams-001", "arcs-conicparams-002", "arcs-conicparams-003"]
+
+[[form]]
+command = "Circle"
+form = "point,point"
+cases = ["arcs-conicpoints-005", "conic-center-001", "conic-center-002"]
+
+[[form]]
+command = "Circle"
+form = "point,point,point"
+cases = ["conic-center-007", "conic-center-008", "conic-diameter-006"]
+
+[[form]]
+command = "CircleArc"
+form = "point,point,point"
+cases = ["arcs-chain-001", "arcs-chain-002", "arcs-circular-001"]
+
+[[form]]
+command = "CircleSector"
+form = "point,point,point"
+cases = ["arcs-chain-002", "arcs-circular-003", "arcs-circular-004"]
+
+[[form]]
+command = "CircumcircleArc"
+form = "point,point,point"
+cases = ["arcs-circum-001", "arcs-circum-002", "arcs-circum-005"]
+
+[[form]]
+command = "CircumcircleSector"
+form = "point,point,point"
+cases = ["arcs-circum-003", "arcs-circum-004", "arcs-circum-007"]
+
+[[form]]
+command = "Circumference"
+form = "conic"
+cases = ["measure-circumference-001", "measure-circumference-002", "measure-circumference-003"]
+
+[[form]]
+command = "ClosestPoint"
+form = "line,line"
+cases = ["points-pathpair-001"]
+
+[[form]]
+command = "Conic"
+form = "point,point,point,point,point"
+cases = ["conics-fivepoints-001", "conics-fivepoints-002", "conics-fivepoints-003"]
+
+[[form]]
+command = "CrossRatio"
+form = "point,point,point,point"
+cases = ["measure-cross-001", "measure-cross-002", "measure-cross-003"]
+
+[[form]]
+command = "Diameter"
+form = "line,conic"
+cases = ["conic-diameter-001", "conic-diameter-002", "conic-diameter-003"]
+
+[[form]]
+command = "Diameter"
+form = "vector,conic"
+cases = ["conics-tangent-003", "conics-tangent-006", "conics-tangent-009"]
+
+[[form]]
+command = "Dilate"
+form = "point,number"
+cases = ["transform-dilate-001"]
+
+[[form]]
+command = "Dilate"
+form = "line,number"
+cases = ["transform-dilate-002", "transform-dilate-019", "transform-dilate-036"]
+
+[[form]]
+command = "Dilate"
+form = "conic,number"
+cases = ["conics-transform-004", "conics-transform-012", "conics-transform-020"]
+
+[[form]]
+command = "Dilate"
+form = "point,number,point"
+cases = ["transform-dilate-006", "transform-dilate-011", "vector-rawscale-005"]
+
+[[form]]
+command = "Dilate"
+form = "line,number,point"
+cases = ["intersect-groups-005", "transform-chain-001", "transform-dilate-007"]
+
+[[form]]
+command = "Dilate"
+form = "conic,number,point"
+cases = ["conics-transform-005", "conics-transform-013", "conics-transform-021"]
+
+[[form]]
+command = "Direction"
+form = "line"
+cases = ["vector-chain-003", "vector-direction-001", "vector-direction-002"]
+
+[[form]]
+command = "Directrix"
+form = "conic"
+cases = ["conics-readers-001", "conics-readers-002", "conics-readers-003"]
+
+[[form]]
+command = "Distance"
+form = "point,point"
+cases = ["expr-chain-006", "expr-cmd-001", "expr-cmd-004"]
+
+[[form]]
+command = "Distance"
+form = "line,line"
+cases = ["conic-diameter-009", "lines-bisector-015", "lines-polar-006"]
+
+[[form]]
+command = "Div"
+form = "number,number"
+cases = ["expr-syntax-013", "expr-twonum-002", "expr-twonum-007"]
+
+[[form]]
+command = "Eccentricity"
+form = "conic"
+cases = ["conics-readers-001", "conics-readers-002", "conics-readers-003"]
+
+[[form]]
+command = "Element"
+form = "list,number"
+cases = ["lists-index-003", "lists-index-004", "lists-index-013"]
+
+[[form]]
+command = "Ellipse"
+form = "point,point,number"
+cases = ["conics-focilength-001", "conics-focilength-002", "conics-focilength-003"]
+
+[[form]]
+command = "Ellipse"
+form = "point,point,point"
+cases = ["arcs-conicparams-006", "arcs-conicparams-007", "conics-ellipse-001"]
+
+[[form]]
+command = "Excentricity"
+form = "conic"
+cases = ["conics-readers-001", "conics-readers-002", "conics-readers-003"]
+
+[[form]]
+command = "First"
+form = "list"
+cases = ["lists-order-003", "lists-order-006"]
+
+[[form]]
+command = "First"
+form = "list,number"
+cases = ["lists-objects-037", "lists-order-004", "lists-order-017"]
+
+[[form]]
+command = "FirstAxis"
+form = "conic"
+cases = ["conics-readers-001", "conics-readers-002", "conics-readers-003"]
+
+[[form]]
+command = "FirstAxisLength"
+form = "conic"
+cases = ["conics-readers-001", "conics-readers-002", "conics-readers-003"]
+
+[[form]]
+command = "Focus"
+form = "conic"
+cases = ["conics-readers-001", "conics-readers-002", "conics-readers-003"]
+
+[[form]]
+command = "GCD"
+form = "number,number"
+cases = ["expr-syntax-012", "expr-twonum-003", "expr-twonum-009"]
+
+[[form]]
+command = "Hyperbola"
+form = "point,point,number"
+cases = ["conics-focilength-004", "conics-focilength-005", "conics-focilength-006"]
+
+[[form]]
+command = "Hyperbola"
+form = "point,point,point"
+cases = ["conics-hyperbola-001", "conics-hyperbola-002", "conics-hyperbola-003"]
+
+[[form]]
+command = "Incircle"
+form = "point,point,point"
+cases = ["conic-center-009", "conic-incircle-001", "conic-incircle-002"]
+
+[[form]]
+command = "InteriorAngles"
+form = "polygon"
+cases = ["polygon-angles-001", "polygon-angles-002", "polygon-angles-003"]
+
+[[form]]
+command = "Intersect"
+form = "line,line"
+cases = ["expr-cmd-013", "expr-ptcmd-005", "expr-ptcmd-006"]
+
+[[form]]
+command = "Intersect"
+form = "line,conic"
+cases = ["conics-tangent-001", "conics-tangent-004", "conics-tangent-007"]
+
+[[form]]
+command = "Intersect"
+form = "line,conic,number"
+cases = ["conics-intersection-001", "conics-intersection-002", "conics-intersection-003"]
+
+[[form]]
+command = "Intersect"
+form = "conic,line,number"
+cases = ["conics-intersection-001", "conics-intersection-002", "conics-intersection-003"]
+
+[[form]]
+command = "Intersect"
+form = "conic,conic,number"
+cases = ["geometry-chain-020", "geometry-chain-021", "geometry-chain-022"]
+
+[[form]]
+command = "IsTangent"
+form = "line,conic"
+cases = ["predicates-tangent-001", "predicates-tangent-002", "predicates-tangent-003"]
+
+[[form]]
+command = "Join"
+form = "list"
+cases = ["lists-join-010", "lists-join-011", "lists-objects-045"]
+
+[[form]]
+command = "Join"
+form = "list,list,..."
+cases = ["lists-join-008", "lists-join-009", "lists-join-013"]
+
+[[form]]
+command = "LCM"
+form = "number,number"
+cases = ["expr-twonum-004", "expr-twonum-009", "expr-twonum-014"]
+
+[[form]]
+command = "Last"
+form = "list,number"
+cases = ["lists-objects-038", "lists-order-005", "lists-order-007"]
+
+[[form]]
+command = "Length"
+form = "vector"
+cases = ["expr-cmd-011", "vector-chain-004", "vector-free-006"]
+
+[[form]]
+command = "Length"
+form = "list"
+cases = ["lists-length-001", "lists-length-002", "lists-length-003"]
+
+[[form]]
+command = "Length"
+form = "segment"
+cases = ["measure-length-001", "measure-length-002", "measure-length-003"]
+
+[[form]]
+command = "Line"
+form = "point,point"
+cases = ["conic-diameter-001", "conic-diameter-002", "conic-diameter-003"]
+
+[[form]]
+command = "Line"
+form = "point,vector"
+cases = ["paths-start-010", "predicates-concurrent-013", "predicates-equal-024"]
+
+[[form]]
+command = "Line"
+form = "point,line"
+cases = ["geometry-ixll-019", "geometry-ixll-020", "geometry-ixll-021"]
+
+[[form]]
+command = "Line"
+form = "point,segment"
+cases = ["geometry-parallel-009", "geometry-parallel-010", "geometry-parallel-011"]
+
+[[form]]
+command = "LineBisector"
+form = "segment"
+cases = ["lines-bisector-007", "lines-bisector-008", "lines-bisector-009"]
+
+[[form]]
+command = "LineBisector"
+form = "point,point"
+cases = ["intersect-groups-001", "intersect-startpoint-005", "lines-bisector-001"]
+
+[[form]]
+command = "Max"
+form = "list"
+cases = ["lists-objects-034", "lists-stats-006", "lists-stats-008"]
+
+[[form]]
+command = "Max"
+form = "number,number"
+cases = ["expr-special-017", "expr-special-019", "expr-special-021"]
+
+[[form]]
+command = "Midpoint"
+form = "conic"
+cases = ["conic-center-001", "conic-center-002", "conic-center-003"]
+
+[[form]]
+command = "Midpoint"
+form = "segment"
+cases = ["conic-midseg-001", "conic-midseg-002", "conic-midseg-003"]
+
+[[form]]
+command = "Midpoint"
+form = "point,point"
+cases = ["arcs-chain-001", "conic-midseg-001", "conic-midseg-002"]
+
+[[form]]
+command = "Min"
+form = "list"
+cases = ["lists-objects-033", "lists-stats-005", "lists-stats-007"]
+
+[[form]]
+command = "Min"
+form = "number,number"
+cases = ["expr-special-018", "expr-special-020", "expr-special-022"]
+
+[[form]]
+command = "Mod"
+form = "number,number"
+cases = ["expr-syntax-008", "expr-syntax-010", "expr-syntax-011"]
+
+[[form]]
+command = "OrthogonalLine"
+form = "point,line"
+cases = ["geometry-chain-001", "geometry-chain-002", "geometry-chain-003"]
+
+[[form]]
+command = "OrthogonalLine"
+form = "point,segment"
+cases = ["geometry-chain-006", "geometry-chain-007", "geometry-chain-008"]
+
+[[form]]
+command = "OrthogonalLine"
+form = "point,vector"
+cases = ["paths-start-011", "predicates-perpendicular-011", "vector-chain-003"]
+
+[[form]]
+command = "OrthogonalVector"
+form = "line"
+cases = ["vector-chain-003", "vector-direction-010", "vector-direction-011"]
+
+[[form]]
+command = "OrthogonalVector"
+form = "vector"
+cases = ["expr-ptcmd-015", "expr-ptcmd-016", "vector-chain-005"]
+
+[[form]]
+command = "Parabola"
+form = "point,line"
+cases = ["conics-intersection-007", "conics-intersection-008", "conics-intersection-022"]
+
+[[form]]
+command = "Parameter"
+form = "conic"
+cases = ["conics-readers-001", "conics-readers-002", "conics-readers-003"]
+
+[[form]]
+command = "PathParameter"
+form = "point"
+cases = ["arcs-chain-001", "arcs-chain-002", "arcs-points-001"]
+
+[[form]]
+command = "Perimeter"
+form = "polygon"
+cases = ["polygon-derived-001", "polygon-derived-002", "polygon-derived-003"]
+
+[[form]]
+command = "Perimeter"
+form = "conic"
+cases = ["measure-circumference-001", "measure-circumference-002", "measure-circumference-003"]
+
+[[form]]
+command = "Polar"
+form = "point,conic"
+cases = ["conics-tangent-003", "conics-tangent-006", "conics-tangent-009"]
+
+[[form]]
+command = "PolyLine"
+form = "point,point,..."
+cases = ["paths-polyline-001", "paths-polyline-002", "paths-polyline-003"]
+
+[[form]]
+command = "Polygon"
+form = "point,point,number"
+cases = ["paths-polygon-005", "polygon-labels-005", "polygon-regsmall-001"]
+
+[[form]]
+command = "Polygon"
+form = "point,point,..."
+cases = ["paths-chain-003", "paths-polygon-001", "paths-polygon-002"]
+
+[[form]]
+command = "Product"
+form = "list"
+cases = ["lists-objects-032", "lists-stats-001", "lists-stats-002"]
+
+[[form]]
+command = "Product"
+form = "list,number"
+cases = ["lists-stats-003"]
+
+[[form]]
+command = "Radius"
+form = "conic"
+cases = ["expr-cmd-009", "measure-radius-001", "measure-radius-002"]
+
+[[form]]
+command = "Ray"
+form = "point,point"
+cases = ["conics-parabola-010", "conics-tangent-015", "paths-closest-003"]
+
+[[form]]
+command = "Ray"
+form = "point,vector"
+cases = ["paths-ray-006", "points-closestray-006", "predicates-equal-026"]
+
+[[form]]
+command = "Reverse"
+form = "list"
+cases = ["lists-join-015", "lists-objects-036", "lists-order-001"]
+
+[[form]]
+command = "SecondAxis"
+form = "conic"
+cases = ["conics-readers-001", "conics-readers-002", "conics-readers-003"]
+
+[[form]]
+command = "SecondAxisLength"
+form = "conic"
+cases = ["conics-readers-001", "conics-readers-002", "conics-readers-003"]
+
+[[form]]
+command = "Sector"
+form = "conic,number,number"
+cases = ["arcs-conicparams-003", "arcs-conicparams-004", "arcs-conicparams-005"]
+
+[[form]]
+command = "Sector"
+form = "conic,point,point"
+cases = ["arcs-conicpoints-003", "arcs-conicpoints-004", "arcs-conicpoints-005"]
+
+[[form]]
+command = "Segment"
+form = "point,point"
+cases = ["conic-diameter-004", "conic-diameter-008", "conic-midseg-001"]
+
+[[form]]
+command = "Semicircle"
+form = "point,point"
+cases = ["arcs-points-006", "arcs-semicircle-001", "arcs-semicircle-002"]
+
+[[form]]
+command = "Sequence"
+form = "number"
+cases = ["lists-arith-013", "lists-if-012", "lists-join-012"]
+
+[[form]]
+command = "Sequence"
+form = "number,number"
+cases = ["lists-limit-003", "lists-seq-002", "lists-seq-019"]
+
+[[form]]
+command = "Sequence"
+form = "number,number,number"
+cases = ["lists-seq-003", "lists-seq-014", "lists-seq-015"]
+
+[[form]]
+command = "Slope"
+form = "line"
+cases = ["conic-diameter-009", "expr-cmd-007", "expr-fncmd-003"]
+
+[[form]]
+command = "Sort"
+form = "list"
+cases = ["lists-objects-039", "lists-objects-040", "lists-objects-041"]
+
+[[form]]
+command = "Sum"
+form = "list"
+cases = ["lists-objects-029", "lists-objects-031", "lists-stats-015"]
+
+[[form]]
+command = "Sum"
+form = "list,number"
+cases = ["lists-objects-030", "lists-stats-018", "lists-sum-005"]
+
+[[form]]
+command = "Tangent"
+form = "conic,point"
+cases = ["lines-oncircle-003", "lines-tangent-002"]
+
+[[form]]
+command = "Tangent"
+form = "line,conic"
+cases = ["conics-tangent-002", "conics-tangent-005", "conics-tangent-008"]
+
+[[form]]
+command = "Tangent"
+form = "point,conic"
+cases = ["conics-tangent-001", "conics-tangent-004", "conics-tangent-007"]
+
+[[form]]
+command = "Translate"
+form = "vector,point"
+cases = ["vector-free-007", "vector-translate-016"]
+
+[[form]]
+command = "Trilinear"
+form = "point,point,point,number,number,number"
+cases = ["points-trilinear-001", "points-trilinear-002", "points-trilinear-003"]
+
+[[form]]
+command = "UnitOrthogonalVector"
+form = "line"
+cases = ["vector-rawscale-002", "vector-unit-003", "vector-unit-004"]
+
+[[form]]
+command = "UnitOrthogonalVector"
+form = "vector"
+cases = ["vector-chain-005", "vector-free-004", "vector-free-005"]
+
+[[form]]
+command = "UnitVector"
+form = "line"
+cases = ["vector-rawscale-001", "vector-rawscale-005", "vector-rawscale-006"]
+
+[[form]]
+command = "UnitVector"
+form = "vector"
+cases = ["expr-ptcmd-009", "expr-ptcmd-010", "vector-free-001"]
+
+[[form]]
+command = "Vector"
+form = "point"
+cases = ["vector-length-002", "vector-translate-017", "vector-vec-001"]
+
+[[form]]
+command = "Vector"
+form = "point,point"
+cases = ["conics-tangent-003", "conics-tangent-006", "conics-tangent-009"]
+
+[[form]]
+command = "Vertex"
+form = "conic"
+cases = ["conics-readers-001", "conics-readers-002", "conics-readers-003"]
+
+[[form]]
+command = "Vertex"
+form = "polygon"
+cases = ["polygon-derived-008", "polygon-derived-009", "polygon-derived-010"]
+
+[[form]]
+command = "Vertex"
+form = "polyline"
+cases = ["polygon-polyline-001", "polygon-polyline-002", "polygon-polyline-003"]
+
+[[form]]
+command = "Vertex"
+form = "polygon,number"
+cases = ["polygon-regular-015", "polygon-shrink-001", "polygon-triangle-022"]
+
+[[form]]
+command = "Vertex"
+form = "polyline,number"
+cases = ["polygon-polyline-001", "polygon-polyline-002", "polygon-polyline-003"]

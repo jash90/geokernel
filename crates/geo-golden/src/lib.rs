@@ -7,12 +7,16 @@
 //! * [`replay`] runs a case on the kernel and compares every snapshot.
 //! * [`gaps`] reads the list of known gaps.
 //! * [`report`] ties it together and produces the summary.
+//! * [`forms`] checks which command forms golden data shows (the command
+//!   matrix), and [`table`] reads the CSV tables it uses.
 
 pub mod compare;
+pub mod forms;
 pub mod gaps;
 pub mod model;
 pub mod replay;
 pub mod report;
+pub mod table;
 
 use std::path::PathBuf;
 

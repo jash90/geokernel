@@ -1,0 +1,572 @@
+//! Command forms and the evidence that a form is done.
+//!
+//! `tools/command-matrix/forms.csv` lists every 2D form of every in-scope
+//! command, as an argument signature such as `point,point` (`()` takes no
+//! argument, a trailing `...` repeats the token before it). A form is done
+//! when `tools/command-matrix/form-evidence.toml` names golden cases that
+//! call the command with arguments of exactly those kinds, or a row of
+//! `DIFFERENCES.md` that gives it a disposition. The rules are checked by
+//! `tests/command_forms.rs`; `tools/command-matrix/README.md` explains them.
+
+use crate::table::Table;
+use geo_kernel::Kind;
+use serde::Deserialize;
+use std::collections::BTreeMap;
+
+/// Tokens that stand for many kinds. One golden case cannot show that every
+/// kind such a form accepts works, so these forms are never done by cases.
+pub const WILDCARDS: [&str; 3] = ["any", "path", "region"];
+
+/// The columns of `forms.csv`.
+pub const FORMS_COLUMNS: [&str; 4] = ["command", "group", "forms_2d", "forms"];
+
+/// The forms of one command.
+#[derive(Debug, Clone, PartialEq)]
+pub struct CommandForms {
+    pub group: String,
+    pub forms: Vec<String>,
+}
+
+/// Reads `forms.csv`: command name to its forms, checking that the count
+/// column agrees with the list and that no form is listed twice.
+pub fn parse_forms(text: &str) -> Result<BTreeMap<String, CommandForms>, String> {
+    let t = Table::parse(text, "forms.csv")?;
+    if t.header != FORMS_COLUMNS {
+        return Err(format!("forms.csv: header {:?}", t.header));
+    }
+    let mut out = BTreeMap::new();
+    for r in &t.rows {
+        let forms: Vec<String> = if r[3].is_empty() {
+            Vec::new()
+        } else {
+            r[3].split(" | ").map(str::to_string).collect()
+        };
+        let n: usize = r[2]
+            .parse()
+            .map_err(|_| format!("forms.csv: `{}`: bad count `{}`", r[0], r[2]))?;
+        if n != forms.len() {
+            return Err(format!(
+                "forms.csv: `{}` says {n} forms and lists {}",
+                r[0],
+                forms.len()
+            ));
+        }
+        for (i, f) in forms.iter().enumerate() {
+            if forms[..i].contains(f) {
+                return Err(format!("forms.csv: `{}` lists `{f}` twice", r[0]));
+            }
+            if f != "()" && f.split(',').any(|t| t.is_empty() || t.contains(['|', ' '])) {
+                return Err(format!("forms.csv: `{}`: malformed form `{f}`", r[0]));
+            }
+        }
+        let entry = CommandForms {
+            group: r[1].clone(),
+            forms,
+        };
+        if out.insert(r[0].clone(), entry).is_some() {
+            return Err(format!("forms.csv: `{}` is listed twice", r[0]));
+        }
+    }
+    Ok(out)
+}
+
+/// One row of `form-evidence.toml`.
+#[derive(Debug, Clone, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct Evidence {
+    pub command: String,
+    pub form: String,
+    /// Golden case ids that call the command in this form.
+    #[serde(default)]
+    pub cases: Vec<String>,
+    /// A row of `DIFFERENCES.md`, written `section-slug: Area text`.
+    pub difference: Option<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct EvidenceFile {
+    #[serde(default)]
+    form: Vec<Evidence>,
+}
+
+/// Reads `form-evidence.toml`: every row has either cases or a difference,
+/// and no form appears twice.
+pub fn parse_evidence(text: &str) -> Result<Vec<Evidence>, String> {
+    let file: EvidenceFile =
+        toml::from_str(text).map_err(|e| format!("form-evidence.toml: {e}"))?;
+    let mut seen = std::collections::BTreeSet::new();
+    for e in &file.form {
+        let what = format!("form-evidence.toml: `{}` `{}`", e.command, e.form);
+        if e.cases.is_empty() == e.difference.is_none() {
+            return Err(format!("{what}: needs either `cases` or `difference`"));
+        }
+        if !seen.insert((e.command.clone(), e.form.clone())) {
+            return Err(format!("{what} is listed twice"));
+        }
+    }
+    Ok(file.form)
+}
+
+/// Whether a form has a wildcard token.
+pub fn is_wildcard(form: &str) -> bool {
+    form.split(',').any(|t| WILDCARDS.contains(&t))
+}
+
+/// The form tokens an argument of kind `k` satisfies. Exact kinds only: a
+/// segment is not taken for `line` (upstream `isGeoLine` would accept it,
+/// but the form with a line argument is not shown by a segment).
+fn tokens_of(k: Kind) -> &'static [&'static str] {
+    match k {
+        Kind::Point => &["point"],
+        Kind::Vector => &["vector"],
+        Kind::Number => &["number"],
+        Kind::Boolean => &["boolean"],
+        Kind::Line => &["line"],
+        Kind::Segment => &["segment"],
+        Kind::Ray => &["ray"],
+        // A circle is a conic upstream (`GeoConic`).
+        Kind::Circle => &["conic", "circle"],
+        Kind::Conic => &["conic"],
+        Kind::Polygon => &["polygon"],
+        Kind::PolyLine => &["polyline"],
+        Kind::List => &["list"],
+        Kind::Function => &["function"],
+        _ => &[],
+    }
+}
+
+/// Whether arguments of the given kinds (`None`: not known) fit `form`.
+pub fn form_matches(form: &str, args: &[Option<Kind>]) -> bool {
+    let mut toks: Vec<&str> = if form == "()" {
+        Vec::new()
+    } else {
+        form.split(',').collect()
+    };
+    if toks.last() == Some(&"...") {
+        toks.pop();
+        let Some(&rep) = toks.last() else {
+            return false;
+        };
+        if args.len() < toks.len() {
+            return false;
+        }
+        while toks.len() < args.len() {
+            toks.push(rep);
+        }
+    }
+    toks.len() == args.len()
+        && toks
+            .iter()
+            .zip(args)
+            .all(|(t, a)| a.is_some_and(|k| tokens_of(k).contains(t)))
+}
+
+fn is_ident_char(c: char) -> bool {
+    c.is_alphanumeric() || c == '_'
+}
+
+/// The index just past the bracket that closes the one at `open`.
+fn closing(s: &str, open: usize) -> Option<usize> {
+    let mut depth = 0i32;
+    for (i, c) in s[open..].char_indices() {
+        match c {
+            '(' | '[' | '{' => depth += 1,
+            ')' | ']' | '}' => {
+                depth -= 1;
+                if depth == 0 {
+                    return Some(open + i + 1);
+                }
+            }
+            _ => {}
+        }
+    }
+    None
+}
+
+/// Splits at the commas outside brackets; an empty text has no argument.
+pub fn split_args(s: &str) -> Vec<String> {
+    if s.trim().is_empty() {
+        return Vec::new();
+    }
+    let mut out = Vec::new();
+    let (mut depth, mut start) = (0i32, 0);
+    for (i, c) in s.char_indices() {
+        match c {
+            '(' | '[' | '{' => depth += 1,
+            ')' | ']' | '}' => depth -= 1,
+            ',' if depth == 0 => {
+                out.push(s[start..i].trim().to_string());
+                start = i + 1;
+            }
+            _ => {}
+        }
+    }
+    out.push(s[start..].trim().to_string());
+    out
+}
+
+/// Every call `Name(args)` in an expression, nested ones included, in order.
+pub fn calls(expr: &str) -> Vec<(String, Vec<String>)> {
+    let mut out = Vec::new();
+    let mut prev: Option<char> = None;
+    for (i, c) in expr.char_indices() {
+        let starts = c.is_alphabetic() && !prev.is_some_and(|p| is_ident_char(p) || p == '{');
+        prev = Some(c);
+        if !starts {
+            continue;
+        }
+        let end = expr[i..]
+            .find(|ch: char| !is_ident_char(ch))
+            .map_or(expr.len(), |n| i + n);
+        if expr[end..].starts_with('(') {
+            if let Some(close) = closing(expr, end) {
+                out.push((
+                    expr[i..end].to_string(),
+                    split_args(&expr[end + 1..close - 1]),
+                ));
+            }
+        }
+    }
+    out
+}
+
+/// Whether `s` is a label as golden scripts write them (`A`, `a_1`, `p_{12}`).
+fn is_name(s: &str) -> bool {
+    let mut it = s.chars();
+    it.next().is_some_and(char::is_alphabetic)
+        && s.chars().all(|c| is_ident_char(c) || c == '{' || c == '}')
+}
+
+/// The kind of an argument, where it can be told without the kernel: a
+/// label of the case, a number written with digits, operators and number
+/// labels, a comparison (a boolean), a list in braces, a pair of numbers (a
+/// point), or a name that is no label (a local variable such as the `k` of
+/// `Sequence`, a number). Anything else, such as a nested call, is unknown.
+pub fn arg_kind(arg: &str, labels: &BTreeMap<String, Kind>) -> Option<Kind> {
+    let a = arg.trim();
+    if let Some(&k) = labels.get(a) {
+        return Some(k);
+    }
+    if a == "true" || a == "false" {
+        return Some(Kind::Boolean);
+    }
+    if is_name(a) {
+        return Some(Kind::Number);
+    }
+    if a.starts_with('{') && closing(a, 0) == Some(a.len()) {
+        return Some(Kind::List);
+    }
+    if a.starts_with('(') && closing(a, 0) == Some(a.len()) {
+        let inner = split_args(&a[1..a.len() - 1]);
+        if inner.len() == 2
+            && inner
+                .iter()
+                .all(|x| arg_kind(x, labels) == Some(Kind::Number))
+        {
+            return Some(Kind::Point);
+        }
+    }
+    // No call, list or tuple inside: only names, digits and operators.
+    let has_call = a
+        .char_indices()
+        .any(|(i, c)| c == '(' && a[..i].chars().last().is_some_and(is_ident_char));
+    if has_call || a.contains([',', '"']) {
+        return None;
+    }
+    // `2a` is two times `a`: digits, then a number label, `pi` or nothing.
+    let names_are_numbers = a
+        .split(|c: char| !(is_ident_char(c) || "._{}".contains(c)))
+        .filter(|w| !w.is_empty())
+        .all(|w| {
+            let name = w.trim_start_matches(|c: char| c.is_ascii_digit() || c == '.');
+            name.is_empty() || name == "pi" || labels.get(name) == Some(&Kind::Number)
+        });
+    if !names_are_numbers || !a.chars().any(|c| c.is_ascii_digit() || c.is_alphabetic()) {
+        return None;
+    }
+    const COMPARISONS: [&str; 10] = ["<", ">", "==", "!=", "≟", "≠", "≤", "≥", "&&", "||"];
+    if COMPARISONS.iter().any(|op| a.contains(op)) {
+        return Some(Kind::Boolean);
+    }
+    if a.chars()
+        .all(|c| is_ident_char(c) || " .+-*/^(){}".contains(c))
+    {
+        return Some(Kind::Number);
+    }
+    None
+}
+
+/// The right-hand sides of a script, without comments.
+fn definitions(script: &[String]) -> impl Iterator<Item = &str> {
+    script.iter().filter_map(|l| {
+        l.split('#')
+            .next()
+            .and_then(|l| l.split_once('='))
+            .map(|(_, rhs)| rhs)
+    })
+}
+
+/// Whether a script calls `command` (through any of its names in
+/// `names`, which maps every name to the command it means) with arguments
+/// that fit `form`; `labels` gives the kind of every object of the case.
+pub fn script_uses_form(
+    script: &[String],
+    labels: &BTreeMap<String, Kind>,
+    names: &BTreeMap<String, String>,
+    command: &str,
+    form: &str,
+) -> bool {
+    definitions(script).any(|rhs| {
+        calls(rhs).iter().any(|(name, args)| {
+            names.get(name).is_some_and(|c| c == command) && {
+                let kinds: Vec<Option<Kind>> = args.iter().map(|a| arg_kind(a, labels)).collect();
+                form_matches(form, &kinds)
+            }
+        })
+    })
+}
+
+/// Whether a script calls `command` at all.
+pub fn script_calls(script: &[String], names: &BTreeMap<String, String>, command: &str) -> bool {
+    definitions(script).any(|rhs| {
+        calls(rhs)
+            .iter()
+            .any(|(name, _)| names.get(name).is_some_and(|c| c == command))
+    })
+}
+
+/// The slug a Markdown heading gets as a link target: lower case, letters,
+/// digits, `-` and `_` kept, spaces turned into `-`.
+pub fn slug(heading: &str) -> String {
+    heading
+        .trim()
+        .to_lowercase()
+        .chars()
+        .filter_map(|c| match c {
+            ' ' => Some('-'),
+            c if c.is_alphanumeric() || c == '-' || c == '_' => Some(c),
+            _ => None,
+        })
+        .collect()
+}
+
+/// One table row of `DIFFERENCES.md`.
+#[derive(Debug, Clone, PartialEq)]
+pub struct DifferenceRow {
+    /// Slug of the heading the row is under.
+    pub section: String,
+    /// The first cell.
+    pub area: String,
+    /// The last cell.
+    pub reason: String,
+}
+
+/// The cells of a Markdown table row; `\|` does not split.
+fn cells(line: &str) -> Vec<String> {
+    let inner = line.trim().trim_start_matches('|');
+    let inner = inner.strip_suffix('|').unwrap_or(inner);
+    let mut out = vec![String::new()];
+    let mut chars = inner.chars().peekable();
+    while let Some(c) = chars.next() {
+        if c == '\\' && chars.peek() == Some(&'|') {
+            out.last_mut().unwrap().push('|');
+            chars.next();
+        } else if c == '|' {
+            out.push(String::new());
+        } else {
+            out.last_mut().unwrap().push(c);
+        }
+    }
+    out.iter().map(|c| c.trim().to_string()).collect()
+}
+
+/// The table rows of `DIFFERENCES.md` with their section, header and
+/// separator rows left out.
+pub fn difference_rows(md: &str) -> Vec<DifferenceRow> {
+    let mut section = String::new();
+    let mut out = Vec::new();
+    for line in md.lines() {
+        if let Some(h) = line.strip_prefix('#') {
+            section = slug(h.trim_start_matches('#'));
+            continue;
+        }
+        if !line.trim_start().starts_with('|') {
+            continue;
+        }
+        let c = cells(line);
+        let separator = c.iter().all(|x| x.chars().all(|ch| ch == '-' || ch == ':'));
+        if separator || c[0] == "Area" || c.len() < 2 {
+            continue;
+        }
+        out.push(DifferenceRow {
+            section: section.clone(),
+            area: c[0].clone(),
+            reason: c.last().unwrap().clone(),
+        });
+    }
+    out
+}
+
+/// Checks a `difference` reference against the rows of `DIFFERENCES.md`: the
+/// row must exist and its reason must be a disposition, not "Not
+/// implemented".
+pub fn check_difference(reference: &str, rows: &[DifferenceRow]) -> Result<(), String> {
+    let Some((section, area)) = reference.split_once(": ") else {
+        return Err(format!("`{reference}` is not `section-slug: Area text`"));
+    };
+    let Some(row) = rows.iter().find(|r| r.section == section && r.area == area) else {
+        return Err(format!("no row `{area}` under the heading `{section}`"));
+    };
+    if row.reason.starts_with("Not implemented") {
+        return Err(format!(
+            "the row `{area}` only says the form is not implemented; that is no disposition"
+        ));
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn labels(pairs: &[(&str, Kind)]) -> BTreeMap<String, Kind> {
+        pairs.iter().map(|(l, k)| (l.to_string(), *k)).collect()
+    }
+
+    #[test]
+    fn forms_csv_counts_must_agree() {
+        let ok = "command,group,forms_2d,forms\nMod,algebra,2,\"number,number | function,function\"\nType,geogebra,0,\nAxisStepX,geogebra,1,()\n";
+        let f = parse_forms(ok).unwrap();
+        assert_eq!(f["Mod"].forms, ["number,number", "function,function"]);
+        assert!(f["Type"].forms.is_empty());
+        assert_eq!(f["AxisStepX"].forms, ["()"]);
+        assert!(
+            parse_forms("command,group,forms_2d,forms\nMod,algebra,3,\"number,number\"\n").is_err()
+        );
+        assert!(parse_forms("command,group,forms_2d,forms\nM,a,2,\"number | number\"\n").is_err());
+        assert!(parse_forms("command,group,forms_2d,forms\nM,a,1,\"number|list\"\n").is_err());
+    }
+
+    #[test]
+    fn evidence_needs_cases_or_a_difference() {
+        let one = "[[form]]\ncommand = \"Mod\"\nform = \"number,number\"\ncases = [\"x-001\"]\n";
+        assert_eq!(parse_evidence(one).unwrap()[0].cases, ["x-001"]);
+        assert!(parse_evidence("[[form]]\ncommand = \"Mod\"\nform = \"number,number\"\n").is_err());
+        assert!(parse_evidence(&format!("{one}{one}")).is_err());
+        let both =
+            "[[form]]\ncommand = \"M\"\nform = \"x\"\ncases = [\"a\"]\ndifference = \"s: a\"\n";
+        assert!(parse_evidence(both).is_err());
+        assert!(parse_evidence("[[form]]\ncommand = \"M\"\nform = \"x\"\nwhy = 1\n").is_err());
+    }
+
+    #[test]
+    fn forms_match_exact_kinds_and_repeats() {
+        let p = Some(Kind::Point);
+        let n = Some(Kind::Number);
+        assert!(form_matches("point,point", &[p, p]));
+        assert!(!form_matches("point,point", &[p, n]));
+        assert!(!form_matches("point,point", &[p]));
+        assert!(form_matches("()", &[]));
+        assert!(form_matches("point,point,...", &[p, p, p, p]));
+        assert!(!form_matches("point,point,...", &[p]));
+        assert!(form_matches("point,number,...", &[p, n, n]));
+        assert!(form_matches("conic", &[Some(Kind::Circle)]));
+        assert!(!form_matches("line", &[Some(Kind::Segment)]));
+        assert!(!form_matches("number", &[None]));
+        assert!(is_wildcard("any,vector") && is_wildcard("point,path") && !is_wildcard("point"));
+    }
+
+    #[test]
+    fn calls_are_found_nested_and_split_at_top_level_commas() {
+        assert_eq!(
+            calls("Midpoint(Segment(A, B)) + f(2, {1, 2})"),
+            [
+                ("Midpoint".to_string(), vec!["Segment(A, B)".to_string()]),
+                ("Segment".to_string(), vec!["A".into(), "B".into()]),
+                ("f".to_string(), vec!["2".into(), "{1, 2}".into()]),
+            ]
+        );
+        assert_eq!(calls("AxisStepX()"), [("AxisStepX".to_string(), vec![])]);
+        // `a_{1}(` is no call of `1`, and a name inside a word is no call
+        assert_eq!(calls("ab(1)")[0].0, "ab");
+        assert_eq!(calls("2 a").len(), 0);
+    }
+
+    #[test]
+    fn argument_kinds() {
+        let l = labels(&[
+            ("A", Kind::Point),
+            ("a", Kind::Number),
+            ("s", Kind::Segment),
+        ]);
+        assert_eq!(arg_kind("A", &l), Some(Kind::Point));
+        assert_eq!(arg_kind(" s ", &l), Some(Kind::Segment));
+        assert_eq!(arg_kind("-2.5", &l), Some(Kind::Number));
+        assert_eq!(arg_kind("2a + 1", &l), Some(Kind::Number));
+        assert_eq!(arg_kind("a^2 - pi", &l), Some(Kind::Number));
+        assert_eq!(arg_kind("k", &l), Some(Kind::Number));
+        assert_eq!(arg_kind("a < 3", &l), Some(Kind::Boolean));
+        assert_eq!(arg_kind("true", &l), Some(Kind::Boolean));
+        assert_eq!(arg_kind("(1, a)", &l), Some(Kind::Point));
+        assert_eq!(arg_kind("{1, 2}", &l), Some(Kind::List));
+        assert_eq!(arg_kind("A + (1, 0)", &l), None);
+        assert_eq!(arg_kind("sqrt(a)", &l), None);
+        assert_eq!(arg_kind("Segment(A, A)", &l), None);
+        assert_eq!(arg_kind("s + 1", &l), None);
+        assert_eq!(arg_kind("(A, 1)", &l), None);
+        assert_eq!(arg_kind("x < 0", &l), None);
+        assert_eq!(arg_kind("x^2", &l), None);
+        let l2 = labels(&[("a_{1}", Kind::Number)]);
+        assert_eq!(arg_kind("a_{1} + 1", &l2), Some(Kind::Number));
+    }
+
+    #[test]
+    fn scripts_use_a_form_through_any_name() {
+        let l = labels(&[("A", Kind::Point), ("B", Kind::Point), ("k", Kind::Circle)]);
+        let names: BTreeMap<String, String> =
+            [("CircularArc", "CircleArc"), ("CircleArc", "CircleArc")]
+                .iter()
+                .map(|(a, b)| (a.to_string(), b.to_string()))
+                .collect();
+        let script = vec![
+            "A = (0, 0)".into(),
+            "c = CircularArc(A, B, A) # note".into(),
+        ];
+        assert!(script_uses_form(
+            &script,
+            &l,
+            &names,
+            "CircleArc",
+            "point,point,point"
+        ));
+        assert!(!script_uses_form(
+            &script,
+            &l,
+            &names,
+            "CircleArc",
+            "point,point"
+        ));
+        assert!(script_calls(&script, &names, "CircleArc"));
+        assert!(!script_calls(&script, &names, "Circle"));
+        // the label of a line is not a call
+        let s2 = vec!["Circle = (1, 2)".to_string()];
+        assert!(!script_calls(&s2, &names, "CircleArc"));
+    }
+
+    #[test]
+    fn difference_references_need_a_row_with_a_disposition() {
+        let md = "# Deliberate differences\n\n| Area | GeoGebra | geokernel | Reason |\n| --- | --- | --- | --- |\n| `Foo` of a \\| bar | x | y | Kept on purpose. |\n\n## General conics (`plot`)\n\n| Area | GeoGebra | geokernel | Reason |\n| --- | --- | --- | --- |\n| Forms of the conic commands | a | Refused. | Not implemented. |\n";
+        let rows = difference_rows(md);
+        assert_eq!(rows.len(), 2);
+        assert_eq!(rows[0].section, "deliberate-differences");
+        assert_eq!(rows[0].area, "`Foo` of a | bar");
+        assert_eq!(rows[1].section, "general-conics-plot");
+        assert!(check_difference("deliberate-differences: `Foo` of a | bar", &rows).is_ok());
+        assert!(
+            check_difference("general-conics-plot: Forms of the conic commands", &rows).is_err()
+        );
+        assert!(check_difference("general-conics-plot: Nothing", &rows).is_err());
+        assert!(check_difference("no separator", &rows).is_err());
+    }
+}
