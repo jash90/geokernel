@@ -91,6 +91,16 @@ impl<T: Clone> Chain<T> {
         out
     }
 
+    /// The items, newest first, without collecting them.
+    pub fn items_rev(&self) -> impl Iterator<Item = &T> {
+        let mut at = self.head.as_deref();
+        std::iter::from_fn(move || {
+            let n = at?;
+            at = n.prev.as_deref();
+            Some(&n.item)
+        })
+    }
+
     /// The items, oldest first.
     pub fn items(&self) -> Vec<&T> {
         self.nodes().into_iter().map(|n| &n.item).collect()

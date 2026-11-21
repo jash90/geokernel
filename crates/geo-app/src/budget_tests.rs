@@ -1,6 +1,7 @@
 //! The frame budget as counters: what one frame of the window produces at
 //! 100 and 1000 objects, in the states the frame benchmark measures (idle,
-//! zoomed in, keyboard open, tool preview, pan, drag). Times are not
+//! zoomed in, keyboard open, tool preview, pan, drag) and in the frames
+//! after an undo, a redo and a deletion. Times are not
 //! asserted (they depend on the machine); these counters stand in for
 //! them, and a change that makes a frame do work for every object, or
 //! rebuild the algebra list while dragging, fails here.
@@ -309,7 +310,67 @@ fn states(cells: usize) -> Vec<(&'static str, Counts)> {
     let still = w.step(vec![Event::PointerMoved(p + vec2(14.0, 4.0))]);
     out.push(("drag_point_still", still));
     w.step(vec![press(p + vec2(14.0, 4.0), false)]);
+    w.step(vec![Event::PointerGone]);
+    w.settled(1);
+
+    // Undo and redo of that drag (one step), then a deletion: each rebuilds
+    // the construction, which renumbers the objects. The frame after makes
+    // the rows of the objects whose value changed, and keeps the others.
+    let before = w.values();
+    assert!(w.app.undo(), "nothing to undo");
+    let undo = w.step(Vec::new());
+    let changed = w.changed_since(&before);
+    assert!(changed > 0, "the undo moved nothing back");
+    assert!(
+        undo.rows_formatted <= changed,
+        "undo: {} rows made for {changed} changed objects",
+        undo.rows_formatted
+    );
+    out.push(("undo", undo));
+    w.settled(1);
+    let before = w.values();
+    assert!(w.app.redo(), "nothing to redo");
+    let redo = w.step(Vec::new());
+    let changed = w.changed_since(&before);
+    assert!(
+        redo.rows_formatted <= changed,
+        "redo: {} rows made for {changed} changed objects",
+        redo.rows_formatted
+    );
+    out.push(("redo", redo));
+    w.settled(1);
+    // The first cell's first point, with its segment, circle, triangle
+    // and intersection: every object after them is renumbered.
+    let first = w.app.wb.construction().id("P_{0}").unwrap();
+    let before = w.app.wb.construction().len();
+    assert!(w.app.wb.delete(first));
+    assert!(w.app.wb.construction().len() < before, "nothing deleted");
+    let delete = w.step(Vec::new());
+    assert_eq!(delete.rows_formatted, 0, "delete: rows made");
+    out.push(("delete", delete));
+    w.settled(1);
     out
+}
+
+impl Window {
+    /// The value of every object, by label.
+    fn values(&self) -> Vec<(String, Value)> {
+        let c = self.app.wb.construction();
+        c.ids()
+            .map(|id| (c.label(id).to_owned(), c.value(id)))
+            .collect()
+    }
+
+    /// How many objects hold another value than in `before` (by label; an
+    /// object that is new counts).
+    fn changed_since(&self, before: &[(String, Value)]) -> u64 {
+        let c = self.app.wb.construction();
+        let old: std::collections::HashMap<&str, Value> =
+            before.iter().map(|(l, v)| (l.as_str(), *v)).collect();
+        c.ids()
+            .filter(|&id| old.get(c.label(id)) != Some(&c.value(id)))
+            .count() as u64
+    }
 }
 
 #[test]
@@ -335,8 +396,9 @@ fn frame_counters_stay_within_the_budget() {
     //   creep. Lower them with any change that lowers the counts.
     // - colour scans: none in any frame (the palette's cache); one call of
     //   `style::color` per object would scan all objects for each.
-    // - rows: none made outside a drag; in a drag only those of the objects
-    //   it changed (checked in `states`).
+    // - rows: none made outside a drag or an edit; in a drag, an undo or a
+    //   redo only those of the objects it changed, none after a deletion
+    //   (checked in `states`).
     //
     // Growth caps in tenths: (shapes, texts, allocations, bytes).
     let growth = |name: &str| match name {
@@ -361,12 +423,23 @@ fn frame_counters_stay_within_the_budget() {
                 "{name}: {what} {l} at n1000 against {s} at n100 (cap {cap} tenths)"
             );
         }
-        assert_eq!(
-            (s.colour_scans, l.colour_scans),
-            (0, 0),
-            "{name}: colours scanned"
-        );
-        if *name != "drag_point" {
+        if matches!(*name, "undo" | "redo" | "delete") {
+            // A rebuild renumbers the objects: the polygons' sides are
+            // found again, in one scan of the 108 or 1008 objects.
+            assert!(
+                s.colour_scans <= 108 && l.colour_scans <= 1008,
+                "{name}: colours scanned"
+            );
+        } else {
+            assert_eq!(
+                (s.colour_scans, l.colour_scans),
+                (0, 0),
+                "{name}: colours scanned"
+            );
+        }
+        // A drag and an edit change the list; their rows are checked in
+        // `states`.
+        if !matches!(*name, "drag_point" | "undo" | "redo" | "delete") {
             assert_eq!(
                 (l.rows_formatted, l.rows_built),
                 (0, 0),
@@ -383,6 +456,9 @@ fn frame_counters_stay_within_the_budget() {
         ("tool_preview_segment", 2_550, 1_030, 94_000),
         ("pan", 2_550, 1_030, 94_000),
         ("drag_point", 2_550, 1_030, 94_000),
+        ("undo", 2_550, 1_030, 94_000),
+        ("redo", 2_550, 1_030, 94_000),
+        ("delete", 2_550, 1_030, 94_000),
     ];
     for (name, shapes, texts, vertices) in ceilings {
         let l = get(&large, name);
@@ -402,6 +478,14 @@ fn frame_counters_stay_within_the_budget() {
         ("pan", 3_100, 580_000),
         ("drag_point", 3_100, 580_000),
         ("drag_point_still", 3_100, 580_000),
+        // The frames after an undo, a redo and a deletion. When a rebuild
+        // made every row again (1008, or 1000 after the deletion) they made
+        // 13 423 allocations of 0.88 MB (undo, redo) and 14 067 of 1.13 MB
+        // (the deletion); now the rows that changed are made, and the
+        // deletion lays out the rows that come into view.
+        ("undo", 2_950, 635_000),
+        ("redo", 2_950, 635_000),
+        ("delete", 3_700, 905_000),
     ];
     for (name, allocs, bytes) in ceilings {
         let l = get(&large, name);
@@ -719,6 +803,10 @@ fn curve_frames_stay_within_the_budget() {
     for (name, f) in &edits {
         assert_eq!((f.plotted, f.tessellated), (0, 0), "{name}");
     }
+    // The rows: the new point's after it was added and after the redo,
+    // none after the undo and the deletion (the other rows are kept).
+    let rows: Vec<u64> = edits.iter().map(|(_, f)| f.counts.rows_formatted).collect();
+    assert_eq!(rows, [1, 0, 1, 0, 0], "rows made by the edits");
     assert!(
         !resize.last().unwrap().counts.immediate,
         "the resize never settles"
@@ -740,8 +828,9 @@ fn curve_frames_stay_within_the_budget() {
     // places 234 kept meshes scaled the same way. The frame after a
     // rebuild (undo, redo, delete) finds what each function depends on
     // again (about 0.25 ms, most of it formatting the definitions for
-    // their fingerprints); most of its allocations and time are the
-    // algebra list's (990 rows formatted again).
+    // their fingerprints: about 850 allocations of 300 kB). When it also
+    // made the 990 rows again it made 17 400 to 18 200 allocations of 1.1
+    // to 1.4 MB.
     let most_moved = pans.iter().map(|f| f.moved).max().unwrap();
     println!("curves pan_most_moved: {most_moved}");
     assert!(
@@ -762,10 +851,10 @@ fn curve_frames_stay_within_the_budget() {
         ("zoom", zoom, 3_700, 7_200_000),
         ("after_zoom", heaviest, 2_800, 4_150_000),
         ("resize", heaviest_resize, 2_550, 1_750_000),
-        ("add_point", edits[0].1, 2_200, 680_000),
-        ("undo", edits[1].1, 18_800, 1_180_000),
-        ("redo", edits[2].1, 18_850, 1_190_000),
-        ("delete", edits[3].1, 19_500, 1_460_000),
+        ("add_point", edits[0].1, 2_200, 505_000),
+        ("undo", edits[1].1, 3_250, 870_000),
+        ("redo", edits[2].1, 3_300, 875_000),
+        ("delete", edits[3].1, 4_050, 1_150_000),
         ("select", edits[4].1, 2_100, 480_000),
     ] {
         let c = f.counts;
