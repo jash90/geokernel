@@ -43,16 +43,20 @@ pub struct OwnerRules {
     pub side_takes_the_polygon: bool,
     /// `interact::REFUSED_DRAG_NOTICE`.
     pub refused_drag_notice: bool,
+    /// `interact::EVERY_DRAG_IS_A_STEP`.
+    pub every_drag_is_a_step: bool,
 }
 
 impl OwnerRules {
     pub const OURS: OwnerRules = OwnerRules {
         side_takes_the_polygon: crate::hit::SIDE_TAKES_THE_POLYGON,
         refused_drag_notice: crate::interact::REFUSED_DRAG_NOTICE,
+        every_drag_is_a_step: crate::interact::EVERY_DRAG_IS_A_STEP,
     };
     pub const REFERENCE: OwnerRules = OwnerRules {
         side_takes_the_polygon: false,
         refused_drag_notice: false,
+        every_drag_is_a_step: false,
     };
 }
 
@@ -100,6 +104,10 @@ pub struct App {
     /// what the user saw, even if the area changes in that frame.
     pub view: Option<(Rect, ViewTransform)>,
     pub press_view: Option<(Rect, ViewTransform)>,
+    /// What the construction tool's press did, until its release.
+    pub tool_press: Option<crate::toolpress::ToolPress>,
+    /// The delete tool's drag is erasing (spec E11).
+    pub erasing: bool,
     /// A text field had the keyboard in the previous frame.
     pub was_typing: bool,
     /// Where the labels were painted in the last frame, in the area's
@@ -145,6 +153,8 @@ impl App {
             seen_rebuilds: 0,
             view: None,
             press_view: None,
+            tool_press: None,
+            erasing: false,
             was_typing: false,
             label_rects: RefCell::new(Vec::new()),
         }
@@ -196,6 +206,7 @@ impl App {
     /// `Kernel.restoreStateForInitNewMode`).
     pub fn reset_tool(&mut self) {
         self.tool.reset();
+        self.tool_press = None;
         self.wb.cancel_tool_use();
     }
 
@@ -266,10 +277,14 @@ impl App {
 
     fn apply_pick(&mut self, outcome: Outcome) {
         match outcome {
-            Outcome::Place { line, then } => match self.wb.run_tool_lines(&[line]) {
+            Outcome::Place { line, at, then } => match self.wb.run_tool_lines(&[line]) {
                 Ok(()) => {
                     self.tool_error = None;
-                    self.wb.selected = self.wb.construction().ids().last();
+                    let new = self.wb.construction().ids().last();
+                    if let (Some(id), Some((x, y))) = (new, at) {
+                        self.wb.move_pending_point(id, x, y);
+                    }
+                    self.wb.selected = new;
                     self.apply_pick(*then);
                 }
                 Err(e) => {

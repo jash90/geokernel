@@ -95,8 +95,9 @@ fn a_press_on_a_dependent_point_neither_moves_it_nor_pans() {
         "the move-view tool did not pan"
     );
     let corner = top_left(&h);
-    h.state_mut().select_tool(Tool::Line);
-    // Away from points a drag still pans.
+    // Away from objects a drag of a tool whose press picks nothing still
+    // pans (the line tool's press makes a point there, spec E1).
+    h.state_mut().select_tool(Tool::Intersect);
     let (from, to) = (on_screen(&h, -3.0, 3.0), on_screen(&h, -1.0, 3.0));
     drag(&mut h, from, to);
     assert!(!close(top_left(&h), corner));

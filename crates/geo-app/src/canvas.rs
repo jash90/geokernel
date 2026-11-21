@@ -163,6 +163,12 @@ pub fn show(app: &mut App, ui: &mut Ui) {
 
     let tool = app.tool.tool();
     let move_tool = tool == Tool::Move;
+    // A tool that builds from picks takes them when the button goes down
+    // (spec E1); the delete and show/hide tools act on a click.
+    let press_tool = !matches!(
+        tool,
+        Tool::Move | Tool::MoveView | Tool::ZoomIn | Tool::ZoomOut | Tool::Delete | Tool::ShowHide
+    );
     // The show/hide tool shows hidden objects faintly and lets them be picked.
     let show_all = tool == Tool::ShowHide;
     let t = cam.transform(w, h);
@@ -241,16 +247,31 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         }
     }
 
+    // A press of this frame picks at once (spec E1, E2); the release of an
+    // earlier press ends that one first (spec E3). Without a new press, the
+    // release waits until the drag it ends took hold of what that press
+    // made.
+    if let (Some(pos), Some(_)) = (fed.early_release, fed.owned) {
+        release_tool(app, &t, to_local(pos), &press_reach);
+    }
+    if let (true, Some(pos)) = (press_tool, fed.owned) {
+        let (local, pt) = at_press(app, pos);
+        app.tool_press = Some(app.press_tool(&pt, local, &press_reach));
+    }
+
     // A drag that starts takes hold of what was under the pointer when the
     // button went down. With the move tool: a label first
     // (`handleMousePressedForMoveMode` asks `getLabelHit` before anything
     // else), then what the press chose, if it can move; a press on any
     // object never pans, only one that hits nothing does
     // (`hasNoHitsDisablingModeForShallMoveView`). The move-view tool
-    // pans from anywhere. Other tools keep their rule until their own part
-    // of the work: a press on a point does not pan.
+    // pans from anywhere. The delete tool's drag erases (spec E11). The
+    // point tool drags the point its press made or found (spec E4); a press
+    // of another tool that picked does not pan; else a press on a point
+    // does not pan.
     let mut grabbed = None;
     let mut refused = None;
+    let mut erase = false;
     let intents = gesture.end_frame(|origin| {
         let ((sx, sy), pt) = at_press(app, origin.egui());
         let c = app.wb.construction();
@@ -280,6 +301,24 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         if tool == Tool::MoveView {
             return Grab::Pan;
         }
+        if tool == Tool::Delete {
+            erase = true;
+            return Grab::Point;
+        }
+        if let (true, Some(press)) = (press_tool, app.tool_press) {
+            if let Some(id) = press.point {
+                let at = app
+                    .snap(pt.scale())
+                    .capture(pt.screen_to_world(sx, sy), (0.0, 0.0));
+                grabbed = Drag::begin(c, id, at);
+                if grabbed.is_some() {
+                    return Grab::Point;
+                }
+            }
+            if press.acted {
+                return Grab::Nothing;
+            }
+        }
         let on_point = hit::pick(c, &pt, (sx, sy), &press_reach, None, |id| {
             shown(app, id) && c.kind(id) == Kind::Point
         })
@@ -302,6 +341,10 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     // press already ended this frame), its motion, then the end of a drag,
     // then the click.
     if intents.started.is_some() {
+        if erase {
+            app.erasing = true;
+            app.wb.begin_gesture();
+        }
         app.drag = grabbed;
         if let Some(drag) = grabbed {
             app.wb.begin_gesture();
@@ -324,6 +367,21 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         }
         app.drag = Some(drag);
     }
+    // The eraser deletes what it meets once the pointer went beyond the
+    // click threshold (`draggingBeyondThreshold`), at each position the
+    // frame delivers.
+    if let (Some(pos), true) = (intents.drag_to, app.erasing) {
+        if app.gesture.beyond_threshold() {
+            let radius = f64::from(draw::FREE_POINT_RADIUS);
+            if app.erase_at(&t, to_local(pos.egui()), radius) {
+                // The eraser holds no ids, so its own deletions leave the
+                // stroke going (unlike a rebuild under a drag).
+                app.seen_rebuilds = app.wb.rebuilds();
+                app.label_rects.borrow_mut().clear();
+                app.hovered = None;
+            }
+        }
+    }
     if let Some((dx, dy)) = intents.pan {
         cam.pan_pixels(dx as f64, dy as f64);
     }
@@ -340,6 +398,8 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             Tool::ZoomIn => cam.zoom_at(ZOOM_TOOL, local.0, local.1, w, h),
             Tool::ZoomOut => cam.zoom_at(1.0 / ZOOM_TOOL, local.0, local.1, w, h),
             Tool::MoveView => {}
+            // Its press picked already (spec E1).
+            _ if press_tool => {}
             _ => {
                 let view = if tap_before_press {
                     tap_view
@@ -363,6 +423,10 @@ pub fn show(app: &mut App, ui: &mut Ui) {
                 }
             }
         }
+    }
+    let early = fed.early_release.filter(|_| fed.owned.is_none());
+    for pos in early.into_iter().chain(fed.late_release) {
+        release_tool(app, &t, to_local(pos), &press_reach);
     }
     let cursor = match tool {
         _ if app.drag.is_some() || app.gesture.panning() => Some(egui::CursorIcon::Grabbing),
@@ -430,10 +494,30 @@ enum Target {
 fn end_drag(app: &mut App, intents: &Intents) {
     if intents.cancel_drag {
         app.cancel_drag();
+        if app.erasing {
+            app.wb.cancel_gesture();
+        }
+        app.erasing = false;
     }
     if intents.end_drag {
-        app.wb.end_gesture();
+        // The reference app keeps no step for a drag within the click
+        // threshold (spec F2); the owner keeps every drag
+        // (`interact::EVERY_DRAG_IS_A_STEP`).
+        let short = intents.released.is_some_and(|r| !r.beyond_threshold);
+        if short && !app.rules.every_drag_is_a_step {
+            app.wb.end_gesture_without_step();
+        } else {
+            app.wb.end_gesture();
+        }
         app.drag = None;
+        app.erasing = false;
+    }
+}
+
+/// The release that ends a construction tool's press, at `pos` in the area.
+fn release_tool(app: &mut App, t: &ViewTransform, pos: (f64, f64), reach: &hit::Reach) {
+    if let Some(press) = app.tool_press.take() {
+        app.release_tool(press, t, pos, reach);
     }
 }
 
@@ -445,6 +529,10 @@ struct Fed {
     released: bool,
     /// The position of the last primary press that was the area's.
     owned: Option<egui::Pos2>,
+    /// A primary release before any primary press of the frame.
+    early_release: Option<egui::Pos2>,
+    /// A primary release after the last primary press of the frame.
+    late_release: Option<egui::Pos2>,
 }
 
 /// Gives this frame's pointer events to the automaton, in order. Each press,
@@ -455,6 +543,8 @@ fn feed(gesture: &mut Gesture, events: &[egui::Event], owns: impl Fn(egui::Pos2)
         pressed: None,
         released: false,
         owned: None,
+        early_release: None,
+        late_release: None,
     };
     for event in events {
         match *event {
@@ -472,6 +562,11 @@ fn feed(gesture: &mut Gesture, events: &[egui::Event], owns: impl Fn(egui::Pos2)
                 if primary {
                     if down {
                         fed.pressed = Some(pos);
+                        fed.late_release = None;
+                    } else if fed.pressed.is_none() {
+                        fed.early_release.get_or_insert(pos);
+                    } else {
+                        fed.late_release = Some(pos);
                     }
                     fed.released = !down;
                 }
@@ -555,7 +650,9 @@ fn pick_position(app: &App, pick: &Pick) -> Option<(f64, f64)> {
 }
 
 /// New points picked so far, and the object the tool is about to make,
-/// drawn from the first pick to the pointer.
+/// drawn from the first pick to the pointer, in the object's own style
+/// (spec E7). The free end jumps onto a point under the pointer, by the
+/// rule a click uses (spec E6).
 fn preview(
     app: &App,
     painter: &egui::Painter,
@@ -567,6 +664,18 @@ fn preview(
         let (sx, sy) = t.world_to_screen(x, y);
         rect.min + vec2(sx as f32, sy as f32)
     };
+    let pointer = pointer.filter(|p| rect.contains(*p)).map(|p| {
+        let local = ((p.x - rect.min.x) as f64, (p.y - rect.min.y) as f64);
+        let c = app.wb.construction();
+        let reach = hit::Reach::of(&app.metrics, false);
+        hit::pick(c, t, local, &reach, None, |id| app.wb.is_visible(id))
+            .filter(|&id| c.kind(id) == Kind::Point)
+            .and_then(|id| match c.value(id) {
+                geo_kernel::kernel::Value::Point { x, y } => Some(screen((x, y))),
+                _ => None,
+            })
+            .unwrap_or(p)
+    });
     let picks = app.tool.picks();
     if app.tool.tool() == Tool::Polygon && !picks.is_empty() {
         // The sides so far and the one following the pointer, lightly filled.
@@ -574,7 +683,7 @@ fn preview(
             .iter()
             .filter_map(|p| pick_position(app, p).map(screen))
             .collect();
-        pts.extend(pointer.filter(|p| rect.contains(*p)));
+        pts.extend(pointer);
         if pts.len() >= 3 {
             let tris: Vec<(f64, f64)> = pts.iter().map(|p| (p.x as f64, p.y as f64)).collect();
             let mut mesh = egui::Mesh::default();
@@ -586,17 +695,17 @@ fn preview(
             }
             painter.add(egui::Shape::mesh(mesh));
         }
-        let stroke = Stroke::new(draw::CURVE_WIDTH, theme::POLYGON.gamma_multiply(0.6));
+        let stroke = Stroke::new(draw::CURVE_WIDTH, theme::POLYGON);
         painter.add(egui::Shape::line(pts, stroke));
         return;
     }
-    let (Some(to), [first]) = (pointer.filter(|p| rect.contains(*p)), picks) else {
+    let (Some(to), [first]) = (pointer, picks) else {
         return;
     };
     let Some(from) = pick_position(app, first).map(screen) else {
         return;
     };
-    let stroke = Stroke::new(draw::CURVE_WIDTH, theme::CURVE.gamma_multiply(0.6));
+    let stroke = Stroke::new(draw::CURVE_WIDTH, theme::CURVE);
     let d = to - from;
     match app.tool.tool() {
         Tool::Segment | Tool::Vector => {

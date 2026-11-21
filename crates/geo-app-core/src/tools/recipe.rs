@@ -78,7 +78,8 @@ pub(super) fn accepts(tool: Tool, picks: &[Kind], cand: Option<Kind>) -> bool {
                 && ((circle(cand) && !has(circle))
                     || (existing_point(cand) && !has(existing_point)))
         }
-        Tool::Angle => n < 3 && existing_point(cand),
+        // New points too (the reference's angle tool makes them).
+        Tool::Angle => n < 3 && point(cand),
         Tool::Distance => match first {
             None => existing_point(cand) || line_like(cand) || circle(cand),
             Some(Kind::Point) => n == 1 && (existing_point(cand) || line_like(cand)),

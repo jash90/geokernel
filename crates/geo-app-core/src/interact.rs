@@ -13,6 +13,7 @@
 //! y axis pointing up.
 
 use crate::snap::Snap;
+use geo_kernel::algo::path::PathDef;
 use geo_kernel::algo::vector::VectorDef;
 use geo_kernel::kernel::{Construction, Def, Id, Kind, Value};
 use geo_kernel::svg::View;
@@ -142,8 +143,16 @@ pub fn movable(c: &Construction, id: Id) -> bool {
     id.index() < c.len()
         && match c.def(id) {
             Def::FreePoint { .. } => matches!(c.value(id), Value::Point { .. }),
+            _ if on_path(c, id) => true,
             _ => moves_by_input_points(c, id),
         }
+}
+
+/// Whether `id` is a point made by `Point(path)`: it moves along its path
+/// (`GeoPoint.isPointOnPath`, `MoveMode.POINT`; the kernel projects the
+/// position, `Path.pointChanged`). Spec C5.
+fn on_path(c: &Construction, id: Id) -> bool {
+    matches!(c.def(id), Def::Path(PathDef::On { .. }))
 }
 
 /// The owner's choice where the reference app is not followed (it refuses
@@ -153,10 +162,20 @@ pub fn movable(c: &Construction, id: Id) -> bool {
 /// window reads it through `app::OwnerRules`.
 pub const REFUSED_DRAG_NOTICE: bool = true;
 
+/// The owner's choice where the reference app is not followed (spec F2):
+/// every drag that changed something is one undo step, however short. The
+/// reference app keeps a drag's step only when the drag went beyond the
+/// click threshold (`wrapMouseReleasedND` stores the undo info only when
+/// `draggingBeyondThreshold`); a shorter drag keeps its motion with no step
+/// of its own. `false` follows the reference app. The window reads it
+/// through `app::OwnerRules`.
+pub const EVERY_DRAG_IS_A_STEP: bool = true;
+
 /// What a drag holds, and the state its moves need.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Hold {
-    /// A free point: it goes under the pointer, captured to the grid
+    /// A free point, or a point on a path (which the kernel puts on the
+    /// path): it goes under the pointer, captured to the grid
     /// (`MoveMode.POINT`; `handleMovedElementFreePoint` sets no offset).
     Point,
     /// A dependent object: its free input points are translated by the
@@ -200,7 +219,7 @@ impl Drag {
         if !movable(c, id) {
             return None;
         }
-        if free_point(c, id) {
+        if free_point(c, id) || on_path(c, id) {
             return Some(Drag {
                 id,
                 hold: Hold::Point,

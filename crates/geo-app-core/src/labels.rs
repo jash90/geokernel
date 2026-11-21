@@ -1,35 +1,63 @@
 // Parts of this file are translated from GeoGebra (https://github.com/geogebra/geogebra),
 // commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoPolygon.java (getDefaultLabel)
-//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/LabelManager.java (the label alphabets)
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/LabelManager.java (getNextIndexedLabel)
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/LabelType.java (the label alphabets)
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoElement.java (getDefaultLabel)
+//   source/shared/editor-base/src/main/java/org/geogebra/editor/share/util/Greek.java (getGreekLowerCaseNoPi)
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
-//! Automatic object labels: the first free one of a kind-specific sequence.
+//! Automatic object labels: the first free one of a kind-specific sequence
+//! (spec E9).
 
 use geo_kernel::kernel::Kind;
 
-const LINE_LETTERS: &str = "fghijklmnopqrstuvwxyzabcde";
-const CIRCLE_LETTERS: &str = "cdefghijklmnopqrstuvwxyzab";
-const NUMBER_LETTERS: &str = "abcdefghijklmnopqrstuvwxyz";
-const VECTOR_LETTERS: &str = "uvwxyzabcdefghijklmnopqrst";
-const POINT_LETTERS: &str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+/// `LabelType.pointLabels`: no `X` and `Y`.
+const POINT_LETTERS: &str = "ABCDEFGHIJKLMNOPQRSTUVWZ";
+/// `LabelType.functionLabels`.
+const FUNCTION_LETTERS: &str = "fghpqrst";
+/// `LabelType.lineLabels`: no `o` and no `u` to `z`.
+const LINE_LETTERS: &str = "fghijklmnpqrstabcde";
+/// `LabelType.vectorLabels`: no `o` and no `x` to `z`.
+const VECTOR_LETTERS: &str = "uvwabcdefghijklmnpqrst";
+/// `LabelType.conicLabels`.
+const CONIC_LETTERS: &str = "cdefghkpqrst";
+/// `LabelType.lowerCaseLabels`: `a` to `w`.
+const LOWER_CASE_LETTERS: &str = "abcdefghijklmnopqrstuvw";
+/// `LabelType.greekLowerCaseLabels`: the lower-case Greek letters without
+/// pi and the final sigma, phi in its straight form.
+const GREEK_LETTERS: &str = "αβγδεζηθικλμνξορστυϕχψω";
 
-/// The letters of the sequence that `kind` draws its labels from.
+/// The letters of the sequence that `kind` draws its labels from
+/// (`GeoElement.getDefaultLabel`): segments, rays and polylines are named
+/// like lines, arcs and sectors like conics; numbers, booleans and anything
+/// else take the lower-case letters (a polygon has its own names,
+/// [`polygon_label`]).
 fn alphabet(kind: Kind) -> &'static str {
     match kind {
         Kind::Point => POINT_LETTERS,
-        Kind::Circle => CIRCLE_LETTERS,
-        Kind::Number => NUMBER_LETTERS,
+        Kind::Line | Kind::Segment | Kind::Ray | Kind::PolyLine => LINE_LETTERS,
         Kind::Vector => VECTOR_LETTERS,
-        _ => LINE_LETTERS,
+        Kind::Circle | Kind::Conic | Kind::Arc | Kind::Sector => CONIC_LETTERS,
+        Kind::Function => FUNCTION_LETTERS,
+        _ => LOWER_CASE_LETTERS,
     }
 }
 
 /// The first label that `is_taken` does not report as used: points `A`, `B`,
-/// ...; circles `c`, `d`, ...; numbers `a`, `b`, ...; vectors `u`, `v`, ...; every other kind `f`, `g`, `h`, .... After the
-/// alphabet is used up, the sequence continues with `A_1`, `B_1`, ...
+/// ...; lines `f`, `g`, ...; conics `c`, `d`, ...; vectors `u`, `v`, ...;
+/// functions `f`, `g`, `h`, `p`, ...; numbers `a`, `b`, ...; lists `l1`,
+/// `l2`, .... After the alphabet is used up, the sequence continues with
+/// `A_1`, `B_1`, ... and from the tenth round `A_{10}`.
 pub fn next_label(kind: Kind, is_taken: impl Fn(&str) -> bool) -> String {
+    if kind == Kind::List {
+        // `GeoList.getDefaultLabel`: `getNextNumberedLabel("l")`.
+        return (1..)
+            .map(|i| format!("l{i}"))
+            .find(|l| !is_taken(l))
+            .unwrap_or_default();
+    }
     next_from(alphabet(kind), is_taken)
 }
 
@@ -49,7 +77,7 @@ pub fn polygon_label(vertices: usize, is_taken: impl Fn(&str) -> bool) -> String
 
 /// Angles are named with Greek letters: `α`, `β`, `γ`, ...
 pub fn next_greek(is_taken: impl Fn(&str) -> bool) -> String {
-    next_from("αβγδεζηθικλμνξοπρστυφχψω", is_taken)
+    next_from(GREEK_LETTERS, is_taken)
 }
 
 /// The label of an image under a transformation: the source label with a
@@ -74,16 +102,21 @@ pub fn primed(source: &str, kind: Kind, is_taken: impl Fn(&str) -> bool) -> Stri
     next_label(kind, is_taken)
 }
 
+/// `LabelManager.getNextIndexedLabel`: the letters, then `X_1` ... `X_9`,
+/// then `X_{10}` ...; an indexed label is free only when both its forms
+/// (`X_1` and `X_{1}`) are.
 fn next_from(letters: &str, is_taken: impl Fn(&str) -> bool) -> String {
-    for round in 0.. {
+    for round in 0u32.. {
         for ch in letters.chars() {
-            let label = if round == 0 {
-                ch.to_string()
-            } else {
-                format!("{ch}_{round}")
-            };
-            if !is_taken(&label) {
-                return label;
+            if round == 0 {
+                if !is_taken(&ch.to_string()) {
+                    return ch.to_string();
+                }
+                continue;
+            }
+            let (plain, braced) = (format!("{ch}_{round}"), format!("{ch}_{{{round}}}"));
+            if !is_taken(&plain) && !is_taken(&braced) {
+                return if round < 10 { plain } else { braced };
             }
         }
     }
@@ -142,5 +175,52 @@ mod tests {
             next_label(Kind::Point, |l| taken.iter().any(|t| t == l)),
             "B_1"
         );
+    }
+
+    /// The reference's sequences (`LabelType`): points skip `X` and `Y`,
+    /// lines skip `o` and `u` to `z`, conics are `c d e f g h k p q r s t`,
+    /// vectors skip `o` and `x` to `z`, functions are `f g h p q r s t`,
+    /// numbers stop at `w`, angles skip pi and phi is straight. Fails with
+    /// the old whole-alphabet sequences.
+    #[test]
+    fn sequences_follow_the_reference() {
+        let after = |kind: Kind, last: &str| {
+            let letters = alphabet(kind);
+            let end = letters.find(last).unwrap() + last.len();
+            next_label(kind, |l| {
+                letters[..end].contains(l) && l.chars().count() == 1
+            })
+        };
+        assert_eq!(after(Kind::Point, "W"), "Z");
+        assert_eq!(after(Kind::Line, "n"), "p");
+        assert_eq!(after(Kind::Line, "t"), "a");
+        assert_eq!(after(Kind::Segment, "e"), "f_1");
+        assert_eq!(after(Kind::Circle, "h"), "k");
+        assert_eq!(after(Kind::Conic, "t"), "c_1");
+        assert_eq!(after(Kind::Arc, "c"), "d");
+        assert_eq!(after(Kind::Vector, "w"), "a");
+        assert_eq!(after(Kind::Vector, "n"), "p");
+        assert_eq!(after(Kind::Function, "h"), "p");
+        assert_eq!(after(Kind::Number, "w"), "a_1");
+        assert_eq!(next_label(Kind::List, |l| l == "l1"), "l2");
+        let greek: Vec<char> = GREEK_LETTERS.chars().collect();
+        assert_eq!(greek.len(), 23);
+        assert_eq!(greek[14..17], ['ο', 'ρ', 'σ']);
+        assert_eq!(greek[19], 'ϕ');
+    }
+
+    /// An indexed label is free only when both forms are, and from the
+    /// tenth round it takes braces (`getNextIndexedLabel`).
+    #[test]
+    fn indexed_labels_check_both_forms_and_brace_from_ten() {
+        let one = |l: &str| l.chars().count() == 1;
+        assert_eq!(next_label(Kind::Point, |l| one(l) || l == "A_{1}"), "B_1");
+        let rounds = |l: &str| {
+            one(l)
+                || l.split_once('_')
+                    .and_then(|(_, n)| n.trim_matches(['{', '}']).parse::<u32>().ok())
+                    .is_some_and(|n| n < 10)
+        };
+        assert_eq!(next_label(Kind::Point, rounds), "A_{10}");
     }
 }

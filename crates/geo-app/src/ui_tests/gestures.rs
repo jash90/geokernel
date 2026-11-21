@@ -164,10 +164,10 @@ fn a_flick_in_the_next_frame_moves_and_is_still_a_click() {
     );
     assert_eq!(labels(&h), ["A"]);
 
-    // With the point tool the flick pans and still places a point at the
-    // release position, read in the view as it was at the press (the tools'
-    // rule until group 6): 40 px right of the press. Fails if a single move
-    // counted beyond the threshold (no point) or if the flick did not pan.
+    // With the point tool the press places the point and the flick drags
+    // it (spec E1, E4): it ends 40 px right of the press and nothing pans.
+    // Fails if the point were placed only on a click (the flick is none
+    // then) or if the flick panned.
     let mut h = harness("A = (1, 1)\n");
     h.state_mut().tool.set_tool(Tool::Point);
     let from = world(-3.3, -2.7);
@@ -182,7 +182,7 @@ fn a_flick_in_the_next_frame_moves_and_is_still_a_click() {
     h.step();
     h.run();
     let cam = h.state().camera.unwrap();
-    assert!((cam.cx - cx0 + 40.0 / 50.0).abs() < 1e-12, "{}", cam.cx);
+    assert_eq!(cam.cx, cx0, "the flick panned");
     assert_eq!(labels(&h), ["A", "B"]);
     assert_eq!(point(&h, "B"), (-2.5, -2.7));
 }
@@ -205,14 +205,12 @@ fn touch_harness(script: &str, size: (f32, f32)) -> Harness<'static, App> {
     h
 }
 
-/// The touch profile no longer has a wider slop of its own: a wobble within
+/// The touch profile no longer has a wider slop of its own: the point tool
+/// places its point where the finger goes down (spec E1); a wobble within
 /// the 100 ms delay is dropped (`shouldCancelDrag`, for every pointer), and
-/// one after the delay is applied (the view pans with it) but keeps the tap
-/// a tap while it stays within the 10 px threshold
-/// (`isDraggingBeyondThreshold`); the point goes where the tap is released
-/// (`wrapMouseReleasedND`), read in the view as it was at the press (the
-/// tools' rule until group 6). The second wobble fails with a threshold
-/// under 9 px.
+/// one after the delay drags the new point with it (spec E4). Nothing pans.
+/// Fails if the point were placed at the release (the first wobble) or if
+/// the second wobble panned instead of moving the point.
 #[test]
 fn with_the_touch_profile_a_wobbly_tap_still_places_a_point() {
     for after_delay in [false, true] {
@@ -245,20 +243,16 @@ fn with_the_touch_profile_a_wobbly_tap_still_places_a_point() {
         let what = format!("after the delay: {after_delay}");
         assert_eq!(labels(&h), ["A", "B"], "{what}");
         let (b, scale) = (point(&h, "B"), cam.scale);
-        let want = (1.3 + 9.0 / scale, 1.7 + 4.0 / scale);
+        let want = if after_delay {
+            (1.3 + 9.0 / scale, 1.7 + 4.0 / scale)
+        } else {
+            (1.3, 1.7)
+        };
         assert!(
             (b.0 - want.0).abs() < 1e-9 && (b.1 - want.1).abs() < 1e-9,
             "{what}: {b:?}"
         );
-        let now = h.state().camera.unwrap();
-        if after_delay {
-            assert!(
-                (now.cx - cam.cx + 9.0 / scale).abs() < 1e-9,
-                "{what}: no pan"
-            );
-        } else {
-            assert_eq!(now, cam, "{what}: the wobble panned");
-        }
+        assert_eq!(h.state().camera.unwrap(), cam, "{what}: the wobble panned");
     }
 }
 
@@ -750,4 +744,89 @@ fn the_last_move_of_a_drag_counts_when_the_release_shares_its_frame() {
     undo(&mut h);
     assert_eq!(point(&h, "A"), (0.0, 0.0));
     assert!(!h.state().wb.can_undo());
+}
+
+/// The delete tool's drag is an eraser: what the stroke crosses is deleted
+/// (here two segments, their end points stay), the whole stroke one undo
+/// step, and it never pans (spec E11, `handleMouseDraggedForDelete`). A
+/// stroke within the click threshold erases nothing and does not pan
+/// either. Fails on a drag that pans.
+#[test]
+fn the_delete_tools_stroke_erases_what_it_crosses_as_one_step() {
+    let src = "A = (-2, 0)\nB = (2, 0)\nf = Segment(A, B)\n\
+               C = (-2, 2)\nD = (2, 2)\ng = Segment(C, D)\n";
+    let mut h = harness(src);
+    h.state_mut().select_tool(Tool::Delete);
+    let cam = camera(&h);
+    let from = world(0.3, -1.0);
+    frame_at(&mut h, 10.0, vec![Event::PointerMoved(from)]);
+    frame_at(
+        &mut h,
+        10.05,
+        vec![press(from, PointerButton::Primary, true)],
+    );
+    let mut pos = from;
+    for i in 0..16 {
+        pos = world(0.3, -1.0 + 0.25 * f64::from(i + 1));
+        frame_at(
+            &mut h,
+            10.2 + 0.02 * f64::from(i),
+            vec![Event::PointerMoved(pos)],
+        );
+    }
+    frame_at(
+        &mut h,
+        10.6,
+        vec![press(pos, PointerButton::Primary, false)],
+    );
+    h.run();
+    assert_eq!(labels(&h), ["A", "B", "C", "D"]);
+    assert_eq!(camera(&h), cam, "the stroke panned");
+    undo(&mut h);
+    assert_eq!(labels(&h), ["A", "B", "f", "C", "D", "g"]);
+    assert!(!h.state().wb.can_undo(), "one step for the stroke");
+
+    let from = world(-3.3, -2.7);
+    frame_at(&mut h, 20.0, vec![Event::PointerMoved(from)]);
+    frame_at(
+        &mut h,
+        20.05,
+        vec![press(from, PointerButton::Primary, true)],
+    );
+    let to = from + egui::vec2(6.0, 0.0);
+    frame_at(&mut h, 20.2, vec![Event::PointerMoved(to)]);
+    frame_at(&mut h, 20.3, vec![press(to, PointerButton::Primary, false)]);
+    h.run();
+    assert_eq!(labels(&h), ["A", "B", "f", "C", "D", "g"]);
+    assert_eq!(camera(&h), cam, "the short stroke panned");
+}
+
+/// A drag of a point that stays within the click threshold is an undo
+/// step under the owner's rule; the reference app keeps its motion but no
+/// step (spec F2, `interact::EVERY_DRAG_IS_A_STEP`). Fails if the switch
+/// did nothing.
+#[test]
+fn a_drag_within_the_click_threshold_is_a_step_only_under_the_owners_rule() {
+    for rules in [OwnerRules::OURS, OwnerRules::REFERENCE] {
+        let mut h = harness("A = (0.3, 0.3)\n");
+        h.state_mut().rules = rules;
+        let from = world(0.3, 0.3);
+        frame_at(&mut h, 10.0, vec![Event::PointerMoved(from)]);
+        frame_at(
+            &mut h,
+            10.05,
+            vec![press(from, PointerButton::Primary, true)],
+        );
+        let to = from + egui::vec2(6.0, 0.0);
+        frame_at(&mut h, 10.2, vec![Event::PointerMoved(to)]);
+        frame_at(&mut h, 10.3, vec![press(to, PointerButton::Primary, false)]);
+        h.run();
+        let what = format!("{rules:?}");
+        assert!((point(&h, "A").0 - 0.42).abs() < 1e-9, "{what}");
+        assert_eq!(
+            h.state().wb.can_undo(),
+            rules.every_drag_is_a_step,
+            "{what}"
+        );
+    }
 }

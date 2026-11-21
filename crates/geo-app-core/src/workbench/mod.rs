@@ -523,6 +523,15 @@ impl Workbench {
         self.gesture = None;
     }
 
+    /// Ends the drag in progress keeping its changes but not its undo step
+    /// (the reference app's drag that stayed within the click threshold,
+    /// spec F2; `interact::EVERY_DRAG_IS_A_STEP` off).
+    pub fn end_gesture_without_step(&mut self) {
+        if self.gesture.take().is_some_and(|g| g.committed) {
+            self.undo.discard_last();
+        }
+    }
+
     /// Abandons the drag in progress and restores the state before it.
     pub fn cancel_gesture(&mut self) {
         let Some(g) = self.gesture.take() else {
@@ -617,13 +626,18 @@ impl Workbench {
             return false;
         }
         // Compared by bits, as the kernel does: `0` to `-0` is a change.
-        let same = match self.construction.value(id) {
-            Value::Point { x: ox, y: oy } | Value::Vector { x: ox, y: oy } => {
-                ox.to_bits() == x.to_bits() && oy.to_bits() == y.to_bits()
-            }
-            _ => false,
+        let bits = |v: Value| match v {
+            Value::Point { x, y } | Value::Vector { x, y } => Some((x.to_bits(), y.to_bits())),
+            _ => None,
         };
+        let old = bits(self.construction.value(id));
+        let same = old == Some((x.to_bits(), y.to_bits()));
         if self.construction.move_point(id, x, y).is_err() || same {
+            return false;
+        }
+        // A point on a path goes where the kernel projects the position: it
+        // may stay where it was.
+        if bits(self.construction.value(id)) == old {
             return false;
         }
         // The journal does not have the move yet: the undo step is taken
@@ -636,6 +650,24 @@ impl Workbench {
         self.log.record_set(&label, Setting::Point(x, y));
         self.version += 1;
         true
+    }
+
+    /// The point that `rhs` (such as `Intersect(c, f, 2)`) would make now,
+    /// without adding it: the line runs on the construction and is rolled
+    /// back at once. `None` when it fails or makes no defined point.
+    pub fn probe_point(&mut self, rhs: &str) -> Option<(f64, f64)> {
+        let c = &mut self.construction;
+        let at = c.checkpoint();
+        let before = c.len();
+        let made = geo_kernel::script::exec(c, &format!("Probe_ = {rhs}")).is_ok();
+        let point = match c.ids().nth(before).map(|id| c.value(id)) {
+            Some(Value::Point { x, y }) if made && x.is_finite() && y.is_finite() => Some((x, y)),
+            _ => None,
+        };
+        // A checkpoint taken just above, with nothing moved since: the
+        // rollback cannot be refused.
+        let _ = c.rollback(at);
+        point
     }
 
     /// Translates the free points `ids` by `(dx, dy)` within the drag in
