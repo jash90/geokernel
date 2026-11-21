@@ -101,8 +101,13 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
     }
     // `name: definition`, the input bar's other form of a labelled line.
     // A definition with `=` in it is an equation (`a: 2x + 3y = 6`); the
-    // rest is the same as after `=`.
-    if let Some((name, rhs)) = line.split_once(':') {
+    // rest is the same as after `=`. A `:` after the first `=` belongs to
+    // the definition (`c = Circle(O, r:c)` names a label holding a colon),
+    // so only a `:` before any `=` separates the label.
+    let label_colon = line
+        .find(':')
+        .filter(|&i| line.find('=').is_none_or(|e| i < e));
+    if let Some((name, rhs)) = label_colon.map(|i| (&line[..i], &line[i + 1..])) {
         let name = name.trim();
         if !is_output_label(name) {
             return Err(format!("`{name}` is not a valid object name"));
@@ -855,6 +860,24 @@ mod tests {
         assert!(!is_vector_label("\u{1d44e}")); // mathematical italic small a, outside the BMP
         assert!(!is_vector_label("\u{2170}")); // small roman numeral one, a letter number
         assert!(!is_vector_label(""));
+    }
+
+    #[test]
+    fn a_colon_after_the_equals_sign_is_part_of_the_definition() {
+        let mut c = Construction::new();
+        exec(&mut c, "O = (0, 0)").unwrap();
+        exec(&mut c, "A = (3, 4)").unwrap();
+        c.add(
+            "\0radius:k",
+            Def::Distance(c.id("O").unwrap(), c.id("A").unwrap()),
+        )
+        .unwrap();
+        let k = exec(&mut c, "k = Circle(O, \0radius:k)").unwrap().unwrap();
+        assert_eq!(c.label(k), "k");
+        assert_eq!(c.kind(k), crate::Kind::Circle);
+        // the label form still reads a colon before the equation
+        let a = exec(&mut c, "a: 2x + 3y = 6").unwrap().unwrap();
+        assert_eq!(c.label(a), "a");
     }
 
     #[test]
