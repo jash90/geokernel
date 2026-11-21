@@ -47,6 +47,8 @@ use crate::tol::{MAX_PRECISION, MIN_PRECISION, STANDARD_PRECISION};
 
 #[path = "intersect_boundary.rs"]
 pub(crate) mod boundary;
+#[path = "intersect_common_tangents.rs"]
+pub(crate) mod common_tangents;
 #[path = "intersect_conics.rs"]
 mod conics;
 #[path = "intersect_function_roots.rs"]
@@ -86,6 +88,9 @@ pub(crate) fn parse_lines(
 
 /// Output slots for an unindexed line/conic intersection in either order.
 pub(crate) fn parse_multi(c: &Construction, name: &str, args: &[&str]) -> Option<Vec<Def>> {
+    if let Some(defs) = common_tangents::parse_multi(c, name, args) {
+        return Some(defs);
+    }
     if let Some(defs) = functions::FunctionIntersection::multi(c, name, args) {
         return Some(
             defs.into_iter()
@@ -407,6 +412,7 @@ fn defined_as_tangent(line_def: Def, circle: Id) -> bool {
         line_def,
         Def::Lines(
             LineDef::TangentPoint { circle: k, .. } | LineDef::TangentLine { circle: k, .. }
+                | LineDef::CommonTangent { first: k, .. }
         ) if k == circle
     )
 }
@@ -447,11 +453,20 @@ pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
                 Def::Lines(LineDef::TangentLine {
                     line: g, circle: k, ..
                 }) if k == circle => push(Some(g)),
+                Def::Lines(LineDef::CommonTangent { first, second, .. }) if first == circle => {
+                    push(Some(second));
+                }
                 _ => {}
             }
         }
         Def::ConicPart(ConicPartDef::IntersectLine { line, conic, .. }) => {
-            push(existing_line_conic_point(c, line, c.def(line), conic));
+            let line_def = c.def(line);
+            push(existing_line_conic_point(c, line, line_def, conic));
+            if let Def::Lines(LineDef::CommonTangent { first, second, .. }) = line_def {
+                if first == conic {
+                    push(Some(second));
+                }
+            }
         }
         Def::IntersectCircles { c1, c2, .. } if c1 == c2 => push(first_point_on(c, c1)),
         Def::IntersectCircles { c1, c2, .. } => {
@@ -599,12 +614,14 @@ pub(crate) fn line_general_conic(
     which: u8,
 ) -> Option<Value> {
     let line_def = c.def(line);
-    if let Def::ConicPart(d) = line_def {
-        // A tangent of this conic has one point, the tangent algorithm's
-        // own (`isDefinedAsTangent`).
-        if let Some(t) = super::conic_parts::tangent_point_on(c, d, conic) {
-            return if which == 0 { to_value(t) } else { None };
-        }
+    // A tangent of this conic has one point, the tangent algorithm's own.
+    let tangent = match line_def {
+        Def::ConicPart(d) => super::conic_parts::tangent_point_on(c, d, conic),
+        Def::Lines(d @ LineDef::CommonTangent { .. }) => lines::tangent_point_on(c, d, conic),
+        _ => None,
+    };
+    if let Some(point) = tangent {
+        return if which == 0 { to_value(point) } else { None };
     }
     let q = match (c.raw_line(line), c.conic(conic)) {
         (Some((a, b, cc)), Some(data)) if data.defined => {

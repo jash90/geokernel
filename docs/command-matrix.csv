@@ -26,7 +26,7 @@ Line,,geometry,P0,done,5,5,"Line(point, point); Line(point, line, segment or ray
 Ray,,geometry,P1,done,2,2,"Ray(point, point); Ray(point, vector)"
 AngularBisector,,geometry,P1,done,2,2,"AngularBisector(point, point, point); AngularBisector(line, line)"
 OrthogonalLine,,geometry,P0,done,5,5,"OrthogonalLine(point, line, segment or ray); OrthogonalLine(point, vector); OrthogonalLine(point, conic or conic part)"
-Tangent,,geometry,P1,partial,11,2,"Tangent(point, circle or conic); Tangent(line or segment, circle or conic)"
+Tangent,,geometry,P1,partial,11,3,"Tangent(point, circle or conic); Tangent(line or segment, circle or conic)"
 Segment,,geometry,P0,done,3,3,"Segment(point, point); Segment(point, length); Segment(point, point, polygon) creates no output"
 Slope,,geometry,P1,done,2,2,"Slope(line, segment, ray or function)"
 Angle,,geometry,P1,done,13,13,"Angle(angle); Angle(number); Angle(point); Angle(vector); Angle(conic); Angle(polygon); Angle(point, point); Angle(point, vector); Angle(vector, point); Angle(vector, vector); Angle(line, line); Angle(point, point, point); Angle(point, point, number)"

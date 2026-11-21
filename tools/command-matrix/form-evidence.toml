@@ -871,6 +871,11 @@ cases = ["lists-objects-030", "lists-stats-018", "lists-sum-005"]
 
 [[form]]
 command = "Tangent"
+form = "conic,conic"
+cases = ["commontangents-conics-001", "commontangents-conics-002"]
+
+[[form]]
+command = "Tangent"
 form = "line,conic"
 cases = ["conics-tangent-002", "conics-tangent-005", "conics-tangent-008"]
 

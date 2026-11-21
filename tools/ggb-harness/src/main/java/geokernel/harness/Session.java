@@ -201,7 +201,8 @@ final class Session {
                 && out[1].toGeoElement() instanceof GeoPoint) {
             return runFixedAngle(line, label, out);
         }
-        if (out != null && out.length == 2 && isMultiOutput(definition)) {
+        if (out != null && ((out.length == 2 && isMultiOutput(definition))
+                || (out.length == 4 && definition.startsWith("Tangent(")))) {
             return runMulti(line, expected, out);
         }
         if (out != null && out.length > 0 && definition.startsWith("Intersect(")

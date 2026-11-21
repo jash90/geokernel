@@ -69,6 +69,8 @@ pub enum LineDef {
     /// One of the two tangents to a circle parallel to a line or segment
     /// (`Tangent(g, c)`); `which` is 0 or 1 in GeoGebra's order.
     TangentLine { line: Id, circle: Id, which: u8 },
+    /// A common tangent of two conics, in outer-then-inner order.
+    CommonTangent { first: Id, second: Id, which: u8 },
     /// Polar line of a point with respect to a circle (`Polar(P, c)`).
     Polar { point: Id, circle: Id },
 }
@@ -92,6 +94,7 @@ impl Group for LineDef {
                 Parents::of(&[point, circle])
             }
             LineDef::TangentLine { line, circle, .. } => Parents::of(&[line, circle]),
+            LineDef::CommonTangent { first, second, .. } => Parents::of(&[first, second]),
         }
     }
 
@@ -137,6 +140,19 @@ impl Group for LineDef {
                 c.expect(line, LINE_LIKE)?;
                 c.expect(circle, CIRCLE)?;
                 check_index(which)
+            }
+            LineDef::CommonTangent {
+                first,
+                second,
+                which,
+            } => {
+                c.expect(first, super::CONIC_OBJECTS)?;
+                c.expect(second, super::CONIC_OBJECTS)?;
+                if which < 4 {
+                    Ok(())
+                } else {
+                    Err(Error::BadIndex(which))
+                }
             }
             LineDef::Polar { point, circle } => {
                 c.expect(point, POINT)?;
@@ -189,6 +205,11 @@ impl Group for LineDef {
                 circle,
                 which,
             } => tangent_line(c.raw_carrier(line)?, c.circle(circle)?, which),
+            LineDef::CommonTangent {
+                first,
+                second,
+                which,
+            } => super::intersect::common_tangents::tangent(c, first, second, which),
             LineDef::Polar { point, circle } => {
                 let (px, py) = c.point(point)?;
                 let (cx, cy, r) = c.circle(circle)?;
@@ -270,9 +291,6 @@ impl Group for LineDef {
                             which,
                         })
                         .collect()),
-                    (Kind::Circle, Kind::Circle) => {
-                        Err("common tangents of two circles are not supported yet".into())
-                    }
                     _ => Err(bad_kinds(c, func, &ids)),
                 }
             })),
@@ -713,6 +731,13 @@ pub(crate) fn tangent_point_on(c: &Construction, d: LineDef, circle: Id) -> Opti
             }
             tangent_points_of(a.diameter(g.1, -g.0), &a)[which as usize]
         })()),
+        LineDef::CommonTangent {
+            first,
+            second,
+            which,
+        } if first == circle => Some(super::intersect::common_tangents::contact(
+            c, first, second, which,
+        )),
         _ => None,
     }
 }
@@ -875,7 +900,6 @@ mod tests {
             ),
             ("f = Tangent(A, B)", "does not take a point, a point"),
             ("f = Tangent(k, l)", "does not take a circle, a line"),
-            ("f = Tangent(k, k)", "not supported"),
             ("f = Polar(k, k)", "does not take a circle, a circle"),
             ("f = Polar(A, B)", "does not take a point, a point"),
             ("f = Tangent(P, Z)", "unknown object `Z`"),

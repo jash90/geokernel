@@ -1211,3 +1211,16 @@ mod tests {
         assert!(exec(&mut c, "a = $vector(1, 2)").is_err());
     }
 }
+#[test]
+fn labelled_common_tangents_of_coincident_conics_are_undefined() {
+    let c = load(
+        "k = Conic({1, 1, -1, 0, 0, 0})\nh = Conic({1, 1, -1, 0, 0, 0})\n\
+             {t_{1}, t_{2}, t_{3}, t_{4}} = Tangent(k, h)",
+    )
+    .unwrap();
+    for label in ["t_{1}", "t_{2}", "t_{3}", "t_{4}"] {
+        let id = c.id(label).unwrap();
+        assert_eq!(c.kind(id), Kind::Line);
+        assert_eq!(c.value(id), Value::Undefined);
+    }
+}
