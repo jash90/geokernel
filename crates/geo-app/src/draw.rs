@@ -95,6 +95,10 @@ fn near_view(c: &Construction, id: Id, t: &ViewTransform, w: f64, h: f64) -> boo
             None => true,
         },
         Value::Polygon { .. } | Value::PolyLine { .. } => near(&mut c.vertices(id).flatten(), NEAR),
+        Value::Locus { .. } => match c.locus(id) {
+            Some(l) => near(&mut l.points.iter().map(|p| (p.x, p.y)), NEAR),
+            None => true,
+        },
         Value::Conic { .. } => match c.conic(id) {
             Some(d) if matches!(d.ty, ConicType::Ellipse | ConicType::Circle) => {
                 let ([a, b], [e0, e1], [mx, my]) = (d.half_axes, d.eigenvec, d.midpoint);
@@ -357,6 +361,29 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
                     None => run.clear(),
                 }
             }
+        }
+    }
+
+    // Loci: a line through their points, which starts a new piece at every
+    // point that is not joined to the one before it.
+    for &id in &ids {
+        let (Value::Locus { .. }, Some(locus)) = (c.value(id), c.locus(id)) else {
+            continue;
+        };
+        let mut run: Vec<Pos2> = Vec::new();
+        for pt in &locus.points {
+            if !pt.line_to {
+                if run.len() >= 2 {
+                    painter.add(Shape::line(std::mem::take(&mut run), curve(id)));
+                }
+                run.clear();
+            }
+            if pt.x.is_finite() && pt.y.is_finite() {
+                run.push(p(pt.x, pt.y));
+            }
+        }
+        if run.len() >= 2 {
+            painter.add(Shape::line(run, curve(id)));
         }
     }
 

@@ -93,6 +93,7 @@ fn only(kind: Kind) -> &'static [Kind] {
         Kind::Conic => &[Kind::Conic],
         Kind::Arc => &[Kind::Arc],
         Kind::Sector => &[Kind::Sector],
+        Kind::Locus => &[Kind::Locus],
     }
 }
 
@@ -391,6 +392,7 @@ fn translate(v: Value, dx: f64, dy: f64) -> Option<Value> {
         | Value::Conic { .. }
         | Value::Arc { .. }
         | Value::Sector { .. }
+        | Value::Locus { .. }
         | Value::Undefined => return None,
     })
 }
