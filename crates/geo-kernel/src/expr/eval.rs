@@ -853,11 +853,11 @@ impl<const M: bool> Ctx<'_, M> {
             }
             Node::Un(Un::Sin, a) => {
                 self.charge(FUNCTION);
-                self.fast(a).sin()
+                libm::sin(self.fast(a))
             }
             Node::Un(Un::Cos, a) => {
                 self.charge(FUNCTION);
-                self.fast(a).cos()
+                libm::cos(self.fast(a))
             }
             Node::Un(Un::Sqrt, a) => self.fast(a).sqrt(),
             Node::Var => match *self.env {

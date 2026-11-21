@@ -712,10 +712,11 @@ fn validate_case(case: &Case) -> Result<(), String> {
     if labels.len() != case.script.len() {
         return Err("script lines must each define a distinct `label = ...`".into());
     }
-    let mut first: Option<BTreeSet<String>> = None;
+    let mut previous_keys: Option<BTreeSet<String>> = None;
+    let mut boundary_prefixes = BTreeSet::new();
     for (i, snap) in case.snapshots.iter().enumerate() {
         let keys: BTreeSet<String> = snap.keys().cloned().collect();
-        match &first {
+        match &previous_keys {
             None => {
                 // The sides and new vertices of a polygon get labels of
                 // their own (see `golden/SCHEMA.md`).
@@ -736,6 +737,20 @@ fn validate_case(case: &Case) -> Result<(), String> {
                     }
                     if let Some((label, "Difference" | "IntersectPath", _)) = command_args(line) {
                         clip_prefixes.insert(label_prefix(label));
+                    }
+                    if let Some((label, "Intersect", args)) = command_args(line) {
+                        if let [a, b] = args.as_slice() {
+                            let kind = |name: &str| snap.get(name).map(|o| o.kind);
+                            let boundary = |k| matches!(k, Some(Kind::Polygon | Kind::PolyLine));
+                            let carrier =
+                                |k| matches!(k, Some(Kind::Line | Kind::Segment | Kind::Ray));
+                            let (a, b) = (kind(a), kind(b));
+                            if boundary(a) && (boundary(b) || carrier(b))
+                                || boundary(b) && carrier(a)
+                            {
+                                boundary_prefixes.insert(label_prefix(label));
+                            }
+                        }
                     }
                     if let Some((label, "Angle", args)) = command_args(line) {
                         match args.as_slice() {
@@ -782,10 +797,20 @@ fn validate_case(case: &Case) -> Result<(), String> {
                     }
                 };
                 check_keys(&keys, &outputs, created).map_err(|e| format!("snapshot {i}: {e}"))?;
-                first = Some(keys);
+                previous_keys = Some(keys);
             }
-            Some(f) if *f != keys => {
-                return Err(format!("snapshot {i} labels differ from snapshot 0"));
+            Some(previous) if *previous != keys => {
+                // Boundary algorithms retain all earlier labels and can
+                // publish new indexed point labels on a move.
+                if !previous.is_subset(&keys)
+                    || keys.difference(previous).any(|key| {
+                        snap[key].kind != Kind::Point
+                            || !indexed_prefix(key).is_some_and(|p| boundary_prefixes.contains(p))
+                    })
+                {
+                    return Err(format!("snapshot {i} labels differ from snapshot 0"));
+                }
+                previous_keys = Some(keys);
             }
             Some(_) => {}
         }

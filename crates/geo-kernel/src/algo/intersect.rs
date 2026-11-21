@@ -36,14 +36,21 @@
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
-use crate::algo::conic::ConicDef;
 use crate::algo::conic_nd::{ConicData, ConicType};
 use crate::algo::conic_parts::ConicPartDef;
 use crate::algo::general_conic::GeneralConicDef;
 use crate::algo::lines::{self, LineDef};
 use crate::algo::point::PointDef;
+use crate::algo::{conic::ConicDef, Group};
 use crate::kernel::{Construction, Def, Id, Kind, Value};
 use crate::tol::{MAX_PRECISION, MIN_PRECISION, STANDARD_PRECISION};
+
+#[path = "intersect_boundary.rs"]
+pub(crate) mod boundary;
+#[path = "intersect_conics.rs"]
+mod conics;
+#[path = "intersect_pair.rs"]
+pub(crate) mod pair;
 
 /// `Kernel.INV_MAX_DOUBLE_PRECISION`.
 const INV_MAX_DOUBLE_PRECISION: f64 = 1e15;
@@ -75,6 +82,16 @@ pub(crate) fn parse_lines(
 
 /// Output slots for an unindexed line/conic intersection in either order.
 pub(crate) fn parse_multi(c: &Construction, name: &str, args: &[&str]) -> Option<Vec<Def>> {
+    if let Some(def) = pair::PairDef::multi(c, name, args) {
+        return Some(
+            (0..4)
+                .map(|slot| Def::IntersectConics(def.with_slot(slot)))
+                .collect(),
+        );
+    }
+    if let Some(defs) = boundary::parse_multi(c, name, args) {
+        return Some(defs.into_iter().map(Def::IntersectBoundary).collect());
+    }
     let ("Intersect", [first, second]) = (name, args) else {
         return None;
     };
@@ -154,6 +171,17 @@ fn selector_kind(c: &mut Construction, text: &str) -> Result<Kind, String> {
     result
 }
 
+pub(crate) fn parse_selected(
+    c: &Construction,
+    func: &str,
+    args: &[&str],
+) -> Option<Result<Def, String>> {
+    if let Some(result) = pair::PairDef::parse(c, func, args) {
+        return Some(result.map(Def::IntersectConics));
+    }
+    boundary::BoundaryDef::parse(c, func, args).map(|result| result.map(Def::IntersectBoundary))
+}
+
 /// Compose existing intersection points with a live selector, or test
 /// incidence by projecting onto a path. The expression keeps the object
 /// dependencies and reuses the intersection hints of the indexed calls.
@@ -201,10 +229,10 @@ pub(crate) fn exec_selected(
         [selector]
             if matches!(
                 (a, b),
-                (Kind::Line, Kind::Circle | Kind::Conic)
-                    | (Kind::Circle | Kind::Conic, Kind::Line)
-                    | (Kind::Circle, Kind::Circle)
-            ) =>
+                (Kind::Line, Kind::Circle | Kind::Conic) | (Kind::Circle | Kind::Conic, Kind::Line)
+            ) || (a, b) == (Kind::Circle, Kind::Circle)
+                && c.id(selector).is_none()
+                && crate::expr::plain_number(selector).is_none() =>
         {
             if matches!(*selector, "1" | "2") {
                 return None;
@@ -249,6 +277,9 @@ pub(crate) fn exec_selected(
 /// construction) and is kept, like the state of GeoGebra's algorithm object;
 /// only `None` is decided from the current positions.
 pub(crate) fn prepare(c: &Construction, def: Def) -> Def {
+    if let Def::IntersectConics(pair) = def {
+        return Def::IntersectConics(pair.oriented(c));
+    }
     let Def::IntersectCircles {
         c1,
         c2,
@@ -375,6 +406,8 @@ pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
         }
     };
     match *def {
+        Def::IntersectConics(d) => return d.common_points(c).collect(),
+        Def::IntersectBoundary(d) => return d.hidden_parents(c),
         Def::IntersectLineCircle { line, circle, .. } => {
             let line_def = c.def(line);
             push(existing_line_circle_point(c, line, line_def, circle));
@@ -660,7 +693,7 @@ pub(crate) fn circles(
     to_value(p[usize::from(which)])
 }
 
-fn to_value(p: Pt) -> Option<Value> {
+pub(crate) fn to_value(p: Pt) -> Option<Value> {
     p.map(|(x, y)| Value::Point { x, y })
 }
 
@@ -683,7 +716,7 @@ fn avoid_double_tangent_point(p: &mut [Pt; 2]) {
 }
 
 /// `GeoPoint.isEqual` for finite points.
-fn points_equal(p: Pt, q: Pt) -> bool {
+pub(crate) fn points_equal(p: Pt, q: Pt) -> bool {
     match (p, q) {
         (Some((x1, y1)), Some((x2, y2))) => is_equal(x1, x2) && is_equal(y1, y2),
         _ => false,
@@ -737,7 +770,7 @@ fn java_round(x: f64) -> f64 {
 
 /// `DoubleUtil.checkDecimalFraction(val, 1e8)`: with that precision the
 /// tolerance is 1, so the value is always rounded to five decimals.
-fn check_decimal_fraction(val: f64) -> f64 {
+pub(crate) fn check_decimal_fraction(val: f64) -> f64 {
     const INV_MIN_PRECISION: f64 = 1e5;
     let frac = val * INV_MIN_PRECISION;
     let round = java_round(frac);
@@ -788,7 +821,7 @@ fn point(x: f64, y: f64) -> Pt {
 // ----------------------------------------------------------------- lines
 
 /// `GeoLine.getNormalizedCoefficients(ret, 2, 0.5)`.
-fn normalized_coefficients(g: [f64; 3]) -> [f64; 3] {
+pub(crate) fn normalized_coefficients(g: [f64; 3]) -> [f64; 3] {
     let (x, y, z) = super::normalized_coefficients((g[0], g[1], g[2]), 2.0, 0.5);
     [x, y, z]
 }
@@ -867,7 +900,7 @@ fn evaluate(m: &[f64; 6], x: f64, y: f64) -> f64 {
 /// `AlgoIntersectLineConic.intersectLineConic(double[] g, double[] A, type, ...)`.
 /// `g` holds normalised coefficients; `double_line` is whether the conic's
 /// type is a double line.
-fn line_conic_points(g: [f64; 3], m: &[f64; 6], double_line: bool, eps: f64) -> [Pt; 2] {
+pub(crate) fn line_conic_points(g: [f64; 3], m: &[f64; 6], double_line: bool, eps: f64) -> [Pt; 2] {
     let [x, y, z] = g;
     // an arbitrary point of the line
     let (px, py) = if x.abs() > y.abs() {
