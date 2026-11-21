@@ -23,13 +23,30 @@ use crate::expr::{self, math, Bin, Elem, IfMode, ListOp, Node, Ty, Un, NONE};
 use crate::kernel::{Construction, Def, Id, Kind, Value};
 
 /// The commands of this group (see `commands::is_command`).
-pub(super) const NAMES: &[&str] = &["Length", "Cross", "Dot", "Identity"];
+pub(super) const NAMES: &[&str] = &[
+    "Length",
+    "Cross",
+    "Dot",
+    "Identity",
+    "Dimension",
+    "Vector",
+    "Direction",
+    "UnitVector",
+    "OrthogonalVector",
+    "PerpendicularVector",
+    "UnitOrthogonalVector",
+    "UnitPerpendicularVector",
+];
 
 pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
     match text {
         "Length" => p.list_command(length),
         "Cross" => p.list_command(cross),
         "Dot" => p.list_command(dot),
+        "Dimension" => p.list_command(dimension),
+        _ if VectorDef::vector_result(text) => {
+            p.list_command(|p, args, lists| Ok(vector(p, text, args, lists)))
+        }
         "Identity" => {
             let [n] = p.arguments()?[..] else {
                 return Err("`Identity` takes one number".into());
@@ -38,6 +55,64 @@ pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
         }
         _ => Ok(None),
     }
+}
+
+/// Inline coordinates use the same arithmetic in any expression. Named
+/// inputs use the script algorithms, which also have their drawing start
+/// points and raw line or intersection coordinates.
+fn vector(p: &mut Parser, command: &str, args: &[u32], lists: &[bool]) -> Option<Node> {
+    let (&[a], [false]) = (args, lists) else {
+        return None;
+    };
+    if matches!(p.node(a), Node::Obj(_)) {
+        return None;
+    }
+    let x = p.push(Node::Un(Un::X, a));
+    let y = p.push(Node::Un(Un::Y, a));
+    let perpendicular = matches!(
+        command,
+        "OrthogonalVector"
+            | "PerpendicularVector"
+            | "UnitOrthogonalVector"
+            | "UnitPerpendicularVector"
+    );
+    let (x, y) = if perpendicular {
+        let minus = p.push(Node::MinusOne);
+        (p.push(Node::Bin(Bin::Mul, minus, y)), x)
+    } else {
+        (x, y)
+    };
+    let tuple = Node::Tuple(x, y);
+    let output = if matches!(
+        command,
+        "UnitVector" | "UnitOrthogonalVector" | "UnitPerpendicularVector"
+    ) {
+        let pair = p.push(tuple);
+        let len = p.push(Node::Un(Un::Abs, pair));
+        p.push(Node::Bin(Bin::Div, pair, len))
+    } else {
+        p.push(tuple)
+    };
+    // An inline coordinate pair belongs to this command. Even with literal
+    // arguments the result is dependent and cannot be dragged as a free vector.
+    let yes = p.push(Node::Bool(true));
+    Some(Node::If(IfMode::Algo, yes, output, NONE))
+}
+
+fn dimension(p: &mut Parser, args: &[u32], lists: &[bool]) -> Result<Option<Node>, String> {
+    let (&[a], [false]) = (args, lists) else {
+        return Ok(None);
+    };
+    if matches!(p.node(a), Node::Obj(_)) {
+        return Ok(None);
+    }
+    let x = p.push(Node::Un(Un::X, a));
+    let y = p.push(Node::Un(Un::Y, a));
+    let defined_x = p.push(Node::Bin(Bin::Equal, x, x));
+    let defined_y = p.push(Node::Bin(Bin::Equal, y, y));
+    let defined = p.push(Node::Bin(Bin::And, defined_x, defined_y));
+    let two = p.push(Node::Num(2.0));
+    Ok(Some(Node::If(IfMode::Algo, defined, two, NONE)))
 }
 
 fn length(p: &mut Parser, args: &[u32], lists: &[bool]) -> Result<Option<Node>, String> {

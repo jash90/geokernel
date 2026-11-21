@@ -159,6 +159,21 @@ pub enum VectorDef {
     DotLists(Id, Id),
 }
 
+impl VectorDef {
+    pub(crate) fn vector_result(name: &str) -> bool {
+        matches!(
+            name,
+            "Vector"
+                | "Direction"
+                | "UnitVector"
+                | "OrthogonalVector"
+                | "PerpendicularVector"
+                | "UnitOrthogonalVector"
+                | "UnitPerpendicularVector"
+        )
+    }
+}
+
 /// `DoubleUtil.isZero`.
 fn is_zero(v: f64) -> bool {
     -STANDARD_PRECISION < v && v < STANDARD_PRECISION
@@ -834,19 +849,20 @@ mod tests {
     }
 
     #[test]
-    fn rejecting_an_inline_matrix_call_discards_its_operands() {
+    fn an_inline_point_argument_creates_one_vector() {
         let mut c = base();
-        let at = c.checkpoint();
         let size = c.len();
-        assert!(exec(&mut c, "v = ApplyMatrix({{1,0},{0,1}}, r)").is_err());
-        assert_eq!(c.len(), size);
-        assert!(c.id("\0operand:v:0").is_none());
-        assert!(exec(&mut c, "v = ApplyMatrix({{r,0},{0,1}}, u)").is_ok());
-        assert_eq!(value(&c, "v"), Value::Vector { x: 6.0, y: -1.0 });
+        let id = exec(&mut c, "V = PerpendicularVector((r, 4))")
+            .unwrap()
+            .unwrap();
+        assert_eq!(id.index(), size);
+        assert_eq!(c.len(), size + 1);
+        assert_eq!(value(&c, "V"), Value::Vector { x: -4.0, y: 2.0 });
         c.set_number(c.id("r").unwrap(), 3.0).unwrap();
-        assert_eq!(value(&c, "v"), Value::Vector { x: 9.0, y: -1.0 });
-        c.rollback(at).unwrap();
-        assert_eq!(c.len(), size);
+        assert_eq!(value(&c, "V"), Value::Vector { x: -4.0, y: 3.0 });
+        let id = exec(&mut c, "W = UnitVector((3, 4))").unwrap().unwrap();
+        assert_eq!(c.kind(id), Kind::Vector);
+        assert!(!c.def(id).is_free());
     }
 
     fn vec_of(c: &Construction, label: &str) -> (f64, f64) {

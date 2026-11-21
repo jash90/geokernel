@@ -107,4 +107,11 @@ case("images", ["A = (1, 1)", "n = 2", "l = {Sequence(n), {3, 4}}",
                 "P = ApplyMatrix(l, A)"], [setn("n", 3), setn("n", 1), setn("n", 2)])
 case("images", ["P = ApplyMatrix({{1, 2}, {3, 4}}, (1, 1))"], [])
 
+# The fuzz corpus loads every top-level input script unchanged. Keep topics
+# with unsupported commands or operands in the reference inputs.
+reference = Cases("vectorforms")
+reference_topics = {"images", "matrixlists", "matrixnumbers", "point", "products"}
+reference.cases = [entry for entry in cases.cases if entry["id"].split("-")[1] in reference_topics]
+cases.cases = [entry for entry in cases.cases if entry["id"].split("-")[1] not in reference_topics]
 cases.write()
+reference.write("reference")

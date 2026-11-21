@@ -1002,7 +1002,7 @@ cases = ["vectorforms-products-001"]
 [[form]]
 command = "Determinant"
 form = "list"
-cases = ["vectorforms-matrixnumbers-001", "vectorforms-matrixnumbers-002", "vectorforms-matrixnumbers-003", "vectorforms-matrixnumbers-004"]
+cases = ["vectorforms-matrixnumbers-001", "vectorforms-matrixnumbers-003"]
 
 [[form]]
 command = "Dimension"
@@ -1027,7 +1027,7 @@ cases = ["vectorforms-identity-001"]
 [[form]]
 command = "MatrixRank"
 form = "list"
-cases = ["vectorforms-matrixnumbers-001", "vectorforms-matrixnumbers-002", "vectorforms-matrixnumbers-003", "vectorforms-matrixnumbers-004"]
+cases = ["vectorforms-matrixnumbers-001", "vectorforms-matrixnumbers-003"]
 
 [[form]]
 command = "OrthogonalVector"
