@@ -20,6 +20,11 @@
 //! sides of a polygon, the outputs of `Tangent`): `p = Polygon(A, B, C)
 //! # labels: p, a_1, b, c`. The list is a comment, so the text stays a
 //! plain script; `load_tolerant` checks it.
+//!
+//! One kind of entry is not the journal of any script line: the start
+//! point a locus froze on a line, written where the entry of the locus was
+//! when the locus was deleted (`Op::Freeze`). It keeps the start over
+//! every later rebuild, and a script does not save it.
 
 use geo_kernel::algo::measure::MeasureDef;
 use geo_kernel::kernel::{Construction, Def, Id};
@@ -65,7 +70,23 @@ pub enum Setting {
 #[derive(Clone, Debug, PartialEq)]
 enum Op {
     Define(Entry),
-    Set { label: String, to: Setting },
+    Set {
+        label: String,
+        to: Setting,
+    },
+    /// The start point a locus froze on a line without one, written where
+    /// the entry of the locus was when the locus was deleted
+    /// ([`Log::keep_frozen_start`]): a replay installs it before the
+    /// operations that follow, exactly where the locus froze it, so every
+    /// later rebuild reproduces the points bit for bit. GeoGebra keeps such
+    /// a start for the rest of the session (it installed the point on the
+    /// line itself); this entry is what carries it over the rebuilds. A
+    /// script does not save it (see `write_script`).
+    Freeze {
+        label: String,
+        x: f64,
+        y: f64,
+    },
 }
 
 /// Rewrites `f: Line(A, B)` as `f = Line(A, B)` and removes a trailing `#`
@@ -250,7 +271,7 @@ impl Log {
     fn entries(&self) -> impl Iterator<Item = &Entry> {
         self.ops.items().into_iter().filter_map(|op| match op {
             Op::Define(e) => Some(e),
-            Op::Set { .. } => None,
+            Op::Set { .. } | Op::Freeze { .. } => None,
         })
     }
 
@@ -258,7 +279,7 @@ impl Log {
     pub(crate) fn entries_rev(&self) -> impl Iterator<Item = &Entry> {
         self.ops.items_rev().filter_map(|op| match op {
             Op::Define(e) => Some(e),
-            Op::Set { .. } => None,
+            Op::Set { .. } | Op::Freeze { .. } => None,
         })
     }
 
@@ -327,7 +348,8 @@ impl Log {
 
     /// Removes the line that created `label` (and with it every object the
     /// line created) and the moves of those objects. Returns whether there
-    /// was such a line. Lines that use a removed object go on the next rebuild.
+    /// was such a line. Lines that use a removed object go on the next
+    /// rebuild, which also drops the start points those lines froze.
     pub fn remove(&mut self, label: &str) -> bool {
         let Some(entry) = self.entries().find(|e| e.labels.iter().any(|l| l == label)) else {
             return false;
@@ -336,9 +358,30 @@ impl Log {
         self.ops.retain(|op| match op {
             Op::Define(e) => e.labels != labels,
             Op::Set { label, .. } => !labels.contains(label),
+            Op::Freeze { .. } => true,
         });
         self.removed.extend(labels);
         true
+    }
+
+    /// Writes the start point a deleted locus froze on `line` into the
+    /// journal at `at`, where the entry of the locus was. A replay installs
+    /// it before the operations that follow — exactly where the locus
+    /// froze it, so moves recorded before it replay from the live foot of
+    /// the line and moves after it from the frozen start — and every later
+    /// rebuild (further deletions, the undo and redo of them) reproduces
+    /// the points bit for bit. GeoGebra keeps such a start when the locus
+    /// that installed it is deleted, because it lives on the line; this
+    /// entry is what makes it survive the rebuilds.
+    pub(crate) fn keep_frozen_start(&mut self, at: usize, line: &str, x: f64, y: f64) {
+        self.ops.insert(
+            at,
+            Op::Freeze {
+                label: line.to_owned(),
+                x,
+                y,
+            },
+        );
     }
 
     /// The journal position of the entry that created `label`, with every
@@ -358,29 +401,13 @@ impl Log {
     /// Replays the journal on a fresh construction. Every line must create
     /// the labels it created before; a line that fails is dropped only when
     /// it uses an object that was removed (or dropped itself), otherwise the
-    /// whole rebuild fails and the caller keeps its previous state.
+    /// whole rebuild fails and the caller keeps its previous state. The
+    /// start points a deleted locus froze (`Op::Freeze`) are installed
+    /// where their entries are, before the operations that follow them.
     pub fn rebuild(&self) -> Result<(Construction, Log), String> {
-        self.rebuild_with(&[])
-    }
-
-    /// [`Self::rebuild`], carrying the start points a locus froze on lines
-    /// without one (`Construction::frozen_line_starts` of the construction
-    /// before the rebuild), each with the journal position of the entry that
-    /// froze it. A start is installed right before that position: the moves
-    /// before it were made with no start and replay from the live foot of
-    /// the line, the moves after it from the frozen start — the origins the
-    /// construction being replaced had. GeoGebra keeps such a start when the
-    /// locus that installed it is deleted, because it lives on the line.
-    pub fn rebuild_with(
-        &self,
-        carried: &[(String, f64, f64, usize)],
-    ) -> Result<(Construction, Log), String> {
         let mut c = Construction::new();
         let mut kept = Log::default();
         let mut gone = self.removed.clone();
-        let mut carried: Vec<_> = carried.to_vec();
-        carried.sort_by_key(|s| s.3);
-        let mut next = 0;
         // While nothing is dropped or merged, `kept` is the first `same`
         // ops of the journal and shares their storage (see `shared.rs`).
         let ops = self.ops.items();
@@ -391,11 +418,6 @@ impl Log {
             }
         };
         for (i, op) in ops.iter().enumerate() {
-            while next < carried.len() && carried[next].3 == i {
-                let (label, x, y, _) = &carried[next];
-                c.set_frozen_line_start(label, *x, *y);
-                next += 1;
-            }
             match op {
                 Op::Define(e) => {
                     let before = c.len();
@@ -451,14 +473,27 @@ impl Log {
                         }
                     }
                 }
+                Op::Freeze { label, x, y } => {
+                    if c.set_frozen_line_start(label, *x, *y) {
+                        // What `keep_frozen_start` wrote is the entry itself.
+                        match &mut same {
+                            Some(n) => *n = i + 1,
+                            None => kept.ops.push(Op::Freeze {
+                                label: label.clone(),
+                                x: *x,
+                                y: *y,
+                            }),
+                        }
+                    } else if c.id(label).is_some() || gone.contains(label) {
+                        // The line was deleted, with everything that used
+                        // it, or no longer takes a frozen start: the entry
+                        // goes with it.
+                        diverge(&mut kept, &mut same);
+                    } else {
+                        return Err(format!("`{label}` is missing"));
+                    }
+                }
             }
-        }
-        // Starts the entry that froze them placed last of all: everything
-        // the journal still holds was made before them.
-        while next < carried.len() {
-            let (label, x, y, _) = &carried[next];
-            c.set_frozen_line_start(label, *x, *y);
-            next += 1;
         }
         if let Some(n) = same {
             kept.ops = self.ops.prefix(n);
@@ -487,26 +522,14 @@ impl Log {
         }
     }
 
-    /// `rebuild_with` as it was before the journal shared its storage:
-    /// every kept line recorded anew. The oracle of the tests of
-    /// `rebuild_with`.
+    /// `rebuild` as it was before the journal shared its storage: every
+    /// kept line recorded anew. The oracle of the tests of `rebuild`.
     #[cfg(test)]
-    pub(crate) fn rebuild_reference_with(
-        &self,
-        carried: &[(String, f64, f64, usize)],
-    ) -> Result<(Construction, Log), String> {
+    pub(crate) fn rebuild_reference(&self) -> Result<(Construction, Log), String> {
         let mut c = Construction::new();
         let mut kept = Log::default();
         let mut gone = self.removed.clone();
-        let mut carried: Vec<_> = carried.to_vec();
-        carried.sort_by_key(|s| s.3);
-        let mut next = 0;
-        for (i, op) in self.ops.items().iter().enumerate() {
-            while next < carried.len() && carried[next].3 == i {
-                let (label, x, y, _) = &carried[next];
-                c.set_frozen_line_start(label, *x, *y);
-                next += 1;
-            }
+        for op in self.ops.items() {
             match op {
                 Op::Define(e) => {
                     let before = c.len();
@@ -544,12 +567,18 @@ impl Log {
                     result.map_err(|e| format!("`{label}`: {e}"))?;
                     kept.record_set(label, *to);
                 }
+                Op::Freeze { label, x, y } => {
+                    if c.set_frozen_line_start(label, *x, *y) {
+                        kept.ops.push(Op::Freeze {
+                            label: label.clone(),
+                            x: *x,
+                            y: *y,
+                        });
+                    } else if c.id(label).is_none() && !gone.contains(label) {
+                        return Err(format!("`{label}` is missing"));
+                    }
+                }
             }
-        }
-        while next < carried.len() {
-            let (label, x, y, _) = &carried[next];
-            c.set_frozen_line_start(label, *x, *y);
-            next += 1;
         }
         kept.hidden = self.hidden.clone();
         Ok((c, kept))
@@ -634,6 +663,11 @@ impl Log {
                     label,
                     to: Setting::Number(v),
                 } => writeln!(out, "SetValue({label}, {v})"),
+                // A file does not save the start a locus froze (GeoGebra
+                // does not either): after a reload the line has no start
+                // until the next locus computation installs a fresh one,
+                // on the line as it is then.
+                Op::Freeze { .. } => Ok(()),
             };
         }
         for label in &self.hidden {

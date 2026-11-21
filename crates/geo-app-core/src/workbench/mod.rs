@@ -145,15 +145,6 @@ impl Workbench {
 
     /// `log` replayed (see `Log::rebuild`).
     fn replay(&self, log: &Log) -> Result<(Construction, Log), String> {
-        self.replay_with(log, &[])
-    }
-
-    /// [`Self::replay`], carrying frozen line starts (see `Log::rebuild_with`).
-    fn replay_with(
-        &self,
-        log: &Log,
-        carried: &[(String, f64, f64, usize)],
-    ) -> Result<(Construction, Log), String> {
         #[cfg(test)]
         if self.break_replay.is_some() || self.unshared {
             let log = match self.break_replay {
@@ -161,12 +152,12 @@ impl Workbench {
                 None => log.clone(),
             };
             return if self.unshared {
-                log.rebuild_reference_with(carried)
+                log.rebuild_reference()
             } else {
-                log.rebuild_with(carried)
+                log.rebuild()
             };
         }
-        log.rebuild_with(carried)
+        log.rebuild()
     }
 
     /// See the field of the same name.
@@ -455,23 +446,12 @@ impl Workbench {
     /// Replays `log` into a new construction, keeping the selection by label.
     /// If the replay fails the previous state stays and `notice` says why.
     fn restore(&mut self, log: Log) -> Result<(), String> {
-        self.restore_with(log, &[])
-    }
-
-    /// [`Self::restore`], carrying the frozen line starts of the current
-    /// construction over the replay (a deletion keeps them, as GeoGebra
-    /// keeps the start a locus installed on the line).
-    fn restore_with(
-        &mut self,
-        log: Log,
-        carried: &[(String, f64, f64, usize)],
-    ) -> Result<(), String> {
         #[cfg(test)]
         if let Some(e) = self.fail_rebuilds.clone() {
             self.notice = Some(format!("Nie można odtworzyć konstrukcji: {e}"));
             return Err(e);
         }
-        let (c, kept) = match self.replay_with(&log, carried) {
+        let (c, kept) = match self.replay(&log) {
             Ok(r) => r,
             Err(e) => {
                 self.notice = Some(format!("Nie można odtworzyć konstrukcji: {e}"));
@@ -521,9 +501,10 @@ impl Workbench {
     fn delete_label(&mut self, label: &str) -> bool {
         let snapshot = self.copy(&self.log);
         let mut next = self.copy(&snapshot);
-        // Where the entry about to go was, so what it froze on the lines
-        // that stay is installed at the same place again (GeoGebra installed
-        // it on the line itself and keeps it when the locus goes).
+        // Where the entry about to go was, so the start points it froze on
+        // the lines that stay are written at the same place again (GeoGebra
+        // installed them on the lines themselves and keeps them when the
+        // locus goes).
         let Some((at, made)) = next.define_entry(label) else {
             return false;
         };
@@ -533,17 +514,20 @@ impl Workbench {
         }
         // A deletion inside a gesture (the eraser's stroke) keeps it: the
         // whole stroke is one undo step.
-        // Only the starts the deleted entry froze have to be carried: every
-        // locus that stays freezes its start again as its own line replays.
-        let carried: Vec<_> = self
-            .construction
-            .frozen_line_starts()
-            .into_iter()
-            .filter(|(_, _, _, owner)| made.iter().any(|m| m == owner))
-            .map(|(line, x, y, _)| (line, x, y, at))
-            .collect();
+        // Only the starts the deleted entry froze are written into the
+        // journal: every locus that stays freezes its start again as its
+        // own line replays. What is written survives every later rebuild
+        // (further deletions, the undo and redo of them), exactly as the
+        // construction being replaced had.
+        let mut placed = 0;
+        for (line, x, y, owner) in self.construction.frozen_line_starts() {
+            if made.iter().any(|m| m == &owner) {
+                next.keep_frozen_start(at + placed, &line, x, y);
+                placed += 1;
+            }
+        }
         let gesture = self.gesture.take();
-        let restored = self.restore_with(next, &carried);
+        let restored = self.restore(next);
         self.gesture = gesture;
         if restored.is_err() {
             return false;
