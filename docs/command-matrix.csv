@@ -159,7 +159,7 @@ SecondAxisLength,,conic,P1,done,1,1,"SecondAxisLength(conic), as a number"
 SecondAxis,,conic,P1,done,1,1,SecondAxis(conic)
 Directrix,,conic,P1,done,1,1,Directrix(conic)
 Diameter,,conic,P1,done,2,2,"Diameter(line or segment, circle or conic)"
-Conic,,conic,P1,partial,3,1,"Conic(point, point, point, point, point)"
+Conic,,conic,P1,done,3,3,"Conic(point, point, point, point, point)"
 FirstAxis,,conic,P1,done,1,1,FirstAxis(conic)
 Circle,,conic,P0,done,3,3,"Circle(centre, point); Circle(centre, radius); Circle(centre, segment); Circle(point, point, point)"
 Incircle,,conic,P1,done,1,1,"Incircle(point, point, point)"

@@ -5,28 +5,28 @@ from caselib import Cases, mv, setn
 c = Cases("conicforms")
 reference = Cases("conicforms")
 
-reference.case("coefficients", [
+c.case("coefficients", [
     "a = 4", "b = 1", "cc = -16", "d = 0", "ee = 0", "ff = 0",
     "k = Conic(a, b, cc, d, ee, ff)", "C = Center(k)",
 ], [setn("d", 2), setn("cc", 0), setn("d", 0), setn("b", -1), setn("cc", -16)])
-reference.case("coefficients", [
+c.case("coefficients", [
     "a = 4", "k = Conic(a, 1, -16, 0, 0, 0)", "m = Conic(4, 1, -16, 0, 0, 0)",
 ], [setn("a", -4), setn("a", 1)])
-reference.case("coefficients", [
+c.case("coefficients", [
     "A = (0, -4)", "k = Conic(1, 1, y(A), 0, 0, 0)",
 ], [mv("A", 0, 0), mv("A", 0, 4), mv("A", 0, -2)])
 
-reference.case("list", [
+c.case("list", [
     "a = -4", "l = {1, 1, a, 0, 0, 0}", "k = Conic(l)",
 ], [setn("a", 0), setn("a", 4), setn("a", -9)])
-reference.case("list", [
+c.case("list", [
     "a = 2", "l = {{4, a, -2}, {0, 2, 0}, {0, -4, -9}}", "k = Conic(l)",
     "C = Center(k)",
 ], [setn("a", 4), setn("a", 8), setn("a", -2)])
-reference.case("list", [
+c.case("list", [
     "n = 6", "l = First({1, 4, -4, 0, 0, 0}, n)", "k = Conic(l)",
 ], [setn("n", 2), setn("n", 3), setn("n", 6)])
-reference.case("list", [
+c.case("list", [
     "A = (0, -4)", "k = Conic({1, 1, y(A), 0, 0, 0})",
     "m = Conic({{4, 2, -2}, {0, 2, 0}, {0, -4, -9}})",
 ], [mv("A", 0, 0), mv("A", 0, 4), mv("A", 0, -2)])
