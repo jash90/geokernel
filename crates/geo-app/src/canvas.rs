@@ -118,6 +118,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     if app.seen_rebuilds != app.wb.rebuilds() {
         app.seen_rebuilds = app.wb.rebuilds();
         app.drag = None;
+        app.tool_press = None;
         app.label_rects.borrow_mut().clear();
         gesture.forget_target();
         app.tool.reset();
@@ -664,19 +665,15 @@ fn preview(
         let (sx, sy) = t.world_to_screen(x, y);
         rect.min + vec2(sx as f32, sy as f32)
     };
+    let picks = app.tool.picks();
+    if picks.is_empty() {
+        return;
+    }
     let pointer = pointer.filter(|p| rect.contains(*p)).map(|p| {
         let local = ((p.x - rect.min.x) as f64, (p.y - rect.min.y) as f64);
-        let c = app.wb.construction();
-        let reach = hit::Reach::of(&app.metrics, false);
-        hit::pick(c, t, local, &reach, None, |id| app.wb.is_visible(id))
-            .filter(|&id| c.kind(id) == Kind::Point)
-            .and_then(|id| match c.value(id) {
-                geo_kernel::kernel::Value::Point { x, y } => Some(screen((x, y))),
-                _ => None,
-            })
-            .unwrap_or(p)
+        let (x, y) = app.preview_end(t, local, &hit::Reach::of(&app.metrics, false));
+        rect.min + vec2(x as f32, y as f32)
     });
-    let picks = app.tool.picks();
     if app.tool.tool() == Tool::Polygon && !picks.is_empty() {
         // The sides so far and the one following the pointer, lightly filled.
         let mut pts: Vec<egui::Pos2> = picks

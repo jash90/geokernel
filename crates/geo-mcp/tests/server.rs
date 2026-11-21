@@ -1044,20 +1044,23 @@ fn the_drag_delay_and_the_click_threshold_decide_through_the_frame_loop() {
         "a drag beyond the threshold did not follow"
     );
 
-    // The threshold decides the click: a press on empty space with the
-    // point tool whose drag (two moves after the delay, so the threshold is
-    // checked) ends 9 or 10 px away is a click and places a point; 11 px is
-    // a drag and places none. The distances are the reference app's
+    // The threshold decides the click: a press on a point with the
+    // show/hide tool whose drag (two moves after the delay, so the threshold
+    // is checked) ends 9 or 10 px away is a click and hides the point; 11 px
+    // is a drag and hides nothing. The distances are the reference app's
     // (`DRAG_THRESHOLD` 10), not read from the metrics, so that this fails
-    // with a threshold of 6 (9 px no click) or of 20 (11 px a click).
+    // with a threshold of 6 (9 px no click) or of 20 (11 px a click). (The
+    // point tool used to show this; it now places its point on the press,
+    // spec E1.)
     for (by, click) in [(9.0, true), (10.0, true), (11.0, false)] {
-        call(&mut s, "reset", json!({}));
-        call(&mut s, "select_tool", json!({"tool": "point"}));
+        call(&mut s, "reset", json!({"script": "A = (2, 2)\n"}));
+        call(&mut s, "select_tool", json!({"tool": "show_hide"}));
         let st = state(&mut s);
         let o = &st["view"]["origin"];
+        let k = st["view"]["scale"].as_f64().unwrap();
         let p = (
-            o[0].as_f64().unwrap() + 115.0,
-            o[1].as_f64().unwrap() - 85.0,
+            o[0].as_f64().unwrap() + 2.0 * k,
+            o[1].as_f64().unwrap() - 2.0 * k,
         );
         input(
             &mut s,
@@ -1070,8 +1073,8 @@ fn the_drag_delay_and_the_click_threshold_decide_through_the_frame_loop() {
             ],
             true,
         );
-        let placed = objects(&state(&mut s)).len() == 1;
-        assert_eq!(placed, click, "a release {by} px from the press");
+        let hidden = objects(&state(&mut s))[0]["visible"] == json!(false);
+        assert_eq!(hidden, click, "a release {by} px from the press");
     }
 }
 

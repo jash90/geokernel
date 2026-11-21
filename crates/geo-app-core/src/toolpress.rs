@@ -29,7 +29,7 @@ use crate::app::App;
 use crate::hit::{self, Reach};
 use crate::interact::{self, ViewTransform};
 use crate::tools::{creates_by_drag, new_points_on_objects, NewPoint, Outcome, Tool};
-use geo_kernel::kernel::{Id, Kind};
+use geo_kernel::kernel::{Id, Kind, Value};
 
 /// The side of the eraser's square, in pixels
 /// (`EuclidianConstants.DEFAULT_ERASER_SIZE`).
@@ -195,12 +195,14 @@ impl App {
             press.acted = true;
             return press;
         }
+        let before = self.wb.construction().len();
         let outcome = self.tool_click(t, pos, reach);
         press.acted = !matches!(outcome, Outcome::Ignored);
         if tool == Tool::Point {
             let c = self.wb.construction();
             press.point = match outcome {
-                Outcome::Place { .. } => c.ids().last(),
+                // Only a placement that succeeded made the last object.
+                Outcome::Place { .. } if c.len() > before => c.ids().last(),
                 Outcome::Select(label) => c.id(&label),
                 _ => None,
             }
@@ -230,6 +232,20 @@ impl App {
         if press.deferred || !within {
             self.tool_click(t, pos, reach);
         }
+    }
+
+    /// Where the free end of a tool's preview is drawn for the pointer at
+    /// `pos` (in the area): on the point under the pointer, by the hit rule
+    /// a click uses, else at the pointer (spec E6).
+    pub fn preview_end(&self, t: &ViewTransform, pos: (f64, f64), reach: &Reach) -> (f64, f64) {
+        let c = self.wb.construction();
+        hit::pick(c, t, pos, reach, None, |id| self.hittable(id))
+            .filter(|&id| c.kind(id) == Kind::Point)
+            .and_then(|id| match c.value(id) {
+                Value::Point { x, y } => Some(t.world_to_screen(x, y)),
+                _ => None,
+            })
+            .unwrap_or(pos)
     }
 
     /// One move of the eraser's stroke at `pos` in the area: deletes every
@@ -391,6 +407,22 @@ mod tests {
         let press = app.press_tool(&t(), at(1.0, 1.0), &r);
         assert_eq!(press.point, app.wb.construction().id("A"));
         assert_eq!(labels(&app), ["A", "B"]);
+    }
+
+    /// The preview's free end jumps onto a point under the pointer, by the
+    /// hit rule of a click, and stays at the pointer elsewhere (spec E6).
+    /// Fails if the end followed the pointer only.
+    #[test]
+    fn the_preview_end_snaps_to_a_point_under_the_pointer() {
+        let app = app("A = (1, 1)\nB = (-2, 1)\nf = Line(A, B)\n", Tool::Segment);
+        let r = reach(&app);
+        let a = at(1.0, 1.0);
+        let near = (a.0 + 6.0, a.1 - 5.0);
+        assert_eq!(app.preview_end(&t(), near, &r), a);
+        let on_line = at(-0.5, 1.0);
+        assert_eq!(app.preview_end(&t(), on_line, &r), on_line);
+        let far = (a.0 + 40.0, a.1);
+        assert_eq!(app.preview_end(&t(), far, &r), far);
     }
 
     /// The eraser deletes what the square around the pointer meets, points
