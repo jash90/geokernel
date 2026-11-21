@@ -1,0 +1,451 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "intersections-pathpoint-001",
+      "group": "intersections",
+      "script": [
+        "G = (0, 0)",
+        "H = (1, 1)",
+        "g = Line(G, H)",
+        "P = (2, 2)",
+        "R = Intersect(g, P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "P", "x": 2.0, "y": -2.0 },
+        { "action": "move", "label": "P", "x": -3.0, "y": -3.0 }
+      ],
+      "snapshots": [
+        {
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "R": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+        },
+        {
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": -2.0 },
+          "R": { "type": "point", "defined": false }
+        },
+        {
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": 0.0 },
+          "P": { "type": "point", "defined": true, "x": -3.0, "y": -3.0 },
+          "R": { "type": "point", "defined": true, "x": -3.0, "y": -3.0 }
+        }
+      ]
+    },
+    {
+      "id": "intersections-pathpoint-002",
+      "group": "intersections",
+      "script": [
+        "G = (0, 0)",
+        "H = (1, 1)",
+        "g = Line(G, H)",
+        "P = (2, 2)",
+        "R = Intersect(P, g)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "P", "x": 2.0, "y": -2.0 },
+        { "action": "move", "label": "P", "x": -3.0, "y": -3.0 }
+      ],
+      "snapshots": [
+        {
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "R": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+        },
+        {
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": -2.0 },
+          "R": { "type": "point", "defined": false }
+        },
+        {
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": 0.0 },
+          "P": { "type": "point", "defined": true, "x": -3.0, "y": -3.0 },
+          "R": { "type": "point", "defined": true, "x": -3.0, "y": -3.0 }
+        }
+      ]
+    },
+    {
+      "id": "intersections-pathpoint-003",
+      "group": "intersections",
+      "script": [
+        "f(x) = x",
+        "P = (2, 2)",
+        "R = Intersect(f, P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "P", "x": 2.0, "y": -2.0 },
+        { "action": "move", "label": "P", "x": -3.0, "y": -3.0 }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0],
+              [-4.0, -4.0],
+              [-2.0, -2.0],
+              [-1.0, -1.0],
+              [-0.5, -0.5],
+              [0.0, 0.0],
+              [0.5, 0.5],
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [4.0, 4.0],
+              [8.0, 8.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "R": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+        },
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0],
+              [-4.0, -4.0],
+              [-2.0, -2.0],
+              [-1.0, -1.0],
+              [-0.5, -0.5],
+              [0.0, 0.0],
+              [0.5, 0.5],
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [4.0, 4.0],
+              [8.0, 8.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": -2.0 },
+          "R": { "type": "point", "defined": false }
+        },
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0],
+              [-4.0, -4.0],
+              [-2.0, -2.0],
+              [-1.0, -1.0],
+              [-0.5, -0.5],
+              [0.0, 0.0],
+              [0.5, 0.5],
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [4.0, 4.0],
+              [8.0, 8.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": -3.0, "y": -3.0 },
+          "R": { "type": "point", "defined": true, "x": -3.0, "y": -3.0 }
+        }
+      ]
+    },
+    {
+      "id": "intersections-pathpoint-004",
+      "group": "intersections",
+      "script": [
+        "f(x) = x",
+        "P = (2, 2)",
+        "R = Intersect(P, f)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "P", "x": 2.0, "y": -2.0 },
+        { "action": "move", "label": "P", "x": -3.0, "y": -3.0 }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0],
+              [-4.0, -4.0],
+              [-2.0, -2.0],
+              [-1.0, -1.0],
+              [-0.5, -0.5],
+              [0.0, 0.0],
+              [0.5, 0.5],
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [4.0, 4.0],
+              [8.0, 8.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "R": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+        },
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0],
+              [-4.0, -4.0],
+              [-2.0, -2.0],
+              [-1.0, -1.0],
+              [-0.5, -0.5],
+              [0.0, 0.0],
+              [0.5, 0.5],
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [4.0, 4.0],
+              [8.0, 8.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": -2.0 },
+          "R": { "type": "point", "defined": false }
+        },
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0],
+              [-4.0, -4.0],
+              [-2.0, -2.0],
+              [-1.0, -1.0],
+              [-0.5, -0.5],
+              [0.0, 0.0],
+              [0.5, 0.5],
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [4.0, 4.0],
+              [8.0, 8.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": -3.0, "y": -3.0 },
+          "R": { "type": "point", "defined": true, "x": -3.0, "y": -3.0 }
+        }
+      ]
+    },
+    {
+      "id": "intersections-pathpoint-005",
+      "group": "intersections",
+      "script": [
+        "A = (0, 0)",
+        "B = (2, 0)",
+        "C = (2, 2)",
+        "q = Polygon(A, B, C)",
+        "P = (1, 0)",
+        "R = Intersect(q, P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": 0.0, "y": 1.0 },
+        { "action": "move", "label": "P", "x": 1.0, "y": 0.5 },
+        { "action": "move", "label": "P", "x": 1.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "q": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [2.0, 0.0],
+              [2.0, 2.0]
+            ],
+            "area": 2.0,
+            "signed_area": 2.0
+          },
+          "c": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "a": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 2.0, "y2": 2.0 },
+          "b": { "type": "segment", "defined": true, "x1": 2.0, "y1": 2.0, "x2": 0.0, "y2": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "q": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 1.0],
+              [2.0, 0.0],
+              [2.0, 2.0]
+            ],
+            "area": 2.0,
+            "signed_area": 2.0
+          },
+          "c": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 2.0, "y2": 0.0 },
+          "a": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 2.0, "y2": 2.0 },
+          "b": { "type": "segment", "defined": true, "x1": 2.0, "y1": 2.0, "x2": 0.0, "y2": 1.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "R": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "q": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 1.0],
+              [2.0, 0.0],
+              [2.0, 2.0]
+            ],
+            "area": 2.0,
+            "signed_area": 2.0
+          },
+          "c": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 2.0, "y2": 0.0 },
+          "a": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 2.0, "y2": 2.0 },
+          "b": { "type": "segment", "defined": true, "x1": 2.0, "y1": 2.0, "x2": 0.0, "y2": 1.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 0.5 },
+          "R": { "type": "point", "defined": true, "x": 1.0, "y": 0.5 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "q": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 1.0],
+              [2.0, 0.0],
+              [2.0, 2.0]
+            ],
+            "area": 2.0,
+            "signed_area": 2.0
+          },
+          "c": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 2.0, "y2": 0.0 },
+          "a": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 2.0, "y2": 2.0 },
+          "b": { "type": "segment", "defined": true, "x1": 2.0, "y1": 2.0, "x2": 0.0, "y2": 1.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "R": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "intersections-pathpoint-006",
+      "group": "intersections",
+      "script": [
+        "A = (0, 0)",
+        "B = (2, 0)",
+        "C = (2, 2)",
+        "q = Polygon(A, B, C)",
+        "P = (1, 0)",
+        "R = Intersect(P, q)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": 0.0, "y": 1.0 },
+        { "action": "move", "label": "P", "x": 1.0, "y": 0.5 },
+        { "action": "move", "label": "P", "x": 1.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "q": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [2.0, 0.0],
+              [2.0, 2.0]
+            ],
+            "area": 2.0,
+            "signed_area": 2.0
+          },
+          "c": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "a": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 2.0, "y2": 2.0 },
+          "b": { "type": "segment", "defined": true, "x1": 2.0, "y1": 2.0, "x2": 0.0, "y2": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "q": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 1.0],
+              [2.0, 0.0],
+              [2.0, 2.0]
+            ],
+            "area": 2.0,
+            "signed_area": 2.0
+          },
+          "c": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 2.0, "y2": 0.0 },
+          "a": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 2.0, "y2": 2.0 },
+          "b": { "type": "segment", "defined": true, "x1": 2.0, "y1": 2.0, "x2": 0.0, "y2": 1.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "R": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "q": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 1.0],
+              [2.0, 0.0],
+              [2.0, 2.0]
+            ],
+            "area": 2.0,
+            "signed_area": 2.0
+          },
+          "c": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 2.0, "y2": 0.0 },
+          "a": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 2.0, "y2": 2.0 },
+          "b": { "type": "segment", "defined": true, "x1": 2.0, "y1": 2.0, "x2": 0.0, "y2": 1.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 0.5 },
+          "R": { "type": "point", "defined": true, "x": 1.0, "y": 0.5 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "q": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 1.0],
+              [2.0, 0.0],
+              [2.0, 2.0]
+            ],
+            "area": 2.0,
+            "signed_area": 2.0
+          },
+          "c": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 2.0, "y2": 0.0 },
+          "a": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 2.0, "y2": 2.0 },
+          "b": { "type": "segment", "defined": true, "x1": 2.0, "y1": 2.0, "x2": 0.0, "y2": 1.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "R": { "type": "point", "defined": false }
+        }
+      ]
+    }
+  ]
+}

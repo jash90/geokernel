@@ -11,6 +11,7 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersect.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersectConics.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersectLineConic.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersectPathPoint.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersectSingle.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoAngularBisectorPoints.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoCircleTwoPoints.java
@@ -20,6 +21,7 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoJoinPoints.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoLinePointLine.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoOrthoLinePointLine.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdIntersect.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoTangentLineND.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoTangentPoint.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoTangentPointND.java
@@ -39,11 +41,129 @@ use crate::algo::conic_nd::{ConicData, ConicType};
 use crate::algo::conic_parts::ConicPartDef;
 use crate::algo::general_conic::GeneralConicDef;
 use crate::algo::lines::{self, LineDef};
-use crate::kernel::{Construction, Def, Id, Value};
+use crate::algo::point::PointDef;
+use crate::kernel::{Construction, Def, Id, Kind, Value};
 use crate::tol::{MAX_PRECISION, MIN_PRECISION, STANDARD_PRECISION};
 
 /// `Kernel.INV_MAX_DOUBLE_PRECISION`.
 const INV_MAX_DOUBLE_PRECISION: f64 = 1e15;
+
+/// Line/line intersection ignores a numeric third argument in GeoGebra.
+pub(crate) fn parse_lines(
+    c: &Construction,
+    first: Id,
+    second: Id,
+    index: Option<&str>,
+) -> Option<Result<Def, String>> {
+    let (a, b) = (c.kind(first), c.kind(second));
+    if !(super::CARRIERS.contains(&a) && super::CARRIERS.contains(&b)) {
+        return None;
+    }
+    if let Some(text) = index {
+        let valid = crate::expr::plain_number(text).is_some()
+            || c.id(text).is_some_and(|id| c.kind(id).is_number());
+        if !valid {
+            return Some(Err(format!("intersection index `{text}` is not a number")));
+        }
+    }
+    Some(Ok(if (a, b) == (Kind::Line, Kind::Line) {
+        Def::IntersectLines(first, second)
+    } else {
+        Def::Point(PointDef::LineIntersection { first, second })
+    }))
+}
+
+/// Output slots for the conic-first form of a line/conic intersection.
+pub(crate) fn parse_multi(c: &Construction, name: &str, args: &[&str]) -> Option<Vec<Def>> {
+    let ("Intersect", [first, second]) = (name, args) else {
+        return None;
+    };
+    let (first, second) = (c.id(first)?, c.id(second)?);
+    match (c.kind(first), c.kind(second)) {
+        (Kind::Conic, Kind::Line) => Some(
+            (0..2)
+                .map(|which| {
+                    Def::ConicPart(ConicPartDef::IntersectLine {
+                        line: second,
+                        conic: first,
+                        which,
+                    })
+                })
+                .collect(),
+        ),
+        _ => None,
+    }
+}
+
+/// Compose existing intersection points with a live selector, or test
+/// incidence by projecting onto a path. The expression keeps the object
+/// dependencies and reuses the intersection hints of the indexed calls.
+pub(crate) fn exec_selected(
+    c: &mut Construction,
+    label: &str,
+    rhs: &str,
+) -> Option<Result<Option<Id>, String>> {
+    if !rhs.starts_with("Intersect") {
+        return None;
+    }
+    let ("Intersect", args) = crate::script::split_call(rhs)? else {
+        return None;
+    };
+    let [first, second, tail @ ..] = args.as_slice() else {
+        return None;
+    };
+    let (a, b) = (c.kind(c.id(first)?), c.kind(c.id(second)?));
+    let expression = match tail {
+        [] => {
+            let (path, point) = match (a, b) {
+                (kind, Kind::Point) if super::point::CLOSEST_PATH.contains(&kind) => {
+                    (first, second)
+                }
+                (Kind::Point, kind) if super::point::CLOSEST_PATH.contains(&kind) => {
+                    (second, first)
+                }
+                _ => return None,
+            };
+            let closest = format!("ClosestPoint({path}, {point})");
+            format!("If({closest} == {point}, {closest})")
+        }
+        [selector]
+            if matches!(
+                (a, b),
+                (Kind::Line, Kind::Circle | Kind::Conic)
+                    | (Kind::Circle | Kind::Conic, Kind::Line)
+                    | (Kind::Circle, Kind::Circle)
+            ) =>
+        {
+            let p = format!("Intersect({first}, {second}, 1)");
+            let q = format!("Intersect({first}, {second}, 2)");
+            match c.id(selector).map(|id| c.kind(id)) {
+                Some(Kind::Point) => format!(
+                    "If(x({p}) == x({p}), If(abs({q} - {selector})^2 < abs({p} - {selector})^2, {q}, {p}), {q})"
+                ),
+                Some(kind) if kind.is_number() => {
+                    format!("If({selector} >= 2, If({selector} < 3, {q}), {p})")
+                }
+                None => {
+                    let n = crate::expr::plain_number(selector)?;
+                    if matches!(*selector, "1" | "2") {
+                        return None;
+                    }
+                    if n < 2.0 {
+                        p
+                    } else if n < 3.0 {
+                        q
+                    } else {
+                        format!("If(false, {p})")
+                    }
+                }
+                _ => return None,
+            }
+        }
+        _ => return None,
+    };
+    Some(crate::expr::define(c, label, &expression, false).map(Some))
+}
 
 /// Completes a new intersection with what GeoGebra decides when it is
 /// created.
@@ -170,6 +290,11 @@ fn defined_as_tangent(line_def: Def, circle: Id) -> bool {
 /// if the line and the circles keep their values, for example when a vertex
 /// of a three-point circle slides along the circle.
 pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
+    if let Def::Point(PointDef::Closest { path, .. }) = *def {
+        if matches!(c.kind(path), Kind::Polygon | Kind::PolyLine) {
+            return super::polygon::inputs(c, path);
+        }
+    }
     let mut ids = Vec::new();
     let mut push = |s: Option<Id>| {
         if let Some(s) = s {
@@ -232,7 +357,12 @@ pub(crate) fn closest_lines(c: &Construction, l: Id, m: Id) -> Option<Value> {
             _ => false,
         }
     };
-    (on_path(l) && on_path(m)).then_some(point)
+    // A recomputation treats both signs of zero as equal. Store a canonical
+    // zero so the point has the same coordinates after a fresh replay.
+    (on_path(l) && on_path(m)).then_some(Value::Point {
+        x: if x == 0.0 { 0.0 } else { x },
+        y: if y == 0.0 { 0.0 } else { y },
+    })
 }
 
 fn cross_lines((a1, b1, c1): (f64, f64, f64), (a2, b2, c2): (f64, f64, f64)) -> Option<Value> {

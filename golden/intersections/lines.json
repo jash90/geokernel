@@ -1,0 +1,215 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "intersections-lines-001",
+      "group": "intersections",
+      "script": [
+        "A = (4, 0)",
+        "B = (4, 1)",
+        "C = (0, 4)",
+        "D = (1, 4)",
+        "g = Line(A, B)",
+        "h = Line(C, D)",
+        "R = Intersect(g, h, 1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 4.0 },
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 4.0 },
+          "h": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -4.0 },
+          "R": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 }
+        }
+      ]
+    },
+    {
+      "id": "intersections-lines-002",
+      "group": "intersections",
+      "script": [
+        "A = (5, 0)",
+        "B = (5, 1)",
+        "C = (0, 5)",
+        "D = (1, 5)",
+        "g = Line(A, B)",
+        "h = Line(C, D)",
+        "R = Intersect(h, g, 2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 5.0 },
+          "h": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -5.0 },
+          "R": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 }
+        }
+      ]
+    },
+    {
+      "id": "intersections-lines-003",
+      "group": "intersections",
+      "script": [
+        "A = (3, 0)",
+        "B = (3, 1)",
+        "C = (0, 3)",
+        "D = (1, 3)",
+        "g = Line(A, B)",
+        "h = Line(C, D)",
+        "R = Intersect(g, h)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 3.0 },
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 3.0 },
+          "h": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -3.0 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 }
+        }
+      ]
+    },
+    {
+      "id": "intersections-lines-004",
+      "group": "intersections",
+      "script": [
+        "A = (2, 0)",
+        "B = (2, 1)",
+        "C = (0, 2)",
+        "D = (1, 2)",
+        "g = Line(A, B)",
+        "h = Line(C, D)",
+        "R = Intersect(h, g)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 2.0 },
+          "h": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -2.0 },
+          "R": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "intersections-lines-005",
+      "group": "intersections",
+      "script": [
+        "A = (-3, 0)",
+        "B = (-3, 1)",
+        "C = (0, 2)",
+        "D = (1, 2)",
+        "g = Line(A, B)",
+        "h = Line(C, D)",
+        "R = Intersect(g, h)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": -3.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": -3.0 },
+          "h": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -2.0 },
+          "R": { "type": "point", "defined": true, "x": -3.0, "y": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "intersections-lines-006",
+      "group": "intersections",
+      "script": [
+        "A = (0, 0)",
+        "B = (0, 1)",
+        "C = (0, 2)",
+        "D = (1, 2)",
+        "g = Line(A, B)",
+        "h = Line(C, D)",
+        "n = 7",
+        "R = Intersect(g, h, n)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": -3.0 },
+        { "action": "move", "label": "D", "x": 0.0, "y": 3.0 },
+        { "action": "move", "label": "C", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "D", "x": 1.0, "y": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 0.0 },
+          "h": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -2.0 },
+          "n": { "type": "number", "defined": true, "value": 7.0 },
+          "R": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 0.0 },
+          "h": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -2.0 },
+          "n": { "type": "number", "defined": true, "value": -3.0 },
+          "R": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 0.0 },
+          "h": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 0.0 },
+          "n": { "type": "number", "defined": true, "value": -3.0 },
+          "R": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 0.0 },
+          "h": { "type": "line", "defined": true, "a": -1.0, "b": -1.0, "c": 3.0 },
+          "n": { "type": "number", "defined": true, "value": -3.0 },
+          "R": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 3.0 },
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 0.0 },
+          "h": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 1.0 },
+          "n": { "type": "number", "defined": true, "value": -3.0 },
+          "R": { "type": "point", "defined": false }
+        }
+      ]
+    }
+  ]
+}

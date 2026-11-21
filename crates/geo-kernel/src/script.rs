@@ -51,6 +51,7 @@ use crate::algo::arc::ArcDef;
 use crate::algo::conic::ConicDef;
 use crate::algo::conic_parts::ConicPartDef;
 use crate::algo::general_conic::GeneralConicDef;
+use crate::algo::intersect;
 use crate::algo::lines::LineDef;
 use crate::algo::measure::MeasureDef;
 use crate::algo::point::PointDef;
@@ -154,6 +155,9 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
         return result;
     }
     if let Some(result) = ConicDef::exec_interval(c, name, rhs) {
+        return result;
+    }
+    if let Some(result) = intersect::exec_selected(c, name, rhs) {
         return result;
     }
     // GeoGebra returns an already labelled angle unchanged.
@@ -269,6 +273,9 @@ fn parse_multi(c: &Construction, rhs: &str) -> Option<Result<Vec<Def>, String>> 
         r.map(|defs| defs.into_iter().map(f).collect())
     }
     let (func, args) = split_call(rhs)?;
+    if let Some(defs) = intersect::parse_multi(c, func, &args) {
+        return Some(Ok(defs));
+    }
     if func == "Angle" {
         if let Some(defs) = angle::fixed(c, &args) {
             return Some(defs.map(|defs| defs.into_iter().map(Def::AngleObject).collect()));
@@ -630,6 +637,9 @@ pub(crate) fn parse_def(c: &Construction, rhs: &str) -> Result<Def, String> {
         ("Intersect", 2 | 3) => {
             let first = obj(args[0])?;
             let second = obj(args[1])?;
+            if let Some(def) = intersect::parse_lines(c, first, second, args.get(2).copied()) {
+                return def;
+            }
             let which = match args.get(2) {
                 None => 0,
                 Some(&"1") => 0,
@@ -639,7 +649,6 @@ pub(crate) fn parse_def(c: &Construction, rhs: &str) -> Result<Def, String> {
                 }
             };
             match (c.kind(first), c.kind(second)) {
-                (Kind::Line, Kind::Line) => Ok(Def::IntersectLines(first, second)),
                 (Kind::Line, Kind::Circle) => Ok(Def::IntersectLineCircle {
                     line: first,
                     circle: second,
