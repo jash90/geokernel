@@ -164,6 +164,9 @@ the point on the path moves (GeoGebra leaves that point out of the inputs it
 updates from). A slider is a script line `a = Slider(min, max)` or
 `a = Slider(min, max, increment)` with number literals: a free number that
 starts at 0 put into `[min, max]` and that `set_number` keeps in it.
+GeoGebra also stops sampling a locus when one update of the construction
+takes longer than 500 ms, which makes the points depend on the machine; no
+case comes near it, and `geo-kernel` has no such limit.
 
 All numbers are finite JSON numbers that round-trip to the same `f64`.
 A value that is not finite in GeoGebra is recorded as `defined: false`.

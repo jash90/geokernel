@@ -380,6 +380,12 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
             }
             if pt.x.is_finite() && pt.y.is_finite() {
                 run.push(p(pt.x, pt.y));
+            } else {
+                // an undefined point is a break too
+                if run.len() >= 2 {
+                    painter.add(Shape::line(std::mem::take(&mut run), curve(id)));
+                }
+                run.clear();
             }
         }
         if run.len() >= 2 {
