@@ -683,24 +683,25 @@ impl ArcDef {
                     a.set_undefined();
                     return a;
                 };
-                if k.ty == ConicType::SinglePoint {
-                    return s;
-                }
                 a.conic = s.conic;
-                a.conic.mirror_conic(&k, false);
-                // `GeoConic.mirror(GeoConicND)` leaves a conic that is
-                // neither a circle nor a pair of lines alone (it clears the
-                // part's value only, which the parameters set again below)
-                if !a.conic.defined
-                    && matches!(
-                        a.conic.ty,
-                        ConicType::Ellipse
-                            | ConicType::Hyperbola
-                            | ConicType::Parabola
-                            | ConicType::IntersectingLines
-                    )
-                {
-                    a.conic.defined = true;
+                // The zero-radius mirror clears the part's value without
+                // changing its conic. The full-turn projection below
+                // computes the value again, including the orientation.
+                if k.ty != ConicType::SinglePoint {
+                    a.conic.mirror_conic(&k, false);
+                    // GeoConic.mirror leaves these conics in place and
+                    // clears only the part's value.
+                    if !a.conic.defined
+                        && matches!(
+                            a.conic.ty,
+                            ConicType::Ellipse
+                                | ConicType::Hyperbola
+                                | ConicType::Parabola
+                                | ConicType::IntersectingLines
+                        )
+                    {
+                        a.conic.defined = true;
+                    }
                 }
                 if !a.conic.defined {
                     a.set_undefined();
@@ -727,8 +728,8 @@ impl ArcDef {
                     a.set_undefined();
                     return a;
                 };
-                let d = conic_parameter(&a.conic, p0, false);
-                let e = conic_parameter(&a.conic, p1, false);
+                let d = full_part_parameter(&a.conic, p0);
+                let e = full_part_parameter(&a.conic, p1);
                 a.set_parameters(true, d, e, positive);
             }
             ArcDef::InvertSegment { src, circle } => {
@@ -760,8 +761,8 @@ impl ArcDef {
                     a.set_undefined();
                     return a;
                 };
-                let d = conic_parameter(&a.conic, p1, false);
-                let e = conic_parameter(&a.conic, p2, false);
+                let d = full_part_parameter(&a.conic, p1);
+                let e = full_part_parameter(&a.conic, p2);
                 // the arc runs the way around that does not take in the
                 // mirror's centre, which lies on the image circle
                 let mut probe = ArcData::new(false);
@@ -1161,6 +1162,15 @@ fn part_transform(
     if matches!(func, "Mirror" | "Reflect") && args.len() == 2 {
         if let Ok(second) = object(c, args[1]) {
             if c.kind(second) == Kind::Circle {
+                // CmdMirror requires a circle at dispatch for conic parts.
+                if c.conic(second)
+                    .is_some_and(|k| k.ty == ConicType::SinglePoint)
+                {
+                    return Err(format!(
+                        "`{}` is a zero-radius circle, expected a circle with positive radius",
+                        args[1]
+                    ));
+                }
                 return Ok(ArcDef::InvertPart {
                     kind,
                     src,
@@ -1382,6 +1392,20 @@ impl Group for ArcDef {
 mod tests {
     use super::*;
     use crate::script::{exec, load};
+
+    #[test]
+    fn a_conic_part_cannot_start_inverted_in_a_zero_radius_circle() {
+        let mut c = load(
+            "M = (1, 1)\nrr = 2\nk = Circle(M, rr)\nps = 0.5\npe = 2\n\
+             a = Arc(k, ps, pe)\nb = Sector(k, ps, pe)\nO = (5, 5)\nqq = 0\nh = Circle(O, qq)",
+        )
+        .unwrap();
+        for part in ["a", "b"] {
+            let err = exec(&mut c, &format!("m = Mirror({part}, h)")).unwrap_err();
+            assert!(err.contains("zero-radius circle"), "{err}");
+            assert!(c.id("m").is_none());
+        }
+    }
 
     fn record(c: &Construction, label: &str) -> ArcData {
         c.arc(c.id(label).unwrap()).unwrap()

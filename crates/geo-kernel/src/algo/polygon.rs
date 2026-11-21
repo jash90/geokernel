@@ -151,7 +151,7 @@ pub enum PolygonDef {
     Vertex { poly: Id, index: Count },
     /// Output `k` (from 0) of `Vertex(polygon or polyline)`.
     VertexAt { poly: Id, k: u32 },
-    /// A named vertex created by the same command as its polygon image.
+    /// A named vertex created by the same command as its polygon or polyline image.
     ImageVertex { poly: Id, source: Id },
     /// Output `k` (from 0) of `InteriorAngles(polygon)` (`internal`) or
     /// `Angle(polygon)` (`AlgoAnglePolygon`).
@@ -294,7 +294,9 @@ fn image_vertices(c: &Construction, poly: Id) -> &[Id] {
 /// Whether the command rebuilds an image from its named vertices.
 pub(super) fn has_fixed_vertices(c: &Construction, poly: Id) -> bool {
     match c.def(poly) {
-        Def::Polygon(PolygonDef::Polygon(list)) => c.list(list).len() >= 3,
+        Def::Polygon(PolygonDef::Polygon(list) | PolygonDef::PolyLine(list)) => {
+            c.list(list).len() >= 3
+        }
         _ => !image_vertices(c, poly).is_empty(),
     }
 }
@@ -603,7 +605,7 @@ impl Group for PolygonDef {
             PolygonDef::Angle { poly, .. } => c.expect(poly, POLYGON),
             PolygonDef::VertexAt { poly, .. } => c.expect(poly, POLY),
             PolygonDef::ImageVertex { poly, source } => {
-                c.expect(poly, POLYGON)?;
+                c.expect(poly, POLY)?;
                 c.expect(source, POINT)
             }
             PolygonDef::Vertex { poly, index } => {
@@ -1171,13 +1173,13 @@ pub(crate) fn exec(
         "Angle" if n == 1 && kind_of(c, args[0]) == Some(Kind::Polygon) => {
             outputs_line(c, name, args[0], Outputs::Angles(false))
         }
-        // Transform.transformPoly rebuilds a fixed-vertex polygon from
-        // the images of its vertices.
+        // Transform.transformPoly rebuilds a fixed-vertex polygon or
+        // polyline from the images of its vertices.
         "Mirror" | "Reflect" | "Rotate" | "Dilate" | "Shear" | "Stretch" | "Translate"
             if n >= 2 =>
         {
             let src = c.id(args[0])?;
-            if c.kind(src) != Kind::Polygon || !has_fixed_vertices(c, src) {
+            if !POLY.contains(&c.kind(src)) || !has_fixed_vertices(c, src) {
                 return None;
             }
             transform_line(c, name, func, &args, src)
@@ -1188,7 +1190,7 @@ pub(crate) fn exec(
 }
 
 /// Transform.transformPoly creates named images of the vertices and builds
-/// the sides from them. The polygon remains the first output of the line.
+/// polygon sides from them. The polygon or polyline is the first output.
 fn transform_line(
     c: &mut Construction,
     name: &str,
@@ -1197,6 +1199,7 @@ fn transform_line(
     src: Id,
 ) -> Result<Id, String> {
     let mut plan = Plan::new(c, name)?;
+    let kind = c.kind(src);
     let def = if func == "Translate" {
         if args.len() != 2 {
             return Err(format!(
@@ -1205,15 +1208,17 @@ fn transform_line(
             ));
         }
         Def::Vector(VectorDef::Translate {
-            kind: Kind::Polygon,
+            kind,
             src,
             by: object(c, args[1])?,
         })
     } else {
-        Def::Transform(parse_transform_for(c, func, args, POLYGON)?)
+        Def::Transform(parse_transform_for(c, func, args, POLY)?)
     };
     let source = match c.def(src) {
-        Def::Polygon(PolygonDef::Polygon(list)) => c.list(list).to_vec(),
+        Def::Polygon(PolygonDef::Polygon(list) | PolygonDef::PolyLine(list)) => {
+            c.list(list).to_vec()
+        }
         _ => image_vertices(c, src).to_vec(),
     };
     let checkpoint = c.checkpoint();
@@ -1235,9 +1240,11 @@ fn transform_line(
             let vertex = Def::Polygon(PolygonDef::ImageVertex { poly, source });
             image.push(c.add(&label, vertex).map_err(|e| e.to_string())?);
         }
-        plan_sides(c, &mut plan, &image, &image)?;
-        if !plan.items.is_empty() {
-            plan.commit(c)?;
+        if kind == Kind::Polygon {
+            plan_sides(c, &mut plan, &image, &image)?;
+            if !plan.items.is_empty() {
+                plan.commit(c)?;
+            }
         }
         Ok(poly)
     })();
@@ -2085,7 +2092,7 @@ mod tests {
         let n = c.len();
         run(&mut c, "m = Rotate(t, w)").unwrap();
         run(&mut c, "o = Rotate(u, w)").unwrap();
-        assert_eq!(labels(&c, n), ["m", "o"]);
+        assert_eq!(labels(&c, n), ["m", "A'", "B'", "D'", "o"]);
         // a rotation moves the points and keeps every length
         assert!(close(
             match c.value(c.id("m").unwrap()) {
@@ -2110,7 +2117,10 @@ mod tests {
         // a translation creates the sides as well, named after the moved
         // vertices like the polygon command
         run(&mut c, "f = Translate(e, v)").unwrap();
-        assert_eq!(labels(&c, n), ["f", "A'", "B'", "D'", "d'", "a'", "b'"]);
+        assert_eq!(
+            labels(&c, n),
+            ["f", "A'_{1}", "B'_{1}", "D'_{1}", "d'_{1}", "a'_{1}", "b'_{1}"]
+        );
         let verts: Vec<_> = c.vertices(c.id("f").unwrap()).map(Option::unwrap).collect();
         assert_eq!(verts.len(), 3);
         assert_eq!(verts[0], (1.0, 3.0));

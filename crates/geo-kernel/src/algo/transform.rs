@@ -1041,6 +1041,7 @@ mod tests {
         assert!(err("m = Mirror(t, k)").contains("not supported"));
         assert!(err("m = Dilate(Z, w)").contains("unknown object"));
         assert!(err("m = Shear(A, l)").contains("`Shear` does not take 2"));
+        assert!(err("m = Shear(A, B, w)").contains("expected a line or a vector"));
         // `Stretch(A, l)` with a line is the vector form's error: `l` is
         // not a vector
         assert!(err("m = Stretch(A, l)").contains("expected a vector"));

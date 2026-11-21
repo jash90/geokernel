@@ -1,0 +1,670 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "transformsreview-zeromirror-001",
+      "group": "transformsreview",
+      "script": [
+        "M = (1, 1)",
+        "rr = 2",
+        "k = Circle(M, rr)",
+        "ps = 0.5",
+        "pe = 2.0",
+        "a = Arc(k, ps, pe)",
+        "b = Sector(k, ps, pe)",
+        "w = 0.4",
+        "c = Rotate(a, w)",
+        "O = (5, 5)",
+        "qq = 2",
+        "h = Circle(O, qq)",
+        "m = Mirror(a, h)",
+        "n = Mirror(b, h)",
+        "q = Mirror(c, h)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "qq", "value": 0.0 },
+        { "action": "set_number", "label": "qq", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "M": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "rr": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 1.0, "r": 2.0 },
+          "ps": { "type": "number", "defined": true, "value": 0.5 },
+          "pe": { "type": "number", "defined": true, "value": 2.0 },
+          "a": {
+            "type": "arc",
+            "defined": true,
+            "value": 3.0,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.5,
+            "end": 2.0,
+            "arc_length": 3.0,
+            "area": 1.0050100267918913,
+            "midpoint": [1.0, 1.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "b": {
+            "type": "sector",
+            "defined": true,
+            "value": 3.0,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.5,
+            "end": 2.0,
+            "arc_length": 3.0,
+            "area": 3.0,
+            "midpoint": [1.0, 1.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "w": { "type": "number", "defined": true, "value": 0.4 },
+          "c": {
+            "type": "arc",
+            "defined": true,
+            "value": 3.0,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.5,
+            "end": 2.0,
+            "arc_length": 3.0,
+            "area": 1.0050100267918913,
+            "midpoint": [0.5316426516942345, 1.3104793363115357],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [0.9210609940028851, 0.3894183423086505],
+              [-0.3894183423086505, 0.9210609940028851]
+            ]
+          },
+          "O": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "qq": { "type": "number", "defined": true, "value": 2.0 },
+          "h": { "type": "circle", "defined": true, "cx": 5.0, "cy": 5.0, "r": 2.0 },
+          "m": {
+            "type": "arc",
+            "defined": true,
+            "value": 0.7205051829063722,
+            "conic_type": "circle",
+            "orientation": "negative",
+            "start": 1.9896648256862328,
+            "end": 4.5114329658585355,
+            "arc_length": 0.7205051829063722,
+            "area": 0.0792194209522387,
+            "midpoint": [4.428571428571429, 4.428571428571429],
+            "half_axes": [0.2857142857142857, 0.2857142857142857],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "n": {
+            "type": "sector",
+            "defined": true,
+            "value": 0.10292931184376745,
+            "conic_type": "circle",
+            "orientation": "negative",
+            "start": 1.9896648256862328,
+            "end": 4.5114329658585355,
+            "arc_length": 0.7205051829063722,
+            "area": 0.10292931184376745,
+            "midpoint": [4.428571428571429, 4.428571428571429],
+            "half_axes": [0.2857142857142857, 0.2857142857142857],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "q": {
+            "type": "arc",
+            "defined": true,
+            "value": 0.5178037371149142,
+            "conic_type": "circle",
+            "orientation": "negative",
+            "start": 1.0913637887765897,
+            "end": 3.0058641494523965,
+            "arc_length": 0.5178037371149142,
+            "area": 0.03558743441529594,
+            "midpoint": [4.395734735484489, 4.5010584413924555],
+            "half_axes": [0.2704641627396365, 0.2704641627396365],
+            "eigenvectors": [
+              [0.9210609940028851, 0.3894183423086505],
+              [-0.3894183423086505, 0.9210609940028851]
+            ]
+          }
+        },
+        {
+          "M": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "rr": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 1.0, "r": 2.0 },
+          "ps": { "type": "number", "defined": true, "value": 0.5 },
+          "pe": { "type": "number", "defined": true, "value": 2.0 },
+          "a": {
+            "type": "arc",
+            "defined": true,
+            "value": 3.0,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.5,
+            "end": 2.0,
+            "arc_length": 3.0,
+            "area": 1.0050100267918913,
+            "midpoint": [1.0, 1.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "b": {
+            "type": "sector",
+            "defined": true,
+            "value": 3.0,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.5,
+            "end": 2.0,
+            "arc_length": 3.0,
+            "area": 3.0,
+            "midpoint": [1.0, 1.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "w": { "type": "number", "defined": true, "value": 0.4 },
+          "c": {
+            "type": "arc",
+            "defined": true,
+            "value": 3.0,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.5,
+            "end": 2.0,
+            "arc_length": 3.0,
+            "area": 1.0050100267918913,
+            "midpoint": [0.5316426516942345, 1.3104793363115357],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [0.9210609940028851, 0.3894183423086505],
+              [-0.3894183423086505, 0.9210609940028851]
+            ]
+          },
+          "O": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "qq": { "type": "number", "defined": true, "value": 0.0 },
+          "h": { "type": "circle", "defined": true, "cx": 5.0, "cy": 5.0, "r": 0.0 },
+          "m": {
+            "type": "arc",
+            "defined": true,
+            "value": 9.566370614359172,
+            "conic_type": "circle",
+            "orientation": "negative",
+            "start": 2.0,
+            "end": 0.5,
+            "arc_length": 9.566370614359172,
+            "area": 11.56136058756728,
+            "midpoint": [1.0, 1.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "n": {
+            "type": "sector",
+            "defined": true,
+            "value": 9.566370614359172,
+            "conic_type": "circle",
+            "orientation": "negative",
+            "start": 2.0,
+            "end": 0.5,
+            "arc_length": 9.566370614359172,
+            "area": 9.566370614359172,
+            "midpoint": [1.0, 1.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "q": {
+            "type": "arc",
+            "defined": true,
+            "value": 9.566370614359172,
+            "conic_type": "circle",
+            "orientation": "negative",
+            "start": 2.0,
+            "end": 0.5,
+            "arc_length": 9.566370614359172,
+            "area": 11.56136058756728,
+            "midpoint": [0.5316426516942345, 1.3104793363115357],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [0.9210609940028851, 0.3894183423086505],
+              [-0.3894183423086505, 0.9210609940028851]
+            ]
+          }
+        },
+        {
+          "M": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "rr": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 1.0, "r": 2.0 },
+          "ps": { "type": "number", "defined": true, "value": 0.5 },
+          "pe": { "type": "number", "defined": true, "value": 2.0 },
+          "a": {
+            "type": "arc",
+            "defined": true,
+            "value": 3.0,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.5,
+            "end": 2.0,
+            "arc_length": 3.0,
+            "area": 1.0050100267918913,
+            "midpoint": [1.0, 1.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "b": {
+            "type": "sector",
+            "defined": true,
+            "value": 3.0,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.5,
+            "end": 2.0,
+            "arc_length": 3.0,
+            "area": 3.0,
+            "midpoint": [1.0, 1.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "w": { "type": "number", "defined": true, "value": 0.4 },
+          "c": {
+            "type": "arc",
+            "defined": true,
+            "value": 3.0,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.5,
+            "end": 2.0,
+            "arc_length": 3.0,
+            "area": 1.0050100267918913,
+            "midpoint": [0.5316426516942345, 1.3104793363115357],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [0.9210609940028851, 0.3894183423086505],
+              [-0.3894183423086505, 0.9210609940028851]
+            ]
+          },
+          "O": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "qq": { "type": "number", "defined": true, "value": 2.0 },
+          "h": { "type": "circle", "defined": true, "cx": 5.0, "cy": 5.0, "r": 2.0 },
+          "m": {
+            "type": "arc",
+            "defined": true,
+            "value": 0.7205051829063722,
+            "conic_type": "circle",
+            "orientation": "negative",
+            "start": 1.9896648256862328,
+            "end": 4.5114329658585355,
+            "arc_length": 0.7205051829063722,
+            "area": 0.0792194209522387,
+            "midpoint": [4.428571428571429, 4.428571428571429],
+            "half_axes": [0.2857142857142857, 0.2857142857142857],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "n": {
+            "type": "sector",
+            "defined": true,
+            "value": 0.10292931184376745,
+            "conic_type": "circle",
+            "orientation": "negative",
+            "start": 1.9896648256862328,
+            "end": 4.5114329658585355,
+            "arc_length": 0.7205051829063722,
+            "area": 0.10292931184376745,
+            "midpoint": [4.428571428571429, 4.428571428571429],
+            "half_axes": [0.2857142857142857, 0.2857142857142857],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "q": {
+            "type": "arc",
+            "defined": true,
+            "value": 0.5178037371149142,
+            "conic_type": "circle",
+            "orientation": "negative",
+            "start": 1.0913637887765897,
+            "end": 3.0058641494523965,
+            "arc_length": 0.5178037371149142,
+            "area": 0.03558743441529594,
+            "midpoint": [4.395734735484489, 4.5010584413924555],
+            "half_axes": [0.2704641627396365, 0.2704641627396365],
+            "eigenvectors": [
+              [0.9210609940028851, 0.3894183423086505],
+              [-0.3894183423086505, 0.9210609940028851]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "transformsreview-zeromirror-002",
+      "group": "transformsreview",
+      "script": [
+        "F = (2.72, 0.99)",
+        "G = (4.95, 1.19)",
+        "H = (3.2, 0.37)",
+        "k = Ellipse(F, G, H)",
+        "ps = 0.7",
+        "pe = 4.1",
+        "a = Arc(k, ps, pe)",
+        "b = Sector(k, ps, pe)",
+        "O = (5, 5)",
+        "qq = 2",
+        "h = Circle(O, qq)",
+        "m = Mirror(a, h)",
+        "n = Mirror(b, h)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "qq", "value": 0.0 },
+        { "action": "set_number", "label": "qq", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "F": { "type": "point", "defined": true, "x": 2.72, "y": 0.99 },
+          "G": { "type": "point", "defined": true, "x": 4.95, "y": 1.19 },
+          "H": { "type": "point", "defined": true, "x": 3.2, "y": 0.37 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [9.629817591922953, 29.36141759192295, 144.12476659617658, -1.7839999999999996, -34.98579046502451, -25.162305175196014],
+            "midpoint": [3.8349999999999986, 1.0899999999999999],
+            "half_axes": [1.3583403842539563, 0.769326718303209],
+            "eigenvectors": [
+              [0.9960023026508695, 0.08932756077586274],
+              [-0.08932756077586274, 0.9960023026508695]
+            ]
+          },
+          "ps": { "type": "number", "defined": true, "value": 0.7 },
+          "pe": { "type": "number", "defined": true, "value": 4.1 },
+          "a": {
+            "type": "arc",
+            "defined": true,
+            "value": 3.6978038978450574,
+            "conic_type": "ellipse",
+            "orientation": "positive",
+            "start": 0.7,
+            "end": 4.1,
+            "arc_length": 3.6978038978450574,
+            "area": 1.776512835266587,
+            "midpoint": [3.8349999999999986, 1.0899999999999999],
+            "half_axes": [1.3583403842539563, 0.769326718303209],
+            "eigenvectors": [
+              [0.9960023026508695, 0.08932756077586274],
+              [-0.08932756077586274, 0.9960023026508695]
+            ]
+          },
+          "b": {
+            "type": "sector",
+            "defined": true,
+            "value": 1.776512835266587,
+            "conic_type": "ellipse",
+            "orientation": "positive",
+            "start": 0.7,
+            "end": 4.1,
+            "arc_length": 3.6978038978450574,
+            "area": 1.776512835266587,
+            "midpoint": [3.8349999999999986, 1.0899999999999999],
+            "half_axes": [1.3583403842539563, 0.769326718303209],
+            "eigenvectors": [
+              [0.9960023026508695, 0.08932756077586274],
+              [-0.08932756077586274, 0.9960023026508695]
+            ]
+          },
+          "O": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "qq": { "type": "number", "defined": true, "value": 2.0 },
+          "h": { "type": "circle", "defined": true, "cx": 5.0, "cy": 5.0, "r": 2.0 },
+          "m": {
+            "type": "arc",
+            "defined": true,
+            "value": 6.663696928607725,
+            "conic_type": "ellipse",
+            "orientation": "negative",
+            "start": 1.155754993292791,
+            "end": 1.0371072762491464,
+            "arc_length": 6.663696928607725,
+            "area": 3.2209941624587817,
+            "midpoint": [3.8349999999999986, 1.0899999999999999],
+            "half_axes": [1.3583403842539563, 0.769326718303209],
+            "eigenvectors": [
+              [0.9960023026508695, 0.08932756077586274],
+              [-0.08932756077586274, 0.9960023026508695]
+            ]
+          },
+          "n": {
+            "type": "sector",
+            "defined": true,
+            "value": 3.2209941624587817,
+            "conic_type": "ellipse",
+            "orientation": "negative",
+            "start": 1.155754993292791,
+            "end": 1.0371072762491464,
+            "arc_length": 6.663696928607725,
+            "area": 3.2209941624587817,
+            "midpoint": [3.8349999999999986, 1.0899999999999999],
+            "half_axes": [1.3583403842539563, 0.769326718303209],
+            "eigenvectors": [
+              [0.9960023026508695, 0.08932756077586274],
+              [-0.08932756077586274, 0.9960023026508695]
+            ]
+          }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": 2.72, "y": 0.99 },
+          "G": { "type": "point", "defined": true, "x": 4.95, "y": 1.19 },
+          "H": { "type": "point", "defined": true, "x": 3.2, "y": 0.37 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [9.629817591922953, 29.36141759192295, 144.12476659617658, -1.7839999999999996, -34.98579046502451, -25.162305175196014],
+            "midpoint": [3.8349999999999986, 1.0899999999999999],
+            "half_axes": [1.3583403842539563, 0.769326718303209],
+            "eigenvectors": [
+              [0.9960023026508695, 0.08932756077586274],
+              [-0.08932756077586274, 0.9960023026508695]
+            ]
+          },
+          "ps": { "type": "number", "defined": true, "value": 0.7 },
+          "pe": { "type": "number", "defined": true, "value": 4.1 },
+          "a": {
+            "type": "arc",
+            "defined": true,
+            "value": 3.6978038978450574,
+            "conic_type": "ellipse",
+            "orientation": "positive",
+            "start": 0.7,
+            "end": 4.1,
+            "arc_length": 3.6978038978450574,
+            "area": 1.776512835266587,
+            "midpoint": [3.8349999999999986, 1.0899999999999999],
+            "half_axes": [1.3583403842539563, 0.769326718303209],
+            "eigenvectors": [
+              [0.9960023026508695, 0.08932756077586274],
+              [-0.08932756077586274, 0.9960023026508695]
+            ]
+          },
+          "b": {
+            "type": "sector",
+            "defined": true,
+            "value": 1.776512835266587,
+            "conic_type": "ellipse",
+            "orientation": "positive",
+            "start": 0.7,
+            "end": 4.1,
+            "arc_length": 3.6978038978450574,
+            "area": 1.776512835266587,
+            "midpoint": [3.8349999999999986, 1.0899999999999999],
+            "half_axes": [1.3583403842539563, 0.769326718303209],
+            "eigenvectors": [
+              [0.9960023026508695, 0.08932756077586274],
+              [-0.08932756077586274, 0.9960023026508695]
+            ]
+          },
+          "O": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "qq": { "type": "number", "defined": true, "value": 0.0 },
+          "h": { "type": "circle", "defined": true, "cx": 5.0, "cy": 5.0, "r": 0.0 },
+          "m": {
+            "type": "arc",
+            "defined": true,
+            "value": 3.1151518969390803,
+            "conic_type": "ellipse",
+            "orientation": "negative",
+            "start": 4.1,
+            "end": 0.7000000000000001,
+            "arc_length": 3.1151518969390803,
+            "area": 1.5064752072519336,
+            "midpoint": [3.8349999999999986, 1.0899999999999999],
+            "half_axes": [1.3583403842539563, 0.769326718303209],
+            "eigenvectors": [
+              [0.9960023026508695, 0.08932756077586274],
+              [-0.08932756077586274, 0.9960023026508695]
+            ]
+          },
+          "n": {
+            "type": "sector",
+            "defined": true,
+            "value": 1.5064752072519336,
+            "conic_type": "ellipse",
+            "orientation": "negative",
+            "start": 4.1,
+            "end": 0.7000000000000001,
+            "arc_length": 3.1151518969390803,
+            "area": 1.5064752072519336,
+            "midpoint": [3.8349999999999986, 1.0899999999999999],
+            "half_axes": [1.3583403842539563, 0.769326718303209],
+            "eigenvectors": [
+              [0.9960023026508695, 0.08932756077586274],
+              [-0.08932756077586274, 0.9960023026508695]
+            ]
+          }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": 2.72, "y": 0.99 },
+          "G": { "type": "point", "defined": true, "x": 4.95, "y": 1.19 },
+          "H": { "type": "point", "defined": true, "x": 3.2, "y": 0.37 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [9.629817591922953, 29.36141759192295, 144.12476659617658, -1.7839999999999996, -34.98579046502451, -25.162305175196014],
+            "midpoint": [3.8349999999999986, 1.0899999999999999],
+            "half_axes": [1.3583403842539563, 0.769326718303209],
+            "eigenvectors": [
+              [0.9960023026508695, 0.08932756077586274],
+              [-0.08932756077586274, 0.9960023026508695]
+            ]
+          },
+          "ps": { "type": "number", "defined": true, "value": 0.7 },
+          "pe": { "type": "number", "defined": true, "value": 4.1 },
+          "a": {
+            "type": "arc",
+            "defined": true,
+            "value": 3.6978038978450574,
+            "conic_type": "ellipse",
+            "orientation": "positive",
+            "start": 0.7,
+            "end": 4.1,
+            "arc_length": 3.6978038978450574,
+            "area": 1.776512835266587,
+            "midpoint": [3.8349999999999986, 1.0899999999999999],
+            "half_axes": [1.3583403842539563, 0.769326718303209],
+            "eigenvectors": [
+              [0.9960023026508695, 0.08932756077586274],
+              [-0.08932756077586274, 0.9960023026508695]
+            ]
+          },
+          "b": {
+            "type": "sector",
+            "defined": true,
+            "value": 1.776512835266587,
+            "conic_type": "ellipse",
+            "orientation": "positive",
+            "start": 0.7,
+            "end": 4.1,
+            "arc_length": 3.6978038978450574,
+            "area": 1.776512835266587,
+            "midpoint": [3.8349999999999986, 1.0899999999999999],
+            "half_axes": [1.3583403842539563, 0.769326718303209],
+            "eigenvectors": [
+              [0.9960023026508695, 0.08932756077586274],
+              [-0.08932756077586274, 0.9960023026508695]
+            ]
+          },
+          "O": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "qq": { "type": "number", "defined": true, "value": 2.0 },
+          "h": { "type": "circle", "defined": true, "cx": 5.0, "cy": 5.0, "r": 2.0 },
+          "m": {
+            "type": "arc",
+            "defined": true,
+            "value": 6.663696928607725,
+            "conic_type": "ellipse",
+            "orientation": "negative",
+            "start": 1.155754993292791,
+            "end": 1.0371072762491464,
+            "arc_length": 6.663696928607725,
+            "area": 3.2209941624587817,
+            "midpoint": [3.8349999999999986, 1.0899999999999999],
+            "half_axes": [1.3583403842539563, 0.769326718303209],
+            "eigenvectors": [
+              [0.9960023026508695, 0.08932756077586274],
+              [-0.08932756077586274, 0.9960023026508695]
+            ]
+          },
+          "n": {
+            "type": "sector",
+            "defined": true,
+            "value": 3.2209941624587817,
+            "conic_type": "ellipse",
+            "orientation": "negative",
+            "start": 1.155754993292791,
+            "end": 1.0371072762491464,
+            "arc_length": 6.663696928607725,
+            "area": 3.2209941624587817,
+            "midpoint": [3.8349999999999986, 1.0899999999999999],
+            "half_axes": [1.3583403842539563, 0.769326718303209],
+            "eigenvectors": [
+              [0.9960023026508695, 0.08932756077586274],
+              [-0.08932756077586274, 0.9960023026508695]
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

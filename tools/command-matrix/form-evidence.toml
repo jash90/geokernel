@@ -836,6 +836,7 @@ cases = [
   "transform-rotate-011",
   "transform-rotate-012",
   "transform-rotate-013",
+  "transformsreview-polyline-001",
 ]
 
 [[form]]
@@ -1008,6 +1009,7 @@ cases = [
   "vector-translate-001",
   "vector-translate-004",
   "vector-translate-006",
+  "transformsreview-polyline-001",
 ]
 
 [[form]]
