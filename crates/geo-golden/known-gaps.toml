@@ -216,3 +216,74 @@ mismatches = ["3:a", "3:b", "3:len", "3:ar", "3:per", "4:a", "4:b", "4:len", "4:
 id = "arcs-undefined-007"
 reason = "intended difference, recorded in DIFFERENCES.md: a part whose circumcircle degenerates to a segment or two rays keeps the arc length and area of its last circle in GeoGebra, and Length and Area read them; the kernel's record keeps no history and they are undefined"
 mismatches = ["1:len", "1:ar", "1:sar", "1:slen", "2:len", "2:ar", "2:sar", "2:slen"]
+
+[[gap]]
+id = "geomforms-rigidpolygon-001"
+reason = "GeoGebra replaces B and C in place. The kernel creates dependent polygon vertices and preserves the original point objects and their other dependants."
+mismatches = ["1:B", "1:C"]
+
+[[gap]]
+id = "geomforms-closest-012"
+reason = "GeoGebra accepts an approximate Brent root for a non-polynomial function. The kernel refines the stationary point further, so the point coordinates differ while the distances agree."
+mismatches = [
+  "0:X", "1:X",
+]
+
+[[gap]]
+id = "geomforms-pointin-007"
+reason = "The construction move dispatcher routes moves only to the original point-on-path definition."
+mismatches = [
+  "1:step",
+]
+
+[[gap]]
+id = "geomforms-segment-006"
+reason = "The fixed-length endpoint's internal circle falls outside the construction move dispatcher."
+mismatches = [
+  "1:step",
+]
+
+[[gap]]
+id = "geomclip-difference-001"
+reason = "The contours agree geometrically. GeoGebra's sweep selects a different first vertex, which rotates the polygon vertices and the emitted point and segment slots."
+mismatches = [
+  "0:I", "0:J", "0:K", "0:L", "0:M", "0:N", "0:i", "0:j",
+  "0:k", "0:l", "0:m", "0:n", "0:s_{1}", "1:I", "1:J", "1:K",
+  "1:L", "1:M", "1:N", "1:i", "1:j", "1:k", "1:l", "1:m",
+  "1:n", "1:s_{1}", "2:I", "2:J", "2:K", "2:L", "2:M", "2:N",
+  "2:i", "2:j", "2:k", "2:l", "2:m", "2:n", "2:s_{1}", "3:I",
+  "3:J", "3:K", "3:L", "3:M", "3:N", "3:i", "3:j", "3:k",
+  "3:l", "3:m", "3:n", "3:s_{1}",
+]
+
+[[gap]]
+id = "geomclip-difference-002"
+reason = "The contours agree geometrically. GeoGebra's sweep selects a different first vertex for the subject-only contour, which rotates the polygon vertices and the emitted point and segment slots."
+mismatches = [
+  "0:O", "0:P", "0:Q", "0:R", "0:S", "0:T", "0:f_1", "0:g_1",
+  "0:h_1", "0:i_1", "0:s", "0:s_{2}", "0:t", "1:I", "1:J", "1:K",
+  "1:L", "1:M", "1:N", "1:i", "1:j", "1:k", "1:l", "1:m",
+  "1:n", "1:s_{1}", "2:I", "2:J", "2:K", "2:L", "2:M", "2:N",
+  "2:i", "2:j", "2:k", "2:l", "2:m", "2:n", "2:s_{1}", "3:O",
+  "3:P", "3:Q", "3:R", "3:S", "3:T", "3:f_1", "3:g_1", "3:h_1",
+  "3:i_1", "3:s", "3:s_{2}", "3:t",
+]
+
+[[gap]]
+id = "geomclip-difference-006"
+reason = "The symmetric difference contours agree geometrically. GeoGebra's sweep selects different first vertices for the right and lower contours, which rotates the emitted point and segment slots."
+mismatches = [
+  "0:Q", "0:R", "0:S", "0:T", "0:U", "0:V", "0:W", "0:Z",
+  "0:f_1", "0:g_1", "0:h_1", "0:i_1", "0:j_1", "0:k_1", "0:l_1", "0:m_1",
+  "0:s_{3}", "0:s_{4}", "3:Q", "3:R", "3:S", "3:T", "3:U", "3:V",
+  "3:W", "3:Z", "3:f_1", "3:g_1", "3:h_1", "3:i_1", "3:j_1", "3:k_1",
+  "3:l_1", "3:m_1", "3:s_{3}", "3:s_{4}",
+]
+
+[[gap]]
+id = "geomclip-polygon-003"
+reason = "The contours agree geometrically. After the right boundaries cross, GeoGebra's sweep starts the intersection at the crossing and the kernel starts at the top of the contour."
+mismatches = [
+  "3:I", "3:J", "3:K", "3:L", "3:i", "3:j", "3:k", "3:l",
+  "3:s_{1}",
+]

@@ -213,8 +213,29 @@ pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
 /// (`GeoLine.isOnFullLine`). A point at infinity (`GeoPoint.updateCoords`)
 /// is reported undefined.
 pub(crate) fn lines(c: &Construction, l: Id, m: Id) -> Option<Value> {
-    let (a1, b1, c1) = c.raw_line(l)?;
-    let (a2, b2, c2) = c.raw_line(m)?;
+    cross_lines(c.raw_line(l)?, c.raw_line(m)?)
+}
+
+pub(crate) fn closest_lines(c: &Construction, l: Id, m: Id) -> Option<Value> {
+    let point = cross_lines(c.raw_carrier(l)?, c.raw_carrier(m)?)?;
+    let Value::Point { x, y } = point else {
+        return None;
+    };
+    let on_path = |id| {
+        if c.kind(id) == crate::Kind::Line {
+            return true;
+        }
+        match super::path::project(c, id, (x, y)) {
+            Some(Value::Point { x: px, y: py }) => {
+                (px - x).abs() < MIN_PRECISION && (py - y).abs() < MIN_PRECISION
+            }
+            _ => false,
+        }
+    };
+    (on_path(l) && on_path(m)).then_some(point)
+}
+
+fn cross_lines((a1, b1, c1): (f64, f64, f64), (a2, b2, c2): (f64, f64, f64)) -> Option<Value> {
     let (mut x, mut y, mut z) = (b1 * c2 - c1 * b2, c1 * a2 - a1 * c2, a1 * b2 - b1 * a2);
     if (z.is_finite() && z.abs() > INV_MAX_DOUBLE_PRECISION)
         || (z != 0.0 && z.abs() < MAX_PRECISION)

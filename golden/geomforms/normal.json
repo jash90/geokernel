@@ -1,0 +1,186 @@
+{
+  "schema": 1,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "geomforms-normal-001",
+      "group": "geomforms",
+      "script": [
+        "A = (0, 0)",
+        "P = (5, 2)",
+        "r = 3",
+        "k = Circle(A, r)",
+        "l = OrthogonalLine(P, k)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": -2.0, "y": 1.0 },
+        { "action": "set_number", "label": "r", "value": 0.0 },
+        { "action": "set_number", "label": "r", "value": 2.0 },
+        { "action": "move", "label": "P", "x": 0.0, "y": 1.0 },
+        { "action": "move", "label": "P", "x": 1.0, "y": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 5.0, "y": 2.0 },
+          "r": { "type": "number", "defined": true, "value": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 3.0 },
+          "l": { "type": "line", "defined": true, "a": 0.8858279709376891, "b": -2.214569927344222, "c": -1.7763568394002505E-15 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "P": { "type": "point", "defined": true, "x": 5.0, "y": 2.0 },
+          "r": { "type": "number", "defined": true, "value": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": -2.0, "cy": 1.0, "r": 3.0 },
+          "l": { "type": "line", "defined": true, "a": 0.5757359312880714, "b": -4.0301515190165, "c": 5.181623381592643 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "P": { "type": "point", "defined": true, "x": 5.0, "y": 2.0 },
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "k": { "type": "circle", "defined": true, "cx": -2.0, "cy": 1.0, "r": 0.0 },
+          "l": { "type": "line", "defined": true, "a": 1.0, "b": -7.0, "c": 9.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "P": { "type": "point", "defined": true, "x": 5.0, "y": 2.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": -2.0, "cy": 1.0, "r": 2.0 },
+          "l": { "type": "line", "defined": true, "a": 0.7171572875253811, "b": -5.020101012677667, "c": 6.454415587728428 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": -2.0, "cy": 1.0, "r": 2.0 },
+          "l": { "type": "line", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": -2.0, "cy": 1.0, "r": 2.0 },
+          "l": { "type": "line", "defined": true, "a": 0.367544467966324, "b": -1.1026334038989725, "c": 1.837722339831621 }
+        }
+      ]
+    },
+    {
+      "id": "geomforms-normal-002",
+      "group": "geomforms",
+      "script": [
+        "A = (-3, 0)",
+        "B = (3, 0)",
+        "P = (4, 3)",
+        "r = 5",
+        "k = Ellipse(A, B, r)",
+        "l = OrthogonalLine(P, k)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "r", "value": 4.0 },
+        { "action": "move", "label": "P", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "P", "x": -2.0, "y": 4.0 },
+        { "action": "move", "label": "B", "x": -3.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [256.0, 400.0, -6400.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [5.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "l": { "type": "line", "defined": true, "a": 0.3220597131949696, "b": -0.28587244844377313, "c": -0.4306215074485582 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "r": { "type": "number", "defined": true, "value": 4.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [112.0, 256.0, -1792.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [4.0, 2.6457513110645907],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "l": { "type": "line", "defined": true, "a": 1.2705278857125484, "b": -0.9729123073150352, "c": -2.1633746209050875 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 4.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [112.0, 256.0, -1792.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [4.0, 2.6457513110645907],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "l": { "type": "line", "defined": true, "a": -2.6457513110645907, "b": 2.4492935982947064E-16, "c": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": -2.0, "y": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 4.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [112.0, 256.0, -1792.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [4.0, 2.6457513110645907],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "l": { "type": "line", "defined": true, "a": 1.564135389076759, "b": 0.43863532419194784, "c": 1.3737294813857268 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": -2.0, "y": 4.0 },
+          "r": { "type": "number", "defined": true, "value": 4.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [256.0, 256.0, -1792.0, -0.0, 768.0, -0.0],
+            "midpoint": [-3.0, 0.0],
+            "half_axes": [4.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "l": { "type": "line", "defined": true, "a": 0.1194299994186725, "b": -0.029857499854668568, "c": 0.35828999825601926 }
+        }
+      ]
+    }
+  ]
+}

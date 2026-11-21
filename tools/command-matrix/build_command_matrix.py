@@ -30,11 +30,11 @@ KNOWN_GROUPS = OUT_OF_SCOPE_GROUPS | P1_GROUPS | {
 # (derived from crates/geo-kernel/src/script.rs and the group files in
 # crates/geo-kernel/src/algo/). The note lists the supported forms.
 PARTIAL = {
-    "Line": "Line(point, point); Line(point, line or segment); Line(point, vector)",
-    "Segment": "Segment(point, point)",
+    "Line": "Line(point, point); Line(point, line, segment or ray); Line(point, vector)",
+    "Segment": "Segment(point, point); Segment(point, length); Segment(point, point, polygon) creates no output",
     "Midpoint": "Midpoint(point, point); Midpoint(segment); Midpoint(circle or conic)",
-    "Distance": "Distance(point, point); Distance(point, line or segment); Distance(line, line)",
-    "OrthogonalLine": "OrthogonalLine(point, line or segment); OrthogonalLine(point, vector)",
+    "Distance": "Distance(point, point); point and path in either order (line, segment, ray, conic, arc, sector, polygon, polyline, function or point list); two line carriers",
+    "OrthogonalLine": "OrthogonalLine(point, line, segment or ray); OrthogonalLine(point, vector); OrthogonalLine(point, conic or conic part)",
     "Circle": "Circle(centre, point); Circle(centre, radius); Circle(centre, segment); "
               "Circle(point, point, point)",
     "Intersect": "line/line; line/circle; circle/circle; line/conic; optional index 1 or 2",
@@ -46,10 +46,10 @@ PARTIAL = {
     "Center": "Center(circle or conic); Center(segment)",
     "Diameter": "Diameter(line or segment, circle or conic)",
     "Length": "Length(segment); Length(vector); Length(list); Length(arc or sector)",
-    "Radius": "Radius(circle)",
+    "Radius": "Radius(conic or conic part); defined for circle and single-point types",
     "Circumference": "Circumference(circle); Circumference(arc or sector)",
     "Perimeter": "Perimeter(circle); Perimeter(polygon); Perimeter(arc or sector)",
-    "Area": "Area(circle); Area(polygon); Area of three or more points; Area(arc or sector)",
+    "Area": "Area(conic, arc, sector or polygon); Area of three or more points",
     "Point": "Point(path); Point(path, parameter) on a line, segment, ray, circle, polygon, polyline, circular arc or sector",
     "PathParameter": "PathParameter(point on a path)",
     "CircleArc": "CircularArc(centre, point, point)",
@@ -59,7 +59,7 @@ PARTIAL = {
     "Semicircle": "Semicircle(point, point)",
     "Arc": "Arc(circle, point, point); Arc(circle or conic, parameter, parameter)",
     "Sector": "Sector(circle, point, point); Sector(circle or conic, parameter, parameter)",
-    "Slope": "Slope(line or segment)",
+    "Slope": "Slope(line, segment, ray or function)",
     "AffineRatio": "AffineRatio(point, point, point)",
     "CrossRatio": "CrossRatio(point, point, point, point)",
     "Angle": "Angle(point, point, point); Angle(polygon)",
@@ -82,8 +82,8 @@ PARTIAL = {
     "AreConcyclic": "AreConcyclic(point, point, point, point)",
     "AreEqual": "AreEqual of two objects of any kind the kernel has",
     "AreCongruent": "AreCongruent of two objects of any kind the kernel has",
-    "IsTangent": "IsTangent(line, segment or ray, circle)",
-    "ClosestPoint": "ClosestPoint(line, segment, ray or circle, point); ClosestPoint(line, line)",
+    "IsTangent": "IsTangent(line, segment or ray, conic or conic part)",
+    "ClosestPoint": "Path and point in either order (line, segment, ray, conic, arc, sector, polygon, polyline, function or point list); two line carriers except line with segment",
     "Trilinear": "Trilinear(point, point, point, number, number, number)",
     "Polygon": "Polygon of three or more points; Polygon(point, point, number of vertices)",
     "PolyLine": "PolyLine of two or more points",
@@ -123,6 +123,11 @@ PARTIAL = {
     "Eccentricity": "Eccentricity(conic)",
     "Excentricity": "Excentricity(conic)",
     "Parameter": "Parameter(parabola)",
+    "RigidPolygon": "RigidPolygon(polygon); RigidPolygon(polygon, x offset, y offset); RigidPolygon of three or more points (separate constrained vertices)",
+    "TriangleCenter": "TriangleCenter(point, point, point, index)",
+    "PointIn": "PointIn(polygon, conic or conic part as a single region argument)",
+    "IntersectPath": "Polygon and line, segment, ray or conic in either order; two polygons",
+    "Difference": "Difference(polygon, polygon); Difference(polygon, polygon, boolean)",
 }
 
 # Commands the first version of the kernel already had: priority P0.

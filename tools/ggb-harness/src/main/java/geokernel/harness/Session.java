@@ -19,6 +19,7 @@ import org.geogebra.common.kernel.Kernel;
 import org.geogebra.common.kernel.algos.AlgoElement;
 import org.geogebra.common.kernel.algos.AlgoJoinPointsRay;
 import org.geogebra.common.kernel.algos.AlgoPointOnPath;
+import org.geogebra.common.kernel.algos.AlgoPointInRegion;
 import org.geogebra.common.kernel.algos.AlgoRayPointVector;
 import org.geogebra.common.kernel.commands.AlgebraProcessor;
 import org.geogebra.common.kernel.geos.GeoConic;
@@ -112,13 +113,34 @@ final class Session {
         }
         GeoElementND[] out = processor.processAlgebraCommandNoExceptionHandling(
                 line, false, new ThrowingErrorHandler(line), false, null);
+        if ((out == null || out.length == 0) && definition.startsWith("Segment(")
+                && definition.chars().filter(ch -> ch == ',').count() == 2) {
+            return null;
+        }
+        if (out != null && out.length == 2 && definition.startsWith("Segment(")) {
+            return runFixedSegment(line, label, out);
+        }
+        if (out != null && out.length == 4
+                && (definition.startsWith("OrthogonalLine(")
+                || definition.startsWith("PerpendicularLine("))) {
+            return runOrthogonalLine(line, label, out);
+        }
+        if (out != null && out.length > 0
+                && (definition.startsWith("Difference(")
+                || definition.startsWith("IntersectPath("))) {
+            return runClipping(line, label, out);
+        }
         if (out != null && out.length == 2 && isMultiOutput(definition)) {
             return runMulti(line, expected, out);
         }
         if (out != null && out.length >= 1 && isPerVertex(definition)) {
             return runMulti(line, expected, out);
         }
-        if (out != null && out.length >= 1 && definition.startsWith("Polygon(")) {
+        if (out != null && out.length >= 1 && (definition.startsWith("Polygon(")
+                || definition.startsWith("RigidPolygon("))) {
+            if (definition.startsWith("RigidPolygon(")) {
+                refreshPoints();
+            }
             return runPolygon(line, label, out);
         }
         // A transformed segment or ray with labelled end points also creates
@@ -157,6 +179,56 @@ final class Session {
             conics.add(geo);
         }
         return geo;
+    }
+
+    private GeoElement runClipping(String line, String label, GeoElementND[] out) {
+        GeoElement first = out[0].toGeoElement();
+        if (!(first instanceof GeoPolygon) && !(first instanceof GeoSegment)) {
+            throw new IllegalStateException("unexpected clipping result from: " + line);
+        }
+        for (GeoElementND element : out) {
+            GeoElement geo = element.toGeoElement();
+            if (geo.isLabelSet()) {
+                String name = geo.getLabelSimple();
+                if (kernel.lookupLabel(name) != geo || objects.putIfAbsent(name, geo) != null) {
+                    throw new IllegalStateException("unexpected output label " + name + " from: " + line);
+                }
+            }
+        }
+        if (!first.isLabelSet()) {
+            objects.put(label, first);
+        }
+        return first;
+    }
+
+    private GeoElement runFixedSegment(String line, String label, GeoElementND[] out) {
+        GeoElement segment = out[0].toGeoElement();
+        GeoElement endpoint = out[1].toGeoElement();
+        if (!(segment instanceof GeoSegment) || !(endpoint instanceof GeoPoint)
+                || !label.equals(segment.getLabelSimple())) {
+            throw new IllegalStateException("unexpected outputs from: " + line);
+        }
+        objects.put(label, segment);
+        if (endpoint.isLabelSet()) {
+            objects.put(endpoint.getLabelSimple(), endpoint);
+        }
+        return segment;
+    }
+
+    private GeoElement runOrthogonalLine(String line, String label, GeoElementND[] out) {
+        GeoElement first = out[0].toGeoElement();
+        if (!(first instanceof GeoLine) || !label.equals(first.getLabelSimple())) {
+            throw new IllegalStateException("unexpected conic normal from: " + line);
+        }
+        objects.put(label, first);
+        return first;
+    }
+
+    private void refreshPoints() {
+        objects.replaceAll((label, geo) -> {
+            GeoElement replacement = kernel.lookupLabel(label);
+            return geo instanceof GeoPoint && replacement instanceof GeoPoint ? replacement : geo;
+        });
     }
 
     /**
@@ -269,8 +341,9 @@ final class Session {
     /** Whether `geo` is a point on a path that the user can drag: `Point(path)`. */
     private static boolean isMovableOnPath(GeoElement geo) {
         AlgoElement parent = geo.getParentAlgorithm();
-        return geo instanceof GeoPoint && parent instanceof AlgoPointOnPath
-                && ((AlgoPointOnPath) parent).isChangeable(geo);
+        return geo instanceof GeoPoint && (parent instanceof AlgoPointInRegion
+                || parent instanceof AlgoPointOnPath
+                && ((AlgoPointOnPath) parent).isChangeable(geo));
     }
 
     /** Sets a free number and updates everything that depends on it. */
@@ -619,8 +692,11 @@ final class Session {
             case "Vertex":
             case "Focus":
             case "Point":
+            case "PointIn":
+            case "TriangleCenter":
                 return "point";
             case "Polygon":
+            case "RigidPolygon":
                 return "polygon";
             case "PolyLine":
                 return "polyline";

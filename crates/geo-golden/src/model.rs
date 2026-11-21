@@ -631,15 +631,40 @@ fn validate_case(case: &Case) -> Result<(), String> {
                     snap.get(label).map(|object| object.kind)
                 });
                 let directrices = directrix_labels(&case.script);
-                let created = |key: &str| match snap[key].kind {
-                    Kind::Point => names.point(key),
-                    Kind::Segment => names.segment(key),
-                    // `Directrix` gives both lines the script label, so the
-                    // second one gets an index of it.
-                    Kind::Line => indexed_prefix(key).is_some_and(|p| directrices.contains(p)),
-                    _ => false,
+                let mut outputs = labels.clone();
+                let mut clip_prefixes = BTreeSet::new();
+                for line in &case.script {
+                    if let Some((label, "Difference" | "IntersectPath", _)) = command_args(line) {
+                        clip_prefixes.insert(label_prefix(label));
+                    }
+                    if let Some((label, "Segment", args)) = command_args(line) {
+                        if let [a, b, polygon] = args.as_slice() {
+                            if [a, b]
+                                .iter()
+                                .all(|&&p| snap.get(p).is_some_and(|o| o.kind == Kind::Point))
+                                && snap.get(*polygon).is_some_and(|o| o.kind == Kind::Polygon)
+                            {
+                                outputs.remove(label);
+                            }
+                        }
+                    }
+                }
+                let created = |key: &str| {
+                    if indexed_prefix(key).is_some_and(|p| clip_prefixes.contains(p))
+                        && matches!(snap[key].kind, Kind::Segment | Kind::Polygon)
+                    {
+                        return true;
+                    }
+                    match snap[key].kind {
+                        Kind::Point => names.point(key),
+                        Kind::Segment => names.segment(key),
+                        // `Directrix` gives both lines the script label, so the
+                        // second one gets an index of it.
+                        Kind::Line => indexed_prefix(key).is_some_and(|p| directrices.contains(p)),
+                        _ => false,
+                    }
                 };
-                check_keys(&keys, &labels, created).map_err(|e| format!("snapshot {i}: {e}"))?;
+                check_keys(&keys, &outputs, created).map_err(|e| format!("snapshot {i}: {e}"))?;
                 first = Some(keys);
             }
             Some(f) if *f != keys => {
@@ -699,7 +724,7 @@ impl PolygonNames {
     fn of(script: &[String], kind: impl Fn(&str) -> Option<Kind>) -> PolygonNames {
         let mut names = PolygonNames::default();
         for line in script {
-            let Some(args) = polygon_args(line) else {
+            let Some((_, command, args)) = command_args(line) else {
                 continue;
             };
             let number = |arg: &str| match kind(arg) {
@@ -707,11 +732,35 @@ impl PolygonNames {
                 None => arg.parse::<f64>().is_ok(),
             };
             let point = |arg: &str| kind(arg) == Some(Kind::Point);
-            if args.len() == 3 && point(args[0]) && point(args[1]) && number(args[2]) {
-                names
-                    .indexed_points
-                    .extend(POINT_LABELS.iter().map(|l| l.to_string()));
+            if command == "Difference"
+                || command == "IntersectPath"
+                    && args
+                        .iter()
+                        .filter(|&&arg| kind(arg) == Some(Kind::Polygon))
+                        .count()
+                        == 2
+            {
+                names.default_points();
                 names.default_segments();
+                continue;
+            }
+            if command == "Segment" {
+                if args.len() == 2 && point(args[0]) && number(args[1]) {
+                    names.default_points();
+                }
+                continue;
+            }
+            if command == "Polygon"
+                && args.len() == 3
+                && point(args[0])
+                && point(args[1])
+                && number(args[2])
+            {
+                names.default_points();
+                names.default_segments();
+                continue;
+            }
+            if !matches!(command, "Polygon" | "RigidPolygon") {
                 continue;
             }
             if args.len() < 2 {
@@ -728,6 +777,11 @@ impl PolygonNames {
             }
         }
         names
+    }
+
+    fn default_points(&mut self) {
+        self.indexed_points
+            .extend(POINT_LABELS.iter().map(|l| l.to_string()));
     }
 
     fn default_segments(&mut self) {
@@ -772,11 +826,12 @@ fn directrix_labels(script: &[String]) -> BTreeSet<&str> {
         .collect()
 }
 
-/// The arguments of a script line `name = Polygon(a, b, ...)`.
-fn polygon_args(line: &str) -> Option<Vec<&str>> {
-    let (_, rhs) = line.split('#').next()?.split_once('=')?;
-    let inner = rhs.trim().strip_prefix("Polygon(")?.strip_suffix(')')?;
-    Some(inner.split(',').map(str::trim).collect())
+/// The label, command and arguments of a script line.
+fn command_args(line: &str) -> Option<(&str, &str, Vec<&str>)> {
+    let (label, rhs) = line.split('#').next()?.split_once('=')?;
+    let (name, inner) = rhs.trim().split_once('(')?;
+    let args = inner.strip_suffix(')')?.split(',').map(str::trim).collect();
+    Some((label.trim(), name.trim(), args))
 }
 
 /// Snapshot keys must match the script labels: each label is either a key

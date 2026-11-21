@@ -1,0 +1,411 @@
+{
+  "schema": 1,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "geomforms-slope-001",
+      "group": "geomforms",
+      "script": [
+        "a = 3",
+        "f(x) = a * x + 3",
+        "m = Slope(f)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -4.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 2.5 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -21.0],
+              [-4.0, -9.0],
+              [-2.0, -3.0],
+              [-1.0, 0.0],
+              [-0.5, 1.5],
+              [0.0, 3.0],
+              [0.5, 4.5],
+              [1.0, 6.0],
+              [2.0, 9.0],
+              [4.0, 15.0],
+              [8.0, 27.0]
+            ]
+          },
+          "m": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -4.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 35.0],
+              [-4.0, 19.0],
+              [-2.0, 11.0],
+              [-1.0, 7.0],
+              [-0.5, 5.0],
+              [0.0, 3.0],
+              [0.5, 1.0],
+              [1.0, -1.0],
+              [2.0, -5.0],
+              [4.0, -13.0],
+              [8.0, -29.0]
+            ]
+          },
+          "m": { "type": "number", "defined": true, "value": -4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 3.0],
+              [-4.0, 3.0],
+              [-2.0, 3.0],
+              [-1.0, 3.0],
+              [-0.5, 3.0],
+              [0.0, 3.0],
+              [0.5, 3.0],
+              [1.0, 3.0],
+              [2.0, 3.0],
+              [4.0, 3.0],
+              [8.0, 3.0]
+            ]
+          },
+          "m": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.5 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -17.0],
+              [-4.0, -7.0],
+              [-2.0, -2.0],
+              [-1.0, 0.5],
+              [-0.5, 1.75],
+              [0.0, 3.0],
+              [0.5, 4.25],
+              [1.0, 5.5],
+              [2.0, 8.0],
+              [4.0, 13.0],
+              [8.0, 23.0]
+            ]
+          },
+          "m": { "type": "number", "defined": true, "value": 2.5 }
+        }
+      ]
+    },
+    {
+      "id": "geomforms-slope-002",
+      "group": "geomforms",
+      "script": [
+        "a = 3",
+        "f(x) = x^2 + a * x",
+        "m = Slope(f)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -4.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 2.5 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 40.0],
+              [-4.0, 4.0],
+              [-2.0, -2.0],
+              [-1.0, -2.0],
+              [-0.5, -1.25],
+              [0.0, 0.0],
+              [0.5, 1.75],
+              [1.0, 4.0],
+              [2.0, 10.0],
+              [4.0, 28.0],
+              [8.0, 88.0]
+            ]
+          },
+          "m": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -4.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 96.0],
+              [-4.0, 32.0],
+              [-2.0, 12.0],
+              [-1.0, 5.0],
+              [-0.5, 2.25],
+              [0.0, 0.0],
+              [0.5, -1.75],
+              [1.0, -3.0],
+              [2.0, -4.0],
+              [4.0, 0.0],
+              [8.0, 32.0]
+            ]
+          },
+          "m": { "type": "number", "defined": true, "value": -4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "m": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.5 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 44.0],
+              [-4.0, 6.0],
+              [-2.0, -1.0],
+              [-1.0, -1.5],
+              [-0.5, -1.0],
+              [0.0, 0.0],
+              [0.5, 1.5],
+              [1.0, 3.5],
+              [2.0, 9.0],
+              [4.0, 26.0],
+              [8.0, 84.0]
+            ]
+          },
+          "m": { "type": "number", "defined": true, "value": 2.5 }
+        }
+      ]
+    },
+    {
+      "id": "geomforms-slope-003",
+      "group": "geomforms",
+      "script": [
+        "a = 3",
+        "f(x) = a * sin(x)",
+        "m = Slope(f)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -4.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 2.5 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -2.9680747398701453],
+              [-4.0, 2.2704074859237844],
+              [-2.0, -2.727892280477045],
+              [-1.0, -2.5244129544236893],
+              [-0.5, -1.438276615812609],
+              [0.0, 0.0],
+              [0.5, 1.438276615812609],
+              [1.0, 2.5244129544236893],
+              [2.0, 2.727892280477045],
+              [4.0, -2.2704074859237844],
+              [8.0, 2.9680747398701453]
+            ]
+          },
+          "m": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -4.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 3.957432986493527],
+              [-4.0, -3.027209981231713],
+              [-2.0, 3.637189707302727],
+              [-1.0, 3.365883939231586],
+              [-0.5, 1.917702154416812],
+              [0.0, -0.0],
+              [0.5, -1.917702154416812],
+              [1.0, -3.365883939231586],
+              [2.0, -3.637189707302727],
+              [4.0, 3.027209981231713],
+              [8.0, -3.957432986493527]
+            ]
+          },
+          "m": { "type": "number", "defined": true, "value": -4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.0],
+              [-4.0, 0.0],
+              [-2.0, -0.0],
+              [-1.0, -0.0],
+              [-0.5, -0.0],
+              [0.0, 0.0],
+              [0.5, 0.0],
+              [1.0, 0.0],
+              [2.0, 0.0],
+              [4.0, -0.0],
+              [8.0, 0.0]
+            ]
+          },
+          "m": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.5 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -2.4733956165584545],
+              [-4.0, 1.8920062382698206],
+              [-2.0, -2.2732435670642044],
+              [-1.0, -2.1036774620197414],
+              [-0.5, -1.1985638465105075],
+              [0.0, 0.0],
+              [0.5, 1.1985638465105075],
+              [1.0, 2.1036774620197414],
+              [2.0, 2.2732435670642044],
+              [4.0, -1.8920062382698206],
+              [8.0, 2.4733956165584545]
+            ]
+          },
+          "m": { "type": "number", "defined": true, "value": 2.5 }
+        }
+      ]
+    },
+    {
+      "id": "geomforms-slope-004",
+      "group": "geomforms",
+      "script": [
+        "a = 3",
+        "f(x) = sqrt(1 + x)",
+        "m = Slope(f)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -4.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 2.5 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, 0.0],
+              [-0.5, 0.7071067811865476],
+              [0.0, 1.0],
+              [0.5, 1.224744871391589],
+              [1.0, 1.4142135623730951],
+              [2.0, 1.7320508075688772],
+              [4.0, 2.23606797749979],
+              [8.0, 3.0]
+            ]
+          },
+          "m": { "type": "number", "defined": true, "value": 0.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -4.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, 0.0],
+              [-0.5, 0.7071067811865476],
+              [0.0, 1.0],
+              [0.5, 1.224744871391589],
+              [1.0, 1.4142135623730951],
+              [2.0, 1.7320508075688772],
+              [4.0, 2.23606797749979],
+              [8.0, 3.0]
+            ]
+          },
+          "m": { "type": "number", "defined": true, "value": 0.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, 0.0],
+              [-0.5, 0.7071067811865476],
+              [0.0, 1.0],
+              [0.5, 1.224744871391589],
+              [1.0, 1.4142135623730951],
+              [2.0, 1.7320508075688772],
+              [4.0, 2.23606797749979],
+              [8.0, 3.0]
+            ]
+          },
+          "m": { "type": "number", "defined": true, "value": 0.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.5 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, 0.0],
+              [-0.5, 0.7071067811865476],
+              [0.0, 1.0],
+              [0.5, 1.224744871391589],
+              [1.0, 1.4142135623730951],
+              [2.0, 1.7320508075688772],
+              [4.0, 2.23606797749979],
+              [8.0, 3.0]
+            ]
+          },
+          "m": { "type": "number", "defined": true, "value": 0.5 }
+        }
+      ]
+    }
+  ]
+}
