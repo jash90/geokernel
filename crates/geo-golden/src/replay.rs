@@ -114,6 +114,12 @@ pub fn replay(case: &Case) -> CaseOutcome {
             let sample = |x| c.function_value(id, x);
             let outcome = if c.kind(id) == Kind::List {
                 compare_list(expected, Kind::List, c.elements(id))
+            } else if case.group == "angle" && expected.kind != c.kind(id) {
+                Err(format!(
+                    "type mismatch: expected {}, got {}",
+                    expected.kind,
+                    c.kind(id)
+                ))
             } else {
                 compare_sampled(expected, c.kind(id), &actual, &vertices, Some(&sample))
             };

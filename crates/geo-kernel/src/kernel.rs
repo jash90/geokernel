@@ -29,6 +29,10 @@
 //! other: they are linked into the dependency graph when the object is added,
 //! so incremental updates treat them exactly like fixed parents.
 
+#[path = "algo/angle.rs"]
+pub mod angle;
+
+use self::angle::{AngleDef, AngleGeometry, AngleSource, AngleStyle};
 use crate::algo::arc::{ArcData, ArcDef};
 use crate::algo::conic::ConicDef;
 use crate::algo::conic_nd::{ConicData, ConicType};
@@ -99,6 +103,8 @@ pub enum Kind {
     Segment,
     Circle,
     Number,
+    /// An angle in radians, with its scalar stored in `Value::Number`.
+    Angle,
     Vector,
     Ray,
     /// A true or false answer, such as the result of `AreCollinear`.
@@ -120,6 +126,13 @@ pub enum Kind {
     Sector,
 }
 
+impl Kind {
+    /// Whether this kind can supply a scalar number.
+    pub const fn is_number(self) -> bool {
+        matches!(self, Self::Number | Self::Angle)
+    }
+}
+
 impl fmt::Display for Kind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(match self {
@@ -128,6 +141,7 @@ impl fmt::Display for Kind {
             Kind::Segment => "segment",
             Kind::Circle => "circle",
             Kind::Number => "number",
+            Kind::Angle => "angle",
             Kind::Vector => "vector",
             Kind::Ray => "ray",
             Kind::Boolean => "boolean",
@@ -337,6 +351,8 @@ pub enum Def {
     Conic(ConicDef),
     /// Numbers measured on objects.
     Measure(MeasureDef),
+    /// An angle command, a styled angle, or the point made by a fixed angle.
+    AngleObject(AngleDef),
     /// Reflections, rotations and dilations.
     Transform(TransformDef),
     /// Vectors, rays and translations.
@@ -377,7 +393,11 @@ impl Def {
             Def::Line(..) | Def::Perpendicular { .. } | Def::Parallel { .. } => Kind::Line,
             Def::Segment(..) => Kind::Segment,
             Def::CircleThrough { .. } | Def::CircleRadius { .. } => Kind::Circle,
-            Def::Number(_) | Def::Angle(_) | Def::Distance(..) => Kind::Number,
+            Def::Number(_) | Def::Distance(..) => Kind::Number,
+            Def::Angle(_)
+            | Def::Measure(MeasureDef::Angle(..))
+            | Def::Polygon(PolygonDef::Angle { .. }) => Kind::Angle,
+            Def::AngleObject(d) => d.kind(),
             Def::Lines(d) => d.kind(),
             Def::Conic(d) => d.kind(),
             Def::Measure(d) => d.kind(),
@@ -420,7 +440,7 @@ impl Def {
                 | Def::Number(_)
                 | Def::Angle(_)
                 | Def::Vector(VectorDef::Free { .. })
-        )
+        ) || matches!(*self, Def::AngleObject(d) if d.is_free())
     }
 
     /// The objects this definition reads. An expression reads the objects
@@ -445,6 +465,7 @@ impl Def {
             Def::Lines(d) => d.parents(),
             Def::Conic(d) => d.parents(),
             Def::Measure(d) => d.parents(),
+            Def::AngleObject(d) => d.parents(),
             Def::Transform(d) => d.parents(),
             Def::Vector(d) => d.parents(),
             Def::Predicate(d) => d.parents(),
@@ -703,16 +724,76 @@ impl Construction {
         self.values[id.0]
     }
 
+    /// The interval of an angle, including an unbounded numeric angle.
+    pub fn angle_style(&self, id: Id) -> Option<AngleStyle> {
+        match *self.defs.get(id.0)? {
+            Def::AngleObject(d) if d.kind() == Kind::Angle => Some(d.style),
+            Def::Angle(_) => Some(AngleStyle::Unbounded),
+            Def::Expr(d) if d.kind() == Kind::Angle => Some(d.angle_style),
+            Def::Measure(MeasureDef::Angle(..)) | Def::Polygon(PolygonDef::Angle { .. }) => {
+                Some(AngleStyle::Anticlockwise)
+            }
+            _ => None,
+        }
+    }
+
+    fn angle_source(&self, id: Id) -> Option<AngleSource> {
+        match *self.defs.get(id.0)? {
+            Def::Angle(v) => Some(AngleSource::Free(v)),
+            Def::AngleObject(d) if d.kind() == Kind::Angle => Some(d.source),
+            Def::Measure(MeasureDef::Angle(a, b, d)) => Some(AngleSource::Points(a, b, d)),
+            Def::Polygon(PolygonDef::Angle { poly, k, internal }) => Some(AngleSource::Polygon {
+                poly,
+                index: k,
+                interior: internal,
+            }),
+            _ => None,
+        }
+    }
+
+    /// The drawable sector of an angle with a finite vertex and nonzero sweep.
+    pub fn angle_geometry(&self, id: Id) -> Option<AngleGeometry> {
+        let source = self.angle_source(id)?;
+        source.drawing(self, self.number(id)?, self.angle_style(id)?)
+    }
+
+    /// Change an angle's interval and update objects that
+    /// use it. Its source and raw sweep are preserved.
+    pub fn set_angle_style(&mut self, id: Id, style: AngleStyle) -> Result<usize, Error> {
+        let old = self.angle_style(id).ok_or(Error::UnknownObject)?;
+        if old == style {
+            return Ok(0);
+        }
+        if let Def::Expr(mut d) = self.def(id) {
+            d.angle_style = style;
+            self.defs[id.0] = Def::Expr(d);
+            self.values[id.0] = expr::value(d, expr::raw(self, d));
+            return Ok(self.propagate(id));
+        }
+        let source = self
+            .angle_source(id)
+            .ok_or_else(|| Error::NotFree(self.label(id).to_owned()))?;
+        if style == AngleStyle::Unbounded && source.has_geometry() {
+            return Err(Error::NotFree(self.label(id).to_owned()));
+        }
+        let def = Def::AngleObject(AngleDef { source, style });
+        self.defs[id.0] = def;
+        self.values[id.0] = self.compute(def, id.0);
+        Ok(self.propagate(id))
+    }
+
     /// `±∞` when `id` is an expression number whose value is infinite.
     /// [`Self::value`] reports such a number undefined, but GeoGebra counts
     /// it as defined, and expressions that read it use the infinite value
     /// (`1 / (r - a)` with `a = ∞` is `-0`).
     pub fn infinite_number(&self, id: Id) -> Option<f64> {
         match self.defs.get(id.0)? {
-            &Def::Expr(d) if d.kind() == Kind::Number => match expr::raw(self, d) {
-                expr::Raw::Num(v) if v.is_infinite() => Some(v),
-                _ => None,
-            },
+            &Def::Expr(d) if d.kind().is_number() && d.angle_style == AngleStyle::Unbounded => {
+                match expr::raw(self, d) {
+                    expr::Raw::Num(v) if v.is_infinite() => Some(v),
+                    _ => None,
+                }
+            }
             _ => None,
         }
     }
@@ -876,6 +957,7 @@ impl Construction {
         ids.extend(algo::vector::hidden_parents(self, def));
         ids.extend(algo::predicate::hidden_parents(self, def));
         ids.extend(algo::polygon::hidden_parents(self, def));
+        ids.extend(angle::hidden_parents(self, def));
         ids.extend(expr::parents(self, def));
         ids.extend_from_slice(def.parents().as_slice());
         if let Some(list) = def.list() {
@@ -1075,6 +1157,10 @@ impl Construction {
         let new_def = match def {
             Def::Number(_) => Def::Number(v),
             Def::Angle(_) => Def::Angle(v),
+            Def::AngleObject(d) if d.is_free() => Def::AngleObject(AngleDef {
+                source: AngleSource::Free(v),
+                ..d
+            }),
             _ => return Err(Error::NotFree(self.labels[id.0].clone())),
         };
         if !v.is_finite() {
@@ -1084,13 +1170,20 @@ impl Construction {
         // which changes what reads it even when the value stays.
         let had_decimal = expr::forget_decimal(self, id);
         // Bit equality: `0` to `-0` is a change (`1/a` flips its sign).
-        if !had_decimal
-            && matches!(self.values[id.0], Value::Number(old) if old.to_bits() == v.to_bits())
-        {
+        let old = match def {
+            Def::Number(old)
+            | Def::Angle(old)
+            | Def::AngleObject(AngleDef {
+                source: AngleSource::Free(old),
+                ..
+            }) => old,
+            _ => unreachable!("the definition is a free scalar"),
+        };
+        if !had_decimal && old.to_bits() == v.to_bits() {
             return Ok(0);
         }
         self.defs[id.0] = new_def;
-        self.values[id.0] = Value::Number(v);
+        self.values[id.0] = self.compute(new_def, id.0);
         Ok(self.propagate(id))
     }
 
@@ -1378,6 +1471,7 @@ impl Construction {
             Def::Lines(d) => d.check(self),
             Def::Conic(d) => d.check(self),
             Def::Measure(d) => d.check(self),
+            Def::AngleObject(d) => d.check(self),
             Def::Transform(d) => d.check(self),
             Def::Vector(d) => d.check(self),
             Def::Predicate(d) => d.check(self),
@@ -1395,7 +1489,7 @@ impl Construction {
     pub(crate) fn expect(&self, id: Id, expected: &'static [Kind]) -> Result<(), Error> {
         let def = self.defs.get(id.0).ok_or(Error::UnknownObject)?;
         let found = def.kind();
-        if expected.contains(&found) {
+        if expected.contains(&found) || (found == Kind::Angle && expected.contains(&Kind::Number)) {
             Ok(())
         } else {
             Err(Error::WrongKind {
@@ -1462,6 +1556,7 @@ impl Construction {
             Def::Lines(d) => d.compute(self),
             Def::Conic(d) => d.compute(self),
             Def::Measure(d) => d.compute(self),
+            Def::AngleObject(d) => d.compute(self),
             Def::Transform(d) => d.compute(self),
             Def::Vector(d) => d.compute(self),
             Def::Predicate(d) => d.compute(self),

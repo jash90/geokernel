@@ -78,7 +78,25 @@ pub(super) fn accepts(tool: Tool, picks: &[Kind], cand: Option<Kind>) -> bool {
                 && ((circle(cand) && !has(circle))
                     || (existing_point(cand) && !has(existing_point)))
         }
-        Tool::Angle => n < 3 && existing_point(cand),
+        Tool::Angle => match first {
+            None => matches!(
+                cand,
+                Some(
+                    Kind::Point
+                        | Kind::Line
+                        | Kind::Segment
+                        | Kind::Ray
+                        | Kind::Vector
+                        | Kind::Polygon
+                )
+            ),
+            Some(Kind::Point) => n < 3 && existing_point(cand),
+            Some(Kind::Vector) => n < 2 && cand == Some(Kind::Vector),
+            Some(Kind::Line | Kind::Segment | Kind::Ray) => {
+                n < 2 && matches!(cand, Some(Kind::Line | Kind::Segment | Kind::Ray))
+            }
+            _ => false,
+        },
         Tool::Distance => match first {
             None => existing_point(cand) || line_like(cand) || circle(cand),
             Some(Kind::Point) => n == 1 && (existing_point(cand) || line_like(cand)),
@@ -128,7 +146,13 @@ pub(super) fn finish(tool: Tool, picks: &[Kind]) -> Option<Finish> {
         Tool::Point => n == 1,
         Tool::Midpoint | Tool::Bisector => n == 2 || (n == 1 && first != Some(Kind::Point)),
         Tool::Distance => n == 2 || (n == 1 && matches!(first, Some(Kind::Segment | Kind::Circle))),
-        Tool::Circle3 | Tool::Angle => n == 3,
+        Tool::Circle3 => n == 3,
+        Tool::Angle => match first {
+            Some(Kind::Point) => n == 3,
+            Some(Kind::Polygon) => n == 1,
+            Some(_) => n == 2,
+            None => false,
+        },
         Tool::AngleBisector => n == 3 || (n == 2 && first != Some(Kind::Point)),
         Tool::CircleRadius => {
             return (n == 1).then_some(Finish::Ask(NumberRequest {
@@ -285,6 +309,9 @@ pub(super) fn build(
             format!("Polygon({}, {}, {num})", a(0), a(1)),
             Name::Polygon(number.map_or(0, |n| n.round().max(0.0) as usize)),
         ),
+        Tool::Angle if kinds[0] == Kind::Polygon => {
+            (format!("InteriorAngles({})", a(0)), Name::Greek)
+        }
         Tool::Angle => (format!("Angle({})", args.join(", ")), Name::Greek),
         Tool::Distance => match kinds.as_slice() {
             [Kind::Segment] => (format!("Length({})", a(0)), Name::Fresh(Kind::Number)),
@@ -362,7 +389,9 @@ pub(super) fn hint(tool: Tool, picks: &[Kind]) -> Hint {
         (Tool::Polygon, _) => Hint::NextVertexOrClose,
         (Tool::RegularPolygon, 0) => Hint::FirstVertex,
         (Tool::RegularPolygon, _) => Hint::SecondVertex,
-        (Tool::Angle, 0) => Hint::PointOnFirstArm,
+        (Tool::Angle, 0) => Hint::AngleObjects,
+        (Tool::Angle, _) if first == Some(Kind::Vector) => Hint::Vector,
+        (Tool::Angle, _) if first != Some(Kind::Point) => Hint::SecondLine,
         (Tool::Angle, 1) => Hint::VertexOfAngle,
         (Tool::Angle, _) => Hint::PointOnSecondArm,
         (Tool::Distance, 0) => Hint::DistanceObjects,

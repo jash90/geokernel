@@ -1,0 +1,153 @@
+{
+  "schema": 1,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "angle-numeric-001",
+      "group": "angle",
+      "script": [
+        "nn = 1",
+        "ang = Angle(nn)",
+        "literal = Angle(7)",
+        "literaldeg = Angle(30°)",
+        "turn = 30°",
+        "copied = Angle(turn)",
+        "dep = 2 * turn",
+        "tr = sin(ang)",
+        "sum = ang + turn",
+        "ra = round(ang)",
+        "scale = ang / (1°)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "nn", "value": -0.5 },
+        { "action": "set_number", "label": "nn", "value": 0.0 },
+        { "action": "set_number", "label": "nn", "value": 6.283185307179586 },
+        { "action": "set_number", "label": "nn", "value": -6.283185307179586 },
+        { "action": "set_number", "label": "nn", "value": 12.566370614359172 },
+        { "action": "set_number", "label": "turn", "value": -0.25 },
+        { "action": "set_number", "label": "turn", "value": 9.0 }
+      ],
+      "snapshots": [
+        {
+          "nn": { "type": "number", "defined": true, "value": 1.0 },
+          "ang": { "type": "angle", "defined": true, "value": 1.0 },
+          "literal": { "type": "angle", "defined": true, "value": 0.7168146928204138 },
+          "literaldeg": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "turn": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "dep": { "type": "angle", "defined": true, "value": 1.0471975511965979 },
+          "tr": { "type": "number", "defined": true, "value": 0.8414709848078965 },
+          "sum": { "type": "angle", "defined": true, "value": 1.523598775598299 },
+          "ra": { "type": "angle", "defined": true, "value": 0.9948376736367679 },
+          "scale": { "type": "number", "defined": true, "value": 57.29577951308232 }
+        },
+        {
+          "nn": { "type": "number", "defined": true, "value": -0.5 },
+          "ang": { "type": "angle", "defined": true, "value": 5.783185307179586 },
+          "literal": { "type": "angle", "defined": true, "value": 0.7168146928204138 },
+          "literaldeg": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "turn": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "dep": { "type": "angle", "defined": true, "value": 1.0471975511965979 },
+          "tr": { "type": "number", "defined": true, "value": -0.4794255386042032 },
+          "sum": { "type": "angle", "defined": true, "value": 6.306784082777885 },
+          "ra": { "type": "angle", "defined": true, "value": 5.777039824101231 },
+          "scale": { "type": "number", "defined": true, "value": 331.3521102434588 }
+        },
+        {
+          "nn": { "type": "number", "defined": true, "value": 0.0 },
+          "ang": { "type": "angle", "defined": true, "value": 0.0 },
+          "literal": { "type": "angle", "defined": true, "value": 0.7168146928204138 },
+          "literaldeg": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "turn": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "dep": { "type": "angle", "defined": true, "value": 1.0471975511965979 },
+          "tr": { "type": "number", "defined": true, "value": 0.0 },
+          "sum": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "ra": { "type": "angle", "defined": true, "value": 0.0 },
+          "scale": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "nn": { "type": "number", "defined": true, "value": 6.283185307179586 },
+          "ang": { "type": "angle", "defined": true, "value": 6.283185307179586 },
+          "literal": { "type": "angle", "defined": true, "value": 0.7168146928204138 },
+          "literaldeg": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "turn": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "dep": { "type": "angle", "defined": true, "value": 1.0471975511965979 },
+          "tr": { "type": "number", "defined": true, "value": 0.0 },
+          "sum": { "type": "angle", "defined": true, "value": 6.806784082777885 },
+          "ra": { "type": "angle", "defined": true, "value": 6.283185307179586 },
+          "scale": { "type": "number", "defined": true, "value": 360.0 }
+        },
+        {
+          "nn": { "type": "number", "defined": true, "value": -6.283185307179586 },
+          "ang": { "type": "angle", "defined": true, "value": 0.0 },
+          "literal": { "type": "angle", "defined": true, "value": 0.7168146928204138 },
+          "literaldeg": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "turn": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "dep": { "type": "angle", "defined": true, "value": 1.0471975511965979 },
+          "tr": { "type": "number", "defined": true, "value": 0.0 },
+          "sum": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "ra": { "type": "angle", "defined": true, "value": 0.0 },
+          "scale": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "nn": { "type": "number", "defined": true, "value": 12.566370614359172 },
+          "ang": { "type": "angle", "defined": true, "value": 6.283185307179586 },
+          "literal": { "type": "angle", "defined": true, "value": 0.7168146928204138 },
+          "literaldeg": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "turn": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "dep": { "type": "angle", "defined": true, "value": 1.0471975511965979 },
+          "tr": { "type": "number", "defined": true, "value": 0.0 },
+          "sum": { "type": "angle", "defined": true, "value": 6.806784082777885 },
+          "ra": { "type": "angle", "defined": true, "value": 6.283185307179586 },
+          "scale": { "type": "number", "defined": true, "value": 360.0 }
+        },
+        {
+          "nn": { "type": "number", "defined": true, "value": 12.566370614359172 },
+          "ang": { "type": "angle", "defined": true, "value": 6.283185307179586 },
+          "literal": { "type": "angle", "defined": true, "value": 0.7168146928204138 },
+          "literaldeg": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "turn": { "type": "angle", "defined": true, "value": -0.25 },
+          "dep": { "type": "angle", "defined": true, "value": -0.5 },
+          "tr": { "type": "number", "defined": true, "value": 0.0 },
+          "sum": { "type": "angle", "defined": true, "value": 6.033185307179586 },
+          "ra": { "type": "angle", "defined": true, "value": 6.283185307179586 },
+          "scale": { "type": "number", "defined": true, "value": 360.0 }
+        },
+        {
+          "nn": { "type": "number", "defined": true, "value": 12.566370614359172 },
+          "ang": { "type": "angle", "defined": true, "value": 6.283185307179586 },
+          "literal": { "type": "angle", "defined": true, "value": 0.7168146928204138 },
+          "literaldeg": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "turn": { "type": "angle", "defined": true, "value": 9.0 },
+          "dep": { "type": "angle", "defined": true, "value": 18.0 },
+          "tr": { "type": "number", "defined": true, "value": 0.0 },
+          "sum": { "type": "angle", "defined": true, "value": 15.283185307179586 },
+          "ra": { "type": "angle", "defined": true, "value": 6.283185307179586 },
+          "scale": { "type": "number", "defined": true, "value": 360.0 }
+        }
+      ]
+    },
+    {
+      "id": "angle-numeric-002",
+      "group": "angle",
+      "script": [
+        "big = 765°",
+        "negative = -450°",
+        "direct = Angle(2 * pi)",
+        "mult = 3 * negative"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "big": { "type": "angle", "defined": true, "value": 13.351768777756622 },
+          "negative": { "type": "angle", "defined": true, "value": -7.853981633974483 },
+          "direct": { "type": "angle", "defined": true, "value": 6.283185307179586 },
+          "mult": { "type": "angle", "defined": true, "value": -23.56194490192345 }
+        }
+      ]
+    }
+  ]
+}

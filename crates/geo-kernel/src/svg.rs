@@ -1,7 +1,7 @@
 //! Draws a construction as an SVG image.
 
 use crate::algo::vector::start;
-use crate::kernel::{Construction, Value};
+use crate::kernel::{Construction, Kind, Value};
 use std::fmt::Write;
 
 /// The rectangle of the plane that is drawn.
@@ -102,6 +102,7 @@ pub fn render(c: &Construction, view: View, width: u32, height: u32) -> String {
 
     let mut lines = String::new();
     let mut polygons = String::new();
+    let mut angles = String::new();
     let mut segments = String::new();
     let mut circles = String::new();
     let mut points = String::new();
@@ -269,6 +270,46 @@ pub fn render(c: &Construction, view: View, width: u32, height: u32) -> String {
                 }
                 let _ = writeln!(segments, r##"<polyline points="{pts}" fill="none"/>"##);
             }
+            Value::Number(_) if c.kind(id) == Kind::Angle => {
+                let Some(g) = c.angle_geometry(id) else {
+                    continue;
+                };
+                let radius = g.radius(scale);
+                if radius <= 0.0 {
+                    continue;
+                }
+                let (cx, cy) = (sx(g.center.0), sy(g.center.1));
+                let at = |a: f64, r: f64| (cx + r * a.cos(), cy - r * a.sin());
+                let _ = write!(angles, r#"<path d="M {cx:.2},{cy:.2}"#);
+                if g.is_right() {
+                    let side = radius * std::f64::consts::FRAC_1_SQRT_2;
+                    let a = at(g.start, side);
+                    let b = at(g.start + g.sweep / 2.0, radius);
+                    let d = at(g.start + g.sweep, side);
+                    for (x, y) in [a, b, d] {
+                        let _ = write!(angles, " L {x:.2},{y:.2}");
+                    }
+                } else {
+                    let (x, y) = at(g.start, radius);
+                    let _ = write!(angles, " L {x:.2},{y:.2}");
+                    // Two arcs are required when the endpoints coincide.
+                    let sections = if g.sweep == std::f64::consts::TAU {
+                        2
+                    } else {
+                        1
+                    };
+                    let sweep = g.sweep / f64::from(sections);
+                    let large = u8::from(sweep > std::f64::consts::PI);
+                    for i in 1..=sections {
+                        let (x, y) = at(g.start + f64::from(i) * sweep, radius);
+                        let _ = write!(
+                            angles,
+                            " A {radius:.2},{radius:.2} 0 {large} 0 {x:.2},{y:.2}"
+                        );
+                    }
+                }
+                let _ = writeln!(angles, r#" Z"/>"#);
+            }
             Value::Number(_) | Value::Bool(_) | Value::List { .. } | Value::Undefined => {}
         }
     }
@@ -288,6 +329,14 @@ pub fn render(c: &Construction, view: View, width: u32, height: u32) -> String {
     );
     out.push_str(&polygons);
     let _ = writeln!(out, "</g>");
+    if !angles.is_empty() {
+        let _ = writeln!(
+            out,
+            r##"<g fill="#2e7d32" fill-opacity="0.1" stroke="#2e7d32" stroke-width="1.5">"##
+        );
+        out.push_str(&angles);
+        let _ = writeln!(out, "</g>");
+    }
     let _ = writeln!(out, r##"<g stroke="#9aa0a6" stroke-width="1">"##);
     out.push_str(&lines);
     let _ = writeln!(out, "</g>");
@@ -364,5 +413,31 @@ fn write_paths(out: &mut String, paths: &[crate::plot::Path]) {
             r##"<polyline points="{}" fill="none"/>"##,
             pts.trim_end()
         );
+    }
+}
+
+#[cfg(test)]
+mod angle_tests {
+    use super::*;
+
+    #[test]
+    fn angle_paths_use_the_right_square_and_a_counterclockwise_reflex_arc() {
+        let c = crate::script::load(
+            "A = (2, 0)\nB = (0, 0)\nC = (0, 2)\nright = Angle(A, B, C)\nreflex = Angle(C, B, A)\nn = Angle(2)\n",
+        ).unwrap();
+        let svg = render(
+            &c,
+            View {
+                xmin: -4.0,
+                ymin: -4.0,
+                xmax: 4.0,
+                ymax: 4.0,
+            },
+            400,
+            400,
+        );
+        assert_eq!(svg.matches("<path").count(), 2);
+        assert!(svg.contains("M 200.00,200.00 L 221.21,200.00 L 221.21,178.79 L 200.00,178.79 Z"));
+        assert!(svg.contains("A 30.00,30.00 0 1 0 230.00,200.00 Z"));
     }
 }

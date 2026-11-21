@@ -1,0 +1,814 @@
+{
+  "schema": 1,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "angle-lines-001",
+      "group": "angle",
+      "script": [
+        "A = (0, 0)",
+        "B = (2, 0)",
+        "C = (0, 2)",
+        "D = (2, 2)",
+        "ll = Line(A, B)",
+        "mm = Line(C, D)",
+        "ang = Angle(ll, mm)",
+        "back = Angle(mm, ll)",
+        "same = Angle(ll, ll)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "D", "x": -2.0, "y": 2.0 },
+        { "action": "move", "label": "D", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "D", "x": 2.0, "y": 4.0 },
+        { "action": "move", "label": "D", "x": 0.0, "y": 2.0 },
+        { "action": "move", "label": "D", "x": 3.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "ll": { "type": "line", "defined": true, "a": 0.0, "b": 2.0, "c": 0.0 },
+          "mm": { "type": "line", "defined": true, "a": 0.0, "b": 2.0, "c": -4.0 },
+          "ang": { "type": "angle", "defined": true, "value": 0.0 },
+          "back": { "type": "angle", "defined": true, "value": 0.0 },
+          "same": { "type": "angle", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": -2.0, "y": 2.0 },
+          "ll": { "type": "line", "defined": true, "a": 0.0, "b": 2.0, "c": 0.0 },
+          "mm": { "type": "line", "defined": true, "a": 0.0, "b": -2.0, "c": 4.0 },
+          "ang": { "type": "angle", "defined": true, "value": 3.141592653589793 },
+          "back": { "type": "angle", "defined": true, "value": 3.141592653589793 },
+          "same": { "type": "angle", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "ll": { "type": "line", "defined": true, "a": 0.0, "b": 2.0, "c": 0.0 },
+          "mm": { "type": "line", "defined": true, "a": 2.0, "b": 0.0, "c": 0.0 },
+          "ang": { "type": "angle", "defined": true, "value": 4.71238898038469 },
+          "back": { "type": "angle", "defined": true, "value": 1.5707963267948966 },
+          "same": { "type": "angle", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "ll": { "type": "line", "defined": true, "a": 0.0, "b": 2.0, "c": 0.0 },
+          "mm": { "type": "line", "defined": true, "a": -2.0, "b": 2.0, "c": -4.0 },
+          "ang": { "type": "angle", "defined": true, "value": 0.7853981633974483 },
+          "back": { "type": "angle", "defined": true, "value": 5.497787143782138 },
+          "same": { "type": "angle", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "ll": { "type": "line", "defined": true, "a": 0.0, "b": 2.0, "c": 0.0 },
+          "mm": { "type": "line", "defined": false },
+          "ang": { "type": "angle", "defined": true, "value": 0.0 },
+          "back": { "type": "angle", "defined": true, "value": 0.0 },
+          "same": { "type": "angle", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "ll": { "type": "line", "defined": true, "a": 0.0, "b": 2.0, "c": 0.0 },
+          "mm": { "type": "line", "defined": true, "a": 1.0, "b": 3.0, "c": -6.0 },
+          "ang": { "type": "angle", "defined": true, "value": 5.961434752782944 },
+          "back": { "type": "angle", "defined": true, "value": 0.3217505543966422 },
+          "same": { "type": "angle", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "angle-lines-002",
+      "group": "angle",
+      "script": [
+        "A = (0, 0)",
+        "B = (2, 0)",
+        "C = (0, 2)",
+        "ll = Line(A, B)",
+        "mm = Line(B, A)",
+        "nn = PerpendicularLine(C, ll)",
+        "op = Angle(ll, mm)",
+        "rt = Angle(ll, nn)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 1.0, "y": 1.0 },
+        { "action": "move", "label": "C", "x": 4.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "ll": { "type": "line", "defined": true, "a": 0.0, "b": 2.0, "c": 0.0 },
+          "mm": { "type": "line", "defined": true, "a": 0.0, "b": -2.0, "c": 0.0 },
+          "nn": { "type": "line", "defined": true, "a": -2.0, "b": 0.0, "c": 0.0 },
+          "op": { "type": "angle", "defined": true, "value": 3.141592653589793 },
+          "rt": { "type": "angle", "defined": true, "value": 1.5707963267948966 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "ll": { "type": "line", "defined": false },
+          "mm": { "type": "line", "defined": false },
+          "nn": { "type": "line", "defined": false },
+          "op": { "type": "angle", "defined": true, "value": 0.0 },
+          "rt": { "type": "angle", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "ll": { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": 0.0 },
+          "mm": { "type": "line", "defined": true, "a": 1.0, "b": -1.0, "c": 0.0 },
+          "nn": { "type": "line", "defined": true, "a": -1.0, "b": -1.0, "c": 2.0 },
+          "op": { "type": "angle", "defined": true, "value": 3.141592653589793 },
+          "rt": { "type": "angle", "defined": true, "value": 1.5707963267948966 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "ll": { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": 0.0 },
+          "mm": { "type": "line", "defined": true, "a": 1.0, "b": -1.0, "c": 0.0 },
+          "nn": { "type": "line", "defined": true, "a": -1.0, "b": -1.0, "c": 4.0 },
+          "op": { "type": "angle", "defined": true, "value": 3.141592653589793 },
+          "rt": { "type": "angle", "defined": true, "value": 1.5707963267948966 }
+        }
+      ]
+    },
+    {
+      "id": "angle-lines-003",
+      "group": "angle",
+      "script": [
+        "A = (3.51, -2.6)",
+        "B = (-5.77, -4.89)",
+        "C = (5.92, -6.04)",
+        "D = (2.47, 2.41)",
+        "ll = Line(A, B)",
+        "mm = Line(C, D)",
+        "ang = Angle(ll, mm)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 5.92, "y": -6.04 },
+        { "action": "move", "label": "D", "x": -5.77, "y": -4.89 },
+        { "action": "move", "label": "B", "x": 3.51, "y": -2.6 },
+        { "action": "move", "label": "B", "x": 2.45, "y": -7.39 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 3.51, "y": -2.6 },
+          "B": { "type": "point", "defined": true, "x": -5.77, "y": -4.89 },
+          "C": { "type": "point", "defined": true, "x": 5.92, "y": -6.04 },
+          "D": { "type": "point", "defined": true, "x": 2.47, "y": 2.41 },
+          "ll": { "type": "line", "defined": true, "a": 2.2899999999999996, "b": -9.28, "c": -32.16589999999999 },
+          "mm": { "type": "line", "defined": true, "a": -8.45, "b": -3.4499999999999997, "c": 29.186 },
+          "ang": { "type": "angle", "defined": true, "value": 4.8580825350397845 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.51, "y": -2.6 },
+          "B": { "type": "point", "defined": true, "x": 5.92, "y": -6.04 },
+          "C": { "type": "point", "defined": true, "x": 5.92, "y": -6.04 },
+          "D": { "type": "point", "defined": true, "x": 2.47, "y": 2.41 },
+          "ll": { "type": "line", "defined": true, "a": 3.44, "b": 2.41, "c": -5.808399999999999 },
+          "mm": { "type": "line", "defined": true, "a": -8.45, "b": -3.4499999999999997, "c": 29.186 },
+          "ang": { "type": "angle", "defined": true, "value": 2.9181039122822625 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.51, "y": -2.6 },
+          "B": { "type": "point", "defined": true, "x": 5.92, "y": -6.04 },
+          "C": { "type": "point", "defined": true, "x": 5.92, "y": -6.04 },
+          "D": { "type": "point", "defined": true, "x": -5.77, "y": -4.89 },
+          "ll": { "type": "line", "defined": true, "a": 3.44, "b": 2.41, "c": -5.808399999999999 },
+          "mm": { "type": "line", "defined": true, "a": -1.1500000000000004, "b": -11.69, "c": -63.7996 },
+          "ang": { "type": "angle", "defined": true, "value": 4.003213757968094 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.51, "y": -2.6 },
+          "B": { "type": "point", "defined": true, "x": 3.51, "y": -2.6 },
+          "C": { "type": "point", "defined": true, "x": 5.92, "y": -6.04 },
+          "D": { "type": "point", "defined": true, "x": -5.77, "y": -4.89 },
+          "ll": { "type": "line", "defined": false },
+          "mm": { "type": "line", "defined": true, "a": -1.1500000000000004, "b": -11.69, "c": -63.7996 },
+          "ang": { "type": "angle", "defined": true, "value": 3.141592653589793 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.51, "y": -2.6 },
+          "B": { "type": "point", "defined": true, "x": 2.45, "y": -7.39 },
+          "C": { "type": "point", "defined": true, "x": 5.92, "y": -6.04 },
+          "D": { "type": "point", "defined": true, "x": -5.77, "y": -4.89 },
+          "ll": { "type": "line", "defined": true, "a": 4.789999999999999, "b": -1.0599999999999996, "c": -19.568899999999996 },
+          "mm": { "type": "line", "defined": true, "a": -1.1500000000000004, "b": -11.69, "c": -63.7996 },
+          "ang": { "type": "angle", "defined": true, "value": 4.832114391331776 }
+        }
+      ]
+    },
+    {
+      "id": "angle-lines-004",
+      "group": "angle",
+      "script": [
+        "A = (-2.32, 3.55)",
+        "B = (7.68, -1.13)",
+        "C = (7.81, 0.89)",
+        "D = (-5.41, 5.7)",
+        "ll = Line(A, B)",
+        "mm = Line(C, D)",
+        "ang = Angle(ll, mm)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 7.81, "y": 0.89 },
+        { "action": "move", "label": "D", "x": 7.68, "y": -1.13 },
+        { "action": "move", "label": "B", "x": -2.32, "y": 3.55 },
+        { "action": "move", "label": "B", "x": 1.01, "y": -2.79 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -2.32, "y": 3.55 },
+          "B": { "type": "point", "defined": true, "x": 7.68, "y": -1.13 },
+          "C": { "type": "point", "defined": true, "x": 7.81, "y": 0.89 },
+          "D": { "type": "point", "defined": true, "x": -5.41, "y": 5.7 },
+          "ll": { "type": "line", "defined": true, "a": 4.68, "b": 10.0, "c": -24.6424 },
+          "mm": { "type": "line", "defined": true, "a": -4.8100000000000005, "b": -13.219999999999999, "c": 49.3319 },
+          "ang": { "type": "angle", "defined": true, "value": 3.23036094713706 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.32, "y": 3.55 },
+          "B": { "type": "point", "defined": true, "x": 7.81, "y": 0.89 },
+          "C": { "type": "point", "defined": true, "x": 7.81, "y": 0.89 },
+          "D": { "type": "point", "defined": true, "x": -5.41, "y": 5.7 },
+          "ll": { "type": "line", "defined": true, "a": 2.6599999999999997, "b": 10.129999999999999, "c": -29.790299999999995 },
+          "mm": { "type": "line", "defined": true, "a": -4.8100000000000005, "b": -13.219999999999999, "c": 49.3319 },
+          "ang": { "type": "angle", "defined": true, "value": 3.049428593978004 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.32, "y": 3.55 },
+          "B": { "type": "point", "defined": true, "x": 7.81, "y": 0.89 },
+          "C": { "type": "point", "defined": true, "x": 7.81, "y": 0.89 },
+          "D": { "type": "point", "defined": true, "x": 7.68, "y": -1.13 },
+          "ll": { "type": "line", "defined": true, "a": 2.6599999999999997, "b": 10.129999999999999, "c": -29.790299999999995 },
+          "mm": { "type": "line", "defined": true, "a": 2.02, "b": -0.1299999999999999, "c": -15.660499999999999 },
+          "ang": { "type": "angle", "defined": true, "value": 4.904910311617855 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.32, "y": 3.55 },
+          "B": { "type": "point", "defined": true, "x": -2.32, "y": 3.55 },
+          "C": { "type": "point", "defined": true, "x": 7.81, "y": 0.89 },
+          "D": { "type": "point", "defined": true, "x": 7.68, "y": -1.13 },
+          "ll": { "type": "line", "defined": false },
+          "mm": { "type": "line", "defined": true, "a": 2.02, "b": -0.1299999999999999, "c": -15.660499999999999 },
+          "ang": { "type": "angle", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.32, "y": 3.55 },
+          "B": { "type": "point", "defined": true, "x": 1.01, "y": -2.79 },
+          "C": { "type": "point", "defined": true, "x": 7.81, "y": 0.89 },
+          "D": { "type": "point", "defined": true, "x": 7.68, "y": -1.13 },
+          "ll": { "type": "line", "defined": true, "a": 6.34, "b": 3.33, "c": 2.8872999999999998 },
+          "mm": { "type": "line", "defined": true, "a": 2.02, "b": -0.1299999999999999, "c": -15.660499999999999 },
+          "ang": { "type": "angle", "defined": true, "value": 5.735285045058235 }
+        }
+      ]
+    },
+    {
+      "id": "angle-lines-005",
+      "group": "angle",
+      "script": [
+        "A = (-2.59, 4.49)",
+        "B = (0.63, 4.4)",
+        "C = (4.97, 0.38)",
+        "D = (-2.18, 0.74)",
+        "ll = Line(A, B)",
+        "mm = Line(C, D)",
+        "ang = Angle(ll, mm)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 4.97, "y": 0.38 },
+        { "action": "move", "label": "D", "x": 0.63, "y": 4.4 },
+        { "action": "move", "label": "B", "x": -2.59, "y": 4.49 },
+        { "action": "move", "label": "B", "x": 7.83, "y": -3.74 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -2.59, "y": 4.49 },
+          "B": { "type": "point", "defined": true, "x": 0.63, "y": 4.4 },
+          "C": { "type": "point", "defined": true, "x": 4.97, "y": 0.38 },
+          "D": { "type": "point", "defined": true, "x": -2.18, "y": 0.74 },
+          "ll": { "type": "line", "defined": true, "a": 0.08999999999999986, "b": 3.2199999999999998, "c": -14.2247 },
+          "mm": { "type": "line", "defined": true, "a": -0.36, "b": -7.15, "c": 4.5062 },
+          "ang": { "type": "angle", "defined": true, "value": 3.119228521083403 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.59, "y": 4.49 },
+          "B": { "type": "point", "defined": true, "x": 4.97, "y": 0.38 },
+          "C": { "type": "point", "defined": true, "x": 4.97, "y": 0.38 },
+          "D": { "type": "point", "defined": true, "x": -2.18, "y": 0.74 },
+          "ll": { "type": "line", "defined": true, "a": 4.11, "b": 7.56, "c": -23.299500000000002 },
+          "mm": { "type": "line", "defined": true, "a": -0.36, "b": -7.15, "c": 4.5062 },
+          "ang": { "type": "angle", "defined": true, "value": 3.589241000570065 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.59, "y": 4.49 },
+          "B": { "type": "point", "defined": true, "x": 4.97, "y": 0.38 },
+          "C": { "type": "point", "defined": true, "x": 4.97, "y": 0.38 },
+          "D": { "type": "point", "defined": true, "x": 0.63, "y": 4.4 },
+          "ll": { "type": "line", "defined": true, "a": 4.11, "b": 7.56, "c": -23.299500000000002 },
+          "mm": { "type": "line", "defined": true, "a": -4.0200000000000005, "b": -4.34, "c": 21.628600000000002 },
+          "ang": { "type": "angle", "defined": true, "value": 2.8924088392530334 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.59, "y": 4.49 },
+          "B": { "type": "point", "defined": true, "x": -2.59, "y": 4.49 },
+          "C": { "type": "point", "defined": true, "x": 4.97, "y": 0.38 },
+          "D": { "type": "point", "defined": true, "x": 0.63, "y": 4.4 },
+          "ll": { "type": "line", "defined": false },
+          "mm": { "type": "line", "defined": true, "a": -4.0200000000000005, "b": -4.34, "c": 21.628600000000002 },
+          "ang": { "type": "angle", "defined": true, "value": 3.141592653589793 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.59, "y": 4.49 },
+          "B": { "type": "point", "defined": true, "x": 7.83, "y": -3.74 },
+          "C": { "type": "point", "defined": true, "x": 4.97, "y": 0.38 },
+          "D": { "type": "point", "defined": true, "x": 0.63, "y": 4.4 },
+          "ll": { "type": "line", "defined": true, "a": 8.23, "b": 10.42, "c": -25.470100000000002 },
+          "mm": { "type": "line", "defined": true, "a": -4.0200000000000005, "b": -4.34, "c": 21.628600000000002 },
+          "ang": { "type": "angle", "defined": true, "value": 3.062960519880554 }
+        }
+      ]
+    },
+    {
+      "id": "angle-lines-006",
+      "group": "angle",
+      "script": [
+        "A = (-4.98, -7.4)",
+        "B = (-6.65, 6.57)",
+        "C = (-6.53, 2.63)",
+        "D = (6.28, 7.46)",
+        "ll = Line(A, B)",
+        "mm = Line(C, D)",
+        "ang = Angle(ll, mm)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": -6.53, "y": 2.63 },
+        { "action": "move", "label": "D", "x": -6.65, "y": 6.57 },
+        { "action": "move", "label": "B", "x": -4.98, "y": -7.4 },
+        { "action": "move", "label": "B", "x": -3.04, "y": 0.34 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -4.98, "y": -7.4 },
+          "B": { "type": "point", "defined": true, "x": -6.65, "y": 6.57 },
+          "C": { "type": "point", "defined": true, "x": -6.53, "y": 2.63 },
+          "D": { "type": "point", "defined": true, "x": 6.28, "y": 7.46 },
+          "ll": { "type": "line", "defined": true, "a": -13.97, "b": -1.67, "c": -81.92860000000002 },
+          "mm": { "type": "line", "defined": true, "a": -4.83, "b": 12.81, "c": -65.2302 },
+          "ang": { "type": "angle", "defined": true, "value": 4.953977700497709 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -4.98, "y": -7.4 },
+          "B": { "type": "point", "defined": true, "x": -6.53, "y": 2.63 },
+          "C": { "type": "point", "defined": true, "x": -6.53, "y": 2.63 },
+          "D": { "type": "point", "defined": true, "x": 6.28, "y": 7.46 },
+          "ll": { "type": "line", "defined": true, "a": -10.030000000000001, "b": -1.5499999999999998, "c": -61.4194 },
+          "mm": { "type": "line", "defined": true, "a": -4.83, "b": 12.81, "c": -65.2302 },
+          "ang": { "type": "angle", "defined": true, "value": 4.919631444763857 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -4.98, "y": -7.4 },
+          "B": { "type": "point", "defined": true, "x": -6.53, "y": 2.63 },
+          "C": { "type": "point", "defined": true, "x": -6.53, "y": 2.63 },
+          "D": { "type": "point", "defined": true, "x": -6.65, "y": 6.57 },
+          "ll": { "type": "line", "defined": true, "a": -10.030000000000001, "b": -1.5499999999999998, "c": -61.4194 },
+          "mm": { "type": "line", "defined": true, "a": -3.9400000000000004, "b": -0.1200000000000001, "c": -25.412600000000005 },
+          "ang": { "type": "angle", "defined": true, "value": 6.160309211649819 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -4.98, "y": -7.4 },
+          "B": { "type": "point", "defined": true, "x": -4.98, "y": -7.4 },
+          "C": { "type": "point", "defined": true, "x": -6.53, "y": 2.63 },
+          "D": { "type": "point", "defined": true, "x": -6.65, "y": 6.57 },
+          "ll": { "type": "line", "defined": false },
+          "mm": { "type": "line", "defined": true, "a": -3.9400000000000004, "b": -0.1200000000000001, "c": -25.412600000000005 },
+          "ang": { "type": "angle", "defined": true, "value": 3.141592653589793 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -4.98, "y": -7.4 },
+          "B": { "type": "point", "defined": true, "x": -3.04, "y": 0.34 },
+          "C": { "type": "point", "defined": true, "x": -6.53, "y": 2.63 },
+          "D": { "type": "point", "defined": true, "x": -6.65, "y": 6.57 },
+          "ll": { "type": "line", "defined": true, "a": -7.74, "b": 1.9400000000000004, "c": -24.189200000000003 },
+          "mm": { "type": "line", "defined": true, "a": -3.9400000000000004, "b": -0.1200000000000001, "c": -25.412600000000005 },
+          "ang": { "type": "angle", "defined": true, "value": 0.27603400635671516 }
+        }
+      ]
+    },
+    {
+      "id": "angle-lines-007",
+      "group": "angle",
+      "script": [
+        "A = (4.79, 7.03)",
+        "B = (4.48, -0.16)",
+        "C = (-7.79, 3.33)",
+        "D = (0.41, -1.11)",
+        "ll = Line(A, B)",
+        "mm = Line(C, D)",
+        "ang = Angle(ll, mm)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": -7.79, "y": 3.33 },
+        { "action": "move", "label": "D", "x": 4.48, "y": -0.16 },
+        { "action": "move", "label": "B", "x": 4.79, "y": 7.03 },
+        { "action": "move", "label": "B", "x": -0.57, "y": -5.07 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 4.79, "y": 7.03 },
+          "B": { "type": "point", "defined": true, "x": 4.48, "y": -0.16 },
+          "C": { "type": "point", "defined": true, "x": -7.79, "y": 3.33 },
+          "D": { "type": "point", "defined": true, "x": 0.41, "y": -1.11 },
+          "ll": { "type": "line", "defined": true, "a": 7.19, "b": -0.3099999999999996, "c": -32.2608 },
+          "mm": { "type": "line", "defined": true, "a": 4.44, "b": 8.2, "c": 7.281600000000001 },
+          "ang": { "type": "angle", "defined": true, "value": 1.1176194834772435 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 4.79, "y": 7.03 },
+          "B": { "type": "point", "defined": true, "x": -7.79, "y": 3.33 },
+          "C": { "type": "point", "defined": true, "x": -7.79, "y": 3.33 },
+          "D": { "type": "point", "defined": true, "x": 0.41, "y": -1.11 },
+          "ll": { "type": "line", "defined": true, "a": 3.7, "b": -12.58, "c": 70.7144 },
+          "mm": { "type": "line", "defined": true, "a": 4.44, "b": 8.2, "c": 7.281600000000001 },
+          "ang": { "type": "angle", "defined": true, "value": 2.3592756170392994 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 4.79, "y": 7.03 },
+          "B": { "type": "point", "defined": true, "x": -7.79, "y": 3.33 },
+          "C": { "type": "point", "defined": true, "x": -7.79, "y": 3.33 },
+          "D": { "type": "point", "defined": true, "x": 4.48, "y": -0.16 },
+          "ll": { "type": "line", "defined": true, "a": 3.7, "b": -12.58, "c": 70.7144 },
+          "mm": { "type": "line", "defined": true, "a": 3.49, "b": 12.27, "c": -13.672000000000002 },
+          "ang": { "type": "angle", "defined": true, "value": 2.57842600369712 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 4.79, "y": 7.03 },
+          "B": { "type": "point", "defined": true, "x": 4.79, "y": 7.03 },
+          "C": { "type": "point", "defined": true, "x": -7.79, "y": 3.33 },
+          "D": { "type": "point", "defined": true, "x": 4.48, "y": -0.16 },
+          "ll": { "type": "line", "defined": false },
+          "mm": { "type": "line", "defined": true, "a": 3.49, "b": 12.27, "c": -13.672000000000002 },
+          "ang": { "type": "angle", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 4.79, "y": 7.03 },
+          "B": { "type": "point", "defined": true, "x": -0.57, "y": -5.07 },
+          "C": { "type": "point", "defined": true, "x": -7.79, "y": 3.33 },
+          "D": { "type": "point", "defined": true, "x": 4.48, "y": -0.16 },
+          "ll": { "type": "line", "defined": true, "a": 12.100000000000001, "b": -5.36, "c": -20.278200000000005 },
+          "mm": { "type": "line", "defined": true, "a": 3.49, "b": 12.27, "c": -13.672000000000002 },
+          "ang": { "type": "angle", "defined": true, "value": 1.7106778901227229 }
+        }
+      ]
+    },
+    {
+      "id": "angle-lines-008",
+      "group": "angle",
+      "script": [
+        "A = (-6.82, 2.24)",
+        "B = (-3.2, -5.8)",
+        "C = (4.16, 3.28)",
+        "D = (1.18, -4.12)",
+        "ll = Line(A, B)",
+        "mm = Line(C, D)",
+        "ang = Angle(ll, mm)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 4.16, "y": 3.28 },
+        { "action": "move", "label": "D", "x": -3.2, "y": -5.8 },
+        { "action": "move", "label": "B", "x": -6.82, "y": 2.24 },
+        { "action": "move", "label": "B", "x": 0.15, "y": -5.74 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -6.82, "y": 2.24 },
+          "B": { "type": "point", "defined": true, "x": -3.2, "y": -5.8 },
+          "C": { "type": "point", "defined": true, "x": 4.16, "y": 3.28 },
+          "D": { "type": "point", "defined": true, "x": 1.18, "y": -4.12 },
+          "ll": { "type": "line", "defined": true, "a": 8.04, "b": 3.62, "c": 46.724 },
+          "mm": { "type": "line", "defined": true, "a": 7.4, "b": -2.9800000000000004, "c": -21.009600000000002 },
+          "ang": { "type": "angle", "defined": true, "value": 5.477290414777058 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.82, "y": 2.24 },
+          "B": { "type": "point", "defined": true, "x": 4.16, "y": 3.28 },
+          "C": { "type": "point", "defined": true, "x": 4.16, "y": 3.28 },
+          "D": { "type": "point", "defined": true, "x": 1.18, "y": -4.12 },
+          "ll": { "type": "line", "defined": true, "a": -1.0399999999999996, "b": 10.98, "c": -31.688 },
+          "mm": { "type": "line", "defined": true, "a": 7.4, "b": -2.9800000000000004, "c": -21.009600000000002 },
+          "ang": { "type": "angle", "defined": true, "value": 4.235118928437837 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.82, "y": 2.24 },
+          "B": { "type": "point", "defined": true, "x": 4.16, "y": 3.28 },
+          "C": { "type": "point", "defined": true, "x": 4.16, "y": 3.28 },
+          "D": { "type": "point", "defined": true, "x": -3.2, "y": -5.8 },
+          "ll": { "type": "line", "defined": true, "a": -1.0399999999999996, "b": 10.98, "c": -31.688 },
+          "mm": { "type": "line", "defined": true, "a": 9.08, "b": -7.36, "c": -13.632 },
+          "ang": { "type": "angle", "defined": true, "value": 3.9367985112816757 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.82, "y": 2.24 },
+          "B": { "type": "point", "defined": true, "x": -6.82, "y": 2.24 },
+          "C": { "type": "point", "defined": true, "x": 4.16, "y": 3.28 },
+          "D": { "type": "point", "defined": true, "x": -3.2, "y": -5.8 },
+          "ll": { "type": "line", "defined": false },
+          "mm": { "type": "line", "defined": true, "a": 9.08, "b": -7.36, "c": -13.632 },
+          "ang": { "type": "angle", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -6.82, "y": 2.24 },
+          "B": { "type": "point", "defined": true, "x": 0.15, "y": -5.74 },
+          "C": { "type": "point", "defined": true, "x": 4.16, "y": 3.28 },
+          "D": { "type": "point", "defined": true, "x": -3.2, "y": -5.8 },
+          "ll": { "type": "line", "defined": true, "a": 7.98, "b": 6.970000000000001, "c": 38.81080000000001 },
+          "mm": { "type": "line", "defined": true, "a": 9.08, "b": -7.36, "c": -13.632 },
+          "ang": { "type": "angle", "defined": true, "value": 4.884088633433157 }
+        }
+      ]
+    },
+    {
+      "id": "angle-lines-009",
+      "group": "angle",
+      "script": [
+        "A = (3.77, 3.82)",
+        "B = (2.41, -5.15)",
+        "C = (-4.31, 5.7)",
+        "D = (5.01, 7.58)",
+        "ll = Line(A, B)",
+        "mm = Line(C, D)",
+        "ang = Angle(ll, mm)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": -4.31, "y": 5.7 },
+        { "action": "move", "label": "D", "x": 2.41, "y": -5.15 },
+        { "action": "move", "label": "B", "x": 3.77, "y": 3.82 },
+        { "action": "move", "label": "B", "x": 0.31, "y": 2.59 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 3.77, "y": 3.82 },
+          "B": { "type": "point", "defined": true, "x": 2.41, "y": -5.15 },
+          "C": { "type": "point", "defined": true, "x": -4.31, "y": 5.7 },
+          "D": { "type": "point", "defined": true, "x": 5.01, "y": 7.58 },
+          "ll": { "type": "line", "defined": true, "a": 8.97, "b": -1.3599999999999999, "c": -28.621700000000004 },
+          "mm": { "type": "line", "defined": true, "a": -1.88, "b": 9.32, "c": -61.2268 },
+          "ang": { "type": "angle", "defined": true, "value": 1.9203125501956302 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.77, "y": 3.82 },
+          "B": { "type": "point", "defined": true, "x": -4.31, "y": 5.7 },
+          "C": { "type": "point", "defined": true, "x": -4.31, "y": 5.7 },
+          "D": { "type": "point", "defined": true, "x": 5.01, "y": 7.58 },
+          "ll": { "type": "line", "defined": true, "a": -1.8800000000000003, "b": -8.08, "c": 37.953199999999995 },
+          "mm": { "type": "line", "defined": true, "a": -1.88, "b": 9.32, "c": -61.2268 },
+          "ang": { "type": "angle", "defined": true, "value": 3.569244234248908 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.77, "y": 3.82 },
+          "B": { "type": "point", "defined": true, "x": -4.31, "y": 5.7 },
+          "C": { "type": "point", "defined": true, "x": -4.31, "y": 5.7 },
+          "D": { "type": "point", "defined": true, "x": 2.41, "y": -5.15 },
+          "ll": { "type": "line", "defined": true, "a": -1.8800000000000003, "b": -8.08, "c": 37.953199999999995 },
+          "mm": { "type": "line", "defined": true, "a": 10.850000000000001, "b": 6.72, "c": 8.459499999999998 },
+          "ang": { "type": "angle", "defined": true, "value": 2.3539317544561253 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.77, "y": 3.82 },
+          "B": { "type": "point", "defined": true, "x": 3.77, "y": 3.82 },
+          "C": { "type": "point", "defined": true, "x": -4.31, "y": 5.7 },
+          "D": { "type": "point", "defined": true, "x": 2.41, "y": -5.15 },
+          "ll": { "type": "line", "defined": false },
+          "mm": { "type": "line", "defined": true, "a": 10.850000000000001, "b": 6.72, "c": 8.459499999999998 },
+          "ang": { "type": "angle", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.77, "y": 3.82 },
+          "B": { "type": "point", "defined": true, "x": 0.31, "y": 2.59 },
+          "C": { "type": "point", "defined": true, "x": -4.31, "y": 5.7 },
+          "D": { "type": "point", "defined": true, "x": 2.41, "y": -5.15 },
+          "ll": { "type": "line", "defined": true, "a": 1.23, "b": -3.46, "c": 8.580099999999998 },
+          "mm": { "type": "line", "defined": true, "a": 10.850000000000001, "b": 6.72, "c": 8.459499999999998 },
+          "ang": { "type": "angle", "defined": true, "value": 1.7837674255620628 }
+        }
+      ]
+    },
+    {
+      "id": "angle-lines-010",
+      "group": "angle",
+      "script": [
+        "A = (7.46, 5.56)",
+        "B = (-2.98, 7.22)",
+        "C = (7.86, 5.12)",
+        "D = (7.33, 0.66)",
+        "ll = Line(A, B)",
+        "mm = Line(C, D)",
+        "ang = Angle(ll, mm)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 7.86, "y": 5.12 },
+        { "action": "move", "label": "D", "x": -2.98, "y": 7.22 },
+        { "action": "move", "label": "B", "x": 7.46, "y": 5.56 },
+        { "action": "move", "label": "B", "x": -3.35, "y": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 7.46, "y": 5.56 },
+          "B": { "type": "point", "defined": true, "x": -2.98, "y": 7.22 },
+          "C": { "type": "point", "defined": true, "x": 7.86, "y": 5.12 },
+          "D": { "type": "point", "defined": true, "x": 7.33, "y": 0.66 },
+          "ll": { "type": "line", "defined": true, "a": -1.6600000000000001, "b": -10.44, "c": 70.42999999999999 },
+          "mm": { "type": "line", "defined": true, "a": 4.46, "b": -0.5300000000000002, "c": -32.342 },
+          "ang": { "type": "angle", "defined": true, "value": 1.6102007354954806 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.46, "y": 5.56 },
+          "B": { "type": "point", "defined": true, "x": 7.86, "y": 5.12 },
+          "C": { "type": "point", "defined": true, "x": 7.86, "y": 5.12 },
+          "D": { "type": "point", "defined": true, "x": 7.33, "y": 0.66 },
+          "ll": { "type": "line", "defined": true, "a": 0.4399999999999995, "b": 0.40000000000000036, "c": -5.506399999999999 },
+          "mm": { "type": "line", "defined": true, "a": 4.46, "b": -0.5300000000000002, "c": -32.342 },
+          "ang": { "type": "angle", "defined": true, "value": 5.427090847459906 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.46, "y": 5.56 },
+          "B": { "type": "point", "defined": true, "x": 7.86, "y": 5.12 },
+          "C": { "type": "point", "defined": true, "x": 7.86, "y": 5.12 },
+          "D": { "type": "point", "defined": true, "x": -2.98, "y": 7.22 },
+          "ll": { "type": "line", "defined": true, "a": 0.4399999999999995, "b": 0.40000000000000036, "c": -5.506399999999999 },
+          "mm": { "type": "line", "defined": true, "a": -2.0999999999999996, "b": -10.84, "c": 72.0068 },
+          "ang": { "type": "angle", "defined": true, "value": 3.7832173633765724 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.46, "y": 5.56 },
+          "B": { "type": "point", "defined": true, "x": 7.46, "y": 5.56 },
+          "C": { "type": "point", "defined": true, "x": 7.86, "y": 5.12 },
+          "D": { "type": "point", "defined": true, "x": -2.98, "y": 7.22 },
+          "ll": { "type": "line", "defined": false },
+          "mm": { "type": "line", "defined": true, "a": -2.0999999999999996, "b": -10.84, "c": 72.0068 },
+          "ang": { "type": "angle", "defined": true, "value": 3.141592653589793 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 7.46, "y": 5.56 },
+          "B": { "type": "point", "defined": true, "x": -3.35, "y": 4.0 },
+          "C": { "type": "point", "defined": true, "x": 7.86, "y": 5.12 },
+          "D": { "type": "point", "defined": true, "x": -2.98, "y": 7.22 },
+          "ll": { "type": "line", "defined": true, "a": 1.5599999999999996, "b": -10.81, "c": 48.465999999999994 },
+          "mm": { "type": "line", "defined": true, "a": -2.0999999999999996, "b": -10.84, "c": 72.0068 },
+          "ang": { "type": "angle", "defined": true, "value": 5.948507379675662 }
+        }
+      ]
+    },
+    {
+      "id": "angle-lines-011",
+      "group": "angle",
+      "script": [
+        "A = (0, 0)",
+        "B = (2, 0)",
+        "C = (0, 0)",
+        "D = (0, 2)",
+        "ll = Line(A, B)",
+        "mm = Line(C, D)",
+        "ang = Angle(ll, mm)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "D", "x": 1.0E-9, "y": 1.0E-9 },
+        { "action": "move", "label": "D", "x": -1.0E-9, "y": 1.0E-9 },
+        { "action": "move", "label": "D", "x": 0.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "ll": { "type": "line", "defined": true, "a": 0.0, "b": 2.0, "c": 0.0 },
+          "mm": { "type": "line", "defined": true, "a": -2.0, "b": 0.0, "c": 0.0 },
+          "ang": { "type": "angle", "defined": true, "value": 1.5707963267948966 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0E-9, "y": 1.0E-9 },
+          "ll": { "type": "line", "defined": true, "a": 0.0, "b": 2.0, "c": 0.0 },
+          "mm": { "type": "line", "defined": false },
+          "ang": { "type": "angle", "defined": true, "value": 0.7853981633974483 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": -1.0E-9, "y": 1.0E-9 },
+          "ll": { "type": "line", "defined": true, "a": 0.0, "b": 2.0, "c": 0.0 },
+          "mm": { "type": "line", "defined": false },
+          "ang": { "type": "angle", "defined": true, "value": 2.356194490192345 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "ll": { "type": "line", "defined": true, "a": 0.0, "b": 2.0, "c": 0.0 },
+          "mm": { "type": "line", "defined": false },
+          "ang": { "type": "angle", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "angle-lines-012",
+      "group": "angle",
+      "script": [
+        "A = (0, 0)",
+        "B = (3, 0)",
+        "C = (0, 3)",
+        "ss = Segment(A, B)",
+        "rr = Ray(A, C)",
+        "ang = Angle(ss, rr)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 0.0, "y": -3.0 },
+        { "action": "move", "label": "B", "x": -3.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "ss": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "rr": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -3.0, "b": 0.0, "c": 0.0 },
+          "ang": { "type": "angle", "defined": true, "value": 1.5707963267948966 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": -3.0 },
+          "ss": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "rr": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": 3.0, "b": 0.0, "c": -0.0 },
+          "ang": { "type": "angle", "defined": true, "value": 4.71238898038469 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": -3.0 },
+          "ss": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": -3.0, "y2": 0.0 },
+          "rr": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": 3.0, "b": 0.0, "c": -0.0 },
+          "ang": { "type": "angle", "defined": true, "value": 1.5707963267948966 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": -3.0 },
+          "ss": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 },
+          "rr": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": 3.0, "b": 0.0, "c": -0.0 },
+          "ang": { "type": "angle", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": -3.0 },
+          "ss": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 1.0 },
+          "rr": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": 3.0, "b": 0.0, "c": -0.0 },
+          "ang": { "type": "angle", "defined": true, "value": 4.3906384259880475 }
+        }
+      ]
+    }
+  ]
+}

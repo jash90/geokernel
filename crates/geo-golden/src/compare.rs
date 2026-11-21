@@ -135,7 +135,8 @@ pub fn compare_sampled(
     vertices: &[Option<(f64, f64)>],
     sample: Option<Sampler>,
 ) -> Result<Sign, String> {
-    if expected.kind != kind {
+    // Earlier harness files recorded angles using the numeric schema.
+    if expected.kind != kind && !(expected.kind == Kind::Number && kind == Kind::Angle) {
         return Err(format!(
             "type mismatch: expected {}, got {kind}",
             expected.kind

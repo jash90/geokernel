@@ -82,7 +82,7 @@ fn only(kind: Kind) -> &'static [Kind] {
         Kind::Line => &[Kind::Line],
         Kind::Segment => &[Kind::Segment],
         Kind::Circle => &[Kind::Circle],
-        Kind::Number => &[Kind::Number],
+        Kind::Number | Kind::Angle => &[Kind::Number],
         Kind::Vector => &[Kind::Vector],
         Kind::Ray => &[Kind::Ray],
         Kind::Boolean => &[Kind::Boolean],

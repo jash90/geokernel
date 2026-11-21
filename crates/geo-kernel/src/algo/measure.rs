@@ -555,7 +555,10 @@ mod tests {
             ("d = Slope(l, l)", "`Slope` does not take 2 argument(s)"),
             ("d = AffineRatio(A, B)", "`AffineRatio` does not take 2"),
             ("d = CrossRatio(A, B, P)", "`CrossRatio` does not take 3"),
-            ("d = Angle(A, B)", "`Angle` does not take 2 argument(s)"),
+            (
+                "d = Angle(A, B, P, C)",
+                "`Angle` does not take 4 argument(s)",
+            ),
             ("d = Distance(A, B, P)", "`Distance` does not take 3"),
             ("d = Length(l)", "`l` is a line, expected a segment"),
             ("d = Length(A)", "`A` is a point, expected a segment"),

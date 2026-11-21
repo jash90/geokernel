@@ -397,3 +397,20 @@ fn cancelling_keeps_the_placed_points_out_of_the_tool_only() {
         crate::text::hint(recipe::hint(Tool::Segment, &[]))
     );
 }
+
+#[test]
+fn angle_tool_builds_line_vector_and_polygon_angles() {
+    for (first, second, expected) in [
+        (Kind::Line, Some(Kind::Line), "α = Angle(f, g)"),
+        (Kind::Vector, Some(Kind::Vector), "α = Angle(f, g)"),
+        (Kind::Polygon, None, "α = InteriorAngles(f)"),
+    ] {
+        let mut s = ToolState::new(Tool::Angle);
+        let mut output = s.click(obj("f", first), (0.0, 0.0), &none);
+        if let Some(second) = second {
+            assert!(all_lines(output).is_empty());
+            output = s.click(obj("g", second), (0.0, 0.0), &none);
+        }
+        assert_eq!(all_lines(output), [expected]);
+    }
+}

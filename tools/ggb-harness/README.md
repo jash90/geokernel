@@ -29,6 +29,7 @@ tools/ggb-harness/harness.sh golden lines   # rewrite one group only
 tools/ggb-harness/harness.sh chain    # time the bench() chain (optional: number of steps)
 python3 tools/ggb-harness/cases/make_cases.py   # rewrite cases/geometry.json
 python3 tools/ggb-harness/cases/make_lines.py   # rewrite cases/lines.json (one script per group)
+python3 tools/ggb-harness/cases/make_angle.py  # rewrite cases/angle.json
 python3 tools/ggb-harness/cases/make_expr.py    # rewrite cases/expr.json
 python3 tools/ggb-harness/cases/make_logic.py   # rewrite cases/logic.json
 python3 tools/ggb-harness/cases/make_lists.py   # rewrite cases/lists.json
@@ -71,7 +72,10 @@ For every case `GoldenGenerator`:
    (`V_{1}`, `V_{2}`, ...). `p = Polygon(...)` must create the polygon `p`;
    its sides and the new vertices of a regular polygon are recorded under the
    labels GeoGebra gives them, and every one of them must be labelled, so the
-   polygon must be defined when it is created;
+   polygon must be defined when it is created. A fixed `Angle(A, B, n)`
+   records the angle and the rotated point under its own label.
+   `Angle(a)` of an existing angle returns the same object; the harness
+   records it once under its original label;
 3. records a snapshot, then applies each step and records a snapshot after it.
    `move` calls `GeoPoint.setCoords(x, y, 1)` (for a free vector
    `GeoVector.setCoords(x, y, 0)`) and `updateCascade()`;
@@ -87,6 +91,7 @@ Snapshot encoding:
 | `GeoSegment` | `segment` with its start point and end point |
 | `GeoConic` from `Circle` | `circle` with the midpoint and the first half-axis |
 | `GeoNumeric` | `number` |
+| `GeoAngle` | `angle` with a radian `value` in the `angle` group, `number` in the legacy groups |
 | `GeoVector` | `vector` with `x`, `y` |
 | `GeoRay` | `ray` with the inhomogeneous start point `x`, `y` and the raw fields `x`, `y`, `z` as `a`, `b`, `c`; a start point at infinity is undefined |
 | `GeoFunction` | `function` with `samples`, the values of `GeoFunction.value` at the sample points (`null` where not finite) |

@@ -80,7 +80,7 @@ public final class GoldenGenerator {
     }
 
     private static Map<String, Object> runCase(Map<?, ?> input, Stats stats) {
-        Session session = new Session();
+        Session session = new Session("angle".equals(input.get("group")));
         List<?> script = (List<?>) input.get("script");
         List<?> steps = (List<?>) input.get("steps");
         for (Object line : script) {

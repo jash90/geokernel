@@ -57,7 +57,7 @@ fn of_kind(kind: Kind) -> &'static [Kind] {
         Kind::Line => LINE,
         Kind::Segment => SEGMENT,
         Kind::Circle => CIRCLE,
-        Kind::Number => NUMBER,
+        Kind::Number | Kind::Angle => NUMBER,
         Kind::Vector => &[Kind::Vector],
         Kind::Ray => &[Kind::Ray],
         Kind::Boolean => &[Kind::Boolean],
@@ -487,7 +487,7 @@ fn parse_transform(c: &Construction, func: &str, args: &[&str]) -> Result<Transf
             return Err(format!("`{}` is a {second_kind}, expected a line", args[1]));
         }
         let ratio = object(c, args[2])?;
-        if c.kind(ratio) != Kind::Number {
+        if !c.kind(ratio).is_number() {
             return Err(format!(
                 "`{}` is a {}, expected a number",
                 args[2],
@@ -523,6 +523,7 @@ fn parse_transform(c: &Construction, func: &str, args: &[&str]) -> Result<Transf
                 "inversion of a {kind} in a circle is not supported (only a point can be inverted)"
             )),
             Kind::Number
+            | Kind::Angle
             | Kind::Vector
             | Kind::Ray
             | Kind::Boolean
@@ -539,7 +540,7 @@ fn parse_transform(c: &Construction, func: &str, args: &[&str]) -> Result<Transf
         };
     }
 
-    if second_kind != Kind::Number {
+    if !second_kind.is_number() {
         return Err(format!(
             "`{}` is a {second_kind}, expected a number",
             args[1]

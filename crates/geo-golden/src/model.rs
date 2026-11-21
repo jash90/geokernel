@@ -422,6 +422,7 @@ impl TryFrom<RawObject> for Expected {
             "segment" => (Kind::Segment, &["x1", "y1", "x2", "y2"]),
             "circle" => (Kind::Circle, &["cx", "cy", "r"]),
             "number" => (Kind::Number, &["value"]),
+            "angle" => (Kind::Angle, &["value"]),
             "vector" => (Kind::Vector, &["x", "y"]),
             "ray" => (Kind::Ray, &["x", "y", "a", "b", "c"]),
             "boolean" => (Kind::Boolean, &["value"]),
@@ -539,7 +540,7 @@ impl TryFrom<RawObject> for Expected {
                 cy: f("cy"),
                 r: f("r"),
             },
-            Kind::Number => ExpectedData::Number(f("value")),
+            Kind::Number | Kind::Angle => ExpectedData::Number(f("value")),
             Kind::Vector => ExpectedData::Vector {
                 x: f("x"),
                 y: f("y"),
@@ -633,9 +634,25 @@ fn validate_case(case: &Case) -> Result<(), String> {
                 let directrices = directrix_labels(&case.script);
                 let mut outputs = labels.clone();
                 let mut clip_prefixes = BTreeSet::new();
+                let mut rotated_prefixes = BTreeSet::new();
                 for line in &case.script {
                     if let Some((label, "Difference" | "IntersectPath", _)) = command_args(line) {
                         clip_prefixes.insert(label_prefix(label));
+                    }
+                    if let Some((label, "Angle", args)) = command_args(line) {
+                        match args.as_slice() {
+                            [arg] if snap.get(*arg).is_some_and(|o| o.kind == Kind::Angle) => {
+                                outputs.remove(label);
+                            }
+                            [from, center, by]
+                                if [from, center].iter().all(|&&p| {
+                                    snap.get(p).is_some_and(|o| o.kind == Kind::Point)
+                                }) && snap.get(*by).is_none_or(|o| o.kind.is_number()) =>
+                            {
+                                rotated_prefixes.insert(format!("{from}'"));
+                            }
+                            _ => {}
+                        }
                     }
                     if let Some((label, "Segment", args)) = command_args(line) {
                         if let [a, b, polygon] = args.as_slice() {
@@ -656,7 +673,9 @@ fn validate_case(case: &Case) -> Result<(), String> {
                         return true;
                     }
                     match snap[key].kind {
-                        Kind::Point => names.point(key),
+                        Kind::Point => {
+                            names.point(key) || rotated_prefixes.contains(label_prefix(key))
+                        }
                         Kind::Segment => names.segment(key),
                         // `Directrix` gives both lines the script label, so the
                         // second one gets an index of it.
@@ -728,7 +747,7 @@ impl PolygonNames {
                 continue;
             };
             let number = |arg: &str| match kind(arg) {
-                Some(k) => k == Kind::Number,
+                Some(k) => k.is_number(),
                 None => arg.parse::<f64>().is_ok(),
             };
             let point = |arg: &str| kind(arg) == Some(Kind::Point);
@@ -743,6 +762,15 @@ impl PolygonNames {
                 names.default_points();
                 names.default_segments();
                 continue;
+            }
+            if command == "Angle"
+                && args.len() == 3
+                && point(args[0])
+                && point(args[1])
+                && kind(args[2]).is_none_or(Kind::is_number)
+                && (args[0].contains('_') || args[0].ends_with("'''"))
+            {
+                names.default_points();
             }
             if command == "Segment" {
                 if args.len() == 2 && point(args[0]) && number(args[1]) {

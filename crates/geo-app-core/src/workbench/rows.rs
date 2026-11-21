@@ -17,7 +17,6 @@
 use super::{Row, Workbench};
 use crate::describe;
 use crate::scriptlog::Log;
-use geo_kernel::algo::measure::MeasureDef;
 use geo_kernel::kernel::{Construction, Def, Id, Kind, Value};
 use std::collections::HashMap;
 
@@ -121,15 +120,13 @@ impl<'a> Lines<'a> {
 /// The value text of `id` and, for a free number or angle, its number.
 fn value_parts(c: &Construction, id: Id) -> (String, Option<f64>) {
     let value = c.value(id);
-    let text = match (c.def(id), value) {
-        // Angles are kept in radians and shown in degrees.
-        (Def::Measure(MeasureDef::Angle(..)), Value::Number(n)) => describe::degrees(n),
+    let text = match (c.kind(id), value) {
+        (Kind::Angle, Value::Number(n)) => describe::degrees(n),
         _ => describe::object_text(c, id),
     };
     // A free angle is a free number shown and set in degrees.
-    let free_number = match (c.def(id), value) {
-        (Def::Number(_), Value::Number(n)) => Some(n),
-        (Def::Angle(_), Value::Number(n)) => Some(n),
+    let free_number = match value {
+        Value::Number(n) if c.def(id).is_free() => Some(n),
         _ => None,
     };
     (text, free_number)
@@ -150,7 +147,7 @@ fn make_row(c: &Construction, id: Id, lines: &Lines) -> Row {
         head: String::new(),
         value: None,
         free_number: None,
-        angle: matches!(c.def(id), Def::Angle(_)),
+        angle: c.kind(id) == Kind::Angle,
         siblings,
         label,
     };
@@ -290,13 +287,12 @@ impl Workbench {
                 let label = c.label(id).to_owned();
                 let kind = c.kind(id);
                 let free = c.def(id).is_free();
-                let text = match (c.def(id), value) {
-                    (Def::Measure(MeasureDef::Angle(..)), Value::Number(n)) => describe::degrees(n),
+                let text = match (kind, value) {
+                    (Kind::Angle, Value::Number(n)) => describe::degrees(n),
                     _ => describe::object_text(c, id),
                 };
-                let free_number = match (c.def(id), value) {
-                    (Def::Number(_), Value::Number(n)) => Some(n),
-                    (Def::Angle(_), Value::Number(n)) => Some(n),
+                let free_number = match value {
+                    Value::Number(n) if free => Some(n),
                     _ => None,
                 };
                 let (head, second) = if free_number.is_some() {
@@ -340,7 +336,7 @@ impl Workbench {
                     value: second,
                     siblings,
                     free_number,
-                    angle: matches!(c.def(id), Def::Angle(_)),
+                    angle: c.kind(id) == Kind::Angle,
                 }
             })
             .collect()
