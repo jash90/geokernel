@@ -1073,7 +1073,7 @@ fn the_drag_delay_and_the_click_threshold_decide_through_the_frame_loop() {
             ],
             true,
         );
-        let hidden = objects(&state(&mut s))[0]["visible"] == json!(false);
+        let hidden = state(&mut s)["objects"][0]["visible"] == json!(false);
         assert_eq!(hidden, click, "a release {by} px from the press");
     }
 }
