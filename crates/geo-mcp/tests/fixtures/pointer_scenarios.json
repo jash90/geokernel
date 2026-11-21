@@ -13,6 +13,7 @@
  "scenarios": [
   {
    "name": "drag_free_point_centre",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "A",
    "row": "A1",
    "tool_mode": 0,
@@ -113,6 +114,7 @@
   },
   {
    "name": "drag_free_point_offset_grab_jumps_to_pointer",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "A",
    "row": "A1o",
    "tool_mode": 0,
@@ -213,6 +215,7 @@
   },
   {
    "name": "drag_free_point_snaps_at_grid_crossing",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "A",
    "row": "A1g",
    "tool_mode": 0,
@@ -312,6 +315,7 @@
   },
   {
    "name": "time_gate_early_move_ignored",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "A",
    "row": "A2t",
    "tool_mode": 0,
@@ -355,6 +359,7 @@
   },
   {
    "name": "time_gate_late_move_applied",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "A",
    "row": "A2t",
    "tool_mode": 0,
@@ -398,6 +403,7 @@
   },
   {
    "name": "no_distance_threshold_1px",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "A",
    "row": "A2d",
    "tool_mode": 0,
@@ -441,6 +447,7 @@
   },
   {
    "name": "early_motion_recovered",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "A",
    "row": "A2e",
    "tool_mode": 0,
@@ -498,6 +505,7 @@
   },
   {
    "name": "press_release_on_point_selects_only",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "A",
    "row": "A3",
    "tool_mode": 0,
@@ -537,6 +545,7 @@
   },
   {
    "name": "drag_line_translates_both_parents",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "A",
    "row": "A4",
    "tool_mode": 0,
@@ -706,6 +715,7 @@
   },
   {
    "name": "free_equation_line_not_draggable",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "A",
    "row": "A4f",
    "tool_mode": 0,
@@ -861,6 +871,7 @@
   },
   {
    "name": "drag_circle_translates_centre_and_point",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "A",
    "row": "A5",
    "tool_mode": 0,
@@ -1022,6 +1033,7 @@
   },
   {
    "name": "press_inside_unfilled_circle_pans",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "A",
    "row": "A5i",
    "tool_mode": 0,
@@ -1188,6 +1200,7 @@
   },
   {
    "name": "drag_segment",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "A",
    "row": "A6",
    "tool_mode": 0,
@@ -1349,6 +1362,7 @@
   },
   {
    "name": "drag_polygon_interior",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "A",
    "row": "A7",
    "tool_mode": 0,
@@ -1515,6 +1529,7 @@
   },
   {
    "name": "press_on_polygon_edge_does_nothing",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "A",
    "row": "A7e",
    "tool_mode": 0,
@@ -1652,6 +1667,7 @@
   },
   {
    "name": "drag_midpoint_refused",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "A",
    "row": "A8",
    "tool_mode": 0,
@@ -1828,6 +1844,7 @@
   },
   {
    "name": "drag_intersection_refused",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "A",
    "row": "A8i",
    "tool_mode": 0,
@@ -2007,6 +2024,7 @@
   },
   {
    "name": "drag_point_on_line_slides",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "A",
    "row": "A8p",
    "tool_mode": 0,
@@ -2163,6 +2181,7 @@
   },
   {
    "name": "pan_from_empty_space",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "A",
    "row": "A9",
    "tool_mode": 0,
@@ -2324,6 +2343,7 @@
   },
   {
    "name": "drag_on_label_moves_label_only",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "A",
    "row": "A10",
    "tool_mode": 0,
@@ -2447,6 +2467,7 @@
   },
   {
    "name": "point_wins_over_line_underneath",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "A",
    "row": "A13",
    "tool_mode": 0,
@@ -2566,6 +2587,7 @@
   },
   {
    "name": "overlapping_points_newest_wins",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "A",
    "row": "A14",
    "tool_mode": 0,
@@ -2686,6 +2708,7 @@
   },
   {
    "name": "near_points_newest_wins_not_nearest",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "A",
    "row": "A14n",
    "tool_mode": 0,
@@ -2806,6 +2829,7 @@
   },
   {
    "name": "wheel_zoom_in_about_pointer",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "B",
    "row": "B1",
    "tool_mode": 0,
@@ -2837,6 +2861,7 @@
   },
   {
    "name": "wheel_zoom_out_about_pointer",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "B",
    "row": "B1o",
    "tool_mode": 0,
@@ -2864,6 +2889,7 @@
   },
   {
    "name": "zoom_in_button_about_canvas_centre",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "B",
    "row": "B2",
    "tool_mode": 0,
@@ -2886,6 +2912,7 @@
   },
   {
    "name": "zoom_to_fit_changes_aspect",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "B",
    "row": "B2f",
    "tool_mode": 0,
@@ -2911,6 +2938,7 @@
   },
   {
    "name": "move_view_tool_on_point_pans",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "B",
    "row": "B3p",
    "tool_mode": 40,
@@ -3071,6 +3099,7 @@
   },
   {
    "name": "axis_drag_move_tool_pans",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "B",
    "row": "B4m",
    "tool_mode": 0,
@@ -3184,6 +3213,7 @@
   },
   {
    "name": "axis_drag_move_view_tool_rescales_x",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "B",
    "row": "B4v",
    "tool_mode": 40,
@@ -3298,6 +3328,7 @@
   },
   {
    "name": "axis_drag_left_of_origin_shrinks_x",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "B",
    "row": "B4v",
    "tool_mode": 40,
@@ -3410,6 +3441,7 @@
   },
   {
    "name": "zoom_in_tool_click_about_click",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "B",
    "row": "B5i",
    "tool_mode": 41,
@@ -3447,6 +3479,7 @@
   },
   {
    "name": "zoom_in_tool_rectangle_fills_canvas",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "B",
    "row": "B5r",
    "tool_mode": 41,
@@ -3604,6 +3637,7 @@
   },
   {
    "name": "keyboard_open_keeps_centre",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "B",
    "row": "B6",
    "tool_mode": 0,
@@ -3628,6 +3662,7 @@
   },
   {
    "name": "viewport_resize_keeps_centre",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "B",
    "row": "B7",
    "tool_mode": 0,
@@ -3660,6 +3695,7 @@
   },
   {
    "name": "tool_line_two_clicks_empty",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "C",
    "row": "C1l",
    "tool_mode": 2,
@@ -3735,6 +3771,7 @@
   },
   {
    "name": "tool_segment_two_clicks_empty",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "C",
    "row": "C1s",
    "tool_mode": 15,
@@ -3810,6 +3847,7 @@
   },
   {
    "name": "tool_ray_two_clicks_empty",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "C",
    "row": "C1r",
    "tool_mode": 18,
@@ -3885,6 +3923,7 @@
   },
   {
    "name": "tool_vector_two_clicks_empty",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "C",
    "row": "C1v",
    "tool_mode": 7,
@@ -3960,6 +3999,7 @@
   },
   {
    "name": "tool_circle_centre_point_two_clicks_empty",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "C",
    "row": "C1c",
    "tool_mode": 10,
@@ -4035,6 +4075,7 @@
   },
   {
    "name": "tool_midpoint_two_clicks_empty",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "C",
    "row": "C1m",
    "tool_mode": 19,
@@ -4110,6 +4151,7 @@
   },
   {
    "name": "tool_circle3_three_clicks",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "C",
    "row": "C2c",
    "tool_mode": 11,
@@ -4197,6 +4239,7 @@
   },
   {
    "name": "tool_polygon_closed_on_first_vertex",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "C",
    "row": "C2p",
    "tool_mode": 16,
@@ -4312,6 +4355,7 @@
   },
   {
    "name": "tool_angle_three_clicks",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "C",
    "row": "C2a",
    "tool_mode": 36,
@@ -4401,6 +4445,7 @@
   },
   {
    "name": "tool_perpendicular_line_then_point",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "C",
    "row": "C3p",
    "tool_mode": 4,
@@ -4459,6 +4504,7 @@
   },
   {
    "name": "tool_parallel_line_then_point",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "C",
    "row": "C3q",
    "tool_mode": 3,
@@ -4517,6 +4563,7 @@
   },
   {
    "name": "tool_segment_reuses_point_within_radius",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "C",
    "row": "C4c",
    "tool_mode": 15,
@@ -4575,6 +4622,7 @@
   },
   {
    "name": "point_tool_on_line_attaches",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "C",
    "row": "C5",
    "tool_mode": 1,
@@ -4616,6 +4664,7 @@
   },
   {
    "name": "point_tool_5px_off_line_is_free",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "C",
    "row": "C5",
    "tool_mode": 1,
@@ -4654,6 +4703,7 @@
   },
   {
    "name": "point_tool_on_line_crossing_intersects",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "C",
    "row": "C6",
    "tool_mode": 1,
@@ -4690,6 +4740,7 @@
   },
   {
    "name": "point_tool_on_circle_line_crossing",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "C",
    "row": "C6c",
    "tool_mode": 1,
@@ -4726,6 +4777,7 @@
   },
   {
    "name": "escape_mid_tool_removes_pending_point",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "C",
    "row": "C7",
    "tool_mode": 15,
@@ -4761,6 +4813,7 @@
   },
   {
    "name": "switch_tool_mid_sequence_removes_pending_point",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "C",
    "row": "C8",
    "tool_mode": 15,
@@ -4795,6 +4848,7 @@
   },
   {
    "name": "press_drag_release_makes_segment",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "C",
    "row": "C10",
    "tool_mode": 15,
@@ -4963,6 +5017,7 @@
   },
   {
    "name": "drag_existing_point_with_segment_tool",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "C",
    "row": "C11",
    "tool_mode": 15,
@@ -5135,6 +5190,7 @@
   },
   {
    "name": "drag_existing_point_with_point_tool",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "C",
    "row": "C11",
    "tool_mode": 1,
@@ -5291,6 +5347,7 @@
   },
   {
    "name": "segment_tool_twice_stays_selected",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "C",
    "row": "C12",
    "tool_mode": 15,
@@ -5376,6 +5433,7 @@
   },
   {
    "name": "area_tool_on_polygon",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "C",
    "row": "C13",
    "tool_mode": 49,
@@ -5407,6 +5465,7 @@
   },
   {
    "name": "delete_tool_click_point_removes_dependents",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "D",
    "row": "D4",
    "tool_mode": 6,
@@ -5445,6 +5504,7 @@
   },
   {
    "name": "delete_tool_area_drag_deletes_nothing",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "D",
    "row": "D5",
    "tool_mode": 6,
@@ -5645,6 +5705,7 @@
   },
   {
    "name": "delete_tool_stroke_erases_crossed_object",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "D",
    "row": "D5s",
    "tool_mode": 6,
@@ -5844,6 +5905,7 @@
   },
   {
    "name": "point_tool_snaps_within_box",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "E",
    "row": "E1d",
    "tool_mode": 1,
@@ -5880,6 +5942,7 @@
   },
   {
    "name": "point_tool_no_snap_7px",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "E",
    "row": "E1",
    "tool_mode": 1,
@@ -5916,6 +5979,7 @@
   },
   {
    "name": "point_tool_no_per_axis_snap",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "E",
    "row": "E1x",
    "tool_mode": 1,
@@ -5952,6 +6016,7 @@
   },
   {
    "name": "point_tool_ignores_minor_crossing",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "E",
    "row": "E1m",
    "tool_mode": 1,
@@ -5988,6 +6053,7 @@
   },
   {
    "name": "touch_drag_point",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "F",
    "row": "F3",
    "tool_mode": 0,
@@ -6120,6 +6186,7 @@
   },
   {
    "name": "touch_pan_one_finger",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "F",
    "row": "F4",
    "tool_mode": 0,
@@ -6250,6 +6317,7 @@
   },
   {
    "name": "pinch_spread_symmetric",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "F",
    "row": "F5",
    "tool_mode": 0,
@@ -6574,6 +6642,7 @@
   },
   {
    "name": "enter_on_empty_input_row",
+   "source": "reference web 5.4.936.0 headless probe",
    "group": "G",
    "row": "G4",
    "tool_mode": 0,
@@ -6594,6 +6663,2222 @@
     "undo_steps_added": 0,
     "keyboard_stays_open": true
    }
+  },
+  {
+   "name": "tool_semicircle_reuses_diameter_points",
+   "source": "reference web 5.4.936.0 headless probe",
+   "group": "H",
+   "row": "H1",
+   "tool_mode": 24,
+   "initial_script": [
+    "A=(-3,0)",
+    "B=(3,0)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      -3,
+      -0.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      -3,
+      -0.01
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_down",
+     "pos": [
+      3,
+      -0.01
+     ]
+    },
+    {
+     "t": 330,
+     "type": "mouse_up",
+     "pos": [
+      3,
+      -0.01
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "c",
+      "definition": "Semicircle(A, B)"
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 24
+   }
+  },
+  {
+   "name": "tool_circular_arc_three_clicks",
+   "source": "reference web 5.4.936.0 headless probe",
+   "group": "H",
+   "row": "H2",
+   "tool_mode": 20,
+   "initial_script": [
+    "A=(0,0)",
+    "B=(3,0)",
+    "C=(0,3)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      -0.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      -0.01
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_down",
+     "pos": [
+      3,
+      -0.01
+     ]
+    },
+    {
+     "t": 330,
+     "type": "mouse_up",
+     "pos": [
+      3,
+      -0.01
+     ]
+    },
+    {
+     "t": 600,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      2.99
+     ]
+    },
+    {
+     "t": 630,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      2.99
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "c",
+      "definition": "CircleArc(A, B, C)"
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 20
+   }
+  },
+  {
+   "name": "tool_circumcircular_arc_three_clicks",
+   "source": "reference web 5.4.936.0 headless probe",
+   "group": "H",
+   "row": "H3",
+   "tool_mode": 22,
+   "initial_script": [
+    "A=(-3,0)",
+    "B=(0,3)",
+    "C=(3,0)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      -3,
+      -0.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      -3,
+      -0.01
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      2.99
+     ]
+    },
+    {
+     "t": 330,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      2.99
+     ]
+    },
+    {
+     "t": 600,
+     "type": "mouse_down",
+     "pos": [
+      3,
+      -0.01
+     ]
+    },
+    {
+     "t": 630,
+     "type": "mouse_up",
+     "pos": [
+      3,
+      -0.01
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "c",
+      "definition": "CircumcircleArc(A, B, C)"
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 22
+   }
+  },
+  {
+   "name": "tool_circular_sector_three_clicks",
+   "source": "reference web 5.4.936.0 headless probe",
+   "group": "H",
+   "row": "H4",
+   "tool_mode": 21,
+   "initial_script": [
+    "A=(0,0)",
+    "B=(3,0)",
+    "C=(0,3)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      -0.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      -0.01
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_down",
+     "pos": [
+      3,
+      -0.01
+     ]
+    },
+    {
+     "t": 330,
+     "type": "mouse_up",
+     "pos": [
+      3,
+      -0.01
+     ]
+    },
+    {
+     "t": 600,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      2.99
+     ]
+    },
+    {
+     "t": 630,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      2.99
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "c",
+      "definition": "CircleSector(A, B, C)"
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 21
+   }
+  },
+  {
+   "name": "tool_circumcircular_sector_three_clicks",
+   "source": "reference web 5.4.936.0 headless probe",
+   "group": "H",
+   "row": "H5",
+   "tool_mode": 23,
+   "initial_script": [
+    "A=(-3,0)",
+    "B=(0,3)",
+    "C=(3,0)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      -3,
+      -0.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      -3,
+      -0.01
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      2.99
+     ]
+    },
+    {
+     "t": 330,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      2.99
+     ]
+    },
+    {
+     "t": 600,
+     "type": "mouse_down",
+     "pos": [
+      3,
+      -0.01
+     ]
+    },
+    {
+     "t": 630,
+     "type": "mouse_up",
+     "pos": [
+      3,
+      -0.01
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "c",
+      "definition": "CircumcircleSector(A, B, C)"
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 23
+   }
+  },
+  {
+   "name": "tool_ellipse_foci_and_point",
+   "source": "reference web 5.4.936.0 headless probe",
+   "group": "H",
+   "row": "H6",
+   "tool_mode": 55,
+   "initial_script": [
+    "A=(-2,0)",
+    "B=(2,0)",
+    "C=(0,3)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      -2,
+      -0.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      -2,
+      -0.01
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_down",
+     "pos": [
+      2,
+      -0.01
+     ]
+    },
+    {
+     "t": 330,
+     "type": "mouse_up",
+     "pos": [
+      2,
+      -0.01
+     ]
+    },
+    {
+     "t": 600,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      2.99
+     ]
+    },
+    {
+     "t": 630,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      2.99
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "c",
+      "definition": "Ellipse(A, B, C)"
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 55
+   }
+  },
+  {
+   "name": "tool_hyperbola_foci_and_point",
+   "source": "reference web 5.4.936.0 headless probe",
+   "group": "H",
+   "row": "H7",
+   "tool_mode": 56,
+   "initial_script": [
+    "A=(-3,0)",
+    "B=(3,0)",
+    "C=(1,2)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      -3,
+      -0.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      -3,
+      -0.01
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_down",
+     "pos": [
+      3,
+      -0.01
+     ]
+    },
+    {
+     "t": 330,
+     "type": "mouse_up",
+     "pos": [
+      3,
+      -0.01
+     ]
+    },
+    {
+     "t": 600,
+     "type": "mouse_down",
+     "pos": [
+      1,
+      1.99
+     ]
+    },
+    {
+     "t": 630,
+     "type": "mouse_up",
+     "pos": [
+      1,
+      1.99
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "c",
+      "definition": "Hyperbola(A, B, C)"
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 56
+   }
+  },
+  {
+   "name": "tool_parabola_line_then_focus",
+   "source": "reference web 5.4.936.0 headless probe",
+   "group": "H",
+   "row": "H8",
+   "tool_mode": 57,
+   "initial_script": [
+    "A=(-3,-2)",
+    "B=(3,-2)",
+    "f=Line(A,B)",
+    "C=(0,2)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      -2.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      -2.01
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      1.99
+     ]
+    },
+    {
+     "t": 330,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      1.99
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "c",
+      "definition": "Parabola(C, f)"
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 57
+   }
+  },
+  {
+   "name": "tool_conic_five_points",
+   "source": "reference web 5.4.936.0 headless probe",
+   "group": "H",
+   "row": "H9",
+   "tool_mode": 12,
+   "initial_script": [
+    "A=(-3,0)",
+    "B=(3,0)",
+    "C=(0,3)",
+    "D=(0,-3)",
+    "E=(1,1)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      -3,
+      -0.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      -3,
+      -0.01
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_down",
+     "pos": [
+      3,
+      -0.01
+     ]
+    },
+    {
+     "t": 330,
+     "type": "mouse_up",
+     "pos": [
+      3,
+      -0.01
+     ]
+    },
+    {
+     "t": 600,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      2.99
+     ]
+    },
+    {
+     "t": 630,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      2.99
+     ]
+    },
+    {
+     "t": 900,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      -3.01
+     ]
+    },
+    {
+     "t": 930,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      -3.01
+     ]
+    },
+    {
+     "t": 1200,
+     "type": "mouse_down",
+     "pos": [
+      1,
+      0.99
+     ]
+    },
+    {
+     "t": 1230,
+     "type": "mouse_up",
+     "pos": [
+      1,
+      0.99
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "c",
+      "definition": "Conic(A, B, C, D, E)"
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 12
+   }
+  },
+  {
+   "name": "tool_polyline_finished_on_first_vertex",
+   "source": "reference web 5.4.936.0 headless probe",
+   "group": "H",
+   "row": "H10",
+   "tool_mode": 65,
+   "initial_script": [
+    "A=(-3,0)",
+    "B=(0,3)",
+    "C=(3,0)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      -3,
+      -0.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      -3,
+      -0.01
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      2.99
+     ]
+    },
+    {
+     "t": 330,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      2.99
+     ]
+    },
+    {
+     "t": 600,
+     "type": "mouse_down",
+     "pos": [
+      3,
+      -0.01
+     ]
+    },
+    {
+     "t": 630,
+     "type": "mouse_up",
+     "pos": [
+      3,
+      -0.01
+     ]
+    },
+    {
+     "t": 900,
+     "type": "mouse_down",
+     "pos": [
+      -3,
+      -0.01
+     ]
+    },
+    {
+     "t": 930,
+     "type": "mouse_up",
+     "pos": [
+      -3,
+      -0.01
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "f",
+      "definition": "PolyLine(A, B, C)"
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 65
+   }
+  },
+  {
+   "name": "tool_slope_selects_line",
+   "source": "reference web 5.4.936.0 headless probe",
+   "group": "H",
+   "row": "H11",
+   "tool_mode": 50,
+   "initial_script": [
+    "A=(-3,-1)",
+    "B=(3,2)",
+    "f=Line(A,B)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      0.49
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      0.49
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "m",
+      "definition": "Slope(f)"
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 50
+   }
+  },
+  {
+   "name": "tool_vector_from_point_translates_endpoint",
+   "source": "reference web 5.4.936.0 headless probe",
+   "group": "H",
+   "row": "H12",
+   "tool_mode": 37,
+   "initial_script": [
+    "A=(-3,0)",
+    "B=(3,0)",
+    "u=Vector(A,B)",
+    "C=(0,3)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      -0.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      -0.01
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      2.99
+     ]
+    },
+    {
+     "t": 330,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      2.99
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "C'",
+      "definition": "Translate(C, u)",
+      "point": [
+       6,
+       3
+      ]
+     },
+     {
+      "label": "v",
+      "definition": "Vector(C, C')"
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 37
+   }
+  },
+  {
+   "name": "tool_compasses_reuses_segment_radius",
+   "source": "reference web 5.4.936.0 headless probe",
+   "group": "H",
+   "row": "H13",
+   "tool_mode": 53,
+   "initial_script": [
+    "A=(-3,0)",
+    "B=(3,0)",
+    "f=Segment(A,B)",
+    "C=(0,3)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      -0.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      -0.01
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      2.99
+     ]
+    },
+    {
+     "t": 330,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      2.99
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "c",
+      "definition": "Circle(C, f)"
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 53
+   }
+  },
+  {
+   "name": "tool_vector_polygon_from_vertices",
+   "source": "reference web 5.4.936.0 headless probe",
+   "group": "H",
+   "row": "H14",
+   "tool_mode": 70,
+   "initial_script": [
+    "A=(-3,0)",
+    "B=(0,3)",
+    "C=(3,0)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      -3,
+      -0.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      -3,
+      -0.01
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      2.99
+     ]
+    },
+    {
+     "t": 330,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      2.99
+     ]
+    },
+    {
+     "t": 600,
+     "type": "mouse_down",
+     "pos": [
+      3,
+      -0.01
+     ]
+    },
+    {
+     "t": 630,
+     "type": "mouse_up",
+     "pos": [
+      3,
+      -0.01
+     ]
+    },
+    {
+     "t": 900,
+     "type": "mouse_down",
+     "pos": [
+      -3,
+      -0.01
+     ]
+    },
+    {
+     "t": 930,
+     "type": "mouse_up",
+     "pos": [
+      -3,
+      -0.01
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "a"
+     },
+     {
+      "label": "b"
+     },
+     {
+      "label": "c"
+     },
+     {
+      "label": "d"
+     },
+     {
+      "label": "t1",
+      "definition": "Polygon(A, B, C)"
+     },
+     {
+      "label": "c_1",
+      "definition": "Segment(A, B, t1)"
+     },
+     {
+      "label": "a_1",
+      "definition": "Segment(B, C, t1)"
+     },
+     {
+      "label": "b_1",
+      "definition": "Segment(C, A, t1)"
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 70,
+    "objects": {
+     "A": [
+      -3,
+      0
+     ],
+     "B": [
+      0,
+      3
+     ],
+     "C": [
+      3,
+      0
+     ]
+    }
+   }
+  },
+  {
+   "name": "compasses_uses_two_existing_points",
+   "source": "reference web 5.4.936.0 headless probe",
+   "group": "I",
+   "row": "I1",
+   "tool_mode": 53,
+   "initial_script": [
+    "A=(2,-2)",
+    "B=(0,0)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      2,
+      -2.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      2,
+      -2.01
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      -0.01
+     ]
+    },
+    {
+     "t": 330,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      -0.01
+     ]
+    },
+    {
+     "t": 600,
+     "type": "mouse_down",
+     "pos": [
+      3,
+      -0.01
+     ]
+    },
+    {
+     "t": 630,
+     "type": "mouse_up",
+     "pos": [
+      3,
+      -0.01
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "C",
+      "type": "point",
+      "point": [
+       3,
+       0
+      ]
+     },
+     {
+      "label": "c",
+      "type": "circle",
+      "definition": "Circle(C, Segment(A, B))"
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 53,
+    "picks": []
+   },
+   "reference_axes_visible": false
+  },
+  {
+   "name": "compasses_copies_a_circle_radius",
+   "source": "reference web 5.4.936.0 headless probe",
+   "group": "I",
+   "row": "I2",
+   "tool_mode": 53,
+   "initial_script": [
+    "A=(2,-2)",
+    "B=(0,0)",
+    "c=Circle(A,B)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      4,
+      -4.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      4,
+      -4.01
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_down",
+     "pos": [
+      3,
+      -0.01
+     ]
+    },
+    {
+     "t": 330,
+     "type": "mouse_up",
+     "pos": [
+      3,
+      -0.01
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "C",
+      "type": "point",
+      "point": [
+       3,
+       0
+      ]
+     },
+     {
+      "label": "d",
+      "type": "circle",
+      "definition": "Circle(C, Radius(c))"
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 53,
+    "picks": []
+   },
+   "reference_axes_visible": false
+  },
+  {
+   "name": "compasses_copies_an_arc_radius",
+   "source": "reference web 5.4.936.0 headless probe",
+   "group": "I",
+   "row": "I3",
+   "tool_mode": 53,
+   "initial_script": [
+    "A=(2,-2)",
+    "B=(4,-2)",
+    "C=(2,0)",
+    "a=CircularArc(A,B,C)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      3.42,
+      -0.59
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      3.42,
+      -0.59
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_down",
+     "pos": [
+      5,
+      -0.01
+     ]
+    },
+    {
+     "t": 330,
+     "type": "mouse_up",
+     "pos": [
+      5,
+      -0.01
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "D",
+      "type": "point",
+      "point": [
+       5,
+       0
+      ]
+     },
+     {
+      "label": "c",
+      "type": "circle",
+      "definition": "Circle(D, Radius(a))"
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 53,
+    "picks": []
+   },
+   "reference_axes_visible": false
+  },
+  {
+   "name": "area_measures_a_polygon",
+   "source": "reference web 5.4.936.0 headless probe",
+   "group": "I",
+   "row": "I4",
+   "tool_mode": 49,
+   "initial_script": [
+    "A=(1,-1)",
+    "B=(5,-1)",
+    "C=(5,-3)",
+    "D=(1,-3)",
+    "p=Polygon(A,B,C,D)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      3,
+      -2.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      3,
+      -2.01
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "Textp",
+      "type": "text"
+     },
+     {
+      "label": "Pointp",
+      "type": "point",
+      "point": [
+       3,
+       -2.0100000000000002
+      ],
+      "definition": "PointIn(p)"
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 49,
+    "picks": []
+   }
+  },
+  {
+   "name": "area_measures_a_circle",
+   "source": "reference web 5.4.936.0 headless probe",
+   "group": "I",
+   "row": "I5",
+   "tool_mode": 49,
+   "initial_script": [
+    "A=(2,-2)",
+    "B=(3,-2)",
+    "c=Circle(A,B)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      2,
+      -1.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      2,
+      -1.01
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "a",
+      "type": "numeric",
+      "number": 3.141592653589793,
+      "definition": "Area(c)"
+     },
+     {
+      "label": "Textc",
+      "type": "text"
+     },
+     {
+      "label": "Pointc",
+      "type": "point",
+      "point": [
+       2,
+       -1.01
+      ],
+      "definition": "PointIn(c)"
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 49,
+    "picks": []
+   }
+  },
+  {
+   "name": "area_picks_the_top_arc_over_a_coincident_circle",
+   "source": "reference web 5.4.936.0 headless probe",
+   "group": "I",
+   "row": "I6",
+   "tool_mode": 49,
+   "initial_script": [
+    "A=(2,-2)",
+    "B=(4,-2)",
+    "C=(2,0)",
+    "c=Circle(A,B)",
+    "a=CircularArc(A,B,C)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      3.42,
+      -0.59
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      3.42,
+      -0.59
+     ]
+    }
+   ],
+   "expected": {
+    "created": [],
+    "undo_steps_added": 0,
+    "tool_mode_after": 49,
+    "picks": []
+   }
+  },
+  {
+   "name": "area_picks_the_top_circle_over_a_coincident_arc",
+   "source": "reference web 5.4.936.0 headless probe",
+   "group": "I",
+   "row": "I7",
+   "tool_mode": 49,
+   "initial_script": [
+    "A=(2,-2)",
+    "B=(4,-2)",
+    "C=(2,0)",
+    "a=CircularArc(A,B,C)",
+    "c=Circle(A,B)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      3.42,
+      -0.59
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      3.42,
+      -0.59
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "b",
+      "type": "numeric",
+      "number": 12.566370614359172,
+      "definition": "Area(c)"
+     },
+     {
+      "label": "Textc",
+      "type": "text"
+     },
+     {
+      "label": "Pointc",
+      "type": "point",
+      "point": [
+       3.4192019233141098,
+       -0.5907924564275384
+      ],
+      "definition": "PointIn(c)"
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 49,
+    "picks": []
+   }
+  },
+  {
+   "name": "vector_from_point_picks_vector_first",
+   "source": "reference web 5.4.936.0 headless probe",
+   "group": "I",
+   "row": "I8",
+   "tool_mode": 37,
+   "initial_script": [
+    "A=(-3,0)",
+    "B=(3,0)",
+    "u=Vector(A,B)",
+    "C=(0,3)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      -0.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      -0.01
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      2.99
+     ]
+    },
+    {
+     "t": 330,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      2.99
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "C'",
+      "type": "point",
+      "point": [
+       6,
+       3
+      ],
+      "definition": "Translate(C, u)"
+     },
+     {
+      "label": "v",
+      "type": "vector",
+      "definition": "Vector(C, C')"
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 37,
+    "picks": []
+   }
+  },
+  {
+   "name": "parabola_uses_segment_directrix",
+   "source": "reference web 5.4.936.0 headless probe",
+   "group": "I",
+   "row": "I9",
+   "tool_mode": 57,
+   "initial_script": [
+    "A=(-3,-2)",
+    "B=(3,-2)",
+    "f=Segment(A,B)",
+    "C=(0,2)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      -2.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      -2.01
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      1.99
+     ]
+    },
+    {
+     "t": 330,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      1.99
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "c",
+      "type": "parabola",
+      "definition": "Parabola(C, f)"
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 57,
+    "picks": []
+   }
+  },
+  {
+   "name": "parabola_uses_ray_directrix",
+   "source": "reference web 5.4.936.0 headless probe",
+   "group": "I",
+   "row": "I10",
+   "tool_mode": 57,
+   "initial_script": [
+    "A=(-3,-2)",
+    "B=(3,-2)",
+    "f=Ray(A,B)",
+    "C=(0,2)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      -2.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      -2.01
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      1.99
+     ]
+    },
+    {
+     "t": 330,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      1.99
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "c",
+      "type": "parabola",
+      "definition": "Parabola(C, f)"
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 57,
+    "picks": []
+   }
+  },
+  {
+   "name": "conic_five_points_deselects_a_repeated_pick",
+   "source": "reference web 5.4.936.0 headless probe",
+   "group": "I",
+   "row": "I11",
+   "tool_mode": 12,
+   "initial_script": [
+    "A=(5,-3)",
+    "B=(3,-1)",
+    "C=(1,-3)",
+    "D=(3,-5)",
+    "E=(4.2,-1.4)",
+    "F=(-1,-1)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      5,
+      -3.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      5,
+      -3.01
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_down",
+     "pos": [
+      3,
+      -1.01
+     ]
+    },
+    {
+     "t": 330,
+     "type": "mouse_up",
+     "pos": [
+      3,
+      -1.01
+     ]
+    },
+    {
+     "t": 600,
+     "type": "mouse_down",
+     "pos": [
+      1,
+      -3.01
+     ]
+    },
+    {
+     "t": 630,
+     "type": "mouse_up",
+     "pos": [
+      1,
+      -3.01
+     ]
+    },
+    {
+     "t": 900,
+     "type": "mouse_down",
+     "pos": [
+      3,
+      -1.01
+     ]
+    },
+    {
+     "t": 930,
+     "type": "mouse_up",
+     "pos": [
+      3,
+      -1.01
+     ]
+    },
+    {
+     "t": 1200,
+     "type": "mouse_down",
+     "pos": [
+      3,
+      -5.01
+     ]
+    },
+    {
+     "t": 1230,
+     "type": "mouse_up",
+     "pos": [
+      3,
+      -5.01
+     ]
+    },
+    {
+     "t": 1500,
+     "type": "mouse_down",
+     "pos": [
+      4.2,
+      -1.41
+     ]
+    },
+    {
+     "t": 1530,
+     "type": "mouse_up",
+     "pos": [
+      4.2,
+      -1.41
+     ]
+    },
+    {
+     "t": 1800,
+     "type": "mouse_down",
+     "pos": [
+      -1,
+      -1.01
+     ]
+    },
+    {
+     "t": 1830,
+     "type": "mouse_up",
+     "pos": [
+      -1,
+      -1.01
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "c",
+      "type": "intersectinglines",
+      "definition": "Conic(A, C, D, E, F)"
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 12,
+    "picks": []
+   }
+  },
+  {
+   "name": "semicircle_reversed_click_order",
+   "source": "reference web 5.4.936.0 headless probe",
+   "group": "I",
+   "row": "I12",
+   "tool_mode": 24,
+   "initial_script": [
+    "A=(-3,0)",
+    "B=(3,0)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      3,
+      -0.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      3,
+      -0.01
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_down",
+     "pos": [
+      -3,
+      -0.01
+     ]
+    },
+    {
+     "t": 330,
+     "type": "mouse_up",
+     "pos": [
+      -3,
+      -0.01
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "c",
+      "type": "arc",
+      "definition": "Semicircle(B, A)"
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 24,
+    "picks": []
+   }
+  },
+  {
+   "name": "polyline_deselects_first_with_two_picks",
+   "source": "reference web 5.4.936.0 headless probe",
+   "group": "I",
+   "row": "I13",
+   "tool_mode": 65,
+   "initial_script": [
+    "A=(-2,0)",
+    "B=(0,0)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      -2,
+      -0.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      -2,
+      -0.01
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      -0.01
+     ]
+    },
+    {
+     "t": 330,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      -0.01
+     ]
+    },
+    {
+     "t": 600,
+     "type": "mouse_down",
+     "pos": [
+      -2,
+      -0.01
+     ]
+    },
+    {
+     "t": 630,
+     "type": "mouse_up",
+     "pos": [
+      -2,
+      -0.01
+     ]
+    }
+   ],
+   "expected": {
+    "created": [],
+    "undo_steps_added": 0,
+    "tool_mode_after": 65,
+    "picks": [
+     "B"
+    ]
+   },
+   "reference_axes_visible": false
+  },
+  {
+   "name": "polyline_deselects_nonfirst_with_three_picks",
+   "source": "reference web 5.4.936.0 headless probe",
+   "group": "I",
+   "row": "I14",
+   "tool_mode": 65,
+   "initial_script": [
+    "A=(-2,0)",
+    "B=(0,0)",
+    "C=(0,-3)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      -2,
+      -0.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      -2,
+      -0.01
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      -0.01
+     ]
+    },
+    {
+     "t": 330,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      -0.01
+     ]
+    },
+    {
+     "t": 600,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      -3.01
+     ]
+    },
+    {
+     "t": 630,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      -3.01
+     ]
+    },
+    {
+     "t": 900,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      -0.01
+     ]
+    },
+    {
+     "t": 930,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      -0.01
+     ]
+    }
+   ],
+   "expected": {
+    "created": [],
+    "undo_steps_added": 0,
+    "tool_mode_after": 65,
+    "picks": [
+     "A",
+     "C"
+    ]
+   },
+   "reference_axes_visible": false
+  },
+  {
+   "name": "vector_polygon_copies_mid_use",
+   "source": "reference web 5.4.936.0 headless probe",
+   "group": "I",
+   "row": "I15",
+   "tool_mode": 70,
+   "initial_script": [
+    "A=(-3,0)",
+    "B=(0,3)",
+    "C=(3,0)",
+    "t1=Polygon(A,B,C)",
+    "D=(-3,-3)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      -3,
+      -3.01
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      -3,
+      -3.01
+     ]
+    },
+    {
+     "t": 300,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      0.99
+     ]
+    },
+    {
+     "t": 330,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      0.99
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "E",
+      "type": "point",
+      "point": [
+       -2.405333333333333,
+       -0.5946666666666667
+      ]
+     },
+     {
+      "label": "d",
+      "type": "numeric",
+      "number": 3
+     },
+     {
+      "label": "e",
+      "type": "numeric",
+      "number": 3
+     },
+     {
+      "label": "F",
+      "type": "point",
+      "point": [
+       0.5946666666666669,
+       2.405333333333333
+      ],
+      "definition": "(d + x(E), e + y(E))"
+     },
+     {
+      "label": "f",
+      "type": "numeric",
+      "number": 6
+     },
+     {
+      "label": "g",
+      "type": "numeric",
+      "number": 0
+     },
+     {
+      "label": "G",
+      "type": "point",
+      "point": [
+       3.594666666666667,
+       -0.5946666666666667
+      ],
+      "definition": "(f + x(E), g + y(E))"
+     },
+     {
+      "label": "t2",
+      "type": "triangle",
+      "definition": "Polygon(E, F, G)"
+     },
+     {
+      "label": "g_1",
+      "type": "segment",
+      "definition": "Segment(E, F, t2)"
+     },
+     {
+      "label": "e_1",
+      "type": "segment",
+      "definition": "Segment(F, G, t2)"
+     },
+     {
+      "label": "f_1",
+      "type": "segment",
+      "definition": "Segment(G, E, t2)"
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 70,
+    "picks": []
+   },
+   "reference_axes_visible": false
+  },
+  {
+   "name": "vector_polygon_copies_a_lone_polygon",
+   "source": "reference web 5.4.936.0 headless probe",
+   "group": "I",
+   "row": "I16",
+   "tool_mode": 70,
+   "initial_script": [
+    "A=(-3,0)",
+    "B=(0,3)",
+    "C=(3,0)",
+    "t1=Polygon(A,B,C)"
+   ],
+   "events": [
+    {
+     "t": 0,
+     "type": "mouse_down",
+     "pos": [
+      0,
+      0.99
+     ]
+    },
+    {
+     "t": 30,
+     "type": "mouse_up",
+     "pos": [
+      0,
+      0.99
+     ]
+    }
+   ],
+   "expected": {
+    "created": [
+     {
+      "label": "D",
+      "type": "point",
+      "point": [
+       -2.405333333333333,
+       -0.5946666666666667
+      ]
+     },
+     {
+      "label": "d",
+      "type": "numeric",
+      "number": 3
+     },
+     {
+      "label": "e",
+      "type": "numeric",
+      "number": 3
+     },
+     {
+      "label": "E",
+      "type": "point",
+      "point": [
+       0.5946666666666669,
+       2.405333333333333
+      ],
+      "definition": "(d + x(D), e + y(D))"
+     },
+     {
+      "label": "f",
+      "type": "numeric",
+      "number": 6
+     },
+     {
+      "label": "g",
+      "type": "numeric",
+      "number": 0
+     },
+     {
+      "label": "F",
+      "type": "point",
+      "point": [
+       3.594666666666667,
+       -0.5946666666666667
+      ],
+      "definition": "(f + x(D), g + y(D))"
+     },
+     {
+      "label": "t2",
+      "type": "triangle",
+      "definition": "Polygon(D, E, F)"
+     },
+     {
+      "label": "f_1",
+      "type": "segment",
+      "definition": "Segment(D, E, t2)"
+     },
+     {
+      "label": "d_1",
+      "type": "segment",
+      "definition": "Segment(E, F, t2)"
+     },
+     {
+      "label": "e_1",
+      "type": "segment",
+      "definition": "Segment(F, D, t2)"
+     }
+    ],
+    "undo_steps_added": 1,
+    "tool_mode_after": 70,
+    "picks": []
+   },
+   "reference_axes_visible": false
   }
  ]
 }

@@ -238,10 +238,7 @@ fn label_of(h: &Headless, id: Option<Id>) -> Json {
 /// The state of the window. `verbose` adds the algebra rows, the regions,
 /// the pointer automaton and the decoration switches.
 pub fn state(h: &Headless, verbose: bool) -> Json {
-    let objects: Vec<Json> = {
-        let c = h.app.wb.construction();
-        c.ids().map(|id| object(h, id)).collect()
-    };
+    let objects: Vec<Json> = h.app.wb.object_ids().map(|id| object(h, id)).collect();
     let app = &h.app;
     let tool = app.tool.tool();
     let asking = app.tool.asking().map(|r| {
@@ -497,8 +494,9 @@ impl Snapshot {
     pub fn take(h: &Headless) -> Snapshot {
         let app = &h.app;
         let c = app.wb.construction();
-        let objects = c
-            .ids()
+        let objects = app
+            .wb
+            .object_ids()
             .map(|id| {
                 // The value text and the definition too: a function has no
                 // coordinates, and a redefinition may keep the value.

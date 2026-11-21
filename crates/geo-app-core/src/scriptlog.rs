@@ -21,7 +21,8 @@
 //! # labels: p, a_1, b, c`. The list is a comment, so the text stays a
 //! plain script; `load_tolerant` checks it.
 
-use geo_kernel::kernel::Construction;
+use geo_kernel::algo::measure::MeasureDef;
+use geo_kernel::kernel::{Construction, Def, Id};
 use shared::Chain;
 pub use shared::Labels;
 use std::collections::BTreeSet;
@@ -157,6 +158,70 @@ fn tokens(line: &str) -> impl Iterator<Item = &str> {
         .filter(|t| !t.is_empty())
 }
 
+/// Internal dependencies have a kernel id but no user-visible label.
+pub(crate) fn object_ids(c: &Construction) -> impl Iterator<Item = Id> + '_ {
+    outputs(c, 0)
+}
+
+fn outputs(c: &Construction, from: usize) -> impl Iterator<Item = Id> + '_ {
+    c.ids().skip(from).filter(|&id| !is_internal(c, id))
+}
+
+pub(crate) fn is_internal(c: &Construction, id: Id) -> bool {
+    is_internal_label(c.label(id))
+}
+
+pub(crate) fn is_internal_label(label: &str) -> bool {
+    label.starts_with('\0')
+}
+
+/// Lower the inline radius of a compasses circle to existing kernel
+/// definitions. Both additions belong to the circle's single journal entry.
+pub(crate) fn exec_definition(c: &mut Construction, line: &str) -> Result<Option<Id>, String> {
+    if line.contains('\0') {
+        return Err("an object definition contains a null character".into());
+    }
+    let Some((label, rhs)) = line.split_once('=') else {
+        return geo_kernel::script::exec(c, line);
+    };
+    let inline_radius = || {
+        let args = rhs.trim().strip_prefix("Circle(")?.strip_suffix(')')?;
+        let (center, radius) = args.split_once(',')?;
+        let (cmd, operands) = radius.trim().split_once('(')?;
+        matches!(cmd, "Radius" | "Segment").then_some((
+            center.trim(),
+            cmd,
+            operands.strip_suffix(')')?,
+        ))
+    };
+    let Some((center, cmd, operands)) = inline_radius() else {
+        return geo_kernel::script::exec(c, line);
+    };
+    let object = |name: &str| {
+        c.id(name.trim())
+            .ok_or_else(|| format!("unknown object `{}`", name.trim()))
+    };
+    let def = if cmd == "Radius" {
+        Def::Measure(MeasureDef::Radius(object(operands)?))
+    } else {
+        let (a, b) = operands
+            .split_once(',')
+            .ok_or("segment radius needs two points")?;
+        // A distance is the segment's numeric value. The helper therefore
+        // has no drawable geometry, including in Show/Hide mode.
+        Def::Distance(object(a)?, object(b)?)
+    };
+    let label = label.trim();
+    let helper = format!("\0radius:{label}");
+    let checkpoint = c.checkpoint();
+    c.add(&helper, def).map_err(|e| e.to_string())?;
+    let result = geo_kernel::script::exec(c, &format!("{label} = Circle({center}, {helper})"));
+    if result.is_err() {
+        c.rollback(checkpoint).map_err(|e| e.to_string())?;
+    }
+    result
+}
+
 /// The journal of a construction, plus which objects are hidden.
 ///
 /// Copies share their storage (see `shared.rs`): a clone, as an undo step
@@ -193,6 +258,7 @@ impl Log {
         let labels: Vec<String> = c
             .ids()
             .skip(from)
+            .filter(|&id| !is_internal(c, id))
             .map(|id| c.label(id).to_owned())
             .collect();
         if !labels.is_empty() {
@@ -287,10 +353,10 @@ impl Log {
             match op {
                 Op::Define(e) => {
                     let before = c.len();
-                    match geo_kernel::script::exec(&mut c, &e.line) {
+                    match exec_definition(&mut c, &e.line) {
                         Ok(_) => {
                             let made: Vec<&str> =
-                                c.ids().skip(before).map(|id| c.label(id)).collect();
+                                outputs(&c, before).map(|id| c.label(id)).collect();
                             if made != e.labels {
                                 return Err(format!(
                                     "`{}` created {made:?} instead of {:?}",
@@ -379,10 +445,10 @@ impl Log {
             match op {
                 Op::Define(e) => {
                     let before = c.len();
-                    match geo_kernel::script::exec(&mut c, &e.line) {
+                    match exec_definition(&mut c, &e.line) {
                         Ok(_) => {
                             let made: Vec<&str> =
-                                c.ids().skip(before).map(|id| c.label(id)).collect();
+                                outputs(&c, before).map(|id| c.label(id)).collect();
                             if made != e.labels {
                                 return Err(format!(
                                     "`{}` created {made:?} instead of {:?}",
@@ -614,17 +680,15 @@ impl Log {
             Ok(()) => reason,
             Err(e) => format!("{reason}; {e}"),
         };
-        if let Err(e) = geo_kernel::script::exec(c, line) {
+        if let Err(e) = exec_definition(c, line) {
             return Err(undo(c, e));
         }
         if let Some(expected) = expected {
-            if !c
-                .ids()
-                .skip(before)
+            if !outputs(c, before)
                 .map(|id| c.label(id))
                 .eq(expected.iter().copied())
             {
-                let made: Vec<&str> = c.ids().skip(before).map(|id| c.label(id)).collect();
+                let made: Vec<&str> = outputs(c, before).map(|id| c.label(id)).collect();
                 let reason = format!("it made {made:?} instead of {expected:?}");
                 return Err(undo(c, reason));
             }
@@ -650,7 +714,7 @@ impl Log {
             }
             check_names(&line).map_err(at)?;
             let before = c.len();
-            geo_kernel::script::exec(&mut c, &line).map_err(at)?;
+            exec_definition(&mut c, &line).map_err(at)?;
             log.record(&c, before, &line);
         }
         Ok((c, log))

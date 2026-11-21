@@ -222,7 +222,7 @@ impl App {
     /// dropped, and no step is undone (`Kernel.undo`,
     /// `restoreStateForModeStarting`).
     pub fn undo(&mut self) -> bool {
-        if self.tool_in_use() {
+        if self.tool_in_use() || self.wb.tool_use_pending() {
             self.reset_tool();
             return true;
         }
@@ -281,8 +281,9 @@ impl App {
     /// (`EuclidianController.processMode` stores the undo info when the
     /// kernel changed). A failed step ends the use unfinished.
     pub fn apply_outcome(&mut self, outcome: Outcome) {
+        let keeps_tool_open = matches!(outcome, Outcome::SelectionChanged | Outcome::Ignored);
         self.apply_pick(outcome);
-        if !self.tool_in_use() {
+        if !keeps_tool_open && !self.tool_in_use() {
             self.wb.end_tool_use();
         }
     }
@@ -314,6 +315,18 @@ impl App {
                     self.reset_tool();
                 }
             },
+            Outcome::VectorPolygon { picks, copy_offset } => {
+                match self.wb.make_vector_polygon(&picks, copy_offset) {
+                    Ok(id) => {
+                        self.tool_error = None;
+                        self.wb.selected = Some(id);
+                    }
+                    Err(e) => {
+                        self.tool_error = Some(errors::polish(&e));
+                        self.reset_tool();
+                    }
+                }
+            }
             Outcome::AskNumber(request) => {
                 self.number_text = crate::describe::n2(request.default);
                 self.tool_error = None;
@@ -331,6 +344,10 @@ impl App {
             }
             Outcome::Select(label) => {
                 self.wb.selected = self.wb.construction().id(&label);
+                self.tool_error = None;
+            }
+            Outcome::SelectionChanged => {
+                self.wb.selected = None;
                 self.tool_error = None;
             }
             Outcome::Pending => self.tool_error = None,

@@ -30,6 +30,7 @@
 //!   a view whose pixels the coordinates cannot tell apart draws nothing.
 
 mod key;
+mod parts;
 
 use eframe::egui::epaint::{PathShape, Tessellator};
 use eframe::egui::{vec2, Color32, Context, Mesh, Painter, Pos2, Rect, Stroke, Vec2};
@@ -557,7 +558,7 @@ impl Curves {
                 }
                 closure.data(c)
             }
-            _ => return None,
+            _ => key::part_data(&c.arc(id)?),
         };
         match cache.entries.get_mut(label) {
             Some(entry) if entry.data == data => self.kept(c, id, entry, color),
@@ -787,7 +788,7 @@ impl Curves {
                 }
                 None => (Vec::new(), None, None, None, None, false),
             },
-            _ => {
+            Value::Function => {
                 let mut f = |x: f64| c.function_value(id, x).unwrap_or(f64::NAN);
                 let p = plot::function::plot_with_margin(&mut f, &self.frame, margin);
                 let paths = p
@@ -796,6 +797,20 @@ impl Curves {
                     .map(|path| path.into_iter().map(at).collect())
                     .collect();
                 (paths, None, None, p.label, None, true)
+            }
+            _ => {
+                let paths = c
+                    .arc(id)
+                    .map_or_else(Vec::new, |part| parts::plot(&part, &self.frame, margin));
+                let label = paths
+                    .iter()
+                    .flatten()
+                    .find(|p| {
+                        (0.0..=self.frame.width() as f32).contains(&p.x)
+                            && (0.0..=self.frame.height() as f32).contains(&p.y)
+                    })
+                    .map(|p| (f64::from(p.x), f64::from(p.y)));
+                (paths, None, None, label, None, false)
             }
         };
         let mut bounds = Rect::NOTHING;

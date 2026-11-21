@@ -24,6 +24,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 pub(super) enum Data {
     /// The bits of a conic's matrix, its type and its two lines.
     Conic([u64; 6], u8, [u64; 6]),
+    Part([u64; 11]),
     /// The fingerprints of a function's definitions ([`Closure::prints`]),
     /// then the bits of the values it depends on.
     Function(Vec<u64>),
@@ -147,6 +148,30 @@ fn fingerprint(c: &Construction, a: Id, ids: &[Id], own: Id) -> u64 {
 }
 
 /// A value that cannot be compared here is never the same as before.
+/// Geometry of a part, including the interval (its measure alone can stay
+/// the same when the arc moves) and the endpoints of a straight part.
+pub(super) fn part_data(part: &geo_kernel::algo::arc::ArcData) -> Data {
+    let d = &part.conic;
+    let [a, b] = d.half_axes;
+    let [x, y] = d.midpoint;
+    let [[ux, uy], [vx, vy]] = d.eigenvec;
+    let flags = u64::from(d.ty as u8)
+        | (u64::from(part.defined) << 8)
+        | (u64::from(part.positive) << 9)
+        | (u64::from(part.sector) << 10);
+    let coordinates = if let Some([(ax, ay), (bx, by)]) = part.segment() {
+        [ax, ay, bx, by, 0.0, 0.0, 0.0, 0.0]
+    } else {
+        [x, y, a, b, ux, uy, vx, vy]
+    };
+    let mut bits = [0; 11];
+    bits[..8].copy_from_slice(&coordinates.map(f64::to_bits));
+    bits[8] = flags;
+    bits[9] = part.start.to_bits();
+    bits[10] = part.extent.to_bits();
+    Data::Part(bits)
+}
+
 static FRESH: AtomicU64 = AtomicU64::new(0);
 
 /// Hands the bits of the value of `id` to `out`, a tag first.

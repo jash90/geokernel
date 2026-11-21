@@ -28,7 +28,9 @@
 use crate::app::App;
 use crate::hit::{self, Reach};
 use crate::interact::{self, ViewTransform};
-use crate::tools::{creates_by_drag, new_points_on_objects, NewPoint, Outcome, Tool};
+use crate::tools::{
+    creates_by_drag, intersection_pair, new_points_on_objects, NewPoint, Outcome, Tool,
+};
 use geo_kernel::kernel::{Id, Kind, Value};
 
 /// The side of the eraser's square, in pixels
@@ -52,22 +54,16 @@ pub struct ToolPress {
 
 /// The kinds a new point can be put on (`Path` in the reference; polygons
 /// are left out, `hits.removePolygons`, their sides are segments).
-fn is_path(kind: Kind) -> bool {
-    matches!(
-        kind,
-        Kind::Line | Kind::Segment | Kind::Ray | Kind::Circle | Kind::PolyLine
-    )
-}
-
-/// Whether the kernel intersects `a` with `b`, and whether that makes two
-/// points (one of which is chosen by its index).
-fn intersection(a: Kind, b: Kind) -> Option<bool> {
-    match (a, b) {
-        (Kind::Line, Kind::Line) => Some(false),
-        (Kind::Line, Kind::Circle) | (Kind::Circle, Kind::Line) | (Kind::Circle, Kind::Circle) => {
-            Some(true)
-        }
-        _ => None,
+fn is_path(c: &geo_kernel::kernel::Construction, id: Id) -> bool {
+    use geo_kernel::algo::arc::ArcDef;
+    use geo_kernel::kernel::Def;
+    match c.kind(id) {
+        Kind::Line | Kind::Segment | Kind::Ray | Kind::Circle | Kind::PolyLine => true,
+        Kind::Arc | Kind::Sector => match c.def(id) {
+            Def::Arc(ArcDef::ConicParameters { conic, .. }) => c.kind(conic) == Kind::Circle,
+            _ => true,
+        },
+        _ => false,
     }
 }
 
@@ -95,10 +91,10 @@ impl App {
         }
         let c = self.wb.construction();
         let paths = hit::hits(c, t, pos, reach, |id| {
-            self.hittable(id) && is_path(c.kind(id))
+            self.hittable(id) && (is_path(c, id) || c.kind(id) == Kind::Conic)
         });
         if let [a, b, ..] = paths[..] {
-            if let Some(two) = intersection(c.kind(a), c.kind(b)) {
+            if let Some(two) = intersection_pair(c.kind(a), c.kind(b)) {
                 let (a, b) = (c.label(a).to_owned(), c.label(b).to_owned());
                 let raw = t.screen_to_world(pos.0, pos.1);
                 if let Some(index) = self.nearest_intersection(&a, &b, two, raw) {
@@ -108,7 +104,7 @@ impl App {
         }
         let c = self.wb.construction();
         let path = hit::pick(c, t, pos, reach, None, |id| {
-            self.hittable(id) && is_path(c.kind(id))
+            self.hittable(id) && is_path(c, id)
         });
         match path {
             Some(p) => NewPoint::OnPath {
@@ -148,25 +144,103 @@ impl App {
         best.map(|(_, n)| Some(n))
     }
 
-    /// The object a construction tool's click at `pos` lands on: the one the
-    /// press takes hold of (`hit::pick`), whatever the tool can do with it.
-    fn tool_hit(
-        &self,
-        t: &ViewTransform,
-        pos: (f64, f64),
-        reach: &Reach,
-    ) -> Option<(String, Kind)> {
+    fn tool_pick_kind(&self, id: Id) -> Kind {
         let c = self.wb.construction();
-        hit::pick(c, t, pos, reach, None, |id| self.hittable(id))
-            .map(|id| (c.label(id).to_owned(), c.kind(id)))
+        let kind = c.kind(id);
+        if self.tool.tool() != Tool::Compasses {
+            return kind;
+        }
+        let circular = match kind {
+            Kind::Conic => c
+                .conic(id)
+                .is_some_and(|d| d.ty == geo_kernel::ConicType::Circle),
+            Kind::Arc | Kind::Sector => c
+                .arc(id)
+                .is_some_and(|part| part.conic.ty == geo_kernel::ConicType::Circle),
+            _ => false,
+        };
+        if circular {
+            Kind::Circle
+        } else {
+            kind
+        }
     }
 
-    /// One click of a construction tool at `pos`: the pick, with a new
-    /// point resolved there; returns what it did.
+    /// Whether the object can participate in the active tool's next pick.
+    pub fn accepts_tool_hit(&self, id: Id) -> bool {
+        self.tool
+            .accepts_object(self.wb.construction().label(id), self.tool_pick_kind(id))
+    }
+
+    /// One click of a construction tool at `pos`, with the picks it allows.
     fn tool_click(&mut self, t: &ViewTransform, pos: (f64, f64), reach: &Reach) -> Outcome {
-        let hit = self.tool_hit(t, pos, reach);
-        let new_point = self.new_point_at(t, pos, reach);
-        let outcome = {
+        let tool = self.tool.tool();
+        let c = self.wb.construction();
+        let mut id = hit::pick(c, t, pos, reach, None, |id| self.hittable(id));
+        let accepts = |id| self.accepts_tool_hit(id);
+        if matches!(
+            tool,
+            Tool::Area | Tool::Slope | Tool::Intersect | Tool::Parabola | Tool::VectorFromPoint
+        ) && id.is_none_or(|id| !accepts(id))
+        {
+            id = hit::pick(c, t, pos, reach, None, |id| {
+                self.hittable(id) && accepts(id)
+            })
+            .or(id);
+        }
+        let picks = self.tool.picks();
+        if let Some(id) = id {
+            if tool == Tool::Compasses
+                && !accepts(id)
+                && matches!(
+                    self.tool_pick_kind(id),
+                    Kind::Conic | Kind::Arc | Kind::Sector
+                )
+                && (picks.is_empty() || matches!(picks, [point] if point.kind() == Kind::Point))
+            {
+                self.tool.reset();
+                self.apply_outcome(Outcome::SelectionChanged);
+                return Outcome::SelectionChanged;
+            }
+            if tool == Tool::Compasses && !accepts(id) && !new_points_on_objects(tool, picks) {
+                // The radius comes from existing objects, unless the click is empty.
+                return Outcome::Ignored;
+            }
+            if tool == Tool::VectorPolygon
+                && !picks.is_empty()
+                && c.kind(id) == Kind::Point
+                && picks
+                    .first()
+                    .is_some_and(|first| first.label() != c.label(id))
+                && !self.wb.can_redefine_vertex(id)
+            {
+                return Outcome::Ignored;
+            }
+            if tool == Tool::VectorPolygon
+                && !picks.is_empty()
+                && !matches!(c.kind(id), Kind::Point | Kind::Polygon)
+            {
+                return Outcome::Ignored;
+            }
+            if tool == Tool::Parabola
+                && matches!(
+                    self.tool_pick_kind(id),
+                    Kind::Line | Kind::Segment | Kind::Ray
+                )
+                && !accepts(id)
+            {
+                return Outcome::Ignored;
+            }
+        }
+        let hit = id.map(|id| (c.label(id).to_owned(), self.tool_pick_kind(id)));
+        let new_point = if self.tool.accepts_new_point()
+            && id.is_none_or(|id| c.kind(id) != Kind::Point && !accepts(id))
+        {
+            self.new_point_at(t, pos, reach)
+        } else {
+            NewPoint::Free(0.0, 0.0)
+        };
+        let mut outcome = {
             let c = self.wb.construction();
             self.tool.click_with(
                 hit.as_ref().map(|(l, k)| (l.as_str(), *k)),
@@ -174,6 +248,9 @@ impl App {
                 &|l| c.id(l).is_some(),
             )
         };
+        if let Outcome::VectorPolygon { copy_offset, .. } = &mut outcome {
+            *copy_offset = t.view().xmax / 15.0;
+        }
         let shown = outcome.clone();
         self.apply_outcome(outcome);
         shown

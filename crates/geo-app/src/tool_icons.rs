@@ -70,10 +70,13 @@ pub fn paint(painter: &Painter, tool: Tool, c: Pos2, half: f32) {
             dot(-8.0, 7.0);
             dot(1.5, -1.0);
         }
-        Tool::Vector => {
+        Tool::Vector | Tool::VectorFromPoint => {
             ink.line((-9.0, 7.0), (8.0, -6.0));
             ink.fill_poly(&[(10.0, -8.0), (3.0, -6.5), (7.0, -1.5)], INK);
             dot(-9.0, 7.0);
+            if tool == Tool::VectorFromPoint {
+                red.line((-7.0, 1.0), (1.0, -5.0));
+            }
         }
         Tool::Perpendicular => {
             ink.line((-11.0, 7.0), (11.0, 7.0));
@@ -124,7 +127,7 @@ pub fn paint(painter: &Painter, tool: Tool, c: Pos2, half: f32) {
             dot(6.4, -6.4);
             dot(4.5, 7.8);
         }
-        Tool::Polygon => {
+        Tool::Polygon | Tool::VectorPolygon => {
             let pts = [(-10.0, 6.0), (-3.0, -9.0), (10.0, -3.0), (5.0, 9.0)];
             painter.add(eframe::egui::Shape::convex_polygon(
                 pts.iter()
@@ -137,6 +140,10 @@ pub fn paint(painter: &Painter, tool: Tool, c: Pos2, half: f32) {
             for (x, y) in pts {
                 dot(x, y);
             }
+            if tool == Tool::VectorPolygon {
+                ink.line((-5.0, 4.0), (4.0, -3.0));
+                ink.fill_poly(&[(5.0, -4.0), (0.0, -2.0), (3.0, 1.0)], INK);
+            }
         }
         Tool::RegularPolygon => {
             let pts: Vec<(f32, f32)> = (0..5)
@@ -148,6 +155,102 @@ pub fn paint(painter: &Painter, tool: Tool, c: Pos2, half: f32) {
             red.poly(&pts, true);
             dot(pts[3].0, pts[3].1);
             dot(pts[2].0, pts[2].1);
+        }
+        Tool::Semicircle => {
+            red.poly(&Pen::arc(0.0, 4.0, 9.0, 0.0, 180.0), false);
+            dot(-9.0, 4.0);
+            dot(9.0, 4.0);
+        }
+        Tool::CircularArc
+        | Tool::CircumcircularArc
+        | Tool::CircularSector
+        | Tool::CircumcircularSector => {
+            let arc = Pen::arc(0.0, 3.0, 9.0, 0.0, 145.0);
+            red.poly(&arc, false);
+            let end = arc[arc.len() - 1];
+            if matches!(tool, Tool::CircularSector | Tool::CircumcircularSector) {
+                red.poly(&[arc[0], (0.0, 3.0), end], false);
+            }
+            let middle = if matches!(tool, Tool::CircumcircularArc | Tool::CircumcircularSector) {
+                arc[arc.len() / 2]
+            } else {
+                (0.0, 3.0)
+            };
+            for (x, y) in [arc[0], middle, end] {
+                dot(x, y);
+            }
+        }
+        Tool::Compasses => {
+            ink.poly(&[(-9.0, 9.0), (0.0, -9.0), (9.0, 9.0)], false);
+            dot(0.0, -9.0);
+            red.poly(&Pen::arc(-8.0, 9.0, 17.0, 0.0, 27.0), false);
+        }
+        Tool::Ellipse | Tool::Conic5 => {
+            let rim: Vec<_> = Pen::arc(0.0, 0.0, 10.0, 0.0, 360.0)
+                .into_iter()
+                .map(|(x, y)| (x, y * 0.65))
+                .collect();
+            red.poly(&rim, true);
+            if tool == Tool::Ellipse {
+                dot(-6.0, 0.0);
+                dot(6.0, 0.0);
+                dot(0.0, -6.5);
+            } else {
+                for i in [1, 4, 7, 10, 13] {
+                    dot(rim[i].0, rim[i].1);
+                }
+            }
+        }
+        Tool::Hyperbola => {
+            for sign in [-1.0, 1.0] {
+                red.poly(
+                    &[
+                        (10.0 * sign, -9.0),
+                        (5.0 * sign, -4.0),
+                        (3.0 * sign, 0.0),
+                        (5.0 * sign, 4.0),
+                        (10.0 * sign, 9.0),
+                    ],
+                    false,
+                );
+                dot(6.0 * sign, 0.0);
+            }
+            dot(5.0, -4.0);
+        }
+        Tool::Parabola => {
+            ink.line((-11.0, 8.0), (11.0, 8.0));
+            red.poly(
+                &[
+                    (-9.0, -9.0),
+                    (-6.0, 0.0),
+                    (-3.0, 4.0),
+                    (0.0, 5.0),
+                    (3.0, 4.0),
+                    (6.0, 0.0),
+                    (9.0, -9.0),
+                ],
+                false,
+            );
+            dot(0.0, 1.0);
+        }
+        Tool::Polyline => {
+            let pts = [(-10.0, 5.0), (-4.0, -6.0), (3.0, 4.0), (10.0, -5.0)];
+            red.poly(&pts, false);
+            for (x, y) in pts {
+                dot(x, y);
+            }
+        }
+        Tool::Area => {
+            let outline = [(-10.0, 8.0), (-6.0, -8.0), (9.0, -4.0), (8.0, 8.0)];
+            ink.fill_poly(&outline, RESULT.gamma_multiply(0.25));
+            red.poly(&outline, true);
+            for x in [-4.0, 0.0, 4.0] {
+                ink.line((x - 2.0, 5.0), (x + 2.0, -2.0));
+            }
+        }
+        Tool::Slope => {
+            ink.line((-11.0, 9.0), (11.0, -9.0));
+            red.poly(&[(-7.0, 5.7), (6.0, 5.7), (6.0, -4.9)], false);
         }
         Tool::Angle => {
             ink.line((-10.0, 8.0), (10.0, 8.0));

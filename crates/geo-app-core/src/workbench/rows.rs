@@ -354,7 +354,8 @@ impl Workbench {
         }
         let c = &self.construction;
         // Rows whose value changed.
-        for ((id, row), old) in c.ids().zip(&mut self.rows).zip(&mut self.row_values) {
+        for (row, old) in self.rows.iter_mut().zip(&mut self.row_values) {
+            let id = row.id;
             let key = row_key(c, id);
             if same_key(*old, key) {
                 continue;
@@ -365,10 +366,13 @@ impl Workbench {
             changed |= set_value(row, text, free_number);
         }
         // Rows of new objects.
-        let from = self.rows.len();
+        let from = self.rows.last().map_or(0, |row| row.id.index() + 1);
         if from < c.len() {
             let sources = sources(c, &self.log, from);
             for (id, src) in c.ids().skip(from).zip(sources) {
+                if crate::scriptlog::is_internal(c, id) {
+                    continue;
+                }
                 self.rows.push(make_row(c, id, src));
                 self.row_values.push(row_key(c, id));
                 self.rows_formatted += 1;
@@ -400,8 +404,14 @@ impl Workbench {
         }
         let sources = sources(c, &self.log, 0);
         let mut last = None;
+        let mut count = 0;
         for ((id, k), &src) in kept.iter_mut().zip(&sources) {
             let (id, j) = (*id, *k);
+            if crate::scriptlog::is_internal(c, id) {
+                *k = usize::MAX;
+                continue;
+            }
+            count += 1;
             let fits = j != usize::MAX
                 && last.is_none_or(|l| l < j)
                 && still_fits(c, id, src, &rows[j], self.row_values[j], row_key(c, id));
@@ -421,12 +431,17 @@ impl Workbench {
         // Then each to its object's place (up or staying), and new rows in
         // the gaps: the places after `i` are done, the kept rows not placed
         // yet are the first `n`.
-        room_for(rows, c.len());
+        let visible = kept
+            .iter()
+            .zip(&sources)
+            .filter(|&(&(id, _), _)| !crate::scriptlog::is_internal(c, id));
+        room_for(rows, count);
         if let Some(&(first, _)) = kept.first() {
-            rows.resize_with(c.len(), || placeholder(first));
+            rows.resize_with(count, || placeholder(first));
         }
-        for (&(id, j), &src) in kept.iter().zip(&sources).rev() {
-            let i = id.index();
+        let mut i = count;
+        for (&(id, j), &src) in visible.rev() {
+            i -= 1;
             if j == usize::MAX {
                 rows[i] = make_row(c, id, src);
                 self.rows_formatted += 1;
@@ -437,8 +452,9 @@ impl Workbench {
             }
         }
         self.row_values.clear();
-        room_for(&mut self.row_values, c.len());
-        self.row_values.extend(c.ids().map(|id| row_key(c, id)));
+        room_for(&mut self.row_values, count);
+        self.row_values
+            .extend(self.rows.iter().map(|row| row_key(c, row.id)));
     }
 
     /// The rows made the way they were before they were cached: every row
@@ -449,7 +465,7 @@ impl Workbench {
         let c = &self.construction;
         let rhs: HashMap<&str, &str> = self.log.definitions().collect();
         let groups: Vec<&[String]> = self.log.multi_output().collect();
-        c.ids()
+        self.object_ids()
             .map(|id| {
                 let value = c.value(id);
                 let label = c.label(id).to_owned();

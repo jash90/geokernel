@@ -138,6 +138,21 @@ pub const fn tool_caption(tool: Tool) -> &'static str {
         Tool::ZoomOut => "Pomniejsz",
         Tool::ShowHide => "Pokaż lub ukryj",
         Tool::Delete => "Usuń",
+        Tool::VectorFromPoint => "Wektor od punktu",
+        Tool::Polyline => "Łamana",
+        Tool::VectorPolygon => "Wielokąt wektorowy",
+        Tool::Semicircle => "Półokrąg",
+        Tool::CircularArc => "Łuk: środek i dwa punkty",
+        Tool::CircumcircularArc => "Łuk przez trzy punkty",
+        Tool::CircularSector => "Wycinek: środek i punkty",
+        Tool::CircumcircularSector => "Wycinek przez trzy punkty",
+        Tool::Compasses => "Cyrkiel",
+        Tool::Ellipse => "Elipsa",
+        Tool::Hyperbola => "Hiperbola",
+        Tool::Parabola => "Parabola",
+        Tool::Conic5 => "Stożkowa przez pięć punktów",
+        Tool::Area => "Pole",
+        Tool::Slope => "Nachylenie",
     }
 }
 
@@ -191,6 +206,20 @@ pub enum Hint {
     ClickToZoomOut,
     ObjectToShowOrHide,
     ObjectToDelete,
+    StartOfArc,
+    EndOfArc,
+    FirstFocus,
+    SecondFocus,
+    Focus,
+    Directrix,
+    FocusOrDirectrix,
+    PointOnConic,
+    FivePoints,
+    NextVertexOrFinish,
+    VectorPolygonStart,
+    AreaObject,
+    SlopeObject,
+    PointOrVector,
 }
 
 /// The text of a tool hint.
@@ -243,6 +272,20 @@ pub const fn hint(key: Hint) -> &'static str {
         Hint::ClickToZoomOut => "Kliknij, aby pomniejszyć",
         Hint::ObjectToShowOrHide => "Kliknij obiekt, aby go pokazać lub ukryć",
         Hint::ObjectToDelete => "Kliknij obiekt do usunięcia",
+        Hint::StartOfArc => "Kliknij początek łuku",
+        Hint::EndOfArc => "Kliknij koniec łuku",
+        Hint::FirstFocus => "Kliknij pierwsze ognisko",
+        Hint::SecondFocus => "Kliknij drugie ognisko",
+        Hint::Focus => "Kliknij ognisko",
+        Hint::Directrix => "Kliknij kierownicę",
+        Hint::FocusOrDirectrix => "Kliknij ognisko lub kierownicę",
+        Hint::PointOnConic => "Kliknij punkt na krzywej",
+        Hint::FivePoints => "Kliknij pięć punktów krzywej",
+        Hint::NextVertexOrFinish => "Kliknij kolejny punkt albo pierwszy, aby zakończyć",
+        Hint::VectorPolygonStart => "Kliknij pierwszy wierzchołek lub wielokąt",
+        Hint::AreaObject => "Kliknij wielokąt, stożkową lub wycinek",
+        Hint::SlopeObject => "Kliknij prostą, odcinek, półprostą lub wykres funkcji",
+        Hint::PointOrVector => "Kliknij punkt lub wektor",
     }
 }
 
