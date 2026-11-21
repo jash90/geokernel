@@ -170,7 +170,9 @@ final class Session {
         if (out != null && out.length == 2 && isMultiOutput(definition)) {
             return runMulti(line, expected, out);
         }
-        if (out != null && out.length > 1 && definition.startsWith("Intersect(")) {
+        if (out != null && out.length > 0 && definition.startsWith("Intersect(")
+                && (out.length > 1 || (out[0].isLabelSet()
+                && !label.equals(out[0].getLabelSimple())))) {
             return runMulti(line, expected, out);
         }
         if (out != null && out.length >= 1 && isPerVertex(definition)) {

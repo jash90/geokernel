@@ -322,7 +322,8 @@ fn parse_multi(c: &Construction, rhs: &str) -> Option<Result<Vec<Def>, String>> 
 /// - two or more outputs defined at creation: every defined output is
 ///   created and gets the next free indexed label (`t_{1}`, `t_{2}`, ...);
 ///   `Vertex` of a hyperbola labels its two defined vertices only;
-/// - exactly one defined: only that output is created, labelled `name`;
+/// - exactly one defined: only that output is created, indexed for a
+///   polygonal boundary intersection and labelled `name` otherwise;
 /// - none defined: only the first output is created, labelled `name`.
 ///
 /// The set of created objects is fixed at creation: an output that was not
@@ -377,7 +378,8 @@ fn add_outputs(c: &mut Construction, name: &str, defs: Vec<Def>) -> Result<Id, S
         };
     }
     let count = defined.iter().filter(|&&d| d).count();
-    if count < 2 {
+    let indexed = matches!(defs.first(), Some(Def::IntersectBoundary(d)) if d.labels_indexed());
+    if count == 0 || count == 1 && !indexed {
         let k = defined.iter().position(|&d| d).unwrap_or(0);
         return c.add(name, defs[k]).map_err(|e| e.to_string());
     }
@@ -472,6 +474,10 @@ fn probe(c: &Construction, def: &Def) -> Result<bool, String> {
             c.check(def).map_err(|e| e.to_string())?;
             Ok(intersect::probe_line_circle(c, *line, *circle, *which))
         }
+        Def::IntersectConics(_) | Def::IntersectBoundary(_) => c
+            .evaluate(*def)
+            .map(|v| v != Value::Undefined)
+            .map_err(|e| e.to_string()),
         _ => Ok(true),
     }
 }
@@ -580,6 +586,9 @@ pub(crate) fn parse_def(c: &Construction, rhs: &str) -> Result<Def, String> {
     let args: Vec<&str> = inner.split(',').map(str::trim).collect();
     let obj = |s: &str| object(c, s);
 
+    if let Some(def) = intersect::parse_selected(c, func, &args) {
+        return def;
+    }
     // Groups are asked first, so that a group can add a new form of a
     // built-in command (for example `Circle` with three points). General
     // conics come first: they claim the transformations of conics.
@@ -958,7 +967,7 @@ mod tests {
              r = 5\n\
              k1 = Circle(A, r)\n\
              k2 = Circle(B, r)\n\
-             P = Intersect(k1, k2)      # first point\n\
+             P = Intersect(k1, k2, 1)   # first point\n\
              Q = Intersect(k1, k2, 2)\n\
              d = Distance(P, Q)\n",
         )
