@@ -44,7 +44,10 @@ impl BoundaryDef {
     }
 
     pub(crate) fn labels_indexed(self) -> bool {
-        matches!(self.0, Intersection::Edges(d) if d.labels_indexed())
+        match self.0 {
+            Intersection::Edges(d) => d.labels_indexed(),
+            Intersection::Function(d) => d.labels_indexed(),
+        }
     }
 
     pub(crate) fn hidden_parents(self, c: &Construction) -> Vec<Id> {

@@ -4,12 +4,13 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersectFunctionLineNewton.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersectPolynomialConic.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoRootsPolynomial.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoSimpleRootsPolynomial.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdIntersect.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
 use super::boundary::Carrier;
-use super::conics::{graph_roots, on_part};
+use super::conics::graph_roots;
 use super::function_roots::{check_root, interval_roots, root_near};
 use crate::algo::conic_nd::ConicType;
 use crate::algo::{curve, Group, Parents, CARRIERS, CONIC_OBJECTS};
@@ -38,6 +39,10 @@ enum Method {
 }
 
 impl FunctionIntersection {
+    pub(super) fn labels_indexed(self) -> bool {
+        matches!(self.method, Method::Conic(_))
+    }
+
     fn pair(c: &Construction, first: &str, second: &str) -> Option<(Id, Id)> {
         let (a, b) = (c.id(first)?, c.id(second)?);
         let graph_partner = |kind| {
@@ -322,7 +327,9 @@ impl FunctionIntersection {
             let mut residual = vec![constant, 2.0 * linear_x, xx];
             add(&mut residual, product(&y, &[2.0 * linear_y, 2.0 * xy]));
             add(&mut residual, product(&y, &product(&y, &[yy])));
-            graph_roots(&residual)
+            let mut roots = graph_roots(&residual);
+            roots.dedup_by(|a, b| (*a - *b).abs() <= MIN_PRECISION);
+            roots
         } else {
             let (left, right) = if matches!(conic.ty, ConicType::Circle | ConicType::Ellipse) {
                 let radius = 1.05 * conic.half_axes[0].max(conic.half_axes[1]);
@@ -343,15 +350,17 @@ impl FunctionIntersection {
                 right,
             )
         };
-        roots
-            .into_iter()
-            .filter_map(|x| {
-                let p = finite_point(x, f(x))?;
-                part.as_ref()
-                    .is_none_or(|part| on_part(part, p))
-                    .then_some(p)
-            })
-            .collect()
+        // The solver uses the full conic even when the input is a conic part.
+        let mut points = Vec::with_capacity(roots.len());
+        for (x, y) in roots.into_iter().filter_map(|x| finite_point(x, f(x))) {
+            if points
+                .iter()
+                .all(|&(a, b): &(f64, f64)| (x - a).powi(2) + (y - b).powi(2) >= STANDARD_PRECISION)
+            {
+                points.push((x, y));
+            }
+        }
+        points
     }
 }
 

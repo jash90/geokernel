@@ -527,7 +527,7 @@ cases = ["intersections-boundaryseed-004", "intersections-boundaryseed-008"]
 [[form]]
 command = "Intersect"
 form = "function,conic"
-cases = ["intersections-functionconic-001", "intersectfunctions-conic-001", "intersectfunctions-conic-006"]
+cases = ["intersections-functionconic-001", "intersectfunctions-conic-001", "intersectfunctions-conic-006", "intersectfunctions-degenerate-001", "intersectfunctions-tangency-001"]
 
 [[form]]
 command = "Intersect"

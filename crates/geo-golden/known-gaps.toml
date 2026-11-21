@@ -475,6 +475,18 @@ id = "intersections-slotreview-009"
 reason = "The indexed point recomputes with the single-output solver, which drops the duplicate root at tangency. GeoGebra's indexed point reads the shared intersection whose second slot already has a label."
 mismatches = ["1:S"]
 
+# intersectfunctions
+
+[[gap]]
+id = "intersectfunctions-automatic-001"
+reason = "The automatic function pair solver starts each update at x=0. AlgoIntersectFunctionsNewton moves its unnamed seed to the last successful root; the reference follows that branch as the parameter changes."
+mismatches = ["2:R", "3:R", "4:R"]
+
+[[gap]]
+id = "intersectfunctions-automatic-002"
+reason = "The automatic function and line solver starts each update at x=0. AlgoIntersectFunctionLineNewton moves its unnamed seed to the last successful root; the reference follows that branch as the parameter changes."
+mismatches = ["2:R", "3:R", "4:R"]
+
 # intersectreview
 
 [[gap]]

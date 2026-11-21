@@ -57,4 +57,16 @@ case("interval", ["f(x) = cos(x)", "h(x) = 0"], "h, f, 0, 7")
 case("interval", ["f(x) = x^2", "h(x) = 0"], "f, h, -1, 1")
 case("interval", ["f(x) = 1/x", "h(x) = 0"], "f, h, -1, 1")
 
+steps = [setn("a", i) for i in range(1, 5)]
+case("automatic", ["a = 0", "f(x) = sin(x - a)", "h(x) = 0"], "f, h", steps)
+case("automatic", ["a = 0", "f(x) = sin(x - a)"], "f, xAxis", steps)
+case("tangency", ["a = 0.9999999999", "f(x) = a", "k = Conic({1, 1, -1, 0, 0, 0})"],
+     "f, k", [setn("a", 0.999), setn("a", 1), setn("a", 1.001)])
+case("tangency", ["a = 0.999", "f(x) = a", "O = (0.01, 0)", "r = 1", "k = Circle(O, r)"],
+     "f, k", [setn("a", 0.9999999999), setn("a", 1.001)])
+case("conicpart", ["O = (0, 0)", "A = (1, 0)", "B = (0, 1)",
+                  "k = CircularArc(O, A, B)", "a = -0.5", "f(x) = a"],
+     "f, k", [setn("a", 0.5), mv("A", -1, 0), setn("a", 1)])
+case("degenerate", ["f(x) = (x - 1)^2 + 1", "k = Conic({1, -1, 0, 0, 0, 0})"], "f, k")
+
 cases.write()
