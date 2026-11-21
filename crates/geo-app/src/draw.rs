@@ -14,13 +14,16 @@ use crate::labelpos;
 use crate::shape;
 use crate::style;
 use crate::theme;
+use eframe::egui::epaint::{CircleShape, PathShape, TessellationOptions, Tessellator};
 use eframe::egui::{vec2, Align2, Color32, FontId, Mesh, Painter, Pos2, Rect, Shape, Stroke};
 use geo_app_core::geom;
 use geo_kernel::algo::vector;
 use geo_kernel::kernel::{Construction, Id, Kind, Value};
-use geo_kernel::ConicType;
+use geo_kernel::{ConicType, LocusPoint};
 use std::borrow::Cow;
 use std::cell::RefCell;
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex, Weak};
 
 /// Point radii in pixels: point size 5 for free points, 4 for dependent ones.
 pub use crate::style::FREE_POINT_RADIUS;
@@ -95,6 +98,10 @@ fn near_view(c: &Construction, id: Id, t: &ViewTransform, w: f64, h: f64) -> boo
             None => true,
         },
         Value::Polygon { .. } | Value::PolyLine { .. } => near(&mut c.vertices(id).flatten(), NEAR),
+        Value::Locus { .. } => c
+            .locus(id)
+            .and_then(|l| l.bounds())
+            .is_some_and(|[x0, x1, y0, y1]| near(&mut [(x0, y0), (x1, y1)].into_iter(), NEAR)),
         Value::Conic { .. } => match c.conic(id) {
             Some(d) if matches!(d.ty, ConicType::Ellipse | ConicType::Circle) => {
                 let ([a, b], [e0, e1], [mx, my]) = (d.half_axes, d.eigenvec, d.midpoint);
@@ -358,6 +365,10 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
                 }
             }
         }
+    }
+
+    if c.has_loci() {
+        paint_loci(painter, c, &ids, (t, origin), color, scene.generation);
     }
 
     for &id in &ids {
@@ -625,6 +636,135 @@ fn paint_highlight(painter: &Painter, rect: Rect, hl: Highlight, color: Color32,
     }
 }
 
+#[derive(Default)]
+struct LocusCache {
+    generation: u64,
+    entries: HashMap<Id, LocusDrawing>,
+    /// Tessellation borrows a run's points, so this allocation can be
+    /// reused for every run and every rebuild of a drawing.
+    run: Vec<Pos2>,
+}
+
+struct LocusDrawing {
+    points: Weak<Vec<LocusPoint>>,
+    view: ViewTransform,
+    origin: Pos2,
+    color: Color32,
+    pixels_per_point: f32,
+    options: TessellationOptions,
+    mesh: Arc<Mesh>,
+}
+
+fn paint_loci(
+    painter: &Painter,
+    c: &Construction,
+    ids: &[Id],
+    (view, origin): (&ViewTransform, Pos2),
+    color: impl Fn(Id) -> Color32,
+    generation: u64,
+) {
+    let ctx = painter.ctx();
+    let cache = ctx.data_mut(|d| {
+        d.get_temp_mut_or_default::<Arc<Mutex<LocusCache>>>(eframe::egui::Id::unique("geo_loci"))
+            .clone()
+    });
+    let mut cache = cache.lock().unwrap_or_else(|e| e.into_inner());
+    let LocusCache {
+        generation: cached_generation,
+        entries,
+        run,
+    } = &mut *cache;
+    if *cached_generation != generation {
+        entries.clear();
+        *cached_generation = generation;
+    }
+
+    let pixels_per_point = ctx.pixels_per_point();
+    let options = ctx.tessellation_options(|o| *o);
+    for &id in ids {
+        let Some(locus) = c.locus(id).filter(|l| l.defined) else {
+            continue;
+        };
+        let color = color(id);
+        let mesh = entries
+            .get(&id)
+            .filter(|entry| {
+                entry.points.as_ptr() == Arc::as_ptr(&locus.points)
+                    && entry.view == *view
+                    && entry.origin == origin
+                    && entry.color == color
+                    && entry.pixels_per_point == pixels_per_point
+                    && entry.options == options
+            })
+            .map(|entry| entry.mesh.clone())
+            .unwrap_or_else(|| {
+                let mesh = Arc::new(locus_mesh(
+                    &locus.points,
+                    |x, y| {
+                        let (sx, sy) = view.world_to_screen(x, y);
+                        origin + vec2(sx as f32, sy as f32)
+                    },
+                    Stroke::new(CURVE_WIDTH, color),
+                    run,
+                    (pixels_per_point, options),
+                ));
+                entries.insert(
+                    id,
+                    LocusDrawing {
+                        points: Arc::downgrade(&locus.points),
+                        view: *view,
+                        origin,
+                        color,
+                        pixels_per_point,
+                        options,
+                        mesh: mesh.clone(),
+                    },
+                );
+                mesh
+            });
+        if !mesh.is_empty() {
+            painter.add(Shape::Mesh(mesh));
+        }
+    }
+}
+
+fn locus_mesh(
+    points: &[LocusPoint],
+    p: impl Fn(f64, f64) -> Pos2,
+    stroke: Stroke,
+    scratch: &mut Vec<Pos2>,
+    (pixels_per_point, options): (f32, TessellationOptions),
+) -> Mesh {
+    let mut mesh = Mesh::default();
+    let mut tess = Tessellator::new(pixels_per_point, options, [1, 1], Vec::new());
+    let mut run = PathShape::line(std::mem::take(scratch), stroke);
+    let mut flush = |run: &mut PathShape| {
+        match *run.points.as_slice() {
+            [] => {}
+            // Epaint collapses a zero-length segment. Draw its round stroke
+            // cap at the sample (CurvePlotterUtils.moveTo).
+            [at] => tess.tessellate_circle(
+                CircleShape::filled(at, stroke.width / 2.0, stroke.color),
+                &mut mesh,
+            ),
+            _ => tess.tessellate_path(run, &mut mesh),
+        }
+        run.points.clear();
+    };
+    for pt in points {
+        let at = p(pt.x, pt.y);
+        if !pt.line_to || !at.is_finite() {
+            flush(&mut run);
+        }
+        if at.is_finite() && run.points.last() != Some(&at) {
+            run.points.push(at);
+        }
+    }
+    flush(&mut run);
+    *scratch = run.points;
+    mesh
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -654,6 +794,28 @@ mod tests {
         });
         out.textures_delta.clear();
         out.shapes.len()
+    }
+
+    #[test]
+    fn a_lone_locus_point_draws_a_stroke_cap() {
+        let at = Pos2::new(40.0, 50.0);
+        let color = Color32::RED;
+        let mesh = locus_mesh(
+            &[LocusPoint {
+                x: 40.0,
+                y: 50.0,
+                line_to: false,
+            }],
+            |x, y| Pos2::new(x as f32, y as f32),
+            Stroke::new(CURVE_WIDTH, color),
+            &mut Vec::new(),
+            (1.0, TessellationOptions::default()),
+        );
+        let mut bounds = Rect::NOTHING;
+        for vertex in mesh.vertices.iter().filter(|v| v.color == color) {
+            bounds.extend_with(vertex.pos);
+        }
+        assert!(bounds.is_positive() && bounds.contains(at), "{bounds:?}");
     }
 
     #[test]

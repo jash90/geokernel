@@ -34,7 +34,7 @@ impl Bounds {
     }
 }
 
-/// The bounding box of every defined point, segment end and circle.
+/// The bounding box of defined points, segment ends, circles and locus samples.
 /// Lines are unbounded and are ignored. `None` when nothing is bounded.
 pub fn content_bounds(c: &Construction) -> Option<Bounds> {
     let mut b = Bounds {
@@ -60,6 +60,12 @@ pub fn content_bounds(c: &Construction) -> Option<Bounds> {
             Value::Circle { cx, cy, r } => {
                 add(&mut b, cx - r, cy - r);
                 add(&mut b, cx + r, cy + r);
+            }
+            Value::Locus { .. } => {
+                if let Some([xmin, xmax, ymin, ymax]) = c.locus(id).and_then(|l| l.bounds()) {
+                    add(&mut b, xmin, ymin);
+                    add(&mut b, xmax, ymax);
+                }
             }
             _ => {}
         }

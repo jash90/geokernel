@@ -2,7 +2,7 @@
 
 use crate::model::{ConicParts, Expected, ExpectedData, SAMPLE_XS};
 use geo_kernel::expr::{Element, List};
-use geo_kernel::{ArcData, ConicData, Kind, Value};
+use geo_kernel::{ArcData, ConicData, Kind, LocusData, Value};
 
 /// Result of a successful comparison.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -404,6 +404,52 @@ pub fn compare_conic(
 /// (`Construction::arc`): the value, the conic type, the orientation where
 /// GeoGebra records it, and for a part of a circle or ellipse its start and
 /// end parameter, arc length, area and conic parts, raw.
+/// Compares a locus point by point: the same number of points, each within
+/// the tolerance with the same `lineTo` flag; an undefined point (NaN on the
+/// kernel's side) only agrees with an undefined one.
+pub fn compare_locus(
+    expected: &Expected,
+    kind: Kind,
+    actual: &Value,
+    data: Option<&LocusData>,
+) -> Result<Sign, String> {
+    if expected.kind != kind {
+        return Err(format!(
+            "type mismatch: expected {}, got {kind}",
+            expected.kind
+        ));
+    }
+    let (want, got) = match (&expected.data, actual, data) {
+        (None, Value::Undefined, _) => return Ok(Sign::NotApplicable),
+        (None, _, _) => return Err("expected undefined, kernel has a value".into()),
+        (Some(_), Value::Undefined, _) | (Some(_), _, None) => {
+            return Err("expected a value, kernel is undefined".into())
+        }
+        (Some(ExpectedData::Locus(want)), Value::Locus { .. }, Some(d)) => (want, d.points.iter()),
+        _ => return Err("kernel value has a different shape than its kind".into()),
+    };
+    if want.len() != got.len() {
+        return Err(format!(
+            "{} points expected, kernel has {}",
+            want.len(),
+            got.len()
+        ));
+    }
+    for (i, ((at, line_to), p)) in want.iter().zip(got).enumerate() {
+        let same = match *at {
+            Some((x, y)) => numbers_agree(x, p.x) && numbers_agree(y, p.y),
+            None => !p.x.is_finite() && !p.y.is_finite(),
+        };
+        if !same || *line_to != p.line_to {
+            return Err(format!(
+                "point {i} differs: expected {at:?} lineTo {line_to}, kernel has ({}, {}) lineTo {}",
+                p.x, p.y, p.line_to
+            ));
+        }
+    }
+    Ok(Sign::NotApplicable)
+}
+
 pub fn compare_arc(
     expected: &Expected,
     kind: Kind,

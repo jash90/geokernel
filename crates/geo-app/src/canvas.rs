@@ -18,6 +18,8 @@ use geo_kernel::kernel::{Id, Kind};
 
 const ZOOM_BUTTON: f64 = 1.25;
 const ZOOM_TOOL: f64 = 1.5;
+const LOCUS_SCALE_RATIO: f64 = 1.5;
+const LOCUS_SAMPLE_INTERVAL: f64 = 0.08;
 /// How many places where a press or a finger went down in one frame are
 /// checked against what lies over the drawing; any further one is not the
 /// drawing's.
@@ -104,9 +106,9 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             app.camera = Some(cam.resized((old.width() as f64, old.height() as f64), (w, h)));
         }
     }
-    let bounds = view::content_bounds(app.wb.construction());
     let request = app.view_request.take();
     if app.camera.is_none() || request.is_some() {
+        let bounds = view::content_bounds(app.wb.construction());
         app.camera = Some(match request {
             Some(ViewRequest::Standard) => Camera::STANDARD,
             Some(ViewRequest::Fit) => Camera::fit(bounds, w, h),
@@ -452,6 +454,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
 
     app.camera = Some(cam);
     let t = cam.transform(w, h);
+    sample_loci(app, ui, t);
     // Whoever got the press (this area, a button over it, a dialog), it
     // ends with the release.
     if fed.released {
@@ -483,6 +486,37 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     overlay(app, ui, rect, w, h, &mut cam);
     app.camera = Some(cam);
     app.view = Some((rect.core(), cam.transform(w, h)));
+}
+
+fn sample_loci(app: &mut App, ui: &Ui, t: ViewTransform) {
+    let c = app.wb.construction();
+    if !c.has_loci() {
+        return;
+    }
+    let now = ui.input(|i| i.time);
+    if let Some([xmin, xmax, ymin, ymax, scale, _]) = c.locus_view() {
+        // The sampler already covers half a view past each edge.
+        let (mx, my) = ((xmax - xmin) * 0.5, (ymax - ymin) * 0.5);
+        let v = t.view();
+        if v.xmin >= xmin - mx
+            && v.xmax <= xmax + mx
+            && v.ymin >= ymin - my
+            && v.ymax <= ymax + my
+            && (1.0 / LOCUS_SCALE_RATIO..=LOCUS_SCALE_RATIO).contains(&(t.scale() / scale))
+        {
+            return;
+        }
+        if let Some(last) = app.locus_sample_time {
+            let remaining = LOCUS_SAMPLE_INTERVAL - (now - last);
+            if remaining > 0.0 {
+                ui.ctx()
+                    .request_repaint_after(std::time::Duration::from_secs_f64(remaining));
+                return;
+            }
+        }
+    }
+    app.wb.set_locus_view(t);
+    app.locus_sample_time = Some(now);
 }
 
 /// What a press of the move tool takes hold of.

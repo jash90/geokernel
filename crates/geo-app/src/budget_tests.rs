@@ -513,6 +513,27 @@ fn frame_counters_stay_within_the_budget() {
     assert!(get(&large, "idle_zoomed_4x").shapes * 3 < get(&large, "idle").shapes);
 }
 
+#[test]
+fn locus_frames_stay_within_the_budget() {
+    let (mut script, mid) = grid(83);
+    script +=
+        "A = (0, 0)\nr = 0\nc = Circle(A, r)\nP = Point(c)\nQ = (x(P), y(P))\nL = Locus(Q, P)\n";
+    let mut w = Window::with(&script, mid);
+    let c = w.app.wb.construction();
+    assert_eq!(c.len(), 1002);
+    assert_eq!(c.value(c.id("L").unwrap()), Value::Locus { len: 10_001 });
+    let idle = w.settled(1);
+    println!("locus idle: {idle:?}");
+    // The cached stroke cap measured 2395 shapes, 964 texts, 88811
+    // vertices and 2655 allocations of 518425 bytes. Drawing each repeated
+    // sample added about 80000 vertices and 262 kB of allocations.
+    assert!(idle.shapes <= 2_450 && idle.texts <= 1_000, "{idle:?}");
+    assert!(idle.vertices <= 92_000, "{idle:?}");
+    assert!(idle.allocs <= 2_850 && idle.bytes <= 560_000, "{idle:?}");
+    assert_eq!((idle.rows_formatted, idle.rows_built), (0, 0));
+    assert!(!idle.immediate);
+}
+
 /// The benchmark's grid of 45 cells (540 objects, with the triangles'
 /// sides) with 50 groups of three
 /// free points and four conics on them (two ellipses, two hyperbolas: 350
