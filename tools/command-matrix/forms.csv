@@ -260,7 +260,7 @@ Minimize,optimization,2,"number,number | number,point"
 IntersectionPaths,english,9,"line,polygon | polygon,line | segment,conic | conic,segment | polyline,conic | conic,polyline | polygon,conic | conic,polygon | polygon,polygon"
 IFactor,algebra,1,any
 CommonDenominator,algebra,2,"number,number | function,function"
-Cross,algebra,4,"point,point | point,vector | vector,point | vector,vector"
+Cross,algebra,5,"point,point | point,vector | vector,point | vector,vector | list,list"
 CSolutions,algebra,10,"list | function | line | conic | implicit | list,any | function,any | line,any | conic,any | implicit,any"
 CSolve,algebra,10,"list | function | line | conic | implicit | list,any | function,any | line,any | conic,any | implicit,any"
 Dot,algebra,1,"any,any"

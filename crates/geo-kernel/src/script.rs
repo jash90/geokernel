@@ -160,6 +160,9 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
     if let Some(result) = intersect::exec_selected(c, name, rhs) {
         return result;
     }
+    if let Some(result) = define_vector_call(c, name, rhs) {
+        return result;
+    }
     // GeoGebra returns an already labelled angle unchanged.
     if rhs.starts_with("Angle") {
         if let Some(("Angle", args)) = split_call(rhs) {
@@ -170,17 +173,47 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
             }
         }
     }
+    define_expression_or_command(c, name, rhs).map(Some)
+}
+
+fn define_expression_or_command(c: &mut Construction, name: &str, rhs: &str) -> Result<Id, String> {
     match define(c, name, rhs) {
         Ok(id) => {
             if matches!(c.def(id), Def::Number(_)) {
                 // a decimal literal keeps its exact decimal
                 crate::expr::record_literal(c, id, rhs);
             }
-            Ok(Some(id))
+            Ok(id)
         }
         // A call of a command keeps the command's own error.
         Err(e) if is_single_call(c, rhs) => Err(e),
-        Err(_) => crate::expr::define(c, name, rhs, is_vector_label(name)).map(Some),
+        Err(_) => {
+            let vector = is_vector_label(name)
+                || rhs.split_once('(').is_some_and(|(name, _)| {
+                    VectorDef::vector_result(name.trim()) && call_closes_at_end(rhs, name.len())
+                });
+            crate::expr::define(c, name, rhs, vector)
+        }
+    }
+}
+
+/// `CmdVector` keeps a labelled vector and labels an anonymous one.
+fn define_vector_call(
+    c: &mut Construction,
+    name: &str,
+    rhs: &str,
+) -> Option<Result<Option<Id>, String>> {
+    let (command, rest) = rhs.split_once('(')?;
+    if command.trim() != "Vector" || !call_closes_at_end(rhs, command.len()) {
+        return None;
+    }
+    let arg = rest.strip_suffix(')')?.trim();
+    if c.id(arg).is_some_and(|id| c.kind(id) == Kind::Vector) {
+        return Some(Ok(None));
+    }
+    match parse_forced(arg)? {
+        Ok(def @ Def::Vector(_)) => Some(c.add(name, def).map(Some).map_err(|e| e.to_string())),
+        _ => None,
     }
 }
 
@@ -237,6 +270,10 @@ fn is_single_call(c: &Construction, rhs: &str) -> bool {
     {
         return false;
     }
+    call_closes_at_end(rhs, open)
+}
+
+fn call_closes_at_end(rhs: &str, open: usize) -> bool {
     let mut depth = 0usize;
     for (i, ch) in rhs.char_indices().skip_while(|&(i, _)| i < open) {
         match ch {
@@ -506,7 +543,7 @@ fn is_finite(v: &Value) -> bool {
         Value::Arc { length } => length.is_finite(),
         Value::Sector { area } => area.is_finite(),
         Value::Locus { .. } => true,
-        Value::Undefined => false,
+        Value::HomogeneousPoint { .. } | Value::Undefined => false,
     }
 }
 

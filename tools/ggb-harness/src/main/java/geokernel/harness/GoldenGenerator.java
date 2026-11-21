@@ -123,6 +123,12 @@ public final class GoldenGenerator {
                     outStep.put("value", value);
                     break;
                 }
+                case "reject": {
+                    String line = (String) step.get("line");
+                    session.reject(line);
+                    outStep.put("line", line);
+                    break;
+                }
                 default:
                     throw new IllegalArgumentException("unknown action " + action);
             }

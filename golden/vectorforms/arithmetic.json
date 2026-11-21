@@ -1,0 +1,119 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "vectorforms-arithmetic-001",
+      "group": "vectorforms",
+      "script": [
+        "A = (1, 2)",
+        "B = (2, 3)",
+        "u = $vector(1, 2)",
+        "n = 2",
+        "v = B - A",
+        "w = u + v",
+        "p = u - v",
+        "q = n * v",
+        "r = u / n",
+        "s = -v",
+        "t = u * v",
+        "j = u^2"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 1.0, "y": 2.0 },
+        { "action": "set_number", "label": "n", "value": 0.0 },
+        { "action": "move", "label": "u", "x": -3.0, "y": 4.0 },
+        { "action": "set_number", "label": "n", "value": -2.0 },
+        { "action": "move", "label": "A", "x": -3.0, "y": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 1.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": 3.0 },
+          "p": { "type": "vector", "defined": true, "x": 0.0, "y": 1.0 },
+          "q": { "type": "vector", "defined": true, "x": 2.0, "y": 2.0 },
+          "r": { "type": "vector", "defined": true, "x": 0.5, "y": 1.0 },
+          "s": { "type": "vector", "defined": true, "x": -1.0, "y": -1.0 },
+          "t": { "type": "number", "defined": true, "value": 3.0 },
+          "j": { "type": "number", "defined": true, "value": 5.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "v": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "w": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "p": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "q": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "vector", "defined": true, "x": 0.5, "y": 1.0 },
+          "s": { "type": "vector", "defined": true, "x": -0.0, "y": -0.0 },
+          "t": { "type": "number", "defined": true, "value": 0.0 },
+          "j": { "type": "number", "defined": true, "value": 5.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "w": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "p": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "q": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "vector", "defined": false },
+          "s": { "type": "vector", "defined": true, "x": -0.0, "y": -0.0 },
+          "t": { "type": "number", "defined": true, "value": 0.0 },
+          "j": { "type": "number", "defined": true, "value": 5.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": -3.0, "y": 4.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "w": { "type": "vector", "defined": true, "x": -3.0, "y": 4.0 },
+          "p": { "type": "vector", "defined": true, "x": -3.0, "y": 4.0 },
+          "q": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "vector", "defined": false },
+          "s": { "type": "vector", "defined": true, "x": -0.0, "y": -0.0 },
+          "t": { "type": "number", "defined": true, "value": 0.0 },
+          "j": { "type": "number", "defined": true, "value": 25.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": -3.0, "y": 4.0 },
+          "n": { "type": "number", "defined": true, "value": -2.0 },
+          "v": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "w": { "type": "vector", "defined": true, "x": -3.0, "y": 4.0 },
+          "p": { "type": "vector", "defined": true, "x": -3.0, "y": 4.0 },
+          "q": { "type": "vector", "defined": true, "x": -0.0, "y": -0.0 },
+          "r": { "type": "vector", "defined": true, "x": 1.5, "y": -2.0 },
+          "s": { "type": "vector", "defined": true, "x": -0.0, "y": -0.0 },
+          "t": { "type": "number", "defined": true, "value": 0.0 },
+          "j": { "type": "number", "defined": true, "value": 25.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": -3.0, "y": 4.0 },
+          "n": { "type": "number", "defined": true, "value": -2.0 },
+          "v": { "type": "vector", "defined": true, "x": 4.0, "y": 0.0 },
+          "w": { "type": "vector", "defined": true, "x": 1.0, "y": 4.0 },
+          "p": { "type": "vector", "defined": true, "x": -7.0, "y": 4.0 },
+          "q": { "type": "vector", "defined": true, "x": -8.0, "y": -0.0 },
+          "r": { "type": "vector", "defined": true, "x": 1.5, "y": -2.0 },
+          "s": { "type": "vector", "defined": true, "x": -4.0, "y": -0.0 },
+          "t": { "type": "number", "defined": true, "value": -12.0 },
+          "j": { "type": "number", "defined": true, "value": 25.0 }
+        }
+      ]
+    }
+  ]
+}

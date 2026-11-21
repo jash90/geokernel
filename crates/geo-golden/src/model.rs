@@ -32,6 +32,7 @@ pub enum Step {
     Initial,
     Move { label: String, x: f64, y: f64 },
     SetNumber { label: String, value: f64 },
+    Reject { line: String },
 }
 
 #[derive(Deserialize)]
@@ -42,6 +43,7 @@ struct RawStep {
     x: Option<f64>,
     y: Option<f64>,
     value: Option<f64>,
+    line: Option<String>,
 }
 
 impl<'de> Deserialize<'de> for Step {
@@ -49,6 +51,9 @@ impl<'de> Deserialize<'de> for Step {
         use serde::de::Error;
         let raw = RawStep::deserialize(d)?;
         let need = |name: &str| D::Error::custom(format!("step `{}` needs `{name}`", raw.action));
+        if raw.action != "reject" && raw.line.is_some() {
+            return Err(D::Error::custom("only step `reject` takes `line`"));
+        }
         match raw.action.as_str() {
             "initial" => {
                 if raw.label.is_some() || raw.x.is_some() || raw.y.is_some() || raw.value.is_some()
@@ -74,6 +79,15 @@ impl<'de> Deserialize<'de> for Step {
                 Ok(Step::SetNumber {
                     label: raw.label.clone().ok_or_else(|| need("label"))?,
                     value: raw.value.ok_or_else(|| need("value"))?,
+                })
+            }
+            "reject" => {
+                if raw.label.is_some() || raw.x.is_some() || raw.y.is_some() || raw.value.is_some()
+                {
+                    return Err(D::Error::custom("step `reject` takes only `line`"));
+                }
+                Ok(Step::Reject {
+                    line: raw.line.ok_or_else(|| need("line"))?,
                 })
             }
             other => Err(D::Error::custom(format!("unknown action `{other}`"))),

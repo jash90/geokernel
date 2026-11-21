@@ -123,6 +123,21 @@ final class Session {
         return kernel;
     }
 
+    /** Checks that GeoGebra reports an error and creates no output. */
+    void reject(String line) {
+        Matcher matcher = LINE.matcher(line);
+        if (!matcher.matches() || kernel.lookupLabel(matcher.group(1)) != null) {
+            throw new IllegalArgumentException("expected an assignment to a new label: " + line);
+        }
+        CommandErrorHandler errors = new CommandErrorHandler(line, true);
+        GeoElementND[] out = processor.processAlgebraCommandNoExceptionHandling(
+                line, false, errors, false, null);
+        if (!errors.reported || (out != null && out.length != 0)
+                || kernel.lookupLabel(matcher.group(1)) != null) {
+            throw new IllegalStateException("GeoGebra did not reject: " + line);
+        }
+    }
+
     /** Runs one `label = definition` or `label: equation` line and checks
      * what GeoGebra created. */
     GeoElement run(String line) {
@@ -154,7 +169,7 @@ final class Session {
             throw new IllegalArgumentException("label used twice: " + label);
         }
         GeoElementND[] out = processor.processAlgebraCommandNoExceptionHandling(
-                line, false, new ThrowingErrorHandler(line), false, null);
+                line, false, new CommandErrorHandler(line, false), false, null);
         if (trackBoundaryGrowth && out != null && out.length > 0) {
             GeoElement first = out[0].toGeoElement();
             AlgoElement parent = first.getParentAlgorithm();
@@ -253,6 +268,7 @@ final class Session {
                 ? !readsObjects(definition) && !callsCommand(definition)
                 : (expected.equals("point") || expected.equals("vector"))
                         && POINT.matcher(definition).matches()
+                        || definition.startsWith("Vector($vector(") && geo instanceof GeoVector
                         || expected.equals("number") && (NUMBER.matcher(definition).matches()
                                 || definition.startsWith("Slider("))
                         || expected.equals("angle") && definition.startsWith("Angle(")
@@ -550,6 +566,10 @@ final class Session {
         Matcher m = CALL.matcher(definition);
         while (m.find()) {
             if (objects.containsKey(m.group(1))) {
+                continue;
+            }
+            if (m.group(1).equals("Dot") || m.group(1).equals("Cross")) {
+                // The command processor rewrites these calls to arithmetic operations.
                 continue;
             }
             if (m.group(1).equals("If") && conditionsReadX(definition, m.end())) {
@@ -941,6 +961,10 @@ final class Session {
         String arguments = definition.substring(definition.indexOf('(') + 1, definition.length() - 1);
         GeoElement first = objects.get(arguments.split(",", 2)[0].trim());
         switch (command) {
+            case "ApplyMatrix":
+                List<String> args = arguments(definition);
+                GeoElement target = args.size() == 2 ? objects.get(args.get(1).trim()) : null;
+                return target == null ? null : schemaType(target);
             case "Polar":
                 return first instanceof GeoLine ? "point" : "line";
             case "Center":
@@ -1361,22 +1385,28 @@ final class Session {
         return f;
     }
 
-    /** Turns every GeoGebra error report into an exception. */
-    private static final class ThrowingErrorHandler implements ErrorHandler {
+    /** Captures expected command errors and throws on unexpected ones. */
+    private static final class CommandErrorHandler implements ErrorHandler {
         private final String line;
+        private final boolean expectError;
+        private boolean reported;
 
-        ThrowingErrorHandler(String line) {
+        CommandErrorHandler(String line, boolean expectError) {
             this.line = line;
+            this.expectError = expectError;
         }
 
         @Override
         public void showError(String msg) {
-            throw new IllegalStateException("GeoGebra error in '" + line + "': " + msg);
+            if (!expectError) {
+                throw new IllegalStateException("GeoGebra error in '" + line + "': " + msg);
+            }
+            reported = true;
         }
 
         @Override
         public void showCommandError(String command, String message) {
-            throw new IllegalStateException("GeoGebra error in '" + line + "': " + message);
+            showError(message);
         }
 
         @Override
