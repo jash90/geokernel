@@ -31,7 +31,7 @@
 <tableview min="0" max="0" step="0"/>
 <scripting blocked="false" disabled="false"/>
 <construction title="" author="" date="">
-<expression label="A" exp="(1, 1)" type="point"/>
+<expression label="A" exp="(-3.78, -3.03)" type="point"/>
 <element type="point" label="A">
 	<show object="true" label="true"/>
 	<objColor r="77" g="77" b="255" alpha="0"/>
@@ -40,21 +40,15 @@
 	<animation step="0.1" type="1" playing="false"/>
 	<pointSize val="5"/>
 	<pointStyle val="0"/>
-	<coords x="1" y="1" z="1"/>
+	<coords x="-3.78" y="-3.03" z="1"/>
 </element>
-<expression label="B" exp="(1.001, 1)" type="point"/>
-<element type="point" label="B">
-	<show object="true" label="true"/>
-	<objColor r="77" g="77" b="255" alpha="0"/>
-	<layer val="0"/>
-	<labelMode val="0"/>
-	<animation step="0.1" type="1" playing="false"/>
-	<pointSize val="5"/>
-	<pointStyle val="0"/>
-	<coords x="1.001" y="1" z="1"/>
+<expression label="r" exp="1.66"/>
+<element type="numeric" label="r">
+	<value val="1.66"/>
+	<show object="false" label="true"/>
 </element>
 <command name="Circle">
-	<input a0="A" a1="B"/>
+	<input a0="A" a1="r"/>
 	<output a0="k"/>
 </command>
 <element type="conic" label="k">
@@ -65,15 +59,26 @@
 	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
 	<eqnStyle style="specific"/>
 	<eigenvectors x0="1" y0="0" z0="1" x1="0" y1="1" z1="1"/>
-	<matrix A0="1" A1="1" A2="1.9999989999999999" A3="0" A4="-1" A5="-1"/>
+	<matrix A0="1" A1="1" A2="20.7137" A3="0" A4="3.78" A5="3.03"/>
 </element>
-<expression label="f" exp="3"/>
+<expression label="f" exp="1.5"/>
 <element type="numeric" label="f">
-	<value val="3"/>
+	<value val="1.5"/>
 	<show object="false" label="true"/>
 </element>
+<expression label="Q" exp="(5.22, -5.05)" type="point"/>
+<element type="point" label="Q">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="1" playing="false"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="5.22" y="-5.05" z="1"/>
+</element>
 <command name="Dilate">
-	<input a0="k" a1="f"/>
+	<input a0="k" a1="f" a2="Q"/>
 	<output a0="m"/>
 </command>
 <element type="conic" label="m">
@@ -84,7 +89,7 @@
 	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
 	<eqnStyle style="specific"/>
 	<eigenvectors x0="1" y0="0" z0="1" x1="0" y1="1" z1="1"/>
-	<matrix A0="1.7777777777777777" A1="1.7777777777777777" A2="31.999983999999998" A3="0" A4="-5.333333333333333" A5="-5.333333333333333"/>
+	<matrix A0="1.7777777777777777" A1="1.7777777777777777" A2="118.11324444444443" A3="0" A4="14.72" A5="3.5911111111111094"/>
 </element>
 </construction>
 </geogebra>

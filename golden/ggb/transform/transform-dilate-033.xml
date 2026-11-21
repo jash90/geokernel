@@ -42,9 +42,9 @@
 	<pointStyle val="0"/>
 	<coords x="1" y="1" z="1"/>
 </element>
-<expression label="r" exp="0.00005"/>
+<expression label="r" exp="2"/>
 <element type="numeric" label="r">
-	<value val="5.0E-5"/>
+	<value val="2"/>
 	<show object="false" label="true"/>
 </element>
 <command name="Circle">
@@ -59,11 +59,11 @@
 	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
 	<eqnStyle style="specific"/>
 	<eigenvectors x0="1" y0="0" z0="1" x1="0" y1="1" z1="1"/>
-	<matrix A0="1" A1="1" A2="1.9999999975" A3="0" A4="-1" A5="-1"/>
+	<matrix A0="1" A1="1" A2="-2" A3="0" A4="-1" A5="-1"/>
 </element>
-<expression label="f" exp="0.5"/>
+<expression label="f" exp="2"/>
 <element type="numeric" label="f">
-	<value val="0.5"/>
+	<value val="2"/>
 	<show object="false" label="true"/>
 </element>
 <expression label="Q" exp="(3, -1)" type="point"/>
@@ -77,16 +77,6 @@
 	<pointStyle val="0"/>
 	<coords x="3" y="-1" z="1"/>
 </element>
-<expression label="g" exp="2"/>
-<element type="numeric" label="g">
-	<value val="2"/>
-	<show object="false" label="true"/>
-</element>
-<expression label="w" exp="0.7"/>
-<element type="numeric" label="w">
-	<value val="0.7"/>
-	<show object="false" label="true"/>
-</element>
 <command name="Dilate">
 	<input a0="k" a1="f" a2="Q"/>
 	<output a0="m"/>
@@ -99,73 +89,7 @@
 	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
 	<eqnStyle style="specific"/>
 	<eigenvectors x0="1" y0="0" z0="1" x1="0" y1="1" z1="1"/>
-	<matrix A0="4" A1="4" A2="15.999999997499998" A3="0" A4="-8" A5="0"/>
-</element>
-<command name="Dilate">
-	<input a0="m" a1="g"/>
-	<output a0="n"/>
-</command>
-<element type="conic" label="n">
-	<show object="true" label="false"/>
-	<objColor r="28" g="28" b="31" alpha="0"/>
-	<layer val="0"/>
-	<labelMode val="0"/>
-	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
-	<eqnStyle style="specific"/>
-	<eigenvectors x0="2" y0="0" z0="1" x1="0" y1="2" z1="1"/>
-	<matrix A0="1" A1="1" A2="15.999999997499998" A3="0" A4="-4" A5="0"/>
-</element>
-<command name="Mirror">
-	<input a0="m" a1="Q"/>
-	<output a0="p"/>
-</command>
-<element type="conic" label="p">
-	<show object="true" label="false"/>
-	<objColor r="28" g="28" b="31" alpha="0"/>
-	<layer val="0"/>
-	<labelMode val="0"/>
-	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
-	<eqnStyle style="specific"/>
-	<eigenvectors x0="-1" y0="0" z0="1" x1="0" y1="-1" z1="1"/>
-	<matrix A0="4" A1="4" A2="79.9999999975" A3="0" A4="-16" A5="8"/>
-</element>
-<command name="Rotate">
-	<input a0="m" a1="w"/>
-	<output a0="t"/>
-</command>
-<element type="conic" label="t">
-	<show object="true" label="false"/>
-	<objColor r="28" g="28" b="31" alpha="0"/>
-	<layer val="0"/>
-	<labelMode val="0"/>
-	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
-	<eqnStyle style="specific"/>
-	<eigenvectors x0="0.7648421872844885" y0="0.644217687237691" z0="1" x1="-0.644217687237691" y1="0.7648421872844885" z1="1"/>
-	<matrix A0="4" A1="4" A2="15.999999997499998" A3="0" A4="-6.118737498275908" A5="-5.153741497901528"/>
-</element>
-<expression label="P" exp="(2, 5)" type="point"/>
-<element type="point" label="P">
-	<show object="true" label="true"/>
-	<objColor r="77" g="77" b="255" alpha="0"/>
-	<layer val="0"/>
-	<labelMode val="0"/>
-	<animation step="0.1" type="1" playing="false"/>
-	<pointSize val="5"/>
-	<pointStyle val="0"/>
-	<coords x="2" y="5" z="1"/>
-</element>
-<command name="Mirror">
-	<input a0="P" a1="m"/>
-	<output a0="u"/>
-</command>
-<element type="point" label="u">
-	<show object="true" label="true"/>
-	<objColor r="77" g="77" b="255" alpha="0"/>
-	<layer val="0"/>
-	<labelMode val="0"/>
-	<pointSize val="5"/>
-	<pointStyle val="0"/>
-	<coords x="2" y="5" z="1"/>
+	<matrix A0="1" A1="1" A2="-6" A3="0" A4="1" A5="-3"/>
 </element>
 </construction>
 </geogebra>

@@ -31,7 +31,7 @@
 <tableview min="0" max="0" step="0"/>
 <scripting blocked="false" disabled="false"/>
 <construction title="" author="" date="">
-<expression label="A" exp="(-1.06, -4.16)" type="point"/>
+<expression label="A" exp="(-6.54, -7.43)" type="point"/>
 <element type="point" label="A">
 	<show object="true" label="true"/>
 	<objColor r="77" g="77" b="255" alpha="0"/>
@@ -40,9 +40,9 @@
 	<animation step="0.1" type="1" playing="false"/>
 	<pointSize val="5"/>
 	<pointStyle val="0"/>
-	<coords x="-1.06" y="-4.16" z="1"/>
+	<coords x="-6.54" y="-7.43" z="1"/>
 </element>
-<expression label="B" exp="(-7.76, -6.4)" type="point"/>
+<expression label="B" exp="(-4.3, 5.35)" type="point"/>
 <element type="point" label="B">
 	<show object="true" label="true"/>
 	<objColor r="77" g="77" b="255" alpha="0"/>
@@ -51,29 +51,10 @@
 	<animation step="0.1" type="1" playing="false"/>
 	<pointSize val="5"/>
 	<pointStyle val="0"/>
-	<coords x="-7.76" y="-6.4" z="1"/>
+	<coords x="-4.3" y="5.35" z="1"/>
 </element>
-<command name="Circle">
-	<input a0="A" a1="B"/>
-	<output a0="k"/>
-</command>
-<element type="conic" label="k">
-	<show object="true" label="false"/>
-	<objColor r="28" g="28" b="31" alpha="0"/>
-	<layer val="0"/>
-	<labelMode val="0"/>
-	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
-	<eqnStyle style="specific"/>
-	<eigenvectors x0="1" y0="0" z0="1" x1="0" y1="1" z1="1"/>
-	<matrix A0="1" A1="1" A2="-31.478399999999983" A3="0" A4="1.06" A5="4.16"/>
-</element>
-<expression label="f" exp="1.5"/>
-<element type="numeric" label="f">
-	<value val="1.5"/>
-	<show object="false" label="true"/>
-</element>
-<expression label="Q" exp="(-5.49, 2.66)" type="point"/>
-<element type="point" label="Q">
+<expression label="E" exp="(-2.94, -5.52)" type="point"/>
+<element type="point" label="E">
 	<show object="true" label="true"/>
 	<objColor r="77" g="77" b="255" alpha="0"/>
 	<layer val="0"/>
@@ -81,21 +62,157 @@
 	<animation step="0.1" type="1" playing="false"/>
 	<pointSize val="5"/>
 	<pointStyle val="0"/>
-	<coords x="-5.49" y="2.66" z="1"/>
+	<coords x="-2.94" y="-5.52" z="1"/>
 </element>
-<command name="Dilate">
-	<input a0="k" a1="f" a2="Q"/>
-	<output a0="m"/>
+<command name="Polygon">
+	<input a0="A" a1="B" a2="E"/>
+	<output a0="p" a1="e" a2="a" a3="b"/>
 </command>
-<element type="conic" label="m">
+<element type="polygon" label="p">
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
 	<show object="true" label="false"/>
-	<objColor r="28" g="28" b="31" alpha="0"/>
+	<objColor r="153" g="51" b="0" alpha="0.10000000149011612"/>
 	<layer val="0"/>
 	<labelMode val="0"/>
+</element>
+<element type="segment" label="e">
+	<show object="true" label="false"/>
+	<objColor r="153" g="51" b="0" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<auxiliary val="false"/>
 	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
-	<eqnStyle style="specific"/>
-	<eigenvectors x0="1" y0="0" z0="1" x1="0" y1="1" z1="1"/>
-	<matrix A0="1.7777777777777777" A1="1.7777777777777777" A2="-95.38342222222215" A3="0" A4="-2.053333333333333" A5="13.457777777777778"/>
+	<eqnStyle style="implicit"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<startStyle val="default"/>
+	<endStyle val="default"/>
+	<coords x="-12.78" y="2.24" z="-66.93799999999999"/>
+</element>
+<element type="segment" label="a">
+	<show object="true" label="false"/>
+	<objColor r="153" g="51" b="0" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<auxiliary val="false"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="implicit"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<startStyle val="default"/>
+	<endStyle val="default"/>
+	<coords x="10.87" y="1.3599999999999999" z="39.464999999999996"/>
+</element>
+<element type="segment" label="b">
+	<show object="true" label="false"/>
+	<objColor r="153" g="51" b="0" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<auxiliary val="false"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="implicit"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<startStyle val="default"/>
+	<endStyle val="default"/>
+	<coords x="1.9100000000000001" y="-3.6" z="-14.256600000000002"/>
+</element>
+<expression label="f" exp="2"/>
+<element type="numeric" label="f">
+	<value val="2"/>
+	<show object="false" label="true"/>
+</element>
+<command name="Dilate">
+	<input a0="A" a1="f"/>
+	<output a0="A&apos;"/>
+</command>
+<element type="point" label="A&apos;">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="-13.08" y="-14.86" z="1"/>
+</element>
+<command name="Dilate">
+	<input a0="B" a1="f"/>
+	<output a0="B&apos;"/>
+</command>
+<element type="point" label="B&apos;">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="-8.6" y="10.7" z="1"/>
+</element>
+<command name="Dilate">
+	<input a0="E" a1="f"/>
+	<output a0="E&apos;"/>
+</command>
+<element type="point" label="E&apos;">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="-5.88" y="-11.04" z="1"/>
+</element>
+<command name="Polygon">
+	<input a0="A&apos;" a1="B&apos;" a2="E&apos;"/>
+	<output a0="m" a1="e&apos;" a2="a&apos;" a3="b&apos;"/>
+</command>
+<element type="polygon" label="m">
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<show object="true" label="false"/>
+	<objColor r="153" g="51" b="0" alpha="0.10000000149011612"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+</element>
+<element type="segment" label="e&apos;">
+	<show object="true" label="false"/>
+	<objColor r="153" g="51" b="0" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<auxiliary val="false"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="implicit"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<startStyle val="default"/>
+	<endStyle val="default"/>
+	<coords x="-25.56" y="4.48" z="-267.75199999999995"/>
+</element>
+<element type="segment" label="a&apos;">
+	<show object="true" label="false"/>
+	<objColor r="153" g="51" b="0" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<auxiliary val="false"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="implicit"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<startStyle val="default"/>
+	<endStyle val="default"/>
+	<coords x="21.74" y="2.7199999999999998" z="157.85999999999999"/>
+</element>
+<element type="segment" label="b&apos;">
+	<show object="true" label="false"/>
+	<objColor r="153" g="51" b="0" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<auxiliary val="false"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="implicit"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<startStyle val="default"/>
+	<endStyle val="default"/>
+	<coords x="3.8200000000000003" y="-7.2" z="-57.02640000000001"/>
 </element>
 </construction>
 </geogebra>
