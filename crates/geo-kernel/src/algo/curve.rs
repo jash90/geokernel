@@ -2,6 +2,8 @@
 // commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDistancePointObject.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/cas/LengthFunction.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/cas/AlgoLengthCurve.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/kernelND/GeoCurveCartesianND.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/cas/AlgoIntegralDefinite.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
@@ -116,4 +118,174 @@ pub(crate) fn closest(c: &Construction, id: Id, (px, py): (f64, f64)) -> Option<
     }
     let y = f(best);
     (best.is_finite() && y.is_finite()).then_some((best, y))
+}
+
+/// A Cartesian curve evaluated with a shared work limit across coordinates.
+pub(super) struct Cartesian<'a> {
+    x: FunctionDerivative<'a>,
+    y: FunctionDerivative<'a>,
+    start: f64,
+    end: f64,
+    work_at_start: u64,
+}
+
+impl<'a> Cartesian<'a> {
+    pub(super) fn new(c: &'a Construction, id: Id) -> Option<Self> {
+        use super::measure::MeasureDef;
+        use crate::{Def, Value};
+        let Def::Measure(MeasureDef::CartesianCurve {
+            coordinates: [x, y],
+            ..
+        }) = c.def(id)
+        else {
+            return None;
+        };
+        let Value::Curve { start, end } = c.value(id) else {
+            return None;
+        };
+        Some(Self {
+            x: FunctionDerivative::new(c, Id(x as usize))?,
+            y: FunctionDerivative::new(c, Id(y as usize))?,
+            start,
+            end,
+            work_at_start: crate::expr::work_done(),
+        })
+    }
+
+    fn has_budget(&self) -> bool {
+        crate::expr::work_done().wrapping_sub(self.work_at_start) < crate::expr::MAX_EVALUATION_WORK
+    }
+
+    pub(super) fn length(&self, start: f64, end: f64) -> f64 {
+        let integrand = |t| {
+            if !self.has_budget() {
+                return f64::NAN;
+            }
+            let x = self.x.slope(t);
+            if !self.has_budget() {
+                return f64::NAN;
+            }
+            let y = self.y.slope(t);
+            (x * x + y * y).sqrt()
+        };
+        super::elliptic::numeric_integration(&integrand, start, end).abs()
+    }
+
+    pub(super) fn closest(&self, (px, py): (f64, f64)) -> f64 {
+        let squared = |t| {
+            if !self.has_budget() {
+                return f64::NAN;
+            }
+            let dx = self.x.value(t) - px;
+            if !self.has_budget() {
+                return f64::NAN;
+            }
+            let dy = self.y.value(t) - py;
+            dx * dx + dy * dy
+        };
+        // GeoCurveCartesianND samples before refining one bracket.
+        let step = (self.end - self.start) / 100.0;
+        let mut t = self.start;
+        let mut best = t;
+        let mut distance = squared(t);
+        for _ in 0..100 {
+            t += step;
+            let d = squared(t);
+            if d < distance || distance.is_nan() {
+                best = t;
+                distance = d;
+            }
+        }
+        let left = self.start.max(best - step);
+        let right = self.end.min(best + step);
+        let adjust = |t| {
+            if t < self.start {
+                t + (self.end - self.start)
+            } else if t > self.end {
+                t - (self.end - self.start)
+            } else {
+                t
+            }
+        };
+        let result = adjust(minimum(left, right, squared));
+        if self.start < left {
+            let alternate = adjust(minimum(self.start - step, self.start + step, squared));
+            if squared(alternate) < squared(result) + crate::tol::MIN_PRECISION / 2.0 {
+                return alternate;
+            }
+        }
+        result
+    }
+}
+
+/// Brent minimization with a bounded golden-section fallback.
+fn minimum(mut left: f64, mut right: f64, f: impl Fn(f64) -> f64) -> f64 {
+    const GOLDEN: f64 = 0.381_966_011_250_105_1;
+    let mut x = left + GOLDEN * (right - left);
+    let (mut w, mut v) = (x, x);
+    let mut fx = f(x);
+    let (mut fw, mut fv) = (fx, fx);
+    let (mut step, mut span): (f64, f64) = (0.0, 0.0);
+    for _ in 0..128 {
+        let mid = (left + right) / 2.0;
+        let tolerance = f64::EPSILON.sqrt() * x.abs() + crate::tol::MIN_PRECISION / 3.0;
+        if (x - mid).abs() <= 2.0 * tolerance - (right - left) / 2.0 {
+            break;
+        }
+        let mut parabolic = false;
+        if span.abs() > tolerance {
+            let r = (x - w) * (fx - fv);
+            let q = (x - v) * (fx - fw);
+            let mut p = (x - v) * q - (x - w) * r;
+            let mut q = 2.0 * (q - r);
+            if q > 0.0 {
+                p = -p;
+            } else {
+                q = -q;
+            }
+            let old_span = span;
+            span = step;
+            if p.abs() < (0.5 * q * old_span).abs() && p > q * (left - x) && p < q * (right - x) {
+                step = p / q;
+                let u = x + step;
+                if u - left < 2.0 * tolerance || right - u < 2.0 * tolerance {
+                    step = tolerance.copysign(mid - x);
+                }
+                parabolic = true;
+            }
+        }
+        if !parabolic {
+            span = if x >= mid { left - x } else { right - x };
+            step = GOLDEN * span;
+        }
+        let u = x + if step.abs() >= tolerance {
+            step
+        } else {
+            tolerance.copysign(step)
+        };
+        let fu = f(u);
+        if fu <= fx {
+            if u < x {
+                right = x;
+            } else {
+                left = x;
+            }
+            (v, fv) = (w, fw);
+            (w, fw) = (x, fx);
+            (x, fx) = (u, fu);
+        } else {
+            if u < x {
+                left = u;
+            } else {
+                right = u;
+            }
+            if fu <= fw || w == x {
+                (v, fv) = (w, fw);
+                (w, fw) = (u, fu);
+            } else if fu <= fv || v == x || v == w {
+                (v, fv) = (u, fu);
+            }
+        }
+    }
+    x
 }

@@ -46,6 +46,7 @@ import org.geogebra.common.kernel.geos.GeoPolygon;
 import org.geogebra.common.kernel.geos.GeoRay;
 import org.geogebra.common.kernel.geos.GeoSegment;
 import org.geogebra.common.kernel.geos.GeoVector;
+import org.geogebra.common.kernel.geos.GeoCurveCartesian;
 import org.geogebra.common.kernel.kernelND.GeoConicND;
 import org.geogebra.common.kernel.kernelND.GeoConicNDConstants;
 import org.geogebra.common.kernel.kernelND.GeoElementND;
@@ -707,6 +708,9 @@ final class Session {
         if (geo instanceof GeoFunction) {
             return "function";
         }
+        if (geo instanceof GeoCurveCartesian) {
+            return "curve";
+        }
         if (geo instanceof GeoLocus) {
             return "locus";
         }
@@ -1001,7 +1005,10 @@ final class Session {
             case "Segment":
                 return "segment";
             case "Locus":
+            case "SlopeField":
                 return "locus";
+            case "Curve":
+                return "curve";
             case "Slider":
                 return "number";
             case "Intersect":
@@ -1263,6 +1270,12 @@ final class Session {
                 }
                 f.put("vertices", vertices);
                 f.put("length", poly.getLength());
+                return f;
+            }
+            case "curve": {
+                GeoCurveCartesian curve = (GeoCurveCartesian) geo;
+                f.put("start", curve.getMinParameter());
+                f.put("end", curve.getMaxParameter());
                 return f;
             }
             case "locus": {

@@ -1311,3 +1311,143 @@ cases = ["geomextras-tangentfunction-001", "geomextras-tangentfunction-002"]
 command = "Vertex"
 form = "segment,number"
 cases = ["geomextras-vertexsegment-001", "geomextras-vertexsegment-002", "geomextras-vertexsegment-003"]
+
+[[form]]
+command = "Arc"
+form = "conic,point,point"
+cases = ["geomextras-conicparts-001"]
+
+[[form]]
+command = "AreCongruent"
+form = "any,any"
+difference = "geometry-command-arguments: `AreCongruent(any, any)`"
+
+[[form]]
+command = "AreEqual"
+form = "any,any"
+difference = "geometry-command-arguments: `AreEqual(any, any)`"
+
+[[form]]
+command = "Circumference"
+form = "locus"
+cases = ["geomclosure-locusmeasure-001", "geomclosure-locusmeasure-002"]
+
+[[form]]
+command = "ClosestPoint"
+form = "path,point"
+difference = "geometry-command-arguments: `ClosestPoint(path, point)` and `ClosestPoint(point, path)`"
+
+[[form]]
+command = "ClosestPoint"
+form = "point,path"
+difference = "geometry-command-arguments: `ClosestPoint(path, point)` and `ClosestPoint(point, path)`"
+
+[[form]]
+command = "Distance"
+form = "path,point"
+difference = "geometry-command-arguments: `Distance(point, path)` and `Distance(path, point)`"
+
+[[form]]
+command = "Distance"
+form = "point,path"
+difference = "geometry-command-arguments: `Distance(point, path)` and `Distance(path, point)`"
+
+[[form]]
+command = "Length"
+form = "conic"
+difference = "geometry-command-arguments: `Length(conic)`"
+
+[[form]]
+command = "Length"
+form = "curve,number,number"
+cases = ["geomclosure-curvelength-001"]
+
+[[form]]
+command = "Length"
+form = "curve,point,point"
+cases = ["geomclosure-curvelength-001"]
+
+[[form]]
+command = "Length"
+form = "locus"
+cases = ["geomclosure-locusmeasure-001", "geomclosure-locusmeasure-002"]
+
+[[form]]
+command = "Length"
+form = "point"
+cases = ["geomclosure-pointlength-001", "geomextras-lengthpoint-001"]
+
+[[form]]
+command = "Length"
+form = "text"
+difference = "geometry-command-arguments: `Length(text)`"
+
+[[form]]
+command = "Locus"
+form = "function,point"
+cases = ["geomclosure-ode-001"]
+
+[[form]]
+command = "Locus"
+form = "locus,point"
+cases = ["geomclosure-slopefield-001"]
+
+[[form]]
+command = "Perimeter"
+form = "locus"
+cases = ["geomclosure-locusmeasure-001", "geomclosure-locusmeasure-002"]
+
+[[form]]
+command = "Point"
+form = "path"
+difference = "geometry-command-arguments: `Point(path)` and `Point(path, number)`"
+
+[[form]]
+command = "Point"
+form = "path,number"
+difference = "geometry-command-arguments: `Point(path)` and `Point(path, number)`"
+
+[[form]]
+command = "PointIn"
+form = "region"
+difference = "geometry-command-arguments: `PointIn(region)`"
+
+[[form]]
+command = "PolyLine"
+form = "list"
+cases = ["geomextras-polylinelist-001", "geomclosure-shapelist-001"]
+
+[[form]]
+command = "PolyLine"
+form = "list,boolean"
+cases = ["geomextras-polylinelist-002", "geomclosure-shapelist-001"]
+
+[[form]]
+command = "PolyLine"
+form = "point,point,...,boolean"
+difference = "geometry-command-arguments: `PolyLine(point, point, ..., boolean)`"
+
+[[form]]
+command = "Polygon"
+form = "list"
+cases = ["geomextras-polygonlist-001", "geomclosure-shapelist-001"]
+
+[[form]]
+command = "RigidPolygon"
+form = "point,point,..."
+cases = ["geomclosure-rigid-001", "geomextras-rigidpoints-001"]
+
+[[form]]
+command = "Sector"
+form = "conic,point,point"
+cases = ["geomextras-conicparts-001", "geomextras-conicparts-002"]
+
+[[form]]
+command = "Vertex"
+form = "number"
+cases = ["geomclosure-viewcorner-001"]
+
+[[form]]
+command = "Vertex"
+form = "number,number"
+cases = ["geomclosure-viewcorner-001"]

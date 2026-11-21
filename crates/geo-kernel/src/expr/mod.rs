@@ -1090,6 +1090,20 @@ pub(crate) fn define_function(c: &mut Construction, name: &str, rhs: &str) -> Re
     function(c, name, parse::parse(c, rhs)?)
 }
 
+pub(crate) fn define_parametric_coordinate(
+    c: &mut Construction,
+    label: &str,
+    rhs: &str,
+    parameter: &str,
+) -> Result<Id, String> {
+    function(c, label, parse::parse_parameter(c, rhs, parameter)?)
+}
+
+/// Hidden two-variable function for a slope field or integral curve.
+pub(crate) fn define_slope(c: &mut Construction, label: &str, rhs: &str) -> Result<Id, String> {
+    function(c, label, parse::parse_equation(c, rhs)?)
+}
+
 fn function(c: &mut Construction, name: &str, parsed: parse::Parsed) -> Result<Id, String> {
     match parsed.tys[parsed.root as usize] {
         Ty::Vec => return Err("a function must give a number".into()),

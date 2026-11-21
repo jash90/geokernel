@@ -22,6 +22,8 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoRay.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoSegment.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoVector.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoPolygon.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoPolyLine.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoVec3D.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoNumeric.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoBoolean.java
@@ -47,6 +49,7 @@
 
 use super::vector::VectorDef;
 use super::{normalized_coefficients, Group, Parents, POINT};
+use crate::expr::{Element, List, MAX_EVALUATION_WORK};
 use crate::kernel::{Construction, Def, Error, Id, Kind, Value};
 use crate::script::object;
 use crate::tol::{MIN_PRECISION, STANDARD_PRECISION};
@@ -63,6 +66,16 @@ const ANY: &[Kind] = &[
     Kind::Vector,
     Kind::Number,
     Kind::Boolean,
+    Kind::Angle,
+    Kind::Polygon,
+    Kind::PolyLine,
+    Kind::Conic,
+    Kind::Arc,
+    Kind::Sector,
+    Kind::List,
+    Kind::Function,
+    Kind::Locus,
+    Kind::Curve,
 ];
 
 /// Boolean tests on objects.
@@ -162,6 +175,11 @@ pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
         for id in args {
             if LINE_LIKE.contains(&c.kind(id)) {
                 super::vector::line_hidden(c, id, &mut ids);
+            }
+            if matches!(p, PredicateDef::Equal(..) | PredicateDef::Congruent(..))
+                && matches!(c.kind(id), Kind::Polygon | Kind::PolyLine)
+            {
+                ids.extend(super::polygon::inputs(c, id));
             }
         }
     }
@@ -311,6 +329,160 @@ fn truth(v: Value) -> bool {
     matches!(v, Value::Bool(true))
 }
 
+fn list_equal(a: List<'_>, b: List<'_>) -> bool {
+    let mut stack = vec![(a, b, 0)];
+    let mut work = MAX_EVALUATION_WORK;
+    while let Some((a, b, i)) = stack.last_mut() {
+        if a.len() != b.len() {
+            return false;
+        }
+        if *i == a.len() {
+            stack.pop();
+            continue;
+        }
+        let Some(left) = work.checked_sub(1) else {
+            return false;
+        };
+        work = left;
+        let pair = (a.get(*i), b.get(*i));
+        *i += 1;
+        match pair {
+            (Some(Element::List(a)), Some(Element::List(b))) => stack.push((a, b, 0)),
+            (Some(Element::Value(ka, a)), Some(Element::Value(kb, b)))
+                if ka == kb && equal_list_values(a, b) => {}
+            _ => return false,
+        }
+    }
+    true
+}
+
+fn equal_list_values(a: Value, b: Value) -> bool {
+    match (a, b) {
+        (Value::Number(a), Value::Number(b)) => is_equal(a, b),
+        (Value::Point { x, y }, Value::Point { x: u, y: v })
+        | (Value::Vector { x, y }, Value::Vector { x: u, y: v }) => same_point((x, y), (u, v)),
+        (Value::Bool(a), Value::Bool(b)) => a == b,
+        _ => false,
+    }
+}
+
+fn conics_equal(a: super::conic_nd::ConicData, b: super::conic_nd::ConicData) -> bool {
+    (a.ty == super::conic_nd::ConicType::Empty && b.ty == a.ty)
+        || equal_matrix(&a.matrix, &b.matrix)
+}
+
+fn polygon_equal(a: &[(f64, f64)], b: &[(f64, f64)]) -> bool {
+    let n = a.len();
+    if n < 2 || b.len() != n {
+        return false;
+    }
+    let Some(start) = b.iter().position(|&v| same_point(a[0], v)) else {
+        return false;
+    };
+    let forwards = same_point(a[1], b[(start + 1) % n]);
+    a.iter().enumerate().skip(1).all(|(i, &v)| {
+        let j = if forwards {
+            (start + i) % n
+        } else {
+            (start + n - i) % n
+        };
+        same_point(v, b[j])
+    })
+}
+
+/// GeoPolygon compares side lengths and interior angles in both cyclic orders.
+fn polygon_congruent(c: &Construction, a: Id, b: Id) -> bool {
+    let Value::Polygon { area: aa } = c.value(a) else {
+        return false;
+    };
+    if let Value::Number(bb) = c.value(b) {
+        return c.kind(b) == Kind::Number && is_equal(aa.abs(), bb);
+    }
+    let Value::Polygon { area: bb } = c.value(b) else {
+        return false;
+    };
+    if !is_equal(aa.abs(), bb.abs()) {
+        return false;
+    }
+    let signature = |id, area| {
+        let vertices: Option<Vec<_>> = c.vertices(id).collect();
+        let v = vertices?;
+        let n = v.len();
+        (0..n)
+            .map(|i| {
+                let p = v[(i + n - 1) % n];
+                let q = v[i];
+                let r = v[(i + 1) % n];
+                let (s, t) = if area > 0.0 { (r, p) } else { (p, r) };
+                Some((
+                    segment_length(q.0, q.1, r.0, r.1),
+                    super::measure::angle_of_points(s, q, t)?,
+                ))
+            })
+            .collect::<Option<Vec<_>>>()
+    };
+    let (Some(a), Some(b)) = (signature(a, aa), signature(b, bb)) else {
+        return false;
+    };
+    let n = a.len();
+    if n != b.len() || n == 0 {
+        return false;
+    }
+    let mut work = MAX_EVALUATION_WORK;
+    for reverse in [false, true] {
+        for shift in 0..n {
+            let mut matches = true;
+            for (i, &(side, angle)) in a.iter().enumerate() {
+                let Some(left) = work.checked_sub(1) else {
+                    return false;
+                };
+                work = left;
+                let j = if reverse {
+                    (shift + n - i) % n
+                } else {
+                    (shift + i) % n
+                };
+                let k = if reverse { (j + 1) % n } else { j };
+                if !(is_equal(side, b[j].0) && is_equal(angle, b[k].1)) {
+                    matches = false;
+                    break;
+                }
+            }
+            if matches {
+                return true;
+            }
+        }
+    }
+    false
+}
+
+fn poly_equal(c: &Construction, a: Id, b: Id, kind: Kind) -> bool {
+    let a: Option<Vec<_>> = c.vertices(a).collect();
+    let b: Option<Vec<_>> = c.vertices(b).collect();
+    let (Some(a), Some(b)) = (a, b) else {
+        return false;
+    };
+    match kind {
+        Kind::Polygon => polygon_equal(&a, &b),
+        _ => {
+            a.len() == b.len()
+                && a.iter()
+                    .enumerate()
+                    .all(|(i, &v)| same_point(v, b[i]) || same_point(v, b[b.len() - 1 - i]))
+        }
+    }
+}
+
+fn function_equal(c: &Construction, a: Id, b: Id) -> bool {
+    if !c.value(a).is_defined() || !c.value(b).is_defined() {
+        return false;
+    }
+    match (c.function_polynomial(a), c.function_polynomial(b)) {
+        (Some(a), Some(b)) => a.iter().zip(b).all(|(&a, b)| is_equal(a, b)),
+        _ => a == b,
+    }
+}
+
 /// `isEqualExtended` of the first object, called with the second. Kinds added
 /// later are equal to nothing until they are handled here.
 #[allow(unreachable_patterns)]
@@ -357,14 +529,36 @@ fn equal(c: &Construction, a: Id, b: Id) -> bool {
                     }
             }
         }
-        Kind::Circle => ka == kb && circles_equal(c, a, b),
+        Kind::Circle if kb == Kind::Circle => circles_equal(c, a, b),
+        Kind::Circle | Kind::Conic => {
+            match (super::conic_object(c, a), super::conic_object(c, b)) {
+                (Some(a), Some(b)) => conics_equal(a, b),
+                _ => false,
+            }
+        }
+        Kind::Arc | Kind::Sector if ka == kb => match (c.arc(a), c.arc(b)) {
+            (Some(a), Some(b)) => {
+                a.positive == b.positive
+                    && is_equal(a.start, b.start)
+                    && is_equal(a.end, b.end)
+                    && conics_equal(a.conic, b.conic)
+            }
+            _ => false,
+        },
+        Kind::Polygon | Kind::PolyLine => ka == kb && poly_equal(c, a, b, ka),
+        Kind::List => match (c.elements(a), c.elements(b)) {
+            (Some(a), Some(b)) => list_equal(a, b),
+            _ => false,
+        },
+        Kind::Function => kb == Kind::Function && function_equal(c, a, b),
+        Kind::Locus | Kind::Curve => a == b,
         Kind::Vector => match (c.value(a), c.value(b)) {
             (Value::Vector { x, y }, Value::Vector { x: u, y: v }) => {
                 x.is_finite() && y.is_finite() && is_equal(x, u) && is_equal(y, v)
             }
             _ => false,
         },
-        Kind::Number => match (c.value(a), c.value(b)) {
+        Kind::Number | Kind::Angle if ka == kb => match (c.value(a), c.value(b)) {
             (Value::Number(p), Value::Number(q)) => is_equal(p, q),
             _ => false,
         },
@@ -374,7 +568,7 @@ fn equal(c: &Construction, a: Id, b: Id) -> bool {
 }
 
 /// `isCongruent` of the first object, called with the second. `None` is the
-/// prover's "unknown", which no kind here produces.
+/// prover's "unknown".
 fn congruent(c: &Construction, a: Id, b: Id) -> Option<bool> {
     let (ka, kb) = (c.kind(a), c.kind(b));
     Some(match ka {
@@ -395,14 +589,19 @@ fn congruent(c: &Construction, a: Id, b: Id) -> Option<bool> {
             ),
             _ => false,
         },
-        Kind::Circle => match (c.value(a), c.value(b)) {
-            // Circles are congruent when their radii agree; a circle of
-            // radius 0 is a single point, not a circle.
-            (Value::Circle { r, .. }, Value::Circle { r: s, .. }) => {
-                r >= STANDARD_PRECISION && s >= STANDARD_PRECISION && is_equal(r, s)
-            }
-            _ => false,
-        },
+        Kind::Circle | Kind::Conic | Kind::Arc | Kind::Sector => {
+            use super::conic_nd::ConicType;
+            let (Some(a), Some(b)) = (super::conic_object(c, a), super::conic_object(c, b)) else {
+                return Some(false);
+            };
+            return match (a.ty, b.ty) {
+                (ConicType::Circle, ConicType::Circle) => {
+                    Some(is_equal(a.half_axes[0], b.half_axes[0]))
+                }
+                _ => Some(false),
+            };
+        }
+        Kind::Polygon => polygon_congruent(c, a, b),
         _ => equal(c, a, b),
     })
 }

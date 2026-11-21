@@ -540,6 +540,7 @@ fn degree() -> &'static Dec {
 pub(super) enum Env<'a, const M: bool> {
     None,
     Value(f64),
+    Pair(f64, f64),
     /// A subtree of the caller: the argument of an expanded function.
     Arg(&'a Ctx<'a, M>, u32),
 }
@@ -701,14 +702,15 @@ impl<const M: bool> Ctx<'_, M> {
             },
             Node::Var => match *self.env {
                 Env::None => Ex::plain(N(f64::NAN)),
-                Env::Value(x) => Ex::plain(N(x)),
+                Env::Value(x) | Env::Pair(x, _) => Ex::plain(N(x)),
                 // `AlgoDependentFunction.substituteFunction` puts a copy of
                 // the argument in place of `x`: it keeps its decimal
                 Env::Arg(caller, a) => caller.full(a),
             },
-            // an equation's `y` never survives into a tree that is
-            // evaluated as a number (see `equation`)
-            Node::VarY => Ex::plain(N(f64::NAN)),
+            Node::VarY => Ex::plain(N(match *self.env {
+                Env::Pair(_, y) => y,
+                _ => f64::NAN,
+            })),
             Node::Obj(id) => object_ex(self.c, id),
             Node::Cmd(def, hint) => Ex {
                 obj: true,
@@ -897,10 +899,13 @@ impl<const M: bool> Ctx<'_, M> {
             Node::Un(Un::Sqrt, a) => self.fast(a).sqrt(),
             Node::Var => match *self.env {
                 Env::None => f64::NAN,
-                Env::Value(x) => x,
+                Env::Value(x) | Env::Pair(x, _) => x,
                 Env::Arg(caller, a) => caller.fast(a),
             },
-            Node::VarY => f64::NAN,
+            Node::VarY => match *self.env {
+                Env::Pair(_, y) => y,
+                _ => f64::NAN,
+            },
             Node::Apply(f, a) if self.e.function => self.apply(f, a, true),
             Node::Obj(id) => object(self.c, id).num(),
             _ => self.full_number(i),

@@ -158,11 +158,28 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
 }
 
 fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option<Id>, String> {
+    if let Some(("Curve", args)) = split_call(rhs) {
+        return define_cartesian_curve(c, name, &args).map(Some);
+    }
+    if let Some(length) = text_length(rhs) {
+        return c
+            .add(name, Def::Measure(MeasureDef::TextLength(length?)))
+            .map(Some)
+            .map_err(|e| e.to_string());
+    }
     if let Some(def) = parse_forced(rhs) {
         return c.add(name, def?).map(Some).map_err(|e| e.to_string());
     }
     if rhs.starts_with("Vertex") {
         if let Some((func, args)) = split_call(rhs) {
+            if func == "Vertex" {
+                if let Some(def) = crate::algo::point::parse_view_corner(c, &args) {
+                    return c
+                        .add(name, Def::Point(def?))
+                        .map(Some)
+                        .map_err(|e| e.to_string());
+                }
+            }
             if let Some(def) = PointDef::parse_segment_vertex(c, func, &args) {
                 return c
                     .add(name, Def::Point(def?))
@@ -200,6 +217,69 @@ fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option
         }
     }
     define_expression_or_command(c, name, rhs).map(Some)
+}
+
+fn define_cartesian_curve(c: &mut Construction, name: &str, args: &[&str]) -> Result<Id, String> {
+    let [x, y, parameter, start, end] = *args else {
+        return Err("`Curve` needs two coordinates, a parameter and two bounds".into());
+    };
+    if !is_identifier(parameter) {
+        return Err("`Curve` needs a parameter name".into());
+    }
+    let checkpoint = c.checkpoint();
+    let result = (|| {
+        let packed = |id: Id| u32::try_from(id.0).map_err(|_| "too many objects".to_owned());
+        let mut coordinate = |text| {
+            let label = format!("\0arg{}", c.len());
+            packed(crate::expr::define_parametric_coordinate(
+                c, &label, text, parameter,
+            )?)
+        };
+        let coordinates = [coordinate(x)?, coordinate(y)?];
+        let mut bound = |text| {
+            if let Some(id) = c.id(text) {
+                return packed(id);
+            }
+            let label = format!("\0arg{}", c.len());
+            if crate::expr::argument_object(c, text, &label, Kind::Number) {
+                packed(object(c, &label)?)
+            } else {
+                Err(format!("`Curve` needs a numeric bound, got `{text}`"))
+            }
+        };
+        let bounds = [bound(start)?, bound(end)?];
+        c.add(
+            name,
+            Def::Measure(MeasureDef::CartesianCurve {
+                coordinates,
+                bounds,
+            }),
+        )
+        .map_err(|e| e.to_string())
+    })();
+    if result.is_err() {
+        c.discard_since(checkpoint);
+    }
+    result
+}
+
+/// `AlgoTextLength` counts UTF-16 code units, as Java's String.length does.
+fn text_length(rhs: &str) -> Option<Result<usize, String>> {
+    let (name, args) = rhs.split_once('(')?;
+    if name.trim() != "Length" {
+        return None;
+    }
+    let quoted = args
+        .trim_end()
+        .strip_suffix(')')?
+        .trim()
+        .strip_prefix('"')?;
+    let text = quoted.strip_suffix('"')?;
+    Some(if text.contains('"') {
+        Err("expected one text literal in `Length`".into())
+    } else {
+        Ok(text.encode_utf16().count())
+    })
 }
 
 fn define_expression_or_command(c: &mut Construction, name: &str, rhs: &str) -> Result<Id, String> {
@@ -389,9 +469,39 @@ pub(crate) fn split_call(rhs: &str) -> Option<(&str, Vec<&str>)> {
 /// named inputs of these commands. Their normal dispatch reads the labels.
 fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String> {
     let (name, _) = rhs.split_once('(')?;
+    if matches!(name.trim(), "Locus" | "SlopeField") {
+        let (func, args) = split_call(rhs)?;
+        let first = match (func, args.as_slice()) {
+            ("Locus", [slope, point])
+                if c.id(point).is_some_and(|id| c.kind(id) == Kind::Point) =>
+            {
+                *slope
+            }
+            ("SlopeField", [slope]) => *slope,
+            _ => return None,
+        };
+        if c.id(first).is_none() {
+            let label = format!("\0arg{}", c.len());
+            crate::expr::define_slope(c, &label, first).ok()?;
+            let suffix = if args.len() == 2 {
+                format!(", {}", args[1])
+            } else {
+                String::new()
+            };
+            return Some(format!("{func}({label}{suffix})"));
+        }
+    }
     if !matches!(
         name.trim(),
-        "Tangent" | "Length" | "Vertex" | "Point" | "Barycenter"
+        "Tangent"
+            | "Length"
+            | "Vertex"
+            | "Point"
+            | "Barycenter"
+            | "Polygon"
+            | "PolyLine"
+            | "Arc"
+            | "Sector"
     ) {
         return None;
     }
@@ -399,11 +509,22 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
     let is_kind = |arg, kind| c.id(arg).is_some_and(|id| c.kind(id) == kind);
     let inputs: &[(usize, Kind)] = match (func, args.as_slice()) {
         ("Tangent", [_, f]) if is_kind(f, Kind::Function) => &[(0, Kind::Number)],
-        ("Length", [f, _, _]) if is_kind(f, Kind::Function) => {
+        ("Length", [f, _, _]) if is_kind(f, Kind::Function) || is_kind(f, Kind::Curve) => {
             &[(1, Kind::Number), (2, Kind::Number)]
         }
         ("Vertex", [s, _]) if is_kind(s, Kind::Segment) => &[(1, Kind::Number)],
-        ("Point", [_]) => &[(0, Kind::List)],
+        ("Point", [path, _])
+            if c.id(path)
+                .is_some_and(|id| crate::algo::path::PATH.contains(&c.kind(id))) =>
+        {
+            &[(1, Kind::Number)]
+        }
+        ("Arc" | "Sector", [path, _, _])
+            if is_kind(path, Kind::Circle) || is_kind(path, Kind::Conic) =>
+        {
+            &[(1, Kind::Number), (2, Kind::Number)]
+        }
+        ("Point" | "Polygon" | "PolyLine", [_]) | ("PolyLine", [_, _]) => &[(0, Kind::List)],
         ("Barycenter", [_, _]) => &[(0, Kind::List), (1, Kind::List)],
         _ => return None,
     };
@@ -411,7 +532,10 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
         .iter()
         .filter_map(|&(index, kind)| {
             let arg = args[index];
-            if c.id(arg).is_some() || crate::algo::polygon::decimal(arg).is_some() {
+            if c.id(arg).is_some()
+                || (!matches!(func, "Point" | "Arc" | "Sector")
+                    && crate::algo::polygon::decimal(arg).is_some())
+            {
                 return None;
             }
             let label = format!("\0arg{}", c.len());
@@ -645,6 +769,7 @@ fn is_finite(v: &Value) -> bool {
         Value::Vector { x, y } => x.is_finite() && y.is_finite(),
         Value::Ray { x, y, a, b, c } => [x, y, a, b, c].iter().all(|v| v.is_finite()),
         Value::Bool(_) => true,
+        Value::Curve { start, end } => start.is_finite() && end.is_finite(),
         Value::Function | Value::List { .. } => true,
         Value::Polygon { area } => area.is_finite(),
         Value::PolyLine { length } => length.is_finite(),

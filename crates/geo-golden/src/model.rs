@@ -140,6 +140,10 @@ pub enum ExpectedData {
         r: f64,
     },
     Number(f64),
+    Curve {
+        start: f64,
+        end: f64,
+    },
     Vector {
         x: f64,
         y: f64,
@@ -490,6 +494,7 @@ impl TryFrom<RawObject> for Expected {
             "arc" => (Kind::Arc, &[]),
             "sector" => (Kind::Sector, &[]),
             "locus" => (Kind::Locus, &["points"]),
+            "curve" => (Kind::Curve, &["start", "end"]),
             other => return Err(format!("unknown object type `{other}`")),
         };
         if raw.samples.is_some() && (kind != Kind::Function || !raw.defined) {
@@ -616,6 +621,10 @@ impl TryFrom<RawObject> for Expected {
                 r: f("r"),
             },
             Kind::Number | Kind::Angle => ExpectedData::Number(f("value")),
+            Kind::Curve => ExpectedData::Curve {
+                start: f("start"),
+                end: f("end"),
+            },
             Kind::Vector => ExpectedData::Vector {
                 x: f("x"),
                 y: f("y"),

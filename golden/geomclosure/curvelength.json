@@ -1,0 +1,74 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "geomclosure-curvelength-001",
+      "group": "geomclosure",
+      "script": [
+        "f = Curve(3t, 4t, t, 0, 10)",
+        "a = 2",
+        "b = 3",
+        "A = (3, 5)",
+        "B = (6, 9)",
+        "l = Length(f, a, b)",
+        "m = Length(f, A, B)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "b", "value": 1.0 },
+        { "action": "move", "label": "A", "x": 6.0, "y": 9.0 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "f": { "type": "curve", "defined": true, "start": 0.0, "end": 10.0 },
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 5.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 9.0 },
+          "l": { "type": "number", "defined": true, "value": 5.0 },
+          "m": { "type": "number", "defined": true, "value": 4.999999999999999 }
+        },
+        {
+          "f": { "type": "curve", "defined": true, "start": 0.0, "end": 10.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 5.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 9.0 },
+          "l": { "type": "number", "defined": true, "value": 0.0 },
+          "m": { "type": "number", "defined": true, "value": 4.999999999999999 }
+        },
+        {
+          "f": { "type": "curve", "defined": true, "start": 0.0, "end": 10.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 5.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 9.0 },
+          "l": { "type": "number", "defined": true, "value": 10.0 },
+          "m": { "type": "number", "defined": true, "value": 4.999999999999999 }
+        },
+        {
+          "f": { "type": "curve", "defined": true, "start": 0.0, "end": 10.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "A": { "type": "point", "defined": true, "x": 6.0, "y": 9.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 9.0 },
+          "l": { "type": "number", "defined": true, "value": 10.0 },
+          "m": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "f": { "type": "curve", "defined": true, "start": 0.0, "end": 10.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "A": { "type": "point", "defined": true, "x": 6.0, "y": 9.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "l": { "type": "number", "defined": true, "value": 10.0 },
+          "m": { "type": "number", "defined": true, "value": 10.799966946519323 }
+        }
+      ]
+    }
+  ]
+}
