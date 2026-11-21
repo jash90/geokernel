@@ -4,6 +4,9 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/ExpressionNodeEvaluator.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdCAStoOperation.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoIdentity.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoTranspose.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoDimension.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdOneListFunction.java
 //   source/shared/common/src/main/java/org/geogebra/common/plugin/Operation.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
@@ -32,6 +35,11 @@ pub(super) const NAMES: &[&str] = &[
     "MatrixRank",
     "Identity",
     "Dimension",
+    "Invert",
+    "Transpose",
+    "ReducedRowEchelonForm",
+    "ApplyMatrix",
+    "Dilate",
     "Vector",
     "Direction",
     "UnitVector",
@@ -53,6 +61,42 @@ pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
             p.list_command(|_, args, lists| list_form(text, ListOp::MatrixRank, false, args, lists))
         }
         "Dimension" => p.list_command(dimension),
+        "Invert" => p.function_command(|p, args, lists| match (args, lists) {
+            (&[a], [false]) if p.uses_function_variable(a) => Ok(Some(Node::Inverse(a))),
+            _ => list_form(text, ListOp::Invert, false, args, lists),
+        }),
+        "Dilate" => p.function_command(|p, args, lists| {
+            let (src, factor, center) = match *args {
+                [src, factor] => (src, factor, NONE),
+                [src, factor, center] => (src, factor, center),
+                _ => return Ok(None),
+            };
+            Ok((lists[0] || p.uses_function_variable(src))
+                .then_some(Node::Dilate(src, factor, center)))
+        }),
+        "Transpose" | "ReducedRowEchelonForm" => p.list_command(|p, args, lists| {
+            let op = if text == "Transpose" {
+                ListOp::Transpose
+            } else {
+                ListOp::Rref
+            };
+            if args.len() >= 2
+                && lists.iter().all(|&list| !list)
+                && (args.iter().all(|&arg| p.is_number(arg))
+                    || args.iter().all(|&arg| p.is_point_or_vector(arg)))
+            {
+                return Ok(Some(Node::ListOp(op, p.wrap_list(args), NONE)));
+            }
+            list_form(text, op, false, args, lists)
+        }),
+        "ApplyMatrix" => p.list_command(|_, args, lists| {
+            Ok(match (args, lists) {
+                (&[matrix, src], [true, true]) => {
+                    Some(Node::ListOp(ListOp::ApplyMatrix, matrix, src))
+                }
+                _ => None,
+            })
+        }),
         _ if VectorDef::vector_result(text) => {
             p.list_command(|p, args, lists| Ok(vector(p, text, args, lists)))
         }
@@ -109,6 +153,14 @@ fn vector(p: &mut Parser, command: &str, args: &[u32], lists: &[bool]) -> Option
 }
 
 fn dimension(p: &mut Parser, args: &[u32], lists: &[bool]) -> Result<Option<Node>, String> {
+    if let (&[a], [true]) = (args, lists) {
+        let op = if p.is_matrix(a) {
+            ListOp::MatrixDimension
+        } else {
+            ListOp::Dimension
+        };
+        return Ok(Some(Node::ListOp(op, a, NONE)));
+    }
     let (&[a], [false]) = (args, lists) else {
         return Ok(None);
     };
@@ -205,7 +257,17 @@ pub(super) fn list_type(
     n: u32,
 ) -> Result<Option<Ty>, String> {
     Ok(match op {
-        ListOp::Length | ListOp::Determinant | ListOp::MatrixRank | ListOp::Dot => Some(Ty::Num(0)),
+        ListOp::Length
+        | ListOp::Determinant
+        | ListOp::MatrixRank
+        | ListOp::Dot
+        | ListOp::Dimension => Some(Ty::Num(0)),
+        ListOp::MatrixDimension => Some(Ty::List(Elem::Num)),
+        ListOp::Transpose | ListOp::Rref | ListOp::Invert => Some(Ty::List(Elem::List)),
+        ListOp::ApplyMatrix => match tys[n as usize] {
+            ty @ Ty::List(_) => Some(ty),
+            _ => return Err("`ApplyMatrix` needs a list to transform".into()),
+        },
         ListOp::Cross => {
             let Ty::List(right) = tys[n as usize] else {
                 return Err("`Cross` needs two lists".into());
@@ -231,7 +293,9 @@ pub(super) fn list_value<const M: bool>(
     n: u32,
 ) -> Option<Val> {
     Some(match op {
-        ListOp::Length => Val::N(ctx.list(l).map_or(f64::NAN, |(_, len)| f64::from(len))),
+        ListOp::Length | ListOp::Dimension => {
+            Val::N(ctx.list(l).map_or(f64::NAN, |(_, len)| f64::from(len)))
+        }
         ListOp::Dot => Val::N(dot_lists(ctx, l, n).unwrap_or(f64::NAN)),
         ListOp::Determinant | ListOp::MatrixRank => {
             Val::N(matrix_number(ctx, op, l).unwrap_or(f64::NAN))
@@ -254,11 +318,142 @@ fn dot_lists<const M: bool>(ctx: &Ctx<'_, M>, left: u32, right: u32) -> Option<f
     })
 }
 
-pub(super) fn cross_lists<const M: bool>(
+pub(super) fn makes_list(op: ListOp) -> bool {
+    matches!(
+        op,
+        ListOp::Cross
+            | ListOp::Transpose
+            | ListOp::Rref
+            | ListOp::Invert
+            | ListOp::MatrixDimension
+            | ListOp::ApplyMatrix
+    )
+}
+
+pub(super) fn list_fn<const M: bool>(
     ctx: &Ctx<'_, M>,
-    left: u32,
-    right: u32,
+    op: ListOp,
+    l: u32,
+    n: u32,
 ) -> Option<(u32, u32)> {
+    if op == ListOp::Cross {
+        return cross_lists(ctx, l, n);
+    }
+    let lists = ctx.lists?;
+    let (start, len) = ctx.list(l)?;
+    if op == ListOp::Transpose {
+        if len == 0 {
+            return Some((lists.len(), 0));
+        }
+        let (_, cols) = lists.read(ctx.c, start).run()?;
+        if !lists.charge(u64::from(len) * (1 + u64::from(cols))) {
+            return None;
+        }
+        for k in 0..len {
+            if lists.read(ctx.c, start + k).run()?.1 != cols {
+                return None;
+            }
+        }
+        let out = lists.reserve(cols)?;
+        for col in 0..cols {
+            let column = lists.reserve(len)?;
+            for row in 0..len {
+                let (source, _) = lists.read(ctx.c, start + row).run()?;
+                lists.set(column + row, lists.read(ctx.c, source + col));
+            }
+            lists.set(out + col, Slot::list(column, len));
+        }
+        return Some((out, cols));
+    }
+    if op == ListOp::ApplyMatrix {
+        let m = lists.with_list(ctx.c, start, len, |list| Some(matrix::Matrix::read(list)))?;
+        let source = ctx.list(n)?;
+        return map_list(ctx, source, |slot| m?.apply(slot.value));
+    }
+    if op == ListOp::MatrixDimension {
+        if len == 0 {
+            return None;
+        }
+        let (_, cols) = lists.read(ctx.c, start).run()?;
+        if !lists.charge(u64::from(len)) {
+            return None;
+        }
+        for k in 1..len {
+            if lists.read(ctx.c, start + k).run()?.1 != cols {
+                return None;
+            }
+        }
+        let out = lists.reserve(2)?;
+        lists.set(out, Slot::number(len as f64));
+        lists.set(out + 1, Slot::number(cols as f64));
+        return Some((out, 2));
+    }
+    // The matrix may borrow the arena. Stage numbers outside it until the
+    // borrow ends, then reserve and fill the result's runs.
+    let (data, rows, cols) = lists.with_list(ctx.c, start, len, |m| {
+        let charge = |work| lists.charge(work);
+        let output = |data: &[f64], rows, cols| {
+            charge(data.len() as u64).then(|| (data.to_vec(), rows as u32, cols as u32))
+        };
+        match op {
+            ListOp::Rref => matrix::rref(m, charge, output),
+            ListOp::Invert => matrix::inverse(m, charge, output),
+            _ => unreachable!("no matrix list result for {op:?}"),
+        }
+    })?;
+    let out = lists.reserve(rows)?;
+    for (row, entries) in data.chunks_exact(cols as usize).enumerate() {
+        let run = lists.reserve(cols)?;
+        for (col, &cell) in entries.iter().enumerate() {
+            lists.set(run + col as u32, Slot::number(cell));
+        }
+        lists.set(out + row as u32, Slot::list(run, cols));
+    }
+    Some((out, rows))
+}
+
+/// Transform each leaf recursively while preserving the shape of the list.
+pub(in crate::expr) fn map_list<const M: bool>(
+    ctx: &Ctx<'_, M>,
+    (start, len): (u32, u32),
+    transform: impl Fn(Slot) -> Option<Value>,
+) -> Option<(u32, u32)> {
+    let lists = ctx.lists?;
+    let mut pending = Vec::new();
+    let out = lists.reserve(len)?;
+    let mut run = (start, len, out);
+    loop {
+        let (source, size, target) = run;
+        if !lists.charge(u64::from(size)) {
+            return None;
+        }
+        for k in 0..size {
+            let slot = lists.read(ctx.c, source + k);
+            let result = if let Some((list, len)) = slot.run() {
+                let dest = lists.reserve(len)?;
+                if len != 0 {
+                    pending.push((list, len, dest));
+                }
+                Slot::list(dest, len)
+            } else {
+                match transform(slot) {
+                    Some(point @ (Value::Point { .. } | Value::HomogeneousPoint { .. })) => {
+                        Slot::point(point)
+                    }
+                    Some(Value::Vector { x, y }) => Slot::coords(Kind::Vector, x, y),
+                    _ => Slot::undefined(slot.kind),
+                }
+            };
+            lists.set(target + k, result);
+        }
+        let Some(next) = pending.pop() else {
+            return Some((out, len));
+        };
+        run = next;
+    }
+}
+
+fn cross_lists<const M: bool>(ctx: &Ctx<'_, M>, left: u32, right: u32) -> Option<(u32, u32)> {
     let lists = ctx.lists?;
     let (a, len) = ctx.list(left)?;
     let (b, other) = ctx.list(right)?;

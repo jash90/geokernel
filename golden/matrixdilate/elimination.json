@@ -1,0 +1,1669 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "matrixdilate-elimination-001",
+      "group": "matrixdilate",
+      "script": [
+        "n = 2",
+        "m = {{1, 2}, Sequence(n)}",
+        "a = Transpose(m)",
+        "b = ReducedRowEchelonForm(m)",
+        "c = Invert(m)",
+        "d = Dimension(m)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 0.0 },
+        { "action": "set_number", "label": "n", "value": 3.0 },
+        { "action": "set_number", "label": "n", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              }
+            ]
+          },
+          "a": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 2.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              }
+            ]
+          },
+          "b": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              }
+            ]
+          },
+          "c": { "type": "list", "defined": false },
+          "d": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": []
+              }
+            ]
+          },
+          "a": { "type": "list", "defined": false },
+          "b": { "type": "list", "defined": false },
+          "c": { "type": "list", "defined": false },
+          "d": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 },
+                  { "type": "number", "defined": true, "value": 3.0 }
+                ]
+              }
+            ]
+          },
+          "a": { "type": "list", "defined": false },
+          "b": { "type": "list", "defined": false },
+          "c": { "type": "list", "defined": false },
+          "d": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              }
+            ]
+          },
+          "a": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 2.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              }
+            ]
+          },
+          "b": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              }
+            ]
+          },
+          "c": { "type": "list", "defined": false },
+          "d": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "matrixdilate-elimination-002",
+      "group": "matrixdilate",
+      "script": [
+        "n = 4",
+        "m = {{1, 2}, {2, n}}",
+        "a = ReducedRowEchelonForm(m)",
+        "b = Invert(m)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 5.0 },
+        { "action": "set_number", "label": "n", "value": 4.0 },
+        { "action": "set_number", "label": "n", "value": 4.000000001 },
+        { "action": "set_number", "label": "n", "value": -2.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 4.0 },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 2.0 },
+                  { "type": "number", "defined": true, "value": 4.0 }
+                ]
+              }
+            ]
+          },
+          "a": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              }
+            ]
+          },
+          "b": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 5.0 },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 2.0 },
+                  { "type": "number", "defined": true, "value": 5.0 }
+                ]
+              }
+            ]
+          },
+          "a": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              }
+            ]
+          },
+          "b": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 5.0 },
+                  { "type": "number", "defined": true, "value": -2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": -2.0 },
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 4.0 },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 2.0 },
+                  { "type": "number", "defined": true, "value": 4.0 }
+                ]
+              }
+            ]
+          },
+          "a": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              }
+            ]
+          },
+          "b": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 4.000000001 },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 2.0 },
+                  { "type": "number", "defined": true, "value": 4.000000001 }
+                ]
+              }
+            ]
+          },
+          "a": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              }
+            ]
+          },
+          "b": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": -2.0 },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 2.0 },
+                  { "type": "number", "defined": true, "value": -2.0 }
+                ]
+              }
+            ]
+          },
+          "a": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": -0.0 },
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              }
+            ]
+          },
+          "b": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.3333333333333333 },
+                  { "type": "number", "defined": true, "value": 0.3333333333333333 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.3333333333333333 },
+                  { "type": "number", "defined": true, "value": -0.16666666666666666 }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "matrixdilate-elimination-003",
+      "group": "matrixdilate",
+      "script": [
+        "n = 2",
+        "m = {{sqrt(n), 0}, {1, n}}",
+        "a = Invert(m)",
+        "b = ReducedRowEchelonForm(m)",
+        "c = Transpose(m)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": -1.0 },
+        { "action": "set_number", "label": "n", "value": 0.0 },
+        { "action": "set_number", "label": "n", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.4142135623730951 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              }
+            ]
+          },
+          "a": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.7071067811865475 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": -0.35355339059327373 },
+                  { "type": "number", "defined": true, "value": 0.5 }
+                ]
+              }
+            ]
+          },
+          "b": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              }
+            ]
+          },
+          "c": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.4142135623730951 },
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": -1.0 },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": false },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": -1.0 }
+                ]
+              }
+            ]
+          },
+          "a": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": false },
+                  { "type": "number", "defined": false }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": false },
+                  { "type": "number", "defined": false }
+                ]
+              }
+            ]
+          },
+          "b": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": false },
+                  { "type": "number", "defined": false }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": false },
+                  { "type": "number", "defined": false }
+                ]
+              }
+            ]
+          },
+          "c": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": false },
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": -1.0 }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              }
+            ]
+          },
+          "a": { "type": "list", "defined": false },
+          "b": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              }
+            ]
+          },
+          "c": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.7320508075688772 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 3.0 }
+                ]
+              }
+            ]
+          },
+          "a": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.5773502691896258 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": -0.1924500897298753 },
+                  { "type": "number", "defined": true, "value": 0.3333333333333333 }
+                ]
+              }
+            ]
+          },
+          "b": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              }
+            ]
+          },
+          "c": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.7320508075688772 },
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 3.0 }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "matrixdilate-elimination-004",
+      "group": "matrixdilate",
+      "script": [
+        "m = {{0, 2, 4}, {0, 1, 2}, {0, 3, 5}}",
+        "a = ReducedRowEchelonForm(m)",
+        "b = Invert(m)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 2.0 },
+                  { "type": "number", "defined": true, "value": 4.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 3.0 },
+                  { "type": "number", "defined": true, "value": 5.0 }
+                ]
+              }
+            ]
+          },
+          "a": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": -0.0 },
+                  { "type": "number", "defined": true, "value": -0.0 },
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              }
+            ]
+          },
+          "b": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "matrixdilate-elimination-005",
+      "group": "matrixdilate",
+      "script": [
+        "a = Invert({})",
+        "b = Transpose({})",
+        "c = ReducedRowEchelonForm({})",
+        "d = Dimension({})",
+        "e_{m} = Dimension({{1}, {2, 3}})",
+        "f = Invert({{1, 2, 3}, {4, 5, 6}})",
+        "g = ReducedRowEchelonForm({{1, 2, 3}, {4, 5, 6}})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "list", "defined": false },
+          "b": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "c": { "type": "list", "defined": false },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "e_{m}": { "type": "number", "defined": true, "value": 2.0 },
+          "f": { "type": "list", "defined": false },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": -1.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": -0.0 },
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "matrixdilate-elimination-006",
+      "group": "matrixdilate",
+      "script": [
+        "A = (2, 3)",
+        "B = (-1, 8)",
+        "m = {{A, true, {1}}, {B, false, {2}}}",
+        "a = Transpose(m)",
+        "b = Dimension(m)",
+        "c = ReducedRowEchelonForm(m)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": 0.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "B": { "type": "point", "defined": true, "x": -1.0, "y": 8.0 },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+                  { "type": "boolean", "defined": true, "value": true },
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": [
+                      { "type": "number", "defined": true, "value": 1.0 }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": -1.0, "y": 8.0 },
+                  { "type": "boolean", "defined": true, "value": false },
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": [
+                      { "type": "number", "defined": true, "value": 2.0 }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "a": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+                  { "type": "point", "defined": true, "x": -1.0, "y": 8.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "boolean", "defined": true, "value": true },
+                  { "type": "boolean", "defined": true, "value": false }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": [
+                      { "type": "number", "defined": true, "value": 1.0 }
+                    ]
+                  },
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": [
+                      { "type": "number", "defined": true, "value": 2.0 }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "b": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "list", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": -1.0, "y": 8.0 },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+                  { "type": "boolean", "defined": true, "value": true },
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": [
+                      { "type": "number", "defined": true, "value": 1.0 }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": -1.0, "y": 8.0 },
+                  { "type": "boolean", "defined": true, "value": false },
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": [
+                      { "type": "number", "defined": true, "value": 2.0 }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "a": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+                  { "type": "point", "defined": true, "x": -1.0, "y": 8.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "boolean", "defined": true, "value": true },
+                  { "type": "boolean", "defined": true, "value": false }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": [
+                      { "type": "number", "defined": true, "value": 1.0 }
+                    ]
+                  },
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": [
+                      { "type": "number", "defined": true, "value": 2.0 }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "b": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "matrixdilate-elimination-007",
+      "group": "matrixdilate",
+      "script": [
+        "n = 1",
+        "m = {{1, 2}, Sequence(n)}",
+        "a = Dimension(m)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 2.0 },
+        { "action": "set_number", "label": "n", "value": 0.0 },
+        { "action": "set_number", "label": "n", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              }
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              }
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": []
+              }
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              }
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "matrixdilate-elimination-008",
+      "group": "matrixdilate",
+      "script": [
+        "n = 2",
+        "m = {{1/n, 0}, {1, n}}",
+        "a = Invert(m)",
+        "b = ReducedRowEchelonForm(m)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 0.0 },
+        { "action": "set_number", "label": "n", "value": -2.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.5 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              }
+            ]
+          },
+          "a": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 2.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": -1.0 },
+                  { "type": "number", "defined": true, "value": 0.5 }
+                ]
+              }
+            ]
+          },
+          "b": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": false },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              }
+            ]
+          },
+          "a": { "type": "list", "defined": false },
+          "b": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": false },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": false },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": -2.0 },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": -0.5 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": -2.0 }
+                ]
+              }
+            ]
+          },
+          "a": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": -2.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": -1.0 },
+                  { "type": "number", "defined": true, "value": -0.5 }
+                ]
+              }
+            ]
+          },
+          "b": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": -0.0 },
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "matrixdilate-elimination-009",
+      "group": "matrixdilate",
+      "script": [
+        "n = 1",
+        "m = If(n == 1, {{2}, {4}}, If(n == 2, {{2}, {4, 5}}, {}))",
+        "a = Transpose(m)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 2.0 },
+        { "action": "set_number", "label": "n", "value": 3.0 },
+        { "action": "set_number", "label": "n", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 4.0 }
+                ]
+              }
+            ]
+          },
+          "a": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 2.0 },
+                  { "type": "number", "defined": true, "value": 4.0 }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 4.0 },
+                  { "type": "number", "defined": true, "value": 5.0 }
+                ]
+              }
+            ]
+          },
+          "a": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "a": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 4.0 }
+                ]
+              }
+            ]
+          },
+          "a": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 2.0 },
+                  { "type": "number", "defined": true, "value": 4.0 }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

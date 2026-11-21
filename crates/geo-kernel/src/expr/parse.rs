@@ -876,14 +876,31 @@ impl Parser<'_> {
         &mut self,
         form: impl FnOnce(&mut Self, &[u32], &[bool]) -> Result<Option<Node>, String>,
     ) -> Result<Option<u32>, String> {
+        self.command_arguments(false, form)
+    }
+
+    /// Like a list command, but a bare function name in the first slot
+    /// stands for the function of x.
+    pub(super) fn function_command(
+        &mut self,
+        form: impl FnOnce(&mut Self, &[u32], &[bool]) -> Result<Option<Node>, String>,
+    ) -> Result<Option<u32>, String> {
+        self.command_arguments(true, form)
+    }
+
+    fn command_arguments(
+        &mut self,
+        takes_function: bool,
+        form: impl FnOnce(&mut Self, &[u32], &[bool]) -> Result<Option<Node>, String>,
+    ) -> Result<Option<u32>, String> {
         let saved = (
             self.pos,
             self.parents.len(),
             self.inputs.len(),
             self.uses_var,
         );
-        // on an error the script parser reports what is wrong
-        let args = self.arguments().unwrap_or_default();
+        // On an error the script parser reports what is wrong.
+        let args = self.parse_arguments(takes_function).unwrap_or_default();
         let lists: Vec<bool> = args.iter().map(|&a| self.is_list(a)).collect();
         let node = if args.is_empty() {
             None
@@ -908,16 +925,79 @@ impl Parser<'_> {
         matches!(check(self.c, &self.nodes, i), Ok((tys, ..)) if matches!(tys[i as usize], Ty::List(_)))
     }
 
+    pub(super) fn uses_function_variable(&self, i: u32) -> bool {
+        matches!(self.node(i), Node::Apply(_, arg) if matches!(self.node(arg), Node::Var))
+            || check(self.c, &self.nodes, i).is_ok_and(|(_, _, _, vars)| vars[i as usize] != 0)
+    }
+
+    pub(super) fn is_number(&self, i: u32) -> bool {
+        matches!(check(self.c, &self.nodes, i), Ok((tys, ..)) if matches!(tys[i as usize], Ty::Num(_)))
+    }
+
+    /// AlgoDimension chooses its output kind from the list at creation.
+    pub(super) fn is_matrix(&self, i: u32) -> bool {
+        if let Node::Obj(id) = self.node(i) {
+            return self.c.elements(id).is_some_and(|list| {
+                vector::matrix::dimensions(list, vector::matrix::budget()).is_some()
+            });
+        }
+        let Some(parsed) = super::reparse(self.c, Kind::List, &self.nodes, &self.lits, i) else {
+            return false;
+        };
+        let entry = super::Entry::new(parsed, false);
+        let mut items = Vec::new();
+        super::eval::root_list(
+            self.c,
+            &entry,
+            &super::eval::Lists::new(Vec::new()),
+            &mut items,
+        )
+        .is_some_and(|len| {
+            vector::matrix::dimensions(super::List::new(&items, len), vector::matrix::budget())
+                .is_some()
+        })
+    }
+
+    pub(super) fn wrap_list(&mut self, args: &[u32]) -> u32 {
+        let start = self.nodes.len() as u32;
+        for &arg in args {
+            self.push(Node::Item(arg));
+        }
+        self.push(Node::List(start, args.len() as u32))
+    }
+
     /// Whether the subtree at `i` is a point or a vector, the argument
     /// `x(...)` and `y(...)` read as a coordinate of.
-    fn is_point_or_vector(&self, i: u32) -> bool {
+    pub(super) fn is_point_or_vector(&self, i: u32) -> bool {
         matches!(check(self.c, &self.nodes, i), Ok((tys, ..)) if matches!(tys[i as usize], Ty::Vec))
     }
 
     /// `( expression, expression, ... )` after a function name.
     pub(super) fn arguments(&mut self) -> Result<Vec<u32>, String> {
+        self.parse_arguments(false)
+    }
+
+    fn parse_arguments(&mut self, takes_function: bool) -> Result<Vec<u32>, String> {
         self.expect(&Tok::LParen, "(")?;
-        let mut args = vec![self.expression()?];
+        let f = self.toks.get(self.pos).and_then(|token| {
+            if takes_function && matches!(token.tok, Tok::Name { call: false, .. }) {
+                return self
+                    .c
+                    .id(&self.src[token.start..token.end])
+                    .filter(|&id| self.c.kind(id) == Kind::Function);
+            }
+            None
+        });
+        let first = if let Some(f) = f {
+            self.pos += 1;
+            self.read(f, true);
+            self.uses_var = true;
+            let x = self.push(Node::Var);
+            self.push(Node::Apply(f, x))
+        } else {
+            self.expression()?
+        };
+        let mut args = vec![first];
         while self.eat(&Tok::Comma) {
             args.push(self.expression()?);
         }

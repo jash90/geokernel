@@ -309,7 +309,7 @@ impl Lists {
     /// value and points by `x`, then `y`; undefined ones go last.
     pub(super) fn sort(&self, start: u32, len: u32) {
         // `+ 0.0` makes -0 equal to 0
-        let key = |s: &Slot| match s.value {
+        let key = |s: &Slot| match s.shown() {
             Value::Number(v) => (v + 0.0, 0.0),
             Value::Bool(b) => (bool_number(b), 0.0),
             Value::Point { x, y } | Value::Vector { x, y } => (x + 0.0, y + 0.0),
@@ -627,6 +627,10 @@ pub(super) fn sample(c: &Construction, e: &Entry, x: f64) -> f64 {
     Ctx::<false>::new(c, e, &Env::Value(x)).fast(e.root)
 }
 
+pub(super) fn number(c: &Construction, e: &Entry, i: u32) -> f64 {
+    Ctx::<false>::new(c, e, &Env::None).full_number(i)
+}
+
 /// The value of the condition at `i` of an entry's `AlgoIf`, which reads
 /// no `x`.
 pub(super) fn condition(c: &Construction, e: &Entry, i: u32) -> bool {
@@ -637,7 +641,7 @@ pub(super) fn condition(c: &Construction, e: &Entry, i: u32) -> bool {
 }
 
 /// The tree of the function object `f`, when it is defined.
-fn function_entry(c: &Construction, f: Id) -> Option<&Entry> {
+pub(super) fn function_entry(c: &Construction, f: Id) -> Option<&Entry> {
     match (c.def(f), c.value(f)) {
         (Def::Expr(d), Value::Function) => Some(super::entry(c, d)),
         _ => None,
@@ -652,7 +656,7 @@ impl<const M: bool> Ctx<'_, M> {
     /// Charges the visit of a node to the evaluation with lists this one is
     /// part of (see [`Lists::step`]); true past its bound.
     #[inline]
-    fn stop(&self, n: u64) -> bool {
+    pub(super) fn stop(&self, n: u64) -> bool {
         self.meter.is_some_and(|m| m.step(n))
     }
 
@@ -747,6 +751,21 @@ impl<const M: bool> Ctx<'_, M> {
                 }
             }
             Node::Apply(f, a) => self.apply_full(f, a),
+            Node::Inverse(a) => Ex::plain(N(
+                super::inverse::sample(self, a, self.variable()).unwrap_or(f64::NAN)
+            )),
+            Node::Dilate(src, factor, center) => {
+                let (r, sx, sy) = self.dilation(factor, center);
+                let f = Ctx {
+                    env: &Env::Value(crate::algo::transform::dilation_preimage(
+                        self.variable(),
+                        r,
+                        sx,
+                    )),
+                    ..*self
+                };
+                Ex::plain(N(f.fast(src) * r + (-sy * r + sy)))
+            }
             Node::If(mode, cond, then, rest) => self.conditional(i, mode, cond, then, rest),
             Node::Item(a) => self.full(a),
             // the variable of a `Sequence` is a `GeoNumeric`
@@ -840,6 +859,26 @@ impl<const M: bool> Ctx<'_, M> {
 
     pub(super) fn full_number(&self, i: u32) -> f64 {
         self.full(i).num()
+    }
+
+    fn variable(&self) -> f64 {
+        match *self.env {
+            Env::None => f64::NAN,
+            Env::Value(x) => x,
+            Env::Arg(ctx, a) => ctx.fast(a),
+        }
+    }
+
+    pub(super) fn dilation(&self, factor: u32, center: u32) -> (f64, f64, f64) {
+        let r = self.full_number(factor);
+        let (sx, sy) = if center == super::NONE {
+            (0.0, 0.0)
+        } else if let Val::V(x, y) = self.full(center).val {
+            (x, y)
+        } else {
+            (f64::NAN, f64::NAN)
+        };
+        (r, sx, sy)
     }
 
     /// The full evaluation of an operand of a numeric operation (see
@@ -1077,6 +1116,13 @@ impl<const M: bool> Ctx<'_, M> {
             // list it belongs to
             Node::ListOp(op, l, n) => self.pick(op, l, n)?.run(),
             Node::If(_, cond, then, rest) => self.list_if(cond, then, rest),
+            Node::Dilate(src, factor, center) => {
+                let (r, sx, sy) = self.dilation(factor, center);
+                let source = self.list(src)?;
+                commands::map_list(self, source, |slot| {
+                    crate::algo::transform::dilate_element(slot.value, r, sx, sy)
+                })
+            }
             _ => None,
         }
     }
@@ -1094,6 +1140,11 @@ impl<const M: bool> Ctx<'_, M> {
                 Some((start, len)) => Slot::list(start, len),
                 None => Slot::undefined(Kind::List),
             };
+        }
+        if let Node::Obj(id) = self.node(i) {
+            if self.c.kind(id) == Kind::Point {
+                return Slot::point(self.c.stored_value(id));
+            }
         }
         let mark = self.lists.map(Lists::len);
         let x = self.full(i).val;
@@ -1335,7 +1386,7 @@ pub(super) fn count(lists: &Lists, values: impl Fn(&mut dyn FnMut(f64) -> bool))
 
 /// An element as an operand.
 pub(super) fn slot_val(s: Slot) -> Val {
-    match (s.kind, s.value) {
+    match (s.kind, s.shown()) {
         (_, Value::Number(v)) => Val::N(v),
         (_, Value::Point { x, y } | Value::Vector { x, y }) => Val::V(x, y),
         (_, Value::Bool(b)) => Val::B(b, true),

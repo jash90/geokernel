@@ -75,6 +75,7 @@ pub(crate) mod derivative;
 /// Equations in `x` and `y` as lines and conics (see the module docs).
 pub(crate) mod equation;
 mod eval;
+mod inverse;
 #[doc(hidden)]
 pub use eval::{work_done, MAX_ELEMENTS, MAX_EVALUATION_WORK, MAX_OVERRUN};
 mod lex;
@@ -140,6 +141,10 @@ pub(crate) enum Node {
     Bin(Bin, u32, u32),
     /// A function object applied to an argument.
     Apply(Id, u32),
+    /// The symbolic inverse of a function expression in `x`.
+    Inverse(u32),
+    /// Dilation of a function or list by a factor about an optional point.
+    Dilate(u32, u32, u32),
     /// A one-argument function name without brackets, waiting for its
     /// argument (`sin a`). Never left in a finished tree.
     FnName(Un),
@@ -215,6 +220,12 @@ pub(crate) enum ListOp {
     /// `Determinant(matrix)` and `MatrixRank(matrix)` inside expressions.
     Determinant,
     MatrixRank,
+    Transpose,
+    Rref,
+    Invert,
+    Dimension,
+    MatrixDimension,
+    ApplyMatrix,
 }
 
 impl ListOp {
@@ -423,7 +434,7 @@ pub(crate) struct Entry {
     function: bool,
     /// Whether a function's tree has an `If`, which changes what decides
     /// whether it is defined (see [`inputs_defined`]).
-    has_if: bool,
+    checks_branches: bool,
     /// The objects named in the tree (a function's inputs).
     inputs: Vec<Id>,
     /// The last result; for a function, 0 when it is defined and `NaN`
@@ -445,10 +456,13 @@ pub(crate) struct Entry {
 
 impl Entry {
     fn new(p: parse::Parsed, function: bool) -> Self {
-        let has_if = function && p.nodes.iter().any(|n| matches!(n, Node::If(..)));
+        let checks_branches = function
+            && p.nodes
+                .iter()
+                .any(|n| matches!(n, Node::If(..) | Node::Inverse(_) | Node::Dilate(..)));
         let lists = reads_list(&p.nodes, &p.tys);
         Entry {
-            has_if,
+            checks_branches,
             lists,
             items: Vec::new(),
             coordinate_layout: None,
@@ -545,8 +559,10 @@ pub(crate) fn children(node: &Node) -> impl Iterator<Item = u32> {
         Node::Tuple(a, b) | Node::Polar(a, b) | Node::Bin(_, a, b) | Node::ListOp(_, a, b) => {
             fixed[..2].copy_from_slice(&[a, b]);
         }
-        Node::Un(_, a) | Node::Apply(_, a) | Node::Item(a) => fixed[0] = a,
-        Node::If(_, a, b, c) | Node::Range(a, b, c) => fixed[..3].copy_from_slice(&[a, b, c]),
+        Node::Un(_, a) | Node::Apply(_, a) | Node::Item(a) | Node::Inverse(a) => fixed[0] = a,
+        Node::If(_, a, b, c) | Node::Range(a, b, c) | Node::Dilate(a, b, c) => {
+            fixed[..3].copy_from_slice(&[a, b, c])
+        }
         Node::Seq(a, b, c, d, _) => fixed = [a, b, c, d],
         Node::List(first, len) => run = first..first.saturating_add(len),
         _ => {}
@@ -569,8 +585,8 @@ pub(crate) fn shift_children(node: &mut Node, by: u32) {
             shift(a);
             shift(b);
         }
-        Node::Un(_, a) | Node::Apply(_, a) | Node::Item(a) => shift(a),
-        Node::If(_, a, b, c) | Node::Range(a, b, c) => {
+        Node::Un(_, a) | Node::Apply(_, a) | Node::Item(a) | Node::Inverse(a) => shift(a),
+        Node::If(_, a, b, c) | Node::Range(a, b, c) | Node::Dilate(a, b, c) => {
             shift(a);
             shift(b);
             shift(c);
@@ -909,7 +925,7 @@ pub(crate) fn update_lists(c: &mut Construction, d: ExprDef) -> (Value, bool) {
 /// object it names is, and every command in it has a result. A number with
 /// an infinite raw value counts as defined, as in GeoGebra.
 fn inputs_defined(c: &Construction, e: &Entry) -> bool {
-    if e.has_if {
+    if e.checks_branches {
         return defined_below(c, e, e.root);
     }
     e.inputs.iter().all(|&id| object_defined(c, id))
@@ -944,6 +960,11 @@ fn defined_below(c: &Construction, e: &Entry, i: u32) -> bool {
         Node::Obj(id) => object_defined(c, id),
         Node::Apply(f, a) => object_defined(c, f) && defined_below(c, e, a),
         Node::Cmd(def, hint) => command_defined(c, def, hint),
+        Node::Inverse(a) => defined_below(c, e, a) && inverse::has_inverse(c, e, a),
+        Node::Dilate(source, factor, _) => {
+            defined_below(c, e, source)
+                && !crate::algo::transform::zero_dilation(eval::number(c, e, factor))
+        }
         Node::If(IfMode::Algo, cond, then, rest) => {
             if eval::condition(c, e, cond) {
                 defined_below(c, e, then)

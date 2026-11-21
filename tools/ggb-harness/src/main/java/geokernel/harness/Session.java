@@ -799,6 +799,10 @@ final class Session {
 
     /** Whether the definition transforms a polygon (it creates the sides too). */
     private boolean isTransformedPoly(String definition) {
+        if (definition.startsWith("ApplyMatrix(")) {
+            List<String> args = arguments(definition);
+            return args.size() == 2 && objects.get(args.get(1).trim()) instanceof GeoPolygon;
+        }
         if (transformCommand(definition) == null
                 || !(transformedSource(definition) instanceof GeoPolygon)) {
             return false;
@@ -973,7 +977,8 @@ final class Session {
             case "ApplyMatrix":
                 List<String> args = arguments(definition);
                 GeoElement target = args.size() == 2 ? objects.get(args.get(1).trim()) : null;
-                return target == null ? null : schemaType(target);
+                return target instanceof GeoConic ? "conic"
+                        : target == null ? null : schemaType(target);
             case "Polar":
                 return first instanceof GeoLine ? "point" : "line";
             case "Center":

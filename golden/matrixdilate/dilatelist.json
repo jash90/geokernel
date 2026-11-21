@@ -1,0 +1,686 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "matrixdilate-dilatelist-001",
+      "group": "matrixdilate",
+      "script": [
+        "A = (2, 3)",
+        "B = (1, -2)",
+        "u = (3, 1)",
+        "n = 2",
+        "l = {A, {u, B, {}}, A}",
+        "p = Dilate(l, n)",
+        "q = Dilate(l, n, B)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 0.0 },
+        { "action": "move", "label": "B", "x": -2.0, "y": 2.0 },
+        { "action": "set_number", "label": "n", "value": -3.0 },
+        { "action": "move", "label": "u", "x": -1.0, "y": 3.0 },
+        { "action": "set_number", "label": "n", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": -2.0 },
+          "u": { "type": "vector", "defined": true, "x": 3.0, "y": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "vector", "defined": true, "x": 3.0, "y": 1.0 },
+                  { "type": "point", "defined": true, "x": 1.0, "y": -2.0 },
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": []
+                  }
+                ]
+              },
+              { "type": "point", "defined": true, "x": 2.0, "y": 3.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 4.0, "y": 6.0 },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "vector", "defined": true, "x": 6.0, "y": 2.0 },
+                  { "type": "point", "defined": true, "x": 2.0, "y": -4.0 },
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": []
+                  }
+                ]
+              },
+              { "type": "point", "defined": true, "x": 4.0, "y": 6.0 }
+            ]
+          },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 3.0, "y": 8.0 },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "vector", "defined": true, "x": 6.0, "y": 2.0 },
+                  { "type": "point", "defined": true, "x": 1.0, "y": -2.0 },
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": []
+                  }
+                ]
+              },
+              { "type": "point", "defined": true, "x": 3.0, "y": 8.0 }
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": -2.0 },
+          "u": { "type": "vector", "defined": true, "x": 3.0, "y": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "vector", "defined": true, "x": 3.0, "y": 1.0 },
+                  { "type": "point", "defined": true, "x": 1.0, "y": -2.0 },
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": []
+                  }
+                ]
+              },
+              { "type": "point", "defined": true, "x": 2.0, "y": 3.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+                  { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": []
+                  }
+                ]
+              },
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+            ]
+          },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": -2.0 },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+                  { "type": "point", "defined": true, "x": 1.0, "y": -2.0 },
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": []
+                  }
+                ]
+              },
+              { "type": "point", "defined": true, "x": 1.0, "y": -2.0 }
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 3.0, "y": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "vector", "defined": true, "x": 3.0, "y": 1.0 },
+                  { "type": "point", "defined": true, "x": -2.0, "y": 2.0 },
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": []
+                  }
+                ]
+              },
+              { "type": "point", "defined": true, "x": 2.0, "y": 3.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+                  { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": []
+                  }
+                ]
+              },
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+            ]
+          },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": -2.0, "y": 2.0 },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+                  { "type": "point", "defined": true, "x": -2.0, "y": 2.0 },
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": []
+                  }
+                ]
+              },
+              { "type": "point", "defined": true, "x": -2.0, "y": 2.0 }
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 3.0, "y": 1.0 },
+          "n": { "type": "number", "defined": true, "value": -3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "vector", "defined": true, "x": 3.0, "y": 1.0 },
+                  { "type": "point", "defined": true, "x": -2.0, "y": 2.0 },
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": []
+                  }
+                ]
+              },
+              { "type": "point", "defined": true, "x": 2.0, "y": 3.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": -6.0, "y": -9.0 },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "vector", "defined": true, "x": -9.0, "y": -3.0 },
+                  { "type": "point", "defined": true, "x": 6.0, "y": -6.0 },
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": []
+                  }
+                ]
+              },
+              { "type": "point", "defined": true, "x": -6.0, "y": -9.0 }
+            ]
+          },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": -14.0, "y": -1.0 },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "vector", "defined": true, "x": -9.0, "y": -3.0 },
+                  { "type": "point", "defined": true, "x": -2.0, "y": 2.0 },
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": []
+                  }
+                ]
+              },
+              { "type": "point", "defined": true, "x": -14.0, "y": -1.0 }
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": -1.0, "y": 3.0 },
+          "n": { "type": "number", "defined": true, "value": -3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "vector", "defined": true, "x": -1.0, "y": 3.0 },
+                  { "type": "point", "defined": true, "x": -2.0, "y": 2.0 },
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": []
+                  }
+                ]
+              },
+              { "type": "point", "defined": true, "x": 2.0, "y": 3.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": -6.0, "y": -9.0 },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "vector", "defined": true, "x": 3.0, "y": -9.0 },
+                  { "type": "point", "defined": true, "x": 6.0, "y": -6.0 },
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": []
+                  }
+                ]
+              },
+              { "type": "point", "defined": true, "x": -6.0, "y": -9.0 }
+            ]
+          },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": -14.0, "y": -1.0 },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "vector", "defined": true, "x": 3.0, "y": -9.0 },
+                  { "type": "point", "defined": true, "x": -2.0, "y": 2.0 },
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": []
+                  }
+                ]
+              },
+              { "type": "point", "defined": true, "x": -14.0, "y": -1.0 }
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": -1.0, "y": 3.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "vector", "defined": true, "x": -1.0, "y": 3.0 },
+                  { "type": "point", "defined": true, "x": -2.0, "y": 2.0 },
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": []
+                  }
+                ]
+              },
+              { "type": "point", "defined": true, "x": 2.0, "y": 3.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "vector", "defined": true, "x": -1.0, "y": 3.0 },
+                  { "type": "point", "defined": true, "x": -2.0, "y": 2.0 },
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": []
+                  }
+                ]
+              },
+              { "type": "point", "defined": true, "x": 2.0, "y": 3.0 }
+            ]
+          },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "vector", "defined": true, "x": -1.0, "y": 3.0 },
+                  { "type": "point", "defined": true, "x": -2.0, "y": 2.0 },
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": []
+                  }
+                ]
+              },
+              { "type": "point", "defined": true, "x": 2.0, "y": 3.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "matrixdilate-dilatelist-002",
+      "group": "matrixdilate",
+      "script": [
+        "A = (2, 3)",
+        "n = 2",
+        "r = 1/n",
+        "l = Sequence(A * k, k, 1, n)",
+        "m = Dilate(l, r)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 3.0 },
+        { "action": "set_number", "label": "n", "value": 0.0 },
+        { "action": "set_number", "label": "n", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "r": { "type": "number", "defined": true, "value": 0.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 6.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.5 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 3.0 }
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 6.0 },
+              { "type": "point", "defined": true, "x": 6.0, "y": 9.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.6666666666666666, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 1.3333333333333333, "y": 2.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 3.0 }
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "r": { "type": "number", "defined": false },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 2.0, "y": 3.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 2.0, "y": 3.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "matrixdilate-dilatelist-003",
+      "group": "matrixdilate",
+      "script": [
+        "A = (0, 1)",
+        "B = (1, 0)",
+        "n = 1",
+        "l = {A, Element({B}, n)}",
+        "p = Dilate(l, 0, A)",
+        "e_{m} = {}",
+        "q = Dilate(e_{m}, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 2.0 },
+        { "action": "move", "label": "A", "x": 0.0, "y": 0.0 },
+        { "action": "set_number", "label": "n", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 1.0, "y": 0.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 0.0, "y": 1.0 }
+            ]
+          },
+          "e_{m}": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+              { "type": "point", "defined": false }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+              { "type": "point", "defined": false }
+            ]
+          },
+          "e_{m}": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+              { "type": "point", "defined": false }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+              { "type": "point", "defined": false }
+            ]
+          },
+          "e_{m}": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 1.0, "y": 0.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+            ]
+          },
+          "e_{m}": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        }
+      ]
+    }
+  ]
+}

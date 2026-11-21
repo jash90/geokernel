@@ -131,6 +131,38 @@ pub(crate) fn check(
                     fv.saturating_mul(vars[a]),
                 )
             }
+            Node::Inverse(a) => {
+                let a = a as usize;
+                if !matches!(tys[a], Ty::Num(_)) {
+                    return Err("`Invert` needs a function or matrix".into());
+                }
+                (Ty::Num(0), 1 + depth[a], 1 + cost[a], 1)
+            }
+            Node::Dilate(src, factor, center) => {
+                let (s, f, p) = (src as usize, factor as usize, center as usize);
+                if !matches!(tys[f], Ty::Num(_)) || center != NONE && tys[p] != Ty::Vec {
+                    return Err("`Dilate` needs a numeric factor and an optional point".into());
+                }
+                let ty = match tys[s] {
+                    ty @ Ty::List(_) => ty,
+                    Ty::Num(_) => Ty::Num(0),
+                    _ => return Err("expected a list or a function".into()),
+                };
+                let (pd, pc, pv) = if center == NONE {
+                    (0, 0, 0)
+                } else {
+                    (depth[p], cost[p], vars[p])
+                };
+                (
+                    ty,
+                    1 + depth[s].max(depth[f]).max(pd),
+                    cost[s]
+                        .saturating_add(cost[f])
+                        .saturating_add(pc)
+                        .saturating_add(1),
+                    vars[s].saturating_add(vars[f]).saturating_add(pv),
+                )
+            }
             Node::Local(_) => (Ty::Num(0), 1, 1, 0),
             Node::Item(a) => {
                 let a = a as usize;

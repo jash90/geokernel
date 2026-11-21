@@ -623,51 +623,6 @@ reason = "AlgoIdentity marks its list undefined at size zero and never marks it 
 mismatches = ["2:m"]
 
 [[gap]]
-id = "vectorforms-matrixlists-001"
-reason = "Transpose of a matrix needs a list-producing expression operation that preserves element kinds and handles changing dimensions."
-mismatches = ["0:script line 3"]
-
-[[gap]]
-id = "vectorforms-matrixlists-002"
-reason = "ReducedRowEchelonForm needs a list-producing expression operation for the result of elimination."
-mismatches = ["0:script line 3"]
-
-[[gap]]
-id = "vectorforms-matrixlists-003"
-reason = "Invert of a matrix needs a list-producing expression operation for the inverse and singular result."
-mismatches = ["0:script line 3"]
-
-[[gap]]
-id = "vectorforms-matrixlists-004"
-reason = "Dimension of a rectangular list returns a two-element list. The implemented Dimension dispatch accepts points and vectors only."
-mismatches = ["0:script line 3"]
-
-[[gap]]
-id = "vectorforms-matrixlists-005"
-reason = "Transpose with separate numbers wraps them in a flat list and yields an undefined list. The variadic list dispatch is absent."
-mismatches = ["0:script line 2"]
-
-[[gap]]
-id = "vectorforms-matrixlists-006"
-reason = "Transpose with separate points wraps them in a flat list and yields an undefined list. The variadic list dispatch is absent."
-mismatches = ["0:script line 3"]
-
-[[gap]]
-id = "vectorforms-matrixlists-007"
-reason = "ReducedRowEchelonForm with separate numbers wraps them in a flat list and yields an undefined list. The variadic list dispatch is absent."
-mismatches = ["0:script line 2"]
-
-[[gap]]
-id = "vectorforms-matrixlists-008"
-reason = "ReducedRowEchelonForm with separate points wraps them in a flat list and yields an undefined list. The variadic list dispatch is absent."
-mismatches = ["0:script line 3"]
-
-[[gap]]
-id = "vectorforms-matrixlists-009"
-reason = "Invert of a function uses symbolic inversion. The kernel stores and evaluates functions but has no symbolic inverse operation."
-mismatches = ["0:script line 2"]
-
-[[gap]]
 id = "vectorforms-point-001"
 reason = "GeoGebra measures the length of a point from the origin. The kernel still rejects Length(point), as required by the measurement group regression test."
 mismatches = ["0:script line 5"]
@@ -741,3 +696,28 @@ mismatches = ["0:script line 7"]
 id = "geomextras-polylinelist-002"
 reason = "The boolean argument is ignored by the reference list form. The kernel lacks the list-backed polyline that this form also needs."
 mismatches = ["0:script line 8"]
+
+
+# Matrix and dilation forms that need new object representations.
+# ApplyMatrix(list,curve) and ApplyMatrix(list,function) produce a parametric
+# curve. For a function, GeoGebra first builds the curve (t, f(t)) over the
+# view-dependent parameter interval. The matrix then transforms coordinate
+# functions, including homogeneous division for 3 x 3 matrices. The kernel
+# has no parametric curve kind.
+# Dilate(curve,number) and Dilate(curve,number,point) transform both coordinate
+# functions about the origin or the center and retain the parameter interval.
+# Zero factor can leave a constant parametric curve. These need the same kind.
+# ApplyMatrix(list,image), Dilate(image,number) and Dilate(image,number,point)
+# transform the image's placement corners (GeoImage.initTransformPoints);
+# matrix images also support projective division. The kernel has no image
+# object with placement corners.
+# Invert(function) handles the symbolic inversion rules. The fallback through
+# AlgoFunctionInvert.computeOutputUsingCAS requires a CAS.
+# List transforms operate on the point and vector leaves supported by the
+# kernel's list evaluator. Lists of other geometry need corresponding list
+# element representations, including curve and conic records.
+
+[[gap]]
+id = "matrixdilate-elimination-009"
+reason = "AlgoTranspose clears its output on empty input but preserves the defined flag from the previous update. After a ragged matrix, the reference keeps the empty transpose undefined until it sees a valid nonempty matrix. The kernel computes the empty list from the current input."
+mismatches = ["2:a"]
