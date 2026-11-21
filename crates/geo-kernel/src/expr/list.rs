@@ -142,6 +142,62 @@ pub enum Element<'a> {
     List(List<'a>),
 }
 
+/// The shape of a coordinate list. Compute this once per list value so
+/// each output of `Point(list)` can read its row in constant time.
+#[derive(Clone, Copy)]
+pub(super) enum CoordinateLayout {
+    Flat,
+    Nested,
+}
+
+impl CoordinateLayout {
+    pub(super) fn of(list: List<'_>) -> Option<Self> {
+        let numeric = |row: List<'_>| {
+            row.iter()
+                .all(|item| matches!(item, Element::Value(Kind::Number | Kind::Angle, _)))
+        };
+        match list.get(0)? {
+            Element::List(_)
+                if list
+                    .iter()
+                    .all(|item| matches!(item, Element::List(row) if numeric(row))) =>
+            {
+                Some(Self::Nested)
+            }
+            Element::Value(Kind::Number | Kind::Angle, _) if numeric(list) => Some(Self::Flat),
+            _ => None,
+        }
+    }
+}
+
+pub(crate) struct CoordinateRows<'a> {
+    list: List<'a>,
+    layout: CoordinateLayout,
+}
+
+impl<'a> CoordinateRows<'a> {
+    pub(super) fn new(list: List<'a>, layout: CoordinateLayout) -> Self {
+        Self { list, layout }
+    }
+
+    pub(crate) fn len(&self) -> usize {
+        match self.layout {
+            CoordinateLayout::Flat => 1,
+            CoordinateLayout::Nested => self.list.len(),
+        }
+    }
+
+    pub(crate) fn row(&self, slot: usize) -> Option<List<'a>> {
+        match self.layout {
+            CoordinateLayout::Flat => (slot == 0).then_some(self.list),
+            CoordinateLayout::Nested => match self.list.get(slot)? {
+                Element::List(row) => Some(row),
+                _ => None,
+            },
+        }
+    }
+}
+
 impl<'a> List<'a> {
     pub(crate) fn new(slots: &'a [Slot], len: u32) -> List<'a> {
         Self::from_run(slots, 0, len)

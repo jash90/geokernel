@@ -2,6 +2,8 @@
 // commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdLength.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoLengthSegment.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/cas/AlgoLengthFunction.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/cas/AlgoLengthFunction2Points.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoSegment.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdRadius.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoRadius.java
@@ -46,22 +48,29 @@
 
 use super::conic_nd::ConicType;
 use super::point::{closest_coords, CLOSEST_PATH};
-use super::{conic_object, Group, Parents, CARRIERS, CIRCLE, CONIC_OBJECTS, POINT};
+use super::polygon::{count_arg, Count};
+use super::{conic_object, Group, Parents, CARRIERS, CONIC_OBJECTS, POINT};
 use crate::kernel::{Construction, Error, Id, Kind, Value};
 use crate::script::object;
 use crate::tol::STANDARD_PRECISION;
 use std::f64::consts::PI;
-
-const SEGMENT: &[Kind] = &[Kind::Segment];
 
 /// Numbers measured on objects.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum MeasureDef {
     /// `Length(segment)`.
     Length(Id),
+    /// `Length(f, a, b)`. The function id is packed to keep `Def` at 48 bytes.
+    FunctionLength {
+        function: u32,
+        start: Count,
+        end: Count,
+    },
+    /// `Length(f, P, Q)` between the points' x coordinates.
+    FunctionLengthBetweenPoints { function: Id, start: Id, end: Id },
     /// `Radius(conic)` of a circle or single-point conic.
     Radius(Id),
-    /// `Circumference(circle)` and `Perimeter(circle)`.
+    /// `Circumference(conic)` and `Perimeter(conic)` of a full conic.
     Circumference(Id),
     /// `Area(conic)` of a bounded full conic.
     CircleArea(Id),
@@ -245,6 +254,23 @@ impl Group for MeasureDef {
             | MeasureDef::Circumference(a)
             | MeasureDef::CircleArea(a)
             | MeasureDef::Slope(a) => Parents::of(&[a]),
+            MeasureDef::FunctionLength {
+                function,
+                start,
+                end,
+            } => {
+                let function = Id(function as usize);
+                match (start.id(), end.id()) {
+                    (Some(a), Some(b)) => Parents::of(&[function, a, b]),
+                    (Some(id), None) | (None, Some(id)) => Parents::of(&[function, id]),
+                    (None, None) => Parents::of(&[function]),
+                }
+            }
+            MeasureDef::FunctionLengthBetweenPoints {
+                function,
+                start,
+                end,
+            } => Parents::of(&[function, start, end]),
             MeasureDef::DistancePointPath { point, path } => Parents::of(&[point, path]),
             MeasureDef::DistanceLines(g, h) => Parents::of(&[g, h]),
             MeasureDef::Area3(a, b, c)
@@ -258,9 +284,27 @@ impl Group for MeasureDef {
 
     fn check(&self, c: &Construction) -> Result<(), Error> {
         match *self {
-            MeasureDef::Length(s) => c.expect(s, SEGMENT),
+            MeasureDef::Length(s) => c.expect(s, &[Kind::Segment]),
+            MeasureDef::FunctionLength {
+                function,
+                start,
+                end,
+            } => {
+                c.expect(Id(function as usize), &[Kind::Function])?;
+                start.check(c)?;
+                end.check(c)
+            }
+            MeasureDef::FunctionLengthBetweenPoints {
+                function,
+                start,
+                end,
+            } => {
+                c.expect(function, &[Kind::Function])?;
+                c.expect(start, POINT)?;
+                c.expect(end, POINT)
+            }
             MeasureDef::Radius(k) | MeasureDef::CircleArea(k) => c.expect(k, CONIC_OBJECTS),
-            MeasureDef::Circumference(k) => c.expect(k, CIRCLE),
+            MeasureDef::Circumference(k) => c.expect(k, &[Kind::Circle, Kind::Conic]),
             MeasureDef::Slope(l) => {
                 c.expect(l, &[Kind::Line, Kind::Segment, Kind::Ray, Kind::Function])
             }
@@ -298,6 +342,26 @@ impl Group for MeasureDef {
                 Value::Segment { x1, y1, x2, y2 } => number(segment_length(x1, y1, x2, y2)),
                 _ => None,
             },
+            MeasureDef::FunctionLength {
+                function,
+                start,
+                end,
+            } => number(super::curve::length(
+                c,
+                Id(function as usize),
+                start.value(c),
+                end.value(c),
+            )?),
+            MeasureDef::FunctionLengthBetweenPoints {
+                function,
+                start,
+                end,
+            } => number(super::curve::length(
+                c,
+                function,
+                c.point(start)?.0,
+                c.point(end)?.0,
+            )?),
             MeasureDef::Radius(k) => {
                 if c.kind(k) == Kind::Circle {
                     return number(circle_radius(c, k)?);
@@ -310,12 +374,15 @@ impl Group for MeasureDef {
                 }
             }
             MeasureDef::Circumference(k) => {
-                let r = circle_radius(c, k)?;
-                // A circle of radius 0 is a single point: no circumference.
-                if r == 0.0 {
-                    None
-                } else {
-                    number(2.0 * r * PI)
+                if c.kind(k) == Kind::Circle {
+                    let r = circle_radius(c, k)?;
+                    return (r != 0.0).then_some(Value::Number(2.0 * r * PI));
+                }
+                let d = conic_object(c, k)?;
+                match d.ty {
+                    ConicType::Circle => number(2.0 * d.half_axes[0] * PI),
+                    ConicType::Ellipse => number(super::elliptic::circumference(d.half_axes)),
+                    _ => None,
                 }
             }
             MeasureDef::CircleArea(k) => {
@@ -398,6 +465,9 @@ impl Group for MeasureDef {
         if func == "Distance" {
             return parse_distance(c, args);
         }
+        if let ("Length", [f, a, b]) = (func, args) {
+            return Some(parse_function_length(c, f, a, b));
+        }
         let known = matches!(
             func,
             "Length"
@@ -443,6 +513,31 @@ impl Group for MeasureDef {
             _ => MeasureDef::Angle(a, b, d),
         }))
     }
+}
+
+fn parse_function_length(
+    c: &Construction,
+    f: &str,
+    a: &str,
+    b: &str,
+) -> Result<MeasureDef, String> {
+    let function = object(c, f)?;
+    c.expect(function, &[Kind::Function])
+        .map_err(|err| err.to_string())?;
+    if let (Some(start), Some(end)) = (c.id(a), c.id(b)) {
+        if c.kind(start) == Kind::Point && c.kind(end) == Kind::Point {
+            return Ok(MeasureDef::FunctionLengthBetweenPoints {
+                function,
+                start,
+                end,
+            });
+        }
+    }
+    Ok(MeasureDef::FunctionLength {
+        function: u32::try_from(function.0).map_err(|_| "function id is out of range")?,
+        start: count_arg(c, a)?,
+        end: count_arg(c, b)?,
+    })
 }
 
 /// `Distance(point, path)`, either argument order, and `Distance(line, line)`.

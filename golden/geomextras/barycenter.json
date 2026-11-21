@@ -1,0 +1,381 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "geomextras-barycenter-001",
+      "group": "geomextras",
+      "script": [
+        "A = (1, 1)",
+        "B = (2, 1/2)",
+        "C = (3, 1/3)",
+        "a = 42",
+        "l = {A, B, C}",
+        "w = {a, 4, 13}",
+        "P = Barycenter(l, w)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -17.0 },
+        { "action": "set_number", "label": "a", "value": -42.0 },
+        { "action": "move", "label": "C", "x": 2.0, "y": 0.5 },
+        { "action": "set_number", "label": "a", "value": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.5 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 0.3333333333333333 },
+          "a": { "type": "number", "defined": true, "value": 42.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 0.5 },
+              { "type": "point", "defined": true, "x": 3.0, "y": 0.3333333333333333 }
+            ]
+          },
+          "w": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 42.0 },
+              { "type": "number", "defined": true, "value": 4.0 },
+              { "type": "number", "defined": true, "value": 13.0 }
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 1.5084745762711864, "y": 0.8192090395480226 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.5 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 0.3333333333333333 },
+          "a": { "type": "number", "defined": true, "value": -17.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 0.5 },
+              { "type": "point", "defined": true, "x": 3.0, "y": 0.3333333333333333 }
+            ]
+          },
+          "w": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -17.0 },
+              { "type": "number", "defined": true, "value": 4.0 },
+              { "type": "number", "defined": true, "value": 13.0 }
+            ]
+          },
+          "P": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.5 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 0.3333333333333333 },
+          "a": { "type": "number", "defined": true, "value": -42.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 0.5 },
+              { "type": "point", "defined": true, "x": 3.0, "y": 0.3333333333333333 }
+            ]
+          },
+          "w": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -42.0 },
+              { "type": "number", "defined": true, "value": 4.0 },
+              { "type": "number", "defined": true, "value": 13.0 }
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": -0.2, "y": 1.4266666666666665 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.5 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 0.5 },
+          "a": { "type": "number", "defined": true, "value": -42.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 0.5 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 0.5 }
+            ]
+          },
+          "w": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -42.0 },
+              { "type": "number", "defined": true, "value": 4.0 },
+              { "type": "number", "defined": true, "value": 13.0 }
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 0.32, "y": 1.34 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.5 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 0.5 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 0.5 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 0.5 }
+            ]
+          },
+          "w": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 4.0 },
+              { "type": "number", "defined": true, "value": 13.0 }
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 0.5 }
+        }
+      ]
+    },
+    {
+      "id": "geomextras-barycenter-002",
+      "group": "geomextras",
+      "script": [
+        "A = (1, 1)",
+        "B = (2, 1/2)",
+        "l = {A, B}",
+        "w = {42}",
+        "P = Barycenter(l, w)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": 1.0, "y": -1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 0.5 }
+            ]
+          },
+          "w": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 42.0 }
+            ]
+          },
+          "P": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": -1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": -1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 0.5 }
+            ]
+          },
+          "w": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 42.0 }
+            ]
+          },
+          "P": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "geomextras-barycenter-003",
+      "group": "geomextras",
+      "script": [
+        "A = (1, 1)",
+        "B = (2, 1/2)",
+        "P = Barycenter({A, B}, {1, 2})"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": 1.0, "y": -1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.5 },
+          "P": { "type": "point", "defined": true, "x": 1.6666666666666665, "y": 0.6666666666666666 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": -1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.5 },
+          "P": { "type": "point", "defined": true, "x": 1.6666666666666665, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "geomextras-barycenter-004",
+      "group": "geomextras",
+      "script": [
+        "A = (1, 1)",
+        "B = (2, 1/2)",
+        "C = (3, 1/3)",
+        "a = 1",
+        "P = Barycenter({A, B, C}, {a, a + 1, 2a})"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.5 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 0.3333333333333333 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "P": { "type": "point", "defined": true, "x": 2.2, "y": 0.5333333333333333 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.5 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 0.3333333333333333 },
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "P": { "type": "point", "defined": true, "x": 2.333333333333333, "y": 0.5555555555555555 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.5 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 0.3333333333333333 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 0.5 }
+        }
+      ]
+    },
+    {
+      "id": "geomextras-barycenter-005",
+      "group": "geomextras",
+      "script": [
+        "A = (1, 2)",
+        "B = (3, 5)",
+        "a = 1",
+        "l = {A, B}",
+        "w = If(a > 0, {1, a}, {1})",
+        "P = Barycenter(l, w)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "move", "label": "B", "x": 4.0, "y": 6.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 5.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+              { "type": "point", "defined": true, "x": 3.0, "y": 5.0 }
+            ]
+          },
+          "w": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 3.5 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 5.0 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+              { "type": "point", "defined": true, "x": 3.0, "y": 5.0 }
+            ]
+          },
+          "w": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          },
+          "P": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 6.0 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 6.0 }
+            ]
+          },
+          "w": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          },
+          "P": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 6.0 },
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 6.0 }
+            ]
+          },
+          "w": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 4.666666666666666 }
+        }
+      ]
+    }
+  ]
+}

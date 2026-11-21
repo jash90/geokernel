@@ -16,6 +16,8 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoTangentLineND.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoTangentLine.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/TangentAlgo.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/cas/AlgoTangentFunctionNumber.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/cas/AlgoTangentFunctionPoint.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoPolarLine.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersectLineConic.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersect.java
@@ -36,6 +38,7 @@
 //! decides "undefined" on those raw values; the rules below build the same
 //! raw triple and keep it (see [`Value::Line`]).
 
+use super::polygon::{count_arg, Count};
 use super::{
     check_index, line_value, normalized_coefficients, Group, Parents, CIRCLE, LINE_LIKE, POINT,
 };
@@ -53,26 +56,57 @@ pub enum LineDef {
         perpendicular: bool,
     },
     /// The line through a point and its projection onto a conic.
-    NormalToConic { point: Id, conic: Id },
+    NormalToConic {
+        point: Id,
+        conic: Id,
+    },
     /// Perpendicular bisector of two points (`LineBisector(A, B)`).
     BisectorPoints(Id, Id),
     /// Perpendicular bisector of a segment (`LineBisector(s)`).
     BisectorSegment(Id),
     /// Bisector of the angle at `vertex` (`AngularBisector(A, B, C)`).
-    AngleBisectorPoints { leg1: Id, vertex: Id, leg2: Id },
+    AngleBisectorPoints {
+        leg1: Id,
+        vertex: Id,
+        leg2: Id,
+    },
     /// One of the two angle bisectors of two lines or segments
     /// (`AngularBisector(g, h)`); `which` is 0 or 1 in GeoGebra's order.
-    AngleBisectorLines { g: Id, h: Id, which: u8 },
+    AngleBisectorLines {
+        g: Id,
+        h: Id,
+        which: u8,
+    },
     /// One of the two tangents from a point to a circle
     /// (`Tangent(P, c)`); `which` is 0 or 1 in GeoGebra's order.
-    TangentPoint { point: Id, circle: Id, which: u8 },
+    TangentPoint {
+        point: Id,
+        circle: Id,
+        which: u8,
+    },
     /// One of the two tangents to a circle parallel to a line or segment
     /// (`Tangent(g, c)`); `which` is 0 or 1 in GeoGebra's order.
-    TangentLine { line: Id, circle: Id, which: u8 },
+    TangentLine {
+        line: Id,
+        circle: Id,
+        which: u8,
+    },
+    /// Tangent to a function at a number or at a point's x coordinate.
+    TangentFunctionNumber {
+        function: Id,
+        at: Count,
+    },
+    TangentFunctionPoint {
+        function: Id,
+        point: Id,
+    },
     /// A common tangent of two conics, in outer-then-inner order.
     CommonTangent { first: Id, second: Id, which: u8 },
     /// Polar line of a point with respect to a circle (`Polar(P, c)`).
-    Polar { point: Id, circle: Id },
+    Polar {
+        point: Id,
+        circle: Id,
+    },
 }
 
 impl Group for LineDef {
@@ -94,6 +128,11 @@ impl Group for LineDef {
                 Parents::of(&[point, circle])
             }
             LineDef::TangentLine { line, circle, .. } => Parents::of(&[line, circle]),
+            LineDef::TangentFunctionNumber { function, at } => match at.id() {
+                Some(number) => Parents::of(&[function, number]),
+                None => Parents::of(&[function]),
+            },
+            LineDef::TangentFunctionPoint { function, point } => Parents::of(&[function, point]),
             LineDef::CommonTangent { first, second, .. } => Parents::of(&[first, second]),
         }
     }
@@ -154,6 +193,14 @@ impl Group for LineDef {
                     Err(Error::BadIndex(which))
                 }
             }
+            LineDef::TangentFunctionNumber { function, at } => {
+                c.expect(function, &[Kind::Function])?;
+                at.check(c)
+            }
+            LineDef::TangentFunctionPoint { function, point } => {
+                c.expect(function, &[Kind::Function])?;
+                c.expect(point, POINT)
+            }
             LineDef::Polar { point, circle } => {
                 c.expect(point, POINT)?;
                 c.expect(circle, CIRCLE)
@@ -205,6 +252,12 @@ impl Group for LineDef {
                 circle,
                 which,
             } => tangent_line(c.raw_carrier(line)?, c.circle(circle)?, which),
+            LineDef::TangentFunctionNumber { function, at } => {
+                function_tangent(c, function, at.value(c))
+            }
+            LineDef::TangentFunctionPoint { function, point } => {
+                function_tangent(c, function, c.point(point)?.0)
+            }
             LineDef::CommonTangent {
                 first,
                 second,
@@ -255,8 +308,7 @@ impl Group for LineDef {
                 2 => return None,
                 n => Err(arg_count(func, n)),
             },
-            // two arguments: `parse_multi`
-            "Tangent" if args.len() == 2 => return None,
+            "Tangent" if let [a, b] = args => return parse_function_tangent(c, a, b),
             "Tangent" => Err(arg_count(func, args.len())),
             "Polar" => parse_polar(c, func, args),
             _ => return None,
@@ -279,6 +331,7 @@ impl Group for LineDef {
                     Err(bad_kinds(c, func, &ids))
                 }
             })),
+            ("Tangent", 2) if parse_function_tangent(c, args[0], args[1]).is_some() => None,
             ("Tangent", 2) => Some(objects(c, args).and_then(|ids| {
                 let (first, second) = (ids[0], ids[1]);
                 match (c.kind(first), c.kind(second)) {
@@ -300,6 +353,29 @@ impl Group for LineDef {
 }
 
 const SEGMENT: &[Kind] = &[Kind::Segment];
+
+fn parse_function_tangent(c: &Construction, a: &str, b: &str) -> Option<Result<LineDef, String>> {
+    let is_function = |id| c.kind(id) == Kind::Function;
+    let is_point = |id| c.kind(id) == Kind::Point;
+    if let Some(function) = c.id(b).filter(|&id| is_function(id)) {
+        let at = match c.id(a).filter(|&id| is_point(id)) {
+            Some(point) => Ok(LineDef::TangentFunctionPoint { function, point }),
+            None => count_arg(c, a).map(|at| LineDef::TangentFunctionNumber { function, at }),
+        };
+        Some(at)
+    } else {
+        let function = c.id(a).filter(|&id| is_function(id))?;
+        let point = c.id(b).filter(|&id| is_point(id))?;
+        Some(Ok(LineDef::TangentFunctionPoint { function, point }))
+    }
+}
+
+fn function_tangent(c: &Construction, function: Id, x: f64) -> Option<Value> {
+    let function = crate::expr::derivative::FunctionDerivative::new(c, function)?;
+    let y = function.value(x);
+    let slope = function.slope(x);
+    line_value(-slope, 1.0, x * slope - y)
+}
 
 /// The tangents from `point` to `circle`. As in the constructor of
 /// `AlgoTangentPointND`, when both tangents are the same line at creation

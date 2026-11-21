@@ -1,0 +1,44 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "geomextras-pointvector-001",
+      "group": "geomextras",
+      "script": [
+        "P = (1, 1)",
+        "v = (3, 4)",
+        "Q = Point(P, v)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "v", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "P", "x": -5.0, "y": 2.0 },
+        { "action": "move", "label": "v", "x": 3.0, "y": -1.0 }
+      ],
+      "snapshots": [
+        {
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "v": { "type": "vector", "defined": true, "x": 3.0, "y": 4.0 },
+          "Q": { "type": "point", "defined": true, "x": 4.0, "y": 5.0 }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "v": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": -5.0, "y": 2.0 },
+          "v": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": -5.0, "y": 2.0 }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": -5.0, "y": 2.0 },
+          "v": { "type": "vector", "defined": true, "x": 3.0, "y": -1.0 },
+          "Q": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 }
+        }
+      ]
+    }
+  ]
+}

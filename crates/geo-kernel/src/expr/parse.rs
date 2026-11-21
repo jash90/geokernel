@@ -65,31 +65,45 @@ pub(crate) struct Parsed {
 }
 
 pub(crate) fn parse(c: &Construction, src: &str) -> Result<Parsed, String> {
-    parse_in(c, src, false, false)
+    parse_in(c, src, Mode::Expression)
+}
+
+/// Parses the expression of an inline geometry command argument.
+pub(super) fn parse_argument(c: &Construction, src: &str) -> Result<Parsed, String> {
+    parse_in(c, src, Mode::Argument)
 }
 
 /// [`parse`] with the variables an equation may read: `x` and `y` are
 /// GeoGebra's function variables, not objects (`Equation.initEquation`
 /// replaces the `x`, `y` and `z` nodes).
 pub(crate) fn parse_equation(c: &Construction, src: &str) -> Result<Parsed, String> {
-    parse_in(c, src, true, false)
+    parse_in(c, src, Mode::Equation)
 }
 
 /// [`parse_equation`] for the left side of an equation: exactly as
 /// `Equation.initEquation` resolves a lone variable on the left as a whole,
 /// so `xy = 1` is no equation in `x·y` while `2xy = 1` is one.
 pub(crate) fn parse_equation_left(c: &Construction, src: &str) -> Result<Parsed, String> {
-    parse_in(c, src, true, true)
+    parse_in(c, src, Mode::EquationLeft)
 }
 
-fn parse_in(c: &Construction, src: &str, equation: bool, left: bool) -> Result<Parsed, String> {
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Mode {
+    Expression,
+    Argument,
+    Equation,
+    EquationLeft,
+}
+
+fn parse_in(c: &Construction, src: &str, mode: Mode) -> Result<Parsed, String> {
+    let equation = matches!(mode, Mode::Equation | Mode::EquationLeft);
     let preprocessed = split_bars(src);
     let src: &str = &preprocessed;
     let toks = tokens(src)?;
     // a name that is no object and no command reads as a product of
     // single-letter variables (`VariableReplacerAlgorithm`), never when the
     // name alone is the whole left side
-    let whole_name = left
+    let whole_name = mode == Mode::EquationLeft
         && matches!(
             &toks[..],
             [Token {
@@ -112,6 +126,7 @@ fn parse_in(c: &Construction, src: &str, equation: bool, left: bool) -> Result<P
         uses_var: false,
         uses_y: false,
         equation,
+        inline_argument: mode == Mode::Argument,
         split_names: equation && !whole_name,
         locals: Vec::new(),
     };
@@ -166,6 +181,7 @@ pub(super) struct Parser<'a> {
     /// Whether `y` reads as the second variable of an equation, not as the
     /// coordinate function (see [`parse_equation`]).
     equation: bool,
+    inline_argument: bool,
     /// Whether a name that resolves as nothing may read as a product of
     /// single-letter variables (see [`parse_in`]).
     split_names: bool,
@@ -814,6 +830,25 @@ impl Parser<'_> {
                 },
             };
             return Ok(self.push(node));
+        }
+        if self.inline_argument && !call {
+            // The fast parser (`VariableReplacerAlgorithm`) reads a name
+            // that resolves as nothing by its longest known prefix, and a
+            // prefix that names a constant keeps the rest as its own
+            // token, so `e5` is `e*5` and `pi15` is `pi*15`.
+            let prefix = ["e", "pi", "Pi", "\u{3c0}", "\u{212f}"]
+                .iter()
+                .copied()
+                .filter(|p| *p != "e" || free("e"))
+                .find(|p| text.starts_with(*p) && text.len() > p.len());
+            if let Some(prefix) = prefix {
+                let rest = &text[prefix.len()..];
+                if rest.bytes().all(|b| b.is_ascii_digit()) {
+                    let constant = self.name(prefix, false)?;
+                    let number = self.push(Node::Num(rest.parse().unwrap_or(f64::NAN)));
+                    return Ok(self.implicit_product(constant, number));
+                }
+            }
         }
         if call {
             return self.command();

@@ -2,6 +2,10 @@
 // commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/CmdClosestPoint.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoClosestPoint.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoPointVector.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoPointsFromList.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoVertexSegment.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/barycentric/AlgoBarycenter.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/barycentric/AlgoKimberling.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoClosestPointLines.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersectLines.java
@@ -23,9 +27,10 @@
 //! `ClosestPoint` calls the `pointChanged` code of the path on a copy of the
 //! point, as `AlgoClosestPoint` does.
 
-use super::polygon::Count;
+use super::polygon::{count_arg, Count};
 use super::{Group, Parents, CARRIERS, POINT};
-use crate::kernel::{Construction, Error, Id, Kind, Value};
+use crate::expr::{Element, List};
+use crate::kernel::{Construction, Def, Error, Id, Kind, Value};
 use crate::script::object;
 use crate::tol::STANDARD_PRECISION;
 
@@ -48,6 +53,21 @@ pub(crate) const CLOSEST_PATH: &[Kind] = &[
 /// Points computed from other objects.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum PointDef {
+    /// `Point(P, v)`: move the point by the vector's components.
+    Offset { point: Id, vector: Id },
+    /// One output of `Point(list)`, from a flat coordinate list or a row.
+    Coordinates { list: Id, slot: u32 },
+    /// `Barycenter(points, weights)`.
+    Barycenter { points: Id, weights: Id },
+    /// `Vertex(segment, n)`.
+    SegmentVertex { segment: Id, index: Count },
+    /// A segment whose endpoint objects are available even when it is undefined.
+    SegmentEndpoint {
+        segment: Id,
+        // Pack the endpoint ids to keep `Def` at 48 bytes.
+        endpoints: [u32; 2],
+        index: Count,
+    },
     /// `ClosestPoint(path, point)` in either order of the arguments.
     Closest { path: Id, point: Id },
     /// `ClosestPoint(g, h)` of two lines: `AlgoClosestPointLines`, which is
@@ -62,6 +82,82 @@ pub enum PointDef {
 
 fn id_of(raw: u32) -> Id {
     Id(raw as usize)
+}
+
+fn list_point(row: List<'_>) -> Option<Value> {
+    if row.len() > 2 {
+        return None;
+    }
+    let coordinate = |k| match row.get(k) {
+        Some(Element::Value(Kind::Number | Kind::Angle, Value::Number(v))) => Some(v),
+        None => Some(0.0),
+        _ => None,
+    };
+    Some(Value::Point {
+        x: coordinate(0)?,
+        y: coordinate(1)?,
+    })
+}
+
+fn weighted_point(points: List<'_>, weights: List<'_>) -> Option<Value> {
+    if points.is_empty() || points.len() != weights.len() {
+        return None;
+    }
+    let mut sum = 0.0;
+    let mut sx = 0.0;
+    let mut sy = 0.0;
+    for (point, weight) in points.iter().zip(weights.iter()) {
+        let Element::Value(Kind::Point, Value::Point { x, y }) = point else {
+            return None;
+        };
+        let Element::Value(Kind::Number | Kind::Angle, Value::Number(w)) = weight else {
+            return None;
+        };
+        sum += w;
+        sx += w * x;
+        sy += w * y;
+    }
+    (sum.is_finite() && sum != 0.0).then_some(Value::Point {
+        x: sx / sum,
+        y: sy / sum,
+    })
+}
+
+fn vertex_index(index: f64) -> Option<usize> {
+    match crate::expr::math::java_round(index) as i32 {
+        1 => Some(0),
+        2 => Some(1),
+        _ => None,
+    }
+}
+
+impl PointDef {
+    pub(crate) fn parse_segment_vertex(
+        c: &Construction,
+        func: &str,
+        args: &[&str],
+    ) -> Option<Result<Self, String>> {
+        let ("Vertex", [segment, index]) = (func, args) else {
+            return None;
+        };
+        let segment = c.id(segment).filter(|&s| c.kind(s) == Kind::Segment)?;
+        Some((|| {
+            let index = count_arg(c, index)?;
+            Ok(match c.def(segment) {
+                Def::Segment(start, end) => {
+                    let pack = |id: Id| {
+                        u32::try_from(id.0).map_err(|_| "segment endpoint id is out of range")
+                    };
+                    Self::SegmentEndpoint {
+                        segment,
+                        endpoints: [pack(start)?, pack(end)?],
+                        index,
+                    }
+                }
+                _ => Self::SegmentVertex { segment, index },
+            })
+        })())
+    }
 }
 
 /// `DoubleUtil.isZero`.
@@ -288,6 +384,24 @@ impl Group for PointDef {
 
     fn parents(&self) -> Parents {
         match *self {
+            PointDef::Offset { point, vector } => Parents::of(&[point, vector]),
+            PointDef::Coordinates { list, .. } => Parents::of(&[list]),
+            PointDef::Barycenter { points, weights } => Parents::of(&[points, weights]),
+            PointDef::SegmentVertex { segment, index } => match index.id() {
+                Some(index) => Parents::of(&[segment, index]),
+                None => Parents::of(&[segment]),
+            },
+            PointDef::SegmentEndpoint {
+                segment,
+                endpoints,
+                index,
+            } => {
+                let [start, end] = endpoints.map(id_of);
+                match index.id() {
+                    Some(index) => Parents::of(&[segment, start, end, index]),
+                    None => Parents::of(&[segment, start, end]),
+                }
+            }
             PointDef::Closest { path, point } => Parents::of(&[path, point]),
             PointDef::LineIntersection { first, second } => Parents::of(&[first, second]),
             PointDef::Trilinear { ids } => Parents::of(&ids.map(id_of)),
@@ -303,6 +417,30 @@ impl Group for PointDef {
 
     fn check(&self, c: &Construction) -> Result<(), Error> {
         match *self {
+            PointDef::Offset { point, vector } => {
+                c.expect(point, POINT)?;
+                c.expect(vector, &[Kind::Vector])
+            }
+            PointDef::Coordinates { list, .. } => c.expect(list, &[Kind::List]),
+            PointDef::Barycenter { points, weights } => {
+                c.expect(points, &[Kind::List])?;
+                c.expect(weights, &[Kind::List])
+            }
+            PointDef::SegmentVertex { segment, index } => {
+                c.expect(segment, &[Kind::Segment])?;
+                index.check(c)
+            }
+            PointDef::SegmentEndpoint {
+                segment,
+                endpoints,
+                index,
+            } => {
+                let [start, end] = endpoints.map(id_of);
+                c.expect(segment, &[Kind::Segment])?;
+                c.expect(start, POINT)?;
+                c.expect(end, POINT)?;
+                index.check(c)
+            }
             PointDef::Closest { path, point } => {
                 c.expect(path, CLOSEST_PATH)?;
                 c.expect(point, POINT)
@@ -331,6 +469,35 @@ impl Group for PointDef {
 
     fn compute(&self, c: &Construction) -> Option<Value> {
         match *self {
+            PointDef::Offset { point, vector } => {
+                let (px, py) = c.point(point)?;
+                let Value::Vector { x, y } = c.value(vector) else {
+                    return None;
+                };
+                Some(Value::Point {
+                    x: px + x,
+                    y: py + y,
+                })
+            }
+            PointDef::Coordinates { list, slot } => {
+                list_point(crate::expr::coordinate_rows(c, list)?.row(slot as usize)?)
+            }
+            PointDef::Barycenter { points, weights } => {
+                weighted_point(c.elements(points)?, c.elements(weights)?)
+            }
+            PointDef::SegmentVertex { segment, index } => {
+                let Value::Segment { x1, y1, x2, y2 } = c.value(segment) else {
+                    return None;
+                };
+                let (x, y) = [(x1, y1), (x2, y2)][vertex_index(index.value(c))?];
+                Some(Value::Point { x, y })
+            }
+            PointDef::SegmentEndpoint {
+                endpoints, index, ..
+            } => {
+                let (x, y) = c.point(id_of(endpoints[vertex_index(index.value(c))?]))?;
+                Some(Value::Point { x, y })
+            }
             PointDef::Closest { path, point } => {
                 let (x, y) = closest_coords(c, path, c.point(point)?)?;
                 Some(Value::Point { x, y })
@@ -344,8 +511,25 @@ impl Group for PointDef {
     }
 
     fn parse(c: &Construction, func: &str, args: &[&str]) -> Option<Result<Self, String>> {
+        if let Some(vertex) = Self::parse_segment_vertex(c, func, args) {
+            return Some(vertex);
+        }
         let n = args.len();
         match func {
+            "Point" if let [p, v] = args => {
+                let (point, vector) = (c.id(p)?, c.id(v)?);
+                (c.kind(point) == Kind::Point && c.kind(vector) == Kind::Vector)
+                    .then_some(Ok(Self::Offset { point, vector }))
+            }
+            "Barycenter" => Some((|| {
+                let [points, weights] = args else {
+                    return Err(format!("`{func}` does not take {n} argument(s)"));
+                };
+                Ok(Self::Barycenter {
+                    points: object(c, points)?,
+                    weights: object(c, weights)?,
+                })
+            })()),
             "ClosestPoint" => {
                 if n != 2 {
                     return Some(Err(format!("`{func}` does not take {n} argument(s)")));
@@ -413,5 +597,26 @@ impl Group for PointDef {
             })()),
             _ => None,
         }
+    }
+
+    fn parse_multi(
+        c: &Construction,
+        func: &str,
+        args: &[&str],
+    ) -> Option<Result<Vec<Self>, String>> {
+        let ("Point", [arg]) = (func, args) else {
+            return None;
+        };
+        let list = c.id(arg).filter(|&id| c.kind(id) == Kind::List)?;
+        let Some(rows) = crate::expr::coordinate_rows(c, list) else {
+            return Some(Err(
+                "`Point` needs a coordinate list or a list of coordinates".into(),
+            ));
+        };
+        // A row of more than two numbers is a 3D point: this 2D kernel's
+        // output for it is undefined, as GeoGebra's 2D one is.
+        Some(Ok((0..rows.len() as u32)
+            .map(|slot| Self::Coordinates { list, slot })
+            .collect()))
     }
 }

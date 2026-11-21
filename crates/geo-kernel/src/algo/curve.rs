@@ -1,9 +1,12 @@
 // Parts of this file are translated from GeoGebra (https://github.com/geogebra/geogebra),
 // commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDistancePointObject.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/cas/LengthFunction.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/cas/AlgoIntegralDefinite.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
+use crate::expr::derivative::FunctionDerivative;
 use crate::{Construction, Id};
 
 /// A bracket with a nonpositive left value and a nonnegative right value.
@@ -29,6 +32,32 @@ pub(crate) fn slope(f: impl Fn(f64) -> f64, x: f64) -> f64 {
     let coarse = f(x + 2.0 * h) - f(x - 2.0 * h);
     let fine = f(x + h) - f(x - h);
     (8.0 * fine - coarse) / (12.0 * h)
+}
+
+/// `LengthFunction.integral`: the arc length of the graph of `id` between
+/// `a` and `b`. `T = hypot(1, f'(x))` is integrated by GeoGebra's adaptive
+/// Gauss quadrature; an end where `T` is infinite but the function has a
+/// value is replaced by a short chord.
+pub(crate) fn length(c: &Construction, id: Id, a: f64, b: f64) -> Option<f64> {
+    if !a.is_finite() || !b.is_finite() {
+        return None;
+    }
+    let function = FunctionDerivative::new(c, id)?;
+    let f = |x| function.value(x);
+    let t = |x| 1.0f64.hypot(function.slope(x));
+    let mut min = a;
+    let mut max = b;
+    let mut edges = 0.0;
+    let dx = (b - a) * crate::tol::MAX_PRECISION;
+    if t(min).is_infinite() {
+        edges += dx.hypot(f(min + dx) - f(min));
+        min += dx;
+    }
+    if t(max).is_infinite() {
+        edges += dx.hypot(f(max - dx) - f(max));
+        max -= dx;
+    }
+    Some(super::elliptic::numeric_integration(&t, min, max).abs() + edges)
 }
 
 /// Search for stationary points of squared distance in the interval that

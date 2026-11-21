@@ -24,6 +24,7 @@ import org.geogebra.common.kernel.algos.AlgoElement;
 import org.geogebra.common.kernel.algos.AlgoIntersectLinePolyLine;
 import org.geogebra.common.kernel.algos.AlgoIntersectPolyLines;
 import org.geogebra.common.kernel.algos.AlgoJoinPointsRay;
+import org.geogebra.common.kernel.algos.AlgoPointsFromList;
 import org.geogebra.common.kernel.algos.AlgoPointOnPath;
 import org.geogebra.common.kernel.algos.AlgoPointInRegion;
 import org.geogebra.common.kernel.algos.AlgoRayPointVector;
@@ -104,14 +105,16 @@ final class Session {
      */
     private final Set<GeoElement> conics = Collections.newSetFromMap(new IdentityHashMap<>());
     private final boolean trackBoundaryGrowth;
-    private final Map<AlgoElement, String> growingIntersections = new LinkedHashMap<>();
+    private final boolean trackPointListGrowth;
+    private final Map<AlgoElement, String> growingPoints = new LinkedHashMap<>();
 
     Session() {
-        this(false);
+        this(false, false);
     }
 
-    Session(boolean trackBoundaryGrowth) {
+    Session(boolean trackBoundaryGrowth, boolean trackPointListGrowth) {
         this.trackBoundaryGrowth = trackBoundaryGrowth;
+        this.trackPointListGrowth = trackPointListGrowth;
         LocalizationCommon loc = new LocalizationCommon(2);
         loc.setResourceBundleControl(new Utf8Control());
         app = new AppCommon(loc, new AwtFactoryCommon(), new AppConfigDefault());
@@ -170,13 +173,16 @@ final class Session {
         }
         GeoElementND[] out = processor.processAlgebraCommandNoExceptionHandling(
                 line, false, new CommandErrorHandler(line, false), false, null);
-        if (trackBoundaryGrowth && out != null && out.length > 0) {
+        if ((trackBoundaryGrowth || trackPointListGrowth) && out != null && out.length > 0) {
             GeoElement first = out[0].toGeoElement();
             AlgoElement parent = first.getParentAlgorithm();
-            if (parent instanceof AlgoIntersectLinePolyLine
-                    || parent instanceof AlgoIntersectPolyLines) {
-                growingIntersections.put(parent, label.split("_", 2)[0] + "_{");
-                recordGrowingIntersections();
+            if (trackPointListGrowth && parent instanceof AlgoPointsFromList) {
+                growingPoints.put(parent, "");
+            }
+            if (trackBoundaryGrowth && (parent instanceof AlgoIntersectLinePolyLine
+                    || parent instanceof AlgoIntersectPolyLines)) {
+                growingPoints.put(parent, label.split("_", 2)[0] + "_{");
+                recordGrowingPoints();
                 return first;
             }
         }
@@ -208,6 +214,9 @@ final class Session {
         if (out != null && out.length > 0 && definition.startsWith("Intersect(")
                 && (out.length > 1 || (out[0].isLabelSet()
                 && !label.equals(out[0].getLabelSimple())))) {
+            return runMulti(line, expected, out);
+        }
+        if (out != null && out.length > 1 && definition.startsWith("Point(")) {
             return runMulti(line, expected, out);
         }
         if (out != null && out.length >= 1 && isPerVertex(definition)) {
@@ -501,7 +510,7 @@ final class Session {
 
     /** Records every scripted object, in script order. */
     Map<String, Object> snapshot() {
-        recordGrowingIntersections();
+        recordGrowingPoints();
         Map<String, Object> snap = new LinkedHashMap<>();
         for (Map.Entry<String, GeoElement> e : objects.entrySet()) {
             snap.put(e.getKey(), describe(e.getValue(), schemaType(e.getValue())));
@@ -509,15 +518,15 @@ final class Session {
         return snap;
     }
 
-    private void recordGrowingIntersections() {
-        for (Map.Entry<AlgoElement, String> entry : growingIntersections.entrySet()) {
+    private void recordGrowingPoints() {
+        for (Map.Entry<AlgoElement, String> entry : growingPoints.entrySet()) {
             for (GeoElement geo : entry.getKey().getOutput()) {
                 String label = geo.getLabelSimple();
                 if (!geo.isLabelSet() || label == null || !label.startsWith(entry.getValue())) {
                     continue;
                 }
                 if (!(geo instanceof GeoPoint)) {
-                    throw new IllegalStateException("expected an intersection point: " + label);
+                    throw new IllegalStateException("expected a growing point output: " + label);
                 }
                 GeoElement previous = objects.putIfAbsent(label, geo);
                 if (previous != null && previous != geo) {
@@ -1005,6 +1014,7 @@ final class Session {
             case "Point":
             case "PointIn":
             case "TriangleCenter":
+            case "Barycenter":
                 return "point";
             case "Polygon":
             case "RigidPolygon":
