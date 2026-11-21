@@ -37,6 +37,13 @@ case("point", ["A = (3, 4)", "B = (0, 0)", "l = {A, B}", "n = 1",
                "w = UnitOrthogonalVector(P)", "k = Length(P)", "d = Dimension(P)"],
      [setn("n", 2), setn("n", 3), mv("B", 0, -3), setn("n", 2), setn("n", 1)])
 
+# Replay the same point transitions independently of the deferred Length(point).
+for entry in tuple(cases.cases):
+    if entry["id"].startswith("vectorforms-point-"):
+        script = [line for line in entry["script"] if " = Length(" not in line
+                  or " = Length(Vector(" in line]
+        case("coordinates", script, entry["steps"][1:])
+
 # CommandsTest.cmdDirection and the line variants of the unit/orthogonal tests.
 case("line", ["g: -2x + 3y + 1 = 0", "h: 3x = 4y", "v = Direction(g)",
               "u = UnitVector(h)", "w = PerpendicularVector(h)",

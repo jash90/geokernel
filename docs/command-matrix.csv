@@ -39,7 +39,7 @@ Intersect,,geometry,P0,partial,65,31,line/line; line/circle; circle/circle; line
 IntersectPath,,geometry,P1,partial,9,4,"Polygon and line, segment, ray or conic in either order; two polygons"
 IntersectRegion,,english,P2,todo,9,0,
 Distance,,geometry,P0,partial,4,2,"Distance(point, point); point and path in either order (line, segment, ray, conic, arc, sector, polygon, polyline, function or point list); two line carriers"
-Length,,geometry,P1,partial,11,4,Length(segment); Length(vector); Length(list); Length(arc or sector)
+Length,,geometry,P1,partial,11,3,Length(segment); Length(vector); Length(list); Length(arc or sector)
 Radius,,geometry,P1,done,1,1,Radius(conic or conic part); defined for circle and single-point types
 Type,,geometry,P1,todo,0,0,
 CircleArc,,geometry,P1,done,1,1,"CircularArc(centre, point, point)"

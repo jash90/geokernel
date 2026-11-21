@@ -1007,27 +1007,22 @@ cases = ["vectorforms-matrixnumbers-001", "vectorforms-matrixnumbers-002", "vect
 [[form]]
 command = "Dimension"
 form = "point"
-cases = ["vectorforms-point-001", "vectorforms-point-003", "vectorforms-point-005"]
+cases = ["vectorforms-coordinates-001", "vectorforms-coordinates-003", "vectorforms-coordinates-005"]
 
 [[form]]
 command = "Dimension"
 form = "vector"
-cases = ["vectorforms-position-002", "vectorforms-point-003"]
+cases = ["vectorforms-position-002", "vectorforms-coordinates-003"]
 
 [[form]]
 command = "Direction"
 form = "vector"
-cases = ["vectorforms-position-002", "vectorforms-point-003"]
+cases = ["vectorforms-position-002", "vectorforms-coordinates-003"]
 
 [[form]]
 command = "Identity"
 form = "number"
 cases = ["vectorforms-identity-001"]
-
-[[form]]
-command = "Length"
-form = "point"
-cases = ["vectorforms-point-001", "vectorforms-point-002", "vectorforms-point-003", "vectorforms-point-004", "vectorforms-point-005"]
 
 [[form]]
 command = "MatrixRank"
@@ -1037,19 +1032,19 @@ cases = ["vectorforms-matrixnumbers-001", "vectorforms-matrixnumbers-002", "vect
 [[form]]
 command = "OrthogonalVector"
 form = "point"
-cases = ["vectorforms-point-001", "vectorforms-point-003", "vectorforms-point-004", "vectorforms-point-005"]
+cases = ["vectorforms-coordinates-001", "vectorforms-coordinates-003", "vectorforms-coordinates-004", "vectorforms-coordinates-005"]
 
 [[form]]
 command = "UnitOrthogonalVector"
 form = "point"
-cases = ["vectorforms-point-001", "vectorforms-point-003", "vectorforms-point-004", "vectorforms-point-005"]
+cases = ["vectorforms-coordinates-001", "vectorforms-coordinates-003", "vectorforms-coordinates-004", "vectorforms-coordinates-005"]
 
 [[form]]
 command = "UnitVector"
 form = "point"
-cases = ["vectorforms-point-001", "vectorforms-point-003", "vectorforms-point-004", "vectorforms-point-005"]
+cases = ["vectorforms-coordinates-001", "vectorforms-coordinates-003", "vectorforms-coordinates-004", "vectorforms-coordinates-005"]
 
 [[form]]
 command = "Vector"
 form = "vector"
-cases = ["vectorforms-position-001", "vectorforms-position-002", "vectorforms-point-003"]
+cases = ["vectorforms-position-001", "vectorforms-position-002", "vectorforms-coordinates-003"]

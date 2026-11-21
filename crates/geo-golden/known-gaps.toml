@@ -666,3 +666,28 @@ mismatches = ["0:script line 3"]
 id = "vectorforms-matrixlists-009"
 reason = "Invert of a function uses symbolic inversion. The kernel stores and evaluates functions but has no symbolic inverse operation."
 mismatches = ["0:script line 2"]
+
+[[gap]]
+id = "vectorforms-point-001"
+reason = "GeoGebra measures the length of a point from the origin. The kernel still rejects Length(point), as required by the measurement group regression test."
+mismatches = ["0:script line 5"]
+
+[[gap]]
+id = "vectorforms-point-002"
+reason = "GeoGebra measures the length of a point from the origin. The kernel still rejects Length(point), as required by the measurement group regression test."
+mismatches = ["0:script line 4"]
+
+[[gap]]
+id = "vectorforms-point-003"
+reason = "GeoGebra measures the length of a point from the origin. The kernel still rejects Length(point), as required by the measurement group regression test."
+mismatches = ["0:script line 14"]
+
+[[gap]]
+id = "vectorforms-point-004"
+reason = "GeoGebra measures the length of a point from the origin. The kernel still rejects Length(point), as required by the measurement group regression test."
+mismatches = ["0:script line 11"]
+
+[[gap]]
+id = "vectorforms-point-005"
+reason = "GeoGebra measures the length of a point from the origin. The kernel still rejects Length(point), as required by the measurement group regression test."
+mismatches = ["0:script line 9"]

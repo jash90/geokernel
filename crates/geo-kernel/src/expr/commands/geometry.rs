@@ -20,7 +20,7 @@ use crate::algo::vector::VectorDef;
 use crate::expr::eval::{Ctx, Env, Val};
 use crate::expr::parse::{list_form, Parser};
 use crate::expr::{self, math, Bin, Elem, IfMode, ListOp, Node, Ty, Un, NONE};
-use crate::kernel::{Construction, Def, Id, Value};
+use crate::kernel::{Construction, Def, Id, Kind, Value};
 
 /// The commands of this group (see `commands::is_command`).
 pub(super) const NAMES: &[&str] = &["Length", "Cross", "Dot", "Identity"];
@@ -42,12 +42,8 @@ pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
 
 fn length(p: &mut Parser, args: &[u32], lists: &[bool]) -> Result<Option<Node>, String> {
     if let (&[a], [false]) = (args, lists) {
-        if !matches!(p.node(a), Node::Obj(_)) {
-            // The coordinate selectors also require a point or vector.
-            let x = p.push(Node::Un(Un::X, a));
-            let y = p.push(Node::Un(Un::Y, a));
-            let pair = p.push(Node::Tuple(x, y));
-            return Ok(Some(Node::Un(Un::Abs, pair)));
+        if matches!(p.node(a), Node::Cmd(def, _) if def.kind() == Kind::Vector) {
+            return Ok(Some(Node::Un(Un::Abs, a)));
         }
     }
     list_form("Length", ListOp::Length, false, args, lists)

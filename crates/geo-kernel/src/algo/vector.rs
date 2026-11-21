@@ -145,7 +145,7 @@ pub enum VectorDef {
     Ortho(Id),
     /// `UnitOrthogonalVector(v)` and `UnitPerpendicularVector(v)`.
     UnitOrtho(Id),
-    /// `Length(v)` and `Length(A)`.
+    /// `Length(v)` of a vector.
     Length(Id),
     /// `Dimension(A)` and `Dimension(v)`.
     Dimension(Id),
@@ -601,7 +601,8 @@ impl Group for VectorDef {
             | VectorDef::Unit(v)
             | VectorDef::Ortho(v)
             | VectorDef::UnitOrtho(v) => c.expect(v, DIRECTED),
-            VectorDef::Length(v) | VectorDef::Dimension(v) => c.expect(v, COORDS),
+            VectorDef::Length(v) => c.expect(v, VECTOR),
+            VectorDef::Dimension(v) => c.expect(v, COORDS),
             VectorDef::ApplyMatrix { matrix, src, kind } => {
                 c.expect(matrix, LIST)?;
                 c.expect(src, MATRIX_TARGET)?;
@@ -674,7 +675,7 @@ impl Group for VectorDef {
                 }
             }
             VectorDef::Length(v) => {
-                let (x, y) = coords(c, v)?;
+                let (x, y) = vector(c, v)?;
                 Some(Value::Number(ggb_length(x, y)))
             }
             VectorDef::Dimension(v) => {
@@ -718,7 +719,7 @@ impl Group for VectorDef {
                 if args.len() != 1 {
                     return None;
                 }
-                let id = c.id(args[0]).filter(|&id| COORDS.contains(&c.kind(id)))?;
+                let id = vector_arg(args[0])?;
                 return Some(Ok(VectorDef::Length(id)));
             }
             "Dot" => {
@@ -966,7 +967,8 @@ mod tests {
         assert!(err(&mut c, "a = Translate(A, B)").contains("expected a vector"));
         assert!(err(&mut c, "a = Translate(r, u)").contains("`r` is a number"));
         assert!(err(&mut c, "a = Ray(A, l)").contains("expected a point"));
-        assert!(err(&mut c, "a = Length(k)").contains("`k` is a circle"));
+        // `Length` of a point is not handled here and not by any other group.
+        assert!(exec(&mut c, "a = Length(A)").is_err());
         // Nothing was added by the failed lines.
         assert_eq!(c.len(), load(BASE).unwrap().len());
     }
