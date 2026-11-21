@@ -208,6 +208,12 @@ pub(crate) enum ListOp {
     // geometry (`commands/geometry.rs`)
     /// `Length(list)`.
     Length,
+    /// `Dot(list, list)` and `Cross(list, list)`.
+    Dot,
+    Cross,
+    /// `Determinant(matrix)` and `MatrixRank(matrix)` inside expressions.
+    Determinant,
+    MatrixRank,
 }
 
 impl ListOp {

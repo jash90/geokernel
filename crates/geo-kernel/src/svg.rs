@@ -360,7 +360,11 @@ pub fn render(c: &Construction, view: View, width: u32, height: u32) -> String {
                 }
                 flush(&mut pts);
             }
-            Value::Number(_) | Value::Bool(_) | Value::List { .. } | Value::Undefined => {}
+            Value::Number(_)
+            | Value::Bool(_)
+            | Value::List { .. }
+            | Value::HomogeneousPoint { .. }
+            | Value::Undefined => {}
         }
     }
 

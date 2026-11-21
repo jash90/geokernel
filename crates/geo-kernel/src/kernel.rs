@@ -180,6 +180,14 @@ pub enum Value {
         x: f64,
         y: f64,
     },
+    /// Stored coordinates of a projective point. The public value of a
+    /// point is its Cartesian projection, when finite.
+    #[doc(hidden)]
+    HomogeneousPoint {
+        x: f64,
+        y: f64,
+        z: f64,
+    },
     /// `a*x + b*y + c = 0` with the raw coefficients GeoGebra's `GeoLine`
     /// holds (its `x`, `y`, `z`) for the same definition. They are not
     /// normalised: the algorithm that makes the line decides their scale, and
@@ -265,6 +273,45 @@ pub enum Value {
 }
 
 impl Value {
+    /// `GeoPoint.updateCoords` makes the scale positive for finite points.
+    pub(crate) fn homogeneous_point(x: f64, y: f64, z: f64) -> Self {
+        if x.is_nan() || y.is_nan() || z.is_nan() {
+            return Self::Undefined;
+        }
+        let (x, y, z) = if z < 0.0 && !point_at_infinity(x, y, z) {
+            (-x, -y, -z)
+        } else {
+            (x, y, z)
+        };
+        if z == 1.0 && x.is_finite() && y.is_finite() {
+            Self::Point { x, y }
+        } else {
+            Self::HomogeneousPoint { x, y, z }
+        }
+    }
+
+    pub(crate) fn point_coords(self) -> Option<(f64, f64, f64)> {
+        match self {
+            Self::Point { x, y } => Some((x, y, 1.0)),
+            Self::HomogeneousPoint { x, y, z } => Some((x, y, z)),
+            _ => None,
+        }
+    }
+
+    pub(crate) fn cartesian(self) -> Self {
+        match self {
+            Self::HomogeneousPoint { x, y, z } if !point_at_infinity(x, y, z) => {
+                let (x, y) = (x / z, y / z);
+                if x.is_finite() && y.is_finite() {
+                    return Self::Point { x, y };
+                }
+                Self::Undefined
+            }
+            Self::HomogeneousPoint { .. } => Self::Undefined,
+            _ => self,
+        }
+    }
+
     pub fn is_defined(&self) -> bool {
         !matches!(self, Value::Undefined)
     }
@@ -284,6 +331,7 @@ impl Value {
     fn is_finite(&self) -> bool {
         match *self {
             Value::Point { x, y } => x.is_finite() && y.is_finite(),
+            Value::HomogeneousPoint { x, y, z } => !(x.is_nan() || y.is_nan() || z.is_nan()),
             Value::Line { a, b, c } => a.is_finite() && b.is_finite() && c.is_finite(),
             Value::Segment { x1, y1, x2, y2 } => {
                 x1.is_finite() && y1.is_finite() && x2.is_finite() && y2.is_finite()
@@ -304,6 +352,12 @@ impl Value {
             | Value::Undefined => true,
         }
     }
+}
+
+/// `DoubleUtil.isEpsilon(z, x, y)` for non-NaN homogeneous coordinates.
+pub(crate) fn point_at_infinity(x: f64, y: f64, z: f64) -> bool {
+    let tol = crate::tol::STANDARD_PRECISION;
+    z.abs() <= tol && z.abs() <= x.abs() * tol && z.abs() <= y.abs() * tol
 }
 
 /// How an object is defined.
@@ -845,6 +899,12 @@ impl Construction {
     }
 
     pub fn value(&self, id: Id) -> Value {
+        self.stored_value(id).cartesian()
+    }
+
+    /// Includes homogeneous coordinates so algorithms that read the raw
+    /// fields see scale changes even when the Cartesian value is unchanged.
+    pub(crate) fn stored_value(&self, id: Id) -> Value {
         self.values
             .get(id.0)
             .copied()
@@ -967,7 +1027,7 @@ impl Construction {
         self.check(&def)?;
         let def = algo::intersect::prepare(self, def);
         let hint = algo::intersect::hint(self, &def);
-        Ok(self.compute_with(def, |_| hint))
+        Ok(self.compute_with(def, |_| hint).cartesian())
     }
 
     /// The current length of the construction and of its lists, to return to
@@ -1848,7 +1908,7 @@ impl Construction {
     /// parsed; it stands for the entry in `hints` that an object has.
     #[inline(never)]
     pub(crate) fn command_value(&self, def: Def, hint: algo::intersect::Hint) -> Option<Value> {
-        self.try_compute(def, |_| hint)
+        self.try_compute(def, |_| hint).map(Value::cartesian)
     }
 
     /// `None` means the object is undefined for the current inputs.

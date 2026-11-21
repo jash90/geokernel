@@ -67,7 +67,7 @@ use crate::script::object;
 use crate::tol::STANDARD_PRECISION;
 
 #[path = "vector_matrix.rs"]
-mod matrix;
+pub(crate) mod matrix;
 
 const VECTOR: &[Kind] = &[Kind::Vector];
 const COORDS: &[Kind] = &[Kind::Point, Kind::Vector];
@@ -179,14 +179,6 @@ fn is_zero(v: f64) -> bool {
     -STANDARD_PRECISION < v && v < STANDARD_PRECISION
 }
 
-/// `GeoPoint.updateCoords` treats a point as infinite when its scale is
-/// within all three bounds in `DoubleUtil.isEpsilon`.
-fn zero_point_scale(w: f64, x: f64, y: f64) -> bool {
-    w.abs() <= STANDARD_PRECISION
-        && w.abs() <= x.abs() * STANDARD_PRECISION
-        && w.abs() <= y.abs() * STANDARD_PRECISION
-}
-
 /// `MyMath.length(x, y)`: scales by the larger component.
 fn ggb_length(x: f64, y: f64) -> f64 {
     let (ax, ay) = (x.abs(), y.abs());
@@ -247,26 +239,6 @@ fn dot_lists(a: List<'_>, b: List<'_>) -> Option<f64> {
     a.iter()
         .zip(b.iter())
         .try_fold(0.0, |sum, (x, y)| Some(sum + number(x)? * number(y)?))
-}
-
-/// `AlgoUnitVectorVector` and `AlgoOrthoVectorVector` read the raw fields of
-/// a point. A line intersection takes the cross product of its carriers,
-/// and `GeoPoint.updateCoords` makes the homogeneous scale positive for a
-/// finite point. The raw coordinates can survive even at infinity.
-fn point_direction(c: &Construction, id: Id) -> Option<(f64, f64)> {
-    if let Def::IntersectLines(g, h) = c.def(id) {
-        if c.kind(g) != Kind::Line || c.kind(h) != Kind::Line {
-            return point(c, id);
-        }
-        let (a, b, d) = c.raw_carrier(g)?;
-        let (e, f, k) = c.raw_carrier(h)?;
-        let (x, y, z) = (b * k - d * f, d * e - a * k, a * f - b * e);
-        if !zero_point_scale(z, x, y) && z < 0.0 {
-            return Some((-x, -y));
-        }
-        return Some((x, y));
-    }
-    point(c, id)
 }
 
 /// `GeoVec3D.lineThroughPoints` for two finite points: directed from `p` to `q`.
@@ -370,9 +342,7 @@ pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
         | VectorDef::Dimension(l),
     ) = *def
     {
-        if let Def::IntersectLines(g, h) = c.def(l) {
-            ids.extend([g, h]);
-        } else {
+        if c.kind(l) != Kind::Point {
             line_hidden(c, l, &mut ids);
         }
     }
@@ -420,7 +390,8 @@ pub(crate) fn line_hidden(c: &Construction, l: Id, ids: &mut Vec<Id>) {
 /// segment or ray (`AlgoUnitVectorVector`, `AlgoUnitVectorLine`).
 fn direction_of(c: &Construction, id: Id) -> Option<(f64, f64)> {
     match c.kind(id) {
-        Kind::Point => point_direction(c, id),
+        // The direction algorithms read the raw fields, including at infinity.
+        Kind::Point => c.stored_value(id).point_coords().map(|(x, y, _)| (x, y)),
         Kind::Vector => vector(c, id),
         _ => {
             let (x, y) = normal_of(c, id)?;
@@ -458,11 +429,10 @@ fn ray_value(start: (f64, f64), (x, y, z): (f64, f64, f64)) -> Option<Value> {
 /// by moving the points they are made from, and leaves a vector unchanged
 /// (`GeoVector.translate` does nothing).
 fn translate(v: Value, dx: f64, dy: f64) -> Option<Value> {
+    if let Some((x, y, z)) = v.point_coords() {
+        return Some(Value::homogeneous_point(x + dx * z, y + dy * z, z));
+    }
     Some(match v {
-        Value::Point { x, y } => Value::Point {
-            x: x + dx,
-            y: y + dy,
-        },
         Value::Line { a, b, c } => Value::Line {
             a,
             b,
@@ -485,7 +455,9 @@ fn translate(v: Value, dx: f64, dy: f64) -> Option<Value> {
         // a translation moves neither a polygon's area nor a polyline's
         // length; GeoGebra recomputes them from the moved points
         Value::Polygon { .. } | Value::PolyLine { .. } => v,
-        Value::Circle { .. }
+        Value::Point { .. }
+        | Value::HomogeneousPoint { .. }
+        | Value::Circle { .. }
         | Value::Number(_)
         | Value::Bool(_)
         | Value::Function
@@ -665,7 +637,7 @@ impl Group for VectorDef {
                     None if kind == Kind::PolyLine => return Some(Value::PolyLine { length: 0.0 }),
                     None => return None,
                 };
-                translate(c.value(src), dx, dy)
+                translate(c.stored_value(src), dx, dy)
             }
             // `AlgoTranslateVector` copies the coordinates and does not read
             // the start point.
@@ -693,20 +665,16 @@ impl Group for VectorDef {
                 let (x, y) = vector(c, v)?;
                 Some(Value::Number(ggb_length(x, y)))
             }
-            VectorDef::Dimension(v) => {
-                let xy = if c.kind(v) == Kind::Point {
-                    point_direction(c, v)
-                } else {
-                    vector(c, v)
-                };
-                xy.filter(|(x, y)| x.is_finite() && y.is_finite())
-                    .map(|_| Value::Number(2.0))
-            }
+            VectorDef::Dimension(v) => c.stored_value(v).is_defined().then_some(Value::Number(2.0)),
             VectorDef::ApplyMatrix { matrix, src, .. } => {
-                matrix::apply(c.elements(matrix)?, c.value(src))
+                matrix::apply(c.elements(matrix)?, c.stored_value(src))
             }
-            VectorDef::Determinant(l) => matrix::determinant(c.elements(l)?).map(Value::Number),
-            VectorDef::MatrixRank(l) => matrix::rank(c.elements(l)?).map(Value::Number),
+            VectorDef::Determinant(l) => {
+                matrix::determinant(c.elements(l)?, matrix::budget()).map(Value::Number)
+            }
+            VectorDef::MatrixRank(l) => {
+                matrix::rank(c.elements(l)?, matrix::budget()).map(Value::Number)
+            }
             VectorDef::DotLists(a, b) => {
                 dot_lists(c.elements(a)?, c.elements(b)?).map(Value::Number)
             }

@@ -543,7 +543,7 @@ fn is_finite(v: &Value) -> bool {
         Value::Arc { length } => length.is_finite(),
         Value::Sector { area } => area.is_finite(),
         Value::Locus { .. } => true,
-        Value::Undefined => false,
+        Value::HomogeneousPoint { .. } | Value::Undefined => false,
     }
 }
 

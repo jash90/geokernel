@@ -1,0 +1,24 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "vectorforms-matrixbudget-001",
+      "group": "vectorforms",
+      "script": [
+        "d = Determinant(Identity(431))",
+        "r = MatrixRank(Identity(431))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 431.0 }
+        }
+      ]
+    }
+  ]
+}

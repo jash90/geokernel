@@ -123,6 +123,21 @@ final class Session {
         return kernel;
     }
 
+    /** Checks that GeoGebra reports an error and creates no output. */
+    void reject(String line) {
+        Matcher matcher = LINE.matcher(line);
+        if (!matcher.matches() || kernel.lookupLabel(matcher.group(1)) != null) {
+            throw new IllegalArgumentException("expected an assignment to a new label: " + line);
+        }
+        CommandErrorHandler errors = new CommandErrorHandler(line, true);
+        GeoElementND[] out = processor.processAlgebraCommandNoExceptionHandling(
+                line, false, errors, false, null);
+        if (!errors.reported || (out != null && out.length != 0)
+                || kernel.lookupLabel(matcher.group(1)) != null) {
+            throw new IllegalStateException("GeoGebra did not reject: " + line);
+        }
+    }
+
     /** Runs one `label = definition` or `label: equation` line and checks
      * what GeoGebra created. */
     GeoElement run(String line) {
@@ -154,7 +169,7 @@ final class Session {
             throw new IllegalArgumentException("label used twice: " + label);
         }
         GeoElementND[] out = processor.processAlgebraCommandNoExceptionHandling(
-                line, false, new ThrowingErrorHandler(line), false, null);
+                line, false, new CommandErrorHandler(line, false), false, null);
         if (trackBoundaryGrowth && out != null && out.length > 0) {
             GeoElement first = out[0].toGeoElement();
             AlgoElement parent = first.getParentAlgorithm();
@@ -1370,22 +1385,28 @@ final class Session {
         return f;
     }
 
-    /** Turns every GeoGebra error report into an exception. */
-    private static final class ThrowingErrorHandler implements ErrorHandler {
+    /** Captures expected command errors and throws on unexpected ones. */
+    private static final class CommandErrorHandler implements ErrorHandler {
         private final String line;
+        private final boolean expectError;
+        private boolean reported;
 
-        ThrowingErrorHandler(String line) {
+        CommandErrorHandler(String line, boolean expectError) {
             this.line = line;
+            this.expectError = expectError;
         }
 
         @Override
         public void showError(String msg) {
-            throw new IllegalStateException("GeoGebra error in '" + line + "': " + msg);
+            if (!expectError) {
+                throw new IllegalStateException("GeoGebra error in '" + line + "': " + msg);
+            }
+            reported = true;
         }
 
         @Override
         public void showCommandError(String command, String message) {
-            throw new IllegalStateException("GeoGebra error in '" + line + "': " + message);
+            showError(message);
         }
 
         @Override

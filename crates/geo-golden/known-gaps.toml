@@ -698,16 +698,6 @@ reason = "ApplyMatrix resolves labelled objects. An inline matrix and point need
 mismatches = ["0:script line 1"]
 
 [[gap]]
-id = "vectorforms-matrixnumbers-002"
-reason = "Determinant and MatrixRank read labelled list objects. The inline matrix literal on the first line has no expression-backed operand dispatch."
-mismatches = ["0:script line 1"]
-
-[[gap]]
-id = "vectorforms-matrixnumbers-004"
-reason = "Determinant and MatrixRank read labelled list objects. The inline rectangular matrix literal on the first line has no expression-backed operand dispatch."
-mismatches = ["0:script line 1"]
-
-[[gap]]
-id = "vectorforms-products-005"
-reason = "Dot of labelled lists reads their entries as doubles, which makes a list of points undefined. Two inline point lists take the expression fallback, which multiplies corresponding points as vectors before summing."
-mismatches = ["0:b", "1:b", "2:b"]
+id = "vectorforms-nestedcross-001"
+reason = "GeoGebra multiplies and subtracts row lists inside the cross product, producing a list for the third component. The kernel's cross product computes scalar and coordinate entries, and its list arithmetic does not support nested operands."
+mismatches = ["0:a"]

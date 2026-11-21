@@ -42,7 +42,7 @@ use crate::algo::general_conic::GeneralConicDef;
 use crate::algo::lines::{self, LineDef};
 use crate::algo::point::PointDef;
 use crate::algo::{conic::ConicDef, Group};
-use crate::kernel::{Construction, Def, Id, Kind, Value};
+use crate::kernel::{point_at_infinity, Construction, Def, Id, Kind, Value};
 use crate::tol::{MAX_PRECISION, MIN_PRECISION, STANDARD_PRECISION};
 
 #[path = "intersect_boundary.rs"]
@@ -439,14 +439,13 @@ pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
 
 /// `AlgoIntersectLines`: the cross product of the raw coefficients
 /// (`GeoVec3D.cross`), kept only when it lies on both lines
-/// (`GeoLine.isOnFullLine`). A point at infinity (`GeoPoint.updateCoords`)
-/// is reported undefined.
+/// (`GeoLine.isOnFullLine`).
 pub(crate) fn lines(c: &Construction, l: Id, m: Id) -> Option<Value> {
     cross_lines(c.raw_line(l)?, c.raw_line(m)?)
 }
 
 pub(crate) fn closest_lines(c: &Construction, l: Id, m: Id) -> Option<Value> {
-    let point = cross_lines(c.raw_carrier(l)?, c.raw_carrier(m)?)?;
+    let point = cross_lines(c.raw_carrier(l)?, c.raw_carrier(m)?)?.cartesian();
     let Value::Point { x, y } = point else {
         return None;
     };
@@ -487,20 +486,17 @@ fn cross_lines((a1, b1, c1): (f64, f64, f64), (a2, b2, c2): (f64, f64, f64)) -> 
         y /= z;
         z = 1.0;
     }
-    if x.is_nan() || y.is_nan() || z.is_nan() || is_epsilon(z, x, y) {
-        return None;
-    }
-    if z < 0.0 {
-        (x, y, z) = (-x, -y, -z);
-    }
-    let (px, py) = if z == 1.0 { (x, y) } else { (x / z, y / z) };
+    let point = Value::homogeneous_point(x, y, z);
+    let (x, y, z) = point.point_coords()?;
     let incident = |(a, b, cc): (f64, f64, f64)| {
-        (a * px + b * py + cc).abs() < MIN_PRECISION * (a.abs() + b.abs())
+        let residual = if point_at_infinity(x, y, z) {
+            a * x + b * y
+        } else {
+            a * (x / z) + b * (y / z) + cc
+        };
+        residual.abs() < MIN_PRECISION * (a.abs() + b.abs())
     };
-    if !(incident((a1, b1, c1)) && incident((a2, b2, c2))) {
-        return None;
-    }
-    to_value(Some((px, py)))
+    (incident((a1, b1, c1)) && incident((a2, b2, c2))).then_some(point)
 }
 
 /// `DoubleUtil.isEpsilon(e, x, y)`: whether `e` is zero compared with

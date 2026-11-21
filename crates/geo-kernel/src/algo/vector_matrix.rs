@@ -3,6 +3,7 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoApplyMatrix.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoDeterminant.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoMatrixRank.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/MyList.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoLine.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoPoint.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoVector.java
@@ -11,7 +12,7 @@
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
-use super::{is_zero, line_value, zero_point_scale};
+use super::{is_zero, line_value};
 use crate::expr::{math, Element, List, MAX_EVALUATION_WORK};
 use crate::kernel::Value;
 use crate::tol::STANDARD_PRECISION;
@@ -36,45 +37,73 @@ fn numeric(element: Element<'_>) -> Option<f64> {
     }
 }
 
-fn cells(list: List<'_>, cols: usize) -> impl Iterator<Item = Option<f64>> + '_ {
+fn matrix_cell(element: Element<'_>) -> Option<f64> {
+    match element {
+        Element::Value(_, Value::Bool(b)) => Some(f64::from(u8::from(b))),
+        _ => numeric(element),
+    }
+}
+
+fn cells(
+    list: List<'_>,
+    cols: usize,
+    read: fn(Element<'_>) -> Option<f64>,
+) -> impl Iterator<Item = Option<f64>> + '_ {
     list.iter().flat_map(move |item| {
         let row = row(item).filter(|row| row.len() == cols);
-        (0..cols).map(move |i| numeric(row?.get(i)?))
+        (0..cols).map(move |i| read(row?.get(i)?))
     })
 }
 
-/// Open a rectangular `GgbMat` and run an elimination within the same work
-/// bound as other list algorithms. Each pivot visits at most `rows * cols`
-/// entries.
-fn eliminate<T>(
+pub(crate) fn budget() -> impl FnMut(u64) -> bool {
+    let mut left = MAX_EVALUATION_WORK;
+    move |work| {
+        if let Some(remaining) = left.checked_sub(work) {
+            left = remaining;
+            true
+        } else {
+            false
+        }
+    }
+}
+
+/// Open a rectangular `GgbMat`, charging for its entries before copying.
+fn eliminate<F: FnMut(u64) -> bool>(
     list: List<'_>,
     square: bool,
-    f: impl FnOnce(&mut [f64], usize, usize) -> T,
-) -> Option<T> {
+    mut charge: F,
+    f: impl FnOnce(&mut [f64], usize, usize, F) -> Option<f64>,
+) -> Option<f64> {
     let rows = list.len();
     let cols = row(list.get(0)?)?.len();
     if cols == 0 || square && rows != cols {
         return None;
     }
     let len = rows.checked_mul(cols)?;
-    let work = len.checked_mul(rows.min(cols))?;
-    if work as u64 > MAX_EVALUATION_WORK {
+    if !charge(len as u64) {
         return None;
     }
     SCRATCH.with_borrow_mut(|data| {
         data.clear();
-        for entry in cells(list, cols) {
+        for entry in cells(list, cols, numeric) {
             data.push(entry?);
         }
-        Some(f(data, rows, cols))
+        f(data, rows, cols, charge)
     })
 }
 
-pub(super) fn determinant(list: List<'_>) -> Option<f64> {
-    eliminate(list, true, |data, size, _| {
+pub(crate) fn determinant(list: List<'_>, charge: impl FnMut(u64) -> bool) -> Option<f64> {
+    eliminate(list, true, charge, |data, size, _, mut charge| {
+        if !charge(data.len() as u64) {
+            return None;
+        }
         let integers = data.iter().all(|&x| math::is_integer(x));
         let mut det = 1.0;
         for k in 0..size {
+            let tail = size - k - 1;
+            if !charge(3 * tail as u64 + 1) {
+                return None;
+            }
             let mut pivot = k;
             for i in k + 1..size {
                 if data[i * size + k].abs() > data[pivot * size + k].abs() {
@@ -82,26 +111,38 @@ pub(super) fn determinant(list: List<'_>) -> Option<f64> {
                 }
             }
             if data[pivot * size + k].abs() < STANDARD_PRECISION {
-                return 0.0;
+                return Some(0.0);
             }
             if pivot != k {
+                if !charge(size as u64) {
+                    return None;
+                }
                 swap_rows(data, size, k, pivot);
                 det = -det;
             }
             let lead = data[k * size + k];
             det *= lead;
+            let finite = data[k * size + k + 1..(k + 1) * size]
+                .iter()
+                .all(|v| v.is_finite());
             for i in k + 1..size {
                 let factor = data[i * size + k] / lead;
+                if factor == 0.0 && finite {
+                    continue;
+                }
+                if !charge(tail as u64) {
+                    return None;
+                }
                 for j in k + 1..size {
                     data[i * size + j] -= factor * data[k * size + j];
                 }
             }
         }
-        if integers {
+        Some(if integers {
             math::java_round(det) as f64
         } else {
             det
-        }
+        })
     })
 }
 
@@ -111,12 +152,15 @@ fn swap_rows(data: &mut [f64], cols: usize, a: usize, b: usize) {
     }
 }
 
-pub(super) fn rank(list: List<'_>) -> Option<f64> {
-    eliminate(list, false, |data, rows, cols| {
+pub(crate) fn rank(list: List<'_>, charge: impl FnMut(u64) -> bool) -> Option<f64> {
+    eliminate(list, false, charge, |data, rows, cols, mut charge| {
         // `GgbMat.reducedRowEchelonFormImmediate`: the first sufficiently
         // nonzero entry leads. Skipped entries are set to zero.
         let mut r = 0;
         for lead in 0..cols {
+            if !charge(rows as u64) {
+                return None;
+            }
             let mut pivot = r;
             while pivot < rows && is_zero(data[pivot * cols + lead]) {
                 data[pivot * cols + lead] = 0.0;
@@ -125,13 +169,23 @@ pub(super) fn rank(list: List<'_>) -> Option<f64> {
             if pivot == rows {
                 continue;
             }
+            if !charge((rows + 3 * cols) as u64) {
+                return None;
+            }
             swap_rows(data, cols, r, pivot);
             let divisor = data[r * cols + lead];
             for j in 0..cols {
                 data[r * cols + j] /= divisor;
             }
+            let finite = data[r * cols..(r + 1) * cols].iter().all(|v| v.is_finite());
             for i in (0..rows).filter(|&i| i != r) {
                 let factor = data[i * cols + lead];
+                if factor == 0.0 && finite {
+                    continue;
+                }
+                if !charge(cols as u64) {
+                    return None;
+                }
                 for j in 0..cols {
                     data[i * cols + j] -= factor * data[r * cols + j];
                 }
@@ -141,9 +195,14 @@ pub(super) fn rank(list: List<'_>) -> Option<f64> {
                 break;
             }
         }
-        data.chunks_exact(cols)
-            .take_while(|row| row.iter().any(|&x| !is_zero(x)))
-            .count() as f64
+        if !charge(data.len() as u64) {
+            return None;
+        }
+        Some(
+            data.chunks_exact(cols)
+                .take_while(|row| row.iter().any(|&x| !is_zero(x)))
+                .count() as f64,
+        )
     })
 }
 
@@ -153,8 +212,20 @@ pub(super) fn apply(list: List<'_>, src: Value) -> Option<Value> {
         return None;
     }
     let mut data = [0.0; 9];
-    for (entry, dest) in cells(list, size).zip(&mut data) {
+    for (entry, dest) in cells(list, size, matrix_cell).zip(&mut data) {
         *dest = entry?;
+    }
+    if let Some((x, y, z)) = src.point_coords() {
+        let [a, b, c, d, e, f, g, h, i] = data;
+        return Some(if size == 2 {
+            Value::homogeneous_point(a * x + b * y, c * x + d * y, z)
+        } else {
+            Value::homogeneous_point(
+                a * x + b * y + c * z,
+                d * x + e * y + f * z,
+                g * x + h * y + i * z,
+            )
+        });
     }
     match (size, src) {
         (2, Value::Line { a, b, c }) => {
@@ -177,25 +248,18 @@ pub(super) fn apply(list: List<'_>, src: Value) -> Option<Value> {
                 (q * u - r * t) * a - (p * u - r * s) * b + (p * t - q * s) * c,
             ))
         }
-        (_, Value::Point { x, y } | Value::Vector { x, y }) => {
-            // Both GeoPoint and GeoVector use homogeneous input (x, y, 1)
-            // for a 3-by-3 matrix.
+        (_, Value::Vector { x, y }) => {
+            // `GeoVector.matrixTransform` uses (x, y, 1) and divides by the
+            // resulting scale.
             let (x, y) = if size == 2 {
                 (data[0] * x + data[1] * y, data[2] * x + data[3] * y)
             } else {
                 let w = data[6] * x + data[7] * y + data[8];
                 let tx = data[0] * x + data[1] * y + data[2];
                 let ty = data[3] * x + data[4] * y + data[5];
-                if matches!(src, Value::Point { .. }) && zero_point_scale(w, tx, ty) {
-                    return None;
-                }
                 (tx / w, ty / w)
             };
-            if matches!(src, Value::Point { .. }) {
-                Some(Value::Point { x, y })
-            } else {
-                Some(Value::Vector { x, y })
-            }
+            Some(Value::Vector { x, y })
         }
         _ => None,
     }

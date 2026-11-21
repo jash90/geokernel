@@ -513,7 +513,7 @@ CIFactor,,cas,,out_of_scope,,,
 IFactor,,algebra,P2,todo,1,0,
 IntegralSymbolic,,cas,,out_of_scope,,,
 CommonDenominator,,algebra,P2,todo,2,0,
-Cross,,algebra,P2,done,4,4,
+Cross,,algebra,P2,partial,5,4,point or vector pairs and flat list pairs of equal length 2 or 3 (vectorforms-listcross-001 and vectorforms-listcross-002)
 CSolutions,,algebra,P2,todo,10,0,
 CSolve,,algebra,P2,todo,10,0,
 Dot,,algebra,P2,todo,1,0,

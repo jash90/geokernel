@@ -1,0 +1,77 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "vectorforms-listdot-001",
+      "group": "vectorforms",
+      "script": [
+        "a = Dot({{1, 2}, {3, 4}}, {{5, 6}, {7, 8}})",
+        "b = Dot({true, false}, {2, 3})",
+        "c = Dot(3, {1, 2})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": true, "value": 2.0 },
+          "c": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 6.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "vectorforms-listdot-002",
+      "group": "vectorforms",
+      "script": [
+        "l = {1, 2}"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "reject", "line": "a = Dot({1, 2}, 3)" },
+        { "action": "reject", "line": "a = Dot(l, 3)" }
+      ],
+      "snapshots": [
+        {
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          }
+        },
+        {
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          }
+        },
+        {
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

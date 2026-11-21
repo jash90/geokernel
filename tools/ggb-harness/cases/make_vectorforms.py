@@ -107,10 +107,40 @@ case("images", ["A = (1, 1)", "n = 2", "l = {Sequence(n), {3, 4}}",
                 "P = ApplyMatrix(l, A)"], [setn("n", 3), setn("n", 1), setn("n", 2)])
 case("images", ["P = ApplyMatrix({{1, 2}, {3, 4}}, (1, 1))"], [])
 
+case("projective", ["A = (2, 4)", "n = 2", "l = {{n, 0, 0}, {0, n, 0}, {0, 0, n}}",
+                    "P = ApplyMatrix(l, A)", "u = OrthogonalVector(P)", "v = Direction(P)",
+                    "b = (1, -2)", "T = Translate(P, b)", "w = Direction(T)",
+                    "B = (1, 1)", "a = 3", "D = Dilate(P, a, B)", "k = OrthogonalVector(D)",
+                    "m = {{2, 1}, {0, 1}}", "Q = ApplyMatrix(m, P)", "s = Direction(Q)"],
+     [setn("n", 3), setn("n", -2), mv("A", -1, 5)])
+case("projective", ["A = (2, 4)", "l = {{1, 0, 0}, {0, 1, 0}, {0, 0, 2}}",
+                    "P = ApplyMatrix(l, A)", "v = OrthogonalVector(P)", "d = Direction(P)"], [])
+case("projective", ["A = (1, 1)", "n = -3", "l = {{1, 2, 3}, {3, 4, -1}, {1, 2, n}}",
+                    "P = ApplyMatrix(l, A)", "d = Dimension(P)", "u = UnitVector(P)",
+                    "v = Direction(P)", "w = OrthogonalVector(P)", "b = (1, -2)",
+                    "T = Translate(P, b)", "t = Direction(T)", "a = 2", "D = Dilate(P, a)",
+                    "k = Direction(D)", "m = {{1, 0, 0}, {0, 1, 0}, {1, 0, 1}}",
+                    "Q = ApplyMatrix(m, P)", "s = Direction(Q)",
+                    "h = {{2, 1}, {0, 1}}", "R = ApplyMatrix(h, P)", "j = Direction(R)"],
+     [setn("n", 1), setn("n", -3), mv("A", 3, 0)])
+case("projective", ["A = (2, 4)", "l = {{true, false}, {2, true}}", "P = ApplyMatrix(l, A)",
+                    "d = Determinant(l)", "r = MatrixRank(l)"], [mv("A", 1, -3)])
+
+case("listcross", ["a = Cross({1, 2, 3}, {4, 5, 6})",
+                  "b = Cross({1, 2}, {3, 4})"], [])
+case("listcross", ["n = 2", "l = Sequence(n)", "m = {3, 4}", "a = Cross(l, m)"],
+     [setn("n", 3), setn("n", 2), setn("n", 1), setn("n", 2)])
+case("nestedcross", ["a = Cross({{1, 2}, {3, 4}}, {{5, 6}, {7, 8}})"], [])
+case("listdot", ["a = Dot({{1, 2}, {3, 4}}, {{5, 6}, {7, 8}})",
+                 "b = Dot({true, false}, {2, 3})", "c = Dot(3, {1, 2})"], [])
+case("listdot", ["l = {1, 2}"], [{"action": "reject", "line": "a = Dot({1, 2}, 3)"},
+                                 {"action": "reject", "line": "a = Dot(l, 3)"}])
+case("matrixbudget", ["d = Determinant(Identity(431))", "r = MatrixRank(Identity(431))"], [])
+
 # The fuzz corpus loads every top-level input script unchanged. Keep topics
 # with unsupported commands or operands in the reference inputs.
 reference = Cases("vectorforms")
-reference_topics = {"images", "matrixlists", "matrixnumbers", "point", "products"}
+reference_topics = {"images", "matrixlists", "matrixnumbers", "nestedcross", "point", "products"}
 reference.cases = [entry for entry in cases.cases if entry["id"].split("-")[1] in reference_topics]
 cases.cases = [entry for entry in cases.cases if entry["id"].split("-")[1] not in reference_topics]
 cases.write()

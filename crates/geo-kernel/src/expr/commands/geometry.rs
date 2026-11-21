@@ -16,8 +16,9 @@ mod conic_coefficients;
 mod conic_interval;
 
 use crate::algo::intersect::Hint;
-use crate::algo::vector::VectorDef;
-use crate::expr::eval::{Ctx, Env, Val};
+use crate::algo::vector::{matrix, VectorDef};
+use crate::expr::eval::{combine, number_of, slot_val, Ctx, Env, Val};
+use crate::expr::list::Slot;
 use crate::expr::parse::{list_form, Parser};
 use crate::expr::{self, math, Bin, Elem, IfMode, ListOp, Node, Ty, Un, NONE};
 use crate::kernel::{Construction, Def, Id, Kind, Value};
@@ -27,6 +28,8 @@ pub(super) const NAMES: &[&str] = &[
     "Length",
     "Cross",
     "Dot",
+    "Determinant",
+    "MatrixRank",
     "Identity",
     "Dimension",
     "Vector",
@@ -43,6 +46,12 @@ pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
         "Length" => p.list_command(length),
         "Cross" => p.list_command(cross),
         "Dot" => p.list_command(dot),
+        "Determinant" => p.list_command(|_, args, lists| {
+            list_form(text, ListOp::Determinant, false, args, lists)
+        }),
+        "MatrixRank" => {
+            p.list_command(|_, args, lists| list_form(text, ListOp::MatrixRank, false, args, lists))
+        }
         "Dimension" => p.list_command(dimension),
         _ if VectorDef::vector_result(text) => {
             p.list_command(|p, args, lists| Ok(vector(p, text, args, lists)))
@@ -126,8 +135,11 @@ fn length(p: &mut Parser, args: &[u32], lists: &[bool]) -> Result<Option<Node>, 
 
 /// `ExpressionNodeEvaluator.vectorProduct` for two 2D inputs.
 fn cross(p: &mut Parser, args: &[u32], lists: &[bool]) -> Result<Option<Node>, String> {
+    if let (&[a, b], [true, true]) = (args, lists) {
+        return Ok(Some(Node::ListOp(ListOp::Cross, a, b)));
+    }
     let (&[a, b], [false, false]) = (args, lists) else {
-        return Err("`Cross` takes two points or vectors".into());
+        return Err("`Cross` takes two points or vectors, or two lists".into());
     };
     let ax = p.push(Node::Un(Un::X, a));
     let ay = p.push(Node::Un(Un::Y, a));
@@ -142,23 +154,19 @@ fn dot(p: &mut Parser, args: &[u32], lists: &[bool]) -> Result<Option<Node>, Str
     let &[a, b] = args else {
         return Err("`Dot` takes two arguments".into());
     };
-    let product = Node::Bin(Bin::Mul, a, b);
-    if lists != [true, true] {
-        // Vector and scalar multiplication already use `handleMult`.
-        return Ok(Some(product));
+    match lists {
+        [true, false] => Err("`Dot` cannot multiply a list by a non-list on its right".into()),
+        [true, true] => {
+            if let (Node::Obj(a), Node::Obj(b)) = (p.node(a), p.node(b)) {
+                return Ok(Some(Node::Cmd(
+                    Def::Vector(VectorDef::DotLists(a, b)),
+                    Hint::None,
+                )));
+            }
+            Ok(Some(Node::ListOp(ListOp::Dot, a, b)))
+        }
+        _ => Ok(Some(Node::Bin(Bin::Mul, a, b))),
     }
-    if let (Node::Obj(a), Node::Obj(b)) = (p.node(a), p.node(b)) {
-        return Ok(Some(Node::Cmd(
-            Def::Vector(VectorDef::DotLists(a, b)),
-            Hint::None,
-        )));
-    }
-    let left = p.push(Node::ListOp(ListOp::Length, a, NONE));
-    let right = p.push(Node::ListOp(ListOp::Length, b, NONE));
-    let same_length = p.push(Node::Bin(Bin::Equal, left, right));
-    let products = p.push(product);
-    let sum = p.push(Node::ListOp(ListOp::Sum, products, NONE));
-    Ok(Some(Node::If(IfMode::Algo, same_length, sum, NONE)))
 }
 
 /// Generate the diagonal with the existing bounded list builder.
@@ -189,15 +197,27 @@ fn identity(p: &mut Parser, n: u32) -> u32 {
 /// The type of a list command of this group (see `commands::list_type`).
 pub(super) fn list_type(
     op: ListOp,
-    _elem: Elem,
-    _numbers: bool,
+    elem: Elem,
+    numbers: bool,
     _nodes: &[Node],
-    _tys: &[Ty],
+    tys: &[Ty],
     _l: u32,
-    _n: u32,
+    n: u32,
 ) -> Result<Option<Ty>, String> {
     Ok(match op {
-        ListOp::Length => Some(Ty::Num(0)),
+        ListOp::Length | ListOp::Determinant | ListOp::MatrixRank | ListOp::Dot => Some(Ty::Num(0)),
+        ListOp::Cross => {
+            let Ty::List(right) = tys[n as usize] else {
+                return Err("`Cross` needs two lists".into());
+            };
+            let right_numbers = matches!(right, Elem::Num | Elem::Bool | Elem::Empty | Elem::Any);
+            let result = if numbers && right_numbers || elem == Elem::Vec && right == Elem::Vec {
+                Elem::Num
+            } else {
+                Elem::Any
+            };
+            Some(Ty::List(result))
+        }
         _ => None,
     })
 }
@@ -208,11 +228,74 @@ pub(super) fn list_value<const M: bool>(
     _i: u32,
     op: ListOp,
     l: u32,
-    _n: u32,
+    n: u32,
 ) -> Option<Val> {
     Some(match op {
         ListOp::Length => Val::N(ctx.list(l).map_or(f64::NAN, |(_, len)| f64::from(len))),
+        ListOp::Dot => Val::N(dot_lists(ctx, l, n).unwrap_or(f64::NAN)),
+        ListOp::Determinant | ListOp::MatrixRank => {
+            Val::N(matrix_number(ctx, op, l).unwrap_or(f64::NAN))
+        }
         _ => return None,
+    })
+}
+
+fn dot_lists<const M: bool>(ctx: &Ctx<'_, M>, left: u32, right: u32) -> Option<f64> {
+    let lists = ctx.lists?;
+    let (a, len) = ctx.list(left)?;
+    let (b, other) = ctx.list(right)?;
+    if len != other || !lists.charge(u64::from(len)) {
+        return None;
+    }
+    (0..len).try_fold(0.0, |sum, k| {
+        let x = number_of(lists.read(ctx.c, a + k))?;
+        let y = number_of(lists.read(ctx.c, b + k))?;
+        Some(sum + x * y)
+    })
+}
+
+pub(super) fn cross_lists<const M: bool>(
+    ctx: &Ctx<'_, M>,
+    left: u32,
+    right: u32,
+) -> Option<(u32, u32)> {
+    let lists = ctx.lists?;
+    let (a, len) = ctx.list(left)?;
+    let (b, other) = ctx.list(right)?;
+    if len != other || len == 0 {
+        return Some((lists.len(), 0));
+    }
+    if !matches!(len, 2 | 3) || !lists.charge(u64::from(len)) {
+        return None;
+    }
+    let product = |i, j| {
+        let x = slot_val(lists.read(ctx.c, a + i));
+        let y = slot_val(lists.read(ctx.c, b + j));
+        slot_val(combine(Bin::Mul, x, y))
+    };
+    let component = |i, j| combine(Bin::Sub, product(i, j), product(j, i));
+    let start = lists.reserve(3)?;
+    let (x, y) = if len == 3 {
+        (component(1, 2), component(2, 0))
+    } else {
+        (Slot::number(0.0), Slot::number(0.0))
+    };
+    for (k, value) in [x, y, component(0, 1)].into_iter().enumerate() {
+        lists.set(start + k as u32, value);
+    }
+    Some((start, 3))
+}
+
+fn matrix_number<const M: bool>(ctx: &Ctx<'_, M>, op: ListOp, matrix: u32) -> Option<f64> {
+    let lists = ctx.lists?;
+    let (start, len) = ctx.list(matrix)?;
+    lists.with_list(ctx.c, start, len, |matrix| {
+        let charge = |work| lists.charge(work);
+        if op == ListOp::Determinant {
+            matrix::determinant(matrix, charge)
+        } else {
+            matrix::rank(matrix, charge)
+        }
     })
 }
 
