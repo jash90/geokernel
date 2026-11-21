@@ -29,6 +29,7 @@ import org.geogebra.common.kernel.geos.GeoFunction;
 import org.geogebra.common.kernel.geos.GeoLine;
 import org.geogebra.common.kernel.geos.GeoList;
 import org.geogebra.common.kernel.geos.GeoBoolean;
+import org.geogebra.common.kernel.geos.GeoAngle;
 import org.geogebra.common.kernel.geos.GeoNumeric;
 import org.geogebra.common.kernel.geos.GeoPoint;
 import org.geogebra.common.kernel.geos.GeoPolyLine;
@@ -141,6 +142,10 @@ final class Session {
                 || definition.startsWith("IntersectPath("))) {
             return runClipping(line, label, out);
         }
+        if (out != null && out.length == 2 && definition.startsWith("Angle(")
+                && out[1].toGeoElement() instanceof GeoPoint) {
+            return runFixedAngle(line, label, out);
+        }
         if (out != null && out.length == 2 && isMultiOutput(definition)) {
             return runMulti(line, expected, out);
         }
@@ -161,6 +166,10 @@ final class Session {
             throw new IllegalStateException("unexpected number of objects from: " + line);
         }
         GeoElement geo = out[0].toGeoElement();
+        if (geo instanceof GeoAngle && definition.startsWith("Angle(")
+                && objects.containsValue(geo)) {
+            return geo;
+        }
         boolean labelled = kernel.lookupLabel(label) == geo;
         boolean waiting = !geo.isLabelSet() && !geo.isDefined()
                 && label.equals(geo.getLabelSimple());
@@ -180,7 +189,7 @@ final class Session {
             }
             expected = type;
         }
-        String actual = "conic".equals(expected) && geo instanceof GeoConic ? "conic" : typeOf(geo);
+        String actual = "conic".equals(expected) && geo instanceof GeoConic ? "conic" : schemaType(geo);
         if (expression && !equationLine) {
             expected = expressionType(label, actual, line);
         }
@@ -192,7 +201,9 @@ final class Session {
                 ? !readsObjects(definition) && !callsCommand(definition)
                 : (expected.equals("point") || expected.equals("vector"))
                         && POINT.matcher(definition).matches()
-                        || expected.equals("number") && NUMBER.matcher(definition).matches();
+                        || expected.equals("number") && NUMBER.matcher(definition).matches()
+                        || expected.equals("angle") && definition.startsWith("Angle(")
+                                && definition.endsWith("°)");
         if (free != geo.isIndependent()) {
             throw new IllegalStateException("unexpected dependency state for: " + line);
         }
@@ -201,6 +212,22 @@ final class Session {
             conics.add(geo);
         }
         return geo;
+    }
+
+    private GeoElement runFixedAngle(String line, String label, GeoElementND[] out) {
+        GeoElement angle = out[0].toGeoElement();
+        GeoElement point = out[1].toGeoElement();
+        if (!(angle instanceof GeoAngle) || !label.equals(angle.getLabelSimple())) {
+            throw new IllegalStateException("unexpected outputs from: " + line);
+        }
+        if (point.isLabelSet()) {
+            String name = point.getLabelSimple();
+            if (kernel.lookupLabel(name) != point || objects.putIfAbsent(name, point) != null) {
+                throw new IllegalStateException("unexpected rotated point " + name + ": " + line);
+            }
+        }
+        objects.put(label, angle);
+        return angle;
     }
 
     private GeoElement runClipping(String line, String label, GeoElementND[] out) {
@@ -276,7 +303,7 @@ final class Session {
             if (objects.containsKey(label)) {
                 throw new IllegalArgumentException("label used twice: " + label);
             }
-            String actual = typeOf(geo);
+            String actual = schemaType(geo);
             if (!expected.equals(actual)) {
                 throw new IllegalStateException("expected a " + expected + " from '" + line
                         + "', got " + geo.getClass().getSimpleName());
@@ -409,6 +436,7 @@ final class Session {
     private static String expressionType(String label, String actual, String line) {
         switch (actual) {
             case "number":
+            case "angle":
             case "function":
             case "boolean":
             case "list":
@@ -544,6 +572,9 @@ final class Session {
         if (geo instanceof GeoPoint) {
             return "point";
         }
+        if (geo instanceof GeoAngle) {
+            return "angle";
+        }
         if (geo instanceof GeoNumeric) {
             return "number";
         }
@@ -656,7 +687,8 @@ final class Session {
             case "InteriorAngles":
                 return true;
             case "Angle":
-                return transformedSource(definition) instanceof GeoPolygon;
+                return objects.get(definition.substring(definition.indexOf('(') + 1,
+                        definition.length() - 1).trim()) instanceof GeoPolygon;
             default:
                 return false;
         }
@@ -740,8 +772,6 @@ final class Session {
             case "Slope":
             case "AffineRatio":
             case "CrossRatio":
-            case "Angle":
-            case "InteriorAngles":
             case "FirstAxisLength":
             case "SemiMajorAxisLength":
             case "SecondAxisLength":
@@ -752,6 +782,9 @@ final class Session {
             case "Parameter":
             case "PathParameter":
                 return "number";
+            case "Angle":
+            case "InteriorAngles":
+                return "angle";
             case "Circle":
             case "Incircle":
                 return "circle";
@@ -918,6 +951,7 @@ final class Session {
             case "arc":
             case "sector":
                 return arcFields((GeoConicPart) geo);
+            case "angle":
             case "number":
                 f.put("value", ((GeoNumeric) geo).getDouble());
                 return f;

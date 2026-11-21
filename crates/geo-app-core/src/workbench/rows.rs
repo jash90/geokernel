@@ -1,11 +1,15 @@
 //! The algebra rows, kept up to date with as little work as each change
 //! needs.
 //!
-//! A row's texts follow from the object's definition line (fixed while the
-//! construction keeps its objects) and from its value. So:
+//! A row's texts follow from the object's label, its definition line and
+//! its value. So:
 //!
 //! - after the construction was replaced or rebuilt (open, undo, redo,
-//!   delete) every row is made anew, in one pass;
+//!   delete) the objects are renumbered: an object keeps its row (with the
+//!   new id) when its label, kind, definition line, the other objects of
+//!   that line and its value are those the row was made from, and only the
+//!   other rows are made anew. Telling which is one pass over the journal
+//!   and one comparison per object, without formatting a number;
 //! - objects added at the end (a typed line, a tool) get new rows, and the
 //!   rows before them stay;
 //! - after a move or a new number only the rows whose value changed (by its
@@ -17,8 +21,8 @@
 use super::{Row, Workbench};
 use crate::describe;
 use crate::scriptlog::Log;
-use geo_kernel::algo::measure::MeasureDef;
 use geo_kernel::kernel::{Construction, Def, Id, Kind, Value};
+#[cfg(test)]
 use std::collections::HashMap;
 
 /// Whether two values are the same bit for bit (`0` and `-0` differ, a
@@ -92,57 +96,119 @@ fn same_key(a: RowKey, b: RowKey) -> bool {
     }
 }
 
-/// What the rows take from the journal: the definition of each label and
-/// the line (as an index into `groups`) that made it with other objects.
-struct Lines<'a> {
-    rhs: HashMap<&'a str, &'a str>,
-    groups: Vec<&'a [String]>,
-    group_of: HashMap<&'a str, usize>,
+/// The number of a free number or angle, edited in place.
+fn free_number(c: &Construction, id: Id) -> Option<f64> {
+    match c.value(id) {
+        Value::Number(n) if c.def(id).is_free() => Some(n),
+        _ => None,
+    }
 }
 
-impl<'a> Lines<'a> {
-    fn of(log: &'a Log) -> Self {
-        let groups: Vec<&[String]> = log.multi_output().collect();
-        let mut group_of = HashMap::new();
-        for (i, g) in groups.iter().enumerate() {
-            for l in g.iter() {
-                // The first line that names a label, as a search would find.
-                group_of.entry(l.as_str()).or_insert(i);
+/// What a row takes from the journal: the definition of the line that made
+/// the object and, when that line made several objects, its labels.
+#[derive(Clone, Copy, Default)]
+struct Source<'a> {
+    rhs: Option<&'a str>,
+    group: Option<&'a [String]>,
+}
+
+/// The sources of the objects of `c` from index `from` on, in one pass
+/// over the journal and as a search of it by label finds them: the
+/// definition of the newest line that names the object, and the labels of
+/// the oldest line with several outputs that names it.
+fn sources<'a>(c: &Construction, log: &'a Log, from: usize) -> Vec<Source<'a>> {
+    let mut out = vec![Source::default(); c.len().saturating_sub(from)];
+    for e in log.entries_rev() {
+        let multi = e.labels.len() > 1;
+        for l in &e.labels {
+            let Some(s) = c
+                .id(l)
+                .and_then(|id| id.index().checked_sub(from))
+                .and_then(|i| out.get_mut(i))
+            else {
+                continue;
+            };
+            if s.rhs.is_none() {
+                s.rhs = Some(e.rhs());
+            }
+            if multi {
+                s.group = Some(e.labels.as_slice());
             }
         }
-        Lines {
-            rhs: log.definitions().collect(),
-            groups,
-            group_of,
+    }
+    out
+}
+
+/// The pieces of the first line of a dependent object's row: `label =
+/// definition`, or for a side made by a polygon the side with the polygon
+/// named, as in the reference: `a = Segment(A, B, q1)`.
+fn head_parts<'a>(
+    c: &'a Construction,
+    id: Id,
+    label: &'a str,
+    src: Source<'a>,
+) -> ([&'a str; 8], usize) {
+    let polygon = src
+        .group
+        .filter(|g| g[0] != label)
+        .map(|g| g[0].as_str())
+        .filter(|&p| c.id(p).is_some_and(|p| c.kind(p) == Kind::Polygon));
+    match (c.def(id), polygon) {
+        (Def::Segment(p, q), Some(poly)) => (
+            [
+                label,
+                " = Segment(",
+                c.label(p),
+                ", ",
+                c.label(q),
+                ", ",
+                poly,
+                ")",
+            ],
+            8,
+        ),
+        _ => match src.rhs {
+            Some(rhs) => ([label, " = ", rhs, "", "", "", "", ""], 3),
+            None => ([label, "", "", "", "", "", "", ""], 1),
+        },
+    }
+}
+
+/// Whether `text` is `parts` joined, without joining them.
+fn is_joined(text: &str, parts: &[&str]) -> bool {
+    let mut rest = text;
+    for p in parts {
+        match rest.strip_prefix(p) {
+            Some(r) => rest = r,
+            None => return false,
         }
     }
+    rest.is_empty()
+}
+
+/// The labels of the other objects of `src`'s line.
+fn siblings<'a>(src: Source<'a>, label: &'a str) -> impl Iterator<Item = &'a String> {
+    src.group
+        .unwrap_or_default()
+        .iter()
+        .filter(move |l| l.as_str() != label)
 }
 
 /// The value text of `id` and, for a free number or angle, its number.
 fn value_parts(c: &Construction, id: Id) -> (String, Option<f64>) {
-    let value = c.value(id);
-    let text = match (c.def(id), value) {
+    let text = match (c.kind(id), c.value(id)) {
         // Angles are kept in radians and shown in degrees.
-        (Def::Measure(MeasureDef::Angle(..)), Value::Number(n)) => describe::degrees(n),
+        (Kind::Angle, Value::Number(n)) => describe::degrees(n),
         _ => describe::object_text(c, id),
     };
     // A free angle is a free number shown and set in degrees.
-    let free_number = match (c.def(id), value) {
-        (Def::Number(_), Value::Number(n)) => Some(n),
-        (Def::Angle(_), Value::Number(n)) => Some(n),
-        _ => None,
-    };
-    (text, free_number)
+    (text, free_number(c, id))
 }
 
 /// The row of `id` made from scratch.
-fn make_row(c: &Construction, id: Id, lines: &Lines) -> Row {
-    let label = c.label(id).to_owned();
+fn make_row(c: &Construction, id: Id, src: Source) -> Row {
+    let label = c.label(id);
     let free = c.def(id).is_free();
-    let group = lines.group_of.get(label.as_str()).map(|&i| lines.groups[i]);
-    let siblings = group
-        .map(|g| g.iter().filter(|l| **l != label).cloned().collect())
-        .unwrap_or_default();
     let mut row = Row {
         id,
         kind: c.kind(id),
@@ -150,35 +216,70 @@ fn make_row(c: &Construction, id: Id, lines: &Lines) -> Row {
         head: String::new(),
         value: None,
         free_number: None,
-        angle: matches!(c.def(id), Def::Angle(_)),
-        siblings,
-        label,
+        angle: c.kind(id) == Kind::Angle,
+        siblings: siblings(src, label).cloned().collect(),
+        label: label.to_owned(),
     };
     let (text, free_number) = value_parts(c, id);
     if free_number.is_none() && !free {
-        // A side made by a polygon names the polygon, as in the
-        // reference: `a = Segment(A, B, q1)`.
-        let polygon = group
-            .filter(|g| g[0] != row.label)
-            .map(|g| g[0].as_str())
-            .filter(|&p| c.id(p).is_some_and(|p| c.kind(p) == Kind::Polygon));
-        let side = match (c.def(id), polygon) {
-            (Def::Segment(p, q), Some(poly)) => {
-                Some(format!("Segment({}, {}, {poly})", c.label(p), c.label(q)))
-            }
-            _ => None,
-        };
         // `label = definition` for every kind, as in the reference.
-        row.head = match side
-            .as_deref()
-            .or(lines.rhs.get(row.label.as_str()).copied())
-        {
-            Some(rhs) => format!("{} = {rhs}", row.label),
-            None => row.label.clone(),
-        };
+        let (parts, n) = head_parts(c, id, label, src);
+        row.head = parts[..n].concat();
     }
     set_value(&mut row, text, free_number);
     row
+}
+
+/// Makes room for `n` items in `v` as pushing them one by one would: a
+/// capacity that is a power of two, so that the next objects added do not
+/// move the whole list at once.
+fn room_for<T>(v: &mut Vec<T>, n: usize) {
+    if v.capacity() < n {
+        v.reserve(n.next_power_of_two() - v.len());
+    }
+}
+
+/// A row that holds nothing, to fill a place until its row is put there.
+fn placeholder(id: Id) -> Row {
+    Row {
+        id,
+        label: String::new(),
+        kind: Kind::Point,
+        free: false,
+        head: String::new(),
+        value: None,
+        free_number: None,
+        angle: false,
+        siblings: Vec::new(),
+    }
+}
+
+/// Whether `row`, made for an object of an earlier construction from
+/// `made_from`, is the row of `id` in `c` with `src` and the key `key`:
+/// the same label (the caller's match), kind, definition line, other
+/// objects of that line and value texts.
+fn still_fits(
+    c: &Construction,
+    id: Id,
+    src: Source,
+    row: &Row,
+    made_from: RowKey,
+    key: RowKey,
+) -> bool {
+    let free = c.def(id).is_free();
+    let number = free_number(c, id);
+    // A free object's or number's head follows from its label and value.
+    let same_head = free || number.is_some() || {
+        let (parts, n) = head_parts(c, id, &row.label, src);
+        is_joined(&row.head, &parts[..n])
+    };
+    row.kind == c.kind(id)
+        && row.free == free
+        && row.angle == (c.kind(id) == Kind::Angle)
+        && row.free_number == number
+        && same_key(made_from, key)
+        && row.siblings.iter().eq(siblings(src, &row.label))
+        && same_head
 }
 
 /// Puts the value parts into `row`, whose definition part is in place: a
@@ -241,14 +342,17 @@ impl Workbench {
         if self.rows_at == Some(now) {
             return;
         }
-        let c = &self.construction;
         let replaced = self.rows_at.is_none_or(|(r, _)| r != self.rebuilds);
         let mut changed = false;
-        if replaced || self.rows.len() > c.len() {
-            changed = !self.rows.is_empty();
+        if replaced {
+            changed = !self.rows.is_empty() || !self.construction.is_empty();
+            self.carry_rows_over();
+        } else if self.rows.len() > self.construction.len() {
+            changed = true;
             self.rows.clear();
             self.row_values.clear();
         }
+        let c = &self.construction;
         // Rows whose value changed.
         for ((id, row), old) in c.ids().zip(&mut self.rows).zip(&mut self.row_values) {
             let key = row_key(c, id);
@@ -261,10 +365,11 @@ impl Workbench {
             changed |= set_value(row, text, free_number);
         }
         // Rows of new objects.
-        if self.rows.len() < c.len() {
-            let lines = Lines::of(&self.log);
-            for id in c.ids().skip(self.rows.len()) {
-                self.rows.push(make_row(c, id, &lines));
+        let from = self.rows.len();
+        if from < c.len() {
+            let sources = sources(c, &self.log, from);
+            for (id, src) in c.ids().skip(from).zip(sources) {
+                self.rows.push(make_row(c, id, src));
                 self.row_values.push(row_key(c, id));
                 self.rows_formatted += 1;
             }
@@ -274,6 +379,66 @@ impl Workbench {
             self.rows_built += 1;
         }
         self.rows_at = Some(now);
+    }
+
+    /// After the construction was rebuilt or replaced: a row for every
+    /// object, the row of the object with the same label before when it
+    /// still fits (`still_fits`), with the new id, else one made anew. The
+    /// rows are moved within their own storage: rows kept in their order
+    /// cost no allocation (a row out of order is made anew; a rebuild keeps
+    /// the order of the objects it keeps).
+    fn carry_rows_over(&mut self) {
+        let c = &self.construction;
+        let rows = &mut self.rows;
+        // Each object and its old row (by its label), if it still fits and
+        // comes after the rows kept before it; `usize::MAX` for none.
+        let mut kept: Vec<(Id, usize)> = c.ids().map(|id| (id, usize::MAX)).collect();
+        for (j, row) in rows.iter().enumerate() {
+            if let Some(id) = c.id(&row.label) {
+                kept[id.index()].1 = j;
+            }
+        }
+        let sources = sources(c, &self.log, 0);
+        let mut last = None;
+        for ((id, k), &src) in kept.iter_mut().zip(&sources) {
+            let (id, j) = (*id, *k);
+            let fits = j != usize::MAX
+                && last.is_none_or(|l| l < j)
+                && still_fits(c, id, src, &rows[j], self.row_values[j], row_key(c, id));
+            if fits {
+                last = Some(j);
+            } else {
+                *k = usize::MAX;
+            }
+        }
+        // The kept rows to the front, in order (each moves down or stays).
+        let mut n = 0;
+        for &(_, j) in kept.iter().filter(|(_, j)| *j != usize::MAX) {
+            rows.swap(n, j);
+            n += 1;
+        }
+        rows.truncate(n);
+        // Then each to its object's place (up or staying), and new rows in
+        // the gaps: the places after `i` are done, the kept rows not placed
+        // yet are the first `n`.
+        room_for(rows, c.len());
+        if let Some(&(first, _)) = kept.first() {
+            rows.resize_with(c.len(), || placeholder(first));
+        }
+        for (&(id, j), &src) in kept.iter().zip(&sources).rev() {
+            let i = id.index();
+            if j == usize::MAX {
+                rows[i] = make_row(c, id, src);
+                self.rows_formatted += 1;
+            } else {
+                n -= 1;
+                rows.swap(i, n);
+                rows[i].id = id;
+            }
+        }
+        self.row_values.clear();
+        room_for(&mut self.row_values, c.len());
+        self.row_values.extend(c.ids().map(|id| row_key(c, id)));
     }
 
     /// The rows made the way they were before they were cached: every row
@@ -290,13 +455,12 @@ impl Workbench {
                 let label = c.label(id).to_owned();
                 let kind = c.kind(id);
                 let free = c.def(id).is_free();
-                let text = match (c.def(id), value) {
-                    (Def::Measure(MeasureDef::Angle(..)), Value::Number(n)) => describe::degrees(n),
+                let text = match (kind, value) {
+                    (Kind::Angle, Value::Number(n)) => describe::degrees(n),
                     _ => describe::object_text(c, id),
                 };
-                let free_number = match (c.def(id), value) {
-                    (Def::Number(_), Value::Number(n)) => Some(n),
-                    (Def::Angle(_), Value::Number(n)) => Some(n),
+                let free_number = match value {
+                    Value::Number(n) if free => Some(n),
                     _ => None,
                 };
                 let (head, second) = if free_number.is_some() {
@@ -340,7 +504,7 @@ impl Workbench {
                     value: second,
                     siblings,
                     free_number,
-                    angle: matches!(c.def(id), Def::Angle(_)),
+                    angle: c.kind(id) == Kind::Angle,
                 }
             })
             .collect()

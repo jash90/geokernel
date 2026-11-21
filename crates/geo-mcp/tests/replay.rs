@@ -80,6 +80,37 @@ const LANDED: &[(u8, &[&str])] = &[
             "drag_on_label_moves_label_only",
         ],
     ),
+    (
+        6,
+        &[
+            "tool_line_two_clicks_empty",
+            "tool_segment_two_clicks_empty",
+            "tool_ray_two_clicks_empty",
+            "tool_vector_two_clicks_empty",
+            "tool_circle_centre_point_two_clicks_empty",
+            "tool_midpoint_two_clicks_empty",
+            "tool_circle3_three_clicks",
+            "tool_polygon_closed_on_first_vertex",
+            "tool_angle_three_clicks",
+            "tool_perpendicular_line_then_point",
+            "tool_parallel_line_then_point",
+            "tool_segment_reuses_point_within_radius",
+            "point_tool_on_line_attaches",
+            "point_tool_5px_off_line_is_free",
+            "point_tool_on_line_crossing_intersects",
+            "point_tool_on_circle_line_crossing",
+            "drag_point_on_line_slides",
+            "escape_mid_tool_removes_pending_point",
+            "switch_tool_mid_sequence_removes_pending_point",
+            "press_drag_release_makes_segment",
+            "drag_existing_point_with_segment_tool",
+            "drag_existing_point_with_point_tool",
+            "segment_tool_twice_stays_selected",
+            "delete_tool_click_point_removes_dependents",
+            "delete_tool_area_drag_deletes_nothing",
+            "delete_tool_stroke_erases_crossed_object",
+        ],
+    ),
 ];
 
 /// The scenarios whose observed behaviour the owner does not follow: our
@@ -122,42 +153,6 @@ const SKIPPED: &[(u8, &str, &[&str])] = &[
     ),
     (
         6,
-        "construction tools as one transaction",
-        &[
-            "tool_line_two_clicks_empty",
-            "tool_segment_two_clicks_empty",
-            "tool_ray_two_clicks_empty",
-            "tool_vector_two_clicks_empty",
-            "tool_circle_centre_point_two_clicks_empty",
-            "tool_midpoint_two_clicks_empty",
-            "tool_circle3_three_clicks",
-            "tool_polygon_closed_on_first_vertex",
-            "tool_angle_three_clicks",
-            "tool_perpendicular_line_then_point",
-            "tool_parallel_line_then_point",
-            "tool_segment_reuses_point_within_radius",
-            "point_tool_on_line_attaches",
-            "point_tool_5px_off_line_is_free",
-            "point_tool_on_line_crossing_intersects",
-            "point_tool_on_circle_line_crossing",
-            "escape_mid_tool_removes_pending_point",
-            "switch_tool_mid_sequence_removes_pending_point",
-            "press_drag_release_makes_segment",
-            "drag_existing_point_with_segment_tool",
-            "drag_existing_point_with_point_tool",
-            "segment_tool_twice_stays_selected",
-            "delete_tool_click_point_removes_dependents",
-            "delete_tool_area_drag_deletes_nothing",
-            "delete_tool_stroke_erases_crossed_object",
-        ],
-    ),
-    (
-        6,
-        "points on objects (a point on a line slides along it)",
-        &["drag_point_on_line_slides"],
-    ),
-    (
-        6,
         "deferred: no texts in the kernel (area tool)",
         &["area_tool_on_polygon"],
     ),
@@ -169,7 +164,8 @@ const SKIPPED: &[(u8, &str, &[&str])] = &[
 /// the field must match it.
 const UNDO_DIFFERS: &[(&str, &str)] = &[(
     "pan_from_empty_space",
-    "a pan is no undo step (the owner keeps pan and zoom out of undo)",
+    "a pan is an undo step for the reference and the owner alike (spec F3), but the \
+     camera joins the undo state only with group 4, so nothing is recorded yet",
 )];
 
 /// How a fixture scenario is treated.
@@ -354,24 +350,101 @@ fn frame_events(
             t["id"] = json!(id);
             vec![t]
         }
+        "key" => {
+            let key = e["key"].as_str().ok_or("a key event names no key")?;
+            vec![json!({"type": "key", "key": key})]
+        }
         other => return Err(format!("event `{other}` is not replayed yet")),
     })
 }
 
-/// The kernel has no lines typed as equations: `f: y=c` becomes the line
-/// through two points of it near the edges of the view (where no press
-/// lands; points outside it would make the first frame fit the view).
-/// It stands in only where the line is not what the scenario drags.
+/// The kernel has no lines or circles typed as equations: `f: y=c` and
+/// `g: x=c` become the line through two points of it near the edges of the
+/// view (where no press lands; points outside it would make the first frame
+/// fit the view), `c: x^2+y^2=r2` the circle about
+/// a free origin with the radius as a number. They stand in only where the
+/// object is not what the scenario drags; their helper objects are not
+/// counted as objects of the scenario (`HELPERS`).
 fn equation_line(line: &str) -> String {
-    match line.split_once(": y=") {
-        Some((name, c)) => {
-            format!(
-                "{name}_{{a}} = $point(-8, {c})\n{name}_{{b}} = $point(8, {c})\n\
-                 {name} = Line({name}_{{a}}, {name}_{{b}})"
-            )
-        }
-        None => line.to_owned(),
+    if let Some((name, c)) = line.split_once(": y=") {
+        return format!(
+            "{name}_{{a}} = $point(-8, {c})\n{name}_{{b}} = $point(8, {c})\n\
+             {name} = Line({name}_{{a}}, {name}_{{b}})"
+        );
     }
+    if let Some((name, c)) = line.split_once(": x=") {
+        return format!(
+            "{name}_{{a}} = $point({c}, -7)\n{name}_{{b}} = $point({c}, 7)\n\
+             {name} = Line({name}_{{a}}, {name}_{{b}})"
+        );
+    }
+    if let Some((name, r2)) = line.split_once(": x^2+y^2=") {
+        let r = r2.parse::<f64>().expect("a squared radius").sqrt();
+        return format!(
+            "{name}_{{a}} = $point(0, 0)\n{name}_{{b}} = {r}\n\
+             {name} = Circle({name}_{{a}}, {name}_{{b}})"
+        );
+    }
+    line.to_owned()
+}
+
+/// Whether `label` is a helper object of a stand-in (see `equation_line`).
+fn helper(label: &str) -> bool {
+    label.ends_with("_{a}") || label.ends_with("_{b}")
+}
+
+/// The labels of the scenario's objects, helpers left out, in order.
+fn scenario_labels(st: &Value) -> Vec<String> {
+    st["objects"]
+        .as_array()
+        .map(|a| {
+            a.iter()
+                .filter_map(|o| o["name"].as_str())
+                .filter(|l| !helper(l))
+                .map(str::to_owned)
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// A side of a polygon, `Segment(P, Q, poly)` in the reference (`d`):
+/// ours is an output of the polygon's line and has that line's definition.
+/// What differs when the side `o` does not run from `P` to `Q` with that
+/// definition.
+fn side_differs(d: &str, o: &Value, st: &Value) -> Option<String> {
+    let args = d.strip_prefix("Segment(").and_then(|a| a.strip_suffix(')'));
+    let parts: Vec<&str> = args.map_or(Vec::new(), |a| a.split(", ").collect());
+    let [p, q, poly] = parts[..] else {
+        return Some(format!("{d} is no side"));
+    };
+    let at =
+        |label: &str| object(st, label).map(|o| [num(&o["coords"]["x"]), num(&o["coords"]["y"])]);
+    let c = &o["coords"];
+    let ends = [
+        Some([num(&c["x1"]), num(&c["y1"])]),
+        Some([num(&c["x2"]), num(&c["y2"])]),
+    ];
+    let polygon = object(st, poly).map(|o| &o["definition"]);
+    (ends != [at(p), at(q)] || Some(&o["definition"]) != polygon)
+        .then(|| format!("a side {c} defined as {} instead of {d}", o["definition"]))
+}
+
+/// A definition in our command names: the tools write `Perpendicular` and
+/// `Parallel` where the reference writes `OrthogonalLine` and `Line` with
+/// a point and a line (the kernel takes both spellings).
+fn our_definition(d: &str, st: &Value) -> String {
+    if let Some(args) = d.strip_prefix("OrthogonalLine(") {
+        return format!("Perpendicular({args}");
+    }
+    if let Some(args) = d.strip_prefix("Line(").and_then(|a| a.strip_suffix(')')) {
+        if let Some((p, l)) = args.split_once(", ") {
+            let kind = |label: &str| object(st, label).map(|o| o["type"].clone());
+            if kind(p) == Some(json!("point")) && kind(l) == Some(json!("line")) {
+                return format!("Parallel({p}, {l})");
+            }
+        }
+    }
+    d.to_owned()
 }
 
 /// What a replay ended with: the state before and after, how many undo
@@ -440,20 +513,34 @@ fn replay(s: &Value, idle: bool, rules: &str) -> Result<Outcome, String> {
             }
         };
         last_t = Some(t);
+        if e["type"] == "select_tool" {
+            // A tool chosen in the toolbar between the pointer events.
+            frames.push(json!({"dt": dt, "events": []}));
+            call(
+                &mut w.server,
+                "input",
+                json!({"frames": std::mem::take(&mut frames), "settle": false}),
+            )?;
+            let mode = e["mode"].as_i64().unwrap_or(-1);
+            let tool = tool_name(mode).ok_or(format!("tool mode {mode}"))?;
+            call(&mut w.server, "select_tool", json!({ "tool": tool }))?;
+            continue;
+        }
         frames.push(json!({"dt": dt, "events": frame_events(&w, e, &mut fingers)?}));
-        if i == 1 && expected.get("objects_after_event_1").is_some() {
+        let after_1 = ["objects_after_event_1", "after_first_click"];
+        if i == 1 && after_1.iter().any(|k| expected.get(k).is_some()) {
             call(
                 &mut w.server,
                 "input",
                 json!({"frames": std::mem::take(&mut frames), "settle": false}),
             )?;
             let st = w.state();
-            compare_objects(
-                &st,
-                &expected["objects_after_event_1"],
-                "after event 1",
-                &mut diffs,
-            );
+            if let Some(objects) = expected.get("objects_after_event_1") {
+                compare_objects(&st, objects, "after event 1", &mut diffs);
+            }
+            if let Some(created) = expected.get("after_first_click") {
+                compare_created(&before, &st, created, "after the first click", &mut diffs);
+            }
         }
     }
     call(
@@ -479,6 +566,43 @@ fn compare(expected: &Value, out: &Outcome, undo: bool) -> Vec<String> {
     let mut diffs = out.diffs.clone();
     if let Some(objects) = expected.get("objects") {
         compare_objects(st, objects, "", &mut diffs);
+        // No object listed: the scenario ends with no objects at all.
+        if objects.as_object().is_some_and(|o| o.is_empty()) && !scenario_labels(st).is_empty() {
+            diffs.push(format!("objects {:?} instead of none", scenario_labels(st)));
+        }
+    }
+    if let Some(remaining) = expected.get("remaining") {
+        let want: Vec<&str> = remaining
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(Value::as_str)
+            .collect();
+        if scenario_labels(st) != want {
+            diffs.push(format!(
+                "{:?} remain instead of {want:?}",
+                scenario_labels(st)
+            ));
+        }
+    }
+    if let Some(mode) = expected.get("tool_mode_after") {
+        let mode = mode.as_i64().unwrap();
+        let want = tool_name(mode).unwrap_or("?");
+        if st["tool"]["id"] != want {
+            diffs.push(format!("tool {} after instead of {want}", st["tool"]["id"]));
+        }
+    }
+    if let Some(labels) = expected.get("created_labels") {
+        let want: Vec<&str> = labels
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(Value::as_str)
+            .collect();
+        let got = created_labels(before, st);
+        if got != want {
+            diffs.push(format!("created {got:?} instead of {want:?}"));
+        }
     }
     if let Some(sel) = expected.get("selected") {
         // Every selected object, in any order (ours selects at most one).
@@ -520,27 +644,7 @@ fn compare(expected: &Value, out: &Outcome, undo: bool) -> Vec<String> {
         }
     }
     if let Some(created) = expected.get("created") {
-        for c in created.as_array().unwrap() {
-            let label = c["label"].as_str().unwrap();
-            let Some(o) = object(st, label) else {
-                diffs.push(format!("{label} was not created"));
-                continue;
-            };
-            if let Some(p) = c.get("point") {
-                let (x, y) = (num(&o["coords"]["x"]), num(&o["coords"]["y"]));
-                if !same(x, num(&p[0])) || !same(y, num(&p[1])) {
-                    diffs.push(format!("{label} created at ({x}, {y}) instead of {p}"));
-                }
-            }
-            if let Some(d) = c.get("definition") {
-                if o["definition"] != *d {
-                    diffs.push(format!(
-                        "{label} defined as {} instead of {d}",
-                        o["definition"]
-                    ));
-                }
-            }
-        }
+        compare_created(before, st, created, "", &mut diffs);
     }
     if let Some(lines) = expected.get("line_implicit") {
         for (label, want) in lines.as_object().unwrap() {
@@ -562,7 +666,10 @@ fn compare(expected: &Value, out: &Outcome, undo: bool) -> Vec<String> {
         for label in labels.as_array().unwrap() {
             let label = label.as_str().unwrap();
             let (a, b) = (object(before, label), object(st, label));
-            if a.map(|o| &o["coords"]) != b.map(|o| &o["coords"]) {
+            // An object the scenario made (the angle of
+            // `tool_angle_three_clicks`) has no earlier state; `created`
+            // checks it.
+            if a.is_some() && a.map(|o| &o["coords"]) != b.map(|o| &o["coords"]) {
                 diffs.push(format!("{label} changed"));
             }
         }
@@ -587,6 +694,64 @@ fn compare(expected: &Value, out: &Outcome, undo: bool) -> Vec<String> {
         }
     }
     diffs
+}
+
+/// The labels of the scenario objects that `st` has and `before` had not,
+/// in order.
+fn created_labels(before: &Value, st: &Value) -> Vec<String> {
+    let old = scenario_labels(before);
+    scenario_labels(st)
+        .into_iter()
+        .filter(|l| !old.contains(l))
+        .collect()
+}
+
+/// Compares the objects created since `before` with `created`: exactly
+/// these labels (in any order), each at its point or with its definition.
+fn compare_created(
+    before: &Value,
+    st: &Value,
+    created: &Value,
+    when: &str,
+    diffs: &mut Vec<String>,
+) {
+    let created = created.as_array().unwrap();
+    let mut want: Vec<&str> = created.iter().filter_map(|c| c["label"].as_str()).collect();
+    let mut got = created_labels(before, st);
+    want.sort_unstable();
+    got.sort_unstable();
+    if got != want {
+        diffs.push(format!("created {got:?} instead of {want:?} {when}"));
+    }
+    for c in created {
+        let label = c["label"].as_str().unwrap();
+        let Some(o) = object(st, label) else {
+            continue;
+        };
+        if let Some(p) = c.get("point") {
+            let (x, y) = (num(&o["coords"]["x"]), num(&o["coords"]["y"]));
+            if !same(x, num(&p[0])) || !same(y, num(&p[1])) {
+                diffs.push(format!(
+                    "{label} created at ({x}, {y}) instead of {p} {when}"
+                ));
+            }
+        }
+        if let Some(d) = c.get("definition").and_then(Value::as_str) {
+            if d.starts_with("Segment(") && d.matches(", ").count() == 2 {
+                if let Some(diff) = side_differs(d, o, st) {
+                    diffs.push(format!("{label}: {diff} {when}"));
+                }
+                continue;
+            }
+            let want = our_definition(d, st);
+            if o["definition"] != want.as_str() {
+                diffs.push(format!(
+                    "{label} defined as {} instead of {want} {when}",
+                    o["definition"]
+                ));
+            }
+        }
+    }
 }
 
 fn object<'a>(st: &'a Value, label: &str) -> Option<&'a Value> {
@@ -745,10 +910,10 @@ fn the_observed_pointer_scenarios_replay() {
         count += 1;
     }
     assert_eq!(count, names.len());
-    assert_eq!((replayed, ours), (26, 2), "scenarios replayed");
+    assert_eq!((replayed, ours), (52, 2), "scenarios replayed");
     assert_eq!(
         skipped.into_iter().collect::<Vec<_>>(),
-        [(4, 12), (5, 1), (6, 27), (8, 1)],
+        [(4, 12), (5, 1), (6, 1), (8, 1)],
         "scenarios skipped, by group"
     );
     // Each pacing records the difference once.

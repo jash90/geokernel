@@ -11,6 +11,7 @@ fn obj(label: &str, kind: Kind) -> Option<(&str, Kind)> {
 fn place(line: &str, then: Outcome) -> Outcome {
     Outcome::Place {
         line: line.into(),
+        at: None,
         then: Box::new(then),
     }
 }
@@ -18,7 +19,7 @@ fn place(line: &str, then: Outcome) -> Outcome {
 /// The points an outcome places first, and what comes after them.
 fn unwrap_places(mut outcome: Outcome) -> (Vec<String>, Outcome) {
     let mut placed = Vec::new();
-    while let Outcome::Place { line, then } = outcome {
+    while let Outcome::Place { line, then, .. } = outcome {
         placed.push(line);
         outcome = *then;
     }
@@ -396,4 +397,21 @@ fn cancelling_keeps_the_placed_points_out_of_the_tool_only() {
         s.hint(),
         crate::text::hint(recipe::hint(Tool::Segment, &[]))
     );
+}
+
+#[test]
+fn angle_tool_builds_line_vector_and_polygon_angles() {
+    for (first, second, expected) in [
+        (Kind::Line, Some(Kind::Line), "α = Angle(f, g)"),
+        (Kind::Vector, Some(Kind::Vector), "α = Angle(f, g)"),
+        (Kind::Polygon, None, "α = InteriorAngles(f)"),
+    ] {
+        let mut s = ToolState::new(Tool::Angle);
+        let mut output = s.click(obj("f", first), (0.0, 0.0), &none);
+        if let Some(second) = second {
+            assert!(all_lines(output).is_empty());
+            output = s.click(obj("g", second), (0.0, 0.0), &none);
+        }
+        assert_eq!(all_lines(output), [expected]);
+    }
 }

@@ -29,6 +29,7 @@ pub mod snap;
 pub mod style;
 pub mod text;
 pub mod ticks;
+pub mod toolpress;
 pub mod tools;
 pub mod undo;
 pub mod view;

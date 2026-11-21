@@ -28,7 +28,6 @@ const DEPENDENT_POINT_RADIUS: f32 = 4.0;
 /// Line thickness 5, drawn half as wide.
 pub const CURVE_WIDTH: f32 = 2.5;
 const LABEL_FONT: f32 = 16.0;
-const ANGLE_RADIUS: f32 = 30.0;
 
 /// What the picture needs besides the construction.
 pub struct Scene<'a> {
@@ -59,9 +58,9 @@ pub struct Scene<'a> {
 /// stay within it, and so does the label rule below (an anchor at most
 /// 20 px outside).
 const NEAR: f64 = 32.0;
-/// The same for an angle, around its vertex: the sector (30 px) and the
-/// label anchor (36 px out, then the 20 px of the label rule).
-const NEAR_ANGLE: f64 = 64.0;
+/// An angle's sector, highlight and label stay within this distance
+/// of its vertex, including the label margin.
+const NEAR_ANGLE: f64 = 48.0;
 
 /// Whether `id` may draw something in the `w` x `h` area: false only when
 /// every shape and label of it certainly lies outside, so skipping it
@@ -85,9 +84,6 @@ fn near_view(c: &Construction, id: Id, t: &ViewTransform, w: f64, h: f64) -> boo
         }
         !any || (x1 >= -margin && x0 <= w + margin && y1 >= -margin && y0 <= h + margin)
     };
-    if let Some([_, b, _]) = style::angle_points(c, id) {
-        return near(&mut std::iter::once(b), NEAR_ANGLE);
-    }
     match c.value(id) {
         Value::Point { x, y } => near(&mut std::iter::once((x, y)), NEAR),
         Value::Segment { x1, y1, x2, y2 } => near(&mut [(x1, y1), (x2, y2)].into_iter(), NEAR),
@@ -178,12 +174,26 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
     let (mx, my) = (0.5 * (v.xmin + v.xmax), 0.5 * (v.ymin + v.ymax));
     let reach = (w / t.scale()).hypot(h / t.scale()).max(vw.hypot(vh));
 
+    let mut angles = Vec::new();
     let ids: Vec<Id> = c
         .ids()
         .filter(|&id| {
+            if !(scene.visible)(id) {
+                return false;
+            }
             // A moved label may lie anywhere: its object is never skipped.
-            (scene.visible)(id)
-                && (!scene.cull || near_view(c, id, t, w, h) || (scene.label_offset)(id).is_some())
+            if let Some(angle) = c.angle_geometry(id) {
+                let (x, y) = screen(angle.center.0, angle.center.1);
+                if !scene.cull
+                    || ((-NEAR_ANGLE..=w + NEAR_ANGLE).contains(&x)
+                        && (-NEAR_ANGLE..=h + NEAR_ANGLE).contains(&y))
+                    || (scene.label_offset)(id).is_some()
+                {
+                    angles.push((id, angle));
+                }
+                return false;
+            }
+            !scene.cull || near_view(c, id, t, w, h) || (scene.label_offset)(id).is_some()
         })
         .collect();
     let mut labels: Vec<Label> = Vec::new();
@@ -228,75 +238,80 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
     }
 
     // Angles first: their sectors lie under the lines.
-    for &id in &ids {
-        let (Some([a, b, v]), Value::Number(angle)) = (style::angle_points(c, id), c.value(id))
-        else {
+    for (id, angle) in angles {
+        let radius = angle.radius(t.scale()) as f32;
+        if radius <= 0.0 {
             continue;
-        };
-        let (sa, sb, sv) = (screen(a.0, a.1), screen(b.0, b.1), screen(v.0, v.1));
-        // The sector is measured in the world; screen angles are mirrored.
-        let Some((start, sweep)) = style::sector((sa.0, -sa.1), (sb.0, -sb.1), (sv.0, -sv.1))
-        else {
-            continue;
-        };
-        let vertex = origin + vec2(sb.0 as f32, sb.1 as f32);
-        let col = color(id);
-        let at = |ang: f64, r: f32| vertex + vec2(ang.cos() as f32, ang.sin() as f32) * r;
-        if style::is_right(angle) {
-            let side = ANGLE_RADIUS * 0.7;
-            let corner = [
-                vertex,
-                at(start, side),
-                at(start, side) + (at(start + sweep, side) - vertex),
-                at(start + sweep, side),
-            ];
-            painter.add(Shape::convex_polygon(
-                corner.to_vec(),
-                col.gamma_multiply(0.1),
-                Stroke::new(1.5, col),
-            ));
-            painter.circle_filled(at(start + sweep / 2.0, side * 0.7), 1.8, col);
-        } else {
-            let n = 32;
-            let mut pts = vec![vertex];
-            pts.extend((0..=n).map(|i| at(start + sweep * i as f64 / n as f64, ANGLE_RADIUS)));
-            painter.add(Shape::Path(eframe::egui::epaint::PathShape {
-                points: pts.clone(),
-                closed: true,
-                fill: col.gamma_multiply(0.1),
-                stroke: Stroke::NONE.into(),
-            }));
-            painter.add(Shape::line(pts[1..].to_vec(), Stroke::new(1.5, col)));
         }
-        // The label sits outside the sector, on its bisector, and grows away
-        // from the vertex.
-        let half = start + sweep / 2.0;
-        let mid = at(half, ANGLE_RADIUS + 6.0) - origin;
-        let (dx, dy) = (half.cos(), half.sin());
-        let h = if dx > 0.3 {
-            eframe::egui::Align::Min
-        } else if dx < -0.3 {
-            eframe::egui::Align::Max
-        } else {
-            eframe::egui::Align::Center
+        let vertex = p(angle.center.0, angle.center.1);
+        let col = color(id);
+        let fill = col.gamma_multiply(0.1);
+        let stroke = Stroke::new(1.5, col);
+        let at = |direction: f64, distance: f32| {
+            let (sin, cos) = direction.sin_cos();
+            vertex + vec2(cos as f32, -(sin as f32)) * distance
         };
-        let v = if dy > 0.3 {
-            eframe::egui::Align::Min
-        } else if dy < -0.3 {
-            eframe::egui::Align::Max
+        let half = angle.start + angle.sweep / 2.0;
+        let highlight = if scene.selected == Some(id) {
+            0.35
+        } else if scene.hovered == Some(id) {
+            0.2
         } else {
-            eframe::egui::Align::Center
+            0.0
         };
+        let end = angle.start + angle.sweep;
+        if angle.is_right() {
+            let side = radius * std::f32::consts::FRAC_1_SQRT_2;
+            let points = vec![
+                vertex,
+                at(angle.start, side),
+                at(half, radius),
+                at(end, side),
+            ];
+            if highlight > 0.0 {
+                painter.add(Shape::closed_line(
+                    points.clone(),
+                    Stroke::new(8.0, col.gamma_multiply(highlight)),
+                ));
+            }
+            painter.add(Shape::convex_polygon(points, fill, stroke));
+        } else {
+            // About 0.25 px maximum deviation at the default radius.
+            let n = (angle.sweep / 0.25).ceil().max(1.0) as usize;
+            let mut points = Vec::with_capacity(n + 2);
+            points.push(vertex);
+            points.extend(
+                (0..=n).map(|i| at(angle.start + angle.sweep * i as f64 / n as f64, radius)),
+            );
+            let mut mesh = Mesh::default();
+            mesh.vertices.reserve(points.len());
+            mesh.indices.reserve(3 * n);
+            for &point in &points {
+                mesh.colored_vertex(point, fill);
+            }
+            for i in 1..=n as u32 {
+                mesh.add_triangle(0, i, i + 1);
+            }
+            painter.add(Shape::mesh(mesh));
+            if highlight > 0.0 {
+                painter.add(Shape::closed_line(
+                    points.clone(),
+                    Stroke::new(8.0, col.gamma_multiply(highlight)),
+                ));
+            }
+            painter.add(Shape::closed_line(points, stroke));
+        }
+        let mid = at(half, radius / 1.7) - origin;
         labels.push(label(
             id,
             Cow::Owned(format!(
                 "{} = {}",
                 c.label(id),
-                crate::describe::degrees(angle)
+                crate::describe::degrees(angle.sweep)
             )),
-            (mid.x as f64, mid.y as f64),
+            (f64::from(mid.x) - 3.0, f64::from(mid.y) + 5.0),
             col,
-            Align2([h, v]),
+            Align2::LEFT_BOTTOM,
         ));
     }
 

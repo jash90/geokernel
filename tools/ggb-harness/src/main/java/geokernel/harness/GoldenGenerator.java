@@ -66,7 +66,7 @@ public final class GoldenGenerator {
 
         for (Map.Entry<String, List<Object>> e : byFile.entrySet()) {
             Map<String, Object> file = new LinkedHashMap<>();
-            file.put("schema", 1L);
+            file.put("schema", 2L);
             file.put("generator", "ggb-harness");
             file.put("upstream_commit", commit);
             file.put("cases", e.getValue());

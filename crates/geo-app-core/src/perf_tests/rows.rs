@@ -83,20 +83,80 @@ fn a_move_makes_only_the_rows_whose_value_changed() {
 }
 
 #[test]
-fn an_added_object_makes_one_row_and_a_delete_makes_all() {
+fn an_added_object_makes_one_row_and_a_rebuild_only_the_rows_that_changed() {
     let mut wb = grid(20);
     wb.rows();
-    let n = wb.construction().len() as u64;
     let made = wb.rows_formatted();
     wb.run_line("Z = Midpoint(P_{1}, R_{1})").unwrap();
     wb.rows();
     assert_eq!(wb.rows_formatted() - made, 1);
-    let made = wb.rows_formatted();
+    // Deleting renumbers the objects after the deleted ones; their rows
+    // stay, with the new ids.
+    let (made, built) = (wb.rows_formatted(), wb.rows_built());
     let z = wb.construction().id("Z").unwrap();
     assert!(wb.delete(z));
-    wb.rows();
-    assert_eq!(wb.rows_formatted() - made, n);
     assert_eq!(wb.rows().to_vec(), wb.rows_reference());
+    assert_eq!(wb.rows_formatted() - made, 0);
+    assert_eq!(wb.rows_built() - built, 1);
+    let made = wb.rows_formatted();
+    let p = wb.construction().id("P_{1}").unwrap();
+    // P, its segment, its circle and its midpoint go.
+    assert!(wb.delete(p));
+    assert_eq!(wb.rows().to_vec(), wb.rows_reference());
+    assert_eq!(wb.rows_formatted() - made, 0);
+    // Undo brings them back: their four rows are made.
+    let made = wb.rows_formatted();
+    assert!(wb.undo());
+    assert_eq!(wb.rows().to_vec(), wb.rows_reference());
+    assert_eq!(wb.rows_formatted() - made, 4);
+    let made = wb.rows_formatted();
+    assert!(wb.redo());
+    assert_eq!(wb.rows().to_vec(), wb.rows_reference());
+    assert_eq!(wb.rows_formatted() - made, 0);
+    // Undo of a move: the rows whose value changed back.
+    assert!(wb.undo());
+    wb.rows();
+    let q = wb.construction().id("Q_{3}").unwrap();
+    assert!(wb.move_point(q, 16.5, 0.5));
+    wb.rows();
+    let made = wb.rows_formatted();
+    assert!(wb.undo());
+    assert_eq!(wb.rows().to_vec(), wb.rows_reference());
+    // Q, its line, its circle and its midpoint.
+    assert_eq!(wb.rows_formatted() - made, 4);
+}
+
+#[test]
+fn a_rebuild_makes_the_row_of_a_label_that_names_another_object() {
+    // Each pair: the same label, kind and value, from another definition
+    // line, another line's labels, or a definition shown another way. A
+    // file opened over another replaces the construction in one step.
+    let pairs = [
+        (
+            "A = (1, 2)\nB = (5, 3)\nM = Midpoint(B, A)\n",
+            "A = (1, 2)\nB = (5, 3)\nM = Midpoint(A, B)\n",
+        ),
+        (
+            "A = (1, 2)\nB = (5, 3)\nC = (3, 7)\nP = Polygon(A, B, C)\n",
+            "a = 5\nA = (1, 2)\nB = (5, 3)\nC = (3, 7)\nP = Polygon(A, B, C)\n",
+        ),
+        (
+            "A = (1, 0)\nB = (0, 0)\nC = (0, 1)\nw = Angle(A, B, C)\n",
+            "A = (1, 0)\nB = (0, 0)\nC = (0, 1)\nw = pi / 2\n",
+        ),
+    ];
+    for (one, other) in pairs {
+        for (from, to) in [(one, other), (other, one)] {
+            let mut wb = Workbench::from_script(from).unwrap();
+            wb.rows();
+            wb.load_script(to).unwrap();
+            assert_eq!(
+                wb.rows().to_vec(),
+                wb.rows_reference(),
+                "{from:?} to {to:?}"
+            );
+        }
+    }
 }
 
 #[test]

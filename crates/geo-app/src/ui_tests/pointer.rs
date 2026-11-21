@@ -85,6 +85,8 @@ fn a_press_on_a_dependent_point_neither_moves_it_nor_pans() {
     drag(&mut h, from, to);
     assert!(close(top_left(&h), corner), "the view panned");
     assert!(close(point(&h, "A"), (0.0, 0.0)));
+    // The press picked A and the release made the line's second point.
+    assert_eq!(labels(&h), ["A", "B", "M", "C", "f"]);
     // The move-view tool pans even from a point.
     h.state_mut().select_tool(Tool::MoveView);
     let (from, to) = (on_screen(&h, 0.0, 0.0), on_screen(&h, 1.0, 0.0));
@@ -95,16 +97,32 @@ fn a_press_on_a_dependent_point_neither_moves_it_nor_pans() {
         "the move-view tool did not pan"
     );
     let corner = top_left(&h);
+    // Away from objects the line tool's drag does not pan either: the press
+    // places the first point, the release the second, and the line is made
+    // (spec E1, `createNewPoint` on press, `wrapMouseReleased`).
     h.state_mut().select_tool(Tool::Line);
-    // Away from points a drag still pans.
     let (from, to) = (on_screen(&h, -3.0, 3.0), on_screen(&h, -1.0, 3.0));
     drag(&mut h, from, to);
-    assert!(!close(top_left(&h), corner));
+    assert!(close(top_left(&h), corner), "the view panned");
+    assert_eq!(labels(&h), ["A", "B", "M", "C", "f", "D", "E", "g"]);
+    assert!(close(point(&h, "D"), (-3.0, 3.0)), "{:?}", point(&h, "D"));
+    assert!(close(point(&h, "E"), (-1.0, 3.0)), "{:?}", point(&h, "E"));
+    assert!(h.state().tool.picks().is_empty());
+    // A construction tool whose press there picks nothing still pans, and
+    // makes nothing.
+    h.state_mut().select_tool(Tool::Intersect);
+    let (from, to) = (on_screen(&h, -3.0, -1.0), on_screen(&h, -1.0, -1.0));
+    drag(&mut h, from, to);
+    assert!(!close(top_left(&h), corner), "the drag did not pan");
+    assert_eq!(labels(&h), ["A", "B", "M", "C", "f", "D", "E", "g"]);
+    assert!(h.state().tool.picks().is_empty());
 }
 
 #[test]
-fn placed_points_survive_a_failed_final_step() {
-    // The kernel refuses a regular polygon of a million vertices.
+fn a_failed_final_step_takes_the_placed_points_away() {
+    // The kernel refuses a regular polygon of a million vertices. The tool
+    // use ends unfinished, so its pending points go with it (spec E5/F1:
+    // they belong to the use, not to steps of their own).
     let mut h = harness("A = (-3, -3)\n");
     h.state_mut().select_tool(Tool::RegularPolygon);
     click(&mut h, world(0.0, 2.0));
@@ -113,9 +131,10 @@ fn placed_points_survive_a_failed_final_step() {
     h.state_mut().number_text = "1000000".into();
     h.key_press(egui::Key::Enter);
     h.run();
-    assert_eq!(labels(&h), ["A", "B", "C"], "the points stay, nothing else");
+    assert_eq!(labels(&h), ["A"], "nothing of the use stays");
     assert!(h.state().tool_error.is_some());
     assert!(h.state().tool.picks().is_empty());
+    assert_eq!(h.state().wb.undo_depth(), (0, 0));
 }
 
 #[test]

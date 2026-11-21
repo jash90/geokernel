@@ -1,0 +1,283 @@
+command,group,forms_2d,forms
+Mod,algebra,2,"number,number | function,function"
+Div,algebra,2,"number,number | function,function"
+Min,algebra,5,"list | interval | number,number | list,list | function,number,number"
+Max,algebra,5,"list | interval | number,number | list,list | function,number,number"
+LCM,algebra,2,"list | number,number"
+GCD,algebra,2,"list | number,number"
+Expand,algebra,1,any
+Factor,algebra,1,any
+Simplify,algebra,5,function | list | curve | implicit | text
+PrimeFactors,algebra,1,number
+CompleteSquare,algebra,1,function
+ToBase,algebra,1,"number,number"
+FromBase,algebra,1,"text,number"
+Division,algebra,2,"number,number | function,function"
+Divisors,algebra,1,number
+DivisorsList,algebra,1,number
+DivisorsSum,algebra,1,number
+IsPrime,algebra,1,number
+LeftSide,algebra,3,line | conic | implicit
+NextPrime,algebra,1,number
+RightSide,algebra,3,line | conic | implicit
+PreviousPrime,algebra,1,number
+IsFactored,algebra,1,function
+Line,geometry,5,"point,point | point,vector | point,line | point,segment | point,ray"
+Ray,geometry,2,"point,point | point,vector"
+AngularBisector,geometry,2,"line,line | point,point,point"
+OrthogonalLine,geometry,5,"point,line | point,segment | point,ray | point,vector | point,conic"
+Tangent,geometry,11,"conic,conic | conic,point | function,point | implicit,point | line,conic | line,implicit | number,function | point,conic | point,curve | point,function | point,implicit"
+Segment,geometry,3,"point,point | point,number | point,point,polygon"
+Slope,geometry,2,line | function
+Angle,geometry,13,"angle | number | point | vector | conic | polygon | point,point | point,vector | vector,point | vector,vector | line,line | point,point,point | point,point,number"
+InteriorAngles,geometry,1,polygon
+Direction,geometry,2,line | vector
+Point,geometry,4,"list | path | path,number | point,vector"
+Midpoint,geometry,4,"conic | segment | interval | point,point"
+LineBisector,geometry,2,"segment | point,point"
+Intersect,geometry,65,"line,line | line,curve | curve,line | curve,curve | line,polyline | polyline,line | polyline,polyline | line,polygon | polygon,line | polyline,polygon | polygon,polyline | polygon,polygon | line,conic | conic,line | polyline,conic | conic,polyline | polygon,conic | conic,polygon | function,conic | conic,function | conic,conic | function,line | line,function | function,polyline | polyline,function | function,polygon | polygon,function | function,function | implicit,polyline | polyline,implicit | implicit,line | implicit,conic | implicit,function | implicit,implicit | line,implicit | conic,implicit | function,implicit | path,point | point,path | line,line,number | line,conic,number | conic,line,number | line,conic,point | conic,line,point | conic,conic,point | conic,conic,number | function,line,number | line,function,number | function,function,number | function,conic,number | conic,function,number | implicit,line,number | line,implicit,number | implicit,function,number | function,implicit,number | implicit,conic,number | function,line,point | function,function,point | line,function,point | polyline,function,point | function,polyline,point | polygon,function,point | function,polygon,point | function,function,number,number | curve,curve,number,number"
+IntersectPath,geometry,9,"line,polygon | polygon,line | segment,conic | conic,segment | polyline,conic | conic,polyline | polygon,conic | conic,polygon | polygon,polygon"
+IntersectRegion,english,9,"line,polygon | polygon,line | segment,conic | conic,segment | polyline,conic | conic,polyline | polygon,conic | conic,polygon | polygon,polygon"
+Distance,geometry,4,"point,point | point,path | path,point | line,line"
+Length,geometry,11,"vector | point | list | text | locus | segment | conic | curve,number,number | curve,point,point | function,number,number | function,point,point"
+Radius,geometry,1,conic
+Type,geometry,0,
+CircleArc,geometry,1,"point,point,point"
+Arc,geometry,2,"conic,number,number | conic,point,point"
+Sector,geometry,2,"conic,number,number | conic,point,point"
+CircleSector,geometry,1,"point,point,point"
+CircumcircleSector,geometry,1,"point,point,point"
+CircumcircleArc,geometry,1,"point,point,point"
+Polygon,geometry,3,"list | point,point,number | point,point,..."
+RigidPolygon,geometry,3,"polygon | polygon,number,number | point,point,..."
+Area,geometry,3,"conic | polygon | point,point,point,..."
+Circumference,geometry,3,conic | polygon | locus
+Perimeter,geometry,3,polygon | conic | locus
+Locus,geometry,4,"function,point | locus,point | point,point | point,number"
+Centroid,geometry,1,polygon
+TriangleCenter,geometry,1,"point,point,point,number"
+Barycenter,geometry,1,"list,list"
+Trilinear,geometry,1,"point,point,point,number,number,number"
+Cubic,geometry,1,"point,point,point,number"
+TriangleCurve,geometry,1,"point,point,point,implicit"
+Vertex,geometry,12,"conic | polygon | polyline | inequality | number | polygon,number | polyline,number | image,number | text,number | boolean,number | segment,number | number,number"
+PolyLine,geometry,4,"list | list,boolean | point,point,... | point,point,...,boolean"
+PenStroke,geometry,2,"point,point,... | number,number,..."
+PenStrokeBezier,english,1,"number,number,..."
+PointIn,geometry,1,region
+AffineRatio,geometry,1,"point,point,point"
+CrossRatio,geometry,1,"point,point,point,point"
+ClosestPoint,geometry,3,"path,point | point,path | line,line"
+ClosestPointRegion,geometry,0,
+Prove,geometry,1,boolean
+ProveDetails,geometry,2,"boolean | boolean,boolean"
+AreCollinear,geometry,1,"point,point,point"
+AreParallel,geometry,1,"line,line"
+AreConcyclic,geometry,1,"point,point,point,point"
+ArePerpendicular,geometry,1,"line,line"
+AreEqual,geometry,1,"any,any"
+AreConcurrent,geometry,1,"line,line,line"
+AreCongruent,geometry,1,"any,any"
+IsTangent,geometry,1,"line,conic"
+LocusEquation,geometry,3,"locus | point,point | boolean,point"
+Envelope,geometry,1,"path,point"
+Difference,geometry,2,"polygon,polygon | polygon,polygon,boolean"
+Text,text,7,"any | any,boolean | any,point | any,point,boolean | any,point,boolean,boolean | any,point,boolean,boolean,number | any,point,boolean,boolean,number,number"
+LaTeX,text,3,"any | any,boolean | any,boolean,boolean"
+LetterToUnicode,text,1,text
+TextToUnicode,text,1,text
+UnicodeToText,text,1,list
+UnicodeToLetter,text,1,number
+FractionText,text,3,"number | point | number,boolean"
+SurdText,text,3,"number | point | number,list"
+ScientificText,text,2,"number | number,number"
+TableText,text,6,"list | list,text | list,list | list,number | list,text,number | list,list,..."
+VerticalText,text,2,"text | text,point"
+RotateText,text,2,"text,number | text,number,point"
+Ordinal,text,1,number
+ContinuedFraction,text,4,"number | number,boolean | number,number | number,number,boolean"
+ReplaceAll,text,1,"text,text,text"
+Split,text,1,"text,list"
+If,logical,2,"boolean,any,... | function,any,..."
+CountIf,logical,2,"function,list | any,any,list"
+IsInteger,logical,1,number
+KeepIf,logical,2,"function,list | boolean,any,list"
+Relation,logical,2,"any,any | list"
+Defined,logical,1,any
+IsInRegion,logical,1,"point,region"
+Root,function,4,"function | function,number | function,function | function,number,number"
+Roots,function,2,"function | function,number,number"
+TurningPoint,function,1,function
+Polynomial,function,3,"function | list | point,point,..."
+Function,function,4,"() | list | function,number,number | function,any,number,number"
+Extremum,function,2,"function | function,number,number"
+RemovableDiscontinuity,function,1,function
+CurveCartesian,function,3,"point,number,number,number | vector,number,number,number | number,number,number,number,number"
+ParametricDerivative,function,1,curve
+Derivative,function,8,"function | curve | function,number | curve,number | function,any | curve,any | function,any,number | curve,any,number"
+NDerivative,function,9,"function | curve | function,number | curve,number | function,function | curve,function | function,number,number | curve,number,number | function,function,number"
+Integral,function,7,"function | function,number | function,number,number | function,function,number,number | function,number,number,boolean | function,number,number,number | function,function,number,number,boolean"
+IntegralBetween,function,7,"function | function,number | function,number,number | function,function,number,number | function,number,number,boolean | function,number,number,number | function,function,number,number,boolean"
+LowerSum,function,1,"function,number,number,number"
+LeftSum,function,1,"function,number,number,number"
+RectangleSum,function,1,"function,number,number,number,number"
+TaylorSeries,function,1,"function,number,number"
+UpperSum,function,1,"function,number,number,number"
+TrapezoidalSum,function,1,"function,number,number,number"
+Limit,function,2,"function,number | function,any,number"
+LimitBelow,function,1,"function,number"
+LimitAbove,function,1,"function,number"
+Factors,function,2,function | number
+Degree,function,1,function
+Coefficients,function,2,function | conic
+PartialFractions,function,1,function
+Numerator,function,2,function | number
+Denominator,function,2,function | number
+ComplexRoot,function,1,function
+SolveODE,function,7,"function | curve | function,point | curve,point | function,number,number,number,number | function,function,number,number,number,number | function,function,function,number,number,number,number,number"
+SlopeField,function,4,"function | function,number | function,number,number | function,number,number,number,number,number,number"
+Iteration,function,3,"function,number,number | function,list,number | function,any,..."
+PathParameter,function,1,point
+Asymptote,function,3,conic | function | implicit
+CurvatureVector,function,3,"point,function | point,curve | point,conic"
+Curvature,function,3,"point,function | point,curve | point,conic"
+OsculatingCircle,function,3,"point,conic | point,function | point,curve"
+IterationList,function,3,"function,number,number | function,list,number | function,any,..."
+RootList,function,3,"list | number,number,... | point,point,..."
+ImplicitCurve,function,3,"list | function | point,point,point,point,point,..."
+ImplicitDerivative,function,1,function
+NSolveODE,function,1,"list,number,list,number"
+Spline,function,4,"list | list,number | list,number,function | point,point,..."
+BezierCurve,function,1,"point,point,point,point"
+ImplicitSurface,english,0,
+Normalize,function,3,"list | point | point,point,..."
+SVD,function,1,list
+Ellipse,conic,2,"point,point,number | point,point,point"
+Hyperbola,conic,2,"point,point,number | point,point,point"
+SecondAxisLength,conic,1,conic
+SecondAxis,conic,1,conic
+Directrix,conic,1,conic
+Diameter,conic,2,"line,conic | vector,conic"
+Conic,conic,3,"list | point,point,point,point,point | number,number,number,number,number,number"
+FirstAxis,conic,1,conic
+Circle,conic,3,"point,number | point,point | point,point,point"
+Incircle,conic,1,"point,point,point"
+Semicircle,conic,1,"point,point"
+FirstAxisLength,conic,1,conic
+Parabola,conic,1,"point,line"
+Focus,conic,1,conic
+Parameter,conic,1,conic
+Center,conic,4,"conic | segment | inequality | point,point"
+Polar,conic,2,"point,conic | line,conic"
+Excentricity,conic,1,conic
+Eccentricity,conic,1,conic
+Axes,conic,1,conic
+Sort,list,3,"list | list,list | point,point,..."
+First,list,5,"list | text | list,number | text,number | locus,number"
+Last,list,5,"function | list | text | list,number | text,number"
+Take,list,4,"list,number | text,number | list,number,number | text,number,number"
+RemoveUndefined,list,1,list
+Reverse,list,3,"list | number,number,... | point,point,..."
+Element,list,3,"list,number | text,number | list,number,number,..."
+IndexOf,list,4,"text,text | any,list | text,text,number | any,list,number"
+Append,list,2,"list,any | any,list"
+Join,list,2,"list | list,list,..."
+Flatten,list,1,list
+Insert,list,1,"any,list,number"
+Sequence,list,5,"number | number,number | number,number,number | any,number,number,number | any,number,number,number,number"
+SelectedElement,list,1,list
+SelectedIndex,list,1,list
+RandomElement,list,3,"list | number,number,... | point,point,..."
+Product,list,4,"list | list,number | list,list | any,number,number,number"
+Frequency,list,8,"list | boolean,list | list,list | boolean,list,list | list,list,boolean | boolean,list,list,boolean | list,list,boolean,number | boolean,list,list,boolean,number"
+Unique,list,1,list
+Classes,list,2,"list,number | list,number,number"
+Zip,list,1,"any,any,list,..."
+Intersection,list,1,"list,list"
+PointList,list,3,"list | number,number,... | point,point,..."
+OrdinalRank,list,3,"list | number,number,... | point,point,..."
+TiedRank,list,3,"list | number,number,... | point,point,..."
+Union,list,2,"list,list | polygon,polygon"
+Remove,list,1,"list,list"
+BarChart,charts,7,"list,number | list,list | number,number,list | list,list,number | list,number,number | number,number,any,number,number,number | number,number,any,number,number,number,number"
+BoxPlot,charts,4,"number,number,list | number,number,list,boolean | number,number,list,list,boolean | number,number,number,number,number,number,number"
+Histogram,charts,8,"list,list | list,list,boolean | list,list,boolean,number | boolean,list,list,boolean | boolean,list,list,boolean,number | boolean,list,list,list,boolean | boolean,list,list,boolean,number,any | boolean,list,list,list,boolean,number"
+HistogramRight,charts,8,"list,list | list,list,boolean | list,list,boolean,number | boolean,list,list,boolean | boolean,list,list,boolean,number | boolean,list,list,list,boolean | boolean,list,list,boolean,number,any | boolean,list,list,list,boolean,number"
+DotPlot,charts,4,"list | list,boolean | list,number | list,boolean,number"
+StemPlot,charts,3,"list | list,number | any,any,any,..."
+ResidualPlot,charts,1,"list,function"
+FrequencyPolygon,charts,6,"list,list | list,list,boolean | boolean,list,list,boolean | list,list,boolean,number | boolean,list,list,boolean,number | boolean,list,list,list,boolean"
+NormalQuantilePlot,charts,3,"list | number,number,... | point,point,..."
+FrequencyTable,charts,11,"list | number | boolean,list | list,list | list,number | boolean,list,list | boolean,list,number | list,list,boolean | boolean,list,list,boolean | list,list,boolean,number | boolean,list,list,boolean,number"
+StickGraph,charts,4,"list | list,boolean | list,list | list,list,boolean"
+StepGraph,charts,6,"list | list,boolean | list,list | list,boolean,number | list,list,boolean | list,list,boolean,number"
+LineGraph,charts,1,"list,list"
+PieChart,charts,3,"list | list,point | list,point,number"
+ContingencyTable,charts,4,"list,list | list,list,text | list,list,list | list,list,list,text"
+Sum,statistics,8,"list | list,number | list,list | number,... | point,... | vector,... | function,... | text,..."
+ApplyMatrix,vector,10,"list,point | list,vector | list,line | list,conic | list,curve | list,image | list,function | list,polygon | list,polyline | list,list"
+UnitVector,vector,3,line | vector | point
+Vector,vector,3,"point | vector | point,point"
+UnitOrthogonalVector,vector,3,line | vector | point
+OrthogonalVector,vector,3,line | vector | point
+Invert,vector,2,function | list
+Transpose,vector,3,"list | number,number,... | point,point,..."
+ReducedRowEchelonForm,vector,3,"list | number,number,... | point,point,..."
+Determinant,vector,1,list
+Identity,vector,1,number
+Dimension,vector,3,list | point | vector
+MatrixRank,vector,1,list
+Mirror,transformation,3,"any,point | any,line | any,circle"
+Dilate,transformation,19,"point,number | vector,number | line,number | conic,number | curve,number | function,number | polygon,number | polyline,number | image,number | list,number | point,number,point | vector,number,point | line,number,point | conic,number,point | curve,number,point | function,number,point | polyline,number,point | image,number,point | list,number,point"
+Rotate,transformation,2,"any,number | any,number,point"
+Translate,transformation,2,"any,vector | vector,point"
+Shear,transformation,2,"any,line,number | any,vector,number"
+Stretch,transformation,2,"any,vector | any,line,number"
+Rate,financial,4,"number,number,number | number,number,number,number | number,number,number,number,number | number,number,number,number,number,number"
+Periods,financial,3,"number,number,number | number,number,number,number | number,number,number,number,number"
+Payment,financial,3,"number,number,number | number,number,number,number | number,number,number,number,number"
+FutureValue,financial,3,"number,number,number | number,number,number,number | number,number,number,number,number"
+PresentValue,financial,3,"number,number,number | number,number,number,number | number,number,number,number,number"
+Voronoi,discrete,3,"list | number,number,... | point,point,..."
+Hull,english,1,"list,number"
+ConvexHull,discrete,2,"list | point,point,..."
+MinimumSpanningTree,discrete,3,"list | number,number,... | point,point,..."
+DelauneyTriangulation,discrete,2,"list | point,point,..."
+TravelingSalesman,discrete,3,"list | number,number,... | point,point,..."
+ShortestDistance,discrete,1,"list,point,point,boolean"
+Corner,geogebra,11,"conic | polygon | polyline | inequality | number | polygon,number | polyline,number | image,number | text,number | segment,number | number,number"
+AxisStepX,geogebra,1,()
+AxisStepY,geogebra,1,()
+ConstructionStep,geogebra,2,() | any
+Object,geogebra,1,text
+Name,geogebra,1,any
+SlowPlot,geogebra,2,"function | function,number"
+ToolImage,geogebra,3,"number | number,point | number,point,point"
+DynamicCoordinates,geogebra,1,"point,number,number"
+SetConstructionStep,geogebra,1,number
+Maximize,optimization,2,"number,number | number,point"
+Minimize,optimization,2,"number,number | number,point"
+IntersectionPaths,english,9,"line,polygon | polygon,line | segment,conic | conic,segment | polyline,conic | conic,polyline | polygon,conic | conic,polygon | polygon,polygon"
+IFactor,algebra,1,any
+CommonDenominator,algebra,2,"number,number | function,function"
+Cross,algebra,4,"point,point | point,vector | vector,point | vector,vector"
+CSolutions,algebra,10,"list | function | line | conic | implicit | list,any | function,any | line,any | conic,any | implicit,any"
+CSolve,algebra,10,"list | function | line | conic | implicit | list,any | function,any | line,any | conic,any | implicit,any"
+Dot,algebra,1,"any,any"
+NIntegral,function,6,"function | function,number | function,number,number | function,number,number,boolean | function,number,number,number | function,function,number,number,boolean"
+NInvert,function,1,function
+NSolve,algebra,10,"list | function | line | conic | implicit | list,any | function,any | line,any | conic,any | implicit,any"
+NSolutions,algebra,10,"list | function | line | conic | implicit | list,any | function,any | line,any | conic,any | implicit,any"
+Solutions,algebra,10,"list | function | line | conic | implicit | list,any | function,any | line,any | conic,any | implicit,any"
+Solve,algebra,10,"list | function | line | conic | implicit | list,any | function,any | line,any | conic,any | implicit,any"
+PlotSolve,function,5,list | function | line | conic | implicit
+ToComplex,geogebra,4,list | number | point | vector
+ToPolar,geogebra,4,list | number | point | vector
+ToPoint,geogebra,4,list | number | point | vector
+TrigExpand,function,4,"function | curve | function,function | curve,function"
+TrigSimplify,function,4,function | list | curve | implicit
+TrigCombine,function,4,"function | curve | function,function | curve,function"
+nCr,english,1,"number,number"
+nPr,english,1,"number,number"
+CASLoaded,geogebra,1,()
+IsVertexForm,function,1,function

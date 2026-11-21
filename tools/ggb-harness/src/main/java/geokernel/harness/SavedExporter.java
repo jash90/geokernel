@@ -134,7 +134,7 @@ public final class SavedExporter {
         }
         Files.writeString(outDir.resolve(id + ".xml"), app.getXML(), StandardCharsets.UTF_8);
         Map<String, Object> snapshot = new LinkedHashMap<>();
-        snapshot.put("schema", 1L);
+        snapshot.put("schema", 2L);
         snapshot.put("id", id);
         snapshot.put("script", script);
         snapshot.put("objects", objects);
@@ -192,7 +192,7 @@ public final class SavedExporter {
                 f.put("r", c.getHalfAxis(0));
             }
         } else if (geo instanceof GeoNumeric) {
-            obj.put("type", "number");
+            obj.put("type", Session.typeOf(geo));
             if (ok) {
                 f.put("value", ((GeoNumeric) geo).getDouble());
             }

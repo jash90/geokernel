@@ -9,7 +9,7 @@
 //! under both angle units).
 
 use geo_golden::compare::compare;
-use geo_golden::model::Expected;
+use geo_golden::model::{set_snapshot_schema, Expected};
 use geo_golden::repo_root;
 use geo_import::import;
 use serde::Deserialize;
@@ -18,6 +18,7 @@ use std::fs;
 
 #[derive(Deserialize)]
 struct Snapshot {
+    schema: u32,
     id: String,
     objects: BTreeMap<String, Expected>,
 }
@@ -36,7 +37,8 @@ fn files_saved_after_moves_agree_with_what_geogebra_computed_when_saving() {
     let mut first_moves = Vec::new();
     let mut double_tangents = 0;
     for path in &names {
-        let snap: Snapshot = serde_json::from_str(&fs::read_to_string(path).unwrap()).unwrap();
+        let mut snap: Snapshot = serde_json::from_str(&fs::read_to_string(path).unwrap()).unwrap();
+        set_snapshot_schema(snap.schema, &mut snap.objects).unwrap();
         let xml = fs::read(path.with_extension("xml")).unwrap();
         let imported = import(&xml).unwrap();
         let first_move = snap.id.starts_with("saved-firstmove-");

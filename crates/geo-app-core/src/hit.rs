@@ -219,6 +219,13 @@ pub fn hit(
             let w = 0.5 * CURVE_STROKE;
             boundary(near <= rad + w && far >= rad - w)
         }
+        Value::Number(_) if c.kind(id) == Kind::Angle => {
+            let angle = c.angle_geometry(id)?;
+            let center = to_screen(angle.center.0, angle.center.1);
+            angle
+                .contains((p.0 - center.0, center.1 - p.1), angle.radius(tr.scale()))
+                .then_some(HitType::Filling)
+        }
         Value::Polygon { .. } => {
             let pts = screen_vertices(c, id, tr)?;
             // `DrawPolygon.hit`: polygons are drawn filled.
@@ -282,6 +289,7 @@ fn type_priority(kind: Kind) -> u8 {
         Kind::Circle => 70,
         Kind::PolyLine => 51,
         Kind::Polygon => 50,
+        Kind::Angle => 49,
         _ => 0,
     }
 }
@@ -416,6 +424,29 @@ pub fn pick(
     choice.choose(selected)
 }
 
+/// Every object among those `accept` allows that a press at `(sx, sy)`
+/// hits, in construction order (`EuclidianView.setHits`: the square of the
+/// threshold, then the finger's larger one when it hits nothing). Made for
+/// one press, not for every frame: it allocates.
+pub fn hits(
+    c: &Construction,
+    t: &ViewTransform,
+    (sx, sy): (f64, f64),
+    reach: &Reach,
+    accept: impl Fn(Id) -> bool,
+) -> Vec<Id> {
+    let pass = |threshold: f64| -> Vec<Id> {
+        c.ids()
+            .filter(|&id| accept(id) && hit(c, id, t, (sx, sy), threshold, reach).is_some())
+            .collect()
+    };
+    let found = pass(reach.threshold);
+    match reach.retry {
+        Some(retry) if found.is_empty() => pass(retry),
+        _ => found,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -454,6 +485,21 @@ mod tests {
 
     fn only<'a>(c: &'a Construction, name: &'a str) -> impl Fn(Id) -> bool + 'a {
         move |id| c.label(id) == name
+    }
+
+    #[test]
+    fn an_angle_hits_the_square_or_sector_instead_of_its_bounding_box() {
+        let (mut c, t) = setup();
+        let script = geo_kernel::script::exec;
+        script(&mut c, "C = (0, 4)").unwrap();
+        let right = script(&mut c, "right = Angle(B, A, C)").unwrap().unwrap();
+        let reflex = script(&mut c, "reflex = Angle(C, A, B)").unwrap().unwrap();
+        let (x, y) = t.world_to_screen(0.0, 0.0);
+        let test = |id, dx, dy| hit(&c, id, &t, (x + dx, y + dy), 3.0, &mouse());
+        assert_eq!(test(right, 10.0, -10.0), Some(HitType::Filling));
+        assert_eq!(test(right, 16.0, -1.0), None);
+        assert_eq!(test(reflex, 10.0, -10.0), None);
+        assert_eq!(test(reflex, 10.0, 10.0), Some(HitType::Filling));
     }
 
     #[test]

@@ -2,12 +2,71 @@
 //! documents with too many items, and a great many lines that the kernel
 //! rejects or whose saved values disagree. Each case is an error or a result
 //! within a time bound, never a panic and never an unbounded allocation.
+//! Where work must grow linearly with the input, the test counts allocations
+//! (a counting global allocator, installed only in this test binary, counts
+//! those of the test's own thread) instead of timing it.
 
 use geo_import::archive::{MAX_XML_BYTES, MAX_ZIP_ENTRIES};
 use geo_import::xml::MAX_ITEMS;
 use geo_import::{import, ImportError};
+use std::alloc::{GlobalAlloc, Layout, System};
+use std::cell::Cell;
 use std::io::Write;
 use std::time::{Duration, Instant};
+
+thread_local! {
+    static ON: Cell<bool> = const { Cell::new(false) };
+    static COUNT: Cell<u64> = const { Cell::new(0) };
+}
+
+struct Counting;
+
+fn note() {
+    // `try_with`: the thread-local storage may be gone while a thread exits.
+    if ON.try_with(Cell::get).unwrap_or(false) {
+        let _ = COUNT.try_with(|c| c.set(c.get() + 1));
+    }
+}
+
+// SAFETY: every method forwards to `System` with the same arguments; the
+// counters are plain thread-local cells without destructors, so touching
+// them cannot allocate or recurse.
+unsafe impl GlobalAlloc for Counting {
+    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+        note();
+        // SAFETY: same contract as the caller's.
+        unsafe { System.alloc(layout) }
+    }
+
+    unsafe fn alloc_zeroed(&self, layout: Layout) -> *mut u8 {
+        note();
+        // SAFETY: same contract as the caller's.
+        unsafe { System.alloc_zeroed(layout) }
+    }
+
+    unsafe fn realloc(&self, ptr: *mut u8, layout: Layout, new_size: usize) -> *mut u8 {
+        note();
+        // SAFETY: same contract as the caller's.
+        unsafe { System.realloc(ptr, layout, new_size) }
+    }
+
+    unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
+        // SAFETY: same contract as the caller's.
+        unsafe { System.dealloc(ptr, layout) }
+    }
+}
+
+#[global_allocator]
+static ALLOCATOR: Counting = Counting;
+
+/// The result of `f` and the allocations it makes on this thread.
+fn allocations<T>(f: impl FnOnce() -> T) -> (T, u64) {
+    COUNT.with(|c| c.set(0));
+    ON.with(|o| o.set(true));
+    let out = f();
+    ON.with(|o| o.set(false));
+    (out, COUNT.with(Cell::get))
+}
 
 const BOUND: Duration = Duration::from_secs(30);
 
@@ -359,21 +418,60 @@ fn thousands_of_mismatching_values_stay_in_the_script() {
     assert!(took < BOUND, "{took:?}");
 }
 
-#[test]
-fn twenty_thousand_polygons() {
+/// A file with `n` triangles on the same three points.
+fn polygons(n: usize) -> String {
     let mut body = String::from(
         "<element type=\"point\" label=\"C\"><coords x=\"0\" y=\"3\" z=\"1\"/></element>",
     );
-    for i in 0..20_000 {
+    for i in 0..n {
         // the sides of a triangle are named after the opposite vertex
         body.push_str(&format!(
             "<command name=\"Polygon\"><input a0=\"A\" a1=\"B\" a2=\"C\"/>\
              <output a0=\"p{i}\"/></command>"
         ));
     }
-    let (r, took) = timed(|| import(wrap(&body).as_bytes()).unwrap());
-    assert_eq!(r.script.len(), 20_003);
-    assert!(took < BOUND, "{took:?}");
+    wrap(&body)
+}
+
+#[test]
+fn twenty_thousand_polygons() {
+    // The work of importing polygons grows linearly with their number: twice
+    // the polygons, about twice the allocations. Every triangle names three
+    // sides (`a_{n}`, `b_{n}`, `c_{n}`), so a label search that starts over
+    // for each new object instead of at `Construction::label_hint`, or any
+    // rescan of the construction per line, makes it quadratic, and the
+    // label search allocates each candidate it tries. Allocations do not
+    // depend on the speed of the machine, unlike the time bound this
+    // replaces. The quadratic term already dominates at a few thousand
+    // polygons, so the ratio is taken there, where a regression fails within
+    // about a minute (the quadratic import of 4000 polygons is slow, not the
+    // check). Then the full size must still import, under two guards that
+    // are generous on purpose so no machine trips them: at most 1000
+    // allocations a polygon (about 100 today), and done within ten minutes,
+    // which catches a hang or quadratic work that does not allocate.
+    let (half, a) = allocations(|| import(polygons(2_000).as_bytes()).unwrap());
+    let (full, b) = allocations(|| import(polygons(4_000).as_bytes()).unwrap());
+    assert_eq!(half.script.len(), 2_003);
+    assert_eq!(full.script.len(), 4_003);
+    let ratio = b as f64 / a as f64;
+    assert!(
+        ratio < 2.5,
+        "2000 polygons: {a} allocations, 4000: {b} (ratio {ratio:.2}, linear is 2)"
+    );
+    const N: usize = 20_000;
+    let (tx, rx) = std::sync::mpsc::channel();
+    std::thread::spawn(move || {
+        let xml = polygons(N);
+        let _ = tx.send(allocations(|| import(xml.as_bytes()).unwrap().script.len()));
+    });
+    let (lines, n) = rx
+        .recv_timeout(Duration::from_secs(600))
+        .unwrap_or_else(|e| panic!("{N} polygons: no import within ten minutes ({e})"));
+    assert_eq!(lines, N + 3);
+    assert!(
+        n <= 1000 * N as u64,
+        "{N} polygons: {n} allocations, over 1000 a polygon"
+    );
 }
 
 /// An archive with a comment, built by hand around a stored entry.

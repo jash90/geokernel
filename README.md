@@ -34,8 +34,9 @@ area, perimeter, centroid, vertices and angles) and predicates (collinear,
 parallel, perpendicular, concurrent, concyclic, equal, congruent, tangent).
 
 Every command is checked against values recorded from GeoGebra. See
-`docs/command-matrix.csv` for what is planned and done,
-`crates/geo-golden/known-gaps.toml` for where the kernel still differs
+`docs/command-matrix.csv` for what is planned and done (per command, how
+many of its 2D forms golden data checks), `docs/kinds.csv` for what each
+object kind supports, `crates/geo-golden/known-gaps.toml` for where the kernel still differs
 from GeoGebra, and [DIFFERENCES.md](DIFFERENCES.md) for the differences
 that are intended.
 

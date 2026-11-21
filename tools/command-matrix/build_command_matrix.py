@@ -5,20 +5,33 @@ Usage (run from the repository root):
     python3 -I tools/command-matrix/build_command_matrix.py \
         --source <geogebra checkout> --out docs/command-matrix.csv [--check]
 
-Only Commands.java and CommandsConstants.java are read. The classification
-rules are documented in tools/command-matrix/README.md.
+Only Commands.java and CommandsConstants.java are read upstream. The form
+counts come from tools/command-matrix/forms.csv and the done forms from
+tools/command-matrix/form-evidence.toml. The classification rules are
+documented in tools/command-matrix/README.md.
 """
 import argparse
 import csv
 import io
 import re
 import sys
+import tomllib
 from pathlib import Path
 
+HERE = Path(__file__).resolve().parent
+
 COMMANDS_DIR = Path("source/shared/common/src/main/java/org/geogebra/common/kernel/commands")
-COLUMNS = ["command", "alias_of", "group", "priority", "status", "notes"]
+COLUMNS = ["command", "alias_of", "group", "priority", "status", "forms_total", "forms_done",
+           "notes"]
+FORMS_COLUMNS = ["command", "group", "forms_2d", "forms"]
 
 OUT_OF_SCOPE_GROUPS = {"3d", "spreadsheet", "probability", "cas", "scripting", "statistics"}
+# Single commands outside the 2D scope although their table is in scope:
+# a statistics pair (var, cov), 3D objects (Polyhedron, CornerThreeD), a
+# command of the CAS view (Evaluate) and whiteboard-only objects (Stadium,
+# TableToChart).
+OUT_OF_SCOPE_COMMANDS = {"var", "cov", "Polyhedron", "CornerThreeD", "Evaluate", "Stadium",
+                         "TableToChart"}
 P1_GROUPS = {"geometry", "conic", "transformation"}
 # Groups the rule knows how to place. Anything else becomes todo/P2 and is reported.
 KNOWN_GROUPS = OUT_OF_SCOPE_GROUPS | P1_GROUPS | {
@@ -62,7 +75,11 @@ PARTIAL = {
     "Slope": "Slope(line, segment, ray or function)",
     "AffineRatio": "AffineRatio(point, point, point)",
     "CrossRatio": "CrossRatio(point, point, point, point)",
-    "Angle": "Angle(point, point, point); Angle(polygon)",
+    "Angle": (
+        "Angle(angle); Angle(number); Angle(point); Angle(vector); Angle(conic); Angle(polygon); "
+        "Angle(point, point); Angle(point, vector); Angle(vector, point); Angle(vector, vector); "
+        "Angle(line, line); Angle(point, point, point); Angle(point, point, number)"
+    ),
     "Mirror": "point, line, segment, circle or conic in a point or a line; point in a circle",
     "Rotate": "point, line, segment, circle or conic by an angle, about the origin or a point",
     "Dilate": "point, line, segment, circle or conic by a factor, from the origin or a point",
@@ -234,6 +251,8 @@ def resolve_aliases(aliases, names):
 
 def classify(group, command, alias_of):
     """Return (priority, status, notes) for a real command; aliases copy their target."""
+    if command in OUT_OF_SCOPE_COMMANDS:
+        return "", "out_of_scope", ""
     if command in PARTIAL and not alias_of:
         if command in FIRST_KERNEL:
             priority = "P0"
@@ -247,7 +266,11 @@ def classify(group, command, alias_of):
     return "P2", "todo", ""
 
 
-def build_rows(commands_java, constants_java):
+def build_rows(commands_java, constants_java, forms=None, done=None):
+    """Rows of the matrix. `forms` maps an in-scope command to (group, list of
+    its 2D forms) and `done` maps a command to its number of done forms."""
+    forms = forms or {}
+    done = done or {}
     tables = parse_table_constants(constants_java)
     entries = split_enum_entries(commands_java)
     names = {name for name, _ in entries}
@@ -264,19 +287,85 @@ def build_rows(commands_java, constants_java):
             unclassified.add(group)
         if target:
             continue
-        rows[name] = (group,) + classify(group, name, "")
+        priority, status, notes = classify(group, name, "")
+        total = got = ""
+        if status != "out_of_scope":
+            n_forms = len(forms.get(name, ("", []))[1])
+            n_done = done.get(name, 0)
+            # The counts alone decide: a hand-listed partial with no done
+            # form is todo (its notes still list what the kernel covers).
+            if n_forms and n_done == n_forms:
+                status = "done"
+            elif n_done:
+                status = "partial"
+            else:
+                status = "todo"
+            total, got = str(n_forms), str(n_done)
+        rows[name] = (group, priority, status, total, got, notes)
     out = []
     for name, _ in entries:
         target = aliases.get(name, "")
         real = target or name
-        group, priority, status, notes = rows[real]
-        note = notes if not target else ""
-        out.append([name, target, group, priority, status, note])
+        group, priority, status, total, got, notes = rows[real]
+        if target:
+            total = got = notes = ""
+        out.append([name, target, group, priority, status, total, got, notes])
     declared = {}
     for _, args in entries:
         key = tables.get(args, args.lower() or "unknown")
         declared[key] = declared.get(key, 0) + 1
     return out, unclassified, declared
+
+
+def read_forms(text):
+    """forms.csv -> {command: (group, [form, ...])}; checks the counts."""
+    reader = csv.reader(io.StringIO(text))
+    header = next(reader)
+    if header != FORMS_COLUMNS:
+        raise ValueError("forms.csv: unexpected header %r" % header)
+    out = {}
+    for command, group, count, field in reader:
+        forms = field.split(" | ") if field else []
+        if int(count) != len(forms) or len(set(forms)) != len(forms):
+            raise ValueError("forms.csv: %s: count %s for %r" % (command, count, field))
+        if command in out:
+            raise ValueError("forms.csv: %s is listed twice" % command)
+        out[command] = (group, forms)
+    return out
+
+
+def read_evidence(text, forms):
+    """form-evidence.toml -> {command: number of done forms}. Only the
+    references are checked here; crates/geo-golden/tests/command_forms.rs
+    checks that the cases and DIFFERENCES.md rows back them."""
+    done, seen = {}, set()
+    for row in tomllib.loads(text).get("form", []):
+        command, form = row["command"], row["form"]
+        if command not in forms or form not in forms[command][1]:
+            raise ValueError("form-evidence.toml: unknown form %s(%s)" % (command, form))
+        if (command, form) in seen:
+            raise ValueError("form-evidence.toml: %s(%s) is listed twice" % (command, form))
+        if bool(row.get("cases")) == bool(row.get("difference")):
+            raise ValueError("form-evidence.toml: %s(%s) needs cases or a difference"
+                             % (command, form))
+        seen.add((command, form))
+        done[command] = done.get(command, 0) + 1
+    return done
+
+
+def check_scope(rows, forms):
+    """forms.csv must list exactly the in-scope commands, with their groups."""
+    errors = []
+    in_scope = {r[0]: r[2] for r in rows if not r[1] and r[4] != "out_of_scope"}
+    for name in sorted(set(in_scope) - set(forms)):
+        errors.append("forms.csv has no row for the in-scope command %s" % name)
+    for name in sorted(set(forms) - set(in_scope)):
+        errors.append("forms.csv lists %s, which is not an in-scope command" % name)
+    for name in sorted(set(forms) & set(in_scope)):
+        if forms[name][0] != in_scope[name]:
+            errors.append("forms.csv: %s is in group %s, the matrix says %s"
+                          % (name, forms[name][0], in_scope[name]))
+    return errors
 
 
 def render_csv(rows):
@@ -290,6 +379,15 @@ def render_csv(rows):
 def summary(rows, unclassified, declared):
     lines = ["total entries: %d" % len(rows),
              "aliases: %d" % sum(1 for r in rows if r[1])]
+    real = [r for r in rows if not r[1]]
+    counted = [r for r in real if r[5]]
+    lines.append("in-scope commands: %d, forms_total: %d, forms_done: %d" % (
+        len(counted), sum(int(r[5]) for r in counted), sum(int(r[6]) for r in counted)))
+    status = {}
+    for r in real:
+        status[r[4]] = status.get(r[4], 0) + 1
+    lines.append("by status, real commands only: " + ", ".join(
+        "%s=%d" % kv for kv in sorted(status.items())))
     for title, idx in (("group", 2), ("status", 4), ("priority", 3)):
         counts = {}
         for r in rows:
@@ -313,13 +411,23 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--source", required=True, help="GeoGebra checkout root")
     ap.add_argument("--out", required=True, help="CSV file to write")
+    ap.add_argument("--forms", default=str(HERE / "forms.csv"),
+                    help="the 2D forms of every in-scope command")
+    ap.add_argument("--evidence", default=str(HERE / "form-evidence.toml"),
+                    help="the done forms and their evidence")
     ap.add_argument("--check", action="store_true",
                     help="exit 1 if the CSV on disk differs from the generated one")
     args = ap.parse_args(argv)
     base = Path(args.source) / COMMANDS_DIR
     commands_java = (base / "Commands.java").read_text(encoding="utf-8")
     constants_java = (base / "CommandsConstants.java").read_text(encoding="utf-8")
-    rows, unclassified, declared = build_rows(commands_java, constants_java)
+    forms = read_forms(Path(args.forms).read_text(encoding="utf-8"))
+    done = read_evidence(Path(args.evidence).read_text(encoding="utf-8"), forms)
+    rows, unclassified, declared = build_rows(commands_java, constants_java, forms, done)
+    errors = check_scope(rows, forms)
+    if errors:
+        print("\n".join(errors), file=sys.stderr)
+        return 1
     text = render_csv(rows)
     print(summary(rows, unclassified, declared))
     out = Path(args.out)
