@@ -6,7 +6,7 @@
 
 //! Names of the built-in functions.
 
-use super::{Bin, Un};
+use super::{commands, Bin, Un};
 
 /// Whether `name` is a built-in function of any number of arguments.
 pub(crate) fn builtin_name(name: &str) -> bool {
@@ -63,12 +63,6 @@ pub(crate) fn binary_builtin(name: &str) -> Option<Bin> {
         "log" | "ln" => Bin::LogB,
         "round" => Bin::Round2,
         // commands of two numbers, computed in place
-        "Mod" => Bin::Mod,
-        "Div" => Bin::IntDiv,
-        "GCD" => Bin::Gcd,
-        "LCM" => Bin::Lcm,
-        "Max" => Bin::Max,
-        "Min" => Bin::Min,
-        _ => return None,
+        _ => return commands::binary_command(name),
     })
 }

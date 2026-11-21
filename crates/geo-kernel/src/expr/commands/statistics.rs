@@ -7,7 +7,56 @@
 //! The statistics group of the command matrix: `Sum` and `Mean`.
 
 use crate::expr::eval::{number_of, slot_val, Ctx, Val};
-use crate::expr::{ListOp, NONE};
+use crate::expr::parse::{list_form, Parser};
+use crate::expr::types::of_numbers;
+use crate::expr::{Elem, ListOp, Node, Ty, NONE};
+
+/// The commands of this group (see `commands::is_command`).
+pub(super) const NAMES: &[&str] = &["Sum", "Mean"];
+
+/// `Sum(list)`, `Sum(list, n)` and `Mean(list)`; of anything else they are
+/// the commands of the script parser.
+pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
+    let (op, count) = match text {
+        "Sum" => (ListOp::Sum, true),
+        "Mean" => (ListOp::Mean, false),
+        _ => return Ok(None),
+    };
+    p.list_command(|_, args, lists| list_form(text, op, count, args, lists))
+}
+
+/// The type of a list command of this group (see `commands::list_type`).
+pub(super) fn list_type(
+    op: ListOp,
+    elem: Elem,
+    numbers: bool,
+    _nodes: &[Node],
+    _tys: &[Ty],
+    _l: u32,
+    _n: u32,
+) -> Result<Option<Ty>, String> {
+    Ok(Some(match op {
+        // `AlgoStats1D` reads numbers; `Sum` adds points and vectors too
+        ListOp::Sum if elem == Elem::Vec => Ty::Vec,
+        ListOp::Sum | ListOp::Mean => of_numbers(numbers)?,
+        _ => return Ok(None),
+    }))
+}
+
+/// The value of a list command of this group (see `commands::list_value`).
+pub(super) fn list_value<const M: bool>(
+    ctx: &Ctx<'_, M>,
+    i: u32,
+    op: ListOp,
+    l: u32,
+    n: u32,
+) -> Option<Val> {
+    Some(match op {
+        ListOp::Sum if ctx.e.tys[i as usize] == Ty::Vec => ctx.sum_vectors(l, n),
+        ListOp::Sum | ListOp::Mean => Val::N(ctx.stats(op, l, n)),
+        _ => return None,
+    })
+}
 
 impl<const M: bool> Ctx<'_, M> {
     /// `AlgoStats1D`: the sum, product or mean of the first `n` (all by

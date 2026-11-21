@@ -62,7 +62,7 @@
 //! behind is dropped before the next one, and the buffer is emptied for
 //! the next evaluation, so a recompute allocates nothing once it has grown.
 
-use super::commands::algebra as twonum;
+use super::commands;
 use super::decimal::Dec;
 use super::list::{copy_tree, Slot};
 use super::math::{self, PI_180};
@@ -1032,7 +1032,7 @@ impl<const M: bool> Ctx<'_, M> {
             Node::Un(op, a) => self.list_unary(op, a),
             Node::Range(from, to, step) => self.range(from, to, step),
             Node::Seq(e, from, to, step, depth) => self.sequence(e, from, to, step, depth),
-            Node::ListOp(op, l, n) if op.makes_list() => self.list_fn(op, l, n),
+            Node::ListOp(op, l, n) if op.makes_list() => commands::list_fn(self, op, l, n),
             // an element that is a list: its elements were built with the
             // list it belongs to
             Node::ListOp(op, l, n) => self.pick(op, l, n)?.run(),
@@ -1238,28 +1238,7 @@ impl<const M: bool> Ctx<'_, M> {
             return Ex::plain(Val::N(f64::NAN));
         };
         let mark = lists.len();
-        let val = match op {
-            ListOp::Length => Val::N(self.list(l).map_or(f64::NAN, |(_, len)| f64::from(len))),
-            ListOp::Sum if self.e.tys[i as usize] == Ty::Vec => self.sum_vectors(l, n),
-            ListOp::Sum | ListOp::Product | ListOp::Mean => Val::N(self.stats(op, l, n)),
-            ListOp::Min | ListOp::Max => Val::N(self.min_max(op == ListOp::Min, l)),
-            // a list: built by `list`
-            ListOp::Reverse
-            | ListOp::First
-            | ListOp::Last
-            | ListOp::Sort
-            | ListOp::Append
-            | ListOp::Prepend
-            | ListOp::Join => Val::N(f64::NAN),
-            ListOp::Index | ListOp::Element => {
-                match (self.pick(op, l, n), self.e.tys[i as usize]) {
-                    (Some(slot), _) => slot_val(slot),
-                    (None, Ty::Vec) => Val::V(f64::NAN, f64::NAN),
-                    (None, Ty::Bool) => Val::B(false, true),
-                    (None, _) => Val::N(f64::NAN),
-                }
-            }
-        };
+        let val = commands::list_value(self, i, op, l, n);
         lists.truncate(mark);
         Ex {
             obj: true,
@@ -1538,12 +1517,7 @@ fn binary(op: Bin, l: Val, r: Val, left_angle: bool) -> Val {
         // `MyDouble.log(base)`
         (Bin::LogB, N(base), N(x)) => N(x.ln() / base.ln()),
         (Bin::Round2, N(x), N(digits)) => N(math::round(x, digits, left_angle)),
-        (Bin::Mod, N(a), N(b)) => N(twonum::modulo(a, b)),
-        (Bin::IntDiv, N(a), N(b)) => N(twonum::div(a, b)),
-        (Bin::Gcd, N(a), N(b)) => N(twonum::gcd_of(a, b)),
-        (Bin::Lcm, N(a), N(b)) => N(twonum::lcm_of(a, b)),
-        (Bin::Max, N(a), N(b)) => N(twonum::max(a, b)),
-        (Bin::Min, N(a), N(b)) => N(twonum::min(a, b)),
+        (op, N(a), N(b)) if op.is_command() => N(commands::binary(op, a, b)),
         _ => N(f64::NAN),
     }
 }

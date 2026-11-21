@@ -55,6 +55,19 @@
 //! expression object elsewhere, take its tree with
 //! [`Construction::expression`] and add it with
 //! [`Construction::add_expression`]; the tree is checked again there.
+//!
+//! # Where a new command goes
+//!
+//! A command that expressions compute themselves (`If`, `Sequence`, `Sum`,
+//! `Mod`, ...) lives in `commands/<group>.rs`, where `<group>` is its
+//! `group` column in `docs/command-matrix.csv`, and its tests in
+//! `commands/<group>/tests.rs`. The group file holds its name, how it is
+//! parsed, its type and its evaluation; `parse`, `types` and `eval` only
+//! ask the groups in turn (see `commands/mod.rs`). Its node is a variant of
+//! [`ListOp`] (a command of a list) or [`Bin`] (a command of two numbers),
+//! added in the enum's block of its group; a command of another shape needs
+//! a new [`Node`] first. A group without a file yet adds one and registers
+//! it in `commands/mod.rs`.
 
 mod commands;
 mod decimal;
@@ -147,10 +160,7 @@ pub(crate) enum Node {
 /// The commands that read a list.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum ListOp {
-    /// `Length(list)`.
-    Length,
-    /// `Sum(list)` and `Sum(list, n)` of numbers (`AlgoStats1D`).
-    Sum,
+    // the list group (`commands/list.rs`)
     /// `l(n)`: rounded, from 1; a negative index counts from the end
     /// (`ExpressionNodeEvaluator.handleElementOf`).
     Index,
@@ -158,11 +168,6 @@ pub(crate) enum ListOp {
     Element,
     /// `Product(list)` and `Product(list, n)` (`AlgoStats1D`).
     Product,
-    /// `Min(list)` and `Max(list)` (`AlgoListMinMax`).
-    Min,
-    Max,
-    /// `Mean(list)` (`AlgoStats1D`).
-    Mean,
     /// `Reverse(list)` (`AlgoReverse`).
     Reverse,
     /// `First(list)`, `First(list, n)` and `Last` (`AlgoFirst`, `AlgoLast`).
@@ -177,21 +182,27 @@ pub(crate) enum ListOp {
     /// `Join(list of lists)`; `Join(l1, l2, ...)` joins the list of its
     /// arguments (`AlgoJoin`).
     Join,
+
+    // statistics (`commands/statistics.rs`)
+    /// `Sum(list)` and `Sum(list, n)` of numbers (`AlgoStats1D`).
+    Sum,
+    /// `Mean(list)` (`AlgoStats1D`).
+    Mean,
+
+    // algebra (`commands/algebra.rs`)
+    /// `Min(list)` and `Max(list)` (`AlgoListMinMax`).
+    Min,
+    Max,
+
+    // geometry (`commands/geometry.rs`)
+    /// `Length(list)`.
+    Length,
 }
 
 impl ListOp {
     /// Whether the result is a list.
     pub(crate) fn makes_list(self) -> bool {
-        matches!(
-            self,
-            ListOp::Reverse
-                | ListOp::First
-                | ListOp::Last
-                | ListOp::Sort
-                | ListOp::Append
-                | ListOp::Prepend
-                | ListOp::Join
-        )
+        commands::makes_list(self)
     }
 }
 
@@ -301,10 +312,7 @@ pub(crate) enum Bin {
 impl Bin {
     /// Whether this is one of the commands of two numbers.
     fn is_command(self) -> bool {
-        matches!(
-            self,
-            Bin::Mod | Bin::IntDiv | Bin::Gcd | Bin::Lcm | Bin::Max | Bin::Min
-        )
+        commands::is_binary_command(self)
     }
 
     /// Whether this compares two values.
@@ -547,21 +555,7 @@ fn reads_list(nodes: &[Node], tys: &[Ty]) -> bool {
 /// The commands that expressions compute themselves; `Length` and `Sum`
 /// also of a list.
 pub(crate) fn is_expression_command(name: &str) -> bool {
-    matches!(
-        name,
-        "If" | "Sequence"
-            | "Element"
-            | "Length"
-            | "Sum"
-            | "Product"
-            | "Mean"
-            | "Reverse"
-            | "First"
-            | "Last"
-            | "Sort"
-            | "Append"
-            | "Join"
-    )
+    commands::is_command(name)
 }
 
 fn entry(c: &Construction, d: ExprDef) -> &Entry {

@@ -14,7 +14,8 @@
 //! `MyError` from `Operation`); the evaluation of a new object always runs,
 //! so rejecting the same trees here gives the same lines errors.
 
-use super::{Bin, Elem, IfMode, ListOp, Node, Ty, Un, NONE};
+use super::commands;
+use super::{Bin, Elem, IfMode, Node, Ty, Un, NONE};
 use crate::algo::measure::MeasureDef;
 use crate::kernel::{Construction, Def, Id, Kind};
 
@@ -152,44 +153,13 @@ pub(crate) fn check(
                 let Ty::List(elem) = tys[l as usize] else {
                     return Err("the command needs a list".into());
                 };
-                let object = matches!(op, ListOp::Append | ListOp::Prepend);
+                let object = commands::takes_object(op);
                 if n != NONE && !object && !matches!(tys[n as usize], Ty::Num(_) | Ty::Bool) {
                     return Err("the index must be a number".into());
                 }
                 // a list of numbers and booleans has mixed elements
                 let numbers = matches!(elem, Elem::Num | Elem::Bool | Elem::Empty | Elem::Any);
-                let ty = match op {
-                    ListOp::Length => Ty::Num(0),
-                    // `AlgoStats1D` and `AlgoListMinMax` read numbers;
-                    // `Sum` adds points and vectors too
-                    ListOp::Sum if elem == Elem::Vec => Ty::Vec,
-                    ListOp::Sum | ListOp::Product | ListOp::Min | ListOp::Max | ListOp::Mean => {
-                        if !numbers {
-                            return Err("the command needs a list of numbers".into());
-                        }
-                        Ty::Num(0)
-                    }
-                    ListOp::Index | ListOp::Element => ty_of(elem)?,
-                    ListOp::Reverse | ListOp::First | ListOp::Last | ListOp::Sort => Ty::List(elem),
-                    ListOp::Append | ListOp::Prepend => {
-                        Ty::List(join_elem(elem, elem_of(tys[n as usize])))
-                    }
-                    ListOp::Join => match nodes[l as usize] {
-                        // the list of the arguments: their elements
-                        Node::List(first, len) => {
-                            let mut joined = Elem::Empty;
-                            for item in first..first + len {
-                                match tys[item as usize] {
-                                    Ty::List(e) => joined = join_elem(joined, e),
-                                    _ => return Err("`Join` needs lists".into()),
-                                }
-                            }
-                            Ty::List(joined)
-                        }
-                        _ if matches!(elem, Elem::List | Elem::Empty) => Ty::List(Elem::Any),
-                        _ => return Err("`Join` needs a list of lists".into()),
-                    },
-                };
+                let ty = commands::list_type(op, elem, numbers, nodes, &tys, l, n)?;
                 let (l, n) = (l as usize, n as usize);
                 let (nd, nc, nv) = if n == NONE as usize {
                     (0, 0, 0)
@@ -251,7 +221,7 @@ fn object_type(c: &Construction, id: Id) -> Result<Ty, String> {
 }
 
 /// The element type of a list of elements of type `t`.
-fn elem_of(t: Ty) -> Elem {
+pub(super) fn elem_of(t: Ty) -> Elem {
     match t {
         Ty::Num(_) => Elem::Num,
         Ty::Vec => Elem::Vec,
@@ -260,7 +230,7 @@ fn elem_of(t: Ty) -> Elem {
     }
 }
 
-fn join_elem(a: Elem, b: Elem) -> Elem {
+pub(super) fn join_elem(a: Elem, b: Elem) -> Elem {
     match (a, b) {
         (Elem::Empty, t) | (t, Elem::Empty) => t,
         (a, b) if a == b => a,
@@ -270,7 +240,7 @@ fn join_elem(a: Elem, b: Elem) -> Elem {
 
 /// The type of one element of a list (`GeoList.createTemplateElement` for
 /// an empty one: a number).
-fn ty_of(e: Elem) -> Result<Ty, String> {
+pub(super) fn ty_of(e: Elem) -> Result<Ty, String> {
     match e {
         Elem::Num | Elem::Empty => Ok(Ty::Num(0)),
         Elem::Vec => Ok(Ty::Vec),
@@ -278,6 +248,15 @@ fn ty_of(e: Elem) -> Result<Ty, String> {
         Elem::List => Ok(Ty::List(Elem::Any)),
         Elem::Any => Err("the elements of the list have different types".into()),
     }
+}
+
+/// The number that a command reading numbers gives (`AlgoStats1D`,
+/// `AlgoListMinMax`); an error unless the elements may all be numbers.
+pub(super) fn of_numbers(numbers: bool) -> Result<Ty, String> {
+    if !numbers {
+        return Err("the command needs a list of numbers".into());
+    }
+    Ok(Ty::Num(0))
 }
 
 fn result_type(kind: Kind, angle: bool) -> Result<Ty, String> {

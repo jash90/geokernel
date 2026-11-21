@@ -19,6 +19,7 @@
 //! `-2^2 = -4`), factorials, square roots, negations (`!a^2` is
 //! `(!a)^2`), then elements.
 
+use super::commands;
 use super::decimal::Dec;
 use super::eval;
 use super::lex::{split_bars, tokens, Tok, Token};
@@ -721,11 +722,9 @@ impl Parser<'_> {
             let arg = self.element()?;
             return Ok(self.push(Node::Bin(Bin::Mul, obj, arg)));
         }
-        if call && text == "If" {
-            return self.if_command();
-        }
         if call {
-            if let Some(node) = self.list_command(text)? {
+            // `If` and the commands of a list (see `commands`)
+            if let Some(node) = commands::parse(self, text)? {
                 return Ok(node);
             }
         }
@@ -752,68 +751,38 @@ impl Parser<'_> {
         Err(format!("unknown object `{text}`"))
     }
 
-    /// The list commands: `Sequence` and `Element`, and `Length` and `Sum`
-    /// of a list (of anything else they are the commands of the script
-    /// parser). `None` when `text` is none of these.
-    fn list_command(&mut self, text: &str) -> Result<Option<u32>, String> {
-        match text {
-            "Sequence" => self.sequence().map(Some),
-            "Element" => match self.arguments()?[..] {
-                [l, n] => Ok(Some(self.push(Node::ListOp(ListOp::Element, l, n)))),
-                _ => Err("`Element` takes a list and one index".into()),
-            },
-            "Length" | "Sum" | "Product" | "Min" | "Max" | "Mean" | "Reverse" | "First"
-            | "Last" | "Sort" | "Append" | "Join" => {
-                let saved = (
-                    self.pos,
-                    self.parents.len(),
-                    self.inputs.len(),
-                    self.uses_var,
-                );
-                // on an error the script parser reports what is wrong
-                let args = self.arguments().unwrap_or_default();
-                let lists: Vec<bool> = args.iter().map(|&a| self.is_list(a)).collect();
-                let node = match (text, &args[..], &lists[..]) {
-                    (_, [], _) => None,
-                    ("Join", [l], [true]) => Some(Node::ListOp(ListOp::Join, *l, NONE)),
-                    ("Join", _, _) if lists.iter().all(|&b| b) => {
-                        // `CmdJoin`: the list of the arguments
-                        let first = self.nodes.len() as u32;
-                        for &a in &args {
-                            self.push(Node::Item(a));
-                        }
-                        let list = self.push(Node::List(first, args.len() as u32));
-                        Some(Node::ListOp(ListOp::Join, list, NONE))
-                    }
-                    ("Append", [l, x], [true, _]) => Some(Node::ListOp(ListOp::Append, *l, *x)),
-                    ("Append", [x, l], [false, true]) => {
-                        Some(Node::ListOp(ListOp::Prepend, *l, *x))
-                    }
-                    (_, _, [false, ..]) => None,
-                    (_, &[l], _) if text != "Append" => Some(Node::ListOp(list_op(text), l, NONE)),
-                    ("Sum" | "Product" | "First" | "Last", &[l, n], _) => {
-                        Some(Node::ListOp(list_op(text), l, n))
-                    }
-                    _ => {
-                        return Err(format!(
-                            "`{text}` of a list does not take {} arguments",
-                            args.len()
-                        ))
-                    }
-                };
-                match node {
-                    Some(node) => Ok(Some(self.push(node))),
-                    None => {
-                        // not a list: the script parser's command
-                        self.pos = saved.0;
-                        self.parents.truncate(saved.1);
-                        self.inputs.truncate(saved.2);
-                        self.uses_var = saved.3;
-                        Ok(None)
-                    }
-                }
+    /// A command of a list (of anything else it is the command of the
+    /// script parser of the same name): `form` makes its node from the
+    /// arguments and whether each is a list, `None` when they are not what
+    /// the command of a list takes. `None` then, with nothing read.
+    pub(super) fn list_command(
+        &mut self,
+        form: impl FnOnce(&mut Self, &[u32], &[bool]) -> Result<Option<Node>, String>,
+    ) -> Result<Option<u32>, String> {
+        let saved = (
+            self.pos,
+            self.parents.len(),
+            self.inputs.len(),
+            self.uses_var,
+        );
+        // on an error the script parser reports what is wrong
+        let args = self.arguments().unwrap_or_default();
+        let lists: Vec<bool> = args.iter().map(|&a| self.is_list(a)).collect();
+        let node = if args.is_empty() {
+            None
+        } else {
+            form(self, &args, &lists)?
+        };
+        match node {
+            Some(node) => Ok(Some(self.push(node))),
+            None => {
+                // not a list: the script parser's command
+                self.pos = saved.0;
+                self.parents.truncate(saved.1);
+                self.inputs.truncate(saved.2);
+                self.uses_var = saved.3;
+                Ok(None)
             }
-            _ => Ok(None),
         }
     }
 
@@ -892,19 +861,26 @@ impl Parser<'_> {
     }
 }
 
-/// The list command of a name that [`Parser::list_command`] reads.
-fn list_op(name: &str) -> ListOp {
-    match name {
-        "Length" => ListOp::Length,
-        "Sum" => ListOp::Sum,
-        "Product" => ListOp::Product,
-        "Min" => ListOp::Min,
-        "Max" => ListOp::Max,
-        "Mean" => ListOp::Mean,
-        "Reverse" => ListOp::Reverse,
-        "First" => ListOp::First,
-        "Last" => ListOp::Last,
-        "Sort" => ListOp::Sort,
-        _ => unreachable!("not a list command: {name}"),
+/// The forms of the list command `op` named `text`: the list alone, and
+/// the list and a number when `count` (`Sum(list, n)`); a first argument
+/// that is no list is the script parser's command (see
+/// [`Parser::list_command`]).
+pub(super) fn list_form(
+    text: &str,
+    op: ListOp,
+    count: bool,
+    args: &[u32],
+    lists: &[bool],
+) -> Result<Option<Node>, String> {
+    match (args, lists) {
+        (_, [false, ..]) => Ok(None),
+        (&[l], _) => Ok(Some(Node::ListOp(op, l, NONE))),
+        (&[l, n], _) if count => Ok(Some(Node::ListOp(op, l, n))),
+        _ => Err(list_arity(text, args.len())),
     }
+}
+
+/// The error of a list command with `n` arguments of the wrong kind.
+pub(super) fn list_arity(text: &str, n: usize) -> String {
+    format!("`{text}` of a list does not take {n} arguments")
 }

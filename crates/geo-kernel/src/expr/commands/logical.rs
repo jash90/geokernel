@@ -13,6 +13,17 @@ use crate::expr::eval::{Ctx, Ex, Val};
 use crate::expr::parse::Parser;
 use crate::expr::{children, IfMode, Node, Ty, NONE};
 
+/// The commands of this group (see `commands::is_command`).
+pub(super) const NAMES: &[&str] = &["If"];
+
+/// `If(...)`.
+pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
+    if text != "If" {
+        return Ok(None);
+    }
+    p.if_command().map(Some)
+}
+
 impl Parser<'_> {
     /// `If(c, a)`, `If(c, a, b)` and `If(c1, a1, c2, a2, ..., [else])`
     /// (`CmdIf`). With `x` in a condition it is the operation of a

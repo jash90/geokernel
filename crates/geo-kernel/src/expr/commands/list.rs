@@ -19,13 +19,151 @@
 //! `l(n)`), `Product`, `Reverse`, `First`, `Last`, `Sort`, `Append` and
 //! `Join`.
 
-use crate::expr::eval::{count, work, Ctx, Local, OBJECT_SHIFT};
+use crate::expr::eval::{count, slot_val, work, Ctx, Local, Val, OBJECT_SHIFT};
 use crate::expr::lex::Tok;
 use crate::expr::list::Slot;
 use crate::expr::math;
-use crate::expr::parse::Parser;
-use crate::expr::{ListOp, Node, NONE};
+use crate::expr::parse::{list_arity, list_form, Parser};
+use crate::expr::types::{elem_of, join_elem, of_numbers, ty_of};
+use crate::expr::{Elem, ListOp, Node, Ty, NONE};
 use crate::kernel::Kind;
+
+/// The commands of this group (see `commands::is_command`).
+pub(super) const NAMES: &[&str] = &[
+    "Sequence", "Element", "Product", "Reverse", "First", "Last", "Sort", "Append", "Join",
+];
+
+/// `Sequence` and `Element`, and the other commands of a list (of anything
+/// else they are the commands of the script parser).
+pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
+    let (op, count) = match text {
+        "Sequence" => return p.sequence().map(Some),
+        "Element" => {
+            return match p.arguments()?[..] {
+                [l, n] => Ok(Some(p.push(Node::ListOp(ListOp::Element, l, n)))),
+                _ => Err("`Element` takes a list and one index".into()),
+            }
+        }
+        "Append" => return p.list_command(|_, args, lists| append(text, args, lists)),
+        "Join" => return p.list_command(|p, args, lists| join(p, text, args, lists)),
+        "Product" => (ListOp::Product, true),
+        "First" => (ListOp::First, true),
+        "Last" => (ListOp::Last, true),
+        "Reverse" => (ListOp::Reverse, false),
+        "Sort" => (ListOp::Sort, false),
+        _ => return Ok(None),
+    };
+    p.list_command(|_, args, lists| list_form(text, op, count, args, lists))
+}
+
+/// `Append(list, object)` and `Append(object, list)`.
+fn append(text: &str, args: &[u32], lists: &[bool]) -> Result<Option<Node>, String> {
+    match (args, lists) {
+        (&[l, x], [true, _]) => Ok(Some(Node::ListOp(ListOp::Append, l, x))),
+        (&[x, l], [false, true]) => Ok(Some(Node::ListOp(ListOp::Prepend, l, x))),
+        (_, [false, ..]) => Ok(None),
+        _ => Err(list_arity(text, args.len())),
+    }
+}
+
+/// `Join(list of lists)` and `Join(l1, l2, ...)`.
+fn join(p: &mut Parser, text: &str, args: &[u32], lists: &[bool]) -> Result<Option<Node>, String> {
+    match (args, lists) {
+        (&[l], [true]) => Ok(Some(Node::ListOp(ListOp::Join, l, NONE))),
+        _ if lists.iter().all(|&b| b) => {
+            // `CmdJoin`: the list of the arguments
+            let first = p.nodes.len() as u32;
+            for &a in args {
+                p.push(Node::Item(a));
+            }
+            let list = p.push(Node::List(first, args.len() as u32));
+            Ok(Some(Node::ListOp(ListOp::Join, list, NONE)))
+        }
+        _ => list_form(text, ListOp::Join, false, args, lists),
+    }
+}
+
+/// Whether the result of `op` is a list.
+pub(super) fn makes_list(op: ListOp) -> bool {
+    matches!(
+        op,
+        ListOp::Reverse
+            | ListOp::First
+            | ListOp::Last
+            | ListOp::Sort
+            | ListOp::Append
+            | ListOp::Prepend
+            | ListOp::Join
+    )
+}
+
+/// Whether the second operand of `op` is an object.
+pub(super) fn takes_object(op: ListOp) -> bool {
+    matches!(op, ListOp::Append | ListOp::Prepend)
+}
+
+/// The type of a list command of this group (see `commands::list_type`).
+pub(super) fn list_type(
+    op: ListOp,
+    elem: Elem,
+    numbers: bool,
+    nodes: &[Node],
+    tys: &[Ty],
+    l: u32,
+    n: u32,
+) -> Result<Option<Ty>, String> {
+    Ok(Some(match op {
+        // `AlgoStats1D` reads numbers
+        ListOp::Product => of_numbers(numbers)?,
+        ListOp::Index | ListOp::Element => ty_of(elem)?,
+        ListOp::Reverse | ListOp::First | ListOp::Last | ListOp::Sort => Ty::List(elem),
+        ListOp::Append | ListOp::Prepend => Ty::List(join_elem(elem, elem_of(tys[n as usize]))),
+        ListOp::Join => match nodes[l as usize] {
+            // the list of the arguments: their elements
+            Node::List(first, len) => {
+                let mut joined = Elem::Empty;
+                for item in first..first + len {
+                    match tys[item as usize] {
+                        Ty::List(e) => joined = join_elem(joined, e),
+                        _ => return Err("`Join` needs lists".into()),
+                    }
+                }
+                Ty::List(joined)
+            }
+            _ if matches!(elem, Elem::List | Elem::Empty) => Ty::List(Elem::Any),
+            _ => return Err("`Join` needs a list of lists".into()),
+        },
+        _ => return Ok(None),
+    }))
+}
+
+/// The value of a list command of this group (see `commands::list_value`).
+pub(super) fn list_value<const M: bool>(
+    ctx: &Ctx<'_, M>,
+    i: u32,
+    op: ListOp,
+    l: u32,
+    n: u32,
+) -> Option<Val> {
+    Some(match op {
+        ListOp::Product => Val::N(ctx.stats(op, l, n)),
+        // a list: built by `list`
+        ListOp::Reverse
+        | ListOp::First
+        | ListOp::Last
+        | ListOp::Sort
+        | ListOp::Append
+        | ListOp::Prepend
+        | ListOp::Join => Val::N(f64::NAN),
+        ListOp::Index | ListOp::Element => match (ctx.pick(op, l, n), ctx.e.tys[i as usize]) {
+            (Some(slot), _) => slot_val(slot),
+            (None, Ty::Vec) => Val::V(f64::NAN, f64::NAN),
+            (None, Ty::Bool) => Val::B(false, true),
+            (None, _) => Val::N(f64::NAN),
+        },
+        _ => return None,
+    })
+}
 
 /// `Kernel.MIN_PRECISION`, the slack of the bounds of `Sequence`.
 const MIN_PRECISION: f64 = 1e-5;

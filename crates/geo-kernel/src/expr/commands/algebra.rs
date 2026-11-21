@@ -11,12 +11,93 @@
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
-//! The commands of two numbers that an expression may use: `Mod`, `Div`,
-//! `GCD`, `LCM`, `Max` and `Min` (`AlgoTwoNumFunction`). An undefined
+//! The algebra group of the command matrix: the commands of two numbers
+//! that an expression may use, `Mod`, `Div`, `GCD`, `LCM`, `Max` and `Min`
+//! (`AlgoTwoNumFunction`), and `Min` and `Max` of a list. An undefined
 //! (`NaN`) argument gives an undefined result.
 
-use crate::expr::eval::{number_of, Ctx};
+use crate::expr::eval::{number_of, Ctx, Val};
 use crate::expr::math::{check_integer, is_equal, is_integer, is_zero, java_round};
+use crate::expr::parse::{list_form, Parser};
+use crate::expr::types::of_numbers;
+use crate::expr::{Bin, Elem, ListOp, Node, Ty};
+
+/// The command of two numbers named `name`: a built-in name, like the
+/// functions of two arguments (see `names`).
+pub(super) fn binary_command(name: &str) -> Option<Bin> {
+    Some(match name {
+        "Mod" => Bin::Mod,
+        "Div" => Bin::IntDiv,
+        "GCD" => Bin::Gcd,
+        "LCM" => Bin::Lcm,
+        "Max" => Bin::Max,
+        "Min" => Bin::Min,
+        _ => return None,
+    })
+}
+
+/// Whether this is one of the commands of two numbers.
+pub(super) fn is_binary_command(op: Bin) -> bool {
+    matches!(
+        op,
+        Bin::Mod | Bin::IntDiv | Bin::Gcd | Bin::Lcm | Bin::Max | Bin::Min
+    )
+}
+
+/// The command of two numbers `op` of `a` and `b`.
+pub(super) fn binary(op: Bin, a: f64, b: f64) -> f64 {
+    match op {
+        Bin::Mod => modulo(a, b),
+        Bin::IntDiv => div(a, b),
+        Bin::Gcd => gcd_of(a, b),
+        Bin::Lcm => lcm_of(a, b),
+        Bin::Max => max(a, b),
+        Bin::Min => min(a, b),
+        _ => f64::NAN,
+    }
+}
+
+/// `Min(list)` and `Max(list)`; of anything else they are the commands of
+/// two numbers.
+pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
+    let op = match text {
+        "Min" => ListOp::Min,
+        "Max" => ListOp::Max,
+        _ => return Ok(None),
+    };
+    p.list_command(|_, args, lists| list_form(text, op, false, args, lists))
+}
+
+/// The type of a list command of this group (see `commands::list_type`).
+pub(super) fn list_type(
+    op: ListOp,
+    _elem: Elem,
+    numbers: bool,
+    _nodes: &[Node],
+    _tys: &[Ty],
+    _l: u32,
+    _n: u32,
+) -> Result<Option<Ty>, String> {
+    Ok(Some(match op {
+        // `AlgoListMinMax` reads numbers
+        ListOp::Min | ListOp::Max => of_numbers(numbers)?,
+        _ => return Ok(None),
+    }))
+}
+
+/// The value of a list command of this group (see `commands::list_value`).
+pub(super) fn list_value<const M: bool>(
+    ctx: &Ctx<'_, M>,
+    _i: u32,
+    op: ListOp,
+    l: u32,
+    _n: u32,
+) -> Option<Val> {
+    Some(match op {
+        ListOp::Min | ListOp::Max => Val::N(ctx.min_max(op == ListOp::Min, l)),
+        _ => return None,
+    })
+}
 
 /// `MyDouble.LARGEST_INTEGER`, 2^53.
 const LARGEST_INTEGER: f64 = 9_007_199_254_740_992.0;
