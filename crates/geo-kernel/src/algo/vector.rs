@@ -13,6 +13,8 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdLength.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoVector.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoVectorPoint.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersectLines.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoDimension.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoTranslate.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoTranslateVector.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoJoinPointsRay.java
@@ -36,6 +38,7 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoVector.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoSegment.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/LimitedPath.java
+//   source/shared/common/src/main/java/org/geogebra/common/plugin/Operation.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/Transform.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/TransformTranslate.java
 //   source/shared/common/src/main/java/org/geogebra/common/util/DoubleUtil.java
@@ -58,14 +61,25 @@
 
 use super::lines::LineDef;
 use super::{normalized_coefficients, Group, Parents, POINT};
+use crate::expr::{Element, List};
 use crate::kernel::{Construction, Def, Error, Id, Kind, Value};
 use crate::script::object;
 use crate::tol::STANDARD_PRECISION;
 
+#[path = "vector_matrix.rs"]
+mod matrix;
+
 const VECTOR: &[Kind] = &[Kind::Vector];
-/// Objects with a direction: GeoGebra's `GeoLine` and its subclasses.
-const DIRECTED: &[Kind] = &[Kind::Line, Kind::Segment, Kind::Ray];
-const VECTOR_OR_DIRECTED: &[Kind] = &[Kind::Vector, Kind::Line, Kind::Segment, Kind::Ray];
+const COORDS: &[Kind] = &[Kind::Point, Kind::Vector];
+const DIRECTED: &[Kind] = &[
+    Kind::Point,
+    Kind::Vector,
+    Kind::Line,
+    Kind::Segment,
+    Kind::Ray,
+];
+const MATRIX_TARGET: &[Kind] = &[Kind::Point, Kind::Vector, Kind::Line];
+const LIST: &[Kind] = &[Kind::List];
 /// Kinds of object `Translate` moves here. A circle is translated by
 /// [`crate::algo::general_conic::GeneralConicDef`], which keeps its axes,
 /// and a part of a conic by [`crate::algo::arc::ArcDef`].
@@ -109,6 +123,8 @@ pub enum VectorDef {
     Between(Id, Id),
     /// `Vector(A)`: the position vector of `A`.
     Position(Id),
+    /// `Vector(v)` used inside an expression: carry through the vector.
+    Same(Id),
     /// `Ray(A, B)`: from `A` through `B`.
     RayPoints(Id, Id),
     /// `Ray(A, v)`: from `A` in the direction of the vector `v`.
@@ -129,13 +145,31 @@ pub enum VectorDef {
     Ortho(Id),
     /// `UnitOrthogonalVector(v)` and `UnitPerpendicularVector(v)`.
     UnitOrtho(Id),
-    /// `Length(v)` of a vector.
+    /// `Length(v)` and `Length(A)`.
     Length(Id),
+    /// `Dimension(A)` and `Dimension(v)`.
+    Dimension(Id),
+    /// `ApplyMatrix(matrix, object)` for a 2D point, vector or line.
+    ApplyMatrix { matrix: Id, src: Id, kind: Kind },
+    /// `Determinant(matrix)` of a square matrix.
+    Determinant(Id),
+    /// `MatrixRank(matrix)` of a rectangular matrix.
+    MatrixRank(Id),
+    /// `Dot(list, list)` uses each entry's numeric value.
+    DotLists(Id, Id),
 }
 
 /// `DoubleUtil.isZero`.
 fn is_zero(v: f64) -> bool {
     -STANDARD_PRECISION < v && v < STANDARD_PRECISION
+}
+
+/// `GeoPoint.updateCoords` treats a point as infinite when its scale is
+/// within all three bounds in `DoubleUtil.isEpsilon`.
+fn zero_point_scale(w: f64, x: f64, y: f64) -> bool {
+    w.abs() <= STANDARD_PRECISION
+        && w.abs() <= x.abs() * STANDARD_PRECISION
+        && w.abs() <= y.abs() * STANDARD_PRECISION
 }
 
 /// `MyMath.length(x, y)`: scales by the larger component.
@@ -177,6 +211,47 @@ fn vector(c: &Construction, id: Id) -> Option<(f64, f64)> {
         Value::Vector { x, y } => Some((x, y)),
         _ => None,
     }
+}
+
+fn coords(c: &Construction, id: Id) -> Option<(f64, f64)> {
+    match c.value(id) {
+        Value::Point { x, y } | Value::Vector { x, y } => Some((x, y)),
+        _ => None,
+    }
+}
+
+fn dot_lists(a: List<'_>, b: List<'_>) -> Option<f64> {
+    if a.len() != b.len() {
+        return None;
+    }
+    let number = |element| match element {
+        Element::Value(_, Value::Number(x)) => Some(x),
+        Element::Value(_, Value::Bool(b)) => Some(f64::from(u8::from(b))),
+        _ => None,
+    };
+    a.iter()
+        .zip(b.iter())
+        .try_fold(0.0, |sum, (x, y)| Some(sum + number(x)? * number(y)?))
+}
+
+/// `AlgoUnitVectorVector` and `AlgoOrthoVectorVector` read the raw fields of
+/// a point. A line intersection takes the cross product of its carriers,
+/// and `GeoPoint.updateCoords` makes the homogeneous scale positive for a
+/// finite point. The raw coordinates can survive even at infinity.
+fn point_direction(c: &Construction, id: Id) -> Option<(f64, f64)> {
+    if let Def::IntersectLines(g, h) = c.def(id) {
+        if c.kind(g) != Kind::Line || c.kind(h) != Kind::Line {
+            return point(c, id);
+        }
+        let (a, b, d) = c.raw_carrier(g)?;
+        let (e, f, k) = c.raw_carrier(h)?;
+        let (x, y, z) = (b * k - d * f, d * e - a * k, a * f - b * e);
+        if !zero_point_scale(z, x, y) && z < 0.0 {
+            return Some((-x, -y));
+        }
+        return Some((x, y));
+    }
+    point(c, id)
 }
 
 /// `GeoVec3D.lineThroughPoints` for two finite points: directed from `p` to `q`.
@@ -276,10 +351,15 @@ pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
         VectorDef::Direction(l)
         | VectorDef::Unit(l)
         | VectorDef::Ortho(l)
-        | VectorDef::UnitOrtho(l),
+        | VectorDef::UnitOrtho(l)
+        | VectorDef::Dimension(l),
     ) = *def
     {
-        line_hidden(c, l, &mut ids);
+        if let Def::IntersectLines(g, h) = c.def(l) {
+            ids.extend([g, h]);
+        } else {
+            line_hidden(c, l, &mut ids);
+        }
     }
     ids
 }
@@ -324,11 +404,13 @@ pub(crate) fn line_hidden(c: &Construction, l: Id, ids: &mut Vec<Id>) {
 /// The `(x, y)` of a vector, or the raw direction `(y, -x)` of a line,
 /// segment or ray (`AlgoUnitVectorVector`, `AlgoUnitVectorLine`).
 fn direction_of(c: &Construction, id: Id) -> Option<(f64, f64)> {
-    if c.kind(id) == Kind::Vector {
-        vector(c, id)
-    } else {
-        let (x, y) = normal_of(c, id)?;
-        Some((y, -x))
+    match c.kind(id) {
+        Kind::Point => point_direction(c, id),
+        Kind::Vector => vector(c, id),
+        _ => {
+            let (x, y) = normal_of(c, id)?;
+            Some((y, -x))
+        }
     }
 }
 
@@ -417,7 +499,11 @@ pub fn start(c: &Construction, id: Id) -> Option<(f64, f64)> {
     match c.def(id) {
         Def::Vector(VectorDef::Between(p, _)) => from(p),
         Def::Vector(VectorDef::TranslateTo { start, .. }) => from(start),
-        Def::Vector(VectorDef::Translate { src, .. }) => start(c, src),
+        Def::Vector(
+            VectorDef::Translate { src, .. }
+            | VectorDef::Same(src)
+            | VectorDef::ApplyMatrix { src, .. },
+        ) => start(c, src),
         Def::Vector(
             VectorDef::Direction(l)
             | VectorDef::Unit(l)
@@ -439,6 +525,7 @@ impl Group for VectorDef {
             VectorDef::Free { .. }
             | VectorDef::Between(..)
             | VectorDef::Position(_)
+            | VectorDef::Same(_)
             | VectorDef::TranslateTo { .. }
             | VectorDef::Direction(..)
             | VectorDef::Unit(..)
@@ -446,8 +533,12 @@ impl Group for VectorDef {
             | VectorDef::UnitOrtho(..) => Kind::Vector,
             VectorDef::RayPoints(..) | VectorDef::RayVector(..) => Kind::Ray,
             VectorDef::LineVector(..) | VectorDef::OrthoLineVector(..) => Kind::Line,
-            VectorDef::Translate { kind, .. } => kind,
-            VectorDef::Length(_) => Kind::Number,
+            VectorDef::Translate { kind, .. } | VectorDef::ApplyMatrix { kind, .. } => kind,
+            VectorDef::Length(_)
+            | VectorDef::Dimension(_)
+            | VectorDef::Determinant(_)
+            | VectorDef::MatrixRank(_)
+            | VectorDef::DotLists(..) => Kind::Number,
         }
     }
 
@@ -458,11 +549,17 @@ impl Group for VectorDef {
             | VectorDef::RayPoints(p, q)
             | VectorDef::RayVector(p, q)
             | VectorDef::LineVector(p, q)
-            | VectorDef::OrthoLineVector(p, q) => Parents::of(&[p, q]),
+            | VectorDef::OrthoLineVector(p, q)
+            | VectorDef::DotLists(p, q) => Parents::of(&[p, q]),
             VectorDef::Translate { src, by, .. } => Parents::of(&[src, by]),
             VectorDef::TranslateTo { vector, start } => Parents::of(&[vector, start]),
+            VectorDef::ApplyMatrix { matrix, src, .. } => Parents::of(&[matrix, src]),
             VectorDef::Position(p)
+            | VectorDef::Same(p)
             | VectorDef::Length(p)
+            | VectorDef::Dimension(p)
+            | VectorDef::Determinant(p)
+            | VectorDef::MatrixRank(p)
             | VectorDef::Direction(p)
             | VectorDef::Unit(p)
             | VectorDef::Ortho(p)
@@ -484,6 +581,7 @@ impl Group for VectorDef {
                 c.expect(q, POINT)
             }
             VectorDef::Position(p) => c.expect(p, POINT),
+            VectorDef::Same(v) => c.expect(v, VECTOR),
             VectorDef::RayVector(p, v)
             | VectorDef::LineVector(p, v)
             | VectorDef::OrthoLineVector(p, v) => {
@@ -499,11 +597,21 @@ impl Group for VectorDef {
                 c.expect(vector, VECTOR)?;
                 c.expect(start, POINT)
             }
-            VectorDef::Direction(l) => c.expect(l, DIRECTED),
-            VectorDef::Unit(v) | VectorDef::Ortho(v) | VectorDef::UnitOrtho(v) => {
-                c.expect(v, VECTOR_OR_DIRECTED)
+            VectorDef::Direction(v)
+            | VectorDef::Unit(v)
+            | VectorDef::Ortho(v)
+            | VectorDef::UnitOrtho(v) => c.expect(v, DIRECTED),
+            VectorDef::Length(v) | VectorDef::Dimension(v) => c.expect(v, COORDS),
+            VectorDef::ApplyMatrix { matrix, src, kind } => {
+                c.expect(matrix, LIST)?;
+                c.expect(src, MATRIX_TARGET)?;
+                c.expect(src, only(kind))
             }
-            VectorDef::Length(v) => c.expect(v, VECTOR),
+            VectorDef::Determinant(l) | VectorDef::MatrixRank(l) => c.expect(l, LIST),
+            VectorDef::DotLists(a, b) => {
+                c.expect(a, LIST)?;
+                c.expect(b, LIST)
+            }
         }
     }
 
@@ -518,8 +626,8 @@ impl Group for VectorDef {
                     y: q.1 - p.1,
                 })
             }
-            VectorDef::Position(p) => {
-                let (x, y) = point(c, p)?;
+            VectorDef::Position(p) | VectorDef::Same(p) => {
+                let (x, y) = coords(c, p)?;
                 Some(Value::Vector { x, y })
             }
             VectorDef::RayPoints(p, q) => {
@@ -557,29 +665,34 @@ impl Group for VectorDef {
                 let (x, y) = direction_of(c, v)?;
                 unit(x, y)
             }
-            VectorDef::Ortho(v) => {
-                // `AlgoOrthoVectorVector` turns a vector by +90 degrees;
-                // `AlgoOrthoVectorLine` takes the raw normal of a line.
-                let (x, y) = if c.kind(v) == Kind::Vector {
-                    let (x, y) = vector(c, v)?;
-                    (-y, x)
+            VectorDef::Ortho(v) | VectorDef::UnitOrtho(v) => {
+                let (x, y) = direction_of(c, v)?;
+                if matches!(self, VectorDef::UnitOrtho(_)) {
+                    unit(-y, x)
                 } else {
-                    normal_of(c, v)?
-                };
-                Some(Value::Vector { x, y })
-            }
-            VectorDef::UnitOrtho(v) => {
-                let (x, y) = if c.kind(v) == Kind::Vector {
-                    let (x, y) = vector(c, v)?;
-                    (-y, x)
-                } else {
-                    normal_of(c, v)?
-                };
-                unit(x, y)
+                    Some(Value::Vector { x: -y, y: x })
+                }
             }
             VectorDef::Length(v) => {
-                let (x, y) = vector(c, v)?;
+                let (x, y) = coords(c, v)?;
                 Some(Value::Number(ggb_length(x, y)))
+            }
+            VectorDef::Dimension(v) => {
+                let xy = if c.kind(v) == Kind::Point {
+                    point_direction(c, v)
+                } else {
+                    vector(c, v)
+                };
+                xy.filter(|(x, y)| x.is_finite() && y.is_finite())
+                    .map(|_| Value::Number(2.0))
+            }
+            VectorDef::ApplyMatrix { matrix, src, .. } => {
+                matrix::apply(c.elements(matrix)?, c.value(src))
+            }
+            VectorDef::Determinant(l) => matrix::determinant(c.elements(l)?).map(Value::Number),
+            VectorDef::MatrixRank(l) => matrix::rank(c.elements(l)?).map(Value::Number),
+            VectorDef::DotLists(a, b) => {
+                dot_lists(c.elements(a)?, c.elements(b)?).map(Value::Number)
             }
         }
     }
@@ -605,14 +718,24 @@ impl Group for VectorDef {
                 if args.len() != 1 {
                     return None;
                 }
-                return Some(Ok(VectorDef::Length(vector_arg(args[0])?)));
+                let id = c.id(args[0]).filter(|&id| COORDS.contains(&c.kind(id)))?;
+                return Some(Ok(VectorDef::Length(id)));
+            }
+            "Dot" => {
+                let &[a, b] = args else { return None };
+                let (a, b) = (c.id(a)?, c.id(b)?);
+                return (c.kind(a) == Kind::List && c.kind(b) == Kind::List)
+                    .then_some(Ok(VectorDef::DotLists(a, b)));
             }
             _ => {}
         }
         let arity = match func {
             "Vector" => 1..=2,
-            "Ray" | "Translate" => 2..=2,
+            "Ray" | "Translate" | "ApplyMatrix" => 2..=2,
             "Direction"
+            | "Dimension"
+            | "Determinant"
+            | "MatrixRank"
             | "UnitVector"
             | "OrthogonalVector"
             | "PerpendicularVector"
@@ -632,6 +755,7 @@ impl Group for VectorDef {
             Err(e) => return Some(Err(e)),
         };
         Some(Ok(match (func, ids.as_slice()) {
+            ("Vector", &[p]) if c.kind(p) == Kind::Vector => VectorDef::Same(p),
             ("Vector", &[p]) => VectorDef::Position(p),
             ("Vector", &[p, q]) => VectorDef::Between(p, q),
             ("Ray", &[p, q]) => {
@@ -666,6 +790,14 @@ impl Group for VectorDef {
             ("UnitVector", &[v]) => VectorDef::Unit(v),
             ("OrthogonalVector" | "PerpendicularVector", &[v]) => VectorDef::Ortho(v),
             ("UnitOrthogonalVector" | "UnitPerpendicularVector", &[v]) => VectorDef::UnitOrtho(v),
+            ("Dimension", &[p]) => VectorDef::Dimension(p),
+            ("Determinant", &[l]) => VectorDef::Determinant(l),
+            ("MatrixRank", &[l]) => VectorDef::MatrixRank(l),
+            ("ApplyMatrix", &[matrix, src]) => VectorDef::ApplyMatrix {
+                matrix,
+                src,
+                kind: c.kind(src),
+            },
             _ => unreachable!("argument count checked above"),
         }))
     }
@@ -689,6 +821,31 @@ mod tests {
 
     fn def(c: &Construction, label: &str) -> Def {
         c.def(c.id(label).unwrap())
+    }
+
+    #[test]
+    fn wrapping_a_labelled_vector_reuses_the_object() {
+        let mut c = base();
+        let size = c.len();
+        assert!(exec(&mut c, "copy = Vector(u)").unwrap().is_none());
+        assert_eq!(c.len(), size);
+        assert!(c.id("copy").is_none());
+    }
+
+    #[test]
+    fn rejecting_an_inline_matrix_call_discards_its_operands() {
+        let mut c = base();
+        let at = c.checkpoint();
+        let size = c.len();
+        assert!(exec(&mut c, "v = ApplyMatrix({{1,0},{0,1}}, r)").is_err());
+        assert_eq!(c.len(), size);
+        assert!(c.id("\0operand:v:0").is_none());
+        assert!(exec(&mut c, "v = ApplyMatrix({{r,0},{0,1}}, u)").is_ok());
+        assert_eq!(value(&c, "v"), Value::Vector { x: 6.0, y: -1.0 });
+        c.set_number(c.id("r").unwrap(), 3.0).unwrap();
+        assert_eq!(value(&c, "v"), Value::Vector { x: 9.0, y: -1.0 });
+        c.rollback(at).unwrap();
+        assert_eq!(c.len(), size);
     }
 
     fn vec_of(c: &Construction, label: &str) -> (f64, f64) {
@@ -804,13 +961,12 @@ mod tests {
         assert!(err(&mut c, "a = Direction(l, s)").contains("`Direction` does not take 2"));
         assert!(err(&mut c, "a = UnitVector(Z)").contains("unknown object `Z`"));
         assert!(err(&mut c, "a = Vector(l)").contains("expected a point"));
-        assert!(err(&mut c, "a = Direction(u)").contains("expected a line"));
-        assert!(err(&mut c, "a = UnitVector(A)").contains("expected a vector"));
+        assert!(err(&mut c, "a = Direction(r)").contains("`r` is a number"));
+        assert!(err(&mut c, "a = UnitVector(k)").contains("`k` is a circle"));
         assert!(err(&mut c, "a = Translate(A, B)").contains("expected a vector"));
         assert!(err(&mut c, "a = Translate(r, u)").contains("`r` is a number"));
         assert!(err(&mut c, "a = Ray(A, l)").contains("expected a point"));
-        // `Length` of a point is not handled here and not by any other group.
-        assert!(exec(&mut c, "a = Length(A)").is_err());
+        assert!(err(&mut c, "a = Length(k)").contains("`k` is a circle"));
         // Nothing was added by the failed lines.
         assert_eq!(c.len(), load(BASE).unwrap().len());
     }

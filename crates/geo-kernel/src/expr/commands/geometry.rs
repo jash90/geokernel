@@ -1,32 +1,118 @@
 // Parts of this file are translated from GeoGebra (https://github.com/geogebra/geogebra),
 // commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/MyList.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/ExpressionNodeEvaluator.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdCAStoOperation.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoIdentity.java
+//   source/shared/common/src/main/java/org/geogebra/common/plugin/Operation.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
-//! The geometry group of the command matrix, as far as expressions compute
-//! it: `Length` of a list (of anything else it is the command of the script
-//! parser).
+//! Geometry and vector commands computed inside expressions.
 
 #[path = "../../algo/conic_coefficients.rs"]
 mod conic_coefficients;
 #[path = "../../algo/conic_interval.rs"]
 mod conic_interval;
 
+use crate::algo::intersect::Hint;
+use crate::algo::vector::VectorDef;
 use crate::expr::eval::{Ctx, Env, Val};
 use crate::expr::parse::{list_form, Parser};
-use crate::expr::{self, math, Bin, Elem, ListOp, Node, Ty, Un};
+use crate::expr::{self, math, Bin, Elem, IfMode, ListOp, Node, Ty, Un, NONE};
 use crate::kernel::{Construction, Def, Id, Value};
 
 /// The commands of this group (see `commands::is_command`).
-pub(super) const NAMES: &[&str] = &["Length"];
+pub(super) const NAMES: &[&str] = &["Length", "Cross", "Dot", "Identity"];
 
-/// `Length(list)`.
 pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
-    if text != "Length" {
-        return Ok(None);
+    match text {
+        "Length" => p.list_command(length),
+        "Cross" => p.list_command(cross),
+        "Dot" => p.list_command(dot),
+        "Identity" => {
+            let [n] = p.arguments()?[..] else {
+                return Err("`Identity` takes one number".into());
+            };
+            Ok(Some(identity(p, n)))
+        }
+        _ => Ok(None),
     }
-    p.list_command(|_, args, lists| list_form(text, ListOp::Length, false, args, lists))
+}
+
+fn length(p: &mut Parser, args: &[u32], lists: &[bool]) -> Result<Option<Node>, String> {
+    if let (&[a], [false]) = (args, lists) {
+        if !matches!(p.node(a), Node::Obj(_)) {
+            // The coordinate selectors also require a point or vector.
+            let x = p.push(Node::Un(Un::X, a));
+            let y = p.push(Node::Un(Un::Y, a));
+            let pair = p.push(Node::Tuple(x, y));
+            return Ok(Some(Node::Un(Un::Abs, pair)));
+        }
+    }
+    list_form("Length", ListOp::Length, false, args, lists)
+}
+
+/// `ExpressionNodeEvaluator.vectorProduct` for two 2D inputs.
+fn cross(p: &mut Parser, args: &[u32], lists: &[bool]) -> Result<Option<Node>, String> {
+    let (&[a, b], [false, false]) = (args, lists) else {
+        return Err("`Cross` takes two points or vectors".into());
+    };
+    let ax = p.push(Node::Un(Un::X, a));
+    let ay = p.push(Node::Un(Un::Y, a));
+    let bx = p.push(Node::Un(Un::X, b));
+    let by = p.push(Node::Un(Un::Y, b));
+    let left = p.push(Node::Bin(Bin::Mul, ax, by));
+    let right = p.push(Node::Bin(Bin::Mul, ay, bx));
+    Ok(Some(Node::Bin(Bin::Sub, left, right)))
+}
+
+fn dot(p: &mut Parser, args: &[u32], lists: &[bool]) -> Result<Option<Node>, String> {
+    let &[a, b] = args else {
+        return Err("`Dot` takes two arguments".into());
+    };
+    let product = Node::Bin(Bin::Mul, a, b);
+    if lists != [true, true] {
+        // Vector and scalar multiplication already use `handleMult`.
+        return Ok(Some(product));
+    }
+    if let (Node::Obj(a), Node::Obj(b)) = (p.node(a), p.node(b)) {
+        return Ok(Some(Node::Cmd(
+            Def::Vector(VectorDef::DotLists(a, b)),
+            Hint::None,
+        )));
+    }
+    let left = p.push(Node::ListOp(ListOp::Length, a, NONE));
+    let right = p.push(Node::ListOp(ListOp::Length, b, NONE));
+    let same_length = p.push(Node::Bin(Bin::Equal, left, right));
+    let products = p.push(product);
+    let sum = p.push(Node::ListOp(ListOp::Sum, products, NONE));
+    Ok(Some(Node::If(IfMode::Algo, same_length, sum, NONE)))
+}
+
+/// Generate the diagonal with the existing bounded list builder.
+fn identity(p: &mut Parser, n: u32) -> u32 {
+    let one = p.push(Node::Num(1.0));
+    let zero = p.push(Node::Num(0.0));
+    let n = p.push(Node::Bin(Bin::Add, n, zero));
+    let floor = p.push(Node::Un(Un::Floor, n));
+    // Floor can snap up within the standard precision. Scale the distance
+    // from its result so a representable value just below it still truncates.
+    let delta = p.push(Node::Bin(Bin::Sub, n, floor));
+    let scale = p.push(Node::Num(2.0_f64.powi(32)));
+    let delta = p.push(Node::Bin(Bin::Mul, delta, scale));
+    let rounded_up = p.push(Node::Bin(Bin::Less, delta, zero));
+    let below = p.push(Node::Bin(Bin::Sub, floor, one));
+    let size = p.push(Node::If(IfMode::Algo, rounded_up, below, floor));
+    let nonempty = p.push(Node::Bin(Bin::GreaterEqual, size, one));
+    let depth = p.locals.len() as u32;
+    let i = p.push(Node::Local(depth));
+    let j = p.push(Node::Local(depth + 1));
+    let on_diagonal = p.push(Node::Bin(Bin::Equal, i, j));
+    let entry = p.push(Node::If(IfMode::Algo, on_diagonal, one, zero));
+    let row = p.push(Node::Seq(entry, one, size, NONE, depth + 1));
+    let matrix = p.push(Node::Seq(row, one, size, NONE, depth));
+    p.push(Node::If(IfMode::Algo, nonempty, matrix, NONE))
 }
 
 /// The type of a list command of this group (see `commands::list_type`).

@@ -1,0 +1,293 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "vectorforms-matrixnumbers-001",
+      "group": "vectorforms",
+      "script": [
+        "n = 4",
+        "l = {{1, 2}, {3, n}}",
+        "p = Determinant(l)",
+        "q = MatrixRank(l)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 6.0 },
+        { "action": "set_number", "label": "n", "value": 1.0 },
+        { "action": "set_number", "label": "n", "value": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 4.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 3.0 },
+                  { "type": "number", "defined": true, "value": 4.0 }
+                ]
+              }
+            ]
+          },
+          "p": { "type": "number", "defined": true, "value": -2.0 },
+          "q": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 3.0 },
+                  { "type": "number", "defined": true, "value": 6.0 }
+                ]
+              }
+            ]
+          },
+          "p": { "type": "number", "defined": true, "value": 0.0 },
+          "q": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 3.0 },
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              }
+            ]
+          },
+          "p": { "type": "number", "defined": true, "value": -5.0 },
+          "q": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 3.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              }
+            ]
+          },
+          "p": { "type": "number", "defined": true, "value": -6.0 },
+          "q": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "vectorforms-matrixnumbers-002",
+      "group": "vectorforms",
+      "script": [
+        "p = Determinant({{1, 2}, {3, 4}})",
+        "q = MatrixRank({{1}})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "p": { "type": "number", "defined": true, "value": -2.0 },
+          "q": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "vectorforms-matrixnumbers-003",
+      "group": "vectorforms",
+      "script": [
+        "n = 2",
+        "l = {Sequence(n), {2, 4}}",
+        "p = Determinant(l)",
+        "q = MatrixRank(l)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 1.0 },
+        { "action": "set_number", "label": "n", "value": 3.0 },
+        { "action": "set_number", "label": "n", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 2.0 },
+                  { "type": "number", "defined": true, "value": 4.0 }
+                ]
+              }
+            ]
+          },
+          "p": { "type": "number", "defined": true, "value": 0.0 },
+          "q": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 2.0 },
+                  { "type": "number", "defined": true, "value": 4.0 }
+                ]
+              }
+            ]
+          },
+          "p": { "type": "number", "defined": false },
+          "q": { "type": "number", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 },
+                  { "type": "number", "defined": true, "value": 3.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 2.0 },
+                  { "type": "number", "defined": true, "value": 4.0 }
+                ]
+              }
+            ]
+          },
+          "p": { "type": "number", "defined": false },
+          "q": { "type": "number", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 2.0 },
+                  { "type": "number", "defined": true, "value": 4.0 }
+                ]
+              }
+            ]
+          },
+          "p": { "type": "number", "defined": true, "value": 0.0 },
+          "q": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "vectorforms-matrixnumbers-004",
+      "group": "vectorforms",
+      "script": [
+        "p = Determinant({{1, 2, 3}, {4, 5, 6}})",
+        "q = MatrixRank({{0, 0, 0}, {0, 0, 0}})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "p": { "type": "number", "defined": false },
+          "q": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    }
+  ]
+}

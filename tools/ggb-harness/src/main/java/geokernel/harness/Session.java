@@ -253,6 +253,7 @@ final class Session {
                 ? !readsObjects(definition) && !callsCommand(definition)
                 : (expected.equals("point") || expected.equals("vector"))
                         && POINT.matcher(definition).matches()
+                        || definition.startsWith("Vector($vector(") && geo instanceof GeoVector
                         || expected.equals("number") && (NUMBER.matcher(definition).matches()
                                 || definition.startsWith("Slider("))
                         || expected.equals("angle") && definition.startsWith("Angle(")
@@ -550,6 +551,10 @@ final class Session {
         Matcher m = CALL.matcher(definition);
         while (m.find()) {
             if (objects.containsKey(m.group(1))) {
+                continue;
+            }
+            if (m.group(1).equals("Dot") || m.group(1).equals("Cross")) {
+                // The command processor rewrites these calls to arithmetic operations.
                 continue;
             }
             if (m.group(1).equals("If") && conditionsReadX(definition, m.end())) {
@@ -941,6 +946,10 @@ final class Session {
         String arguments = definition.substring(definition.indexOf('(') + 1, definition.length() - 1);
         GeoElement first = objects.get(arguments.split(",", 2)[0].trim());
         switch (command) {
+            case "ApplyMatrix":
+                List<String> args = arguments(definition);
+                GeoElement target = args.size() == 2 ? objects.get(args.get(1).trim()) : null;
+                return target == null ? null : schemaType(target);
             case "Polar":
                 return first instanceof GeoLine ? "point" : "line";
             case "Center":

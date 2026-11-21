@@ -160,6 +160,9 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
     if let Some(result) = intersect::exec_selected(c, name, rhs) {
         return result;
     }
+    if let Some(result) = define_vector_call(c, name, rhs) {
+        return result;
+    }
     // GeoGebra returns an already labelled angle unchanged.
     if rhs.starts_with("Angle") {
         if let Some(("Angle", args)) = split_call(rhs) {
@@ -170,18 +173,120 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
             }
         }
     }
+    define_expression_or_command(c, name, rhs).map(Some)
+}
+
+fn define_expression_or_command(c: &mut Construction, name: &str, rhs: &str) -> Result<Id, String> {
     match define(c, name, rhs) {
         Ok(id) => {
             if matches!(c.def(id), Def::Number(_)) {
                 // a decimal literal keeps its exact decimal
                 crate::expr::record_literal(c, id, rhs);
             }
-            Ok(Some(id))
+            Ok(id)
         }
         // A call of a command keeps the command's own error.
         Err(e) if is_single_call(c, rhs) => Err(e),
-        Err(_) => crate::expr::define(c, name, rhs, is_vector_label(name)).map(Some),
+        Err(_) => crate::expr::define(c, name, rhs, is_vector_label(name)),
     }
+}
+
+/// Commands whose inline operands need their own kernel definitions. Use
+/// the same internal labels as other construction helpers, and keep the
+/// additions in the transaction of the command that owns them.
+fn define_vector_call(
+    c: &mut Construction,
+    name: &str,
+    rhs: &str,
+) -> Option<Result<Option<Id>, String>> {
+    let (command, args) = rhs.split_once('(')?;
+    let command = command.trim();
+    let arity = match command {
+        "Vector" => 1..=2,
+        "ApplyMatrix" | "Dot" => 2..=2,
+        "Direction"
+        | "UnitVector"
+        | "OrthogonalVector"
+        | "PerpendicularVector"
+        | "UnitOrthogonalVector"
+        | "UnitPerpendicularVector"
+        | "Dimension"
+        | "Determinant"
+        | "MatrixRank" => 1..=1,
+        _ => return None,
+    };
+    if c.id(command).is_some() || !call_closes_at_end(rhs, rhs.find('(')?) {
+        return None;
+    }
+    let args = split_arguments(args.strip_suffix(')')?);
+    if !arity.contains(&args.len()) {
+        return None;
+    }
+    if command == "Dot"
+        && !args
+            .iter()
+            .all(|arg| arg.starts_with('{') || c.id(arg).is_some_and(|id| c.kind(id) == Kind::List))
+    {
+        return None;
+    }
+    if let ("Vector", [arg]) = (command, args.as_slice()) {
+        // CmdVector returns the existing vector, as CmdAngle does for an
+        // already labelled angle. An inline forced vector gets our label.
+        if c.id(arg).is_some_and(|id| c.kind(id) == Kind::Vector) {
+            return Some(Ok(None));
+        }
+        if arg.starts_with("$vector(") {
+            return Some(define_after_label(c, name, arg));
+        }
+    }
+    if args.iter().all(|a| c.id(a).is_some() || is_identifier(a)) {
+        return None;
+    }
+    let at = c.checkpoint();
+    let result = (|| {
+        let mut labels = Vec::with_capacity(args.len());
+        for (i, arg) in args.into_iter().enumerate() {
+            if c.id(arg).is_some() || is_identifier(arg) {
+                labels.push(arg.to_string());
+            } else {
+                let label = format!("\0operand:{name}:{i}");
+                if let Some(def) = parse_forced(arg) {
+                    c.add(&label, def?).map_err(|e| e.to_string())?;
+                } else {
+                    define_expression_or_command(c, &label, arg)?;
+                }
+                labels.push(label);
+            }
+        }
+        let labels: Vec<_> = labels.iter().map(String::as_str).collect();
+        let def = VectorDef::parse(c, command, &labels)
+            .ok_or_else(|| format!("invalid arguments to `{command}`"))??;
+        c.add(name, Def::Vector(def))
+            .map(Some)
+            .map_err(|e| e.to_string())
+    })();
+    if result.is_err() {
+        c.discard_since(at);
+    }
+    Some(result)
+}
+
+fn split_arguments(inner: &str) -> Vec<&str> {
+    let mut args = Vec::new();
+    let (mut depth, mut start) = (0usize, 0);
+    for (i, ch) in inner.char_indices() {
+        match ch {
+            '(' | '{' | '[' => depth += 1,
+            ')' | '}' | ']' => depth = depth.saturating_sub(1),
+            ',' if depth == 0 => {
+                args.push(inner[start..i].trim());
+                start = i + 1;
+            }
+            _ => {}
+        }
+    }
+    args.push(inner[start..].trim());
+    args
 }
 
 /// The forms of the module documentation other than arithmetic.
@@ -237,6 +342,10 @@ fn is_single_call(c: &Construction, rhs: &str) -> bool {
     {
         return false;
     }
+    call_closes_at_end(rhs, open)
+}
+
+fn call_closes_at_end(rhs: &str, open: usize) -> bool {
     let mut depth = 0usize;
     for (i, ch) in rhs.char_indices().skip_while(|&(i, _)| i < open) {
         match ch {

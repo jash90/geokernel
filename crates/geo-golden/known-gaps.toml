@@ -616,3 +616,53 @@ mismatches = ["2:R_{2}", "2:R_{3}", "3:R_{2}", "3:R_{3}", "4:R_{2}", "4:R_{3}"]
 id = "intersectreview-growth-005"
 reason = "The intersection of two polygons gains crossings after a move. The reference adds indexed output labels then. The kernel keeps the first slot created by the command because the workbench journal does not record output births on moves."
 mismatches = ["1:R_{2}", "2:R_{2}", "2:R_{3}", "2:R_{4}", "3:R_{2}", "3:R_{3}", "3:R_{4}", "3:R_{5}", "3:R_{6}", "4:R_{2}", "4:R_{3}", "4:R_{4}", "4:R_{5}", "4:R_{6}", "4:R_{7}", "4:R_{8}"]
+
+[[gap]]
+id = "vectorforms-identity-002"
+reason = "AlgoIdentity marks its list undefined at size zero and never marks it defined again. After the size returns to two, the kernel's list expression recomputes a defined identity matrix."
+mismatches = ["2:m"]
+
+[[gap]]
+id = "vectorforms-matrixlists-001"
+reason = "Transpose of a matrix needs a list-producing expression operation that preserves element kinds and handles changing dimensions."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "vectorforms-matrixlists-002"
+reason = "ReducedRowEchelonForm needs a list-producing expression operation for the result of elimination."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "vectorforms-matrixlists-003"
+reason = "Invert of a matrix needs a list-producing expression operation for the inverse and singular result."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "vectorforms-matrixlists-004"
+reason = "Dimension of a rectangular list returns a two-element list. The implemented Dimension dispatch accepts points and vectors only."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "vectorforms-matrixlists-005"
+reason = "Transpose with separate numbers wraps them in a flat list and yields an undefined list. The variadic list dispatch is absent."
+mismatches = ["0:script line 2"]
+
+[[gap]]
+id = "vectorforms-matrixlists-006"
+reason = "Transpose with separate points wraps them in a flat list and yields an undefined list. The variadic list dispatch is absent."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "vectorforms-matrixlists-007"
+reason = "ReducedRowEchelonForm with separate numbers wraps them in a flat list and yields an undefined list. The variadic list dispatch is absent."
+mismatches = ["0:script line 2"]
+
+[[gap]]
+id = "vectorforms-matrixlists-008"
+reason = "ReducedRowEchelonForm with separate points wraps them in a flat list and yields an undefined list. The variadic list dispatch is absent."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "vectorforms-matrixlists-009"
+reason = "Invert of a function uses symbolic inversion. The kernel stores and evaluates functions but has no symbolic inverse operation."
+mismatches = ["0:script line 2"]
