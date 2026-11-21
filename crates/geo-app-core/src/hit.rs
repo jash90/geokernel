@@ -424,6 +424,29 @@ pub fn pick(
     choice.choose(selected)
 }
 
+/// Every object among those `accept` allows that a press at `(sx, sy)`
+/// hits, in construction order (`EuclidianView.setHits`: the square of the
+/// threshold, then the finger's larger one when it hits nothing). Made for
+/// one press, not for every frame: it allocates.
+pub fn hits(
+    c: &Construction,
+    t: &ViewTransform,
+    (sx, sy): (f64, f64),
+    reach: &Reach,
+    accept: impl Fn(Id) -> bool,
+) -> Vec<Id> {
+    let pass = |threshold: f64| -> Vec<Id> {
+        c.ids()
+            .filter(|&id| accept(id) && hit(c, id, t, (sx, sy), threshold, reach).is_some())
+            .collect()
+    };
+    let found = pass(reach.threshold);
+    match reach.retry {
+        Some(retry) if found.is_empty() => pass(retry),
+        _ => found,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -73,12 +73,12 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         "undo",
         undo,
         Icon::Undo,
-        app.wb.can_undo(),
+        app.can_undo(),
         text::label(Label::Undo),
     )
     .clicked()
     {
-        app.wb.undo();
+        app.undo();
     }
     if flat_button(
         ui,
@@ -90,7 +90,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     )
     .clicked()
     {
-        app.wb.redo();
+        app.redo();
     }
     let menu = flat_button(ui, "menu", menu, Icon::Menu, true, text::label(Label::Menu));
     main_menu(app, &menu);

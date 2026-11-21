@@ -283,7 +283,7 @@ pub fn state(h: &Headless, verbose: bool) -> Json {
         "camera": camera,
         "view": view,
         "undo": {
-            "can_undo": app.wb.can_undo(),
+            "can_undo": app.can_undo(),
             "can_redo": app.wb.can_redo(),
             "undo_depth": undo_depth,
             "redo_depth": redo_depth,
@@ -527,7 +527,7 @@ impl Snapshot {
             selected: label_of(h, app.wb.selected),
             undo: {
                 let (u, r) = app.wb.undo_depth();
-                (app.wb.can_undo(), app.wb.can_redo(), u, r)
+                (app.can_undo(), app.wb.can_redo(), u, r)
             },
             keyboard_open: app.keyboard.open,
             input: app.input.clone(),

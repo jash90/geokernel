@@ -9,8 +9,9 @@
 //! A click on the drawing area is reported as [`ToolState::click`]. The state
 //! remembers the objects picked so far; after the last pick it returns the
 //! script lines to run, exactly as if the user had typed them. A click on
-//! empty space places a free point first, as a change of its own
-//! ([`Outcome::Place`]). Tools that need
+//! empty space places a new point first ([`Outcome::Place`]), which the
+//! window keeps as a pending point of the tool use until the use completes
+//! (one undo step) or is cancelled (the point goes). Tools that need
 //! a number (a radius, an angle, a factor) first return
 //! [`Outcome::AskNumber`]; the answer goes to [`ToolState::finish_number`].
 
@@ -134,7 +135,7 @@ pub enum Pick {
 }
 
 impl Pick {
-    fn kind(&self) -> Kind {
+    pub fn kind(&self) -> Kind {
         let Pick::Object { kind, .. } = self;
         *kind
     }
@@ -164,8 +165,14 @@ pub enum Outcome {
     Pending,
     /// Run these script lines as one change.
     Run(Vec<String>),
-    /// Add this free point as its own change, then go on with `then`.
-    Place { line: String, then: Box<Outcome> },
+    /// Add this new point (a pending point of the tool use), put it at
+    /// `at` when given (a point on a path goes where the pointer was), then
+    /// go on with `then`.
+    Place {
+        line: String,
+        at: Option<(f64, f64)>,
+        then: Box<Outcome>,
+    },
     /// The picks are complete; ask for a number, then call
     /// [`ToolState::finish_number`].
     AskNumber(NumberRequest),
@@ -177,6 +184,58 @@ pub enum Outcome {
     Select(String),
     /// Nothing happened: the click was not something the tool can use.
     Ignored,
+}
+
+/// What a new point made by a click is (`EuclidianController.getNewPoint`,
+/// chosen by the window from what lies under the pointer).
+#[derive(Clone, Debug, PartialEq)]
+pub enum NewPoint {
+    /// A free point at `(x, y)`, already captured to the grid.
+    Free(f64, f64),
+    /// `Point(path)`, put at `(x, y)` (the kernel projects it onto the path).
+    OnPath { path: String, x: f64, y: f64 },
+    /// `Intersect(a, b)`, or `Intersect(a, b, n)` for one of two points.
+    Intersection {
+        a: String,
+        b: String,
+        index: Option<u8>,
+    },
+}
+
+/// Whether a construction tool makes a new point on the objects under the
+/// pointer (on a path, or at the crossing of two) rather than a free one:
+/// the reference's `createNewPointForModePoint` and
+/// `createNewPointForModeOther` allow paths and intersections; the angle and
+/// midpoint tools (`createNewPoint(hits, false, false, ...)`) and the
+/// perpendicular and parallel tools before a line is picked do not.
+pub fn new_points_on_objects(tool: Tool, picks: &[Pick]) -> bool {
+    match tool {
+        Tool::Point
+        | Tool::Line
+        | Tool::Segment
+        | Tool::Ray
+        | Tool::Vector
+        | Tool::Circle
+        | Tool::CircleRadius
+        | Tool::Circle3
+        | Tool::Polygon
+        | Tool::RegularPolygon => true,
+        Tool::Perpendicular | Tool::Parallel => picks
+            .iter()
+            .any(|p| matches!(p.kind(), Kind::Line | Kind::Segment)),
+        _ => false,
+    }
+}
+
+/// Whether the tool makes its object from a press, a drag and a release as
+/// well as from two clicks: the release is the second point
+/// (`EuclidianController.isModeCreatingObjectsByDrag`; the semicircle tool
+/// of that list does not exist here).
+pub fn creates_by_drag(tool: Tool) -> bool {
+    matches!(
+        tool,
+        Tool::Line | Tool::Segment | Tool::Ray | Tool::Vector | Tool::Circle | Tool::RegularPolygon
+    )
 }
 
 #[derive(Clone, Debug)]
@@ -285,6 +344,16 @@ impl ToolState {
         world: (f64, f64),
         is_taken: &dyn Fn(&str) -> bool,
     ) -> Outcome {
+        self.click_with(hit, &NewPoint::Free(world.0, world.1), is_taken)
+    }
+
+    /// [`Self::click`] where a new point is `new_point`.
+    pub fn click_with(
+        &mut self,
+        hit: Option<(&str, Kind)>,
+        new_point: &NewPoint,
+        is_taken: &dyn Fn(&str) -> bool,
+    ) -> Outcome {
         match (self.tool, hit) {
             (Tool::Move | Tool::MoveView | Tool::ZoomIn | Tool::ZoomOut, _) => {
                 return Outcome::Ignored
@@ -297,8 +366,9 @@ impl ToolState {
             _ => {}
         }
         // A point placed on empty space (or on an object the tool cannot
-        // take) is added to the construction at once, as its own step, as in
-        // the reference: cancelling the tool later keeps it.
+        // take) is added to the construction at once, as a pending point of
+        // the tool use (the window runs it so): cancelling the tool takes it
+        // away again.
         let (pick, place) = match hit {
             Some((label, kind)) if self.accepts_object(label, kind) => (
                 Pick::Object {
@@ -309,13 +379,24 @@ impl ToolState {
             ),
             _ if self.accepts_new_point() && !matches!(hit, Some((_, Kind::Point))) => {
                 let label = next_label(Kind::Point, |l| is_taken(l) || self.picked(l));
-                let line = format!("{label} = ({}, {})", exact(world.0), exact(world.1));
+                let (rhs, at) = match new_point {
+                    NewPoint::Free(x, y) => (format!("({}, {})", exact(*x), exact(*y)), None),
+                    NewPoint::OnPath { path, x, y } => (format!("Point({path})"), Some((*x, *y))),
+                    NewPoint::Intersection { a, b, index: None } => {
+                        (format!("Intersect({a}, {b})"), None)
+                    }
+                    NewPoint::Intersection {
+                        a,
+                        b,
+                        index: Some(n),
+                    } => (format!("Intersect({a}, {b}, {n})"), None),
+                };
                 (
                     Pick::Object {
-                        label,
+                        label: label.clone(),
                         kind: Kind::Point,
                     },
-                    Some(line),
+                    Some((format!("{label} = {rhs}"), at)),
                 )
             }
             _ => return Outcome::Ignored,
@@ -335,8 +416,9 @@ impl ToolState {
             }
         };
         match place {
-            Some(line) => Outcome::Place {
+            Some((line, at)) => Outcome::Place {
                 line,
+                at,
                 then: Box::new(then),
             },
             None => then,

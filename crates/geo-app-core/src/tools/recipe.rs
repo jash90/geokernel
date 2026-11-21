@@ -79,18 +79,14 @@ pub(super) fn accepts(tool: Tool, picks: &[Kind], cand: Option<Kind>) -> bool {
                     || (existing_point(cand) && !has(existing_point)))
         }
         Tool::Angle => match first {
-            None => matches!(
-                cand,
-                Some(
-                    Kind::Point
-                        | Kind::Line
-                        | Kind::Segment
-                        | Kind::Ray
-                        | Kind::Vector
-                        | Kind::Polygon
-                )
-            ),
-            Some(Kind::Point) => n < 3 && existing_point(cand),
+            None => {
+                point(cand)
+                    || matches!(
+                        cand,
+                        Some(Kind::Line | Kind::Segment | Kind::Ray | Kind::Vector | Kind::Polygon)
+                    )
+            }
+            Some(Kind::Point) => n < 3 && point(cand),
             Some(Kind::Vector) => n < 2 && cand == Some(Kind::Vector),
             Some(Kind::Line | Kind::Segment | Kind::Ray) => {
                 n < 2 && matches!(cand, Some(Kind::Line | Kind::Segment | Kind::Ray))

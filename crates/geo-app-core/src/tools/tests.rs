@@ -11,6 +11,7 @@ fn obj(label: &str, kind: Kind) -> Option<(&str, Kind)> {
 fn place(line: &str, then: Outcome) -> Outcome {
     Outcome::Place {
         line: line.into(),
+        at: None,
         then: Box::new(then),
     }
 }
@@ -18,7 +19,7 @@ fn place(line: &str, then: Outcome) -> Outcome {
 /// The points an outcome places first, and what comes after them.
 fn unwrap_places(mut outcome: Outcome) -> (Vec<String>, Outcome) {
     let mut placed = Vec::new();
-    while let Outcome::Place { line, then } = outcome {
+    while let Outcome::Place { line, then, .. } = outcome {
         placed.push(line);
         outcome = *then;
     }

@@ -130,18 +130,20 @@ fn scene_labels() -> Vec<String> {
 }
 
 #[test]
-fn cancelling_the_number_dialog_keeps_the_new_point_and_makes_nothing_else() {
-    // Circle with radius on empty space: the centre is made at once.
+fn cancelling_the_number_dialog_takes_the_new_point_away() {
+    // Circle with radius on empty space: the centre is made at once, as a
+    // pending point of the tool use; cancelling the dialog ends the use
+    // unfinished and takes it away (spec E5; what the reference does on a
+    // cancelled dialog is unconfirmed, this follows its Escape rule).
     let mut h = with_clicks(Tool::CircleRadius, &[(0.0, 2.0)]);
     assert!(h.state().tool.asking().is_some());
+    assert!(h.state().wb.construction().id("F").is_some());
     h.key_press(egui::Key::Escape);
     h.run();
-    let mut expected = scene_labels();
-    expected.push("F".into());
-    assert_eq!(labels(&h), expected);
+    assert_eq!(labels(&h), scene_labels());
     let app = h.state();
     assert!(app.tool.asking().is_none() && app.tool.picks().is_empty());
-    assert_eq!(app.wb.definition("F"), Some("(0, 2)"));
+    assert_eq!(app.wb.undo_depth(), (0, 0));
 }
 
 #[test]
@@ -169,29 +171,42 @@ fn undo_and_redo_after_a_regular_polygon_and_a_circle_with_radius() {
 }
 
 #[test]
-fn escape_in_the_middle_of_a_tool_keeps_its_points_and_drops_the_picks() {
+fn escape_in_the_middle_of_a_tool_removes_its_points_and_drops_the_picks() {
+    // Spec E5 (`initNewMode` -> `Kernel.restoreStateForInitNewMode`).
     let mut h = with_clicks(Tool::Circle3, &[(0.0, 2.0), (1.0, 2.0)]);
     assert_eq!(h.state().tool.picks().len(), 2);
     h.key_press(egui::Key::Escape);
     h.run();
-    let mut expected = scene_labels();
-    expected.extend(["F".to_owned(), "I".to_owned()]);
-    assert_eq!(labels(&h), expected);
+    assert_eq!(labels(&h), scene_labels());
     assert!(h.state().tool.picks().is_empty());
+    assert_eq!(
+        h.state().tool.tool(),
+        Tool::Move,
+        "Escape goes to the move tool"
+    );
+    assert_eq!(h.state().wb.undo_depth(), (0, 0));
     // A tool switch does the same.
     let mut h = with_clicks(Tool::Segment, &[(0.0, 2.0)]);
+    assert!(h.state().wb.construction().id("F").is_some());
     h.state_mut().select_tool(Tool::Line);
     h.run();
     assert!(h.state().tool.picks().is_empty());
-    assert!(h.state().wb.construction().id("F").is_some());
+    assert!(h.state().wb.construction().id("F").is_none());
+    assert_eq!(h.state().wb.undo_depth(), (0, 0));
 }
 
 #[test]
-fn undo_in_the_middle_of_a_tool_removes_the_last_point_and_resets_the_picks() {
-    let mut h = with_clicks(Tool::Circle3, &[(0.0, 2.0), (1.0, 2.0)]);
-    undo(&mut h);
+fn undo_in_the_middle_of_a_tool_removes_all_its_points_and_resets_the_picks() {
+    // Spec F4 (`Kernel.undo` -> `restoreStateForModeStarting`): no real
+    // undo, the earlier steps stay.
+    let mut h = with_clicks(Tool::Point, &[(5.0, 5.0)]);
+    h.state_mut().select_tool(Tool::Circle3);
+    for &(x, y) in &[(0.0, 2.0), (1.0, 2.0)] {
+        click(&mut h, world(x, y));
+    }
     let mut expected = scene_labels();
     expected.push("F".into());
+    undo(&mut h);
     assert_eq!(labels(&h), expected);
     assert!(h.state().tool.picks().is_empty());
     assert_eq!(
@@ -199,6 +214,13 @@ fn undo_in_the_middle_of_a_tool_removes_the_last_point_and_resets_the_picks() {
         crate::tools::ToolState::new(Tool::Circle3).hint(),
         "the hint is back at the first pick"
     );
+    assert_eq!(
+        h.state().wb.undo_depth(),
+        (1, 0),
+        "the point tool's step stays"
+    );
+    undo(&mut h);
+    assert_eq!(labels(&h), scene_labels());
 }
 
 #[test]
@@ -221,8 +243,15 @@ fn a_regular_polygon_with_fewer_than_three_vertices_is_undefined() {
     assert_eq!(app.wb.definition("poly1"), Some("Polygon(F, I, a)"));
     let c = app.wb.construction();
     assert!(!c.value(c.id("poly1").unwrap()).is_defined());
+    // The whole use is one step, its two new points included (spec F1).
     undo(&mut h);
-    assert_eq!(labels(&h), points, "one undo takes the polygon back");
+    assert_eq!(
+        labels(&h),
+        scene_labels(),
+        "one undo takes the whole use back"
+    );
+    redo(&mut h);
+    assert_eq!(labels(&h), all);
 }
 
 #[test]
