@@ -17,9 +17,7 @@
 //! reference app's too where a switch of `OwnerRules` gives it), or it is
 //! skipped until a later group, named with its group. A fixture scenario
 //! that is in no list fails the test, and the numbers replayed and skipped
-//! are asserted. `undo_steps_added` is compared wherever our kept rules and
-//! the reference app agree; `UNDO_DIFFERS` names the scenarios where they
-//! do not.
+//! are asserted.
 
 use geo_mcp::protocol::Server;
 use serde_json::{json, Value};
@@ -66,6 +64,22 @@ const LANDED: &[(u8, &[&str])] = &[
             "point_tool_no_per_axis_snap",
             "point_tool_ignores_minor_crossing",
             "drag_free_point_snaps_at_grid_crossing",
+        ],
+    ),
+    (
+        4,
+        &[
+            "wheel_zoom_out_about_pointer",
+            "zoom_in_button_about_canvas_centre",
+            "zoom_to_fit_changes_aspect",
+            "move_view_tool_on_point_pans",
+            "axis_drag_move_tool_pans",
+            "axis_drag_move_view_tool_rescales_x",
+            "axis_drag_left_of_origin_shrinks_x",
+            "zoom_in_tool_click_about_click",
+            "zoom_in_tool_rectangle_fills_canvas",
+            "keyboard_open_keeps_centre",
+            "viewport_resize_keeps_centre",
         ],
     ),
     (
@@ -160,31 +174,21 @@ const OURS: &[(&str, bool)] = &[
     // A press on a polygon's side drags the polygon
     // (`hit::SIDE_TAKES_THE_POLYGON`).
     ("press_on_polygon_edge_does_nothing", true),
-    // A pinch zooms exactly under the fingers, with no 10 px dead band
-    // (group 9 has no switch for it).
-    ("pinch_spread_symmetric", false),
+    // A wheel zoom is an undo step right after the gesture
+    // (`OwnerRules::view_changes_are_steps`); the reference stores the view
+    // only at the next canvas press or when the pointer leaves the canvas,
+    // so the observation (the undo pressed through the button, no canvas
+    // press) counts none (spec F3).
+    ("wheel_zoom_in_about_pointer", true),
+    // A pinch zooms exactly under the fingers, with no dead band
+    // (`OwnerRules::pinch_bands`, none); the
+    // reference's lagging pinch (10 px zoom, 5 px pan) is the same gesture
+    // under the reference rules, so both outcomes are asserted.
+    ("pinch_spread_symmetric", true),
 ];
 
 /// The scenarios skipped until a later group, with the group and why.
 const SKIPPED: &[(u8, &str, &[&str])] = &[
-    (
-        4,
-        "camera with two scales, wheel, buttons, axes, resize",
-        &[
-            "wheel_zoom_in_about_pointer",
-            "wheel_zoom_out_about_pointer",
-            "zoom_in_button_about_canvas_centre",
-            "zoom_to_fit_changes_aspect",
-            "move_view_tool_on_point_pans",
-            "axis_drag_move_tool_pans",
-            "axis_drag_move_view_tool_rescales_x",
-            "axis_drag_left_of_origin_shrinks_x",
-            "zoom_in_tool_click_about_click",
-            "zoom_in_tool_rectangle_fills_canvas",
-            "keyboard_open_keeps_centre",
-            "viewport_resize_keeps_centre",
-        ],
-    ),
     (
         5,
         "the kernel has no lines typed as equations (`f: y=c`); a line with free \
@@ -198,15 +202,6 @@ const SKIPPED: &[(u8, &str, &[&str])] = &[
     ),
     (8, "the input row", &["enter_on_empty_input_row"]),
 ];
-
-/// The scenarios whose `undo_steps_added` differs from ours because of a
-/// rule the owner keeps, and that rule. Every other replayed scenario with
-/// the field must match it.
-const UNDO_DIFFERS: &[(&str, &str)] = &[(
-    "pan_from_empty_space",
-    "a pan is an undo step for the reference and the owner alike (spec F3), but the \
-     camera joins the undo state only with group 4, so nothing is recorded yet",
-)];
 
 /// How a fixture scenario is treated.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -259,6 +254,29 @@ fn num(v: &Value) -> f64 {
 /// (at least 1).
 fn same(a: f64, b: f64) -> bool {
     (a - b).abs() <= 1e-9 * a.abs().max(b.abs()).max(1.0)
+}
+
+/// A number the recorder wrote with finitely many decimals: `got` matches
+/// when it rounds to it, that is when it is within half a unit of the last
+/// recorded decimal (the recorder rounded — a scale of 50/1.1 came back as
+/// `45.454545` — so a 1e-9 comparison of its output can never pass).
+fn same_recorded(got: f64, want: &Value) -> bool {
+    let Some(w) = want.as_f64() else {
+        return false;
+    };
+    if !w.is_finite() || !got.is_finite() {
+        return w == got;
+    }
+    let decimals = want.to_string().split('.').nth(1).map_or(0, |d| d.len());
+    (got - w).abs() <= 0.5 * 10f64.powi(-(decimals as i32)) + 1e-12
+}
+
+/// A length or position in pixels of the view: the reference records whole
+/// pixels of its DOM layout, ours are the `f32` rects of our own chrome,
+/// which sit up to one pixel from its (the keyboard closes to a canvas of
+/// 526 there, 525 here).
+fn same_pixel(got: f64, want: &Value) -> bool {
+    same_recorded(got, want) || want.as_f64().is_some_and(|w| (got - w).abs() <= 1.0)
 }
 
 /// The window of the replay: the top left corner of its graphics view.
@@ -408,6 +426,33 @@ fn frame_events(
         "key" => {
             let key = e["key"].as_str().ok_or("a key event names no key")?;
             vec![json!({"type": "key", "key": key})]
+        }
+        // One wheel notch of the observation: the browser's deltaY (+-100),
+        // at the pointer. The window's wheel zoom is proportional to the
+        // scroll amount (the owner's rule), x1.1 for one notch: the move
+        // first (egui zooms about the pointer), then the scroll. egui's
+        // wheel delta points up when the browser's deltaY goes down.
+        "wheel" => {
+            let at = w.at(&e["pos"], false)?;
+            let dy = -num(&e["deltaY"]);
+            vec![
+                ev("move", at),
+                json!({"type": "wheel", "unit": "point", "dy": dy}),
+            ]
+        }
+        // A button over the drawing, pressed by name.
+        "button" => {
+            let name = e["button"]
+                .as_str()
+                .ok_or("a button event names no button")?;
+            vec![json!({"type": "button", "name": name})]
+        }
+        "focus_input_row" => vec![json!({"type": "focus_input_row"})],
+        "resize_window" => {
+            let v = e["viewport"]
+                .as_array()
+                .ok_or("a resize names no viewport")?;
+            vec![json!({"type": "resize_window", "viewport": v})]
         }
         other => return Err(format!("event `{other}` is not replayed yet")),
     })
@@ -717,27 +762,120 @@ fn compare(expected: &Value, out: &Outcome, undo: bool) -> Vec<String> {
         }
     }
     if let Some(view) = expected.get("view") {
-        // Ours may name a tolerance for a view egui computes in `f32`.
-        let tol = view.get("tolerance").map_or(0.0, num);
-        let same = |a: f64, b: f64| same(a, b) || (a - b).abs() <= tol * b.abs().max(1.0);
         let origin = (num(&st["view"]["origin"][0]), num(&st["view"]["origin"][1]));
         let zero = (
             ZERO.0 + origin.0 - out.origin0.0,
             ZERO.1 + origin.1 - out.origin0.1,
         );
-        if view.get("xZero").is_some()
-            && (!same(zero.0, num(&view["xZero"])) || !same(zero.1, num(&view["yZero"])))
-        {
-            diffs.push(format!(
-                "view origin at {zero:?} instead of ({}, {})",
-                view["xZero"], view["yZero"]
-            ));
+        // The origin's fields are recorded each only where the observation
+        // measured it (an x-axis drag records no `yZero`).
+        if let Some(want) = view.get("xZero") {
+            if !same_pixel(zero.0, want) {
+                diffs.push(format!("view xZero at {} instead of {want}", zero.0));
+            }
         }
-        if !same(num(&st["view"]["scale"]), num(&view["scale"])) {
+        if let Some(want) = view.get("yZero") {
+            if !same_pixel(zero.1, want) {
+                diffs.push(format!("view yZero at {} instead of {want}", zero.1));
+            }
+        }
+        if !same_recorded(num(&st["view"]["scale"]), &view["scale"]) {
             diffs.push(format!(
                 "scale {} instead of {}",
                 st["view"]["scale"], view["scale"]
             ));
+        }
+        if let Some(want) = view.get("yscale") {
+            if !same_recorded(num(&st["view"]["yscale"]), want) {
+                diffs.push(format!("yscale {} instead of {want}", st["view"]["yscale"]));
+            }
+        }
+    }
+    // The view's own measures, from its rectangle and transform: what part
+    // of the plane it shows, its size, and which world point its centre
+    // holds.
+    if expected.get("visible_world").is_some()
+        || expected.get("canvas").is_some()
+        || expected.get("world_at_canvas_centre").is_some()
+    {
+        let r = &st["view"]["rect"];
+        let rect = [num(&r[0]), num(&r[1]), num(&r[2]), num(&r[3])];
+        // The rect is the view's place in the window, then its size; the
+        // transform of the state: origin and scale are the view's own.
+        let (w, h) = (rect[2], rect[3]);
+        let (ox, oy) = (
+            num(&st["view"]["origin"][0]) - rect[0],
+            num(&st["view"]["origin"][1]) - rect[1],
+        );
+        let (sx, sy_) = (num(&st["view"]["scale"]), num(&st["view"]["yscale"]));
+        let world = |px: f64, py: f64| -> (f64, f64) { ((px - ox) / sx, (oy - py) / sy_) };
+        if let Some(vis) = expected.get("visible_world") {
+            let got = (
+                world(0.0, 0.0).0,
+                world(w, 0.0).0,
+                world(0.0, h).1,
+                world(0.0, 0.0).1,
+            );
+            let want = [&vis["xmin"], &vis["xmax"], &vis["ymin"], &vis["ymax"]];
+            if ![got.0, got.1, got.2, got.3]
+                .into_iter()
+                .zip(want)
+                .all(|(g, w)| same_recorded(g, w))
+            {
+                diffs.push(format!(
+                    "visible world (xmin {}, xmax {}, ymin {}, ymax {}) instead of ({}, {}, {}, {})",
+                    got.0, got.1, got.2, got.3,
+                    vis["xmin"], vis["xmax"], vis["ymin"], vis["ymax"],
+                ));
+            }
+        }
+        if let Some(canvas) = expected.get("canvas") {
+            let got = (w, h);
+            let want = (num(&canvas[0]), num(&canvas[1]));
+            if !same_pixel(got.0, &canvas[0]) || !same_pixel(got.1, &canvas[1]) {
+                diffs.push(format!("canvas {got:?} instead of {want:?}"));
+            }
+        }
+        if let Some(centre) = expected.get("world_at_canvas_centre") {
+            let got = world(0.5 * w, 0.5 * h);
+            let want = (num(&centre[0]), num(&centre[1]));
+            if !same(got.0, want.0) || !same(got.1, want.1) {
+                diffs.push(format!("canvas centre at {got:?} instead of {want:?}"));
+            }
+        }
+    }
+    // A world point the scenario says stayed under the pointer: it began at
+    // the standard view's place of it (the window is opened standard) and
+    // must still be there. The `approx` form is the reference's pinch,
+    // which lags behind its fingers — its zoom fires only once the fingers
+    // pass the dead band, so the point wanders a pixel or so, measured in
+    // world units at the end view's scale (0.02 of them, about 1.5 px
+    // there); ours holds the exact check.
+    for (key, world) in [
+        ("fixed_world_point", false),
+        ("fixed_world_point_approx", true),
+    ] {
+        if let Some(p) = expected.get(key) {
+            let before = (
+                out.origin0.0 + num(&p[0]) * SCALE,
+                out.origin0.1 - num(&p[1]) * SCALE,
+            );
+            let origin = (num(&st["view"]["origin"][0]), num(&st["view"]["origin"][1]));
+            let after = (
+                origin.0 + num(&p[0]) * num(&st["view"]["scale"]),
+                origin.1 - num(&p[1]) * num(&st["view"]["yscale"]),
+            );
+            let (dx, dy) = ((before.0 - after.0).abs(), (before.1 - after.1).abs());
+            // The pixel drift of the exact form, the world drift (0.02 of
+            // a unit) of the approx one.
+            let ok = if world {
+                dx / num(&st["view"]["scale"]) <= 0.02 && dy / num(&st["view"]["yscale"]) <= 0.02
+            } else {
+                dx <= 1e-9 && dy <= 1e-9
+            };
+            if !ok {
+                diffs.push(format!("{key} {p:?} moved from {before:?} to {after:?}"));
+            }
         }
     }
     if let Some(created) = expected.get("created") {
@@ -890,15 +1028,26 @@ fn ours_expected(name: &str) -> Value {
             "view": {"xZero": 446, "yZero": 373.5, "scale": 50},
             "undo_steps_added": 1
         }),
+        // The wheel zoom is one undo step the moment the run of wheel
+        // events ends (the owner's rule, `OwnerRules::view_changes_are_steps`);
+        // the view is the observed one — the zoom is about the pointer and
+        // the same in both apps.
+        "wheel_zoom_in_about_pointer" => json!({
+            "view": {"xZero": 459.4, "yZero": 386.15, "scale": 55},
+            "fixed_world_point": [-2.68, 2.53],
+            "undo_steps_added": 1
+        }),
         // The fingers spread from 200 to 300 px about the fixed midpoint
         // (-2.68, 2.53), drawn at (312, 247): the scale goes from 50 to 75
         // and that point stays under the fingers (the reference app lags
         // by its 10 px dead band: 74.25). egui measures the fingers in
-        // `f32`: within 1e-4 (0.05 px at the origin).
+        // `f32`, which stays within the recorded integer's half unit. The
+        // pinch changed the view, so it is one undo step right after the
+        // gesture (the owner's rule, `OwnerRules::view_changes_are_steps`).
         "pinch_spread_symmetric" => json!({
             "objects": {"A": [1, 1.01]},
-            "view": {"xZero": 513, "yZero": 436.75, "scale": 75, "tolerance": 1e-4},
-            "undo_steps_added": 0
+            "view": {"xZero": 513, "yZero": 436.75, "scale": 75},
+            "undo_steps_added": 1
         }),
         other => panic!("no outcome of ours for {other}"),
     }
@@ -911,7 +1060,6 @@ fn the_observed_pointer_scenarios_replay() {
     let mut failed = Vec::new();
     let (mut replayed, mut ours) = (0, 0);
     let mut skipped = std::collections::BTreeMap::<u8, usize>::new();
-    let undo_differs = std::cell::RefCell::new(Vec::new());
     // Both frame pacings; the differences of the second are marked.
     let both = |s: &Value, rules: &str, run: &dyn Fn(&Outcome) -> Vec<String>| {
         let mut diffs = Vec::new();
@@ -950,19 +1098,7 @@ fn the_observed_pointer_scenarios_replay() {
             }
             Some(Part::Landed(g)) => {
                 replayed += 1;
-                let differs = UNDO_DIFFERS.iter().any(|(n, _)| *n == name);
-                let diffs = both(s, "ours", &|out| {
-                    let mut d = compare(expected, out, !differs);
-                    if differs {
-                        let want = expected["undo_steps_added"].as_i64();
-                        if want == Some(out.undo_added) {
-                            d.push("undo steps now agree: drop it from UNDO_DIFFERS".into());
-                        } else {
-                            undo_differs.borrow_mut().push(name.to_owned());
-                        }
-                    }
-                    d
-                });
+                let diffs = both(s, "ours", &|out| compare(expected, out, true));
                 if diffs.is_empty() {
                     format!("pass (group {g})")
                 } else {
@@ -1020,16 +1156,10 @@ fn the_observed_pointer_scenarios_replay() {
         count += 1;
     }
     assert_eq!(count, names.len());
-    assert_eq!((replayed, ours), (82, 2), "scenarios replayed");
+    assert_eq!((replayed, ours), (93, 3), "scenarios replayed");
     assert_eq!(
         skipped.into_iter().collect::<Vec<_>>(),
-        [(4, 12), (5, 1), (6, 1), (8, 1)],
+        [(5, 1), (6, 1), (8, 1)],
         "scenarios skipped, by group"
     );
-    // Each pacing records the difference once.
-    let want: Vec<String> = UNDO_DIFFERS
-        .iter()
-        .flat_map(|(n, _)| [n.to_string(), n.to_string()])
-        .collect();
-    assert_eq!(undo_differs.into_inner(), want, "undo steps that differ");
 }

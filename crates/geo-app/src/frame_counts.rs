@@ -133,18 +133,20 @@ fn frame_counts_are_unchanged() {
     for (name, counts) in &got {
         println!("{name}: {counts:?}");
     }
-    // The algebra list lays out only the rows in its visible part: the
-    // rows below it (61 shapes in this example, 79 with the keyboard open)
-    // are no longer painted and clipped away. Vertices and indices, that
-    // is the picture, are what they were. The conic toolbar group adds
-    // seven shapes, 206 vertices and 879 indices to each scene.
+    // The algebra list lays out only the rows in its visible part; the
+    // conic toolbar group adds seven shapes to each scene. The counts are
+    // the two-scale camera's (spec D1): each axis keeps its own grid and
+    // the circles follow both scales, which tessellates to fewer vertices
+    // per shape than the one-scale grid did, and a resize keeps the
+    // centre of the drawing (D11), so the keyboard's scene, whose window
+    // moves, fits one more grid line than the corner-keeping one did.
     let expected: &[(&str, Counts)] = &[
         (
             "idle",
             Counts {
                 shapes: 524,
-                vertices: 12996,
-                indices: 53646,
+                vertices: 12268,
+                indices: 50370,
                 immediate_repaints: 0,
             },
         ),
@@ -152,8 +154,8 @@ fn frame_counts_are_unchanged() {
             "hover",
             Counts {
                 shapes: 526,
-                vertices: 13136,
-                indices: 54363,
+                vertices: 12408,
+                indices: 51087,
                 immediate_repaints: 1,
             },
         ),
@@ -161,29 +163,29 @@ fn frame_counts_are_unchanged() {
             "drag",
             Counts {
                 shapes: 527,
-                vertices: 13316,
-                indices: 55122,
+                vertices: 12588,
+                indices: 51846,
                 immediate_repaints: 1,
             },
         ),
         (
             // Two more shapes than before the tool hint got its close
-            // button: the two strokes of its cross (16 vertices, 60
-            // indices), whatever the size of the construction.
+            // button: the two strokes of its cross, whatever the size of
+            // the construction.
             "segment preview",
             Counts {
                 shapes: 530,
-                vertices: 13220,
-                indices: 54246,
+                vertices: 12492,
+                indices: 50970,
                 immediate_repaints: 1,
             },
         ),
         (
             "keyboard",
             Counts {
-                shapes: 557,
-                vertices: 15120,
-                indices: 63372,
+                shapes: 558,
+                vertices: 14408,
+                indices: 60120,
                 immediate_repaints: 0,
             },
         ),

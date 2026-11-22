@@ -63,8 +63,9 @@ pub fn check_decimal_fraction(v: f64) -> f64 {
 /// How positions are captured at one zoom level.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Snap {
-    /// The major grid step, or `None` while capturing is off.
-    step: Option<f64>,
+    /// The major grid step of each axis (`axesIntervalX` and -`Y`), or
+    /// `None` while capturing is off.
+    step: Option<(f64, f64)>,
     /// The half-width of the capturing box, as a fraction of the step.
     fraction: f64,
 }
@@ -76,20 +77,25 @@ impl Snap {
         fraction: 0.0,
     };
 
-    /// Capturing at `scale` pixels per unit, on while `grid_or_axes` (the
-    /// grid or the axes are shown).
-    pub fn new(metrics: &Metrics, scale: f64, grid_or_axes: bool) -> Snap {
+    /// Capturing at `xscale` / `yscale` pixels per unit, on while
+    /// `grid_or_axes` (the grid or the axes are shown). Each axis takes
+    /// its own step (`setAxesIntervals` runs per axis), so with the scales
+    /// apart the capturing box is square in pixels, not in world units.
+    pub fn new(metrics: &Metrics, xscale: f64, yscale: f64, grid_or_axes: bool) -> Snap {
         if !grid_or_axes {
             return Snap::OFF;
         }
         Snap {
-            step: Some(ticks::numbering_step(scale, metrics.numbering_px)),
+            step: Some((
+                ticks::numbering_step(xscale, metrics.numbering_px),
+                ticks::numbering_step(yscale, metrics.numbering_px),
+            )),
             fraction: metrics.grid_capture,
         }
     }
 
     /// The grid step positions are captured to, if capturing is on.
-    pub fn step(&self) -> Option<f64> {
+    pub fn step(&self) -> Option<(f64, f64)> {
         self.step
     }
 
@@ -109,10 +115,9 @@ impl Snap {
     /// both branches. No cleaning.
     pub fn capture(&self, (x, y): (f64, f64), offset: (f64, f64)) -> (f64, f64) {
         let (x, y) = (x + offset.0, y + offset.1);
-        if let Some(step) = self.step {
-            let (gx, gy) = (round_to_scale(x, step), round_to_scale(y, step));
-            let box_half = step * self.fraction;
-            if (gx - x).abs() < box_half && (gy - y).abs() < box_half {
+        if let Some((step_x, step_y)) = self.step {
+            let (gx, gy) = (round_to_scale(x, step_x), round_to_scale(y, step_y));
+            if (gx - x).abs() < step_x * self.fraction && (gy - y).abs() < step_y * self.fraction {
                 return (gx - offset.0, gy - offset.1);
             }
         }
@@ -125,7 +130,7 @@ mod tests {
     use super::*;
 
     fn standard() -> Snap {
-        Snap::new(&Metrics::desktop(), 50.0, true)
+        Snap::new(&Metrics::desktop(), 50.0, 50.0, true)
     }
 
     #[test]
@@ -134,7 +139,7 @@ mod tests {
         // (6.25 px): 6 px off is captured, 7 px is not (E1); a diagonal
         // (6, 5.5) px is (the box is a square, E1d).
         let s = standard();
-        assert_eq!(s.step(), Some(1.0));
+        assert_eq!(s.step(), Some((1.0, 1.0)));
         assert_eq!(s.apply((2.12, 3.11)), (2.0, 3.0));
         assert_eq!(s.apply((2.12, 2.89)), (2.0, 3.0));
         assert_eq!(s.apply((2.14, 2.99)), (2.14, 2.99));
@@ -154,15 +159,30 @@ mod tests {
     #[test]
     fn the_box_follows_the_grid_step_of_the_zoom() {
         // 112.5 px per unit: the step is 0.5 and the box 7.03 px (E3).
-        let s = Snap::new(&Metrics::desktop(), 112.5, true);
-        assert_eq!(s.step(), Some(0.5));
+        let s = Snap::new(&Metrics::desktop(), 112.5, 112.5, true);
+        assert_eq!(s.step(), Some((0.5, 0.5)));
         assert_eq!(s.apply((1.56, -0.44)), (1.5, -0.5));
         assert_eq!(s.apply((1.63, -0.5)), (1.63, -0.5));
     }
 
+    /// With the scales apart each axis captures by its own step
+    /// (`setAxesIntervals` per axis, spec D1): the box is square in
+    /// pixels, not in world units.
+    #[test]
+    fn each_axis_takes_its_own_step_when_the_scales_are_apart() {
+        // 100 px per unit on x (step 1) and 400 on y (step 0.2): 0.05 off
+        // on x is inside its 0.125 box, and 0.02 off on y inside the 0.025
+        // box of the 0.2 step, but 0.03 off on y is outside it, where
+        // 0.125 off on x would still be taken.
+        let s = Snap::new(&Metrics::desktop(), 100.0, 400.0, true);
+        assert_eq!(s.step(), Some((1.0, 0.2)));
+        assert_eq!(s.apply((2.05, 1.18)), (2.0, 1.2));
+        assert_eq!(s.apply((2.05, 1.03)), (2.05, 1.03));
+    }
+
     #[test]
     fn capturing_is_off_without_grid_and_axes() {
-        let s = Snap::new(&Metrics::desktop(), 50.0, false);
+        let s = Snap::new(&Metrics::desktop(), 50.0, 50.0, false);
         assert_eq!(s, Snap::OFF);
         assert_eq!(s.apply((2.01, 2.99)), (2.01, 2.99));
     }
