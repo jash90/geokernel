@@ -375,6 +375,37 @@ fn a_guided_root_is_the_only_real_root() {
 }
 
 #[test]
+fn a_certified_root_has_a_sign_change_beyond_rounding() {
+    let rats = |values: &[i128]| -> Vec<Rat> { values.iter().map(|&v| rational(v, 1)).collect() };
+    let mut work = Work::new(&|_| true);
+    // x^2 - 2 changes sign across sqrt(2).
+    assert_eq!(
+        super::certified(&rats(&[-2, 0, 1]), std::f64::consts::SQRT_2, &mut work),
+        Some(true)
+    );
+    // A value off by 10^-3 is no root.
+    assert_eq!(
+        super::certified(&rats(&[-2, 0, 1]), 1.415, &mut work),
+        Some(false)
+    );
+    // The expanded (x - 10^12)^3 + 10^36 - 10^25: rounding hides the sign
+    // near the root.
+    let wide = [
+        rational(-10_000_000_000_000_000_000_000_000, 1),
+        rational(3_000_000_000_000_000_000_000_000, 1),
+        rational(-3_000_000_000_000, 1),
+        Rat::ONE,
+    ];
+    let root = 3.333_333_333_334_444;
+    assert_eq!(super::certified(&wide, root + 1.0, &mut work), Some(false));
+    // Beyond 1000 a guided solve answers nothing.
+    assert_eq!(
+        super::guided_root(&rats(&[-10_000_000_000, 1, 0, 1]), 0.0, &mut work),
+        None
+    );
+}
+
+#[test]
 fn a_guided_root_stops_when_the_budget_is_spent() {
     let coefficients = [rational(2, 1), rational(-2, 1), Rat::ZERO, Rat::ONE];
     let spent = std::cell::Cell::new(0usize);

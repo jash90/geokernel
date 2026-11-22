@@ -423,6 +423,45 @@
           }
         }
       ]
+    },
+    {
+      "id": "cas-coefficient-005",
+      "group": "cas",
+      "script": [
+        "A = (0, 1)",
+        "B = (1, 1+1/10^9)",
+        "g = Line(A, B)",
+        "r1 = Solutions(g, x)",
+        "r2 = Solutions(g, y)",
+        "r3 = Solve(g, x)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.000000001 },
+          "g": { "type": "line", "defined": true, "a": -1.000000082740371E-9, "b": 1.0, "c": -1.0 },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        }
+      ]
     }
   ]
 }

@@ -34,18 +34,23 @@ impl Rat {
         }
     }
 
-    pub(crate) fn from_value(value: f64) -> Option<Self> {
+    /// A double as the reference prints it into a CAS call: the decimal of
+    /// its 15 significant digits (`StringTemplate.prefixedDefaultSF`, a
+    /// scientific format with 15 significant figures). The shortest decimal
+    /// that reads back as the double, or the exact binary fraction, would be
+    /// a different number than the one the CAS receives.
+    pub(crate) fn printed(value: f64) -> Option<Self> {
         if !value.is_finite() {
             return None;
         }
-        let text = format!("{value:e}");
+        if value == 0.0 {
+            return Some(Self::ZERO);
+        }
+        let text = format!("{value:.14e}");
         let (mantissa, exponent) = text.split_once('e')?;
-        let scale = mantissa
-            .split_once('.')
-            .map_or(0, |(_, digits)| digits.len());
         Self::decimal(
             mantissa.replace('.', "").parse().ok()?,
-            exponent.parse::<i64>().ok()? - scale as i64,
+            exponent.parse::<i64>().ok()? - 14,
         )
     }
 

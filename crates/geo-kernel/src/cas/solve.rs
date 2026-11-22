@@ -85,13 +85,46 @@ pub(crate) fn real_roots(coefficients: &[Rat], work: &mut Work<'_>) -> Option<Ro
 /// the reference's numeric backend, which no EUPL source describes
 /// (golden/cas/start.json records starts a step apart that end on
 /// different roots). The answer is therefore given only where it does not
-/// depend on the path: the polynomial has exactly one real root, and that
-/// root is simple, so every successful search ends on it.
+/// depend on the path: the polynomial has exactly one real root, simple, so
+/// every successful search ends on it. The root must lie within
+/// `GUIDED_ROOT_LIMIT` of 0, where the recorded probes show the reference
+/// still answers (golden/cas/magnitude.json), and its value is certified:
+/// the polynomial changes sign, beyond its rounding error, across an
+/// interval far inside the comparison tolerance.
 pub(crate) fn guided_root(coefficients: &[Rat], start: f64, work: &mut Work<'_>) -> Option<f64> {
     if !start.is_finite() {
         return None;
     }
-    unique_real_root(coefficients, work).map(Root::value)
+    let root = unique_real_root(coefficients, work)?.value();
+    (root.abs() <= GUIDED_ROOT_LIMIT && certified(trim(coefficients), root, work)?).then_some(root)
+}
+
+/// The largest root a guided solve answers: the reference answers the
+/// recorded roots up to 1000 (`x^3 - 10^9` from 1) and none of those near
+/// 10^6 (`x^3 - 10^18`).
+const GUIDED_ROOT_LIMIT: f64 = 1e3;
+
+/// Whether `root` is within `1e-10 * max(1, |root|)` of a sign change of the
+/// polynomial, with both signs decided beyond the rounding bound of Horner's
+/// scheme (`2 n u` times the evaluation of the absolute values; Higham,
+/// Accuracy and Stability of Numerical Algorithms, section 5.1).
+pub(crate) fn certified(coefficients: &[Rat], root: f64, work: &mut Work<'_>) -> Option<bool> {
+    work.spend(2 * coefficients.len())?;
+    let values: Vec<f64> = coefficients.iter().map(|c| c.to_f64()).collect();
+    let bound = 2.0 * values.len() as f64 * f64::EPSILON;
+    let sign = |x: f64| {
+        let (value, absolute) = values.iter().rev().fold((0.0_f64, 0.0_f64), |(v, a), &c| {
+            (v * x + c, a * x.abs() + c.abs())
+        });
+        if !value.is_finite() || value.abs() <= bound * absolute * 1.01 {
+            0.0
+        } else {
+            value.signum()
+        }
+    };
+    let delta = 1e-10 * root.abs().max(1.0);
+    let (below, above) = (sign(root - delta), sign(root + delta));
+    Some(below != 0.0 && above != 0.0 && below != above)
 }
 
 /// The only real root of the polynomial, `None` when it has none, several,

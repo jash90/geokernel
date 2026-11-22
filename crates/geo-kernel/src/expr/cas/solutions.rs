@@ -30,10 +30,14 @@ pub(super) fn list<const M: bool>(
     let single = !system && length == 1 && width <= 1;
     let vars = &variables();
     let mut polynomials = Vec::with_capacity(length as usize);
+    let mut constants = f64::INFINITY;
     for item in start..start + length {
         let Node::Item(i) = ctx.node(item) else {
             return None;
         };
+        if single && guess != crate::expr::NONE {
+            constants = typed_constants(ctx, i, work);
+        }
         match ctx.node(i) {
             Node::Obj(id) if ctx.c.kind(id) == Kind::List => {
                 let list = ctx.c.elements(id)?;
@@ -74,6 +78,7 @@ pub(super) fn list<const M: bool>(
         nesting,
         assumed: width == 1 && axes[1] == single::NO_VARIABLE,
         unordered: single && rows,
+        constants,
     };
     if single {
         if rows && approximate {
@@ -95,7 +100,13 @@ pub(super) fn list<const M: bool>(
                 return None;
             }
             let coefficients = dense_at(&equation.numerator, axis);
-            if coefficients.len() != 2 {
+            // The reference answers the recorded `a x - 1` with |a| up to
+            // 10^10 and none with |a| from 10^15 on, while every recorded
+            // constant term is answered (golden/cas/magnitude.json).
+            let [_, slope] = coefficients[..] else {
+                return None;
+            };
+            if slope.to_f64().abs() > 1e10 {
                 return None;
             }
             let root = crate::cas::unique_real_root(&coefficients, work)?;
@@ -253,54 +264,27 @@ pub(super) fn list<const M: bool>(
     }
 }
 
+/// The solutions of a linear system with a one-parameter family of
+/// solutions. A family that comes from factoring a nonlinear equation is
+/// not answered: several families come in an order the CAS chooses, and
+/// even a single one is parametrised by a variable the CAS chooses
+/// (`Solve((x - y)^2 = 0, {x, y})` keeps `x` free, `Solve(x + y = 1,
+/// {x, y})` keeps `y` free).
 fn affine_families(
     equations: &[std::collections::BTreeMap<[u8; 3], Rat>],
     width: usize,
     work: &mut Work<'_>,
 ) -> Option<Vec<Vec<Vec<Rat>>>> {
-    if let Some(family) = affine_system(equations, width, work) {
-        return Some(vec![family]);
-    }
-    // One product equation is the union of the equations of its factors.
-    // Each branch must be representable, since a partial union loses roots.
-    let [equation] = equations else {
-        return None;
-    };
-    let (_, factors) = crate::cas::factor_poly(&Poly(equation.clone()), work)?;
-    let mut families: Vec<_> = factors
-        .into_iter()
-        .map(|(factor, _)| affine_system(&[factor.0], width, work))
-        .collect::<Option<_>>()?;
-    let key = |coordinate: &[Rat]| {
-        let slope = coordinate.get(1).map_or(0.0, |r| r.to_f64());
-        (
-            coordinate.len(),
-            coordinate[0].to_f64() - 8.0 * slope,
-            slope,
-        )
-    };
-    families.sort_by(|a, b| {
-        a.iter()
-            .zip(b)
-            .find_map(|(u, v)| {
-                let (rank_u, value_u, slope_u) = key(u);
-                let (rank_v, value_v, slope_v) = key(v);
-                let cmp = rank_u
-                    .cmp(&rank_v)
-                    .then_with(|| value_u.total_cmp(&value_v))
-                    .then_with(|| slope_u.total_cmp(&slope_v));
-                cmp.is_ne().then_some(cmp)
-            })
-            .unwrap_or(std::cmp::Ordering::Equal)
-    });
-    Some(families)
+    affine_system(equations, width, work).map(|family| vec![family])
 }
 
 /// The equation of a line, a conic or an implicit curve as the reference
 /// sends it to its CAS (`AlgoSolve.printCAS`): the definition as it was
-/// typed where the object has one, otherwise the object's coefficients.
-/// Coefficients are taken exactly, every one of them; one that has no
-/// exact rational form makes the equation unknown.
+/// typed. An object without one is printed from its coefficients
+/// (`GeoLine.toValueString`, `Kernel.buildImplicitEquation`), which drops
+/// coefficients below the kernel's precision and rounds the rest; that
+/// printing is not reproduced here, so such an object gives no equation
+/// (`Line((0, 1), (1, 1 + 10^-9))` prints as `y = 1`).
 fn object_equation(
     c: &crate::Construction,
     id: crate::Id,
@@ -309,52 +293,36 @@ fn object_equation(
     if !c.value(id).is_defined() {
         return None;
     }
-    let side = |left| crate::expr::equation::side_entry(c, id, left);
-    if let (Some(left), Some(right)) = (side(true), side(false)) {
-        let vars = &variables();
-        let lhs = read(c, left, left.root, vars, work)?;
-        let rhs = read(c, right, right.root, vars, work)?;
-        return lhs.sub(rhs, work);
-    }
-    let terms: Vec<([u8; 3], f64)> = match c.kind(id) {
-        Kind::Line => {
-            let Value::Line { a, b, c } = c.value(id) else {
-                return None;
-            };
-            vec![([1, 0, 0], a), ([0, 1, 0], b), ([0, 0, 0], c)]
-        }
-        Kind::Conic | Kind::Circle => {
-            let [xx, yy, c, xy, x, y] = c.conic(id)?.matrix;
-            vec![
-                ([2, 0, 0], xx),
-                ([0, 2, 0], yy),
-                ([0, 0, 0], c),
-                ([1, 1, 0], 2.0 * xy),
-                ([1, 0, 0], 2.0 * x),
-                ([0, 1, 0], 2.0 * y),
-            ]
-        }
-        Kind::ImplicitCurve => {
-            // Rows are the powers of x, columns the powers of y.
-            let matrix = c.implicit_coefficients(id)?;
-            let mut terms = Vec::new();
-            for (i, row) in matrix.iter().enumerate() {
-                work.spend(row.len())?;
-                for (j, &v) in row.iter().enumerate() {
-                    terms.push(([u8::try_from(i).ok()?, u8::try_from(j).ok()?, 0], v));
-                }
+    let left = crate::expr::equation::side_entry(c, id, true)?;
+    let right = crate::expr::equation::side_entry(c, id, false)?;
+    let vars = &variables();
+    let lhs = read(c, left, left.root, vars, work)?;
+    let rhs = read(c, right, right.root, vars, work)?;
+    lhs.sub(rhs, work)
+}
+
+/// The largest magnitude of a constant in what an equation item reads, as
+/// typed: a typed object's sides, or the expression itself. Infinite where
+/// it is not known.
+fn typed_constants<const M: bool>(ctx: &Ctx<'_, M>, i: u32, work: &mut Work<'_>) -> f64 {
+    let largest = match ctx.node(i) {
+        Node::Obj(id)
+            if matches!(
+                ctx.c.kind(id),
+                Kind::Line | Kind::Conic | Kind::Circle | Kind::ImplicitCurve
+            ) =>
+        {
+            let side = |left| crate::expr::equation::side_entry(ctx.c, id, left);
+            match (side(true), side(false)) {
+                (Some(l), Some(r)) => super::input::typed_constants(ctx.c, l, l.root, work)
+                    .zip(super::input::typed_constants(ctx.c, r, r.root, work))
+                    .map(|(a, b)| a.max(b)),
+                _ => None,
             }
-            terms
         }
-        _ => return None,
+        _ => super::input::typed_constants(ctx.c, ctx.e, i, work),
     };
-    work.spend(terms.len())?;
-    let coefficients = terms
-        .into_iter()
-        .filter(|&(_, v)| v != 0.0)
-        .map(|(p, v)| Some((p, Rat::from_value(v)?)))
-        .collect::<Option<_>>()?;
-    Some(crate::cas::Quotient::polynomial(Poly(coefficients)))
+    largest.unwrap_or(f64::INFINITY)
 }
 
 pub(super) fn identity(axis: u8) -> Slot {

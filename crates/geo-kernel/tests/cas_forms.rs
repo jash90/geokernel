@@ -645,3 +645,55 @@ fn extreme_coefficients_end_undefined_or_defined_never_stuck() {
         }
     }
 }
+
+#[test]
+fn the_edges_of_the_supported_domains_are_undefined() {
+    let c = build(&[
+        "f(x) = (x-10^12)^3+(10^36-10^25)",
+        "r1 = NSolutions(f, x=0)",
+        "g(x) = x^3+x-10^10",
+        "r2 = NSolutions(g, x=0)",
+        "h(x) = x^3-10^9",
+        "r3 = NSolutions(h, x=1)",
+        "p(x) = 10^35*x-1",
+        "r4 = NSolutions(p, {x})",
+        "q(x) = 10^5*x-1",
+        "r5 = NSolutions(q, {x})",
+    ]);
+    // Typed constants past 10^10, a root past 1000, a slope past 10^10.
+    for label in ["r1", "r2", "r4"] {
+        assert!(c.elements(id(&c, label)).is_none(), "{label}");
+    }
+    assert_eq!(numbers(&c, "r3").unwrap(), [1000.0]);
+    assert_eq!(numbers(&c, "r5").unwrap(), [1e-5]);
+    // A constructed line is printed by the reference with rounding the
+    // kernel does not reproduce.
+    let c = build(&[
+        "A = (0, 1)",
+        "B = (1, 1+1/10^9)",
+        "g = Line(A, B)",
+        "r = Solutions(g, x)",
+    ]);
+    assert!(c.elements(id(&c, "r")).is_none());
+    // Simplify of a curve whose factored and expanded forms differ.
+    let c = build(&[
+        "k = Curve((t-10^8)^3/(t-10^8), t, t, 10^8-1, 10^8+1)",
+        "s = Simplify(k)",
+        "f = Factor(k)",
+    ]);
+    assert_eq!(curve_point(&c, "s", 1e8 + 1.0), None);
+    assert_eq!(curve_point(&c, "f", 1e8 + 1.0), Some((1.0, 1e8 + 1.0)));
+    // Families from factoring are undefined; a linear family is answered.
+    let c = build(&[
+        "a = -1",
+        "k: (13*x-10*y-10)*(a*x-5*y+2)=0",
+        "r1 = Solutions(k, {x, y})",
+        "j: (x-y)^2=0",
+        "r2 = Solve(j, {x, y})",
+        "g: x+y=1",
+        "r3 = Solve(g, {x, y})",
+    ]);
+    assert!(c.elements(id(&c, "r1")).is_none());
+    assert!(c.elements(id(&c, "r2")).is_none());
+    assert_eq!(c.elements(id(&c, "r3")).unwrap().len(), 1);
+}

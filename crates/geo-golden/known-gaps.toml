@@ -733,9 +733,21 @@ mismatches = ["0:r2"]
 undefined = true
 
 [[gap]]
+id = "cas-coefficient-003"
+reason = "The object has no typed definition, so the reference prints its coefficients into the CAS call (GeoLine.toValueString, Kernel.buildImplicitEquation), dropping coefficients below the printing precision and rounding the rest: Line((0, 1), (1, 1 + 10^-9)) is sent as y = 1. That printing is not reproduced, so the kernel answers an undefined list for a constructed line, conic or implicit curve."
+mismatches = ["0:r1", "0:r2", "0:r3", "1:r1", "1:r2", "1:r3"]
+undefined = true
+
+[[gap]]
 id = "cas-coefficient-004"
 reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
 mismatches = ["0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-coefficient-005"
+reason = "The object has no typed definition, so the reference prints its coefficients into the CAS call (GeoLine.toValueString, Kernel.buildImplicitEquation), dropping coefficients below the printing precision and rounding the rest: Line((0, 1), (1, 1 + 10^-9)) is sent as y = 1. That printing is not reproduced, so the kernel answers an undefined list for a constructed line, conic or implicit curve."
+mismatches = ["0:r1", "0:r2", "0:r3"]
 undefined = true
 
 [[gap]]
@@ -973,9 +985,21 @@ mismatches = ["0:r1", "0:r2", "0:r3"]
 undefined = true
 
 [[gap]]
+id = "cas-curve-015"
+reason = "Simplify of a curve coordinate answers the shorter of the normal form and the factored form (Simplify.1 in Ggb2giac), which evaluate differently far from 0 ((t - 10^8)^3 / (t - 10^8) keeps (t - 10^8)^2 and gives 1 at t = 10^8 + 1, its expansion 0). The kernel answers only a coordinate whose numerator and denominator each have at most one irreducible factor, of multiplicity one, where both forms are the same expression, and an undefined curve otherwise."
+mismatches = ["0:result"]
+undefined = true
+
+[[gap]]
 id = "cas-curve-016"
 reason = "Expand, Factor, IFactor and Simplify of a curve send each coordinate to GeoGebra's CAS, which may rewrite a coordinate that is no rational function into something that evaluates differently: exp(t) exp(-t) becomes 1 where the input overflows at t = 750, (t^65 - 1) / (t - 1) loses its pole, sqrt(t)^2 becomes t. The kernel rewrites rational coordinates only and answers an undefined curve for any other, also where GeoGebra keeps the coordinate as it is."
 mismatches = ["0:r1", "0:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-curve-017"
+reason = "Simplify of a curve coordinate answers the shorter of the normal form and the factored form (Simplify.1 in Ggb2giac), which evaluate differently far from 0 ((t - 10^8)^3 / (t - 10^8) keeps (t - 10^8)^2 and gives 1 at t = 10^8 + 1, its expansion 0). The kernel answers only a coordinate whose numerator and denominator each have at most one irreducible factor, of multiplicity one, where both forms are the same expression, and an undefined curve otherwise."
+mismatches = ["0:result", "1:result", "4:result"]
 undefined = true
 
 [[gap]]
@@ -1015,6 +1039,12 @@ mismatches = ["0:r1"]
 undefined = true
 
 [[gap]]
+id = "cas-curve-024"
+reason = "Simplify of a curve coordinate answers the shorter of the normal form and the factored form (Simplify.1 in Ggb2giac), which evaluate differently far from 0 ((t - 10^8)^3 / (t - 10^8) keeps (t - 10^8)^2 and gives 1 at t = 10^8 + 1, its expansion 0). The kernel answers only a coordinate whose numerator and denominator each have at most one irreducible factor, of multiplicity one, where both forms are the same expression, and an undefined curve otherwise."
+mismatches = ["0:r1"]
+undefined = true
+
+[[gap]]
 id = "cas-degree-001"
 reason = "Solutions(x^3 + y = 0, x) needs a cube root, which GeoGebra's CAS answers as a function; the bounded polynomial CAS has no cube roots and answers an undefined list."
 mismatches = ["0:result"]
@@ -1033,45 +1063,69 @@ mismatches = ["0:result"]
 undefined = true
 
 [[gap]]
+id = "cas-family-001"
+reason = "The solutions form one or more families from factoring a nonlinear equation (or a system with two free variables). GeoGebra lists several families in an order its CAS chooses and parametrises even one family by a variable it chooses (Solve((x - y)^2 = 0, {x, y}) keeps x free, Solve(x + y = 1, {x, y}) keeps y free); the kernel answers only the family of a linear system and an undefined list otherwise."
+mismatches = ["0:r1", "0:r2", "1:r1", "1:r2", "2:r1", "2:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-family-002"
+reason = "The solutions form one or more families from factoring a nonlinear equation (or a system with two free variables). GeoGebra lists several families in an order its CAS chooses and parametrises even one family by a variable it chooses (Solve((x - y)^2 = 0, {x, y}) keeps x free, Solve(x + y = 1, {x, y}) keeps y free); the kernel answers only the family of a linear system and an undefined list otherwise."
+mismatches = ["0:r1", "0:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-family-003"
+reason = "The solutions form one or more families from factoring a nonlinear equation (or a system with two free variables). GeoGebra lists several families in an order its CAS chooses and parametrises even one family by a variable it chooses (Solve((x - y)^2 = 0, {x, y}) keeps x free, Solve(x + y = 1, {x, y}) keeps y free); the kernel answers only the family of a linear system and an undefined list otherwise."
+mismatches = ["0:r3"]
+undefined = true
+
+[[gap]]
 id = "cas-hint-017"
-reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple, certified by a sign change, at most 1000 in size, with typed constants up to 10^10 (golden/cas/magnitude.json), and an undefined list otherwise."
 mismatches = ["0:r2", "0:r3", "0:r4"]
 undefined = true
 
 [[gap]]
 id = "cas-hint-018"
-reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple, certified by a sign change, at most 1000 in size, with typed constants up to 10^10 (golden/cas/magnitude.json), and an undefined list otherwise."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4", "0:r5", "0:r6", "0:r7", "0:r8", "0:r9", "0:r10"]
 undefined = true
 
 [[gap]]
 id = "cas-hint-019"
-reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple, certified by a sign change, at most 1000 in size, with typed constants up to 10^10 (golden/cas/magnitude.json), and an undefined list otherwise."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4", "0:r5", "0:r6", "0:r7"]
 undefined = true
 
 [[gap]]
 id = "cas-hint-020"
-reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple, certified by a sign change, at most 1000 in size, with typed constants up to 10^10 (golden/cas/magnitude.json), and an undefined list otherwise."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4", "0:r5"]
 undefined = true
 
 [[gap]]
 id = "cas-hint-022"
-reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple, certified by a sign change, at most 1000 in size, with typed constants up to 10^10 (golden/cas/magnitude.json), and an undefined list otherwise."
 mismatches = ["0:r1"]
 undefined = true
 
 [[gap]]
 id = "cas-hint-023"
-reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple, certified by a sign change, at most 1000 in size, with typed constants up to 10^10 (golden/cas/magnitude.json), and an undefined list otherwise."
 mismatches = ["0:r1", "1:r1", "3:r1", "4:r1"]
 undefined = true
 
 [[gap]]
 id = "cas-hint-024"
-reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple, certified by a sign change, at most 1000 in size, with typed constants up to 10^10 (golden/cas/magnitude.json), and an undefined list otherwise."
 mismatches = ["0:result", "1:result", "2:result"]
+undefined = true
+
+[[gap]]
+id = "cas-hint-027"
+reason = "The object has no typed definition, so the reference prints its coefficients into the CAS call (GeoLine.toValueString, Kernel.buildImplicitEquation), dropping coefficients below the printing precision and rounding the rest: Line((0, 1), (1, 1 + 10^-9)) is sent as y = 1. That printing is not reproduced, so the kernel answers an undefined list for a constructed line, conic or implicit curve."
+mismatches = ["0:r1", "0:r2", "0:r3", "1:r1", "1:r2", "1:r3", "2:r1", "2:r2", "2:r3", "2:r4", "4:r1", "4:r2", "4:r3"]
 undefined = true
 
 [[gap]]
@@ -1112,7 +1166,7 @@ undefined = true
 
 [[gap]]
 id = "cas-implicit-003"
-reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple, certified by a sign change, at most 1000 in size, with typed constants up to 10^10 (golden/cas/magnitude.json), and an undefined list otherwise."
 mismatches = ["0:r11", "0:r14", "0:r17"]
 undefined = true
 
@@ -1160,7 +1214,7 @@ undefined = true
 
 [[gap]]
 id = "cas-implicit-011"
-reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple, certified by a sign change, at most 1000 in size, with typed constants up to 10^10 (golden/cas/magnitude.json), and an undefined list otherwise."
 mismatches = ["0:r6", "1:r6", "2:r6", "4:r6"]
 undefined = true
 
@@ -1247,6 +1301,72 @@ id = "cas-implicitrewrite-012"
 reason = "Expand, Factor, IFactor and Simplify of an implicit curve answer an implicit curve in GeoGebra, with an equation text the CAS writes (Factor prints the raw factored form, IFactor of an irreducible polynomial is undefined). The kernel does not compute implicit curves from these commands and refuses them; the implicit forms of the four commands stay open."
 mismatches = ["0:script line 2"]
 failure = "invalid arguments to `Simplify`"
+
+[[gap]]
+id = "cas-magnitude-010"
+reason = "Outside the recorded magnitude range: the kernel answers a start value only for typed constants up to 10^10 and a root of at most 1000, a linear equation with a list of variables only for a slope up to 10^10, and exact coefficients only within 128-bit fractions (10^40 does not fit). The reference answers this probe; golden/cas/magnitude.json records where it stops answering (x^3 - 10^18, (x - 10^4)^3 + (10^12 - 10), 10^15 x - 1)."
+mismatches = ["0:r1"]
+undefined = true
+
+[[gap]]
+id = "cas-magnitude-015"
+reason = "Outside the recorded magnitude range: the kernel answers a start value only for typed constants up to 10^10 and a root of at most 1000, a linear equation with a list of variables only for a slope up to 10^10, and exact coefficients only within 128-bit fractions (10^40 does not fit). The reference answers this probe; golden/cas/magnitude.json records where it stops answering (x^3 - 10^18, (x - 10^4)^3 + (10^12 - 10), 10^15 x - 1)."
+mismatches = ["0:r1"]
+undefined = true
+
+[[gap]]
+id = "cas-magnitude-016"
+reason = "Outside the recorded magnitude range: the kernel answers a start value only for typed constants up to 10^10 and a root of at most 1000, a linear equation with a list of variables only for a slope up to 10^10, and exact coefficients only within 128-bit fractions (10^40 does not fit). The reference answers this probe; golden/cas/magnitude.json records where it stops answering (x^3 - 10^18, (x - 10^4)^3 + (10^12 - 10), 10^15 x - 1)."
+mismatches = ["0:r1"]
+undefined = true
+
+[[gap]]
+id = "cas-magnitude-017"
+reason = "Outside the recorded magnitude range: the kernel answers a start value only for typed constants up to 10^10 and a root of at most 1000, a linear equation with a list of variables only for a slope up to 10^10, and exact coefficients only within 128-bit fractions (10^40 does not fit). The reference answers this probe; golden/cas/magnitude.json records where it stops answering (x^3 - 10^18, (x - 10^4)^3 + (10^12 - 10), 10^15 x - 1)."
+mismatches = ["0:r1"]
+undefined = true
+
+[[gap]]
+id = "cas-magnitude-021"
+reason = "Outside the recorded magnitude range: the kernel answers a start value only for typed constants up to 10^10 and a root of at most 1000, a linear equation with a list of variables only for a slope up to 10^10, and exact coefficients only within 128-bit fractions (10^40 does not fit). The reference answers this probe; golden/cas/magnitude.json records where it stops answering (x^3 - 10^18, (x - 10^4)^3 + (10^12 - 10), 10^15 x - 1)."
+mismatches = ["0:r1"]
+undefined = true
+
+[[gap]]
+id = "cas-magnitude-030"
+reason = "Outside the recorded magnitude range: the kernel answers a start value only for typed constants up to 10^10 and a root of at most 1000, a linear equation with a list of variables only for a slope up to 10^10, and exact coefficients only within 128-bit fractions (10^40 does not fit). The reference answers this probe; golden/cas/magnitude.json records where it stops answering (x^3 - 10^18, (x - 10^4)^3 + (10^12 - 10), 10^15 x - 1)."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-magnitude-031"
+reason = "Outside the recorded magnitude range: the kernel answers a start value only for typed constants up to 10^10 and a root of at most 1000, a linear equation with a list of variables only for a slope up to 10^10, and exact coefficients only within 128-bit fractions (10^40 does not fit). The reference answers this probe; golden/cas/magnitude.json records where it stops answering (x^3 - 10^18, (x - 10^4)^3 + (10^12 - 10), 10^15 x - 1)."
+mismatches = ["0:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-magnitude-032"
+reason = "Outside the recorded magnitude range: the kernel answers a start value only for typed constants up to 10^10 and a root of at most 1000, a linear equation with a list of variables only for a slope up to 10^10, and exact coefficients only within 128-bit fractions (10^40 does not fit). The reference answers this probe; golden/cas/magnitude.json records where it stops answering (x^3 - 10^18, (x - 10^4)^3 + (10^12 - 10), 10^15 x - 1)."
+mismatches = ["0:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-magnitude-033"
+reason = "Outside the recorded magnitude range: the kernel answers a start value only for typed constants up to 10^10 and a root of at most 1000, a linear equation with a list of variables only for a slope up to 10^10, and exact coefficients only within 128-bit fractions (10^40 does not fit). The reference answers this probe; golden/cas/magnitude.json records where it stops answering (x^3 - 10^18, (x - 10^4)^3 + (10^12 - 10), 10^15 x - 1)."
+mismatches = ["0:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-magnitude-034"
+reason = "Outside the recorded magnitude range: the kernel answers a start value only for typed constants up to 10^10 and a root of at most 1000, a linear equation with a list of variables only for a slope up to 10^10, and exact coefficients only within 128-bit fractions (10^40 does not fit). The reference answers this probe; golden/cas/magnitude.json records where it stops answering (x^3 - 10^18, (x - 10^4)^3 + (10^12 - 10), 10^15 x - 1)."
+mismatches = ["0:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-magnitude-043"
+reason = "Outside the recorded magnitude range: the kernel answers a start value only for typed constants up to 10^10 and a root of at most 1000, a linear equation with a list of variables only for a slope up to 10^10, and exact coefficients only within 128-bit fractions (10^40 does not fit). The reference answers this probe; golden/cas/magnitude.json records where it stops answering (x^3 - 10^18, (x - 10^4)^3 + (10^12 - 10), 10^15 x - 1)."
+mismatches = ["0:r2"]
+undefined = true
 
 [[gap]]
 id = "cas-name-003"
@@ -1849,6 +1969,12 @@ mismatches = ["0:r1", "0:r2", "2:r1", "2:r2"]
 undefined = true
 
 [[gap]]
+id = "cas-plot-008"
+reason = "The object has no typed definition, so the reference prints its coefficients into the CAS call (GeoLine.toValueString, Kernel.buildImplicitEquation), dropping coefficients below the printing precision and rounding the rest: Line((0, 1), (1, 1 + 10^-9)) is sent as y = 1. That printing is not reproduced, so the kernel answers an undefined list for a constructed line, conic or implicit curve."
+mismatches = ["0:result", "1:result", "2:result", "4:result"]
+undefined = true
+
+[[gap]]
 id = "cas-plot-014"
 reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
 mismatches = ["0:result"]
@@ -1951,86 +2077,92 @@ mismatches = ["0:r1", "0:r2"]
 undefined = true
 
 [[gap]]
+id = "cas-solve-046"
+reason = "The solutions form one or more families from factoring a nonlinear equation (or a system with two free variables). GeoGebra lists several families in an order its CAS chooses and parametrises even one family by a variable it chooses (Solve((x - y)^2 = 0, {x, y}) keeps x free, Solve(x + y = 1, {x, y}) keeps y free); the kernel answers only the family of a linear system and an undefined list otherwise."
+mismatches = ["0:result"]
+undefined = true
+
+[[gap]]
 id = "cas-start-001"
-reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple, certified by a sign change, at most 1000 in size, with typed constants up to 10^10 (golden/cas/magnitude.json), and an undefined list otherwise."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4", "0:r5"]
 undefined = true
 
 [[gap]]
 id = "cas-start-003"
-reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple, certified by a sign change, at most 1000 in size, with typed constants up to 10^10 (golden/cas/magnitude.json), and an undefined list otherwise."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4", "0:r5"]
 undefined = true
 
 [[gap]]
 id = "cas-start-004"
-reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple, certified by a sign change, at most 1000 in size, with typed constants up to 10^10 (golden/cas/magnitude.json), and an undefined list otherwise."
 mismatches = ["0:r1", "0:r2", "0:r3"]
 undefined = true
 
 [[gap]]
 id = "cas-start-005"
-reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple, certified by a sign change, at most 1000 in size, with typed constants up to 10^10 (golden/cas/magnitude.json), and an undefined list otherwise."
 mismatches = ["0:r1", "0:r2", "0:r4"]
 undefined = true
 
 [[gap]]
 id = "cas-start-006"
-reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple, certified by a sign change, at most 1000 in size, with typed constants up to 10^10 (golden/cas/magnitude.json), and an undefined list otherwise."
 mismatches = ["0:result", "1:result", "2:result", "4:result"]
 undefined = true
 
 [[gap]]
 id = "cas-start-007"
-reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple, certified by a sign change, at most 1000 in size, with typed constants up to 10^10 (golden/cas/magnitude.json), and an undefined list otherwise."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4", "0:r5"]
 undefined = true
 
 [[gap]]
 id = "cas-start-008"
-reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple, certified by a sign change, at most 1000 in size, with typed constants up to 10^10 (golden/cas/magnitude.json), and an undefined list otherwise."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4", "0:r5", "0:r6"]
 undefined = true
 
 [[gap]]
 id = "cas-start-012"
-reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple, certified by a sign change, at most 1000 in size, with typed constants up to 10^10 (golden/cas/magnitude.json), and an undefined list otherwise."
 mismatches = ["0:r1", "0:r2", "0:r3"]
 undefined = true
 
 [[gap]]
 id = "cas-start-013"
-reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple, certified by a sign change, at most 1000 in size, with typed constants up to 10^10 (golden/cas/magnitude.json), and an undefined list otherwise."
 mismatches = ["0:r1"]
 undefined = true
 
 [[gap]]
 id = "cas-start-014"
-reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple, certified by a sign change, at most 1000 in size, with typed constants up to 10^10 (golden/cas/magnitude.json), and an undefined list otherwise."
 mismatches = ["0:r1"]
 undefined = true
 
 [[gap]]
 id = "cas-start-015"
-reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple, certified by a sign change, at most 1000 in size, with typed constants up to 10^10 (golden/cas/magnitude.json), and an undefined list otherwise."
 mismatches = ["0:r1"]
 undefined = true
 
 [[gap]]
 id = "cas-start-016"
-reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple, certified by a sign change, at most 1000 in size, with typed constants up to 10^10 (golden/cas/magnitude.json), and an undefined list otherwise."
 mismatches = ["0:r1"]
 undefined = true
 
 [[gap]]
 id = "cas-start-017"
-reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple, certified by a sign change, at most 1000 in size, with typed constants up to 10^10 (golden/cas/magnitude.json), and an undefined list otherwise."
 mismatches = ["0:r1"]
 undefined = true
 
 [[gap]]
 id = "cas-start-018"
-reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple, certified by a sign change, at most 1000 in size, with typed constants up to 10^10 (golden/cas/magnitude.json), and an undefined list otherwise."
 mismatches = ["0:r1"]
 undefined = true
 
@@ -2042,19 +2174,19 @@ undefined = true
 
 [[gap]]
 id = "cas-start-020"
-reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple, certified by a sign change, at most 1000 in size, with typed constants up to 10^10 (golden/cas/magnitude.json), and an undefined list otherwise."
 mismatches = ["0:r1"]
 undefined = true
 
 [[gap]]
 id = "cas-start-021"
-reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple, certified by a sign change, at most 1000 in size, with typed constants up to 10^10 (golden/cas/magnitude.json), and an undefined list otherwise."
 mismatches = ["0:r1"]
 undefined = true
 
 [[gap]]
 id = "cas-start-022"
-reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple, certified by a sign change, at most 1000 in size, with typed constants up to 10^10 (golden/cas/magnitude.json), and an undefined list otherwise."
 mismatches = ["0:r1", "0:r2"]
 undefined = true
 

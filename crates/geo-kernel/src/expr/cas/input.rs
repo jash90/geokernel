@@ -28,7 +28,7 @@ fn object(c: &Construction, id: Id) -> Option<Rat> {
             return from_decimal(d);
         }
     }
-    Rat::from_value(value)
+    Rat::printed(value)
 }
 
 fn cached_function(e: &Entry) -> Option<&Quotient> {
@@ -90,7 +90,7 @@ fn read_at(
                     from_decimal(d)?
                 }
                 Some(_) => return None,
-                None => Rat::from_value(value)?,
+                None => Rat::printed(value)?,
             };
             Some(number(rational))
         }
@@ -141,7 +141,7 @@ fn read_at(
             let coefficients = e
                 .polynomial()?
                 .iter()
-                .map(|&v| Rat::from_value(v))
+                .map(|&v| Rat::printed(v))
                 .collect::<Option<Vec<_>>>()?;
             substitute(
                 &Quotient::polynomial(Poly::dense(&coefficients)),
@@ -273,4 +273,78 @@ fn expanded_terms(
         seen |= term;
     }
     Some(true)
+}
+
+/// The largest magnitude of a constant in the expression as typed, where
+/// constant subexpressions count by their folded value (`10^12 - 10` is
+/// about `10^12`): the size of the numbers the reference's numeric solver
+/// evaluates. `None` for a node this walk does not know.
+pub(super) fn typed_constants(
+    c: &Construction,
+    e: &Entry,
+    i: u32,
+    work: &mut Work<'_>,
+) -> Option<f64> {
+    constants_at(c, e, i, work, 0).map(|(_, largest)| largest)
+}
+
+/// The value of the node where it is constant, and the largest constant
+/// magnitude below it.
+fn constants_at(
+    c: &Construction,
+    e: &Entry,
+    i: u32,
+    work: &mut Work<'_>,
+    depth: u8,
+) -> Option<(Option<f64>, f64)> {
+    if depth > 128 {
+        return None;
+    }
+    work.spend(1)?;
+    let body = |id: Id, work: &mut Work<'_>| {
+        let Def::Expr(def) = c.def(id) else {
+            return None;
+        };
+        let input = entry(c, def);
+        constants_at(c, input, input.root, work, depth + 1)
+    };
+    Some(match e.nodes[i as usize] {
+        Node::Num(v) => (Some(v), v.abs()),
+        Node::MinusOne => (Some(-1.0), 1.0),
+        Node::Var | Node::VarY | Node::CasVariable(_) | Node::Local(..) => (None, 0.0),
+        Node::Obj(id) => match c.value(id) {
+            Value::Number(v) => (Some(v), v.abs()),
+            _ => return None,
+        },
+        Node::SystemFunction(_, root) => constants_at(c, e, root, work, depth + 1)?,
+        Node::FunctionObject(id) => (None, body(id, work)?.1),
+        Node::Apply(id, arg) => {
+            let (_, inner) = constants_at(c, e, arg, work, depth + 1)?;
+            (None, inner.max(body(id, work)?.1))
+        }
+        Node::Apply2(id, a, b) => {
+            let (_, first) = constants_at(c, e, a, work, depth + 1)?;
+            let (_, second) = constants_at(c, e, b, work, depth + 1)?;
+            (None, first.max(second).max(body(id, work)?.1))
+        }
+        Node::Bin(op @ (Bin::Add | Bin::Sub | Bin::Mul | Bin::Div | Bin::Pow), a, b) => {
+            let (va, ma) = constants_at(c, e, a, work, depth + 1)?;
+            let (vb, mb) = constants_at(c, e, b, work, depth + 1)?;
+            let largest = ma.max(mb);
+            match (va, vb) {
+                (Some(x), Some(y)) => {
+                    let v = match op {
+                        Bin::Add => x + y,
+                        Bin::Sub => x - y,
+                        Bin::Mul => x * y,
+                        Bin::Div => x / y,
+                        _ => x.powf(y),
+                    };
+                    (Some(v), largest.max(v.abs()))
+                }
+                _ => (None, largest),
+            }
+        }
+        _ => return None,
+    })
 }

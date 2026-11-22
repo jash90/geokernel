@@ -174,11 +174,34 @@ pub(in crate::expr) fn evaluate<const M: bool>(
         };
         transform(op, source, other, work)
     })();
+    // `Simplify.1` answers the shorter of the normal form and the factored
+    // form (`Ggb2giac`), which evaluate differently far from 0 (`(t - 10^8)^2`
+    // against its expansion). A curve coordinate is answered only where both
+    // forms are the same expression: numerator and denominator are each a
+    // number times one irreducible factor at most, of multiplicity one.
+    let exact = match exact {
+        Some(f) if op == Op::Simplify && ctx.e.curve_parameter.is_some() => {
+            single_factors(&f.expanded, work)?.then_some(f)
+        }
+        other => other,
+    };
     // A curve coordinate that is no rational function is beyond this
     // kernel: `AlgoCasBaseSingleArgument.applyCasCommand` sends it to the
     // CAS, which may rewrite it into something that evaluates differently
     // (`exp(t) exp(-t)` becomes 1), so the coordinate is undefined.
     exact.map(FunctionResult::Exact)
+}
+
+/// Whether the numerator and the denominator each have at most one
+/// irreducible factor, of multiplicity one.
+fn single_factors(q: &Quotient, work: &mut Work<'_>) -> Option<bool> {
+    for p in [&q.numerator, &q.denominator] {
+        let (_, factors) = product(p, work)?;
+        if factors.len() > 1 || factors.iter().any(|(_, m)| *m > 1) {
+            return Some(false);
+        }
+    }
+    Some(true)
 }
 
 pub(super) fn transform(

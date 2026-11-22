@@ -55,7 +55,17 @@ pub(super) struct Mode {
     /// which follows no rule (golden/cas/shape.json), so only an answer
     /// with at most one solution is given.
     pub(super) unordered: bool,
+    /// The largest magnitude of a constant in the equation as typed (see
+    /// `typed_constants`), which bounds where a start value is answered.
+    pub(super) constants: f64,
 }
+
+/// The largest typed constant with which a start value is answered: the
+/// reference answers the recorded equations with constants up to 10^10
+/// (`x^3 + x - 10^10`, `10^10 (x^3 + x + 1)`) and none of those with
+/// constants from 10^12 on (`(x - 10^4)^3 + (10^12 - 10)`, `x^3 - 10^18`)
+/// (golden/cas/magnitude.json).
+const GUIDED_CONSTANT_LIMIT: f64 = 1e10;
 
 /// The second argument of a solve names something that is no variable of
 /// an equation: an existing number (`AlgoSolve.printHint` prints its
@@ -159,6 +169,9 @@ pub(super) fn univariate<const M: bool>(
     }
     if let Some(start) = guided {
         // `fsolve(equation, variable = start)` answers one root.
+        if mode.constants.is_nan() || mode.constants > GUIDED_CONSTANT_LIMIT {
+            return None;
+        }
         let root = Root::Numeric(guided_root(&coefficients, start, work)?);
         let slot = solution(root, mode.assignments, true, coordinate);
         return emit(ctx, vec![slot], mode);

@@ -778,6 +778,36 @@ curve_case(["k = Curve(exp(t)*exp(-t), t, t, 700, 800)", "r1 = Simplify(k)"])
 
 # Solve of a cubic variable itself.
 c.case("degree", ["result = Solve(x^3+y=0, x)"], [])
+# Magnitude ladders for the numeric solver from a start value, on
+# equations with exactly one real root, which is simple.
+for k in [-12, -9, -6, -3, 0, 3, 6, 9, 12]:
+    c.case("magnitude", [f"f(x) = x^3-10^({3 * k})", "r1 = NSolutions(f, x=1)", "r2 = NSolutions(f, x=0)"], [])
+for k in [-40, -30, -20, -10, 10, 20, 30, 40]:
+    c.case("magnitude", [f"f(x) = 10^({k})*(x^3+x+1)", "r1 = NSolutions(f, x=0)"], [])
+for k in [-30, -20, -10, 10, 20, 30, 40]:
+    c.case("magnitude", [f"f(x) = x^3+x-10^({k})", "r1 = NSolutions(f, x=0)"], [])
+for m in [2, 4, 6, 8, 12]:
+    c.case("magnitude", [f"f(x) = (x-10^{m})^3+(10^{3 * m}-10^({3 * m - 11}))", "r1 = NSolutions(f, x=0)"], [])
+# The same ladders for one linear equation with a list of variables.
+for k in [-40, -35, -30, -20, -15, -10, -5, 5, 10, 15, 20, 30, 35, 40]:
+    c.case("magnitude", [f"f(x) = 10^({k})*x-1", f"g(x) = x-10^({k})", "r1 = NSolutions(f, {x})",
+                         "r2 = NSolutions(g, {x})", "r3 = NSolve(f, {x})"], [])
+
+# A constructed line with a coefficient below the printing precision.
+c.case("coefficient", ["A = (0, 1)", "B = (1, 1+1/10^9)", "g = Line(A, B)", "r1 = Solutions(g, x)",
+                       "r2 = Solutions(g, y)", "r3 = Solve(g, x)"], [])
+
+# Simplify of a rational curve: the reference picks the shorter of the
+# normal form and the factored form.
+curve_case(["k = Curve((t-10^8)^3/(t-10^8), t, t, 10^8-1, 10^8+1)", "r1 = Simplify(k)", "r2 = Expand(k)",
+            "r3 = Factor(k)"])
+
+# Families of solutions on the system path.
+c.case("family", ["a = -1", "k: (13*x-10*y-10)*(a*x-5*y+2)=0", "r1 = Solutions(k, {x, y})",
+                  "r2 = Solve(k, {x, y})"], [setn("a", 0), setn("a", 3)])
+c.case("family", ["k: (x-y)^2=0", "r1 = Solve(k, {x, y})", "r2 = Solutions(k, {x, y})"], [])
+c.case("family", ["g: x+y=1", "k: x-2y=3", "r1 = Solve(g, {x, y})", "r2 = Solutions(k, {x, y})",
+                  "r3 = Solve({x+y+z=1}, {x, y, z})"], [])
 c.write()
 
 # Expand, Factor, IFactor and Simplify of an implicit curve answer an
