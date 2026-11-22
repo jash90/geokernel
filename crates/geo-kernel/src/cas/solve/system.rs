@@ -22,6 +22,70 @@ pub(crate) enum SystemRoots {
     Finite(Vec<Vec<Root>>),
 }
 
+/// Parameterize an affine family with exactly one free variable. The
+/// coordinate functions are returned in ascending coefficient order.
+pub(crate) fn affine_system(
+    equations: &[Equation],
+    width: usize,
+    work: &mut Work<'_>,
+) -> Option<Vec<Vec<Rat>>> {
+    if !(1..=3).contains(&width) || equations.len() > MAX_EQUATIONS {
+        return None;
+    }
+    for equation in equations {
+        work.spend(equation.len())?;
+        if equation
+            .keys()
+            .any(|power| degree(power) > 1 || power[width..].iter().any(|&exponent| exponent != 0))
+        {
+            return None;
+        }
+    }
+    let basis = basis(equations, work)?;
+    if basis.len() + 1 != width {
+        return None;
+    }
+    let mut coordinates = [[Rat::ZERO; 2]; 3];
+    let mut free = 0;
+    for variable in (0..width).rev() {
+        work.spend(basis.len())?;
+        let mut axis = [0; 3];
+        axis[variable] = 1;
+        let pivot = basis
+            .iter()
+            .find(|p| p.last_key_value().is_some_and(|(power, _)| *power == axis));
+        if let Some(pivot) = pivot {
+            work.spend(pivot.len())?;
+            coordinates[variable][0] = pivot.get(&[0; 3]).copied().unwrap_or(Rat::ZERO).neg()?;
+            for i in variable + 1..width {
+                let mut axis = [0; 3];
+                axis[i] = 1;
+                if let Some(&coefficient) = pivot.get(&axis) {
+                    let source = coordinates[i];
+                    for (target, value) in coordinates[variable].iter_mut().zip(source) {
+                        *target = target.sub(value.mul(coefficient)?)?;
+                    }
+                }
+            }
+        } else {
+            coordinates[variable][1] = Rat::ONE;
+            free += 1;
+        }
+    }
+    if free != 1 {
+        return None;
+    }
+    Some(
+        coordinates[..width]
+            .iter()
+            .map(|coefficients| {
+                let length = if coefficients[1] == Rat::ZERO { 1 } else { 2 };
+                coefficients[..length].to_vec()
+            })
+            .collect(),
+    )
+}
+
 pub(crate) fn systems(
     equations: &[Equation],
     width: usize,

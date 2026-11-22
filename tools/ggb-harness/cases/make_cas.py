@@ -847,6 +847,14 @@ c.case("edge", ["A = (0, 0)", "B = (1, 1)", "g = Line(A, B)", "h: x=2", "r1 = NS
                 "r2 = Solutions({g, h})", "r3 = Solve(g, y)", "r4 = Solutions(g, x)"], [mv("B", 2, 3), mv("B", 1, 1)])
 c.case("edge", ["r1 = Solve(x^4=16, {x})", "r2 = Solve(x^2=4, {x})", "r3 = Solve(x^3-x=0, {x})"], [])
 curve_case(["k = Curve(t^2-10^8*t-99999999, t, t, 10^8, 10^8+2)", "r1 = Simplify(k)", "r2 = Expand(k)"])
+# Seventh round: the reproducers of the verification review.
+curve_case(["k = Curve(t^5-100020001*t^3+1, t, t, 10000, 10002)", "r1 = Expand(k)", "r2 = Simplify(k)"])
+c.case("edge", ["a = 1.000030517578125", "b = 1.000091552734375", "f = Simplify(x+10^8*(a+b-2.0001220703125))",
+                "r = f(0)"], [])
+c.case("edge", ["r1 = NSolutions(0.1000000001*x-0.1*x-0.0000001, x=0)"], [])
+c.case("edge", ["g: x=2", "r1 = NSolutions(g, {y})"], [])
+c.case("edge", ["f(x) = x+1", "g(x) = x-f(1)", "r1 = NSolutions(g, {x})"], [])
+c.case("edge", ["A = (0, 0)", "g = Line(A, (1, 1.5))", "h: x=2", "r1 = NSolutions({g, h})"], [])
 c.write()
 
 # Expand, Factor, IFactor and Simplify of an implicit curve answer an

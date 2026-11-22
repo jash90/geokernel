@@ -20,10 +20,17 @@ pub(super) fn list<const M: bool>(
         system,
         rows,
         points,
+        ..
     } = op
     else {
         return None;
     };
+    if let super::Op::Solve { legacy: true, .. } = op {
+        // Main's answer stands wherever main gives one.
+        if let Some(answer) = super::legacy::list(ctx, equations, op, work) {
+            return Some(answer);
+        }
+    }
     let Node::List(start, length) = ctx.node(equations) else {
         return None;
     };

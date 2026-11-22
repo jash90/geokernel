@@ -65,6 +65,23 @@ impl Rat {
         Self::decimal(sign * kept, exponent)
     }
 
+    /// The shortest decimal that reads back as the double, as main reads
+    /// object values into the CAS.
+    pub(crate) fn from_value(value: f64) -> Option<Self> {
+        if !value.is_finite() {
+            return None;
+        }
+        let text = format!("{value:e}");
+        let (mantissa, exponent) = text.split_once('e')?;
+        let scale = mantissa
+            .split_once('.')
+            .map_or(0, |(_, digits)| digits.len());
+        Self::decimal(
+            mantissa.replace('.', "").parse().ok()?,
+            exponent.parse::<i64>().ok()? - scale as i64,
+        )
+    }
+
     pub(crate) fn neg(self) -> Option<Self> {
         Self::new(self.num.checked_neg()?, self.den)
     }

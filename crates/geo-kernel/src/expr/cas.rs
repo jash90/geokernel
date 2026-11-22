@@ -2,6 +2,7 @@
 
 mod functional;
 mod input;
+mod legacy;
 mod objects;
 mod single;
 mod solutions;
@@ -67,6 +68,8 @@ pub(crate) enum Op {
         rows: bool,
         /// `PlotSolve`: the solutions as points on the x-axis.
         points: bool,
+        /// Main parses the input: main's solving path answers first.
+        legacy: bool,
     },
 }
 
@@ -96,6 +99,7 @@ impl Op {
                 system: false,
                 rows: false,
                 points: false,
+                legacy: false,
             },
             _ => return None,
         })

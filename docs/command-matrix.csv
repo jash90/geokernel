@@ -523,8 +523,8 @@ GroebnerDegRevLex,,cas,,out_of_scope,,,
 GroebnerLexDeg,,cas,,out_of_scope,,,
 NIntegral,,function,P2,done,6,6,
 NInvert,,function,P2,done,1,1,
-NSolve,,algebra,P2,partial,10,5,Bounded real polynomial equations and systems with an optional variable or start value. The implicit-curve forms need an implicit curve object.
-NSolutions,,algebra,P2,partial,10,5,Bounded real polynomial equations and systems with an optional variable or start value. The implicit-curve forms need an implicit curve object.
+NSolve,,algebra,P2,partial,10,4,Bounded real polynomial equations and systems with an optional variable or start value. The implicit-curve forms need an implicit curve object.
+NSolutions,,algebra,P2,partial,10,4,Bounded real polynomial equations and systems with an optional variable or start value. The implicit-curve forms need an implicit curve object.
 Numeric,,cas,,out_of_scope,,,
 Evaluate,,english,,out_of_scope,,,
 MixedNumber,,cas,,out_of_scope,,,

@@ -12,7 +12,8 @@ enum Form {
     Expanded,
     /// The expanded form evaluated as the reference evaluates its printed
     /// expression: term by term from the highest power, each term the
-    /// coefficient times the power, summed left to right (the printed
+    /// coefficient times the power (`Math.pow` in `MyDouble.pow`, here
+    /// `f64::powf`), summed left to right (the printed
     /// `t^2 - 100000000t - 99999999` at `t = 10^8 + 1` is 1, Horner's scheme
     /// gives 2).
     Printed,
@@ -51,7 +52,7 @@ impl Function {
                     let mut terms: Vec<_> = p.0.iter().collect();
                     terms.sort_by(|u, v| v.0.cmp(u.0));
                     terms.iter().fold(0.0, |acc, (power, c)| {
-                        acc + c.to_f64() * x.powi(i32::from(power[0])) * y.powi(i32::from(power[1]))
+                        acc + c.to_f64() * x.powf(f64::from(power[0])) * y.powf(f64::from(power[1]))
                     })
                 };
                 sum(&self.expanded.numerator) / sum(&self.expanded.denominator)

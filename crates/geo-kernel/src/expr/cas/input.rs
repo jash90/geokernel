@@ -1,6 +1,6 @@
 use super::{Poly, Quotient, Rat, Work};
 use crate::cas::factor;
-use crate::expr::{entry, Bin, Entry, Node, StoredExtra};
+use crate::expr::{entry, free_decimal, Bin, Entry, Node, StoredExtra};
 use crate::{Construction, Def, Id, Value};
 
 pub(super) fn variables() -> [Quotient; 3] {
@@ -16,14 +16,19 @@ pub(super) fn number(value: Rat) -> Quotient {
     Quotient::polynomial(Poly::constant(value))
 }
 
-/// A number object as the reference prints it into a CAS call: the decimal
-/// of its 15 significant digits (`Rat::printed`), whatever decimal it was
-/// typed or stored with.
 fn object(c: &Construction, id: Id) -> Option<Rat> {
     let Value::Number(value) = c.value(id) else {
         return None;
     };
-    Rat::printed(value)
+    if let Some(decimal) = free_decimal(c, id) {
+        return from_decimal(decimal);
+    }
+    if let Def::Expr(def) = c.def(id) {
+        if let StoredExtra::Decimal(d) = &entry(c, def).extra {
+            return from_decimal(d);
+        }
+    }
+    Rat::from_value(value)
 }
 
 fn cached_function(e: &Entry) -> Option<&Quotient> {
@@ -80,13 +85,12 @@ fn read_at(
 
     match e.nodes[i as usize] {
         Node::Num(value) => {
-            // A typed literal keeps its decimal digits.
             let rational = match e.lits[i as usize].decimal() {
                 Some(d) if value != std::f64::consts::PI && value != std::f64::consts::E => {
                     from_decimal(d)?
                 }
                 Some(_) => return None,
-                None => Rat::printed(value)?,
+                None => Rat::from_value(value)?,
             };
             Some(number(rational))
         }
@@ -137,7 +141,7 @@ fn read_at(
             let coefficients = e
                 .polynomial()?
                 .iter()
-                .map(|&v| Rat::printed(v))
+                .map(|&v| Rat::from_value(v))
                 .collect::<Option<Vec<_>>>()?;
             substitute(
                 &Quotient::polynomial(Poly::dense(&coefficients)),
@@ -382,6 +386,10 @@ fn bound_at(
     };
     let constant = |v: f64| Rat::printed(v).map(|r| vec![r.to_f64().abs()]);
     let result = match e.nodes[i as usize] {
+        // A non-integer literal is evaluated in doubles by the reference's
+        // numeric solver, whose rounding (`0.1000000001 x - 0.1 x`) the
+        // kernel does not model.
+        Node::Num(v) if v.fract() != 0.0 => return None,
         Node::Num(v) => constant(v)?,
         Node::MinusOne => vec![1.0],
         Node::Var | Node::VarY | Node::CasVariable(_) | Node::Local(..) => variable.to_vec(),

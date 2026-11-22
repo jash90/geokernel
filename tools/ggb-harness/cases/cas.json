@@ -632,6 +632,12 @@
     {"id": "cas-edge-010", "group": "cas", "script": ["r = NSolutions(x-1, {x})", "e = Element(r, 1)", "s = NSolutions(y-1, {y})", "t = NSolve(y-1, {y})"], "steps": [{"action": "initial"}]},
     {"id": "cas-edge-011", "group": "cas", "script": ["A = (0, 0)", "B = (1, 1)", "g = Line(A, B)", "h: x=2", "r1 = NSolutions({g, h})", "r2 = Solutions({g, h})", "r3 = Solve(g, y)", "r4 = Solutions(g, x)"], "steps": [{"action": "initial"}, {"action": "move", "label": "B", "x": 2.0, "y": 3.0}, {"action": "move", "label": "B", "x": 1.0, "y": 1.0}]},
     {"id": "cas-edge-012", "group": "cas", "script": ["r1 = Solve(x^4=16, {x})", "r2 = Solve(x^2=4, {x})", "r3 = Solve(x^3-x=0, {x})"], "steps": [{"action": "initial"}]},
-    {"id": "cas-curve-026", "group": "cas", "script": ["k = Curve(t^2-10^8*t-99999999, t, t, 10^8, 10^8+2)", "r1 = Simplify(k)", "r2 = Expand(k)"], "steps": [{"action": "initial"}], "sample_curves": true}
+    {"id": "cas-curve-026", "group": "cas", "script": ["k = Curve(t^2-10^8*t-99999999, t, t, 10^8, 10^8+2)", "r1 = Simplify(k)", "r2 = Expand(k)"], "steps": [{"action": "initial"}], "sample_curves": true},
+    {"id": "cas-curve-027", "group": "cas", "script": ["k = Curve(t^5-100020001*t^3+1, t, t, 10000, 10002)", "r1 = Expand(k)", "r2 = Simplify(k)"], "steps": [{"action": "initial"}], "sample_curves": true},
+    {"id": "cas-edge-013", "group": "cas", "script": ["a = 1.000030517578125", "b = 1.000091552734375", "f = Simplify(x+10^8*(a+b-2.0001220703125))", "r = f(0)"], "steps": [{"action": "initial"}]},
+    {"id": "cas-edge-014", "group": "cas", "script": ["r1 = NSolutions(0.1000000001*x-0.1*x-0.0000001, x=0)"], "steps": [{"action": "initial"}]},
+    {"id": "cas-edge-015", "group": "cas", "script": ["g: x=2", "r1 = NSolutions(g, {y})"], "steps": [{"action": "initial"}]},
+    {"id": "cas-edge-016", "group": "cas", "script": ["f(x) = x+1", "g(x) = x-f(1)", "r1 = NSolutions(g, {x})"], "steps": [{"action": "initial"}]},
+    {"id": "cas-edge-017", "group": "cas", "script": ["A = (0, 0)", "g = Line(A, (1, 1.5))", "h: x=2", "r1 = NSolutions({g, h})"], "steps": [{"action": "initial"}]}
   ]
 }

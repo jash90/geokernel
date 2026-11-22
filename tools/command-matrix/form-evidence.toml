@@ -3414,16 +3414,6 @@ cases = ["georestsmall-surdpoint-001", "georestsmall-surdpoint-002"]
 
 [[form]]
 command = "NSolve"
-form = "conic"
-cases = ["cas-conic-003"]
-
-[[form]]
-command = "NSolutions"
-form = "conic"
-cases = ["cas-conic-004"]
-
-[[form]]
-command = "NSolve"
 form = "implicit"
 cases = ["cas-implicit-002"]
 

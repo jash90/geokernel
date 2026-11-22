@@ -79,8 +79,49 @@ impl Parser<'_> {
     fn parse_solve(&mut self, name: &str) -> Result<u32, String> {
         let points = name == "PlotSolve";
         let commas = self.argument_commas();
-        let hint = match commas[..] {
-            [] => Hint {
+        // What main parses keeps main's reading of the solving variables, so
+        // that main's answers stay; the readings of `solution_hint` are for
+        // the forms main refused (a start value, `PlotSolve`, an equation
+        // main could not read with its variables).
+        let legacy = match commas[..] {
+            _ if points => None,
+            [] => Some((vec!["x".into(), "y".into(), "z".into()], 0, [0, 1, 2])),
+            [comma] => self.solution_variables(comma + 1).ok(),
+            _ => None,
+        };
+        let Some(legacy) = legacy else {
+            return self.parse_solve_as(name, &commas, None);
+        };
+        let saved = self.saved();
+        let state = (self.uses_y, self.cas_variables.clone(), self.split_names);
+        match self.parse_solve_as(name, &commas, Some(legacy)) {
+            Ok(node) => Ok(node),
+            Err(error) if commas.is_empty() => Err(error),
+            Err(error) => {
+                self.reset(saved);
+                (self.uses_y, self.cas_variables, self.split_names) = state;
+                self.parse_solve_as(name, &commas, None).map_err(|_| error)
+            }
+        }
+    }
+
+    fn parse_solve_as(
+        &mut self,
+        name: &str,
+        commas: &[usize],
+        legacy: Option<(Vec<String>, u8, [u8; 3])>,
+    ) -> Result<u32, String> {
+        let points = name == "PlotSolve";
+        let is_legacy = legacy.is_some();
+        let hint = match (legacy, commas) {
+            (Some((names, width, axes)), _) => Hint {
+                names,
+                width,
+                axes,
+                list: false,
+                guess: false,
+            },
+            (None, []) => Hint {
                 names: vec!["x".into(), "y".into(), "z".into()],
                 width: 0,
                 axes: [0, 1, 2],
@@ -88,7 +129,7 @@ impl Parser<'_> {
                 guess: false,
             },
             // `CmdSolve.process`: the plotted solve takes one argument.
-            [comma] if !points => self.solution_hint(comma + 1, name)?,
+            (None, [comma]) if !points => self.solution_hint(*comma + 1, name)?,
             _ => return Err(format!("invalid arguments to `{name}`")),
         };
         let (outer_x, outer_y) = (self.uses_var, self.uses_y);
@@ -163,6 +204,7 @@ impl Parser<'_> {
             system: is_list,
             rows: hint.list,
             points,
+            legacy: is_legacy,
         };
         Ok(self.push(Node::Cas(op, equations, guess)))
     }
@@ -211,6 +253,45 @@ impl Parser<'_> {
             pending.extend(crate::expr::children(&node));
         }
         false
+    }
+
+    /// The solving variables as main reads them: one name or a list of up
+    /// to three distinct names, `y` and `z` on their own axes and any other
+    /// name on the first.
+    fn solution_variables(&self, mut i: usize) -> Result<(Vec<String>, u8, [u8; 3]), String> {
+        let bad = || "expected up to three distinct solving variables".to_owned();
+        let list = self.toks.get(i).is_some_and(|t| t.tok == Tok::LBrace);
+        i += usize::from(list);
+        let mut names = Vec::new();
+        let mut axes = [0; 3];
+        loop {
+            let name = self.name_at(i).ok_or_else(bad)?;
+            if names.len() == 3 || names.iter().any(|old| old == name) {
+                return Err(bad());
+            }
+            axes[names.len()] = match name {
+                "y" => 1,
+                "z" => 2,
+                _ => 0,
+            };
+            names.push(name.to_owned());
+            i += 1;
+            if !list || self.toks.get(i).is_none_or(|t| t.tok != Tok::Comma) {
+                break;
+            }
+            i += 1;
+        }
+        if list {
+            if self.toks.get(i).is_none_or(|t| t.tok != Tok::RBrace) {
+                return Err(bad());
+            }
+            i += 1;
+        }
+        if self.toks.get(i).is_none_or(|t| t.tok != Tok::RParen) {
+            return Err(bad());
+        }
+        let width = names.len() as u8;
+        Ok((names, width, axes))
     }
 
     /// The second argument of a solve: one variable, `variable = value` as

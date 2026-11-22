@@ -958,6 +958,172 @@
           }
         }
       ]
+    },
+    {
+      "id": "cas-edge-013",
+      "group": "cas",
+      "script": [
+        "a = 1.000030517578125",
+        "b = 1.000091552734375",
+        "f = Simplify(x+10^8*(a+b-2.0001220703125))",
+        "r = f(0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.000030517578125 },
+          "b": { "type": "number", "defined": true, "value": 1.000091552734375 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0],
+              [-4.0, -4.0],
+              [-2.0, -2.0],
+              [-1.0, -1.0],
+              [-0.5, -0.5],
+              [0.0, 0.0],
+              [0.5, 0.5],
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [4.0, 4.0],
+              [8.0, 8.0]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "cas-edge-014",
+      "group": "cas",
+      "script": [
+        "r1 = NSolutions(0.1000000001*x-0.1*x-0.0000001, x=0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 999.9999172596 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-edge-015",
+      "group": "cas",
+      "script": [
+        "g: x=2",
+        "r1 = NSolutions(g, {y})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -2.0 },
+          "r1": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-edge-016",
+      "group": "cas",
+      "script": [
+        "f(x) = x+1",
+        "g(x) = x-f(1)",
+        "r1 = NSolutions(g, {x})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -7.0],
+              [-4.0, -3.0],
+              [-2.0, -1.0],
+              [-1.0, 0.0],
+              [-0.5, 0.5],
+              [0.0, 1.0],
+              [0.5, 1.5],
+              [1.0, 2.0],
+              [2.0, 3.0],
+              [4.0, 5.0],
+              [8.0, 9.0]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -10.0],
+              [-4.0, -6.0],
+              [-2.0, -4.0],
+              [-1.0, -3.0],
+              [-0.5, -2.5],
+              [0.0, -2.0],
+              [0.5, -1.5],
+              [1.0, -1.0],
+              [2.0, 0.0],
+              [4.0, 2.0],
+              [8.0, 6.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-edge-017",
+      "group": "cas",
+      "script": [
+        "A = (0, 0)",
+        "g = Line(A, (1, 1.5))",
+        "h: x=2",
+        "r1 = NSolutions({g, h})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": -1.5, "b": 1.0, "c": 0.0 },
+          "h": { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -2.0 },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 2.0 },
+                  { "type": "number", "defined": true, "value": 3.0 }
+                ]
+              }
+            ]
+          }
+        }
+      ]
     }
   ]
 }

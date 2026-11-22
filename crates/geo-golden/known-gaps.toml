@@ -731,6 +731,16 @@ mismatches = ["0:r1", "0:r2", "0:r3"]
 undefined = true
 
 [[gap]]
+id = "cas-conic-009"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-conic-010"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r5", "0:r7"]
+
+[[gap]]
 id = "cas-conic-012"
 reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
@@ -858,15 +868,23 @@ undefined = true
 
 [[gap]]
 id = "cas-conic-036"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-conic-037"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
+
+[[gap]]
+id = "cas-conic-038"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r1", "0:r2"]
+
+[[gap]]
+id = "cas-conic-039"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r1", "0:r2"]
 
 [[gap]]
 id = "cas-conic-040"
@@ -876,45 +894,38 @@ undefined = true
 
 [[gap]]
 id = "cas-conic-041"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-conic-042"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-conic-043"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2"]
-undefined = true
 
 [[gap]]
 id = "cas-conic-044"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-conic-045"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-conic-046"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-conic-047"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-conic-048"
@@ -929,10 +940,24 @@ mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
 undefined = true
 
 [[gap]]
+id = "cas-conic-050"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r1", "0:r2"]
+
+[[gap]]
+id = "cas-conic-051"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-conic-054"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r5", "0:r6"]
+
+[[gap]]
 id = "cas-conic-056"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
-mismatches = ["0:r1", "0:r2", "1:r1", "1:r2", "4:r1", "4:r2"]
-undefined = true
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r1", "0:r2", "1:r1", "1:r2", "2:r3", "4:r1", "4:r2"]
 
 [[gap]]
 id = "cas-conic-057"
@@ -1020,9 +1045,8 @@ undefined = true
 
 [[gap]]
 id = "cas-curve-024"
-reason = "Simplify of a curve coordinate answers the shorter of the normal form and the factored form (Simplify.1 in Ggb2giac), which evaluate differently far from 0 ((t - 10^8)^3 / (t - 10^8) keeps (t - 10^8)^2 and gives 1 at t = 10^8 + 1, its expansion 0). The kernel answers only a coordinate whose numerator and denominator each have at most one irreducible factor, of multiplicity one, where both forms are the same expression, and an undefined curve otherwise."
-mismatches = ["0:r1"]
-undefined = true
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r1", "0:r2"]
 
 [[gap]]
 id = "cas-curve-025"
@@ -1038,9 +1062,13 @@ undefined = true
 
 [[gap]]
 id = "cas-degree-002"
-reason = "Solutions(x y^2 + y = 1, y) answers the two roots (+-sqrt(4x + 1) - 1) / (2x) in GeoGebra. Two branches are listed in the order the CAS chooses for their normal forms, which no EUPL source states, so the kernel answers an undefined list."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:result"]
-undefined = true
+
+[[gap]]
+id = "cas-degree-003"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r1", "0:r2"]
 
 [[gap]]
 id = "cas-degree-004"
@@ -1049,73 +1077,61 @@ mismatches = ["0:result"]
 undefined = true
 
 [[gap]]
-id = "cas-edge-004"
-reason = "NSolutions(f, x) evaluates x + 10^10 (a - 0.123456789012345) in floating point in GeoGebra and answers -9.992e-6; the kernel solves the printed polynomial exactly (a as 0.123456789012346) and answers -10^-5, which Solutions also gives in GeoGebra. The float cancellation of the reference is not reproduced (follow-up)."
-mismatches = ["0:r2"]
+id = "cas-edge-001"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["1:r2"]
 
 [[gap]]
-id = "cas-edge-005"
-reason = "NSolutions(10^15 (x - 1), {x}) answers 1 in GeoGebra (and on main), while NSolutions(10^15 x - 1, {x}) is undefined in GeoGebra. No rule over the equation separates the two, so the kernel answers a linear equation with a list of variables only when every intermediate coefficient of the typed polynomial is at most 10^10: an intentional change against main."
-mismatches = ["0:r1"]
-undefined = true
+id = "cas-edge-004"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r1", "0:r2"]
 
 [[gap]]
 id = "cas-edge-006"
-reason = "A constructed line is printed into the CAS call with the reference's rounding; the kernel reproduces that only for a line with an exactly zero coefficient (x = v, y = v). After moving A the line through A and B is no longer vertical and the kernel answers an undefined list."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["1:r1", "1:r3"]
-undefined = true
 
 [[gap]]
 id = "cas-edge-007"
-reason = "The coefficient (0.1000000001 - 0.1) is evaluated in doubles by GeoGebra's numeric solver, which answers 999.9999173 where the exact root is 1000. The kernel does not model that evaluation: a sum or difference of typed constants with a fractional operand that cancels to below a millionth makes the start-value and the numeric list path undefined."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2"]
+
+[[gap]]
+id = "cas-edge-008"
+reason = "A start value with a non-integer decimal literal in the equation is evaluated in doubles by GeoGebra's numeric solver, whose rounding the kernel does not model (0.1000000001 x - 0.1 x); the kernel answers an undefined list for such start values."
+mismatches = ["0:r1", "0:r2", "0:r4"]
 undefined = true
 
 [[gap]]
 id = "cas-edge-012"
-reason = "A list of variables after one equation runs GeoGebra's system solver, which lists several solutions in an order without rule (x^2 = 4 gives 2 before -2, x^4 = 16 gives -2 before 2, x^3 - x gives 0, 1, -1). Solutions with a list of variables answers no solution or one and an undefined list for several; Solve keeps main's ascending assignments, which agree for x^4 = 16 and differ where the CAS lists another order, as on main."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r2", "0:r3"]
 
 [[gap]]
-id = "cas-family-001"
-reason = "The solutions form one or more families from factoring a nonlinear equation (or a system with two free variables). GeoGebra lists several families in an order its CAS chooses and parametrises even one family by a variable it chooses (Solve((x - y)^2 = 0, {x, y}) keeps x free, Solve(x + y = 1, {x, y}) keeps y free); the kernel answers an undefined list for every system with a free variable."
-mismatches = ["0:r1", "0:r2", "1:r1", "1:r2", "2:r1", "2:r2"]
+id = "cas-edge-014"
+reason = "A start value with a non-integer decimal literal in the equation is evaluated in doubles by GeoGebra's numeric solver (999.9999173 for 0.1000000001 x - 0.1 x - 0.0000001), whose rounding the kernel does not model; the kernel answers an undefined list for such start values."
+mismatches = ["0:r1"]
 undefined = true
 
 [[gap]]
-id = "cas-family-002"
-reason = "The solutions form one or more families from factoring a nonlinear equation (or a system with two free variables). GeoGebra lists several families in an order its CAS chooses and parametrises even one family by a variable it chooses (Solve((x - y)^2 = 0, {x, y}) keeps x free, Solve(x + y = 1, {x, y}) keeps y free); the kernel answers an undefined list for every system with a free variable."
+id = "cas-edge-015"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r1"]
+
+[[gap]]
+id = "cas-family-001"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2"]
-undefined = true
+
+[[gap]]
+id = "cas-family-002"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r1"]
 
 [[gap]]
 id = "cas-family-003"
 reason = "The solutions form one or more families from factoring a nonlinear equation (or a system with two free variables). GeoGebra lists several families in an order its CAS chooses and parametrises even one family by a variable it chooses (Solve((x - y)^2 = 0, {x, y}) keeps x free, Solve(x + y = 1, {x, y}) keeps y free); the kernel answers an undefined list for every system with a free variable."
-mismatches = ["0:r1", "0:r2", "0:r3"]
-undefined = true
-
-[[gap]]
-id = "cas-freevariable-001"
-reason = "A linear system with a free variable: GeoGebra's CAS chooses which variables stay free and how the others are written in them, and the recordings show no rule the kernel reproduces ({x + y = 1, z = 0} with {x, y, z} keeps z itself instead of 0; golden/cas/freevariable.json). The kernel answers an undefined list for every system with a free variable, also where it agreed before."
-mismatches = ["0:r1", "0:r2"]
-undefined = true
-
-[[gap]]
-id = "cas-freevariable-002"
-reason = "A linear system with a free variable: GeoGebra's CAS chooses which variables stay free and how the others are written in them, and the recordings show no rule the kernel reproduces ({x + y = 1, z = 0} with {x, y, z} keeps z itself instead of 0; golden/cas/freevariable.json). The kernel answers an undefined list for every system with a free variable, also where it agreed before."
-mismatches = ["0:r1", "0:r2"]
-undefined = true
-
-[[gap]]
-id = "cas-freevariable-003"
-reason = "A linear system with a free variable: GeoGebra's CAS chooses which variables stay free and how the others are written in them, and the recordings show no rule the kernel reproduces ({x + y = 1, z = 0} with {x, y, z} keeps z itself instead of 0; golden/cas/freevariable.json). The kernel answers an undefined list for every system with a free variable, also where it agreed before."
-mismatches = ["0:r1", "0:r2"]
-undefined = true
-
-[[gap]]
-id = "cas-freevariable-004"
-reason = "A linear system with a free variable: GeoGebra's CAS chooses which variables stay free and how the others are written in them, and the recordings show no rule the kernel reproduces ({x + y = 1, z = 0} with {x, y, z} keeps z itself instead of 0; golden/cas/freevariable.json). The kernel answers an undefined list for every system with a free variable, also where it agreed before."
-mismatches = ["0:r1", "0:r2"]
+mismatches = ["0:r3"]
 undefined = true
 
 [[gap]]
@@ -1138,33 +1154,38 @@ undefined = true
 
 [[gap]]
 id = "cas-freevariable-008"
-reason = "A linear system with a free variable: GeoGebra's CAS chooses which variables stay free and how the others are written in them, and the recordings show no rule the kernel reproduces ({x + y = 1, z = 0} with {x, y, z} keeps z itself instead of 0; golden/cas/freevariable.json). The kernel answers an undefined list for every system with a free variable, also where it agreed before."
-mismatches = ["0:r1", "0:r2"]
-undefined = true
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r1"]
 
 [[gap]]
 id = "cas-freevariable-009"
-reason = "A linear system with a free variable: GeoGebra's CAS chooses which variables stay free and how the others are written in them, and the recordings show no rule the kernel reproduces ({x + y = 1, z = 0} with {x, y, z} keeps z itself instead of 0; golden/cas/freevariable.json). The kernel answers an undefined list for every system with a free variable, also where it agreed before."
-mismatches = ["0:r1", "0:r2"]
-undefined = true
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r2"]
 
 [[gap]]
 id = "cas-freevariable-010"
-reason = "A linear system with a free variable: GeoGebra's CAS chooses which variables stay free and how the others are written in them, and the recordings show no rule the kernel reproduces ({x + y = 1, z = 0} with {x, y, z} keeps z itself instead of 0; golden/cas/freevariable.json). The kernel answers an undefined list for every system with a free variable, also where it agreed before."
-mismatches = ["0:r1", "0:r2"]
-undefined = true
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r2"]
 
 [[gap]]
 id = "cas-freevariable-011"
-reason = "A linear system with a free variable: GeoGebra's CAS chooses which variables stay free and how the others are written in them, and the recordings show no rule the kernel reproduces ({x + y = 1, z = 0} with {x, y, z} keeps z itself instead of 0; golden/cas/freevariable.json). The kernel answers an undefined list for every system with a free variable, also where it agreed before."
-mismatches = ["0:r1", "0:r2"]
-undefined = true
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r2"]
 
 [[gap]]
-id = "cas-freevariable-012"
-reason = "A linear system with a free variable: GeoGebra's CAS chooses which variables stay free and how the others are written in them, and the recordings show no rule the kernel reproduces ({x + y = 1, z = 0} with {x, y, z} keeps z itself instead of 0; golden/cas/freevariable.json). The kernel answers an undefined list for every system with a free variable, also where it agreed before."
-mismatches = ["0:r1", "0:r2"]
-undefined = true
+id = "cas-hint-013"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-hint-014"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r5", "0:r6", "0:r7", "0:r8"]
+
+[[gap]]
+id = "cas-hint-015"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
 
 [[gap]]
 id = "cas-hint-017"
@@ -1198,9 +1219,8 @@ undefined = true
 
 [[gap]]
 id = "cas-hint-023"
-reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for a polynomial typed equation with exactly one real root, which is simple, certified by a sign change, at most 1000 in size, and every intermediate coefficient of the typed expression, taken without cancellation, at most 10^10 (golden/cas/magnitude.json), and an undefined list otherwise."
-mismatches = ["0:r1", "1:r1", "3:r1", "4:r1"]
-undefined = true
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r1", "0:r3", "1:r1", "1:r3", "3:r1", "3:r3", "4:r1", "4:r3"]
 
 [[gap]]
 id = "cas-hint-024"
@@ -1210,38 +1230,33 @@ undefined = true
 
 [[gap]]
 id = "cas-hint-027"
-reason = "The object has no typed definition, so the reference prints its coefficients into the CAS call (GeoLine.toValueString, Kernel.buildImplicitEquation), dropping coefficients below the printing precision and rounding the rest: Line((0, 1), (1, 1 + 10^-9)) is sent as y = 1. That printing is not reproduced, so the kernel answers an undefined list for a constructed line, conic or implicit curve."
-mismatches = ["3:r1", "3:r2", "3:r3"]
-undefined = true
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["2:r2", "2:r3", "3:r1", "3:r2", "3:r3"]
 
 [[gap]]
 id = "cas-hint-028"
-reason = "A list of variables after one equation runs GeoGebra's system solver, which lists several solutions in an order without rule (x^2 = 4 gives 2 before -2, x^4 = 16 gives -2 before 2, x^3 - x gives 0, 1, -1). Solutions with a list of variables answers no solution or one and an undefined list for several; Solve keeps main's ascending assignments, which agree for x^4 = 16 and differ where the CAS lists another order, as on main."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:result"]
 
 [[gap]]
 id = "cas-hint-029"
-reason = "A list of variables after one equation runs GeoGebra's system solver, which lists several solutions in an order without rule (x^2 = 4 gives 2 before -2, x^4 = 16 gives -2 before 2, x^3 - x gives 0, 1, -1). Solutions with a list of variables answers no solution or one and an undefined list for several; Solve keeps main's ascending assignments, which agree for x^4 = 16 and differ where the CAS lists another order, as on main."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:result"]
-undefined = true
 
 [[gap]]
 id = "cas-hintobject-001"
-reason = "AlgoSolve.printHint prints a point into the CAS call, which then fails with an error, and Solve answers an undefined list. What the CAS makes of an object that is no number follows no rule (cas-hintobject-002 answers an empty list for Solutions with the same point), so the kernel refuses an object other than a number as the solving argument."
-mismatches = ["0:script line 3"]
-failure = "invalid arguments to `Solve`"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:result"]
 
 [[gap]]
 id = "cas-hintobject-002"
-reason = "AlgoSolve.printHint prints a point into the CAS call, and Solutions answers an empty list where Solve answers an undefined one (cas-hintobject-001). What the CAS makes of an object that is no number follows no rule, so the kernel refuses an object other than a number as the solving argument."
-mismatches = ["0:script line 3"]
-failure = "invalid arguments to `Solutions`"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:result"]
 
 [[gap]]
 id = "cas-hintobject-003"
-reason = "After a list of equations a number is printed as its value into the system solver of the CAS, which answers one row with an undefined number for Solutions({x^2 = 4}, b) (and makes the reference throw while it reads the answer of NSolve(f, b) back). The kernel refuses a number as the solving argument after a list."
-mismatches = ["0:script line 2"]
-failure = "invalid arguments to `Solutions`"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:result"]
 
 [[gap]]
 id = "cas-implicit-001"
@@ -1425,27 +1440,23 @@ undefined = true
 
 [[gap]]
 id = "cas-magnitude-039"
-reason = "Outside the recorded magnitude range: the kernel answers a start value, and a linear equation with a list of variables, only when the typed expression is a polynomial whose every intermediate coefficient, taken without cancellation, is at most 10^10, and a start value only for a root of at most 1000. The reference answers this probe; golden/cas/magnitude.json records where it stops answering (x^3 - 10^18, (x - 10^4)^3 + (10^12 - 10), 10^15 x - 1)."
-mismatches = ["0:r2"]
-undefined = true
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r1", "0:r3"]
 
 [[gap]]
 id = "cas-magnitude-040"
-reason = "Outside the recorded magnitude range: the kernel answers a start value, and a linear equation with a list of variables, only when the typed expression is a polynomial whose every intermediate coefficient, taken without cancellation, is at most 10^10, and a start value only for a root of at most 1000. The reference answers this probe; golden/cas/magnitude.json records where it stops answering (x^3 - 10^18, (x - 10^4)^3 + (10^12 - 10), 10^15 x - 1)."
-mismatches = ["0:r2"]
-undefined = true
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r1", "0:r3"]
 
 [[gap]]
 id = "cas-magnitude-041"
-reason = "Outside the recorded magnitude range: the kernel answers a start value, and a linear equation with a list of variables, only when the typed expression is a polynomial whose every intermediate coefficient, taken without cancellation, is at most 10^10, and a start value only for a root of at most 1000. The reference answers this probe; golden/cas/magnitude.json records where it stops answering (x^3 - 10^18, (x - 10^4)^3 + (10^12 - 10), 10^15 x - 1)."
-mismatches = ["0:r2"]
-undefined = true
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r1", "0:r3"]
 
 [[gap]]
 id = "cas-magnitude-042"
-reason = "Outside the recorded magnitude range: the kernel answers a start value, and a linear equation with a list of variables, only when the typed expression is a polynomial whose every intermediate coefficient, taken without cancellation, is at most 10^10, and a start value only for a root of at most 1000. The reference answers this probe; golden/cas/magnitude.json records where it stops answering (x^3 - 10^18, (x - 10^4)^3 + (10^12 - 10), 10^15 x - 1)."
-mismatches = ["0:r2"]
-undefined = true
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r1", "0:r3"]
 
 [[gap]]
 id = "cas-magnitude-043"
@@ -1454,16 +1465,66 @@ mismatches = ["0:r2"]
 undefined = true
 
 [[gap]]
+id = "cas-name-001"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
 id = "cas-name-003"
-reason = "Solutions(t^2 = 4, t = 1) and NSolutions with the same start have two real roots to choose from: A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise. Solutions(t^2 = x, t) solves to two branches, whose order the CAS chooses, and is undefined too."
-mismatches = ["0:r3", "0:r4", "0:r5"]
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r3", "0:r4", "0:r5", "0:r6", "0:r7"]
+
+[[gap]]
+id = "cas-name-004"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r1", "0:r2"]
+
+[[gap]]
+id = "cas-name-005"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r1", "0:r2"]
+
+[[gap]]
+id = "cas-name-006"
+reason = "Main reads the name t as the first variable and answers nothing for the circle; the kernel's own rules then see two branches of x and answer an undefined list, where GeoGebra treats t as a variable of its own and answers {} for Solve and Solutions."
+mismatches = ["0:r1", "0:r2"]
 undefined = true
+
+[[gap]]
+id = "cas-name-007"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-name-008"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4", "1:r1", "1:r2", "1:r3", "1:r4"]
+
+[[gap]]
+id = "cas-name-009"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r1", "0:r2", "0:r4", "0:r5"]
+
+[[gap]]
+id = "cas-name-010"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["1:step"]
+
+[[gap]]
+id = "cas-name-011"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r2", "0:r3", "0:r4", "0:r5"]
 
 [[gap]]
 id = "cas-name-013"
 reason = "Solve(k, y = 1) of x^2 - y^2 = 0 solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
 mismatches = ["0:r1", "0:r3"]
 undefined = true
+
+[[gap]]
+id = "cas-name-014"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r1", "0:r2", "0:r3"]
 
 [[gap]]
 id = "cas-order-001"
@@ -1473,9 +1534,8 @@ undefined = true
 
 [[gap]]
 id = "cas-order-002"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "1:r1", "1:r2", "2:r1", "2:r2", "3:r1", "3:r2", "4:r1", "4:r2", "5:r1", "5:r2"]
-undefined = true
 
 [[gap]]
 id = "cas-order-003"
@@ -1689,231 +1749,193 @@ undefined = true
 
 [[gap]]
 id = "cas-order-038"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-order-039"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-order-040"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-order-041"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-order-042"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-order-043"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-order-044"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-order-045"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-order-046"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-order-047"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-order-048"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-order-049"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-order-050"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-order-051"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-order-052"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-order-053"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-order-054"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-order-055"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-order-056"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-order-057"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-order-058"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-order-059"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-order-060"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-order-061"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-order-062"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-order-063"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-order-064"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-order-065"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-order-066"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-order-067"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-order-068"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-order-069"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-order-070"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-order-071"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-order-072"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-order-073"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-order-074"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-order-075"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-undefined = true
 
 [[gap]]
 id = "cas-order-076"
@@ -2007,9 +2029,8 @@ undefined = true
 
 [[gap]]
 id = "cas-order-092"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3", "1:r1", "1:r2", "1:r3", "2:r1", "2:r2", "2:r3", "3:r1", "3:r2", "3:r3", "4:r1", "4:r2", "4:r3", "5:r1", "5:r2", "5:r3", "6:r1", "6:r2", "6:r3"]
-undefined = true
 
 [[gap]]
 id = "cas-order-093"
@@ -2043,15 +2064,13 @@ undefined = true
 
 [[gap]]
 id = "cas-order-098"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
-mismatches = ["0:r1", "0:r2", "0:r3", "1:r1", "1:r2", "1:r3", "3:r1", "3:r2", "3:r3", "4:r1", "4:r2", "4:r3"]
-undefined = true
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r1", "0:r2", "0:r3", "1:r1", "1:r2", "1:r3", "2:r2", "3:r1", "3:r2", "3:r3", "4:r1", "4:r2", "4:r3"]
 
 [[gap]]
 id = "cas-order-099"
-reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
-mismatches = ["0:r1", "0:r2", "2:r1", "2:r2"]
-undefined = true
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r1", "0:r2", "1:r1", "1:r2", "2:r1", "2:r2", "3:r1", "3:r2"]
 
 [[gap]]
 id = "cas-plot-014"
@@ -2097,49 +2116,103 @@ undefined = true
 
 [[gap]]
 id = "cas-rows-001"
-reason = "Several roots of a list of equations in one variable come in the order of GeoGebra's system solver, which follows no rule across inputs (x^2 = 4 gives 2, -2; x^4 = 16 gives -2, 2; x^3 - x gives 0, 1, -1; golden/cas/rows.json). The kernel keeps main's ascending rows, so the solution sets agree while the order differs; Solve(list) and Solutions(list) stay open."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3"]
 
 [[gap]]
 id = "cas-rows-002"
-reason = "Several roots of a list of equations in one variable come in the order of GeoGebra's system solver, which follows no rule across inputs (x^2 = 4 gives 2, -2; x^4 = 16 gives -2, 2; x^3 - x gives 0, 1, -1; golden/cas/rows.json). The kernel keeps main's ascending rows, so the solution sets agree while the order differs; Solve(list) and Solutions(list) stay open."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3"]
 
 [[gap]]
 id = "cas-rows-003"
-reason = "Several roots of a list of equations in one variable come in the order of GeoGebra's system solver, which follows no rule across inputs (x^2 = 4 gives 2, -2; x^4 = 16 gives -2, 2; x^3 - x gives 0, 1, -1; golden/cas/rows.json). The kernel keeps main's ascending rows, so the solution sets agree while the order differs; Solve(list) and Solutions(list) stay open."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3"]
 
 [[gap]]
 id = "cas-rows-004"
-reason = "Several roots of a list of equations in one variable come in the order of GeoGebra's system solver, which follows no rule across inputs (x^2 = 4 gives 2, -2; x^4 = 16 gives -2, 2; x^3 - x gives 0, 1, -1; golden/cas/rows.json). The kernel keeps main's ascending rows, so the solution sets agree while the order differs; Solve(list) and Solutions(list) stay open."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3"]
 
 [[gap]]
 id = "cas-rows-005"
-reason = "Several roots of a list of equations in one variable come in the order of GeoGebra's system solver, which follows no rule across inputs (x^2 = 4 gives 2, -2; x^4 = 16 gives -2, 2; x^3 - x gives 0, 1, -1; golden/cas/rows.json). The kernel keeps main's ascending rows, so the solution sets agree while the order differs; Solve(list) and Solutions(list) stay open."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3"]
 
 [[gap]]
 id = "cas-rows-006"
-reason = "Several roots of a list of equations in one variable come in the order of GeoGebra's system solver, which follows no rule across inputs (x^2 = 4 gives 2, -2; x^4 = 16 gives -2, 2; x^3 - x gives 0, 1, -1; golden/cas/rows.json). The kernel keeps main's ascending rows, so the solution sets agree while the order differs; Solve(list) and Solutions(list) stay open."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3"]
 
 [[gap]]
 id = "cas-rows-007"
-reason = "Several roots of a list of equations in one variable come in the order of GeoGebra's system solver, which follows no rule across inputs (x^2 = 4 gives 2, -2; x^4 = 16 gives -2, 2; x^3 - x gives 0, 1, -1; golden/cas/rows.json). The kernel keeps main's ascending rows, so the solution sets agree while the order differs; Solve(list) and Solutions(list) stay open."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3"]
 
 [[gap]]
 id = "cas-rows-009"
-reason = "Several roots of a list of equations in one variable come in the order of GeoGebra's system solver, which follows no rule across inputs (x^2 = 4 gives 2, -2; x^4 = 16 gives -2, 2; x^3 - x gives 0, 1, -1; golden/cas/rows.json). The kernel keeps main's ascending rows, so the solution sets agree while the order differs; Solve(list) and Solutions(list) stay open."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2", "0:r3"]
 
 [[gap]]
+id = "cas-shape-001"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-shape-002"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-shape-003"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r3"]
+
+[[gap]]
+id = "cas-shape-004"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-shape-005"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-shape-006"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-shape-008"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r3"]
+
+[[gap]]
 id = "cas-shape-009"
-reason = "Solutions({x^2 = y}, x) solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
-mismatches = ["0:r1"]
-undefined = true
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r1", "0:r4"]
+
+[[gap]]
+id = "cas-shape-010"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4", "0:r6", "0:r7", "0:r8"]
+
+[[gap]]
+id = "cas-shape-011"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+
+[[gap]]
+id = "cas-shape-012"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r1", "0:r3", "1:r1", "1:r2", "1:r3", "3:r1", "3:r3", "4:r1", "4:r3"]
+
+[[gap]]
+id = "cas-shape-013"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r5"]
 
 [[gap]]
 id = "cas-shape-014"
@@ -2149,19 +2222,33 @@ undefined = true
 
 [[gap]]
 id = "cas-shape-016"
-reason = "A list of variables after one equation runs GeoGebra's system solver, which lists several solutions in an order without rule (x^2 = 4 gives 2 before -2, x^4 = 16 gives -2 before 2, x^3 - x gives 0, 1, -1). Solutions with a list of variables answers no solution or one and an undefined list for several; Solve keeps main's ascending assignments, which agree for x^4 = 16 and differ where the CAS lists another order, as on main."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-shape-017"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2"]
+
+[[gap]]
+id = "cas-shape-018"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r2"]
 
 [[gap]]
 id = "cas-shape-019"
-reason = "A list of variables after one equation runs GeoGebra's system solver, which lists several solutions in an order without rule (x^2 = 4 gives 2 before -2, x^4 = 16 gives -2 before 2, x^3 - x gives 0, 1, -1). Solutions with a list of variables answers no solution or one and an undefined list for several; Solve keeps main's ascending assignments, which agree for x^4 = 16 and differ where the CAS lists another order, as on main."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2"]
 
 [[gap]]
-id = "cas-shape-022"
-reason = "A linear system with a free variable: GeoGebra's CAS chooses which variables stay free and how the others are written in them, and the recordings show no rule the kernel reproduces ({x + y = 1, z = 0} with {x, y, z} keeps z itself instead of 0; golden/cas/freevariable.json). The kernel answers an undefined list for every system with a free variable, also where it agreed before."
-mismatches = ["0:r1", "0:r2"]
-undefined = true
+id = "cas-shape-021"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r2", "0:r6"]
+
+[[gap]]
+id = "cas-shape-023"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r2"]
 
 [[gap]]
 id = "cas-shape-024"
@@ -2171,8 +2258,8 @@ undefined = true
 
 [[gap]]
 id = "cas-shape-025"
-reason = "A list of variables after one equation runs GeoGebra's system solver, which lists several solutions in an order without rule (x^2 = 4 gives 2 before -2, x^4 = 16 gives -2 before 2, x^3 - x gives 0, 1, -1). Solutions with a list of variables answers no solution or one and an undefined list for several; Solve keeps main's ascending assignments, which agree for x^4 = 16 and differ where the CAS lists another order, as on main."
-mismatches = ["0:r1", "0:r2"]
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
 
 [[gap]]
 id = "cas-shape-026"
@@ -2181,61 +2268,54 @@ mismatches = ["0:r1", "0:r2"]
 undefined = true
 
 [[gap]]
-id = "cas-shape-027"
-reason = "One equation with a list of variables goes to the numeric system solver, which starts at 0 (Ggb2giac) and answers whatever its search reaches: (x - 2)^2 gives 2, x^2 - 4x + 3 only 1, (x - 2)^3, x^3 + 1 and x^3 - 2x + 2 nothing (cas-shape-027 to cas-shape-032). The kernel answers only a linear equation, whose one root every search finds, and an undefined list otherwise."
+id = "cas-shape-028"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2"]
-undefined = true
+
+[[gap]]
+id = "cas-shape-029"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r1", "0:r2"]
+
+[[gap]]
+id = "cas-shape-030"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r1", "0:r2"]
 
 [[gap]]
 id = "cas-shape-031"
-reason = "One equation with a list of variables goes to the numeric system solver, which starts at 0 (Ggb2giac) and answers whatever its search reaches: (x - 2)^2 gives 2, x^2 - 4x + 3 only 1, (x - 2)^3, x^3 + 1 and x^3 - 2x + 2 nothing (cas-shape-027 to cas-shape-032). The kernel answers only a linear equation, whose one root every search finds, and an undefined list otherwise."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2"]
-undefined = true
+
+[[gap]]
+id = "cas-shape-032"
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
+mismatches = ["0:r1", "0:r2"]
 
 [[gap]]
 id = "cas-shape-033"
-reason = "NSolutions(x + y = 1, {x, y}) answers the one point {0.5, 0.5} that the numeric system solver reaches on the line of solutions. The point is the solver's choice, not determined by the equation, so the kernel answers an undefined list for a family of solutions in the numeric commands."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:r1", "0:r2"]
-undefined = true
 
 [[gap]]
 id = "cas-solve-013"
-reason = "GeoGebra lists the solutions of a system in the order its CAS returns them, which follows no rule across inputs (Solutions({x^2=1},{x}) answers {1},{-1} while Solutions({x^4-16=0},{x}) answers {-2},{2}). The kernel always answers rows in ascending order of the first coordinate, so the solution multisets agree while the order may differ."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:result"]
-
-[[gap]]
-id = "cas-solve-016"
-reason = "A linear system with a free variable: GeoGebra's CAS chooses which variables stay free and how the others are written in them, and the recordings show no rule the kernel reproduces ({x + y = 1, z = 0} with {x, y, z} keeps z itself instead of 0; golden/cas/freevariable.json). The kernel answers an undefined list for every system with a free variable, also where it agreed before."
-mismatches = ["0:result"]
-undefined = true
-
-[[gap]]
-id = "cas-solve-039"
-reason = "A linear system with a free variable: GeoGebra's CAS chooses which variables stay free and how the others are written in them, and the recordings show no rule the kernel reproduces ({x + y = 1, z = 0} with {x, y, z} keeps z itself instead of 0; golden/cas/freevariable.json). The kernel answers an undefined list for every system with a free variable, also where it agreed before."
-mismatches = ["0:result"]
-undefined = true
 
 [[gap]]
 id = "cas-solve-040"
-reason = "GeoGebra lists the solutions of a system in the order its CAS returns them, which follows no rule across inputs (Solutions({x^2=1},{x}) answers {1},{-1} while Solutions({x^4-16=0},{x}) answers {-2},{2}). The kernel always answers rows in ascending order of the first coordinate, so the solution multisets agree while the order may differ."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:result"]
 
 [[gap]]
 id = "cas-solve-041"
-reason = "GeoGebra lists the assignments of a system solve in the order its CAS returns the roots, which follows no rule across inputs. The kernel lists the same lines in ascending order of the solved coordinate, so the line sets agree while the order may differ."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:result"]
 
 [[gap]]
 id = "cas-solve-045"
-reason = "GeoGebra lists the solution families of a product equation in the order its CAS factors it (the y = 0 family of x*y = 0 before x = 0), which follows no rule. The kernel lists the family whose first coordinate is constant first, so the families agree while the order differs."
+reason = "Same as main: main's solving path answers this input first and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver, recorded so that the difference stays visible."
 mismatches = ["0:result"]
-undefined = true
-
-[[gap]]
-id = "cas-solve-046"
-reason = "The solutions form one or more families from factoring a nonlinear equation (or a system with two free variables). GeoGebra lists several families in an order its CAS chooses and parametrises even one family by a variable it chooses (Solve((x - y)^2 = 0, {x, y}) keeps x free, Solve(x + y = 1, {x, y}) keeps y free); the kernel answers an undefined list for every system with a free variable."
-mismatches = ["0:result"]
-undefined = true
 
 [[gap]]
 id = "cas-start-001"
