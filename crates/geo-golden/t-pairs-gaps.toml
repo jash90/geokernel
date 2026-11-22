@@ -6796,9 +6796,9 @@ mismatches = ["l1"]
 
 [[gap]]
 id = "commands/CommandsUsingMockedCasTest.java:178"
-category = "dummy-cas-expectation"
-reason = "the replay without a CAS answers an undefined list; the kernel answers the three points the upstream test expects from its mocked CAS"
-mismatches = ["l1"]
+category = "unsupported-command"
+reason = "the kernel refuses the input: unknown command `PlotSolve`"
+mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsUsingMockedCasTest.java:187"

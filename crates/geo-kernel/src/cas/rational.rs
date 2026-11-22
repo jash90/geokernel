@@ -34,39 +34,6 @@ impl Rat {
         }
     }
 
-    /// A double as the reference prints it into a CAS call: its 15
-    /// significant digits (`StringTemplate.prefixedDefaultSF`, whose
-    /// `ScientificFormat` is a `DecimalFormat` with the pattern
-    /// `0.00000000000000E0` and `RoundingMode.HALF_UP`). `DecimalFormat`
-    /// rounds the exact binary value of the double, so a tie such as
-    /// `1.000030517578125` rounds away from zero to `1.00003051757813`.
-    pub(crate) fn printed(value: f64) -> Option<Self> {
-        if !value.is_finite() {
-            return None;
-        }
-        if value == 0.0 {
-            return Some(Self::ZERO);
-        }
-        // The exact decimal expansion: a double has at most 767 significant
-        // digits.
-        let text = format!("{:.800e}", value.abs());
-        let (mantissa, exponent) = text.split_once('e')?;
-        let digits: Vec<u8> = mantissa
-            .bytes()
-            .filter(u8::is_ascii_digit)
-            .map(|d| d - b'0')
-            .collect();
-        let mut kept: i128 = digits[..15].iter().fold(0, |n, &d| n * 10 + i128::from(d));
-        if digits[15] >= 5 {
-            kept += 1;
-        }
-        let exponent = exponent.parse::<i64>().ok()? - 14;
-        let sign = if value < 0.0 { -1 } else { 1 };
-        Self::decimal(sign * kept, exponent)
-    }
-
-    /// The shortest decimal that reads back as the double, as main reads
-    /// object values into the CAS.
     pub(crate) fn from_value(value: f64) -> Option<Self> {
         if !value.is_finite() {
             return None;
@@ -125,35 +92,4 @@ pub(crate) fn gcd(mut a: u128, mut b: u128) -> u128 {
         (a, b) = (b, a % b);
     }
     a
-}
-
-#[cfg(test)]
-mod printed_tests {
-    use super::Rat;
-
-    #[test]
-    fn printing_rounds_ties_away_from_zero_on_the_exact_binary_value() {
-        let digits = |v: f64| Rat::printed(v).unwrap();
-        // Exactly representable ties round up, as `RoundingMode.HALF_UP`.
-        assert_eq!(
-            digits(1.000030517578125),
-            Rat::decimal(100_003_051_757_813, -14).unwrap()
-        );
-        assert_eq!(
-            digits(1.000091552734375),
-            Rat::decimal(100_009_155_273_438, -14).unwrap()
-        );
-        assert_eq!(
-            digits(-1.000030517578125),
-            Rat::decimal(-100_003_051_757_813, -14).unwrap()
-        );
-        // 0.1 is a little above one tenth, but its 15 digits are 0.1.
-        assert_eq!(digits(0.1), Rat::new(1, 10).unwrap());
-        assert_eq!(
-            digits(1.0 / 3.0),
-            Rat::decimal(333_333_333_333_333, -15).unwrap()
-        );
-        assert_eq!(digits(0.0), Rat::ZERO);
-        assert_eq!(Rat::printed(f64::NAN), None);
-    }
 }

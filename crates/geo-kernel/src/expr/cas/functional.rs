@@ -10,13 +10,6 @@ type Product = (Rat, Vec<(Poly, u32)>);
 #[derive(Clone, Debug, PartialEq)]
 enum Form {
     Expanded,
-    /// The expanded form evaluated as the reference evaluates its printed
-    /// expression: term by term from the highest power, each term the
-    /// coefficient times the power (`Math.pow` in `MyDouble.pow`, here
-    /// `f64::powf`), summed left to right (the printed
-    /// `t^2 - 100000000t - 99999999` at `t = 10^8 + 1` is 1, Horner's scheme
-    /// gives 2).
-    Printed,
     Product {
         numerator: Product,
         denominator: Product,
@@ -47,16 +40,6 @@ impl Function {
     pub(in crate::expr) fn value(&self, x: f64, y: f64) -> f64 {
         match &self.form {
             Form::Expanded => self.expanded.value(x, y),
-            Form::Printed => {
-                let sum = |p: &Poly| {
-                    let mut terms: Vec<_> = p.0.iter().collect();
-                    terms.sort_by(|u, v| v.0.cmp(u.0));
-                    terms.iter().fold(0.0, |acc, (power, c)| {
-                        acc + c.to_f64() * x.powf(f64::from(power[0])) * y.powf(f64::from(power[1]))
-                    })
-                };
-                sum(&self.expanded.numerator) / sum(&self.expanded.denominator)
-            }
             Form::Product {
                 numerator,
                 denominator,
@@ -177,62 +160,13 @@ pub(in crate::expr) fn evaluate<const M: bool>(
         }
     }
 
-    if let (Op::Simplify, super::Node::Obj(id)) = (op, ctx.node(a)) {
-        if !matches!(ctx.c.kind(id), crate::Kind::Number | crate::Kind::Angle) {
-            return super::objects::as_function(ctx.c, id, work);
-        }
-    }
-    let exact = (|| {
-        let source = read(ctx.c, ctx.e, a, vars, work)?;
-        let other = if b == NONE {
-            None
-        } else {
-            Some(read(ctx.c, ctx.e, b, vars, work)?)
-        };
-        transform(op, source, other, work)
-    })();
-    // `Simplify.1` answers the shorter of the normal form and the factored
-    // form (`Ggb2giac`), which evaluate differently far from 0 (`(t - 10^8)^2`
-    // against its expansion). A curve coordinate is answered only where both
-    // forms are the same expression: a polynomial that is a number times one
-    // irreducible factor at most, of multiplicity one.
-    let exact = match exact {
-        Some(f) if op == Op::Simplify && ctx.e.curve_parameter.is_some() => {
-            // A rational coordinate is kept as a quotient by the reference
-            // and evaluated in that form, which the kernel does not keep.
-            let polynomial = f.expanded.denominator.scalar().is_some();
-            (polynomial && single_factors(&f.expanded, work)?).then_some(f)
-        }
-        other => other,
+    let a = read(ctx.c, ctx.e, a, vars, work)?;
+    let other = if b == NONE {
+        None
+    } else {
+        Some(read(ctx.c, ctx.e, b, vars, work)?)
     };
-    // A rewritten curve coordinate is evaluated like the expression the
-    // reference prints for it.
-    let exact = exact.map(|mut f| {
-        if ctx.e.curve_parameter.is_some()
-            && matches!(op, Op::Expand | Op::Simplify)
-            && f.form == Form::Expanded
-        {
-            f.form = Form::Printed;
-        }
-        f
-    });
-    // A curve coordinate that is no rational function is beyond this
-    // kernel: `AlgoCasBaseSingleArgument.applyCasCommand` sends it to the
-    // CAS, which may rewrite it into something that evaluates differently
-    // (`exp(t) exp(-t)` becomes 1), so the coordinate is undefined.
-    exact.map(FunctionResult::Exact)
-}
-
-/// Whether the numerator and the denominator each have at most one
-/// irreducible factor, of multiplicity one.
-fn single_factors(q: &Quotient, work: &mut Work<'_>) -> Option<bool> {
-    for p in [&q.numerator, &q.denominator] {
-        let (_, factors) = product(p, work)?;
-        if factors.len() > 1 || factors.iter().any(|(_, m)| *m > 1) {
-            return Some(false);
-        }
-    }
-    Some(true)
+    transform(op, a, other, work).map(FunctionResult::Exact)
 }
 
 pub(super) fn transform(
@@ -550,7 +484,7 @@ impl fmt::Display for Function {
             }
         };
         match &self.form {
-            Form::Expanded | Form::Printed => quotient(
+            Form::Expanded => quotient(
                 f,
                 print_poly(&self.expanded.numerator),
                 print_poly(&self.expanded.denominator),

@@ -2,9 +2,6 @@
 
 mod functional;
 mod input;
-mod legacy;
-mod objects;
-mod single;
 mod solutions;
 
 use super::equation::Builder;
@@ -15,8 +12,6 @@ use crate::{Construction, Kind};
 
 pub(super) use functional::{evaluate as function_at, function, print_poly, FunctionResult};
 use input::read;
-pub(crate) use objects::define_object;
-pub(in crate::expr) use single::NO_VARIABLE;
 
 pub(super) const NAMES: &[&str] = &[
     "Expand",
@@ -34,7 +29,6 @@ pub(super) const NAMES: &[&str] = &[
     "Solutions",
     "NSolve",
     "NSolutions",
-    "PlotSolve",
     "Polynomial",
     "Numerator",
     "Denominator",
@@ -64,12 +58,6 @@ pub(crate) enum Op {
         width: u8,
         axes: [u8; 3],
         system: bool,
-        /// The solving variables came as a list.
-        rows: bool,
-        /// `PlotSolve`: the solutions as points on the x-axis.
-        points: bool,
-        /// Main parses the input: main's solving path answers first.
-        legacy: bool,
     },
 }
 
@@ -91,15 +79,12 @@ impl Op {
             "IsFactored" => Self::IsFactored,
             "NextPrime" => Self::NextPrime,
             "PreviousPrime" => Self::PreviousPrime,
-            "Solve" | "Solutions" | "NSolve" | "NSolutions" | "PlotSolve" => Self::Solve {
+            "Solve" | "Solutions" | "NSolve" | "NSolutions" => Self::Solve {
                 assignments: false,
                 approximate: false,
                 width: 0,
                 axes: [0; 3],
                 system: false,
-                rows: false,
-                points: false,
-                legacy: false,
             },
             _ => return None,
         })
@@ -135,19 +120,14 @@ impl Op {
             Self::Solve {
                 system,
                 assignments,
-                rows,
-                approximate,
-                width,
                 ..
-            } => Ty::List(
-                if system || (rows && !assignments && !(approximate && width == 1)) {
-                    Elem::List
-                } else if assignments {
-                    Elem::Any
-                } else {
-                    Elem::Num
-                },
-            ),
+            } => Ty::List(if system {
+                Elem::List
+            } else if assignments {
+                Elem::Any
+            } else {
+                Elem::Num
+            }),
             Self::Coefficients if numeric(a) || a == Ty::Object => Ty::List(Elem::Num),
             Self::Degree if numeric(a) => Ty::Num(0),
             Self::Factors if numeric(a) => Ty::List(Elem::Any),
@@ -155,8 +135,6 @@ impl Op {
             Self::NextPrime | Self::PreviousPrime if a == Ty::Num(0) => Ty::Num(0),
             Self::CommonDenominator if numeric(a) && b.is_some_and(numeric) => Ty::Num(0),
             Self::Numerator | Self::Denominator if matches!(a, Ty::Num(_)) => Ty::Num(0),
-            // `Simplify` of a line or a conic reads it as a function.
-            Self::Simplify if b.is_none() && a == Ty::Object => Ty::Num(0),
             op if op.is_function() && b.is_none() && numeric(a) => Ty::Num(0),
             _ => return Err(format!("invalid arguments to `{}`", self.name())),
         };
@@ -204,7 +182,7 @@ impl<const M: bool> Ctx<'_, M> {
         }
     }
 
-    pub(super) fn cas_list(&self, op: Op, a: u32, b: u32) -> Option<(u32, u32)> {
+    pub(super) fn cas_list(&self, op: Op, a: u32) -> Option<(u32, u32)> {
         let lists = self.lists?;
         let charge = |n| lists.charge(n as u64);
         let work = &mut Work::new(&charge);
@@ -228,7 +206,7 @@ impl<const M: bool> Ctx<'_, M> {
                 self.cas_slots(coefficients.into_iter().map(Slot::number))
             }
             Op::Factors => functional::factor_list(self, a, work),
-            Op::Solve { .. } => solutions::list(self, a, b, op, work),
+            Op::Solve { .. } => solutions::list(self, a, op, work),
             _ => None,
         }
     }

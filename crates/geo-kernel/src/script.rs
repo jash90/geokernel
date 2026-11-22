@@ -749,8 +749,8 @@ fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option
     if let Some(result) = crate::expr::division_list(c, name, rhs) {
         return result.map(Some);
     }
-    if let Some(result) = crate::expr::define_cas_object(c, name, rhs) {
-        return result.map(Some);
+    if let Some(error) = crate::expr::refuse_empty_simplify(c, rhs) {
+        return Err(error);
     }
     if let Some(result) = crate::algo::discrete::exec(c, name, rhs) {
         return result.map(Some);
@@ -1099,8 +1099,7 @@ pub fn find_unquoted(text: &str, ch: char) -> Option<usize> {
     unquoted(text).find_map(|(i, c)| (c == ch).then_some(i))
 }
 
-/// The characters outside string literals, with their byte positions.
-pub(crate) fn unquoted(text: &str) -> impl Iterator<Item = (usize, char)> + '_ {
+fn unquoted(text: &str) -> impl Iterator<Item = (usize, char)> + '_ {
     let mut quoted = false;
     let mut escaped = false;
     text.char_indices().filter(move |&(_, c)| {

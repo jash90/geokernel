@@ -1338,7 +1338,7 @@ impl<const M: bool> Ctx<'_, M> {
             } => self.iteration_list(mode, formula, initial, count),
             Node::Range(from, to, step) => self.range(from, to, step),
             Node::Algebra(op, a, b) => self.algebra_list(op, a, b),
-            Node::Cas(op, a, b) => self.cas_list(op, a, b),
+            Node::Cas(op, a, _) => self.cas_list(op, a),
             Node::TextCmd(op, first, count) => self.text_list(op, first, count),
             Node::Seq(e, from, to, step, depth) => self.sequence(e, from, to, step, depth),
             Node::Call(op, first, len) => self.call_list(op, first, len),

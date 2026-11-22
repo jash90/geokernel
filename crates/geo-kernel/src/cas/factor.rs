@@ -105,7 +105,7 @@ pub(crate) fn gcd(left: &[Rat], right: &[Rat], work: &mut Work<'_>) -> Option<Ve
         .collect()
 }
 
-pub(super) fn derivative(coefficients: &[Rat], work: &mut Work<'_>) -> Option<Vec<Rat>> {
+fn derivative(coefficients: &[Rat], work: &mut Work<'_>) -> Option<Vec<Rat>> {
     work.spend(coefficients.len())?;
     coefficients
         .iter()

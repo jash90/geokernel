@@ -1002,11 +1002,11 @@
       ],
       "steps": [
         { "action": "initial" },
-        { "action": "reject", "line": "r = PlotSolve(f, x)", "error": "invalid arguments to `PlotSolve`" },
-        { "action": "reject", "line": "r = PlotSolve(g, y)", "error": "invalid arguments to `PlotSolve`" },
-        { "action": "reject", "line": "r = PlotSolve(2)", "error": "invalid arguments to `PlotSolve`" },
-        { "action": "reject", "line": "r = PlotSolve(x, y)", "error": "invalid arguments to `PlotSolve`" },
-        { "action": "reject", "line": "r = PlotSolve(f, x=1)", "error": "invalid arguments to `PlotSolve`" }
+        { "action": "reject", "line": "r = PlotSolve(f, x)", "error": "unknown command `PlotSolve`" },
+        { "action": "reject", "line": "r = PlotSolve(g, y)", "error": "unknown command `PlotSolve`" },
+        { "action": "reject", "line": "r = PlotSolve(2)", "error": "unknown command `PlotSolve`" },
+        { "action": "reject", "line": "r = PlotSolve(x, y)", "error": "unknown command `PlotSolve`" },
+        { "action": "reject", "line": "r = PlotSolve(f, x=1)", "error": "unknown command `PlotSolve`" }
       ],
       "snapshots": [
         {

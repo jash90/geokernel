@@ -237,8 +237,7 @@ fn coefficients(
 }
 
 /// Splits `lhs = rhs` at the one `=` between them: the top-level `=` that
-/// is not part of `==`, `!=`, `<=` or `>=` and sits outside every bracket
-/// and every text.
+/// is not part of `==`, `!=`, `<=` or `>=` and sits outside every bracket.
 pub(crate) fn split_equation(text: &str) -> Result<(&str, &str), String> {
     let (split, ordered) = equation_separator(text)?;
     match split {
@@ -258,11 +257,11 @@ fn equation_separator(text: &str) -> Result<(Option<usize>, bool), String> {
     let mut depth = 0i32;
     let mut split = None;
     let mut ordered = false;
-    for (i, c) in crate::script::unquoted(text) {
-        match c {
-            '(' | '[' | '{' => depth += 1,
-            ')' | ']' | '}' => depth -= 1,
-            '=' if depth == 0 => {
+    for (i, &b) in bytes.iter().enumerate() {
+        match b {
+            b'(' | b'[' | b'{' => depth += 1,
+            b')' | b']' | b'}' => depth -= 1,
+            b'=' if depth == 0 => {
                 let before = i.checked_sub(1).and_then(|j| bytes.get(j));
                 let part_of_comparison = matches!(before, Some(b'=' | b'<' | b'>' | b'!'))
                     || matches!(bytes.get(i + 1), Some(b'='));
@@ -274,7 +273,7 @@ fn equation_separator(text: &str) -> Result<(Option<usize>, bool), String> {
                 }
                 split = Some(i);
             }
-            '<' | '>' if depth == 0 => ordered = true,
+            b'<' | b'>' if depth == 0 => ordered = true,
             _ => {}
         }
     }

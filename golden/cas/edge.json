@@ -1124,6 +1124,188 @@
           }
         }
       ]
+    },
+    {
+      "id": "cas-edge-018",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" },
+        { "action": "reject", "line": "k = Curve(1+Simplify((t-10)^2), t, t, 0, 2)" }
+      ],
+      "snapshots": [
+        {},
+        {}
+      ]
+    },
+    {
+      "id": "cas-edge-019",
+      "group": "cas",
+      "script": [
+        "k: x^3-x+y=0",
+        "g: y=0",
+        "r1 = NSolve({k, g})",
+        "r2 = NSolutions({k, g})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 1.0],
+              [-1.0, 0.0],
+              [0.0, 0.0],
+              [1.0, 0.0]
+            ],
+            "equation": "x^(3) - x + y = 0",
+            "input_form": true
+          },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 0.0 },
+                  { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 }
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": -1.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-edge-020",
+      "group": "cas",
+      "script": [
+        "k: x^3-x=0",
+        "r1 = NSolutions(k, {x})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0],
+              [-1.0],
+              [0.0],
+              [1.0]
+            ],
+            "equation": "x^(3) - x = 0",
+            "input_form": true
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-edge-021",
+      "group": "cas",
+      "script": [
+        "r1 = NSolutions((1000000001/10000000000)*x-(1/10)*x-1/10000000, x=0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r1": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-edge-022",
+      "group": "cas",
+      "script": [
+        "g: y=(x-10^8)^2",
+        "f = Simplify(g)",
+        "n = f(10^8+1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [-1.0, 0.0, -1.0E16, 0.0, 1.0E8, 0.5],
+            "vertex": [1.0E8, 0.0],
+            "p": 0.5,
+            "eigenvectors": [
+              [0.0, 1.0],
+              [-1.0, 0.0]
+            ]
+          },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0000001600000064E16],
+              [-4.0, 1.0000000800000016E16],
+              [-2.0, 1.0000000400000004E16],
+              [-1.0, 1.00000002E16],
+              [-0.5, 1.00000001E16],
+              [0.0, 1.0E16],
+              [0.5, 9.9999999E15],
+              [1.0, 9.9999998E15],
+              [2.0, 9.999999600000004E15],
+              [4.0, 9.999999200000016E15],
+              [8.0, 9.999998400000064E15]
+            ]
+          },
+          "n": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
     }
   ]
 }

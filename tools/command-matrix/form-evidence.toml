@@ -3320,11 +3320,6 @@ form = "line"
 cases = ["cas-solve-026"]
 
 [[form]]
-command = "NSolve"
-form = "list"
-cases = ["cas-solve-027"]
-
-[[form]]
 command = "NSolutions"
 form = "function"
 cases = ["cas-solve-029"]
@@ -3333,11 +3328,6 @@ cases = ["cas-solve-029"]
 command = "NSolutions"
 form = "line"
 cases = ["cas-solve-030"]
-
-[[form]]
-command = "NSolutions"
-form = "list"
-cases = ["cas-solve-031"]
 
 [[form]]
 command = "Tangent"
@@ -3413,16 +3403,6 @@ form = "point"
 cases = ["georestsmall-surdpoint-001", "georestsmall-surdpoint-002"]
 
 [[form]]
-command = "NSolve"
-form = "implicit"
-cases = ["cas-implicit-002"]
-
-[[form]]
-command = "NSolutions"
-form = "implicit"
-cases = ["cas-implicit-002"]
-
-[[form]]
 command = "Expand"
 form = "list"
 cases = ["cas-rejected-001"]
@@ -3484,18 +3464,6 @@ form = "conic"
 cases = ["cas-rejected-003"]
 refusal = true
 difference = "polynomial-cas: `Expand(list)`, `Expand(line)`, `Expand(conic)`, `Factor(list)`, `Factor(line)`, `Factor(conic)`, `IFactor(list)`, `IFactor(line)`, `IFactor(conic)`"
-
-[[form]]
-command = "Simplify"
-form = "line"
-cases = ["cas-simplify-007", "cas-simplify-010"]
-difference = "polynomial-cas: `Simplify(line)`, `Simplify(conic)`"
-
-[[form]]
-command = "Simplify"
-form = "conic"
-cases = ["cas-simplify-008", "cas-simplify-014"]
-difference = "polynomial-cas: `Simplify(line)`, `Simplify(conic)`"
 
 [[form]]
 command = "Simplify"
@@ -3509,17 +3477,6 @@ form = "list"
 cases = ["cas-rejected-004"]
 refusal = true
 difference = "polynomial-cas: `Simplify(list)`"
-
-[[form]]
-command = "PlotSolve"
-form = "line"
-cases = ["cas-plot-002", "cas-plot-007", "cas-plot-008"]
-difference = "polynomial-cas: `PlotSolve(function)`, `PlotSolve(line)`"
-
-[[form]]
-command = "PlotSolve"
-form = "list"
-cases = ["cas-plot-004", "cas-plot-021"]
 
 [[form]]
 command = "IntersectPath"

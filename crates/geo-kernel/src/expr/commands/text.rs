@@ -534,3 +534,22 @@ pub(in crate::expr) fn is_independent(c: &Construction, id: crate::Id) -> bool {
             )
         })
 }
+
+/// `Simplify(text)` of an empty or undefined text fails when the command is
+/// created: `AlgoSimplifyText.compute` reads the first character. `None`,
+/// with nothing checked, for every other input.
+pub(crate) fn refuse_empty_simplify(c: &crate::Construction, input: &str) -> Option<String> {
+    if !input.starts_with("Simplify") {
+        return None;
+    }
+    let (name, args) = crate::script::split_call(input)?;
+    let (true, &[argument]) = (name == "Simplify", args.as_slice()) else {
+        return None;
+    };
+    let argument = argument.trim();
+    let empty = argument == "\"\""
+        || c.id(argument).is_some_and(|id| {
+            c.kind(id) == crate::Kind::Text && c.text(id).is_none_or(str::is_empty)
+        });
+    empty.then(|| "`Simplify` needs a text that is not empty".to_owned())
+}

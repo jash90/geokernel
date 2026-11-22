@@ -1720,8 +1720,8 @@ pub(crate) fn accepts_text_argument(c: &Construction, source: &str) -> bool {
     parse::parse_argument(c, source).is_ok()
 }
 
-pub(crate) use cas::define_object as define_cas_object;
 pub(crate) use cas::displayed as symbolic_value;
+pub(crate) use commands::text::refuse_empty_simplify;
 
 pub(crate) fn text_value(c: &Construction, id: Id) -> Option<&str> {
     let Def::Expr(d) = c.def(id) else {
@@ -2263,23 +2263,6 @@ pub(crate) fn define_parametric_coordinate(
     };
     c.exprs.entries[def.index as usize].curve_parameter = Some(parameter.into());
     Ok(id)
-}
-
-/// Adds the function `parsed` as a coordinate of a curve, with the
-/// parameter name of the coordinate `like`. The name is in place before
-/// the first evaluation, which reads it.
-fn add_curve_coordinate(
-    c: &mut Construction,
-    label: &str,
-    parsed: parse::Parsed,
-    like: Id,
-) -> Result<Id, String> {
-    let Def::Expr(source) = c.def(like) else {
-        return Err("a curve coordinate is a function expression".into());
-    };
-    let mut e = Entry::new(c, parsed, true);
-    e.curve_parameter = entry(c, source).curve_parameter.clone();
-    add_entry(c, label, e, Kind::Function, AngleStyle::Unbounded).map_err(|e| e.to_string())
 }
 
 /// Legacy Function stores the graph's bounds separately. Parse the bounds
