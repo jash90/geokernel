@@ -791,3 +791,13 @@ reason = "The kernel has no complex point mode, so the input point cannot be con
 mismatches = [
   "0:script line 1",
 ]
+
+[[gap]]
+id = "corners-text-001"
+reason = "Text corners require the drawable bounding box, including its headless font metrics. The kernel has no drawable bounds."
+mismatches = ["0:P", "1:P", "2:P", "4:P"]
+
+[[gap]]
+id = "corners-inequality-002"
+reason = "A sinusoidal border prevents polynomial expansion of the full inequality tree. The reference can still return the three vertices from pairs of linear borders."
+mismatches = ["0:P_{1}", "0:P_{2}", "0:P_{3}"]

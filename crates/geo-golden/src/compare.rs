@@ -318,6 +318,7 @@ pub fn compare_sampled(
             ok(numbers_agree(*start, a) && numbers_agree(*end, b))
         }
         (ExpectedData::Bool(b), Value::Bool(ab)) => ok(*b == ab),
+        (ExpectedData::Image, Value::Image) => ok(true),
         (
             ExpectedData::Circle { cx, cy, r },
             Value::Circle {

@@ -3493,3 +3493,43 @@ cases = ["georestclip-paths-004"]
 command = "IntersectionPaths"
 form = "conic,polygon"
 cases = ["georestclip-paths-004"]
+
+[[form]]
+command = "Corner"
+form = "conic"
+cases = ["corners-conic-001"]
+
+[[form]]
+command = "Corner"
+form = "polygon"
+cases = ["corners-geometry-001"]
+
+[[form]]
+command = "Corner"
+form = "polyline"
+cases = ["corners-geometry-001"]
+
+[[form]]
+command = "Corner"
+form = "polygon,number"
+cases = ["corners-geometry-001"]
+
+[[form]]
+command = "Corner"
+form = "polyline,number"
+cases = ["corners-geometry-001"]
+
+[[form]]
+command = "Corner"
+form = "segment,number"
+cases = ["corners-geometry-001"]
+
+[[form]]
+command = "Corner"
+form = "image,number"
+cases = ["corners-raster-001"]
+
+[[form]]
+command = "Corner"
+form = "number,number"
+cases = ["corners-view-001"]

@@ -54,17 +54,44 @@ pub(crate) const CLOSEST_PATH: &[Kind] = &[
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum PointDef {
     /// `Point(P, v)`: move the point by the vector's components.
-    Offset { point: Id, vector: Id },
+    Offset {
+        point: Id,
+        vector: Id,
+    },
     /// One output of `Point(list)`, from a flat coordinate list or a row.
-    Coordinates { list: Id, slot: u32 },
+    Coordinates {
+        list: Id,
+        slot: u32,
+    },
     /// `Barycenter(points, weights)`.
-    Barycenter { points: Id, weights: Id },
+    Barycenter {
+        points: Id,
+        weights: Id,
+    },
     /// `Vertex(segment, n)`.
-    SegmentVertex { segment: Id, index: Count },
+    SegmentVertex {
+        segment: Id,
+        index: Count,
+    },
     /// `Vertex(n)` or `Vertex(view, n)` in the kernel's graphics view.
-    ViewCorner { view: Option<Count>, index: Count },
+    ViewCorner {
+        view: Option<Count>,
+        index: Count,
+    },
     /// World coordinates of a raster image's corner.
-    ImageVertex { image: Id, index: Count },
+    ImageVertex {
+        image: Id,
+        index: Count,
+    },
+    /// A corner whose position requires bounds supplied by a drawable.
+    DrawableCorner {
+        source: Id,
+        index: Count,
+    },
+    InequalityVertex {
+        source: Id,
+        slot: u16,
+    },
     /// A segment whose endpoint objects are available even when it is undefined.
     SegmentEndpoint {
         segment: Id,
@@ -73,22 +100,42 @@ pub enum PointDef {
         index: Count,
     },
     /// `ClosestPoint(path, point)` in either order of the arguments.
-    Closest { path: Id, point: Id },
+    Closest {
+        path: Id,
+        point: Id,
+    },
     /// `ClosestPoint(g, h)` of two lines: `AlgoClosestPointLines`, which is
     /// `AlgoIntersectLines`.
-    LineIntersection { first: Id, second: Id },
+    LineIntersection {
+        first: Id,
+        second: Id,
+    },
     /// `Trilinear(A, B, C, a, b, c)`: the three points, then the three
     /// numbers. The handles are stored as `u32` to keep [`crate::Def`] small.
-    Trilinear { ids: [u32; 6] },
+    Trilinear {
+        ids: [u32; 6],
+    },
     /// `TriangleCenter(A, B, C, n)`.
-    TriangleCenter { a: Id, b: Id, c: Id, index: Count },
+    TriangleCenter {
+        a: Id,
+        b: Id,
+        c: Id,
+        index: Count,
+    },
     /// `ToComplex(g)`, `ToPolar(g)` and `ToPoint(g)`: a copy of the value
     /// of a point, number, vector or list (of its first two elements) that
     /// only shows in another coordinate style (`AlgoToComplexPolar`).
-    Convert { source: Id, mode: CoordMode },
+    Convert {
+        source: Id,
+        mode: CoordMode,
+    },
     /// `DynamicCoordinates(P, x, y)`: the point `(x, y)`, recomputed when
     /// the movable point `P` moves (`AlgoDynamicCoordinates`).
-    Dynamic { point: Id, x: Id, y: Id },
+    Dynamic {
+        point: Id,
+        x: Id,
+        y: Id,
+    },
 }
 
 /// The coordinate style a point or vector prints in (`Kernel.COORD_*`);
@@ -193,6 +240,25 @@ fn vertex_index(index: f64) -> Option<usize> {
 }
 
 impl PointDef {
+    pub(crate) fn inequality_source(c: &Construction, func: &str, args: &[&str]) -> Option<Id> {
+        let ("Vertex" | "Corner", [source]) = (func, args) else {
+            return None;
+        };
+        c.id(source)
+            .filter(|&id| crate::expr::inequality::is_inequality(c, id))
+    }
+
+    pub(crate) fn inequality_slots(source: Id, count: usize) -> Vec<Def> {
+        (0..count)
+            .map(|slot| {
+                Def::Point(Self::InequalityVertex {
+                    source,
+                    slot: slot as u16,
+                })
+            })
+            .collect()
+    }
+
     pub(crate) fn parse_image_vertex(
         c: &Construction,
         args: &[&str],
@@ -206,6 +272,19 @@ impl PointDef {
 
     pub(crate) fn reads_view(self) -> bool {
         matches!(self, Self::ViewCorner { .. } | Self::ImageVertex { .. })
+    }
+
+    pub(crate) fn parse_drawable_corner(
+        c: &Construction,
+        args: &[&str],
+    ) -> Option<Result<Self, String>> {
+        let [source, index] = *args else {
+            return None;
+        };
+        let source = c
+            .id(source)
+            .filter(|&id| matches!(c.kind(id), Kind::Text | Kind::Boolean))?;
+        Some(count_arg(c, index).map(|index| Self::DrawableCorner { source, index }))
     }
 
     pub(crate) fn hidden_parents(self, c: &Construction) -> &[Id] {
@@ -478,6 +557,11 @@ impl Group for PointDef {
                 Some(index) => Parents::of(&[image, index]),
                 None => Parents::of(&[image]),
             },
+            PointDef::DrawableCorner { source, index } => match index.id() {
+                Some(index) => Parents::of(&[source, index]),
+                None => Parents::of(&[source]),
+            },
+            PointDef::InequalityVertex { source, .. } => Parents::of(&[source]),
             PointDef::Offset { point, vector } => Parents::of(&[point, vector]),
             PointDef::Coordinates { list, .. } => Parents::of(&[list]),
             PointDef::Barycenter { points, weights } => Parents::of(&[points, weights]),
@@ -523,6 +607,11 @@ impl Group for PointDef {
                 c.expect(image, &[Kind::Image])?;
                 index.check(c)
             }
+            PointDef::DrawableCorner { source, index } => {
+                c.expect(source, &[Kind::Text, Kind::Boolean])?;
+                index.check(c)
+            }
+            PointDef::InequalityVertex { source, .. } => c.expect(source, &[Kind::FunctionNVar]),
             PointDef::Offset { point, vector } => {
                 c.expect(point, POINT)?;
                 c.expect(vector, &[Kind::Vector])
@@ -594,6 +683,12 @@ impl Group for PointDef {
         match *self {
             PointDef::ViewCorner { view, index } => view_corner(c, view, index),
             PointDef::ImageVertex { image, index } => c.image_vertex(image, index.value(c) as i32),
+            PointDef::DrawableCorner { .. } => None,
+            PointDef::InequalityVertex { source, slot } => {
+                let points = crate::expr::inequality::vertices(c, source);
+                let (x, y) = *points.get(usize::from(slot))?;
+                Some(Value::Point { x, y })
+            }
             PointDef::Offset { point, vector } => {
                 let (px, py) = c.point(point)?;
                 let Value::Vector { x, y } = c.value(vector) else {

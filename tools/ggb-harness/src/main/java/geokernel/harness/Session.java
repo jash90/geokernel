@@ -1,15 +1,21 @@
 package geokernel.harness;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.IdentityHashMap;
+import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.imageio.ImageIO;
 
 import org.geogebra.common.factories.AwtFactoryCommon;
 import org.geogebra.common.jre.headless.AppCommon;
@@ -39,6 +45,7 @@ import org.geogebra.common.kernel.geos.GeoConicPart;
 import org.geogebra.common.kernel.geos.GeoElement;
 import org.geogebra.common.kernel.geos.GeoFunction;
 import org.geogebra.common.kernel.geos.GeoFunctionNVar;
+import org.geogebra.common.kernel.geos.GeoImage;
 import org.geogebra.common.kernel.geos.GeoText;
 import org.geogebra.common.kernel.geos.GeoLine;
 import org.geogebra.common.kernel.geos.GeoList;
@@ -72,6 +79,8 @@ import org.geogebra.common.util.StringUtil;
  * Every surprise (an unexpected label, class or conic type) is an error.
  */
 final class Session {
+
+    private final Map<String, BufferedImage> fixtureImages = new LinkedHashMap<>();
 
     private static final Pattern LINE =
             Pattern.compile("^([A-Za-z][A-Za-z0-9']*(?:_\\{[A-Za-z0-9]+\\})?)"
@@ -197,6 +206,16 @@ final class Session {
     /** Runs one `label = definition` or `label: equation` line and checks
      * what GeoGebra created. */
     GeoElement run(String line) {
+        if (line.startsWith("$imageAsset(")) {
+            List<String> args = arguments(line);
+            try {
+                fixtureImages.put(fixtureText(args.get(0)),
+                        ImageIO.read(new ByteArrayInputStream(fixtureBytes(args.get(1).trim()))));
+            } catch (IOException ex) {
+                throw new IllegalArgumentException("invalid raster fixture", ex);
+            }
+            return null;
+        }
         Matcher m = LINE.matcher(line);
         boolean equationLine = false;
         if (!m.matches()) {
@@ -225,6 +244,9 @@ final class Session {
                 : transformed != null ? transformed : expectedType(label, definition);
         if (objects.containsKey(label) || kernel.lookupLabel(label) != null) {
             throw new IllegalArgumentException("label used twice: " + label);
+        }
+        if (definition.startsWith("$image(")) {
+            return addFixtureImage(label, definition);
         }
         if (definition.startsWith("Relation(")) {
             List<String> args = arguments(definition);
@@ -402,6 +424,62 @@ final class Session {
             conics.add(geo);
         }
         return geo;
+    }
+
+    private static byte[] fixtureBytes(String field) {
+        if (!field.startsWith("_")) {
+            throw new IllegalArgumentException("invalid encoded fixture field");
+        }
+        return HexFormat.of().parseHex(field.substring(1));
+    }
+
+    private static String fixtureText(String field) {
+        return new String(fixtureBytes(field), StandardCharsets.UTF_8);
+    }
+
+    private GeoImage addFixtureImage(String label, String definition) {
+        List<String> args = arguments(definition).stream().map(String::trim).toList();
+        String file = fixtureText(args.get(0));
+        BufferedImage raster = fixtureImages.get(file);
+        if (raster == null || args.size() != 6 || !args.get(4).equals("_")) {
+            throw new IllegalArgumentException("invalid raster fixture placement");
+        }
+        var image = new GeoImage(kernel.getConstruction());
+        image.setImageFileName(file, raster.getWidth(), raster.getHeight());
+        image.setAlphaValue(Float.parseFloat(args.get(1)));
+        image.setInBackground(Boolean.parseBoolean(args.get(2)));
+        image.setInterpolate(Boolean.parseBoolean(args.get(3)));
+        String placement = args.get(5);
+        List<String> coordinates = arguments(placement).stream().map(String::trim).toList();
+        if (placement.startsWith("screen(")) {
+            image.setAbsoluteScreenLocActive(true);
+            image.setAbsoluteScreenLoc(Integer.parseInt(coordinates.get(0)),
+                    Integer.parseInt(coordinates.get(1)));
+        } else if (placement.startsWith("world(") && coordinates.get(1).equals("false")) {
+            for (int i = 0; i < 3; i++) {
+                String corner = coordinates.get(i + 2);
+                if (corner.startsWith("point(")) {
+                    String point = fixtureText(arguments(corner).get(0));
+                    image.setCorner((GeoPoint) kernel.lookupLabel(point), i);
+                } else if (corner.startsWith("xy(")) {
+                    List<String> xy = arguments(corner);
+                    image.setRealWorldCoord(Double.parseDouble(xy.get(0)),
+                            Double.parseDouble(xy.get(1)), i);
+                } else if (!corner.equals("_")) {
+                    throw new IllegalArgumentException("invalid raster fixture corner");
+                }
+            }
+            if (Boolean.parseBoolean(coordinates.get(0))) {
+                image.setCentered(true);
+            }
+        } else {
+            throw new IllegalArgumentException("invalid raster fixture placement");
+        }
+        image.setLabel(label);
+        image.setEuclidianVisible(true);
+        image.updateCascade();
+        objects.put(label, image);
+        return image;
     }
 
     /**
@@ -876,6 +954,9 @@ final class Session {
         if (geo instanceof GeoText) {
             return "text";
         }
+        if (geo instanceof GeoImage) {
+            return "image";
+        }
         if (geo instanceof GeoLocus) {
             return "locus";
         }
@@ -1114,6 +1195,9 @@ final class Session {
             return false;
         }
         switch (m.group(1)) {
+            case "Corner":
+                return !(objects.get(arguments(definition).get(0)) instanceof GeoNumeric)
+                        && !NUMBER.matcher(arguments(definition).get(0)).matches();
             case "Vertex":
             case "InteriorAngles":
                 return true;
@@ -1609,6 +1693,8 @@ final class Session {
                 return arcFields((GeoConicPart) geo);
             case "text":
                 f.put("text", ((GeoText) geo).getTextString());
+                return f;
+            case "image":
                 return f;
             case "angle":
             case "number":

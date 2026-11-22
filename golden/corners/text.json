@@ -1,0 +1,56 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "corners-text-001",
+      "group": "corners",
+      "script": [
+        "A = (2, 3)",
+        "n = 1",
+        "t = Text(\"Corner\", A)",
+        "P = Corner(t, n)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 3.0 },
+        { "action": "move", "label": "A", "x": -2.0, "y": 4.0 },
+        { "action": "set_number", "label": "n", "value": 5.0 },
+        { "action": "set_number", "label": "n", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "t": { "type": "text", "defined": true, "text": "Corner" },
+          "P": { "type": "point", "defined": true, "x": 1.94, "y": 2.8200000000000003 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "t": { "type": "text", "defined": true, "text": "Corner" },
+          "P": { "type": "point", "defined": true, "x": 2.78, "y": 3.3000000000000003 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 4.0 },
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "t": { "type": "text", "defined": true, "text": "Corner" },
+          "P": { "type": "point", "defined": true, "x": -1.2200000000000002, "y": 4.3 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 4.0 },
+          "n": { "type": "number", "defined": true, "value": 5.0 },
+          "t": { "type": "text", "defined": true, "text": "Corner" },
+          "P": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 4.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "t": { "type": "text", "defined": true, "text": "Corner" },
+          "P": { "type": "point", "defined": true, "x": -2.06, "y": 3.82 }
+        }
+      ]
+    }
+  ]
+}

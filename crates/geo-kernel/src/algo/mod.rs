@@ -37,6 +37,7 @@ pub mod lines;
 pub mod measure;
 pub mod optimize;
 pub mod path;
+pub(crate) mod plane_polynomial;
 pub mod point;
 pub mod polygon;
 pub mod polygon_clip;

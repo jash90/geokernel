@@ -820,6 +820,10 @@ fn java_int(v: f64) -> i64 {
 }
 
 impl Poly {
+    pub(crate) fn terms(&self) -> &[Term] {
+        &self.0
+    }
+
     /// The degree of the polynomial: the largest sum of the variable
     /// degrees of its terms (`Polynomial.degree`).
     pub(crate) fn degree(&self) -> u32 {

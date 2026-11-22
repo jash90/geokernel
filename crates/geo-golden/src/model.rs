@@ -141,6 +141,7 @@ pub enum ExpectedData {
         r: f64,
     },
     Number(f64),
+    Image,
     Curve {
         start: f64,
         end: f64,
@@ -505,6 +506,7 @@ impl TryFrom<RawObject> for Expected {
             "function" => (Kind::Function, &[]),
             "function_nvar" => (Kind::FunctionNVar, &[]),
             "text" => (Kind::Text, &["text"]),
+            "image" => (Kind::Image, &[]),
             "relation" => (Kind::Text, &["reports"]),
             "polygon" => (Kind::Polygon, &["vertices", "area", "signed_area"]),
             "piechart" => (Kind::PieChart, &["center", "radius", "fractions"]),
@@ -701,6 +703,7 @@ impl TryFrom<RawObject> for Expected {
                 r: f("r"),
             },
             Kind::Number | Kind::Angle => ExpectedData::Number(f("value")),
+            Kind::Image => ExpectedData::Image,
             Kind::Curve => ExpectedData::Curve {
                 start: f("start"),
                 end: f("end"),
@@ -736,6 +739,7 @@ const SCRIPTING_COMMANDS: &[&str] = &[
     "ZoomIn(",
     "ZoomOut(",
     "SetActiveView(",
+    "$imageAsset(",
 ];
 
 /// How many lines of the script run a scripting command of their own.

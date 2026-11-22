@@ -283,9 +283,9 @@ fn type_node(
                 0,
             )
         }
-        Node::SystemFunction(_, a) => {
+        Node::SystemFunction(arity, a) => {
             let a = a as usize;
-            if !matches!(state.tys[a], Ty::Num(_)) {
+            if !matches!(state.tys[a], Ty::Num(_)) && (arity != 2 || state.tys[a] != Ty::Bool) {
                 return Err("a system function must give a number".into());
             }
             (

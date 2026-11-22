@@ -78,6 +78,7 @@ pub(crate) mod derivative;
 pub(crate) mod equation;
 mod eval;
 pub(crate) mod fraction;
+pub(crate) mod inequality;
 mod inverse;
 #[doc(hidden)]
 pub use eval::{work_done, MAX_ELEMENTS, MAX_EVALUATION_WORK, MAX_OVERRUN};
@@ -1958,6 +1959,9 @@ fn define_with_coordinates(
     rhs: &str,
     vector_label: Option<bool>,
 ) -> Result<Id, String> {
+    if let Some(result) = define_plane_inequality(c, name, rhs) {
+        return result;
+    }
     let parsed = match parse::parse(c, rhs) {
         Ok(parsed) => parsed,
         Err(error) => match parse::parse_equation(c, rhs) {
@@ -1991,6 +1995,25 @@ fn define_with_coordinates(
         Ty::Function => return Err("a function needs an argument".into()),
     };
     add(c, name, parsed, kind)
+}
+
+pub(crate) fn define_plane_inequality(
+    c: &mut Construction,
+    label: &str,
+    rhs: &str,
+) -> Option<Result<Id, String>> {
+    if !rhs.contains(['<', '>']) || !rhs.contains('y') {
+        return None;
+    }
+    let mut parsed = parse::parse_equation(c, rhs).ok()?;
+    if !parsed.uses_y || parsed.tys[parsed.root as usize] != Ty::Bool {
+        return None;
+    }
+    parsed.nodes.push(Node::SystemFunction(2, parsed.root));
+    parsed.lits.push(Lit::default());
+    parsed.tys.push(Ty::Bool);
+    parsed.root = parsed.nodes.len() as u32 - 1;
+    Some(add(c, label, parsed, Kind::FunctionNVar))
 }
 
 /// ExpressionNode.evaluatesToVectorNotPoint, for an unlabelled 2D input.

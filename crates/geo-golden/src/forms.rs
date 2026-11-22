@@ -135,6 +135,7 @@ fn tokens_of(k: Kind) -> &'static [&'static str] {
         Kind::Function | Kind::FunctionNVar => &["function"],
         Kind::Curve => &["curve"],
         Kind::Text => &["text"],
+        Kind::Image => &["image"],
         Kind::Locus => &["locus"],
         _ => &[],
     }

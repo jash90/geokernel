@@ -1,0 +1,65 @@
+#!/usr/bin/env python3
+"""Geometry and view corners, including a small synthetic raster."""
+
+import struct
+import zlib
+
+from caselib import Cases, mv, num, pt, setn
+
+
+def encoded(text):
+    return "_" + text.encode().hex()
+
+
+def raster():
+    def chunk(tag, data):
+        return struct.pack(">I", len(data)) + tag + data + struct.pack(">I", zlib.crc32(tag + data))
+
+    header = struct.pack(">2I5B", 12, 8, 8, 2, 0, 0, 0)
+    pixels = (b"\0" + b"\x11\x77\x99" * 12) * 8
+    return b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", header) + chunk(
+        b"IDAT", zlib.compress(pixels)
+    ) + chunk(b"IEND", b"")
+
+
+asset = encoded("sample.png")
+image_asset = f"$imageAsset({asset}, _{raster().hex()})"
+
+
+def image(label, placement):
+    return f"{label} = $image({asset}, 1, false, true, _, {placement})"
+
+
+cases = Cases("corners")
+# CommandsTest.cmdVertex, with movable endpoints and an editable index.
+cases.case("geometry", [
+    pt("A", 0, 0), pt("B", 1, 0), pt("C", 0, 1), num("n", 2),
+    "p = Polygon(A, B, C)", "q = PolyLine(A, B, C)", "s = Segment(B, C)",
+    "V = Corner(p)", "W = Corner(q)", "G = Corner(p, n)", "H = Corner(q, n)",
+    "S = Corner(s, n)",
+], [setn("n", 0), mv("B", 0, 1), setn("n", 1.5), setn("n", 2)])
+cases.case("conic", [
+    pt("A", -1, 0), pt("B", 1, 0), num("r", 3),
+    "k = Ellipse(A, B, r)", "V = Corner(k)",
+], [setn("r", 0.5), mv("B", 1, 2), setn("r", 3)])
+cases.case("view", [
+    num("v", 1), num("n", 1), "P = Corner(v, n)", "Q = Corner(1, 6)",
+], [setn("n", 5), setn("v", 2), setn("n", 3), setn("v", 1), setn("n", 7), setn("n", 4)])
+cases.case("text", [
+    pt("A", 2, 3), num("n", 1), 't = Text("Corner", A)', "P = Corner(t, n)",
+], [setn("n", 3), mv("A", -2, 4), setn("n", 5), setn("n", 1)])
+cases.case("raster", [
+    image_asset, pt("A", 2, 3), pt("B", 5, 3), num("n", 1),
+    image("im", f"world(false, false, point({encoded('A')}), point({encoded('B')}), _)"),
+    image("fixed", "screen(12, 18)"), "P = Corner(im, n)", "Q = Corner(fixed, 2)",
+], [setn("n", 2), mv("B", 2, 3), setn("n", 3), mv("B", 5, 5),
+    setn("n", 5), setn("n", 4)])
+cases.case("inequality", [
+    num("h", 2), "q(x,y) = x > 0 && y > 0 && x + y < h", "P = Corner(q)",
+], [setn("h", -1), setn("h", 3)])
+cases.case("inequality", [
+    "q(x,y) = x > 0 && y > 0 && x + y < 2 && y > sin(x) - 10",
+    "P = Corner(q)",
+], [])
+
+cases.write()

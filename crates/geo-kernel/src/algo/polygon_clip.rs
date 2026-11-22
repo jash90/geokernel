@@ -62,10 +62,7 @@ pub(crate) struct ClipCache {
 
 impl ClipCache {
     pub(crate) fn clear(&mut self) {
-        self.segments
-            .get_mut()
-            .expect("path clip cache")
-            .clear();
+        self.segments.get_mut().expect("path clip cache").clear();
         self.rings.get_mut().expect("polygon overlay cache").clear();
     }
 }
