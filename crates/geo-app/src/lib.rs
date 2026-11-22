@@ -78,6 +78,12 @@ impl Window {
         app.set_metrics(metrics);
         Window(app)
     }
+
+    /// Sets the source path used to seed the Save As dialog.
+    pub fn with_source_path(mut self, path: Option<std::path::PathBuf>) -> Self {
+        self.0.source_path = path;
+        self
+    }
 }
 
 /// Sets up the egui context of a window with the input profile `metrics`:

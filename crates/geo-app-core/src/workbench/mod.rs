@@ -12,6 +12,7 @@ use crate::style::{Palette, Sides};
 use crate::undo::Undo;
 use crate::view::Camera;
 pub use file::{import_notice, rejected_notice, SNAPSHOT_VERSION};
+pub use geo_import::export::View as FileView;
 use geo_kernel::kernel::text::{TextOverrides, TextPosition};
 use geo_kernel::kernel::{Construction, Def, Id, Kind, Value};
 use geo_kernel::script::text::Properties as TextProperties;
@@ -76,6 +77,11 @@ pub struct Workbench {
     construction: Construction,
     log: Log,
     boundary_outputs: BoundaryOutputs,
+    file_settings: geo_import::Settings,
+    file_import_losses: (usize, usize),
+    file_object_styles: BTreeMap<String, geo_import::export::ObjectStyle>,
+    file_slider_animation: BTreeMap<String, geo_import::export::SliderAnimation>,
+    file_view: Option<geo_import::export::View>,
     version: u64,
     /// Counts the times the construction was rebuilt or replaced. Object ids
     /// are only valid within one such period.
@@ -96,8 +102,7 @@ pub struct Workbench {
     /// The labels moved away from their place, by object label: the offset
     /// in pixels (`GeoElement.labelOffsetX/Y`). A label drag is no undo step
     /// (`moveLabel`), so they are kept outside the journal: undo leaves them,
-    /// and a label that goes away takes its offset along. Not written to
-    /// files yet.
+    /// and a label that goes away takes its offset along. Included in .ggb export.
     label_offsets: BTreeMap<String, (f64, f64)>,
     /// The algebra rows, the values each was made from, and the state they
     /// were brought up to date with (see `rows.rs`).
@@ -258,6 +263,11 @@ impl Workbench {
         self.objects_changed();
         self.log = log;
         self.label_offsets.clear();
+        self.file_settings = geo_import::Settings::default();
+        self.file_import_losses = (0, 0);
+        self.file_object_styles.clear();
+        self.file_slider_animation.clear();
+        self.file_view = None;
         self.selected = None;
         self.undo.clear();
         self.gesture = None;
@@ -542,6 +552,8 @@ impl Workbench {
         // with its label moved.
         kept.hidden.retain(|l| c.id(l).is_some());
         self.label_offsets.retain(|l, _| c.id(l).is_some());
+        self.file_object_styles.retain(|l, _| c.id(l).is_some());
+        self.file_slider_animation.retain(|l, _| c.id(l).is_some());
         self.boundary_outputs = kept.boundary_outputs(&c);
         self.construction = c;
         self.objects_changed();

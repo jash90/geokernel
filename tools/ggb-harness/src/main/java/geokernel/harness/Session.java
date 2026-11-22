@@ -606,21 +606,7 @@ final class Session {
         for (Map.Entry<String, GeoElement> e : objects.entrySet()) {
             GeoElement geo = e.getValue();
             Map<String, Object> object = solutionSets.contains(geo) && geo instanceof GeoList list
-                    ? describeSolutions(list) : describe(geo, schemaType(geo));
-            if (sampleCurves && geo instanceof GeoCurveCartesian curve && curve.isDefined()) {
-                List<Object> samples = new ArrayList<>();
-                double start = curve.getMinParameter();
-                double end = curve.getMaxParameter();
-                for (double fraction : new double[] {0, 0.125, 0.25, 0.5, 0.75, 0.875, 1}) {
-                    double t = start + (end - start) * fraction;
-                    double[] xy = new double[2];
-                    curve.evaluateCurve(t, xy);
-                    Object point = Double.isFinite(xy[0]) && Double.isFinite(xy[1])
-                            ? pair(xy[0], xy[1]) : null;
-                    samples.add(Arrays.asList(t, point));
-                }
-                object.put("samples_curve", samples);
-            }
+                    ? describeSolutions(list) : describe(geo, schemaType(geo), sampleCurves);
             snap.put(e.getKey(), object);
         }
         for (Map.Entry<String, List<GeoElement>> e : relations.entrySet()) {
@@ -1363,6 +1349,25 @@ final class Session {
             }
         }
         return true;
+    }
+
+    static Map<String, Object> describe(GeoElement geo, String type, boolean sampleCurves) {
+        Map<String, Object> object = describe(geo, type);
+        if (sampleCurves && geo instanceof GeoCurveCartesian curve && curve.isDefined()) {
+            List<Object> samples = new ArrayList<>();
+            double start = curve.getMinParameter();
+            double end = curve.getMaxParameter();
+            for (double fraction : new double[] {0, 0.125, 0.25, 0.5, 0.75, 0.875, 1}) {
+                double t = start + (end - start) * fraction;
+                double[] xy = new double[2];
+                curve.evaluateCurve(t, xy);
+                Object point = Double.isFinite(xy[0]) && Double.isFinite(xy[1])
+                        ? pair(xy[0], xy[1]) : null;
+                samples.add(Arrays.asList(t, point));
+            }
+            object.put("samples_curve", samples);
+        }
+        return object;
     }
 
     static Map<String, Object> describe(GeoElement geo, String type) {

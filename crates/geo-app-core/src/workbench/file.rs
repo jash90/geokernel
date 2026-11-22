@@ -5,6 +5,11 @@
 
 use super::Workbench;
 use crate::scriptlog::{Log, Rejected};
+use geo_import::export::{self, Definition, Presentation, View};
+use geo_kernel::script::boundary_slot_owner;
+use geo_kernel::script::saved::Property;
+use geo_kernel::{script, Kind};
+use std::collections::BTreeMap;
 
 /// The format of `snapshot_text`. Its first line is a script comment, so a
 /// snapshot is also a plain script; `restore_text` reads exactly this
@@ -20,22 +25,167 @@ impl Workbench {
     /// script. `name` prefixes every error. On error the document is
     /// unchanged.
     pub fn load_bytes(&mut self, bytes: &[u8], name: &str) -> Result<(), String> {
+        self.load_document(bytes, name, false)
+    }
+
+    /// Loads a source for conversion, requiring every object to import and agree.
+    pub fn load_for_export(&mut self, bytes: &[u8], name: &str) -> Result<(), String> {
+        self.load_document(bytes, name, true)
+    }
+
+    fn load_document(&mut self, bytes: &[u8], name: &str, complete: bool) -> Result<(), String> {
         if geo_import::looks_like_construction(bytes) {
             let imported =
                 geo_import::import_for_replay(bytes).map_err(|e| format!("{name}: {e}"))?;
+            if complete && (!imported.skipped.is_empty() || !imported.mismatched.is_empty()) {
+                let detail = imported
+                    .skipped
+                    .first()
+                    .map(|s| format!("{}: {}", s.label, s.reason))
+                    .or_else(|| {
+                        imported.mismatched.first().map(|m| {
+                            format!("{}: saved {}, computed {}", m.label, m.saved, m.computed)
+                        })
+                    })
+                    .unwrap_or_default();
+                return Err(format!(
+                    "{name}: {} skipped objects and {} saved value mismatches ({detail})",
+                    imported.skipped.len(),
+                    imported.mismatched.len()
+                ));
+            }
             let notice = import_notice(&imported);
-            return self
-                .load_imported_with_conditions(
-                    &imported.script.join("\n"),
-                    &imported.image_assets,
-                    &imported.hidden,
-                    &imported.conditions,
-                    notice,
-                )
-                .map_err(|e| format!("{name}: {e}"));
+            self.load_imported_with_conditions(
+                &imported.script.join("\n"),
+                &imported.image_assets,
+                &imported.hidden,
+                &imported.conditions,
+                notice,
+            )
+            .map_err(|e| format!("{name}: {e}"))?;
+            self.file_settings = imported.settings;
+            self.file_import_losses = (imported.skipped.len(), imported.mismatched.len());
+            self.file_object_styles = imported.object_styles;
+            self.file_slider_animation = imported.slider_animation;
+            self.file_view = imported.view;
+            self.label_offsets = imported.label_offsets;
+            return Ok(());
         }
         let src = std::str::from_utf8(bytes).map_err(|e| format!("{name}: {e}"))?;
         self.load_script(src).map_err(|e| format!("{name}: {e}"))
+    }
+
+    /// The primary view saved by the document, when present.
+    pub fn file_view(&self) -> Option<View> {
+        self.file_view
+    }
+
+    /// Skipped objects and mismatched values in the file used to open the document.
+    pub fn file_import_losses(&self) -> (usize, usize) {
+        self.file_import_losses
+    }
+
+    /// Presentation the document will write to a construction file.
+    pub fn export_presentation(&self, view: Option<View>) -> Presentation<'_> {
+        let c = self.construction();
+        let palette = self.palette();
+        let mut presentation = Presentation {
+            view: view.or(self.file_view).unwrap_or_default(),
+            settings: self.file_settings.clone(),
+            object_styles: self
+                .file_object_styles
+                .iter()
+                .map(|(label, style)| (label.as_str(), style))
+                .collect(),
+            slider_animation: self
+                .file_slider_animation
+                .iter()
+                .map(|(label, animation)| (label.as_str(), animation))
+                .collect(),
+            hidden: self.log.hidden.iter().map(String::as_str).collect(),
+            ..Presentation::default()
+        };
+        for id in self.object_ids() {
+            let label = c.label(id);
+            let color = palette.color(id);
+            let rgb = self
+                .file_object_styles
+                .get(label)
+                .and_then(|style| style.color)
+                .unwrap_or([color.r, color.g, color.b]);
+            presentation.colors.insert(label, rgb);
+            if let Some(condition) = self.log.condition_source(label) {
+                presentation.conditions.insert(label, condition);
+            }
+            if let Some((x, y)) = self.label_offset(id) {
+                presentation
+                    .label_offsets
+                    .insert(label, (x as i32, y as i32));
+            }
+        }
+        for property in self.log.saved_properties() {
+            if let Property::SliderBounds { label, bounds } = property {
+                presentation
+                    .slider_bounds
+                    .insert(label, bounds.each_ref().map(|b| b.as_deref()));
+            }
+        }
+        presentation
+    }
+
+    /// Exports the live document. The window can provide its current view.
+    pub fn export_ggb(&self, view: Option<View>) -> Result<Vec<u8>, export::ExportError> {
+        let (skipped, mismatched) = self.file_import_losses;
+        if skipped != 0 || mismatched != 0 {
+            return Err(export::ExportError::incomplete_import(skipped, mismatched));
+        }
+        let c = self.construction();
+        // GeoGebra saves slots that appeared after an edit on the original
+        // curve intersection command, even when some are now undefined.
+        let mut grown: BTreeMap<_, _> = self
+            .log
+            .grown_groups()
+            .into_iter()
+            .filter_map(|group| {
+                let owner = c.id(group.labels.first()?)?;
+                c.inputs(owner)
+                    .any(|id| c.kind(id) == Kind::Curve)
+                    .then_some((c.label(owner), group.labels))
+            })
+            .collect();
+        // A script can also supply replay slots explicitly. Keep the
+        // exporter's refusal if their indices would change when grouped.
+        for entry in self.log.entries() {
+            let rhs = entry.rhs();
+            let Some(owner) = boundary_slot_owner(rhs) else {
+                continue;
+            };
+            let Some(outputs) = grown.get(owner) else {
+                continue;
+            };
+            let saved_slot = script::split_call(rhs)
+                .and_then(|(_, args)| args.get(1)?.parse::<usize>().ok())
+                .and_then(|slot| slot.checked_sub(1))
+                .and_then(|slot| outputs.get(slot));
+            if saved_slot != entry.labels.first() {
+                grown.remove(owner);
+            }
+        }
+        let definitions = self.log.entries().filter_map(|entry| {
+            if boundary_slot_owner(entry.rhs()).is_some_and(|owner| grown.contains_key(owner)) {
+                return None;
+            }
+            let outputs = entry
+                .labels
+                .first()
+                .and_then(|label| grown.get(label.as_str()))
+                .unwrap_or(&entry.labels);
+            Some(Definition {
+                line: &entry.line,
+                outputs,
+            })
+        });
+        export::ggb(c, definitions, &self.export_presentation(view))
     }
 
     /// The whole document as a script that `restore_text` (or `load_bytes`)

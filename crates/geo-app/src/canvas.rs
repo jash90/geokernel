@@ -121,9 +121,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
                     .and_then(|t| Camera::fit_drawn(c, t, w, h, app.rules.scale_limits))
                     .unwrap_or_else(|| Camera::fit(bounds, w, h, app.rules.scale_limits))
             }
-            Some(ViewRequest::Initial) | None => {
-                Camera::initial(bounds, w, h, app.rules.scale_limits)
-            }
+            Some(ViewRequest::Initial) | None => initial_camera(app, bounds, &painter, rect),
         });
         // A fit or the standard view is one undo step
         // (`setViewShowAllObjects(storeUndo)` / `setStandardView(true)`),
@@ -825,6 +823,65 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     overlay(app, ui, rect, w, h, &mut cam);
     app.camera = Some(cam);
     app.view = Some((rect.core(), cam.transform(w, h)));
+}
+
+fn initial_camera(
+    app: &App,
+    bounds: Option<view::Bounds>,
+    painter: &egui::Painter,
+    rect: Rect,
+) -> Camera {
+    let (w, h) = (f64::from(rect.width()), f64::from(rect.height()));
+    let limits = app.rules.scale_limits;
+    let Some(saved) = app.wb.file_view() else {
+        return Camera::initial(bounds, w, h, limits);
+    };
+    let c = app.wb.construction();
+    let visible = |id| app.wb.is_visible(id);
+    if let Some(camera) = Camera::from_file(saved, limits) {
+        let t = camera.transform(w, h);
+        // Probe the saved view with the actual object renderer once at open.
+        // Axes, grid and selection overlays do not count as visible objects.
+        let layer = egui::LayerId::new(
+            egui::Order::Background,
+            egui::Id::unique("saved-view-probe"),
+        );
+        let probe = painter.clone().with_layer_id(layer);
+        draw::image::paint_background(&probe, rect, c, &t, &visible, &|_| false);
+        draw::paint(
+            &probe,
+            rect,
+            c,
+            &t,
+            &Scene {
+                visible: &visible,
+                ghost: &|_| false,
+                hovered: None,
+                selected: None,
+                palette: app.wb.palette(),
+                cull: true,
+                generation: app.wb.rebuilds(),
+                label_offset: &|id| app.wb.label_offset(id),
+                label_rects: None,
+                text_rects: None,
+            },
+        );
+        let has_objects = painter.ctx().graphics_mut(|graphics| {
+            graphics.get_mut(layer).is_some_and(|list| {
+                std::mem::take(list).all_entries().any(|shape| {
+                    shape
+                        .shape
+                        .visual_bounding_rect()
+                        .intersects(rect.intersect(shape.clip_rect))
+                })
+            })
+        });
+        if has_objects || c.is_empty() {
+            return camera;
+        }
+    }
+    let visible_bounds = view::visible_content_bounds(c, visible);
+    Camera::fit(visible_bounds.or(bounds), w, h, limits)
 }
 
 /// The zoom of a zoom tool's click, as one undo step at once (the owner's

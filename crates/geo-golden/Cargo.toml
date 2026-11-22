@@ -19,3 +19,4 @@ toml = "0.8"
 geo-app-core = { path = "../geo-app-core" }
 geo-import = { path = "../geo-import" }
 geo-latex = { path = "../geo-latex" }
+zip = { version = "9.6", default-features = false }

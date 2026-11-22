@@ -1,0 +1,50 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "export-transforms-001",
+      "group": "export",
+      "script": [
+        "A = (1, 2)",
+        "B = (4, 1)",
+        "C = (-1, 1)",
+        "g = Line(B, C)",
+        "v = Vector(A, B)",
+        "a = 0.5",
+        "b = 1.5",
+        "n = 0.75",
+        "u = 2",
+        "D = Reflect(A, g)",
+        "E = Rotate(A, a, B)",
+        "F = Translate(A, v)",
+        "G = Dilate(A, b, C)",
+        "H = Shear(A, g, n)",
+        "I = Stretch(A, g, u)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": -1.0, "y": 1.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": -5.0, "c": 5.0 },
+          "v": { "type": "vector", "defined": true, "x": 3.0, "y": -1.0 },
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "b": { "type": "number", "defined": true, "value": 1.5 },
+          "n": { "type": "number", "defined": true, "value": 0.75 },
+          "u": { "type": "number", "defined": true, "value": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0000000000000002, "y": 2.220446049250313E-16 },
+          "E": { "type": "point", "defined": true, "x": 0.8878267757246787, "y": 0.43930594607776374 },
+          "F": { "type": "point", "defined": true, "x": 4.0, "y": 1.0 },
+          "G": { "type": "point", "defined": true, "x": 2.0, "y": 2.5 },
+          "H": { "type": "point", "defined": true, "x": 1.75, "y": 2.0 },
+          "I": { "type": "point", "defined": true, "x": 1.0, "y": 3.0 }
+        }
+      ]
+    }
+  ]
+}

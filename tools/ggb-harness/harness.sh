@@ -6,6 +6,7 @@
 #   GEOGEBRA_SRC=<path to a GeoGebra checkout> tools/ggb-harness/harness.sh chain
 #   GEOGEBRA_SRC=<path to a GeoGebra checkout> tools/ggb-harness/harness.sh ggb [sample step [zip step]]
 #   GEOGEBRA_SRC=<path to a GeoGebra checkout> tools/ggb-harness/harness.sh saved
+#   GEOGEBRA_SRC=<path to a GeoGebra checkout> tools/ggb-harness/harness.sh export-snapshot <directory>
 #   GEOGEBRA_SRC=<path to a GeoGebra checkout> tools/ggb-harness/harness.sh reload <file.xml> <label>...
 #   GEOGEBRA_SRC=<path to a GeoGebra checkout> tools/ggb-harness/harness.sh tpairs [type]
 #   GEOGEBRA_SRC=<path to a GeoGebra checkout> tools/ggb-harness/harness.sh text-canvas
@@ -25,6 +26,7 @@
 #          (<id>.xml or <id>.ggb, and <id>.snapshot), from saved/saved.json.
 # `reload` loads a saved file into a fresh GeoGebra and prints the numbers it
 #          computes for the given labels.
+# `export-snapshot` loads every .ggb in a directory and writes a snapshot beside it.
 # `tpairs` replays the upstream test methods of golden/t-pairs/scripts.jsonl and
 #          writes what GeoGebra returns for every step to golden/t-pairs/verified.jsonl.
 # `text-canvas` checks text pointer interaction and integer placement.
@@ -170,6 +172,10 @@ case "$cmd" in
       geokernel.harness.TPairs "$repo/golden/t-pairs/scripts.jsonl" \
       "$repo/golden/t-pairs/verified.jsonl" "$commit" "$@"
     ;;
+  export-snapshot)
+    exec java -Xmx512m -Djava.awt.headless=true -cp "$build/classes:$(cat "$build/classpath.txt")" \
+      geokernel.harness.ExportSnapshot "$@"
+    ;;
   reload)
     java "${java_opts[@]}" -cp "$build/classes:$(cat "$build/classpath.txt")" \
       geokernel.harness.Reload "$@"
@@ -183,7 +189,7 @@ case "$cmd" in
       geokernel.harness.GiacOracle
     ;;
   *)
-    echo "usage: GEOGEBRA_SRC=<checkout> $0 build|golden|chain|ggb|saved|reload|tpairs|text-canvas|cas-smoke" >&2
+    echo "usage: GEOGEBRA_SRC=<checkout> $0 build|golden|chain|ggb|saved|export-snapshot|reload|tpairs|text-canvas|cas-smoke" >&2
     exit 2
     ;;
 esac

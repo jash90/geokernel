@@ -464,6 +464,12 @@ impl Log {
             .map(|condition| condition.boolean.as_str())
     }
 
+    pub(crate) fn condition_source(&self, label: &str) -> Option<&str> {
+        self.conditions
+            .get(label)
+            .map(|condition| condition.source.as_str())
+    }
+
     pub(crate) fn set_condition(
         &mut self,
         c: &mut Construction,
@@ -486,9 +492,16 @@ impl Log {
         );
         Ok(())
     }
-    fn entries(&self) -> impl Iterator<Item = &Entry> {
+    pub(crate) fn entries(&self) -> impl Iterator<Item = &Entry> {
         self.ops.items().into_iter().filter_map(|op| match op {
             Op::Define(e) => Some(e),
+            _ => None,
+        })
+    }
+
+    pub(crate) fn saved_properties(&self) -> impl Iterator<Item = &Property> {
+        self.ops.items().into_iter().filter_map(|op| match op {
+            Op::SavedProperty(property) => Some(property.as_ref()),
             _ => None,
         })
     }

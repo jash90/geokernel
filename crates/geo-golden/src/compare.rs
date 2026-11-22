@@ -148,6 +148,34 @@ pub fn compare_list(
     Ok(Sign::NotApplicable)
 }
 
+/// Compares a snapshot of one object with the live kernel, including data
+/// stored outside the fixed-size value.
+pub fn compare_construction_object(
+    expected: &Expected,
+    c: &Construction,
+    id: Id,
+) -> Result<Sign, String> {
+    let kind = c.kind(id);
+    let value = c.value(id);
+    match kind {
+        Kind::Arc | Kind::Sector => compare_arc(expected, kind, &value, c.arc(id).as_ref()),
+        Kind::Locus => compare_locus(expected, kind, &value, c.locus(id)),
+        Kind::Conic => compare_conic(expected, kind, &value, c.conic(id).as_ref()).0,
+        Kind::List => compare_list(c, expected, kind, c.elements(id)),
+        Kind::Text | Kind::FunctionNVar | Kind::Curve => compare_extra(c, id, expected),
+        Kind::PieChart if expected.kind == kind => {
+            compare_pie(expected, c.chart(id).and_then(|data| data.pie.as_ref()))
+        }
+        _ => compare_sampled(
+            expected,
+            kind,
+            &value,
+            &c.vertices(id).collect::<Vec<_>>(),
+            Some(&|x| c.function_value(id, x)),
+        ),
+    }
+}
+
 /// Compares results whose data are held outside the fixed-size value.
 pub(crate) fn compare_extra(c: &Construction, id: Id, expected: &Expected) -> Result<Sign, String> {
     let kind = c.kind(id);

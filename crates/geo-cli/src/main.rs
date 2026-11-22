@@ -1,6 +1,8 @@
 use geo_kernel::svg::{self, View};
 use geo_kernel::{script, Construction, Def, Id, Value};
 use std::hint::black_box;
+use std::io::{self, Write};
+use std::path::Path;
 use std::process::ExitCode;
 use std::time::Instant;
 
@@ -10,6 +12,7 @@ geokernel: proof-of-concept dynamic-geometry kernel
 USAGE:
     geokernel run <script.geo> [out.svg]   build a construction from a script
     geokernel run <file.ggb> [out.svg]     open a construction file saved by GeoGebra (any name)
+    geokernel export <in> <out.ggb>      save a script or construction as .ggb
     geokernel demo [out-dir]               triangle demo: draw, drag A, draw again
     geokernel bench [steps]                time dragging a point in a large construction
 ";
@@ -20,6 +23,7 @@ fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let result = match args.first().map(String::as_str) {
         Some("run") if args.len() >= 2 => run(&args[1], args.get(2).map(String::as_str)),
+        Some("export") if args.len() == 3 => export(&args[1], &args[2]),
         Some("demo") => demo(args.get(1).map(String::as_str).unwrap_or(".")),
         Some("bench") => match args.get(1).map(|s| s.parse::<usize>()) {
             None => bench(15_000),
@@ -80,6 +84,30 @@ fn import_file(path: &str, bytes: &[u8]) -> Result<geo_import::Imported, String>
         );
     }
     Ok(imported)
+}
+
+fn export(path: &str, out: &str) -> Result<(), String> {
+    if same_file::is_same_file(path, out).unwrap_or(false) {
+        return Err("Export would overwrite its input file.".into());
+    }
+    let bytes = std::fs::read(path).map_err(|e| format!("{path}: {e}"))?;
+    let mut wb = geo_app_core::workbench::Workbench::default();
+    wb.load_for_export(&bytes, path)?;
+    let archive = wb.export_ggb(None).map_err(|e| e.to_string())?;
+    write_archive(Path::new(out), &archive).map_err(|e| format!("{out}: {e}"))
+}
+
+fn write_archive(path: &Path, bytes: &[u8]) -> io::Result<()> {
+    // Stage in the destination directory so replacing a file is atomic.
+    let staging = path.with_file_name(format!(".ggb-export-{}.tmp", std::process::id()));
+    let mut file = std::fs::File::create_new(&staging)?;
+    let written = file.write_all(bytes);
+    drop(file);
+    let result = written.and_then(|()| std::fs::rename(&staging, path));
+    if result.is_err() {
+        let _ = std::fs::remove_file(&staging);
+    }
+    result
 }
 
 fn run(path: &str, out: Option<&str>) -> Result<(), String> {
