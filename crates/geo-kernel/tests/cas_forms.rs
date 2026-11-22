@@ -217,3 +217,91 @@ fn objects_that_are_no_expression_are_refused() {
         rejected(&mut c, &format!("r = {command}(s, 2)"));
     }
 }
+
+fn function_values(c: &Construction, label: &str, xs: &[f64]) -> Vec<Option<f64>> {
+    xs.iter()
+        .map(|&x| c.function_value(id(c, label), x).filter(|v| v.is_finite()))
+        .collect()
+}
+
+#[test]
+fn simplify_reads_a_line_as_its_function_and_recovers() {
+    let mut c = build(&[
+        "A = (0, 1)",
+        "B = (1, 0)",
+        "g = Line(A, B)",
+        "r = Ray(A, B)",
+        "f = Simplify(g)",
+        "h = Simplify(r)",
+    ]);
+    let b = id(&c, "B");
+    for label in ["f", "h"] {
+        assert_eq!(
+            function_values(&c, label, &[0.0, 3.0]),
+            [Some(1.0), Some(-2.0)]
+        );
+    }
+    // Vertical: a function without values, still a defined object.
+    c.move_point(b, 0.0, 5.0).unwrap();
+    for label in ["f", "h"] {
+        assert_eq!(c.value(id(&c, label)), Value::Function);
+        assert_eq!(function_values(&c, label, &[0.0, 3.0]), [None, None]);
+    }
+    c.move_point(b, 2.0, 2.0).unwrap();
+    assert_eq!(
+        function_values(&c, "f", &[0.0, 2.0]),
+        [Some(1.0), Some(2.0)]
+    );
+}
+
+#[test]
+fn simplify_reads_only_a_parabola_in_y_as_a_function() {
+    let mut c = build(&["a = 0", "k: x^2+a*y^2+y=1", "f = Simplify(k)"]);
+    assert_eq!(
+        function_values(&c, "f", &[0.0, 2.0]),
+        [Some(1.0), Some(-3.0)]
+    );
+    c.set_number(id(&c, "a"), 2.0).unwrap();
+    assert_eq!(c.value(id(&c, "f")), Value::Undefined);
+    c.set_number(id(&c, "a"), 0.0).unwrap();
+    assert_eq!(function_values(&c, "f", &[1.0]), [Some(0.0)]);
+    // The result is a function like any other.
+    let c = build(&[
+        "k: y=x^2-1",
+        "f = Simplify(k)",
+        "g(x) = f(x)+1",
+        "r = Root(f)",
+    ]);
+    assert_eq!(function_values(&c, "g", &[3.0]), [Some(9.0)]);
+}
+
+#[test]
+fn simplify_refuses_what_is_no_function_text_or_curve() {
+    let mut c = build(&[
+        "A = (0, 1)",
+        "B = (1, 0)",
+        "C = (2, 3)",
+        "p = Polygon(A, B, C)",
+        "l = {1, 2}",
+        "t = \"\"",
+    ]);
+    for argument in ["A", "p", "l", "{1, 2}", "t", "\"\"", "x^3+y^3=1"] {
+        rejected(&mut c, &format!("r = Simplify({argument})"));
+    }
+    rejected(&mut c, "r = Simplify(l, 2)");
+}
+
+#[test]
+fn a_simplified_text_follows_its_source() {
+    let mut c = build(&["a = 2", "t = \"1x+\" + a", "s = Simplify(t)"]);
+    assert_eq!(c.text(id(&c, "s")), Some("x + 2"));
+    c.set_number(id(&c, "a"), -3.0).unwrap();
+    assert_eq!(c.text(id(&c, "s")), Some("x \u{2212} 3"));
+    // A text of 4 MB of signs stays within the text bound or is undefined.
+    let long = "+-".repeat(1 << 21);
+    let mut c = Construction::new();
+    script::exec(&mut c, &format!("t = \"{long}\"")).ok();
+    if c.id("t").is_some() {
+        script::exec(&mut c, "s = Simplify(t)").ok();
+    }
+}

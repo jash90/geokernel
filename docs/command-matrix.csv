@@ -7,7 +7,7 @@ LCM,,algebra,P2,done,2,2,"LCM(number, number)"
 GCD,,algebra,P2,done,2,2,"GCD(number, number)"
 Expand,,algebra,P2,partial,6,5,Polynomial and rational functions are in scope for the 1.0 CAS.
 Factor,,algebra,P2,partial,6,5,Exact polynomial and rational functions are in scope for the 1.0 CAS.
-Simplify,,algebra,P2,partial,8,2,Polynomial and rational functions and number inputs are in scope for the 1.0 CAS.
+Simplify,,algebra,P2,partial,8,7,Polynomial and rational functions and number inputs are in scope for the 1.0 CAS.
 PrimeFactors,,algebra,P2,done,1,1,
 CompleteSquare,,algebra,P2,done,1,1,"Quadratic polynomials, including quadratic polynomials in a power of x."
 ToBase,,algebra,P2,done,1,1,

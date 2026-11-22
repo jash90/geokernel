@@ -52,6 +52,9 @@ pub(crate) enum TextOp {
     Last,
     /// `Element(text, n)`: one character of a text (`AlgoTextElement`).
     TextElement,
+    /// `Simplify(text)`: tidies the signs of a formula text
+    /// (`AlgoSimplifyText`).
+    Simplify,
 }
 
 pub(super) const NAMES: &[&str] = &[
@@ -172,7 +175,7 @@ fn parse_name(p: &mut Parser<'_>) -> Result<Option<u32>, String> {
     }
 }
 
-fn call_node(p: &mut Parser<'_>, op: TextOp, args: &[u32]) -> Node {
+pub(in crate::expr) fn call_node(p: &mut Parser<'_>, op: TextOp, args: &[u32]) -> Node {
     let first = p.nodes.len() as u32;
     for &arg in args {
         p.push(Node::Item(arg));
@@ -212,7 +215,7 @@ pub(in crate::expr) fn result_type(
         (Continued, [x, Bool]) => number(*x),
         (Continued, [x, y] | [x, y, Bool]) => number(*x) && number(*y),
         (Table, args) => table::valid_types(args),
-        (Length | LetterToUnicode | TextToUnicode, [Text]) => true,
+        (Length | LetterToUnicode | TextToUnicode | Simplify, [Text]) => true,
         (UnicodeToText, [a]) | (Split, [Text, a]) => list(*a),
         (ReplaceAll, [Text, Text, Text]) => true,
         (Sum, [Text, ..]) => true,
@@ -319,6 +322,7 @@ impl<const M: bool> Ctx<'_, M> {
             Table => table::evaluate(self, &args),
             UnicodeToLetter | UnicodeToText | ReplaceAll | Take | Sum | First | Last
             | TextElement => strings::evaluate(self, op, &args),
+            Simplify => strings::simplify(&self.text(a)?),
             _ => None,
         }?;
         self.bounded_text(result.len())?;

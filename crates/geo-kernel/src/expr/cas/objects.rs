@@ -3,18 +3,24 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/cas/CmdCASCommand1Arg.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/cas/AlgoCasBaseSingleArgument.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoCasBase.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/cas/CmdSimplify.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoLine.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoConic.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
 //! `Expand`, `Factor`, `IFactor` and `Simplify` of an object that is no
 //! function. A curve is rewritten coordinate by coordinate into a curve
 //! over the same interval (`AlgoCasBase` copies the input and applies the
-//! command to it).
+//! command to it). `Simplify` also reads a line or a conic as the function
+//! of `x` it is the graph of.
 
-use super::Op;
+use super::functional::{transform, FunctionResult};
+use super::{Op, Poly, Quotient, Rat, Work};
 use crate::algo::measure::MeasureDef;
-use crate::expr::{add_curve_coordinate, reparse, Lit, Node, NONE};
-use crate::{Construction, Def, Id, Kind};
+use crate::expr::{add, add_curve_coordinate, reparse, Lit, Node, NONE};
+use crate::tol::STANDARD_PRECISION;
+use crate::{Construction, Def, Id, Kind, Value};
 
 /// The call `Command(object)` of one of the four commands when the object
 /// is a curve; `None`, with nothing added, for every other input.
@@ -40,11 +46,83 @@ pub(crate) fn define_object(
     let &[argument] = args.as_slice() else {
         return None;
     };
-    let source = c.id(argument.trim())?;
-    match c.kind(source) {
-        Kind::Curve => Some(curve(c, label, op, source)),
-        _ => None,
+    let argument = argument.trim();
+    if let Some(source) = c.id(argument) {
+        return match c.kind(source) {
+            Kind::Curve => Some(curve(c, label, op, source)),
+            // `AlgoSimplifyText.compute` reads the first character when it
+            // is created, which fails for an empty or undefined text.
+            Kind::Text if op == Op::Simplify && c.text(source).is_none_or(str::is_empty) => {
+                Some(Err("`Simplify` needs a text that is not empty".into()))
+            }
+            _ => None,
+        };
     }
+    if op == Op::Simplify && argument == "\"\"" {
+        return Some(Err("`Simplify` needs a text that is not empty".into()));
+    }
+    if op == Op::Simplify && crate::expr::equation::split_equation(argument).is_ok() {
+        return Some(equation(c, label, argument));
+    }
+    None
+}
+
+/// `Simplify(equation)`: the line or conic of an inline equation, read as
+/// a function.
+fn equation(c: &mut Construction, label: &str, source: &str) -> Result<Id, String> {
+    let start = c.checkpoint();
+    let result = (|| {
+        let hidden = format!("\0arg{}", c.len());
+        let object = crate::expr::equation::define(c, &hidden, source)?;
+        let nodes = [Node::Obj(object), Node::Cas(Op::Simplify, 0, NONE)];
+        let literals = vec![Lit::default(); nodes.len()];
+        let parsed = reparse(c, Kind::Function, &nodes, &literals, 1)
+            .ok_or("`Simplify` needs a line or a conic")?;
+        add(c, label, parsed, Kind::Function)
+    })();
+    if result.is_err() {
+        c.discard_since(start);
+    }
+    result
+}
+
+/// The function of `x` whose graph the object is, simplified: a line that
+/// is not vertical, or a conic `y = a x^2 + b x + c`
+/// (`GeoConic.isRealValuedFunction`). A vertical or undefined line is the
+/// function that is nowhere defined; any other conic is undefined.
+pub(super) fn as_function(c: &Construction, id: Id, work: &mut Work<'_>) -> Option<FunctionResult> {
+    let nowhere = Some(FunctionResult::Number(f64::NAN));
+    // `y = (c2 x^2 + c1 x + c0) / divisor`
+    let (coefficients, divisor) = match c.kind(id) {
+        Kind::Line | Kind::Segment | Kind::Ray => {
+            let (a, b, constant) = match c.value(id) {
+                Value::Line { a, b, c } | Value::Ray { a, b, c, .. } => (a, b, c),
+                // The line through the end points (`GeoVec3D.lineThroughPoints`).
+                Value::Segment { x1, y1, x2, y2 } => (y1 - y2, x2 - x1, x1 * y2 - x2 * y1),
+                _ => return nowhere,
+            };
+            if b == 0.0 {
+                return nowhere;
+            }
+            ([-constant, -a, 0.0], b)
+        }
+        Kind::Conic | Kind::Circle => {
+            let [xx, yy, constant, xy, x, y] = c.conic(id)?.matrix;
+            let zero = |v: f64| v.abs() < STANDARD_PRECISION;
+            if !zero(xy) || !zero(yy) || zero(y) {
+                return None;
+            }
+            ([constant, 2.0 * x, xx], -2.0 * y)
+        }
+        _ => return None,
+    };
+    let divisor = Rat::from_value(divisor)?;
+    let coefficients = coefficients
+        .iter()
+        .map(|&v| Rat::from_value(v)?.div(divisor))
+        .collect::<Option<Vec<_>>>()?;
+    let function = Quotient::polynomial(Poly::dense(&coefficients));
+    transform(Op::Simplify, function, None, work).map(FunctionResult::Exact)
 }
 
 /// The curve whose coordinates are the command applied to the coordinates

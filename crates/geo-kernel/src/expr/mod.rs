@@ -162,7 +162,7 @@ fn sample_system(c: &Construction, id: Id, t: f64, state: &[f64], meter: &eval::
 pub(crate) mod lex;
 pub(crate) use lex::{is_name_char, plain_number};
 mod list;
-use commands::text::TextOp;
+pub(in crate::expr) use commands::text::TextOp;
 pub(crate) use list::{same_slots, Slot};
 pub use list::{Element, List};
 pub(crate) mod math;

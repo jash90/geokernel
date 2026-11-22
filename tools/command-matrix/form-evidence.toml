@@ -3544,3 +3544,31 @@ difference = "polynomial-cas: `Expand(list)`, `Expand(line)`, `Expand(conic)`, `
 command = "IFactor"
 form = "conic"
 difference = "polynomial-cas: `Expand(list)`, `Expand(line)`, `Expand(conic)`, `Factor(list)`, `Factor(line)`, `Factor(conic)`, `IFactor(list)`, `IFactor(line)`, `IFactor(conic)`"
+
+[[form]]
+command = "Simplify"
+form = "line"
+cases = ["cas-simplify-007", "cas-simplify-010"]
+difference = "polynomial-cas: `Simplify(line)`, `Simplify(conic)`"
+
+[[form]]
+command = "Simplify"
+form = "conic"
+cases = ["cas-simplify-008", "cas-simplify-014"]
+difference = "polynomial-cas: `Simplify(line)`, `Simplify(conic)`"
+
+[[form]]
+command = "Simplify"
+form = "curve"
+cases = ["cas-curve-015", "cas-curve-017"]
+
+[[form]]
+command = "Simplify"
+form = "text"
+cases = ["cas-text-001", "cas-text-003"]
+difference = "polynomial-cas: `Simplify(text)`"
+
+[[form]]
+command = "Simplify"
+form = "list"
+difference = "polynomial-cas: `Simplify(list)`"

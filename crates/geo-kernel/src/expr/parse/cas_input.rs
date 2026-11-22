@@ -30,7 +30,17 @@ impl Parser<'_> {
                     Node::Cas(op, a, b)
                 }
             }
+            [a] if op == Op::Simplify && !x && !y && self.is_text(a) => {
+                // `CmdSimplify`: a text is tidied as a text.
+                crate::expr::commands::text_call(self, crate::expr::TextOp::Simplify, &[a])
+            }
             [a] if op != Op::CommonDenominator => {
+                if op.is_function()
+                    && self.checked_type(a)? == Ty::Object
+                    && !(op == Op::Simplify && self.as_function(a))
+                {
+                    return Err(format!("invalid arguments to `{name}`"));
+                }
                 if op.is_function() {
                     if matches!(
                         op,
@@ -124,6 +134,20 @@ impl Parser<'_> {
             points,
         };
         Ok(self.push(Node::Cas(op, equations, guess)))
+    }
+
+    /// Whether the node is an object `CmdSimplify` reads as a function of
+    /// `x`: a line (`GeoLine` and its segment and ray) or a conic
+    /// (`GeoFunctionable`).
+    fn as_function(&self, i: u32) -> bool {
+        matches!(self.node(i), Node::Obj(id) if matches!(
+            self.c.kind(id),
+            crate::Kind::Line
+                | crate::Kind::Segment
+                | crate::Kind::Ray
+                | crate::Kind::Conic
+                | crate::Kind::Circle
+        ))
     }
 
     fn cas_equation(&mut self) -> Result<u32, String> {

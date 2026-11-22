@@ -8,6 +8,7 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoIndexOf.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoReplaceAll.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoSplit.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/cas/AlgoSimplifyText.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
@@ -563,5 +564,130 @@ fn replace<const M: bool>(
         Some(result)
     } else {
         Some(input.replace(needle, &replacement_text))
+    }
+}
+
+/// `AlgoSimplifyText.compute`: tidies the signs of a formula written as a
+/// text, pass by pass, each pass replacing its matches from left to right
+/// without overlap as a regular expression does. `None` for an empty text,
+/// where the reference fails reading the first character.
+pub(super) fn simplify(text: &str) -> Option<String> {
+    let mut chars: Vec<char> = text.chars().collect();
+    // `++` and `--` are `+`, `+-` and `-+` are `-`, with spaces between.
+    for (first, second, sign) in [
+        ('+', '+', '+'),
+        ('-', '-', '+'),
+        ('+', '-', '-'),
+        ('-', '+', '-'),
+    ] {
+        chars = replace_run(&chars, first, &[second], &[sign]);
+    }
+    // `+1x` is `+x` and `-1x` is `-x`.
+    for sign in ['+', '-'] {
+        chars = replace_run(&chars, sign, &['1', 'x'], &[sign, 'x']);
+    }
+    // A sign between two characters that are no spaces gets a space on
+    // either side; a second pass reaches the signs that shared a neighbour.
+    for sign in ['+', '-', '='] {
+        for _ in 0..2 {
+            chars = space_out(&chars, sign);
+        }
+    }
+    let mut rest = &chars[..];
+    if *rest.first()? == '+' {
+        rest = &rest[1..];
+    }
+    if rest.starts_with(&['1', 'x']) {
+        rest = &rest[1..];
+    }
+    // A minus after a space becomes the minus sign U+2212.
+    let mut result = String::with_capacity(text.len());
+    for (i, &c) in rest.iter().enumerate() {
+        result.push(if c == '-' && i > 0 && rest[i - 1] == ' ' {
+            '\u{2212}'
+        } else {
+            c
+        });
+    }
+    Some(result)
+}
+
+/// Replaces every `first`, spaces, `rest[0]`, spaces, `rest[1]`, ... by
+/// `replacement`.
+fn replace_run(chars: &[char], first: char, rest: &[char], replacement: &[char]) -> Vec<char> {
+    let mut out = Vec::with_capacity(chars.len());
+    let mut i = 0;
+    while i < chars.len() {
+        if chars[i] == first {
+            let mut j = i + 1;
+            let matched = rest.iter().all(|&next| {
+                while chars.get(j) == Some(&' ') {
+                    j += 1;
+                }
+                let found = chars.get(j) == Some(&next);
+                j += usize::from(found);
+                found
+            });
+            if matched {
+                out.extend_from_slice(replacement);
+                i = j;
+                continue;
+            }
+        }
+        out.push(chars[i]);
+        i += 1;
+    }
+    out
+}
+
+/// Replaces every `a sign b`, with `a` and `b` no spaces, by `a`, the sign
+/// between two spaces, `b`.
+fn space_out(chars: &[char], sign: char) -> Vec<char> {
+    let mut out = Vec::with_capacity(chars.len() + 2);
+    let mut i = 0;
+    while i < chars.len() {
+        if chars[i] != ' '
+            && chars.get(i + 1) == Some(&sign)
+            && chars.get(i + 2).is_some_and(|&c| c != ' ')
+        {
+            out.extend_from_slice(&[chars[i], ' ', sign, ' ', chars[i + 2]]);
+            i += 3;
+        } else {
+            out.push(chars[i]);
+            i += 1;
+        }
+    }
+    out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::simplify;
+
+    #[test]
+    fn simplify_tidies_signs_like_the_reference() {
+        // CommandsUsingMockedCasTest.cmdSimplify and the texts recorded in
+        // golden/cas/text.json.
+        for (input, expected) in [
+            ("x+-x--x", "x \u{2212} x + x"),
+            ("x+x", "x + x"),
+            (
+                "+1x++x--x+-1x-+1x++x",
+                "x + x + x \u{2212} x \u{2212} x + x",
+            ),
+            ("x-x-x-x", "x \u{2212} x \u{2212} x \u{2212} x"),
+            ("x=x=x=x+x+x+x", "x = x = x = x + x + x + x"),
+            ("1x - 2", "x \u{2212} 2"),
+            ("+", ""),
+            ("a - -b+ +c", "a +b + c"),
+            ("3 -1x", "3 \u{2212}x"),
+            ("-1x", "-x"),
+            ("1x", "x"),
+            ("11x+1xy", "11x + xy"),
+            ("x - - 1 x", "x +x"),
+        ] {
+            assert_eq!(simplify(input).as_deref(), Some(expected), "{input:?}");
+        }
+        assert_eq!(simplify(""), None);
     }
 }

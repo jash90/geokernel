@@ -6951,12 +6951,6 @@ reason = "the kernel refuses the input: unknown command `Envelope`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsUsingMockedCasTest.java:57"
-category = "cas"
-reason = "the kernel refuses the input: unknown command `Simplify`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsUsingMockedCasTest.java:63"
 category = "dummy-cas-expectation"
 reason = "Number(5.0) does not match `NaN` (expected undefined, kernel has a value)"

@@ -335,4 +335,46 @@ for command in REWRITES:
                         "s = Segment(A, B)"],
            [reject(f"r = {command}({argument})") for argument in
             ["g", "k", "l", "s", "x+y=1", "x^2+y^2=4", "{1, 2}", "{x^2-1, (x+1)^2}"]])
+
+# Simplify reads a line and a parabola in y as the function it graphs.
+c.case("simplify", ["g: x+y=1", "result = Simplify(g)"], [])
+c.case("simplify", ["k: y=x^2", "result = Simplify(k)"], [])
+c.case("simplify", ["g: 2x+3y=6", "h: y=2", "v: x=3", "r1 = Simplify(g)", "r2 = Simplify(h)",
+                     "r3 = Simplify(v)"], [])
+c.case("simplify", ["A = (0, 1)", "B = (1, 0)", "g = Line(A, B)", "s = Segment(A, B)",
+                     "r1 = Simplify(g)", "r2 = Simplify(s)"],
+       [mv("B", 3, 0), mv("B", 0, 5), mv("B", 0, 1), mv("B", 2, 2)])
+c.case("simplify", ["r1 = Simplify(x+y=1)", "r2 = Simplify(y=x^2-x)", "r3 = Simplify(x=2)"], [])
+c.case("simplify", ["k: x^2+y^2=4", "h: x*y=1", "p: y^2=x", "q: 2y=x^2+4x", "r1 = Simplify(k)",
+                     "r2 = Simplify(h)", "r3 = Simplify(p)", "r4 = Simplify(q)"], [])
+c.case("simplify", ["A = (0, 1)", "k = Circle(A, 2)", "result = Simplify(k)"], [mv("A", 1, 1)])
+c.case("simplify", ["a = 1", "k: y=a*x^2+x+a", "result = Simplify(k)"],
+       [setn("a", -2), setn("a", 0), setn("a", 0.5)])
+c.case("simplify", ["a = 1", "k: x^2+a*y^2+y=1", "result = Simplify(k)"],
+       [setn("a", 0), setn("a", 2), setn("a", 0)])
+
+# Simplify rewrites a curve like the other three commands.
+curve_case(["k = Curve((t+1)^2, t^2-1, t, 0, 2)", "result = Simplify(k)"])
+curve_case(["k = Curve((t^2-1)/(t-1), cos(t), t, 0, 2)", "j = Curve(1/t, sqrt(t), t, 0, 4)",
+            "r1 = Simplify(k)", "r2 = Simplify(j)"])
+curve_case(["a = 2", "k = Curve(a*t^2, (t^2-a^2)/(t-a), t, 0, a)", "result = Simplify(k)"],
+           [setn("a", 3), setn("a", -1), setn("a", 0), setn("a", 1)])
+
+# Simplify of a text tidies its signs as a text.
+c.case("text", ['t = "x+x"', "result = Simplify(t)"], [])
+c.case("text", ['result = Simplify("x+-x--x")'], [])
+for k, text in enumerate([
+    "+1x++x--x+-1x-+1x++x", "x-x-x-x", "x=x=x=x+x+x+x", "1x - 2", "+", "a - -b+ +c", "3 -1x",
+    "-1x", "1x", "11x+1xy", "x - - 1 x", "+++", "---", "x+ +1 x", "2=-1x", "y = - 1x+ - 3",
+    " +x", "x^2+-1x^2", "1x1x-1x", "+ 1x", "a+b=c-d", "- - -x",
+]):
+    c.case("text", [f't = "{text}"', "result = Simplify(t)"], [])
+c.case("text", ["a = 2", 't = "x+" + a', "result = Simplify(t)"],
+       [setn("a", -3), setn("a", 1), setn("a", -1)])
+c.case("text", ['t = "1"', 'u = t + "x-x"', "result = Simplify(u)"], [])
+c.case("text", ['t = ""'], [reject("r = Simplify(t)"), reject('r = Simplify("")')])
+
+c.case("rejected", ["l = {1, 2}", "A = (0, 1)", "B = (1, 0)", "C = (2, 3)", "p = Polygon(A, B, C)"],
+       [reject(f"r = Simplify({argument})") for argument in
+        ["l", "{1, 2}", "{x^2-1, (x+1)^2}", "A", "p"]])
 c.write()

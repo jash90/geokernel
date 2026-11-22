@@ -79,7 +79,8 @@ impl PartialEq for FunctionResult {
         match (self, other) {
             (Self::Exact(a), Self::Exact(b)) => a == b,
             (Self::Tree(a), Self::Tree(b)) => Arc::ptr_eq(a, b),
-            (Self::Number(a), Self::Number(b)) => a == b,
+            // Bitwise, so that the function that is nowhere defined equals itself.
+            (Self::Number(a), Self::Number(b)) => a.to_bits() == b.to_bits(),
             _ => false,
         }
     }
@@ -160,6 +161,11 @@ pub(in crate::expr) fn evaluate<const M: bool>(
         }
     }
 
+    if let (Op::Simplify, super::Node::Obj(id)) = (op, ctx.node(a)) {
+        if !matches!(ctx.c.kind(id), crate::Kind::Number | crate::Kind::Angle) {
+            return super::objects::as_function(ctx.c, id, work);
+        }
+    }
     let exact = (|| {
         let source = read(ctx.c, ctx.e, a, vars, work)?;
         let other = if b == NONE {
