@@ -244,6 +244,20 @@ fn coefficients(
 /// Splits `lhs = rhs` at the one `=` between them: the top-level `=` that
 /// is not part of `==`, `!=`, `<=` or `>=` and sits outside every bracket.
 pub(crate) fn split_equation(text: &str) -> Result<(&str, &str), String> {
+    let (split, ordered) = equation_separator(text)?;
+    match split {
+        Some(i) => Ok((&text[..i], &text[i + 1..])),
+        None if ordered => Err("inequalities are not supported".into()),
+        None => Err("expected an equation `lhs = rhs`".into()),
+    }
+}
+
+/// Whether a definition has a standalone top-level equals sign.
+pub(crate) fn has_equation_separator(text: &str) -> bool {
+    !matches!(equation_separator(text), Ok((None, _)))
+}
+
+fn equation_separator(text: &str) -> Result<(Option<usize>, bool), String> {
     let bytes = text.as_bytes();
     let mut depth = 0i32;
     let mut split = None;
@@ -268,11 +282,7 @@ pub(crate) fn split_equation(text: &str) -> Result<(&str, &str), String> {
             _ => {}
         }
     }
-    match split {
-        Some(i) => Ok((&text[..i], &text[i + 1..])),
-        None if ordered => Err("inequalities are not supported".into()),
-        None => Err("expected an equation `lhs = rhs`".into()),
-    }
+    Ok((split, ordered))
 }
 
 // The polynomial expansion.
@@ -1709,22 +1719,18 @@ mod tests {
     }
 
     #[test]
-    fn implicit_curves_and_inequalities_are_refused() {
+    fn unsupported_and_malformed_equations_are_refused() {
         for line in [
             "a: y^2 = x^3",
             "a: sin(x) = 0",
             "a: x / y = 1",
             "a: sqrt(x) = 1",
-            "a: x < 3",
-            "a: x <= 3",
             "a: x = y = z",
         ] {
             let mut c = Construction::new();
             let err = exec(&mut c, line).unwrap_err();
             assert!(
-                err.contains("implicit curves")
-                    || err.contains("inequalities")
-                    || err.contains("only one `=`"),
+                err.contains("implicit curves") || err.contains("only one `=`"),
                 "{line}: {err}"
             );
         }

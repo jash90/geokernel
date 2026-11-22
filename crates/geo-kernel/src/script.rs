@@ -178,7 +178,7 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
         }
         check_label(name)?;
         let rhs = rhs.trim();
-        if crate::expr::equation::split_equation(rhs).is_ok() {
+        if crate::expr::equation::has_equation_separator(rhs) {
             return crate::expr::equation::define(c, name, rhs).map(Some);
         }
         return define_after_label(c, name, rhs);
