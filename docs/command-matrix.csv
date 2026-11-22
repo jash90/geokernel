@@ -79,8 +79,8 @@ AreEqual,,geometry,P1,done,1,1,"Numeric equality by object kind, including cycli
 AreConcurrent,,geometry,P1,done,1,1,"AreConcurrent of three lines, segments or rays"
 AreCongruent,,geometry,P1,done,1,1,"Numeric congruence by object kind, including cyclic or reversed polygon congruence"
 IsTangent,,geometry,P1,done,1,1,"IsTangent(line, segment or ray, conic or conic part)"
-LocusEquation,,geometry,P1,done,3,3,
-Envelope,,geometry,P1,done,1,1,
+LocusEquation,,geometry,P1,partial,3,2,
+Envelope,,geometry,P1,todo,1,0,
 Volume,,3d,,out_of_scope,,,
 Difference,,geometry,P1,done,2,2,"Difference(polygon, polygon); Difference(polygon, polygon, boolean)"
 Text,,text,P2,done,7,7,
