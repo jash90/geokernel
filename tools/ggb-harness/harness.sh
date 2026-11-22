@@ -6,7 +6,7 @@
 #   GEOGEBRA_SRC=<path to a GeoGebra checkout> tools/ggb-harness/harness.sh chain
 #   GEOGEBRA_SRC=<path to a GeoGebra checkout> tools/ggb-harness/harness.sh ggb [sample step [zip step]]
 #   GEOGEBRA_SRC=<path to a GeoGebra checkout> tools/ggb-harness/harness.sh saved
-#   GEOGEBRA_SRC=<path to a GeoGebra checkout> tools/ggb-harness/harness.sh export-snapshot <directory>
+#   GEOGEBRA_SRC=<path to a GeoGebra checkout> tools/ggb-harness/harness.sh export-snapshot [--lenient] <directory>
 #   GEOGEBRA_SRC=<path to a GeoGebra checkout> tools/ggb-harness/harness.sh reload <file.xml> <label>...
 #   GEOGEBRA_SRC=<path to a GeoGebra checkout> tools/ggb-harness/harness.sh tpairs [type]
 #   GEOGEBRA_SRC=<path to a GeoGebra checkout> tools/ggb-harness/harness.sh text-canvas
@@ -27,6 +27,8 @@
 # `reload` loads a saved file into a fresh GeoGebra and prints the numbers it
 #          computes for the given labels.
 # `export-snapshot` loads every .ggb in a directory and writes a snapshot beside it.
+#          Anything GeoGebra reports while loading stops the run; with `--lenient`
+#          the reports are recorded in the snapshot and loading goes on.
 # `tpairs` replays the upstream test methods of golden/t-pairs/scripts.jsonl and
 #          writes what GeoGebra returns for every step to golden/t-pairs/verified.jsonl.
 # `text-canvas` checks text pointer interaction and integer placement.

@@ -10,6 +10,19 @@ use geo_kernel::kernel::{Construction, Def, Id, Kind, Value};
 /// The drawn radius of a free point, in points (point size 5).
 pub const FREE_POINT_RADIUS: f32 = 5.0;
 
+/// How strongly the inside of a polygon and the sector of an angle are
+/// tinted with the object's colour. In double precision, so that a file
+/// gets the decimal `0.1` and not a widened 32-bit value.
+pub const FILL_OPACITY: f64 = 0.1;
+
+/// The opacity of the fill the canvas draws for an object, 0 for an outline.
+pub fn fill_opacity(c: &Construction, id: Id) -> f64 {
+    match c.kind(id) {
+        Kind::Polygon | Kind::Angle => FILL_OPACITY,
+        _ => 0.0,
+    }
+}
+
 /// The default colour of an object: blue free points, grey dependent
 /// points, green angles, brown polygons and their sides, near-black lines
 /// and circles.

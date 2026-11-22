@@ -175,6 +175,45 @@
           "action": "initial"
         }
       ]
+    },
+    {
+      "id": "export-numbers-001",
+      "group": "export",
+      "script": [
+        "n = 400",
+        "m = -37.5",
+        "d = n / 8",
+        "P = (m / 10, d / 10)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
+    },
+    {
+      "id": "export-sliders-002",
+      "group": "export",
+      "script": [
+        "a = Slider(0, 100, 1)",
+        "b = Slider(-50, 50, 5)",
+        "P = (a / 10, b / 10)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        },
+        {
+          "action": "set_number",
+          "label": "a",
+          "value": 30.0
+        },
+        {
+          "action": "set_number",
+          "label": "b",
+          "value": -40.0
+        }
+      ]
     }
   ]
 }

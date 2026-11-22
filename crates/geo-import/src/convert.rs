@@ -8,6 +8,7 @@
 //! the kernel cannot do is skipped with the kernel's message.
 
 use crate::archive::AssetArchive;
+use crate::export::DynamicColor;
 use crate::xml::{Document, Element, Item};
 use crate::{ImportError, Imported, Mismatch, Skipped};
 use geo_kernel::algo::conic_nd::{ConicData, ConicType};
@@ -158,6 +159,7 @@ pub(crate) fn convert_with_assets(
     for el in elements.values() {
         c.apply_text_position(el);
     }
+    let mut expressions = StyleExpressions::default();
     for el in elements.values() {
         let Some(id) = c.kernel.id(&el.label) else {
             continue;
@@ -174,21 +176,72 @@ pub(crate) fn convert_with_assets(
         if c.kernel.chart(id).is_some() {
             style.show_label = el.label_shown.unwrap_or(style.show_label);
             style.line_thickness = el.thickness.map_or(style.line_thickness, |t| t.min(13));
-        } else {
-            saved_style.show_label = el.label_shown.filter(|&v| v != default_style.show_label);
-            saved_style.thickness = el.thickness.filter(|&v| v != default_style.line_thickness);
         }
+        saved_style.show_label = el.label_shown;
+        saved_style.untagged = el.shown.is_none();
         if c.kernel.control(id).is_none() {
             saved_style.caption.clone_from(&el.caption);
         }
-        if saved_style != crate::export::ObjectStyle::default() {
-            c.out.object_styles.insert(el.label.clone(), saved_style);
+        let label = quote(&el.label);
+        if let Some(dynamic) = saved_style.dynamic_color.take() {
+            match expressions.dynamic_color(&c.kernel, &dynamic) {
+                Ok(dynamic) => saved_style.dynamic_color = Some(Box::new(dynamic)),
+                Err(reason) => c
+                    .out
+                    .notes
+                    .push(format!("dynamic colour of `{label}`: {}", quote(&reason))),
+            }
         }
-        if let Some(animation) = el.slider_animation.as_ref().filter(|_| el.slider.is_some()) {
-            c.out
-                .slider_animation
-                .insert(el.label.clone(), animation.clone());
+        if let Some(fill) = saved_style.fill.as_deref_mut() {
+            if fill.pattern > crate::export::Fill::MAX_PATTERN {
+                c.out
+                    .notes
+                    .push(format!("the image fill of `{label}` is not kept"));
+                fill.pattern = 0;
+            }
         }
+        // A caption taken from a text that is not there is dropped, as the
+        // reference reader drops it.
+        if let Some(caption) = saved_style.dynamic_caption.take() {
+            if c.kernel
+                .id(&caption)
+                .is_some_and(|text| c.kernel.kind(text) == Kind::Text)
+            {
+                saved_style.dynamic_caption = Some(caption);
+            } else {
+                c.out.notes.push(format!(
+                    "dynamic caption of `{label}`: `{}` is not a text",
+                    quote(&caption)
+                ));
+            }
+        }
+        for tag in &el.reader_stops {
+            c.out.notes.push(format!(
+                "`<{tag}>` of `{label}` has a number the reference reader cannot read; \
+                 it gives up the file there, and what the tag had not yet set is not kept"
+            ));
+        }
+        if let Some(mut animation) = el.slider_animation.clone() {
+            for (text, what) in [
+                (&mut animation.step, "step"),
+                (&mut animation.speed, "speed"),
+            ] {
+                let Some(source) = text.take() else { continue };
+                match expressions.number(&c.kernel, &source) {
+                    Ok(source) => *text = Some(source),
+                    Err(reason) => c
+                        .out
+                        .notes
+                        .push(format!("animation {what} of `{label}`: {}", quote(&reason))),
+                }
+            }
+            if el.slider.is_some() {
+                c.out.slider_animation.insert(el.label.clone(), animation);
+            } else {
+                saved_style.animation = Some(Box::new(animation));
+            }
+        }
+        c.out.object_styles.insert(el.label.clone(), saved_style);
         if let Some([x, y]) = el.label_offset.filter(|[x, y]| [*x, *y] != [0, 0]) {
             c.out
                 .label_offsets
@@ -218,12 +271,82 @@ pub(crate) fn convert_with_assets(
     if doc.constructions > 1 {
         out.notes.push(format!(
             "the file has {} construction sections; their elements are appended one after \
-             the other, as GeoGebra's reader does",
+             the other, as the reader of the format does",
             doc.constructions
         ));
     }
     flags.notes(&mut out.notes);
     Ok(out)
+}
+
+/// The evaluation work all style expressions of one document may take
+/// together, on import and again on each export: the budget of a single
+/// evaluation. Past it the remaining expressions are not kept.
+pub const STYLE_EVALUATION_WORK: u64 = geo_kernel::expr::MAX_EVALUATION_WORK;
+
+/// Evaluates the numeric expressions of saved styles (dynamic colour
+/// channels, animation steps and speeds) within one budget per document.
+pub struct StyleExpressions {
+    used: u64,
+    budget: u64,
+}
+
+impl Default for StyleExpressions {
+    fn default() -> Self {
+        Self::with_budget(STYLE_EVALUATION_WORK)
+    }
+}
+
+impl StyleExpressions {
+    /// A budget other than [`STYLE_EVALUATION_WORK`], for tests.
+    pub fn with_budget(budget: u64) -> Self {
+        Self { used: 0, budget }
+    }
+
+    /// The work done so far, in the units of the kernel's evaluation budget.
+    pub fn work(&self) -> u64 {
+        self.used
+    }
+
+    /// A saved numeric expression in the kernel's syntax, when the kernel
+    /// evaluates it as arithmetic over the construction. Its current value
+    /// does not matter: an expression whose inputs are undefined right now
+    /// is kept, as the reference reader keeps it.
+    pub fn number(&mut self, c: &Construction, source: &str) -> Result<String, String> {
+        if self.used >= self.budget {
+            return Err("the style expressions of the file exceed the evaluation budget".into());
+        }
+        let line = expression_line(source)?;
+        let before = geo_kernel::expr::work_done();
+        let value = c.arithmetic_value(&line);
+        // A parsed expression costs at least one unit, so that a file of
+        // many cheap ones is bounded as well.
+        self.used += (geo_kernel::expr::work_done() - before).max(1);
+        // A command the kernel parses without running it is refused by
+        // the kernel itself, whatever value it would give.
+        value
+            .map(|_| line)
+            .ok_or_else(|| format!("`{source}` is not a number of the construction"))
+    }
+
+    /// The channels of a dynamic colour as expressions the kernel evaluates.
+    pub fn dynamic_color(
+        &mut self,
+        c: &Construction,
+        saved: &DynamicColor,
+    ) -> Result<DynamicColor, String> {
+        Ok(DynamicColor {
+            red: self.number(c, &saved.red)?,
+            green: self.number(c, &saved.green)?,
+            blue: self.number(c, &saved.blue)?,
+            alpha: saved
+                .alpha
+                .as_deref()
+                .map(|alpha| self.number(c, alpha))
+                .transpose()?,
+            space: saved.space,
+        })
+    }
 }
 
 /// Properties of elements that no value depends on and the kernel has no
@@ -923,7 +1046,8 @@ impl Converter {
                     computed,
                 });
             }
-            if !el.shown {
+            // Without a `<show>` tag the object stays visible in the editor.
+            if el.shown == Some(false) {
                 self.out.hidden.push(el.label.clone());
             }
         }
