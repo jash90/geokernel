@@ -9,6 +9,8 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.geogebra.common.main.MyParseError;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -143,7 +145,17 @@ public final class GoldenGenerator {
                     String label = (String) step.get("label");
                     double x = number(step.get("x"));
                     double y = number(step.get("y"));
-                    session.move(label, x, y);
+                    if (Boolean.TRUE.equals(step.get("reference_parse_error"))) {
+                        boolean failed = false;
+                        try {
+                            session.move(label, x, y);
+                        } catch (MyParseError error) {
+                            failed = true;
+                        }
+                        outStep.put("reference_parse_error", failed);
+                    } else {
+                        session.move(label, x, y);
+                    }
                     outStep.put("label", label);
                     outStep.put("x", x);
                     outStep.put("y", y);

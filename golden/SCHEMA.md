@@ -70,6 +70,10 @@ One JSON object per file, stored under `golden/<group>/`.
 | `delete` | `label` | Remove the object and its dependents from the construction. Subsequent snapshots omit the deleted labels. |
 | `reject` | `line` | Check that the command reports an error and creates no output. |
 
+A `move` step may include `reference_parse_error`, which records whether the
+reference threw a parse error during the update. The snapshot still records
+the values left in the construction after the edit.
+
 ## Snapshot
 
 A JSON object that maps every label created by the script to an Object.

@@ -60,8 +60,9 @@ tools/ggb-harness/harness.sh golden cas
 ```
 
 `cas-smoke` checks a prime command through the headless app's algebra processor.
-The `cas` golden group and the `calculus` group's `degree` topic select the
-native backend automatically. `GGB_HARNESS_CAS=1` selects it for other
+The `cas`, `locusequation` and `envelope` golden groups and the `calculus`
+group's `degree` topic select the native backend automatically.
+`GGB_HARNESS_CAS=1` selects it for other
 harness runs. The remaining historical cases default to the dummy backend.
 Giac is a separate GPL reference backend used only to record and check fixtures.
 The Rust workspace and release builds have no runtime or build dependency on it.

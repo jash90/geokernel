@@ -1345,6 +1345,28 @@ pub(crate) fn parents(c: &Construction, def: &Def) -> Vec<Id> {
     }
 }
 
+pub(crate) fn distance_equality(c: &Construction, boolean: Id) -> Option<[[Id; 2]; 2]> {
+    let Def::Expr(def) = c.def(boolean) else {
+        return None;
+    };
+    let expr = entry(c, def);
+    let Node::Bin(Bin::Equal, lhs, rhs) = expr.nodes[expr.root as usize] else {
+        return None;
+    };
+    let distance = |index: u32| {
+        let def = match expr.nodes[index as usize] {
+            Node::Obj(id) => c.def(id),
+            Node::Cmd(def, _) => def,
+            _ => return None,
+        };
+        match def {
+            Def::Distance(a, b) => Some([a, b]),
+            _ => None,
+        }
+    };
+    Some([distance(lhs)?, distance(rhs)?])
+}
+
 /// A result of [`evaluate`]: the raw value and the exact decimal of a
 /// number.
 pub(crate) struct Outcome {
