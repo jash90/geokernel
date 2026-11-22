@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Writes saved/saved.json: constructions that are saved after their free
-points were moved.
+"""Writes saved/saved.json: constructions saved after edits.
 
-Each case gives raw GeoGebra input lines and `move` or `set_number` steps.
+Each case gives raw GeoGebra input lines and optional steps to move points,
+change a number, enable animation, set an angle style, or rename an object.
 It can also set the angle unit or hide specific objects. The harness
 (`harness.sh saved`) writes the construction file and GeoGebra's own values
 at that moment. The importer checks intersection and tangent output order
@@ -187,6 +187,35 @@ move = mv("A", 2, 1)
 case("expressions", expressions, [move], hidden=hidden)
 case("expressions", expressions,
      [move, {"action": "set_number", "label": "v_{0x}", "value": 5}], hidden=hidden)
+
+paths = [
+    "A = (1, 2)", "B = (9, 6)", "s = Segment(A, B)", "l = Line(A, B)",
+    "f(x) = x² + y(A) - 3", "c = Circle(A, 3)", "S = Point(s)", "L = Point(l)",
+    "F = Point(f)", "C = Point(c)", "D = Point(s, 0.25)", "u = Vector(S, L)",
+    "d = Segment(F, C)", "p = PerpendicularLine(S, l)", "q = PerpendicularLine(L, l)",
+    "ts = PathParameter(S)", "tl = PathParameter(L)", "tf = PathParameter(F)",
+    "tc = PathParameter(C)",
+]
+dragged = [mv("S", 5, 5), mv("L", -3, 1), mv("F", 2.25, 3), mv("C", 2, -4),
+           {"action": "animate", "label": "S"}]
+case("paths", paths, dragged)
+case("paths", paths, dragged + [mv("B", 7, 3), mv("A", -1, 1), mv("F", -2.5, 2)])
+
+case("review", ["n = 400", "ang = (n + 30)°", "acute = (n - 10)°",
+                "reflex = (n + 30)°", "raw = (n + 30)°", "turn = ang / 1°",
+                "A = (sqrt(2), 1)", "B = (3, 4)", "C = (2, 5)",
+                "a = 2π", "d = 1/3", "P = If(n > 0, A, B)",
+                "q = {A, d, 5, a}", "flat(x) = 4", "tri = Polygon(A, B, C)",
+                "len = 5", "el = Ellipse(A, B, len)",
+                "e = x(A) + NextPrime(n)", "lost = e + 1", "Euler = ℯ + 1"],
+     [{"action": "angle_style", "label": "ang", "value": 0},
+      {"action": "angle_style", "label": "acute", "value": 1},
+      {"action": "angle_style", "label": "reflex", "value": 2},
+      {"action": "rename", "label": "P", "name": "chosen"}])
+
+case("coordinates", ["a = 2", "b = 3", "P = $point(a, b)",
+                     "Q = $point(1/2, 3)", "v = $vector(a, b)",
+                     "w = $vector(1/2, 3)"], [])
 
 out = Path(__file__).with_name("saved.json")
 lines = ",\n".join("    " + json.dumps(c, separators=(", ", ": ")) for c in cases)

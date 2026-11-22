@@ -1,0 +1,20 @@
+{
+  "schema": 2,
+  "id": "saved-coordinates-001",
+  "script": [
+    "a = 2",
+    "b = 3",
+    "P = $point(a, b)",
+    "Q = $point(1/2, 3)",
+    "v = $vector(a, b)",
+    "w = $vector(1/2, 3)"
+  ],
+  "objects": {
+    "a": { "type": "number", "defined": true, "value": 2.0 },
+    "b": { "type": "number", "defined": true, "value": 3.0 },
+    "P": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+    "Q": { "type": "point", "defined": true, "x": 0.5, "y": 3.0 },
+    "v": { "type": "vector", "defined": true, "x": 2.0, "y": 3.0 },
+    "w": { "type": "vector", "defined": true, "x": 0.5, "y": 3.0 }
+  }
+}

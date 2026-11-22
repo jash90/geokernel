@@ -6,6 +6,7 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoPointOnPath.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDispatcher.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoClosestPoint.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDistancePointObject.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoPathParameter.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdPoint.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoJoinPoints.java
@@ -21,6 +22,7 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoTangentLine.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoAxes.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoPoint.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoFunction.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoLine.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoSegment.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoRay.java
@@ -109,6 +111,7 @@ pub struct PathState {
     temp_t: f64,
     temp_ty: i32,
     region: RegionState,
+    function_bounds: Option<[f64; 2]>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -163,7 +166,22 @@ impl PathState {
             temp_t: f64::NAN,
             temp_ty: -1,
             region: RegionState::Boundary,
+            function_bounds: None,
         }
+    }
+
+    /// Restore the coordinates before any dependent is constructed.
+    pub(crate) fn saved(
+        c: &Construction,
+        path: Id,
+        x: f64,
+        y: f64,
+        bounds: Option<[f64; 2]>,
+    ) -> Self {
+        let mut state = Self::new();
+        state.function_bounds = bounds;
+        state.set_coords(&geom(c, path), x, y);
+        state
     }
 
     /// The raw path parameter, in the range of the path (not normalised).
@@ -189,6 +207,7 @@ impl PathState {
             && b(self.temp_t, o.temp_t)
             && self.temp_ty == o.temp_ty
             && self.region.same(o.region)
+            && self.function_bounds == o.function_bounds
     }
 
     /// Whether every field is a number or NaN that the state can hold:
@@ -438,6 +457,10 @@ pub(crate) enum Geom<'a> {
     },
     /// An arc or sector (`GeoConicPart`) with its record.
     Arc(ArcData),
+    Function {
+        c: &'a Construction,
+        id: Id,
+    },
 }
 
 /// A `GeoSegment`: its line through the start and end point
@@ -611,6 +634,12 @@ impl Geom<'_> {
             Geom::Polygon { n, .. } => (0.0, *n as f64),
             Geom::PolyLine { n, .. } => (0.0, *n as f64 - 1.0),
             Geom::Arc(a) => a.range(),
+            Geom::Function { c, .. } => {
+                let [min, max, ..] = c
+                    .locus_view()
+                    .unwrap_or(crate::kernel::locus::HEADLESS_VIEW);
+                (min, max)
+            }
         }
     }
 
@@ -635,12 +664,27 @@ impl Geom<'_> {
             &Geom::Polygon { c, id, n } => polygonal_point_changed(c, id, n, true, p),
             &Geom::PolyLine { c, id, n } => polygonal_point_changed(c, id, n, false, p),
             Geom::Arc(a) => a.point_changed(p),
+            Geom::Function { c, id } => {
+                let (x, y) = (p.x / p.z, p.y / p.z);
+                let at_x = c.function_value(*id, x).unwrap_or(f64::NAN);
+                // A saved point is already on the graph up to rounding.
+                // A drag off a polynomial graph uses the nearest point.
+                p.t = if (at_x - y).abs() <= 4.0 * f64::EPSILON * at_x.abs().max(1.0) {
+                    x
+                } else {
+                    closest_function_x(c, *id, x, y).unwrap_or(x)
+                };
+                self.path_changed(p);
+            }
         }
     }
 
     /// `Path.pathChanged`: puts the point at its parameter.
     pub(crate) fn path_changed(&self, p: &mut PathState) {
         match self {
+            Geom::Function { c, id } => {
+                p.set_coords_2d(p.t, c.function_value(*id, p.t).unwrap_or(f64::NAN), 1.0);
+            }
             Geom::Undefined => p.set_coords_2d(f64::NAN, f64::NAN, f64::NAN),
             Geom::Line { g, start } => line_path_changed(*g, *start, p),
             Geom::Ray { g, start } => {
@@ -688,6 +732,44 @@ impl Geom<'_> {
             Geom::Arc(a) => a.path_changed(p),
         }
     }
+}
+
+/// `AlgoDistancePointObject.closestValPoly`: minimize the squared distance
+/// by solving `(t - x) + (f(t) - y) f'(t) = 0`.
+fn closest_function_x(c: &Construction, id: Id, x: f64, y: f64) -> Option<f64> {
+    let work = crate::expr::IntersectionWork::new();
+    let (mut coefficients, denominator) = work.fraction(c, id)?;
+    let &[scale] = denominator.as_slice() else {
+        return None;
+    };
+    if scale == 0.0 || !work.charge((coefficients.len() * coefficients.len()) as u64) {
+        return None;
+    }
+    for coefficient in &mut coefficients {
+        *coefficient /= scale;
+    }
+    let mut stationary = vec![0.0; 2 * coefficients.len().saturating_sub(1).max(1)];
+    stationary[0] = -x;
+    stationary[1] = 1.0;
+    for (degree, &coefficient) in coefficients.iter().enumerate().skip(1) {
+        let derivative = degree as f64 * coefficient;
+        stationary[degree - 1] -= y * derivative;
+        for (i, &value) in coefficients.iter().enumerate() {
+            stationary[degree - 1 + i] += derivative * value;
+        }
+    }
+    let roots = super::intersect::conics::graph_roots(&stationary, &|units| work.charge(units));
+    let mut closest = None;
+    let mut best = f64::INFINITY;
+    for t in roots {
+        let value = coefficients.iter().rev().fold(0.0, |v, &a| v * t + a);
+        let distance = (x - t).powi(2) + (y - value).powi(2);
+        if distance + STANDARD_PRECISION < best {
+            best = distance;
+            closest = Some(t);
+        }
+    }
+    closest
 }
 
 /// Vertex `i` of a polygon or polyline whose vertices are all defined.
@@ -866,6 +948,11 @@ pub(crate) fn geom(c: &Construction, path: Id) -> Geom<'_> {
             Some(n) => Geom::PolyLine { c, id: path, n },
             None => Geom::Undefined,
         },
+        (Kind::Function, Value::Function)
+            if crate::expr::function_signature(c, path).is_some_and(|sig| !sig.boolean) =>
+        {
+            Geom::Function { c, id: path }
+        }
         _ => Geom::Undefined,
     }
 }
@@ -1050,7 +1137,9 @@ fn path_parameter(c: &Construction, point: Id) -> Option<Value> {
     if !st.is_defined() || st.value().is_none() {
         return None;
     }
-    let (min, max) = geom(c, path).range();
+    let (min, max) = st
+        .function_bounds
+        .map_or_else(|| geom(c, path).range(), |[a, b]| (a, b));
     Some(Value::Number(to_normalized(st.t, min, max)))
 }
 
@@ -1141,7 +1230,9 @@ impl Group for PathDef {
                 c.expect(start, POINT)?;
                 length.check(c)
             }
-            PathDef::On { path } => c.expect(path, PATH),
+            PathDef::On { path } => c
+                .expect(path, &[Kind::Function])
+                .or_else(|_| c.expect(path, PATH)),
             PathDef::OnParam { path, param } => {
                 c.expect(path, PATH)?;
                 c.expect(param, NUMBER)

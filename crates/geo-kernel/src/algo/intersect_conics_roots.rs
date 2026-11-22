@@ -446,7 +446,7 @@ pub(crate) fn polynomial_roots(coefficients: [f64; 5]) -> ([f64; 4], usize) {
 /// Real roots of the polynomial obtained by substituting a graph into
 /// another equation. Above degree four, use the same Laguerre iteration and
 /// deflation as the quartic solver, then polish against the original input.
-pub(in crate::algo::intersect) fn graph_roots(
+pub(in crate::algo) fn graph_roots(
     coefficients: &[f64],
     charge: &impl Fn(u64) -> bool,
 ) -> Vec<f64> {

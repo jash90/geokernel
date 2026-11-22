@@ -1480,6 +1480,55 @@ pub(crate) fn define_coordinates(
     )
 }
 
+/// The names in an expression, using the same token boundaries as the parser.
+pub fn expression_names(source: &str) -> Vec<&str> {
+    lex::tokens(source).map_or_else(
+        |_| Vec::new(),
+        |tokens| {
+            tokens
+                .into_iter()
+                .filter(|token| matches!(token.tok, lex::Tok::Name { .. }))
+                .map(|token| &source[token.start..token.end])
+                .collect()
+        },
+    )
+}
+
+/// The source expressions in a brace-delimited list literal.
+pub fn list_literal_elements(source: &str) -> Option<Vec<&str>> {
+    use lex::Tok;
+    if !source.trim_start().starts_with('{') {
+        return None;
+    }
+    let tokens = lex::tokens(source).ok()?;
+    let (first, rest) = tokens.split_first()?;
+    let (last, inner) = rest.split_last()?;
+    if !matches!(first.tok, Tok::LBrace) || !matches!(last.tok, Tok::RBrace) {
+        return None;
+    }
+    if inner.is_empty() {
+        return Some(Vec::new());
+    }
+    let (mut start, mut depth) = (first.end, 0usize);
+    let mut elements = Vec::new();
+    for token in inner {
+        match token.tok {
+            Tok::LParen | Tok::LBrace => depth += 1,
+            Tok::RParen | Tok::RBrace => depth = depth.checked_sub(1)?,
+            Tok::Comma if depth == 0 => {
+                elements.push(source[start..token.start].trim());
+                start = token.end;
+            }
+            _ => {}
+        }
+    }
+    if depth != 0 {
+        return None;
+    }
+    elements.push(source[start..last.start].trim());
+    Some(elements)
+}
+
 /// Defines a named function. A constant right side (`f(x) = 3`) is still
 /// a function.
 pub(crate) fn define_function(

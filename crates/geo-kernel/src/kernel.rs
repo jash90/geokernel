@@ -1244,6 +1244,15 @@ impl Construction {
 
     /// Adds an object and computes its value.
     pub fn add(&mut self, label: &str, def: Def) -> Result<Id, Error> {
+        self.add_with_path_state(label, def, None)
+    }
+
+    fn add_with_path_state(
+        &mut self,
+        label: &str,
+        def: Def,
+        saved_path: Option<PathState>,
+    ) -> Result<Id, Error> {
         if label.is_empty() {
             return Err(Error::EmptyLabel);
         }
@@ -1273,7 +1282,7 @@ impl Construction {
                 algo::general_conic::value(d.kind(), &data)
             }
             Def::Path(d) if d.has_state() => {
-                let state = d.create(self);
+                let state = saved_path.unwrap_or_else(|| d.create(self));
                 self.paths.push((id.0, state));
                 PathDef::value(&state)
             }
@@ -1874,6 +1883,21 @@ impl Construction {
             Def::Path(d) if d.has_state() => self.path_slot(id.0).map(|slot| self.paths[slot].1),
             _ => None,
         }
+    }
+
+    pub(crate) fn add_saved_path_point(
+        &mut self,
+        label: &str,
+        path: Id,
+        x: f64,
+        y: f64,
+        bounds: Option<[f64; 2]>,
+    ) -> Result<Id, Error> {
+        if bounds.is_some_and(|[min, max]| min >= max || self.kind(path) != Kind::Function) {
+            return Err(Error::NotFinite);
+        }
+        let state = PathState::saved(self, path, x, y, bounds);
+        self.add_with_path_state(label, Def::Path(PathDef::On { path }), Some(state))
     }
 
     /// Gives the point on a path `id` the state `state` read from another

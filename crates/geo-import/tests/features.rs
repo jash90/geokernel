@@ -141,7 +141,14 @@ fn constant_expressions_are_free_objects_with_the_saved_value() {
                 <element type=\"numeric\" label=\"n\"><value val=\"1024\"/></element>\
                 <expression label=\"m\" exp=\"n + 1\" type=\"numeric\"/>\
                 <element type=\"numeric\" label=\"m\"><value val=\"1025\"/></element>");
-    assert_eq!(r.script, ["A = (0.5, 3)", "n = 1024", "m = n + 1"]);
+    assert_eq!(
+        r.script,
+        [
+            "A = $saved($point(0.5, 3), (1/2, 3))",
+            "n = $saved(1024, 2^10)",
+            "m = n + 1"
+        ]
+    );
     assert!(r.skipped.is_empty());
 }
 

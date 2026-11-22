@@ -59,8 +59,8 @@ pub struct Imported {
     /// Things worth telling the user that are not an object (for example that
     /// the file was saved with continuity on).
     pub notes: Vec<String>,
-    /// Objects the kernel computed differently from the value saved in the
-    /// file (relative tolerance `1e-9`). The object stays in the script.
+    /// Objects whose kind or value disagrees with the file (relative
+    /// tolerance `1e-9`). The object stays in the script.
     pub mismatched: Vec<Mismatch>,
 }
 
