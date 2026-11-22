@@ -21,42 +21,6 @@ reason = "the kernel refuses the input: unknown command `Extremum`"
 mismatches = ["step"]
 
 [[gap]]
-id = "arithmetic/ArithmeticTest.java:100"
-category = "error-behaviour"
-reason = "the kernel refuses the input: unknown object `log_{2}2`"
-mismatches = ["step"]
-
-[[gap]]
-id = "arithmetic/ArithmeticTest.java:196"
-category = "text-formatting"
-reason = "string `0.04241150082346221`, GeoGebra prints `2.43*°`"
-mismatches = ["α"]
-
-[[gap]]
-id = "arithmetic/ArithmeticTest.java:197"
-category = "text-formatting"
-reason = "string `-0.04241150082346221`, GeoGebra prints `-2.43*°`"
-mismatches = ["β"]
-
-[[gap]]
-id = "arithmetic/ArithmeticTest.java:198"
-category = "text-formatting"
-reason = "string `0.05235987755982989`, GeoGebra prints `3*°`"
-mismatches = ["γ"]
-
-[[gap]]
-id = "arithmetic/ArithmeticTest.java:199"
-category = "text-formatting"
-reason = "string `-0.05235987755982989`, GeoGebra prints `-3*°`"
-mismatches = ["δ"]
-
-[[gap]]
-id = "arithmetic/ArithmeticTest.java:204"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `x^(2)`"
-mismatches = ["f"]
-
-[[gap]]
 id = "arithmetic/ArithmeticTest.java:205"
 category = "unsupported-form"
 reason = "the kernel refuses the input: the function `f` needs an argument"
@@ -213,12 +177,6 @@ reason = "the kernel refuses the input: unknown object `list1`; the method's ste
 mismatches = ["step"]
 
 [[gap]]
-id = "arithmetic/ArithmeticTest.java:302"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `abs(x + 2)`"
-mismatches = ["f"]
-
-[[gap]]
 id = "arithmetic/ArithmeticTest.java:309"
 category = "unsupported-form"
 reason = "the kernel refuses the input: `x()` and `y()` need a point or a vector"
@@ -231,15 +189,9 @@ reason = "the kernel refuses the input: `x()` and `y()` need a point or a vector
 mismatches = ["step"]
 
 [[gap]]
-id = "arithmetic/ArithmeticTest.java:316"
-category = "incomplete-context"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `x`"
-mismatches = ["f"]
-
-[[gap]]
 id = "arithmetic/ArithmeticTest.java:317"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `f'`; the method's step `arithmetic/ArithmeticTest.java:316` fails earlier here, so the object is missing only in its wake"
+category = "incomplete-context"
+reason = "the kernel refuses the input: unknown object `f'`"
 mismatches = ["step"]
 
 [[gap]]
@@ -315,12 +267,6 @@ reason = "the kernel refuses the input: `f(x):` is not a valid object name"
 mismatches = ["step"]
 
 [[gap]]
-id = "arithmetic/ArithmeticTest.java:386"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `x + 1`"
-mismatches = ["g"]
-
-[[gap]]
 id = "arithmetic/ArithmeticTest.java:387"
 category = "cascade"
 reason = "the kernel refuses the input: unknown object `f`; the method's step `arithmetic/ArithmeticTest.java:382` fails earlier here, so the object is missing only in its wake"
@@ -331,12 +277,6 @@ id = "arithmetic/ArithmeticTest.java:388"
 category = "cascade"
 reason = "the kernel refuses the input: unknown object `f`; the method's step `arithmetic/ArithmeticTest.java:382` fails earlier here, so the object is missing only in its wake"
 mismatches = ["step"]
-
-[[gap]]
-id = "arithmetic/ArithmeticTest.java:404"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `x`"
-mismatches = ["f"]
 
 [[gap]]
 id = "arithmetic/ArithmeticTest.java:405"
@@ -355,36 +295,6 @@ id = "arithmetic/ArithmeticTest.java:408"
 category = "unsupported-form"
 reason = "the kernel refuses the input: `gg(a,b)` is not a valid object name"
 mismatches = ["step"]
-
-[[gap]]
-id = "arithmetic/ArithmeticTest.java:414"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `4 < x < 5`"
-mismatches = ["r"]
-
-[[gap]]
-id = "arithmetic/ArithmeticTest.java:417"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `1 < x`"
-mismatches = ["p1"]
-
-[[gap]]
-id = "arithmetic/ArithmeticTest.java:418"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `1 < x < 2`"
-mismatches = ["p2"]
-
-[[gap]]
-id = "arithmetic/ArithmeticTest.java:419"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `(1 < x) + (x < 2)`"
-mismatches = ["p3"]
-
-[[gap]]
-id = "arithmetic/ArithmeticTest.java:420"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `1 < x + x < 2`"
-mismatches = ["p4"]
 
 [[gap]]
 id = "arithmetic/ArithmeticTest.java:443"
@@ -423,12 +333,6 @@ reason = "the kernel refuses the input: unknown object `i`"
 mismatches = ["step"]
 
 [[gap]]
-id = "arithmetic/ArithmeticTest.java:468"
-category = "text-formatting"
-reason = "string `0.5235987755982988`, GeoGebra prints `30*°`"
-mismatches = ["α"]
-
-[[gap]]
 id = "arithmetic/ArithmeticTest.java:481"
 category = "unsupported-form"
 reason = "the kernel refuses the input: unexpected `,`"
@@ -465,18 +369,6 @@ reason = "the kernel refuses the input: unexpected `\\`"
 mismatches = ["step"]
 
 [[gap]]
-id = "arithmetic/ArithmeticTest.java:504"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `x^(3)`"
-mismatches = ["f"]
-
-[[gap]]
-id = "arithmetic/ArithmeticTest.java:505"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `(-x^(3))`"
-mismatches = ["g"]
-
-[[gap]]
 id = "arithmetic/ArithmeticTest.java:506"
 category = "unsupported-form"
 reason = "the kernel refuses the input: the function `f` needs an argument"
@@ -501,18 +393,6 @@ reason = "the kernel refuses the input: the function `f` needs an argument"
 mismatches = ["step"]
 
 [[gap]]
-id = "arithmetic/ArithmeticTest.java:514"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `(3 * x) + 2`"
-mismatches = ["f"]
-
-[[gap]]
-id = "arithmetic/ArithmeticTest.java:515"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `1`"
-mismatches = ["g"]
-
-[[gap]]
 id = "arithmetic/ArithmeticTest.java:516"
 category = "unsupported-form"
 reason = "the kernel refuses the input: unexpected `=`"
@@ -526,33 +406,27 @@ mismatches = ["step"]
 
 [[gap]]
 id = "arithmetic/ArithmeticTest.java:518"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `ff`; the method's step `arithmetic/ArithmeticTest.java:514` fails earlier here, so the object is missing only in its wake"
+category = "unsupported-form"
+reason = "the kernel refuses the input: geometric objects cannot be used as arithmetic operands"
 mismatches = ["step"]
 
 [[gap]]
 id = "arithmetic/ArithmeticTest.java:519"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `gg`; the method's step `arithmetic/ArithmeticTest.java:514` fails earlier here, so the object is missing only in its wake"
+category = "unsupported-form"
+reason = "the kernel refuses the input: geometric objects cannot be used as arithmetic operands"
 mismatches = ["step"]
 
 [[gap]]
 id = "arithmetic/ArithmeticTest.java:520"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `ff`; the method's step `arithmetic/ArithmeticTest.java:514` fails earlier here, so the object is missing only in its wake"
+category = "unsupported-form"
+reason = "the kernel refuses the input: geometric objects cannot be used as arithmetic operands"
 mismatches = ["step"]
 
 [[gap]]
 id = "arithmetic/ArithmeticTest.java:521"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `gg`; the method's step `arithmetic/ArithmeticTest.java:514` fails earlier here, so the object is missing only in its wake"
+category = "unsupported-form"
+reason = "the kernel refuses the input: geometric objects cannot be used as arithmetic operands"
 mismatches = ["step"]
-
-[[gap]]
-id = "arithmetic/ArithmeticTest.java:581"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `If[x / abs(x) < 0, 1, 2]`"
-mismatches = ["f"]
 
 [[gap]]
 id = "arithmetic/ArithmeticTest.java:681"
@@ -627,27 +501,9 @@ reason = "the kernel refuses the input: unexpected `̅`"
 mismatches = ["step"]
 
 [[gap]]
-id = "arithmetic/ArithmeticTest.java:71"
-category = "error-behaviour"
-reason = "the kernel refuses the input: unknown object `list1`"
-mismatches = ["step"]
-
-[[gap]]
-id = "arithmetic/ArithmeticTest.java:716"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `x - 0`"
-mismatches = ["f"]
-
-[[gap]]
 id = "arithmetic/ArithmeticTest.java:72"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `listF`; the method's step `arithmetic/ArithmeticTest.java:71` fails earlier here, so the object is missing only in its wake"
-mismatches = ["step"]
-
-[[gap]]
-id = "arithmetic/ArithmeticTest.java:73"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `matrix1`; the method's step `arithmetic/ArithmeticTest.java:71` fails earlier here, so the object is missing only in its wake"
+category = "unsupported-form"
+reason = "the kernel refuses the input: a function cannot give a list"
 mismatches = ["step"]
 
 [[gap]]
@@ -663,51 +519,9 @@ reason = "the kernel refuses the input: `x^3+y^3+z^3` is not a valid object name
 mismatches = ["step"]
 
 [[gap]]
-id = "arithmetic/ArithmeticTest.java:74"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `aa`; the method's step `arithmetic/ArithmeticTest.java:71` fails earlier here, so the object is missing only in its wake"
-mismatches = ["step"]
-
-[[gap]]
-id = "arithmetic/ArithmeticTest.java:75"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `matrix2`; the method's step `arithmetic/ArithmeticTest.java:71` fails earlier here, so the object is missing only in its wake"
-mismatches = ["step"]
-
-[[gap]]
-id = "arithmetic/ArithmeticTest.java:77"
-category = "unsupported-form"
-reason = "the kernel refuses the input: unknown command `list1`"
-mismatches = ["step"]
-
-[[gap]]
 id = "arithmetic/ArithmeticTest.java:779"
 category = "unsupported-form"
 reason = "the kernel refuses the input: `$vector` needs two coordinates"
-mismatches = ["step"]
-
-[[gap]]
-id = "arithmetic/ArithmeticTest.java:78"
-category = "unsupported-form"
-reason = "the kernel refuses the input: unknown command `list1`"
-mismatches = ["step"]
-
-[[gap]]
-id = "arithmetic/ArithmeticTest.java:79"
-category = "unsupported-form"
-reason = "the kernel refuses the input: unknown command `list1`"
-mismatches = ["step"]
-
-[[gap]]
-id = "arithmetic/ArithmeticTest.java:80"
-category = "unsupported-form"
-reason = "the kernel refuses the input: unknown command `list1`"
-mismatches = ["step"]
-
-[[gap]]
-id = "arithmetic/ArithmeticTest.java:81"
-category = "unsupported-form"
-reason = "the kernel refuses the input: unknown command `list1`"
 mismatches = ["step"]
 
 [[gap]]
@@ -735,22 +549,10 @@ reason = "the kernel refuses the input: unknown command `listF`"
 mismatches = ["step"]
 
 [[gap]]
-id = "arithmetic/ArithmeticTest.java:86"
-category = "unsupported-form"
-reason = "the kernel refuses the input: unknown command `matrix1`"
-mismatches = ["step"]
-
-[[gap]]
-id = "arithmetic/ArithmeticTest.java:87"
-category = "unsupported-form"
-reason = "the kernel refuses the input: unknown command `matrix1`"
-mismatches = ["step"]
-
-[[gap]]
 id = "arithmetic/ArithmeticTest.java:88"
-category = "unsupported-form"
-reason = "the kernel refuses the input: unknown command `matrix1`"
-mismatches = ["step"]
+category = "kernel-mismatch"
+reason = "Undefined does not match `{NaN, NaN, NaN}` (expected a value, kernel is undefined)"
+mismatches = ["l5"]
 
 [[gap]]
 id = "arithmetic/ArithmeticTest.java:89"
@@ -921,18 +723,6 @@ reason = "the kernel refuses the input: unknown command `Heaviside`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CmdCopyFreeObjectTest.java:27"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `(3 * 1)`"
-mismatches = ["myFunc"]
-
-[[gap]]
-id = "commands/CmdCopyFreeObjectTest.java:28"
-category = "text-formatting"
-reason = "values agree but `GeoList` of kind list has no GeoGebra-style text yet; GeoGebra prints `{(3 * 1)}`"
-mismatches = ["myList"]
-
-[[gap]]
 id = "commands/CmdCopyFreeObjectTest.java:29"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `CopyFreeObject`"
@@ -987,28 +777,10 @@ reason = "the kernel refuses the input: `OrthogonalLine` does not take 4 argumen
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:100"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `0`"
-mismatches = ["h"]
-
-[[gap]]
-id = "commands/CommandsTest.java:101"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `x^(4) - (3 * x^(2)) + x - 4`"
-mismatches = ["p"]
-
-[[gap]]
 id = "commands/CommandsTest.java:1029"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `Cross`"
 mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:103"
-category = "text-formatting"
-reason = "values agree but `GeoList` of kind list has no GeoGebra-style text yet; GeoGebra prints `{x^(2) - x - 3, (5 * x) - 1}`"
-mismatches = ["l3"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1030"
@@ -1029,18 +801,6 @@ reason = "the kernel refuses the input: unknown command `Cube`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:104"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `x^(2) - x - 3`"
-mismatches = ["q"]
-
-[[gap]]
-id = "commands/CommandsTest.java:105"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `(5 * x) - 1`"
-mismatches = ["r"]
-
-[[gap]]
 id = "commands/CommandsTest.java:1064"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `Cube`"
@@ -1051,18 +811,6 @@ id = "commands/CommandsTest.java:1090"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `Cube`"
 mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:115"
-category = "text-formatting"
-reason = "values agree but `GeoList` of kind list has no GeoGebra-style text yet; GeoGebra prints `{2, -1}`"
-mismatches = ["l4"]
-
-[[gap]]
-id = "commands/CommandsTest.java:116"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `2`"
-mismatches = ["s"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1165"
@@ -1081,12 +829,6 @@ id = "commands/CommandsTest.java:1167"
 category = "unsupported-command"
 reason = "the kernel refuses the input: `ClosestPoint` does not take 3 argument(s)"
 mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:117"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `-1`"
-mismatches = ["t"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1170"
@@ -1131,12 +873,6 @@ reason = "the kernel refuses the input: `Fit({(0,0),(1,1),(2,4)},{x^2,sin(x),x})
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:119"
-category = "text-formatting"
-reason = "values agree but `GeoList` of kind list has no GeoGebra-style text yet; GeoGebra prints `{1, 0}`"
-mismatches = ["l5"]
-
-[[gap]]
 id = "commands/CommandsTest.java:1190"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `Column`"
@@ -1161,22 +897,10 @@ reason = "the kernel refuses the input: unknown command `ColumnName`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:120"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `1`"
-mismatches = ["f_1"]
-
-[[gap]]
 id = "commands/CommandsTest.java:1208"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `CopyFreeObject`"
 mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:121"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `0`"
-mismatches = ["g_1"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1224"
@@ -1191,12 +915,6 @@ reason = "the kernel refuses the input: unknown command `Covariance`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:123"
-category = "text-formatting"
-reason = "values agree but `GeoList` of kind list has no GeoGebra-style text yet; GeoGebra prints `{2, 3}`"
-mismatches = ["l6"]
-
-[[gap]]
 id = "commands/CommandsTest.java:1230"
 category = "unsupported-command"
 reason = "the kernel refuses the input: `CrossRatio` does not take 8 argument(s)"
@@ -1209,16 +927,10 @@ reason = "the kernel refuses the input: `CrossRatio` does not take 8 argument(s)
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:1236"
-category = "redefine"
-reason = "the kernel refuses the input: object `\u0000arg1` already exists"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:1237"
 category = "text-formatting"
-reason = "string `-0.5730366435550952`, GeoGebra prints `-0.5730366435551724`"
-mismatches = ["k"]
+reason = "string `-0.5730366435550952`, the reference prints `-0.5730366435551724`"
+mismatches = ["tpairs_probe_1237_0"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1238"
@@ -1227,34 +939,10 @@ reason = "the kernel refuses the input: unexpected `[`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:124"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `2`"
-mismatches = ["h_1"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1243"
-category = "redefine"
-reason = "the kernel refuses the input: object `\u0000arg1` already exists"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:1244"
 category = "kernel-mismatch"
-reason = "GeoGebra's test and the replay run without a CAS, so the derivatives of sin(x) that CurvatureVector needs are missing and the vector is undefined; the kernel computes it from its own derivatives (the golden case funcanalysis-curvatureupstream-004 is a known gap for the same reason)"
-mismatches = ["cv"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1245"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `(2`; the method's step `commands/CommandsTest.java:1243` fails earlier here, so the object is missing only in its wake"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:125"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `3`"
-mismatches = ["p_1"]
+reason = "Vector { x: 0.2723957318354948, y: -0.5041543019103322 } does not match `(NaN, NaN)` (expected undefined, kernel has a value)"
+mismatches = ["tpairs_probe_1244_0"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1250"
@@ -1269,18 +957,6 @@ reason = "the kernel refuses the input: unknown command `Cubic`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:127"
-category = "text-formatting"
-reason = "values agree but `GeoList` of kind list has no GeoGebra-style text yet; GeoGebra prints `{x + 1, 0}`"
-mismatches = ["l7"]
-
-[[gap]]
-id = "commands/CommandsTest.java:128"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `x + 1`"
-mismatches = ["q_1"]
-
-[[gap]]
 id = "commands/CommandsTest.java:1281"
 category = "kernel-mismatch"
 reason = "recorded without a CAS, where CommonDenominator of two rational functions is the function NaN; the kernel's polynomial CAS answers x^2 - 1"
@@ -1291,12 +967,6 @@ id = "commands/CommandsTest.java:1286"
 category = "app-command"
 reason = "the kernel refuses the input: unknown command `CenterView`"
 mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:129"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `0`"
-mismatches = ["r_1"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1291"
@@ -1329,12 +999,6 @@ reason = "class `GeoLocus` has no schema object (unsupported-type); string `Dela
 mismatches = ["graph1"]
 
 [[gap]]
-id = "commands/CommandsTest.java:1321"
-category = "error-behaviour"
-reason = "the kernel refuses the input: unknown object `(1,1)`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:1322"
 category = "app-command"
 reason = "the kernel refuses the input: unknown command `Delete`"
@@ -1353,21 +1017,9 @@ reason = "the kernel refuses the input: `s(1,2)*x` is not a valid object name"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:1358"
-category = "error-behaviour"
-reason = "the kernel refuses the input: unknown object `x+y=17`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:1359"
 category = "unsupported-command"
 reason = "the kernel refuses the input: `ConjugateDiameter` does not take 3 argument(s)"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1364"
-category = "error-behaviour"
-reason = "the kernel refuses the input: unknown object `-2x + 3y + 1 = 0`"
 mismatches = ["step"]
 
 [[gap]]
@@ -1413,28 +1065,10 @@ reason = "the kernel refuses the input: `Distance` does not take 12 argument(s)"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:1386"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `x^(2)`"
-mismatches = ["f"]
-
-[[gap]]
-id = "commands/CommandsTest.java:140"
-category = "incomplete-context"
-reason = "the kernel refuses the input: `f(x):` is not a valid object name"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:141"
-category = "incomplete-context"
-reason = "the kernel refuses the input: `g(x):` is not a valid object name"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:142"
 category = "incomplete-context"
-reason = "the kernel refuses the input: `h(x):` is not a valid object name"
-mismatches = ["step"]
+reason = "string `If[0 < x ≤ 2, x^(2), If[x > 2, 1 / x]]`, the reference prints `If[0 < x ≤ 2, x^(2), x > 2, 1 / x]`"
+mismatches = ["h"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1429"
@@ -1463,32 +1097,26 @@ mismatches = ["step"]
 [[gap]]
 id = "commands/CommandsTest.java:145"
 category = "incomplete-context"
-reason = "the kernel refuses the input: `h2(x):` is not a valid object name"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1459"
-category = "text-formatting"
-reason = "values agree but `GeoList` of kind list has no GeoGebra-style text yet; GeoGebra prints `{x - 1, 1}`"
-mismatches = ["l2"]
+reason = "string `If[x ≤ 2, x^(2), If[x > 2, 1 / x]]`, the reference prints `If[x ≤ 2, x^(2), x > 2, 1 / x]`"
+mismatches = ["h2"]
 
 [[gap]]
 id = "commands/CommandsTest.java:146"
 category = "incomplete-context"
-reason = "the kernel refuses the input: `h3(x):` is not a valid object name"
-mismatches = ["step"]
+reason = "string `If[0 < x ≤ 2, f(x), If[x > 2, g(x)]]`, the reference prints `If[0 < x ≤ 2, x^(2), x > 2, 1 / x]`"
+mismatches = ["h3"]
 
 [[gap]]
 id = "commands/CommandsTest.java:149"
 category = "incomplete-context"
-reason = "the kernel refuses the input: `h4(x):` is not a valid object name"
-mismatches = ["step"]
+reason = "string `If[0 < x ≤ 2, f(x), If[2 < x < 4, g(x)]]`, the reference prints `If[0 < x ≤ 2, x^(2), 2 < x < 4, 1 / x]`"
+mismatches = ["h4"]
 
 [[gap]]
 id = "commands/CommandsTest.java:152"
 category = "incomplete-context"
-reason = "the kernel refuses the input: `h5(x):` is not a valid object name"
-mismatches = ["step"]
+reason = "string `If[x ≥ 2, x^(2), If[x < 2, 1 / x]]`, the reference prints `If[x ≥ 2, x^(2), x < 2, 1 / x]`"
+mismatches = ["h5"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1531"
@@ -1643,20 +1271,8 @@ mismatches = ["step"]
 [[gap]]
 id = "commands/CommandsTest.java:1633"
 category = "kernel-mismatch"
-reason = "the reference's extremum search stops 7e-9 short of 3 pi / 2 (4.712388973431372), outside the 1e-9 tolerance of the kernel's 4.712388980384689; its search code is not under the EUPL and its iteration is not reproduced, and the five-digit strings need the rounding template"
-mismatches = ["A", "B"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1635"
-category = "text-formatting"
-reason = "string `(-1, 1.2599210498948732)`, GeoGebra prints `(-1, 1.25992)`"
-mismatches = ["E", "F"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1636"
-category = "text-formatting"
-reason = "string `(NaN, NaN)`, GeoGebra prints `(?, ?)`"
-mismatches = ["G"]
+reason = "Point { x: 4.712388980384689, y: -1.0 } does not match `(4.71239, -1)` (values differ)"
+mismatches = ["B"]
 
 [[gap]]
 id = "commands/CommandsTest.java:164"
@@ -1881,24 +1497,6 @@ reason = "Frequency of two lists of texts is a contingency table in GeoGebra; th
 mismatches = ["m1"]
 
 [[gap]]
-id = "commands/CommandsTest.java:1827"
-category = "text-formatting"
-reason = "values agree but `GeoPolyLine` of kind polyline has no GeoGebra-style text yet; GeoGebra prints `0`"
-mismatches = ["f"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1828"
-category = "text-formatting"
-reason = "values agree but `GeoPolyLine` of kind polyline has no GeoGebra-style text yet; GeoGebra prints `0`"
-mismatches = ["g"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1829"
-category = "text-formatting"
-reason = "values agree but `GeoPolyLine` of kind polyline has no GeoGebra-style text yet; GeoGebra prints `0`"
-mismatches = ["h"]
-
-[[gap]]
 id = "commands/CommandsTest.java:183"
 category = "error-behaviour"
 reason = "the kernel refuses the input: unknown object `X`"
@@ -1975,12 +1573,6 @@ id = "commands/CommandsTest.java:1875"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `Function`"
 mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1876"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `If[4 ≤ x ≤ 13, sin(x)]`"
-mismatches = ["g"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1877"
@@ -2103,19 +1695,7 @@ reason = "the kernel refuses the input: unknown command `ZoomIn`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:2146"
-category = "incomplete-context"
-reason = "the kernel refuses the input: `Intersect` does not take 4 argument(s)"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:2147"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `x^2+y^2=25`; the method's step `commands/CommandsTest.java:2138` fails earlier here, so the object is missing only in its wake"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2148"
 category = "cascade"
 reason = "the kernel refuses the input: unknown object `x^2+y^2=25`; the method's step `commands/CommandsTest.java:2138` fails earlier here, so the object is missing only in its wake"
 mismatches = ["step"]
@@ -2175,22 +1755,10 @@ reason = "the kernel refuses the input: unknown command `IntersectPath`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:2280"
-category = "error-behaviour"
-reason = "the kernel refuses the input: unknown object `100x = -300`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2281"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `A`; the method's step `commands/CommandsTest.java:2280` fails earlier here, so the object is missing only in its wake"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:2282"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `t1`; the method's step `commands/CommandsTest.java:2280` fails earlier here, so the object is missing only in its wake"
-mismatches = ["step"]
+category = "kernel-mismatch"
+reason = "the reference creates a `GeoSegment` here, the kernel has no object with this label"
+mismatches = ["h"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2287"
@@ -2385,30 +1953,6 @@ reason = "the kernel refuses the input: unknown command `IsFactored`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:2450"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `(x * ((2 * x) - 2))`"
-mismatches = ["redef1"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2451"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `(x^(50) * (x - 1))`"
-mismatches = ["redef2"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2454"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `(x * (x - 1))`"
-mismatches = ["redef1"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2455"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `(x * (x - 1))`"
-mismatches = ["redef2"]
-
-[[gap]]
 id = "commands/CommandsTest.java:2465"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `IsFactored`"
@@ -2442,12 +1986,6 @@ mismatches = ["step"]
 id = "commands/CommandsTest.java:2488"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `IsInRegion`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2494"
-category = "error-behaviour"
-reason = "the kernel refuses the input: unknown object `x+y=17`"
 mismatches = ["step"]
 
 [[gap]]
@@ -2681,7 +2219,7 @@ mismatches = ["loc"]
 [[gap]]
 id = "commands/CommandsTest.java:2644"
 category = "redefine"
-reason = "the kernel refuses the input: object `Q` already exists"
+reason = "the kernel refuses the input: object `Q` already exists: a replacement input must precede the original definition"
 mismatches = ["step"]
 
 [[gap]]
@@ -2739,30 +2277,6 @@ reason = "the kernel refuses the input: unknown command `mad`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:269"
-category = "error-behaviour"
-reason = "the kernel refuses the input: unknown object `x = 4`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2697"
-category = "text-formatting"
-reason = "string `(1.9999999601567608, 1.9999999601567608)`, GeoGebra prints `(2, 2)`"
-mismatches = ["A"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2698"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `2 < x < 3`"
-mismatches = ["interval"]
-
-[[gap]]
-id = "commands/CommandsTest.java:270"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `y = 5`; the method's step `commands/CommandsTest.java:269` fails earlier here, so the object is missing only in its wake"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:2703"
 category = "app-command"
 reason = "the kernel refuses the input: unknown command `SetValue`"
@@ -2775,45 +2289,15 @@ reason = "Number(3.0) does not match `NaN` (expected undefined, kernel has a val
 mismatches = ["intervalMax"]
 
 [[gap]]
-id = "commands/CommandsTest.java:2709"
-category = "error-behaviour"
-reason = "the kernel refuses the input: unknown object `slider`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:271"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `x = 3`; the method's step `commands/CommandsTest.java:269` fails earlier here, so the object is missing only in its wake"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2710"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `slider`; the method's step `commands/CommandsTest.java:2709` fails earlier here, so the object is missing only in its wake"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2711"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `ptPath`; the method's step `commands/CommandsTest.java:2709` fails earlier here, so the object is missing only in its wake"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:2712"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `ptPath`; the method's step `commands/CommandsTest.java:2709` fails earlier here, so the object is missing only in its wake"
+category = "unsupported-command"
+reason = "the kernel refuses the input: `ptPath` is a point, expected a number"
 mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2718"
 category = "unsupported-command"
 reason = "the kernel refuses the input: `Mean` of a list does not take 2 arguments"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:272"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `y = 2`; the method's step `commands/CommandsTest.java:269` fails earlier here, so the object is missing only in its wake"
 mismatches = ["step"]
 
 [[gap]]
@@ -2871,33 +2355,9 @@ reason = "the kernel refuses the input: unknown object `(x-1)^2+(y-1)^2=pi`; the
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:2753"
-category = "text-formatting"
-reason = "string `(1.0000000484654883, 1.0000000484654883)`, GeoGebra prints `(1, 1)`"
-mismatches = ["A"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2762"
-category = "error-behaviour"
-reason = "the kernel refuses the input: unknown object `slider`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2763"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `slider`; the method's step `commands/CommandsTest.java:2762` fails earlier here, so the object is missing only in its wake"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2764"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `ptPath`; the method's step `commands/CommandsTest.java:2762` fails earlier here, so the object is missing only in its wake"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:2765"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `ptPath`; the method's step `commands/CommandsTest.java:2762` fails earlier here, so the object is missing only in its wake"
+category = "unsupported-command"
+reason = "the kernel refuses the input: `ptPath` is a point, expected a number"
 mismatches = ["step"]
 
 [[gap]]
@@ -3027,12 +2487,6 @@ reason = "the kernel refuses the input: unknown command `Mode`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:2853"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `4`"
-mismatches = ["f"]
-
-[[gap]]
 id = "commands/CommandsTest.java:2858"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `Name`"
@@ -3057,12 +2511,6 @@ reason = "the kernel refuses the input: unknown command `NIntegral`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:2950"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `NIntegral[x^(2)]`"
-mismatches = ["f"]
-
-[[gap]]
 id = "commands/CommandsTest.java:2951"
 category = "cas"
 reason = "the kernel refuses the input: unknown command `NIntegral`"
@@ -3085,12 +2533,6 @@ id = "commands/CommandsTest.java:2956"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `G1`"
 mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2962"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `NInvert[sin(x)]`"
-mismatches = ["ni"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2968"
@@ -3286,14 +2728,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:314"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `X=(s`; the method's step `commands/CommandsTest.java:313` fails earlier here, so the object is missing only in its wake"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3143"
-category = "error-behaviour"
-reason = "the kernel refuses the input: unknown object `3x = 4y`"
+category = "unsupported-command"
+reason = "the kernel refuses the input: cannot evaluate command input `s`"
 mismatches = ["step"]
 
 [[gap]]
@@ -3369,12 +2805,6 @@ reason = "the kernel refuses the input: unknown command `ParseToFunction`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:3178"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `(3 * x^(2)) + 2`"
-mismatches = ["f"]
-
-[[gap]]
 id = "commands/CommandsTest.java:3180"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `ParseToFunction`"
@@ -3402,12 +2832,6 @@ mismatches = ["step"]
 id = "commands/CommandsTest.java:3190"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `ParseToNumber`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3196"
-category = "error-behaviour"
-reason = "the kernel refuses the input: unknown object `Point(x^2+y^2=1)`"
 mismatches = ["step"]
 
 [[gap]]
@@ -3585,12 +3009,6 @@ reason = "the kernel refuses the input: unknown command `CorrelationCoefficient`
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:3305"
-category = "error-behaviour"
-reason = "the kernel refuses the input: unknown object `x^2+y^2=1`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:3306"
 category = "unsupported-command"
 reason = "the kernel refuses the input: `Point` takes a path, or a path and a number"
@@ -3627,33 +3045,9 @@ reason = "the kernel refuses the input: unknown object `x+y=17`; the method's st
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:3330"
-category = "text-formatting"
-reason = "values agree but `GeoPolygon` of kind polygon has no GeoGebra-style text yet; GeoGebra prints `3.4499999999999997`"
-mismatches = ["poly1"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3331"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `(1,1)`; the method's step `commands/CommandsTest.java:3330` fails earlier here, so the object is missing only in its wake"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:3332"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `Polygon`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3342"
-category = "text-formatting"
-reason = "values agree but `GeoPolyLine` of kind polyline has no GeoGebra-style text yet; GeoGebra prints `6.755851322151136`"
-mismatches = ["f"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3343"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `(1,1)`; the method's step `commands/CommandsTest.java:3342` fails earlier here, so the object is missing only in its wake"
 mismatches = ["step"]
 
 [[gap]]
@@ -3717,12 +3111,6 @@ reason = "the kernel refuses the input: the command needs a list of numbers"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:3440"
-category = "text-formatting"
-reason = "the value is off in the last digits: the kernel gives `0.12500000000000003`, GeoGebra prints `0.125`"
-mismatches = ["d"]
-
-[[gap]]
 id = "commands/CommandsTest.java:3441"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `Product`"
@@ -3780,12 +3168,6 @@ mismatches = ["step"]
 id = "commands/CommandsTest.java:350"
 category = "cascade"
 reason = "the kernel refuses the input: unknown object `pie`; the method's step `commands/CommandsTest.java:347` fails earlier here, so the object is missing only in its wake"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3503"
-category = "error-behaviour"
-reason = "the kernel refuses the input: unknown object `x^2+y^2=1`"
 mismatches = ["step"]
 
 [[gap]]
@@ -3859,12 +3241,6 @@ id = "commands/CommandsTest.java:3538"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `RandomUniform`"
 mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:354"
-category = "incomplete-context"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `sin(x)`"
-mismatches = ["h"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3545"
@@ -4042,9 +3418,9 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:363"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `xπ`; the method's step `commands/CommandsTest.java:347` fails earlier here, so the object is missing only in its wake"
-mismatches = ["step"]
+category = "incomplete-context"
+reason = "string `(x * π)`, the reference prints `(x * pi)`"
+mismatches = ["p"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3639"
@@ -4089,36 +3465,6 @@ reason = "class `GeoFunctionNVar` has no schema object (unsupported-type); strin
 mismatches = ["a"]
 
 [[gap]]
-id = "commands/CommandsTest.java:3700"
-category = "text-formatting"
-reason = "string `(0.9999999999999147, 0)`, GeoGebra prints `(1, 0)`"
-mismatches = ["G"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3704"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `a`; the method's step `commands/CommandsTest.java:3697` fails earlier here, so the object is missing only in its wake"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3705"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `a`; the method's step `commands/CommandsTest.java:3700` fails earlier here, so the object is missing only in its wake"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3706"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `b`; the method's step `commands/CommandsTest.java:3697` fails earlier here, so the object is missing only in its wake"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3707"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `b`; the method's step `commands/CommandsTest.java:3700` fails earlier here, so the object is missing only in its wake"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:3709"
 category = "text-formatting"
 reason = "string `(-0.000000000000000009178449016447598, 0)`, GeoGebra prints `(0, 0)`"
@@ -4147,18 +3493,6 @@ id = "commands/CommandsTest.java:3734"
 category = "kernel-mismatch"
 reason = "the values agree within the tolerance, but a numerically polished root differs from the reference's in its last digits (6.28318530725133 against 6.283185305816606), so the full-precision strings cannot agree"
 mismatches = ["A", "B", "C"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3739"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `(2.00011 * sin(x / 2)) - x`"
-mismatches = ["flat"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3740"
-category = "text-formatting"
-reason = "string `(-0.03633111085944898, 0)`, GeoGebra prints `(-0.03633, 0)`"
-mismatches = ["D", "F"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3746"
@@ -4326,18 +3660,6 @@ mismatches = ["step"]
 id = "commands/CommandsTest.java:3853"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `SemiMinorAxisLength`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3858"
-category = "error-behaviour"
-reason = "the kernel refuses the input: unknown object `x^2+y^2=1`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3859"
-category = "unsupported-command"
-reason = "the kernel refuses the input: `Sector` does not take 5 argument(s)"
 mismatches = ["step"]
 
 [[gap]]
@@ -4683,12 +4005,6 @@ reason = "Point { x: 0.0, y: 0.0 } does not match `(Infinity, 0)` (expected unde
 mismatches = ["A"]
 
 [[gap]]
-id = "commands/CommandsTest.java:4054"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `x=2`; the method's step `commands/CommandsTest.java:4042` fails earlier here, so the object is missing only in its wake"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:4055"
 category = "app-command"
 reason = "the kernel refuses the input: unknown command `SetCoords`"
@@ -4696,15 +4012,9 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4056"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `B`; the method's step `commands/CommandsTest.java:4042` fails earlier here, so the object is missing only in its wake"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:406"
-category = "error-behaviour"
-reason = "the kernel refuses the input: unknown object `aa_1`"
-mismatches = ["step"]
+category = "kernel-mismatch"
+reason = "Point { x: 2.0, y: 0.0 } does not match `(2, Infinity)` (expected undefined, kernel has a value)"
+mismatches = ["B"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4062"
@@ -4749,12 +4059,6 @@ reason = "the kernel refuses the input: unknown command `SetBackgroundColor`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:408"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `ab_{1}`; the method's step `commands/CommandsTest.java:406` fails earlier here, so the object is missing only in its wake"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:4081"
 category = "app-command"
 reason = "the kernel refuses the input: unknown command `SetBackgroundColor`"
@@ -4794,12 +4098,6 @@ mismatches = ["step"]
 id = "commands/CommandsTest.java:4115"
 category = "unsupported-form"
 reason = "the kernel refuses the input: `Length(Unique(Sequence( random(),t,1,10)))`: a command inside a command is not supported"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:412"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `ab_{1}`; the method's step `commands/CommandsTest.java:406` fails earlier here, so the object is missing only in its wake"
 mismatches = ["step"]
 
 [[gap]]
@@ -4932,12 +4230,6 @@ mismatches = ["step"]
 id = "commands/CommandsTest.java:4207"
 category = "unsupported-command"
 reason = "the kernel refuses the input: `Slider` does not take 9 argument(s)"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:4212"
-category = "error-behaviour"
-reason = "the kernel refuses the input: unknown object `x+y=17`"
 mismatches = ["step"]
 
 [[gap]]
@@ -5253,15 +4545,9 @@ reason = "the kernel refuses the input: unknown command `SVD`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:443"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `x^(2)`"
-mismatches = ["f"]
-
-[[gap]]
 id = "commands/CommandsTest.java:444"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `i`; the method's step `commands/CommandsTest.java:443` fails earlier here, so the object is missing only in its wake"
+category = "error-behaviour"
+reason = "the kernel refuses the input: unknown object `i`"
 mismatches = ["step"]
 
 [[gap]]
@@ -5271,27 +4557,9 @@ reason = "the kernel refuses the input: a function takes a number"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:446"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `x > 1`"
-mismatches = ["g"]
-
-[[gap]]
-id = "commands/CommandsTest.java:4463"
-category = "incomplete-context"
-reason = "the kernel refuses the input: unknown object `x^2+y^2=1`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:4464"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `x+y=17`; the method's step `commands/CommandsTest.java:4463` fails earlier here, so the object is missing only in its wake"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:4465"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `42`; the method's step `commands/CommandsTest.java:4463` fails earlier here, so the object is missing only in its wake"
+category = "incomplete-context"
+reason = "the kernel refuses the input: unknown object `42`"
 mismatches = ["step"]
 
 [[gap]]
@@ -5559,12 +4827,6 @@ reason = "the kernel refuses the input: unknown command `TurtleDown`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:4738"
-category = "error-behaviour"
-reason = "the kernel refuses the input: unknown object `3x = 4y`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:4739"
 category = "unsupported-form"
 reason = "the kernel refuses the input: `UnitPerpendicularVector( Segment((0,0),(3,4)) )`: a command inside a command is not supported"
@@ -5574,12 +4836,6 @@ mismatches = ["step"]
 id = "commands/CommandsTest.java:4742"
 category = "cascade"
 reason = "the kernel refuses the input: unknown object `2x+2y+z=1`; the method's step `commands/CommandsTest.java:4738` fails earlier here, so the object is missing only in its wake"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:4747"
-category = "error-behaviour"
-reason = "the kernel refuses the input: unknown object `3x = 4y`"
 mismatches = ["step"]
 
 [[gap]]
@@ -6015,18 +5271,6 @@ reason = "the kernel refuses the input: unknown command `a`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:584"
-category = "error-behaviour"
-reason = "the kernel refuses the input: unknown object `ab`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:585"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `abπ`; the method's step `commands/CommandsTest.java:584` fails earlier here, so the object is missing only in its wake"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:590"
 category = "incomplete-context"
 reason = "class `GeoFunctionNVar` has no schema object (unsupported-type); string `(2 * x) + (0 * y)`"
@@ -6111,12 +5355,6 @@ reason = "the kernel refuses the input: `AffineRatio` does not take 6 argument(s
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:658"
-category = "error-behaviour"
-reason = "the kernel refuses the input: unknown object `x+y=17`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:662"
 category = "unsupported-command"
 reason = "the kernel refuses the input: `AngleBisector` does not take 6 argument(s)"
@@ -6159,40 +5397,16 @@ reason = "the kernel refuses the input: unexpected `=`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:689"
-category = "error-behaviour"
-reason = "the kernel refuses the input: unknown object `x^2+y^2=1`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:69"
 category = "incomplete-context"
 reason = "the kernel refuses the input: `-y^2` is not a valid object name"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:690"
-category = "unsupported-command"
-reason = "the kernel refuses the input: `Arc` does not take 5 argument(s)"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:691"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `x^2+y^2/2=1`; the method's step `commands/CommandsTest.java:689` fails earlier here, so the object is missing only in its wake"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:692"
-category = "unsupported-command"
-reason = "the kernel refuses the input: `Arc` does not take 5 argument(s)"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:697"
-category = "error-behaviour"
-reason = "the kernel refuses the input: unknown object `x^2+y^2=1`"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "string `7.054542994541887`, the reference prints `7.054542994541888`"
+mismatches = ["eq4"]
 
 [[gap]]
 id = "commands/CommandsTest.java:698"
@@ -6216,12 +5430,6 @@ mismatches = ["step"]
 id = "commands/CommandsTest.java:704"
 category = "unsupported-command"
 reason = "the kernel refuses the input: `AreCollinear` does not take 6 argument(s)"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:709"
-category = "error-behaviour"
-reason = "the kernel refuses the input: unknown object `x+y=17`"
 mismatches = ["step"]
 
 [[gap]]
@@ -6264,18 +5472,6 @@ mismatches = ["step"]
 id = "commands/CommandsTest.java:734"
 category = "unsupported-command"
 reason = "the kernel refuses the input: `AreEqual` does not take 4 argument(s)"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:739"
-category = "error-behaviour"
-reason = "the kernel refuses the input: unknown object `x+y=17`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:744"
-category = "error-behaviour"
-reason = "the kernel refuses the input: unknown object `x+y=17`"
 mismatches = ["step"]
 
 [[gap]]
@@ -6375,18 +5571,6 @@ reason = "the kernel refuses the input: unknown command `CellRange`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:854"
-category = "error-behaviour"
-reason = "the kernel refuses the input: unknown object `x^2+y^2=1`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:859"
-category = "error-behaviour"
-reason = "the kernel refuses the input: unknown object `Polygon((1,1),(2,1/2),(3,1/3))`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:864"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `Checkbox`"
@@ -6414,24 +5598,6 @@ mismatches = ["step"]
 id = "commands/CommandsTest.java:891"
 category = "unsupported-command"
 reason = "the kernel refuses the input: `CircularArc` does not take 6 argument(s)"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:896"
-category = "error-behaviour"
-reason = "the kernel refuses the input: unknown object `(1`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:897"
-category = "unsupported-command"
-reason = "the kernel refuses the input: `Circle` does not take 4 argument(s)"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:898"
-category = "unsupported-command"
-reason = "the kernel refuses the input: `Circle` does not take 6 argument(s)"
 mismatches = ["step"]
 
 [[gap]]
@@ -6471,30 +5637,6 @@ reason = "the kernel refuses the input: `CircumcircularSector` does not take 6 a
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:95"
-category = "text-formatting"
-reason = "values agree but `GeoList` of kind list has no GeoGebra-style text yet; GeoGebra prints `{x^(3) - x^(2) - (2 * x) + 3, -7}`"
-mismatches = ["l1"]
-
-[[gap]]
-id = "commands/CommandsTest.java:96"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `x^(3) - x^(2) - (2 * x) + 3`"
-mismatches = ["f"]
-
-[[gap]]
-id = "commands/CommandsTest.java:964"
-category = "error-behaviour"
-reason = "the kernel refuses the input: unknown object `x^2+y^2=1`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:97"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `-7`"
-mismatches = ["g"]
-
-[[gap]]
 id = "commands/CommandsTest.java:979"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `ConstructionStep`"
@@ -6505,12 +5647,6 @@ id = "commands/CommandsTest.java:984"
 category = "unsupported-type"
 reason = "class `GeoLocus` has no schema object (unsupported-type); string `ConvexHull[{(1, 1), (2, 2), (3, 3), (4, 1 / 4), (5, 1 / 5)}]`"
 mismatches = ["graph1"]
-
-[[gap]]
-id = "commands/CommandsTest.java:99"
-category = "text-formatting"
-reason = "values agree but `GeoList` of kind list has no GeoGebra-style text yet; GeoGebra prints `{0, x^(4) - (3 * x^(2)) + x - 4}`"
-mismatches = ["l2"]
 
 [[gap]]
 id = "commands/CommandsUsingMockedCasTest.java:105"
@@ -6747,15 +5883,9 @@ reason = "the kernel refuses the input: unknown command `Limit`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/FormulaTextTest.java:34"
-category = "incomplete-context"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `sin((1 * x) + (1 * x) - (1 * x))`"
-mismatches = ["f"]
-
-[[gap]]
 id = "commands/FormulaTextTest.java:38"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `ax`; the method's step `commands/FormulaTextTest.java:34` fails earlier here, so the object is missing only in its wake"
+category = "incomplete-context"
+reason = "the kernel refuses the input: object `f` already exists: a replacement input must precede the original definition"
 mismatches = ["step"]
 
 [[gap]]
@@ -6766,51 +5896,27 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/FormulaTextTest.java:43"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `ax`; the method's step `commands/FormulaTextTest.java:34` fails earlier here, so the object is missing only in its wake"
+category = "incomplete-context"
+reason = "the kernel refuses the input: a function must give a number or a boolean"
 mismatches = ["step"]
 
 [[gap]]
 id = "commands/FormulaTextTest.java:45"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `ax`; the method's step `commands/FormulaTextTest.java:34` fails earlier here, so the object is missing only in its wake"
+category = "incomplete-context"
+reason = "the kernel refuses the input: a function must give a number or a boolean"
 mismatches = ["step"]
 
 [[gap]]
 id = "commands/FormulaTextTest.java:47"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `ax`; the method's step `commands/FormulaTextTest.java:34` fails earlier here, so the object is missing only in its wake"
+category = "incomplete-context"
+reason = "the kernel refuses the input: a function must give a number or a boolean"
 mismatches = ["step"]
-
-[[gap]]
-id = "commands/RedefineTest.java:114"
-category = "incomplete-context"
-reason = "values agree but `GeoPolygon` of kind polygon has no GeoGebra-style text yet; GeoGebra prints `1`"
-mismatches = ["poly1"]
-
-[[gap]]
-id = "commands/RedefineTest.java:123"
-category = "incomplete-context"
-reason = "values agree but `GeoPolygon` of kind polygon has no GeoGebra-style text yet; GeoGebra prints `1`"
-mismatches = ["poly1"]
-
-[[gap]]
-id = "commands/RedefineTest.java:129"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `x`"
-mismatches = ["f"]
 
 [[gap]]
 id = "commands/RedefineTest.java:154"
 category = "incomplete-context"
 reason = "Number(2.0) does not match `3` (values differ)"
 mismatches = ["r_2"]
-
-[[gap]]
-id = "commands/RedefineTest.java:161"
-category = "incomplete-context"
-reason = "values agree but `GeoPolygon` of kind polygon has no GeoGebra-style text yet; GeoGebra prints `1`"
-mismatches = ["poly1"]
 
 [[gap]]
 id = "commands/RedefineTest.java:172"
@@ -6923,8 +6029,8 @@ mismatches = ["step"]
 [[gap]]
 id = "commands/RedefineTest.java:250"
 category = "incomplete-context"
-reason = "the kernel refuses the input: `f(x,y)` is not a valid object name"
-mismatches = ["step"]
+reason = "class `GeoFunctionNVar` has no schema object (unsupported-type); string `x^(2) + y`"
+mismatches = ["f"]
 
 [[gap]]
 id = "commands/RedefineTest.java:251"
@@ -6945,15 +6051,9 @@ reason = "the kernel refuses the input: unknown object `B20`; the method's step 
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/RedefineTest.java:296"
-category = "error-behaviour"
-reason = "the kernel refuses the input: unknown object `axx`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/RedefineTest.java:297"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `f`; the method's step `commands/RedefineTest.java:296` fails earlier here, so the object is missing only in its wake"
+category = "unsupported-command"
+reason = "the kernel refuses the input: `Point` needs a line, segment, ray, circle, conic, polygon, polyline, arc, sector or curve, and `f` is a function"
 mismatches = ["step"]
 
 [[gap]]
@@ -6967,12 +6067,6 @@ id = "commands/RedefineTest.java:305"
 category = "app-command"
 reason = "the kernel refuses the input: unknown command `ZoomIn`"
 mismatches = ["step"]
-
-[[gap]]
-id = "commands/RedefineTest.java:308"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `If[x ≟ 0, 1, NaN]`"
-mismatches = ["f"]
 
 [[gap]]
 id = "commands/RedefineTest.java:309"
@@ -6999,15 +6093,9 @@ reason = "the kernel refuses the input: unexpected `=`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/RedefineTest.java:345"
-category = "incomplete-context"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `x^(2)`"
-mismatches = ["f"]
-
-[[gap]]
 id = "commands/RedefineTest.java:346"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `f'`; the method's step `commands/RedefineTest.java:345` fails earlier here, so the object is missing only in its wake"
+category = "incomplete-context"
+reason = "the kernel refuses the input: unknown object `f'`"
 mismatches = ["step"]
 
 [[gap]]
@@ -7033,18 +6121,6 @@ id = "commands/RedefineTest.java:384"
 category = "app-command"
 reason = "the kernel refuses the input: unknown command `SetValue`"
 mismatches = ["step"]
-
-[[gap]]
-id = "commands/RedefineTest.java:417"
-category = "incomplete-context"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `-3 < x < 6`"
-mismatches = ["a"]
-
-[[gap]]
-id = "commands/RedefineTest.java:418"
-category = "incomplete-context"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `x < 3`"
-mismatches = ["b"]
 
 [[gap]]
 id = "commands/RedefineTest.java:423"

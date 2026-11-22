@@ -22,6 +22,68 @@ impl Construction {
         Format::new(false).equation::<false>(self, id, None)
     }
 
+    /// A function, equation, or Cartesian curve in the XML expression syntax.
+    pub fn xml_value_string(&self, id: Id) -> Option<String> {
+        let format = Format::xml();
+        let meter = Lists::new(Vec::new());
+        format.xml_object_string(self, id, &meter)
+    }
+
+    /// Renders a polynomial stored as an inline list element.
+    pub fn xml_inline_polynomial(&self, source: &str) -> Option<String> {
+        let parsed = expr::parse::parse(self, source).ok()?;
+        let entry = Entry::new(self, parsed, false);
+        let meter = Lists::new(Vec::new());
+        Format::xml().entry_value::<true>(self, &entry, Some(&meter), false)
+    }
+}
+
+impl Format {
+    fn xml_object_string(mut self, c: &Construction, id: Id, meter: &Lists) -> Option<String> {
+        if self.object_depth == 64 {
+            return None;
+        }
+        self.object_depth += 1;
+        let expression = |entry| self.entry_value::<true>(c, entry, Some(meter), true);
+        match c.def(id) {
+            Def::Expr(def) if matches!(def.kind(), Kind::Function | Kind::FunctionNVar) => {
+                let entry = expr::entry(c, def);
+                if let Some(coefficients) = entry.polynomial() {
+                    return Some(xml_polynomial(coefficients));
+                }
+                expression(entry)
+            }
+            Def::Calculus(crate::algo::calculus::CalculusDef::IndefiniteIntegral {
+                function,
+                numeric: true,
+            }) => {
+                let source = self.xml_object_string(c, Id(function as usize), meter)?;
+                Some(self.command("NIntegral", &[source]))
+            }
+            Def::Calculus(_) if c.kind(id) == Kind::Function => {
+                expression(c.calculus_record(id)?.tree.as_ref()?)
+            }
+            Def::Measure(MeasureDef::CartesianCurve { coordinates, .. }) => {
+                let mut coordinates = coordinates
+                    .map(|index| {
+                        let Def::Expr(def) = c.def(Id(index as usize)) else {
+                            return None;
+                        };
+                        expression(expr::entry(c, def))
+                    })
+                    .into_iter();
+                Some(format!(
+                    "({}, {})",
+                    coordinates.next()??,
+                    coordinates.next()??
+                ))
+            }
+            _ => self.equation::<true>(c, id, Some(meter)),
+        }
+    }
+}
+
+impl Construction {
     /// Mathematical definitions and rectangular numeric list values for the algebra panel.
     pub fn algebra_formula(&self, id: Id) -> Option<String> {
         let format = Format::new(true);
@@ -82,8 +144,52 @@ impl Construction {
     }
 }
 
+fn xml_polynomial(coefficients: &[f64]) -> String {
+    let mut out = String::new();
+    let format = Format::xml();
+    for (degree, &coefficient) in coefficients.iter().enumerate().rev() {
+        if coefficient == 0.0 {
+            continue;
+        }
+        let magnitude = coefficient.abs();
+        let variable = match degree {
+            0 => String::new(),
+            1 => "x".into(),
+            _ => format!("x^({degree})"),
+        };
+        let term = match (degree, magnitude) {
+            (0, _) => format.number(magnitude),
+            (_, 1.0) => variable,
+            _ => format!("({} * {variable})", format.number(magnitude)),
+        };
+        if out.is_empty() {
+            if coefficient < 0.0 {
+                out.push('-');
+            }
+        } else {
+            out.push_str(if coefficient < 0.0 { " - " } else { " + " });
+        }
+        out.push_str(&term);
+    }
+    if out.is_empty() {
+        "0".into()
+    } else {
+        out
+    }
+}
+
 impl Format {
-    pub(super) fn object_value<const M: bool>(self, ctx: &Ctx<'_, M>, id: Id) -> Option<String> {
+    pub(super) fn object_value<const M: bool>(
+        mut self,
+        ctx: &Ctx<'_, M>,
+        id: Id,
+    ) -> Option<String> {
+        if self.xml {
+            if self.object_depth == 64 {
+                return None;
+            }
+            self.object_depth += 1;
+        }
         let value = ctx.c.value(id);
         if !value.is_defined() {
             return Some(self.shown(ctx.c.kind(id), value));

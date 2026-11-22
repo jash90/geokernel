@@ -177,6 +177,9 @@ fn normalize_definition(input: &str) -> String {
     let eq = find_unquoted(line, '=');
     match (colon, eq) {
         (Some(c), None) => format!("{} = {}", line[..c].trim(), line[c + 1..].trim()),
+        (Some(c), Some(e)) if c + 1 == e => {
+            format!("{} = {}", line[..c].trim(), line[e + 1..].trim())
+        }
         (Some(c), Some(e)) if c < e => format!("{}: {}", line[..c].trim(), line[c + 1..].trim()),
         _ => line.to_owned(),
     }

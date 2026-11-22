@@ -57,7 +57,6 @@ pub struct Pair {
     #[allow(dead_code)]
     pub call: String,
     pub input: String,
-    #[allow(dead_code)]
     pub template: String,
     pub context_complete: bool,
     #[serde(default)]
@@ -155,15 +154,35 @@ pub fn ggb_double(v: f64) -> Option<String> {
     })
 }
 
-/// The GeoGebra-style value string of an object, `None` where this crate
-/// has no GeoGebra-compatible formatting yet (expressions, equations).
-/// Undefined numbers print `NaN`, undefined points and vectors `(NaN, NaN)`
-/// and undefined booleans, lists, functions and lines `?`, as GeoGebra's
-/// templates do.
-pub fn value_string(c: &Construction, id: Id) -> Option<String> {
+fn display_number(value: f64, template: &str) -> Option<String> {
+    if template != "edit" || !value.is_finite() {
+        return ggb_double(value);
+    }
+    if value.abs() < 0.000005 {
+        return Some("0".into());
+    }
+    let fixed = format!("{value:.5}");
+    Some(fixed.trim_end_matches('0').trim_end_matches('.').into())
+}
+
+fn display_angle(value: f64, template: &str) -> Option<String> {
+    let degrees = value.to_degrees();
+    let nearest = (degrees * 1e8).round() / 1e8;
+    let degrees = if (nearest - degrees).abs() < 1e-12 {
+        nearest
+    } else {
+        degrees
+    };
+    let unit = if template == "xml" { "*°" } else { "°" };
+    Some(format!("{}{unit}", display_number(degrees, template)?))
+}
+
+/// Renders a supported value in the template used to record the pair.
+pub fn value_string(c: &Construction, id: Id, template: &str) -> Option<String> {
     let value = c.value(id);
+    let number = |v| display_number(v, template);
     let text = |x: f64, y: f64| {
-        let (x, y) = (ggb_double(x)?, ggb_double(y)?);
+        let (x, y) = (number(x)?, number(y)?);
         Some(format!("({x}, {y})"))
     };
     // `ToComplex` and `ToPolar` only change how the point prints
@@ -178,20 +197,34 @@ pub fn value_string(c: &Construction, id: Id) -> Option<String> {
     }
     match (&value, c.kind(id)) {
         (Value::Undefined, kind) => match kind {
+            Kind::Number if template == "edit" => Some("?".into()),
             Kind::Number => Some("NaN".into()),
+            Kind::Point | Kind::Vector if template == "edit" => Some("(?, ?)".into()),
             Kind::Point | Kind::Vector => Some("(NaN, NaN)".into()),
             // an undefined function or line prints the undefined sign too
             Kind::Boolean | Kind::List | Kind::Function | Kind::Line => Some("?".into()),
             Kind::Text => Some(String::new()),
             _ => None,
         },
-        (Value::Number(n), _) => ggb_double(*n),
+        (Value::Number(n), Kind::Angle) => display_angle(*n, template),
+        (Value::Number(n), _) => number(*n),
         (Value::Point { x, y }, _) => text(*x, *y),
         (Value::Vector { x, y }, _) => text(*x, *y),
         (Value::Bool(b), _) => Some(b.to_string()),
         (Value::Text, _) => c.text(id).map(str::to_owned),
-        (Value::Segment { x1, y1, x2, y2 }, _) => ggb_double((x2 - x1).hypot(y2 - y1)),
-        (_, Kind::List) => list_string(c.elements(id)?),
+        (Value::Segment { x1, y1, x2, y2 }, _) => number((x2 - x1).hypot(y2 - y1)),
+        (Value::Polygon { area }, _) | (Value::Sector { area }, _) => number(area.abs()),
+        (Value::PolyLine { length }, _) | (Value::Arc { length }, _) => number(*length),
+        (_, Kind::List) => list_string(c, c.elements(id)?, template, &mut 16_384),
+        (
+            _,
+            Kind::Function
+            | Kind::FunctionNVar
+            | Kind::Curve
+            | Kind::Line
+            | Kind::Circle
+            | Kind::Conic,
+        ) if matches!(template, "xml" | "edit") => c.xml_value_string(id),
         _ => None,
     }
 }
@@ -234,12 +267,21 @@ fn styled_point(x: f64, y: f64, mode: geo_kernel::algo::point::CoordMode) -> Opt
 
 /// A list of numbers (or of such lists) prints `{a, b, c}` in GeoGebra;
 /// any other element needs the expression printer.
-fn list_string(list: geo_kernel::expr::List<'_>) -> Option<String> {
+fn list_string(
+    c: &Construction,
+    list: geo_kernel::expr::List<'_>,
+    template: &str,
+    remaining: &mut usize,
+) -> Option<String> {
     use geo_kernel::expr::Element;
+    *remaining = remaining.checked_sub(list.len())?;
     let mut parts = Vec::new();
-    for element in list.iter() {
+    for (index, element) in list.iter().enumerate() {
         match element {
             Element::Value(Kind::Number, Value::Number(n)) => parts.push(ggb_double(n)?),
+            Element::Value(Kind::Segment, Value::Segment { x1, y1, x2, y2 }) => {
+                parts.push(ggb_double((x2 - x1).hypot(y2 - y1))?);
+            }
             Element::Value(Kind::Number, Value::Undefined) => parts.push("NaN".into()),
             Element::Value(Kind::Point | Kind::Vector, Value::Undefined) => {
                 parts.push("(NaN, NaN)".into())
@@ -250,7 +292,15 @@ fn list_string(list: geo_kernel::expr::List<'_>) -> Option<String> {
                 Value::Point { x, y } | Value::Vector { x, y },
             ) => parts.push(format!("({}, {})", ggb_double(x)?, ggb_double(y)?)),
             Element::Value(Kind::Boolean, Value::Bool(b)) => parts.push(b.to_string()),
-            Element::List(inner) => parts.push(list_string(inner)?),
+            Element::List(inner) => parts.push(list_string(c, inner, template, remaining)?),
+            Element::Value(Kind::Function, _) if template == "xml" => {
+                let text = if let Some(id) = list.function_at(index) {
+                    value_string(c, id, template)?
+                } else {
+                    c.xml_inline_polynomial(&list.symbolic_at(index)?)?
+                };
+                parts.push(text);
+            }
             Element::Text(s) => parts.push(format!("\"{s}\"")),
             _ => return None,
         }
@@ -399,7 +449,9 @@ fn normalize_syntax(input: &str) -> String {
                 let label = !out.is_empty()
                     && out.chars().any(is_name)
                     && out.chars().all(|c| is_name(c) || c.is_whitespace());
-                out.push(if label { '=' } else { ch });
+                if !label || chars.get(i + 1) != Some(&'=') {
+                    out.push(if label { '=' } else { ch });
+                }
             }
             c => out.push(c),
         }
@@ -496,8 +548,13 @@ fn exec_step(c: &mut Construction, pair: &Pair) -> Exec {
     let mut probes = Vec::new();
     for (i, out) in pair.outputs.iter().enumerate() {
         match out.label.as_deref() {
-            Some(label) => labels.push(label.to_string()),
-            None => {
+            Some(label)
+                if !(c.id(label).is_some()
+                    && matches!(command_of(&input).as_str(), "Curvature" | "CurvatureVector")) =>
+            {
+                labels.push(label.to_string())
+            }
+            _ => {
                 let probe = format!("{PROBE}_{line}_{i}");
                 probes.push((i, probe.clone()));
                 labels.push(probe);
@@ -663,7 +720,12 @@ pub struct StepOutcome {
 
 /// Compares one output of a step against its recorded object and string,
 /// by the label GeoGebra gave it.
-fn compare_output(c: &Construction, out: &Output, values_only: bool) -> Vec<Disagreement> {
+fn compare_output(
+    c: &Construction,
+    out: &Output,
+    values_only: bool,
+    template: &str,
+) -> Vec<Disagreement> {
     let mut bad = Vec::new();
     let Some(label) = out.label.as_deref() else {
         bad.push(Disagreement {
@@ -682,7 +744,7 @@ fn compare_output(c: &Construction, out: &Output, values_only: bool) -> Vec<Disa
         });
         return bad;
     };
-    compare_at(c, out, label, id, values_only)
+    compare_at(c, out, label, id, values_only, template)
 }
 
 /// [`compare_output`], against a result the runner ran under a probe label.
@@ -691,9 +753,10 @@ fn compare_probed(
     out: &Output,
     probe: &str,
     values_only: bool,
+    template: &str,
 ) -> Vec<Disagreement> {
     match c.id(probe) {
-        Some(id) => compare_at(c, out, probe, id, values_only),
+        Some(id) => compare_at(c, out, probe, id, values_only, template),
         None => vec![Disagreement {
             label: probe.into(),
             why: format!(
@@ -733,6 +796,7 @@ fn compare_at(
     label: &str,
     id: Id,
     values_only: bool,
+    template: &str,
 ) -> Vec<Disagreement> {
     let mut bad = Vec::new();
     let Some(raw) = out.object.as_ref() else {
@@ -818,7 +882,7 @@ fn compare_at(
         return bad;
     }
     // The string, where a GeoGebra-compatible formatter exists.
-    match value_string(c, id) {
+    match value_string(c, id, template) {
         Some(text) if text != out.string => bad.push(Disagreement {
             label: label.into(),
             why: format!("string `{text}`, GeoGebra prints `{}`", out.string),
@@ -1188,10 +1252,16 @@ pub fn run_pair(c: &mut Construction, pair: &Pair, prior_failure: Option<&str>) 
                 } else {
                     for (i, out) in pair.outputs.iter().enumerate() {
                         match (&out.label, exec.probe_label(i)) {
-                            (_, Some(probe)) => {
-                                bad.extend(compare_probed(c, out, probe, values_only))
+                            (_, Some(probe)) => bad.extend(compare_probed(
+                                c,
+                                out,
+                                probe,
+                                values_only,
+                                &pair.template,
+                            )),
+                            (Some(_), None) => {
+                                bad.extend(compare_output(c, out, values_only, &pair.template))
                             }
-                            (Some(_), None) => bad.extend(compare_output(c, out, values_only)),
                             (None, None) => bad.push(Disagreement {
                                 label: "step".into(),
                                 why: format!(

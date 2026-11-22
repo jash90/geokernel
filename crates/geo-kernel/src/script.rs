@@ -186,12 +186,12 @@ fn definition_label(name: &str) -> Option<&str> {
 /// Finds the assignment delimiter before the definition.
 fn assignment(line: &str) -> Option<(&str, &str, bool)> {
     let i = line.find([':', '='])?;
-    let colon = line.as_bytes()[i] == b':';
     let rhs = &line[i + 1..];
-    let rhs = if colon {
-        rhs.strip_prefix('=').unwrap_or(rhs)
+    let colon = line.as_bytes()[i] == b':';
+    let (rhs, colon) = if let (true, Some(rhs)) = (colon, rhs.strip_prefix('=')) {
+        (rhs, false)
     } else {
-        rhs
+        (rhs, colon)
     };
     Some((line[..i].trim(), rhs.trim(), colon))
 }
@@ -501,6 +501,8 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
         }
         return result;
     }
+    let inline = inline_arguments(c, rhs);
+    let rhs = inline.as_deref().unwrap_or(rhs);
     if let Some(result) = with_saved_arguments(c, rhs, |c, call| define_after_label(c, name, call))
     {
         return result;
@@ -554,6 +556,63 @@ fn implicit_multi_output(c: &Construction, rhs: &str) -> bool {
                     .is_some_and(|id| c.kind(id) == Kind::ImplicitCurve)
             })
     })
+}
+
+/// Marks inline geometry for the same lowering used by saved definitions.
+fn inline_arguments(c: &Construction, rhs: &str) -> Option<String> {
+    let (command, args) = split_call(rhs)?;
+    let equations = matches!(
+        command,
+        "Intersect"
+            | "IntersectPath"
+            | "IntersectionPaths"
+            | "AngularBisector"
+            | "AngleBisector"
+            | "Arc"
+            | "Sector"
+            | "Area"
+            | "AreConcurrent"
+            | "AreParallel"
+            | "ArePerpendicular"
+            | "Center"
+            | "Circumference"
+            | "ConjugateDiameter"
+            | "Diameter"
+            | "Direction"
+            | "IsTangent"
+            | "Point"
+            | "Radius"
+            | "Slope"
+            | "OrthogonalVector"
+            | "PerpendicularVector"
+            | "UnitOrthogonalVector"
+            | "UnitPerpendicularVector"
+            | "UnitVector"
+            | "Tangent"
+    );
+    let mut rewritten = false;
+    let args = args
+        .iter()
+        .map(|&arg| {
+            let inline = c.id(arg).is_none()
+                && (equations && crate::expr::equation::split_equation(arg).is_ok()
+                    || matches!(
+                        command,
+                        "Circle" | "Polygon" | "PolyLine" | "Arc" | "Sector"
+                    ) && arg.starts_with('(')
+                    || matches!(
+                        (command, split_call(arg).map(|(name, _)| name)),
+                        ("PathParameter", Some("Point")) | ("Centroid", Some("Polygon"))
+                    ));
+            if inline {
+                rewritten = true;
+                format!("$arg({arg})")
+            } else {
+                arg.to_owned()
+            }
+        })
+        .collect::<Vec<_>>();
+    rewritten.then(|| format!("{command}({})", args.join(", ")))
 }
 
 /// Lowers an imported argument within its owning definition. Each temporary
@@ -611,6 +670,9 @@ fn saved_argument(c: &mut Construction, source: &str, depth: usize) -> Result<St
     let start = c.checkpoint();
     let label = format!("\0arg{}", c.len());
     let call = split_call(source);
+    if let Some(("Polygon", args)) = &call {
+        return inline_polygon(c, &label, args).map(|_| label);
+    }
     if let Some(("Vector", args)) = &call {
         if let [arg] = args.as_slice() {
             if c.id(arg).is_some_and(|id| c.kind(id) == Kind::Vector) {
@@ -1203,37 +1265,7 @@ fn resolve_text_argument(c: &mut Construction, rhs: &str) -> Result<Option<Strin
     }
     let label = format!("\0textarg{}", c.len());
     let id = if command == "Polygon" && args.len() >= 2 {
-        let mut points = Vec::with_capacity(args.len());
-        for token in &args {
-            if let Some(id) = c.id(token).filter(|&id| c.kind(id) == Kind::Point) {
-                points.push(id);
-            } else {
-                let point = format!("\0textpoint{}", c.len());
-                if crate::expr::argument_object(c, token, &point, Kind::Point) {
-                    points.push(c.id(&point).unwrap());
-                } else {
-                    break;
-                }
-            }
-        }
-        let polygon = if points.len() == 2 && args.len() == 3 {
-            let n = crate::algo::polygon::count_arg(c, args[2])?;
-            c.add(
-                &label,
-                Def::Polygon(crate::algo::polygon::PolygonDef::Regular {
-                    a: points[0],
-                    b: points[1],
-                    n,
-                }),
-            )
-        } else if points.len() == args.len() && points.len() >= 3 {
-            c.add_with_list(&label, &points, |list| {
-                Def::Polygon(crate::algo::polygon::PolygonDef::Polygon(list))
-            })
-        } else {
-            return Err("expected points or two points and a vertex count".into());
-        };
-        polygon.map_err(|err| err.to_string())?
+        inline_polygon(c, &label, &args)?
     } else {
         define_after_label(c, &label, first)?.ok_or("the text argument has no value")?
     };
@@ -1245,6 +1277,41 @@ fn resolve_text_argument(c: &mut Construction, rhs: &str) -> Result<Option<Strin
             .collect::<Vec<_>>()
             .join(", ")
     )))
+}
+
+/// Builds the polygon value of a nested command without publishing its sides.
+fn inline_polygon(c: &mut Construction, label: &str, args: &[&str]) -> Result<Id, String> {
+    let mut points = Vec::with_capacity(args.len());
+    for token in args {
+        if let Some(id) = c.id(token).filter(|&id| c.kind(id) == Kind::Point) {
+            points.push(id);
+        } else {
+            let point = format!("\0polypoint{}", c.len());
+            if crate::expr::argument_object(c, token, &point, Kind::Point) {
+                points.push(c.id(&point).unwrap());
+            } else {
+                break;
+            }
+        }
+    }
+    let polygon = if points.len() == 2 && args.len() == 3 {
+        let n = crate::algo::polygon::count_arg(c, args[2])?;
+        c.add(
+            label,
+            Def::Polygon(crate::algo::polygon::PolygonDef::Regular {
+                a: points[0],
+                b: points[1],
+                n,
+            }),
+        )
+    } else if points.len() == args.len() && points.len() >= 3 {
+        c.add_with_list(label, &points, |list| {
+            Def::Polygon(crate::algo::polygon::PolygonDef::Polygon(list))
+        })
+    } else {
+        return Err("expected points or two points and a vertex count".into());
+    };
+    polygon.map_err(|err| err.to_string())
 }
 
 /// Give inline numeric and list inputs a live dependency, as for the
@@ -2066,6 +2133,8 @@ fn exec_labelled(c: &mut Construction, line: &str) -> Result<Option<Id>, String>
         .strip_prefix('=')
         .ok_or("expected `=` after the output labels")?
         .trim();
+    let inline = inline_arguments(c, rhs);
+    let rhs = inline.as_deref().unwrap_or(rhs);
     if let Some(result) = with_saved_arguments(c, rhs, |c, call| exec_slots(c, &slots, call)) {
         return result;
     }
