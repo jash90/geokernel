@@ -54,6 +54,8 @@ import org.geogebra.common.kernel.geos.GeoRay;
 import org.geogebra.common.kernel.geos.GeoSegment;
 import org.geogebra.common.kernel.geos.GeoVector;
 import org.geogebra.common.kernel.geos.GeoCurveCartesian;
+import org.geogebra.common.kernel.implicit.GeoImplicitCurve;
+import org.geogebra.common.kernel.StringTemplate;
 import org.geogebra.common.kernel.kernelND.GeoConicND;
 import org.geogebra.common.kernel.kernelND.GeoConicNDConstants;
 import org.geogebra.common.kernel.kernelND.GeoElementND;
@@ -357,8 +359,8 @@ final class Session {
             // function, and every conic of one is recorded as a general conic
             String type = geo instanceof GeoConic && !(geo instanceof GeoConicPart)
                     ? "conic" : typeOf(geo);
-            if (!type.equals("line") && !type.equals("conic") && !type.equals("function")) {
-                throw new IllegalStateException("expected a line, a conic or a function from '"
+            if (!Set.of("line", "conic", "function", "implicit").contains(type)) {
+                throw new IllegalStateException("expected a planar equation from '"
                         + line + "', got " + geo.getClass().getSimpleName());
             }
             expected = type;
@@ -625,8 +627,14 @@ final class Session {
         Map<String, Object> snap = new LinkedHashMap<>();
         for (Map.Entry<String, GeoElement> e : objects.entrySet()) {
             GeoElement geo = e.getValue();
+            GeoElement replacement = kernel.lookupLabel(e.getKey());
+            if (replacement != null && schemaType(geo).equals("implicit") && replacement != geo) {
+                geo = replacement;
+            }
+            String type = replacement != null && replacement != e.getValue() && geo instanceof GeoConic
+                    ? "conic" : schemaType(geo);
             Map<String, Object> object = solutionSets.contains(geo) && geo instanceof GeoList list
-                    ? describeSolutions(list) : describe(geo, schemaType(geo), sampleCurves);
+                    ? describeSolutions(list) : describe(geo, type, sampleCurves);
             snap.put(e.getKey(), object);
         }
         for (Map.Entry<String, List<GeoElement>> e : relations.entrySet()) {
@@ -866,6 +874,9 @@ final class Session {
         }
         if (geo instanceof GeoFunction) {
             return "function";
+        }
+        if (geo instanceof GeoImplicitCurve) {
+            return "implicit";
         }
         if (geo instanceof GeoCurveCartesian) {
             return "curve";
@@ -1656,6 +1667,21 @@ final class Session {
                 }
                 f.put("vertices", vertices);
                 f.put("length", poly.getLength());
+                return f;
+            }
+            case "implicit": {
+                GeoImplicitCurve curve = (GeoImplicitCurve) geo;
+                double[][] coefficients = curve.getCoeff();
+                if (coefficients == null) {
+                    return null;
+                }
+                List<List<Double>> rows = new ArrayList<>();
+                for (double[] row : coefficients) {
+                    rows.add(Arrays.stream(row).boxed().toList());
+                }
+                f.put("coefficients", rows);
+                f.put("equation", curve.toValueString(StringTemplate.xmlTemplate));
+                f.put("input_form", curve.isInputForm());
                 return f;
             }
             case "curve": {

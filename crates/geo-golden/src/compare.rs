@@ -162,7 +162,9 @@ pub fn compare_construction_object(
         Kind::Locus => compare_locus(expected, kind, &value, c.locus(id)),
         Kind::Conic => compare_conic(expected, kind, &value, c.conic(id).as_ref()).0,
         Kind::List => compare_list(c, expected, kind, c.elements(id)),
-        Kind::Text | Kind::FunctionNVar | Kind::Curve => compare_extra(c, id, expected),
+        Kind::Text | Kind::FunctionNVar | Kind::Curve | Kind::ImplicitCurve => {
+            compare_extra(c, id, expected)
+        }
         Kind::PieChart if expected.kind == kind => {
             compare_pie(expected, c.chart(id).and_then(|data| data.pie.as_ref()))
         }
@@ -215,6 +217,54 @@ pub(crate) fn compare_extra(c: &Construction, id: Id, expected: &Expected) -> Re
             actual.sort_unstable();
             if *expected != actual {
                 return Err(format!("expected {expected:?}, got {actual:?}"));
+            }
+        }
+        Some(ExpectedData::Implicit {
+            coefficients,
+            equation,
+            input_form,
+        }) => {
+            let matrix = c
+                .implicit_coefficients(id)
+                .ok_or("missing implicit coefficients")?;
+            if coefficients.len() != matrix.len()
+                || coefficients.iter().zip(matrix).any(|(a, b)| {
+                    a.len() != b.len() || a.iter().zip(b).any(|(&x, &y)| !numbers_agree(x, y))
+                })
+            {
+                return Err(format!(
+                    "expected coefficients {coefficients:?}, got {matrix:?}"
+                ));
+            }
+            let user = c.equation_form(id) == Some(&geo_kernel::kernel::EquationForm::User);
+            if user != *input_form {
+                return Err(format!("expected input form {input_form}, got {user}"));
+            }
+            let actual = c
+                .formatted_equation(id)
+                .ok_or("missing implicit equation text")?;
+            let compact = |s: &str| {
+                let mut normalized = String::new();
+                let mut previous_super = false;
+                for ch in s.chars() {
+                    if let Some(i) = "⁰¹²³⁴⁵⁶⁷⁸⁹".chars().position(|digit| digit == ch)
+                    {
+                        if !previous_super {
+                            normalized.push('^');
+                        }
+                        normalized.push(char::from(b'0' + i as u8));
+                        previous_super = true;
+                    } else {
+                        previous_super = false;
+                        if !ch.is_whitespace() && !matches!(ch, '(' | ')' | '*' | '·') {
+                            normalized.push(ch);
+                        }
+                    }
+                }
+                normalized
+            };
+            if compact(&actual) != compact(equation) {
+                return Err(format!("expected equation {equation:?}, got {actual:?}"));
             }
         }
         Some(ExpectedData::Curve { samples, .. }) => {

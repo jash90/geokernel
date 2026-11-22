@@ -139,6 +139,9 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
     if let Some(result) = text::apply(c, line) {
         return result.map(|_| None);
     }
+    if let Some(result) = equation::coefficients(c, line) {
+        return result.map(Some);
+    }
     if let Some(style) = equation::parse_style(line) {
         return style?.apply(c).map(|_| None);
     }
@@ -1618,6 +1621,7 @@ fn is_finite(v: &Value) -> bool {
         | Value::InputBox
         | Value::Image
         | Value::PieChart
+        | Value::ImplicitCurve
         | Value::Undefined => false,
     }
 }

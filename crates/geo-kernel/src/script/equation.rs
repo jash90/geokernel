@@ -63,3 +63,65 @@ pub fn parse_style(line: &str) -> Option<Result<Style<'_>, String>> {
     };
     Some(read().ok_or_else(|| "invalid equation style directive".into()))
 }
+
+/// Saved implicit element with no defining expression.
+pub(super) fn coefficients(c: &mut Construction, line: &str) -> Option<Result<crate::Id, String>> {
+    let args = line
+        .strip_prefix("$implicitCoefficients(")?
+        .strip_suffix(')')?;
+    Some((|| {
+        let (label, matrix) = args
+            .split_once(',')
+            .ok_or("expected a label and coefficient matrix")?;
+        let label = label.trim();
+        if !super::is_output_label(label) {
+            return Err("invalid implicit curve label".into());
+        }
+        super::check_label(label)?;
+        let matrix = matrix
+            .trim()
+            .strip_prefix('[')
+            .and_then(|s| s.strip_suffix(']'))
+            .ok_or("invalid implicit coefficient matrix")?
+            .trim();
+        let mut rows = Vec::new();
+        let mut remaining = matrix;
+        let size = crate::expr::equation::implicit::MAX_DEGREE as usize + 1;
+        for _ in 0..size {
+            if remaining.is_empty() {
+                break;
+            }
+            let (row, rest) = remaining
+                .strip_prefix('[')
+                .and_then(|s| s.split_once(']'))
+                .ok_or("invalid implicit coefficient row")?;
+            let row = row.trim();
+            let values = if row.is_empty() {
+                Vec::new()
+            } else {
+                row.split(',')
+                    .take(size + 1)
+                    .map(|s| s.trim().parse::<f64>())
+                    .collect::<Result<Vec<_>, _>>()
+                    .map_err(|_| "invalid implicit coefficient")?
+            };
+            rows.push(values);
+            let rest = rest.trim();
+            remaining = if rest.is_empty() {
+                rest
+            } else {
+                rest.strip_prefix(',')
+                    .ok_or("expected another coefficient row")?
+                    .trim()
+            };
+        }
+        if !remaining.is_empty() {
+            return Err("implicit coefficient matrix exceeds the degree budget".into());
+        }
+        let id = c
+            .add_implicit_coefficients(label, rows)
+            .map_err(|e| e.to_string())?;
+        c.remember_construction_source(id, line);
+        Ok(id)
+    })())
+}

@@ -143,7 +143,10 @@ pub fn replay(case: &Case) -> CaseOutcome {
                 compare_list(&c, expected, Kind::List, c.elements(id))
             } else if c.kind(id) == Kind::PieChart {
                 crate::compare::compare_pie(expected, c.chart(id).and_then(|d| d.pie.as_ref()))
-            } else if matches!(c.kind(id), Kind::Text | Kind::FunctionNVar | Kind::Curve) {
+            } else if matches!(
+                c.kind(id),
+                Kind::Text | Kind::FunctionNVar | Kind::Curve | Kind::ImplicitCurve
+            ) {
                 compare_extra(&c, id, expected)
             } else {
                 compare_sampled(expected, c.kind(id), &actual, &vertices, Some(&sample))

@@ -120,6 +120,11 @@ impl Expected {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ExpectedData {
+    Implicit {
+        coefficients: Vec<Vec<f64>>,
+        equation: String,
+        input_form: bool,
+    },
     Point {
         x: f64,
         y: f64,
@@ -514,6 +519,10 @@ impl TryFrom<RawObject> for Expected {
             "arc" => (Kind::Arc, &[]),
             "sector" => (Kind::Sector, &[]),
             "locus" => (Kind::Locus, &["points"]),
+            "implicit" => (
+                Kind::ImplicitCurve,
+                &["coefficients", "equation", "input_form"],
+            ),
             "curve" => (Kind::Curve, &["start", "end"]),
             other => return Err(format!("unknown object type `{other}`")),
         };
@@ -562,6 +571,28 @@ impl TryFrom<RawObject> for Expected {
                 kind,
                 data: Some(ExpectedData::FunctionNVar(samples)),
                 legacy_angle_number: false,
+            });
+        }
+        if kind == Kind::ImplicitCurve {
+            let field = |name| {
+                raw.fields
+                    .get(name)
+                    .cloned()
+                    .ok_or_else(|| format!("missing {name}"))
+            };
+            let coefficients =
+                serde_json::from_value(field("coefficients")?).map_err(|e| e.to_string())?;
+            let equation = serde_json::from_value(field("equation")?).map_err(|e| e.to_string())?;
+            let input_form =
+                serde_json::from_value(field("input_form")?).map_err(|e| e.to_string())?;
+            return Ok(Expected {
+                legacy_angle_number: false,
+                kind,
+                data: Some(ExpectedData::Implicit {
+                    coefficients,
+                    equation,
+                    input_form,
+                }),
             });
         }
         if kind == Kind::Conic {

@@ -377,6 +377,8 @@ clip_paths = ["O = (0, 0)", "k = Circle(O, 2)", "A = (-4, 0)", "B = (4, 0)",
 case("conic-clip", clip_paths, [])
 case("conic-clip", clip_paths, [mv("O", 0, 2)])
 
+case("implicit", ["a = 2", "p: x^3/a + y^3 = 1", "q: x^4 + y^4 = 2"], [])
+
 out = Path(__file__).with_name("saved.json")
 lines = ",\n".join("    " + json.dumps(c, separators=(", ", ": ")) for c in cases)
 out.write_text('{\n  "cases": [\n' + lines + "\n  ]\n}\n")

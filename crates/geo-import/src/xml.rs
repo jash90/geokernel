@@ -70,6 +70,7 @@ pub struct Element {
     pub equation_form: Option<EquationForm>,
     /// `<matrix A0= ... A5=>` of a conic as written.
     pub matrix: Option<[String; 6]>,
+    pub implicit_coefficients: Option<String>,
     /// `<fixed val="true">`: not used, counted for a note.
     pub fixed: bool,
     /// `<auxiliary val="true">`: not used, counted for a note.
@@ -651,6 +652,22 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                 "angleStyle" if element.is_some() => {
                     element.as_mut().expect("checked above").angle_style =
                         attr(e, "val")?.and_then(|v| v.parse().ok());
+                }
+                "coefficients" if element.as_ref().is_some_and(|el| el.kind == "implicitpoly") => {
+                    if attr(e, "rep")?.as_deref() == Some("array") {
+                        element
+                            .as_mut()
+                            .expect("checked above")
+                            .implicit_coefficients = attr(e, "data")?;
+                    }
+                }
+                "userinput" if element.as_ref().is_some_and(|el| el.kind == "implicitpoly") => {
+                    let input = attr(e, "show")?.as_deref() == Some("true");
+                    element.as_mut().expect("checked above").equation_form = Some(if input {
+                        EquationForm::User
+                    } else {
+                        EquationForm::Implicit
+                    });
                 }
                 "eqnStyle"
                     if element

@@ -153,6 +153,7 @@ pub enum Kind {
     /// [`Construction::locus`].
     Locus,
     Curve,
+    ImplicitCurve,
     Button,
     InputBox,
     Image,
@@ -189,6 +190,7 @@ impl fmt::Display for Kind {
             Kind::Sector => "sector",
             Kind::Locus => "locus",
             Kind::Curve => "curve",
+            Kind::ImplicitCurve => "implicit",
             Kind::Button => "button",
             Kind::InputBox => "input box",
             Kind::Image => "image",
@@ -262,6 +264,7 @@ pub enum Value {
     /// [`Construction::function_value`].
     Function,
     /// The parameter interval of a defined Cartesian curve.
+    ImplicitCurve,
     Curve {
         start: f64,
         end: f64,
@@ -387,6 +390,7 @@ impl Value {
             Value::Function
             | Value::Text
             | Value::FunctionNVar
+            | Value::ImplicitCurve
             | Value::List { .. }
             | Value::Conic { .. }
             | Value::Locus { .. }
@@ -534,6 +538,8 @@ pub enum Def {
     /// of its coefficients (see [`crate::expr`]). Like [`Def::Expr`], the
     /// handle is valid only in the construction that made it.
     Equation(EquationDef),
+    /// Handle for a polynomial curve or a variable-degree equation.
+    ImplicitCurve(u32),
     /// The calculus commands of the function group: the integrals, the
     /// derivatives, the Riemann sums and the polynomial queries. An
     /// object whose value samples a tree keeps it in the construction's
@@ -653,6 +659,7 @@ impl Def {
             Def::ConicPart(d) => d.kind(),
             Def::Path(d) => d.kind(),
             Def::Arc(d) => d.kind(),
+            Def::ImplicitCurve(_) => Kind::ImplicitCurve,
             Def::Equation(d) => {
                 if d.is_conic() {
                     Kind::Conic
@@ -726,7 +733,8 @@ impl Def {
             | Def::Chart(_)
             | Def::Angle(_)
             | Def::Expr(_)
-            | Def::Equation(_) => Parents::none(),
+            | Def::Equation(_)
+            | Def::ImplicitCurve(_) => Parents::none(),
             Def::InputBox(Some(id)) => Parents::of(&[id]),
             Def::Line(p, q)
             | Def::Segment(p, q)
@@ -904,6 +912,7 @@ pub struct Construction {
     /// The records of the [`Def::Equation`] objects, with the index of each
     /// object, in creation order (see [`EquationRecord`]).
     pub(crate) equations: Vec<(usize, EquationRecord)>,
+    pub(crate) implicit_curves: Vec<(usize, expr::equation::implicit::Record)>,
     /// The points of the loci, with the index of each object, in creation
     /// order.
     loci: Vec<(usize, LocusData)>,
@@ -1116,7 +1125,10 @@ impl Construction {
     }
 
     pub fn kind(&self, id: Id) -> Kind {
-        self.def(id).kind()
+        match self.def(id) {
+            Def::ImplicitCurve(index) => self.implicit_curves[index as usize].1.kind,
+            def => def.kind(),
+        }
     }
 
     /// Whether `id` names an object of this construction, an axis included.
@@ -1143,7 +1155,13 @@ impl Construction {
 
     /// Changes the display form and refreshes texts that read it.
     pub fn set_equation_form(&mut self, id: Id, form: EquationForm) -> Result<usize, Error> {
-        const EQUATIONS: &[Kind] = &[Kind::Line, Kind::Ray, Kind::Circle, Kind::Conic];
+        const EQUATIONS: &[Kind] = &[
+            Kind::Line,
+            Kind::Ray,
+            Kind::Circle,
+            Kind::Conic,
+            Kind::ImplicitCurve,
+        ];
         let kind = self.defs.get(id.0).ok_or(Error::UnknownObject)?.kind();
         if !EQUATIONS.contains(&kind) {
             return Err(Error::WrongKind {
@@ -1516,6 +1534,10 @@ impl Construction {
         {
             self.equations.pop();
         }
+        self.implicit_curves.truncate(
+            self.implicit_curves
+                .partition_point(|(owner, _)| *owner < at.len),
+        );
         while self.loci.last().is_some_and(|&(owner, _)| owner >= at.len) {
             self.loci.pop();
         }
@@ -1583,6 +1605,9 @@ impl Construction {
         ids.extend(expr::parents(self, def));
         if let Def::Equation(d) = *def {
             ids.extend(expr::equation::parents(self, d));
+        }
+        if let Def::ImplicitCurve(index) = *def {
+            ids.extend(expr::equation::implicit::parents(self, index));
         }
         ids.extend_from_slice(def.parents().as_slice());
         if let Some(list) = def.list() {
@@ -1653,6 +1678,7 @@ impl Construction {
                 self.limited_common_tangents.push((id.0, state));
                 value.unwrap_or(Value::Undefined)
             }
+            Def::ImplicitCurve(index) => expr::equation::implicit::update(self, index),
             Def::Equation(d) => {
                 let (value, record) = crate::expr::equation::initialize(self, d);
                 if let Some(record) = record {
@@ -2125,6 +2151,9 @@ impl Construction {
                         continue;
                     }
                 }
+                Def::ImplicitCurve(index) => {
+                    self.values[i] = expr::equation::implicit::update(self, index);
+                }
                 Def::Equation(d) => {
                     if !self.update_equation(i, d) {
                         continue;
@@ -2529,6 +2558,11 @@ impl Construction {
             id = expr::conditional_branch(self, self.list(*args))?;
         }
         match self.defs.get(id.0)? {
+            Def::ImplicitCurve(index)
+                if self.kind(id) == Kind::Conic && self.value(id).is_defined() =>
+            {
+                self.implicit_curves[*index as usize].1.conic
+            }
             Def::GeneralConic(_) | Def::Equation(_) => {
                 self.conic_slot(id.0).map(|slot| self.conics[slot].1)
             }
@@ -2687,6 +2721,12 @@ impl Construction {
             Def::Arc(d) => d.check(self),
             // the coefficient entries were checked when they were parsed
             Def::Equation(d) => crate::expr::equation::check(self, d),
+            Def::ImplicitCurve(index) => self
+                .implicit_curves
+                .get(index as usize)
+                .filter(|(owner, _)| *owner == self.len())
+                .map(|_| ())
+                .ok_or(Error::UnknownObject),
             Def::Locus(d) => d.check(self),
             Def::Optimize(d) => d.check(self),
             Def::Calculus(d) => d.check(self),
@@ -2696,13 +2736,10 @@ impl Construction {
     }
 
     pub(crate) fn expect(&self, id: Id, expected: &'static [Kind]) -> Result<(), Error> {
-        let def = self
-            .defs
-            .get(id.0)
-            .copied()
-            .or_else(|| axis::get(id).map(|axis| axis.def))
-            .ok_or(Error::UnknownObject)?;
-        let found = def.kind();
+        if !self.exists(id) {
+            return Err(Error::UnknownObject);
+        }
+        let found = self.kind(id);
         if expected.contains(&found) || (found == Kind::Angle && expected.contains(&Kind::Number)) {
             Ok(())
         } else {
@@ -2797,6 +2834,7 @@ impl Construction {
             Def::Path(d) => d.compute(self),
             Def::Arc(d) => d.compute(self),
             Def::Equation(d) => Some(expr::equation::current(self, d)),
+            Def::ImplicitCurve(_) => None,
             Def::Locus(d) => d.compute(self),
             Def::Optimize(d) => d.compute(self),
             Def::Calculus(d) => d.compute(self),

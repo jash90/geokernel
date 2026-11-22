@@ -1,0 +1,9 @@
+{
+  "cases": [
+    {"id": "implicit-equations-001", "group": "implicit", "script": ["c: x^3 + y^3 = 1"], "steps": [{"action": "initial"}]},
+    {"id": "implicit-equations-002", "group": "implicit", "script": ["a = 2.98", "b = 0.03", "c: (x^2 + y^2)^2 - 2*b^2*(x^2 - y^2) = a^4 - b^4"], "steps": [{"action": "initial"}, {"action": "set_number", "label": "a", "value": 3.8}, {"action": "set_number", "label": "b", "value": 3.9}]},
+    {"id": "implicit-equations-003", "group": "implicit", "script": ["A = (2, 1)", "c: x^3/x(A) + y^3 = 1"], "steps": [{"action": "initial"}, {"action": "move", "label": "A", "x": 0.0, "y": 1.0}, {"action": "move", "label": "A", "x": -2.0, "y": 1.0}]},
+    {"id": "implicit-equations-004", "group": "implicit", "script": ["a = 3", "c: x^a + y = 1"], "steps": [{"action": "initial"}, {"action": "set_number", "label": "a", "value": 2.0}, {"action": "set_number", "label": "a", "value": 1.0}, {"action": "set_number", "label": "a", "value": 4.0}]},
+    {"id": "implicit-equations-005", "group": "implicit", "script": ["a = 0", "c: a*x^3 + x^2 + y^2 = 1"], "steps": [{"action": "initial"}, {"action": "set_number", "label": "a", "value": 1.0}, {"action": "set_number", "label": "a", "value": 0.0}]}
+  ]
+}
