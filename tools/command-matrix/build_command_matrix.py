@@ -37,6 +37,12 @@ EXCLUDED_ALGEBRA = {
     "CSolutions": "All algebra-input forms delegate to the CAS.",
 }
 
+EXCLUDED_CHARTS = {
+    "StemPlot": "Produces a LaTeX stem-and-leaf table.",
+    "FrequencyTable": "Produces a LaTeX frequency table.",
+    "ContingencyTable": "Produces a LaTeX contingency table, optionally with a test report.",
+}
+
 EXCLUDED_FUNCTION = {
     "TaylorSeries": "A symbolic Taylor polynomial uses the CAS.",
     "Limit": "Symbolic limits, including variable and infinite endpoints, use the CAS.",
@@ -308,6 +314,8 @@ def classify(group, command, alias_of):
     """Return (priority, status, notes) for a real command; aliases copy their target."""
     if command in EXCLUDED_ALGEBRA:
         return "", "out_of_scope", EXCLUDED_ALGEBRA[command]
+    if command in EXCLUDED_CHARTS:
+        return "", "out_of_scope", EXCLUDED_CHARTS[command]
     if command in EXCLUDED_FUNCTION:
         return "", "out_of_scope", EXCLUDED_FUNCTION[command]
     if command in OUT_OF_SCOPE_COMMANDS:

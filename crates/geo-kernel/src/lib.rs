@@ -12,6 +12,7 @@
 //!   and the window alike.
 
 pub mod algo;
+pub mod base64;
 mod cas;
 pub mod equation;
 pub mod expr;

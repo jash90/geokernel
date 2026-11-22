@@ -43,7 +43,7 @@ fn main() -> ExitCode {
 /// Imports a construction file into script text. What was left out is
 /// reported on stderr.
 fn import_file(path: &str, bytes: &[u8]) -> Result<geo_import::Imported, String> {
-    let imported = geo_import::import(bytes).map_err(|e| format!("{path}: {e}"))?;
+    let imported = geo_import::import_for_replay(bytes).map_err(|e| format!("{path}: {e}"))?;
     for note in &imported.notes {
         eprintln!("note: {note}");
     }
@@ -85,21 +85,23 @@ fn import_file(path: &str, bytes: &[u8]) -> Result<geo_import::Imported, String>
 fn run(path: &str, out: Option<&str>) -> Result<(), String> {
     // A construction file is told from a script by its content, not its name.
     let bytes = std::fs::read(path).map_err(|e| format!("{path}: {e}"))?;
-    let (src, hidden, conditions) = if geo_import::looks_like_construction(&bytes) {
+    let (src, hidden, conditions, assets) = if geo_import::looks_like_construction(&bytes) {
         let imported = import_file(path, &bytes)?;
         (
             imported.script.join("\n"),
             imported.hidden,
             imported.conditions,
+            imported.image_assets,
         )
     } else {
         (
             String::from_utf8(bytes).map_err(|e| format!("{path}: {e}"))?,
             Vec::new(),
             Vec::new(),
+            Vec::new(),
         )
     };
-    let mut c = script::load(&src).map_err(|e| format!("{path}: {e}"))?;
+    let mut c = script::load_with_assets(&src, &assets).map_err(|e| format!("{path}: {e}"))?;
     print_objects(&c);
     if let Some(out) = out {
         let mut hidden: std::collections::HashSet<_> =

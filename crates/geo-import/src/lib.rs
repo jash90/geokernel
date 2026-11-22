@@ -49,6 +49,8 @@ use std::fmt;
 pub struct Imported {
     /// Lines of the script language, in construction order.
     pub script: Vec<String>,
+    /// Raster sources for replay without serializing or decoding them again.
+    pub image_assets: Vec<geo_kernel::script::saved::Property>,
     /// Every object that could not be imported, including the objects that
     /// depend on one that was skipped.
     pub skipped: Vec<Skipped>,
@@ -184,11 +186,31 @@ impl std::error::Error for ImportError {}
 /// [`xml::MAX_ITEMS`] items. Beyond them the answer is an error, not an
 /// attempt.
 pub fn import(bytes: &[u8]) -> Result<Imported, ImportError> {
+    let mut imported = import_for_replay(bytes)?;
+    if !imported.image_assets.is_empty() {
+        let lines = imported
+            .image_assets
+            .drain(..)
+            .map(|asset| asset.to_string());
+        imported.script.splice(..0, lines);
+    }
+    Ok(imported)
+}
+
+/// Import definitions and share decoded raster assets with the replay caller.
+pub fn import_for_replay(bytes: &[u8]) -> Result<Imported, ImportError> {
     let doc = {
         let text = archive::extract_xml(bytes)?;
         xml::parse(&text)?
     };
-    convert::convert(doc)
+    let archive = (archive::is_zip(bytes)
+        && doc
+            .items
+            .iter()
+            .any(|item| matches!(item, xml::Item::Element(element) if element.kind == "image")))
+    .then(|| archive::AssetArchive::new(bytes))
+    .transpose()?;
+    convert::convert_with_assets(doc, archive.as_ref())
 }
 
 /// Whether `bytes` look like a construction file (a zip archive, or XML whose

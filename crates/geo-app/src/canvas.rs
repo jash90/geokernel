@@ -782,10 +782,11 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         app.press_view = None;
     }
     painter.rect_filled(rect, 0.0, theme::WHITE);
-    grid::paint(&painter, rect, &t, app.decor, app.metrics.numbering_px);
     let c = app.wb.construction();
     let visible = |id: Id| show_all || app.wb.is_visible(id);
     let ghost = |id: Id| show_all && !app.wb.is_visible(id);
+    draw::image::paint_background(&painter, rect, c, &t, &visible, &ghost);
+    grid::paint(&painter, rect, &t, app.decor, app.metrics.numbering_px);
     draw::paint(
         &painter,
         rect,

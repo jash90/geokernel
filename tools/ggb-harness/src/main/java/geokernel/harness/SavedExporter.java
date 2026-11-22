@@ -125,6 +125,7 @@ public final class SavedExporter {
             throw new IllegalArgumentException("unknown angle unit " + unit);
         }
         List<GeoElement> created = new ArrayList<>();
+        Map<String, byte[]> imageAssets = new LinkedHashMap<>();
         List<String> script = new ArrayList<>();
         for (Object line : (List<?>) input.get("script")) {
             script.add((String) line);
@@ -136,6 +137,11 @@ public final class SavedExporter {
             }
             for (GeoElementND nd : out) {
                 created.add(nd.toGeoElement());
+            }
+        }
+        if (input.get("images") instanceof List<?> images) {
+            for (Object image : images) {
+                created.add(SavedImages.create(kernel, (Map<?, ?>) image, imageAssets));
             }
         }
         if (input.get("hidden") instanceof List<?> hidden) {
@@ -229,7 +235,7 @@ public final class SavedExporter {
             ByteArrayOutputStream zip = new ByteArrayOutputStream();
             ((MyXMLioJre) app.getXMLio()).writeGeoGebraFile(zip, false);
             Path target = outDir.resolve(id + ".ggb");
-            byte[] bytes = zip.toByteArray();
+            byte[] bytes = SavedImages.embed(zip.toByteArray(), imageAssets);
             if (!Files.exists(target) || !GgbExporter.sameEntries(Files.readAllBytes(target), bytes)) {
                 Files.write(target, bytes);
             }
@@ -282,6 +288,9 @@ public final class SavedExporter {
 
     /** The golden-file form of an object (only the types the saved cases use). */
     private static Map<String, Object> describe(GeoElement geo) {
+        if (geo instanceof org.geogebra.common.kernel.geos.GeoImage image) {
+            return SavedImages.describe(image);
+        }
         Map<String, Object> obj = new LinkedHashMap<>();
         Map<String, Object> f = new LinkedHashMap<>();
         boolean ok = geo.isDefined();

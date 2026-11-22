@@ -1,0 +1,164 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "charts-normalquantileplot-001",
+      "group": "charts",
+      "script": [
+        "chart = NormalQuantilePlot({2,3,4})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 2.0, "y": -0.8193286198336103 },
+              { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 0.8193286198336103 },
+              { "type": "segment", "defined": true, "x1": 2.0, "y1": -1.0, "x2": 4.0, "y2": 1.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "charts-normalquantileplot-002",
+      "group": "charts",
+      "script": [
+        "chart = NormalQuantilePlot({})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "charts-normalquantileplot-003",
+      "group": "charts",
+      "script": [
+        "chart = NormalQuantilePlot({2})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+              { "type": "segment", "defined": false }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "charts-normalquantileplot-004",
+      "group": "charts",
+      "script": [
+        "chart = NormalQuantilePlot({4,4,4})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 4.0, "y": -0.8193286198336103 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 0.8193286198336103 },
+              { "type": "segment", "defined": false }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "charts-normalquantileplot-005",
+      "group": "charts",
+      "script": [
+        "chart = NormalQuantilePlot(3,2,4)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 2.0, "y": -0.8193286198336103 },
+              { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 0.8193286198336103 },
+              { "type": "segment", "defined": true, "x1": 2.0, "y1": -1.0, "x2": 4.0, "y2": 1.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "charts-normalquantileplot-006",
+      "group": "charts",
+      "script": [
+        "chart = NormalQuantilePlot((1,2),(3,4))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "charts-normalquantileplot-007",
+      "group": "charts",
+      "script": [
+        "chart = NormalQuantilePlot({4,1,5,4,7,10,8,5,4,3,2,1})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": -1.5881546429662676 },
+              { "type": "point", "defined": true, "x": 1.0, "y": -1.0981497546858916 },
+              { "type": "point", "defined": true, "x": 2.0, "y": -0.7825592680591444 },
+              { "type": "point", "defined": true, "x": 3.0, "y": -0.5306911286167684 },
+              { "type": "point", "defined": true, "x": 4.0, "y": -0.3089235254771197 },
+              { "type": "point", "defined": true, "x": 4.0, "y": -0.10153400250628433 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 0.1015340025062842 },
+              { "type": "point", "defined": true, "x": 5.0, "y": 0.3089235254771197 },
+              { "type": "point", "defined": true, "x": 5.0, "y": 0.5306911286167681 },
+              { "type": "point", "defined": true, "x": 7.0, "y": 0.7825592680591443 },
+              { "type": "point", "defined": true, "x": 8.0, "y": 1.0981497546858916 },
+              { "type": "point", "defined": true, "x": 10.0, "y": 1.5881546429662676 },
+              { "type": "segment", "defined": true, "x1": 1.0, "y1": -1.2741640302188781, "x2": 10.0, "y2": 2.0022577617725226 }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

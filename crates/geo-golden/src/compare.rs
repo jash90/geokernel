@@ -56,6 +56,46 @@ pub fn line_scale_agrees(expected: &Expected, actual: &Value) -> Option<bool> {
     Some(close(*a, x) && close(*b, y) && close(*c, z))
 }
 
+pub(crate) fn compare_pie(
+    expected: &Expected,
+    pie: Option<&geo_kernel::algo::charts::Pie>,
+) -> Result<Sign, String> {
+    match (&expected.data, pie) {
+        (None, None) => Ok(Sign::NotApplicable),
+        (
+            Some(ExpectedData::Pie {
+                center,
+                radius,
+                fractions,
+            }),
+            Some(pie),
+        ) => {
+            if !all_agree(&[
+                (center.0, pie.center.0),
+                (center.1, pie.center.1),
+                (*radius, pie.radius),
+            ]) {
+                return Err(format!(
+                    "pie center or radius differs: {:?}",
+                    (pie.center, pie.radius)
+                ));
+            }
+            if fractions.len() != pie.fractions.len()
+                || !fractions.iter().zip(&pie.fractions).all(|(want, &got)| {
+                    want.map_or_else(
+                        || !got.is_finite(),
+                        |want| got.is_finite() && numbers_agree(want, got),
+                    )
+                })
+            {
+                return Err(format!("pie fractions differ: {:?}", pie.fractions));
+            }
+            Ok(Sign::NotApplicable)
+        }
+        _ => Err("pie definition differs".into()),
+    }
+}
+
 /// Compares one recorded object with what the kernel holds, for objects
 /// without vertices and other than functions (see [`compare_object`]).
 pub fn compare(expected: &Expected, kind: Kind, actual: &Value) -> Result<Sign, String> {

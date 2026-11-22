@@ -162,7 +162,7 @@ pub(crate) mod lex;
 pub(crate) use lex::{is_name_char, plain_number};
 mod list;
 use commands::text::TextOp;
-use list::Slot;
+pub(crate) use list::{same_slots, Slot};
 pub use list::{Element, List};
 pub(crate) mod math;
 mod names;
@@ -1469,8 +1469,16 @@ pub(crate) fn current(c: &Construction, d: ExprDef) -> Value {
 
 /// The elements of the list object `id`, when it is a defined list.
 pub(crate) fn list(c: &Construction, id: Id) -> Option<List<'_>> {
-    match (c.def(id), c.value(id)) {
-        (Def::Expr(d), Value::List { len }) => Some(List::new(&entry(c, d).items, len)),
+    let Value::List { len } = c.value(id) else {
+        return None;
+    };
+    Some(List::new(list_slots(c, id)?, len))
+}
+
+fn list_slots(c: &Construction, id: Id) -> Option<&[Slot]> {
+    match c.def(id) {
+        Def::Expr(d) => Some(&entry(c, d).items),
+        Def::Chart(_) => c.chart(id).map(|data| data.slots.as_slice()),
         _ => None,
     }
 }
@@ -1505,6 +1513,7 @@ pub(crate) fn store(c: &mut Construction, d: ExprDef, out: Outcome) -> bool {
 pub(crate) fn function_value(c: &Construction, f: Id, x: f64) -> Option<f64> {
     match (c.def(f), c.value(f)) {
         (Def::Expr(d), Value::Function) => Some(eval::sample(c, entry(c, d), x)),
+        (Def::Chart(_), Value::Function) => c.chart(f).map(|data| data.sample(x)),
         _ => None,
     }
 }
@@ -1517,6 +1526,12 @@ pub(crate) struct FunctionSignature {
 }
 
 pub(crate) fn function_signature(c: &Construction, id: Id) -> Option<FunctionSignature> {
+    if c.kind(id) == Kind::Function && matches!(c.def(id), Def::Chart(_)) {
+        return Some(FunctionSignature {
+            boolean: false,
+            of_y: false,
+        });
+    }
     let Def::Expr(d) = c.def(id) else {
         return None;
     };

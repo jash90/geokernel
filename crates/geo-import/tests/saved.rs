@@ -460,6 +460,9 @@ fn files_saved_after_moves_agree_with_what_geogebra_computed_when_saving() {
                     "saved-controls-001",
                     "saved-controls-002",
                     "saved-elements-001",
+                    // images.rs checks the archive assets and quad snapshots.
+                    "saved-images-001",
+                    "saved-images-002",
                     // Its values are deliberately stale. The replay test checks the clamped values.
                     "saved-slider-bounds-001",
                 ])
