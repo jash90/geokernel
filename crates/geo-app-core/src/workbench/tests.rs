@@ -1528,3 +1528,24 @@ fn typed_slider_assignments_reveal_interval_roots() {
     // A plain script with the assignment grows the same outputs.
     check(&Workbench::from_script(&format!("{src}\nb = 10")).unwrap());
 }
+
+#[test]
+fn recorded_slots_do_not_stop_later_growth() {
+    let src = concat!(
+        "b = Slider(1, 13)\nb = 4\nf(x) = sin(x)\nh(x) = 0\nR = Intersect(f, h, 1, b)\n",
+        "b = 7\nA = $boundarySlot(R, 2)\nb = 10"
+    );
+    let w = Workbench::from_script(src).unwrap();
+    let c = w.construction();
+    for (label, x) in [("A", 2.0), ("B", 3.0)] {
+        let id = c.id(label).unwrap_or_else(|| panic!("no {label}"));
+        let Value::Point { x: px, .. } = c.value(id) else {
+            panic!("{label} is undefined");
+        };
+        assert!(
+            (px - x * std::f64::consts::PI).abs() < 1e-6,
+            "{label}: {px}"
+        );
+    }
+    assert!(c.id("C").is_none());
+}

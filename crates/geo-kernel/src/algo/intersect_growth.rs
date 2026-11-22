@@ -70,6 +70,9 @@ impl GrowthAnchor {
 #[derive(Debug, Default)]
 pub struct BoundaryOutputs {
     groups: Vec<Outputs>,
+    /// Slots (owner label, zero-based slot) that the script being replayed
+    /// adds with its own `$boundarySlot` lines: growth stops before them.
+    recorded: BTreeSet<(String, usize)>,
 }
 
 impl BoundaryOutputs {
@@ -78,6 +81,23 @@ impl BoundaryOutputs {
         rhs.split_once('(').is_some_and(|(name, _)| {
             matches!(name.trim(), "Intersect" | "Tangent" | "Vertex" | "Corner")
         })
+    }
+
+    /// A registry for replaying `src`, whose recorded slot lines add their
+    /// outputs themselves.
+    pub fn for_script(src: &str) -> Self {
+        let recorded = src
+            .lines()
+            .filter_map(|line| {
+                let (_, rhs) = script::split_comment(line).0.split_once('=')?;
+                let (owner, slot) = slot_args(rhs.trim())?;
+                Some((owner.to_owned(), slot))
+            })
+            .collect();
+        Self {
+            groups: Vec::new(),
+            recorded,
+        }
     }
 
     /// Rebuilds the registry from a definition that has already executed.
@@ -123,6 +143,7 @@ impl BoundaryOutputs {
         mut record: impl FnMut(&Construction, Id, &str),
     ) {
         for group in &mut self.groups {
+            let owner = c.label(group.first).to_owned();
             if !changed.clone().any(|id| group.dependencies.contains(&id)) {
                 continue;
             }
@@ -133,6 +154,9 @@ impl BoundaryOutputs {
                 continue;
             };
             for slot in group.slots..count {
+                if self.recorded.contains(&(owner.clone(), slot)) {
+                    break;
+                }
                 let Some(output) = anchor.slot(slot) else {
                     break;
                 };
@@ -255,4 +279,29 @@ pub fn restore_boundary_labels(
         c.discard_since(start);
     }
     result
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{script, Value};
+
+    #[test]
+    fn script_slider_assignments_reveal_interval_roots() {
+        let src = "b = Slider(1, 13)\nb = 4\nf(x) = sin(x)\nh(x) = 0\nR = Intersect(f, h, 1, b)";
+        for tail in ["\nb = 10", "\nb = 7\nA = $boundarySlot(R, 2)\nb = 10"] {
+            let c = script::load(&format!("{src}{tail}")).unwrap();
+            for (label, x) in [("A", 2.0), ("B", 3.0)] {
+                let id = c
+                    .id(label)
+                    .unwrap_or_else(|| panic!("no {label} after {tail:?}"));
+                let Value::Point { x: px, .. } = c.value(id) else {
+                    panic!("{label} is undefined");
+                };
+                assert!(
+                    (px - x * std::f64::consts::PI).abs() < 1e-6,
+                    "{label}: {px}"
+                );
+            }
+        }
+    }
 }

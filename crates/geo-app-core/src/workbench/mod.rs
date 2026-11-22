@@ -470,7 +470,7 @@ impl Workbench {
             }
             let before = self.construction.len();
             let step_before = self.construction.step();
-            let slider = crate::scriptlog::slider_target(&self.construction, &line);
+            let slider = geo_kernel::script::slider_assignment_target(&self.construction, &line);
             let assigns_slider = slider.is_some()
                 || geo_kernel::script::is_slider_assignment(&self.construction, &line);
             // Only lines that succeeded go into the log: a failed one would

@@ -226,4 +226,13 @@ cases.cases[-1]["track_boundary_growth"] = True
 cases.case("review", ["q(x,y) = (x > 1 -> y > 2) && x < 3 && y < 4 && y > sqrt(x - 5)",
                       "P = Vertex(q)"], [])
 
+for script in ("P = Vertex(x > sin(y) && (y^2 + 1000*y + 1000000)/1000000000 > 0)",
+               "P = Vertex(!((x > 0) ⊕ false) && x > 1 && y > 0)",
+               "P = Vertex((!(y > sqrt(x)) ⊕ x > 10) && x > -2 && x < 1 && y > 0)",
+               "P = Vertex(!(-1 < y < sqrt(x) - 2) && x > -2 && x < 1 && y > 0)",
+               "P = Vertex(x > y^2 && y^2 - 10000000000 > 0)",
+               "P = Vertex((x > 0 ⊕ y > 1) && x < 2 && y < 3)",
+               "P = Vertex((x > 0 && true) && x < 2 && y > 0 && y < 1)"):
+    cases.case("review", [script], [])
+
 cases.write()

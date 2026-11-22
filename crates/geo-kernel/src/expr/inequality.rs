@@ -166,6 +166,12 @@ struct Border {
     polynomial: PlanePolynomial,
     evaluation_cost: u64,
     expression: Option<Expression>,
+    /// The two sides of a parametric border, for its border function.
+    sides: Option<Expression>,
+    /// For a one-variable border that is not linear, the coefficients of
+    /// the numerator of its normal form (`AlgoRootsPolynomial.calcRoots`
+    /// solves the numerator of `Fractions.getFraction`).
+    numerator: Option<Vec<f64>>,
     strict: bool,
 }
 
@@ -191,15 +197,18 @@ impl Border {
             (Some(x), None) if coef_y.is_none() => (BorderType::ParametricX, x),
             _ => (BorderType::Invalid, f64::NAN),
         };
+        let expression = Expression {
+            positive,
+            negative,
+            divisor: -coefficient,
+        };
         Self {
             kind,
             polynomial: Vec::new(),
             evaluation_cost: 1,
-            expression: Some(Expression {
-                positive,
-                negative,
-                divisor: -coefficient,
-            }),
+            expression: Some(expression),
+            sides: Some(expression),
+            numerator: None,
             strict,
         }
     }
@@ -208,7 +217,7 @@ impl Border {
     /// (`Inequality.funBorder`: the normal form with the other coordinate
     /// replaced by 0, divided by `-coef`).
     fn border_value(&self, at: &Plane<'_>, t: f64) -> f64 {
-        let Some(expression) = &self.expression else {
+        let Some(expression) = &self.sides else {
             return f64::NAN;
         };
         let value = if self.kind == BorderType::ParametricX {
@@ -223,7 +232,9 @@ impl Border {
     /// real roots, a root twice where the border touches without a sign
     /// change and the closed side is the inside.
     fn zeros(&self, work: &IntersectionWork) -> Option<Vec<f64>> {
-        let coefficients: Vec<f64> = if self.kind == BorderType::OneVariableX {
+        let coefficients: Vec<f64> = if let Some(numerator) = &self.numerator {
+            numerator.clone()
+        } else if self.kind == BorderType::OneVariableX {
             self.polynomial.first().cloned().unwrap_or_default()
         } else {
             self.polynomial
@@ -284,6 +295,8 @@ impl Border {
             polynomial,
             evaluation_cost,
             expression: None,
+            sides: None,
+            numerator: None,
             strict,
         }
     }
@@ -304,6 +317,9 @@ impl Border {
         } else {
             (other, self)
         };
+        if let Some(points) = Self::zero_intersections(a, b, at) {
+            return points;
+        }
         if a.expression.is_some() || b.expression.is_some() {
             return Self::nonpolynomial_intersections(a, b, at);
         }
@@ -398,6 +414,88 @@ impl Border {
         })
     }
 
+    /// The kind `Inequality.update` gives: a border linear in its one
+    /// coordinate is `INEQUALITY_LINEAR`.
+    fn reference_kind(&self) -> BorderType {
+        match self.kind {
+            BorderType::OneVariableX | BorderType::OneVariableY
+                if !self.is_one_variable_nonlinear() =>
+            {
+                BorderType::Line
+            }
+            kind => kind,
+        }
+    }
+
+    /// The pairs of `AlgoVertexIneq.typeSwitch` that read the zeros of a
+    /// one-variable border: `intParamYX`, `intParamXY`, `intLinearX`,
+    /// `intLinearY` and `intXY`, in the reference's order. `None` for the
+    /// other pairs.
+    #[allow(clippy::option_option)]
+    fn zero_intersections(a: &Self, b: &Self, at: &Plane<'_>) -> Option<Option<Vec<(f64, f64)>>> {
+        use BorderType::*;
+        let (a, b) = if a.reference_kind() <= b.reference_kind() {
+            (a, b)
+        } else {
+            (b, a)
+        };
+        let zeros = |border: &Self| border.zeros(at.work);
+        let points: Option<Vec<(f64, f64)>> = match (a.reference_kind(), b.reference_kind()) {
+            (ParametricY, OneVariableX) | (ParametricX, OneVariableY) => {
+                a.sides?;
+                zeros(b).map(|zeros| {
+                    zeros
+                        .into_iter()
+                        .map(|zero| {
+                            let value = a.border_value(at, zero);
+                            if a.kind == ParametricY {
+                                (zero, value)
+                            } else {
+                                (value, zero)
+                            }
+                        })
+                        .collect()
+                })
+            }
+            (Line, kind @ (OneVariableX | OneVariableY)) => {
+                let (lx, ly, lc) = (
+                    a.coefficient(1, 0),
+                    a.coefficient(0, 1),
+                    a.coefficient(0, 0),
+                );
+                let along_x = kind == OneVariableX;
+                if is_zero(if along_x { ly } else { lx }) {
+                    Some(Vec::new())
+                } else {
+                    zeros(b).map(|zeros| {
+                        zeros
+                            .into_iter()
+                            .map(|zero| {
+                                if along_x {
+                                    (zero, (-lx * zero - lc) / ly)
+                                } else {
+                                    ((-ly * zero - lc) / lx, zero)
+                                }
+                            })
+                            .collect()
+                    })
+                }
+            }
+            (OneVariableX, OneVariableY) => zeros(a).zip(zeros(b)).and_then(|(xs, ys)| {
+                at.charge((xs.len() * ys.len()) as u64).then(|| {
+                    xs.iter()
+                        .flat_map(|&x| ys.iter().map(move |&y| (x, y)))
+                        .collect()
+                })
+            }),
+            _ => return None,
+        };
+        if points.as_ref().is_some_and(|p| !at.charge(p.len() as u64)) {
+            return Some(None);
+        }
+        Some(points)
+    }
+
     fn is_one_variable_nonlinear(&self) -> bool {
         match self.kind {
             BorderType::OneVariableX => self.polynomial.first().is_some_and(|row| row.len() > 2),
@@ -444,6 +542,27 @@ impl Border {
     }
 }
 
+/// Whether `a && b` is a comparison chain such as `-1 < y < 2`, which the
+/// parser joins through the shared middle operand (`AND_INTERVAL`).
+fn is_chain(builder: &Builder, a: u32, b: u32) -> bool {
+    fn end(builder: &Builder, i: u32) -> Option<u32> {
+        match builder.node(i) {
+            Node::Bin(op, _, right) if is_comparison(op) => Some(right),
+            Node::Bin(Bin::And, a, b) if is_chain(builder, a, b) => end(builder, b),
+            _ => None,
+        }
+    }
+    matches!(builder.node(b), Node::Bin(op, left, _)
+        if is_comparison(op) && end(builder, a) == Some(left))
+}
+
+fn is_comparison(op: Bin) -> bool {
+    matches!(
+        op,
+        Bin::Greater | Bin::GreaterEqual | Bin::Less | Bin::LessEqual | Bin::Equal | Bin::NotEqual
+    )
+}
+
 /// `ExpressionNode.getCoefficient`: the coefficient of `var` in the
 /// subtree `i` when the subtree is linear in it, `None` otherwise.
 fn coefficient(c: &Construction, builder: &Builder, i: u32, var: Node) -> Option<f64> {
@@ -483,6 +602,36 @@ fn coefficient(c: &Construction, builder: &Builder, i: u32, var: Node) -> Option
         }
         _ => (!reads(i)).then_some(0.0),
     }
+}
+
+/// The coefficients of the numerator of a one-variable normal form in its
+/// coordinate; empty when the numerator does not expand.
+fn numerator(c: &Construction, builder: &mut Builder, root: u32, kind: BorderType) -> Vec<f64> {
+    let (numerator, _) = super::fraction::get_fraction(builder, root, true);
+    let Ok(polynomial) = builder.expand(c, numerator.unwrap_or(root)) else {
+        return Vec::new();
+    };
+    let terms = polynomial.terms().to_vec();
+    let values = builder.number_values(c, terms.iter().map(|term| term.coeff));
+    let mut coefficients = Vec::new();
+    for (term, value) in terms.iter().zip(values) {
+        let (power, other) = if kind == BorderType::OneVariableX {
+            (term.x, term.y)
+        } else {
+            (term.y, term.x)
+        };
+        let Some(value) = value.filter(|v| v.is_finite()) else {
+            return Vec::new();
+        };
+        if other != 0 || power as usize > MAX_BORDER_DEGREE as usize {
+            return Vec::new();
+        }
+        if coefficients.len() <= power as usize {
+            coefficients.resize(power as usize + 1, 0.0);
+        }
+        coefficients[power as usize] += value;
+    }
+    coefficients
 }
 
 fn is_zero(v: f64) -> bool {
@@ -546,9 +695,15 @@ impl Tree {
                 let left = child(builder, a, !negate)?;
                 Self::Pair(op, left, child(builder, b, negate)?)
             }
-            // A negated `XOR` becomes `NO_OPERATION`, which
-            // `IneqTree.valueAround` reads as unknown.
-            Node::Bin(Bin::Xor, a, b) if negate => {
+            // `IneqTree.valueAround` has no case for `XOR`, nor for the
+            // `NO_OPERATION` that negation makes of it or of a comparison
+            // chain (`AND_INTERVAL`): they read as unknown.
+            Node::Bin(Bin::Xor, a, b) => {
+                let left = child(builder, a, negate)?;
+                child(builder, b, negate)?;
+                Self::Unknown(left)
+            }
+            Node::Bin(Bin::And, a, b) if negate && is_chain(builder, a, b) => {
                 let left = child(builder, a, negate)?;
                 child(builder, b, negate)?;
                 Self::Unknown(left)
@@ -632,18 +787,37 @@ impl Tree {
                         return None;
                     }
                     let index = borders.len();
-                    borders.push(Border::new(
+                    let mut border = Border::new(
                         terms.into_iter().filter(|&(_, _, v)| v != 0.0).collect(),
                         strict,
-                    ));
+                    );
+                    border.sides = match border.kind {
+                        BorderType::ParametricY => Some(-border.coefficient(0, 1)),
+                        BorderType::ParametricX => Some(-border.coefficient(1, 0)),
+                        _ => None,
+                    }
+                    .map(|divisor| Expression {
+                        positive,
+                        negative,
+                        divisor,
+                    });
+                    if border.is_one_variable_nonlinear() {
+                        border.numerator = Some(numerator(c, builder, root, border.kind));
+                    }
+                    borders.push(border);
                     Self::Border(index)
                 }
             }
-            Node::Obj(id) => match c.value(id) {
-                crate::Value::Bool(v) => Self::Constant(v != negate),
-                _ => return None,
-            },
-            Node::Bool(value) => Self::Constant(value != negate),
+            // `initIneqs` builds nothing for a Boolean constant or object and
+            // stops there.
+            Node::Obj(id) if c.kind(id) == crate::Kind::Boolean => {
+                *stopped = true;
+                Self::Empty
+            }
+            Node::Bool(_) => {
+                *stopped = true;
+                Self::Empty
+            }
             _ => return None,
         };
         Some(tree)

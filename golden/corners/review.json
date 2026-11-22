@@ -123,6 +123,117 @@
           "P_{1}": { "type": "point", "defined": false }
         }
       ]
+    },
+    {
+      "id": "corners-review-006",
+      "group": "corners",
+      "script": [
+        "P = Vertex(x > sin(y) && (y^2 + 1000*y + 1000000)/1000000000 > 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "P_{1}": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "corners-review-007",
+      "group": "corners",
+      "script": [
+        "P = Vertex(!((x > 0) ⊕ false) && x > 1 && y > 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "P_{1}": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "corners-review-008",
+      "group": "corners",
+      "script": [
+        "P = Vertex((!(y > sqrt(x)) ⊕ x > 10) && x > -2 && x < 1 && y > 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "P_{1}": { "type": "point", "defined": true, "x": -2.0, "y": -0.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.0, "y": -0.0 }
+        }
+      ]
+    },
+    {
+      "id": "corners-review-009",
+      "group": "corners",
+      "script": [
+        "P = Vertex(!(-1 < y < sqrt(x) - 2) && x > -2 && x < 1 && y > 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "P_{1}": { "type": "point", "defined": true, "x": -2.0, "y": -0.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.0, "y": -0.0 }
+        }
+      ]
+    },
+    {
+      "id": "corners-review-010",
+      "group": "corners",
+      "script": [
+        "P = Vertex(x > y^2 && y^2 - 10000000000 > 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "P_{1}": { "type": "point", "defined": true, "x": 1.0E10, "y": -100000.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.0E10, "y": 100000.0 }
+        }
+      ]
+    },
+    {
+      "id": "corners-review-011",
+      "group": "corners",
+      "script": [
+        "P = Vertex((x > 0 ⊕ y > 1) && x < 2 && y < 3)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "P_{1}": { "type": "point", "defined": true, "x": -0.0, "y": 1.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": -0.0, "y": 3.0 },
+          "P_{3}": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "P_{4}": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 }
+        }
+      ]
+    },
+    {
+      "id": "corners-review-012",
+      "group": "corners",
+      "script": [
+        "P = Vertex((x > 0 && true) && x < 2 && y > 0 && y < 1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "P_{1}": { "type": "point", "defined": false }
+        }
+      ]
     }
   ]
 }

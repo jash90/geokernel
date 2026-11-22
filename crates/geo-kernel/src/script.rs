@@ -101,11 +101,20 @@ pub fn load_with_assets(
             .apply(&mut c)
             .map_err(|message| ScriptError { line: 1, message })?;
     }
+    let mut groups = BoundaryOutputs::for_script(src);
     for (i, raw) in src.lines().enumerate() {
-        exec(&mut c, raw).map_err(|message| ScriptError {
+        let slider = slider_assignment_target(&c, raw);
+        let before = c.len();
+        let first = exec(&mut c, raw).map_err(|message| ScriptError {
             line: i + 1,
             message,
         })?;
+        if let Some(first) = first.filter(|_| c.len() > before) {
+            groups.record(&c, raw, first, c.len() - before);
+        }
+        if let Some(id) = slider {
+            groups.grow(&mut c, id, |_, _, _| {});
+        }
     }
     c.prune_image_assets();
     Ok(c)
@@ -533,6 +542,16 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
         c.discard_since(start);
     }
     result
+}
+
+/// The number that a slider assignment such as `b = 10` sets: a growing
+/// command that depends on it can reveal more outputs.
+pub fn slider_assignment_target(c: &Construction, line: &str) -> Option<Id> {
+    if !is_slider_assignment(c, line) {
+        return None;
+    }
+    let (name, _) = split_comment(line).0.split_once('=')?;
+    c.id(name.trim())
 }
 
 /// Whether the line assigns a literal value to an existing slider.
