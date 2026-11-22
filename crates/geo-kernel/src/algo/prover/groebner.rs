@@ -252,21 +252,27 @@ fn reduce(f: Poly, all: &[Poly], active: &[bool], order: &Order, budget: &Budget
 /// The normal form `r` of `f` with the factor `s` such that `s*f - r` lies
 /// in the ideal; `s` is a positive integer.
 fn reduce_scaled(
-    mut f: Poly,
+    f: Poly,
     all: &[Poly],
     active: &[bool],
     order: &Order,
     budget: &Budget,
 ) -> Option<(Poly, Int)> {
     let mut done: Vec<(Mono, Int)> = Vec::new();
+    // The largest coefficient size in `done`, kept up to date so that no
+    // step scans `done` without being charged for it.
+    let mut done_size = 0;
     let mut scale = Int::from_i64(1);
-    while let Some((m, c)) = f.terms.first().cloned() {
-        // The divisor search and the removal of the leading term.
-        budget.charge(1 + all.len() + f.terms.len())?;
+    // The terms still to reduce, largest last, so that taking the leading
+    // term costs nothing.
+    let mut rest: Vec<(Mono, Int)> = f.terms.into_iter().rev().collect();
+    while let Some((m, c)) = rest.last().cloned() {
+        budget.charge(1 + all.len())?;
         let divisor = (0..all.len()).find(|&k| active[k] && all[k].terms[0].0.divides(&m));
         let Some(k) = divisor else {
+            done_size = done_size.max(c.size());
             done.push((m, c));
-            f.terms.remove(0);
+            rest.pop();
             continue;
         };
         let (lg, cg) = &all[k].terms[0];
@@ -277,8 +283,12 @@ fn reduce_scaled(
         if a.is_negative() {
             return None;
         }
-        f = combine(
-            &f,
+        budget.charge(rest.len() * 2)?;
+        let current = Poly {
+            terms: rest.iter().rev().cloned().collect(),
+        };
+        let next = combine(
+            &current,
             &a,
             &Mono::ONE,
             &all[k],
@@ -287,35 +297,40 @@ fn reduce_scaled(
             order,
             budget,
         )?;
+        rest = next.terms.into_iter().rev().collect();
         if !a.is_unit() {
-            budget.charge((done.len() + 1) * (1 + a.size() + max_size_terms(&done)))?;
+            budget.charge((done.len() + 1) * (1 + a.size()) * (1 + done_size))?;
             for (_, dc) in &mut done {
                 *dc = dc.mul(&a);
             }
+            done_size += a.size();
             scale = scale.mul(&a);
         }
         // Keep the coefficients small: divide out the common content.
-        let big = f.terms.iter().chain(&done).any(|(_, c)| c.size() > 2);
-        if big {
-            let width = 1 + max_size(&f).max(max_size_terms(&done));
-            budget.charge((f.terms.len() + done.len() + 1) * width * width)?;
+        let rest_size = rest.iter().map(|(_, c)| c.size()).max().unwrap_or(0);
+        budget.charge(rest.len() + 1)?;
+        if rest_size.max(done_size) > 2 {
+            let width = 1 + rest_size.max(done_size);
+            budget.charge((rest.len() + done.len() + 1) * width * width)?;
             let mut g = scale.clone();
-            for (_, c) in f.terms.iter().chain(&done) {
+            for (_, c) in rest.iter().chain(&done) {
                 g = g.gcd(c);
                 if g.is_unit() {
                     break;
                 }
             }
             if !g.is_unit() && !g.is_zero() {
-                for (_, c) in f.terms.iter_mut().chain(done.iter_mut()) {
+                for (_, c) in rest.iter_mut().chain(done.iter_mut()) {
                     *c = c.div_exact(&g)?;
                 }
                 scale = scale.div_exact(&g)?;
+                done_size = max_size_terms(&done);
             }
         }
-        if done.len() + f.terms.len() > MAX_TERMS
+        if done.len() + rest.len() > MAX_TERMS
             || scale.size() > MAX_LIMBS
-            || done.iter().any(|(_, c)| c.size() > MAX_LIMBS)
+            || done_size > MAX_LIMBS
+            || rest_size > MAX_LIMBS
         {
             return None;
         }

@@ -182,13 +182,6 @@ impl System {
                 if !proper_circle(c, circle) {
                     return None;
                 }
-                // One output of `Intersect(line, circle, n)`. The unindexed
-                // command makes the same definition with labels `P_{1}`,
-                // `P_{2}`; its algorithm is in the construction list and does
-                // not exclude an existing intersection.
-                if c.label(id).contains("_{") {
-                    return None;
-                }
                 let g = self.line(line)?;
                 let k = self.circle(circle)?;
                 let x = self.new_var(false)?;
@@ -196,17 +189,14 @@ impl System {
                 self.add(collinear([g[0], g[1]], [g[2], g[3]], [x, y], budget)?);
                 self.add(equidistant([k[2], k[3]], [k[0], k[1]], [x, y], budget)?);
                 let existing = existing_point(c, line, circle)?;
-                let other = self.distinct_from_earlier(c, id, line, circle, [x, y], budget)?;
-                if let Some(e) = existing {
-                    // With both conditions the reference's adapter writes
-                    // the exclusion over the other one and fails on the
-                    // missing polynomial.
-                    if e >= id || other {
-                        return None;
-                    }
-                    let e = self.point(e)?;
-                    let t = self.new_var(false)?;
-                    self.add(distinct([x, y], e, t, budget)?);
+                self.distinct_from_earlier(c, id, line, circle, [x, y], budget)?;
+                if existing.is_some() {
+                    // The reference excludes an existing intersection only
+                    // for `Intersect(line, circle, n)`; the unindexed command
+                    // (also behind `{P, Q} = Intersect(...)` and saved files)
+                    // makes the same definition here, and its algorithm keeps
+                    // the point. Which one made this object is not recorded.
+                    return None;
                 }
                 self.point_vars.insert(id, [x, y]);
             }
@@ -241,14 +231,12 @@ impl System {
                 let y = self.new_var(false)?;
                 self.add(equidistant([a[2], a[3]], [a[0], a[1]], [x, y], budget)?);
                 self.add(equidistant([b[2], b[3]], [b[0], b[1]], [x, y], budget)?);
-                let other = self.distinct_from_earlier(c, id, c1, c2, [x, y], budget)?;
-                if let [e] = shared.as_slice() {
-                    if other {
-                        return None;
-                    }
-                    let e = self.point(*e)?;
-                    let t = self.new_var(false)?;
-                    self.add(distinct([x, y], e, t, budget)?);
+                self.distinct_from_earlier(c, id, c1, c2, [x, y], budget)?;
+                // A single shared point is excluded only by the indexed
+                // command, as for a line and a circle; which command made
+                // this object is not recorded.
+                if !shared.is_empty() {
+                    return None;
                 }
                 self.point_vars.insert(id, [x, y]);
             }

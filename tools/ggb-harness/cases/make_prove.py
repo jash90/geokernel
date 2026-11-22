@@ -237,5 +237,8 @@ proof("review", ["A = (0, 0)", "B = (0, 0)", "c = Circle(A, B)", "d = Circle(A, 
 proof("review", ["A = (0, 0)", "B = (2, 1)", "c = Circle(A, B)", "d = Circle(A, B)"],
       "AreEqual(c, d)", [mv("B", 0, 0)])
 cases.case("review", ["Prove = {2, 3}", "n = Prove(1)"], [])
+proof("review", ["O = (0, 0)", "A = (3, 1)", "B = (1, 4)", "c = Circle(O, A)",
+                 "g = Line(A, B)", "P = Intersect(g, c)", "M = Midpoint(P_{1}, P_{2})",
+                 "f = Line(O, M)"], "ArePerpendicular(f, g)")
 
 cases.write()
