@@ -1613,6 +1613,11 @@ impl Construction {
         if let Some(list) = def.list() {
             ids.extend_from_slice(self.list(list));
         }
+        if let Def::Optimize(d) = *def {
+            if let Some(watched) = d.watched {
+                ids.extend_from_slice(self.list(watched));
+            }
+        }
         ids
     }
 

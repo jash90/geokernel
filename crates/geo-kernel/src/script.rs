@@ -454,9 +454,7 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
                 .or_else(|_| analysis::argument(c, args[1], Kind::Point))
                 .or_else(|_| analysis::argument(c, args[1], Kind::Number))?;
             let def = OptimizeDef::new(c, dependent, independent, func == "Maximize");
-            c.add(name, Def::Optimize(def))
-                .map(Some)
-                .map_err(|e| e.to_string())
+            def.attach(c, name).map(Some).map_err(|e| e.to_string())
         })();
         if result.is_err() {
             c.discard_since(start);

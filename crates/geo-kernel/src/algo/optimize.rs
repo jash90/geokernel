@@ -14,11 +14,12 @@
 //!
 //! Without slider bounds the result is undefined (`OptimizerNumeric
 //! .hasBounds`); the search itself also fails, to an undefined result, when
-//! the sampled value is undefined at the start point or the iteration limit
+//! a trial value is undefined or the iteration limit
 //! runs out.
 
 use crate::algo::{Group, Parents, NUMBER};
-use crate::kernel::{Construction, Def, Error, Id, Kind, Value};
+use crate::kernel::{Construction, Def, Error, Id, IdList, Kind, Value};
+use std::collections::HashSet;
 
 use super::path::{self, PathDef};
 
@@ -30,6 +31,7 @@ pub struct OptimizeDef {
     pub independent: Id,
     pub maximize: bool,
     point: bool,
+    pub(crate) watched: Option<IdList>,
 }
 
 impl OptimizeDef {
@@ -39,7 +41,36 @@ impl OptimizeDef {
             independent,
             maximize,
             point: c.kind(independent) == Kind::Point,
+            watched: None,
         }
+    }
+
+    // An edit can change the objective at a trial point while leaving its
+    // value at the mover unchanged. Watch the objective's inputs directly.
+    pub(crate) fn attach(self, c: &mut Construction, label: &str) -> Result<Id, Error> {
+        const MAX_DEPENDENCY_EDGES: usize = 16_384;
+        let mut remaining = MAX_DEPENDENCY_EDGES;
+        let mut seen = HashSet::new();
+        let mut watched = Vec::new();
+        let mut pending = vec![self.dependent, self.independent];
+        while let Some(id) = pending.pop() {
+            if !seen.insert(id) {
+                continue;
+            }
+            let parents = c.reads(id);
+            let Some(left) = remaining.checked_sub(parents.len()) else {
+                return c.add(label, Def::Optimize(self));
+            };
+            remaining = left;
+            watched.push(id);
+            pending.extend(parents);
+        }
+        c.add_with_list(label, &watched, |list| {
+            Def::Optimize(Self {
+                watched: Some(list),
+                ..self
+            })
+        })
     }
 }
 
@@ -107,7 +138,11 @@ pub(crate) fn record(c: &mut Construction, d: OptimizeDef) -> Value {
         independent,
         maximize,
         point,
+        watched,
     } = d;
+    if watched.is_none() {
+        return Value::Undefined;
+    }
     let on_path = if point {
         let Def::Path(PathDef::On { path } | PathDef::OnParam { path, .. }) = c.def(independent)
         else {
@@ -138,15 +173,20 @@ pub(crate) fn record(c: &mut Construction, d: OptimizeDef) -> Value {
     // what one sample recomputes: everything between the number and the
     // dependent value (`updateCascade` from the number)
     let chain = crate::kernel::locus::chain(c, dependent, independent);
-    if point && chain.len() as u64 > crate::expr::MAX_EVALUATION_WORK / 106 {
+    if chain.len() as u64 > crate::expr::MAX_EVALUATION_WORK / 106 {
         return Value::Undefined;
     }
     let mut ids = chain.clone();
     ids.push(independent.0);
     let saved = crate::kernel::locus::Saved::of(c, &ids);
     let sign = if maximize { -1.0 } else { 1.0 };
-    let mut first = None;
+    let mut undefined_trial = None;
+    let start = crate::expr::work_done();
+    let mut exhausted = false;
     let optimum = crate::expr::fmin(min, max, |x| {
+        if exhausted {
+            return f64::NAN;
+        }
         // `Optimizer.value`: set the number, cascade its update, read the
         // dependent value
         if let Some((path, state)) = on_path {
@@ -156,26 +196,33 @@ pub(crate) fn record(c: &mut Construction, d: OptimizeDef) -> Value {
         }
         for &i in &chain {
             crate::kernel::locus::recompute(c, i);
+            crate::expr::charge(1);
+            if crate::expr::work_done() - start > crate::expr::MAX_EVALUATION_WORK {
+                exhausted = true;
+                return f64::NAN;
+            }
         }
         let objective = sign
             * match c.value(dependent) {
                 Value::Number(v) => v,
                 _ => f64::NAN,
             };
-        first.get_or_insert((x, objective));
+        if objective.is_nan() {
+            undefined_trial.get_or_insert(x);
+        }
         objective
     });
-    let result = match on_path {
-        Some((path, state)) => {
-            // An undefined initial objective leaves the first trial in
-            // place in the reference search.
-            let optimum = optimum
-                .or_else(|| first.and_then(|(x, objective)| objective.is_nan().then_some(x)));
+    let result = match (exhausted, on_path) {
+        (true, _) => Value::Undefined,
+        (false, Some((path, state))) => {
+            // An undefined search parameter leaves a path point at the
+            // trial that encountered the undefined objective.
+            let optimum = optimum.or(undefined_trial);
             optimum.map_or(Value::Undefined, |x| {
                 crate::kernel::locus::sample_path_point(c, independent, path, state, x)
             })
         }
-        None => optimum.map_or(Value::Undefined, Value::Number),
+        (false, None) => optimum.map_or(Value::Undefined, Value::Number),
     };
     // the number and the chain are restored with it, and the result keeps
     // the optimum alone (`result.set`, `setValue(old)`)
