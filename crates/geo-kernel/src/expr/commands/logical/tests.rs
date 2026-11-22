@@ -146,6 +146,7 @@ fn misplaced_booleans_are_errors() {
         "b = A < B",
         "b = A >= 1",
         "f(x) = x < A",
+        "f(x) = (x < 3) && a",
         "b = a = 3",
         "b = a < ",
         "b = == a",
@@ -157,6 +158,14 @@ fn misplaced_booleans_are_errors() {
     for label in ["true", "False"] {
         assert!(exec(&mut load(base).unwrap(), &format!("{label} = 1")).is_err());
     }
+}
+
+#[test]
+fn boolean_function_applications_can_be_used_as_conditions() {
+    let c = load("f(x) = x < 3\nb = f(2)\nc = f(4)\nd = If(f(2), 1, 2)").unwrap();
+    assert!(truth(&c, "b"));
+    assert!(!truth(&c, "c"));
+    assert_eq!(num(&c, "d"), 1.0);
 }
 
 #[test]

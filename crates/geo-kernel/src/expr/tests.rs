@@ -187,6 +187,51 @@ pub(super) fn sample(c: &Construction, label: &str, x: f64) -> Option<f64> {
 }
 
 #[test]
+fn inverse_chains_are_bounded_at_creation_update_and_sampling() {
+    let mut c = load("n = 2\ng0(x) = x + n\ng1 = Invert(g0)\ng2 = Invert(g1)").unwrap();
+    let before = super::work_done();
+    exec(&mut c, "g3 = Invert(g2)").unwrap();
+    assert!(super::work_done() > before, "inversion was not metered");
+
+    let mut last = 3;
+    for index in 4..=50 {
+        let before = super::work_done();
+        let len = c.len();
+        match exec(&mut c, &format!("g{index} = Invert(g{last})")) {
+            Ok(_) => last = index,
+            Err(error) => {
+                assert!(error.contains("the expression is too large to evaluate"));
+                assert_eq!(c.len(), len);
+            }
+        }
+        assert!(super::work_done() - before <= super::MAX_EVALUATION_WORK + super::MAX_OVERRUN);
+    }
+    assert!(last < 50, "the static cost did not stop the chain");
+    let inline = format!("g = {}x{}", "Invert(".repeat(50), ")".repeat(50));
+    assert!(exec(&mut c, &inline)
+        .unwrap_err()
+        .contains("the expression is too large to evaluate"));
+
+    let last_label = format!("g{last}");
+    let n = c.id("n").unwrap();
+    let before = super::work_done();
+    super::eval::with_work_limit(10, || c.set_number(n, 4.0)).unwrap();
+    assert!(!c.value(c.id(&last_label).unwrap()).is_defined());
+    assert!(super::work_done() > before);
+
+    c.set_number(n, 5.0).unwrap();
+    assert_eq!(sample(&c, "g2", 7.0), Some(12.0));
+    assert_eq!(sample(&c, "g3", 7.0), Some(2.0));
+    let before = super::work_done();
+    assert!(sample(&c, &last_label, 7.0).is_some_and(f64::is_finite));
+    assert!((1..=super::MAX_EVALUATION_WORK + super::MAX_OVERRUN)
+        .contains(&(super::work_done() - before)));
+    assert!(
+        super::eval::with_work_limit(10, || sample(&c, &last_label, 7.0)).is_some_and(f64::is_nan)
+    );
+}
+
+#[test]
 fn functions_are_sampled_expanded_and_applied() {
     let mut c = load(
         "a = 2\n\

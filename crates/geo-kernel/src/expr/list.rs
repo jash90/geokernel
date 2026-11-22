@@ -40,7 +40,19 @@ impl Slot {
                 object: None,
             }
         } else {
-            Slot::undefined(Kind::Number)
+            // Non-list slots can keep the sign of infinity in the run
+            // offset. Ordinary list readers still see an undefined number.
+            let start = if v == f64::INFINITY {
+                1
+            } else if v == f64::NEG_INFINITY {
+                2
+            } else {
+                0
+            };
+            Slot {
+                start,
+                ..Slot::undefined(Kind::Number)
+            }
         }
     }
 
@@ -60,6 +72,23 @@ impl Slot {
             start: 0,
             object: None,
         }
+    }
+
+    pub(crate) fn point(value: Value) -> Slot {
+        debug_assert!(matches!(
+            value,
+            Value::Point { .. } | Value::HomogeneousPoint { .. } | Value::Undefined
+        ));
+        Slot {
+            kind: Kind::Point,
+            value,
+            start: 0,
+            object: None,
+        }
+    }
+
+    pub(crate) fn shown(self) -> Value {
+        self.value.cartesian()
     }
 
     pub(crate) fn boolean(b: bool) -> Slot {
@@ -106,13 +135,14 @@ impl Slot {
                 && self.value == other.value
                 && (self.kind != Kind::Line || self.value.is_defined());
         }
-        let bits = |v: &Value| -> [u64; 2] {
+        let bits = |v: &Value| -> [u64; 3] {
             match *v {
-                Value::Number(x) => [x.to_bits(), 0],
-                Value::Point { x, y } | Value::Vector { x, y } => [x.to_bits(), y.to_bits()],
-                Value::Bool(b) => [u64::from(b), 0],
-                Value::List { len } => [u64::from(len), 0],
-                _ => [u64::MAX, u64::MAX],
+                Value::Number(x) => [x.to_bits(), 0, 0],
+                Value::Point { x, y } | Value::Vector { x, y } => [x.to_bits(), y.to_bits(), 0],
+                Value::HomogeneousPoint { x, y, z } => [x.to_bits(), y.to_bits(), z.to_bits()],
+                Value::Bool(b) => [u64::from(b), 0, 0],
+                Value::List { len } => [u64::from(len), 0, 0],
+                _ => [u64::MAX; 3],
             }
         };
         self.kind == other.kind
@@ -263,7 +293,7 @@ impl<'a> List<'a> {
                 start,
                 len,
             }),
-            None => Element::Value(slot.kind, slot.value),
+            None => Element::Value(slot.kind, slot.shown()),
         })
     }
 
@@ -272,6 +302,30 @@ impl<'a> List<'a> {
         (k < self.len())
             .then(|| self.slots[self.start as usize + k].object)
             .flatten()
+    }
+
+    /// The stored point value, including homogeneous coordinates.
+    pub(crate) fn raw_point(&self, k: usize) -> Option<Value> {
+        if k >= self.len() {
+            return None;
+        }
+        let slot = self.slots[self.start as usize + k];
+        (slot.kind == Kind::Point).then_some(slot.value)
+    }
+
+    /// The raw numeric field read by GgbMat, including NaN and infinity.
+    pub(crate) fn numeric_cell(&self, k: usize) -> Option<f64> {
+        if k >= self.len() {
+            return None;
+        }
+        let slot = self.slots[self.start as usize + k];
+        match (slot.kind, slot.value, slot.start) {
+            (_, Value::Number(v), _) => Some(v),
+            (Kind::Number, Value::Undefined, 1) => Some(f64::INFINITY),
+            (Kind::Number, Value::Undefined, 2) => Some(f64::NEG_INFINITY),
+            (Kind::Number | Kind::Angle, Value::Undefined, _) => Some(f64::NAN),
+            _ => None,
+        }
     }
 
     /// The elements in order.

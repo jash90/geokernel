@@ -1088,13 +1088,16 @@ fn transformed_arg(line: &str) -> Option<&str> {
     let (_, rhs) = line.split('#').next()?.split_once('=')?;
     let rhs = rhs.trim();
     let (func, rest) = rhs.split_once('(')?;
+    let inner = rest.strip_suffix(')')?;
+    if func == "ApplyMatrix" {
+        return inner.rsplit(',').next().map(str::trim);
+    }
     if !matches!(
         func,
         "Mirror" | "Reflect" | "Rotate" | "Dilate" | "Shear" | "Stretch" | "Translate"
     ) {
         return None;
     }
-    let inner = rest.strip_suffix(')')?;
     inner.split(',').map(str::trim).next()
 }
 

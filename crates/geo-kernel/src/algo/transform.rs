@@ -12,6 +12,7 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoShearOrStretch.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/Transform.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoPoint.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoFunction.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoLine.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoConic.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoSegment.java
@@ -204,6 +205,36 @@ fn mirror_origin(a: f64, b: f64, c: f64) -> (f64, f64) {
 fn mirror_xy(x: f64, y: f64, phi: f64) -> (f64, f64) {
     let (sin, cos) = phi.sin_cos();
     (x * cos + y * sin, x * sin - y * cos)
+}
+
+/// GeoFunction.dilate does not define a function at a zero factor.
+pub(crate) fn zero_dilation(factor: f64) -> bool {
+    factor.abs() < STANDARD_PRECISION
+}
+
+/// `GeoFunction.dilate` substitutes this argument into the function.
+pub(crate) fn dilation_preimage(x: f64, r: f64, sx: f64) -> f64 {
+    (1.0 / r) * (x + (sx * r - sx))
+}
+
+/// Apply dilation to a list element or a point with raw coordinates.
+pub(crate) fn dilate_element(src: Value, r: f64, sx: f64, sy: f64) -> Option<Value> {
+    if let Some((x, y, z)) = src.point_coords() {
+        let offset = 1.0 - r;
+        return Some(Value::homogeneous_point(
+            r * x + offset * sx * z,
+            r * y + offset * sy * z,
+            z,
+        ));
+    }
+    let map = Map::Dilate { r, sx, sy };
+    match src {
+        Value::Vector { x, y } => {
+            let (x, y) = map.vector(x, y);
+            Some(Value::Vector { x, y })
+        }
+        _ => map.value(src),
+    }
 }
 
 impl Map {
@@ -746,13 +777,7 @@ impl Group for TransformDef {
         }
         let map = self.map(c);
         if let (Kind::Point, Some(Map::Dilate { r, sx, sy })) = (self.kind(), map) {
-            let (x, y, z) = c.stored_value(source_of(self)).point_coords()?;
-            let offset = 1.0 - r;
-            return Some(Value::homogeneous_point(
-                r * x + offset * sx * z,
-                r * y + offset * sy * z,
-                z,
-            ));
+            return dilate_element(c.stored_value(source_of(self)), r, sx, sy);
         }
         match self.kind() {
             Kind::Ray => ray_image(c, self, &map?),

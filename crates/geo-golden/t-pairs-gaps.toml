@@ -1876,8 +1876,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1431"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `y=-3x-6`; the method's step `commands/CommandsTest.java:1429` fails earlier here, so the object is missing only in its wake"
+category = "incomplete-context"
+reason = "the kernel refuses the input: unexpected `=`"
 mismatches = ["step"]
 
 [[gap]]
@@ -3069,58 +3069,52 @@ reason = "the kernel refuses the input: unknown command `InverseZipf`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:2391"
-category = "incomplete-context"
-reason = "the kernel refuses the input: unknown command `Invert`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:2392"
 category = "incomplete-context"
-reason = "the kernel refuses the input: unknown command `Invert`"
-mismatches = ["step"]
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `asin(x)`"
+mismatches = ["f"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2393"
 category = "incomplete-context"
-reason = "the kernel refuses the input: unknown command `Invert`"
-mismatches = ["step"]
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `If[cbrt(x - 1) > 1, cbrt(x - 1)]`"
+mismatches = ["g"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2394"
 category = "incomplete-context"
-reason = "the kernel refuses the input: unknown command `Invert`"
-mismatches = ["step"]
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `If[x - 1 > 2, x - 1]`"
+mismatches = ["h"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2395"
 category = "incomplete-context"
-reason = "the kernel refuses the input: unknown command `Invert`"
-mismatches = ["step"]
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `?`"
+mismatches = ["p"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2396"
 category = "incomplete-context"
-reason = "the kernel refuses the input: unknown command `Invert`"
-mismatches = ["step"]
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `?`"
+mismatches = ["q"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2397"
 category = "incomplete-context"
-reason = "the kernel refuses the input: unknown command `Invert`"
-mismatches = ["step"]
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `?`"
+mismatches = ["r"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2398"
 category = "incomplete-context"
-reason = "the kernel refuses the input: unknown command `Invert`"
-mismatches = ["step"]
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `2 / (x - 3)`"
+mismatches = ["s"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2401"
 category = "incomplete-context"
-reason = "the kernel refuses the input: unknown command `Invert`"
-mismatches = ["step"]
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `asin(x)`"
+mismatches = ["t"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2408"
@@ -5625,12 +5619,6 @@ reason = "the kernel refuses the input: unknown command `IsDefined`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:3597"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `ReducedRowEchelonForm`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:3607"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `RemoveUndefined`"
@@ -7521,12 +7509,6 @@ reason = "the kernel refuses the input: `Translate` does not take 4 argument(s)"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:4606"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Transpose`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:4611"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `TrapezoidalSum`"
@@ -8344,14 +8326,14 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:680"
-category = "unsupported-command"
-reason = "the kernel refuses the input: `ApplyMatrix` does not take 9 argument(s)"
+category = "unsupported-form"
+reason = "the kernel refuses the input: `ApplyMatrix( {{1,2},{3,4}},Polygon((1,1),(2,1/2),4) )`: a command inside a command is not supported"
 mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:681"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `ApplyMatrix`"
+category = "unsupported-form"
+reason = "the kernel refuses the input: `ApplyMatrix( {{2,0,0},{0,3,0},{0,0,4}},Sphere((0,0,1),1) )`: a command inside a command is not supported"
 mismatches = ["step"]
 
 [[gap]]

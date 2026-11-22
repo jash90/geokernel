@@ -201,6 +201,9 @@ fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option
     if let Some(result) = exec_polyline_flag(c, name, rhs) {
         return result;
     }
+    if let Some(result) = crate::algo::vector::matrix::exec(c, name, rhs) {
+        return result;
+    }
     if let Some(result) = crate::algo::polygon::exec(c, name, rhs) {
         return result;
     }

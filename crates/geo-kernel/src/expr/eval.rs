@@ -309,7 +309,7 @@ impl Lists {
     /// value and points by `x`, then `y`; undefined ones go last.
     pub(super) fn sort(&self, start: u32, len: u32) {
         // `+ 0.0` makes -0 equal to 0
-        let key = |s: &Slot| match s.value {
+        let key = |s: &Slot| match s.shown() {
             Value::Number(v) => (v + 0.0, 0.0),
             Value::Bool(b) => (bool_number(b), 0.0),
             Value::Point { x, y } | Value::Vector { x, y } => (x + 0.0, y + 0.0),
@@ -545,9 +545,8 @@ pub(super) enum Env<'a, const M: bool> {
     Arg(&'a Ctx<'a, M>, u32),
 }
 
-/// An evaluation; `M` when it is part of an evaluation with lists, which
-/// charges every node visited: an evaluation without lists is compiled
-/// without the charges and checks.
+/// An evaluation. `M` enables the work meter for lists, derivatives, and
+/// function inverses.
 #[derive(Clone, Copy)]
 pub(super) struct Ctx<'a, const M: bool> {
     pub(super) c: &'a Construction,
@@ -555,9 +554,8 @@ pub(super) struct Ctx<'a, const M: bool> {
     pub(super) env: &'a Env<'a, M>,
     /// The scratch of a tree with lists; `None` for a tree without.
     pub(super) lists: Option<&'a Lists>,
-    /// The evaluation with lists this one is part of when `M`, which is
-    /// charged for every node visited (see [`Lists::step`]); functions it
-    /// samples or expands are charged too, but read no lists.
+    /// The budget when `M`, charged for every node visited (see [`Lists::step`]),
+    /// including the functions sampled or expanded.
     pub(super) meter: Option<&'a Lists>,
     /// The variables of the `Sequence`s around the node being evaluated.
     pub(super) locals: Option<&'a Local<'a>>,
@@ -580,16 +578,17 @@ impl<'a, const M: bool> Ctx<'a, M> {
 /// a number result (`toDecimal`).
 #[inline]
 pub(super) fn root(c: &Construction, e: &Entry, lists: Option<&Lists>) -> (Raw, Option<Exact>) {
-    let x = match lists {
+    let inverse_meter = (lists.is_none() && e.inverts).then(|| Lists::new(Vec::new()));
+    let x = match lists.or(inverse_meter.as_ref()) {
         None => Ctx::<false>::new(c, e, &Env::None).full(e.root),
-        Some(lists) => {
+        Some(meter) => {
             let x = Ctx::<true> {
-                lists: Some(lists),
-                meter: Some(lists),
+                lists,
+                meter: Some(meter),
                 ..Ctx::new(c, e, &Env::None)
             }
             .full(e.root);
-            if lists.over() {
+            if meter.over() {
                 return (Raw::Num(f64::NAN), None);
             }
             x
@@ -626,20 +625,24 @@ pub(super) fn root_list(
 /// `Function.value`: a function entry at `x`, using the `y = 0` slice
 /// for a two-variable slope.
 pub(super) fn sample(c: &Construction, e: &Entry, x: f64) -> f64 {
-    Ctx::<false>::new(c, e, &Env::Pair(x, 0.0)).fast(e.root)
-}
-
-/// The value of the condition at `i` of an entry's `AlgoIf`, which reads
-/// no `x`.
-pub(super) fn condition(c: &Construction, e: &Entry, i: u32) -> bool {
-    matches!(
-        Ctx::<false>::new(c, e, &Env::None).full(i).val,
-        Val::B(true, _)
-    )
+    if !e.inverts {
+        return Ctx::<false>::new(c, e, &Env::Pair(x, 0.0)).fast(e.root);
+    }
+    let meter = Lists::new(Vec::new());
+    let y = Ctx::<true> {
+        meter: Some(&meter),
+        ..Ctx::new(c, e, &Env::Pair(x, 0.0))
+    }
+    .fast(e.root);
+    if meter.over() {
+        f64::NAN
+    } else {
+        y
+    }
 }
 
 /// The tree of the function object `f`, when it is defined.
-fn function_entry(c: &Construction, f: Id) -> Option<&Entry> {
+pub(super) fn function_entry(c: &Construction, f: Id) -> Option<&Entry> {
     match (c.def(f), c.value(f)) {
         (Def::Expr(d), Value::Function) => Some(super::entry(c, d)),
         _ => None,
@@ -654,7 +657,7 @@ impl<const M: bool> Ctx<'_, M> {
     /// Charges the visit of a node to the evaluation with lists this one is
     /// part of (see [`Lists::step`]); true past its bound.
     #[inline]
-    fn stop(&self, n: u64) -> bool {
+    pub(super) fn stop(&self, n: u64) -> bool {
         self.meter.is_some_and(|m| m.step(n))
     }
 
@@ -750,8 +753,27 @@ impl<const M: bool> Ctx<'_, M> {
                 }
             }
             Node::Apply(f, a) => self.apply_full(f, a),
+            Node::Inverse(a) => Ex::plain(N(
+                super::inverse::sample(self, a, self.variable()).unwrap_or(f64::NAN)
+            )),
+            Node::Dilate(src, factor, center) => {
+                let (r, sx, sy) = self.dilation(factor, center);
+                let f = Ctx {
+                    env: &Env::Value(crate::algo::transform::dilation_preimage(
+                        self.variable(),
+                        r,
+                        sx,
+                    )),
+                    ..*self
+                };
+                if self.e.tys[src as usize] == Ty::Bool {
+                    f.full(src)
+                } else {
+                    Ex::plain(N(f.fast(src) * r + (-sy * r + sy)))
+                }
+            }
             Node::If(mode, cond, then, rest) => self.conditional(i, mode, cond, then, rest),
-            Node::Item(a) => self.full(a),
+            Node::Item(a) | Node::Vector(a) => self.full(a),
             // the variable of a `Sequence` is a `GeoNumeric`
             Node::Local(depth) => Ex {
                 obj: true,
@@ -847,6 +869,26 @@ impl<const M: bool> Ctx<'_, M> {
 
     pub(super) fn full_number(&self, i: u32) -> f64 {
         self.full(i).num()
+    }
+
+    fn variable(&self) -> f64 {
+        match *self.env {
+            Env::None => f64::NAN,
+            Env::Value(x) | Env::Pair(x, _) => x,
+            Env::Arg(ctx, a) => ctx.fast(a),
+        }
+    }
+
+    pub(super) fn dilation(&self, factor: u32, center: u32) -> (f64, f64, f64) {
+        let r = self.full_number(factor);
+        let (sx, sy) = if center == super::NONE {
+            (0.0, 0.0)
+        } else if let Val::V(x, y) = self.full(center).val {
+            (x, y)
+        } else {
+            (f64::NAN, f64::NAN)
+        };
+        (r, sx, sy)
     }
 
     /// The full evaluation of an operand of a numeric operation (see
@@ -1087,6 +1129,13 @@ impl<const M: bool> Ctx<'_, M> {
             // list it belongs to
             Node::ListOp(op, l, n) => self.pick(op, l, n)?.run(),
             Node::If(_, cond, then, rest) => self.list_if(cond, then, rest),
+            Node::Dilate(src, factor, center) => {
+                let (r, sx, sy) = self.dilation(factor, center);
+                let source = self.list(src)?;
+                commands::map_list(self, source, |value| {
+                    crate::algo::transform::dilate_element(value, r, sx, sy)
+                })
+            }
             _ => None,
         }
     }
@@ -1106,6 +1155,11 @@ impl<const M: bool> Ctx<'_, M> {
                 None => Slot::undefined(Kind::List),
             };
         }
+        if let Node::Obj(id) = self.node(i) {
+            if self.c.kind(id) == Kind::Point {
+                return Slot::point(self.c.stored_value(id));
+            }
+        }
         let mark = self.lists.map(Lists::len);
         let x = self.full(i).val;
         if let (Some(lists), Some(mark)) = (self.lists, mark) {
@@ -1113,35 +1167,12 @@ impl<const M: bool> Ctx<'_, M> {
         }
         match x {
             Val::N(v) => Slot::number(v),
-            Val::V(x, y) => Slot::coords(self.vec_kind(i), x, y),
+            Val::V(x, y) => Slot::coords(
+                super::types::vec_kind(self.c, &self.e.nodes, &self.e.tys, i),
+                x,
+                y,
+            ),
             Val::B(b, _) => Slot::boolean(b),
-        }
-    }
-
-    /// Whether a point or vector element is a point or a vector: an object
-    /// or a command keeps its kind, coordinates are a point, and an
-    /// operation is a point when a point takes part.
-    fn vec_kind(&self, i: u32) -> Kind {
-        let kind = |k: Kind| {
-            if k == Kind::Vector {
-                Kind::Vector
-            } else {
-                Kind::Point
-            }
-        };
-        match self.node(i) {
-            Node::Obj(id) => kind(self.c.kind(id)),
-            Node::Cmd(def, _) => kind(def.kind()),
-            Node::Item(a) | Node::Un(_, a) | Node::If(_, _, a, _) => self.vec_kind(a),
-            Node::Bin(_, a, b) => {
-                let kinds = [a, b].map(|j| self.is_vec(j).then(|| self.vec_kind(j)));
-                if kinds.contains(&Some(Kind::Point)) || !kinds.contains(&Some(Kind::Vector)) {
-                    Kind::Point
-                } else {
-                    Kind::Vector
-                }
-            }
-            _ => Kind::Point,
         }
     }
 
@@ -1346,7 +1377,7 @@ pub(super) fn count(lists: &Lists, values: impl Fn(&mut dyn FnMut(f64) -> bool))
 
 /// An element as an operand.
 pub(super) fn slot_val(s: Slot) -> Val {
-    match (s.kind, s.value) {
+    match (s.kind, s.shown()) {
         (_, Value::Number(v)) => Val::N(v),
         (_, Value::Point { x, y } | Value::Vector { x, y }) => Val::V(x, y),
         (_, Value::Bool(b)) => Val::B(b, true),
