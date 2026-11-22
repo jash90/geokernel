@@ -91,5 +91,6 @@ def alias_cases(topic, command):
 
 
 alias_cases("region", "IntersectRegion")
+alias_cases("paths", "IntersectionPaths")
 
 cases.write()
