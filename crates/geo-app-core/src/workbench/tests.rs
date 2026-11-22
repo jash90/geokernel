@@ -855,3 +855,117 @@ fn automatic_intersection_follows_its_root_through_journal_replay() {
     assert!(problems.is_empty(), "{problems:?}");
     check(&reloaded, 4.0);
 }
+
+#[test]
+fn base_and_relation_text_rows_update_and_survive_undo() {
+    let mut w = Workbench::default();
+    for input in [
+        "a = 15",
+        "b = 15",
+        "s = ToBase(a, 16)",
+        "r = Relation(a, b)",
+    ] {
+        w.run_line(input).unwrap();
+    }
+    let text = |w: &mut Workbench, name: &str| {
+        w.rows()
+            .iter()
+            .find(|row| row.label == name)
+            .unwrap()
+            .value
+            .clone()
+            .unwrap()
+    };
+    assert_eq!(text(&mut w, "s"), "F");
+    let equal = text(&mut w, "r");
+    assert!(equal.contains("equal"));
+    let id = w.construction().id("a").unwrap();
+    assert!(w.set_number(id, 16.0));
+    assert_eq!(text(&mut w, "s"), "10");
+    assert_ne!(text(&mut w, "r"), equal);
+    assert!(w.undo());
+    assert_eq!(text(&mut w, "s"), "F");
+    assert_eq!(text(&mut w, "r"), equal);
+}
+
+#[test]
+fn a_literal_circle_radius_uses_no_object_id() {
+    let mut w = Workbench::from_script("A = (1, 2)\n").unwrap();
+    w.run_line("Circle(A, 2)").unwrap();
+    w.run_line("P = Center(c)").unwrap();
+    w.run_line("n = Radius(c)").unwrap();
+
+    let check = |w: &mut Workbench, cx, cy| {
+        let c = w.construction();
+        assert_eq!(c.len(), 4);
+        for (index, label) in ["A", "c", "P", "n"].into_iter().enumerate() {
+            assert_eq!(c.id(label).unwrap().index(), index);
+        }
+        assert_eq!(
+            c.value(c.id("c").unwrap()),
+            Value::Circle { cx, cy, r: 2.0 }
+        );
+        let rows: Vec<_> = w.rows().iter().map(|r| r.label.as_str()).collect();
+        assert_eq!(rows, ["A", "c", "P", "n"]);
+    };
+    check(&mut w, 1.0, 2.0);
+    assert!(w.move_point(w.construction().id("A").unwrap(), -3.0, 4.0));
+    check(&mut w, -3.0, 4.0);
+    assert!(w.undo());
+    check(&mut w, 1.0, 2.0);
+    assert!(w.redo());
+    check(&mut w, -3.0, 4.0);
+
+    let mut loaded = Workbench::default();
+    let issues = loaded.restore_text(&w.snapshot_text()).unwrap();
+    assert!(issues.is_empty(), "{issues:?}");
+    check(&mut loaded, -3.0, 4.0);
+}
+
+#[test]
+fn a_hash_inside_text_survives_a_script_and_saved_snapshot() {
+    let mut w = Workbench::default();
+    w.run_line(r#"n = Length("a# labels: b") # trailing comment"#)
+        .unwrap();
+    let mut loaded = Workbench::default();
+    let issues = loaded.restore_text(&w.snapshot_text()).unwrap();
+    assert!(issues.is_empty(), "{issues:?}");
+    let c = loaded.construction();
+    assert_eq!(c.value(c.id("n").unwrap()), Value::Number(12.0));
+}
+
+#[test]
+fn equation_sides_keep_their_inputs_through_rebuild_and_undo() {
+    let mut w = Workbench::from_script(
+        "unused(x) = x+1\n\
+         a = 2\n\
+         j: a*x+y = a*x+5*x+1\n\
+         f = LeftSide(j)\n\
+         g = RightSide(j)\n\
+         n = f(3,4)\n\
+         m = g(3,4)\n",
+    )
+    .unwrap();
+    let check = |w: &Workbench, left, right| {
+        let c = w.construction();
+        for (side, number, expected) in [("f", "n", left), ("g", "m", right)] {
+            assert_eq!(
+                c.function_value_xy(c.id(side).unwrap(), 3.0, 4.0),
+                Some(expected)
+            );
+            assert_eq!(c.value(c.id(number).unwrap()), Value::Number(expected));
+        }
+    };
+    check(&w, 10.0, 22.0);
+    // Both sides depend on a, although it cancels in the line's coefficients.
+    assert!(w.set_number(w.construction().id("a").unwrap(), -1.0));
+    check(&w, 1.0, 13.0);
+    assert!(w.undo());
+    check(&w, 10.0, 22.0);
+    assert!(w.redo());
+    check(&w, 1.0, 13.0);
+    assert!(w.delete(w.construction().id("unused").unwrap()));
+    check(&w, 1.0, 13.0);
+    assert!(w.undo());
+    check(&w, 1.0, 13.0);
+}

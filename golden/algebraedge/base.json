@@ -1,0 +1,24 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "algebraedge-base-001",
+      "group": "algebraedge",
+      "script": [
+        "s = ToBase(10.01,16)",
+        "t = ToBase(10.3,2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "s": { "type": "text", "defined": true, "text": "A.03" },
+          "t": { "type": "text", "defined": true, "text": "1010.01" }
+        }
+      ]
+    }
+  ]
+}

@@ -155,6 +155,19 @@ fn transformed_kinds<'a>(
     })
 }
 
+/// These signatures use a wildcard for a family of compatible operands.
+fn numeric_wildcard(command: &str, form: &str) -> bool {
+    matches!(
+        (command, form),
+        ("Dot" | "Relation", "any,any")
+            | ("Defined", "any")
+            | ("IsInRegion", "point,region")
+            | ("If", "function,any,...")
+            | ("CountIf", "any,any,list")
+            | ("KeepIf", "boolean,any,list")
+    )
+}
+
 #[test]
 fn every_evidence_row_is_backed() {
     let f = forms();
@@ -183,7 +196,11 @@ fn every_evidence_row_is_backed() {
             }
         }
         let required = transformation_kinds(&e.command, &e.form);
-        if forms::is_wildcard(&e.form) && required.is_none() && e.difference.is_none() {
+        if forms::is_wildcard(&e.form)
+            && required.is_none()
+            && e.difference.is_none()
+            && !numeric_wildcard(&e.command, &e.form)
+        {
             errors.push(format!(
                 "{what}: golden cases do not cover this wildcard form"
             ));

@@ -96,6 +96,8 @@ fn of_kind(kind: Kind) -> &'static [Kind] {
         Kind::Ray => &[Kind::Ray],
         Kind::Boolean => &[Kind::Boolean],
         Kind::Function => &[Kind::Function],
+        Kind::Text => &[Kind::Text],
+        Kind::FunctionNVar => &[Kind::FunctionNVar],
         Kind::Polygon => &[Kind::Polygon],
         Kind::PolyLine => &[Kind::PolyLine],
         Kind::List => &[Kind::List],
@@ -354,6 +356,8 @@ impl Map {
             | Value::Ray { .. }
             | Value::Bool(_)
             | Value::Function
+            | Value::Text
+            | Value::FunctionNVar
             | Value::Polygon { .. }
             | Value::PolyLine { .. }
             | Value::List { .. }

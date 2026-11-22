@@ -188,7 +188,7 @@ impl Parser<'_> {
         };
         self.expect(&Tok::LParen, "(")?;
         let depth = self.locals.len() as u32;
-        self.locals.push(variable);
+        self.locals.push((variable, Elem::Num));
         let expression = self.expression();
         self.locals.pop();
         let expression = expression?;
@@ -210,21 +210,7 @@ impl Parser<'_> {
     /// The variable of a `Sequence` with four or five arguments, found
     /// before its expression is parsed; `None` with fewer arguments.
     fn sequence_variable(&self) -> Result<Option<String>, String> {
-        let mut depth = 0usize;
-        let mut commas = Vec::new();
-        for (j, t) in self.toks.iter().enumerate().skip(self.pos) {
-            match t.tok {
-                Tok::LParen | Tok::LBrace => depth += 1,
-                Tok::RParen | Tok::RBrace => {
-                    depth = depth.saturating_sub(1);
-                    if depth == 0 {
-                        break;
-                    }
-                }
-                Tok::Comma if depth == 1 => commas.push(j),
-                _ => {}
-            }
-        }
+        let commas = self.argument_commas();
         if commas.len() < 3 {
             return Ok(None);
         }
@@ -373,7 +359,8 @@ impl<const M: bool> Ctx<'_, M> {
             }
             let local = Local {
                 depth,
-                value: v,
+                value: Val::N(v),
+                run: None,
                 up: self.locals,
             };
             let slot = Ctx {

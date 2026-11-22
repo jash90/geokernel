@@ -18,10 +18,26 @@ impl ConicDef {
         rhs: &str,
     ) -> Option<Result<Option<Id>, String>> {
         let (command, arg) = rhs.split_once('(')?;
-        if !matches!(command.trim(), "Center" | "Midpoint") {
+        if !matches!(command.trim(), "Center" | "Midpoint" | "Min" | "Max") {
             return None;
         }
-        let mut parsed = parse::parse(c, arg.strip_suffix(')')?).ok()?;
+        let arg = arg.strip_suffix(')')?.trim();
+        // A labelled interval stores the same expression tree as an inline one.
+        let mut parsed = if let Some(id) = c
+            .id(arg)
+            .filter(|_| matches!(command.trim(), "Min" | "Max"))
+        {
+            let crate::kernel::Def::Expr(def) = c.def(id) else {
+                return None;
+            };
+            if c.kind(id) != Kind::Function {
+                return None;
+            }
+            let entry = expr::entry(c, def);
+            expr::reparse(c, Kind::Function, &entry.nodes, &entry.lits, entry.root)?
+        } else {
+            parse::parse(c, arg).ok()?
+        };
         if !parsed.uses_var || parsed.tys[parsed.root as usize] != Ty::Bool {
             return None;
         }
@@ -34,7 +50,11 @@ impl ConicDef {
             }
         }
         let root = match bounds {
-            Some(bounds) => bounds.midpoint(&mut parsed),
+            Some(bounds) => match command.trim() {
+                "Min" => bounds.endpoint(&mut parsed, true),
+                "Max" => bounds.endpoint(&mut parsed, false),
+                _ => bounds.midpoint(&mut parsed),
+            },
             None => push(&mut parsed, Node::Num(f64::NAN)),
         };
         let result = expr::reparse(c, Kind::Number, &parsed.nodes, &parsed.lits, root)
@@ -80,6 +100,19 @@ impl Bounds {
             }
         }
         Some(bounds)
+    }
+
+    fn endpoint(self, parsed: &mut parse::Parsed, minimum: bool) -> u32 {
+        let low = combine(parsed, self.lower, Bin::Max, f64::NEG_INFINITY);
+        let high = combine(parsed, self.upper, Bin::Min, f64::INFINITY);
+        let width = push(parsed, Node::Bin(Bin::Sub, high, low));
+        let root = push(parsed, Node::Un(Un::Sqrt, width));
+        let zero = push(parsed, Node::Num(0.0));
+        let valid = push(parsed, Node::Bin(Bin::GreaterEqual, root, zero));
+        push(
+            parsed,
+            Node::If(IfMode::Algo, valid, if minimum { low } else { high }, NONE),
+        )
     }
 
     fn midpoint(self, parsed: &mut parse::Parsed) -> u32 {

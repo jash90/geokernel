@@ -1,0 +1,164 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "relationreview-conics-001",
+      "group": "relationreview",
+      "script": [
+        "O = (0,0)",
+        "A = (4,0)",
+        "r = 2",
+        "c = Circle(O,r)",
+        "d = Circle(A,r)",
+        "m = Relation(c,d)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": 5.0, "y": 0.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 0.0 },
+        { "action": "move", "label": "A", "x": 0.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "d": { "type": "circle", "defined": true, "cx": 4.0, "cy": 0.0, "r": 2.0 },
+          "m": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "null=true/intersect"
+            ]
+          }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "d": { "type": "circle", "defined": true, "cx": 5.0, "cy": 0.0, "r": 2.0 },
+          "m": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "null=true/disjoint"
+            ]
+          }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "d": { "type": "circle", "defined": true, "cx": 3.0, "cy": 0.0, "r": 2.0 },
+          "m": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "null=true/intersect"
+            ]
+          }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "d": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "m": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "null=true"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "relationreview-conics-002",
+      "group": "relationreview",
+      "script": [
+        "O = (0,0)",
+        "A = (2,0)",
+        "r = 2",
+        "s = 0",
+        "c = Circle(O,r)",
+        "d = Circle(A,s)",
+        "m = Relation(c,d)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": 3.0, "y": 0.0 },
+        { "action": "move", "label": "A", "x": 2.0, "y": 0.0 },
+        { "action": "set_number", "label": "s", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "d": { "type": "circle", "defined": true, "cx": 2.0, "cy": 0.0, "r": 0.0 },
+          "m": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "null=true/intersect"
+            ]
+          }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "d": { "type": "circle", "defined": true, "cx": 3.0, "cy": 0.0, "r": 0.0 },
+          "m": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "null=true/disjoint"
+            ]
+          }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "d": { "type": "circle", "defined": true, "cx": 2.0, "cy": 0.0, "r": 0.0 },
+          "m": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "null=true/intersect"
+            ]
+          }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "d": { "type": "circle", "defined": true, "cx": 2.0, "cy": 0.0, "r": 2.0 },
+          "m": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "null=true/intersect"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

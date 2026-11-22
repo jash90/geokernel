@@ -65,8 +65,12 @@ impl Default for RawScratch {
 /// Check incidence with the curved path of an arc or a sector. A collinear
 /// circumcircular arc can also define a bounded segment.
 pub(crate) fn on_part(part: &ArcData, point: (f64, f64)) -> bool {
+    on_part_with_precision(part, point, MIN_PRECISION)
+}
+
+pub(crate) fn on_part_with_precision(part: &ArcData, point: (f64, f64), eps: f64) -> bool {
     let conic = &part.conic;
-    if !part.defined || !conic.on_full_conic(point, MIN_PRECISION) {
+    if !part.defined || !conic.on_full_conic(point, eps) {
         return false;
     }
     let parameter = match conic.ty {
@@ -88,9 +92,9 @@ pub(crate) fn on_part(part: &ArcData, point: (f64, f64)) -> bool {
     };
     let axis = conic.half_axes[0];
     let eps = if axis > 100.0 {
-        MAX_PRECISION.max(MIN_PRECISION / axis)
+        MAX_PRECISION.max(eps / axis)
     } else {
-        MIN_PRECISION
+        eps
     };
     (-eps..=1.0 + eps).contains(&parameter)
 }

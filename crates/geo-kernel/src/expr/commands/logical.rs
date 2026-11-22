@@ -7,21 +7,39 @@
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
-//! The logical group of the command matrix: `If`.
+//! Conditionals, list filters and definedness.
+
+mod filters;
+pub(crate) mod relation;
 
 use crate::expr::eval::{Ctx, Ex, Val};
+use crate::expr::lex::Tok;
 use crate::expr::parse::Parser;
 use crate::expr::{children, IfMode, Node, Ty, NONE};
 
 /// The commands of this group (see `commands::is_command`).
-pub(super) const NAMES: &[&str] = &["If"];
+pub(super) const NAMES: &[&str] = &["If", "CountIf", "KeepIf", "Defined", "IsDefined"];
 
 /// `If(...)`.
 pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
-    if text != "If" {
-        return Ok(None);
+    match text {
+        "If" => p.if_command().map(Some),
+        "CountIf" | "KeepIf" => p.filter_command(text == "KeepIf").map(Some),
+        "Defined" | "IsDefined" => {
+            if matches!(p.toks.get(p.pos + 2).map(|t| &t.tok), Some(Tok::RParen)) {
+                if let Some(id) = p.object_at(p.pos + 1) {
+                    p.pos += 3;
+                    p.read(id, true);
+                    return Ok(Some(p.push(Node::ObjectDefined(id))));
+                }
+            }
+            let [arg] = p.arguments()?[..] else {
+                return Err(format!("`{text}` takes one argument"));
+            };
+            Ok(Some(p.push(Node::Defined(arg))))
+        }
+        _ => Ok(None),
     }
-    p.if_command().map(Some)
 }
 
 impl Parser<'_> {
@@ -30,7 +48,7 @@ impl Parser<'_> {
     /// function (`IF`, `IF_ELSE`, `IF_LIST`); otherwise the command
     /// `AlgoIf`.
     pub(crate) fn if_command(&mut self) -> Result<u32, String> {
-        let args = self.arguments()?;
+        let args = self.parse_arguments(true)?;
         if args.len() < 2 {
             return Err("`If` needs a condition and a value".into());
         }
@@ -54,8 +72,12 @@ impl Parser<'_> {
 
     /// Whether the subtree at `i` reads `x` (`variable`) or an object.
     fn reads(&self, i: u32, variable: bool) -> bool {
+        let mut seen = vec![false; i as usize + 1];
         let mut stack = vec![i];
         while let Some(j) = stack.pop() {
+            if std::mem::replace(&mut seen[j as usize], true) {
+                continue;
+            }
             let node = self.node(j);
             let found = if variable {
                 matches!(node, Node::Var)
@@ -86,7 +108,9 @@ impl<const M: bool> Ctx<'_, M> {
             Ty::Vec => Ex::plain(Val::V(f64::NAN, f64::NAN)),
             // `GeoBoolean.setUndefined` only sets false
             Ty::Bool => Ex::plain(Val::B(false, true)),
-            Ty::Num(_) | Ty::List(_) | Ty::Object => Ex::plain(Val::N(f64::NAN)),
+            Ty::Num(_) | Ty::List(_) | Ty::Function | Ty::Text | Ty::Object => {
+                Ex::plain(Val::N(f64::NAN))
+            }
         };
         if mode == IfMode::Else && !defined {
             return undefined();

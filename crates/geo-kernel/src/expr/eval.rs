@@ -66,7 +66,7 @@ use super::commands;
 use super::decimal::Dec;
 use super::list::{copy_tree, List, Slot};
 use super::math::{self, PI_180};
-use super::{Bin, Entry, ListOp, Node, Raw, Ty, Un};
+use super::{Bin, Elem, Entry, ListOp, Node, Raw, Ty, Un};
 use crate::algo::intersect::Hint;
 use crate::kernel::{Construction, Def, Id, Kind, Value};
 use crate::tol::STANDARD_PRECISION;
@@ -388,7 +388,8 @@ impl Lists {
 /// The value of the variable of a `Sequence`, inside those around it.
 pub(super) struct Local<'a> {
     pub(super) depth: u32,
-    pub(super) value: f64,
+    pub(super) value: Val,
+    pub(super) run: Option<(u32, u32)>,
     pub(super) up: Option<&'a Local<'a>>,
 }
 
@@ -597,8 +598,27 @@ pub(super) fn root(c: &Construction, e: &Entry, lists: Option<&Lists>) -> (Raw, 
     match x.val {
         Val::N(v) => (Raw::Num(v), x.dec),
         Val::V(x, y) => (Raw::Vec(x, y), None),
+        Val::B(false, false)
+            if matches!(
+                e.nodes[e.root as usize],
+                Node::Algebra(super::AlgebraOp::IsPrime, ..)
+            ) =>
+        {
+            (Raw::Num(f64::NAN), None)
+        }
         Val::B(b, _) => (Raw::Num(bool_number(b)), None),
     }
+}
+
+pub(super) fn text_root(c: &Construction, e: &Entry) -> Option<String> {
+    let meter = Lists::new(Vec::new());
+    let ctx = Ctx::<true> {
+        lists: Some(&meter),
+        meter: Some(&meter),
+        ..Ctx::new(c, e, &Env::None)
+    };
+    let value = ctx.text(e.root)?;
+    (!meter.over()).then(|| value.into_owned())
 }
 
 /// Evaluates an entry whose result is a list: its elements go to `out`,
@@ -687,8 +707,8 @@ impl<const M: bool> Ctx<'_, M> {
                 let lit = &self.e.lits[i as usize];
                 Ex {
                     val: N(v),
-                    dec: lit.dec.clone().map(Exact::Dec),
-                    special: lit.special,
+                    dec: lit.decimal().cloned().map(Exact::Dec),
+                    special: lit.special(),
                     obj: false,
                 }
             }
@@ -753,6 +773,15 @@ impl<const M: bool> Ctx<'_, M> {
                 }
             }
             Node::Apply(f, a) => self.apply_full(f, a),
+            Node::Apply2(f, a, b) => {
+                let x = self.full_number(a);
+                let y = self.full_number(b);
+                let v = self
+                    .meter
+                    .and_then(|meter| super::equation::sample_side(self.c, f, x, y, meter));
+                Ex::plain(N(v.unwrap_or(f64::NAN)))
+            }
+            Node::Side(..) => Ex::plain(N(f64::NAN)),
             Node::Inverse(a) => Ex::plain(N(
                 super::inverse::sample(self, a, self.variable()).unwrap_or(f64::NAN)
             )),
@@ -775,11 +804,40 @@ impl<const M: bool> Ctx<'_, M> {
             Node::If(mode, cond, then, rest) => self.conditional(i, mode, cond, then, rest),
             Node::Item(a) | Node::Vector(a) => self.full(a),
             // the variable of a `Sequence` is a `GeoNumeric`
-            Node::Local(depth) => Ex {
+            Node::Local(depth, _) => Ex {
                 obj: true,
-                ..Ex::plain(N(self.local(depth)))
+                ..Ex::plain(self.local(depth).map_or(N(f64::NAN), |local| local.value))
             },
             Node::ListOp(op, l, n) => self.list_command(i, op, l, n),
+            Node::Algebra(op, a, _) if !op.makes_list() => Ex::plain(self.algebra_number(op, a)),
+            Node::Algebra(..)
+            | Node::FunctionObject(_)
+            | Node::Text
+            | Node::Relation { .. }
+            | Node::Base { to: true, .. } => Ex::plain(N(f64::NAN)),
+            Node::Base {
+                to: false,
+                value,
+                radix,
+            } => Ex::plain(N(self.read_base_number(value, radix))),
+            Node::Extremum(minimum, f, a, b) => Ex::plain(self.extremum(minimum, f, a, b)),
+            Node::PolynomialPart(..) => Ex::plain(N(self.polynomial_value())),
+            Node::ObjectDefined(id) => Ex::plain(Val::B(super::object_defined(self.c, id), true)),
+            Node::Defined(a) => Ex::plain(Val::B(self.is_defined_argument(a), true)),
+            Node::Filter {
+                keep: false,
+                list,
+                condition,
+                local,
+                elem,
+                explicit,
+            } => {
+                let count = self
+                    .filter(list, condition, local, elem, explicit, false)
+                    .map(|(_, n)| f64::from(n));
+                Ex::plain(N(count.unwrap_or(f64::NAN)))
+            }
+            Node::Filter { .. } => Ex::plain(N(f64::NAN)),
             // a list is only read through `list`
             Node::FnName(_)
             | Node::List(..)
@@ -814,7 +872,11 @@ impl<const M: bool> Ctx<'_, M> {
             | Node::Cmd(..)
             | Node::Apply(..)
             | Node::If(..)
-            | Node::Local(_)
+            | Node::Local(..)
+            | Node::Algebra(..)
+            | Node::ObjectDefined(_)
+            | Node::Defined(_)
+            | Node::Filter { .. }
             | Node::ListOp(..)
             | Node::Range(..)
             | Node::Seq(..) => false,
@@ -871,7 +933,7 @@ impl<const M: bool> Ctx<'_, M> {
         self.full(i).num()
     }
 
-    fn variable(&self) -> f64 {
+    pub(super) fn variable(&self) -> f64 {
         match *self.env {
             Env::None => f64::NAN,
             Env::Value(x) | Env::Pair(x, _) => x,
@@ -1083,15 +1145,15 @@ impl<const M: bool> Ctx<'_, M> {
 impl<const M: bool> Ctx<'_, M> {
     /// The value of the variable of the `Sequence` of `depth`.
     #[inline(never)]
-    fn local(&self, depth: u32) -> f64 {
+    fn local(&self, depth: u32) -> Option<&Local<'_>> {
         let mut local = self.locals;
         while let Some(l) = local {
             if l.depth == depth {
-                return l.value;
+                return Some(l);
             }
             local = l.up;
         }
-        f64::NAN
+        None
     }
 
     fn is_list(&self, i: u32) -> bool {
@@ -1119,11 +1181,21 @@ impl<const M: bool> Ctx<'_, M> {
                 Some((start, len))
             }
             Node::Item(a) => self.list(a),
+            Node::Local(depth, Elem::List) => self.local(depth)?.run,
             Node::Obj(id) => self.object_list(id),
             Node::Bin(op, a, b) => self.list_binary(op, a, b),
             Node::Un(op, a) => self.list_unary(op, a),
             Node::Range(from, to, step) => self.range(from, to, step),
+            Node::Algebra(op, a, b) => self.algebra_list(op, a, b),
             Node::Seq(e, from, to, step, depth) => self.sequence(e, from, to, step, depth),
+            Node::Filter {
+                keep: true,
+                list,
+                condition,
+                local,
+                elem,
+                explicit,
+            } => self.filter(list, condition, local, elem, explicit, true),
             Node::ListOp(op, l, n) if op.makes_list() => commands::list_fn(self, op, l, n),
             // an element that is a list: its elements were built with the
             // list it belongs to
@@ -1155,6 +1227,9 @@ impl<const M: bool> Ctx<'_, M> {
                 None => Slot::undefined(Kind::List),
             };
         }
+        if let Node::FunctionObject(id) = self.node(i) {
+            return Slot::function(id, self.c.value(id));
+        }
         if let Node::Obj(id) = self.node(i) {
             if self.c.kind(id) == Kind::Point {
                 return Slot::point(self.c.stored_value(id));
@@ -1172,6 +1247,11 @@ impl<const M: bool> Ctx<'_, M> {
                 x,
                 y,
             ),
+            Val::B(false, false)
+                if matches!(self.node(i), Node::Algebra(super::AlgebraOp::IsPrime, ..)) =>
+            {
+                Slot::undefined(Kind::Boolean)
+            }
             Val::B(b, _) => Slot::boolean(b),
         }
     }
@@ -1559,7 +1639,7 @@ fn object_ex(c: &Construction, id: Id) -> Ex {
     }
     let (dec, special) = match c.def(id) {
         Def::Expr(d) if d.angle_style == super::AngleStyle::Unbounded => {
-            (super::entry(c, d).dec.clone(), false)
+            (super::entry(c, d).extra.exact(), false)
         }
         Def::Number(_) => {
             let d = super::free_decimal(c, id).cloned().map(Exact::Dec);

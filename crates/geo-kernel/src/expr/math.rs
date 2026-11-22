@@ -89,7 +89,9 @@ pub(crate) fn java_pow(a: f64, b: f64) -> f64 {
     if b.is_nan() || (a.abs() == 1.0 && b.is_infinite()) {
         return f64::NAN;
     }
-    a.powf(b)
+    // Use the portable fdlibm algorithm behind Java's StrictMath.pow.
+    // Native pow can differ by one ulp, which changes rounded divisor sums.
+    libm::pow(a, b)
 }
 
 /// `MyDouble.pow(double, double)`: `∞^0` and `1^∞` are undefined.

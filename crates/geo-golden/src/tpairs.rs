@@ -25,7 +25,7 @@
 //! creating anything, an input both refuse, and a step of a method whose
 //! replay context is incomplete. The compared-value count is the headline.
 
-use crate::compare::{compare_arc, compare_conic, compare_list, compare_sampled};
+use crate::compare::{compare_arc, compare_conic, compare_extra, compare_list, compare_sampled};
 use crate::model::Expected;
 use geo_kernel::{script, Construction, Id, Kind, Value};
 use serde::{Deserialize, Serialize};
@@ -685,7 +685,9 @@ fn compare_at(c: &Construction, out: &Output, label: &str, id: Id) -> Vec<Disagr
                 .0
                 .err()
         } else if kind == Kind::List {
-            compare_list(&expected, kind, c.elements(id)).err()
+            compare_list(c, &expected, kind, c.elements(id)).err()
+        } else if matches!(kind, Kind::Text | Kind::FunctionNVar) {
+            compare_extra(c, id, &expected).err()
         } else {
             let vertices: Vec<_> = c.vertices(id).collect();
             let sample = |x| c.function_value(id, x);

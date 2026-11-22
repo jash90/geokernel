@@ -1,0 +1,988 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "algebralogic-integer-001",
+      "group": "algebralogic",
+      "script": [
+        "n = GCD({1,2,3,4,5})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-integer-002",
+      "group": "algebralogic",
+      "script": [
+        "n = LCM({1,2,3,4,5})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 60.0 }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-integer-003",
+      "group": "algebralogic",
+      "script": [
+        "l = PrimeFactors(42)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 7.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-integer-004",
+      "group": "algebralogic",
+      "script": [
+        "l = Division(3,7)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 3.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-integer-005",
+      "group": "algebralogic",
+      "script": [
+        "n = Divisors(37)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-integer-006",
+      "group": "algebralogic",
+      "script": [
+        "l = DivisorsList(42)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 6.0 },
+              { "type": "number", "defined": true, "value": 7.0 },
+              { "type": "number", "defined": true, "value": 14.0 },
+              { "type": "number", "defined": true, "value": 21.0 },
+              { "type": "number", "defined": true, "value": 42.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-integer-007",
+      "group": "algebralogic",
+      "script": [
+        "n = DivisorsSum(37)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 38.0 }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-integer-008",
+      "group": "algebralogic",
+      "script": [
+        "b = IsPrime(0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "b": { "type": "boolean", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-integer-009",
+      "group": "algebralogic",
+      "script": [
+        "n = CommonDenominator(1/2,1/3)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 6.0 }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-integer-010",
+      "group": "algebralogic",
+      "script": [
+        "m = Mod(-7,3)",
+        "d = Div(-7,3)",
+        "q = Division(-7,3)",
+        "g = GCD(-7,3)",
+        "l = LCM(-7,3)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -3.0 },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -3.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 1.0 },
+          "l": { "type": "number", "defined": true, "value": 21.0 }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-integer-011",
+      "group": "algebralogic",
+      "script": [
+        "m = Mod(-7,-3)",
+        "d = Div(-7,-3)",
+        "q = Division(-7,-3)",
+        "g = GCD(-7,-3)",
+        "l = LCM(-7,-3)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 1.0 },
+          "l": { "type": "number", "defined": true, "value": 21.0 }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-integer-012",
+      "group": "algebralogic",
+      "script": [
+        "m = Mod(7,-3)",
+        "d = Div(7,-3)",
+        "q = Division(7,-3)",
+        "g = GCD(7,-3)",
+        "l = LCM(7,-3)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "m": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": -2.0 },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -2.0 },
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 1.0 },
+          "l": { "type": "number", "defined": true, "value": 21.0 }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-integer-013",
+      "group": "algebralogic",
+      "script": [
+        "m = Mod(3,0)",
+        "d = Div(3,0)",
+        "q = Division(3,0)",
+        "g = GCD(3,0)",
+        "l = LCM(3,0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "m": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": false },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": false }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 3.0 },
+          "l": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-integer-014",
+      "group": "algebralogic",
+      "script": [
+        "m = Mod(0,0)",
+        "d = Div(0,0)",
+        "q = Division(0,0)",
+        "g = GCD(0,0)",
+        "l = LCM(0,0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "m": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": false },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": false }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 0.0 },
+          "l": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-integer-015",
+      "group": "algebralogic",
+      "script": [
+        "m = Mod(3.8,-1.2)",
+        "d = Div(3.8,-1.2)",
+        "q = Division(3.8,-1.2)",
+        "g = GCD(3.8,-1.2)",
+        "l = LCM(3.8,-1.2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "m": { "type": "number", "defined": true, "value": 0.19999999999999996 },
+          "d": { "type": "number", "defined": true, "value": -3.0 },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -3.0 },
+              { "type": "number", "defined": true, "value": 0.19999999999999996 }
+            ]
+          },
+          "g": { "type": "number", "defined": false },
+          "l": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-integer-016",
+      "group": "algebralogic",
+      "script": [
+        "m = Mod(9007199254740992,3)",
+        "d = Div(9007199254740992,3)",
+        "q = Division(9007199254740992,3)",
+        "g = GCD(9007199254740992,3)",
+        "l = LCM(9007199254740992,3)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": 3.00239975158033E15 },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 3.00239975158033E15 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 1.0 },
+          "l": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-integer-017",
+      "group": "algebralogic",
+      "script": [
+        "m = Mod(9007199254740994,2)",
+        "d = Div(9007199254740994,2)",
+        "q = Division(9007199254740994,2)",
+        "g = GCD(9007199254740994,2)",
+        "l = LCM(9007199254740994,2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "m": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": false },
+          "q": { "type": "list", "defined": false },
+          "g": { "type": "number", "defined": true, "value": 2.0 },
+          "l": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-integer-018",
+      "group": "algebralogic",
+      "script": [
+        "m = Mod(9007199254740994,3)",
+        "d = Div(9007199254740994,3)",
+        "q = Division(9007199254740994,3)",
+        "g = GCD(9007199254740994,3)",
+        "l = LCM(9007199254740994,3)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "m": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": false },
+          "q": { "type": "list", "defined": false },
+          "g": { "type": "number", "defined": true, "value": 1.0 },
+          "l": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-integer-019",
+      "group": "algebralogic",
+      "script": [
+        "m = Mod(1000000000000000,1000000000000000)",
+        "d = Div(1000000000000000,1000000000000000)",
+        "q = Division(1000000000000000,1000000000000000)",
+        "g = GCD(1000000000000000,1000000000000000)",
+        "l = LCM(1000000000000000,1000000000000000)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "m": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.0 }
+            ]
+          },
+          "g": { "type": "number", "defined": false },
+          "l": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-integer-020",
+      "group": "algebralogic",
+      "script": [
+        "m = Mod(?,3)",
+        "d = Div(?,3)",
+        "q = Division(?,3)",
+        "g = GCD(?,3)",
+        "l = LCM(?,3)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "m": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": false },
+          "q": { "type": "list", "defined": false },
+          "g": { "type": "number", "defined": false },
+          "l": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-integer-021",
+      "group": "algebralogic",
+      "script": [
+        "l = {}",
+        "g = GCD(l)",
+        "m = LCM(l)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "g": { "type": "number", "defined": false },
+          "m": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-integer-022",
+      "group": "algebralogic",
+      "script": [
+        "l = {-12,0,18}",
+        "g = GCD(l)",
+        "m = LCM(l)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -12.0 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 18.0 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 6.0 },
+          "m": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-integer-023",
+      "group": "algebralogic",
+      "script": [
+        "l = {1000000000000000}",
+        "g = GCD(l)",
+        "m = LCM(l)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0E15 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 1.0E15 },
+          "m": { "type": "number", "defined": true, "value": 1.0E15 }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-integer-024",
+      "group": "algebralogic",
+      "script": [
+        "l = {2.5,0}",
+        "g = GCD(l)",
+        "m = LCM(l)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.5 },
+              { "type": "number", "defined": true, "value": 0.0 }
+            ]
+          },
+          "g": { "type": "number", "defined": false },
+          "m": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-integer-025",
+      "group": "algebralogic",
+      "script": [
+        "l = {4,?}",
+        "g = GCD(l)",
+        "m = LCM(l)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 4.0 },
+              { "type": "number", "defined": false }
+            ]
+          },
+          "g": { "type": "number", "defined": false },
+          "m": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-integer-026",
+      "group": "algebralogic",
+      "script": [
+        "l = {9223372036854775808,9}",
+        "g = GCD(l)",
+        "m = LCM(l)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 9.223372036854776E18 },
+              { "type": "number", "defined": true, "value": 9.0 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 1.0 },
+          "m": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-integer-027",
+      "group": "algebralogic",
+      "script": [
+        "l = {1,2.999999999}",
+        "g = GCD(l)",
+        "m = LCM(l)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.999999999 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 1.0 },
+          "m": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-integer-028",
+      "group": "algebralogic",
+      "script": [
+        "a = 42",
+        "f = PrimeFactors(a)",
+        "d = Divisors(a)",
+        "l = DivisorsList(a)",
+        "s = DivisorsSum(a)",
+        "b = IsPrime(a)",
+        "k = IsInteger(a)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -5.0 },
+        { "action": "set_number", "label": "a", "value": 2.6 },
+        { "action": "set_number", "label": "a", "value": 7.0 },
+        { "action": "set_number", "label": "a", "value": 180.0 },
+        { "action": "set_number", "label": "a", "value": 9.007199254740992E15 },
+        { "action": "set_number", "label": "a", "value": 9.007199254740994E15 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 42.0 },
+          "f": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 7.0 }
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 8.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 6.0 },
+              { "type": "number", "defined": true, "value": 7.0 },
+              { "type": "number", "defined": true, "value": 14.0 },
+              { "type": "number", "defined": true, "value": 21.0 },
+              { "type": "number", "defined": true, "value": 42.0 }
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 96.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "k": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "k": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": { "type": "list", "defined": false },
+          "d": { "type": "number", "defined": false },
+          "l": { "type": "list", "defined": false },
+          "s": { "type": "number", "defined": false },
+          "b": { "type": "boolean", "defined": false },
+          "k": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -5.0 },
+          "f": { "type": "list", "defined": false },
+          "d": { "type": "number", "defined": false },
+          "l": { "type": "list", "defined": false },
+          "s": { "type": "number", "defined": false },
+          "b": { "type": "boolean", "defined": false },
+          "k": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.6 },
+          "f": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 3.0 }
+            ]
+          },
+          "d": { "type": "number", "defined": false },
+          "l": { "type": "list", "defined": false },
+          "s": { "type": "number", "defined": false },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "k": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 7.0 },
+          "f": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 7.0 }
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 2.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 7.0 }
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 8.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "k": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 180.0 },
+          "f": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 5.0 }
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 18.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 },
+              { "type": "number", "defined": true, "value": 5.0 },
+              { "type": "number", "defined": true, "value": 6.0 },
+              { "type": "number", "defined": true, "value": 9.0 },
+              { "type": "number", "defined": true, "value": 10.0 },
+              { "type": "number", "defined": true, "value": 12.0 },
+              { "type": "number", "defined": true, "value": 15.0 },
+              { "type": "number", "defined": true, "value": 18.0 },
+              { "type": "number", "defined": true, "value": 20.0 },
+              { "type": "number", "defined": true, "value": 30.0 },
+              { "type": "number", "defined": true, "value": 36.0 },
+              { "type": "number", "defined": true, "value": 45.0 },
+              { "type": "number", "defined": true, "value": 60.0 },
+              { "type": "number", "defined": true, "value": 90.0 },
+              { "type": "number", "defined": true, "value": 180.0 }
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 546.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "k": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 9.007199254740992E15 },
+          "f": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 54.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 4.0 },
+              { "type": "number", "defined": true, "value": 8.0 },
+              { "type": "number", "defined": true, "value": 16.0 },
+              { "type": "number", "defined": true, "value": 32.0 },
+              { "type": "number", "defined": true, "value": 64.0 },
+              { "type": "number", "defined": true, "value": 128.0 },
+              { "type": "number", "defined": true, "value": 256.0 },
+              { "type": "number", "defined": true, "value": 512.0 },
+              { "type": "number", "defined": true, "value": 1024.0 },
+              { "type": "number", "defined": true, "value": 2048.0 },
+              { "type": "number", "defined": true, "value": 4096.0 },
+              { "type": "number", "defined": true, "value": 8192.0 },
+              { "type": "number", "defined": true, "value": 16384.0 },
+              { "type": "number", "defined": true, "value": 32768.0 },
+              { "type": "number", "defined": true, "value": 65536.0 },
+              { "type": "number", "defined": true, "value": 131072.0 },
+              { "type": "number", "defined": true, "value": 262144.0 },
+              { "type": "number", "defined": true, "value": 524288.0 },
+              { "type": "number", "defined": true, "value": 1048576.0 },
+              { "type": "number", "defined": true, "value": 2097152.0 },
+              { "type": "number", "defined": true, "value": 4194304.0 },
+              { "type": "number", "defined": true, "value": 8388608.0 },
+              { "type": "number", "defined": true, "value": 1.6777216E7 },
+              { "type": "number", "defined": true, "value": 3.3554432E7 },
+              { "type": "number", "defined": true, "value": 6.7108864E7 },
+              { "type": "number", "defined": true, "value": 1.34217728E8 },
+              { "type": "number", "defined": true, "value": 2.68435456E8 },
+              { "type": "number", "defined": true, "value": 5.36870912E8 },
+              { "type": "number", "defined": true, "value": 1.073741824E9 },
+              { "type": "number", "defined": true, "value": 2.147483648E9 },
+              { "type": "number", "defined": true, "value": 4.294967296E9 },
+              { "type": "number", "defined": true, "value": 8.589934592E9 },
+              { "type": "number", "defined": true, "value": 1.7179869184E10 },
+              { "type": "number", "defined": true, "value": 3.4359738368E10 },
+              { "type": "number", "defined": true, "value": 6.8719476736E10 },
+              { "type": "number", "defined": true, "value": 1.37438953472E11 },
+              { "type": "number", "defined": true, "value": 2.74877906944E11 },
+              { "type": "number", "defined": true, "value": 5.49755813888E11 },
+              { "type": "number", "defined": true, "value": 1.099511627776E12 },
+              { "type": "number", "defined": true, "value": 2.199023255552E12 },
+              { "type": "number", "defined": true, "value": 4.398046511104E12 },
+              { "type": "number", "defined": true, "value": 8.796093022208E12 },
+              { "type": "number", "defined": true, "value": 1.7592186044416E13 },
+              { "type": "number", "defined": true, "value": 3.5184372088832E13 },
+              { "type": "number", "defined": true, "value": 7.0368744177664E13 },
+              { "type": "number", "defined": true, "value": 1.40737488355328E14 },
+              { "type": "number", "defined": true, "value": 2.81474976710656E14 },
+              { "type": "number", "defined": true, "value": 5.62949953421312E14 },
+              { "type": "number", "defined": true, "value": 1.125899906842624E15 },
+              { "type": "number", "defined": true, "value": 2.251799813685248E15 },
+              { "type": "number", "defined": true, "value": 4.503599627370496E15 },
+              { "type": "number", "defined": true, "value": 9.007199254740992E15 }
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 1.8014398509481984E16 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "k": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 9.007199254740994E15 },
+          "f": { "type": "list", "defined": false },
+          "d": { "type": "number", "defined": false },
+          "l": { "type": "list", "defined": false },
+          "s": { "type": "number", "defined": false },
+          "b": { "type": "boolean", "defined": false },
+          "k": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-integer-029",
+      "group": "algebralogic",
+      "script": [
+        "a = 1/7",
+        "n = CommonDenominator(a, -2/5)",
+        "i = CommonDenominator(?, 2)",
+        "j = CommonDenominator(2, 0)",
+        "k = CommonDenominator(sqrt(2), pi)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.14285714285714285 },
+          "n": { "type": "number", "defined": true, "value": 35.0 },
+          "i": { "type": "number", "defined": false },
+          "j": { "type": "number", "defined": true, "value": 1.0 },
+          "k": { "type": "number", "defined": true, "value": 2.548854E7 }
+        }
+      ]
+    }
+  ]
+}
