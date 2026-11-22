@@ -178,12 +178,55 @@ pub(in crate::expr) fn evaluate<const M: bool>(
         && ctx.e.curve_parameter.is_some()
         && matches!(op, Op::Expand | Op::Factor | Op::IFactor | Op::Simplify)
     {
-        // `AlgoCasBaseSingleArgument.applyCasCommand`: a coordinate of a
-        // curve the command cannot rewrite keeps the input.
+        // `AlgoCasBaseSingleArgument.applyCasCommand` sends the coordinate
+        // of a curve to the CAS, whose answer for a term that is no
+        // rational function is beyond this kernel. Where the coordinate is
+        // defined for every parameter, whatever the CAS makes of it has the
+        // same values, so the input stands for it. Anywhere else the CAS
+        // may cancel a pole or widen a domain (`sqrt(t)^2` becomes `t`),
+        // and the coordinate is undefined.
         let (entry, root) = super::argument_tree(ctx.c, ctx.e, a)?;
-        return (root == entry.root).then(|| FunctionResult::Tree(Arc::new(entry.clone())));
+        return (root == entry.root && entire(ctx.c, entry, root, work)?)
+            .then(|| FunctionResult::Tree(Arc::new(entry.clone())));
     }
     exact.map(FunctionResult::Exact)
+}
+
+/// Whether the tree has a value for every value of its variable: sums,
+/// differences and products of numbers, the variable and the sine, cosine
+/// and exponential of such terms, with whole powers and constant divisors.
+fn entire(
+    c: &crate::Construction,
+    e: &crate::expr::Entry,
+    root: u32,
+    work: &mut Work<'_>,
+) -> Option<bool> {
+    use crate::expr::{Bin, Node, Un};
+    let constant = |i: u32| match e.nodes[i as usize] {
+        Node::Num(v) => Some(v),
+        _ => None,
+    };
+    let mut pending = vec![root];
+    while let Some(i) = pending.pop() {
+        work.spend(1)?;
+        match e.nodes[i as usize] {
+            Node::Num(v) if v.is_finite() => {}
+            Node::MinusOne | Node::Var => {}
+            Node::Obj(id) if matches!(c.kind(id), crate::Kind::Number | crate::Kind::Angle) => {}
+            Node::Un(Un::Sin | Un::Cos | Un::Sinh | Un::Cosh | Un::Exp, a) => pending.push(a),
+            Node::Bin(Bin::Add | Bin::Sub | Bin::Mul, a, b) => pending.extend([a, b]),
+            Node::Bin(Bin::Pow, a, b)
+                if constant(b).is_some_and(|n| n >= 0.0 && n.fract() == 0.0) =>
+            {
+                pending.push(a);
+            }
+            Node::Bin(Bin::Div, a, b) if constant(b).is_some_and(|d| d != 0.0 && d.is_finite()) => {
+                pending.push(a);
+            }
+            _ => return Some(false),
+        }
+    }
+    Some(true)
 }
 
 pub(super) fn transform(

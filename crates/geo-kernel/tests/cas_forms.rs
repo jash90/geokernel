@@ -142,6 +142,36 @@ fn a_text_with_an_equals_sign_is_a_text() {
 }
 
 #[test]
+fn a_coordinate_the_kernel_cannot_rewrite_like_the_reference_is_undefined() {
+    // The expansion of the numerator has degree 65, past the bound; the
+    // reference cancels the pole, so keeping the input would differ.
+    let c = build(&[
+        "k = Curve((t^65-1)/(t-1), t, t, 0, 2)",
+        "e = Expand(k)",
+        "j = Curve(sqrt(t)^2, t, t, -1, 1)",
+        "s = Simplify(j)",
+        "i = Curve(sin(t)/t, t, t, -1, 1)",
+        "u = Simplify(i)",
+    ]);
+    for label in ["e", "s", "u"] {
+        assert_eq!(c.value(id(&c, label)), Value::Undefined, "{label}");
+        assert_eq!(curve_point(&c, label, 0.5), None, "{label}");
+    }
+    // A coordinate that is defined everywhere keeps its values.
+    let c = build(&[
+        "k = Curve(sin(t)^2+t, cos(t)*t^2, t, 0, 2)",
+        "e = Factor(k)",
+    ]);
+    assert_eq!(
+        curve_point(&c, "e", 1.0),
+        Some((1.0_f64.sin().powi(2) + 1.0, 1.0_f64.cos()))
+    );
+    // A polynomial past the bound of the expansion is still itself.
+    let c = build(&["k = Curve(t^70, t, t, 0, 1)", "e = Expand(k)"]);
+    assert_eq!(curve_point(&c, "e", 0.5), Some((0.5_f64.powi(70), 0.5)));
+}
+
+#[test]
 fn hints_that_are_no_variable_or_value_are_refused() {
     let mut c = build(&["f(x) = x^2-3", "g: x+y=1"]);
     for line in [

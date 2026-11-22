@@ -746,6 +746,31 @@ reason = "GeoGebra's CAS solves sin(x) = 0 symbolically as n pi and PlotSolve sh
 mismatches = ["0:result"]
 
 [[gap]]
+id = "cas-curve-008"
+reason = "Expand, Factor, IFactor and Simplify of a curve send each coordinate to GeoGebra's CAS. A coordinate that is no rational function keeps its input in the kernel only where it is defined for every parameter (sums and products of numbers, the parameter and the sine, cosine or exponential of such terms), because anywhere else the CAS may cancel a pole or widen a domain: Simplify turns sqrt(t)^2 into t, defined for negative t (cas-curve-020). sqrt(t) is no such coordinate, so the kernel answers an undefined curve where GeoGebra keeps sqrt(t)."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+
+[[gap]]
+id = "cas-curve-016"
+reason = "Expand, Factor, IFactor and Simplify of a curve send each coordinate to GeoGebra's CAS. A coordinate that is no rational function keeps its input in the kernel only where it is defined for every parameter (sums and products of numbers, the parameter and the sine, cosine or exponential of such terms), because anywhere else the CAS may cancel a pole or widen a domain: Simplify turns sqrt(t)^2 into t, defined for negative t (cas-curve-020). sqrt(t) is no such coordinate, so the kernel answers an undefined curve where GeoGebra keeps sqrt(t)."
+mismatches = ["0:r2"]
+
+[[gap]]
+id = "cas-curve-018"
+reason = "GeoGebra's CAS cancels the pole of (t^65 - 1) / (t - 1) at t = 1 and answers the polynomial of degree 64. The bounded polynomial CAS expands up to total degree 64 and the numerator has degree 65, so the kernel cannot cancel the pole; keeping the input would be a curve with a hole at t = 1 that GeoGebra's curve does not have, so the kernel answers an undefined curve."
+mismatches = ["0:r1", "0:r2"]
+
+[[gap]]
+id = "cas-curve-019"
+reason = "Expand, Factor, IFactor and Simplify of a curve send each coordinate to GeoGebra's CAS. A coordinate that is no rational function keeps its input in the kernel only where it is defined for every parameter (sums and products of numbers, the parameter and the sine, cosine or exponential of such terms), because anywhere else the CAS may cancel a pole or widen a domain: Simplify turns sqrt(t)^2 into t, defined for negative t (cas-curve-020). GeoGebra's CAS cancels the pole of (t^2 - 1) / (t - 1) inside a sum or a product with sin(t); the kernel rewrites rational functions only and answers an undefined curve."
+mismatches = ["0:r1", "0:r2"]
+
+[[gap]]
+id = "cas-curve-020"
+reason = "Expand, Factor, IFactor and Simplify of a curve send each coordinate to GeoGebra's CAS. A coordinate that is no rational function keeps its input in the kernel only where it is defined for every parameter (sums and products of numbers, the parameter and the sine, cosine or exponential of such terms), because anywhere else the CAS may cancel a pole or widen a domain: Simplify turns sqrt(t)^2 into t, defined for negative t (cas-curve-020). GeoGebra keeps sin(t) / t with its pole at 0 and turns sqrt(t)^2 into t; neither coordinate is defined for every parameter, so the kernel answers an undefined curve for both."
+mismatches = ["0:r1", "0:r2"]
+
+[[gap]]
 id = "georestintersect-spline-001"
 reason = "IntersectLineSpline leaves the previous point defined when adjacent spline inputs coincide, while the kernel propagates the undefined spline to the intersection"
 mismatches = ["2:P_{1}"]

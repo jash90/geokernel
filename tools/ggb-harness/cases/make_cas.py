@@ -419,4 +419,17 @@ c.case("conic", ["k: y=x^2+x", "result = Solve(k, y)"], [])
 # A text holding an equals sign is a text, not an equation.
 c.case("text", ['r1 = Simplify("α=β")', 'r2 = Simplify("a=b")', 'r3 = Simplify("x+-1x=2")',
                 'r4 = Simplify("a,b=c")', 'r5 = Simplify("(a=b")'], [])
+
+# A coordinate whose expansion is too large for the kernel, and coordinates
+# that are no polynomials: the CAS rewrites them, also where the value
+# changes (a cancelled pole, a square root squared).
+curve_case(["k = Curve((t^65-1)/(t-1), t, t, 0, 2)", "r1 = Expand(k)", "r2 = Simplify(k)"])
+curve_case(["k = Curve((t^2-1)/(t-1)+sin(t), t, t, 0, 2)",
+            "j = Curve((t^2-1)/(t-1)*sin(t), t, t, 0, 2)", "r1 = Simplify(k)", "r2 = Expand(j)"])
+curve_case(["k = Curve(sin(t)/t, t, t, -1, 1)", "j = Curve(sqrt(t)^2, t, t, -1, 1)",
+            "r1 = Simplify(k)", "r2 = Simplify(j)"])
+curve_case(["k = Curve(sin(t)^2+t, cos(t)*t^2, t, 0, 2)"]
+           + results(f"{command}(k)" for command in REWRITES + ("Simplify",)))
+curve_case(["a = 2", "k = Curve(a*sin(t)+t^2, t^3-a, t, 0, 2)", "r1 = Expand(k)",
+            "r2 = Simplify(k)"], [setn("a", -1), setn("a", 0.5)])
 c.write()

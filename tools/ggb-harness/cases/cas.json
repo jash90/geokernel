@@ -348,6 +348,11 @@
     {"id": "cas-plot-024", "group": "cas", "script": ["k: x*y=1", "result = PlotSolve(k)"], "steps": [{"action": "initial"}]},
     {"id": "cas-plot-025", "group": "cas", "script": ["f(x) = sin(x)", "result = PlotSolve(f)"], "steps": [{"action": "initial"}]},
     {"id": "cas-conic-060", "group": "cas", "script": ["k: y=x^2+x", "result = Solve(k, y)"], "steps": [{"action": "initial"}]},
-    {"id": "cas-text-028", "group": "cas", "script": ["r1 = Simplify(\"\u03b1=\u03b2\")", "r2 = Simplify(\"a=b\")", "r3 = Simplify(\"x+-1x=2\")", "r4 = Simplify(\"a,b=c\")", "r5 = Simplify(\"(a=b\")"], "steps": [{"action": "initial"}]}
+    {"id": "cas-text-028", "group": "cas", "script": ["r1 = Simplify(\"\u03b1=\u03b2\")", "r2 = Simplify(\"a=b\")", "r3 = Simplify(\"x+-1x=2\")", "r4 = Simplify(\"a,b=c\")", "r5 = Simplify(\"(a=b\")"], "steps": [{"action": "initial"}]},
+    {"id": "cas-curve-018", "group": "cas", "script": ["k = Curve((t^65-1)/(t-1), t, t, 0, 2)", "r1 = Expand(k)", "r2 = Simplify(k)"], "steps": [{"action": "initial"}], "sample_curves": true},
+    {"id": "cas-curve-019", "group": "cas", "script": ["k = Curve((t^2-1)/(t-1)+sin(t), t, t, 0, 2)", "j = Curve((t^2-1)/(t-1)*sin(t), t, t, 0, 2)", "r1 = Simplify(k)", "r2 = Expand(j)"], "steps": [{"action": "initial"}], "sample_curves": true},
+    {"id": "cas-curve-020", "group": "cas", "script": ["k = Curve(sin(t)/t, t, t, -1, 1)", "j = Curve(sqrt(t)^2, t, t, -1, 1)", "r1 = Simplify(k)", "r2 = Simplify(j)"], "steps": [{"action": "initial"}], "sample_curves": true},
+    {"id": "cas-curve-021", "group": "cas", "script": ["k = Curve(sin(t)^2+t, cos(t)*t^2, t, 0, 2)", "r1 = Expand(k)", "r2 = Factor(k)", "r3 = IFactor(k)", "r4 = Simplify(k)"], "steps": [{"action": "initial"}], "sample_curves": true},
+    {"id": "cas-curve-022", "group": "cas", "script": ["a = 2", "k = Curve(a*sin(t)+t^2, t^3-a, t, 0, 2)", "r1 = Expand(k)", "r2 = Simplify(k)"], "steps": [{"action": "initial"}, {"action": "set_number", "label": "a", "value": -1.0}, {"action": "set_number", "label": "a", "value": 0.5}], "sample_curves": true}
   ]
 }
