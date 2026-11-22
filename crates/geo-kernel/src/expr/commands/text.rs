@@ -45,6 +45,7 @@ pub(crate) enum TextOp {
     IndexOf,
     Length,
     Take,
+    Sum,
 }
 
 pub(super) const NAMES: &[&str] = &[
@@ -69,6 +70,7 @@ pub(super) const NAMES: &[&str] = &[
     "Length",
     "Take",
     "Name",
+    "Sum",
 ];
 
 pub(super) fn parse(p: &mut Parser<'_>, name: &str) -> Result<Option<u32>, String> {
@@ -93,6 +95,19 @@ pub(super) fn parse(p: &mut Parser<'_>, name: &str) -> Result<Option<u32>, Strin
         "Length" => TextOp::Length,
         "Take" => TextOp::Take,
         "Name" => return parse_name(p),
+        // `Sum` of texts concatenates them (`TextFold`); anything else is
+        // the statistics group's command, so it must fall through.
+        "Sum" => {
+            return p.list_command(|p, args, _| {
+                let texty = |p: &Parser<'_>, i: u32| {
+                    p.is_text(i) || p.list_element_type(i) == Some(Elem::Text)
+                };
+                if args.is_empty() || !args.iter().all(|&a| texty(p, a)) {
+                    return Ok(None);
+                }
+                Ok(Some(call_node(p, TextOp::Sum, &args)))
+            });
+        }
         _ => return Ok(None),
     };
     if matches!(op, TextOp::Length | TextOp::IndexOf | TextOp::Take) {
@@ -172,6 +187,8 @@ pub(in crate::expr) fn result_type(
         (Length | LetterToUnicode | TextToUnicode, [Text]) => true,
         (UnicodeToText, [a]) | (Split, [Text, a]) => list(*a),
         (ReplaceAll, [Text, Text, Text]) => true,
+        (Sum, [Text, ..]) => true,
+        (Sum, [list]) if matches!(list, Ty::List(Elem::Text)) => true,
         (IndexOf, [Text, Text]) => true,
         (IndexOf, [Text, Text, n]) | (Take, [Text, n]) => number(*n),
         (Take, [Text, a, b]) => number(*a) && number(*b),
@@ -268,7 +285,7 @@ impl<const M: bool> Ctx<'_, M> {
                 numeric::continued(number(a), level, c.or(boolean).is_some_and(flag))
             }
             Table => table::evaluate(self, &args),
-            UnicodeToLetter | UnicodeToText | ReplaceAll | Take => {
+            UnicodeToLetter | UnicodeToText | ReplaceAll | Take | Sum => {
                 strings::evaluate(self, op, &args)
             }
             _ => None,

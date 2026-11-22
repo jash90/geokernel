@@ -47,6 +47,28 @@ pub(super) fn evaluate<const M: bool>(
             };
             Some(from_utf16(&units))
         }
+        Sum => {
+            // `Sum` of texts concatenates them; one list argument
+            // concatenates its elements (`TextFold`)
+            let mut parts: Vec<String> = Vec::new();
+            if args.len() == 1 && ctx.list(a).is_some() {
+                let lists = ctx.lists?;
+                let (start, len) = ctx.list(a)?;
+                for index in start..start + len {
+                    if ctx.stop(1) {
+                        return None;
+                    }
+                    parts.push(lists.read(ctx.c, index).text_value()?.to_owned());
+                }
+            } else {
+                for &i in args {
+                    parts.push(ctx.text(i)?.into_owned());
+                }
+            }
+            let total: usize = parts.iter().map(String::len).sum();
+            ctx.bounded_text(total)?;
+            Some(parts.concat())
+        }
         ReplaceAll => {
             let input = ctx.text(a)?;
             let needle = ctx.text(b?)?;

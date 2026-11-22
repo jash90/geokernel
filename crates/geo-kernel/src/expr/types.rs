@@ -15,7 +15,7 @@
 //! so rejecting the same trees here gives the same lines errors.
 
 use super::commands;
-use super::{AlgebraOp, Bin, Elem, IfMode, Node, Ty, Un, NONE};
+use super::{AlgebraOp, Bin, Elem, IfMode, ListOp, Node, Ty, Un, NONE};
 use crate::kernel::{Construction, Def, Id, Kind};
 
 /// Types, depths, costs and variable counts of the nodes reachable from
@@ -366,7 +366,15 @@ pub(crate) fn check(
                     return Err("the command needs a list".into());
                 };
                 let object = commands::takes_object(op);
-                if n != NONE && !object && !matches!(tys[n as usize], Ty::Num(_) | Ty::Bool) {
+                // `Sum(list, frequencies)`: the second argument is a list
+                let frequencies = op == ListOp::Sum
+                    && n != NONE
+                    && matches!(tys[n as usize], Ty::List(_));
+                if n != NONE
+                    && !object
+                    && !frequencies
+                    && !matches!(tys[n as usize], Ty::Num(_) | Ty::Bool)
+                {
                     return Err("the index must be a number".into());
                 }
                 // a list of numbers and booleans has mixed elements

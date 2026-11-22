@@ -1099,6 +1099,11 @@ impl Parser<'_> {
         matches!(check(self.c, &self.nodes, i), Ok((tys, ..)) if matches!(tys[i as usize], Ty::List(_)))
     }
 
+    /// Whether the subtree at `i` is a function.
+    pub(super) fn is_function(&self, i: u32) -> bool {
+        matches!(check(self.c, &self.nodes, i), Ok((tys, ..)) if tys[i as usize] == Ty::Function)
+    }
+
     pub(super) fn is_text(&self, i: u32) -> bool {
         matches!(check(self.c, &self.nodes, i), Ok((tys, ..)) if tys[i as usize] == Ty::Text)
     }

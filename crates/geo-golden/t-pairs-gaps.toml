@@ -6495,12 +6495,6 @@ reason = "the kernel refuses the input: unknown command `Zip`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:4343"
-category = "unsupported-command"
-reason = "the kernel refuses the input: the index must be a number"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:4347"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `Sum`"
@@ -6528,12 +6522,6 @@ mismatches = ["step"]
 id = "commands/CommandsTest.java:4352"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `Sum`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:4353"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unexpected `\"`"
 mismatches = ["step"]
 
 [[gap]]

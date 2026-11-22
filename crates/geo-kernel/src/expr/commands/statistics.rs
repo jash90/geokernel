@@ -9,7 +9,7 @@
 use crate::expr::eval::{number_of, slot_val, Ctx, Val};
 use crate::expr::parse::{list_form, Parser};
 use crate::expr::types::of_numbers;
-use crate::expr::{Elem, ListOp, Node, Ty, NONE};
+use crate::expr::{Bin, Elem, ListOp, Node, Ty, NONE};
 
 /// The commands of this group (see `commands::is_command`).
 pub(super) const NAMES: &[&str] = &["Sum", "Mean"];
@@ -22,7 +22,28 @@ pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
         "Mean" => (ListOp::Mean, false),
         _ => return Ok(None),
     };
-    p.list_command(|_, args, lists| list_form(text, op, count, args, lists))
+    p.list_command(|p, args, lists| {
+        // `Sum(a, b, ...)` of anything but a list folds the arguments,
+        // which GeoGebra wraps in a list of the class of the first
+        // (`CmdSum`); functions add as one tree instead.
+        if op == ListOp::Sum && args.len() >= 2 && !lists[0] {
+            if args.iter().all(|&a| p.is_function(a)) {
+                let (last, init) = args.split_last().unwrap();
+                let mut acc = init[0];
+                for &a in &init[1..] {
+                    acc = p.push(Node::Bin(Bin::Add, acc, a));
+                }
+                return Ok(Some(Node::Bin(Bin::Add, acc, *last)));
+            }
+            let list = p.wrap_list(args);
+            return Ok(Some(Node::ListOp(op, list, NONE)));
+        }
+        // `Sum(list, frequencies)`: the second argument is a list too
+        if !(op == ListOp::Sum && args.len() == 2 && lists[0] && lists[1]) {
+            return list_form(text, op, count, args, lists);
+        }
+        Ok(Some(Node::ListOp(op, args[0], args[1])))
+    })
 }
 
 /// The type of a list command of this group (see `commands::list_type`).
@@ -67,6 +88,15 @@ impl<const M: bool> Ctx<'_, M> {
         let Some(lists) = self.lists else {
             return f64::NAN;
         };
+        // `Sum(list, frequencies)`: a second list weights the elements,
+        // and a list one longer than its frequencies holds class bounds
+        // whose midpoints count instead (`AlgoStats1D`).
+        if op == ListOp::Sum
+            && n != NONE
+            && matches!(self.e.tys[n as usize], Ty::List(_))
+        {
+            return self.sum_frequencies(lists, l, n);
+        }
         let Some((start, size)) = self.truncated(l, n) else {
             return f64::NAN;
         };
@@ -89,6 +119,49 @@ impl<const M: bool> Ctx<'_, M> {
             ListOp::Product => product,
             _ => sum / f64::from(size),
         }
+    }
+
+    /// `Sum(list, frequencies)` (`AlgoStats1D` with `STATS_SIGMAX`): the
+    /// sum of each element times its frequency, with the midpoint rule for
+    /// class bounds; a negative frequency or a missing element makes the
+    /// sum undefined, and no elements sum to 0.
+    fn sum_frequencies(&self, lists: &crate::expr::eval::Lists, l: u32, f: u32) -> f64 {
+        let (Some((start, len)), Some((fstart, flen))) = (self.list(l), self.list(f)) else {
+            return f64::NAN;
+        };
+        let classes = len == flen + 1;
+        let size = if classes { len - 1 } else { len };
+        if size == 0 {
+            return 0.0;
+        }
+        if !lists.charge(u64::from(2 * size)) {
+            return f64::NAN;
+        }
+        let mut sum = 0.0;
+        for k in 0..size {
+            let Some(value) = number_of(lists.read(self.c, start + k)) else {
+                return f64::NAN;
+            };
+            let value = if classes {
+                match number_of(lists.read(self.c, start + k + 1)) {
+                    Some(next) => (value + next) / 2.0,
+                    None => return f64::NAN,
+                }
+            } else {
+                value
+            };
+            if start + k >= fstart + flen {
+                return f64::NAN;
+            }
+            let Some(frequency) = number_of(lists.read(self.c, fstart + k)) else {
+                return f64::NAN;
+            };
+            if frequency < 0.0 {
+                return f64::NAN;
+            }
+            sum += value * frequency;
+        }
+        sum
     }
 
     /// The list `l` and how many of its elements a truncation `n` keeps
