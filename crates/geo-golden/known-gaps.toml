@@ -979,16 +979,6 @@ reason = "The kernel lacks the reference sign convention for the initial rank-on
 mismatches = ["0:s", "2:s", "3:s"]
 
 [[gap]]
-id = "misc-maximizepoint-001"
-reason = "The independent bounded search lacks the reference parameter selection on the rounded circle maximum. The x coordinate is 3.000000000000307 instead of 2.9999999942592415."
-mismatches = ["0:M", "1:M", "2:M"]
-
-[[gap]]
-id = "misc-minimizepoint-001"
-reason = "The independent bounded search lacks the reference parameter selection on the rounded circle minimum. The x coordinate is 2.999999999999956 instead of 2.9999999942609166."
-mismatches = ["0:M", "1:M"]
-
-[[gap]]
 id = "funcrest-conditionalmixed-001"
 reason = "The kernel lacks a segment record with a separately assignable supporting line and retained endpoints. It therefore rejects a segment followed by a plain line."
 mismatches = ["0:script line 7"]
