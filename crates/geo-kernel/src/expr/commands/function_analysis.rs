@@ -6,6 +6,8 @@
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
+mod svd;
+
 use crate::expr::{
     eval::{number_of, slot_val, Ctx, Env, Local, Val, MAX_ELEMENTS},
     lex::Tok,
@@ -23,10 +25,15 @@ pub(super) const NAMES: &[&str] = &[
     "nroot",
     "Asymptote",
     "Normalize",
+    "SVD",
 ];
 
 pub(super) fn parse(p: &mut Parser<'_>, name: &str) -> Result<Option<u32>, String> {
     let node = match name {
+        "SVD" => {
+            return p
+                .list_command(|_, args, lists| list_form(name, ListOp::Svd, false, args, lists));
+        }
         "Normalize" => {
             return p.list_command(|p, args, lists| {
                 if !args.is_empty() && args.iter().all(|&a| point_argument(p, a)) {
@@ -161,6 +168,64 @@ pub(super) fn normalize<const M: bool>(ctx: &Ctx<'_, M>, l: u32) -> Option<(u32,
         lists.set(out + i, slot);
     }
     Some((out, len))
+}
+
+pub(super) fn svd<const M: bool>(ctx: &Ctx<'_, M>, l: u32) -> Option<(u32, u32)> {
+    let lists = ctx.lists?;
+    let (start, rows) = ctx.list(l)?;
+    if rows == 0 {
+        return None;
+    }
+    let (_, cols) = lists.read(ctx.c, start).run()?;
+    if cols == 0 || !lists.charge(u64::from(rows) * u64::from(cols)) {
+        return None;
+    }
+    let wide = rows < cols;
+    let [height, rank] = if wide { [cols, rows] } else { [rows, cols] }.map(|n| n as usize);
+    let mut columns = vec![vec![0.0; height]; rank];
+    for i in 0..rows {
+        let (input, length) = lists.read(ctx.c, start + i).run()?;
+        if length < cols {
+            return None;
+        }
+        for j in 0..cols {
+            let x = number_of(lists.read(ctx.c, input + j)).filter(|x| x.is_finite())?;
+            if wide {
+                columns[i as usize][j as usize] = x;
+            } else {
+                columns[j as usize][i as usize] = x;
+            }
+        }
+    }
+    let (mut left, singular, mut right) = svd::decompose(columns, |work| lists.charge(work))?;
+    if wide {
+        std::mem::swap(&mut left, &mut right);
+    }
+    let mut diag = vec![vec![0.0; rank]; rank];
+    for (i, sigma) in singular.into_iter().enumerate() {
+        diag[i][i] = sigma;
+        // Choose a sign from the largest entry of the left vector.
+        let pivot = left[i].iter().max_by(|a, b| a.abs().total_cmp(&b.abs()))?;
+        if *pivot < 0.0 {
+            for value in left[i].iter_mut().chain(&mut right[i]) {
+                *value = -*value;
+            }
+        }
+    }
+    let out = lists.reserve(3)?;
+    for (i, matrix) in [left, diag, right].into_iter().enumerate() {
+        let rows = matrix[0].len() as u32;
+        let run = lists.reserve(rows)?;
+        for row in 0..rows {
+            let cells = lists.reserve(rank as u32)?;
+            for (col, column) in matrix.iter().enumerate() {
+                lists.set(cells + col as u32, Slot::number(column[row as usize]));
+            }
+            lists.set(run + row, Slot::list(cells, rank as u32));
+        }
+        lists.set(out + i as u32, Slot::list(run, rows));
+    }
+    Some((out, 3))
 }
 
 fn parse_iteration(p: &mut Parser<'_>, collect: bool) -> Result<Node, String> {

@@ -428,6 +428,7 @@ pub(crate) enum ListOp {
     /// `Determinant(matrix)` and `MatrixRank(matrix)` inside expressions.
     Determinant,
     Normalize,
+    Svd,
     MatrixRank,
     Transpose,
     Rref,

@@ -83,4 +83,16 @@ case("normalize", "r = Normalize({1, (2, 2), 4})\ns = Normalize({1, true})\nt = 
 case("normalize", "A = (1, 2)", [reject("r = Normalize()"), reject("r = Normalize(1)"),
                                  reject("r = Normalize(A, 2)")])
 
+# --------------------------------------------------------------------- SVD
+cases.topic("svd")
+case("svd", "s = SVD({{1}})\nt = SVD({{-2}})\nu = SVD({{0}})")
+case("svd", "s = SVD({{3, 0}, {0, 2}})\nt = SVD({{1, 0}, {0, 4}})")
+case("svd", "s = SVD({{3, 4}})\nt = SVD({{3}, {4}})")
+case("svd", "s = SVD({{1, 2}, {3, 4}})\nt = SVD({{1, 2, 3}, {4, 5, 6}})")
+case("svd", "s = SVD({{1, 2}, {2, 4}, {3, 6}})\nt = SVD({{1, 0}, {0, 1}})\nu = SVD({{0, 0}, {0, 0}})")
+case("svd", "n = 2\nl = Sequence({k, 0}, k, 1, n)\ns = SVD(l)",
+     [setn("n", 0), setn("n", 1), setn("n", 3)])
+case("svd", "s = SVD({})\nt = SVD({{}, {}})\nu = SVD({{1, 2}, {3}})\nv = SVD({1, 2})",
+     [reject("r = SVD(1)"), reject("r = SVD({{1}}, {{2}})")])
+
 cases.write()

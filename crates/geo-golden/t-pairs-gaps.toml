@@ -5505,12 +5505,6 @@ reason = "the kernel refuses the input: unknown command `Syy`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:4419"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `SVD`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:443"
 category = "text-formatting"
 reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `x^(2)`"

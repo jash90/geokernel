@@ -894,3 +894,23 @@ mismatches = ["1:g", "2:g"]
 id = "funcrest-freehandreaders-010"
 reason = "intended difference, recorded in DIFFERENCES.md: the numeric intersection of two functions reads the expression trees of both, and a freehand function has none, so the kernel leaves the point undefined where GeoGebra iterates on the sampled values"
 mismatches = ["0:S"]
+
+[[gap]]
+id = "funcrest-svd-002"
+reason = "the reference negates both vectors of the first input axis in a diagonal matrix, while the Jacobi result orients each left singular vector by its largest component"
+mismatches = ["0:s", "0:t"]
+
+[[gap]]
+id = "funcrest-svd-003"
+reason = "the reference returns negative vectors on both sides of the one-row and one-column decompositions; the Jacobi result chooses a positive left vector orientation"
+mismatches = ["0:s", "0:t"]
+
+[[gap]]
+id = "funcrest-svd-005"
+reason = "the Jacobi result chooses different singular vector signs and completes the left null space with a different orthonormal basis for the rank-one matrix"
+mismatches = ["0:s", "0:t"]
+
+[[gap]]
+id = "funcrest-svd-006"
+reason = "the rank-one result has a different singular vector orientation; after the matrix becomes empty the reference result stays undefined even when rows return, while the kernel recomputes from the new matrix"
+mismatches = ["0:s", "2:s", "3:s"]
