@@ -65,6 +65,8 @@ use crate::kernel::locus::LocusDef;
 use crate::kernel::{Construction, Def, Id, Kind, Value};
 use std::fmt;
 
+pub use intersect::growth::{boundary_slot_owner, restore_boundary_labels, BoundaryOutputs};
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct ScriptError {
     /// 1-based line number.
@@ -158,6 +160,9 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
 }
 
 fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option<Id>, String> {
+    if let Some(def) = intersect::growth::parse_slot(c, rhs) {
+        return c.add(name, def?).map(Some).map_err(|e| e.to_string());
+    }
     if let Some(def) = parse_forced(rhs) {
         return c.add(name, def?).map(Some).map_err(|e| e.to_string());
     }
@@ -467,14 +472,14 @@ fn parse_multi(c: &Construction, rhs: &str) -> Option<Result<Vec<Def>, String>> 
 /// - two or more outputs defined at creation: every defined output is
 ///   created and gets the next free indexed label (`t_{1}`, `t_{2}`, ...);
 ///   `Vertex` of a hyperbola labels its two defined vertices only;
-/// - exactly one defined: only that output is created, indexed for a
-///   polygonal boundary intersection and labelled `name` otherwise;
+/// - exactly one defined: only that output is created, using an indexed
+///   label for algorithms that assign slots through an output handler;
 /// - none defined: only the first output is created, using the same rule.
 ///
-/// The set of created objects is fixed at creation: an output that was not
-/// created is not added later, even when it becomes defined.
+/// The workbench can record additional polygonal boundary outputs after a
+/// move reveals more crossings.
 /// Returns the id of the first object created.
-fn add_outputs(c: &mut Construction, name: &str, defs: Vec<Def>) -> Result<Id, String> {
+pub(crate) fn add_outputs(c: &mut Construction, name: &str, defs: Vec<Def>) -> Result<Id, String> {
     if c.id(name).is_some() {
         return Err(format!("object `{name}` already exists"));
     }
@@ -1023,7 +1028,14 @@ fn exec_labelled(c: &mut Construction, line: &str) -> Result<Option<Id>, String>
             Ok(_) => "the command does not create several objects, write `name = ...`".into(),
         });
     };
-    let defs = defs?;
+    add_named_outputs(c, &slots, defs?)
+}
+
+pub(crate) fn add_named_outputs(
+    c: &mut Construction,
+    slots: &[&str],
+    defs: Vec<Def>,
+) -> Result<Option<Id>, String> {
     // A command can make fewer outputs than GeoGebra's algorithm has (the
     // second tangent from a point on a circle is undefined at creation and
     // never created); slots for outputs that are not created may stay empty.
@@ -1035,7 +1047,7 @@ fn exec_labelled(c: &mut Construction, line: &str) -> Result<Option<Id>, String>
         ));
     }
     let mut seen = std::collections::HashSet::new();
-    for slot in &slots {
+    for slot in slots {
         if slot.is_empty() {
             continue;
         }
@@ -1336,5 +1348,19 @@ mod tests {
         assert!(exec(&mut c, "d = $point(1)").is_err());
         assert!(exec(&mut c, "d = $point(1, x)").is_err());
         assert!(exec(&mut c, "a = $vector(1, 2)").is_err());
+    }
+
+    #[test]
+    fn labelled_common_tangents_of_coincident_conics_are_undefined() {
+        let c = load(
+            "k = Conic({1, 1, -1, 0, 0, 0})\nh = Conic({1, 1, -1, 0, 0, 0})\n\
+             {t_{1}, t_{2}, t_{3}, t_{4}} = Tangent(k, h)",
+        )
+        .unwrap();
+        for label in ["t_{1}", "t_{2}", "t_{3}", "t_{4}"] {
+            let id = c.id(label).unwrap();
+            assert_eq!(c.kind(id), Kind::Line);
+            assert_eq!(c.value(id), Value::Undefined);
+        }
     }
 }

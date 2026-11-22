@@ -289,11 +289,6 @@ mismatches = [
 ]
 
 [[gap]]
-id = "axes-functions-001"
-reason = "The axis resolves as a line. Intersect of a function and a line has no kernel dispatch or polynomial root algorithm."
-mismatches = ["0:script line 3"]
-
-[[gap]]
 id = "conicforms-namedinterval-001"
 reason = "A named inequality is a boolean-valued function in GeoGebra. Kernel functions are numeric, so the named input fails before Center can read its bounds."
 mismatches = ["0:script line 3"]
@@ -421,116 +416,6 @@ reason = "The selector dispatch excludes conic/ray pairs. The fallback parser tr
 mismatches = ["0:script line 10"]
 
 [[gap]]
-id = "intersections-functionconic-001"
-reason = "The kernel does not substitute a function into a conic and solve the resulting polynomial. Intersect rejects this pair before creating its point output."
-mismatches = ["0:script line 5"]
-
-[[gap]]
-id = "intersections-functionconic-002"
-reason = "The kernel does not substitute a function into a conic and solve the resulting polynomial. Intersect rejects this pair before creating its point output."
-mismatches = ["0:script line 5"]
-
-[[gap]]
-id = "intersections-functionconic-003"
-reason = "The kernel does not substitute a function into a conic and solve the resulting polynomial. Intersect rejects this pair before creating its point output."
-mismatches = ["0:script line 5"]
-
-[[gap]]
-id = "intersections-functionconic-004"
-reason = "The kernel does not substitute a function into a conic and solve the resulting polynomial. Intersect rejects this pair before creating its point output."
-mismatches = ["0:script line 5"]
-
-[[gap]]
-id = "intersections-functionline-001"
-reason = "The kernel has no function/line root solver or point output slots for this pair. Intersect rejects the call before creating its point output."
-mismatches = ["0:script line 8"]
-
-[[gap]]
-id = "intersections-functionline-002"
-reason = "The kernel has no function/line root solver or point output slots for this pair. Intersect rejects the call before creating its point output."
-mismatches = ["0:script line 8"]
-
-[[gap]]
-id = "intersections-functionline-003"
-reason = "The kernel has no function/line root solver or point output slots for this pair. Intersect rejects the call before creating its point output."
-mismatches = ["0:script line 8"]
-
-[[gap]]
-id = "intersections-functionline-004"
-reason = "The kernel has no function/line root solver or point output slots for this pair. Intersect rejects the call before creating its point output."
-mismatches = ["0:script line 8"]
-
-[[gap]]
-id = "intersections-functionline-005"
-reason = "The kernel has no function/line root solver or point output slots for this pair. Intersect rejects the call before creating its point output."
-mismatches = ["0:script line 8"]
-
-[[gap]]
-id = "intersections-functionline-006"
-reason = "The kernel has no function/line root solver or point output slots for this pair. Intersect rejects the call before creating its point output."
-mismatches = ["0:script line 8"]
-
-[[gap]]
-id = "intersections-functionline-007"
-reason = "The kernel has no function/line root solver or point output slots for this pair. Intersect rejects the call before creating its point output."
-mismatches = ["0:script line 5"]
-
-[[gap]]
-id = "intersections-functionline-008"
-reason = "The kernel has no function/line root solver or point output slots for this pair. Intersect rejects the call before creating its point output."
-mismatches = ["0:script line 2"]
-
-[[gap]]
-id = "intersections-functionline-009"
-reason = "The kernel has no function/line root solver or point output slots for this pair. Intersect rejects the call before creating its point output."
-mismatches = ["0:script line 5"]
-
-[[gap]]
-id = "intersections-functionline-010"
-reason = "The kernel has no function/line root solver or point output slots for this pair. Intersect rejects the call before creating its point output."
-mismatches = ["0:script line 7"]
-
-[[gap]]
-id = "intersections-functions-001"
-reason = "The kernel has no polynomial difference or seeded numerical solver for two functions. Intersect rejects the call before creating its point output."
-mismatches = ["0:script line 6"]
-
-[[gap]]
-id = "intersections-functions-002"
-reason = "The kernel has no polynomial difference or seeded numerical solver for two functions. Intersect rejects the call before creating its point output."
-mismatches = ["0:script line 6"]
-
-[[gap]]
-id = "intersections-functions-003"
-reason = "The kernel has no polynomial difference or seeded numerical solver for two functions. Intersect rejects the call before creating its point output."
-mismatches = ["0:script line 6"]
-
-[[gap]]
-id = "intersections-functions-004"
-reason = "The kernel has no polynomial difference or seeded numerical solver for two functions. Intersect rejects the call before creating its point output."
-mismatches = ["0:script line 3"]
-
-[[gap]]
-id = "intersections-functions-005"
-reason = "The kernel has no polynomial difference or seeded numerical solver for two functions. Intersect rejects the call before creating its point output."
-mismatches = ["0:script line 3"]
-
-[[gap]]
-id = "intersections-functions-006"
-reason = "The kernel has no polynomial difference or seeded numerical solver for two functions. Intersect rejects the call before creating its point output."
-mismatches = ["0:script line 4"]
-
-[[gap]]
-id = "intersections-interval-001"
-reason = "The kernel has no interval root search for the difference of two functions. Intersect rejects the four-argument call before creating its point outputs."
-mismatches = ["0:script line 6"]
-
-[[gap]]
-id = "intersections-interval-002"
-reason = "The kernel has no interval root search for the difference of two functions. Intersect rejects the four-argument call before creating its point outputs."
-mismatches = ["0:script line 3"]
-
-[[gap]]
 id = "intersections-limitedconic-001"
 reason = "The live-selector dispatch excludes segment/circle pairs. The fallback parser rejects the named index before it creates a point."
 mismatches = ["0:script line 8"]
@@ -590,32 +475,12 @@ id = "intersections-slotreview-009"
 reason = "The indexed point recomputes with the single-output solver, which drops the duplicate root at tangency. GeoGebra's indexed point reads the shared intersection whose second slot already has a label."
 mismatches = ["1:S"]
 
-# intersectreview
+# intersectgrowth
 
 [[gap]]
-id = "intersectreview-growth-001"
-reason = "The intersection of line and polygon gains crossings after a move. The reference adds indexed output labels then. The kernel keeps the first slot created by the command because the workbench journal does not record output births on moves."
-mismatches = ["1:R_{2}", "2:R_{2}", "2:R_{3}", "2:R_{4}", "3:R_{2}", "3:R_{3}", "3:R_{4}", "4:R_{2}", "4:R_{3}", "4:R_{4}"]
-
-[[gap]]
-id = "intersectreview-growth-002"
-reason = "The intersection of segment and polyline gains crossings after a move. The reference adds indexed output labels then. The kernel keeps the first slot created by the command because the workbench journal does not record output births on moves."
-mismatches = ["2:R_{2}", "2:R_{3}", "3:R_{2}", "3:R_{3}", "4:R_{2}", "4:R_{3}"]
-
-[[gap]]
-id = "intersectreview-growth-003"
-reason = "The intersection of ray and polygon gains crossings after a move. The reference adds indexed output labels then. The kernel keeps the first slot created by the command because the workbench journal does not record output births on moves."
-mismatches = ["1:R_{2}", "2:R_{2}", "2:R_{3}", "2:R_{4}", "3:R_{2}", "3:R_{3}", "3:R_{4}", "4:R_{2}", "4:R_{3}", "4:R_{4}"]
-
-[[gap]]
-id = "intersectreview-growth-004"
-reason = "The intersection of two polylines gains crossings after a move. The reference adds indexed output labels then. The kernel keeps the first slot created by the command because the workbench journal does not record output births on moves."
-mismatches = ["2:R_{2}", "2:R_{3}", "3:R_{2}", "3:R_{3}", "4:R_{2}", "4:R_{3}"]
-
-[[gap]]
-id = "intersectreview-growth-005"
-reason = "The intersection of two polygons gains crossings after a move. The reference adds indexed output labels then. The kernel keeps the first slot created by the command because the workbench journal does not record output births on moves."
-mismatches = ["1:R_{2}", "2:R_{2}", "2:R_{3}", "2:R_{4}", "3:R_{2}", "3:R_{3}", "3:R_{4}", "3:R_{5}", "3:R_{6}", "4:R_{2}", "4:R_{3}", "4:R_{4}", "4:R_{5}", "4:R_{6}", "4:R_{7}", "4:R_{8}"]
+id = "intersectgrowth-interval-001"
+reason = "Intersect(f, h, a, b) keeps its creation-time output count. When b increases from 0.5 to 2, AlgoRoots allocates and labels one more point A, then keeps that label while the root is outside the interval and reuses it when b increases again."
+mismatches = ["1:A", "2:A", "3:A"]
 
 [[gap]]
 id = "vectorforms-identity-002"
