@@ -1,4 +1,4 @@
-//! Files saved after their free points were moved. `golden/ggb/saved/<id>.xml`
+//! Files saved after edits. `golden/ggb/saved/<id>.xml` or `<id>.ggb`
 //! is the file GeoGebra writes for the state the harness reached after the
 //! moves, `<id>.snapshot` what GeoGebra computed in that same state (see
 //! `tools/ggb-harness/harness.sh saved`). Every object the importer gives
@@ -9,10 +9,11 @@
 //! under both angle units).
 
 use geo_golden::compare::{compare, compare_conic, compare_list, compare_sampled};
-use geo_golden::model::{set_snapshot_schema, Expected};
+use geo_golden::model::{set_snapshot_schema, Expected, ExpectedData};
 use geo_golden::repo_root;
 use geo_import::import;
 use geo_kernel::expr::{work_done, MAX_EVALUATION_WORK};
+use geo_kernel::kernel::text::TextPosition;
 use geo_kernel::{script, Construction, Kind, Value};
 use serde::Deserialize;
 use std::collections::BTreeMap;
@@ -36,6 +37,10 @@ const REVIEW_FIXTURES: [&str; 4] = [
     "saved-review-001",
     "saved-coordinates-001",
 ];
+const TEXT_FIXTURES: [&str; 2] = ["saved-texts-001", "saved-texts-002"];
+const TEXT_EQUATION_FIXTURES: [&str; 2] = ["saved-text-equations-001", "saved-text-equations-002"];
+const TEXT_CONIC_STYLE_FIXTURE: &str = "saved-text-conic-styles-001";
+const TEXT_TEMPLATE_FIXTURES: [&str; 2] = ["saved-text-template-001", "saved-text-template-002"];
 
 fn fixture(name: &str) -> (Snapshot, geo_import::Imported) {
     let dir = repo_root().join("golden/ggb/saved");
@@ -61,6 +66,17 @@ fn check_review_values(snap: &Snapshot, c: &Construction, skipped: &[&str]) {
         let result = match kind {
             Kind::List => compare_list(c, expected, kind, c.elements(id)),
             Kind::Conic => compare_conic(expected, kind, &value, c.conic(id).as_ref()).0,
+            Kind::Text => {
+                assert_eq!(kind, expected.kind);
+                match &expected.data {
+                    Some(ExpectedData::Text(text)) => {
+                        assert_eq!(c.text(id), Some(text.as_str()), "{}: {label}", snap.id)
+                    }
+                    None => assert_eq!(value, Value::Undefined),
+                    other => panic!("{}: {label}: unexpected text snapshot {other:?}", snap.id),
+                }
+                continue;
+            }
             _ => {
                 let vertices: Vec<_> = c.vertices(id).collect();
                 let sample = |x| within_budget(|| c.function_value(id, x));
@@ -69,6 +85,100 @@ fn check_review_values(snap: &Snapshot, c: &Construction, skipped: &[&str]) {
         };
         result.unwrap_or_else(|why| panic!("{}: {label}: {why}", snap.id));
     }
+}
+
+#[test]
+fn saved_text_objects_match_before_and_after_edits() {
+    let dir = repo_root().join("golden/ggb/saved");
+    let load = |name: &str| {
+        let bytes = fs::read(dir.join(format!("{name}.ggb"))).unwrap();
+        let imported = import(&bytes).unwrap();
+        let mut snap: Snapshot =
+            serde_json::from_slice(&fs::read(dir.join(format!("{name}.snapshot"))).unwrap())
+                .unwrap();
+        set_snapshot_schema(snap.schema, &mut snap.objects).unwrap();
+        assert!(
+            imported.skipped.is_empty(),
+            "{name}: {:?}",
+            imported.skipped
+        );
+        assert!(
+            imported.mismatched.is_empty(),
+            "{name}: {:?}",
+            imported.mismatched
+        );
+        assert!(imported.hidden.iter().any(|name| name == "hiddenText"));
+        let c = script::load(&imported.script.join("\n")).unwrap();
+        check_review_values(&snap, &c, &[]);
+        let style = |label| c.text_presentation(c.id(label).unwrap()).unwrap();
+        assert_eq!(
+            style("caption").position,
+            TextPosition::Screen { x: 51.0, y: 73.0 }
+        );
+        assert_eq!(
+            style("note").position,
+            TextPosition::World { x: -3.0, y: 2.0 }
+        );
+        assert_eq!(
+            style("marker").position,
+            TextPosition::Point(c.id("P").unwrap())
+        );
+        assert_eq!(
+            style("atPoint").position,
+            TextPosition::Point(c.id("P").unwrap())
+        );
+        assert_eq!(style("atPoint").horizontal, Some(0));
+        assert_eq!(style("atPoint").vertical, Some(1));
+        let formula = style("formula");
+        assert!(formula.latex && formula.serif && formula.bold && formula.italic);
+        assert_eq!(formula.size, 1.4);
+        (snap, c)
+    };
+    let (_, mut live) = load(TEXT_FIXTURES[0]);
+    let (after, _) = load(TEXT_FIXTURES[1]);
+    let ExpectedData::Point { x, y } = after.objects["P"].data.as_ref().unwrap() else {
+        panic!("expected a point");
+    };
+    let ExpectedData::Number(n) = after.objects["a"].data.as_ref().unwrap() else {
+        panic!("expected a number");
+    };
+    live.move_point(live.id("P").unwrap(), *x, *y).unwrap();
+    live.set_number(live.id("a").unwrap(), *n).unwrap();
+    check_review_values(&after, &live, &[]);
+}
+
+#[test]
+fn saved_styles_are_used_to_recompute_texts() {
+    for pair in [TEXT_EQUATION_FIXTURES, TEXT_TEMPLATE_FIXTURES] {
+        check_saved_text_recompute(pair);
+    }
+}
+
+#[test]
+fn text_matches_saved_conic_equation_styles() {
+    let (snapshot, imported) = fixture(TEXT_CONIC_STYLE_FIXTURE);
+    assert!(imported.skipped.is_empty(), "{:?}", imported.skipped);
+    assert!(imported.mismatched.is_empty(), "{:?}", imported.mismatched);
+    let c = script::load(&imported.script.join("\n")).unwrap();
+    check_review_values(&snapshot, &c, &[]);
+}
+
+fn check_saved_text_recompute(pair: [&str; 2]) {
+    let [before, after] = pair.map(fixture);
+    let load = |(snapshot, imported): &(Snapshot, geo_import::Imported)| {
+        assert!(imported.skipped.is_empty(), "{:?}", imported.skipped);
+        assert!(imported.mismatched.is_empty(), "{:?}", imported.mismatched);
+        let c = script::load(&imported.script.join("\n")).unwrap();
+        check_review_values(snapshot, &c, &[]);
+        c
+    };
+    let mut live = load(&before);
+    load(&after);
+    let Some(ExpectedData::Number(a)) = after.0.objects["a"].data else {
+        panic!("expected a number");
+    };
+    live.set_number(live.id("a").unwrap(), a).unwrap();
+    check_review_values(&after.0, &live, &[]);
 }
 
 #[test]
@@ -291,6 +401,10 @@ fn files_saved_after_moves_agree_with_what_geogebra_computed_when_saving() {
             !EXPRESSION_FIXTURES
                 .iter()
                 .chain(&REVIEW_FIXTURES)
+                .chain(&TEXT_FIXTURES)
+                .chain(&TEXT_EQUATION_FIXTURES)
+                .chain(&TEXT_TEMPLATE_FIXTURES)
+                .chain(std::iter::once(&TEXT_CONIC_STYLE_FIXTURE))
                 .any(|id| p.file_stem().unwrap() == *id)
         })
         .collect();

@@ -4,14 +4,17 @@
 #[cfg(test)]
 use crate::describe;
 use crate::history::History;
+use crate::interact::TextMove;
 use crate::labels::next_label;
 use crate::scriptlog::{exec_definition, normalize, Log, Setting};
 use crate::snap::check_decimal_fraction;
 use crate::style::{Palette, Sides};
 use crate::undo::Undo;
 pub use file::{import_notice, rejected_notice, SNAPSHOT_VERSION};
+use geo_kernel::kernel::text::{TextOverrides, TextPosition};
 use geo_kernel::kernel::{Construction, Def, Id, Kind, Value};
-use geo_kernel::script::BoundaryOutputs;
+use geo_kernel::script::text::Properties as TextProperties;
+use geo_kernel::script::{find_unquoted, BoundaryOutputs};
 use std::collections::BTreeMap;
 use std::sync::OnceLock;
 
@@ -154,12 +157,12 @@ impl Workbench {
                 None => log.clone(),
             };
             return if self.unshared {
-                log.rebuild_reference()
+                log.rebuild_reference(&self.construction)
             } else {
-                log.rebuild()
+                log.rebuild_with_text_anchors(Some(&self.construction))
             };
         }
-        log.rebuild()
+        log.rebuild_with_text_anchors(Some(&self.construction))
     }
 
     /// See the field of the same name.
@@ -266,7 +269,7 @@ impl Workbench {
     /// `(1, 2)`. The label class follows the kind of the result, found by
     /// running the line on a scratch copy.
     fn with_label(&self, line: String) -> String {
-        if line.is_empty() || line.contains('=') {
+        if line.is_empty() || find_unquoted(&line, '=').is_some() {
             return line;
         }
         let kind = self.log.rebuild().ok().and_then(|(mut scratch, _)| {
@@ -868,6 +871,51 @@ impl Workbench {
             self.label_offsets.remove(&label);
         } else {
             self.label_offsets.insert(label, offset);
+        }
+    }
+
+    /// Moves a text while keeping the other presentation properties and its definition.
+    pub fn move_text(&mut self, id: Id, movement: TextMove) {
+        let Some(style) = self.construction.text_presentation(id).filter(|s| !s.fixed) else {
+            return;
+        };
+        let (position, offset) = match (movement, style.position) {
+            (TextMove::World { x, y }, TextPosition::Origin | TextPosition::World { .. })
+                if x.is_finite() && y.is_finite() =>
+            {
+                let old = match style.position {
+                    TextPosition::World { x, y } => (x, y),
+                    _ => (0.0, 0.0),
+                };
+                if (x, y) == old {
+                    return;
+                }
+                (Some(TextPosition::World { x, y }), None)
+            }
+            (TextMove::Screen { x, y }, TextPosition::Screen { x: old_x, y: old_y }) => {
+                let (x, y) = (f64::from(x), f64::from(y));
+                if (x, y) == (old_x, old_y) {
+                    return;
+                }
+                (Some(TextPosition::Screen { x, y }), None)
+            }
+            (TextMove::Offset(offset), TextPosition::Point(_)) if offset != style.offset => {
+                (None, Some(offset))
+            }
+            _ => return,
+        };
+        let label = self.construction.label(id).to_owned();
+        let props = TextProperties {
+            label: &label,
+            overrides: TextOverrides {
+                position,
+                offset,
+                ..TextOverrides::default()
+            },
+        };
+        if props.apply(&mut self.construction).is_ok() {
+            self.note_change();
+            self.log.record_text_properties(props);
         }
     }
 

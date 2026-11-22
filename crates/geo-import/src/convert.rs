@@ -11,7 +11,12 @@ use crate::xml::{Document, Element, Item};
 use crate::{ImportError, Imported, Mismatch, Skipped};
 use geo_kernel::algo::conic_nd::{ConicData, ConicType};
 use geo_kernel::algo::general_conic::GeneralConicDef;
+use geo_kernel::kernel::text::{TextFont, TextOverrides, TextPosition};
 use geo_kernel::kernel::{angle::AngleStyle, Def};
+use geo_kernel::script::equation::Style as EquationStyle;
+use geo_kernel::script::text::{
+    literal as text_literal, push_escaped_char, Properties as TextProperties,
+};
 use geo_kernel::script::{exec, is_vector_label, multi_output_count};
 use geo_kernel::{Construction, Id, Kind, Value};
 use std::collections::{BTreeMap, BTreeSet};
@@ -96,9 +101,13 @@ pub fn convert(doc: Document) -> Result<Imported, ImportError> {
                         })
                         .collect::<Option<Vec<_>>>()
                 });
-                c.element(el, points.as_deref())?;
+                c.element(el, points.as_deref(), doc.gui_font_size.unwrap_or(12.0))?;
             }
         }
+    }
+    // A text start point may be named later in the construction.
+    for el in elements.values() {
+        c.apply_text_position(el);
     }
     let mut out = c.out;
     out.settings = doc.settings;
@@ -395,14 +404,41 @@ impl Converter {
         if name.is_empty() || !name.bytes().all(|b| b.is_ascii_alphanumeric()) {
             return Err(format!("`{}` is not a command name", quote(name)));
         }
+        let text_command = match name {
+            "Text" | "LaTeX" | "FormulaText" | "LetterToUnicode" | "TextToUnicode"
+            | "UnicodeToLetter" | "UnicodeToText" | "Ordinal" | "FractionText"
+            | "ScientificText" | "SurdText" | "ContinuedFraction" | "TableText"
+            | "VerticalText" | "RotateText" | "ReplaceAll" | "Split" => true,
+            "Length" | "Take" | "IndexOf" => inputs.first().is_some_and(|arg| {
+                arg.contains('"')
+                    || self
+                        .kernel
+                        .id(arg)
+                        .is_some_and(|id| self.kernel.kind(id) == Kind::Text)
+            }),
+            _ => false,
+        };
         let mut args = Vec::with_capacity(inputs.len());
         for arg in inputs {
-            for token in tokens(arg) {
-                if self.skipped.contains_key(token) {
-                    return Err(format!("depends on the skipped object `{}`", quote(token)));
+            if text_command {
+                let arg = expression_line(arg)?;
+                if !self.skipped.is_empty() {
+                    if let Some(token) = geo_kernel::expr::expression_names(&arg)
+                        .into_iter()
+                        .find(|token| self.skipped.contains_key(*token))
+                    {
+                        return Err(format!("depends on the skipped object `{}`", quote(token)));
+                    }
                 }
+                args.push(arg);
+            } else {
+                for token in tokens(arg) {
+                    if self.skipped.contains_key(token) {
+                        return Err(format!("depends on the skipped object `{}`", quote(token)));
+                    }
+                }
+                args.push(pass_argument(arg)?);
             }
-            args.push(pass_argument(arg)?);
         }
         if let ("Point", [path], [label]) = (name, args.as_slice(), outputs) {
             if let Some([x, y, z]) = elements
@@ -574,12 +610,18 @@ impl Converter {
         label
     }
 
-    fn element(&mut self, el: &Element, polygon: Option<&[[f64; 2]]>) -> Result<(), ImportError> {
+    fn element(
+        &mut self,
+        el: &Element,
+        polygon: Option<&[[f64; 2]]>,
+        font_size: f64,
+    ) -> Result<(), ImportError> {
         let expression = self.expressions.remove(&el.label);
         if !self.produced.contains(&el.label) {
             self.claim(&el.label)?;
             self.define_element(el, expression.as_deref())?;
         }
+        self.apply_text_style(el, font_size);
         self.record_element(el, expression.as_deref(), polygon);
         Ok(())
     }
@@ -612,6 +654,24 @@ impl Converter {
         polygon: Option<&[[f64; 2]]>,
     ) {
         if let Some(id) = self.kernel.id(&el.label) {
+            if let Some(form) = el
+                .equation_form
+                .as_ref()
+                .filter(|form| self.kernel.equation_form(id) != Some(*form))
+            {
+                let line = EquationStyle {
+                    label: &el.label,
+                    form: form.clone(),
+                }
+                .to_string();
+                match exec(&mut self.kernel, &line) {
+                    Ok(_) => self.out.script.push(line),
+                    Err(e) => self
+                        .out
+                        .notes
+                        .push(format!("equation style for `{}`: {e}", quote(&el.label))),
+                }
+            }
             if let Some(code) = el
                 .angle_style
                 .filter(|_| self.kernel.kind(id) == Kind::Angle)
@@ -639,6 +699,95 @@ impl Converter {
             if !el.shown {
                 self.out.hidden.push(el.label.clone());
             }
+        }
+    }
+
+    fn apply_text_style(&mut self, el: &Element, font_size: f64) {
+        let Some(style) = el
+            .text
+            .as_deref()
+            .filter(|_| self.kernel.id(&el.label).is_some())
+        else {
+            return;
+        };
+        self.apply_text_overrides(
+            &el.label,
+            TextOverrides {
+                latex: style.latex,
+                font: style.font.as_ref().map(|font| TextFont {
+                    size: font.multiplier.unwrap_or_else(|| {
+                        font.legacy_size.map_or(1.0, |size| {
+                            (font_size + f64::from(size)).max(4.0) / font_size
+                        })
+                    }),
+                    serif: font.serif,
+                    bold: font.style & 1 != 0,
+                    italic: font.style & 2 != 0,
+                }),
+                offset: style.offset,
+                ..TextOverrides::default()
+            },
+        );
+    }
+
+    fn apply_text_position(&mut self, el: &Element) {
+        let Some((saved, id)) = el
+            .text
+            .as_deref()
+            .and_then(|style| style.position.as_ref())
+            .zip(self.kernel.id(&el.label))
+            .filter(|&(_, id)| self.kernel.kind(id) == Kind::Text)
+        else {
+            return;
+        };
+        let from_command = self.produced.contains(&el.label)
+            && self.kernel.text_position(id) != Some(TextPosition::Origin);
+        let position = match saved {
+            TextPosition::Point(label) | TextPosition::ScreenPoint(label) => {
+                if !self
+                    .kernel
+                    .id(label)
+                    .is_some_and(|p| self.kernel.kind(p) == Kind::Point)
+                {
+                    self.out.notes.push(format!(
+                        "text `{}` has an unavailable start point `{}`",
+                        quote(&el.label),
+                        quote(label)
+                    ));
+                    None
+                } else if matches!(saved, TextPosition::ScreenPoint(_)) {
+                    Some(TextPosition::ScreenPoint(label.as_str()))
+                } else {
+                    Some(TextPosition::Point(label.as_str()))
+                }
+            }
+            TextPosition::World { x, y } if !from_command => {
+                Some(TextPosition::World { x: *x, y: *y })
+            }
+            TextPosition::Screen { x, y } => Some(TextPosition::Screen { x: *x, y: *y }),
+            TextPosition::Undefined if !from_command => Some(TextPosition::Undefined),
+            _ => None,
+        };
+        self.apply_text_overrides(
+            &el.label,
+            TextOverrides {
+                position,
+                ..TextOverrides::default()
+            },
+        );
+    }
+
+    fn apply_text_overrides(&mut self, label: &str, overrides: TextOverrides<&str>) {
+        if overrides == TextOverrides::default() {
+            return;
+        }
+        let properties = TextProperties { label, overrides };
+        match properties.apply(&mut self.kernel) {
+            Ok(()) => self.out.script.push(properties.to_string()),
+            Err(e) => self
+                .out
+                .notes
+                .push(format!("text properties for `{}`: {e}", quote(label))),
         }
     }
 
@@ -679,9 +828,13 @@ impl Converter {
                 format!("expression: {error}")
             })?;
             let Some(id) = id.filter(|&id| {
-                self.kernel.len() == before + 1
-                    && id.index() == before
-                    && self.kernel.label(id) == label
+                self.kernel.label(id) == label
+                    && (id.index() == before && self.kernel.len() == before + 1
+                        || kind == Some(Kind::Text)
+                            && id.index() >= before
+                            && self.kernel.ids().skip(before).all(|made| {
+                                made == id || self.kernel.label(made).starts_with('\0')
+                            }))
             }) else {
                 return Err(
                     "the expression must create exactly one object with the saved label".into(),
@@ -782,6 +935,11 @@ impl Converter {
             }
             "angle" => Err("the angle has no saved definition".into()),
             "boolean" => Err(CHECKBOX_REASON.into()),
+            "text" => el
+                .value
+                .as_ref()
+                .map(|s| format!("{label} = {}", text_literal(s)))
+                .ok_or_else(|| "the text has no saved expression or value".into()),
             "conic" => Err("a conic that no command made: the kernel only has circles".into()),
             other => Err(unsupported_element(other)),
         })
@@ -819,7 +977,9 @@ fn expression_kind(saved_type: &str, exp: &str) -> Result<Kind, String> {
         }
         "boolean" => Kind::Boolean,
         "list" => Kind::List,
-        "text" => return Err("text expressions are unsupported".into()),
+        "text" => Kind::Text,
+        "line" => Kind::Line,
+        "conic" => Kind::Conic,
         other => return Err(unsupported_element(other)),
     })
 }
@@ -891,6 +1051,7 @@ fn object_expression(label: &str, kind: Kind, exp: &str) -> Result<String, Strin
     }
     let rhs = expression_line(exp)?;
     Ok(match kind {
+        Kind::Line | Kind::Conic => format!("{label}: {rhs}"),
         Kind::Point if is_vector_label(label) => format!("{label} = $point({rhs})"),
         Kind::Vector if !is_vector_label(label) => format!("{label} = $vector({rhs})"),
         _ => format!("{label} = {rhs}"),
@@ -902,23 +1063,21 @@ fn object_expression(label: &str, kind: Kind, exp: &str) -> Result<String, Strin
 pub fn expression_line(exp: &str) -> Result<String, String> {
     let mut out = String::with_capacity(exp.len());
     let mut closers = Vec::new();
-    let (mut quoted, mut escaped) = (false, false);
+    let mut quoted = false;
     for ch in exp.trim().chars() {
-        if ch == '#' {
-            return Err("a script comment marker `#` in an expression is unsupported".into());
-        }
         if quoted {
-            if matches!(ch, '\n' | '\r') {
-                return Err("a line break inside an expression text literal is unsupported".into());
-            }
-            if ch == '"' && !escaped {
+            if ch == '"' {
                 quoted = false;
+                out.push(ch);
+            } else {
+                push_escaped_char(&mut out, ch);
             }
-            escaped = ch == '\\' && !escaped;
-            out.push(ch);
             continue;
         }
         let normalized = match ch {
+            '#' => {
+                return Err("a script comment marker `#` in an expression is unsupported".into())
+            }
             '"' => {
                 quoted = true;
                 ch
@@ -1239,9 +1398,22 @@ fn cross_check(
     let kind = c.kind(id);
     let value = c.value(id);
     let kind_matches = kind_agrees(&el.kind, kind);
+    // GeoGebra writes independent text as a quoted expression. Dependent
+    // texts normally save their definition or command and omit the result.
+    let saved_string = (el.kind == "text")
+        .then(|| {
+            el.value.as_deref().or_else(|| {
+                let body = expression?.trim().strip_prefix('"')?.strip_suffix('"')?;
+                (!body.contains('"')).then_some(body)
+            })
+        })
+        .flatten();
     let report = || {
-        let saved = saved_text(el);
-        let computed = if kind == Kind::Conic {
+        let saved =
+            saved_string.map_or_else(|| saved_text(el), |s| format!("value {:?}", quote(s)));
+        let computed = if let Some(text) = c.text(id) {
+            format!("{kind}, {:?}", quote(text))
+        } else if kind == Kind::Conic {
             format!(
                 "{kind}, {value:?}, matrix {:?}",
                 c.conic(id).map(|d| d.matrix)
@@ -1269,6 +1441,9 @@ fn cross_check(
     }
     if polygon.is_some_and(|points| !polygon_agrees(c, id, points)) {
         return report();
+    }
+    if let Some(saved) = saved_string {
+        return (c.text(id) != Some(saved)).then(report).flatten();
     }
     if let Some(exp) = expression {
         let exp = exp.trim();
@@ -1434,6 +1609,52 @@ fn list_item_agrees(actual: geo_kernel::expr::Element<'_>, saved: &str) -> bool 
 mod tests {
     use crate::import;
     use geo_kernel::{script, Value};
+
+    #[test]
+    fn saved_text_verification_reports_exact_string_differences() {
+        use super::cross_check;
+        use crate::xml::{parse, Item};
+        let xml = crate::archive::extract_xml(include_bytes!(
+            "../../../golden/ggb/saved/saved-texts-001.ggb"
+        ))
+        .unwrap();
+        let mut doc = parse(&xml).unwrap();
+        let label = "note";
+        let (el, exp) = (
+            doc.items
+                .iter()
+                .find_map(|item| match item {
+                    Item::Element(el) if el.label == label => Some(el.as_ref()),
+                    _ => None,
+                })
+                .unwrap(),
+            doc.items
+                .iter()
+                .find_map(|item| match item {
+                    Item::Expression { label: name, exp } if name == label => Some(exp.as_str()),
+                    _ => None,
+                })
+                .unwrap(),
+        );
+        let c = script::load(r#"note = "Survey note second line""#).unwrap();
+        assert!(cross_check(el, &c, c.id(label).unwrap(), Some(exp), None).is_some());
+
+        // Supply a cached value alongside the saved expression to exercise
+        // mismatch reporting through the converter's normal entry point.
+        for item in &mut doc.items {
+            if let Item::Element(el) = item {
+                if el.label == label {
+                    el.value = c.text(c.id(label).unwrap()).map(str::to_owned);
+                }
+            }
+        }
+        let imported = super::convert(doc).unwrap();
+        assert_eq!(imported.mismatched.len(), 1, "{:?}", imported.mismatched);
+        let mismatch = &imported.mismatched[0];
+        assert_eq!(mismatch.label, label);
+        assert!(mismatch.saved.contains("Survey note second line"));
+        assert!(mismatch.computed.contains(r"Survey note\nsecond line"));
+    }
 
     #[test]
     fn saved_verification_detects_different_kinds_and_serialized_values() {

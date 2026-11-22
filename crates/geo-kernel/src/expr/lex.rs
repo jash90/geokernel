@@ -25,6 +25,7 @@ pub(crate) enum Tok {
     RBrace,
     Comma,
     Semicolon,
+    Range,
     Plus,
     Minus,
     Star,
@@ -96,6 +97,13 @@ pub(crate) fn tokens(src: &str) -> Result<Vec<Token>, String> {
                     {
                         value.push(chars.next().unwrap().1);
                     }
+                    // Saved text encodes line breaks without splitting the script line.
+                    '\\' if matches!(src.get(i + 1..i + 5), Some("u{a}" | "u{d}")) => {
+                        value.push(if bytes[i + 3] == b'a' { '\n' } else { '\r' });
+                        for _ in 0..4 {
+                            chars.next();
+                        }
+                    }
                     _ => value.push(next),
                 }
             }
@@ -103,6 +111,21 @@ pub(crate) fn tokens(src: &str) -> Result<Vec<Token>, String> {
                 tok: Tok::Text(value),
                 start,
                 end: end.ok_or("unterminated text")?,
+            });
+            continue;
+        } else if (ch == '.' && src[start..].starts_with("..")) || ch == '…' {
+            let end = if ch == '.' {
+                start + src[start..].bytes().take_while(|&b| b == b'.').count()
+            } else {
+                start + ch.len_utf8()
+            };
+            while chars.peek().is_some_and(|&(i, _)| i < end) {
+                chars.next();
+            }
+            out.push(Token {
+                tok: Tok::Range,
+                start,
+                end,
             });
             continue;
         } else if ch.is_ascii_digit() || ch == '.' {
@@ -117,10 +140,10 @@ pub(crate) fn tokens(src: &str) -> Result<Vec<Token>, String> {
                 end,
             });
             continue;
-        } else if is_name_char(ch) && !ch.is_numeric() || ch == '_' {
+        } else if is_name_char(ch) && !ch.is_numeric() || matches!(ch, '_' | '\0') {
             let mut end = start;
             while let Some(&(i, c)) = chars.peek() {
-                if is_name_char(c) || c == '_' || c == '\'' {
+                if is_name_char(c) || matches!(c, '_' | '\'') || (i == start && c == '\0') {
                     chars.next();
                     end = i + c.len_utf8();
                     // a subscript in braces: `a_{12}`
@@ -284,7 +307,7 @@ fn scan_bars(chars: impl Iterator<Item = char>, splitters: &[char]) -> String {
 /// of digits and decimal points with exactly one point at most, then
 /// optionally `EFLOAT`'s exponent: an upper-case `E`, a sign and digits.
 /// A lower-case `e` never starts an exponent: `2e3` is `2` and the name
-/// `e3`. A run like `1.2.3` or `1..2` is an error, as upstream
+/// `e3`. A run like `1.2.3` is an error, as upstream
 /// (`MyDouble.parseDouble`), and so is a lone `.`.
 fn number_end(src: &str, start: usize) -> Result<usize, String> {
     let b = src.as_bytes();
@@ -293,6 +316,7 @@ fn number_end(src: &str, start: usize) -> Result<usize, String> {
     while let Some(&c) = b.get(i) {
         match c {
             b'0'..=b'9' => digits += 1,
+            b'.' if b.get(i + 1) == Some(&b'.') => break,
             b'.' => points += 1,
             _ => break,
         }
@@ -437,8 +461,12 @@ mod tests {
         assert!(tokens(". 5").is_err());
         assert!(tokens("a_{1").is_err());
         assert!(tokens("1.2.3").is_err());
-        assert!(tokens("1..2").is_err());
-        assert!(tokens("2 ** ..").is_err());
+        assert_eq!(
+            kinds("1..2"),
+            vec![Tok::Num(1.0), Tok::Range, Tok::Num(2.0)]
+        );
+        assert_eq!(kinds("1…2"), kinds("1..2"));
+        assert!(tokens("2 ** .").is_err());
     }
 
     #[test]

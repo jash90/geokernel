@@ -156,7 +156,7 @@ pub(super) fn list_value<const M: bool>(
         | ListOp::Prepend
         | ListOp::Join => Val::N(f64::NAN),
         ListOp::Index | ListOp::Element => match (ctx.pick(op, l, n), ctx.e.tys[i as usize]) {
-            (Some(slot), _) => slot_val(slot),
+            (Some(slot), _) => slot_val(&slot),
             (None, Ty::Vec) => Val::V(f64::NAN, f64::NAN),
             (None, Ty::Bool) => Val::B(false, true),
             (None, _) => Val::N(f64::NAN),

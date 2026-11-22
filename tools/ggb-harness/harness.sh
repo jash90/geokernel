@@ -7,7 +7,8 @@
 #   GEOGEBRA_SRC=<path to a GeoGebra checkout> tools/ggb-harness/harness.sh ggb [sample step [zip step]]
 #   GEOGEBRA_SRC=<path to a GeoGebra checkout> tools/ggb-harness/harness.sh saved
 #   GEOGEBRA_SRC=<path to a GeoGebra checkout> tools/ggb-harness/harness.sh reload <file.xml> <label>...
-#   GEOGEBRA_SRC=<path to a GeoGebra checkout> tools/ggb-harness/harness.sh tpairs
+#   GEOGEBRA_SRC=<path to a GeoGebra checkout> tools/ggb-harness/harness.sh tpairs [type]
+#   GEOGEBRA_SRC=<path to a GeoGebra checkout> tools/ggb-harness/harness.sh text-canvas
 #
 # `build`  builds GeoGebra's common-jre with its own Gradle wrapper, records the
 #          class path in build/classpath.txt and compiles the harness.
@@ -20,11 +21,12 @@
 #          prunes files it did not produce and prints each one.
 # `saved`  writes construction files saved after the free points were moved,
 #          with GeoGebra's own values at that moment, to golden/ggb/saved/
-#          (<id>.xml and <id>.snapshot), from saved/saved.json.
+#          (<id>.xml or <id>.ggb, and <id>.snapshot), from saved/saved.json.
 # `reload` loads a saved file into a fresh GeoGebra and prints the numbers it
 #          computes for the given labels.
 # `tpairs` replays the upstream test methods of golden/t-pairs/scripts.jsonl and
 #          writes what GeoGebra returns for every step to golden/t-pairs/verified.jsonl.
+# `text-canvas` checks text pointer interaction and integer placement.
 # `chain`  times the bench() chain (see README.md); extra arguments are passed on.
 set -euo pipefail
 
@@ -90,14 +92,18 @@ case "$cmd" in
     commit="$(git -C "$ggb" rev-parse HEAD)"
     java "${java_opts[@]}" -cp "$build/classes:$(cat "$build/classpath.txt")" \
       geokernel.harness.TPairs "$repo/golden/t-pairs/scripts.jsonl" \
-      "$repo/golden/t-pairs/verified.jsonl" "$commit"
+      "$repo/golden/t-pairs/verified.jsonl" "$commit" "$@"
     ;;
   reload)
     java "${java_opts[@]}" -cp "$build/classes:$(cat "$build/classpath.txt")" \
       geokernel.harness.Reload "$@"
     ;;
+  text-canvas)
+    java "${java_opts[@]}" -cp "$build/classes:$(cat "$build/classpath.txt")" \
+      geokernel.harness.TextCanvas
+    ;;
   *)
-    echo "usage: GEOGEBRA_SRC=<checkout> $0 build|golden|chain|ggb|saved|reload|tpairs" >&2
+    echo "usage: GEOGEBRA_SRC=<checkout> $0 build|golden|chain|ggb|saved|reload|tpairs|text-canvas" >&2
     exit 2
     ;;
 esac

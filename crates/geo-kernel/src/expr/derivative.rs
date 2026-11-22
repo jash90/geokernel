@@ -170,6 +170,7 @@ impl Walker<'_> {
             | Node::Side(..)
             | Node::Relation { .. }
             | Node::Text
+            | Node::TextCmd(..)
             | Node::Base { .. }
             | Node::FunctionObject(_)
             | Node::Extremum(..)

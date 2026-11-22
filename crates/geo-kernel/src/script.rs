@@ -96,12 +96,21 @@ pub fn load(src: &str) -> Result<Construction, ScriptError> {
     Ok(c)
 }
 
+pub mod equation;
+pub mod text;
+
 /// Runs one line. Returns the first output, or `Ok(None)` if the line
 /// creates nothing. Internal objects for inline arguments precede the outputs.
 pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
     let line = split_comment(raw).0.trim();
     if line.is_empty() {
         return Ok(None);
+    }
+    if let Some(result) = text::apply(c, line) {
+        return result.map(|_| None);
+    }
+    if let Some(style) = equation::parse_style(line) {
+        return style?.apply(c).map(|_| None);
     }
     if line.starts_with('{') {
         return exec_labelled(c, line);
@@ -174,10 +183,32 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
         }
         return result;
     }
-    let Some(call) = resolve_geometry_arguments(c, rhs) else {
-        return define_resolved(c, name, rhs);
+    let call = match resolve_text_argument(c, rhs) {
+        Ok(call) => call.or_else(|| resolve_geometry_arguments(c, rhs)),
+        Err(error) => {
+            c.discard_since(start);
+            return Err(error);
+        }
     };
-    let result = define_resolved(c, name, &call);
+    let result = define_resolved(c, name, call.as_deref().unwrap_or(rhs));
+    if let Ok(Some(id)) = result.as_ref() {
+        let numeric_expression = c.kind(*id).is_number()
+            && crate::expr::plain_number(rhs).is_none()
+            && !rhs.ends_with('°')
+            && split_call(rhs).is_none();
+        let coordinate_expression = c.kind(*id) == Kind::Point
+            && rhs
+                .strip_prefix('(')
+                .and_then(|s| s.strip_suffix(')'))
+                .is_some_and(|parts| {
+                    parts
+                        .split(',')
+                        .any(|arg| crate::expr::plain_number(arg.trim()).is_none())
+                });
+        if c.def(*id).is_free() && (numeric_expression || coordinate_expression) {
+            c.remember_construction_source(*id, rhs);
+        }
+    }
     if result.is_err() {
         c.discard_since(start);
     }
@@ -190,12 +221,6 @@ fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option
     }
     if let Some(("Curve", args)) = split_call(rhs) {
         return define_cartesian_curve(c, name, &args).map(Some);
-    }
-    if let Some(length) = text_length(rhs) {
-        return c
-            .add(name, Def::Measure(MeasureDef::TextLength(length?)))
-            .map(Some)
-            .map_err(|e| e.to_string());
     }
     if let Some(def) = intersect::growth::parse_slot(c, rhs) {
         return c.add(name, def?).map(Some).map_err(|e| e.to_string());
@@ -359,25 +384,6 @@ fn define_cartesian_curve(c: &mut Construction, name: &str, args: &[&str]) -> Re
         c.discard_since(checkpoint);
     }
     result
-}
-
-/// `AlgoTextLength` counts UTF-16 code units, as Java's String.length does.
-fn text_length(rhs: &str) -> Option<Result<usize, String>> {
-    let (name, args) = rhs.split_once('(')?;
-    if name.trim() != "Length" {
-        return None;
-    }
-    let quoted = args
-        .trim_end()
-        .strip_suffix(')')?
-        .trim()
-        .strip_prefix('"')?;
-    let text = quoted.strip_suffix('"')?;
-    Some(if text.contains('"') {
-        Err("expected one text literal in `Length`".into())
-    } else {
-        Ok(text.encode_utf16().count())
-    })
 }
 
 fn define_expression_or_command(c: &mut Construction, name: &str, rhs: &str) -> Result<Id, String> {
@@ -550,6 +556,11 @@ pub fn split_comment(line: &str) -> (&str, Option<&str>) {
     (line, None)
 }
 
+/// The byte position of the first matching character outside a string literal.
+pub fn find_unquoted(text: &str, ch: char) -> Option<usize> {
+    unquoted(text).find_map(|(i, c)| (c == ch).then_some(i))
+}
+
 fn unquoted(text: &str) -> impl Iterator<Item = (usize, char)> + '_ {
     let mut quoted = false;
     let mut escaped = false;
@@ -659,6 +670,66 @@ pub(crate) fn relation_or_region_argument(c: &mut Construction, arg: &str) -> Re
         return crate::expr::equation::define(c, &label, &call);
     }
     define_expression_or_command(c, &label, &call)
+}
+
+/// A formatting command accepts a geometry command as its first argument.
+fn resolve_text_argument(c: &mut Construction, rhs: &str) -> Result<Option<String>, String> {
+    let Some((name @ ("Text" | "FormulaText" | "LaTeX"), args)) = split_call(rhs) else {
+        return Ok(None);
+    };
+    let Some((first, rest)) = args.split_first() else {
+        return Ok(None);
+    };
+    let Some((command, args)) = split_call(first) else {
+        return Ok(None);
+    };
+    if crate::expr::is_expression_command(command) || crate::expr::accepts_text_argument(c, first) {
+        return Ok(None);
+    }
+    let label = format!("\0textarg{}", c.len());
+    let id = if command == "Polygon" && args.len() >= 2 {
+        let mut points = Vec::with_capacity(args.len());
+        for token in &args {
+            if let Some(id) = c.id(token).filter(|&id| c.kind(id) == Kind::Point) {
+                points.push(id);
+            } else {
+                let point = format!("\0textpoint{}", c.len());
+                if crate::expr::argument_object(c, token, &point, Kind::Point) {
+                    points.push(c.id(&point).unwrap());
+                } else {
+                    break;
+                }
+            }
+        }
+        let polygon = if points.len() == 2 && args.len() == 3 {
+            let n = crate::algo::polygon::count_arg(c, args[2])?;
+            c.add(
+                &label,
+                Def::Polygon(crate::algo::polygon::PolygonDef::Regular {
+                    a: points[0],
+                    b: points[1],
+                    n,
+                }),
+            )
+        } else if points.len() == args.len() && points.len() >= 3 {
+            c.add_with_list(&label, &points, |list| {
+                Def::Polygon(crate::algo::polygon::PolygonDef::Polygon(list))
+            })
+        } else {
+            return Err("expected points or two points and a vertex count".into());
+        };
+        polygon.map_err(|err| err.to_string())?
+    } else {
+        define_after_label(c, &label, first)?.ok_or("the text argument has no value")?
+    };
+    c.remember_construction_source(id, first);
+    Ok(Some(format!(
+        "{name}({})",
+        std::iter::once(label.as_str())
+            .chain(rest.iter().copied())
+            .collect::<Vec<_>>()
+            .join(", ")
+    )))
 }
 
 /// Give inline numeric and list inputs a live dependency, as for the
