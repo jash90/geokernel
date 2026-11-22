@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<geogebra format="5.0">
+<construction title="" author="" date="">
+<expression label="A" exp="(1, 2)" type="point"/>
+<element type="point" label="A">
+	<show object="true" label="true"/>
+	<coords x="1" y="2" z="1"/>
+</element>
+<expression label="B" exp="(3, 1)" type="point"/>
+<element type="point" label="B">
+	<show object="true" label="true"/>
+	<coords x="3" y="1" z="1"/>
+</element>
+<command name="Circle">
+	<input a0="A" a1="B"/>
+	<output a0="k"/>
+</command>
+<element type="conic" label="k">
+	<show object="true" label="true"/>
+	<objColor r="10" g="20" b="30" alpha="0.5" hatchAngle="abc" hatchDistance="7" fillType="2" inverseFill="true"/>
+</element>
+<element type="numeric" label="n">
+	<value val="2"/>
+	<slider min="0" max="5" width="100" x="10" y="10" fixed="false" horizontal="true" showAlgebra="true"/>
+	<show object="true" label="true"/>
+</element>
+</construction>
+</geogebra>

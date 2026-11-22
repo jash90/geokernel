@@ -1,4 +1,7 @@
-use super::{failure, flag, number, ExportError, Writer};
+use super::{
+    failure, flag, number, ExportError, ObjectStyle, Rounding, SliderAnimation, SliderLayout,
+    Writer,
+};
 use geo_kernel::algo::path::PathDef;
 use geo_kernel::kernel::image::{ImageCorner, ImagePlacement};
 use geo_kernel::kernel::text::TextPosition;
@@ -33,6 +36,29 @@ pub(super) fn kind(kind: Kind) -> &'static str {
     }
 }
 
+/// Kinds whose reference class keeps a trace flag.
+fn traceable(kind: Kind) -> bool {
+    matches!(
+        kind,
+        Kind::Point
+            | Kind::Line
+            | Kind::Segment
+            | Kind::Ray
+            | Kind::Vector
+            | Kind::Circle
+            | Kind::Conic
+            | Kind::Arc
+            | Kind::Sector
+            | Kind::Function
+            | Kind::Polygon
+            | Kind::PolyLine
+            | Kind::List
+            | Kind::Locus
+            | Kind::Curve
+            | Kind::ImplicitCurve
+    )
+}
+
 impl Writer<'_> {
     pub(super) fn element(&mut self, id: Id, line: &str) -> Result<(), ExportError> {
         let c = self.c;
@@ -51,68 +77,163 @@ impl Writer<'_> {
             self.image(id)?;
         }
         let style = c.drawing_style(id);
+        // An object from a file writes the tags its file had. A tag the file
+        // left out stays out, so the reader keeps the same default.
         let saved = self.presentation.object_styles.get(label).copied();
         let shown = !self.presentation.hidden.contains(label);
-        self.xml.tag(
-            "show",
-            &[
+        let label_shown = saved.and_then(|style| style.show_label);
+        // A free number is a slider when it has a bound, or when its file
+        // placed one for it.
+        let numeric = c.slider_bounds(id).map(|n| n.map(|n| n.to_string()));
+        let bounds = match c.def(id) {
+            Def::Number(_) => self
+                .presentation
+                .slider_bounds
+                .get(label)
+                .copied()
+                .unwrap_or_else(|| numeric.each_ref().map(|n| n.as_deref())),
+            _ => [None; 2],
+        };
+        let bounded = bounds.iter().any(Option::is_some);
+        // The reference shows a number by giving it an interval around its
+        // current value, so the value, and the slider with its bounds, come
+        // before `<show>`, as in the files of the reference application.
+        let is_number = matches!(object_kind, Kind::Number | Kind::Angle);
+        // Only a number or an angle takes the tag in the reference reader.
+        let layout = saved
+            .and_then(|style| style.slider.as_deref())
+            .filter(|_| is_number);
+        if is_number {
+            self.angle(id, saved)?;
+            self.value(id)?;
+            if bounded || layout.is_some() {
+                self.slider(bounds, layout)?;
+            }
+        }
+        let reader_decides = match saved {
+            // The file had no tag and the object is still visible.
+            Some(saved) => saved.untagged && shown,
+            // The canvas draws nothing for a free number without bounds. Shown,
+            // the reference would make it a slider and clamp its value.
+            None => shown && !bounded && matches!(c.def(id), Def::Number(_)),
+        };
+        if !reader_decides {
+            let views = saved
+                .and_then(|style| style.views)
+                .filter(|&views| views != 0)
+                .map(|views| views.to_string());
+            let mut attrs = vec![
                 ("object", flag(shown)),
-                (
-                    "label",
-                    flag(
-                        saved
-                            .and_then(|style| style.show_label)
-                            .unwrap_or(style.show_label),
-                    ),
-                ),
-            ],
-        )?;
+                ("label", flag(label_shown.unwrap_or(style.show_label))),
+            ];
+            if let Some(views) = &views {
+                attrs.push(("ev", views));
+            }
+            self.xml.tag("show", &attrs)?;
+        }
         if let Some(condition) = self.presentation.conditions.get(label) {
             self.xml.tag("condition", &[("showObject", condition)])?;
         }
-        let [r, g, b] = self
-            .presentation
-            .colors
-            .get(label)
-            .copied()
-            .or_else(|| saved.and_then(|style| style.color))
-            .unwrap_or([0; 3]);
-        let alpha = c.image(id).map_or(0.0, |image| image.style.alpha);
-        self.xml.tag(
-            "objColor",
-            &[
-                ("r", &r.to_string()),
-                ("g", &g.to_string()),
-                ("b", &b.to_string()),
-                ("alpha", &alpha.to_string()),
-            ],
-        )?;
-        self.xml.val("layer", &style.layer.to_string())?;
-        self.xml.val(
-            "labelMode",
-            &saved.map_or(0, |style| style.label_mode).to_string(),
-        )?;
-        if !matches!(
-            object_kind,
-            Kind::Point | Kind::Image | Kind::Text | Kind::Boolean | Kind::Button | Kind::InputBox
-        ) {
+        self.color(id, saved)?;
+        if let Some([r, g, b, a]) = saved.and_then(|style| style.background) {
             self.xml.tag(
-                "lineStyle",
+                "bgColor",
                 &[
-                    (
-                        "thickness",
-                        &saved
-                            .and_then(|style| style.thickness)
-                            .unwrap_or(style.line_thickness)
-                            .to_string(),
-                    ),
-                    (
-                        "type",
-                        &saved.map_or(0, |style| style.line_type).to_string(),
-                    ),
-                    ("typeHidden", "1"),
+                    ("r", &r.to_string()),
+                    ("g", &g.to_string()),
+                    ("b", &b.to_string()),
+                    ("alpha", &a.to_string()),
                 ],
             )?;
+        }
+        if saved.is_none_or(|saved| saved.layer.is_some()) {
+            self.xml.val("layer", &style.layer.to_string())?;
+        }
+        if let Some(mode) = saved.map_or(Some(0), |style| style.label_mode) {
+            self.xml.val("labelMode", &mode.to_string())?;
+        }
+        if let Some(mode) = saved.and_then(|style| style.tooltip_mode) {
+            self.xml.val("tooltipMode", &mode.to_string())?;
+        }
+        if let Some(trace) = saved
+            .and_then(|style| style.trace)
+            .filter(|_| traceable(object_kind))
+        {
+            self.xml.val("trace", flag(trace))?;
+        }
+        if let Some(decoration) = saved.and_then(|style| style.decoration) {
+            self.xml
+                .tag("decoration", &[("type", &decoration.to_string())])?;
+        }
+        if let Some(order) = saved.and_then(|style| style.ordering) {
+            self.xml.val("ordering", &number(order))?;
+        }
+        // The caption text must still be a text of the construction.
+        if let Some(caption) = saved
+            .and_then(|style| style.dynamic_caption.as_deref())
+            .filter(|caption| c.id(caption).is_some_and(|id| c.kind(id) == Kind::Text))
+        {
+            self.xml.val("dynamicCaption", caption)?;
+        }
+        if matches!(object_kind, Kind::Segment | Kind::PolyLine) {
+            let ends = saved.map_or([None; 2], |style| style.ends);
+            for (tag, end) in ["startStyle", "endStyle"].into_iter().zip(ends) {
+                if let Some(end) = end {
+                    self.xml.val(tag, end.xml_name())?;
+                }
+            }
+        }
+        if object_kind == Kind::Vector {
+            if let Some(head) = saved.and_then(|style| style.head_style) {
+                self.xml.val("headStyle", &head.to_string())?;
+            }
+        }
+        if is_number {
+            if let Some(size) = saved.and_then(|style| style.knob_size) {
+                self.xml.val("pointSize", &number(size))?;
+            }
+        }
+        match saved {
+            Some(saved) => {
+                if let Some(line) = saved.line {
+                    // A tag the reader left early is written as far as it got.
+                    let mut attrs = vec![("type", line.kind.to_string())];
+                    if let Some(thickness) = line.thickness {
+                        attrs.push(("thickness", thickness.to_string()));
+                    }
+                    if let Some(hidden) = line.hidden_kind {
+                        attrs.push(("typeHidden", hidden.to_string()));
+                    }
+                    if let Some(opacity) = line.opacity {
+                        attrs.push(("opacity", opacity.to_string()));
+                    }
+                    if let Some(arrows) = line.draw_arrow.filter(|_| object_kind == Kind::Locus) {
+                        attrs.push(("drawArrow", flag(arrows).to_owned()));
+                    }
+                    let attrs: Vec<_> = attrs.iter().map(|(k, v)| (*k, v.as_str())).collect();
+                    self.xml.tag("lineStyle", &attrs)?;
+                }
+            }
+            None if !matches!(
+                object_kind,
+                Kind::Point
+                    | Kind::Image
+                    | Kind::Text
+                    | Kind::Boolean
+                    | Kind::Button
+                    | Kind::InputBox
+            ) =>
+            {
+                self.xml.tag(
+                    "lineStyle",
+                    &[
+                        ("thickness", &style.line_thickness.to_string()),
+                        ("type", "0"),
+                        ("typeHidden", "1"),
+                    ],
+                )?;
+            }
+            None => {}
         }
         if let Some(&(x, y)) = self
             .presentation
@@ -122,8 +243,13 @@ impl Writer<'_> {
         {
             self.xml.pixels("labelOffset", x, y)?;
         }
-        if let Some(angle) = c.angle_style(id) {
-            self.xml.val("angleStyle", &angle.xml_code().to_string())?;
+        if !is_number {
+            self.angle(id, saved)?;
+        }
+        if object_kind == Kind::Angle {
+            if let Some(size) = saved.and_then(|style| style.arc_size) {
+                self.xml.val("arcSize", &size.to_string())?;
+            }
         }
         if object_kind == Kind::ImplicitCurve {
             if let Some(coefficients) = c.implicit_coefficients(id) {
@@ -140,6 +266,28 @@ impl Writer<'_> {
             }
             self.xml.tag("eqnStyle", &attrs)?;
         }
+        if let Some(fixed) = saved.and_then(|style| style.fixed) {
+            self.xml.val("fixed", flag(fixed))?;
+        }
+        if let Some(fixed) = saved.and_then(|style| style.fixed_size) {
+            self.xml.val("fixedSize", flag(fixed))?;
+        }
+        if let Some(allowed) = saved.and_then(|style| style.selection_allowed) {
+            self.xml.val("selectionAllowed", flag(allowed))?;
+        }
+        if let Some(trimmed) = saved.and_then(|style| style.show_trimmed) {
+            self.xml.val("showTrimmed", flag(trimmed))?;
+        }
+        if let Some(breakpoint) = saved.and_then(|style| style.breakpoint) {
+            self.xml.val("breakpoint", flag(breakpoint))?;
+        }
+        if let Some(visible) = saved.and_then(|style| style.algebra_label) {
+            self.xml
+                .tag("algebra", &[("labelVisible", flag(visible))])?;
+        }
+        if let Some(auxiliary) = saved.and_then(|style| style.auxiliary) {
+            self.xml.val("auxiliary", flag(auxiliary))?;
+        }
         let caption = c.control(id).map_or_else(
             || saved.map_or("", |style| style.caption.as_str()),
             |control| control.caption.as_str(),
@@ -147,8 +295,15 @@ impl Writer<'_> {
         if !caption.is_empty() {
             self.xml.val("caption", caption)?;
         }
-        if c.control(id).is_some() && object_kind == Kind::Boolean {
-            self.xml.tag("checkbox", &[("fixed", "false")])?;
+        if object_kind == Kind::Boolean {
+            // A check box made in the application can be dragged.
+            let fixed = match saved {
+                Some(saved) => saved.checkbox_fixed,
+                None => c.control(id).map(|_| false),
+            };
+            if let Some(fixed) = fixed {
+                self.xml.tag("checkbox", &[("fixed", flag(fixed))])?;
+            }
         }
         for script in c.object_scripts(label) {
             let tag = match script.language.as_str() {
@@ -165,70 +320,237 @@ impl Writer<'_> {
             };
             self.xml.tag(tag, &[(attr, &script.text)])?;
         }
-
-        self.value(id)?;
-        if let Def::Number(_) = c.def(id) {
-            let numeric = c.slider_bounds(id).map(|n| n.map(|n| n.to_string()));
-            let bounds = self
-                .presentation
-                .slider_bounds
-                .get(label)
-                .copied()
-                .unwrap_or_else(|| numeric.each_ref().map(|n| n.as_deref()));
-            if bounds.iter().any(Option::is_some) {
-                // Stack sliders in rows, with another column as the view fills.
-                let rows = usize::try_from(self.presentation.view.size[1] / 40)
-                    .unwrap_or(usize::MAX)
-                    .saturating_sub(1)
-                    .max(1);
-                let x = (30 + 130 * (self.sliders / rows)).to_string();
-                let y = (30 + 40 * (self.sliders % rows)).to_string();
-                self.sliders += 1;
-                let attrs = [
-                    ("width", "100"),
-                    ("x", &x),
-                    ("y", &y),
-                    ("fixed", "false"),
-                    ("horizontal", "true"),
-                    ("showAlgebra", "true"),
-                    ("absoluteScreenLocation", "true"),
-                    // The reader supplies default bounds for visible sliders
-                    // before reading this tag. An undefined endpoint clears it.
-                    ("min", bounds[0].unwrap_or("0 / 0")),
-                    ("max", bounds[1].unwrap_or("0 / 0")),
-                ];
-                self.xml.tag("slider", &attrs)?;
-                let animation = self.presentation.slider_animation.get(label).copied();
-                let command_step = line
-                    .split_once(['=', ':'])
-                    .and_then(|(_, rhs)| {
-                        geo_kernel::script::split_call(
-                            geo_kernel::script::split_comment(rhs).0.trim(),
-                        )
-                    })
-                    .and_then(|(name, args)| match (name, args.as_slice()) {
-                        ("Slider", [_, _, step]) => Some(*step),
-                        _ => None,
-                    });
-                let step = animation.map_or(command_step.or(Some("0.1")), |a| a.step.as_deref());
-                let speed = animation.and_then(|a| a.speed.as_deref()).unwrap_or("1");
-                let mode = animation.map_or(0, |a| a.mode).to_string();
-                let mut attrs = vec![
-                    ("speed", speed),
-                    ("type", mode.as_str()),
-                    ("playing", flag(animation.is_some_and(|a| a.playing))),
-                ];
-                if let Some(step) = step {
-                    attrs.push(("step", step));
-                }
-                self.xml.tag("animation", &attrs)?;
+        if matches!(object_kind, Kind::Point | Kind::List) {
+            if let Some(size) = saved.and_then(|style| style.point_size) {
+                self.xml.val("pointSize", &size.to_string())?;
             }
+            if let Some(point_style) = saved.and_then(|style| style.point_style) {
+                self.xml.val("pointStyle", &point_style.to_string())?;
+            }
+        }
+        if object_kind == Kind::Text {
+            match saved.and_then(|style| style.rounding) {
+                Some(Rounding::Decimals(digits)) => {
+                    self.xml.val("decimals", &digits.to_string())?;
+                }
+                Some(Rounding::SignificantFigures(digits)) => {
+                    self.xml.val("significantfigures", &digits.to_string())?;
+                }
+                None => {}
+            }
+        }
+
+        if !is_number {
+            self.value(id)?;
+        }
+        let animation = self
+            .presentation
+            .slider_animation
+            .get(label)
+            .copied()
+            .or(saved.and_then(|style| style.animation.as_deref()));
+        if bounded {
+            let command_step = line
+                .split_once(['=', ':'])
+                .and_then(|(_, rhs)| {
+                    geo_kernel::script::split_call(geo_kernel::script::split_comment(rhs).0.trim())
+                })
+                .and_then(|(name, args)| match (name, args.as_slice()) {
+                    ("Slider", [_, _, step]) => Some(*step),
+                    _ => None,
+                });
+            match animation {
+                Some(animation) => self.animation(animation)?,
+                // The file of the slider had no such tag.
+                None if saved.is_some() => {}
+                None => self.xml.tag(
+                    "animation",
+                    &[
+                        ("speed", "1"),
+                        ("type", "0"),
+                        ("playing", "false"),
+                        ("step", command_step.unwrap_or("0.1")),
+                    ],
+                )?,
+            }
+        } else if let Some(animation) = animation {
+            self.animation(animation)?;
         }
         if c.text_presentation(id).is_some() {
             self.text_style(id)?;
         }
         self.xml.buffer.push_str("</element>\n");
         Ok(())
+    }
+
+    /// The interval of an angle and its right-angle marker.
+    fn angle(&mut self, id: Id, saved: Option<&ObjectStyle>) -> Result<(), ExportError> {
+        if let Some(angle) = self.c.angle_style(id) {
+            self.xml.val("angleStyle", &angle.xml_code().to_string())?;
+        }
+        if self.c.kind(id) == Kind::Angle {
+            if let Some(emphasize) = saved.and_then(|style| style.emphasize_right_angle) {
+                self.xml.val("emphasizeRightAngle", flag(emphasize))?;
+            }
+        }
+        Ok(())
+    }
+
+    /// `<objColor>` with the opacity, the dynamic channels and the fill pattern.
+    fn color(&mut self, id: Id, saved: Option<&ObjectStyle>) -> Result<(), ExportError> {
+        let c = self.c;
+        let label = c.label(id);
+        let rgb = match saved {
+            Some(saved) => saved.color,
+            None => Some(
+                self.presentation
+                    .colors
+                    .get(label)
+                    .copied()
+                    .unwrap_or([0; 3]),
+            ),
+        };
+        // Without a colour the reference reader skips the whole tag.
+        let Some([r, g, b]) = rgb else { return Ok(()) };
+        let mut attrs = vec![
+            ("r", r.to_string()),
+            ("g", g.to_string()),
+            ("b", b.to_string()),
+        ];
+        // The shortest decimal of the stored value: the opacity of an image
+        // is a 32-bit float, which widened would read 0.30000001192092896
+        // for a saved 0.3.
+        let alpha = match (c.image(id), saved) {
+            (Some(image), _) => Some(image.style.alpha.to_string()),
+            (None, Some(saved)) => saved.alpha.map(|alpha| alpha.to_string()),
+            (None, None) => Some(
+                self.presentation
+                    .opacity
+                    .get(label)
+                    .copied()
+                    .unwrap_or(0.0)
+                    .to_string(),
+            ),
+        };
+        if let Some(alpha) = alpha {
+            attrs.push(("alpha", alpha));
+        }
+        // Channels reach the reader's command processor, so only arithmetic
+        // the kernel itself evaluates is written, in the kernel's syntax.
+        // Inputs that are undefined right now do not drop them; an object
+        // they name that is gone does.
+        let dynamic = saved
+            .and_then(|style| style.dynamic_color.as_deref())
+            .and_then(|dynamic| self.expressions.dynamic_color(c, dynamic).ok());
+        if let Some(dynamic) = dynamic {
+            attrs.push(("dynamicr", dynamic.red));
+            attrs.push(("dynamicg", dynamic.green));
+            attrs.push(("dynamicb", dynamic.blue));
+            if let Some(alpha) = dynamic.alpha {
+                attrs.push(("dynamica", alpha));
+            }
+            attrs.push(("colorSpace", dynamic.space.to_string()));
+        }
+        if let Some(fill) = saved.and_then(|style| style.fill.as_deref()) {
+            if fill.pattern != 0 || fill.hatch.is_some() {
+                attrs.push(("fillType", fill.pattern.to_string()));
+            }
+            if let Some([angle, distance]) = fill.hatch {
+                attrs.push(("hatchAngle", angle.to_string()));
+                attrs.push(("hatchDistance", distance.to_string()));
+            }
+            if let Some(symbol) = &fill.symbol {
+                attrs.push(("fillSymbol", symbol.clone()));
+            }
+            if let Some(inverse) = fill.inverse {
+                attrs.push(("inverseFill", flag(inverse).to_owned()));
+            }
+        }
+        let attrs: Vec<_> = attrs.iter().map(|(k, v)| (*k, v.as_str())).collect();
+        self.xml.tag("objColor", &attrs)
+    }
+
+    fn slider(
+        &mut self,
+        bounds: [Option<&str>; 2],
+        layout: Option<&SliderLayout>,
+    ) -> Result<(), ExportError> {
+        let mut attrs: Vec<(&str, String)> = Vec::new();
+        match layout {
+            // A tag the reader left early is written as far as it got.
+            Some(layout) => {
+                attrs.push(("absoluteScreenLocation", flag(layout.absolute).into()));
+                if let Some([x, y]) = layout.position {
+                    attrs.extend([("x", number(x)), ("y", number(y))]);
+                }
+                if let Some(width) = layout.width {
+                    attrs.push(("width", number(width)));
+                }
+                if let Some(flags) = layout.flags {
+                    attrs.extend([
+                        ("fixed", flag(flags.fixed).into()),
+                        ("showAlgebra", flag(flags.show_algebra).into()),
+                        ("horizontal", flag(flags.horizontal).into()),
+                    ]);
+                }
+            }
+            None => {
+                // Stack sliders in rows, with another column as the view fills.
+                let rows = usize::try_from(self.presentation.view.size[1] / 40)
+                    .unwrap_or(usize::MAX)
+                    .saturating_sub(1)
+                    .max(1);
+                let x = 30 + 130 * (self.sliders / rows);
+                let y = 30 + 40 * (self.sliders % rows);
+                self.sliders += 1;
+                attrs.extend([
+                    ("absoluteScreenLocation", "true".into()),
+                    ("x", x.to_string()),
+                    ("y", y.to_string()),
+                    ("width", "100".into()),
+                    ("fixed", "false".into()),
+                    ("showAlgebra", "true".into()),
+                    ("horizontal", "true".into()),
+                ]);
+            }
+        }
+        if bounds.iter().any(Option::is_some) {
+            // The reader supplies default bounds for visible sliders
+            // before reading this tag. An undefined endpoint clears it.
+            attrs.extend([
+                ("min", bounds[0].unwrap_or("0 / 0").into()),
+                ("max", bounds[1].unwrap_or("0 / 0").into()),
+            ]);
+        }
+        let attrs: Vec<_> = attrs.iter().map(|(k, v)| (*k, v.as_str())).collect();
+        self.xml.tag("slider", &attrs)
+    }
+
+    /// `<animation>` of a saved object. The step and the speed are numeric
+    /// expressions; one that is no arithmetic over the construction any more
+    /// (an object it names is gone) is left out, one whose inputs are
+    /// undefined right now is kept.
+    fn animation(&mut self, animation: &SliderAnimation) -> Result<(), ExportError> {
+        let c = self.c;
+        let mut numeric = |source: &Option<String>| {
+            source
+                .as_deref()
+                .and_then(|source| self.expressions.number(c, source).ok())
+        };
+        let step = numeric(&animation.step);
+        let speed = numeric(&animation.speed);
+        let mode = animation.mode.to_string();
+        let mut attrs = vec![
+            ("type", mode.as_str()),
+            ("playing", flag(animation.playing)),
+        ];
+        if let Some(step) = &step {
+            attrs.push(("step", step));
+        }
+        if let Some(speed) = &speed {
+            attrs.push(("speed", speed));
+        }
+        self.xml.tag("animation", &attrs)
     }
 
     fn value(&mut self, id: Id) -> Result<(), ExportError> {
@@ -280,9 +602,6 @@ impl Writer<'_> {
         let c = self.c;
         let text = c.text_presentation(id).expect("text checked by caller");
         self.xml.val("isLaTeX", flag(text.latex))?;
-        if text.fixed {
-            self.xml.val("fixed", "true")?;
-        }
         let style = u8::from(text.bold) | (u8::from(text.italic) << 1);
         self.xml.tag(
             "font",
