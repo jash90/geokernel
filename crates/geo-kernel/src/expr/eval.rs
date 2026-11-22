@@ -1157,7 +1157,7 @@ impl<const M: bool> Ctx<'_, M> {
         }
         if let Node::Obj(id) = self.node(i) {
             if self.c.kind(id) == Kind::Point {
-                return Slot::point(self.c.stored_value(id));
+                return Slot::named_point(self.c.stored_value(id), id);
             }
         }
         let mark = self.lists.map(Lists::len);

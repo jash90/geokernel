@@ -529,3 +529,30 @@ mismatches = ["1:step"]
 id = "matrixdilate-dilatelist-006"
 reason = "Dilate reports a command error when a number is visited before any transformable list element. The kernel creates an undefined list."
 mismatches = ["1:step"]
+
+# Discrete loci
+
+[[gap]]
+id = "discrete-path-004"
+reason = "The reference can choose either equal-cost route through the diamond across recomputations. The kernel settles tied endpoints by first occurrence in the segment list."
+mismatches = ["0:g", "0:h", "1:h", "3:g", "3:h"]
+
+[[gap]]
+id = "discrete-tree-003"
+reason = "The reference can reorder the edges and choose different equal-weight edges across recomputations of the graph. The kernel uses input-pair order."
+mismatches = ["0:g", "1:g", "2:g", "3:g", "4:g", "5:g"]
+
+[[gap]]
+id = "discrete-tree-005"
+reason = "The reference emits the two spanning edges of the copied point list in a different order. The single-point state and zero-length edges agree."
+mismatches = ["0:g", "3:g"]
+
+[[gap]]
+id = "discrete-tree-007"
+reason = "The reference emits both spanning edges of the repeated-point list in a different order on this recomputation."
+mismatches = ["0:g"]
+
+[[gap]]
+id = "discrete-upstream-019"
+reason = "The circumcircle test is sensitive to the last bit of cos(6) on approximately cocircular sites. The literal cocircular cases exercise the exact tie rule separately."
+mismatches = ["0:g"]

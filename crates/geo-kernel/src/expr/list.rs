@@ -87,6 +87,20 @@ impl Slot {
         }
     }
 
+    pub(super) fn named_point(value: Value, id: Id) -> Self {
+        Self {
+            object: Some(id),
+            ..Self::point(value)
+        }
+    }
+
+    pub(super) fn detach_graph_object(mut self) -> Self {
+        if matches!(self.kind, Kind::Point | Kind::Segment) {
+            self.object = None;
+        }
+        self
+    }
+
     pub(crate) fn shown(self) -> Value {
         self.value.cartesian()
     }
@@ -129,7 +143,10 @@ impl Slot {
 
     /// Bit equality, so that a change from `0` to `-0` is seen.
     fn same(&self, other: &Slot) -> bool {
-        if self.object.is_some() || other.object.is_some() {
+        if self.object != other.object {
+            return false;
+        }
+        if self.object.is_some() && self.kind != Kind::Point {
             // An undefined line can retain coefficients used by equality.
             return self.object == other.object
                 && self.value == other.value
@@ -145,6 +162,18 @@ impl Slot {
                 _ => [u64::MAX; 3],
             }
         };
+        if let (
+            Value::Segment { x1, y1, x2, y2 },
+            Value::Segment {
+                x1: a,
+                y1: b,
+                x2: c,
+                y2: d,
+            },
+        ) = (self.value, other.value)
+        {
+            return [x1, y1, x2, y2].map(f64::to_bits) == [a, b, c, d].map(f64::to_bits);
+        }
         self.kind == other.kind
             && self.start == other.start
             && std::mem::discriminant(&self.value) == std::mem::discriminant(&other.value)

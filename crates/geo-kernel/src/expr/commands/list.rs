@@ -446,6 +446,23 @@ impl<const M: bool> Ctx<'_, M> {
                 } else {
                     s + len - count
                 };
+                if !matches!(
+                    self.e.tys[l as usize],
+                    Ty::List(Elem::Num | Elem::Bool | Elem::Empty)
+                ) {
+                    // AlgoFirst and AlgoLast copy each selected object.
+                    let start = lists.reserve(count)?;
+                    if !lists.charge(u64::from(count)) {
+                        return None;
+                    }
+                    for k in 0..count {
+                        lists.set(
+                            start + k,
+                            lists.read(self.c, from + k).detach_graph_object(),
+                        );
+                    }
+                    return Some((start, count));
+                }
                 if s >> OBJECT_SHIFT != 0 {
                     // a part of a list object read in place: it never
                     // changes, so it is read where it is

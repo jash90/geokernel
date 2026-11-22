@@ -479,6 +479,8 @@ pub enum Def {
     /// `Locus(Q, P)` and `Locus(Q, slider)`; the construction keeps the
     /// points of each locus (see [`Construction::locus`]).
     Locus(LocusDef),
+    /// A locus built from points or a segment graph.
+    Discrete(algo::discrete::DiscreteDef),
     /// A line or conic defined by an equation in `x` and `y`
     /// (`a: 2x + 3y = 6`, `y = m x + b`); the construction keeps the trees
     /// of its coefficients (see [`crate::expr`]). Like [`Def::Expr`], the
@@ -553,6 +555,7 @@ impl Def {
                 }
             }
             Def::Locus(d) => d.kind(),
+            Def::Discrete(_) => Kind::Locus,
         }
     }
 
@@ -625,6 +628,7 @@ impl Def {
             Def::Path(d) => d.parents(),
             Def::Arc(d) => d.parents(),
             Def::Locus(d) => d.parents(),
+            Def::Discrete(d) => d.parents(),
         }
     }
 }
@@ -1285,10 +1289,9 @@ impl Construction {
             }
             Def::Locus(d) => {
                 let data = locus::record(self, d);
-                let value = data.value();
-                self.loci.push((id.0, data));
-                value
+                self.store_locus(id, data)
             }
+            Def::Discrete(d) => self.store_locus(id, d.record(self, None)),
             _ => self.compute(def, id.0),
         };
         if let Def::IntersectBoundary(intersection) = def {
@@ -1641,7 +1644,12 @@ impl Construction {
                     }
                 }
                 Def::Locus(d) => {
-                    if !self.update_locus(i, d) {
+                    if !self.update_locus(i, |c| locus::record(c, d)) {
+                        continue;
+                    }
+                }
+                Def::Discrete(d) => {
+                    if !self.update_locus(i, |c| d.record(c, c.locus(Id(i)))) {
                         continue;
                     }
                 }
@@ -2031,6 +2039,7 @@ impl Construction {
             // the coefficient entries were checked when they were parsed
             Def::Equation(d) => crate::expr::equation::check(self, d),
             Def::Locus(d) => d.check(self),
+            Def::Discrete(d) => d.check(self),
         }
     }
 
@@ -2125,6 +2134,7 @@ impl Construction {
             Def::Arc(d) => d.compute(self),
             Def::Equation(d) => Some(expr::equation::current(self, d)),
             Def::Locus(d) => d.compute(self),
+            Def::Discrete(_) => None,
         }
     }
 
