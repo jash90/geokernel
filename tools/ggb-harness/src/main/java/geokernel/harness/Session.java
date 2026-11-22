@@ -1694,11 +1694,31 @@ final class Session {
     }
 
     /**
-     * Whether an infinite number is recorded as such (schema 3, the golden
-     * files) or as undefined like every other value that is not finite
-     * (schema 2, which the snapshot and t-pair writers still produce).
+     * Whether infinities are recorded with their sign (schema 4, the golden
+     * files): an infinite number in place of its value, and an infinite
+     * sample, pie fraction or locus coordinate in place of the null that
+     * then means NaN only. Otherwise every value that is not finite is
+     * undefined or null (schema 2, which the snapshot and t-pair writers
+     * still produce).
      */
     static boolean recordInfinity;
+
+    /**
+     * A sampled value: the number when finite; with {@link #recordInfinity}
+     * the sign of an infinity as {@code {"infinity": 1}} or {@code -1} and
+     * null for NaN; otherwise null for every value that is not finite.
+     */
+    static Object sample(double v) {
+        if (Double.isFinite(v)) {
+            return v;
+        }
+        if (recordInfinity && Double.isInfinite(v)) {
+            Map<String, Object> infinity = new LinkedHashMap<>();
+            infinity.put("infinity", v > 0 ? 1L : -1L);
+            return infinity;
+        }
+        return null;
+    }
 
     static Map<String, Object> describe(GeoElement geo, String type, boolean sampleCurves) {
         Map<String, Object> object = describe(geo, type);
@@ -1710,7 +1730,10 @@ final class Session {
                 double t = start + (end - start) * fraction;
                 double[] xy = new double[2];
                 curve.evaluateCurve(t, xy);
-                Object point = Double.isFinite(xy[0]) && Double.isFinite(xy[1])
+                // schema 4 records each coordinate like a sample; before,
+                // the pair was null when either coordinate was not finite
+                Object point = recordInfinity ? Arrays.asList(sample(xy[0]), sample(xy[1]))
+                        : Double.isFinite(xy[0]) && Double.isFinite(xy[1])
                         ? pair(xy[0], xy[1]) : null;
                 samples.add(Arrays.asList(t, point));
             }
@@ -1729,7 +1752,7 @@ final class Session {
                 obj.put("radius", pie.getRadius());
                 List<Object> fractions = new ArrayList<>();
                 for (double fraction : pie.getData()) {
-                    fractions.add(Double.isFinite(fraction) ? fraction : null);
+                    fractions.add(sample(fraction));
                 }
                 obj.put("fractions", fractions);
             }
@@ -1765,7 +1788,7 @@ final class Session {
                 List<Object> samples = new ArrayList<>();
                 for (double x : SAMPLES) {
                     double v = sampleFunction(geo, x);
-                    samples.add(Arrays.asList(x, Double.isFinite(v) ? (Object) v : null));
+                    samples.add(Arrays.asList(x, sample(v)));
                 }
                 obj.put("samples", samples);
             }
@@ -1782,7 +1805,7 @@ final class Session {
                     argument[0] = x;
                     argument[1] = y;
                     double v = f.evaluate(argument);
-                    samples.add(Arrays.asList(x, y, Double.isFinite(v) ? (Object) v : null));
+                    samples.add(Arrays.asList(x, y, sample(v)));
                 }
                 obj.put("samples_xy", samples);
             }
@@ -1790,7 +1813,7 @@ final class Session {
         }
         if (recordInfinity && type.equals("number") && geo.isDefined()
                 && Double.isInfinite(((GeoNumeric) geo).getDouble())) {
-            // GeoGebra keeps an infinite number defined; schema 3 records
+            // GeoGebra keeps an infinite number defined; schema 3 and later record
             // which infinity it holds in place of a value
             obj.put("defined", true);
             obj.put("infinity", ((GeoNumeric) geo).getDouble() > 0 ? 1L : -1L);
@@ -1814,9 +1837,12 @@ final class Session {
         return ((GeoFunctionNVar) geo).evaluate(argument, 0);
     }
 
-    /** Whether a field is finite: a number, or a list of finite fields or nulls; a name is. */
+    /**
+     * Whether a field is finite: a number, or a list of finite fields, nulls
+     * or recorded infinities; a name is.
+     */
     private static boolean finite(Object v) {
-        if (v == null || v instanceof String || v instanceof Boolean) {
+        if (v == null || v instanceof String || v instanceof Boolean || v instanceof Map) {
             return true;
         }
         if (v instanceof List) {
@@ -1975,8 +2001,7 @@ final class Session {
                 // coordinates
                 List<Object> points = new ArrayList<>();
                 for (MyPoint p : ((GeoLocus) geo).getPoints()) {
-                    points.add(Arrays.asList(Double.isFinite(p.x) ? (Object) p.x : null,
-                            Double.isFinite(p.y) ? (Object) p.y : null, p.getLineTo()));
+                    points.add(Arrays.asList(sample(p.x), sample(p.y), p.getLineTo()));
                 }
                 f.put("points", points);
                 return f;

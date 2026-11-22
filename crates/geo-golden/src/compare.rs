@@ -286,12 +286,16 @@ pub(crate) fn compare_extra(c: &Construction, id: Id, expected: &Expected) -> Re
             let result = compare(expected, kind, &c.value(id))?;
             for &(t, want) in samples {
                 let got = c.curve_sample(id, t);
+                // from schema 4 a NaN coordinate stands for a recorded `null`
+                let coordinate = |want: f64, got: f64| {
+                    samples_agree((!want.is_nan()).then_some(want), Some(got))
+                };
                 let agrees = match (want, got) {
-                    (Some((x, y)), Some((a, b))) => all_agree(&[(x, a), (y, b)]),
+                    (Some((x, y)), Some((a, b))) => coordinate(x, a) && coordinate(y, b),
+                    (Some((x, y)), None) => x.is_nan() && y.is_nan(),
                     (None, got) => got.is_none_or(|(x, y)| {
                         !x.is_infinite() && !y.is_infinite() && (x.is_nan() || y.is_nan())
                     }),
-                    _ => false,
                 };
                 if !agrees {
                     return Err(format!("curve at {t}: expected {want:?}, got {got:?}"));
@@ -978,6 +982,29 @@ mod tests {
                 };
                 assert_eq!(compare_extra(&c, id, &expected).is_ok(), agrees, "{label}");
             }
+        }
+    }
+
+    #[test]
+    fn signed_curve_coordinates_meet_nan_or_the_same_infinity() {
+        let c = geo_kernel::script::load("c = Curve(t, 1/t, t, -1, 1)").unwrap();
+        let id = c.id("c").unwrap();
+        for (want, agrees) in [
+            ((0.0, f64::INFINITY), true),
+            ((0.0, f64::NEG_INFINITY), false),
+            ((0.0, f64::NAN), false),
+            ((f64::NAN, f64::INFINITY), false),
+        ] {
+            let expected = Expected {
+                kind: Kind::Curve,
+                legacy_angle_number: false,
+                data: Some(ExpectedData::Curve {
+                    start: -1.0,
+                    end: 1.0,
+                    samples: vec![(0.0, Some(want))],
+                }),
+            };
+            assert_eq!(compare_extra(&c, id, &expected).is_ok(), agrees, "{want:?}");
         }
     }
 
