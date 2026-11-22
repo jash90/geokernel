@@ -281,3 +281,104 @@ fn rolling_back_the_first_locus_releases_its_lines_start() {
         fresh.value(id(&fresh, "P"))
     );
 }
+
+const HULL: [&str; 7] = [
+    "A = (0, 0)",
+    "B = (4, 0)",
+    "C = (4, 3)",
+    "D = (0, 3)",
+    "E = (2, 1)",
+    "l = {A, E, B, A, C, D}",
+    "h = Hull(l, 1)",
+];
+
+#[test]
+fn hull_skips_interior_and_duplicate_points_and_closes() {
+    let c = build(&HULL);
+    // the number argument is only decoration: GeoGebra's `CmdHull` runs
+    // `AlgoConvexHull` on the list alone
+    let pts = points(&c, "h");
+    assert_eq!(
+        pts,
+        vec![
+            (0.0, 0.0, false),
+            (0.0, 3.0, true),
+            (4.0, 3.0, true),
+            (4.0, 0.0, true),
+            (0.0, 0.0, true),
+        ]
+    );
+    // the interior point and the duplicate did not reach the hull
+    assert_eq!(pts.len(), 5);
+}
+
+#[test]
+fn hull_follows_a_moved_point() {
+    let mut c = build(&HULL);
+    c.move_point(id(&c, "E"), -1.0, -1.0).unwrap();
+    // E left the square, so the hull runs around it; A became interior
+    assert_eq!(
+        points(&c, "h"),
+        vec![
+            (-1.0, -1.0, false),
+            (0.0, 3.0, true),
+            (4.0, 3.0, true),
+            (4.0, 0.0, true),
+            (-1.0, -1.0, true),
+        ]
+    );
+}
+
+#[test]
+fn hull_of_one_point_is_a_run_of_two() {
+    let c = build(&["A = (2, 3)", "l = {A}", "h = Hull(l, 0)"]);
+    assert_eq!(points(&c, "h"), vec![(2.0, 3.0, false), (2.0, 3.0, true)]);
+}
+
+#[test]
+fn hull_of_no_points_and_of_other_objects_is_undefined() {
+    let empty = build(&["l = {}", "h = Hull(l, 1)"]);
+    assert!(!empty.locus(id(&empty, "h")).unwrap().defined);
+    let numbers = build(&["l = {1, 2}", "h = Hull(l, 1)"]);
+    assert!(!numbers.locus(id(&numbers, "h")).unwrap().defined);
+    let undefined = build(&[
+        "a = 1/0",
+        "A = (2, 3)",
+        "l = {A, (a, 0)}",
+        "h = Hull(l, 1)",
+    ]);
+    // the undefined point is skipped, the hull is the single point
+    assert_eq!(
+        points(&undefined, "h"),
+        vec![(2.0, 3.0, false), (2.0, 3.0, true)]
+    );
+}
+
+#[test]
+fn hull_refuses_wrong_arguments() {
+    let mut c = build(&["A = (0, 0)", "l = {A}"]);
+    assert!(script::exec(&mut c, "h = Hull(l)").unwrap_err().contains("does not take 1"));
+    assert!(script::exec(&mut c, "h = Hull(l, A)")
+        .unwrap_err()
+        .contains("needs a number"));
+    assert!(script::exec(&mut c, "h = Hull(A, 1)")
+        .unwrap_err()
+        .contains("needs a list"));
+}
+
+#[test]
+fn convex_hull_of_one_list_argument() {
+    let c = build(&["l = {(1, 1), (2, 2), (3, 3), (4, 0.25), (5, 0.2)}", "h = ConvexHull(l)"]);
+    // the collinear run (1,1)..(3,3) keeps only its ends, and (4, 0.25)
+    // stays a vertex: it lies below the line from (5, 0.2) back to (1, 1)
+    assert_eq!(
+        points(&c, "h"),
+        vec![
+            (1.0, 1.0, false),
+            (3.0, 3.0, true),
+            (5.0, 0.2, true),
+            (4.0, 0.25, true),
+            (1.0, 1.0, true),
+        ]
+    );
+}

@@ -67,6 +67,7 @@ impl Format {
                     LocusDef::Slider { point, slider } => ("Locus", [Some(point), Some(slider)]),
                     LocusDef::Ode { point, source } => ("Locus", [Some(source), Some(point)]),
                     LocusDef::SlopeField(source) => ("SlopeField", [Some(source), None]),
+                    LocusDef::Hull(list) => ("Hull", [Some(list), None]),
                 };
                 let args = objects
                     .into_iter()

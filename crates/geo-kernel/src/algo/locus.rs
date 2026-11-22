@@ -53,6 +53,7 @@ use crate::algo::conic_nd::ConicType;
 use crate::algo::path::{self, inf_function, inverse_inf_function, Geom, PathDef, PathState};
 use crate::algo::{Group, Parents, NUMBER, POINT};
 use crate::expr::fraction::FunctionFraction;
+use crate::expr::Element;
 use crate::kernel::{Construction, Def, Error, Id, Kind, Value};
 use std::sync::Arc;
 
@@ -86,6 +87,9 @@ pub enum LocusDef {
     Ode { point: Id, source: Id },
     /// A grid of line segments showing the slope at each sample.
     SlopeField(Id),
+    /// `Hull(list, number)`: the convex hull of a list of points as a
+    /// closed locus (`AlgoConvexHull`); the number is ignored.
+    Hull(Id),
 }
 
 /// One point of a locus (`MyPoint`): drawn with a line from the point before
@@ -318,6 +322,7 @@ pub(crate) fn reads(c: &Construction, d: LocusDef) -> Vec<Id> {
             return ids;
         }
         LocusDef::SlopeField(source) => return vec![source],
+        LocusDef::Hull(list) => return vec![list],
         LocusDef::Slider { point, .. } | LocusDef::Path { point, .. } => point,
     };
     if point.0 >= c.len() {
@@ -332,7 +337,9 @@ pub(crate) fn reads(c: &Construction, d: LocusDef) -> Vec<Id> {
         let reads = match d {
             LocusDef::Path { mover, .. } => id != mover && pointer_changeable(c, id),
             LocusDef::Slider { .. } => c.def(id).is_free(),
-            LocusDef::Ode { .. } | LocusDef::SlopeField(_) => unreachable!(),
+            LocusDef::Ode { .. } | LocusDef::SlopeField(_) | LocusDef::Hull(_) => {
+                unreachable!()
+            }
         };
         if is && reads {
             ids.push(id);
@@ -483,6 +490,7 @@ pub(crate) fn record(c: &mut Construction, d: LocusDef, owner: Id) -> LocusData 
         LocusDef::Slider { point, slider } => record_slider(c, point, slider),
         LocusDef::Ode { point, source } => record_ode(c, point, source),
         LocusDef::SlopeField(source) => record_slope_field(c, source),
+        LocusDef::Hull(list) => record_hull(c, list),
     }
 }
 
@@ -570,6 +578,89 @@ fn record_slope_field(c: &Construction, source: Id) -> LocusData {
         x += x_step;
     }
     locus_from_points(points)
+}
+
+/// `AlgoConvexHull.compute`: the closed convex hull of the defined points
+/// of a list as one locus run. Points that are not defined and duplicates
+/// (within `STANDARD_PRECISION`, as `DoubleUtil.isEqual`) are skipped; a
+/// single point becomes a run of two equal points; the hull itself is
+/// Andrew's monotone chain of the sorted points (`ConvexHull.makeHull`).
+fn record_hull(c: &Construction, list: Id) -> LocusData {
+    let Some(elements) = c.elements(list) else {
+        return LocusData::default();
+    };
+    let mut points: Vec<(f64, f64)> = Vec::new();
+    let is_equal = |a: f64, b: f64| (a - b).abs() <= crate::tol::STANDARD_PRECISION;
+    for element in elements.iter() {
+        // only the defined points of the list count, and each only once
+        let Element::Value(Kind::Point, Value::Point { x, y }) = element
+        else {
+            continue;
+        };
+        if points.iter().any(|&(a, b)| is_equal(a, x) && is_equal(b, y)) {
+            continue;
+        }
+        if x.is_nan() || y.is_nan() {
+            return LocusData::default();
+        }
+        points.push((x, y));
+    }
+    match points.len() {
+        0 => LocusData::default(),
+        1 => {
+            let (x, y) = points[0];
+            locus_from_points(vec![
+                LocusPoint { x, y, line_to: false },
+                LocusPoint { x, y, line_to: true },
+            ])
+        }
+        _ => {
+            points.sort_by(|a, b| {
+                a.0.partial_cmp(&b.0)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+                    .then(a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal))
+            });
+            let cross = |o: (f64, f64), a: (f64, f64), b: (f64, f64)| {
+                (a.0 - o.0) * (b.1 - o.1) - (a.1 - o.1) * (b.0 - o.0)
+            };
+            let mut upper: Vec<(f64, f64)> = Vec::new();
+            for &p in &points {
+                while upper.len() >= 2
+                    && cross(upper[upper.len() - 2], upper[upper.len() - 1], p) >= 0.0
+                {
+                    upper.pop();
+                }
+                upper.push(p);
+            }
+            upper.pop();
+            let mut lower: Vec<(f64, f64)> = Vec::new();
+            for &p in points.iter().rev() {
+                while lower.len() >= 2
+                    && cross(lower[lower.len() - 2], lower[lower.len() - 1], p) >= 0.0
+                {
+                    lower.pop();
+                }
+                lower.push(p);
+            }
+            lower.pop();
+            if !(upper.len() == 1 && upper == lower) {
+                upper.extend(lower);
+            }
+            let hull = upper;
+            let mut run = Vec::with_capacity(hull.len() + 1);
+            for (i, &(x, y)) in hull.iter().enumerate() {
+                run.push(LocusPoint {
+                    x,
+                    y,
+                    line_to: i != 0,
+                });
+            }
+            // close the polygon
+            let (x, y) = hull[0];
+            run.push(LocusPoint { x, y, line_to: true });
+            locus_from_points(run)
+        }
+    }
 }
 
 /// `AlgoLocusND.compute` for `Locus(Q, P)`.
@@ -1308,6 +1399,7 @@ impl Group for LocusDef {
                 source: mover,
             } => Parents::of(&[point, mover]),
             LocusDef::SlopeField(source) => Parents::of(&[source]),
+            LocusDef::Hull(list) => Parents::of(&[list]),
         }
     }
 
@@ -1325,6 +1417,7 @@ impl Group for LocusDef {
                 };
             }
             LocusDef::SlopeField(source) => return c.expect(source, &[Kind::Function]),
+            LocusDef::Hull(list) => return c.expect(list, &[Kind::List]),
             LocusDef::Path { point, mover }
             | LocusDef::Slider {
                 point,
@@ -1354,7 +1447,9 @@ impl Group for LocusDef {
                     return Err(wrong(NUMBER));
                 }
             }
-            LocusDef::Ode { .. } | LocusDef::SlopeField(_) => unreachable!(),
+            LocusDef::Ode { .. } | LocusDef::SlopeField(_) | LocusDef::Hull(_) => {
+                unreachable!()
+            }
         }
         if on_path(c, point) || !is_ancestor(c, mover, point) {
             return Err(Error::WrongKind {
@@ -1377,6 +1472,22 @@ impl Group for LocusDef {
     fn parse(c: &Construction, func: &str, args: &[&str]) -> Option<Result<Self, String>> {
         if let ("SlopeField", [source]) = (func, args) {
             return Some(crate::script::object(c, source).map(LocusDef::SlopeField));
+        }
+        if func == "Hull" {
+            return Some(match args {
+                [list, number] => parse_hull(c, list, number),
+                _ => Err(format!("`Hull` does not take {} argument(s)", args.len())),
+            });
+        }
+        // `ConvexHull(list)` is the same algorithm with the list alone
+        // (`CmdConvexHull` extends `CmdOneListFunction`).
+        if func == "ConvexHull" {
+            return Some(match args {
+                [list] => crate::script::object(c, list).map(LocusDef::Hull).and_then(
+                    |def| def.check(c).map_err(|e| e.to_string()).map(|_| def),
+                ),
+                _ => Err(format!("`ConvexHull` does not take {} argument(s)", args.len())),
+            });
         }
         if func != "Locus" {
             return None;
@@ -1420,7 +1531,25 @@ fn parse_locus(c: &Construction, args: &[&str]) -> Result<LocusDef, String> {
         LocusDef::Ode { .. } => {
             format!("`Locus({a}, {b})` needs a slope function or field and a point")
         }
-        LocusDef::SlopeField(_) => unreachable!(),
+        LocusDef::SlopeField(_) | LocusDef::Hull(_) => unreachable!(),
     })?;
     Ok(def)
+}
+
+/// `CmdHull`: exactly a list and a number, and the number is only there to
+/// be ignored (the command once had a parameter, and `AlgoConvexHull` runs
+/// without it).
+fn parse_hull(c: &Construction, list: &str, number: &str) -> Result<LocusDef, String> {
+    let list = crate::script::object(c, list)?;
+    if c.kind(list) != Kind::List {
+        return Err(format!("`Hull` needs a list of points, found `{}`", c.label(list)));
+    }
+    let number_is_numeric = crate::expr::plain_number(number).is_some()
+        || c.id(number).is_some_and(|id| c.kind(id) == Kind::Number);
+    if !number_is_numeric {
+        return Err(format!(
+            "`Hull` needs a number as its second argument, found `{number}`"
+        ));
+    }
+    Ok(LocusDef::Hull(list))
 }

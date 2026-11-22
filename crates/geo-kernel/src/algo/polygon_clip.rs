@@ -50,7 +50,10 @@ pub struct ClipDef {
 impl ClipDef {
     pub(crate) fn parse(c: &Construction, func: &str, args: &[&str]) -> Result<Self, String> {
         let (a, b, xor) = match (func, args) {
-            ("IntersectPath" | "Difference", [a, b]) => (*a, *b, None),
+            ("IntersectPath" | "IntersectionPaths" | "IntersectRegion" | "Difference", [a, b]) => {
+                (*a, *b, None)
+            }
+
             ("Difference", [a, b, xor]) => (*a, *b, Some(*xor)),
             _ => return Err(format!("`{func}` does not take {} argument(s)", args.len())),
         };

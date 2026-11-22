@@ -1283,7 +1283,12 @@ pub(crate) fn exec(
     let result = match func {
         "Polygon" => polygon_line(c, name, &args),
         "RigidPolygon" => rigid_polygon_line(c, name, &args),
-        "IntersectPath" | "Difference" => clip_line(c, name, func, &args),
+        // `IntersectRegion` and `IntersectionPaths` are GeoGebra's
+        // deprecated aliases of `IntersectPath` (CommandDispatcher).
+        "IntersectPath" | "IntersectionPaths" | "IntersectRegion" | "Difference" => {
+            clip_line(c, name, func, &args)
+        }
+
         "Segment" if let [a, b, polygon] = args.as_slice() => {
             let checked = (|| {
                 points(c, &[*a, *b])?;
@@ -1964,6 +1969,28 @@ mod tests {
             .skip(from)
             .map(|id| c.label(id).to_string())
             .collect()
+    }
+
+    #[test]
+    fn intersect_region_and_intersection_paths_alias_intersect_path() {
+        // The deprecated names run the same clipping as `IntersectPath`
+        // (`CommandDispatcher` routes all three to one processor).
+        let script = "A = (0, 0)\nB = (4, 0)\nC = (0, 3)\nD = (4, 3)\n\
+                      p = Polygon(A, B, C)\nq = Polygon(A, B, D)\n";
+        let mut region = load(script).unwrap();
+        run(&mut region, "r = IntersectRegion(p, q)").unwrap();
+        let mut paths = load(script).unwrap();
+        run(&mut paths, "r = IntersectionPaths(p, q)").unwrap();
+        let mut plain = load(script).unwrap();
+        run(&mut plain, "r = IntersectPath(p, q)").unwrap();
+        for c in [&mut region, &mut paths] {
+            // a region intersection labels its outputs with an index
+            assert_eq!(
+                c.value(c.id("r_{1}").unwrap()),
+                plain.value(plain.id("r_{1}").unwrap())
+            );
+            assert_eq!(labels(c, 7), labels(&mut plain, 7));
+        }
     }
 
     #[test]
