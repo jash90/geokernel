@@ -93,6 +93,8 @@ const ROOT_RELATIVE_ACCURACY: f64 = 1e-14;
 const ROOT_ABSOLUTE_ACCURACY: f64 = 1e-6;
 const ROOT_VALUE_ACCURACY: f64 = 1e-15;
 const ROOT_ITERATIONS: usize = 100;
+// Binary64 value of Euler's constant, the reference solver's alternate seed.
+const LAGUERRE_ALTERNATE_SEED: f64 = f64::from_bits(0x3fe2_788c_fc6f_b619);
 
 #[derive(Clone, Copy, PartialEq)]
 struct Complex(f64, f64);
@@ -545,7 +547,7 @@ pub(in crate::algo) fn complex_roots(
         [c, b, a] => roots.extend(complex_quadratic(c, b, a)),
         [_] => {}
         _ => {
-            if let Some(mut candidates) = [-1.0, 0.577_215_664_901_532_9]
+            if let Some(mut candidates) = [-1.0, LAGUERRE_ALTERNATE_SEED]
                 .into_iter()
                 .find_map(|start| complex_with_seed(reduced, start, charge))
             {
