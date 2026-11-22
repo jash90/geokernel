@@ -549,6 +549,17 @@ fn geogebra_reloads_exports_and_matches_the_kernel() {
                     gave_up.push(name.as_str());
                 } else {
                     assert!(applied.is_none(), "{name}: the reference reads the file");
+                    // A stroke is what the reference reads from the file:
+                    // older vertices smoothed in the file's view, Bezier
+                    // points as written.
+                    let c = live.construction();
+                    for (label, id) in labelled(c) {
+                        if c.kind(id) == Kind::PenStroke {
+                            let expected = expected_from_json(&source["objects"][label]).unwrap();
+                            compare_construction_object(&expected, c, id)
+                                .unwrap_or_else(|why| panic!("{name}: source {label}: {why}"));
+                        }
+                    }
                     // The export makes the reader report nothing that the
                     // source did not: a tag that set nothing is not written,
                     // a tag read halfway is written as far as it was read.
@@ -1685,6 +1696,38 @@ fn slow_plot_hides_its_source_and_plays_its_slider_as_the_reference_saves_it() {
     }
     assert_eq!(sliders, 3);
     assert!(wb.is_animating());
+}
+
+/// A running animation is saved with `<startAnimation>` and the slider as
+/// playing, which the reference reader starts again (`MyXMLHandler`); a
+/// slider that has played once to its end is saved as stopped.
+#[test]
+fn a_running_slow_plot_animation_is_saved_and_restarts_on_load() {
+    let mut wb = Workbench::from_script("f(x) = x\ng = SlowPlot(f)\nh = SlowPlot(f, 0)").unwrap();
+    let xml = exported_xml(&wb);
+    assert!(xml.contains("<startAnimation val=\"true\"/>"), "{xml}");
+    // (the functions read view corners, which the importer skips)
+    let imported = geo_import::import(&wb.export_ggb(None).unwrap()).unwrap();
+    let c = geo_kernel::script::load(&imported.script.join("\n")).unwrap();
+    assert!(c.is_animating());
+    for (label, mode) in [("a", 1), ("b", 3)] {
+        let a = c.animation(c.id(label).unwrap()).unwrap();
+        assert!(a.playing && a.auto_step && a.speed == 1.0, "{label}");
+        assert_eq!(a.mode.code(), mode, "{label}");
+    }
+    // the slider that plays once stops; the other keeps the timer running
+    for _ in 0..400 {
+        wb.animate(geo_kernel::kernel::animation::MAX_ANIMATION_FRAME_RATE);
+    }
+    let xml = exported_xml(&wb);
+    assert!(xml.contains("<startAnimation val=\"true\"/>"));
+    assert!(xml.contains("type=\"3\" playing=\"false\""), "{xml}");
+    let mut once = Workbench::from_script("f(x) = x\ng = SlowPlot(f, 0)").unwrap();
+    for _ in 0..400 {
+        once.animate(geo_kernel::kernel::animation::MAX_ANIMATION_FRAME_RATE);
+    }
+    assert!(!once.is_animating());
+    assert!(!exported_xml(&once).contains("startAnimation"));
 }
 
 fn exported_xml(wb: &Workbench) -> String {

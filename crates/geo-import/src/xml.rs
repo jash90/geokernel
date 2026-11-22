@@ -88,9 +88,9 @@ pub struct Element {
     pub implicit_coefficients: Option<String>,
     /// `<strokeBezierCoords val=>` of a pen stroke as written.
     pub stroke_coords: Option<String>,
-    /// `<strokeCoords>`: the vertices of an older pen stroke, which the
-    /// reference smooths again in its view when no Bezier points came first.
-    pub legacy_stroke: bool,
+    /// The first `<strokeCoords val=>`: the vertices of an older pen stroke,
+    /// which the reference smooths in its view unless Bezier points came.
+    pub legacy_stroke: Option<String>,
     /// `<fixed val="true">`: not used, counted for a note.
     pub fixed: bool,
     /// `<auxiliary val="true">`: not used, counted for a note.
@@ -682,12 +682,16 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                 "viewNumber" | "size" | "coordSystem" | "evSettings" | "axis" if view.is_some() => {
                     view.as_mut().expect("checked above").read(&name, e)?;
                 }
-                "continuous" | "decimals" | "significantfigures" | "angleUnit" if in_kernel => {
+                "continuous" | "decimals" | "significantfigures" | "angleUnit"
+                | "startAnimation"
+                    if in_kernel =>
+                {
                     let val = attr(e, "val")?.unwrap_or_default();
                     match name.as_str() {
                         "continuous" => doc.settings.continuous = val == "true",
                         "decimals" => doc.settings.decimals = val.parse().ok(),
                         "significantfigures" => doc.settings.significant_figures = val.parse().ok(),
+                        "startAnimation" => doc.settings.start_animation = val == "true",
                         _ => doc.settings.angle_unit = Some(val),
                     }
                 }
@@ -1027,8 +1031,9 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                     }
                 }
                 "strokeCoords" if element.as_ref().is_some_and(|el| el.kind == "penstroke") => {
-                    if attr(e, "val")?.is_some_and(|v| !v.is_empty()) {
-                        element.as_mut().expect("checked above").legacy_stroke = true;
+                    let el = element.as_mut().expect("checked above");
+                    if let Some(coords) = attr(e, "val")?.filter(|v| !v.is_empty()) {
+                        el.legacy_stroke.get_or_insert(coords);
                     }
                 }
                 "coefficients" if element.as_ref().is_some_and(|el| el.kind == "implicitpoly") => {

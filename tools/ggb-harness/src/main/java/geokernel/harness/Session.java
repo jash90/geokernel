@@ -865,6 +865,10 @@ final class Session {
 
     private GeoElement lookup(String label) {
         GeoElement geo = objects.get(label);
+        // a slider a command made (`SlowPlot`) can be edited too
+        if (geo == null && generated.contains(label)) {
+            geo = kernel.lookupLabel(label);
+        }
         if (geo == null) {
             throw new IllegalArgumentException("unknown label " + label);
         }
@@ -1390,6 +1394,8 @@ final class Session {
                 return first instanceof GeoFunction || first instanceof GeoImplicitCurve ? "list" : "line";
             case "Segment":
                 return "segment";
+            case "PenStroke":
+                return "stroke";
             case "ConvexHull":
             case "Hull":
             case "DelauneyTriangulation":
@@ -1398,8 +1404,6 @@ final class Session {
             case "ShortestDistance":
             case "TravelingSalesman":
             case "Voronoi":
-            case "PenStroke":
-                return "stroke";
             case "Locus":
             case "SlopeField":
             case "NSolveODE":

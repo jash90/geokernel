@@ -888,6 +888,9 @@ pub struct Construction {
     charts: std::collections::BTreeMap<Id, algo::charts::ChartData>,
     /// The animations of the sliders, see [`Construction::animate`].
     animations: std::collections::BTreeMap<Id, animation::Animation>,
+    /// Whether the animation timer runs (`AnimationManager.isRunning`); a
+    /// playing slider moves only while it does.
+    animation_running: bool,
     /// Objects commands asked to hide (see
     /// [`Construction::take_hidden_requests`]).
     hidden_requests: Vec<Id>,
@@ -1491,6 +1494,9 @@ impl Construction {
         self.charts.split_off(&Id(at.len));
         self.strokes.split_off(&Id(at.len));
         self.animations.split_off(&Id(at.len));
+        if !self.animations.values().any(|a| a.playing) {
+            self.animation_running = false;
+        }
         self.hidden_requests.retain(|id| id.0 < at.len);
         self.drawing_styles.split_off(&Id(at.len));
         self.discard_text_presentations(at.len);

@@ -135,6 +135,7 @@ pub(crate) fn convert_with_assets(
     }
     for el in elements.values() {
         c.restore_slider(el);
+        c.restore_animation(el, doc.settings.start_animation);
         c.retain_scripts(el);
     }
     for (&label, element) in &elements {
@@ -1053,6 +1054,51 @@ impl Converter {
         }
     }
 
+    /// A slider saved as playing plays again, and moves when the file
+    /// started the timer. A step or speed that is no plain number is not
+    /// kept for the animation.
+    fn restore_animation(&mut self, el: &Element, running: bool) {
+        let Some(animation) = el.slider_animation.as_ref().filter(|a| a.playing) else {
+            return;
+        };
+        if el.slider.is_none() || self.kernel.id(&el.label).is_none() {
+            return;
+        }
+        let plain = |source: &Option<String>| -> Result<Option<f64>, ()> {
+            source
+                .as_deref()
+                .map(|s| {
+                    s.trim()
+                        .parse::<f64>()
+                        .ok()
+                        .filter(|v| v.is_finite())
+                        .ok_or(())
+                })
+                .transpose()
+        };
+        let label = quote(&el.label);
+        let (Ok(step), Ok(speed)) = (plain(&animation.step), plain(&animation.speed)) else {
+            self.out.notes.push(format!(
+                "slider `{label}` does not play: its saved step or speed is an expression, kept for the file only"
+            ));
+            return;
+        };
+        let property = Property::SliderAnimation {
+            label: el.label.clone(),
+            step,
+            speed: speed.unwrap_or(1.0),
+            mode: animation.mode,
+            running,
+        };
+        match property.apply(&mut self.kernel) {
+            Ok(()) => self.out.script.push(property.to_string()),
+            Err(reason) => self
+                .out
+                .notes
+                .push(format!("animation of `{label}`: {}", quote(&reason))),
+        }
+    }
+
     fn restore_slider(&mut self, el: &Element) {
         let Some(saved) = &el.slider else { return };
         if literal_slider_bounds(el).is_some_and(|[min, max]| {
@@ -1353,22 +1399,43 @@ impl Converter {
                     Err("the value is not finite".into())
                 }
             }
-            "penstroke" => match (&el.stroke_coords, el.legacy_stroke) {
-                (Some(coords), _) => {
-                    match geo_kernel::algo::stroke::parse_saved_coords(coords) {
-                        Ok(numbers) => {
-                            let data = geo_kernel::algo::stroke::StrokeData::from_triplets(&numbers);
-                            Ok(format!(
-                                "{label} = {}",
-                                geo_kernel::algo::stroke::saved_definition(&data)
-                            ))
-                        }
-                        Err(reason) => Err(reason),
+            "penstroke" => {
+                use geo_kernel::algo::stroke::{
+                    parse_saved_coords, saved_definition, smooth_saved_vertices, StrokeData,
+                };
+                // Bezier points replace whatever the vertices made; the
+                // vertices apply to a stroke without points
+                let bezier = el
+                    .stroke_coords
+                    .as_deref()
+                    .map(parse_saved_coords)
+                    .transpose()
+                    .map(|numbers| numbers.map(|n| StrokeData::from_triplets(&n)));
+                match bezier {
+                    Err(reason) => Err(reason),
+                    Ok(Some(data)) if !data.points.is_empty() => {
+                        Ok(format!("{label} = {}", saved_definition(&data)))
                     }
+                    Ok(_) => match &el.legacy_stroke {
+                        None => Ok(format!("{label} = PenStroke()")),
+                        Some(coords) => match parse_saved_coords(coords) {
+                            Err(reason) => Err(reason),
+                            // The reference smooths the vertices in the view
+                            // its application has while it reads, which the
+                            // file does not determine: only pieces of fewer
+                            // than three points, which no view changes, are
+                            // restored.
+                            Ok(numbers) => smooth_saved_vertices(&numbers, None)
+                                .map(|data| format!("{label} = {}", saved_definition(&data)))
+                                .ok_or_else(|| {
+                                    "the stroke vertices are smoothed in the view the reader \
+                                     has, which the file does not determine"
+                                        .into()
+                                }),
+                        },
+                    },
                 }
-                (None, true) => Err("the stroke has only vertices to smooth again in the reader's view (`strokeCoords`)".into()),
-                (None, false) => Ok(format!("{label} = PenStroke()")),
-            },
+            }
             "implicitpoly" => Ok(format!(
                 "$implicitCoefficients({label}, {})",
                 el.implicit_coefficients.as_deref().unwrap_or("[]")

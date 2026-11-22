@@ -465,6 +465,10 @@ impl Writer<'_> {
             "angleUnit",
             settings.angle_unit.as_deref().unwrap_or("degree"),
         )?;
+        // an animation that runs starts again when the file is opened
+        if self.c.is_animating() {
+            self.xml.val("startAnimation", "true")?;
+        }
         // Object scripts are kept as data by the application.
         self.xml
             .buffer

@@ -491,7 +491,7 @@ fn render_geometry(
             }
             Value::PenStroke { .. } => {
                 if let Some(stroke) = c.stroke(id) {
-                    write_stroke(&stroke.points, &mut segments, |x, y| (sx(x), sy(y)));
+                    write_stroke(stroke, &mut segments, |x, y| (sx(x), sy(y)));
                 }
             }
             Value::Text => {
@@ -671,48 +671,35 @@ fn write_locus(
     flush(&mut run, out);
 }
 
-/// A pen stroke as one path with round caps: every subpath starts with a
-/// move, and cubic pieces take the two control points before their end. A
-/// subpath of one point is a line to itself, which the round cap shows as
-/// a dot.
+/// A pen stroke as one path with round caps, from the path operations of
+/// [`crate::algo::stroke::StrokeData::path`]; a lone point is a line to
+/// itself, which the round cap shows as a dot.
 fn write_stroke(
-    points: &[crate::algo::stroke::StrokePoint],
+    stroke: &crate::algo::stroke::StrokeData,
     out: &mut String,
     at: impl Fn(f64, f64) -> (f64, f64),
 ) {
-    use crate::algo::stroke::Segment;
+    use crate::algo::stroke::PathOp;
     let mut d = String::new();
-    let mut open = false;
-    let mut controls: Vec<(f64, f64)> = Vec::with_capacity(2);
-    for p in points {
-        if !p.is_defined() || !p.y.is_finite() {
-            open = false;
-            controls.clear();
-            continue;
-        }
-        let (x, y) = at(p.x, p.y);
-        match p.segment {
-            Segment::Move => {
-                let _ = write!(d, "M{x:.2} {y:.2}");
-                open = true;
-                controls.clear();
+    for op in stroke.path() {
+        let _ = match op {
+            PathOp::Move([x, y]) => {
+                let (x, y) = at(x, y);
+                write!(d, "M{x:.2} {y:.2}")
             }
-            Segment::Control => controls.push((x, y)),
-            _ if !open => {
-                // a piece without a start draws nothing, as the reference
-                // path does before its first move
-                controls.clear();
+            PathOp::Line([x, y]) => {
+                let (x, y) = at(x, y);
+                write!(d, "L{x:.2} {y:.2}")
             }
-            Segment::Curve if controls.len() == 2 => {
-                let [(x1, y1), (x2, y2)] = [controls[0], controls[1]];
-                let _ = write!(d, "C{x1:.2} {y1:.2} {x2:.2} {y2:.2} {x:.2} {y:.2}");
-                controls.clear();
+            PathOp::Quad([cx, cy], [x, y]) => {
+                let ((cx, cy), (x, y)) = (at(cx, cy), at(x, y));
+                write!(d, "Q{cx:.2} {cy:.2} {x:.2} {y:.2}")
             }
-            Segment::Curve | Segment::Line => {
-                let _ = write!(d, "L{x:.2} {y:.2}");
-                controls.clear();
+            PathOp::Cubic([ax, ay], [bx, by], [x, y]) => {
+                let ((ax, ay), (bx, by), (x, y)) = (at(ax, ay), at(bx, by), at(x, y));
+                write!(d, "C{ax:.2} {ay:.2} {bx:.2} {by:.2} {x:.2} {y:.2}")
             }
-        }
+        };
     }
     if !d.is_empty() {
         let _ = writeln!(

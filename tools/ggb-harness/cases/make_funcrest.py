@@ -15,6 +15,10 @@ def reject(line):
     return {"action": "reject", "line": line}
 
 
+def bounds(label, lo, hi):
+    return {"action": "set_slider_bounds", "label": label, "min": float(lo), "max": float(hi)}
+
+
 def anim(frames):
     return {"action": "animate", "frames": frames}
 
@@ -190,6 +194,14 @@ case("slowplot", "n = 1\nf(x) = x / n\ng = SlowPlot(f)\np = a + 0\nu = g(-4)",
      [anim(30), setn("n", 0), anim(30), setn("n", 2), anim(30)])
 case("slowplot", "A = (0, 0)\nB = (2, 2)\nl = Line(A, B)\ng = SlowPlot(l, 1)\np = a + 0\nu = g(0)",
      [anim(160), mv("B", 2, 0), anim(160)])
+# A reversed interval makes the slider undefined; a frame then sets it by
+# the ordered tests of the interval, and the interval recovers.
+case("slowplot", "f(x) = x\ng = SlowPlot(f)\np = a + 0\nu = g(-4)",
+     [anim(10), bounds("a", 1, 0), anim(1), anim(3), bounds("a", 0, 1), anim(5)])
+# The repeat value of an angle is its radians cut to an integer.
+case("slowplot", "f(x) = x\nr = 90°\ng = SlowPlot(f, r)\nh = SlowPlot(f, 90°)\n"
+     "k = SlowPlot(f, 2)\np = a + 0\nq = b + 0\ns = c + 0",
+     [anim(310), anim(1)])
 
 # ---------------------------------------------------------------- Derivative
 case("derivative", "n = 0\nk = n/n\nf(x) = x^3 + 1\ng = Derivative(f, k)\nh = NDerivative(f, k)\n"

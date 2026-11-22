@@ -105,4 +105,10 @@ case("literals", "s = PenStroke(e, 1, ∞, 1, -∞, 2, +1, 1., NaN, 2, −1, - 1
       reject("b = PenStroke(2^2, 1, 2, 2)"), reject("c = PenStroke(pi/2, 1, 2, 2)"),
       reject("d = PenStroke(1°, 1, 2, 2)"), reject("f = PenStroke(-π, 1, 2, 2)")])
 
+# ------------------------------------------------------------------ limits
+# A stroke too long for the saved attribute: the reference keeps it.
+cases.topic("limits")
+case("limits", "s = PenStroke(" + tuples([(round(1.37 * i, 2), round((i % 2) * 1.91, 2))
+                                          for i in range(2500)]) + ")")
+
 cases.write()

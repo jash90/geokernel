@@ -25,6 +25,17 @@ pub enum AnimationMode {
 }
 
 impl AnimationMode {
+    /// The mode of a saved code; the reference treats an unknown one as
+    /// increasing (`setAnimationType`).
+    pub fn from_code(code: i64) -> Self {
+        match code {
+            0 => Self::Oscillating,
+            2 => Self::Decreasing,
+            3 => Self::IncreasingOnce,
+            _ => Self::Increasing,
+        }
+    }
+
     pub fn code(self) -> u8 {
         match self {
             Self::Oscillating => 0,
@@ -102,6 +113,19 @@ fn next_pretty_number(t: f64) -> f64 {
 /// `GeoNumeric.AUTO_STEP_MUL`.
 const AUTO_STEP_MUL: f64 = 0.0009;
 
+impl Animation {
+    /// A saved animation: the increment is automatic without a step.
+    pub fn saved(step: Option<f64>, speed: f64, mode: AnimationMode, playing: bool) -> Self {
+        Self {
+            step: step.unwrap_or(0.01),
+            auto_step: step.is_none(),
+            speed,
+            playing,
+            ..Self::playing(0.01, mode)
+        }
+    }
+}
+
 /// `Kernel.roundToScale`.
 fn round_to_scale(x: f64, scale: f64) -> f64 {
     if scale == 1.0 {
@@ -131,14 +155,25 @@ impl Construction {
         self.animations.get(&id)
     }
 
-    /// Whether a slider is playing.
+    /// Whether the animation runs: the timer is on and a slider plays.
     pub fn is_animating(&self) -> bool {
-        self.animations.values().any(|a| a.playing)
+        self.animation_running && self.animations.values().any(|a| a.playing)
     }
 
-    /// Gives the slider `id` a playing animation (`setAnimating(true)`).
+    /// Gives the slider `id` a playing animation (`setAnimating(true)`) and
+    /// starts the timer (`AnimationManager.startAnimation`).
     pub(crate) fn start_animation(&mut self, id: Id, animation: Animation) {
         self.animations.insert(id, animation);
+        self.animation_running = true;
+    }
+
+    /// Restores the animation of the slider `id` from a saved file; the
+    /// timer runs when the file says so (`<startAnimation>`).
+    pub fn restore_animation(&mut self, id: Id, animation: Animation, running: bool) {
+        self.animations.insert(id, animation);
+        if running && animation.playing {
+            self.animation_running = true;
+        }
     }
 
     /// Asks the application to hide `id`, as a command that hides an input
@@ -167,6 +202,13 @@ impl Construction {
         }
     }
 
+    /// Where the animation of `id` goes on from.
+    pub(super) fn set_animation_position(&mut self, id: Id, position: f64) {
+        if let Some(a) = self.animations.get_mut(&id) {
+            a.position = position;
+        }
+    }
+
     /// A value set by hand is where the animation goes on from.
     pub(super) fn reset_animation_position(&mut self, id: Id) {
         if let Some(a) = self.animations.get_mut(&id) {
@@ -179,6 +221,9 @@ impl Construction {
     /// update of everything that depends on the sliders that changed
     /// (`AnimationManager.sliderStep`). Returns whether a value changed.
     pub fn animate(&mut self, frame_rate: f64) -> bool {
+        if !self.animation_running {
+            return false;
+        }
         let frame_rate = if frame_rate.is_nan() {
             MAX_ANIMATION_FRAME_RATE
         } else {
@@ -196,11 +241,16 @@ impl Construction {
             if let Some(value) = self.animation_step(id, frame_rate) {
                 // `setValue(value, false)`: the position stays unrounded
                 let position = self.animations.get(&id).map(|a| a.position);
-                changed |= self.update_number(id, value, true).is_ok();
+                // already kept in the interval, as `setValue` does it once
+                changed |= self.update_number(id, value, false).is_ok();
                 if let (Some(a), Some(position)) = (self.animations.get_mut(&id), position) {
                     a.position = position;
                 }
             }
+        }
+        // the timer stops with the last playing slider
+        if !self.animations.values().any(|a| a.playing) {
+            self.animation_running = false;
         }
         changed
     }
@@ -211,8 +261,10 @@ impl Construction {
         let [Some(min), Some(max)] = self.slider_bounds(id) else {
             return None;
         };
-        let old = match self.defs.get(id.0) {
-            Some(&Def::Number(v)) => v,
+        // an undefined slider (a reversed interval) reads as NaN
+        let old = match (self.defs.get(id.0), self.values[id.0]) {
+            (Some(Def::Number(_)), crate::Value::Number(v)) => v,
+            (Some(Def::Number(_)), _) => f64::NAN,
             _ => return None,
         };
         let a = self.animations.get_mut(&id)?;
@@ -239,11 +291,12 @@ impl Construction {
                 if a.position > max {
                     a.playing = false;
                     a.position = f64::NAN;
-                    return (max != old).then_some(max);
+                    let changed = max != old;
+                    return changed.then(|| self.clamp_slider(id, max));
                 } else if a.position < min {
                     a.playing = false;
                     a.position = f64::NAN;
-                    return Some(min);
+                    return Some(self.clamp_slider(id, min));
                 }
             }
             AnimationMode::Oscillating => {
@@ -266,8 +319,9 @@ impl Construction {
         if increment > MIN_PRECISION {
             value = check_decimal_fraction(value);
         }
-        // `setValue` keeps the value in the interval
-        let value = value.clamp(min, max);
+        // `setValue` keeps the value in the interval with ordered tests,
+        // which a reversed interval also passes through
+        let value = self.clamp_slider(id, value);
         (value != old).then_some(value)
     }
 }

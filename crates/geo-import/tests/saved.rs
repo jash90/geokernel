@@ -731,3 +731,28 @@ fn files_saved_after_moves_agree_with_what_geogebra_computed_when_saving() {
     assert!(failures.is_empty(), "{}", failures.join("\n"));
     assert!(compared >= 300, "only {compared} objects compared");
 }
+
+/// Older stroke vertices of three or more points are smoothed in whatever
+/// view the reference reader has, which the file does not fix: the stroke
+/// is skipped with that reason instead of a guess. The saved stroke limit
+/// of the kernel is the attribute limit of the importer.
+#[test]
+fn older_stroke_vertices_that_need_a_view_are_skipped() {
+    let xml = br#"<geogebra format="5.0"><construction>
+<expression label="t" exp="PenStroke[]"/>
+<element type="penstroke" label="t"><strokeCoords val="-3,3,4,3,2,5"/></element>
+<expression label="s" exp="PenStroke[]"/>
+<element type="penstroke" label="s"><strokeCoords val="0,0,1,1"/></element>
+</construction></geogebra>"#;
+    let imported = import(xml).unwrap();
+    assert_eq!(imported.skipped.len(), 1, "{:?}", imported.skipped);
+    assert_eq!(imported.skipped[0].label, "t");
+    assert!(imported.skipped[0].reason.contains("view"));
+    let c = script::load(&imported.script.join("\n")).unwrap();
+    let s = c.stroke(c.id("s").unwrap()).unwrap();
+    assert_eq!(s.points.len(), 3);
+    assert_eq!(
+        geo_kernel::algo::stroke::MAX_SAVED_COORDS_BYTES,
+        geo_import::xml::MAX_ATTRIBUTE_BYTES
+    );
+}

@@ -370,6 +370,14 @@ impl Writer<'_> {
                     _ => None,
                 });
             match animation {
+                // the construction knows whether the slider still plays
+                Some(animation) if c.animation(id).is_some() => {
+                    let playing = c.animation(id).is_some_and(|a| a.playing);
+                    self.animation(&SliderAnimation {
+                        playing,
+                        ..animation.clone()
+                    })?
+                }
                 Some(animation) => self.animation(animation)?,
                 // The file of the slider had no such tag.
                 None if saved.is_some() => {}

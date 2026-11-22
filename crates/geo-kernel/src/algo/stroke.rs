@@ -48,6 +48,17 @@ impl Segment {
     }
 }
 
+/// One operation of the drawing of a stroke (see [`StrokeData::path`]).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum PathOp {
+    Move([f64; 2]),
+    Line([f64; 2]),
+    /// A quadratic piece: its control point and its end.
+    Quad([f64; 2], [f64; 2]),
+    /// A cubic piece: its two control points and its end.
+    Cubic([f64; 2], [f64; 2], [f64; 2]),
+}
+
 /// One point of a stroke. A subpath break has a non-finite `x`.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct StrokePoint {
@@ -110,49 +121,115 @@ impl StrokeData {
             })
     }
 
-    /// The subpaths as polylines, each cubic piece flattened into `steps`
-    /// chords. A subpath of one point is a run of one point; a piece with a
-    /// non-finite coordinate ends its run.
+    /// The drawing of the stroke as path operations, as the reference
+    /// plots a locus (`CurvePlotterUtils.draw` into `GeneralPathClipped`):
+    /// a point with a non-finite coordinate ends the subpath and the next
+    /// finite point starts one, whatever its code; a curve end draws a cubic
+    /// piece after two control points, a quadratic one after one, and
+    /// nothing without; a move that nothing follows is closed with a line to
+    /// itself, which the round cap of the pen shows as a dot.
+    pub fn path(&self) -> Vec<PathOp> {
+        let mut ops = Vec::new();
+        let mut gap = true;
+        let mut last_move: Option<[f64; 2]> = None;
+        let mut current: Option<[f64; 2]> = None;
+        // the control points stay with the path across moves and gaps
+        let (mut c1, mut c2): (Option<[f64; 2]>, Option<[f64; 2]>) = (None, None);
+        for p in self.points.iter() {
+            if !(p.x.is_finite() && p.y.is_finite()) {
+                gap = true;
+                continue;
+            }
+            let at = [p.x, p.y];
+            match p.segment {
+                Segment::Control | Segment::Curve if !gap => {
+                    if p.segment == Segment::Control {
+                        if c1.is_none() {
+                            c1 = Some(at);
+                        } else {
+                            c2 = Some(at);
+                        }
+                    } else if let (Some(a), Some(b)) = (c1, c2) {
+                        ops.push(PathOp::Cubic(a, b, at));
+                        current = Some(at);
+                        (c1, c2) = (None, None);
+                    } else if let Some(a) = c1 {
+                        ops.push(PathOp::Quad(a, at));
+                        current = Some(at);
+                        (c1, c2) = (None, None);
+                    }
+                    last_move = None;
+                }
+                Segment::Line if !gap => {
+                    ops.push(if current.is_some() {
+                        PathOp::Line(at)
+                    } else {
+                        PathOp::Move(at)
+                    });
+                    current = Some(at);
+                    last_move = None;
+                }
+                _ => {
+                    if let Some(m) = last_move {
+                        ops.push(PathOp::Line(m));
+                    }
+                    ops.push(PathOp::Move(at));
+                    current = Some(at);
+                    last_move = Some(at);
+                }
+            }
+            gap = false;
+        }
+        if let Some(m) = last_move {
+            ops.push(PathOp::Line(m));
+        }
+        ops
+    }
+
+    /// The subpaths of [`StrokeData::path`] as polylines, each curved piece
+    /// flattened into `steps` chords. A subpath whose points all coincide
+    /// is a run of one point, a dot.
     pub fn runs(&self, steps: usize) -> Vec<Vec<(f64, f64)>> {
         let steps = steps.max(1);
         let mut runs: Vec<Vec<(f64, f64)>> = Vec::new();
         let mut run: Vec<(f64, f64)> = Vec::new();
-        let mut controls: Vec<(f64, f64)> = Vec::with_capacity(2);
         let mut flush = |run: &mut Vec<(f64, f64)>| {
+            if run.windows(2).all(|w| w[0] == w[1]) {
+                run.truncate(1);
+            }
             if !run.is_empty() {
                 runs.push(std::mem::take(run));
             }
         };
-        for p in self.points.iter() {
-            if !p.is_defined() || !p.y.is_finite() {
-                flush(&mut run);
-                controls.clear();
-                continue;
-            }
-            let at = (p.x, p.y);
-            match p.segment {
-                Segment::Move => {
+        for op in self.path() {
+            let start = run.last().copied();
+            match op {
+                PathOp::Move([x, y]) => {
                     flush(&mut run);
-                    controls.clear();
-                    run.push(at);
+                    run.push((x, y));
                 }
-                Segment::Control => controls.push(at),
-                // a piece before any move draws nothing
-                _ if run.is_empty() => controls.clear(),
-                Segment::Curve if controls.len() == 2 => {
-                    let start = *run.last().expect("a run has a start");
-                    let xs = cubic(start.0, controls[0].0, controls[1].0, at.0);
-                    let ys = cubic(start.1, controls[0].1, controls[1].1, at.1);
+                PathOp::Line([x, y]) => run.push((x, y)),
+                PathOp::Quad([cx, cy], [x, y]) => {
+                    let (sx, sy) = start.unwrap_or((x, y));
+                    for k in 1..steps {
+                        let t = k as f64 / steps as f64;
+                        let u = 1.0 - t;
+                        run.push((
+                            u * u * sx + 2.0 * u * t * cx + t * t * x,
+                            u * u * sy + 2.0 * u * t * cy + t * t * y,
+                        ));
+                    }
+                    run.push((x, y));
+                }
+                PathOp::Cubic([ax, ay], [bx, by], [x, y]) => {
+                    let (sx, sy) = start.unwrap_or((x, y));
+                    let xs = cubic(sx, ax, bx, x);
+                    let ys = cubic(sy, ay, by, y);
                     for k in 1..steps {
                         let t = k as f64 / steps as f64;
                         run.push((evaluate(&xs, t), evaluate(&ys, t)));
                     }
-                    run.push(at);
-                    controls.clear();
-                }
-                Segment::Curve | Segment::Line => {
-                    run.push(at);
-                    controls.clear();
+                    run.push((x, y));
                 }
             }
         }
@@ -198,8 +275,28 @@ impl StrokeData {
     }
 }
 
-/// The largest number of points a saved stroke restores.
-pub const MAX_SAVED_POINTS: usize = 400_000;
+/// The longest saved coordinate text of a stroke, in bytes: the import
+/// limit of an XML attribute, which the `strokeBezierCoords` value is. A
+/// stroke whose points would not fit is made undefined when it is created
+/// or restored, so that a stroke never fails to be saved, journaled or
+/// read back later.
+pub const MAX_SAVED_COORDS_BYTES: usize = 1 << 20;
+
+/// Whether the saved coordinates of `data` fit [`MAX_SAVED_COORDS_BYTES`].
+pub fn fits_saved_limit(data: &StrokeData) -> bool {
+    // every point takes at least six bytes (`0,0,0,`)
+    data.points.len() <= MAX_SAVED_COORDS_BYTES / 6
+        && saved_coords(data).len() <= MAX_SAVED_COORDS_BYTES
+}
+
+/// `data`, or an undefined stroke where it would not fit the saved limit.
+fn within_saved_limit(data: StrokeData) -> StrokeData {
+    if fits_saved_limit(&data) {
+        data
+    } else {
+        StrokeData::default()
+    }
+}
 
 /// A number of a saved stroke as the reference reader parses it back.
 fn saved_number(v: f64) -> String {
@@ -271,14 +368,14 @@ pub fn saved_coords(data: &StrokeData) -> String {
 /// The numbers of a `strokeBezierCoords` value, split at commas as the
 /// reference reader does (trailing empty fields are dropped).
 pub fn parse_saved_coords(text: &str) -> Result<Vec<f64>, String> {
+    if text.len() > MAX_SAVED_COORDS_BYTES {
+        return Err(format!(
+            "saved stroke coordinates are longer than {MAX_SAVED_COORDS_BYTES} bytes"
+        ));
+    }
     let mut fields: Vec<&str> = text.split(',').collect();
     while fields.last().is_some_and(|f| f.is_empty()) {
         fields.pop();
-    }
-    if fields.len() > 3 * MAX_SAVED_POINTS {
-        return Err(format!(
-            "a saved stroke holds at most {MAX_SAVED_POINTS} points"
-        ));
     }
     fields
         .iter()
@@ -313,7 +410,8 @@ pub fn saved_definition(data: &StrokeData) -> String {
 }
 
 /// The largest number of input points one stroke smooths; a longer input
-/// makes an undefined stroke instead of unbounded work.
+/// makes an undefined stroke instead of unbounded work. Its smoothing could
+/// not fit [`MAX_SAVED_COORDS_BYTES`] anyway.
 pub const MAX_STROKE_POINTS: usize = 100_000;
 
 /// The smallest turn, in radians, that makes a piece curved.
@@ -326,7 +424,7 @@ const CLOSE_PIXELS: f64 = 4.0;
 /// The window the smoothing measures pixels in: the origin and scales of
 /// the graphics view.
 #[derive(Clone, Copy, Debug)]
-pub(crate) struct StrokeView {
+pub struct StrokeView {
     x_zero: f64,
     y_zero: f64,
     x_scale: f64,
@@ -334,6 +432,17 @@ pub(crate) struct StrokeView {
 }
 
 impl StrokeView {
+    /// The view with the origin at `(x_zero, y_zero)` pixels and the scales
+    /// in pixels per unit.
+    pub fn new(x_zero: f64, y_zero: f64, x_scale: f64, y_scale: f64) -> Self {
+        Self {
+            x_zero,
+            y_zero,
+            x_scale,
+            y_scale,
+        }
+    }
+
     pub(crate) fn of(c: &Construction) -> Self {
         let [xmin, _, _, ymax, x_scale, y_scale] = c.view();
         Self {
@@ -366,6 +475,41 @@ pub(crate) fn smooth(input: &[(f64, f64)], view: StrokeView) -> Vec<StrokePoint>
     } else {
         points
     }
+}
+
+/// The stroke of saved vertices (`<strokeCoords>`, `x, y` pairs, a lone
+/// last number left out) smoothed in `view` as the reference reader does
+/// (`appendVertexPointArray`). `None` when a subpath of three or more
+/// points needs a view and there is none; an undefined stroke where the
+/// result would not fit the saved limit.
+pub fn smooth_saved_vertices(numbers: &[f64], view: Option<StrokeView>) -> Option<StrokeData> {
+    let input: Vec<(f64, f64)> = numbers
+        .as_chunks::<2>()
+        .0
+        .iter()
+        .map(|&[x, y]| (x, y))
+        .collect();
+    let data: Vec<_> = input
+        .iter()
+        .map(|&(x, y)| StrokePoint::new(x, y, Segment::Line))
+        .collect();
+    let mut index = 0;
+    let mut needs_view = false;
+    while index < data.len() {
+        let size = part(&data, index);
+        needs_view |= size >= 3;
+        index += size.max(1);
+    }
+    let view = match view {
+        Some(view) if view.x_scale > 0.0 && view.y_scale > 0.0 => view,
+        // a view of no size cannot change pieces of fewer than three points
+        _ if !needs_view => StrokeView::new(0.0, 0.0, 1.0, 1.0),
+        _ => return None,
+    };
+    Some(within_saved_limit(StrokeData {
+        points: Arc::new(smooth(&input, view)),
+        defined: true,
+    }))
 }
 
 /// The length of the subpath that starts at `index`: up to the first break
@@ -659,11 +803,6 @@ pub(crate) fn input_points(args: &[&str]) -> Result<Vec<(f64, f64)>, String> {
         [""] => &[][..],
         _ => args,
     };
-    if args.len() > 2 * MAX_STROKE_POINTS {
-        return Err(format!(
-            "a pen stroke takes at most {MAX_STROKE_POINTS} points"
-        ));
-    }
     let empty = Construction::new();
     let illegal = |arg: &str| format!("illegal argument of `PenStroke`: `{arg}`");
     let mut points = Vec::with_capacity(args.len());
@@ -711,20 +850,31 @@ impl Construction {
             _ => args,
         };
         let numbers = parse_saved_coords(&args.join(","))?;
-        self.add_stroke(label, StrokeData::from_triplets(&numbers))
+        // breaks the reader adds can make the points a little longer
+        self.add_stroke(
+            label,
+            within_saved_limit(StrokeData::from_triplets(&numbers)),
+        )
     }
 
     /// `PenStroke(args)`: smooths the points of the arguments in the
     /// current view and adds the frozen stroke.
     pub fn add_pen_stroke(&mut self, label: &str, args: &[&str]) -> Result<Id, String> {
+        let count = match args {
+            [""] => 0,
+            _ => args.len(),
+        };
+        if count > 2 * MAX_STROKE_POINTS {
+            return self.add_stroke(label, StrokeData::default());
+        }
         let input = input_points(args)?;
         let data = if input.is_empty() {
             StrokeData::default()
         } else {
-            StrokeData {
+            within_saved_limit(StrokeData {
                 points: Arc::new(smooth(&input, StrokeView::of(self))),
                 defined: true,
-            }
+            })
         };
         self.add_stroke(label, data)
     }
@@ -764,6 +914,58 @@ mod tests {
         assert!(input_points(&["1", "2", "3"]).is_err());
         assert_eq!(input_points(&["1", "2"]).unwrap(), vec![(1.0, 2.0)]);
         assert!(input_points(&[""]).unwrap().is_empty());
+    }
+
+    #[test]
+    fn the_drawing_follows_the_reference_path_rules() {
+        // a finite point after a gap starts a subpath whatever its code
+        let data = StrokeData::from_triplets(&[
+            0.0,
+            0.0,
+            1.0,
+            1.0,
+            f64::NAN,
+            0.0,
+            2.0,
+            0.0,
+            0.0,
+            3.0,
+            0.0,
+            0.0,
+        ]);
+        assert_eq!(
+            data.runs(4),
+            vec![vec![(0.0, 0.0)], vec![(2.0, 0.0), (3.0, 0.0)]]
+        );
+        // one control point makes a quadratic piece
+        let quad = StrokeData::from_triplets(&[0.0, 0.0, 1.0, 1.0, 2.0, 4.0, 2.0, 0.0, 3.0]);
+        assert_eq!(
+            quad.path(),
+            vec![
+                PathOp::Move([0.0, 0.0]),
+                PathOp::Quad([1.0, 2.0], [2.0, 0.0])
+            ]
+        );
+        assert_eq!(quad.runs(2)[0][1], (1.0, 1.0));
+    }
+
+    #[test]
+    fn a_stroke_that_would_not_fit_a_saved_file_is_undefined() {
+        let mut c = Construction::new();
+        let args: Vec<String> = (0..4000)
+            .map(|i| format!("({}, {})", f64::from(i) * 1.37, f64::from(i % 2) * 1.91))
+            .collect();
+        let args: Vec<&str> = args.iter().map(String::as_str).collect();
+        let id = c.add_pen_stroke("s", &args).unwrap();
+        assert!(!c.value(id).is_defined());
+        let small = c.add_pen_stroke("t", &args[..400]).unwrap();
+        let stroke = c.stroke(small).unwrap();
+        assert!(stroke.defined && saved_coords(stroke).len() <= MAX_SAVED_COORDS_BYTES);
+        // the journal form of a stroke that fits is read back
+        let line = saved_definition(stroke);
+        let (_, coords) = crate::script::split_call(&line).unwrap();
+        assert!(c.add_saved_stroke("u", &coords).is_ok());
+        assert!(parse_saved_coords(&"0,".repeat(MAX_SAVED_COORDS_BYTES)).is_err());
     }
 
     #[test]

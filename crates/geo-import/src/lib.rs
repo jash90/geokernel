@@ -110,6 +110,9 @@ pub struct Settings {
     pub angle_unit: Option<String>,
     /// Whether the construction was saved with continuity on (`<continuous>`).
     pub continuous: bool,
+    /// Whether the file was saved while its animation ran
+    /// (`<startAnimation>`), which the reference starts again on load.
+    pub start_animation: bool,
 }
 
 /// Why a file could not be read at all.
