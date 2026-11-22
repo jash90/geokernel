@@ -131,7 +131,9 @@ pub(super) fn chart(
                     right,
                     height,
                 } => {
-                    if height != 0.0 {
+                    if left >= right {
+                        line(out, screen((left, 0.0)), screen((left, height)));
+                    } else if height != 0.0 {
                         rect(
                             out,
                             screen((left, 0.0)),
