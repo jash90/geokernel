@@ -1,22 +1,37 @@
-// Licensed under the EUPL 1.2.
+// The construction rules follow reference commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/Kernel.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/CmdLocusEquation.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoCirclePointRadius.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDistancePoints.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/prover/AlgoLocusEquation.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/prover/AlgoEnvelope.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/prover/ProverBotanasMethod.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/prover/adapters/PointOnPathAdapter.java
+// Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
+// Licensed by GeoGebra GmbH under the EUPL 1.2.
 
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::algo::{conic::ConicDef, lines::LineDef, path::PathDef, point::PointDef};
-use crate::cas::{project_plane, PlanePolynomial as Polynomial, Rat, Work};
+use crate::cas::{
+    project_plane, rounded_numerator, PlanePolynomial as Polynomial, Rat, Work, PLANE_X, PLANE_Y,
+};
 use crate::expr::equation::implicit::Coefficients;
-use crate::{Construction, Def, Id, Kind, LocusDef};
+use crate::{Construction, Def, Id, Kind, LocusDef, Value};
 
 type Point = [Polynomial; 2];
 type Line = [Polynomial; 3];
 const MAX_DEPTH: usize = 64;
 const NEG_ONE: Rat = Rat { num: -1, den: 1 };
+const SATURATION: usize = 0;
+const MOVER_X: usize = 1;
+const MOVER_Y: usize = 2;
+const MIN_PRECISION: i64 = 10_000;
 
 #[derive(Clone, Copy, Debug)]
 pub(crate) enum Definition {
     Traced { point: Id, mover: Id },
     Condition { boolean: Id, mover: Id },
-    UnsupportedLocus(Id),
     Envelope { path: Id, mover: Id },
 }
 
@@ -30,11 +45,8 @@ impl Definition {
             [locus] => {
                 let locus = named(locus)?;
                 match c.def(locus) {
-                    Def::Locus(LocusDef::Path { point, mover }) => {
-                        Ok(Self::Traced { point, mover })
-                    }
-                    _ if c.kind(locus) == Kind::Locus => Ok(Self::UnsupportedLocus(locus)),
-                    _ => Err("LocusEquation needs a locus".into()),
+                    Def::Locus(LocusDef::Path { point, mover }) => Self::traced(c, point, mover),
+                    _ => Err("LocusEquation needs a point-path locus".into()),
                 }
             }
             [source, mover] => {
@@ -44,18 +56,34 @@ impl Definition {
                     return Err("LocusEquation needs a moving point".into());
                 }
                 match c.kind(source) {
-                    Kind::Point => Ok(Self::Traced {
-                        point: source,
-                        mover,
-                    }),
-                    Kind::Boolean => Ok(Self::Condition {
-                        boolean: source,
-                        mover,
-                    }),
+                    Kind::Point => Self::traced(c, source, mover),
+                    Kind::Boolean => {
+                        if mover_path(c, mover).is_some()
+                            || matches!(c.def(mover), Def::FreePoint { .. })
+                        {
+                            Ok(Self::Condition {
+                                boolean: source,
+                                mover,
+                            })
+                        } else {
+                            Err("LocusEquation needs a free point or a point on a path".into())
+                        }
+                    }
                     _ => Err("LocusEquation needs a traced point or a Boolean condition".into()),
                 }
             }
             _ => Err("LocusEquation needs a locus or two arguments".into()),
+        }
+    }
+
+    fn traced(c: &Construction, point: Id, mover: Id) -> Result<Self, String> {
+        if mover_path(c, mover).is_none() || mover_path(c, point).is_some() {
+            return Err("LocusEquation needs a tracer without a path and a mover on a path".into());
+        }
+        let mut geometry = Geometry::new(c, mover, coordinates(MOVER_X, MOVER_Y));
+        match geometry.depends(point, 0) {
+            Some(false) => Err("the traced point must depend on the mover".into()),
+            _ => Ok(Self::Traced { point, mover }),
         }
     }
 
@@ -95,73 +123,84 @@ impl Definition {
             Self::Traced { point, mover } => [point, mover],
             Self::Condition { boolean, mover } => [boolean, mover],
             Self::Envelope { path, mover } => [path, mover],
-            Self::UnsupportedLocus(locus) => return Some(Box::new([locus])),
         };
         construction_parents(c, roots)
     }
 
-    pub(crate) fn coefficients(self, c: &Construction) -> Option<Coefficients> {
-        let output = [Polynomial::variable(2), Polynomial::variable(3)];
+    pub(crate) fn input_key(self, c: &Construction, parents: &[Id]) -> Option<Vec<[u64; 3]>> {
+        let mover = match self {
+            Self::Traced { mover, .. }
+            | Self::Condition { mover, .. }
+            | Self::Envelope { mover, .. } => mover,
+        };
+        let carrier = if matches!(self, Self::Traced { .. } | Self::Envelope { .. }) {
+            mover_path(c, mover)
+        } else {
+            None
+        };
+        parents
+            .iter()
+            .copied()
+            .filter(|&id| {
+                id != mover
+                    && (c.def(id).is_free() || mover_path(c, id).is_some() || carrier == Some(id))
+            })
+            .map(|id| {
+                let value = c.value(id);
+                let values = match value {
+                    Value::Undefined => [f64::NAN; 3],
+                    Value::Bool(value) => [f64::from(value), 0.0, 0.0],
+                    Value::Point { x, y } | Value::Vector { x, y } => [x, y, 0.0],
+                    Value::Number(value) => [value, 0.0, 0.0],
+                    Value::Circle { cx, cy, r } => [cx, cy, r],
+                    Value::Segment { x1, y1, x2, y2 } => [y1 - y2, x2 - x1, x1 * y2 - y1 * x2],
+                    Value::Line { .. } => {
+                        let (a, b, d) = value.unit_line()?;
+                        [a, b, d]
+                    }
+                    _ => return None,
+                };
+                // The default algebra descriptions display two decimal places.
+                Some(values.map(|v| ((v * 100.0).round_ties_even() + 0.0).to_bits()))
+            })
+            .collect()
+    }
+
+    pub(crate) fn coefficients(self, c: &Construction, parents: &[Id]) -> Option<Coefficients> {
+        let output = coordinates(PLANE_X, PLANE_Y);
         let mut system;
-        let equations = match self {
+        match self {
             Self::Traced { point, mover } => {
                 let path = mover_path(c, mover)?;
-                if matches!(c.def(point), Def::Path(_)) {
-                    return None;
+                system = Geometry::new(c, mover, coordinates(MOVER_X, MOVER_Y));
+                let driver = system.path(path, &system.position.clone(), 0)?;
+                let has_driver = !driver.is_zero();
+                system.equations.push(driver);
+                system.trace(point, &output, 0)?;
+                if has_driver {
+                    system.exclude_coincidences(path, parents)?;
                 }
-                system =
-                    Geometry::new(c, mover, [Polynomial::variable(0), Polynomial::variable(1)]);
-                if !system.depends(point, 0)? {
-                    return None;
-                }
-                let driver = system.path(path, &system.position.clone())?;
-                let mut equations = system.trace(point, &output)?;
-                equations.push(driver);
-                equations
             }
             Self::Condition { boolean, mover } => {
                 system = Geometry::new(c, mover, output);
-                if !system.depends(boolean, 0)? {
-                    return None;
-                }
+                system.implicit = true;
                 let condition = system.condition(boolean)?;
-                if matches!(c.def(mover), Def::FreePoint { .. }) {
-                    vec![condition]
-                } else {
-                    vec![
-                        condition,
-                        system.path(mover_path(c, mover)?, &system.position.clone())?,
-                    ]
+                system.equations.push(condition);
+                if let Some(path) = mover_path(c, mover) {
+                    let driver = system.path(path, &system.position.clone(), 0)?;
+                    system.equations.push(driver);
                 }
             }
             Self::Envelope { path, mover } => {
                 let driver_path = mover_path(c, mover)?;
-                system =
-                    Geometry::new(c, mover, [Polynomial::variable(0), Polynomial::variable(1)]);
+                system = Geometry::new(c, mover, coordinates(MOVER_X, MOVER_Y));
                 if !system.depends(path, 0)? {
                     return None;
                 }
-                let driver = system.path(driver_path, &system.position.clone())?;
-                let family = system.path(path, &output)?;
-                if c.circle(driver_path)
-                    .is_some_and(|(_, _, radius)| radius == 0.0)
-                    || system.fixed_zero_radius(path)?
-                {
-                    return Some(vec![vec![0.0]]);
-                }
-                // The two gradients in the mover coordinates must be
-                // dependent at a contact along the driver's path.
-                let du = driver.derivative(0, &mut system.work)?;
-                let dv = driver.derivative(1, &mut system.work)?;
-                let fu = family.derivative(0, &mut system.work)?;
-                let fv = family.derivative(1, &mut system.work)?;
-                let lhs = du.product(&fv, &mut system.work)?;
-                let rhs = dv.product(&fu, &mut system.work)?;
-                vec![driver, family, system.subtract(lhs, &rhs)?]
+                system.envelope(path, driver_path, &output)?;
             }
-            Self::UnsupportedLocus(_) => return None,
-        };
-        coefficients(equations, &mut system.work)
+        }
+        coefficients(system.equations, system.precision, &mut system.work)
     }
 }
 
@@ -197,8 +236,16 @@ fn mover_path(c: &Construction, mover: Id) -> Option<Id> {
     }
 }
 
-fn coefficients(equations: Vec<Polynomial>, work: &mut Work<'_>) -> Option<Coefficients> {
-    let polynomial = project_plane(equations, work)?;
+fn coordinates(x: usize, y: usize) -> Point {
+    [Polynomial::variable(x), Polynomial::variable(y)]
+}
+
+fn coefficients(
+    equations: Vec<Polynomial>,
+    precision: i64,
+    work: &mut Work<'_>,
+) -> Option<Coefficients> {
+    let polynomial = project_plane(equations, precision, work)?;
     let (nx, ny) = polynomial
         .0
         .keys()
@@ -214,17 +261,30 @@ struct Geometry<'a> {
     c: &'a Construction,
     mover: Id,
     position: Point,
+    precision: i64,
     dependencies: BTreeMap<Id, bool>,
+    points: BTreeMap<Id, Point>,
+    radii: BTreeMap<Id, Polynomial>,
+    equations: Vec<Polynomial>,
+    next_variable: usize,
+    implicit: bool,
     work: Work<'a>,
 }
 
 impl<'a> Geometry<'a> {
     fn new(c: &'a Construction, mover: Id, position: Point) -> Self {
+        let [.., xscale, yscale] = c.view();
         Self {
             c,
             mover,
             position,
+            precision: (xscale.min(yscale) as i64).max(MIN_PRECISION),
             dependencies: BTreeMap::new(),
+            points: BTreeMap::new(),
+            radii: BTreeMap::new(),
+            equations: Vec::new(),
+            next_variable: MOVER_Y + 1,
+            implicit: false,
             work: Work::new(&|_| true),
         }
     }
@@ -260,21 +320,25 @@ impl<'a> Geometry<'a> {
         self.work.spend(1)
     }
 
-    fn constant(value: f64) -> Option<Polynomial> {
-        Some(Polynomial::constant(Rat::from_value(value)?))
+    fn constant(&self, value: f64) -> Option<Polynomial> {
+        let (numerator, denominator) = if value.fract() == 0.0 {
+            (rounded_numerator(value, 1)?, 1)
+        } else {
+            (rounded_numerator(value, self.precision)?, self.precision)
+        };
+        Some(Polynomial::constant(Rat::new(
+            numerator,
+            i128::from(denominator),
+        )?))
     }
 
-    fn fixed_zero_radius(&mut self, path: Id) -> Option<bool> {
-        let Def::Conic(ConicDef::SegmentRadius { segment, .. }) = self.c.def(path) else {
-            return Some(false);
-        };
-        let Def::Segment(a, b) = self.c.def(segment) else {
+    fn auxiliary(&mut self) -> Option<Polynomial> {
+        if self.next_variable >= PLANE_X {
             return None;
-        };
-        if self.depends(segment, 0)? {
-            return Some(false);
         }
-        Some(self.c.point(a)? == self.c.point(b)?)
+        let index = self.next_variable;
+        self.next_variable += 1;
+        Some(Polynomial::variable(index))
     }
 
     fn point(&mut self, id: Id, depth: usize) -> Option<Point> {
@@ -282,11 +346,17 @@ impl<'a> Geometry<'a> {
         if id == self.mover {
             return Some(self.position.clone());
         }
-        if !self.depends(id, depth)? {
+        if matches!(self.c.def(id), Def::FreePoint { .. }) {
             let (x, y) = self.c.point(id)?;
-            return Some([Self::constant(x)?, Self::constant(y)?]);
+            return Some([self.constant(x)?, self.constant(y)?]);
+        }
+        if let Some(point) = self.points.get(&id) {
+            return Some(point.clone());
         }
         match self.c.def(id) {
+            Def::Path(PathDef::On { path } | PathDef::OnParam { path, .. }) => {
+                self.fixed_path_point(id, path, depth + 1)
+            }
             Def::Midpoint(a, b) => self.midpoint(a, b, depth + 1),
             Def::Conic(ConicDef::MidpointSegment(segment)) => {
                 let Def::Segment(a, b) = self.c.def(segment) else {
@@ -294,8 +364,43 @@ impl<'a> Geometry<'a> {
                 };
                 self.midpoint(a, b, depth + 1)
             }
+            _ if self.intersection_paths(id).is_some() => {
+                let point = [self.auxiliary()?, self.auxiliary()?];
+                self.trace(id, &point, depth + 1)?;
+                self.points.insert(id, point.clone());
+                Some(point)
+            }
             _ => None,
         }
+    }
+
+    fn fixed_path_point(&mut self, id: Id, path: Id, depth: usize) -> Option<Point> {
+        let (x, y) = self.c.point(id)?;
+        let fixed_axis = if let Some((_, b, _)) = self.c.raw_carrier(path) {
+            Some(usize::from(b == 0.0))
+        } else if self.implicit {
+            self.c
+                .circle(path)
+                .map(|(cx, _, _)| usize::from((x - cx).abs() < crate::tol::STANDARD_PRECISION))
+        } else {
+            None
+        };
+        let Some(axis) = fixed_axis else {
+            return Some([self.constant(x)?, self.constant(y)?]);
+        };
+        // Round the coordinate along the path. The carrier equation determines
+        // the other coordinate and keeps the point incident after rounding.
+        let fixed = self.constant([x, y][axis])?;
+        let free = self.auxiliary()?;
+        let point = if axis == 0 {
+            [fixed, free]
+        } else {
+            [free, fixed]
+        };
+        let incidence = self.path(path, &point, depth)?;
+        self.equations.push(incidence);
+        self.points.insert(id, point.clone());
+        Some(point)
     }
 
     fn midpoint(&mut self, a: Id, b: Id, depth: usize) -> Option<Point> {
@@ -355,9 +460,9 @@ impl<'a> Geometry<'a> {
                 };
                 self.bisector(a, b, depth + 1)
             }
-            _ if !self.depends(id, depth)? => {
+            _ if self.c.read_ids(&self.c.def(id)).is_empty() => {
                 let (a, b, c) = self.c.raw_carrier(id)?;
-                Some([Self::constant(a)?, Self::constant(b)?, Self::constant(c)?])
+                Some([self.constant(a)?, self.constant(b)?, self.constant(c)?])
             }
             _ => None,
         }
@@ -382,9 +487,10 @@ impl<'a> Geometry<'a> {
         Some([a, b, self.subtract(lhs, &rhs)?])
     }
 
-    fn path(&mut self, id: Id, at: &Point) -> Option<Polynomial> {
+    fn path(&mut self, id: Id, at: &Point, depth: usize) -> Option<Polynomial> {
+        self.visit(depth)?;
         if matches!(self.c.kind(id), Kind::Line | Kind::Ray | Kind::Segment) {
-            let [a, b, c] = self.line(id, 0)?;
+            let [a, b, c] = self.line(id, depth + 1)?;
             let ax = a.product(&at[0], &mut self.work)?;
             let by = b.product(&at[1], &mut self.work)?;
             return c.add_scaled(&ax, Rat::ONE, &mut self.work)?.add_scaled(
@@ -393,42 +499,164 @@ impl<'a> Geometry<'a> {
                 &mut self.work,
             );
         }
-        let (center, radius_squared) = match self.c.def(id) {
+        let (center, radius_squared) = self.circle(id, depth + 1)?;
+        let distance = self.squared_distance(center, at)?;
+        self.subtract(distance, &radius_squared)
+    }
+
+    fn circle(&mut self, id: Id, depth: usize) -> Option<(Point, Polynomial)> {
+        self.visit(depth)?;
+        let result = match self.c.def(id) {
             Def::CircleThrough { center, through } => {
-                let a = self.point(center, 0)?;
-                let b = self.point(through, 0)?;
+                let a = self.point(center, depth + 1)?;
+                let b = self.point(through, depth + 1)?;
                 (a.clone(), self.squared_distance(a, &b)?)
             }
             Def::Conic(ConicDef::SegmentRadius { center, segment }) => {
                 let Def::Segment(a, b) = self.c.def(segment) else {
                     return None;
                 };
-                let a = self.point(a, 0)?;
-                let b = self.point(b, 0)?;
-                (self.point(center, 0)?, self.squared_distance(a, &b)?)
+                let a = self.point(a, depth + 1)?;
+                let b = self.point(b, depth + 1)?;
+                (
+                    self.point(center, depth + 1)?,
+                    self.squared_distance(a, &b)?,
+                )
+            }
+            Def::CircleRadius { center, radius } => {
+                let squared = match self.c.def(radius) {
+                    Def::Number(_) => {
+                        // Free numeric radii are eliminated as independent algebraic variables.
+                        if let Some(squared) = self.radii.get(&radius) {
+                            squared.clone()
+                        } else {
+                            let squared = self.auxiliary()?;
+                            self.radii.insert(radius, squared.clone());
+                            squared
+                        }
+                    }
+                    Def::Distance(first, _) => {
+                        // A point-to-point distance exposes its endpoint coordinates
+                        // to the prover. The circle uses the first coordinate as radius.
+                        let [x, _] = self.point(first, depth + 1)?;
+                        x.product(&x, &mut self.work)?
+                    }
+                    _ => return None,
+                };
+                (self.point(center, depth + 1)?, squared)
             }
             _ => return None,
         };
-        let distance = self.squared_distance(center, at)?;
-        self.subtract(distance, &radius_squared)
+        Some(result)
     }
 
-    fn trace(&mut self, id: Id, output: &Point) -> Option<Vec<Polynomial>> {
-        let paths = match self.c.def(id) {
+    fn intersection_paths(&self, id: Id) -> Option<[Id; 2]> {
+        match self.c.def(id) {
             Def::IntersectLines(first, second)
             | Def::Point(PointDef::LineIntersection { first, second }) => Some([first, second]),
             Def::IntersectLineCircle { line, circle, .. } => Some([line, circle]),
             Def::IntersectCircles { c1, c2, .. } => Some([c1, c2]),
             _ => None,
-        };
-        if let Some([first, second]) = paths {
-            return Some(vec![self.path(first, output)?, self.path(second, output)?]);
         }
-        let [x, y] = self.point(id, 0)?;
-        Some(vec![
-            self.subtract(x, &output[0])?,
-            self.subtract(y, &output[1])?,
-        ])
+    }
+
+    fn trace(&mut self, id: Id, output: &Point, depth: usize) -> Option<()> {
+        let constraints = if let Some([first, second]) = self.intersection_paths(id) {
+            [
+                self.path(first, output, depth)?,
+                self.path(second, output, depth)?,
+            ]
+        } else {
+            let [x, y] = self.point(id, depth)?;
+            [self.subtract(x, &output[0])?, self.subtract(y, &output[1])?]
+        };
+        self.equations.extend(constraints);
+        Some(())
+    }
+
+    fn exclude_coincidences(&mut self, driver: Id, parents: &[Id]) -> Option<()> {
+        let (endpoints, along) = match self.c.def(driver) {
+            Def::Line(a, b) | Def::Segment(a, b) => {
+                let free = |id| matches!(self.c.def(id), Def::FreePoint { .. });
+                let along = if free(a) && free(b) {
+                    let [ax, _] = self.point(a, 0)?;
+                    let [bx, _] = self.point(b, 0)?;
+                    // On the carrier, equality in a varying coordinate
+                    // is equivalent to coincidence with the endpoint.
+                    Some(usize::from(self.subtract(ax, &bx)?.is_zero()))
+                } else {
+                    None
+                };
+                ([Some(a), Some(b)], along)
+            }
+            Def::CircleThrough { through, .. } => {
+                let mover = self.mover;
+                self.work.spend(parents.len())?;
+                let incident = parents.iter().any(|&id| {
+                    matches!(self.c.def(id), Def::Line(a, b)
+                        if [a, b] == [through, mover] || [b, a] == [through, mover])
+                });
+                let distinct = self.c.point(through) != self.c.point(mover);
+                ([(incident && distinct).then_some(through), None], None)
+            }
+            _ => return Some(()),
+        };
+        let mut nonzero = Polynomial::variable(SATURATION);
+        let mut changed = false;
+        for endpoint in endpoints.into_iter().flatten() {
+            if self.numeric_point(endpoint) {
+                let fixed = self.point(endpoint, 0)?;
+                let distance = if let Some(axis) = along {
+                    self.subtract(self.position[axis].clone(), &fixed[axis])?
+                } else {
+                    self.squared_distance(fixed, &self.position.clone())?
+                };
+                nonzero = nonzero.product(&distance, &mut self.work)?;
+                changed = true;
+            }
+        }
+        if changed {
+            let condition = self.subtract(nonzero, &Polynomial::constant(Rat::ONE))?;
+            self.equations.push(condition);
+        }
+        Some(())
+    }
+
+    fn numeric_point(&self, id: Id) -> bool {
+        matches!(self.c.def(id), Def::FreePoint { .. }) || mover_path(self.c, id).is_some()
+    }
+
+    fn envelope(&mut self, path: Id, driver_path: Id, output: &Point) -> Option<()> {
+        let driver = self.path(driver_path, &self.position.clone(), 0)?;
+        let family = self.path(path, output, 0)?;
+        // The virtual tracer only receives circle incidence constraints when
+        // its current path is a circle. A single-point conic has no such rule.
+        if self
+            .c
+            .circle(path)
+            .is_some_and(|(_, _, radius)| radius == 0.0)
+        {
+            self.equations.push(driver);
+            return Some(());
+        }
+        if !self.points.is_empty() {
+            return None;
+        }
+        // With a free radius there are more variables than incidence
+        // equations, so the Jacobian supplies no contact constraint.
+        if !driver.is_zero() && !family.is_zero() && self.radii.is_empty() {
+            // The gradients in the mover coordinates are dependent at a contact.
+            let du = driver.derivative(MOVER_X, &mut self.work)?;
+            let dv = driver.derivative(MOVER_Y, &mut self.work)?;
+            let fu = family.derivative(MOVER_X, &mut self.work)?;
+            let fv = family.derivative(MOVER_Y, &mut self.work)?;
+            let lhs = du.product(&fv, &mut self.work)?;
+            let rhs = dv.product(&fu, &mut self.work)?;
+            let contact = self.subtract(lhs, &rhs)?;
+            self.equations.push(contact);
+        }
+        self.equations.extend([driver, family]);
+        Some(())
     }
 
     fn condition(&mut self, boolean: Id) -> Option<Polynomial> {

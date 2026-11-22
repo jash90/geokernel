@@ -19,6 +19,7 @@ pub(crate) struct Record {
     pub(crate) conic: Option<ConicData>,
     fingerprint: u64,
     construction_parents: Option<Box<[Id]>>,
+    locus_inputs: Option<Vec<[u64; 3]>>,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -41,6 +42,7 @@ impl Record {
             conic: None,
             fingerprint: 0,
             construction_parents: None,
+            locus_inputs: None,
         }
     }
 
@@ -432,10 +434,17 @@ pub(crate) fn update(c: &mut Construction, index: u32) -> Value {
             (Kind::ImplicitCurve, coefficients)
         }
         Source::LocusEquation(definition) => {
-            if record.construction_parents.is_none() {
+            let Some(parents) = record.construction_parents.as_deref() else {
                 return Value::Undefined;
+            };
+            let inputs = definition.input_key(c, parents);
+            if inputs.is_some() && inputs == record.locus_inputs {
+                return Value::ImplicitCurve;
             }
-            let Some(coefficients) = definition.coefficients(c) else {
+            let coefficients = definition.coefficients(c, parents);
+            c.implicit_curves[index as usize].1.locus_inputs =
+                if coefficients.is_some() { inputs } else { None };
+            let Some(coefficients) = coefficients else {
                 return Value::Undefined;
             };
             (Kind::ImplicitCurve, coefficients)
@@ -461,7 +470,7 @@ pub(crate) fn update(c: &mut Construction, index: u32) -> Value {
             (Kind::ImplicitCurve, coefficients)
         }
     };
-    let replacing = record.kind != kind;
+    let replacing = c.implicit_curves[index as usize].1.kind != kind;
     if replacing && !c.children(owner).is_empty() {
         return Value::Undefined;
     }

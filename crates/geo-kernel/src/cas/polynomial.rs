@@ -76,7 +76,7 @@ impl Poly {
         (self.0.len() <= MAX_TERMS).then_some(())
     }
 
-    fn sum(mut self, rhs: Self, sign: Rat, work: &mut Work<'_>) -> Option<Self> {
+    pub(super) fn sum(mut self, rhs: Self, sign: Rat, work: &mut Work<'_>) -> Option<Self> {
         work.spend(self.0.len() + rhs.0.len())?;
         for (powers, coefficient) in rhs.0 {
             self.accumulate(powers, coefficient.mul(sign)?)?;

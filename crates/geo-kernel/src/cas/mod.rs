@@ -12,7 +12,7 @@ pub(crate) use rational::gcd as integer_gcd;
 pub(crate) use rational::Rat;
 pub(crate) use solve::{affine_system, real_roots, systems, Root, Roots, SystemRoots};
 mod projection;
-pub(crate) use projection::{project_plane, PlanePolynomial};
+pub(crate) use projection::{project_plane, rounded_numerator, PlanePolynomial, PLANE_X, PLANE_Y};
 
 pub(crate) type Factorization = (Rat, Vec<(Vec<Rat>, u32)>);
 

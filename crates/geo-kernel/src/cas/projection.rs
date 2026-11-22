@@ -1,11 +1,16 @@
-// Licensed under the EUPL 1.2.
+// The projection rules follow reference commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
+//   source/shared/common/src/main/java/org/geogebra/common/cas/giac/CASgiac.java
+// Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
+// Licensed by GeoGebra GmbH under the EUPL 1.2.
 
-use super::solve::{add_shifted, basis, Equation};
+use super::solve::{add_shifted, basis, systems, Equation, SystemRoots};
 use super::{multivariate, Poly, Rat, Work};
 
-const VARIABLES: usize = 4;
+pub(crate) const PLANE_X: usize = 8;
+pub(crate) const PLANE_Y: usize = PLANE_X + 1;
+const VARIABLES: usize = PLANE_Y + 1;
 
-/// The first two coordinates are eliminated. The last two are Cartesian x and y.
+/// Auxiliary variables precede Cartesian x and y in the elimination order.
 #[derive(Clone)]
 pub(crate) struct PlanePolynomial(Equation<VARIABLES>);
 
@@ -22,6 +27,10 @@ impl PlanePolynomial {
         let mut power = [0; VARIABLES];
         power[index] = 1;
         Self(Equation::from([(power, Rat::ONE)]))
+    }
+
+    pub(crate) fn is_zero(&self) -> bool {
+        self.0.is_empty()
     }
 
     pub(crate) fn add_scaled(
@@ -58,7 +67,11 @@ impl PlanePolynomial {
     }
 }
 
-pub(crate) fn project_plane(equations: Vec<PlanePolynomial>, work: &mut Work<'_>) -> Option<Poly> {
+pub(crate) fn project_plane(
+    equations: Vec<PlanePolynomial>,
+    precision: i64,
+    work: &mut Work<'_>,
+) -> Option<Poly> {
     let equations = equations.into_iter().map(|p| p.0).collect::<Vec<_>>();
     let basis = basis(&equations, work)?;
     let mut plane = Vec::new();
@@ -66,11 +79,14 @@ pub(crate) fn project_plane(equations: Vec<PlanePolynomial>, work: &mut Work<'_>
         work.spend(polynomial.len())?;
         // A lexicographic basis element whose leader has no auxiliary
         // exponents lies entirely in the Cartesian variables.
-        if matches!(polynomial.last_key_value(), Some(([0, 0, ..], _))) {
+        if polynomial
+            .last_key_value()
+            .is_some_and(|(power, _)| power[..PLANE_X].iter().all(|&p| p == 0))
+        {
             plane.push(Poly(
                 polynomial
                     .into_iter()
-                    .map(|([_, _, x, y], v)| ([x, y, 0], v))
+                    .map(|(power, v)| ([power[PLANE_X], power[PLANE_Y], 0], v))
                     .collect(),
             ));
         }
@@ -85,8 +101,10 @@ pub(crate) fn project_plane(equations: Vec<PlanePolynomial>, work: &mut Work<'_>
         return None;
     }
     for polynomial in &plane {
-        if polynomial != generator {
-            multivariate::divide_exact(&polynomial.0, &generator.0, work)?;
+        if polynomial != generator
+            && multivariate::divide_exact(&polynomial.0, &generator.0, work).is_none()
+        {
+            return discrete_projection(plane, precision, work);
         }
     }
     let (_, factors) = super::factor_poly(generator, work)?;
@@ -95,4 +113,42 @@ pub(crate) fn project_plane(equations: Vec<PlanePolynomial>, work: &mut Work<'_>
         square_free = square_free.mul(&factor, work)?;
     }
     Some(square_free.primitive(work)?.1)
+}
+
+fn discrete_projection(plane: Vec<Poly>, precision: i64, work: &mut Work<'_>) -> Option<Poly> {
+    let equations: Vec<_> = plane.into_iter().map(|poly| poly.0).collect();
+    let SystemRoots::Finite(points) = systems(&equations, 2, work)? else {
+        return None;
+    };
+    let mut product = Poly::constant(Rat::ONE);
+    let mut seen = std::collections::BTreeSet::new();
+    for point in points {
+        work.spend(1)?;
+        let [x, y] = point.as_slice() else {
+            return None;
+        };
+        let x = rounded_numerator(x.value(), precision)?;
+        let y = rounded_numerator(y.value(), precision)?;
+        if seen.insert((x, y)) {
+            let squared_offset = |p, numerator: i128, work: &mut Work<'_>| {
+                let offset = Poly::variable(p).sum(
+                    Poly::constant(Rat::new(numerator.checked_neg()?, i128::from(precision))?),
+                    Rat::ONE,
+                    work,
+                )?;
+                offset.mul(&offset, work)
+            };
+            let xx = squared_offset(0, x, work)?;
+            let yy = squared_offset(1, y, work)?;
+            product = product.mul(&xx.sum(yy, Rat::ONE, work)?, work)?;
+        }
+    }
+    Some(product.primitive(work)?.1)
+}
+
+pub(crate) fn rounded_numerator(value: f64, precision: i64) -> Option<i128> {
+    let scaled = value * precision as f64;
+    let floor = scaled.floor();
+    let rounded = floor + f64::from(scaled - floor >= 0.5);
+    (rounded.abs() < i64::MAX as f64).then_some(rounded as i128)
 }
