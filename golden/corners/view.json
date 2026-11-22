@@ -1,0 +1,70 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "corners-view-001",
+      "group": "corners",
+      "script": [
+        "v = 1",
+        "n = 1",
+        "P = Corner(v, n)",
+        "Q = Corner(1, 6)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 5.0 },
+        { "action": "set_number", "label": "v", "value": 2.0 },
+        { "action": "set_number", "label": "n", "value": 3.0 },
+        { "action": "set_number", "label": "v", "value": 1.0 },
+        { "action": "set_number", "label": "n", "value": 7.0 },
+        { "action": "set_number", "label": "n", "value": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "v": { "type": "number", "defined": true, "value": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "P": { "type": "point", "defined": true, "x": -4.32, "y": -5.72 },
+          "Q": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        },
+        {
+          "v": { "type": "number", "defined": true, "value": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 5.0 },
+          "P": { "type": "point", "defined": true, "x": 800.0, "y": 600.0 },
+          "Q": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        },
+        {
+          "v": { "type": "number", "defined": true, "value": 2.0 },
+          "n": { "type": "number", "defined": true, "value": 5.0 },
+          "P": { "type": "point", "defined": false },
+          "Q": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        },
+        {
+          "v": { "type": "number", "defined": true, "value": 2.0 },
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "P": { "type": "point", "defined": false },
+          "Q": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        },
+        {
+          "v": { "type": "number", "defined": true, "value": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "P": { "type": "point", "defined": true, "x": 11.72, "y": 6.32 },
+          "Q": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        },
+        {
+          "v": { "type": "number", "defined": true, "value": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 7.0 },
+          "P": { "type": "point", "defined": false },
+          "Q": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        },
+        {
+          "v": { "type": "number", "defined": true, "value": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 4.0 },
+          "P": { "type": "point", "defined": true, "x": -4.32, "y": 6.32 },
+          "Q": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        }
+      ]
+    }
+  ]
+}

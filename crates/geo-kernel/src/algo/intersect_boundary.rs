@@ -59,9 +59,9 @@ impl BoundaryDef {
         matches!(self.0, Intersection::Implicit(d) if d.retains_output(c))
     }
 
-    /// Limited carrier intersections label slots even when out of domain.
+    /// Cartesian and limited implicit intersections label slots even when out of domain.
     pub(crate) fn labels_all_indexed(self, c: &Construction) -> bool {
-        matches!(self.0, Intersection::Cartesian(d) if d.is_line())
+        matches!(self.0, Intersection::Cartesian(d) if d.keeps_all_slots())
             || matches!(self.0, Intersection::Implicit(d) if d.labels_clipped_slots(c))
     }
 
@@ -445,7 +445,7 @@ impl Edge {
     }
 
     fn crosses(self, other: Self) -> Option<Point> {
-        let p = finite(cross(self.line, other.line))?;
+        let p = line_crossing(self.line, other.line)?;
         (self.distance(p) < STANDARD_PRECISION && other.distance(p) < STANDARD_PRECISION)
             .then_some(p)
     }
@@ -587,6 +587,10 @@ fn next_on_line(
 
 fn cross((a, b, d): Line, (u, v, w): Line) -> Line {
     (b * w - d * v, d * u - a * w, a * v - b * u)
+}
+
+pub(crate) fn line_crossing(a: Line, b: Line) -> Option<Point> {
+    finite(cross(a, b))
 }
 
 fn finite((x, y, z): Line) -> Option<Point> {
