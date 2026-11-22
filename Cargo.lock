@@ -794,6 +794,7 @@ dependencies = [
  "egui_kittest",
  "geo-app-core",
  "geo-kernel",
+ "geo-latex",
  "image",
  "serde",
  "toml 0.8.23",
@@ -823,6 +824,7 @@ dependencies = [
  "geo-app-core",
  "geo-import",
  "geo-kernel",
+ "geo-latex",
  "serde",
  "serde_json",
  "toml 0.8.23",
@@ -847,9 +849,18 @@ dependencies = [
 name = "geo-kernel"
 version = "0.1.0"
 dependencies = [
+ "geo-latex",
  "image",
  "libm",
  "png",
+]
+
+[[package]]
+name = "geo-latex"
+version = "0.1.0"
+dependencies = [
+ "epaint_default_fonts",
+ "skrifa",
 ]
 
 [[package]]
