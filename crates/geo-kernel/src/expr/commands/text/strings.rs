@@ -571,7 +571,12 @@ fn replace<const M: bool>(
 /// text, pass by pass, each pass replacing its matches from left to right
 /// without overlap as a regular expression does. `None` for an empty text,
 /// where the reference fails reading the first character.
-pub(super) fn simplify(text: &str) -> Option<String> {
+///
+/// `charge` takes the number of characters a pass is about to read or to
+/// write, before anything is allocated for them; a refusal ends the
+/// command with `None`.
+pub(super) fn simplify(text: &str, charge: &dyn Fn(usize) -> Option<()>) -> Option<String> {
+    charge(text.len())?;
     let mut chars: Vec<char> = text.chars().collect();
     // `++` and `--` are `+`, `+-` and `-+` are `-`, with spaces between.
     for (first, second, sign) in [
@@ -580,17 +585,17 @@ pub(super) fn simplify(text: &str) -> Option<String> {
         ('+', '-', '-'),
         ('-', '+', '-'),
     ] {
-        chars = replace_run(&chars, first, &[second], &[sign]);
+        chars = replace_run(&chars, first, &[second], &[sign], charge)?;
     }
     // `+1x` is `+x` and `-1x` is `-x`.
     for sign in ['+', '-'] {
-        chars = replace_run(&chars, sign, &['1', 'x'], &[sign, 'x']);
+        chars = replace_run(&chars, sign, &['1', 'x'], &[sign, 'x'], charge)?;
     }
     // A sign between two characters that are no spaces gets a space on
     // either side; a second pass reaches the signs that shared a neighbour.
     for sign in ['+', '-', '='] {
         for _ in 0..2 {
-            chars = space_out(&chars, sign);
+            chars = space_out(&chars, sign, charge)?;
         }
     }
     let mut rest = &chars[..];
@@ -601,20 +606,31 @@ pub(super) fn simplify(text: &str) -> Option<String> {
         rest = &rest[1..];
     }
     // A minus after a space becomes the minus sign U+2212.
-    let mut result = String::with_capacity(text.len());
-    for (i, &c) in rest.iter().enumerate() {
-        result.push(if c == '-' && i > 0 && rest[i - 1] == ' ' {
+    let shown = |i: usize| {
+        if rest[i] == '-' && i > 0 && rest[i - 1] == ' ' {
             '\u{2212}'
         } else {
-            c
-        });
-    }
+            rest[i]
+        }
+    };
+    charge(rest.len())?;
+    let bytes = (0..rest.len()).map(|i| shown(i).len_utf8()).sum();
+    charge(bytes)?;
+    let mut result = String::with_capacity(bytes);
+    result.extend((0..rest.len()).map(shown));
     Some(result)
 }
 
 /// Replaces every `first`, spaces, `rest[0]`, spaces, `rest[1]`, ... by
-/// `replacement`.
-fn replace_run(chars: &[char], first: char, rest: &[char], replacement: &[char]) -> Vec<char> {
+/// `replacement`, which is no longer than what it replaces.
+fn replace_run(
+    chars: &[char],
+    first: char,
+    rest: &[char],
+    replacement: &[char],
+    charge: &dyn Fn(usize) -> Option<()>,
+) -> Option<Vec<char>> {
+    charge(chars.len())?;
     let mut out = Vec::with_capacity(chars.len());
     let mut i = 0;
     while i < chars.len() {
@@ -637,19 +653,39 @@ fn replace_run(chars: &[char], first: char, rest: &[char], replacement: &[char])
         out.push(chars[i]);
         i += 1;
     }
-    out
+    Some(out)
 }
 
 /// Replaces every `a sign b`, with `a` and `b` no spaces, by `a`, the sign
 /// between two spaces, `b`.
-fn space_out(chars: &[char], sign: char) -> Vec<char> {
-    let mut out = Vec::with_capacity(chars.len() + 2);
-    let mut i = 0;
-    while i < chars.len() {
-        if chars[i] != ' '
+fn space_out(
+    chars: &[char],
+    sign: char,
+    charge: &dyn Fn(usize) -> Option<()>,
+) -> Option<Vec<char>> {
+    let matches_at = |i: usize| {
+        chars[i] != ' '
             && chars.get(i + 1) == Some(&sign)
             && chars.get(i + 2).is_some_and(|&c| c != ' ')
-        {
+    };
+    // The length of the result, counted before it is allocated.
+    charge(chars.len())?;
+    let mut matches = 0_usize;
+    let mut i = 0;
+    while i < chars.len() {
+        if matches_at(i) {
+            matches += 1;
+            i += 3;
+        } else {
+            i += 1;
+        }
+    }
+    let length = chars.len().checked_add(matches.checked_mul(2)?)?;
+    charge(length)?;
+    let mut out = Vec::with_capacity(length);
+    let mut i = 0;
+    while i < chars.len() {
+        if matches_at(i) {
             out.extend_from_slice(&[chars[i], ' ', sign, ' ', chars[i + 2]]);
             i += 3;
         } else {
@@ -657,12 +693,14 @@ fn space_out(chars: &[char], sign: char) -> Vec<char> {
             i += 1;
         }
     }
-    out
+    Some(out)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::simplify;
+    fn simplify(text: &str) -> Option<String> {
+        super::simplify(text, &|_| Some(()))
+    }
 
     #[test]
     fn simplify_tidies_signs_like_the_reference() {
@@ -689,5 +727,31 @@ mod tests {
             assert_eq!(simplify(input).as_deref(), Some(expected), "{input:?}");
         }
         assert_eq!(simplify(""), None);
+    }
+
+    #[test]
+    fn simplify_charges_every_pass_before_it_allocates() {
+        let charged = std::cell::Cell::new(0_usize);
+        let charge = |n: usize| {
+            charged.set(charged.get() + n);
+            Some(())
+        };
+        assert_eq!(super::simplify("a+b", &charge).as_deref(), Some("a + b"));
+        // The input, six replacements, six spacing passes (each read and
+        // written) and the result.
+        assert!(
+            charged.get() >= 3 + 6 * 3 + 6 * 2 * 3 + 5,
+            "{}",
+            charged.get()
+        );
+        // A refusal at any point ends the command.
+        for allowance in 0..charged.get() {
+            let spent = std::cell::Cell::new(0_usize);
+            let charge = |n: usize| {
+                spent.set(spent.get() + n);
+                (spent.get() <= allowance).then_some(())
+            };
+            assert_eq!(super::simplify("a+b", &charge), None, "{allowance}");
+        }
     }
 }

@@ -322,7 +322,15 @@ impl<const M: bool> Ctx<'_, M> {
             Table => table::evaluate(self, &args),
             UnicodeToLetter | UnicodeToText | ReplaceAll | Take | Sum | First | Last
             | TextElement => strings::evaluate(self, op, &args),
-            Simplify => strings::simplify(&self.text(a)?),
+            Simplify => {
+                // The passes work on characters, four bytes each.
+                let charge = |characters: usize| {
+                    (characters <= MAX_TEXT_BYTES
+                        && self.meter.is_none_or(|m| m.charge(characters as u64 * 4)))
+                    .then_some(())
+                };
+                strings::simplify(&self.text(a)?, &charge)
+            }
             _ => None,
         }?;
         self.bounded_text(result.len())?;
