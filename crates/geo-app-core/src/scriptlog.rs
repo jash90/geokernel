@@ -704,7 +704,17 @@ impl Log {
     /// was such a line. Lines that use a removed object go on the next
     /// rebuild, which also drops the start points those lines froze.
     pub fn remove(&mut self, label: &str) -> bool {
-        let Some(entry) = self.entries().find(|e| e.labels.iter().any(|l| l == label)) else {
+        let Ok((c, _)) = self.rebuild() else {
+            return false;
+        };
+        self.remove_from(label, &c)
+    }
+
+    pub(crate) fn remove_from(&mut self, label: &str, c: &Construction) -> bool {
+        let Some(entry) = self
+            .entries_rev()
+            .find(|e| e.labels.iter().any(|l| l == label))
+        else {
             return false;
         };
         let grown = (BoundaryOutputs::is_command(entry.rhs())
@@ -715,17 +725,45 @@ impl Log {
                 .find(|group| group.labels.iter().any(|member| member == label))
         })
         .flatten();
-        let (grouped, labels) = match grown {
-            Some(group) => (true, group.labels),
-            None => (false, entry.labels.clone()),
-        };
+        let mut labels: BTreeSet<_> = grown
+            .map_or_else(|| entry.labels.clone(), |group| group.labels)
+            .into_iter()
+            .collect();
+        let mut defined = BTreeSet::new();
+        let repeated: BTreeSet<_> = self
+                .entries()
+                .flat_map(|entry| entry.labels.iter().map(String::as_str))
+                .filter(|&label| !defined.insert(label))
+                .collect();
+            if !repeated.is_empty() {
+                // If an active replacement depends on a deleted object, drop
+                // its whole history before replay can restore an older rule.
+                let mut pending: Vec<_> = labels.iter().filter_map(|label| c.id(label)).collect();
+                let mut visited = BTreeSet::new();
+                let mut remaining = 1_000_000usize;
+                while let Some(id) = pending.pop() {
+                    if !visited.insert(id) {
+                        continue;
+                    }
+                    let label = c.label(id);
+                    if repeated.contains(label) {
+                        labels.insert(label.to_owned());
+                    }
+                    for child in c.direct_dependents(id) {
+                        let Some(next) = remaining.checked_sub(1) else {
+                            return false;
+                        };
+                        remaining = next;
+                        pending.push(child);
+                    }
+                }
+            }
         self.ops.retain(|op| match op {
-            Op::Define(e) if grouped => !e.labels.iter().any(|label| labels.contains(label)),
-            Op::Define(e) => e.labels != labels,
+            Op::Define(e) => !e.labels.iter().any(|label| labels.contains(label)),
             Op::Set { label, .. } | Op::EquationStyle { label, .. } => !labels.contains(label),
-            Op::SavedProperty(property) => !property
-                .label()
-                .is_some_and(|label| labels.iter().any(|l| l == label)),
+            Op::SavedProperty(property) => {
+                !property.label().is_some_and(|label| labels.contains(label))
+            }
             Op::Freeze { .. } | Op::MovePoints(_) | Op::TextProperties(_) => true,
         });
         self.removed.extend(labels);
@@ -752,14 +790,14 @@ impl Log {
         );
     }
 
-    /// The journal position of the entry that created `label`, with every
+    /// The journal position of the active definition of `label`, with every
     /// label that entry made: the position a rebuild has to place at what
     /// that entry froze, before the operations that follow it.
     pub(crate) fn define_entry(&self, label: &str) -> Option<(usize, &[String])> {
         let ops = self.ops.items();
         let at = ops
             .iter()
-            .position(|op| matches!(op, Op::Define(e) if e.labels.iter().any(|l| l == label)))?;
+            .rposition(|op| matches!(op, Op::Define(e) if e.labels.iter().any(|l| l == label)))?;
         match &ops[at] {
             Op::Define(e) => Some((at, &e.labels[..])),
             _ => None,
@@ -1403,10 +1441,12 @@ impl Log {
         if let (Some(label), Some(expected)) =
             (geo_kernel::script::assignment_label(line), expected)
         {
-            if c.id(label).is_some() && expected != [label] {
-                return Err(format!(
-                    "it would redefine {label:?} instead of creating {expected:?}"
-                ));
+            if let Some(id) = c.id(label) {
+                if expected != [c.label(id)] {
+                    return Err(format!(
+                        "it would redefine {label:?} instead of creating {expected:?}"
+                    ));
+                }
             }
         }
         let at = c.checkpoint();

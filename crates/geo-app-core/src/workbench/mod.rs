@@ -621,7 +621,7 @@ impl Workbench {
             return false;
         };
         let made: Vec<String> = made.to_vec();
-        if !next.remove(label) {
+        if !next.remove_from(label, &self.construction) {
             return false;
         }
         // A deletion inside a gesture (the eraser's stroke) keeps it: the

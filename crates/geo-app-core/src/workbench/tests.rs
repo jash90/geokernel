@@ -1403,6 +1403,34 @@ fn equation_sides_keep_their_inputs_through_rebuild_and_undo() {
     check(&w, 1.0, 13.0);
 }
 
+#[test]
+fn deleting_a_replacement_parent_removes_the_active_dependents() {
+    let mut w = Workbench::from_script("X = (1, 1)\nA = (0, 0)\nB = 2 A\nC = (4, 1)\n").unwrap();
+    w.run_line("A = X + (1, 0)").unwrap();
+    let check = |w: &Workbench, exists| {
+        let c = w.construction();
+        for label in ["X", "A", "B"] {
+            assert_eq!(c.id(label).is_some(), exists, "{label}");
+        }
+        assert!(c.id("C").is_some());
+        if exists {
+            assert_eq!(c.value(c.id("A").unwrap()), Value::Point { x: 2.0, y: 1.0 });
+        }
+    };
+    assert!(w.delete(w.construction().id("X").unwrap()));
+    check(&w, false);
+    assert!(w.undo());
+    check(&w, true);
+    assert!(w.redo());
+    check(&w, false);
+    let mut restored = Workbench::default();
+    assert!(restored
+        .restore_text(&w.snapshot_text())
+        .unwrap()
+        .is_empty());
+    check(&restored, false);
+}
+
 /// A failed undo keeps its step: the stacks go back to exactly what they
 /// were, so the undo can be taken again and still reaches the state the
 /// step holds (the recovery used to push a fresh state of the current
