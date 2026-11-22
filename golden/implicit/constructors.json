@@ -1,0 +1,878 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "implicit-constructors-001",
+      "group": "implicit",
+      "script": [
+        "A = (1, 1)",
+        "B = (2, 2)",
+        "C = (3, 3)",
+        "D = (4, 0.25)",
+        "E = (5, 0.2)",
+        "pts = {A, B, C, D, E}",
+        "c = ImplicitCurve(pts)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "E", "x": 4.0, "y": 0.25 },
+        { "action": "move", "label": "E", "x": 5.0, "y": 0.2 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": 4.0, "y": 0.25 },
+          "E": { "type": "point", "defined": true, "x": 5.0, "y": 0.2 },
+          "pts": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+              { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 0.25 },
+              { "type": "point", "defined": true, "x": 5.0, "y": 0.2 }
+            ]
+          },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 1.0, -2.2222222222222223],
+              [-1.0000000000000002, 2.111111111111111, 0.0],
+              [0.11111111111111115, 0.0, 0.0]
+            ],
+            "equation": "0.11x² + 2.11x y - x - 2.22y² + y = 0",
+            "input_form": false
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": 4.0, "y": 0.25 },
+          "E": { "type": "point", "defined": true, "x": 4.0, "y": 0.25 },
+          "pts": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+              { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 0.25 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 0.25 }
+            ]
+          },
+          "c": { "type": "implicit", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": 4.0, "y": 0.25 },
+          "E": { "type": "point", "defined": true, "x": 5.0, "y": 0.2 },
+          "pts": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+              { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 0.25 },
+              { "type": "point", "defined": true, "x": 5.0, "y": 0.2 }
+            ]
+          },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 1.0, -2.2222222222222223],
+              [-1.0000000000000002, 2.111111111111111, 0.0],
+              [0.11111111111111115, 0.0, 0.0]
+            ],
+            "equation": "0.11x² + 2.11x y - x - 2.22y² + y = 0",
+            "input_form": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "implicit-constructors-002",
+      "group": "implicit",
+      "script": [
+        "A = (1, 1)",
+        "B = (2, 2)",
+        "C = (3, 3)",
+        "D = (4, 0.25)",
+        "E = (5, 0.2)",
+        "c = ImplicitCurve(A, B, C, D, E)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "D", "x": 4.0, "y": 4.0 },
+        { "action": "move", "label": "D", "x": 4.0, "y": 0.25 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": 4.0, "y": 0.25 },
+          "E": { "type": "point", "defined": true, "x": 5.0, "y": 0.2 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 1.0, -2.2222222222222223],
+              [-1.0000000000000002, 2.111111111111111, 0.0],
+              [0.11111111111111115, 0.0, 0.0]
+            ],
+            "equation": "0.11x² + 2.11x y - x - 2.22y² + y = 0",
+            "input_form": false
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 },
+          "E": { "type": "point", "defined": true, "x": 5.0, "y": 0.2 },
+          "c": { "type": "implicit", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": 4.0, "y": 0.25 },
+          "E": { "type": "point", "defined": true, "x": 5.0, "y": 0.2 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 1.0, -2.2222222222222223],
+              [-1.0000000000000002, 2.111111111111111, 0.0],
+              [0.11111111111111115, 0.0, 0.0]
+            ],
+            "equation": "0.11x² + 2.11x y - x - 2.22y² + y = 0",
+            "input_form": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "implicit-constructors-003",
+      "group": "implicit",
+      "script": [
+        "a = 1",
+        "f(x,y) = x^3/a + y^2 - 1",
+        "c = ImplicitCurve(f)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, -224.0],
+              [-4.0, 9.0, 16.0],
+              [-2.0, 5.0, 16.0],
+              [-1.0, 3.0, 7.0],
+              [-0.5, 2.0, 2.875],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, -0.875],
+              [1.0, -1.0, 1.0],
+              [2.0, -3.0, 16.0],
+              [4.0, -7.0, 112.0],
+              [8.0, -15.0, 736.0]
+            ]
+          },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "x³ + y² = 1",
+            "input_form": false
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, null],
+              [-4.0, 9.0, null],
+              [-2.0, 5.0, null],
+              [-1.0, 3.0, null],
+              [-0.5, 2.0, null],
+              [0.0, 1.0, null],
+              [0.5, 0.0, null],
+              [1.0, -1.0, null],
+              [2.0, -3.0, null],
+              [4.0, -7.0, null],
+              [8.0, -15.0, null]
+            ]
+          },
+          "c": { "type": "implicit", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 32.0],
+              [-4.0, 9.0, 48.0],
+              [-2.0, 5.0, 20.0],
+              [-1.0, 3.0, 7.5],
+              [-0.5, 2.0, 2.9375],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, -0.9375],
+              [1.0, -1.0, 0.5],
+              [2.0, -3.0, 12.0],
+              [4.0, -7.0, 80.0],
+              [8.0, -15.0, 480.0]
+            ]
+          },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0],
+              [0.5, 0.0, 0.0]
+            ],
+            "equation": "0.5x³ + y² = 1",
+            "input_form": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "implicit-constructors-004",
+      "group": "implicit",
+      "script": [
+        "f(x,y) = x*y",
+        "c = ImplicitCurve(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, -136.0],
+              [-4.0, 9.0, -36.0],
+              [-2.0, 5.0, -10.0],
+              [-1.0, 3.0, -3.0],
+              [-0.5, 2.0, -1.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, -1.0],
+              [2.0, -3.0, -6.0],
+              [4.0, -7.0, -28.0],
+              [8.0, -15.0, -120.0]
+            ]
+          },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "equation": "x y = 0",
+            "input_form": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "implicit-constructors-005",
+      "group": "implicit",
+      "script": [
+        "A = (1, 1)",
+        "B = (2, 2)",
+        "C = (3, 3)",
+        "pts = {A, B, C}",
+        "c = ImplicitCurve(pts)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "pts": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+              { "type": "point", "defined": true, "x": 3.0, "y": 3.0 }
+            ]
+          },
+          "c": { "type": "implicit", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "implicit-constructors-006",
+      "group": "implicit",
+      "script": [
+        "A = (1, 1)",
+        "B = (2, 2)",
+        "pts = {A, B}",
+        "c = ImplicitCurve(pts)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 1.0, "y": 1.0 },
+        { "action": "move", "label": "B", "x": 2.0, "y": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "pts": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 1.0],
+              [-1.0, 0.0]
+            ],
+            "equation": "-x + y = 0",
+            "input_form": false
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "pts": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+            ]
+          },
+          "c": { "type": "implicit", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "pts": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 3.0 }
+            ]
+          },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [1.0, 1.0],
+              [-2.0, 0.0]
+            ],
+            "equation": "-2x + y = -1",
+            "input_form": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "implicit-constructors-007",
+      "group": "implicit",
+      "script": [
+        "c = ImplicitCurve(x*y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "equation": "x y = 0",
+            "input_form": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "implicit-constructors-008",
+      "group": "implicit",
+      "script": [
+        "A = (0, 0)",
+        "B = (1, 1)",
+        "C = (2, 2)",
+        "D = (3, 3)",
+        "E = (0, 1)",
+        "c = ImplicitCurve(A, B, C, D, E)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "E", "x": 4.0, "y": 4.0 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 1.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "E": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "c": { "type": "implicit", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "E": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 },
+          "c": { "type": "implicit", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "E": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 },
+          "c": { "type": "implicit", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "E": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 },
+          "c": { "type": "implicit", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "implicit-constructors-009",
+      "group": "implicit",
+      "script": [
+        "A = (0, 0)",
+        "B = (1, 1)",
+        "C = (2, 2)",
+        "D = (3, 3)",
+        "E = (4, 4)",
+        "F = (5, 5)",
+        "G = (6, 6)",
+        "H = (7, 7)",
+        "I = (0, 1)",
+        "c = ImplicitCurve(A, B, C, D, E, F, G, H, I)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "I", "x": 8.0, "y": 8.0 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 1.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "E": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 },
+          "F": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "G": { "type": "point", "defined": true, "x": 6.0, "y": 6.0 },
+          "H": { "type": "point", "defined": true, "x": 7.0, "y": 7.0 },
+          "I": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "c": { "type": "implicit", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "E": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 },
+          "F": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "G": { "type": "point", "defined": true, "x": 6.0, "y": 6.0 },
+          "H": { "type": "point", "defined": true, "x": 7.0, "y": 7.0 },
+          "I": { "type": "point", "defined": true, "x": 8.0, "y": 8.0 },
+          "c": { "type": "implicit", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "E": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 },
+          "F": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "G": { "type": "point", "defined": true, "x": 6.0, "y": 6.0 },
+          "H": { "type": "point", "defined": true, "x": 7.0, "y": 7.0 },
+          "I": { "type": "point", "defined": true, "x": 8.0, "y": 8.0 },
+          "c": { "type": "implicit", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "E": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 },
+          "F": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "G": { "type": "point", "defined": true, "x": 6.0, "y": 6.0 },
+          "H": { "type": "point", "defined": true, "x": 7.0, "y": 7.0 },
+          "I": { "type": "point", "defined": true, "x": 8.0, "y": 8.0 },
+          "c": { "type": "implicit", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "implicit-constructors-010",
+      "group": "implicit",
+      "script": [
+        "A = (0, 0)",
+        "B = (1, 1)",
+        "C = (2, 2)",
+        "D = (3, 3)",
+        "E = (4, 4)",
+        "F = (5, 5)",
+        "G = (6, 6)",
+        "H = (7, 7)",
+        "I = (8, 8)",
+        "J = (9, 9)",
+        "K = (10, 10)",
+        "L = (11, 11)",
+        "M = (12, 12)",
+        "N = (0, 1)",
+        "c = ImplicitCurve(A, B, C, D, E, F, G, H, I, J, K, L, M, N)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "N", "x": 13.0, "y": 13.0 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 1.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "E": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 },
+          "F": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "G": { "type": "point", "defined": true, "x": 6.0, "y": 6.0 },
+          "H": { "type": "point", "defined": true, "x": 7.0, "y": 7.0 },
+          "I": { "type": "point", "defined": true, "x": 8.0, "y": 8.0 },
+          "J": { "type": "point", "defined": true, "x": 9.0, "y": 9.0 },
+          "K": { "type": "point", "defined": true, "x": 10.0, "y": 10.0 },
+          "L": { "type": "point", "defined": true, "x": 11.0, "y": 11.0 },
+          "M": { "type": "point", "defined": true, "x": 12.0, "y": 12.0 },
+          "N": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "c": { "type": "implicit", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "E": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 },
+          "F": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "G": { "type": "point", "defined": true, "x": 6.0, "y": 6.0 },
+          "H": { "type": "point", "defined": true, "x": 7.0, "y": 7.0 },
+          "I": { "type": "point", "defined": true, "x": 8.0, "y": 8.0 },
+          "J": { "type": "point", "defined": true, "x": 9.0, "y": 9.0 },
+          "K": { "type": "point", "defined": true, "x": 10.0, "y": 10.0 },
+          "L": { "type": "point", "defined": true, "x": 11.0, "y": 11.0 },
+          "M": { "type": "point", "defined": true, "x": 12.0, "y": 12.0 },
+          "N": { "type": "point", "defined": true, "x": 13.0, "y": 13.0 },
+          "c": { "type": "implicit", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "E": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 },
+          "F": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "G": { "type": "point", "defined": true, "x": 6.0, "y": 6.0 },
+          "H": { "type": "point", "defined": true, "x": 7.0, "y": 7.0 },
+          "I": { "type": "point", "defined": true, "x": 8.0, "y": 8.0 },
+          "J": { "type": "point", "defined": true, "x": 9.0, "y": 9.0 },
+          "K": { "type": "point", "defined": true, "x": 10.0, "y": 10.0 },
+          "L": { "type": "point", "defined": true, "x": 11.0, "y": 11.0 },
+          "M": { "type": "point", "defined": true, "x": 12.0, "y": 12.0 },
+          "N": { "type": "point", "defined": true, "x": 13.0, "y": 13.0 },
+          "c": { "type": "implicit", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "E": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 },
+          "F": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "G": { "type": "point", "defined": true, "x": 6.0, "y": 6.0 },
+          "H": { "type": "point", "defined": true, "x": 7.0, "y": 7.0 },
+          "I": { "type": "point", "defined": true, "x": 8.0, "y": 8.0 },
+          "J": { "type": "point", "defined": true, "x": 9.0, "y": 9.0 },
+          "K": { "type": "point", "defined": true, "x": 10.0, "y": 10.0 },
+          "L": { "type": "point", "defined": true, "x": 11.0, "y": 11.0 },
+          "M": { "type": "point", "defined": true, "x": 12.0, "y": 12.0 },
+          "N": { "type": "point", "defined": true, "x": 13.0, "y": 13.0 },
+          "c": { "type": "implicit", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "implicit-constructors-011",
+      "group": "implicit",
+      "script": [
+        "A = (0, 0.01)",
+        "B = (0, 0.02)",
+        "C = (0, 0.03)",
+        "D = (0.01, 0)",
+        "E = (0.01, 0.01)",
+        "F = (0.01, 0.02)",
+        "G = (0.02, 0)",
+        "H = (0.02, 0.01)",
+        "I = (0.03, 0)",
+        "pts = {A, B, C, D, E, F, G, H, I}",
+        "c = ImplicitCurve(pts)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.01 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.02 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.03 },
+          "D": { "type": "point", "defined": true, "x": 0.01, "y": 0.0 },
+          "E": { "type": "point", "defined": true, "x": 0.01, "y": 0.01 },
+          "F": { "type": "point", "defined": true, "x": 0.01, "y": 0.02 },
+          "G": { "type": "point", "defined": true, "x": 0.02, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 0.02, "y": 0.01 },
+          "I": { "type": "point", "defined": true, "x": 0.03, "y": 0.0 },
+          "pts": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.01 },
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.02 },
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.03 },
+              { "type": "point", "defined": true, "x": 0.01, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 0.01, "y": 0.01 },
+              { "type": "point", "defined": true, "x": 0.01, "y": 0.02 },
+              { "type": "point", "defined": true, "x": 0.02, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 0.02, "y": 0.01 },
+              { "type": "point", "defined": true, "x": 0.03, "y": 0.0 }
+            ]
+          },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [1.0, -183.33333333333326, 9999.999999999998, -166666.66666666672],
+              [-183.33333333333326, 19999.999999999996, -499999.99999999994, 0.0],
+              [9999.999999999998, -499999.99999999994, 0.0, 0.0],
+              [-166666.66666666672, 0.0, 0.0, 0.0]
+            ],
+            "equation": "-166666.67x³ - 500000x² y + 10000x² - 500000x y² + 20000x y - 183.33x - 166666.67y³ + 10000y² - 183.33y = -1",
+            "input_form": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "implicit-constructors-012",
+      "group": "implicit",
+      "script": [
+        "A = (0, 0.001)",
+        "B = (0, 0.002)",
+        "C = (0, 0.003)",
+        "D = (0.001, 0)",
+        "E = (0.001, 0.001)",
+        "F = (0.001, 0.002)",
+        "G = (0.002, 0)",
+        "H = (0.002, 0.001)",
+        "I = (0.003, 0)",
+        "pts = {A, B, C, D, E, F, G, H, I}",
+        "c = ImplicitCurve(pts)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.001 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.002 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.003 },
+          "D": { "type": "point", "defined": true, "x": 0.001, "y": 0.0 },
+          "E": { "type": "point", "defined": true, "x": 0.001, "y": 0.001 },
+          "F": { "type": "point", "defined": true, "x": 0.001, "y": 0.002 },
+          "G": { "type": "point", "defined": true, "x": 0.002, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 0.002, "y": 0.001 },
+          "I": { "type": "point", "defined": true, "x": 0.003, "y": 0.0 },
+          "pts": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.001 },
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.002 },
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.003 },
+              { "type": "point", "defined": true, "x": 0.001, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 0.001, "y": 0.001 },
+              { "type": "point", "defined": true, "x": 0.001, "y": 0.002 },
+              { "type": "point", "defined": true, "x": 0.002, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 0.002, "y": 0.001 },
+              { "type": "point", "defined": true, "x": 0.003, "y": 0.0 }
+            ]
+          },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [1.0, -1833.3333333333328, 1000000.0, -1.6666666666666672E8],
+              [-1833.3333333333328, 1999999.9999999998, -4.999999999999999E8, 0.0],
+              [1000000.0, -4.9999999999999994E8, 0.0, 0.0],
+              [-1.6666666666666672E8, 0.0, 0.0, 0.0]
+            ],
+            "equation": "-166666666.67x³ - 500000000x² y + 1000000x² - 500000000x y² + 2000000x y - 1833.33x - 166666666.67y³ + 1000000y² - 1833.33y = -1",
+            "input_form": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "implicit-constructors-013",
+      "group": "implicit",
+      "script": [
+        "A = (0, 0.0001)",
+        "B = (0, 0.0002)",
+        "C = (0, 0.0003)",
+        "D = (0.0001, 0)",
+        "E = (0.0001, 0.0001)",
+        "F = (0.0001, 0.0002)",
+        "G = (0.0002, 0)",
+        "H = (0.0002, 0.0001)",
+        "I = (0.0003, 0)",
+        "pts = {A, B, C, D, E, F, G, H, I}",
+        "c = ImplicitCurve(pts)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0E-4 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 2.0E-4 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 3.0E-4 },
+          "D": { "type": "point", "defined": true, "x": 1.0E-4, "y": 0.0 },
+          "E": { "type": "point", "defined": true, "x": 1.0E-4, "y": 1.0E-4 },
+          "F": { "type": "point", "defined": true, "x": 1.0E-4, "y": 2.0E-4 },
+          "G": { "type": "point", "defined": true, "x": 2.0E-4, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 2.0E-4, "y": 1.0E-4 },
+          "I": { "type": "point", "defined": true, "x": 3.0E-4, "y": 0.0 },
+          "pts": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 1.0E-4 },
+              { "type": "point", "defined": true, "x": 0.0, "y": 2.0E-4 },
+              { "type": "point", "defined": true, "x": 0.0, "y": 3.0E-4 },
+              { "type": "point", "defined": true, "x": 1.0E-4, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 1.0E-4, "y": 1.0E-4 },
+              { "type": "point", "defined": true, "x": 1.0E-4, "y": 2.0E-4 },
+              { "type": "point", "defined": true, "x": 2.0E-4, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 2.0E-4, "y": 1.0E-4 },
+              { "type": "point", "defined": true, "x": 3.0E-4, "y": 0.0 }
+            ]
+          },
+          "c": { "type": "implicit", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "implicit-constructors-014",
+      "group": "implicit",
+      "script": [
+        "A = (0, 0.00001)",
+        "B = (0, 0.00002)",
+        "C = (0, 0.00003)",
+        "D = (0.00001, 0)",
+        "E = (0.00001, 0.00001)",
+        "F = (0.00001, 0.00002)",
+        "G = (0.00002, 0)",
+        "H = (0.00002, 0.00001)",
+        "I = (0.00003, 0)",
+        "pts = {A, B, C, D, E, F, G, H, I}",
+        "c = ImplicitCurve(pts)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0E-5 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 2.0E-5 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 3.0E-5 },
+          "D": { "type": "point", "defined": true, "x": 1.0E-5, "y": 0.0 },
+          "E": { "type": "point", "defined": true, "x": 1.0E-5, "y": 1.0E-5 },
+          "F": { "type": "point", "defined": true, "x": 1.0E-5, "y": 2.0E-5 },
+          "G": { "type": "point", "defined": true, "x": 2.0E-5, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 2.0E-5, "y": 1.0E-5 },
+          "I": { "type": "point", "defined": true, "x": 3.0E-5, "y": 0.0 },
+          "pts": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 1.0E-5 },
+              { "type": "point", "defined": true, "x": 0.0, "y": 2.0E-5 },
+              { "type": "point", "defined": true, "x": 0.0, "y": 3.0E-5 },
+              { "type": "point", "defined": true, "x": 1.0E-5, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 1.0E-5, "y": 1.0E-5 },
+              { "type": "point", "defined": true, "x": 1.0E-5, "y": 2.0E-5 },
+              { "type": "point", "defined": true, "x": 2.0E-5, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 2.0E-5, "y": 1.0E-5 },
+              { "type": "point", "defined": true, "x": 3.0E-5, "y": 0.0 }
+            ]
+          },
+          "c": { "type": "implicit", "defined": false }
+        }
+      ]
+    }
+  ]
+}

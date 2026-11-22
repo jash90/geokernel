@@ -1,0 +1,945 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "implicit-line-001",
+      "group": "implicit",
+      "script": [
+        "c: x^4 + y^4 = 2",
+        "A = (-2, -2)",
+        "B = (2, 2)",
+        "g = Line(A, B)",
+        "P = Intersect(c, g)",
+        "Q = Intersect(g, c)",
+        "n = 1",
+        "R = Intersect(c, g, n)",
+        "S = Intersect(g, c, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 2.0 },
+        { "action": "set_number", "label": "n", "value": 3.0 },
+        { "action": "move", "label": "B", "x": -2.0, "y": -2.0 },
+        { "action": "move", "label": "B", "x": 2.0, "y": 2.0 },
+        { "action": "set_number", "label": "n", "value": -1.0 }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 2",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": -2.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "g": { "type": "line", "defined": true, "a": -4.0, "b": 4.0, "c": 0.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.0, "y": -1.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "Q_{1}": { "type": "point", "defined": true, "x": -1.0, "y": -1.0 },
+          "Q_{2}": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "R": { "type": "point", "defined": true, "x": -1.0, "y": -1.0 },
+          "S": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+        },
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 2",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": -2.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "g": { "type": "line", "defined": true, "a": -4.0, "b": 4.0, "c": 0.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.0, "y": -1.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "Q_{1}": { "type": "point", "defined": true, "x": -1.0, "y": -1.0 },
+          "Q_{2}": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "R": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "S": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+        },
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 2",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": -2.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "g": { "type": "line", "defined": true, "a": -4.0, "b": 4.0, "c": 0.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.0, "y": -1.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "Q_{1}": { "type": "point", "defined": true, "x": -1.0, "y": -1.0 },
+          "Q_{2}": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "R": { "type": "point", "defined": false },
+          "S": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+        },
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 2",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": -2.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": -2.0 },
+          "g": { "type": "line", "defined": false },
+          "P_{1}": { "type": "point", "defined": false },
+          "P_{2}": { "type": "point", "defined": false },
+          "Q_{1}": { "type": "point", "defined": false },
+          "Q_{2}": { "type": "point", "defined": false },
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "R": { "type": "point", "defined": false },
+          "S": { "type": "point", "defined": false }
+        },
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 2",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": -2.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "g": { "type": "line", "defined": true, "a": -4.0, "b": 4.0, "c": 0.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.0, "y": -1.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "Q_{1}": { "type": "point", "defined": true, "x": -1.0, "y": -1.0 },
+          "Q_{2}": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "R": { "type": "point", "defined": false },
+          "S": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+        },
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 2",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": -2.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "g": { "type": "line", "defined": true, "a": -4.0, "b": 4.0, "c": 0.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.0, "y": -1.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "Q_{1}": { "type": "point", "defined": true, "x": -1.0, "y": -1.0 },
+          "Q_{2}": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "n": { "type": "number", "defined": true, "value": -1.0 },
+          "R": { "type": "point", "defined": true, "x": -1.0, "y": -1.0 },
+          "S": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "implicit-line-002",
+      "group": "implicit",
+      "script": [
+        "c: y^3 - y = 0",
+        "g: x = 0",
+        "P = Intersect(c, g)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, -1.0, 0.0, 1.0]
+            ],
+            "equation": "y^(3) - y = 0",
+            "input_form": true
+          },
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 0.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -0.0, "y": 1.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": -0.0, "y": 0.0 },
+          "P_{3}": { "type": "point", "defined": true, "x": -0.0, "y": -1.0 }
+        }
+      ]
+    },
+    {
+      "id": "implicit-line-003",
+      "group": "implicit",
+      "script": [
+        "c: x^3 - x = 0",
+        "g: x = 1",
+        "P = Intersect(c, g)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0],
+              [-1.0],
+              [0.0],
+              [1.0]
+            ],
+            "equation": "x^(3) - x = 0",
+            "input_form": true
+          },
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -1.0 }
+        }
+      ]
+    },
+    {
+      "id": "implicit-line-004",
+      "group": "implicit",
+      "script": [
+        "a = 2",
+        "c: x^3/a + y^3 = 1",
+        "g: y = 0",
+        "P = Intersect(c, g)",
+        "Q = Intersect(c, g, 1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0],
+              [0.5, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(3) / a + y^(3) = 1",
+            "input_form": true
+          },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": 1.2599210498948732, "y": -0.0 },
+          "Q": { "type": "point", "defined": true, "x": 1.2599210498948732, "y": -0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "implicit", "defined": false },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": 1.2599210498948732, "y": -0.0 },
+          "Q": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0],
+              [-0.5, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(3) / a + y^(3) = 1",
+            "input_form": true
+          },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.2599210498948732, "y": -0.0 },
+          "Q": { "type": "point", "defined": true, "x": -1.2599210498948732, "y": -0.0 }
+        }
+      ]
+    },
+    {
+      "id": "implicit-line-005",
+      "group": "implicit",
+      "script": [
+        "a = -1",
+        "c: x^4 - 5*x^2 + y = 0",
+        "g: y = a",
+        "P = Intersect(c, g)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 9.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 1.0],
+              [0.0, 0.0],
+              [-5.0, 0.0],
+              [0.0, 0.0],
+              [1.0, 0.0]
+            ],
+            "equation": "x^(4) - (5 * x^(2)) + y = 0",
+            "input_form": true
+          },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 1.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -2.27872385417085, "y": -1.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 2.27872385417085, "y": -1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 1.0],
+              [0.0, 0.0],
+              [-5.0, 0.0],
+              [0.0, 0.0],
+              [1.0, 0.0]
+            ],
+            "equation": "x^(4) - (5 * x^(2)) + y = 0",
+            "input_form": true
+          },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -2.188901059316734, "y": 1.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": -0.45685025174785665, "y": 1.0 },
+          "P_{3}": { "type": "point", "defined": true, "x": 0.45685025174785665, "y": 1.0 },
+          "P_{4}": { "type": "point", "defined": true, "x": 2.188901059316734, "y": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 9.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 1.0],
+              [0.0, 0.0],
+              [-5.0, 0.0],
+              [0.0, 0.0],
+              [1.0, 0.0]
+            ],
+            "equation": "x^(4) - (5 * x^(2)) + y = 0",
+            "input_form": true
+          },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -9.0 },
+          "P_{1}": { "type": "point", "defined": false },
+          "P_{2}": { "type": "point", "defined": false },
+          "P_{3}": { "type": "point", "defined": false },
+          "P_{4}": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 1.0],
+              [0.0, 0.0],
+              [-5.0, 0.0],
+              [0.0, 0.0],
+              [1.0, 0.0]
+            ],
+            "equation": "x^(4) - (5 * x^(2)) + y = 0",
+            "input_form": true
+          },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -0.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -2.23606797749979, "y": 0.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "P_{3}": { "type": "point", "defined": true, "x": 2.23606797749979, "y": 0.0 },
+          "P_{4}": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "implicit-line-006",
+      "group": "implicit",
+      "script": [
+        "c: x^4 + y^4 = 2",
+        "A = (-2, 0)",
+        "B = (2, 0)",
+        "s = Segment(A, B)",
+        "P = Intersect(c, s)",
+        "Q = Intersect(s, c)",
+        "R = Intersect(c, s, 1)",
+        "S = Intersect(s, c, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "A", "x": 0.5, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 0.5, "y": 0.0 },
+        { "action": "move", "label": "A", "x": -2.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 2.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 2",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": -2.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.1892071150027208, "y": 0.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.1892071150027181, "y": 0.0 },
+          "Q_{1}": { "type": "point", "defined": true, "x": -1.1892071150027208, "y": 0.0 },
+          "Q_{2}": { "type": "point", "defined": true, "x": 1.1892071150027181, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": -1.1892071150027208, "y": 0.0 },
+          "S": { "type": "point", "defined": true, "x": 1.1892071150027181, "y": 0.0 }
+        },
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 2",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": -2.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.1892071150027208, "y": 0.0 },
+          "P_{2}": { "type": "point", "defined": false },
+          "Q_{1}": { "type": "point", "defined": true, "x": -1.1892071150027208, "y": 0.0 },
+          "Q_{2}": { "type": "point", "defined": false },
+          "R": { "type": "point", "defined": true, "x": -1.1892071150027208, "y": 0.0 },
+          "S": { "type": "point", "defined": false }
+        },
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 2",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": 0.5, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.5, "y1": 0.0, "x2": 0.0, "y2": 0.0 },
+          "P_{1}": { "type": "point", "defined": false },
+          "P_{2}": { "type": "point", "defined": false },
+          "Q_{1}": { "type": "point", "defined": false },
+          "Q_{2}": { "type": "point", "defined": false },
+          "R": { "type": "point", "defined": false },
+          "S": { "type": "point", "defined": false }
+        },
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 2",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": 0.5, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.5, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.5, "y1": 0.0, "x2": 0.5, "y2": 0.0 },
+          "P_{1}": { "type": "point", "defined": false },
+          "P_{2}": { "type": "point", "defined": false },
+          "Q_{1}": { "type": "point", "defined": false },
+          "Q_{2}": { "type": "point", "defined": false },
+          "R": { "type": "point", "defined": false },
+          "S": { "type": "point", "defined": false }
+        },
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 2",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.5, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": -2.0, "y1": 0.0, "x2": 0.5, "y2": 0.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.1892071150027212, "y": 0.0 },
+          "P_{2}": { "type": "point", "defined": false },
+          "Q_{1}": { "type": "point", "defined": true, "x": -1.1892071150027212, "y": 0.0 },
+          "Q_{2}": { "type": "point", "defined": false },
+          "R": { "type": "point", "defined": true, "x": -1.1892071150027212, "y": 0.0 },
+          "S": { "type": "point", "defined": false }
+        },
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 2",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": -2.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.1892071150027208, "y": 0.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.1892071150027181, "y": 0.0 },
+          "Q_{1}": { "type": "point", "defined": true, "x": -1.1892071150027208, "y": 0.0 },
+          "Q_{2}": { "type": "point", "defined": true, "x": 1.1892071150027181, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": -1.1892071150027208, "y": 0.0 },
+          "S": { "type": "point", "defined": true, "x": 1.1892071150027181, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "implicit-line-007",
+      "group": "implicit",
+      "script": [
+        "c: x^4 + y^4 = 2",
+        "A = (0, 0)",
+        "B = (2, 0)",
+        "s = Segment(A, B)",
+        "P = Intersect(c, s)",
+        "R = Intersect(c, s, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": -2.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": -2.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 2.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 2",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "P_{1}": { "type": "point", "defined": false },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.189207115002721, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 1.189207115002721, "y": 0.0 }
+        },
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 2",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": -2.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.1892071150027208, "y": 0.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.1892071150027181, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 1.1892071150027181, "y": 0.0 }
+        },
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 2",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": -2.0, "y1": 0.0, "x2": -2.0, "y2": 0.0 },
+          "P_{1}": { "type": "point", "defined": false },
+          "P_{2}": { "type": "point", "defined": false },
+          "R": { "type": "point", "defined": false }
+        },
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 2",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": -2.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.1892071150027208, "y": 0.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.1892071150027181, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 1.1892071150027181, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "implicit-line-008",
+      "group": "implicit",
+      "script": [
+        "c: x^4 + y^4 = 2",
+        "A = (-2, 0)",
+        "B = (2, 0)",
+        "s = Ray(A, B)",
+        "P = Intersect(c, s)",
+        "Q = Intersect(s, c)",
+        "R = Intersect(c, s, 1)",
+        "S = Intersect(s, c, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "A", "x": 0.5, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 0.5, "y": 0.0 },
+        { "action": "move", "label": "A", "x": -2.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 2.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 2",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "s": { "type": "ray", "defined": true, "x": -2.0, "y": 0.0, "a": 0.0, "b": 4.0, "c": -0.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.1892071150027208, "y": 0.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.1892071150027181, "y": 0.0 },
+          "Q_{1}": { "type": "point", "defined": true, "x": -1.1892071150027208, "y": 0.0 },
+          "Q_{2}": { "type": "point", "defined": true, "x": 1.1892071150027181, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": -1.1892071150027208, "y": 0.0 },
+          "S": { "type": "point", "defined": true, "x": 1.1892071150027181, "y": 0.0 }
+        },
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 2",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "s": { "type": "ray", "defined": true, "x": -2.0, "y": 0.0, "a": 0.0, "b": 2.0, "c": -0.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.1892071150027208, "y": 0.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.1892071150027195, "y": 0.0 },
+          "Q_{1}": { "type": "point", "defined": true, "x": -1.1892071150027208, "y": 0.0 },
+          "Q_{2}": { "type": "point", "defined": true, "x": 1.1892071150027195, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": -1.1892071150027208, "y": 0.0 },
+          "S": { "type": "point", "defined": true, "x": 1.1892071150027195, "y": 0.0 }
+        },
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 2",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": 0.5, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "s": { "type": "ray", "defined": true, "x": 0.5, "y": 0.0, "a": 0.0, "b": -0.5, "c": 0.0 },
+          "P_{1}": { "type": "point", "defined": false },
+          "P_{2}": { "type": "point", "defined": true, "x": -1.1892071150027212, "y": 0.0 },
+          "Q_{1}": { "type": "point", "defined": false },
+          "Q_{2}": { "type": "point", "defined": true, "x": -1.1892071150027212, "y": 0.0 },
+          "R": { "type": "point", "defined": false },
+          "S": { "type": "point", "defined": true, "x": -1.1892071150027212, "y": 0.0 }
+        },
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 2",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": 0.5, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.5, "y": 0.0 },
+          "s": { "type": "ray", "defined": false },
+          "P_{1}": { "type": "point", "defined": false },
+          "P_{2}": { "type": "point", "defined": false },
+          "Q_{1}": { "type": "point", "defined": false },
+          "Q_{2}": { "type": "point", "defined": false },
+          "R": { "type": "point", "defined": false },
+          "S": { "type": "point", "defined": false }
+        },
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 2",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.5, "y": 0.0 },
+          "s": { "type": "ray", "defined": true, "x": -2.0, "y": 0.0, "a": 0.0, "b": 2.5, "c": -0.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.1892071150027212, "y": 0.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.1892071150027186, "y": 0.0 },
+          "Q_{1}": { "type": "point", "defined": true, "x": -1.1892071150027212, "y": 0.0 },
+          "Q_{2}": { "type": "point", "defined": true, "x": 1.1892071150027186, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": -1.1892071150027212, "y": 0.0 },
+          "S": { "type": "point", "defined": true, "x": 1.1892071150027186, "y": 0.0 }
+        },
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 2",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "s": { "type": "ray", "defined": true, "x": -2.0, "y": 0.0, "a": 0.0, "b": 4.0, "c": -0.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.1892071150027208, "y": 0.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.1892071150027181, "y": 0.0 },
+          "Q_{1}": { "type": "point", "defined": true, "x": -1.1892071150027208, "y": 0.0 },
+          "Q_{2}": { "type": "point", "defined": true, "x": 1.1892071150027181, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": -1.1892071150027208, "y": 0.0 },
+          "S": { "type": "point", "defined": true, "x": 1.1892071150027181, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "implicit-line-009",
+      "group": "implicit",
+      "script": [
+        "c: x^4 + y^4 = 2",
+        "A = (0, 0)",
+        "B = (2, 0)",
+        "s = Ray(A, B)",
+        "P = Intersect(c, s)",
+        "R = Intersect(c, s, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": -2.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": -2.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 2.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 2",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "s": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": 0.0, "b": 2.0, "c": 0.0 },
+          "P_{1}": { "type": "point", "defined": false },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.189207115002721, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 1.189207115002721, "y": 0.0 }
+        },
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 2",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "s": { "type": "ray", "defined": true, "x": -2.0, "y": 0.0, "a": 0.0, "b": 4.0, "c": -0.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.1892071150027208, "y": 0.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.1892071150027181, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 1.1892071150027181, "y": 0.0 }
+        },
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 2",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "s": { "type": "ray", "defined": false },
+          "P_{1}": { "type": "point", "defined": false },
+          "P_{2}": { "type": "point", "defined": false },
+          "R": { "type": "point", "defined": false }
+        },
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 2",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "s": { "type": "ray", "defined": true, "x": -2.0, "y": 0.0, "a": 0.0, "b": 4.0, "c": -0.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.1892071150027208, "y": 0.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.1892071150027181, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 1.1892071150027181, "y": 0.0 }
+        }
+      ]
+    }
+  ]
+}

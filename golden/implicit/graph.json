@@ -1,0 +1,554 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "implicit-graph-001",
+      "group": "implicit",
+      "script": [
+        "c: x^4 + y^4 = 2",
+        "a = 1",
+        "f(x) = a*x",
+        "n = 1",
+        "P = Intersect(c, f)",
+        "Q = Intersect(f, c)",
+        "R = Intersect(c, f, n)",
+        "S = Intersect(f, c, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "n", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "n", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 2",
+            "input_form": true
+          },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0],
+              [-4.0, -4.0],
+              [-2.0, -2.0],
+              [-1.0, -1.0],
+              [-0.5, -0.5],
+              [0.0, 0.0],
+              [0.5, 0.5],
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [4.0, 4.0],
+              [8.0, 8.0]
+            ]
+          },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.0, "y": -1.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "Q_{1}": { "type": "point", "defined": true, "x": -1.0, "y": -1.0 },
+          "Q_{2}": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "R": { "type": "point", "defined": true, "x": -1.0, "y": -1.0 },
+          "S": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+        },
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 2",
+            "input_form": true
+          },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0],
+              [-4.0, -4.0],
+              [-2.0, -2.0],
+              [-1.0, -1.0],
+              [-0.5, -0.5],
+              [0.0, 0.0],
+              [0.5, 0.5],
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [4.0, 4.0],
+              [8.0, 8.0]
+            ]
+          },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.0, "y": -1.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "Q_{1}": { "type": "point", "defined": true, "x": -1.0, "y": -1.0 },
+          "Q_{2}": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "R": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "S": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+        },
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 2",
+            "input_form": true
+          },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.0],
+              [-4.0, -0.0],
+              [-2.0, -0.0],
+              [-1.0, -0.0],
+              [-0.5, -0.0],
+              [0.0, 0.0],
+              [0.5, 0.0],
+              [1.0, 0.0],
+              [2.0, 0.0],
+              [4.0, 0.0],
+              [8.0, 0.0]
+            ]
+          },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.189207115002721, "y": 0.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.1892071150027208, "y": 0.0 },
+          "Q_{1}": { "type": "point", "defined": true, "x": -1.189207115002721, "y": 0.0 },
+          "Q_{2}": { "type": "point", "defined": true, "x": 1.1892071150027208, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 1.1892071150027208, "y": 0.0 },
+          "S": { "type": "point", "defined": true, "x": 1.1892071150027208, "y": 0.0 }
+        },
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 2",
+            "input_form": true
+          },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.0],
+              [-4.0, -0.0],
+              [-2.0, -0.0],
+              [-1.0, -0.0],
+              [-0.5, -0.0],
+              [0.0, 0.0],
+              [0.5, 0.0],
+              [1.0, 0.0],
+              [2.0, 0.0],
+              [4.0, 0.0],
+              [8.0, 0.0]
+            ]
+          },
+          "n": { "type": "number", "defined": true, "value": 4.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.189207115002721, "y": 0.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.1892071150027208, "y": 0.0 },
+          "Q_{1}": { "type": "point", "defined": true, "x": -1.189207115002721, "y": 0.0 },
+          "Q_{2}": { "type": "point", "defined": true, "x": 1.1892071150027208, "y": 0.0 },
+          "R": { "type": "point", "defined": false },
+          "S": { "type": "point", "defined": true, "x": 1.1892071150027208, "y": 0.0 }
+        },
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 2",
+            "input_form": true
+          },
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 8.0],
+              [-4.0, 4.0],
+              [-2.0, 2.0],
+              [-1.0, 1.0],
+              [-0.5, 0.5],
+              [0.0, -0.0],
+              [0.5, -0.5],
+              [1.0, -1.0],
+              [2.0, -2.0],
+              [4.0, -4.0],
+              [8.0, -8.0]
+            ]
+          },
+          "n": { "type": "number", "defined": true, "value": 4.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.0, "y": 1.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.0, "y": -1.0 },
+          "Q_{1}": { "type": "point", "defined": true, "x": -1.0, "y": 1.0 },
+          "Q_{2}": { "type": "point", "defined": true, "x": 1.0, "y": -1.0 },
+          "R": { "type": "point", "defined": false },
+          "S": { "type": "point", "defined": true, "x": 1.0, "y": -1.0 }
+        },
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 2",
+            "input_form": true
+          },
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 8.0],
+              [-4.0, 4.0],
+              [-2.0, 2.0],
+              [-1.0, 1.0],
+              [-0.5, 0.5],
+              [0.0, -0.0],
+              [0.5, -0.5],
+              [1.0, -1.0],
+              [2.0, -2.0],
+              [4.0, -4.0],
+              [8.0, -8.0]
+            ]
+          },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.0, "y": 1.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.0, "y": -1.0 },
+          "Q_{1}": { "type": "point", "defined": true, "x": -1.0, "y": 1.0 },
+          "Q_{2}": { "type": "point", "defined": true, "x": 1.0, "y": -1.0 },
+          "R": { "type": "point", "defined": true, "x": -1.0, "y": 1.0 },
+          "S": { "type": "point", "defined": true, "x": 1.0, "y": -1.0 }
+        }
+      ]
+    },
+    {
+      "id": "implicit-graph-002",
+      "group": "implicit",
+      "script": [
+        "c: x^3 + y = 0",
+        "f(x) = sin(x)",
+        "P = Intersect(c, f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 1.0],
+              [0.0, 0.0],
+              [0.0, 0.0],
+              [1.0, 0.0]
+            ],
+            "equation": "x^(3) + y = 0",
+            "input_form": true
+          },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.9893582466233818],
+              [-4.0, 0.7568024953079282],
+              [-2.0, -0.9092974268256817],
+              [-1.0, -0.8414709848078965],
+              [-0.5, -0.479425538604203],
+              [0.0, 0.0],
+              [0.5, 0.479425538604203],
+              [1.0, 0.8414709848078965],
+              [2.0, 0.9092974268256817],
+              [4.0, -0.7568024953079282],
+              [8.0, 0.9893582466233818]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "implicit-graph-003",
+      "group": "implicit",
+      "script": [
+        "k = 0.1",
+        "c: y^3 + y = 0",
+        "f(x) = sin(k*x)",
+        "P = Intersect(c, f)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "k", "value": 13.0 },
+        { "action": "set_number", "label": "k", "value": 0.1 }
+      ],
+      "snapshots": [
+        {
+          "k": { "type": "number", "defined": true, "value": 0.1 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 1.0, 0.0, 1.0]
+            ],
+            "equation": "y^(3) + y = 0",
+            "input_form": true
+          },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.7173560908995228],
+              [-4.0, -0.3894183423086505],
+              [-2.0, -0.19866933079506122],
+              [-1.0, -0.09983341664682815],
+              [-0.5, -0.04997916927067833],
+              [0.0, 0.0],
+              [0.5, 0.04997916927067833],
+              [1.0, 0.09983341664682815],
+              [2.0, 0.19866933079506122],
+              [4.0, 0.3894183423086505],
+              [8.0, 0.7173560908995228]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 13.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 1.0, 0.0, 1.0]
+            ],
+            "equation": "y^(3) + y = 0",
+            "input_form": true
+          },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.32162240316253093],
+              [-4.0, -0.9866275920404853],
+              [-2.0, -0.7625584504796027],
+              [-1.0, -0.4201670368266409],
+              [-0.5, -0.21511998808781552],
+              [0.0, 0.0],
+              [0.5, 0.21511998808781552],
+              [1.0, 0.4201670368266409],
+              [2.0, 0.7625584504796027],
+              [4.0, 0.9866275920404853],
+              [8.0, -0.32162240316253093]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": -4.108236396446093, "y": -1.9572272818836144E-6 },
+          "P_{2}": { "type": "point", "defined": true, "x": -3.866575350872722, "y": 2.896091304728516E-6 },
+          "P_{3}": { "type": "point", "defined": true, "x": -3.6249146677417534, "y": 8.767958962711022E-7 },
+          "P_{4}": { "type": "point", "defined": true, "x": -3.383253844796651, "y": -2.832099360419505E-6 },
+          "P_{5}": { "type": "point", "defined": true, "x": -3.141592810174429, "y": 2.0356002627561217E-6 },
+          "P_{6}": { "type": "point", "defined": true, "x": -2.8999316835925724, "y": -4.3625922736904534E-8 },
+          "P_{7}": { "type": "point", "defined": true, "x": -2.658270555120481, "y": -1.972921471984598E-6 },
+          "P_{8}": { "type": "point", "defined": true, "x": -2.4166095117231885, "y": 2.8834964828077956E-6 },
+          "P_{9}": { "type": "point", "defined": true, "x": -2.1749492006331805, "y": 5.725923208220807E-6 },
+          "P_{10}": { "type": "point", "defined": true, "x": -1.9332880056782498, "y": -2.8450989003770875E-6 },
+          "P_{11}": { "type": "point", "defined": true, "x": -1.6916269688520515, "y": 2.0199481190215287E-6 },
+          "P_{12}": { "type": "point", "defined": true, "x": -1.4499658409574443, "y": -1.0908016865498177E-8 },
+          "P_{13}": { "type": "point", "defined": true, "x": -1.208304713795513, "y": -1.9886072972212247E-6 },
+          "P_{14}": { "type": "point", "defined": true, "x": -0.9666436725815769, "y": 2.870798673046597E-6 },
+          "P_{15}": { "type": "point", "defined": true, "x": -0.7249827335424002, "y": -2.4247181777168106E-6 },
+          "P_{16}": { "type": "point", "defined": true, "x": -0.48332216655220517, "y": -2.857999080703036E-6 },
+          "P_{17}": { "type": "point", "defined": true, "x": -0.24166112752870095, "y": 2.0042833191885434E-6 },
+          "P_{18}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "P_{19}": { "type": "point", "defined": true, "x": 0.24166112752870095, "y": -2.0042833191885434E-6 },
+          "P_{20}": { "type": "point", "defined": true, "x": 0.48332216655220517, "y": 2.857999080703036E-6 },
+          "P_{21}": { "type": "point", "defined": true, "x": 0.7249827335424002, "y": 2.4247181777168106E-6 },
+          "P_{22}": { "type": "point", "defined": true, "x": 0.9666436725815769, "y": -2.870798673046597E-6 },
+          "P_{23}": { "type": "point", "defined": true, "x": 1.208304713795513, "y": 1.9886072972212247E-6 },
+          "P_{24}": { "type": "point", "defined": true, "x": 1.449965840957444, "y": 1.0908013312784498E-8 },
+          "P_{25}": { "type": "point", "defined": true, "x": 1.6916269688520515, "y": -2.0199481190215287E-6 },
+          "P_{26}": { "type": "point", "defined": true, "x": 1.9332880056782498, "y": 2.8450989003770875E-6 },
+          "P_{27}": { "type": "point", "defined": true, "x": 2.1749492006331805, "y": -5.725923208220807E-6 },
+          "P_{28}": { "type": "point", "defined": true, "x": 2.4166095117231885, "y": -2.8834964828077956E-6 },
+          "P_{29}": { "type": "point", "defined": true, "x": 2.658270555120481, "y": 1.972921471984598E-6 },
+          "P_{30}": { "type": "point", "defined": true, "x": 2.8999316835925724, "y": 4.3625922736904534E-8 },
+          "P_{31}": { "type": "point", "defined": true, "x": 3.141592810174429, "y": -2.0356002627561217E-6 },
+          "P_{32}": { "type": "point", "defined": true, "x": 3.383253844796651, "y": 2.832099360419505E-6 },
+          "P_{33}": { "type": "point", "defined": true, "x": 3.6249146677417534, "y": -8.767958962711022E-7 },
+          "P_{34}": { "type": "point", "defined": true, "x": 3.866575350872722, "y": -2.896091304728516E-6 },
+          "P_{35}": { "type": "point", "defined": true, "x": 4.108236396446093, "y": 1.9572272818836144E-6 },
+          "P_{36}": { "type": "point", "defined": true, "x": 4.349897527904617, "y": 9.814374869963623E-8 },
+          "P_{37}": { "type": "point", "defined": true, "x": 4.591558651495724, "y": -2.0512383412972603E-6 },
+          "P_{38}": { "type": "point", "defined": true, "x": 4.833219683907503, "y": 2.8190016696411184E-6 },
+          "P_{39}": { "type": "point", "defined": true, "x": 5.074880440351116, "y": 8.21159047907832E-10 },
+          "P_{40}": { "type": "point", "defined": true, "x": 5.31654119003027, "y": -2.9085819433206056E-6 },
+          "P_{41}": { "type": "point", "defined": true, "x": 5.55820223777224, "y": 1.94152612846382E-6 },
+          "P_{42}": { "type": "point", "defined": true, "x": 5.799863373892735, "y": 1.7445051686842532E-7 },
+          "P_{43}": { "type": "point", "defined": true, "x": 6.041524492815825, "y": -2.0668609015850495E-6 },
+          "P_{44}": { "type": "point", "defined": true, "x": 6.283185523010901, "y": 2.8058070892552835E-6 },
+          "P_{45}": { "type": "point", "defined": true, "x": 6.524846280428148, "y": 1.358493515759772E-9 },
+          "P_{46}": { "type": "point", "defined": true, "x": 6.76650702919592, "y": -2.920967251057546E-6 },
+          "P_{47}": { "type": "point", "defined": true, "x": 7.008168079098812, "y": 1.9258194470215402E-6 },
+          "P_{48}": { "type": "point", "defined": true, "x": 7.249829221556006, "y": 2.725342830198825E-7 },
+          "P_{49}": { "type": "point", "defined": true, "x": 7.491490334134624, "y": -2.08246651542859E-6 },
+          "P_{50}": { "type": "point", "defined": true, "x": 7.73315136210694, "y": 2.7925168342900785E-6 },
+          "P_{51}": { "type": "point", "defined": true, "x": 7.9748121204947875, "y": 2.030944790243853E-9 },
+          "P_{52}": { "type": "point", "defined": true, "x": 8.216472868369763, "y": -2.933246048438396E-6 },
+          "P_{53}": { "type": "point", "defined": true, "x": 8.458133920425702, "y": 1.910108644431393E-6 },
+          "P_{54}": { "type": "point", "defined": true, "x": 8.699795070893432, "y": 3.9238205843279564E-7 },
+          "P_{55}": { "type": "point", "defined": true, "x": 8.941456175452009, "y": -2.098053768847838E-6 },
+          "P_{56}": { "type": "point", "defined": true, "x": 9.183117201195717, "y": 2.779132176617E-6 },
+          "P_{57}": { "type": "point", "defined": true, "x": 9.424777960551014, "y": 2.8387544558902325E-9 },
+          "P_{58}": { "type": "point", "defined": true, "x": 9.666438707551892, "y": -2.945417127540505E-6 },
+          "P_{59}": { "type": "point", "defined": true, "x": 9.9081, "y": -1.2028184655812093E-6 },
+          "P_{60}": { "type": "point", "defined": true, "x": 10.149760921903939, "y": 5.3397988804783E-7 },
+          "P_{61}": { "type": "point", "defined": true, "x": 10.391422016767871, "y": -2.1136212265464672E-6 },
+          "P_{62}": { "type": "point", "defined": true, "x": 10.633083040277329, "y": 2.7656543667912633E-6 },
+          "P_{63}": { "type": "point", "defined": true, "x": 10.874743800596804, "y": 3.782249362357361E-9 },
+          "P_{64}": { "type": "point", "defined": true, "x": 11.11640454674239, "y": -2.957479422549769E-6 },
+          "P_{65}": { "type": "point", "defined": true, "x": 11.358065603079998, "y": 1.8786803033059622E-6 },
+          "P_{66}": { "type": "point", "defined": true, "x": 11.599726774586378, "y": 6.97312822045818E-7 }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 0.1 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 1.0, 0.0, 1.0]
+            ],
+            "equation": "y^(3) + y = 0",
+            "input_form": true
+          },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.7173560908995228],
+              [-4.0, -0.3894183423086505],
+              [-2.0, -0.19866933079506122],
+              [-1.0, -0.09983341664682815],
+              [-0.5, -0.04997916927067833],
+              [0.0, 0.0],
+              [0.5, 0.04997916927067833],
+              [1.0, 0.09983341664682815],
+              [2.0, 0.19866933079506122],
+              [4.0, 0.3894183423086505],
+              [8.0, 0.7173560908995228]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "P_{2}": { "type": "point", "defined": false },
+          "P_{3}": { "type": "point", "defined": false },
+          "P_{4}": { "type": "point", "defined": false },
+          "P_{5}": { "type": "point", "defined": false },
+          "P_{6}": { "type": "point", "defined": false },
+          "P_{7}": { "type": "point", "defined": false },
+          "P_{8}": { "type": "point", "defined": false },
+          "P_{9}": { "type": "point", "defined": false },
+          "P_{10}": { "type": "point", "defined": false },
+          "P_{11}": { "type": "point", "defined": false },
+          "P_{12}": { "type": "point", "defined": false },
+          "P_{13}": { "type": "point", "defined": false },
+          "P_{14}": { "type": "point", "defined": false },
+          "P_{15}": { "type": "point", "defined": false },
+          "P_{16}": { "type": "point", "defined": false },
+          "P_{17}": { "type": "point", "defined": false },
+          "P_{18}": { "type": "point", "defined": false },
+          "P_{19}": { "type": "point", "defined": false },
+          "P_{20}": { "type": "point", "defined": false },
+          "P_{21}": { "type": "point", "defined": false },
+          "P_{22}": { "type": "point", "defined": false },
+          "P_{23}": { "type": "point", "defined": false },
+          "P_{24}": { "type": "point", "defined": false },
+          "P_{25}": { "type": "point", "defined": false },
+          "P_{26}": { "type": "point", "defined": false },
+          "P_{27}": { "type": "point", "defined": false },
+          "P_{28}": { "type": "point", "defined": false },
+          "P_{29}": { "type": "point", "defined": false },
+          "P_{30}": { "type": "point", "defined": false },
+          "P_{31}": { "type": "point", "defined": false },
+          "P_{32}": { "type": "point", "defined": false },
+          "P_{33}": { "type": "point", "defined": false },
+          "P_{34}": { "type": "point", "defined": false },
+          "P_{35}": { "type": "point", "defined": false },
+          "P_{36}": { "type": "point", "defined": false },
+          "P_{37}": { "type": "point", "defined": false },
+          "P_{38}": { "type": "point", "defined": false },
+          "P_{39}": { "type": "point", "defined": false },
+          "P_{40}": { "type": "point", "defined": false },
+          "P_{41}": { "type": "point", "defined": false },
+          "P_{42}": { "type": "point", "defined": false },
+          "P_{43}": { "type": "point", "defined": false },
+          "P_{44}": { "type": "point", "defined": false },
+          "P_{45}": { "type": "point", "defined": false },
+          "P_{46}": { "type": "point", "defined": false },
+          "P_{47}": { "type": "point", "defined": false },
+          "P_{48}": { "type": "point", "defined": false },
+          "P_{49}": { "type": "point", "defined": false },
+          "P_{50}": { "type": "point", "defined": false },
+          "P_{51}": { "type": "point", "defined": false },
+          "P_{52}": { "type": "point", "defined": false },
+          "P_{53}": { "type": "point", "defined": false },
+          "P_{54}": { "type": "point", "defined": false },
+          "P_{55}": { "type": "point", "defined": false },
+          "P_{56}": { "type": "point", "defined": false },
+          "P_{57}": { "type": "point", "defined": false },
+          "P_{58}": { "type": "point", "defined": false },
+          "P_{59}": { "type": "point", "defined": false },
+          "P_{60}": { "type": "point", "defined": false },
+          "P_{61}": { "type": "point", "defined": false },
+          "P_{62}": { "type": "point", "defined": false },
+          "P_{63}": { "type": "point", "defined": false },
+          "P_{64}": { "type": "point", "defined": false },
+          "P_{65}": { "type": "point", "defined": false },
+          "P_{66}": { "type": "point", "defined": false }
+        }
+      ]
+    }
+  ]
+}

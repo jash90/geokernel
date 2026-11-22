@@ -1,6 +1,6 @@
 //! Label allocation for intersections whose output count can grow.
 
-use super::boundary;
+use super::{boundary, lines::LineDef};
 use crate::kernel::{Construction, Def, Id};
 use crate::script;
 use std::collections::BTreeSet;
@@ -27,7 +27,7 @@ impl BoundaryOutputs {
     /// Rebuilds the registry from a definition that has already executed.
     pub fn record(&mut self, c: &Construction, line: &str, first: Id, count: usize) {
         if let Some((prefix, _)) = boundary_command(line) {
-            if matches!(c.def(first), Def::IntersectBoundary(d) if d.can_grow()) {
+            if can_grow(c.def(first)) {
                 self.groups.push(Outputs {
                     first,
                     prefix: prefix.to_owned(),
@@ -69,19 +69,21 @@ impl BoundaryOutputs {
             if !changed.clone().any(|id| group.dependencies.contains(&id)) {
                 continue;
             }
-            let Def::IntersectBoundary(def) = c.def(group.first) else {
-                continue;
+            let def = c.def(group.first);
+            let count = match def {
+                Def::IntersectBoundary(d) => d.grown_size(c),
+                Def::Lines(LineDef::ImplicitTangent(d)) => d.grown_size(c),
+                _ => None,
             };
-            let Some(count) = def.grown_size(c) else {
+            let Some(count) = count else {
                 continue;
             };
             for slot in group.slots..count {
-                let Some(output) = def.grown_slot(slot) else {
+                let Some(output) = grown_slot(def, slot) else {
                     break;
                 };
                 let label = script::index_label(c, &group.prefix);
-                let Ok(id) = c.add_output(&label, Def::IntersectBoundary(output), group.first)
-                else {
+                let Ok(id) = c.add_output(&label, output, group.first) else {
                     break;
                 };
                 group.slots = slot + 1;
@@ -93,6 +95,22 @@ impl BoundaryOutputs {
                 record(c, id, &line);
             }
         }
+    }
+}
+
+fn can_grow(def: Def) -> bool {
+    match def {
+        Def::IntersectBoundary(d) => d.can_grow(),
+        Def::Lines(LineDef::ImplicitTangent(d)) => d.can_grow(),
+        _ => false,
+    }
+}
+
+fn grown_slot(def: Def, slot: usize) -> Option<Def> {
+    match def {
+        Def::IntersectBoundary(d) => d.grown_slot(slot).map(Def::IntersectBoundary),
+        Def::Lines(LineDef::ImplicitTangent(d)) => d.grown_slot(slot),
+        _ => None,
     }
 }
 
@@ -110,7 +128,7 @@ fn dependencies(c: &Construction, first: Id) -> BTreeSet<Id> {
 fn boundary_command(line: &str) -> Option<(&str, &str)> {
     let (name, rhs) = line.split_once(['=', ':'])?;
     let (name, rhs) = (name.trim(), rhs.trim());
-    if name.starts_with('{') || !rhs.starts_with("Intersect") {
+    if name.starts_with('{') || !(rhs.starts_with("Intersect") || rhs.starts_with("Tangent")) {
         return None;
     }
     let prefix = name
@@ -145,10 +163,8 @@ pub(crate) fn parse_slot(c: &Construction, rhs: &str) -> Option<Result<(Def, Id)
         let id = c
             .id(anchor)
             .ok_or_else(|| format!("unknown object `{anchor}`"))?;
-        if let Def::IntersectBoundary(def) = c.def(id) {
-            if let Some(def) = def.grown_slot(slot) {
-                return Ok((Def::IntersectBoundary(def), id));
-            }
+        if let Some(def) = grown_slot(c.def(id), slot) {
+            return Ok((def, id));
         }
         Err(format!(
             "`{anchor}` does not start a growing boundary intersection"

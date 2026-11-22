@@ -139,6 +139,9 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
     if let Some(result) = text::apply(c, line) {
         return result.map(|_| None);
     }
+    if let Some(result) = equation::coefficients(c, line) {
+        return result.map(Some);
+    }
     if let Some(style) = equation::parse_style(line) {
         return style?.apply(c).map(|_| None);
     }
@@ -492,7 +495,8 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
             return Err(error);
         }
     };
-    let result = define_resolved(c, name, call.as_deref().unwrap_or(rhs));
+    let resolved = call.as_deref().unwrap_or(rhs);
+    let result = define_resolved(c, name, resolved);
     if let Ok(Some(id)) = result.as_ref() {
         let numeric_expression = c.kind(*id).is_number()
             && crate::expr::plain_number(rhs).is_none()
@@ -511,19 +515,30 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
             c.remember_construction_source(*id, rhs);
         }
     }
-    if result.is_err() {
+    if result.is_err() || (matches!(result, Ok(None)) && implicit_multi_output(c, resolved)) {
         c.discard_since(start);
     }
     result
 }
 
+fn implicit_multi_output(c: &Construction, rhs: &str) -> bool {
+    split_call(rhs).is_some_and(|(command, args)| {
+        matches!(command, "Intersect" | "Tangent")
+            && args.len() == 2
+            && args.iter().any(|arg| {
+                c.id(arg)
+                    .is_some_and(|id| c.kind(id) == Kind::ImplicitCurve)
+            })
+    })
+}
+
 /// Lowers an imported argument within its owning definition. Each temporary
 /// object is anonymous and shares the lifetime of that definition's replay.
-fn with_saved_arguments<T>(
+fn with_saved_arguments(
     c: &mut Construction,
     rhs: &str,
-    run: impl FnOnce(&mut Construction, &str) -> Result<T, String>,
-) -> Option<Result<T, String>> {
+    run: impl FnOnce(&mut Construction, &str) -> Result<Option<Id>, String>,
+) -> Option<Result<Option<Id>, String>> {
     if !rhs.contains("$arg(") {
         return None;
     }
@@ -533,6 +548,7 @@ fn with_saved_arguments<T>(
     }
     let before = c.len();
     let start = c.checkpoint();
+    let mut implicit = false;
     let result = (|| {
         let args = args
             .iter()
@@ -543,9 +559,11 @@ fn with_saved_arguments<T>(
                 },
             )
             .collect::<Result<Vec<_>, String>>()?;
-        run(c, &format!("{command}({})", args.join(", ")))
+        let call = format!("{command}({})", args.join(", "));
+        implicit = implicit_multi_output(c, &call);
+        run(c, &call)
     })();
-    if result.is_err() {
+    if result.is_err() || (matches!(result, Ok(None)) && implicit) {
         c.discard_since(start);
     } else {
         let source = saved::command_with_inline_arguments(rhs).map(|(source, _)| source);
@@ -672,6 +690,12 @@ fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option
     if let Some(result) = crate::expr::define_geometry_if(c, name, rhs) {
         return result.map(Some);
     }
+    if let Some(result) = crate::expr::equation::implicit::asymptote_command(c, name, rhs) {
+        return result.map(Some);
+    }
+    if let Some(result) = crate::expr::equation::implicit::command(c, name, rhs) {
+        return result.map(Some);
+    }
     if let Some(result) = crate::expr::equation::define_side(c, name, rhs) {
         return result.map(Some);
     }
@@ -698,6 +722,15 @@ fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option
     }
     if let Some(result) = ConicDef::exec_interval(c, name, rhs) {
         return result;
+    }
+    if let Some((command @ "Tangent", args)) = split_call(rhs) {
+        if let Some(defs) = crate::algo::implicit::tangent::Tangent::multi(c, command, &args) {
+            return if defs.is_empty() {
+                Ok(None)
+            } else {
+                add_outputs(c, name, defs).map(Some)
+            };
+        }
     }
     if let Some(result) = intersect::exec_selected(c, name, rhs) {
         return result;
@@ -1246,6 +1279,8 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
     let (func, mut args) = split_call(rhs)?;
     let is_kind = |arg, kind| c.id(arg).is_some_and(|id| c.kind(id) == kind);
     let inputs: &[(usize, Kind)] = match (func, args.as_slice()) {
+        ("Tangent", [f, _]) if is_kind(f, Kind::ImplicitCurve) => &[(1, Kind::Point)],
+        ("Tangent", [_, f]) if is_kind(f, Kind::ImplicitCurve) => &[(0, Kind::Point)],
         ("Tangent", [f, _]) if is_kind(f, Kind::Function) => &[(1, Kind::Point)],
         ("Tangent", [_, f]) if is_kind(f, Kind::Curve) => &[(0, Kind::Point)],
         ("Tangent", [_, f]) if is_kind(f, Kind::Function) => &[(0, Kind::Number)],
@@ -1381,6 +1416,9 @@ fn parse_multi(c: &Construction, rhs: &str) -> Option<Result<Vec<Def>, String>> 
     if let Some(defs) = analysis::existing_outputs(c, func, &args) {
         return Some(defs);
     }
+    if let Some(defs) = crate::algo::implicit::tangent::Tangent::multi(c, func, &args) {
+        return Some(Ok(defs));
+    }
     if let Some(defs) = intersect::parse_multi(c, func, &args) {
         return Some(Ok(defs));
     }
@@ -1477,9 +1515,10 @@ pub(crate) fn add_outputs(c: &mut Construction, name: &str, defs: Vec<Def>) -> R
         };
     }
     let count = defined.iter().filter(|&&d| d).count();
-    let indexed = matches!(defs.first(), Some(Def::IntersectBoundary(d)) if d.labels_indexed());
+    let indexed = matches!(defs.first(), Some(Def::IntersectBoundary(d)) if d.labels_indexed())
+        || matches!(defs.first(), Some(Def::Lines(LineDef::ImplicitTangent(_))));
     let all_indexed =
-        matches!(defs.first(), Some(Def::IntersectBoundary(d)) if d.labels_all_indexed());
+        matches!(defs.first(), Some(Def::IntersectBoundary(d)) if d.labels_all_indexed(c));
     // Construction.getIndexLabel: the prefix is the name up to the first `_`.
     let prefix = match name.split('_').next() {
         Some(p) if !p.is_empty() => p,
@@ -1624,6 +1663,7 @@ fn is_finite(v: &Value) -> bool {
         | Value::InputBox
         | Value::Image
         | Value::PieChart
+        | Value::ImplicitCurve
         | Value::Undefined => false,
     }
 }
@@ -2123,6 +2163,16 @@ pub(crate) fn add_named_outputs(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn an_empty_implicit_tangent_discards_inline_arguments() {
+        let mut c = load("f(x,y) = x^2 + y^2 - 1\nc = ImplicitCurve(f)").unwrap();
+        let before = c.len();
+        for line in ["t = Tangent((0, 0), c)", "t = Tangent($arg((0, 0)), c)"] {
+            assert_eq!(exec(&mut c, line), Ok(None));
+            assert_eq!(c.len(), before);
+        }
+    }
+
     #[test]
     fn saved_curve_intersections_reject_overlong_output_lists() {
         let mut c = super::load("q = Curve(t, t^2, t, -2, 2)\ng: y = 100").unwrap();
