@@ -298,7 +298,9 @@ fn slow_plot(c: &mut Construction, name: &str, args: &[&str]) -> Result<Option<I
 }
 
 fn set_construction_step(c: &mut Construction, arg: &str) -> Result<f64, String> {
-    let value = crate::expr::plain_number(arg)
+    // `arg[0].evaluateDouble()`: any constant numeric expression
+    let value = crate::expr::constant_number(c, arg)
+        .map(|(value, _)| value)
         .or_else(|| c.id(arg).and_then(|id| c.number(id)))
         .ok_or_else(|| format!("`{arg}` is not a number"))?;
     c.set_construction_step(value);
@@ -1413,7 +1415,7 @@ pub(crate) fn add_outputs(c: &mut Construction, name: &str, defs: Vec<Def>) -> R
         let at = c.checkpoint();
         let result = c
             .add(name, first)
-            .and_then(|id| c.add(&point, second).map(|_| id));
+            .and_then(|id| c.add_output(&point, second, id).map(|_| id));
         if result.is_err() {
             c.discard_since(at);
         }
@@ -1463,7 +1465,13 @@ pub(crate) fn add_outputs(c: &mut Construction, name: &str, defs: Vec<Def>) -> R
     let mut first = None;
     for (def, _) in defs.into_iter().zip(defined).filter(|&(_, d)| d) {
         let label = index_label(c, prefix);
-        match intersect::add_labelled_output(c, &label, def) {
+        // the indexed outputs of one intersection share the element of
+        // the first (`AlgoIntersectConics` is one construction element)
+        let added = match first {
+            Some(owner) => intersect::add_labelled_output_of(c, &label, def, owner),
+            None => intersect::add_labelled_output(c, &label, def),
+        };
+        match added {
             Ok(id) => {
                 first.get_or_insert(id);
             }

@@ -1234,9 +1234,13 @@ impl Plan {
         let start = c.checkpoint();
         let mut first = None;
         for (label, item) in self.items {
-            let added = match item {
-                Planned::Def(def) => c.add(&label, def),
-                Planned::List(ids, make) => {
+            // the first object is the construction element; the sides and
+            // the further vertices of the polygon are its outputs and
+            // share it in the protocol
+            let added = match (&first, item) {
+                (Some(owner), Planned::Def(def)) => c.add_output(&label, def, *owner),
+                (None, Planned::Def(def)) => c.add(&label, def),
+                (_, Planned::List(ids, make)) => {
                     c.add_with_list(&label, &ids, |list| Def::Polygon(make(list)))
                 }
             };

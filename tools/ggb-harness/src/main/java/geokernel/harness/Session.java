@@ -78,6 +78,10 @@ final class Session {
     /** `label: lhs = rhs`, an equation line (its `=` belongs to the definition). */
     private static final Pattern EQUATION =
             Pattern.compile("^([A-Za-z]+(?:_\\{[A-Za-z0-9]+\\})?): (.+)$");
+    /** A scripting command line, which assigns nothing. */
+    private static final Pattern SCRIPTING =
+            Pattern.compile("^(SetConstructionStep|ZoomIn|ZoomOut|SetActiveView)"
+                    + "(?:\\([A-Za-z0-9_{}',.^/ ()+*-]*\\))?$");
     /** A label as the script lines write it, to find the objects an expression reads. */
     private static final Pattern LABEL = Pattern.compile("[A-Za-z]+(?:_\\{[A-Za-z0-9]+\\})?");
     /** Where a function is sampled, in this order (see golden/SCHEMA.md). */
@@ -175,6 +179,18 @@ final class Session {
         }
     }
 
+    /** Runs a scripting command that creates no object of its own, such as
+     * `SetConstructionStep`, and checks that it stayed silent. */
+    private GeoElement runScriptingCommand(String line) {
+        GeoElementND[] out = processor.processAlgebraCommandNoExceptionHandling(
+                line, false, new CommandErrorHandler(line, false), false, null);
+        if (out != null && out.length != 0) {
+            throw new IllegalArgumentException(
+                    "a scripting command created output: " + line);
+        }
+        return null;
+    }
+
     /** Runs one `label = definition` or `label: equation` line and checks
      * what GeoGebra created. */
     GeoElement run(String line) {
@@ -184,6 +200,8 @@ final class Session {
             m = EQUATION.matcher(line);
             if (m.matches() && m.group(2).contains("=")) {
                 equationLine = true;
+            } else if (SCRIPTING.matcher(line).matches()) {
+                return runScriptingCommand(line);
             } else {
                 throw new IllegalArgumentException(
                         "not of the form 'label = definition': " + line);
@@ -1179,8 +1197,6 @@ final class Session {
             case "Voronoi":
             case "Locus":
             case "SlopeField":
-            case "Hull":
-            case "ConvexHull":
             case "SolveODE":
             case "NSolveODE":
                 return "locus";
@@ -1286,10 +1302,15 @@ final class Session {
             case "Sum":
                 // folding points or vectors sums to a point (`CmdSum` wraps
                 // them in a list of points), functions to a function, texts
-                // to a text
+                // to a text; the four-argument fold over the function
+                // variable itself stays a function
                 List<String> folded = arguments(definition);
                 GeoElement lead = folded.isEmpty() ? null
                         : objects.get(folded.get(0).trim());
+                if (folded.size() == 4 && "x".equals(folded.get(1).trim())
+                        && VARIABLE_X.matcher(folded.get(0).trim()).find()) {
+                    return "function";
+                }
                 return !folded.isEmpty()
                         && (POINT.matcher(folded.get(0).trim()).matches()
                                 || lead instanceof GeoPoint

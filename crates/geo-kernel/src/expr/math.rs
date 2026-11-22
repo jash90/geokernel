@@ -392,6 +392,11 @@ impl std::fmt::Write for Stack {
     }
 }
 
+/// The most factors the exact `nPr` product multiplies; beyond it the
+/// log-gamma value stands (upstream would multiply every factor without a
+/// bound; see `DIFFERENCES.md`).
+const N_PR_WORK: u64 = 100_000;
+
 /// `MyMath.binomial(n, k)`: the binomial coefficient, exact through the
 /// log-gamma path for small `n` and through an exact wide product for the
 /// larger ones, `0` wherever the arguments do not make a count.
@@ -420,6 +425,11 @@ pub(crate) fn binomial(n0: f64, k: f64) -> f64 {
     }
     // `binomBig`: every intermediate value is an exact integer that divides
     // exactly, so a 128-bit product is the exact answer whenever it fits.
+    // A count of factors past the work bound keeps the log-gamma value
+    // (upstream multiplies without a bound; see `DIFFERENCES.md`).
+    if r as u64 > N_PR_WORK {
+        return ncr;
+    }
     let mut acc: u128 = 1;
     let mut dd: u128 = 1;
     let mut nn = n;
@@ -441,7 +451,7 @@ fn wide_product_binomial(n: f64, r: f64) -> f64 {
     let mut acc = 1.0f64;
     let mut dd = 1.0f64;
     let mut nn = n;
-    while dd <= r {
+    while dd <= r.min(N_PR_WORK as f64) {
         acc *= nn / dd;
         nn -= 1.0;
         dd += 1.0;
@@ -471,23 +481,40 @@ pub(crate) fn n_pr(n: f64, r: f64) -> f64 {
     if n <= 16.0 {
         return npr;
     }
+    // `nPrBig` walks the integers from the decimal of `n - r` plus one to
+    // the decimal of `n`; the decimals come from the doubles, so once `r`
+    // is below the spacing of `n` the two are the same double and the
+    // product is empty (`nPr(1e40, 2)` is 1).
+    let from = n - r;
+    if from == n {
+        return 1.0;
+    }
+    // The loop below cannot run past the exact-integer range of `u128`.
+    if !(from.is_finite() && n < 3.4e38) {
+        return npr;
+    }
+    let iterations = n - from;
+    if iterations > N_PR_WORK as f64 {
+        return npr;
+    }
     let mut acc: u128 = 1;
-    let mut factor = (n - r) as u128 + 1;
+    let mut factor = from as u128 + 1;
     let top = n as u128;
     while factor <= top {
         acc = match acc.checked_mul(factor) {
             Some(v) => v,
-            None => return wide_product_permutation(n, r),
+            None => return wide_product_permutation(from, n),
         };
         factor += 1;
     }
     acc as f64
 }
 
-/// The `nPrBig` fallback beyond 128 bits.
-fn wide_product_permutation(n: f64, r: f64) -> f64 {
+/// The `nPrBig` fallback beyond 128 bits: a plain product of the factors
+/// that remain, accurate far within the comparison tolerance.
+fn wide_product_permutation(from: f64, n: f64) -> f64 {
     let mut acc = 1.0f64;
-    let mut factor = n - r + 1.0;
+    let mut factor = from + 1.0;
     while factor <= n {
         acc *= factor;
         factor += 1.0;

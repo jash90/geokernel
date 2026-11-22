@@ -32,6 +32,17 @@ cases.case("optimize", [
 cases.case("optimize", [
     "a = Slider(0, 6)", "f = 2a + 1", "m = Maximize(f, a)",
 ], [setn("a", 2.0), setn("a", 6.0)])
+# a degenerate slider: min == max, the interval is one point
+cases.case("optimize", [
+    "s = Slider(3, 3)", "f = (s - 1)^2 + 2", "m = Minimize(f, s)",
+    "n = Maximize(f, s)",
+], [])
+# a locus whose chain runs through the optimized number
+cases.case("optimize", [
+    "a = Slider(0, 6)", "f = -(a - 3)^2 + 7", "m = Maximize(f, a)",
+    "A = (0, 0)", "B = (10, 0)", "s = Segment(A, B)", "P = Point(s)",
+    "C = (m, a)", "Q = Midpoint(P, C)", "l = Locus(Q, P)",
+], [mv("P", 2, 0), mv("P", 8, 0)])
 
 # Hull: the convex hull of a list of points, as a locus.
 cases.case("hull", [
@@ -57,6 +68,22 @@ cases.case("hull", [
 # collinear points keep only the ends of their run
 cases.case("hull", [
     "l = {(1, 1), (2, 2), (3, 3), (4, 0.25), (5, 0.2)}", "h = ConvexHull(l)",
+], [])
+# two points make a segment there and back
+cases.case("hull", [
+    "l = {(0, 0), (4, 0)}", "h = ConvexHull(l)",
+], [])
+# duplicates count once
+cases.case("hull", [
+    "l = {(0, 0), (0, 0), (4, 0), (4, 0)}", "h = Hull(l, 1)",
+], [])
+# all points equal
+cases.case("hull", [
+    "l = {(2, 2), (2, 2), (2, 2)}", "h = Hull(l, 1)",
+], [])
+# every point on one line
+cases.case("hull", [
+    "l = {(0, 0), (1, 1), (2, 2), (3, 3)}", "h = ConvexHull(l)",
 ], [])
 
 # ToComplex, ToPolar and ToPoint: the same value, another style.
@@ -104,6 +131,26 @@ cases.case("protocol", [
     "B = (3, 4)", "j = ConstructionStep()",
     "k = ConstructionStep(B)",
 ], [])
+# the protocol counts construction elements: the polygon's sides share
+# its entry
+cases.case("protocol", [
+    pt("A", 0, 0), pt("B", 4, 0), pt("C", 0, 3), "p = Polygon(A, B, C)",
+    pt("D", 1, 1), "s = ConstructionStep(D)", "t = ConstructionStep(p)",
+    "u = ConstructionStep(A)", "i = ConstructionStep()",
+], [])
+# the indexed outputs of one command share its entry: both intersection
+# points are one element (D is the fourth, not the fifth)
+cases.case("protocol", [
+    "g: x^2 + y^2 = 4", "h: y = x", "R = Intersect(g, h)",
+    pt("D", 5, 5), "s = ConstructionStep(D)",
+], [])
+# SetConstructionStep clamps to the last step and recomputes
+cases.case("protocol", [
+    pt("A", 0, 0), pt("B", 1, 1), "SetConstructionStep(1000000000)",
+    "i = ConstructionStep()", "SetConstructionStep(5)",
+    "j = ConstructionStep()", "SetConstructionStep(1)",
+    "k = ConstructionStep()",
+], [])
 
 # The view readers.
 cases.case("view", [
@@ -137,6 +184,15 @@ cases.case("sum", [
 # functions add as one expression tree (`FunctionFold`)
 cases.case("sum", [
     "f(x) = x", "g(x) = 2x", "h = Sum(f, g, f)",
+], [])
+# the index shadows an existing object (`processSymb` binds it locally)
+cases.case("sum", [
+    "k = 7", "a = Sum(k^2, k, 1, 5)", "b = k",
+], [])
+# the index may be the function variable itself: the fold stays a
+# function of it
+cases.case("sum", [
+    "f(x) = x^2", "g = Sum(x^2, x, 1, 3)", "a = g(4)", "b = f(2)",
 ], [])
 
 # The deprecated IntersectPath aliases.

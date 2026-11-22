@@ -22,6 +22,15 @@ pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
         "Mean" => (ListOp::Mean, false),
         _ => return Ok(None),
     };
+    // `Sum(expression, variable, from, to)`: the four-argument fold of
+    // `CmdSum.processSymb`, with the variable bound locally, so it shadows
+    // an object of the same name (`Sum(k^2, k, 1, 5)` with an existing
+    // `k`). Over the variable `x` the expression stays a function of it.
+    if op == ListOp::Sum {
+        if let Some(node) = p.fold(text)? {
+            return Ok(Some(node));
+        }
+    }
     p.list_command(|p, args, lists| {
         // `Sum(a, b, ...)` of anything but a list folds the arguments,
         // which GeoGebra wraps in a list of the class of the first

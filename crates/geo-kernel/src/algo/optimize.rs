@@ -91,7 +91,10 @@ pub(crate) fn record(c: &mut Construction, d: OptimizeDef) -> Value {
     let Some((min, max)) = c.slider_interval(independent) else {
         return Value::Undefined;
     };
-    if !max.is_finite() || min >= max {
+    // A slider with `min == max` still has bounds (`hasBounds`): the
+    // interval is one point and the search returns it at once. Only a
+    // reversed interval (`Slider(5, 3)`) has no search.
+    if !max.is_finite() || min > max {
         return Value::Undefined;
     }
     // what one sample recomputes: everything between the number and the

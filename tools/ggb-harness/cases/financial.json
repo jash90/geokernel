@@ -35,6 +35,8 @@
     {"id": "financial-future-006", "group": "financial", "script": ["f = FutureValue(10, 0, -100)"], "steps": [{"action": "initial"}]},
     {"id": "financial-future-007", "group": "financial", "script": ["f = FutureValue(4.5, 0.07, -13)"], "steps": [{"action": "initial"}]},
     {"id": "financial-future-008", "group": "financial", "script": ["f = FutureValue(-3, 0.07, -13)"], "steps": [{"action": "initial"}]},
+    {"id": "financial-future-009", "group": "financial", "script": ["f = FutureValue(0, 4, 1/0, 13)"], "steps": [{"action": "initial"}]},
+    {"id": "financial-future-010", "group": "financial", "script": ["f = FutureValue(0, 4, 10^400, 13)"], "steps": [{"action": "initial"}]},
     {"id": "financial-present-001", "group": "financial", "script": ["p = PresentValue(10, 0.05, -100)"], "steps": [{"action": "initial"}]},
     {"id": "financial-present-002", "group": "financial", "script": ["p = PresentValue(10, 0.05, -100, 0)"], "steps": [{"action": "initial"}]},
     {"id": "financial-present-003", "group": "financial", "script": ["p = PresentValue(10, 0.05, -100, 0, 500)"], "steps": [{"action": "initial"}]},
@@ -48,6 +50,8 @@
     {"id": "financial-npr-001", "group": "financial", "script": ["a = nPr(8, 7)", "b = nPr(5, 0)", "c = nPr(5, 6)", "d = nPr(5, -1)"], "steps": [{"action": "initial"}]},
     {"id": "financial-npr-002", "group": "financial", "script": ["a = nPr(10, 4)", "b = nPr(16, 8)"], "steps": [{"action": "initial"}]},
     {"id": "financial-npr-003", "group": "financial", "script": ["a = nPr(2.5, 2)", "b = nPr(5, 2.5)"], "steps": [{"action": "initial"}]},
-    {"id": "financial-npr-004", "group": "financial", "script": ["a = nPr(1000000, 3)"], "steps": [{"action": "initial"}]}
+    {"id": "financial-npr-004", "group": "financial", "script": ["a = nPr(1000000, 3)"], "steps": [{"action": "initial"}]},
+    {"id": "financial-npr-005", "group": "financial", "script": ["a = nPr(10^40, 2)", "b = nPr(10^300, 0)"], "steps": [{"action": "initial"}]},
+    {"id": "financial-ncr-005", "group": "financial", "script": ["a = nCr(10^40, 2)"], "steps": [{"action": "initial"}]}
   ]
 }

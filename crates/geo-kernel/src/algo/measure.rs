@@ -276,7 +276,7 @@ fn id_index(c: &Construction, id: Id) -> i32 {
     if c.label(id).is_empty() {
         -1
     } else {
-        id.0 as i32
+        c.element_of(id)
     }
 }
 

@@ -80,6 +80,21 @@
           "b": { "type": "number", "defined": true, "value": 1.66666166667E17 }
         }
       ]
+    },
+    {
+      "id": "financial-ncr-005",
+      "group": "financial",
+      "script": [
+        "a = nCr(10^40, 2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
     }
   ]
 }

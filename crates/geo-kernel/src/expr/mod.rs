@@ -353,6 +353,9 @@ pub(crate) enum CallOp {
     Zip,
     /// `Product(expression, variable, from, to)` (`AlgoFoldExpression`).
     Fold,
+    /// `Sum(expression, variable, from, to)` (`AlgoFoldExpression` with
+    /// `PLUS`, `CmdSum.processSymb`): the same shape, added up.
+    SumFold,
 }
 
 /// The commands that read a list.

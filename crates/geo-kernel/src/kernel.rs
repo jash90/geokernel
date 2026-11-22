@@ -898,9 +898,19 @@ pub struct Construction {
     /// construction uses the reference window.
     view_state: Option<[f64; 6]>,
     /// The step of the construction protocol: -1 before the first object,
-    /// then the index of the last object while the step follows the
-    /// construction (`Construction.getStep`).
+    /// then the index of the last construction element while the step
+    /// follows the construction (`Construction.getStep`).
     step: i32,
+    /// The construction elements of the protocol (`ceList`): the def index
+    /// of each element in creation order. One line of input is one element
+    /// (`Polygon(A, B, C)` counts once); the extra objects it creates
+    /// (the sides, the indexed outputs of `Intersect`) share it.
+    elements: Vec<u32>,
+    /// For every def, the position in `elements` of the element it belongs
+    /// to: its own for a free object or the first output of a command, the
+    /// owner's for every further output (`GeoElement.getConstructionIndex`
+    /// reads its algorithm's index).
+    element_of: Vec<u32>,
     /// The indices of the objects that read the construction step, so that
     /// adding an object or `SetConstructionStep` can recompute them.
     protocol: Vec<usize>,
@@ -1426,11 +1436,21 @@ impl Construction {
             self.values.pop();
             self.children.pop();
             self.hints.pop();
+            self.element_of.pop();
             if let Some(label) = self.labels.pop() {
                 self.by_label.remove(&label);
                 self.object_scripts.remove(&label);
             }
         }
+        // The protocol rolls back with the objects: the elements that went
+        // are gone, the step cannot point past the last one that stays and
+        // no reader of the step may be stale (`Construction.remove`).
+        let elements = self.elements.partition_point(|&i| (i as usize) < at.len);
+        self.elements.truncate(elements);
+        if self.step >= elements as i32 {
+            self.step = elements as i32 - 1;
+        }
+        self.protocol.retain(|&i| i < at.len);
         self.lists.truncate(at.lists.min(self.lists.len()));
         self.exprs.truncate(at.exprs, at.len);
         self.function_roots.clear();
@@ -1534,7 +1554,14 @@ impl Construction {
 
     /// Adds an object and computes its value.
     pub fn add(&mut self, label: &str, def: Def) -> Result<Id, Error> {
-        self.add_with_path_state(label, def, None)
+        self.add_with_path_state(label, def, None, None)
+    }
+
+    /// Adds another output of the object `owner`: the same value as
+    /// [`Construction::add`], but the protocol counts it with its owner's
+    /// construction element instead of opening one of its own.
+    pub fn add_output(&mut self, label: &str, def: Def, owner: Id) -> Result<Id, Error> {
+        self.add_with_path_state(label, def, None, Some(owner))
     }
 
     fn add_with_path_state(
@@ -1542,6 +1569,7 @@ impl Construction {
         label: &str,
         def: Def,
         saved_path: Option<PathState>,
+        owner: Option<Id>,
     ) -> Result<Id, Error> {
         if label.is_empty() {
             return Err(Error::EmptyLabel);
@@ -1632,10 +1660,18 @@ impl Construction {
         self.labels.push(label.to_string());
         self.children.push(Vec::new());
         self.by_label.insert(label.to_string(), id);
-        // The protocol step follows the construction while it is at its
-        // end: every add moves it onto the new object (`Construction.add`
-        // of a construction without the protocol view).
-        self.step = (self.step + 1).min(self.defs.len() as i32 - 1);
+        // Every element opened here moves the protocol step onto itself
+        // (`addToConstructionList` does `++step`); a further output leaves
+        // the step on its owner's element.
+        let element = match owner {
+            Some(owner) => self.element_of[owner.0],
+            None => {
+                self.elements.push(id.0 as u32);
+                self.step = (self.step + 1).min(self.elements.len() as i32 - 1);
+                self.elements.len() as u32 - 1
+            }
+        };
+        self.element_of.push(element);
         if let Def::Measure(MeasureDef::ConstructionStep(_)) = def {
             self.protocol.push(id.0);
         }
@@ -1649,18 +1685,49 @@ impl Construction {
     }
 
     /// `CmdSetConstructionStep`: moves the protocol step, clamped to the
-    /// construction, and recomputes the objects that read it.
+    /// construction, and recomputes the objects that read it. The clamped
+    /// value stays a `long` until the end, as `Math.round` returns one:
+    /// `SetConstructionStep(infinity)` reaches the last step instead of
+    /// wrapping.
     pub fn set_construction_step(&mut self, value: f64) {
-        let mut new_step = crate::expr::math::java_round(value - 1.0) as i32;
-        let steps = self.defs.len() as i32;
+        let mut new_step = crate::expr::math::java_round(value - 1.0) as f64;
+        let steps = self.elements.len() as f64;
         if new_step >= steps {
-            new_step = steps - 1;
+            new_step = steps - 1.0;
         }
+        // `(int)` of the double: saturating, as Java casts are
+        let new_step = new_step as i32;
         if new_step == self.step || new_step < -1 {
             return;
         }
         self.step = new_step;
         self.update_protocol();
+    }
+
+    /// The position of the construction element `id` belongs to
+    /// (`GeoElement.getConstructionIndex`: its own for a free object, its
+    /// algorithm's for a dependent one).
+    pub(crate) fn element_of(&self, id: Id) -> i32 {
+        self.element_of.get(id.0).map_or(-1, |&e| e as i32)
+    }
+
+    /// Moves the just-added object `id` into the construction element of
+    /// `owner`: the entry it opened itself, if any, is the last one and
+    /// closes again. For the outputs that an expression defines (the
+    /// selector of a line/circle intersection), which [`Self::add_output`]
+    /// cannot reach.
+    pub(crate) fn adopt_output(&mut self, id: Id, owner: Id) {
+        if self.elements.last() == Some(&(id.0 as u32)) {
+            self.elements.pop();
+            if self.step >= self.elements.len() as i32 {
+                self.step = self.elements.len() as i32 - 1;
+            }
+        }
+        if let Some(&element) = self.element_of.get(owner.0) {
+            if let Some(slot) = self.element_of.get_mut(id.0) {
+                *slot = element;
+            }
+        }
     }
 
     /// Recomputes the objects that read the construction step and whatever
@@ -2314,7 +2381,7 @@ impl Construction {
             return Err(Error::NotFinite);
         }
         let state = PathState::saved(self, path, x, y, bounds);
-        self.add_with_path_state(label, Def::Path(PathDef::On { path }), Some(state))
+        self.add_with_path_state(label, Def::Path(PathDef::On { path }), Some(state), None)
     }
 
     /// Gives the point on a path `id` the state `state` read from another

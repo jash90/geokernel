@@ -72,6 +72,23 @@
           "a": { "type": "number", "defined": true, "value": 9.99997000002E17 }
         }
       ]
+    },
+    {
+      "id": "financial-npr-005",
+      "group": "financial",
+      "script": [
+        "a = nPr(10^40, 2)",
+        "b = nPr(10^300, 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
     }
   ]
 }

@@ -136,6 +136,13 @@ cases.case("future", [
 cases.case("future", [
     "f = FutureValue(-3, 0.07, -13)",
 ], [])
+# an overflowing input is an undefined number, which the setters reject
+cases.case("future", [
+    "f = FutureValue(0, 4, 1/0, 13)",
+], [])
+cases.case("future", [
+    "f = FutureValue(0, 4, 10^400, 13)",
+], [])
 
 # PresentValue: what the stream is worth today.
 cases.case("present", [
@@ -184,6 +191,15 @@ cases.case("npr", [
 ], [])
 cases.case("npr", [
     "a = nPr(1000000, 3)",
+], [])
+# beyond 128 bits: the decimal of n - r equals that of n, so the product
+# of the factors is empty
+cases.case("npr", [
+    "a = nPr(10^40, 2)", "b = nPr(10^300, 0)",
+], [])
+# nCr in the same range keeps the log value
+cases.case("ncr", [
+    "a = nCr(10^40, 2)",
 ], [])
 
 cases.write()

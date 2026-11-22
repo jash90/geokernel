@@ -318,6 +318,138 @@
           }
         }
       ]
+    },
+    {
+      "id": "misc-hull-007",
+      "group": "misc",
+      "script": [
+        "l = {(0, 0), (4, 0)}",
+        "h = ConvexHull(l)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 0.0 }
+            ]
+          },
+          "h": {
+            "type": "locus",
+            "defined": true,
+            "points": [
+              [0.0, 0.0, false],
+              [4.0, 0.0, true],
+              [0.0, 0.0, true]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "misc-hull-008",
+      "group": "misc",
+      "script": [
+        "l = {(0, 0), (0, 0), (4, 0), (4, 0)}",
+        "h = Hull(l, 1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 0.0 }
+            ]
+          },
+          "h": {
+            "type": "locus",
+            "defined": true,
+            "points": [
+              [0.0, 0.0, false],
+              [4.0, 0.0, true],
+              [0.0, 0.0, true]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "misc-hull-009",
+      "group": "misc",
+      "script": [
+        "l = {(2, 2), (2, 2), (2, 2)}",
+        "h = Hull(l, 1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "h": {
+            "type": "locus",
+            "defined": true,
+            "points": [
+              [2.0, 2.0, false],
+              [2.0, 2.0, true]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "misc-hull-010",
+      "group": "misc",
+      "script": [
+        "l = {(0, 0), (1, 1), (2, 2), (3, 3)}",
+        "h = ConvexHull(l)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+              { "type": "point", "defined": true, "x": 3.0, "y": 3.0 }
+            ]
+          },
+          "h": {
+            "type": "locus",
+            "defined": true,
+            "points": [
+              [0.0, 0.0, false],
+              [3.0, 3.0, true],
+              [0.0, 0.0, true]
+            ]
+          }
+        }
+      ]
     }
   ]
 }

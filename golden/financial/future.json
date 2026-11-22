@@ -144,6 +144,36 @@
           "f": { "type": "number", "defined": false }
         }
       ]
+    },
+    {
+      "id": "financial-future-009",
+      "group": "financial",
+      "script": [
+        "f = FutureValue(0, 4, 1/0, 13)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "financial-future-010",
+      "group": "financial",
+      "script": [
+        "f = FutureValue(0, 4, 10^400, 13)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": { "type": "number", "defined": false }
+        }
+      ]
     }
   ]
 }
