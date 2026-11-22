@@ -428,7 +428,7 @@ pub(super) enum Val {
 }
 
 impl Val {
-    fn num(self) -> f64 {
+    pub(super) fn num(self) -> f64 {
         match self {
             Val::N(v) => v,
             Val::V(..) => f64::NAN,
@@ -723,7 +723,7 @@ pub(super) fn subtree(c: &Construction, e: &Entry, i: u32, x: f64) -> Val {
     Ctx::<false>::new(c, e, &Env::Pair(x, 0.0)).full(i).val
 }
 
-pub(super) fn system_locals(ctx: &Ctx<'_, true>, root: u32, depth: u32, values: &[f64]) -> f64 {
+pub(super) fn system_locals(ctx: &Ctx<'_, true>, root: u32, depth: u32, values: &[f64]) -> Val {
     if let Some((&x, rest)) = values.split_first() {
         let local = Local {
             depth,
@@ -742,8 +742,10 @@ pub(super) fn system_locals(ctx: &Ctx<'_, true>, root: u32, depth: u32, values: 
             depth + 1,
             rest,
         )
+    } else if ctx.e.tys[root as usize] == Ty::Bool {
+        ctx.full(root).val
     } else {
-        ctx.fast(root)
+        Val::N(ctx.fast(root))
     }
 }
 
@@ -864,8 +866,8 @@ impl<const M: bool> Ctx<'_, M> {
                 let y = self.full_number(b);
                 let v = self
                     .meter
-                    .map(|meter| super::sample_system(self.c, f, x, &[y], meter));
-                Ex::plain(N(v.unwrap_or(f64::NAN)))
+                    .map(|meter| super::system_value(self.c, f, x, &[y], meter));
+                Ex::plain(v.unwrap_or(N(f64::NAN)))
             }
             Node::Side(..) => Ex::plain(N(f64::NAN)),
             Node::Inverse(a) => Ex::plain(N(

@@ -78,6 +78,7 @@ pub(crate) mod derivative;
 pub(crate) mod equation;
 mod eval;
 pub(crate) mod fraction;
+pub(crate) mod inequality;
 mod inverse;
 #[doc(hidden)]
 pub use eval::{work_done, MAX_ELEMENTS, MAX_EVALUATION_WORK, MAX_OVERRUN};
@@ -98,7 +99,7 @@ impl IntersectionWork {
         if !self.charge(1) {
             return f64::NAN;
         }
-        sample_system(c, id, t, state, &self.0)
+        system_value(c, id, t, state, &self.0).num()
     }
 
     pub(crate) fn exhausted(&self) -> bool {
@@ -106,9 +107,10 @@ impl IntersectionWork {
     }
 }
 
-fn sample_system(c: &Construction, id: Id, t: f64, state: &[f64], meter: &eval::Lists) -> f64 {
+fn system_value(c: &Construction, id: Id, t: f64, state: &[f64], meter: &eval::Lists) -> eval::Val {
+    use eval::Val::N;
     let Def::Expr(d) = c.def(id) else {
-        return f64::NAN;
+        return N(f64::NAN);
     };
     let function = entry(c, d);
     let env = eval::Env::Pair(t, state.first().copied().unwrap_or(0.0));
@@ -121,13 +123,13 @@ fn sample_system(c: &Construction, id: Id, t: f64, state: &[f64], meter: &eval::
             let mut args = [0.0; 16];
             let n = usize::from(arity.saturating_sub(1));
             if n == 0 || n > args.len() {
-                return f64::NAN;
+                return N(f64::NAN);
             }
             let supplied = state.len().min(n);
             args[..supplied].copy_from_slice(&state[..supplied]);
             let time = eval::Local {
                 depth: 0,
-                value: eval::Val::N(t),
+                value: N(t),
                 run: None,
                 vector: false,
                 text: None,
@@ -146,17 +148,19 @@ fn sample_system(c: &Construction, id: Id, t: f64, state: &[f64], meter: &eval::
         (Value::Function, _) => {
             if function.function_of_y {
                 let env = eval::Env::Value(state.first().copied().unwrap_or(f64::NAN));
-                eval::Ctx { env: &env, ..ctx }.fast(function.root)
+                N(eval::Ctx { env: &env, ..ctx }.fast(function.root))
             } else {
-                ctx.fast(function.root)
+                N(ctx.fast(function.root))
             }
         }
-        (Value::FunctionNVar, Node::Cas(..)) => ctx.fast(function.root),
+        (Value::FunctionNVar, Node::Cas(..)) => N(ctx.fast(function.root)),
         (Value::FunctionNVar, _) => {
-            equation::sample_side(c, id, t, state.first().copied().unwrap_or(0.0), meter)
-                .unwrap_or(f64::NAN)
+            N(
+                equation::sample_side(c, id, t, state.first().copied().unwrap_or(0.0), meter)
+                    .unwrap_or(f64::NAN),
+            )
         }
-        _ => f64::NAN,
+        _ => N(f64::NAN),
     }
 }
 
@@ -1996,6 +2000,9 @@ fn define_with_coordinates(
     rhs: &str,
     vector_label: Option<bool>,
 ) -> Result<Id, String> {
+    if let Some(result) = define_plane_inequality(c, name, rhs) {
+        return result;
+    }
     let parsed = match parse::parse(c, rhs) {
         Ok(parsed) => parsed,
         Err(error) => match parse::parse_equation(c, rhs) {
@@ -2038,6 +2045,25 @@ fn define_with_coordinates(
         Ty::Function => return Err("a function needs an argument".into()),
     };
     add(c, name, parsed, kind)
+}
+
+pub(crate) fn define_plane_inequality(
+    c: &mut Construction,
+    label: &str,
+    rhs: &str,
+) -> Option<Result<Id, String>> {
+    if !rhs.contains(['<', '>']) || !rhs.contains('y') {
+        return None;
+    }
+    let mut parsed = parse::parse_equation(c, rhs).ok()?;
+    if !parsed.uses_y || parsed.tys[parsed.root as usize] != Ty::Bool {
+        return None;
+    }
+    parsed.nodes.push(Node::SystemFunction(2, parsed.root));
+    parsed.lits.push(Lit::default());
+    parsed.tys.push(Ty::Bool);
+    parsed.root = parsed.nodes.len() as u32 - 1;
+    Some(add(c, label, parsed, Kind::FunctionNVar))
 }
 
 /// ExpressionNode.evaluatesToVectorNotPoint, for an unlabelled 2D input.

@@ -66,7 +66,7 @@ const TRANSFORMABLE: &[Kind] = &[
     Kind::Polygon,
     Kind::PolyLine,
 ];
-const DILATABLE_CURVE: &[Kind] = &[Kind::Curve];
+const DILATABLE_CURVE_OR_IMAGE: &[Kind] = &[Kind::Curve, Kind::Image];
 const VECTOR: &[Kind] = &[Kind::Vector];
 pub(crate) fn shear_axis(shear: bool) -> &'static [Kind] {
     if shear {
@@ -107,7 +107,8 @@ fn of_kind(kind: Kind) -> &'static [Kind] {
         Kind::Sector => &[Kind::Sector],
         Kind::Locus => &[Kind::Locus],
         Kind::Curve => &[Kind::Curve],
-        Kind::Button | Kind::InputBox | Kind::Image | Kind::PieChart | Kind::ImplicitCurve => &[],
+        Kind::Image => &[Kind::Image],
+        Kind::Button | Kind::InputBox | Kind::PieChart | Kind::ImplicitCurve => &[],
     }
 }
 
@@ -775,11 +776,11 @@ impl Group for TransformDef {
                     if matches!(
                         self,
                         Self::Dilate {
-                            kind: Kind::Curve,
+                            kind: Kind::Curve | Kind::Image,
                             ..
                         }
                     ) {
-                        DILATABLE_CURVE
+                        DILATABLE_CURVE_OR_IMAGE
                     } else {
                         TRANSFORMABLE
                     },
@@ -794,6 +795,9 @@ impl Group for TransformDef {
     }
 
     fn compute(&self, c: &Construction) -> Option<Value> {
+        if self.kind() == Kind::Image {
+            return c.transformed_image_value(Def::Transform(*self));
+        }
         if let TransformDef::Invert { src, circle } = *self {
             let p = c.point(src)?;
             let (x, y) = invert_point(p, c.circle(circle)?)?;
@@ -1032,9 +1036,9 @@ fn parse_transform(c: &Construction, func: &str, args: &[&str]) -> Result<Transf
         && args
             .first()
             .and_then(|label| c.id(label))
-            .is_some_and(|id| c.kind(id) == Kind::Curve)
+            .is_some_and(|id| DILATABLE_CURVE_OR_IMAGE.contains(&c.kind(id)))
     {
-        DILATABLE_CURVE
+        DILATABLE_CURVE_OR_IMAGE
     } else {
         TRANSFORMABLE
     };

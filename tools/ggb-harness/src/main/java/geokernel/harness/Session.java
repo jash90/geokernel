@@ -1,15 +1,21 @@
 package geokernel.harness;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.IdentityHashMap;
+import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.imageio.ImageIO;
 
 import org.geogebra.common.factories.AwtFactoryCommon;
 import org.geogebra.common.jre.headless.AppCommon;
@@ -23,6 +29,7 @@ import org.geogebra.common.kernel.algos.AlgoConicPartCircumcircle;
 import org.geogebra.common.kernel.algos.AlgoConicPartConicPoints;
 import org.geogebra.common.kernel.MyPoint;
 import org.geogebra.common.kernel.algos.AlgoElement;
+import org.geogebra.common.kernel.algos.AlgoIntersectCurveCurve;
 import org.geogebra.common.kernel.algos.AlgoIntersectLineCurve;
 import org.geogebra.common.kernel.algos.AlgoIntersectLinePolyLine;
 import org.geogebra.common.kernel.algos.AlgoIntersectPolyLines;
@@ -33,12 +40,14 @@ import org.geogebra.common.kernel.algos.AlgoPointInRegion;
 import org.geogebra.common.kernel.algos.AlgoRayPointVector;
 import org.geogebra.common.kernel.algos.AlgoRoots;
 import org.geogebra.common.kernel.algos.AlgoSemicircle;
+import org.geogebra.common.kernel.algos.AlgoVertexIneq;
 import org.geogebra.common.kernel.commands.AlgebraProcessor;
 import org.geogebra.common.kernel.geos.GeoConic;
 import org.geogebra.common.kernel.geos.GeoConicPart;
 import org.geogebra.common.kernel.geos.GeoElement;
 import org.geogebra.common.kernel.geos.GeoFunction;
 import org.geogebra.common.kernel.geos.GeoFunctionNVar;
+import org.geogebra.common.kernel.geos.GeoImage;
 import org.geogebra.common.kernel.geos.GeoText;
 import org.geogebra.common.kernel.geos.GeoLine;
 import org.geogebra.common.kernel.geos.GeoList;
@@ -79,10 +88,12 @@ import org.geogebra.common.util.StringUtil;
  */
 final class Session {
 
+    private final Map<String, BufferedImage> fixtureImages = new LinkedHashMap<>();
+
     private static final Pattern LINE =
             Pattern.compile("^([A-Za-z][A-Za-z0-9']*(?:_\\{[A-Za-z0-9]+\\})?)"
                     + "(\\([A-Za-z][A-Za-z0-9]*(?:, *[A-Za-z][A-Za-z0-9]*)*\\))? = (.+)$");
-    /** `label: lhs = rhs`, an equation line (its `=` belongs to the definition). */
+    /** `label: definition`, where a comparison or equation belongs to the definition. */
     private static final Pattern EQUATION =
             Pattern.compile("^([A-Za-z]+(?:_\\{[A-Za-z0-9]+\\})?): (.+)$");
     /** A scripting command line, which assigns nothing. */
@@ -219,11 +230,22 @@ final class Session {
     /** Runs one `label = definition` or `label: equation` line and checks
      * what GeoGebra created. */
     GeoElement run(String line) {
+        if (line.startsWith("$imageAsset(")) {
+            List<String> args = arguments(line);
+            try {
+                fixtureImages.put(fixtureText(args.get(0)),
+                        ImageIO.read(new ByteArrayInputStream(fixtureBytes(args.get(1).trim()))));
+            } catch (IOException ex) {
+                throw new IllegalArgumentException("invalid raster fixture", ex);
+            }
+            return null;
+        }
         Matcher m = LINE.matcher(line);
         boolean equationLine = false;
         if (!m.matches()) {
             m = EQUATION.matcher(line);
-            if (m.matches() && m.group(2).contains("=")) {
+            if (m.matches() && (m.group(2).contains("=") || m.group(2).contains("<")
+                    || m.group(2).contains(">"))) {
                 equationLine = true;
             } else if (SCRIPTING.matcher(line).matches()) {
                 return runScriptingCommand(line);
@@ -247,6 +269,9 @@ final class Session {
                 : transformed != null ? transformed : expectedType(label, definition);
         if (objects.containsKey(label) || kernel.lookupLabel(label) != null) {
             throw new IllegalArgumentException("label used twice: " + label);
+        }
+        if (definition.startsWith("$image(")) {
+            return addFixtureImage(label, definition);
         }
         if (definition.startsWith("Relation(")) {
             List<String> args = arguments(definition);
@@ -281,8 +306,10 @@ final class Session {
                 growingPoints.put(parent, "");
             }
             if (trackBoundaryGrowth && (parent instanceof AlgoIntersectLineCurve
+                    || parent instanceof AlgoIntersectCurveCurve
                     || parent instanceof AlgoIntersectLinePolyLine
                     || parent instanceof AlgoIntersectPolyLines
+                    || parent instanceof AlgoVertexIneq
                     || parent instanceof AlgoIntersectImplicitpolyParametric
                     || parent instanceof AlgoIntersectImplicitpolyPolyLine
                     || parent instanceof AlgoIntersectImplicitPolynomials
@@ -389,12 +416,14 @@ final class Session {
                     + geo.getLabelSimple());
         }
         boolean expression = expected == null;
+        boolean planeInequality = geo instanceof GeoFunctionNVar f && f.isBooleanFunction()
+                && f.getFunctionVariables().length == 2;
         if (equationLine) {
-            // an equation makes a line, a conic or (of `y = ...` alone) a
-            // function, and every conic of one is recorded as a general conic
+            // Every conic defined by an equation is recorded as a general conic.
             String type = geo instanceof GeoConic && !(geo instanceof GeoConicPart)
                     ? "conic" : typeOf(geo);
-            if (!Set.of("line", "conic", "function", "implicit").contains(type)) {
+            if (!Set.of("line", "conic", "function", "implicit").contains(type)
+                    && !planeInequality) {
                 throw new IllegalStateException("expected a planar equation from '"
                         + line + "', got " + geo.getClass().getSimpleName());
             }
@@ -404,7 +433,10 @@ final class Session {
         if (nativeCas && geo instanceof GeoList && definition.matches("(N?Solve|N?Solutions)\\(.*")) {
             solutionSets.add(geo);
         }
-        if (functionLine && "function_nvar".equals(expected)
+        if (planeInequality && !functionLine) {
+            expected = "function_nvar";
+        }
+        if ("function_nvar".equals(expected)
                 || nativeCas && geo instanceof GeoFunctionNVar f && f.getFunctionVariables().length > 1
                         && definition.matches("(Expand|Factor|IFactor|Simplify|Numerator|Denominator)\\(.*")) {
             namedMultivariate.add(geo);
@@ -414,7 +446,7 @@ final class Session {
             // the class of the folded expression decides, not the label
             expected = actual.equals("vector") ? "vector" : "point";
         }
-        if (expression && !equationLine) {
+        if (expression && !equationLine && !planeInequality) {
             expected = expressionType(label, actual, line);
         }
         if (!expected.equals(actual)) {
@@ -443,6 +475,62 @@ final class Session {
             conics.add(geo);
         }
         return geo;
+    }
+
+    private static byte[] fixtureBytes(String field) {
+        if (!field.startsWith("_")) {
+            throw new IllegalArgumentException("invalid encoded fixture field");
+        }
+        return HexFormat.of().parseHex(field.substring(1));
+    }
+
+    private static String fixtureText(String field) {
+        return new String(fixtureBytes(field), StandardCharsets.UTF_8);
+    }
+
+    private GeoImage addFixtureImage(String label, String definition) {
+        List<String> args = arguments(definition).stream().map(String::trim).toList();
+        String file = fixtureText(args.get(0));
+        BufferedImage raster = fixtureImages.get(file);
+        if (raster == null || args.size() != 6 || !args.get(4).equals("_")) {
+            throw new IllegalArgumentException("invalid raster fixture placement");
+        }
+        var image = new GeoImage(kernel.getConstruction());
+        image.setImageFileName(file, raster.getWidth(), raster.getHeight());
+        image.setAlphaValue(Float.parseFloat(args.get(1)));
+        image.setInBackground(Boolean.parseBoolean(args.get(2)));
+        image.setInterpolate(Boolean.parseBoolean(args.get(3)));
+        String placement = args.get(5);
+        List<String> coordinates = arguments(placement).stream().map(String::trim).toList();
+        if (placement.startsWith("screen(")) {
+            image.setAbsoluteScreenLocActive(true);
+            image.setAbsoluteScreenLoc(Integer.parseInt(coordinates.get(0)),
+                    Integer.parseInt(coordinates.get(1)));
+        } else if (placement.startsWith("world(") && coordinates.get(1).equals("false")) {
+            for (int i = 0; i < 3; i++) {
+                String corner = coordinates.get(i + 2);
+                if (corner.startsWith("point(")) {
+                    String point = fixtureText(arguments(corner).get(0));
+                    image.setCorner((GeoPoint) kernel.lookupLabel(point), i);
+                } else if (corner.startsWith("xy(")) {
+                    List<String> xy = arguments(corner);
+                    image.setRealWorldCoord(Double.parseDouble(xy.get(0)),
+                            Double.parseDouble(xy.get(1)), i);
+                } else if (!corner.equals("_")) {
+                    throw new IllegalArgumentException("invalid raster fixture corner");
+                }
+            }
+            if (Boolean.parseBoolean(coordinates.get(0))) {
+                image.setCentered(true);
+            }
+        } else {
+            throw new IllegalArgumentException("invalid raster fixture placement");
+        }
+        image.setLabel(label);
+        image.setEuclidianVisible(true);
+        image.updateCascade();
+        objects.put(label, image);
+        return image;
     }
 
     /**
@@ -975,6 +1063,9 @@ final class Session {
         if (geo instanceof GeoText) {
             return "text";
         }
+        if (geo instanceof GeoImage) {
+            return "image";
+        }
         if (geo instanceof GeoLocus) {
             return "locus";
         }
@@ -1213,6 +1304,9 @@ final class Session {
             return false;
         }
         switch (m.group(1)) {
+            case "Corner":
+                return !(objects.get(arguments(definition).get(0)) instanceof GeoNumeric)
+                        && !NUMBER.matcher(arguments(definition).get(0)).matches();
             case "Vertex":
             case "InteriorAngles":
                 return true;
@@ -1736,6 +1830,8 @@ final class Session {
                 return arcFields((GeoConicPart) geo);
             case "text":
                 f.put("text", ((GeoText) geo).getTextString());
+                return f;
+            case "image":
                 return f;
             case "angle":
             case "number":

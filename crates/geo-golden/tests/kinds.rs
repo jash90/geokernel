@@ -478,6 +478,36 @@ const SAMPLE_CASES: &[&str] = &[
     "conics-transform-009",
     "conics-transform-017",
     "conics-transform-025",
+    "corners-dilate-001",
+    "corners-dilate-002",
+    "corners-dilate-003",
+    "corners-dilate-004",
+    "corners-geometry-001",
+    "corners-growth-001",
+    "corners-growth-002",
+    "corners-inequality-001",
+    "corners-inequality-003",
+    "corners-inequality-004",
+    "corners-inequality-005",
+    "corners-matrix-001",
+    "corners-matrix-002",
+    "corners-matrix-003",
+    "corners-matrix-004",
+    "corners-raster-001",
+    "corners-vertex-001",
+    "corners-vertex-004",
+    "corners-vertex-005",
+    "corners-vertex-006",
+    "corners-vertex-007",
+    "corners-vertex-008",
+    "corners-vertex-009",
+    "curvepairs-bounded-001",
+    "curvepairs-coincident-001",
+    "curvepairs-coincident-002",
+    "curvepairs-independent-001",
+    "curvepairs-order-001",
+    "curvepairs-parabola-001",
+    "curvepairs-parabola-002",
     "discrete-delaunay-001",
     "discrete-delaunay-006",
     "discrete-delaunay-007",
@@ -608,10 +638,24 @@ const SAMPLE_CASES: &[&str] = &[
     "geomformsreview-functionofy-001",
     "geomformsreview-odenamed-001",
     "geomformsreview-shapes-001",
+    "georestclip-conicpart-002",
+    "georestclip-conicpart-005",
+    "georestclip-conicpart-008",
+    "georestclip-conicpart-011",
+    "georestclip-conicpart-014",
+    "georestclip-conicpart-017",
+    "georestclip-conicpart-020",
+    "georestclip-conicpart-023",
+    "georestclip-conicpart-026",
+    "georestclip-conicpart-029",
+    "georestclip-conicpart-032",
+    "georestclip-conicpart-035",
+    "georestclip-paths-003",
     "georestclip-polyline-001",
     "georestclip-polyline-002",
     "georestclip-polyline-003",
     "georestclip-polyline-004",
+    "georestclip-region-003",
     "georestintersect-affine-001",
     "georestintersect-affine-002",
     "georestintersect-affine-003",
@@ -745,6 +789,8 @@ const SAMPLE_CASES: &[&str] = &[
     "lists-textelem-016",
     "lists-textelem-017",
     "lists-textelem-018",
+    "lists-textelem-019",
+    "lists-textlists-020",
     "locus-arc-001",
     "locus-arc-002",
     "locus-arc-003",
@@ -762,6 +808,9 @@ const SAMPLE_CASES: &[&str] = &[
     "logic-boolconst-001",
     "logic-boolconst-002",
     "matrixdilate-applypoly-003",
+    "misc-name-001",
+    "misc-sum-004",
+    "misc-sum-005",
     "paths-closest-003",
     "paths-ray-001",
     "paths-ray-002",
@@ -832,6 +881,21 @@ fn samples() -> Samples {
     let cases = model::load_all(&repo_root()).unwrap_or_else(|e| panic!("golden data: {e}"));
     let gaps = gaps::load().unwrap_or_else(|e| panic!("{e}"));
     let mut s = Samples::default();
+    if !regenerating() {
+        // Keep allow-list entries for cases that acquire a gap. They can
+        // contribute samples again once the gap is closed.
+        let known: BTreeSet<&str> = cases
+            .iter()
+            .filter(|c| c.generator == "ggb-harness")
+            .map(|c| c.id.as_str())
+            .collect();
+        for id in SAMPLE_CASES {
+            assert!(
+                known.contains(id),
+                "{id} is listed in SAMPLE_CASES but is no golden case (regenerate the list)"
+            );
+        }
+    }
     let mut cases: Vec<_> = cases
         .into_iter()
         .filter(|c| c.generator == "ggb-harness" && !gaps.contains_key(&c.id))
@@ -841,15 +905,6 @@ fn samples() -> Samples {
     for case in &cases {
         for e in case.snapshots[0].values() {
             s.recorded.insert(format!("{:?}", e.kind));
-        }
-    }
-    if !regenerating() {
-        let known: BTreeSet<&str> = cases.iter().map(|c| c.id.as_str()).collect();
-        for id in SAMPLE_CASES {
-            assert!(
-                known.contains(id),
-                "{id} is listed in SAMPLE_CASES but is no golden case (regenerate the list)"
-            );
         }
     }
     for case in &cases {
