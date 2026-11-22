@@ -900,7 +900,7 @@ pub(crate) fn children(node: &Node) -> impl Iterator<Item = u32> {
         } => {
             fixed[..3].copy_from_slice(&[formula, initial, count]);
         }
-        Node::Seq(a, b, c, d, _) => fixed = [a, b, c, d],
+        Node::Seq(a, b, c, d, _) => fixed[..4].copy_from_slice(&[a, b, c, d]),
         Node::Financial(_, args) => fixed.copy_from_slice(&args),
         Node::List(first, len) | Node::TextCmd(_, first, len) | Node::Call(_, first, len) => {
             run = first..first.saturating_add(len)

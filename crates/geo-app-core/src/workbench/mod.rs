@@ -149,9 +149,14 @@ impl Workbench {
     /// when the window or scale changed.
     pub fn set_view(&mut self, view: crate::interact::ViewTransform) {
         let v = view.view();
-        let scale = view.scale();
-        self.construction
-            .set_view(v.xmin, v.xmax, v.ymin, v.ymax, scale, scale);
+        self.construction.set_view(
+            v.xmin,
+            v.xmax,
+            v.ymin,
+            v.ymax,
+            view.xscale(),
+            view.yscale(),
+        );
     }
 
     /// Objects exposed to the algebra view and document clients.

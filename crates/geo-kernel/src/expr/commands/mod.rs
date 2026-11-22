@@ -9,7 +9,10 @@
 
 mod algebra;
 
-pub(crate) use algebra::{extrema::brent_minimum, polynomial};
+pub(crate) use algebra::{
+    extrema::{brent_minimum, fmin},
+    polynomial,
+};
 pub(super) mod financial;
 pub(super) mod function_analysis;
 mod geogebra;

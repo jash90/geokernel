@@ -15,7 +15,6 @@
 
 mod base;
 pub(super) mod extrema;
-pub(crate) use self::extrema::fmin;
 mod integers;
 pub(crate) mod polynomial;
 
