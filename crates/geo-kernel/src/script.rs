@@ -133,7 +133,7 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
     if line.is_empty() {
         return Ok(None);
     }
-    if let Some(id) = c.id(line) {
+    if let Some(id) = c.resolve_label(line) {
         return Ok(Some(id));
     }
     if let Some(property) = saved::parse(line) {
@@ -171,7 +171,7 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
     }
     let (name, rhs, colon) = assignment(line).ok_or("expected `name = definition`")?;
     if let Some(label) = definition_label(name) {
-        if let Some(id) = c.id(label) {
+        if let Some(id) = c.resolve_label(label) {
             let original = c.label(id);
             if label != original {
                 let name = format!("{original}{}", &name[label.len()..]);
@@ -186,6 +186,12 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
 /// The visible label assigned by a single-output definition.
 pub fn assignment_label(line: &str) -> Option<&str> {
     assignment(split_comment(line).0).and_then(|(name, _, _)| definition_label(name))
+}
+
+/// The existing object a single assignment would replace, including numeric
+/// subscript aliases.
+pub fn assignment_target(c: &Construction, line: &str) -> Option<Id> {
+    c.resolve_label(assignment_label(line)?)
 }
 
 fn definition_label(name: &str) -> Option<&str> {

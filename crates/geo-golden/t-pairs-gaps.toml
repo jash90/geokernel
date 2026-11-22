@@ -2902,14 +2902,14 @@ mismatches = ["nint_{1}", "nint_{2}"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3040"
-category = "unsupported-command"
-reason = "the kernel refuses the input: `Point` needs a line, segment, ray, circle, conic, polygon, polyline, arc, sector or curve, and `nint_1` is a locus"
+category = "cascade"
+reason = "the kernel refuses the input: unknown object `nint_1`; the method's step `commands/CommandsTest.java:3033` fails earlier here, so the object is missing only in its wake"
 mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3041"
-category = "unsupported-command"
-reason = "the kernel refuses the input: `Point` needs a line, segment, ray, circle, conic, polygon, polyline, arc, sector or curve, and `nint_1` is a locus"
+category = "cascade"
+reason = "the kernel refuses the input: unknown object `nint_1`; the method's step `commands/CommandsTest.java:3033` fails earlier here, so the object is missing only in its wake"
 mismatches = ["step"]
 
 [[gap]]

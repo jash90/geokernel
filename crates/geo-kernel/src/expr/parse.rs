@@ -333,7 +333,7 @@ impl Parser<'_> {
 
     /// The object named `label`, if the construction has it.
     pub(super) fn lookup(&self, label: &str) -> Option<Id> {
-        self.c.id(label)
+        self.c.resolve_label(label)
     }
 
     pub(super) fn read(&mut self, id: Id, input: bool) {

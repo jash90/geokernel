@@ -1209,25 +1209,28 @@ impl Construction {
         self.by_label
             .get(label)
             .copied()
-            .or_else(|| {
-                let (base, subscript) = label.rsplit_once('_')?;
-                let alternate = if let Some(index) = subscript
-                    .strip_prefix('{')
-                    .and_then(|index| index.strip_suffix('}'))
-                {
-                    if index.is_empty() || !index.bytes().all(|b| b.is_ascii_digit()) {
-                        return None;
-                    }
-                    format!("{base}_{index}")
-                } else {
-                    if subscript.is_empty() || !subscript.bytes().all(|b| b.is_ascii_digit()) {
-                        return None;
-                    }
-                    format!("{base}_{{{subscript}}}")
-                };
-                self.by_label.get(&alternate).copied()
-            })
             .or_else(|| axis::lookup(label))
+    }
+
+    pub(crate) fn resolve_label(&self, label: &str) -> Option<Id> {
+        self.id(label).or_else(|| {
+            let (base, subscript) = label.rsplit_once('_')?;
+            let alternate = if let Some(index) = subscript
+                .strip_prefix('{')
+                .and_then(|index| index.strip_suffix('}'))
+            {
+                if index.is_empty() || !index.bytes().all(|b| b.is_ascii_digit()) {
+                    return None;
+                }
+                format!("{base}_{index}")
+            } else {
+                if subscript.is_empty() || !subscript.bytes().all(|b| b.is_ascii_digit()) {
+                    return None;
+                }
+                format!("{base}_{{{subscript}}}")
+            };
+            self.id(&alternate)
+        })
     }
 
     pub fn label(&self, id: Id) -> &str {
@@ -2093,7 +2096,7 @@ impl Construction {
         if label.is_empty() {
             return Err(Error::EmptyLabel);
         }
-        if self.id(label).is_some() {
+        if self.resolve_label(label).is_some() {
             return Err(Error::DuplicateLabel(label.to_string()));
         }
         if let Some(axis) = axis::definition(def) {

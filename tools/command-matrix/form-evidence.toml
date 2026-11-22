@@ -491,7 +491,7 @@ cases = ["conics-tangent-001", "conics-tangent-004", "conics-tangent-007"]
 [[form]]
 command = "Intersect"
 form = "line,conic,number"
-cases = ["conics-intersection-001", "conics-intersection-002", "conics-intersection-003", "redefine-intersection-001", "redefine-intersection-002", "redefine-order-001"]
+cases = ["conics-intersection-001", "conics-intersection-002", "conics-intersection-003"]
 
 [[form]]
 command = "Intersect"
@@ -526,7 +526,7 @@ cases = ["intersections-conics-001", "intersectconics-pencil-001", "intersectcon
 [[form]]
 command = "Intersect"
 form = "conic,conic,number"
-cases = ["intersections-conics-002", "intersectconics-index-001", "intersectconics-index-002", "redefine-circlepair-001"]
+cases = ["intersections-conics-002", "intersectconics-index-001", "intersectconics-index-002"]
 
 [[form]]
 command = "Intersect"
@@ -1081,7 +1081,7 @@ cases = ["conics-tangent-002", "conics-tangent-005", "conics-tangent-008"]
 [[form]]
 command = "Tangent"
 form = "point,conic"
-cases = ["conics-tangent-001", "conics-tangent-004", "conics-tangent-007", "redefine-tangent-001"]
+cases = ["conics-tangent-001", "conics-tangent-004", "conics-tangent-007"]
 
 [[form]]
 command = "TiedRank"

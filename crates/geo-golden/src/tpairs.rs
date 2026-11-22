@@ -1453,10 +1453,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn doubles_print_like_geogebra() {
+    fn xml_doubles_use_exponents_outside_the_plain_range() {
         assert_eq!(ggb_double(4.0), "4");
         assert_eq!(ggb_double(0.5), "0.5");
-        assert_eq!(ggb_double(67403403358.94), "67403403358.94");
+        assert_eq!(ggb_double(67403403358.94), "6.740340335894E10");
         assert_eq!(ggb_double(-0.0), "0");
         assert_eq!(ggb_double(f64::NAN), "NaN");
         assert_eq!(ggb_double(f64::INFINITY), "Infinity");

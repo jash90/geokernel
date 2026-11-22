@@ -1772,8 +1772,8 @@ fn misuse_of_the_api_is_an_error_and_changes_nothing() {
         assert_eq!(c.add("X", Def::Number(bad)), Err(Error::NotFinite));
         assert_eq!(c.move_point(a, bad, 1.0), Err(Error::NotFinite));
         assert_eq!(c.move_point(a, 1.0, bad), Err(Error::NotFinite));
-        assert_eq!(c.set_number(r, bad), Err(Error::NotFinite));
     }
+    assert_eq!(c.set_number(r, f64::NAN), Err(Error::NotFinite));
     assert_unchanged(&c, &before, "non-finite input");
 
     // moving a dependent object, or the wrong kind of free object

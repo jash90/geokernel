@@ -1438,15 +1438,14 @@ impl Log {
         expected: Option<&[&str]>,
     ) -> Result<Option<Id>, String> {
         // Validate the expected label before changing an existing definition.
-        if let (Some(label), Some(expected)) =
-            (geo_kernel::script::assignment_label(line), expected)
+        if let (Some(id), Some(expected)) =
+            (geo_kernel::script::assignment_target(c, line), expected)
         {
-            if let Some(id) = c.id(label) {
-                if expected != [c.label(id)] {
-                    return Err(format!(
-                        "it would redefine {label:?} instead of creating {expected:?}"
-                    ));
-                }
+            let label = c.label(id);
+            if expected != [label] {
+                return Err(format!(
+                    "it would redefine {label:?} instead of creating {expected:?}"
+                ));
             }
         }
         let at = c.checkpoint();
