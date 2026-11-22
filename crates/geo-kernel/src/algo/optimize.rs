@@ -273,7 +273,8 @@ const MAX_ITERATIONS: usize = 101;
 /// *Computer Methods for Mathematical Computations*, 1977), parabolic
 /// interpolation safeguarded by golden-section steps.
 ///
-/// The reference's search is reproduced from its recorded behaviour: the
+/// The details are fixed from black-box recordings of the reference's
+/// search (its sample sequences, not its source): the
 /// relative part of the step floor is the square root of `1.2e-16`; a zero
 /// or undefined step falls back to the floor downwards; a parabola with an
 /// undefined coefficient is refused; a sample that equals the best value
