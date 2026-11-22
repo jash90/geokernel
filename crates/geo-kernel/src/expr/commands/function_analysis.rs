@@ -106,6 +106,19 @@ pub(super) fn parse(p: &mut Parser<'_>, name: &str) -> Result<Option<u32>, Strin
 impl<const M: bool> Ctx<'_, M> {
     pub(in crate::expr) fn vertex_form(&self, root: u32) -> Val {
         match self.node(root) {
+            Node::Obj(id) if matches!(self.c.kind(id), Kind::Conic | Kind::Circle) => {
+                let vertex_form = self.c.conic(id).is_some_and(|conic| {
+                    let [xx, yy, _, xy, x, y] = conic.matrix;
+                    let zero = crate::tol::STANDARD_PRECISION;
+                    conic.defined
+                        && yy.abs() < zero
+                        && xy.abs() < zero
+                        && y.abs() >= zero
+                        && xx != 0.0
+                        && x == 0.0
+                });
+                Val::B(vertex_form, true)
+            }
             Node::Apply(f, x) if matches!(self.node(x), Node::Var) => {
                 let source = function_entry(self.c, f).or_else(|| {
                     self.c
@@ -185,11 +198,12 @@ pub(super) fn normalize<const M: bool>(ctx: &Ctx<'_, M>, l: u32) -> Option<(u32,
         return None;
     }
     let read = |i| lists.read(ctx.c, start + i);
-    let kind = read(0).kind;
-    let points = kind == Kind::Point;
-    if !points && !kind.is_number() {
-        return None;
-    }
+    let points = match (read(0).kind, read(len - 1).kind) {
+        (Kind::Point, Kind::Point) => true,
+        (first, last) if first.is_number() && last.is_number() => false,
+        (first, last) if first.is_number() && last != Kind::Point => return Some((lists.len(), 0)),
+        _ => return None,
+    };
     let coordinate = |slot: Slot| {
         if points {
             match slot_val(&slot) {
@@ -216,9 +230,6 @@ pub(super) fn normalize<const M: bool>(ctx: &Ctx<'_, M>, l: u32) -> Option<(u32,
             min[axis] = min[axis].min(value);
             max[axis] = max[axis].max(value);
         }
-    }
-    if !points && !read(len - 1).kind.is_number() {
-        return Some((lists.len(), 0));
     }
     let scale = std::array::from_fn::<_, 2, _>(|i| {
         if max[i] == min[i] {

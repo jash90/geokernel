@@ -2042,6 +2042,15 @@ impl Construction {
     /// Changes a free number and recomputes everything that depends on it.
     /// Returns how many dependent objects were recomputed.
     pub fn set_number(&mut self, id: Id, v: f64) -> Result<usize, Error> {
+        self.update_number(id, v, true)
+    }
+
+    /// A numeric assignment to a slider sets its value outside the drag interval too.
+    pub(crate) fn assign_slider_number(&mut self, id: Id, v: f64) -> Result<usize, Error> {
+        self.update_number(id, v, false)
+    }
+
+    fn update_number(&mut self, id: Id, v: f64, clamp_slider: bool) -> Result<usize, Error> {
         self.last_update_changed_automatic_root = false;
         if let Some(axis) = axis::get(id) {
             return Err(Error::NotFree(axis.label.to_string()));
@@ -2060,7 +2069,7 @@ impl Construction {
             return Err(Error::NotFinite);
         }
         // A slider keeps its value in its active interval.
-        let (new_def, v) = if matches!(new_def, Def::Number(_)) {
+        let (new_def, v) = if clamp_slider && matches!(new_def, Def::Number(_)) {
             let v = self.clamp_slider(id, v);
             (Def::Number(v), v)
         } else {

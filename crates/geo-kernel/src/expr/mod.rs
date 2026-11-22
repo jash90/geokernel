@@ -2156,6 +2156,29 @@ pub(crate) fn define_function(
     function(c, name, parsed, of_y)
 }
 
+pub(crate) fn define_slow_plot(
+    c: &mut Construction,
+    name: &str,
+    source: Id,
+    slider: Id,
+    corners: [Id; 2],
+) -> Result<Id, String> {
+    let mut b = equation::Builder::empty();
+    let [left, right] = corners.map(|id| {
+        let corner = b.push(Node::Obj(id));
+        b.push(Node::Un(Un::X, corner))
+    });
+    let width = b.push(Node::Bin(Bin::Sub, right, left));
+    let fraction = b.push(Node::Obj(slider));
+    let extent = b.push(Node::Bin(Bin::Mul, fraction, width));
+    let cutoff = b.push(Node::Bin(Bin::Add, left, extent));
+    let x = b.push(Node::Var);
+    let condition = b.push(Node::Bin(Bin::Less, x, cutoff));
+    let value = b.push(Node::Apply(source, x));
+    let root = b.push(Node::If(IfMode::List, condition, value, NONE));
+    function(c, name, b.finish(c, root)?, false)
+}
+
 pub(crate) fn define_system_function(
     c: &mut Construction,
     label: &str,

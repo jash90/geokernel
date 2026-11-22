@@ -315,10 +315,28 @@ fn type_node(
         }
         Node::VertexForm(a) => {
             let a = a as usize;
-            let function =
-                matches!(nodes[a], Node::Apply(_, x) if matches!(nodes[x as usize], Node::Var));
-            if !matches!(state.tys[a], Ty::Num(_) | Ty::Bool) || (state.vars[a] == 0 && !function) {
-                return Err("IsVertexForm needs a function".into());
+            let functionable = match nodes[a] {
+                Node::Obj(id) => {
+                    c.kind(id).is_number()
+                        || matches!(
+                            c.kind(id),
+                            Kind::Line
+                                | Kind::Ray
+                                | Kind::Segment
+                                | Kind::Conic
+                                | Kind::Circle
+                                | Kind::Arc
+                                | Kind::Sector
+                        )
+                }
+                Node::Apply(_, x) if matches!(nodes[x as usize], Node::Var) => true,
+                _ => {
+                    matches!(state.tys[a], Ty::Num(_))
+                        || state.tys[a] == Ty::Bool && state.vars[a] > 0
+                }
+            };
+            if !functionable {
+                return Err("IsVertexForm needs a function, number, line or conic".into());
             }
             (
                 Ty::Bool,
@@ -563,6 +581,9 @@ fn type_node(
             (Ty::List(elem), 1 + d, k, v)
         }
         Node::ListOp(op, l, n) => {
+            if op == ListOp::Normalize && !normalize_points_fit(c, nodes, &state.tys, l) {
+                return Err("Normalize cannot read a mixed list as points".into());
+            }
             let elem = match state.tys[l as usize] {
                 Ty::List(e) => e,
                 _ => {
@@ -778,6 +799,35 @@ pub(super) fn join_elem(a: Elem, b: Elem) -> Elem {
         (Elem::Empty, t) | (t, Elem::Empty) => t,
         (a, b) if a == b => a,
         _ => Elem::Any,
+    }
+}
+
+/// The reference reads every entry as a point when the first entry is a
+/// point or the last entry is a point after a numeric scan.
+fn normalize_points_fit(c: &Construction, nodes: &[Node], types: &[Ty], list: u32) -> bool {
+    let fits = |len: usize, first_numeric: bool, is_point: &dyn Fn(usize) -> bool| {
+        len == 0 || !(is_point(0) || first_numeric && is_point(len - 1)) || (0..len).all(is_point)
+    };
+    match nodes[list as usize] {
+        Node::List(start, len) if len != 0 => {
+            let is_point = |i: usize| {
+                let item = start + i as u32;
+                types[item as usize] == Ty::Vec && vec_kind(c, nodes, types, item) == Kind::Point
+            };
+            fits(
+                len as usize,
+                matches!(types[start as usize], Ty::Num(_)),
+                &is_point,
+            )
+        }
+        Node::Obj(id) => c.elements(id).is_none_or(|items| {
+            let first_numeric =
+                matches!(items.get(0), Some(super::Element::Value(kind, _)) if kind.is_number());
+            fits(items.len(), first_numeric, &|i| {
+                items.raw_point(i).is_some()
+            })
+        }),
+        _ => true,
     }
 }
 

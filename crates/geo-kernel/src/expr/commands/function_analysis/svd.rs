@@ -1,4 +1,6 @@
 //! Thin singular value decomposition using cyclic one-sided Jacobi rotations.
+//! See *A One-Sided Jacobi Algorithm for Computing the Singular Value
+//! Decomposition on a Vector Computer* (1989), <https://doi.org/10.1137/0910023>.
 
 type Columns = Vec<Vec<f64>>;
 

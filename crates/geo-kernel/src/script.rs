@@ -231,9 +231,7 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
 }
 
 /// `SlowPlot(f[, repeat])`: the drawn-up-to-here view of the function `f`.
-/// The hidden number between 0 and 1 that GeoGebra animates starts at 0,
-/// so the static function is the part left of the view (`CmdSlowPlot`);
-/// the repeat flag only changes how the animation runs again.
+/// The slider starts at zero and controls how far across the view to plot.
 fn slow_plot(c: &mut Construction, name: &str, args: &[&str]) -> Result<Option<Id>, String> {
     if args.is_empty() || args.len() > 2 {
         return Err(format!(
@@ -245,15 +243,26 @@ fn slow_plot(c: &mut Construction, name: &str, args: &[&str]) -> Result<Option<I
     let result = (|| {
         // the function itself may be written inline, as GeoGebra's argument
         // resolver wraps it
-        let function = match c.id(args[0]).filter(|&id| {
-            c.kind(id) == Kind::Function
-                && !crate::expr::function_signature(c, id).is_some_and(|sig| sig.boolean)
+        let function = match c.id(args[0]).filter(|&id| match c.kind(id) {
+            Kind::Line => true,
+            Kind::Function => {
+                !crate::expr::function_signature(c, id).is_some_and(|sig| sig.boolean)
+            }
+            _ => false,
         }) {
             Some(id) => id,
             None => {
                 let label = format!("\u{0}spf{}", c.len());
-                crate::expr::argument_function(c, args[0], &label)
-                    .ok_or("SlowPlot needs a real-valued function")?
+                let resolved = resolve_geometry_arguments(c, args[0]);
+                let line = parse_def(c, resolved.as_deref().unwrap_or(args[0]))
+                    .ok()
+                    .filter(|def| def.kind() == Kind::Line);
+                if let Some(def) = line {
+                    c.add(&label, def).map_err(|e| e.to_string())?
+                } else {
+                    crate::expr::argument_function(c, args[0], &label)
+                        .ok_or("SlowPlot needs a real-valued function")?
+                }
             }
         };
         if let Some(repeat) = args.get(1) {
@@ -267,14 +276,27 @@ fn slow_plot(c: &mut Construction, name: &str, args: &[&str]) -> Result<Option<I
                 return Err(format!("`{repeat}` is not a number"));
             }
         }
-        let first = format!("\u{0}sp{}", c.len());
-        let corner = crate::algo::point::parse_view_corner(c, &["1"])
-            .expect("corner of the view")
-            .map_err(|e| e.to_string())?;
-        c.add(&first, Def::Point(corner))
-            .map_err(|e| e.to_string())?;
-        let body = format!("If(x < x({first}), {}(x))", c.label(function));
-        crate::expr::define_function(c, name, &body, false).map(Some)
+        let label = (0..=c.len() / 23 + 1)
+            .flat_map(|index| (b'a'..=b'w').map(move |letter| (index, char::from(letter))))
+            .map(|(index, letter)| {
+                if index == 0 {
+                    letter.to_string()
+                } else {
+                    format!("{letter}_{{{index}}}")
+                }
+            })
+            .find(|label| label != name && c.id(label).is_none() && check_label(label).is_ok())
+            .ok_or("no label available for the SlowPlot slider")?;
+        let slider = c.add_slider(&label, 0.0, 1.0).map_err(|e| e.to_string())?;
+        let mut corner = |index| {
+            let label = format!("\0sp{}", c.len());
+            let def = crate::algo::point::parse_view_corner(c, &[index])
+                .expect("corner of the view")
+                .map_err(|e| e.to_string())?;
+            c.add(&label, Def::Point(def)).map_err(|e| e.to_string())
+        };
+        let corners = [corner("1")?, corner("2")?];
+        crate::expr::define_slow_plot(c, name, function, slider, corners).map(Some)
     })();
     if result.is_err() {
         c.discard_since(start);
@@ -324,6 +346,13 @@ fn convert_source(c: &mut Construction, arg: &str) -> Result<Id, String> {
 /// The definition of a labelled line after its name has been read and
 /// checked: the forms of the module documentation other than arithmetic.
 fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Option<Id>, String> {
+    if let Some(id) = c.id(name).filter(|&id| c.slider_interval(id).is_some()) {
+        if let Some(value) = crate::expr::plain_number(rhs) {
+            c.assign_slider_number(id, value)
+                .map_err(|e| e.to_string())?;
+            return Ok(Some(id));
+        }
+    }
     // `name = SetConstructionStep(n)` runs the script too: a scripting
     // command's returned argument is not labelable, so even the labelled
     // form creates no object (`CmdSetConstructionStep` via the algebra

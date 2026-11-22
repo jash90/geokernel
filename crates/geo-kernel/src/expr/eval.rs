@@ -999,11 +999,9 @@ impl<const M: bool> Ctx<'_, M> {
     /// substituted into the body.
     fn apply_fast(&self, f: Id, a: u32) -> f64 {
         let Some(e) = function_entry(self.c, f) else {
-            return if super::is_sampled_function(self.c, f) && !self.stop(32) {
-                super::function_value(self.c, f, self.fast(a)).unwrap_or(f64::NAN)
-            } else {
-                f64::NAN
-            };
+            return self
+                .sample_application(f, || self.fast(a))
+                .unwrap_or(f64::NAN);
         };
         // the function's nodes are charged to the evaluation with lists
         // this one is part of, if any
@@ -1019,11 +1017,8 @@ impl<const M: bool> Ctx<'_, M> {
     /// keeps its decimals; elsewhere `f` is sampled at the value of `a`.
     fn apply_full(&self, f: Id, a: u32) -> Ex {
         let Some(e) = function_entry(self.c, f) else {
-            if super::is_sampled_function(self.c, f) && !self.stop(32) {
-                let x = self.full_number(a);
-                return Ex::plain(Val::N(
-                    super::function_value(self.c, f, x).unwrap_or(f64::NAN),
-                ));
+            if let Some(value) = self.sample_application(f, || self.full_number(a)) {
+                return Ex::plain(Val::N(value));
             }
             return Ex::plain(
                 if super::function_signature(self.c, f).is_some_and(|f| f.boolean) {
@@ -1047,6 +1042,19 @@ impl<const M: bool> Ctx<'_, M> {
         } else {
             Ex::plain(Val::N(inner.fast(e.root)))
         }
+    }
+
+    fn sample_application(&self, source: Id, argument: impl FnOnce() -> f64) -> Option<f64> {
+        if self.c.kind(source) == Kind::Line {
+            let Value::Line { a, b, c } = self.c.value(source) else {
+                return None;
+            };
+            return (b != 0.0 && !self.stop(1)).then(|| -(a * argument() + c) / b);
+        }
+        if super::is_sampled_function(self.c, source) && !self.stop(32) {
+            return super::function_value(self.c, source, argument());
+        }
+        None
     }
 
     pub(super) fn full_number(&self, i: u32) -> f64 {
