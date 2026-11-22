@@ -8,9 +8,12 @@
 //! here that its commands need.
 
 mod algebra;
+
+pub(crate) use algebra::polynomial;
 mod geometry;
 mod list;
 mod logical;
+pub(crate) use logical::relation;
 mod statistics;
 
 use super::eval::{Ctx, Val};
@@ -22,6 +25,7 @@ use super::{Bin, Elem, ListOp, Node, Ty};
 /// [`binary_command`]).
 pub(super) fn is_command(name: &str) -> bool {
     [
+        algebra::NAMES,
         logical::NAMES,
         list::NAMES,
         statistics::NAMES,
@@ -73,7 +77,10 @@ pub(super) fn makes_list(op: ListOp) -> bool {
 /// Whether the second operand of the list command `op` is an object rather
 /// than a number.
 pub(super) fn takes_object(op: ListOp) -> bool {
-    matches!(op, ListOp::Dot | ListOp::Cross | ListOp::ApplyMatrix) || list::takes_object(op)
+    matches!(
+        op,
+        ListOp::Dot | ListOp::Cross | ListOp::ApplyMatrix | ListOp::Min | ListOp::Max
+    ) || list::takes_object(op)
 }
 
 /// The type of the list command `op` of the list `l`, whose elements are

@@ -1,0 +1,165 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "algebraedge-filter-001",
+      "group": "algebraedge",
+      "script": [
+        "a = 0",
+        "b = {true,a,false}",
+        "l = KeepIf(x==1,b)",
+        "n = CountIf(x==1,b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "boolean", "defined": true, "value": false }
+            ]
+          },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true }
+            ]
+          },
+          "n": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "boolean", "defined": true, "value": false }
+            ]
+          },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          },
+          "n": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "boolean", "defined": true, "value": false }
+            ]
+          },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true }
+            ]
+          },
+          "n": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "algebraedge-filter-002",
+      "group": "algebraedge",
+      "script": [
+        "b = {0,true,false,1}",
+        "l = KeepIf(x==true,b)",
+        "n = CountIf(x==true,b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "b": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "boolean", "defined": true, "value": true },
+              { "type": "boolean", "defined": true, "value": false },
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          },
+          "n": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "algebraedge-filter-003",
+      "group": "algebraedge",
+      "script": [
+        "b = {true,false,true}",
+        "l = KeepIf(x==true,b)",
+        "n = CountIf(x==true,b)",
+        "m = KeepIf(t && true,t,b)",
+        "k = CountIf(t && true,t,b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "b": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              { "type": "boolean", "defined": true, "value": false },
+              { "type": "boolean", "defined": true, "value": true }
+            ]
+          },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              { "type": "boolean", "defined": true, "value": true }
+            ]
+          },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              { "type": "boolean", "defined": true, "value": true }
+            ]
+          },
+          "k": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    }
+  ]
+}

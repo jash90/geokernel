@@ -100,6 +100,15 @@ impl Slot {
         }
     }
 
+    pub(crate) fn function(id: Id, value: Value) -> Slot {
+        Slot {
+            kind: Kind::Function,
+            value,
+            start: 0,
+            object: Some(id),
+        }
+    }
+
     /// A nested list of `len` elements from `start` on.
     pub(crate) fn list(start: u32, len: u32) -> Slot {
         Slot {
@@ -311,6 +320,17 @@ impl<'a> List<'a> {
         }
         let slot = self.slots[self.start as usize + k];
         (slot.kind == Kind::Point).then_some(slot.value)
+    }
+
+    /// The construction object supplying the function at this list position.
+    pub fn function_at(&self, k: usize) -> Option<Id> {
+        if k >= self.len() {
+            return None;
+        }
+        let slot = self.slots[self.start as usize + k];
+        (slot.kind == Kind::Function)
+            .then_some(slot.object)
+            .flatten()
     }
 
     /// The raw numeric field read by GgbMat, including NaN and infinity.

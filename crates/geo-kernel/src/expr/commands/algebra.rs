@@ -11,16 +11,30 @@
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
-//! The algebra group of the command matrix: the commands of two numbers
-//! that an expression may use, `Mod`, `Div`, `GCD`, `LCM`, `Max` and `Min`
-//! (`AlgoTwoNumFunction`), and `Min` and `Max` of a list. An undefined
-//! (`NaN`) argument gives an undefined result.
+//! Numeric algebra commands and their expression forms.
+
+mod base;
+mod extrema;
+mod integers;
+pub(crate) mod polynomial;
 
 use crate::expr::eval::{number_of, Ctx, Val};
 use crate::expr::math::{check_integer, is_equal, is_integer, is_zero, java_round};
 use crate::expr::parse::{list_form, Parser};
 use crate::expr::types::of_numbers;
-use crate::expr::{Bin, Elem, ListOp, Node, Ty};
+use crate::expr::{AlgebraOp, Bin, Elem, ListOp, Node, Ty, NONE};
+
+pub(super) const NAMES: &[&str] = &[
+    "Division",
+    "PrimeFactors",
+    "Divisors",
+    "DivisorsList",
+    "DivisorsSum",
+    "IsPrime",
+    "IsInteger",
+    "ToBase",
+    "FromBase",
+];
 
 /// The command of two numbers named `name`: a built-in name, like the
 /// functions of two arguments (see `names`).
@@ -30,6 +44,7 @@ pub(super) fn binary_command(name: &str) -> Option<Bin> {
         "Div" => Bin::IntDiv,
         "GCD" => Bin::Gcd,
         "LCM" => Bin::Lcm,
+        "CommonDenominator" => Bin::CommonDenominator,
         "Max" => Bin::Max,
         "Min" => Bin::Min,
         _ => return None,
@@ -40,7 +55,7 @@ pub(super) fn binary_command(name: &str) -> Option<Bin> {
 pub(super) fn is_binary_command(op: Bin) -> bool {
     matches!(
         op,
-        Bin::Mod | Bin::IntDiv | Bin::Gcd | Bin::Lcm | Bin::Max | Bin::Min
+        Bin::Mod | Bin::IntDiv | Bin::Gcd | Bin::Lcm | Bin::CommonDenominator | Bin::Max | Bin::Min
     )
 }
 
@@ -51,6 +66,7 @@ pub(super) fn binary(op: Bin, a: f64, b: f64) -> f64 {
         Bin::IntDiv => div(a, b),
         Bin::Gcd => gcd_of(a, b),
         Bin::Lcm => lcm_of(a, b),
+        Bin::CommonDenominator => common_denominator(a, b),
         Bin::Max => max(a, b),
         Bin::Min => min(a, b),
         _ => f64::NAN,
@@ -60,12 +76,66 @@ pub(super) fn binary(op: Bin, a: f64, b: f64) -> f64 {
 /// `Min(list)` and `Max(list)`; of anything else they are the commands of
 /// two numbers.
 pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
-    let op = match text {
-        "Min" => ListOp::Min,
-        "Max" => ListOp::Max,
-        _ => return Ok(None),
+    if matches!(text, "ToBase" | "FromBase") {
+        let [value, radix] = p.arguments()?[..] else {
+            return Err(format!("`{text}` takes two arguments"));
+        };
+        return Ok(Some(p.push(Node::Base {
+            to: text == "ToBase",
+            value,
+            radix,
+        })));
+    }
+    if matches!(text, "Min" | "Max") {
+        let uses_var = p.uses_var;
+        if let Some(node) = p.function_command(|p, args, _| {
+            let &[f, a, b] = args else { return Ok(None) };
+            if !p.uses_function_variable(f) || !p.is_number(f) {
+                return Err(format!("`{text}` needs a numeric function"));
+            }
+            Ok(Some(Node::Extremum(text == "Min", f, a, b)))
+        })? {
+            p.uses_var = uses_var;
+            return Ok(Some(node));
+        }
+    }
+    if matches!(text, "Div" | "Mod") {
+        return p.function_command(|p, args, _| {
+            let &[a, b] = args else { return Ok(None) };
+            Ok((p.uses_function_variable(a) && p.uses_function_variable(b))
+                .then_some(Node::PolynomialPart(text == "Mod", a, b)))
+        });
+    }
+    let algebra = match text {
+        "Division" => AlgebraOp::Division,
+        "PrimeFactors" => AlgebraOp::PrimeFactors,
+        "Divisors" => AlgebraOp::Divisors,
+        "DivisorsList" => AlgebraOp::DivisorsList,
+        "DivisorsSum" => AlgebraOp::DivisorsSum,
+        "IsPrime" => AlgebraOp::IsPrime,
+        "IsInteger" => AlgebraOp::IsInteger,
+        _ => {
+            let op = match text {
+                "Min" => ListOp::Min,
+                "Max" => ListOp::Max,
+                "GCD" => ListOp::Gcd,
+                "LCM" => ListOp::Lcm,
+                _ => return Ok(None),
+            };
+            return p.list_command(|_, args, lists| {
+                let frequencies =
+                    matches!(op, ListOp::Min | ListOp::Max) && matches!(lists, [true, true]);
+                list_form(text, op, frequencies, args, lists)
+            });
+        }
     };
-    p.list_command(|_, args, lists| list_form(text, op, false, args, lists))
+    let args = p.arguments()?;
+    let node = match (algebra, args.as_slice()) {
+        (AlgebraOp::Division, &[a, b]) => Node::Algebra(algebra, a, b),
+        (op, &[a]) if op != AlgebraOp::Division => Node::Algebra(op, a, NONE),
+        _ => return Err(format!("`{text}` does not take {} argument(s)", args.len())),
+    };
+    Ok(Some(p.push(node)))
 }
 
 /// The type of a list command of this group (see `commands::list_type`).
@@ -74,13 +144,16 @@ pub(super) fn list_type(
     _elem: Elem,
     numbers: bool,
     _nodes: &[Node],
-    _tys: &[Ty],
+    tys: &[Ty],
     _l: u32,
-    _n: u32,
+    n: u32,
 ) -> Result<Option<Ty>, String> {
     Ok(Some(match op {
         // `AlgoListMinMax` reads numbers
-        ListOp::Min | ListOp::Max => of_numbers(numbers)?,
+        ListOp::Min | ListOp::Max if n != NONE && !matches!(tys[n as usize], Ty::List(_)) => {
+            return Err("frequencies must be a list".into());
+        }
+        ListOp::Min | ListOp::Max | ListOp::Gcd | ListOp::Lcm => of_numbers(numbers)?,
         _ => return Ok(None),
     }))
 }
@@ -91,10 +164,11 @@ pub(super) fn list_value<const M: bool>(
     _i: u32,
     op: ListOp,
     l: u32,
-    _n: u32,
+    n: u32,
 ) -> Option<Val> {
     Some(match op {
-        ListOp::Min | ListOp::Max => Val::N(ctx.min_max(op == ListOp::Min, l)),
+        ListOp::Min | ListOp::Max => Val::N(ctx.min_max(op == ListOp::Min, l, n)),
+        ListOp::Gcd | ListOp::Lcm => Val::N(ctx.list_gcd_lcm(op == ListOp::Gcd, l)),
         _ => return None,
     })
 }
@@ -197,6 +271,19 @@ pub(crate) fn lcm_of(a: f64, b: f64) -> f64 {
     }
 }
 
+/// The two numeric fractions use GeoGebra's continued-fraction tolerance.
+fn common_denominator(a: f64, b: f64) -> f64 {
+    use crate::expr::derivative::decimal_to_fraction;
+    use crate::tol::STANDARD_PRECISION;
+
+    if a.is_nan() || b.is_nan() {
+        return f64::NAN;
+    }
+    let (_, p) = decimal_to_fraction(a, STANDARD_PRECISION);
+    let (_, q) = decimal_to_fraction(b, STANDARD_PRECISION);
+    p * q / gcd(magnitude(p), magnitude(q)) as f64
+}
+
 /// Java's `Math.max`: `NaN` wins, and `0` is larger than `-0`.
 pub(crate) fn max(a: f64, b: f64) -> f64 {
     if a.is_nan() || b.is_nan() {
@@ -230,7 +317,7 @@ pub(crate) fn min(a: f64, b: f64) -> f64 {
 impl<const M: bool> Ctx<'_, M> {
     /// `AlgoListMinMax`: the least or greatest element; an empty list, or
     /// one with an element that is no number, has none.
-    pub(crate) fn min_max(&self, min: bool, l: u32) -> f64 {
+    fn min_max(&self, min: bool, l: u32, n: u32) -> f64 {
         let Some(lists) = self.lists else {
             return f64::NAN;
         };
@@ -240,26 +327,50 @@ impl<const M: bool> Ctx<'_, M> {
         if len == 0 {
             return f64::NAN;
         }
+        let frequencies = if n == NONE {
+            None
+        } else {
+            let Some((freq, count)) = self.list(n) else {
+                return f64::NAN;
+            };
+            if count != len {
+                return f64::NAN;
+            }
+            Some(freq)
+        };
         let mut best = if min {
             f64::INFINITY
         } else {
             f64::NEG_INFINITY
         };
-        if !lists.charge(u64::from(len)) {
+        let mut used = false;
+        if !lists.charge(u64::from(len) * (1 + u64::from(frequencies.is_some()))) {
             return f64::NAN;
         }
         for k in 0..len {
             let Some(v) = number_of(lists.read(self.c, start + k)) else {
                 return f64::NAN;
             };
-            // `Math.min` and `Math.max`: NaN wins
-            best = if v.is_nan() || best.is_nan() {
-                f64::NAN
-            } else if min {
-                best.min(v)
+            if let Some(freq) = frequencies {
+                let Some(frequency) = number_of(lists.read(self.c, freq + k)) else {
+                    return f64::NAN;
+                };
+                if frequency < 0.0 {
+                    return f64::NAN;
+                }
+                if frequency == 0.0 {
+                    continue;
+                }
+            }
+            used = true;
+            best = if min {
+                self::min(best, v)
             } else {
-                best.max(v)
+                max(best, v)
             };
+        }
+        if !used {
+            return f64::NAN;
         }
         best
     }

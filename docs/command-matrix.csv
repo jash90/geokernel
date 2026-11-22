@@ -1,27 +1,27 @@
 command,alias_of,group,priority,status,forms_total,forms_done,notes
-Mod,,algebra,P2,partial,2,1,"Mod(number, number)"
-Div,,algebra,P2,partial,2,1,"Div(number, number)"
-Min,,algebra,P2,partial,5,2,"Min(number, number); Min(list)"
-Max,,algebra,P2,partial,5,2,"Max(number, number); Max(list)"
-LCM,,algebra,P2,partial,2,1,"LCM(number, number)"
-GCD,,algebra,P2,partial,2,1,"GCD(number, number)"
-Expand,,algebra,P2,todo,1,0,
-Factor,,algebra,P2,todo,1,0,
-Simplify,,algebra,P2,todo,5,0,
-PrimeFactors,,algebra,P2,todo,1,0,
-CompleteSquare,,algebra,P2,todo,1,0,
-ToBase,,algebra,P2,todo,1,0,
-FromBase,,algebra,P2,todo,1,0,
-Division,,algebra,P2,todo,2,0,
-Divisors,,algebra,P2,todo,1,0,
-DivisorsList,,algebra,P2,todo,1,0,
-DivisorsSum,,algebra,P2,todo,1,0,
-IsPrime,,algebra,P2,todo,1,0,
-LeftSide,,algebra,P2,todo,3,0,
-NextPrime,,algebra,P2,todo,1,0,
-RightSide,,algebra,P2,todo,3,0,
-PreviousPrime,,algebra,P2,todo,1,0,
-IsFactored,,algebra,P2,todo,1,0,
+Mod,,algebra,P2,done,2,2,"Mod(number, number)"
+Div,,algebra,P2,done,2,2,"Div(number, number)"
+Min,,algebra,P2,done,5,5,"Min(number, number); Min(list)"
+Max,,algebra,P2,done,5,5,"Max(number, number); Max(list)"
+LCM,,algebra,P2,done,2,2,"LCM(number, number)"
+GCD,,algebra,P2,done,2,2,"GCD(number, number)"
+Expand,,algebra,,out_of_scope,,,Symbolic expansion is outside numeric algebra.
+Factor,,algebra,,out_of_scope,,,Symbolic factorization uses the CAS.
+Simplify,,algebra,,out_of_scope,,,"Function, list, curve and implicit forms use the CAS. Text formatting is outside numeric algebra."
+PrimeFactors,,algebra,P2,done,1,1,
+CompleteSquare,,algebra,,out_of_scope,,,Symbolic completion of the square is outside numeric algebra.
+ToBase,,algebra,P2,done,1,1,
+FromBase,,algebra,P2,done,1,1,
+Division,,algebra,P2,done,2,2,
+Divisors,,algebra,P2,done,1,1,
+DivisorsList,,algebra,P2,done,1,1,
+DivisorsSum,,algebra,P2,done,1,1,
+IsPrime,,algebra,P2,done,1,1,
+LeftSide,,algebra,P2,partial,3,2,Lines and conics. The implicit-curve form needs an implicit curve object.
+NextPrime,,algebra,,out_of_scope,,,AlgoNextPreviousPrime obtains the value from the CAS.
+RightSide,,algebra,P2,partial,3,2,Lines and conics. The implicit-curve form needs an implicit curve object.
+PreviousPrime,,algebra,,out_of_scope,,,AlgoNextPreviousPrime obtains the value from the CAS.
+IsFactored,,algebra,,out_of_scope,,,Inspects symbolic polynomial structure and is outside numeric algebra.
 Line,,geometry,P0,done,5,5,"Line(point, point); Line(point, line, segment or ray); Line(point, vector)"
 Ray,,geometry,P1,done,2,2,"Ray(point, point); Ray(point, vector)"
 AngularBisector,,geometry,P1,done,2,2,"AngularBisector(point, point, point); AngularBisector(line, line)"
@@ -99,13 +99,13 @@ Ordinal,,text,P2,todo,1,0,
 ContinuedFraction,,text,P2,todo,4,0,
 ReplaceAll,,text,P2,todo,1,0,
 Split,,text,P2,todo,1,0,
-If,,logical,P2,todo,2,0,"If(condition, then); If(condition, then, else); If(condition, value, condition, value, ..., else)"
-CountIf,,logical,P2,todo,2,0,
-IsInteger,,logical,P2,todo,1,0,
-KeepIf,,logical,P2,todo,2,0,
-Relation,,logical,P2,todo,2,0,
-Defined,,logical,P2,todo,1,0,
-IsInRegion,,logical,P2,todo,1,0,
+If,,logical,P2,partial,2,1,"Scalar, coordinate, boolean, text, list and numeric-function branches. Other geometry branches are pending."
+CountIf,,logical,P2,done,2,2,
+IsInteger,,logical,P2,done,1,1,
+KeepIf,,logical,P2,done,2,2,
+Relation,,logical,P2,done,2,2,Numerical reports for supported objects. CAS function comparisons and the symbolic prover are outside scope.
+Defined,,logical,P2,done,1,1,
+IsInRegion,,logical,P2,done,1,1,
 Root,,function,P2,todo,4,0,
 Roots,,function,P2,todo,2,0,
 TurningPoint,,function,P2,todo,1,0,
@@ -139,7 +139,7 @@ SolveODE,,function,P2,todo,7,0,
 SlopeField,,function,P2,todo,4,0,
 Iteration,,function,P2,todo,3,0,
 PathParameter,,function,P2,done,1,1,PathParameter(point on a path)
-Asymptote,,function,P2,todo,3,0,
+Asymptote,,function,P2,partial,3,1,
 CurvatureVector,,function,P2,todo,3,0,
 Curvature,,function,P2,todo,3,0,
 OsculatingCircle,,function,P2,todo,3,0,
@@ -437,7 +437,7 @@ Minimize,,optimization,P2,todo,2,0,
 ExportImage,,scripting,,out_of_scope,,,
 Curve,CurveCartesian,function,P2,todo,,,
 FormulaText,LaTeX,text,P2,todo,,,
-IsDefined,Defined,logical,P2,todo,,,
+IsDefined,Defined,logical,P2,done,,,
 ConjugateDiameter,Diameter,conic,P1,done,,,
 LinearEccentricity,Excentricity,conic,P1,done,,,
 MajorAxis,FirstAxis,conic,P1,done,,,
@@ -510,27 +510,27 @@ Reflect,Mirror,transformation,P1,done,,,
 Assume,,cas,,out_of_scope,,,
 CFactor,,cas,,out_of_scope,,,
 CIFactor,,cas,,out_of_scope,,,
-IFactor,,algebra,P2,todo,1,0,
+IFactor,,algebra,,out_of_scope,,,Symbolic integer-coefficient factorization uses the CAS.
 IntegralSymbolic,,cas,,out_of_scope,,,
-CommonDenominator,,algebra,P2,todo,2,0,
-Cross,,algebra,P2,partial,5,4,point or vector pairs and flat list pairs of equal length 2 or 3 (vectorforms-listcross-001 and vectorforms-listcross-002)
-CSolutions,,algebra,P2,todo,10,0,
-CSolve,,algebra,P2,todo,10,0,
-Dot,,algebra,P2,todo,1,0,
+CommonDenominator,,algebra,P2,partial,2,1,Number pairs. The function pair delegates to the CAS (AlgoPolynomialCD).
+Cross,,algebra,P2,done,5,5,point or vector pairs and flat list pairs of equal length 2 or 3 (vectorforms-listcross-001 and vectorforms-listcross-002)
+CSolutions,,algebra,,out_of_scope,,,All algebra-input forms delegate to the CAS.
+CSolve,,algebra,,out_of_scope,,,All algebra-input forms delegate to the CAS.
+Dot,,algebra,P2,done,1,1,
 Eliminate,,cas,,out_of_scope,,,
 GroebnerLex,,cas,,out_of_scope,,,
 GroebnerDegRevLex,,cas,,out_of_scope,,,
 GroebnerLexDeg,,cas,,out_of_scope,,,
 NIntegral,,function,P2,todo,6,0,
 NInvert,,function,P2,todo,1,0,
-NSolve,,algebra,P2,todo,10,0,
-NSolutions,,algebra,P2,todo,10,0,
+NSolve,,algebra,,out_of_scope,,,AlgoSolve delegates to the CAS even for numeric equations and initial guesses.
+NSolutions,,algebra,,out_of_scope,,,AlgoSolve delegates to the CAS even for numeric equations and initial guesses.
 Numeric,,cas,,out_of_scope,,,
 Evaluate,,english,,out_of_scope,,,
 MixedNumber,,cas,,out_of_scope,,,
 Rationalize,,cas,,out_of_scope,,,
-Solutions,,algebra,P2,todo,10,0,
-Solve,,algebra,P2,todo,10,0,
+Solutions,,algebra,,out_of_scope,,,All algebra-input forms delegate to the CAS.
+Solve,,algebra,,out_of_scope,,,All algebra-input forms delegate to the CAS.
 PlotSolve,,function,P2,todo,5,0,
 SolveCubic,,cas,,out_of_scope,,,
 SolveQuartic,,cas,,out_of_scope,,,

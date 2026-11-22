@@ -49,6 +49,9 @@
 //! an undefined object: NaN coordinates, so that every test fails, except a
 //! line that degenerated to all-zero coefficients (see [`raw_line`]).
 
+pub(crate) mod relation;
+pub use relation::Report as RelationReport;
+
 use super::vector::VectorDef;
 use super::{normalized_coefficients, Group, Parents, POINT};
 use crate::expr::{Element, List, MAX_EVALUATION_WORK};
@@ -98,7 +101,11 @@ pub enum PredicateDef {
     /// `AreCongruent(a, b)` for objects of any kind.
     Congruent(Id, Id),
     /// `IsTangent(line, circle)`.
-    Tangent { line: Id, circle: Id },
+    Tangent {
+        line: Id,
+        circle: Id,
+    },
+    InRegion(Id, Id),
 }
 
 /// `-eps < v < eps` (`DoubleUtil.isZero`).
@@ -667,6 +674,31 @@ fn tangent(c: &Construction, line: Id, circle: Id) -> bool {
     is_equal_eps(d * d - u * w, 0.0, delta)
 }
 
+/// Numeric region membership (AlgoIsInRegion).
+fn in_region(c: &Construction, point: Id, region: Id) -> bool {
+    use super::path::{conic_contains, part_contains, polygon_contains};
+
+    let Some(p) = c.point(point) else {
+        return false;
+    };
+    if let Some(signature) = crate::expr::function_signature(c, region) {
+        let coordinate = if signature.of_y { p.1 } else { p.0 };
+        return signature.boolean && c.function_value(region, coordinate) == Some(1.0);
+    }
+    if c.kind(region) == Kind::Polygon {
+        let work = crate::expr::IntersectionWork::new();
+        let vertices = c
+            .vertices(region)
+            .map(|p| work.charge(2).then_some(p).flatten());
+        return vertices
+            .collect::<Option<Vec<_>>>()
+            .is_some_and(|vertices| polygon_contains(&vertices, p));
+    }
+    super::conic_object(c, region).is_some_and(|d| {
+        conic_contains(&d, p) && c.arc(region).is_none_or(|arc| part_contains(&arc, p))
+    })
+}
+
 impl Group for PredicateDef {
     fn kind(&self) -> Kind {
         Kind::Boolean
@@ -680,7 +712,8 @@ impl Group for PredicateDef {
             PredicateDef::Parallel(a, b)
             | PredicateDef::Perpendicular(a, b)
             | PredicateDef::Equal(a, b)
-            | PredicateDef::Congruent(a, b) => Parents::of(&[a, b]),
+            | PredicateDef::Congruent(a, b)
+            | PredicateDef::InRegion(a, b) => Parents::of(&[a, b]),
             PredicateDef::Concyclic(a, b, d, e) => Parents::of(&[a, b, d, e]),
             PredicateDef::Tangent { line, circle } => Parents::of(&[line, circle]),
         }
@@ -712,6 +745,14 @@ impl Group for PredicateDef {
                 c.expect(a, ANY)?;
                 c.expect(b, ANY)
             }
+            PredicateDef::InRegion(point, region) => {
+                c.expect(point, POINT)?;
+                if crate::expr::function_signature(c, region).is_some_and(|s| s.boolean) {
+                    Ok(())
+                } else {
+                    c.expect(region, super::path::REGIONS)
+                }
+            }
             PredicateDef::Tangent { line, circle } => {
                 c.expect(line, super::CARRIERS)?;
                 c.expect(circle, super::CONIC_OBJECTS)
@@ -741,6 +782,7 @@ impl Group for PredicateDef {
             PredicateDef::Equal(a, b) => answer(equal(c, a, b)),
             PredicateDef::Congruent(a, b) => congruent(c, a, b).map(Value::Bool),
             PredicateDef::Tangent { line, circle } => answer(tangent(c, line, circle)),
+            PredicateDef::InRegion(point, region) => answer(in_region(c, point, region)),
         }
     }
 
@@ -748,7 +790,8 @@ impl Group for PredicateDef {
         let wanted = match func {
             "AreCollinear" | "AreConcurrent" => 3,
             "AreConcyclic" => 4,
-            "AreParallel" | "ArePerpendicular" | "AreEqual" | "AreCongruent" | "IsTangent" => 2,
+            "AreParallel" | "ArePerpendicular" | "AreEqual" | "AreCongruent" | "IsTangent"
+            | "IsInRegion" => 2,
             _ => return None,
         };
         let n = args.len();
@@ -771,6 +814,7 @@ impl Group for PredicateDef {
             "ArePerpendicular" => PredicateDef::Perpendicular(a, b),
             "AreEqual" => PredicateDef::Equal(a, b),
             "AreCongruent" => PredicateDef::Congruent(a, b),
+            "IsInRegion" => PredicateDef::InRegion(a, b),
             _ => PredicateDef::Tangent { line: a, circle: b },
         }))
     }
