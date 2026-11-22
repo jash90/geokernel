@@ -625,14 +625,17 @@ fn nintegral_of_a_polynomial_is_exact() {
 
 /// `AlgoFunctionAreaSums`: a subdivision count over `MAX_RECTANGLES`
 /// clamps to it — an infinite `n` is a defined `GeoNumeric` (`isDefined`
-/// is `!isNaN`) — and an infinite bound makes the total infinite, which
-/// the kernel has no object value for (`calculus-sums-012`,
-/// `calculus-sums-013`).
+/// is `!isNaN`) — and an infinite bound makes the left sum a defined
+/// infinite number (`calculus-sums-012`, `calculus-sums-013`). The upper
+/// sum searches its first rectangle on a NaN bracket and stays undefined,
+/// a known gap of `calculus-sums-012`.
 #[test]
 fn sums_read_an_infinite_subdivision_count_and_bound() {
     let c = load("f(x) = 1\nb = 1/0\nd = LeftSum(f, 0, b, 4)\nu = UpperSum(f, 0, b, 4)");
-    assert!(!defined(&c, "d"));
+    assert_eq!(num(&c, "d"), f64::INFINITY);
     assert!(!defined(&c, "u"));
+    let c = load("f(x) = 1\nb = -1/0\nd = LeftSum(f, 0, b, 4)");
+    assert_eq!(num(&c, "d"), f64::NEG_INFINITY);
     let c = load("f(x) = 1\nn = 1/0\nd = LeftSum(f, 0, 2, n)\ne = LeftSum(f, 2, 0, n)");
     assert_eq!(num(&c, "d"), 2.0);
     assert_eq!(num(&c, "e"), -2.0);

@@ -540,11 +540,10 @@ fn sum_value(c: &Construction, d: &CalculusDef) -> Option<Value> {
             total
         }
     };
-    // `sum.setValue(totalArea * STEP)`: an infinite total is the defined
-    // infinite number of GeoGebra, which this kernel has no object value
-    // for, and a NaN one leaves the sum undefined
+    // `sum.setValue(totalArea * STEP)`: an infinite total is a defined
+    // infinite number, and a NaN one leaves the sum undefined
     let result = total * step;
-    if budget.over() || !result.is_finite() || !is_defined {
+    if budget.over() || result.is_nan() || !is_defined {
         return None;
     }
     Some(Value::Number(result))

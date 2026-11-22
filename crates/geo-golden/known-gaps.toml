@@ -918,8 +918,8 @@ mismatches = ["0:b"]
 
 [[gap]]
 id = "calculus-sums-012"
-reason = "The two rectangle sums of a constant function over an infinite interval return positive infinity in the reference, recorded as `infinity: 1` for d and u in the signed recording of this file. The kernel requires finite interval endpoints."
-mismatches = ["0:d", "0:u"]
+reason = "UpperSum of a constant function over an infinite interval is positive infinity in the reference, recorded as `infinity: 1` for u in the signed recording of this file. The first rectangle then starts at 0 + 0 * Infinity, which is NaN, and the reference's minimum search still returns a height on that bracket. The kernel's search requires a finite bracket and leaves the sum undefined. The reference search is third-party code that cannot be consulted, and this one constant function does not determine its behaviour on other functions. LeftSum, d, agrees."
+mismatches = ["0:u"]
 
 [[gap]]
 id = "georestsmall-ifgeometry-003"
@@ -928,8 +928,8 @@ mismatches = ["1:d"]
 
 [[gap]]
 id = "infinity-legacy-010"
-reason = "The rectangle sums return positive infinity for a constant function over an infinite interval. The kernel requires finite interval endpoints."
-mismatches = ["0:d", "0:u"]
+reason = "Same script as calculus-sums-012: UpperSum of a constant function over an infinite interval is positive infinity in the reference. Its first rectangle starts at the NaN 0 + 0 * Infinity, and the kernel's minimum search requires a finite bracket. LeftSum agrees."
+mismatches = ["0:u"]
 
 [[gap]]
 id = "infinity-legacy-075"
