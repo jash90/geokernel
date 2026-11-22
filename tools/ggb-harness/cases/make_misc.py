@@ -54,6 +54,17 @@ cases.case("optimize", [
     "a = Slider(0, 6)", "t = Slider(1, 3)",
     "n = Minimize((a - t)^2, a)", "Q = (n, t)", "l = Locus(Q, t)",
 ], [])
+cases.case("optimize", [
+    "a = Slider(0, 6)", "b = 1", "f = sqrt(a - b)",
+    "m = Minimize(f, a)", "q = Maximize(f, a)",
+], [setn("b", 4), setn("b", -1), setn("b", 1)])
+cases.case("optimize", [
+    "a = Slider(0, 6)", "f = If(a != 3(3 - sqrt(5)), a)",
+    "m = Maximize(f, a)", "q = Minimize(f, a)",
+], [])
+cases.case("optimize", [
+    "a = 2", "f = (a - 3)^2", "m = Minimize(f, a)",
+], [{"action": "set_slider_bounds", "label": "a", "min": 0, "max": 6}, setn("a", 4)])
 
 # Hull: the convex hull of a list of points, as a locus.
 cases.case("hull", [
@@ -222,6 +233,10 @@ cases.case("maximizepoint", [
     "c = Curve(t, t^2, t, -4, 4)", "P = Point(c, 0.75)",
     "M = Maximize(-(x(P) - 1)^2, P)", "w = x(P)",
 ], [])
+cases.case("maximizepoint", [
+    "A = (0, 0)", "B = (6, 0)", "P = Point(Segment(A, B))",
+    "b = 1", "f = sqrt(x(P) - b)", "M = Maximize(f, P)", "w = x(P)",
+], [setn("b", 4), setn("b", -1), setn("b", 1)])
 
 cases.case("minimizepoint", [
     "C = (3, 4)", "c = Circle(C, 5)", "P = Point(c)", "a = y(P)", "M = Minimize(a, P)",
@@ -237,6 +252,10 @@ cases.case("minimizepoint", [
     "c = Curve(t, t^2, t, -4, 4)", "P = Point(c, 0.75)",
     "M = Minimize((x(P) + 1)^2, P)", "w = x(P)",
 ], [])
+cases.case("minimizepoint", [
+    "A = (0, 0)", "B = (6, 0)", "P = Point(Segment(A, B))",
+    "b = 1", "f = sqrt(x(P) - b)", "M = Minimize(f, P)",
+], [setn("b", 4), setn("b", -1), setn("b", 1)])
 
 # The remaining Sum forms.
 cases.case("sum", [

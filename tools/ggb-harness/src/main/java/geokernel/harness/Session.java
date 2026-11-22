@@ -252,7 +252,10 @@ final class Session {
         String transformed = functionLine ? null : transformedType(definition);
         String expected = functionLine ? (m.group(2).contains(",") ? "function_nvar" : "function")
                 : transformed != null ? transformed : expectedType(label, definition);
-        if (objects.containsKey(label) || kernel.lookupLabel(label) != null) {
+        GeoElement existing = kernel.lookupLabel(label);
+        // A command can create a slider that a later assignment names explicitly.
+        if (objects.containsKey(label) || (existing != null
+                && (!(existing instanceof GeoNumeric n) || !n.isIndependent()))) {
             throw new IllegalArgumentException("label used twice: " + label);
         }
         if (definition.startsWith("$image(")) {
@@ -719,7 +722,7 @@ final class Session {
 
     /** Sets a free number and updates everything that depends on it. */
     void setNumber(String label, double value) {
-        GeoElement geo = lookup(label);
+        GeoElement geo = kernel.lookupLabel(label);
         if (!(geo instanceof GeoNumeric) || !geo.isIndependent()) {
             throw new IllegalArgumentException(label + " is not a free number");
         }
@@ -729,6 +732,16 @@ final class Session {
             throw new IllegalStateException("GeoGebra stored " + n.getDouble()
                     + " instead of " + value + " in " + label);
         }
+        n.updateCascade();
+    }
+
+    /** Edits the lower and upper endpoints of an independent number. */
+    void setSliderBounds(String label, double min, double max) {
+        if (!(lookup(label) instanceof GeoNumeric n) || !n.isIndependent()) {
+            throw new IllegalArgumentException(label + " is not a free number");
+        }
+        n.setIntervalMin(min);
+        n.setIntervalMax(max);
         n.updateCascade();
     }
 
@@ -1365,7 +1378,9 @@ final class Session {
             case "Derivative":
             case "NDerivative":
                 // a curve input differentiates componentwise to a curve
-                return first instanceof GeoCurveCartesian ? "curve" : "function";
+                return first instanceof GeoCurveCartesian
+                        || arguments(definition).get(0).trim().startsWith("Curve(")
+                        ? "curve" : "function";
             case "LineGraph":
                 return "function";
             case "DotPlot":

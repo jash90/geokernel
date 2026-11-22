@@ -1071,6 +1071,105 @@
           }
         }
       ]
+    },
+    {
+      "id": "misc-optimize-011",
+      "group": "misc",
+      "script": [
+        "a = Slider(0, 6)",
+        "b = 1",
+        "f = sqrt(a - b)",
+        "m = Minimize(f, a)",
+        "q = Maximize(f, a)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "value": 4.0 },
+        { "action": "set_number", "label": "b", "value": -1.0 },
+        { "action": "set_number", "label": "b", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "f": { "type": "number", "defined": false },
+          "m": { "type": "number", "defined": false },
+          "q": { "type": "number", "defined": true, "value": 5.999999902673458 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "f": { "type": "number", "defined": false },
+          "m": { "type": "number", "defined": false },
+          "q": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": -1.0 },
+          "f": { "type": "number", "defined": true, "value": 1.0 },
+          "m": { "type": "number", "defined": true, "value": 2.5759449412951078E-8 },
+          "q": { "type": "number", "defined": true, "value": 5.999999902673458 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "f": { "type": "number", "defined": false },
+          "m": { "type": "number", "defined": false },
+          "q": { "type": "number", "defined": true, "value": 5.999999902673458 }
+        }
+      ]
+    },
+    {
+      "id": "misc-optimize-012",
+      "group": "misc",
+      "script": [
+        "a = Slider(0, 6)",
+        "f = If(a != 3(3 - sqrt(5)), a)",
+        "m = Maximize(f, a)",
+        "q = Minimize(f, a)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": { "type": "number", "defined": true, "value": 0.0 },
+          "m": { "type": "number", "defined": false },
+          "q": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "misc-optimize-013",
+      "group": "misc",
+      "script": [
+        "a = 2",
+        "f = (a - 3)^2",
+        "m = Minimize(f, a)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_slider_bounds", "label": "a", "min": 0.0, "max": 6.0 },
+        { "action": "set_number", "label": "a", "value": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": { "type": "number", "defined": true, "value": 1.0 },
+          "m": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": { "type": "number", "defined": true, "value": 1.0 },
+          "m": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "f": { "type": "number", "defined": true, "value": 1.0 },
+          "m": { "type": "number", "defined": false }
+        }
+      ]
     }
   ]
 }

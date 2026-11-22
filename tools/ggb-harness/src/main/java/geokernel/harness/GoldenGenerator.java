@@ -156,6 +156,16 @@ public final class GoldenGenerator {
                     outStep.put("value", value);
                     break;
                 }
+                case "set_slider_bounds": {
+                    String label = (String) step.get("label");
+                    double min = number(step.get("min"));
+                    double max = number(step.get("max"));
+                    session.setSliderBounds(label, min, max);
+                    outStep.put("label", label);
+                    outStep.put("min", min);
+                    outStep.put("max", max);
+                    break;
+                }
                 case "reject": {
                     String line = (String) step.get("line");
                     session.reject(line);

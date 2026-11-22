@@ -849,6 +849,99 @@
           }
         }
       ]
+    },
+    {
+      "id": "funcrest-conditional-009",
+      "group": "funcrest",
+      "script": [
+        "n = 1",
+        "b = n > 0",
+        "a = If(b, 3, {1, 2})",
+        "P = If(b, (1, 2), 3)",
+        "c = If(b, 30°, 5)",
+        "d = If(b, 5, 30°)",
+        "e = If(b, \"a\", 3)",
+        "h = If(b, 3, \"a\")"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 0.0 },
+        { "action": "set_number", "label": "n", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5235987755982989 },
+          "d": { "type": "number", "defined": true, "value": 5.0 },
+          "e": { "type": "text", "defined": true, "text": "a" },
+          "h": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "a": { "type": "number", "defined": false },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 5.0 },
+          "d": { "type": "number", "defined": true, "value": 0.5235987755982989 },
+          "e": { "type": "text", "defined": true, "text": "a" },
+          "h": { "type": "number", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5235987755982989 },
+          "d": { "type": "number", "defined": true, "value": 5.0 },
+          "e": { "type": "text", "defined": true, "text": "a" },
+          "h": { "type": "number", "defined": true, "value": 3.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcrest-conditional-010",
+      "group": "funcrest",
+      "script": [
+        "n = 1",
+        "a = If(n > 0, 30°, n < 0, 5, 60°)",
+        "P = If(n > 0, 3, n < 0, {1, 2}, 5)",
+        "Q = If(n > 0, (1, 2), n < 0, 3, (3, 4))"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": -1.0 },
+        { "action": "set_number", "label": "n", "value": 0.0 },
+        { "action": "set_number", "label": "n", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 0.5235987755982989 },
+          "P": { "type": "number", "defined": true, "value": 3.0 },
+          "Q": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": -1.0 },
+          "a": { "type": "number", "defined": true, "value": 5.0 },
+          "P": { "type": "number", "defined": false },
+          "Q": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0471975511965979 },
+          "P": { "type": "number", "defined": true, "value": 5.0 },
+          "Q": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 0.5235987755982989 },
+          "P": { "type": "number", "defined": true, "value": 3.0 },
+          "Q": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+        }
+      ]
     }
   ]
 }

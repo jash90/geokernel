@@ -82,6 +82,10 @@ case("normalize", "n = 2\nl = Sequence(k, k, 1, n)\nr = Normalize(l)",
 case("normalize", "r = Normalize({1, (2, 2), 4})\ns = Normalize({1, true})\nt = Normalize({1, false, 2})")
 case("normalize", "A = (1, 2)", [reject("r = Normalize()"), reject("r = Normalize(1)"),
                                  reject("r = Normalize(A, 2)")])
+case("normalize", 'r = Normalize({1, 2, true})\ns = Normalize({true, 1})\n'
+     'u = Normalize({1, "a"})', [reject("t = Normalize({1, (2, 2)})")])
+case("normalize", "r = Normalize({})\ns = Normalize({4, 4, 4})",
+     [reject("t = Normalize({(1, 2), 3, (4, 5)})")])
 
 # --------------------------------------------------------------------- SVD
 cases.topic("svd")
@@ -94,6 +98,11 @@ case("svd", "n = 2\nl = Sequence({k, 0}, k, 1, n)\ns = SVD(l)",
      [setn("n", 0), setn("n", 1), setn("n", 3)])
 case("svd", "s = SVD({})\nt = SVD({{}, {}})\nu = SVD({{1, 2}, {3}})\nv = SVD({1, 2})",
      [reject("r = SVD(1)"), reject("r = SVD({{1}}, {{2}})")])
+case("svd", "n = 2\nl = {{1, 2}, Sequence(k, k, 1, n)}\ns = SVD(l)",
+     [setn("n", 1), setn("n", 2)])
+case("svd", "s = SVD({{1/0}})\nt = SVD({{0/0}})")
+case("svd", "s = SVD({{1, 2, 3}, {4, 5, 6}, {7, 8, 9}})")
+case("svd", "d = IsDefined(SVD(Sequence(Sequence(sin(i*j), j, 1, 200), i, 1, 200)))")
 
 # ------------------------------------------------------------- IsVertexForm
 cases.topic("vertexform")
@@ -104,6 +113,11 @@ case("vertexform", "n = 2\nf(x) = (x+1)^n\ng(x) = n*(x+1)^2\nh(x) = 4*(x+1)^2 + 
      [setn("n", 0), setn("n", 2)])
 case("vertexform", "n = 1\nf(x) = (x+1)^2 + 0/n\ng = IsVertexForm(f)\nh = IsVertexForm(Function())",
      [setn("n", 0), setn("n", 2), reject("a = IsVertexForm()"), reject("a = IsVertexForm({1,2})")])
+case("vertexform", "l = Line((0, 0), (1, 1))\nv = Line((0, 0), (0, 1))\n"
+     "a = IsVertexForm(3)\nb = IsVertexForm(l)\nd = IsVertexForm(v)",
+     [reject("s = IsVertexForm(Vector((1, 1)))")])
+case("vertexform", "F = (0, 1)\nl: y = -1\nc = Parabola(F, l)\ne = Circle((0, 0), 2)\n"
+     "a = IsVertexForm(c)\nb = IsVertexForm(e)", [mv("F", 0, -1), mv("F", 0, 2)])
 
 # ---------------------------------------------------------------------- If
 cases.topic("conditional")
@@ -130,6 +144,13 @@ cases.counters["conditional"] += 1
 case("conditional",
      "a = 2\nt = true\nl = {1, 2}\np = If(a < 3, t, 2)\nq = If(a < 3, 3, a < 4)\nr = If(a < 3, l, 1)",
      [setn("a", 3), setn("a", 4), setn("a", 2)])
+case("conditional",
+     'n = 1\nb = n > 0\na = If(b, 3, {1, 2})\nP = If(b, (1, 2), 3)\n'
+     'c = If(b, 30°, 5)\nd = If(b, 5, 30°)\ne = If(b, "a", 3)\nh = If(b, 3, "a")',
+     [setn("n", 0), setn("n", 1)])
+case("conditional", "n = 1\na = If(n > 0, 30°, n < 0, 5, 60°)\n"
+     "P = If(n > 0, 3, n < 0, {1, 2}, 5)\nQ = If(n > 0, (1, 2), n < 0, 3, (3, 4))",
+     [setn("n", -1), setn("n", 0), setn("n", 1)])
 
 # ---------------------------------------------------------------- SlowPlot
 cases.topic("slowplot")
@@ -138,6 +159,28 @@ case("slowplot", "n = 1\nf(x) = n*x\ng = SlowPlot(f, 0)\nh = SlowPlot(f, n + 1)\
      [setn("n", 0), setn("n", -2)])
 case("slowplot", "n = 1\nf(x) = x/n\ng = SlowPlot(f)\nu = g(-8)",
      [setn("n", 0), setn("n", 2), reject("s = SlowPlot(3)")])
+case("slowplot", "f(x) = sin(x)\ng = SlowPlot(f)\na = 2\nu = g(0)\nv = g(8)")
+case("slowplot", "a = 1\nf(x) = sin(x)\ng = SlowPlot(f)\nv = g(0)\nw = g(8)",
+     [setn("b", 0.5), setn("b", 1), setn("b", 0)])
+case("slowplot", "A = (0, 0)\nB = (2, 2)\nl = Line(A, B)\ng = SlowPlot(l)\n"
+     "h = SlowPlot(Line(A, B), 0)\nu = g(-8)\nv = h(-8)",
+     [mv("B", 0, 2), mv("B", 2, 4)])
+
+# ---------------------------------------------------------------- Derivative
+case("derivative", "n = 0\nk = n/n\nf(x) = x^3 + 1\ng = Derivative(f, k)\nh = NDerivative(f, k)\n"
+     "p = Derivative(f, 2147483648)\nq = Derivative(f, 4294967296)\n"
+     "r = Derivative(f, -1.5)\ns = Derivative(f, -0.5)", [setn("n", 1), setn("n", 0)])
+case("derivative", "n = 0\nk = n/n\nc = Curve(t, t^2, t, 0, 1)\nd = Derivative(c, k)\n"
+     "e = NDerivative(c, t, k)\np = Derivative(c, 2147483648)", [setn("n", 1), setn("n", 0)])
+cases.cases[-1]["sample_curves"] = True
+case("derivative", "f(x) = x^3\nd = Derivative(Curve(t, t^2, t, 0, 1))\n"
+     "e = NDerivative(Curve(t^3, t^2, t, 0, 1), t, 2)\nh = Derivative(f, pi)",
+     [reject("g = Derivative(f, pi, 2)"),
+      reject("g = Derivative(Curve(t, t^2, t, 0, 1), pi, 2)")])
+cases.cases[-1]["sample_curves"] = True
+case("derivative", "n = 5\ns = Spline(Sequence((k, sin(k)), k, 1, n))\nd = Derivative(s)",
+     [setn("n", 260), setn("n", 5)])
+cases.cases[-1]["sample_curves"] = True
 
 cases.write()
 

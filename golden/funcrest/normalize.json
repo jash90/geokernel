@@ -377,6 +377,85 @@
           "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
         }
       ]
+    },
+    {
+      "id": "funcrest-normalize-008",
+      "group": "funcrest",
+      "script": [
+        "r = Normalize({1, 2, true})",
+        "s = Normalize({true, 1})",
+        "u = Normalize({1, \"a\"})"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "reject", "line": "t = Normalize({1, (2, 2)})" }
+      ],
+      "snapshots": [
+        {
+          "r": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "s": { "type": "list", "defined": false },
+          "u": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        },
+        {
+          "r": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "s": { "type": "list", "defined": false },
+          "u": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "funcrest-normalize-009",
+      "group": "funcrest",
+      "script": [
+        "r = Normalize({})",
+        "s = Normalize({4, 4, 4})"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "reject", "line": "t = Normalize({(1, 2), 3, (4, 5)})" }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "list", "defined": false },
+          "s": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 0.0 }
+            ]
+          }
+        },
+        {
+          "r": { "type": "list", "defined": false },
+          "s": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 0.0 }
+            ]
+          }
+        }
+      ]
     }
   ]
 }

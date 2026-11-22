@@ -399,6 +399,111 @@
           "h": { "type": "boolean", "defined": true, "value": false }
         }
       ]
+    },
+    {
+      "id": "funcrest-vertexform-006",
+      "group": "funcrest",
+      "script": [
+        "l = Line((0, 0), (1, 1))",
+        "v = Line((0, 0), (0, 1))",
+        "a = IsVertexForm(3)",
+        "b = IsVertexForm(l)",
+        "d = IsVertexForm(v)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "reject", "line": "s = IsVertexForm(Vector((1, 1)))" }
+      ],
+      "snapshots": [
+        {
+          "l": { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": 0.0 },
+          "v": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 0.0 },
+          "a": { "type": "boolean", "defined": true, "value": false },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "d": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "l": { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": 0.0 },
+          "v": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 0.0 },
+          "a": { "type": "boolean", "defined": true, "value": false },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "d": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "funcrest-vertexform-007",
+      "group": "funcrest",
+      "script": [
+        "F = (0, 1)",
+        "l: y = -1",
+        "c = Parabola(F, l)",
+        "e = Circle((0, 0), 2)",
+        "a = IsVertexForm(c)",
+        "b = IsVertexForm(e)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "F", "x": 0.0, "y": -1.0 },
+        { "action": "move", "label": "F", "x": 0.0, "y": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "F": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 1.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [1.0, 0.0, 0.0, -0.0, -0.0, -2.0],
+            "vertex": [0.0, -0.0],
+            "p": 2.0,
+            "eigenvectors": [
+              [0.0, 1.0],
+              [-1.0, 0.0]
+            ]
+          },
+          "e": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "a": { "type": "boolean", "defined": true, "value": true },
+          "b": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": 0.0, "y": -1.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 1.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "double_line",
+            "matrix": [1.0, 0.0, 0.0, -0.0, -0.0, -0.0],
+            "lines": [
+              [-1.0, 0.0, 0.0],
+              [-1.0, 0.0, 0.0]
+            ]
+          },
+          "e": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "a": { "type": "boolean", "defined": true, "value": false },
+          "b": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 1.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [1.0, 0.0, 3.0, -0.0, -0.0, -3.0],
+            "vertex": [0.0, 0.5],
+            "p": 3.0,
+            "eigenvectors": [
+              [0.0, 1.0],
+              [-1.0, 0.0]
+            ]
+          },
+          "e": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "a": { "type": "boolean", "defined": true, "value": true },
+          "b": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
     }
   ]
 }

@@ -1048,6 +1048,365 @@
           "v": { "type": "list", "defined": false }
         }
       ]
+    },
+    {
+      "id": "funcrest-svd-008",
+      "group": "funcrest",
+      "script": [
+        "n = 2",
+        "l = {{1, 2}, Sequence(k, k, 1, n)}",
+        "s = SVD(l)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 1.0 },
+        { "action": "set_number", "label": "n", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              }
+            ]
+          },
+          "s": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": [
+                      { "type": "number", "defined": true, "value": -0.7071067811865475 },
+                      { "type": "number", "defined": true, "value": -0.7071067811865475 }
+                    ]
+                  },
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": [
+                      { "type": "number", "defined": true, "value": -0.7071067811865475 },
+                      { "type": "number", "defined": true, "value": 0.7071067811865476 }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": [
+                      { "type": "number", "defined": true, "value": 3.1622776601683795 },
+                      { "type": "number", "defined": true, "value": 0.0 }
+                    ]
+                  },
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": [
+                      { "type": "number", "defined": true, "value": 0.0 },
+                      { "type": "number", "defined": true, "value": 0.0 }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": [
+                      { "type": "number", "defined": true, "value": -0.4472135954999579 },
+                      { "type": "number", "defined": true, "value": -0.8944271909999157 }
+                    ]
+                  },
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": [
+                      { "type": "number", "defined": true, "value": -0.8944271909999157 },
+                      { "type": "number", "defined": true, "value": 0.4472135954999579 }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              }
+            ]
+          },
+          "s": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              }
+            ]
+          },
+          "s": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "funcrest-svd-009",
+      "group": "funcrest",
+      "script": [
+        "s = SVD({{1/0}})",
+        "t = SVD({{0/0}})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "s": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": [
+                      { "type": "number", "defined": true, "value": 1.0 }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": [
+                      { "type": "number", "defined": false }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": [
+                      { "type": "number", "defined": true, "value": 1.0 }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "t": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "funcrest-svd-010",
+      "group": "funcrest",
+      "script": [
+        "s = SVD({{1, 2, 3}, {4, 5, 6}, {7, 8, 9}})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "s": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": [
+                      { "type": "number", "defined": true, "value": -0.2148372383683962 },
+                      { "type": "number", "defined": true, "value": 0.8872306883463701 },
+                      { "type": "number", "defined": true, "value": 0.40824829046386374 }
+                    ]
+                  },
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": [
+                      { "type": "number", "defined": true, "value": -0.520587389464737 },
+                      { "type": "number", "defined": true, "value": 0.24964395298829847 },
+                      { "type": "number", "defined": true, "value": -0.8164965809277258 }
+                    ]
+                  },
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": [
+                      { "type": "number", "defined": true, "value": -0.8263375405610778 },
+                      { "type": "number", "defined": true, "value": -0.387942782369775 },
+                      { "type": "number", "defined": true, "value": 0.40824829046386274 }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": [
+                      { "type": "number", "defined": true, "value": 16.84810335261421 },
+                      { "type": "number", "defined": true, "value": 0.0 },
+                      { "type": "number", "defined": true, "value": 0.0 }
+                    ]
+                  },
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": [
+                      { "type": "number", "defined": true, "value": 0.0 },
+                      { "type": "number", "defined": true, "value": 1.068369514554708 },
+                      { "type": "number", "defined": true, "value": 0.0 }
+                    ]
+                  },
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": [
+                      { "type": "number", "defined": true, "value": 0.0 },
+                      { "type": "number", "defined": true, "value": 0.0 },
+                      { "type": "number", "defined": true, "value": 0.0 }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": [
+                      { "type": "number", "defined": true, "value": -0.47967117787777147 },
+                      { "type": "number", "defined": true, "value": -0.7766909903215586 },
+                      { "type": "number", "defined": true, "value": -0.4082482904638641 }
+                    ]
+                  },
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": [
+                      { "type": "number", "defined": true, "value": -0.5723677939720621 },
+                      { "type": "number", "defined": true, "value": -0.07568647010455967 },
+                      { "type": "number", "defined": true, "value": 0.8164965809277258 }
+                    ]
+                  },
+                  {
+                    "type": "list",
+                    "defined": true,
+                    "elements": [
+                      { "type": "number", "defined": true, "value": -0.665064410066353 },
+                      { "type": "number", "defined": true, "value": 0.6253180501124431 },
+                      { "type": "number", "defined": true, "value": -0.4082482904638621 }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "funcrest-svd-011",
+      "group": "funcrest",
+      "script": [
+        "d = IsDefined(SVD(Sequence(Sequence(sin(i*j), j, 1, 200), i, 1, 200)))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "d": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
     }
   ]
 }

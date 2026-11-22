@@ -138,6 +138,58 @@
           "w": { "type": "number", "defined": true, "value": 2.0 }
         }
       ]
+    },
+    {
+      "id": "misc-minimizepoint-005",
+      "group": "misc",
+      "script": [
+        "A = (0, 0)",
+        "B = (6, 0)",
+        "P = Point(Segment(A, B))",
+        "b = 1",
+        "f = sqrt(x(P) - b)",
+        "M = Minimize(f, P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "value": 4.0 },
+        { "action": "set_number", "label": "b", "value": -1.0 },
+        { "action": "set_number", "label": "b", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "f": { "type": "number", "defined": false },
+          "M": { "type": "point", "defined": true, "x": 0.8753882025018928, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "f": { "type": "number", "defined": false },
+          "M": { "type": "point", "defined": true, "x": 2.2917960675006306, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "b": { "type": "number", "defined": true, "value": -1.0 },
+          "f": { "type": "number", "defined": true, "value": 1.0 },
+          "M": { "type": "point", "defined": true, "x": 1.7971991370329074E-7, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "f": { "type": "number", "defined": false },
+          "M": { "type": "point", "defined": true, "x": 0.8753882025018928, "y": 0.0 }
+        }
+      ]
     }
   ]
 }
