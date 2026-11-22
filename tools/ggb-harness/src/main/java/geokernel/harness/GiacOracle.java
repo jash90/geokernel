@@ -41,6 +41,7 @@ public final class GiacOracle {
         if (enabled()) {
             app.setCASFactory(FactoryHolder.FACTORY);
         }
+        ProverOracle.configure();
     }
 
     public static void main(String[] args) {

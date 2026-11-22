@@ -1620,6 +1620,7 @@ fn list_slots(c: &Construction, id: Id) -> Option<&[Slot]> {
     match c.def(id) {
         Def::Expr(d) => Some(&entry(c, d).items),
         Def::Chart(_) => c.chart(id).map(|data| data.slots.as_slice()),
+        Def::Prove(_) => c.proof(id).map(|data| data.slots.as_slice()),
         _ => None,
     }
 }

@@ -750,7 +750,7 @@ fn assign(state: &mut State, i: u32, ty: Ty, d: u32, k: u64, v: u64) -> (Ty, u32
 fn object_type(c: &Construction, id: Id) -> Result<Ty, String> {
     match (c.kind(id), c.def(id)) {
         (Kind::List, Def::Expr(d)) => Ok(super::entry(c, d).root_ty()),
-        (Kind::List, Def::Chart(_)) => Ok(Ty::List(Elem::Any)),
+        (Kind::List, Def::Chart(_) | Def::Prove(_)) => Ok(Ty::List(Elem::Any)),
         // a locus is the argument of `First(locus, n)` (`AlgoFirstLocus`);
         // anywhere else it reads as a plain number, which no operation
         // makes sense of and evaluates to the undefined number

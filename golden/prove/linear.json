@@ -1,0 +1,1354 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "prove-linear-001",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "D = Midpoint(A, B)",
+        "E = Midpoint(A, C)",
+        "f = Line(D, E)",
+        "g = Line(B, C)",
+        "b = AreParallel(f, g)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": 1.0, "y": 1.0 },
+        { "action": "move", "label": "A", "x": 5.0, "y": 1.0 },
+        { "action": "move", "label": "A", "x": 0.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 2.5, "y": 0.5 },
+          "E": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "f": { "type": "line", "defined": true, "a": -1.5, "b": -1.5, "c": 4.5 },
+          "g": { "type": "line", "defined": true, "a": -3.0, "b": -3.0, "c": 18.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[A,B]" }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "E": { "type": "point", "defined": true, "x": 1.5, "y": 2.5 },
+          "f": { "type": "line", "defined": true, "a": -1.5, "b": -1.5, "c": 6.0 },
+          "g": { "type": "line", "defined": true, "a": -3.0, "b": -3.0, "c": 18.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[A,B]" }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "E": { "type": "point", "defined": true, "x": 3.5, "y": 2.5 },
+          "f": { "type": "line", "defined": true, "a": -1.5, "b": -1.5, "c": 9.0 },
+          "g": { "type": "line", "defined": true, "a": -3.0, "b": -3.0, "c": 18.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[A,B]" }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 2.5, "y": 0.5 },
+          "E": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "f": { "type": "line", "defined": true, "a": -1.5, "b": -1.5, "c": 4.5 },
+          "g": { "type": "line", "defined": true, "a": -3.0, "b": -3.0, "c": 18.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[A,B]" }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-linear-002",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "b = AreCollinear(A, B, C)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 10.0, "y": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": false }
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 10.0, "y": 2.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": false }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-linear-003",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "D = Midpoint(B, C)",
+        "E = Midpoint(A, C)",
+        "F = Midpoint(A, B)",
+        "f = Line(A, D)",
+        "g = Line(B, E)",
+        "h = Line(C, F)",
+        "b = AreConcurrent(f, g, h)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 10.0, "y": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 3.5, "y": 2.5 },
+          "E": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "F": { "type": "point", "defined": true, "x": 2.5, "y": 0.5 },
+          "f": { "type": "line", "defined": true, "a": -2.5, "b": 3.5, "c": 0.0 },
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": -4.0, "c": 9.0 },
+          "h": { "type": "line", "defined": true, "a": 3.5, "b": 0.5, "c": -9.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[A,B]" }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 10.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 7.5, "y": 1.5 },
+          "E": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "F": { "type": "point", "defined": true, "x": 2.5, "y": 0.5 },
+          "f": { "type": "line", "defined": true, "a": -1.5, "b": 7.5, "c": 0.0 },
+          "g": { "type": "line", "defined": false },
+          "h": { "type": "line", "defined": true, "a": 1.5, "b": -7.5, "c": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[A,B]" }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-linear-004",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "a = Line(B, C)",
+        "d = Line(A, C)",
+        "e = Line(A, B)",
+        "f = PerpendicularLine(A, a)",
+        "g = PerpendicularLine(B, d)",
+        "h = PerpendicularLine(C, e)",
+        "b = AreConcurrent(f, g, h)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 10.0, "y": 2.0 },
+        { "action": "move", "label": "C", "x": 2.0, "y": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "a": { "type": "line", "defined": true, "a": -3.0, "b": -3.0, "c": 18.0 },
+          "d": { "type": "line", "defined": true, "a": -4.0, "b": 2.0, "c": 0.0 },
+          "e": { "type": "line", "defined": true, "a": -1.0, "b": 5.0, "c": 0.0 },
+          "f": { "type": "line", "defined": true, "a": 3.0, "b": -3.0, "c": 0.0 },
+          "g": { "type": "line", "defined": true, "a": -2.0, "b": -4.0, "c": 14.0 },
+          "h": { "type": "line", "defined": true, "a": -5.0, "b": -1.0, "c": 14.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[A,B]" }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 10.0, "y": 2.0 },
+          "a": { "type": "line", "defined": true, "a": -1.0, "b": 5.0, "c": 0.0 },
+          "d": { "type": "line", "defined": true, "a": -2.0, "b": 10.0, "c": 0.0 },
+          "e": { "type": "line", "defined": true, "a": -1.0, "b": 5.0, "c": 0.0 },
+          "f": { "type": "line", "defined": true, "a": -5.0, "b": -1.0, "c": 0.0 },
+          "g": { "type": "line", "defined": true, "a": -10.0, "b": -2.0, "c": 52.0 },
+          "h": { "type": "line", "defined": true, "a": -5.0, "b": -1.0, "c": 52.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[A,B]" }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "a": { "type": "line", "defined": true, "a": -3.0, "b": -3.0, "c": 18.0 },
+          "d": { "type": "line", "defined": true, "a": -4.0, "b": 2.0, "c": 0.0 },
+          "e": { "type": "line", "defined": true, "a": -1.0, "b": 5.0, "c": 0.0 },
+          "f": { "type": "line", "defined": true, "a": 3.0, "b": -3.0, "c": 0.0 },
+          "g": { "type": "line", "defined": true, "a": -2.0, "b": -4.0, "c": 14.0 },
+          "h": { "type": "line", "defined": true, "a": -5.0, "b": -1.0, "c": 14.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[A,B]" }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-linear-005",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "f = PerpendicularBisector(A, B)",
+        "g = PerpendicularBisector(B, C)",
+        "h = PerpendicularBisector(A, C)",
+        "b = AreConcurrent(f, g, h)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "f": { "type": "line", "defined": true, "a": -5.0, "b": -1.0, "c": 13.0 },
+          "g": { "type": "line", "defined": true, "a": 3.0, "b": -3.0, "c": -3.0 },
+          "h": { "type": "line", "defined": true, "a": -2.0, "b": -4.0, "c": 10.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[A,B]" }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-linear-006",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "D = (-1, 3)",
+        "E = Midpoint(A, B)",
+        "F = Midpoint(B, C)",
+        "G = Midpoint(C, D)",
+        "H = Midpoint(D, A)",
+        "f = Line(E, F)",
+        "g = Line(G, H)",
+        "b = AreParallel(f, g)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "D", "x": 3.0, "y": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": -1.0, "y": 3.0 },
+          "E": { "type": "point", "defined": true, "x": 2.5, "y": 0.5 },
+          "F": { "type": "point", "defined": true, "x": 3.5, "y": 2.5 },
+          "G": { "type": "point", "defined": true, "x": 0.5, "y": 3.5 },
+          "H": { "type": "point", "defined": true, "x": -0.5, "y": 1.5 },
+          "f": { "type": "line", "defined": true, "a": -2.0, "b": 1.0, "c": 4.5 },
+          "g": { "type": "line", "defined": true, "a": 2.0, "b": -1.0, "c": 2.5 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[A,B]" }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "E": { "type": "point", "defined": true, "x": 2.5, "y": 0.5 },
+          "F": { "type": "point", "defined": true, "x": 3.5, "y": 2.5 },
+          "G": { "type": "point", "defined": true, "x": 2.5, "y": 3.5 },
+          "H": { "type": "point", "defined": true, "x": 1.5, "y": 1.5 },
+          "f": { "type": "line", "defined": true, "a": -2.0, "b": 1.0, "c": 4.5 },
+          "g": { "type": "line", "defined": true, "a": 2.0, "b": -1.0, "c": -1.5 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[A,B]" }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-linear-007",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "a = Line(B, C)",
+        "e = Line(A, B)",
+        "f = Line(A, a)",
+        "g = Line(C, e)",
+        "D = Intersect(f, g)",
+        "M = Midpoint(A, C)",
+        "b = AreCollinear(B, D, M)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 10.0, "y": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "a": { "type": "line", "defined": true, "a": -3.0, "b": -3.0, "c": 18.0 },
+          "e": { "type": "line", "defined": true, "a": -1.0, "b": 5.0, "c": 0.0 },
+          "f": { "type": "line", "defined": true, "a": -3.0, "b": -3.0, "c": 0.0 },
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 5.0, "c": -18.0 },
+          "D": { "type": "point", "defined": true, "x": -3.0, "y": 3.0 },
+          "M": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[A,B]" }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 10.0, "y": 2.0 },
+          "a": { "type": "line", "defined": true, "a": -1.0, "b": 5.0, "c": 0.0 },
+          "e": { "type": "line", "defined": true, "a": -1.0, "b": 5.0, "c": 0.0 },
+          "f": { "type": "line", "defined": true, "a": -1.0, "b": 5.0, "c": 0.0 },
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 5.0, "c": 0.0 },
+          "D": { "type": "point", "defined": false },
+          "M": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[A,B]" }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-linear-008",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "a = Line(B, C)",
+        "f = PerpendicularLine(A, a)",
+        "g = PerpendicularLine(B, f)",
+        "b = AreParallel(a, g)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "a": { "type": "line", "defined": true, "a": -3.0, "b": -3.0, "c": 18.0 },
+          "f": { "type": "line", "defined": true, "a": 3.0, "b": -3.0, "c": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 3.0, "b": 3.0, "c": -18.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[A,B]" }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-linear-009",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "a = Line(B, C)",
+        "f = Line(A, a)",
+        "g = PerpendicularLine(C, f)",
+        "b = ArePerpendicular(a, g)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "a": { "type": "line", "defined": true, "a": -3.0, "b": -3.0, "c": 18.0 },
+          "f": { "type": "line", "defined": true, "a": -3.0, "b": -3.0, "c": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 3.0, "b": -3.0, "c": 6.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[A,B]" }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-linear-010",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "e = Line(A, B)",
+        "d = Line(A, C)",
+        "b = ArePerpendicular(e, d)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "e": { "type": "line", "defined": true, "a": -1.0, "b": 5.0, "c": 0.0 },
+          "d": { "type": "line", "defined": true, "a": -4.0, "b": 2.0, "c": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": false }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-linear-011",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "e = Line(A, B)",
+        "d = Line(A, C)",
+        "b = AreParallel(e, d)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "e": { "type": "line", "defined": true, "a": -1.0, "b": 5.0, "c": 0.0 },
+          "d": { "type": "line", "defined": true, "a": -4.0, "b": 2.0, "c": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": false }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-linear-012",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "D = Midpoint(A, B)",
+        "E = Midpoint(B, A)",
+        "b = AreEqual(D, E)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 2.5, "y": 0.5 },
+          "E": { "type": "point", "defined": true, "x": 2.5, "y": 0.5 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[A,B]" }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-linear-013",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "D = Midpoint(A, B)",
+        "E = Midpoint(B, C)",
+        "b = AreEqual(D, E)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 2.5, "y": 0.5 },
+          "E": { "type": "point", "defined": true, "x": 3.5, "y": 2.5 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": false }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-linear-014",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "D = Midpoint(A, B)",
+        "b = AreCollinear(A, D, B)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 2.5, "y": 0.5 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[A,B]" }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-linear-015",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "D = Midpoint(A, B)",
+        "E = Midpoint(A, D)",
+        "F = Midpoint(D, B)",
+        "G = Midpoint(E, F)",
+        "b = AreEqual(G, D)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 2.5, "y": 0.5 },
+          "E": { "type": "point", "defined": true, "x": 1.25, "y": 0.25 },
+          "F": { "type": "point", "defined": true, "x": 3.75, "y": 0.75 },
+          "G": { "type": "point", "defined": true, "x": 2.5, "y": 0.5 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[A,B]" }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-linear-016",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "e = Line(A, B)",
+        "P = Point(e)",
+        "M = Midpoint(A, P)",
+        "b = AreCollinear(B, M, P)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": 2.0, "y": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "e": { "type": "line", "defined": true, "a": -1.0, "b": 5.0, "c": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "M": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true }
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "e": { "type": "line", "defined": true, "a": 3.0, "b": 3.0, "c": -18.0 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "M": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-linear-017",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "e = Segment(A, B)",
+        "P = Point(e)",
+        "b = AreCollinear(A, B, P)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "e": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 5.0, "y2": 1.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-linear-018",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "e = Line(A, B)",
+        "P = Point(e)",
+        "b = AreCollinear(A, C, P)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "e": { "type": "line", "defined": true, "a": -1.0, "b": 5.0, "c": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": false }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-linear-019",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "D = Midpoint(A, B)",
+        "E = Midpoint(A, C)",
+        "F = Midpoint(B, C)",
+        "f = Line(D, E)",
+        "g = Line(E, F)",
+        "h = Line(D, F)",
+        "b = AreConcurrent(f, g, h)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 2.5, "y": 0.5 },
+          "E": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "F": { "type": "point", "defined": true, "x": 3.5, "y": 2.5 },
+          "f": { "type": "line", "defined": true, "a": -1.5, "b": -1.5, "c": 4.5 },
+          "g": { "type": "line", "defined": true, "a": -0.5, "b": 2.5, "c": -4.5 },
+          "h": { "type": "line", "defined": true, "a": -2.0, "b": 1.0, "c": 4.5 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": false }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-linear-020",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "a = Line(B, C)",
+        "f = PerpendicularLine(A, a)",
+        "H = Intersect(f, a)",
+        "e = Line(A, H)",
+        "b = ArePerpendicular(e, a)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "a": { "type": "line", "defined": true, "a": -3.0, "b": -3.0, "c": 18.0 },
+          "f": { "type": "line", "defined": true, "a": 3.0, "b": -3.0, "c": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "e": { "type": "line", "defined": true, "a": -3.0, "b": 3.0, "c": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[A,B]" }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-linear-021",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "a = Line(B, C)",
+        "e = Line(A, B)",
+        "f = Line(C, e)",
+        "g = Line(A, a)",
+        "b = AreParallel(f, e)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "a": { "type": "line", "defined": true, "a": -3.0, "b": -3.0, "c": 18.0 },
+          "e": { "type": "line", "defined": true, "a": -1.0, "b": 5.0, "c": 0.0 },
+          "f": { "type": "line", "defined": true, "a": -1.0, "b": 5.0, "c": -18.0 },
+          "g": { "type": "line", "defined": true, "a": -3.0, "b": -3.0, "c": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[A,B]" }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-linear-022",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "e = Line(A, B)",
+        "f = Line(B, A)",
+        "b = AreEqual(e, f)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "e": { "type": "line", "defined": true, "a": -1.0, "b": 5.0, "c": 0.0 },
+          "f": { "type": "line", "defined": true, "a": 1.0, "b": -5.0, "c": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[A,B]" }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-linear-023",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "e = Line(A, B)",
+        "f = Line(A, C)",
+        "b = AreEqual(e, f)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "e": { "type": "line", "defined": true, "a": -1.0, "b": 5.0, "c": 0.0 },
+          "f": { "type": "line", "defined": true, "a": -4.0, "b": 2.0, "c": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": false }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-linear-024",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "D = (-1, 3)",
+        "E = Midpoint(A, C)",
+        "F = Midpoint(B, D)",
+        "G = Midpoint(A, B)",
+        "H = Midpoint(C, D)",
+        "M = Midpoint(E, F)",
+        "b = AreCollinear(M, G, H)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": -1.0, "y": 3.0 },
+          "E": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "F": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "G": { "type": "point", "defined": true, "x": 2.5, "y": 0.5 },
+          "H": { "type": "point", "defined": true, "x": 0.5, "y": 3.5 },
+          "M": { "type": "point", "defined": true, "x": 1.5, "y": 2.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[A,B]" }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-linear-025",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "D = (-1, 3)",
+        "f = Line(A, B)",
+        "g = Line(C, D)",
+        "E = Intersect(f, g)",
+        "h = Line(A, C)",
+        "k = Line(B, D)",
+        "F = Intersect(h, k)",
+        "M = Midpoint(A, D)",
+        "b = AreCollinear(E, F, M)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": -1.0, "y": 3.0 },
+          "f": { "type": "line", "defined": true, "a": -1.0, "b": 5.0, "c": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": -3.0, "c": 10.0 },
+          "E": { "type": "point", "defined": true, "x": -25.0, "y": -5.0 },
+          "h": { "type": "line", "defined": true, "a": -4.0, "b": 2.0, "c": 0.0 },
+          "k": { "type": "line", "defined": true, "a": -2.0, "b": -6.0, "c": 16.0 },
+          "F": { "type": "point", "defined": true, "x": 1.1428571428571428, "y": 2.2857142857142856 },
+          "M": { "type": "point", "defined": true, "x": -0.5, "y": 1.5 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": false }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-linear-026",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "D = Midpoint(A, B)",
+        "G = Midpoint(D, C)",
+        "b = AreCollinear(A, B, G)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 2.5, "y": 0.5 },
+          "G": { "type": "point", "defined": true, "x": 2.25, "y": 2.25 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": false }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
