@@ -6,6 +6,8 @@ pub(super) mod intersection;
 mod polynomial;
 pub(crate) mod tangent;
 
+const MAX_OUTPUTS: usize = 64;
+
 pub(crate) fn asymptotes(
     c: &Construction,
     id: Id,
@@ -60,11 +62,16 @@ pub(crate) fn asymptotes(
     // the first nonzero row is directly the polynomial in the offset y.
     if let Some(row) = coefficients
         .iter()
+        .take(degree + 1)
+        .enumerate()
         .rev()
-        .find(|row| row.iter().any(|v| *v != 0.0))
+        .find_map(|(x, row)| {
+            let mut row = row[..row.len().min(degree - x + 1)].to_vec();
+            clean(&mut row).then_some(row)
+        })
     {
         lines.extend(
-            ordered_roots(row, charge)
+            ordered_roots(&row, charge)
                 .into_iter()
                 .map(|offset| Value::Line {
                     a: 0.0,

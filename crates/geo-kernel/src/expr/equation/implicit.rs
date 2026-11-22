@@ -122,9 +122,9 @@ impl Construction {
                 .iter()
                 .enumerate()
                 .flat_map(|(x, row)| {
-                    row.iter()
-                        .enumerate()
-                        .filter_map(move |(y, &v)| (v != 0.0).then_some(x + y))
+                    row.iter().enumerate().filter_map(move |(y, &v)| {
+                        (v.abs() > crate::tol::STANDARD_PRECISION).then_some(x + y)
+                    })
                 })
                 .max()
                 .unwrap_or(0),
@@ -476,48 +476,36 @@ fn through_points(c: &Construction, list: Id) -> Option<Coefficients> {
         })
         .collect::<Option<Vec<_>>>()?;
 
-    for fit_degree in (1..=degree).rev() {
-        let powers: Vec<_> = (0..=fit_degree)
-            .flat_map(|i| (0..=fit_degree - i).map(move |j| (i, j)))
-            .collect();
-        let n = powers.len() - 1;
-        let rows: Vec<Vec<f64>> = points
-            .iter()
-            .take(n)
-            .map(|&(x, y)| {
-                powers
-                    .iter()
-                    .map(|&(i, j)| x.powi(i as i32) * y.powi(j as i32))
-                    .collect()
-            })
-            .collect();
-        if rows.iter().flatten().any(|v| !v.is_finite()) {
-            return None;
-        }
-        // Pick the first coefficient that can be fixed to one. If the fit
-        // is rank deficient, try the lower degree and check all points.
-        for fixed in 0..=n {
-            let Some(solution) = solve(&rows, fixed) else {
-                continue;
-            };
-            let mut coefficients = vec![vec![0.0; degree + 1]; degree + 1];
-            for (&(i, j), coefficient) in powers.iter().zip(solution) {
-                coefficients[i][j] = if coefficient.abs() < crate::tol::STANDARD_PRECISION {
-                    0.0
-                } else {
-                    coefficient
-                };
-            }
-            return points
+    let powers: Vec<_> = (0..=degree)
+        .flat_map(|i| (0..=degree - i).map(move |j| (i, j)))
+        .collect();
+    let rows: Vec<Vec<f64>> = points
+        .iter()
+        .map(|&(x, y)| {
+            powers
                 .iter()
-                .all(|&(x, y)| {
-                    crate::plot::implicit::evaluate(&coefficients, x, y).abs()
-                        < crate::tol::MIN_PRECISION
-                })
-                .then_some(coefficients);
+                .map(|&(i, j)| x.powi(i as i32) * y.powi(j as i32))
+                .collect()
+        })
+        .collect();
+    if rows.iter().flatten().any(|v| !v.is_finite()) {
+        return None;
+    }
+    // The lower-degree retry uses cached projection coordinates. For ordinary
+    // 2D points those coordinates are all zero, so each retry is singular.
+    let solution = (0..powers.len()).find_map(|fixed| solve(&rows, fixed))?;
+    let mut coefficients = vec![vec![0.0; degree + 1]; degree + 1];
+    for (&(i, j), coefficient) in powers.iter().zip(solution) {
+        if coefficient.abs() >= crate::tol::STANDARD_PRECISION {
+            coefficients[i][j] = coefficient;
         }
     }
-    None
+    points
+        .iter()
+        .all(|&(x, y)| {
+            crate::plot::implicit::evaluate(&coefficients, x, y).abs() < crate::tol::MIN_PRECISION
+        })
+        .then_some(coefficients)
 }
 
 fn solve(rows: &[Vec<f64>], fixed: usize) -> Option<Vec<f64>> {
@@ -531,15 +519,11 @@ fn solve(rows: &[Vec<f64>], fixed: usize) -> Option<Vec<f64>> {
             coefficients
         })
         .collect();
-    let scale = a
-        .iter()
-        .flat_map(|row| &row[..n])
-        .fold(0.0_f64, |scale, &value| scale.max(value.abs()));
-    let minimum_pivot = 64.0 * f64::EPSILON * scale.max(1.0);
+    const MINIMUM_PIVOT: f64 = 1e-11;
     for k in 0..n {
-        let pivot = (k..n).max_by(|&i, &j| a[i][k].abs().total_cmp(&a[j][k].abs()))?;
+        let pivot = (k..n).min_by(|&i, &j| a[j][k].abs().total_cmp(&a[i][k].abs()))?;
         let divisor = a[pivot][k];
-        if divisor.abs() <= minimum_pivot || !divisor.is_finite() {
+        if divisor.abs() < MINIMUM_PIVOT || !divisor.is_finite() {
             return None;
         }
         a.swap(k, pivot);

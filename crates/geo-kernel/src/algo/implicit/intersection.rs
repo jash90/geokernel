@@ -1,6 +1,7 @@
 // Licensed under the EUPL 1.2.
 
 use super::polynomial::{evaluate, roots, substitute};
+use super::MAX_OUTPUTS;
 use crate::algo::intersect::boundary::BoundaryDef;
 use crate::algo::intersect::function_roots::interval_roots;
 use crate::algo::{polygon, Group, Parents};
@@ -11,6 +12,19 @@ use crate::{Construction, Def, Error, Id, Kind, Value};
 
 type Point = (f64, f64);
 type Points = Vec<Option<Point>>;
+
+const PARTNERS: &[Kind] = &[
+    Kind::Line,
+    Kind::Segment,
+    Kind::Ray,
+    Kind::PolyLine,
+    Kind::Function,
+    Kind::Conic,
+    Kind::Circle,
+    Kind::Arc,
+    Kind::Sector,
+    Kind::ImplicitCurve,
+];
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(in crate::algo) struct Intersection {
@@ -28,16 +42,9 @@ enum Method {
 impl Intersection {
     fn pair(c: &Construction, first: &str, second: &str) -> Option<[Id; 2]> {
         let (a, b) = (c.id(first)?, c.id(second)?);
-        let partner = |kind| {
-            matches!(
-                kind,
-                Kind::Line | Kind::PolyLine | Kind::Function | Kind::Conic | Kind::Circle
-            )
-        };
         match (c.kind(a), c.kind(b)) {
-            (Kind::ImplicitCurve, Kind::ImplicitCurve) => Some([a, b]),
-            (Kind::ImplicitCurve, kind) if partner(kind) => Some([a, b]),
-            (kind, Kind::ImplicitCurve) if partner(kind) => Some([b, a]),
+            (Kind::ImplicitCurve, kind) if PARTNERS.contains(&kind) => Some([a, b]),
+            (kind, Kind::ImplicitCurve) if PARTNERS.contains(&kind) => Some([b, a]),
             _ => None,
         }
     }
@@ -82,7 +89,10 @@ impl Intersection {
         let [selector] = tail else { return None };
         let partner = c.kind(pair[1]);
         if matches!(partner, Kind::PolyLine | Kind::ImplicitCurve)
-            || (matches!(partner, Kind::Conic | Kind::Circle) && c.id(a) != Some(pair[0]))
+            || (matches!(
+                partner,
+                Kind::Conic | Kind::Circle | Kind::Arc | Kind::Sector
+            ) && c.id(a) != Some(pair[0]))
         {
             return Some(Err("no indexed intersection for those arguments".into()));
         }
@@ -118,7 +128,7 @@ impl Intersection {
     }
 
     pub(in crate::algo) fn slot(self, slot: usize) -> Option<Self> {
-        self.can_grow().then_some(Self {
+        (self.can_grow() && slot < MAX_OUTPUTS).then_some(Self {
             method: Method::Slot(u32::try_from(slot).ok()?),
             ..self
         })
@@ -128,10 +138,16 @@ impl Intersection {
         matches!(self.method, Method::Slot(_))
     }
 
+    pub(in crate::algo) fn labels_clipped_slots(self, c: &Construction) -> bool {
+        self.labels_indexed() && matches!(c.kind(self.pair[1]), Kind::Segment | Kind::Ray)
+    }
+
     pub(in crate::algo) fn retains_output(self, c: &Construction) -> bool {
         self.labels_indexed()
-            && (matches!(c.kind(self.pair[1]), Kind::Line | Kind::Function)
-                && !c.value(self.pair[0]).is_defined()
+            && (matches!(
+                c.kind(self.pair[1]),
+                Kind::Line | Kind::Segment | Kind::Ray | Kind::Function
+            ) && !c.value(self.pair[0]).is_defined()
                 || c.kind(self.pair[1]) == Kind::Function && !c.value(self.pair[1]).is_defined())
     }
 
@@ -170,17 +186,7 @@ impl Group for Intersection {
 
     fn check(&self, c: &Construction) -> Result<(), Error> {
         c.expect(self.pair[0], &[Kind::ImplicitCurve])?;
-        c.expect(
-            self.pair[1],
-            &[
-                Kind::Line,
-                Kind::PolyLine,
-                Kind::Function,
-                Kind::Conic,
-                Kind::Circle,
-                Kind::ImplicitCurve,
-            ],
-        )?;
+        c.expect(self.pair[1], PARTNERS)?;
         if let Method::Index(index) = self.method {
             c.intersection_argument_parents(index)
                 .ok_or(Error::UnknownObject)?;
@@ -232,23 +238,45 @@ fn solve(c: &Construction, [first, other]: [Id; 2]) -> Option<Points> {
                 &work,
             )?
         }
+        Kind::Segment | Kind::Ray => {
+            let (a, b, _) = c.raw_carrier(other)?;
+            let (x, y, max) = match c.value(other) {
+                Value::Segment { x1, y1, .. } => (x1, y1, 1.0),
+                Value::Ray { x, y, .. } => (x, y, f64::INFINITY),
+                _ => return None,
+            };
+            parametric(matrix, &[x, b], &[y, -a], [0.0, max], &work)?
+        }
         Kind::PolyLine => polyline(c, other, matrix, &work)?,
         Kind::Function => graph(c, other, matrix, &work)?,
-        Kind::Conic | Kind::Circle if c.value(other).is_defined() => {
-            super::elimination::conic(matrix, &c.conic(other)?, &work)
-                .into_iter()
-                .map(Some)
-                .collect()
+        Kind::Conic | Kind::Circle | Kind::Arc | Kind::Sector if c.value(other).is_defined() => {
+            let conic = c
+                .arc(other)
+                .map(|part| part.conic)
+                .or_else(|| c.conic(other))?;
+            let limited = matches!(c.kind(other), Kind::Arc | Kind::Sector);
+            super::elimination::conic(matrix, &conic, &work, limited).map_or_else(
+                || vec![None],
+                |points| points.into_iter().map(Some).collect(),
+            )
         }
         Kind::ImplicitCurve => {
-            super::elimination::pair(matrix, c.implicit_coefficients(other)?, &work)?
-                .into_iter()
-                .map(Some)
-                .collect()
+            let second = c.implicit_coefficients(other)?;
+            if matrix.len() == 1 && second.len() == 1 {
+                vec![None]
+            } else {
+                super::elimination::pair(matrix, second, &work).map_or_else(
+                    || vec![None],
+                    |points| points.into_iter().map(Some).collect(),
+                )
+            }
         }
         _ => return None,
     };
-    (!work.exhausted()).then_some(points)
+    if work.exhausted() || points.len() > MAX_OUTPUTS {
+        return Some(vec![None]);
+    }
+    Some(points)
 }
 
 fn polynomial_graph(c: &Construction, id: Id, work: &IntersectionWork) -> Option<Vec<f64>> {
@@ -279,7 +307,9 @@ fn graph(c: &Construction, id: Id, matrix: &[Vec<f64>], work: &IntersectionWork)
         return None;
     }
     if let Some(y) = polynomial_graph(c, id, work) {
-        return parametric(matrix, &[0.0, 1.0], &y, [left, right], work);
+        return Some(
+            parametric(matrix, &[0.0, 1.0], &y, [left, right], work).unwrap_or_else(|| vec![None]),
+        );
     }
     let f = |x| {
         if !work.charge((matrix.len() * matrix.first().map_or(0, Vec::len)) as u64) {
@@ -290,6 +320,7 @@ fn graph(c: &Construction, id: Id, matrix: &[Vec<f64>], work: &IntersectionWork)
     Some(
         interval_roots(&f, left, right, scale, || work.exhausted())
             .into_iter()
+            .take(MAX_OUTPUTS + 1)
             .map(|x| finite(x, work.sample(c, id, x)))
             .collect(),
     )
@@ -318,8 +349,12 @@ fn polyline(
             parametric(matrix, &[*x, end_x - x], &[*y, end_y - y], [0.0, 1.0], work)?
                 .into_iter()
                 .flatten()
-                .map(Some),
+                .map(Some)
+                .take(MAX_OUTPUTS + 1 - out.len()),
         );
+        if out.len() > MAX_OUTPUTS {
+            break;
+        }
     }
     Some(out)
 }

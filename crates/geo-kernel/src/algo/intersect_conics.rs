@@ -25,7 +25,8 @@ use self::distance::distance;
 use self::roots::cubic;
 pub(crate) use self::roots::polynomial_roots;
 pub(in crate::algo) use self::roots::{
-    bracketed_root, complex_roots, graph_roots, polynomial_analysis_roots,
+    bracketed_root, complex_roots, graph_roots, newton as polynomial_newton,
+    polynomial_analysis_roots,
 };
 pub(crate) use self::state::Intersection;
 pub(crate) use self::state::SavedSlots;

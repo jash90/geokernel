@@ -59,9 +59,10 @@ impl BoundaryDef {
         matches!(self.0, Intersection::Implicit(d) if d.retains_output(c))
     }
 
-    /// Cartesian carrier intersections label slots even when out of domain.
-    pub(crate) fn labels_all_indexed(self) -> bool {
+    /// Limited carrier intersections label slots even when out of domain.
+    pub(crate) fn labels_all_indexed(self, c: &Construction) -> bool {
         matches!(self.0, Intersection::Cartesian(d) if d.is_line())
+            || matches!(self.0, Intersection::Implicit(d) if d.labels_clipped_slots(c))
     }
 
     pub(crate) fn with_root(self, value: Value) -> Option<Self> {

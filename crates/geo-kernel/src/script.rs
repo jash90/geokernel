@@ -481,7 +481,6 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
     {
         return result;
     }
-    let before = c.len();
     let start = c.checkpoint();
     if let Some(result) = define_inline_region(c, name, rhs) {
         if result.is_err() {
@@ -496,7 +495,8 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
             return Err(error);
         }
     };
-    let result = define_resolved(c, name, call.as_deref().unwrap_or(rhs));
+    let resolved = call.as_deref().unwrap_or(rhs);
+    let result = define_resolved(c, name, resolved);
     if let Ok(Some(id)) = result.as_ref() {
         let numeric_expression = c.kind(*id).is_number()
             && crate::expr::plain_number(rhs).is_none()
@@ -515,10 +515,21 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
             c.remember_construction_source(*id, rhs);
         }
     }
-    if result.is_err() || (matches!(result, Ok(None)) && c.len() > before) {
+    if result.is_err() || (matches!(result, Ok(None)) && implicit_multi_output(c, resolved)) {
         c.discard_since(start);
     }
     result
+}
+
+fn implicit_multi_output(c: &Construction, rhs: &str) -> bool {
+    split_call(rhs).is_some_and(|(command, args)| {
+        matches!(command, "Intersect" | "Tangent")
+            && args.len() == 2
+            && args.iter().any(|arg| {
+                c.id(arg)
+                    .is_some_and(|id| c.kind(id) == Kind::ImplicitCurve)
+            })
+    })
 }
 
 /// Lowers an imported argument within its owning definition. Each temporary
@@ -537,6 +548,7 @@ fn with_saved_arguments(
     }
     let before = c.len();
     let start = c.checkpoint();
+    let mut implicit = false;
     let result = (|| {
         let args = args
             .iter()
@@ -547,9 +559,11 @@ fn with_saved_arguments(
                 },
             )
             .collect::<Result<Vec<_>, String>>()?;
-        run(c, &format!("{command}({})", args.join(", ")))
+        let call = format!("{command}({})", args.join(", "));
+        implicit = implicit_multi_output(c, &call);
+        run(c, &call)
     })();
-    if result.is_err() || (matches!(result, Ok(None)) && c.len() > before) {
+    if result.is_err() || (matches!(result, Ok(None)) && implicit) {
         c.discard_since(start);
     } else {
         let source = saved::command_with_inline_arguments(rhs).map(|(source, _)| source);
@@ -1498,7 +1512,7 @@ pub(crate) fn add_outputs(c: &mut Construction, name: &str, defs: Vec<Def>) -> R
     let indexed = matches!(defs.first(), Some(Def::IntersectBoundary(d)) if d.labels_indexed())
         || matches!(defs.first(), Some(Def::Lines(LineDef::ImplicitTangent(_))));
     let all_indexed =
-        matches!(defs.first(), Some(Def::IntersectBoundary(d)) if d.labels_all_indexed());
+        matches!(defs.first(), Some(Def::IntersectBoundary(d)) if d.labels_all_indexed(c));
     // Construction.getIndexLabel: the prefix is the name up to the first `_`.
     let prefix = match name.split('_').next() {
         Some(p) if !p.is_empty() => p,

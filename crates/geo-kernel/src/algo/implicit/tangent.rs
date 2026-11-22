@@ -1,6 +1,7 @@
 // Licensed under the EUPL 1.2.
 
-use super::elimination::{gradient, pair};
+use super::elimination::{gradient, tangent_contacts};
+use super::MAX_OUTPUTS;
 use crate::algo::lines::LineDef;
 use crate::algo::Parents;
 use crate::expr::IntersectionWork;
@@ -42,11 +43,12 @@ impl Tangent {
     }
 
     pub(crate) fn grown_slot(self, slot: usize) -> Option<Def> {
-        self.can_grow()
-            .then_some(Def::Lines(LineDef::ImplicitTangent(Self {
+        (self.can_grow() && slot < MAX_OUTPUTS).then_some(Def::Lines(LineDef::ImplicitTangent(
+            Self {
                 slot: u32::try_from(slot).ok()?,
                 ..self
-            })))
+            },
+        )))
     }
 
     pub(crate) fn parents(self) -> Parents {
@@ -73,7 +75,6 @@ impl Tangent {
 
 fn lines(c: &Construction, [source, curve]: [Id; 2]) -> Option<Vec<Value>> {
     let coefficients = c.implicit_coefficients(curve)?;
-    let degree = c.implicit_degree(curve)?;
     let work = IntersectionWork::new();
     let (point, line) = match c.kind(source) {
         Kind::Point => (Some(c.point(source)?), None),
@@ -81,11 +82,12 @@ fn lines(c: &Construction, [source, curve]: [Id; 2]) -> Option<Vec<Value>> {
         _ => return None,
     };
     let (u, v) = point.or_else(|| line.map(|(a, b, _)| (b, -a)))?;
+    let degree = c.implicit_degree(curve)? as f64;
     let mut helper = coefficients.to_vec();
     for (i, row) in helper.iter_mut().enumerate() {
         for (j, coefficient) in row.iter_mut().enumerate() {
             let base = if point.is_some() {
-                degree.saturating_sub(i + j) as f64 * *coefficient
+                (degree - (i + j) as f64) * *coefficient
             } else {
                 0.0
             };
@@ -96,8 +98,17 @@ fn lines(c: &Construction, [source, curve]: [Id; 2]) -> Option<Vec<Value>> {
                 .unwrap_or(0.0);
             let dy = coefficients[i].get(j + 1).copied().unwrap_or(0.0);
             *coefficient = base + u * (i + 1) as f64 * dx + v * (j + 1) as f64 * dy;
+            if coefficient.abs() <= crate::tol::STANDARD_PRECISION {
+                *coefficient = 0.0;
+            }
         }
     }
+    helper.truncate(
+        helper
+            .iter()
+            .rposition(|row| row.iter().any(|&coefficient| coefficient != 0.0))
+            .map_or(1, |row| row + 1),
+    );
     let mut output = Vec::new();
     if let Some((x, y)) = point {
         if evaluate(coefficients, x, y).abs() < crate::tol::MIN_PRECISION {
@@ -107,7 +118,7 @@ fn lines(c: &Construction, [source, curve]: [Id; 2]) -> Option<Vec<Value>> {
             }
         }
     }
-    for (x, y) in pair(coefficients, &helper, &work).unwrap_or_default() {
+    for (x, y) in tangent_contacts(coefficients, &helper, &work, point.is_some())? {
         if point.is_some_and(|(u, v)| (x - u).abs() <= 0.01 && (y - v).abs() <= 0.01) {
             continue;
         }
@@ -124,7 +135,7 @@ fn lines(c: &Construction, [source, curve]: [Id; 2]) -> Option<Vec<Value>> {
             output.push(line);
         }
     }
-    (!work.exhausted()).then_some(output)
+    (!work.exhausted() && output.len() <= MAX_OUTPUTS).then_some(output)
 }
 
 fn line_value(a: f64, b: f64, c: f64, minimum: f64) -> Option<Value> {
