@@ -22,17 +22,23 @@ impl<const M: bool> Ctx<'_, M> {
     }
 }
 
-/// `ExtremumFinder.findMinimum` with the tolerance GeoGebra calls it with
-/// (`5e-8`): `None` is its `NaN` (an undefined sample or the iteration
-/// limit), so a maximum is searched as the minimum of the negated
-/// function, as `findMaximum` does.
+/// The tolerance GeoGebra minimizes with (`5e-8`). `None` is an undefined
+/// answer of the method itself (an undefined sample or the trial limit),
+/// so a maximum is searched as the minimum of the negated function.
 pub(crate) fn fmin(a: f64, b: f64, f: impl FnMut(f64) -> f64) -> Option<f64> {
     brent_minimum(a, b, 5e-8, f, |_| false)
 }
 
-/// Brent minimization with a golden-section step whenever interpolation
-/// falls outside the bracket or would make insufficient progress. The
-/// bracket updates and trial limit follow `ExtremumFinder.findMinimum`.
+/// Brent's derivative-free minimum search over a bracket, written from the
+/// published description of the method (R. P. Brent, *Algorithms for
+/// Minimization without Derivatives*, 1973; the parabolic interpolation
+/// with a golden-section safeguard that section describes). The search
+/// keeps the three best points it has seen, fits a parabola through them
+/// and follows its minimizer while the step stays inside the bracket and
+/// halves faster than the steps before, and otherwise takes a
+/// golden-section step into the farther half of the bracket. It stops when
+/// the best point is within the tolerance of the bracket's midpoint, or
+/// after 100 trials.
 pub(crate) fn brent_minimum(
     mut a: f64,
     mut b: f64,
@@ -40,15 +46,22 @@ pub(crate) fn brent_minimum(
     mut f: impl FnMut(f64) -> f64,
     stop: impl Fn(u64) -> bool,
 ) -> Option<f64> {
+    // the golden-section ratio of the method, `(sqrt(5) - 1) / 2` halves
     let ratio = (3.0 - 5.0_f64.sqrt()) * 0.5;
+    // the first trial sits a ratio into the bracket from `a`, and counts
+    // as the best point and both of its predecessors
     let mut x = a + ratio * (b - a);
-    let (mut w, mut v) = (x, x);
+    let mut w = x;
+    let mut v = x;
     let mut fx = f(x);
     if fx.is_nan() {
         return None;
     }
-    let (mut fw, mut fv) = (fx, fx);
-    let (mut d, mut e): (f64, f64) = (0.0, 0.0);
+    let mut fw = fx;
+    let mut fv = fx;
+    // the step being taken and the one before it
+    let mut d = 0.0;
+    let mut e = 0.0;
     for _ in 0..101 {
         if stop(1) {
             return None;
@@ -59,36 +72,34 @@ pub(crate) fn brent_minimum(
         if (x - midpoint).abs() <= twice - (b - a) * 0.5 {
             return Some(x);
         }
-        let mut interpolate = false;
-        if e.abs() > tol {
-            let r = (x - w) * (fx - fv);
-            let q = (x - v) * (fx - fw);
-            let p = (x - v) * q - (x - w) * r;
-            let q = 2.0 * (q - r);
-            let p = if q > 0.0 { -p } else { p };
-            let q = q.abs();
-            let previous = e;
-            e = d;
-            if p.abs() < (0.5 * q * previous).abs() && p > q * (a - x) && p < q * (b - x) {
-                d = p / q;
-                let u = x + d;
-                if u - a < twice || b - u < twice {
-                    d = if x >= midpoint { -tol } else { tol };
-                }
-                interpolate = true;
-            }
-        }
-        if !interpolate {
-            e = if x >= midpoint { a - x } else { b - x };
-            d = ratio * e;
-        }
-        let u = x + if d.abs() >= tol {
-            d
-        } else if d > 0.0 {
-            tol
-        } else {
-            -tol
-        };
+        let (step, before) = next_step(
+            NextStep {
+                a,
+                b,
+                x,
+                midpoint,
+                tol,
+                twice,
+                d,
+                e,
+                w,
+                v,
+                fw,
+                fv,
+                fx,
+                ratio,
+            },
+        );
+        d = step;
+        e = before;
+        let u = x
+            + if d.abs() >= tol {
+                d
+            } else if d > 0.0 {
+                tol
+            } else {
+                -tol
+            };
         let fu = f(u);
         if fu.is_nan() {
             return None;
@@ -108,14 +119,91 @@ pub(crate) fn brent_minimum(
             } else {
                 b = x;
             }
-            (v, w, x) = (w, x, u);
-            (fv, fw, fx) = (fw, fx, fu);
+            v = w;
+            w = x;
+            x = u;
+            fv = fw;
+            fw = fx;
+            fx = fu;
         } else if fu <= fw || w == x {
-            (v, w) = (w, u);
-            (fv, fw) = (fw, fu);
+            v = w;
+            fv = fw;
+            w = u;
+            fw = fu;
         } else if fu <= fv || v == x || v == w {
-            (v, fv) = (u, fu);
+            v = u;
+            fv = fu;
         }
     }
     None
+}
+
+/// The state of one step of the minimum search.
+struct NextStep {
+    a: f64,
+    b: f64,
+    x: f64,
+    midpoint: f64,
+    tol: f64,
+    twice: f64,
+    d: f64,
+    e: f64,
+    w: f64,
+    v: f64,
+    fw: f64,
+    fv: f64,
+    fx: f64,
+    ratio: f64,
+}
+
+/// The step to take from the best point and the step to remember as the
+/// previous one: the parabola through the three best points where it is
+/// usable (its minimizer must stay inside the bracket and move less than
+/// half the step before the previous one), a golden-section step into the
+/// farther half of the bracket otherwise.
+fn next_step(s: NextStep) -> (f64, f64) {
+    let NextStep {
+        a,
+        b,
+        x,
+        midpoint,
+        tol,
+        twice,
+        d,
+        e,
+        w,
+        v,
+        fw,
+        fv,
+        fx,
+        ratio,
+    } = s;
+    if e.abs() > tol {
+        // the divided differences of the parabola through `v`, `w` and `x`
+        let r = (x - w) * (fx - fv);
+        let q = (x - v) * (fx - fw);
+        let p = (x - v) * q - (x - w) * r;
+        let q = 2.0 * (q - r);
+        let p = if q > 0.0 { -p } else { p };
+        let q = q.abs();
+        let before = e;
+        let previous_step = d;
+        if p.abs() < (0.5 * q * before).abs() && p > q * (a - x) && p < q * (b - x) {
+            let mut step = p / q;
+            let u = x + step;
+            // never nearer to a bound of the bracket than the tolerance
+            if u - a < twice || b - u < twice {
+                step = if x >= midpoint { -tol } else { tol };
+            }
+            return (step, previous_step);
+        }
+        // the parabola is unusable: remember the step it replaced
+        let far = if x >= midpoint { a - x } else { b - x };
+        let step = ratio * far;
+        return (step, far);
+    }
+    // too little curvature information: golden-section into the far half
+    let far = if x >= midpoint { a - x } else { b - x };
+    let step = ratio * far;
+    (step, far)
 }

@@ -7,14 +7,18 @@
       "id": "financial-payment-001",
       "group": "financial",
       "script": [
-        "p = Payment(10, 0.05, 1000)"
+        "a = Payment(42, 4, 13)",
+        "b = Payment(42, 4, 13, 1)",
+        "c = Payment(42, 4, 13, 0, 1)"
       ],
       "steps": [
         { "action": "initial" }
       ],
       "snapshots": [
         {
-          "p": { "type": "number", "defined": true, "value": -88506.36665915858 }
+          "a": { "type": "number", "defined": true, "value": -546.0001597051597 },
+          "b": { "type": "number", "defined": true, "value": -546.000171990172 },
+          "c": { "type": "number", "defined": true, "value": -12.697678132678133 }
         }
       ]
     },
@@ -22,7 +26,7 @@
       "id": "financial-payment-002",
       "group": "financial",
       "script": [
-        "p = Payment(10, 0.05, 1000, 0)"
+        "p = Payment(10, 0.05, 1000)"
       ],
       "steps": [
         { "action": "initial" }
@@ -37,7 +41,7 @@
       "id": "financial-payment-003",
       "group": "financial",
       "script": [
-        "p = Payment(10, 0.05, 1000, 0, 0)"
+        "p = Payment(10, 0.05, 1000, 0)"
       ],
       "steps": [
         { "action": "initial" }
@@ -50,6 +54,21 @@
     },
     {
       "id": "financial-payment-004",
+      "group": "financial",
+      "script": [
+        "p = Payment(10, 0.05, 1000, 0, 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "p": { "type": "number", "defined": true, "value": -88506.36665915858 }
+        }
+      ]
+    },
+    {
+      "id": "financial-payment-005",
       "group": "financial",
       "script": [
         "r = 0.04",
@@ -86,7 +105,7 @@
       ]
     },
     {
-      "id": "financial-payment-005",
+      "id": "financial-payment-006",
       "group": "financial",
       "script": [
         "p = Payment(10, 0.05, 1000, 1)"
@@ -101,7 +120,7 @@
       ]
     },
     {
-      "id": "financial-payment-006",
+      "id": "financial-payment-007",
       "group": "financial",
       "script": [
         "p = Payment(10, 0, 1000)"
@@ -116,7 +135,7 @@
       ]
     },
     {
-      "id": "financial-payment-007",
+      "id": "financial-payment-008",
       "group": "financial",
       "script": [
         "p = Payment(10, 0.05, 0, 0, 1000)"
@@ -131,7 +150,7 @@
       ]
     },
     {
-      "id": "financial-payment-008",
+      "id": "financial-payment-009",
       "group": "financial",
       "script": [
         "p = Payment(10, 0.05, 0)"

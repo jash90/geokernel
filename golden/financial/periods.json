@@ -7,14 +7,16 @@
       "id": "financial-periods-001",
       "group": "financial",
       "script": [
-        "n = Periods(0.01, -200, 1000)"
+        "n = Periods(10 / 100 / 12, -200, -400, 10000)",
+        "m = Periods(10 / 100 / 12, -200, -400, 10000, 1)"
       ],
       "steps": [
         { "action": "initial" }
       ],
       "snapshots": [
         {
-          "n": { "type": "number", "defined": true, "value": 5.15493355391486 }
+          "n": { "type": "number", "defined": true, "value": 39.97894632819951 },
+          "m": { "type": "number", "defined": true, "value": 39.70201587954573 }
         }
       ]
     },
@@ -22,7 +24,7 @@
       "id": "financial-periods-002",
       "group": "financial",
       "script": [
-        "n = Periods(0.01, -200, 1000, 0)"
+        "n = Periods(0.01, -200, 1000)"
       ],
       "steps": [
         { "action": "initial" }
@@ -37,7 +39,7 @@
       "id": "financial-periods-003",
       "group": "financial",
       "script": [
-        "n = Periods(0.01, -200, 1000, 0, 0)"
+        "n = Periods(0.01, -200, 1000, 0)"
       ],
       "steps": [
         { "action": "initial" }
@@ -50,6 +52,21 @@
     },
     {
       "id": "financial-periods-004",
+      "group": "financial",
+      "script": [
+        "n = Periods(0.01, -200, 1000, 0, 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 5.15493355391486 }
+        }
+      ]
+    },
+    {
+      "id": "financial-periods-005",
       "group": "financial",
       "script": [
         "r = 0.005",
@@ -86,7 +103,7 @@
       ]
     },
     {
-      "id": "financial-periods-005",
+      "id": "financial-periods-006",
       "group": "financial",
       "script": [
         "n = Periods(0, -100, 1000)"
@@ -101,7 +118,7 @@
       ]
     },
     {
-      "id": "financial-periods-006",
+      "id": "financial-periods-007",
       "group": "financial",
       "script": [
         "n = Periods(0.01, -100, 0)"
@@ -116,7 +133,7 @@
       ]
     },
     {
-      "id": "financial-periods-007",
+      "id": "financial-periods-008",
       "group": "financial",
       "script": [
         "n = Periods(0.05, -100, 0, 0, 1000)"

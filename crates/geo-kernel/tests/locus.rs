@@ -355,12 +355,18 @@ fn hull_refuses_wrong_arguments() {
     assert!(script::exec(&mut c, "h = Hull(l)")
         .unwrap_err()
         .contains("does not take 1"));
-    assert!(script::exec(&mut c, "h = Hull(l, A)")
-        .unwrap_err()
-        .contains("needs a number"));
-    assert!(script::exec(&mut c, "h = Hull(A, 1)")
-        .unwrap_err()
-        .contains("needs a list"));
+    // the argument resolver reports the wrong kind itself since the
+    // calculus merge; both messages refuse the point as the number
+    let err = script::exec(&mut c, "h = Hull(l, A)").unwrap_err();
+    assert!(
+        err.contains("needs a number") || err.contains("expected a number"),
+        "{err}"
+    );
+    let err = script::exec(&mut c, "h = Hull(A, 1)").unwrap_err();
+    assert!(
+        err.contains("needs a list") || err.contains("expected a list"),
+        "{err}"
+    );
 }
 
 #[test]

@@ -7,14 +7,18 @@
       "id": "financial-future-001",
       "group": "financial",
       "script": [
-        "f = FutureValue(10, 0.05, -100)"
+        "a = FutureValue(42, 4, 13)",
+        "b = FutureValue(42, 4, 13, 1)",
+        "c = FutureValue(42, 4, 13, 0, 1)"
       ],
       "steps": [
         { "action": "initial" }
       ],
       "snapshots": [
         {
-          "f": { "type": "number", "defined": true, "value": 1.2737820415783307 }
+          "a": { "type": "number", "defined": true, "value": -1058200.0 },
+          "b": { "type": "number", "defined": true, "value": -4477001.0 },
+          "c": { "type": "number", "defined": true, "value": -4.55026E7 }
         }
       ]
     },
@@ -22,7 +26,7 @@
       "id": "financial-future-002",
       "group": "financial",
       "script": [
-        "f = FutureValue(10, 0.05, -100, 0)"
+        "f = FutureValue(10, 0.05, -100)"
       ],
       "steps": [
         { "action": "initial" }
@@ -37,6 +41,21 @@
       "id": "financial-future-003",
       "group": "financial",
       "script": [
+        "f = FutureValue(10, 0.05, -100, 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": { "type": "number", "defined": true, "value": 1.2737820415783307 }
+        }
+      ]
+    },
+    {
+      "id": "financial-future-004",
+      "group": "financial",
+      "script": [
         "f = FutureValue(10, 0.05, -100, 0, 500)"
       ],
       "steps": [
@@ -49,7 +68,7 @@
       ]
     },
     {
-      "id": "financial-future-004",
+      "id": "financial-future-005",
       "group": "financial",
       "script": [
         "r = 0.03",
@@ -86,7 +105,7 @@
       ]
     },
     {
-      "id": "financial-future-005",
+      "id": "financial-future-006",
       "group": "financial",
       "script": [
         "f = FutureValue(10, 0.05, -100, 1)"
@@ -101,7 +120,7 @@
       ]
     },
     {
-      "id": "financial-future-006",
+      "id": "financial-future-007",
       "group": "financial",
       "script": [
         "f = FutureValue(10, 0, -100)"
@@ -116,7 +135,7 @@
       ]
     },
     {
-      "id": "financial-future-007",
+      "id": "financial-future-008",
       "group": "financial",
       "script": [
         "f = FutureValue(4.5, 0.07, -13)"
@@ -131,7 +150,7 @@
       ]
     },
     {
-      "id": "financial-future-008",
+      "id": "financial-future-009",
       "group": "financial",
       "script": [
         "f = FutureValue(-3, 0.07, -13)"
@@ -146,7 +165,7 @@
       ]
     },
     {
-      "id": "financial-future-009",
+      "id": "financial-future-010",
       "group": "financial",
       "script": [
         "f = FutureValue(0, 4, 1/0, 13)"
@@ -161,7 +180,7 @@
       ]
     },
     {
-      "id": "financial-future-010",
+      "id": "financial-future-011",
       "group": "financial",
       "script": [
         "f = FutureValue(0, 4, 10^400, 13)"

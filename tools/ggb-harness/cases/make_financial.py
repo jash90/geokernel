@@ -45,6 +45,13 @@ cases.case("rate", [
 cases.case("rate", [
     "r = Rate(-4, -200, 1000)",
 ], [])
+# the remaining recorded answers of the upstream command tests: a
+# savings-plan rate, two without a bracket, one that only converges from
+# its guess
+cases.case("rate", [
+    "a = Rate(60, -300, 10000)", "b = Rate(42, 4, 13, 1)",
+    "c = Rate(42, 4, 13, 0, 1)", "d = Rate(42, 4, 13, 0, 1, 42)",
+], [])
 # one period, and the boundary where nothing is left
 cases.case("rate", [
     "r = Rate(1, -1000, 1000)",
@@ -52,6 +59,10 @@ cases.case("rate", [
 
 # Periods: how long paying off takes, with and without a final value and
 # a guess.
+cases.case("periods", [
+    "n = Periods(10 / 100 / 12, -200, -400, 10000)",
+    "m = Periods(10 / 100 / 12, -200, -400, 10000, 1)",
+], [])
 cases.case("periods", [
     "n = Periods(0.01, -200, 1000)",
 ], [])
@@ -78,6 +89,10 @@ cases.case("periods", [
 ], [])
 
 # Payment: the instalment of a loan and the withdrawal of a deposit.
+cases.case("payment", [
+    "a = Payment(42, 4, 13)", "b = Payment(42, 4, 13, 1)",
+    "c = Payment(42, 4, 13, 0, 1)",
+], [])
 cases.case("payment", [
     "p = Payment(10, 0.05, 1000)",
 ], [])
@@ -108,6 +123,10 @@ cases.case("payment", [
 ], [])
 
 # FutureValue: what a stream of payments grows to.
+cases.case("future", [
+    "a = FutureValue(42, 4, 13)", "b = FutureValue(42, 4, 13, 1)",
+    "c = FutureValue(42, 4, 13, 0, 1)",
+], [])
 cases.case("future", [
     "f = FutureValue(10, 0.05, -100)",
 ], [])
@@ -145,6 +164,10 @@ cases.case("future", [
 ], [])
 
 # PresentValue: what the stream is worth today.
+cases.case("present", [
+    "a = PresentValue(42, 4, 13)", "b = PresentValue(42, 4, 13, 1)",
+    "c = PresentValue(42, 4, 13, 0, 1)",
+], [])
 cases.case("present", [
     "p = PresentValue(10, 0.05, -100)",
 ], [])

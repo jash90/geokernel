@@ -659,34 +659,62 @@ fn record_slope_field(
 /// `AlgoConvexHull.compute`: the closed convex hull of the defined points
 /// of a list as one locus run. Points that are not defined and duplicates
 /// (within `STANDARD_PRECISION`, as `DoubleUtil.isEqual`) are skipped; a
-/// single point becomes a run of two equal points; the hull itself is
-/// Andrew's monotone chain of the sorted points (`ConvexHull.makeHull`).
+/// single point becomes a run of two equal points.
+///
+/// The hull itself is gift wrapping (Jarvis's march, as textbooks describe
+/// it, e.g. Computational Geometry in C, chapter 8): starting at the point
+/// with the smallest `x` (then `y`), every edge is chosen so that all the
+/// other points lie to its right, collinear points keeping only the
+/// farthest, which walks the hull clockwise. The start point, the vertex
+/// order and the closing point are the reference's own (matched by the
+/// recorded hull cases: collinear runs, duplicates, one and two points).
 fn record_hull(c: &Construction, list: Id) -> LocusData {
     let Some(elements) = c.elements(list) else {
         return LocusData::default();
     };
+    // The work of the hull: every list element read, every comparison of
+    // the wrap and every vertex it emits. Past the evaluation budget the
+    // hull is undefined, as the reference's own runaway inputs are.
+    let end = crate::expr::work_done() + crate::expr::MAX_EVALUATION_WORK;
+    let mut charge = |n: u64| -> bool {
+        crate::expr::charge(n);
+        crate::expr::work_done() <= end
+    };
+    if !charge(1) {
+        return LocusData::default();
+    }
     let mut points: Vec<(f64, f64)> = Vec::new();
-    let is_equal = |a: f64, b: f64| (a - b).abs() <= crate::tol::STANDARD_PRECISION;
     for element in elements.iter() {
-        // only the defined points of the list count, and each only once
+        // only the defined points of the list count
         let Element::Value(Kind::Point, Value::Point { x, y }) = element else {
             continue;
         };
-        if points
-            .iter()
-            .any(|&(a, b)| is_equal(a, x) && is_equal(b, y))
-        {
-            continue;
-        }
         if x.is_nan() || y.is_nan() {
             return LocusData::default();
         }
         points.push((x, y));
     }
-    match points.len() {
+    // Each point only once: sorted, a point within `STANDARD_PRECISION` of
+    // the last one kept, in both coordinates, is the same as it.
+    points.sort_by(|a, b| {
+        a.0.partial_cmp(&b.0)
+            .unwrap_or(std::cmp::Ordering::Equal)
+            .then(a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal))
+    });
+    let is_equal = |a: (f64, f64), b: (f64, f64)| {
+        (a.0 - b.0).abs() <= crate::tol::STANDARD_PRECISION
+            && (a.1 - b.1).abs() <= crate::tol::STANDARD_PRECISION
+    };
+    let mut kept: Vec<(f64, f64)> = Vec::with_capacity(points.len());
+    for &p in &points {
+        if kept.last().is_none_or(|&last| !is_equal(last, p)) {
+            kept.push(p);
+        }
+    }
+    match kept.len() {
         0 => LocusData::default(),
         1 => {
-            let (x, y) = points[0];
+            let (x, y) = kept[0];
             locus_from_points(vec![
                 LocusPoint {
                     x,
@@ -700,57 +728,65 @@ fn record_hull(c: &Construction, list: Id) -> LocusData {
                 },
             ])
         }
-        _ => {
-            points.sort_by(|a, b| {
-                a.0.partial_cmp(&b.0)
-                    .unwrap_or(std::cmp::Ordering::Equal)
-                    .then(a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal))
-            });
-            let cross = |o: (f64, f64), a: (f64, f64), b: (f64, f64)| {
-                (a.0 - o.0) * (b.1 - o.1) - (a.1 - o.1) * (b.0 - o.0)
-            };
-            let mut upper: Vec<(f64, f64)> = Vec::new();
-            for &p in &points {
-                while upper.len() >= 2
-                    && cross(upper[upper.len() - 2], upper[upper.len() - 1], p) >= 0.0
-                {
-                    upper.pop();
-                }
-                upper.push(p);
+        _ => gift_wrap(&kept, &mut charge),
+    }
+}
+
+/// One clockwise tour of the hull by gift wrapping: from `cur`, the next
+/// vertex is the point that leaves every other point to the right of the
+/// edge to it, the farthest of the collinear ones. The tour closes at the
+/// start point.
+fn gift_wrap(points: &[(f64, f64)], charge: &mut dyn FnMut(u64) -> bool) -> LocusData {
+    let cross = |o: (f64, f64), a: (f64, f64), b: (f64, f64)| {
+        (a.0 - o.0) * (b.1 - o.1) - (a.1 - o.1) * (b.0 - o.0)
+    };
+    let farther = |o: (f64, f64), a: (f64, f64), b: (f64, f64)| {
+        let d = |p: (f64, f64)| (p.0 - o.0) * (p.0 - o.0) + (p.1 - o.1) * (p.1 - o.1);
+        d(b) > d(a)
+    };
+    // the sorted points start with the smallest `x`, then `y`
+    let start = points[0];
+    let mut run = Vec::with_capacity(points.len() + 1);
+    let mut cur = start;
+    loop {
+        run.push(LocusPoint {
+            x: cur.0,
+            y: cur.1,
+            line_to: run.len() != 1,
+        });
+        // the first candidate that is not the current point
+        let mut next = None;
+        for &p in points {
+            if p != cur {
+                next = Some(p);
+                break;
             }
-            upper.pop();
-            let mut lower: Vec<(f64, f64)> = Vec::new();
-            for &p in points.iter().rev() {
-                while lower.len() >= 2
-                    && cross(lower[lower.len() - 2], lower[lower.len() - 1], p) >= 0.0
-                {
-                    lower.pop();
-                }
-                lower.push(p);
+        }
+        let Some(mut next) = next else {
+            return LocusData::default();
+        };
+        if !charge(points.len() as u64) {
+            return LocusData::default();
+        }
+        for &p in points {
+            if p == cur {
+                continue;
             }
-            lower.pop();
-            if !(upper.len() == 1 && upper == lower) {
-                upper.extend(lower);
+            match cross(cur, next, p).partial_cmp(&0.0) {
+                // `p` lies to the left of the edge to `next`: the edge
+                // turns too far, `p` comes first on the clockwise walk
+                Some(std::cmp::Ordering::Greater) => next = p,
+                // on the edge itself only the farthest point is a vertex
+                Some(std::cmp::Ordering::Equal) if farther(cur, next, p) => next = p,
+                _ => {}
             }
-            let hull = upper;
-            let mut run = Vec::with_capacity(hull.len() + 1);
-            for (i, &(x, y)) in hull.iter().enumerate() {
-                run.push(LocusPoint {
-                    x,
-                    y,
-                    line_to: i != 0,
-                });
-            }
-            // close the polygon
-            let (x, y) = hull[0];
-            run.push(LocusPoint {
-                x,
-                y,
-                line_to: true,
-            });
-            locus_from_points(run)
+        }
+        cur = next;
+        if cur == start {
+            break;
         }
     }
+    locus_from_points(run)
 }
 
 /// `AlgoLocusND.compute` for `Locus(Q, P)`.

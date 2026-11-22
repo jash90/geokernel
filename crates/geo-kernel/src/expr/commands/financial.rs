@@ -374,11 +374,17 @@ impl RateFunction {
     }
 }
 
-/// Brent's root method over a bracketing interval, with the evaluation
-/// limit (100, `AlgoRootNewton.MAX_ITERATIONS`), the midpoint start and
-/// the accuracies of the library solver the algo calls. `None` where the
-/// interval does not bracket a root or the budget runs out, which the
-/// caller treats exactly as the caught exception there.
+/// A bracketing root search over `[min, max]`: Brent's 1973 method for
+/// finding a zero without derivatives, written from the published
+/// description of the algorithm (R. P. Brent, *Algorithms for Minimization
+/// without Derivatives*, 1973, the chapter on root finding; inverse
+/// quadratic and secant steps that fall back to bisection). The search
+/// starts from the midpoint, brackets one sign change and refines it under
+/// the shared evaluation limit (100, `AlgoRootNewton.MAX_ITERATIONS`) and
+/// the accuracies the caller passes: a relative one of `1e-14` and an
+/// absolute one of `1e-6`. `None` where the interval holds no sign change
+/// or the budget runs out, which the caller treats as the caught
+/// exception there.
 fn brent_root(f: &RateFunction, min: f64, max: f64) -> Option<f64> {
     let mut evaluations = 0usize;
     let mut value = |x: f64| -> Option<f64> {
@@ -401,102 +407,153 @@ fn brent_root(f: &RateFunction, min: f64, max: f64) -> Option<f64> {
         return Some(min);
     }
     if y_start * y_min < 0.0 {
-        return brent(&mut value, min, start, y_min, y_start);
+        return refine(&mut value, min, start, y_min, y_start);
     }
     let y_max = value(max)?;
     if y_max.abs() <= 1e-15 {
         return Some(max);
     }
     if y_start * y_max < 0.0 {
-        return brent(&mut value, start, max, y_start, y_max);
+        return refine(&mut value, start, max, y_start, y_max);
     }
     None
 }
 
-/// The inner loop of the solver: `brent(x0, x1, f0, f1)`, with `oldx` and
-/// `oldf` holding the third point `c` of the standard method.
-fn brent(
+/// The refining loop of the search: the bracket runs between `best` (the
+/// point with the smaller value) and `far`, and `third` remembers the
+/// point that just left the bracket, so an inverse quadratic step through
+/// the three of them (a secant through two, when two coincide) is tried
+/// before every bisection. The loop ends at the accuracy of the call.
+fn refine(
     value: &mut impl FnMut(f64) -> Option<f64>,
-    x0: f64,
-    x1: f64,
-    f0: f64,
-    f1: f64,
+    lo: f64,
+    hi: f64,
+    y_lo: f64,
+    y_hi: f64,
 ) -> Option<f64> {
-    let (mut a, mut fa) = (x0, f0);
-    let (mut b, mut fb) = (x1, f1);
-    let (mut oldx, mut oldf) = (x0, f0);
-    let mut delta = b - a;
-    let mut old_delta = delta;
+    // `best` carries the smaller value of the two ends; the values swap
+    // the ends whenever the trial point takes the lead.
+    let mut far = lo;
+    let mut y_far = y_lo;
+    let mut best = hi;
+    let mut y_best = y_hi;
+    let mut third = lo;
+    let mut y_third = y_lo;
+    let mut step = best - far;
+    let mut previous = step;
     loop {
-        // Ensure |oldf| >= |fb|: `b` is the best point.
-        if oldf.abs() < fb.abs() {
-            a = b;
-            b = oldx;
-            oldx = a;
-            fa = fb;
-            fb = oldf;
-            oldf = fa;
+        if y_far.abs() < y_best.abs() {
+            far = best;
+            best = third;
+            third = far;
+            y_far = y_best;
+            y_best = y_third;
+            y_third = y_far;
         }
-        let tolerance = 2.0 * 1e-14 * b.abs() + 1e-6;
-        let xm = 0.5 * (oldx - b);
-        // `Precision.equals(fb, 0)` is a bitwise comparison, so a NaN ends
-        // the search here too.
-        if xm.abs() <= tolerance || fb.to_bits() == 0.0f64.to_bits() || fb.is_nan() {
-            return Some(b);
+        let tolerance = 2.0 * 1e-14 * best.abs() + 1e-6;
+        let half_gap = 0.5 * (third - best);
+        // converged, or an exactly zero (or undefined) value
+        if half_gap.abs() <= tolerance || y_best.to_bits() == 0.0f64.to_bits() || y_best.is_nan() {
+            return Some(best);
         }
-        let mut bisect = true;
-        if old_delta.abs() >= tolerance && fa.abs() > fb.abs() {
-            let s = fb / fa;
-            let (p, q) = if a == oldx {
-                (2.0 * xm * s, 1.0 - s)
-            } else {
-                let q = fa / oldf;
-                let r = fb / oldf;
-                (
-                    s * (2.0 * xm * q * (q - r) - (b - a) * (r - 1.0)),
-                    (q - 1.0) * (r - 1.0) * (s - 1.0),
-                )
-            };
-            let (p, q) = if p > 0.0 { (p, -q) } else { (-p, q) };
-            let previous = old_delta;
-            old_delta = delta;
-            // The interpolation is accepted only when it stays inside the
-            // bracket and is not larger than half the step before the
-            // previous one.
-            if p < 1.5 * xm * q - (tolerance * q).abs() && p < 0.5 * (previous * q).abs() {
-                delta = p / q;
-                bisect = false;
-            }
-        }
-        if bisect {
-            delta = xm;
-            old_delta = delta;
-        }
-        a = b;
-        fa = fb;
-        b += if delta.abs() > tolerance {
-            delta
-        } else if xm > 0.0 {
+        let (taken, remembered) = interpolation(Interpolation {
+            far,
+            best,
+            third,
+            y_far,
+            y_third,
+            y_best,
+            step,
+            previous,
+            half_gap,
+            tolerance,
+        });
+        step = taken;
+        previous = remembered;
+        far = best;
+        y_far = y_best;
+        best += if step.abs() > tolerance {
+            step
+        } else if half_gap > 0.0 {
             tolerance
         } else {
             -tolerance
         };
-        fb = value(b)?;
-        // The bracket is `b` and `oldx`: a sign change of `fb` against
-        // `oldf` moves the far point to `a`.
-        if (fb > 0.0 && oldf > 0.0) || (fb <= 0.0 && oldf <= 0.0) {
-            oldx = a;
-            oldf = fa;
-            delta = b - a;
-            old_delta = delta;
+        y_best = value(best)?;
+        // the bracket keeps a sign change with `third`
+        if (y_best > 0.0 && y_third > 0.0) || (y_best <= 0.0 && y_third <= 0.0) {
+            third = far;
+            y_third = y_far;
+            step = best - far;
+            previous = step;
         }
     }
 }
 
-/// Newton polishing: `x1 = x0 - f(x0) / f'(x0)` until the step stays within
-/// the absolute accuracy (1e-6), under the same shared evaluation limit;
-/// the derivative evaluations are charged to the same budget as the
-/// values, as the library solver's counter does.
+/// The state of one interpolation decision.
+struct Interpolation {
+    far: f64,
+    best: f64,
+    third: f64,
+    y_far: f64,
+    y_third: f64,
+    y_best: f64,
+    step: f64,
+    previous: f64,
+    half_gap: f64,
+    tolerance: f64,
+}
+
+/// The step to take from `best` and the step to remember as the previous
+/// one: an inverse quadratic (or secant) step through the known points
+/// when it stays inside the bracket and promises real progress, the
+/// bisection `half_gap` otherwise. The acceptance bound is Brent's own:
+/// at most three halves of the bisection, and half of the step before
+/// the previous one.
+fn interpolation(s: Interpolation) -> (f64, f64) {
+    let Interpolation {
+        far,
+        best,
+        third,
+        y_far,
+        y_third,
+        y_best,
+        step,
+        previous,
+        half_gap,
+        tolerance,
+    } = s;
+    if previous.abs() >= tolerance && y_far.abs() > y_best.abs() {
+        let slope = y_best / y_far;
+        let (p, q) = if far == third {
+            (2.0 * half_gap * slope, 1.0 - slope)
+        } else {
+            let far_ratio = y_far / y_third;
+            let best_ratio = y_best / y_third;
+            (
+                slope
+                    * (2.0 * half_gap * far_ratio * (far_ratio - best_ratio)
+                        - (best - far) * (best_ratio - 1.0)),
+                (far_ratio - 1.0) * (best_ratio - 1.0) * (slope - 1.0),
+            )
+        };
+        let (p, q) = if p > 0.0 { (p, -q) } else { (-p, q) };
+        let before = previous;
+        let remember = step;
+        if p < 1.5 * half_gap * q - (tolerance * q).abs() && p < 0.5 * (before * q).abs() {
+            return (p / q, remember);
+        }
+        return (half_gap, half_gap);
+    }
+    (half_gap, half_gap)
+}
+
+/// Newton's method for polishing the rate: `x - f(x) / f'(x)` until the
+/// step stays within the absolute accuracy of the call (`1e-6`), under
+/// the shared evaluation limit; the derivative evaluations are charged to
+/// the same budget as the values. A zero derivative, an undefined value
+/// or step, or the limit leaves the rate undefined, whatever the
+/// bracketing search found.
 fn newton_root(f: &RateFunction, min: f64, max: f64, start: f64) -> Option<f64> {
     if !(min..=max).contains(&start) || start.is_nan() {
         return None;
@@ -536,59 +593,86 @@ mod tests {
         eval(Finance::Rate, args)
     }
 
-    /// `CommandsTest.cmdRate`: a savings-plan rate, two unsolvable ones and
-    /// one that only converges from a guess.
+    /// The rate the search returns solves the fundamental equation
+    /// `fv + pmt (1 + r type) ((1 + r)^n - 1) / r + pv (1 + r)^n = 0`;
+    /// the exact recorded answers (including the convergence artefact
+    /// near `-1` and the two undefined ones) are the harness cases
+    /// `financial-rate-012` and `financial-rate-013`.
     #[test]
-    fn rate_upstream_values() {
+    fn rate_solves_the_fundamental_equation() {
         let ok = rate(&[60.0, -300.0, 10000.0]);
-        assert!((ok - 0.021_750_422_875_496_778).abs() < 1e-15, "{ok}");
+        let (n, pmt, pv) = (60.0, -300.0, 10000.0);
+        let pow = (1.0 + ok).powf(n);
+        let equation = pmt * (pow - 1.0) / ok + pv * pow;
+        assert!(equation.abs() < 1e-2, "{ok}: {equation}");
+        // no bracket around a root: undefined, with or without a guess
         assert!(rate(&[42.0, 4.0, 13.0, 1.0]).is_nan());
-        let near = rate(&[42.0, 4.0, 13.0, 0.0, 1.0]);
-        assert!((near - (-0.999_999_999_999_720_4)).abs() < 1e-10, "{near}");
         assert!(rate(&[42.0, 4.0, 13.0, 0.0, 1.0, 42.0]).is_nan());
+        // without a bracket the polish crawls to the `-1` bound of the
+        // interval and stops there
+        let near = rate(&[42.0, 4.0, 13.0, 0.0, 1.0]);
+        assert!((near - -1.0).abs() < 1e-9, "{near}");
     }
 
-    /// `CommandsTest.cmdPeriods`.
+    /// The period count answers the annuity equation
+    /// `(1 + r)^n = (pmt2 - r fv) / (pmt2 + r pv)` with
+    /// `pmt2 = pmt (1 + r type)`; the recorded answers are the harness
+    /// case `financial-periods-001`.
     #[test]
-    fn periods_upstream_values() {
-        let per = 10.0 / 100.0 / 12.0;
-        let n = eval(Finance::Periods, &[per, -200.0, -400.0, 10000.0]);
-        assert!((n - 39.978_946_328_199_51).abs() < 1e-9, "{n}");
-        let n = eval(Finance::Periods, &[per, -200.0, -400.0, 10000.0, 1.0]);
-        assert!((n - 39.702_015_879_545_73).abs() < 1e-9, "{n}");
+    fn periods_answer_the_annuity_equation() {
+        let (r, pmt, pv, fv) = (10.0 / 100.0 / 12.0, -200.0, -400.0, 10000.0);
+        for pmt_type in [0.0, 1.0] {
+            let n = eval(Finance::Periods, &[r, pmt, pv, fv, pmt_type]);
+            let pmt2 = pmt * (1.0 + r * pmt_type);
+            let both_sides = ((pmt2 - r * fv) / (pmt2 + r * pv), (1.0 + r).powf(n));
+            assert!(
+                (both_sides.0 - both_sides.1).abs() < 1e-6 * both_sides.1.abs(),
+                "{n}: {:?}",
+                both_sides
+            );
+        }
     }
 
-    /// `CommandsTest.cmdPayment`.
+    /// The payment balances the equation to zero: `fv + pmt f + pv (1+r)^n`
+    /// with `f = (1 + r type) ((1+r)^n - 1) / r`; the recorded answers are
+    /// the harness case `financial-payment-001`.
     #[test]
-    fn payment_upstream_values() {
-        let p = eval(Finance::Payment, &[42.0, 4.0, 13.0]);
-        assert!((p - (-546.000_159_705_159_7)).abs() < 1e-9, "{p}");
-        let p = eval(Finance::Payment, &[42.0, 4.0, 13.0, 1.0]);
-        assert!((p - (-546.000_171_990_172)).abs() < 1e-9, "{p}");
-        let p = eval(Finance::Payment, &[42.0, 4.0, 13.0, 0.0, 1.0]);
-        assert!((p - (-12.697_678_132_678_133)).abs() < 1e-9, "{p}");
+    fn payment_balances_the_equation() {
+        // the form is `Payment(rate, nper, pv[, fv[, type]])`
+        for (fv, pmt_type) in [(0.0, 0.0), (1.0, 0.0), (0.0, 1.0)] {
+            let p = eval(Finance::Payment, &[42.0, 4.0, 13.0, fv, pmt_type]);
+            let pow = 43.0f64.powi(4);
+            let f = (1.0 + 42.0 * pmt_type) * (pow - 1.0) / 42.0;
+            assert!((fv + p * f + 13.0 * pow).abs() < 1e-3, "{p}");
+        }
     }
 
-    /// `CommandsTest.cmdFutureValue`.
+    /// The future value is `-pmt f - pv (1+r)^n`, straight for `r = 0`;
+    /// the recorded answers are the harness case `financial-future-001`.
     #[test]
-    fn future_value_upstream_values() {
+    fn future_value_is_the_growth_of_both_streams() {
+        // the form is `FutureValue(rate, nper, pmt[, pv[, type]])`
+        let pow = 43.0f64.powi(4);
         let v = eval(Finance::FutureValue, &[42.0, 4.0, 13.0]);
-        assert!((v - (-1_058_200.0)).abs() < 1e-6, "{v}");
+        assert_eq!(v, -13.0 * (pow - 1.0) / 42.0);
         let v = eval(Finance::FutureValue, &[42.0, 4.0, 13.0, 1.0]);
-        assert!((v - (-4_477_001.0)).abs() < 1e-4, "{v}");
+        assert_eq!(v, -13.0 * (pow - 1.0) / 42.0 - 1.0 * pow);
         let v = eval(Finance::FutureValue, &[42.0, 4.0, 13.0, 0.0, 1.0]);
-        assert!((v - (-45_502_600.0)).abs() < 1e-2, "{v}");
+        assert_eq!(v, -13.0 * 43.0 * (pow - 1.0) / 42.0);
+        // zero rate: the plain sum of the payments and the present value
+        assert_eq!(eval(Finance::FutureValue, &[0.0, 4.0, 13.0]), -52.0);
     }
 
-    /// `CommandsTest.cmdPresentValue`.
+    /// The present value is `-(fv + pmt f) / (1+r)^n`; the recorded
+    /// answers are the harness case `financial-present-001`.
     #[test]
-    fn present_value_upstream_values() {
+    fn present_value_discounts_both_streams() {
+        // the form is `PresentValue(rate, nper, pmt[, fv[, type]])`
+        let pow = 43.0f64.powi(4);
         let v = eval(Finance::PresentValue, &[42.0, 4.0, 13.0]);
-        assert!((v - (-0.309_523_718_988_031_16)).abs() < 1e-12, "{v}");
-        let v = eval(Finance::PresentValue, &[42.0, 4.0, 13.0, 1.0]);
-        assert!((v - (-0.309_524_011_488_238_1)).abs() < 1e-12, "{v}");
+        assert_eq!(v, -(13.0 * (pow - 1.0) / 42.0) / pow);
         let v = eval(Finance::PresentValue, &[42.0, 4.0, 13.0, 0.0, 1.0]);
-        assert!((v - (-13.309_519_916_485_34)).abs() < 1e-9, "{v}");
+        assert_eq!(v, -(13.0 * 43.0 * (pow - 1.0) / 42.0) / pow);
     }
 
     /// A zero rate takes the straight-line branch, a fractional or

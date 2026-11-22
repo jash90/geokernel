@@ -189,6 +189,27 @@
       "id": "financial-rate-012",
       "group": "financial",
       "script": [
+        "a = Rate(60, -300, 10000)",
+        "b = Rate(42, 4, 13, 1)",
+        "c = Rate(42, 4, 13, 0, 1)",
+        "d = Rate(42, 4, 13, 0, 1, 42)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.021750422875496778 },
+          "b": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": true, "value": -0.9999999999997204 },
+          "d": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "financial-rate-013",
+      "group": "financial",
+      "script": [
         "r = Rate(1, -1000, 1000)"
       ],
       "steps": [

@@ -7,14 +7,18 @@
       "id": "financial-present-001",
       "group": "financial",
       "script": [
-        "p = PresentValue(10, 0.05, -100)"
+        "a = PresentValue(42, 4, 13)",
+        "b = PresentValue(42, 4, 13, 1)",
+        "c = PresentValue(42, 4, 13, 0, 1)"
       ],
       "steps": [
         { "action": "initial" }
       ],
       "snapshots": [
         {
-          "p": { "type": "number", "defined": true, "value": 1.1298622209304316 }
+          "a": { "type": "number", "defined": true, "value": -0.30952371898803116 },
+          "b": { "type": "number", "defined": true, "value": -0.3095240114882381 },
+          "c": { "type": "number", "defined": true, "value": -13.30951991648534 }
         }
       ]
     },
@@ -22,7 +26,7 @@
       "id": "financial-present-002",
       "group": "financial",
       "script": [
-        "p = PresentValue(10, 0.05, -100, 0)"
+        "p = PresentValue(10, 0.05, -100)"
       ],
       "steps": [
         { "action": "initial" }
@@ -37,6 +41,21 @@
       "id": "financial-present-003",
       "group": "financial",
       "script": [
+        "p = PresentValue(10, 0.05, -100, 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "p": { "type": "number", "defined": true, "value": 1.1298622209304316 }
+        }
+      ]
+    },
+    {
+      "id": "financial-present-004",
+      "group": "financial",
+      "script": [
         "p = PresentValue(10, 0.05, -100, 0, 500)"
       ],
       "steps": [
@@ -49,7 +68,7 @@
       ]
     },
     {
-      "id": "financial-present-004",
+      "id": "financial-present-005",
       "group": "financial",
       "script": [
         "r = 0.02",
@@ -86,7 +105,7 @@
       ]
     },
     {
-      "id": "financial-present-005",
+      "id": "financial-present-006",
       "group": "financial",
       "script": [
         "p = PresentValue(10, 0.05, -100, 1)"
@@ -101,7 +120,7 @@
       ]
     },
     {
-      "id": "financial-present-006",
+      "id": "financial-present-007",
       "group": "financial",
       "script": [
         "p = PresentValue(10, 0, -100)"
