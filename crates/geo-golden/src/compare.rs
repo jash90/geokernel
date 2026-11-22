@@ -189,6 +189,21 @@ pub(crate) fn compare_extra(c: &Construction, id: Id, expected: &Expected) -> Re
                 return Err(format!("expected {expected:?}, got {actual:?}"));
             }
         }
+        Some(ExpectedData::Curve { samples, .. }) => {
+            let result = compare(expected, kind, &c.value(id))?;
+            for &(t, want) in samples {
+                let got = c.curve_point(id, t);
+                let agrees = match (want, got) {
+                    (Some((x, y)), Some((a, b))) => all_agree(&[(x, a), (y, b)]),
+                    (None, None) => true,
+                    _ => false,
+                };
+                if !agrees {
+                    return Err(format!("curve at {t}: expected {want:?}, got {got:?}"));
+                }
+            }
+            return Ok(result);
+        }
         Some(ExpectedData::FunctionNVar(samples)) => {
             for &(x, y, want) in samples {
                 let got = c.function_value_xy(id, x, y).filter(|v| v.is_finite());
@@ -271,7 +286,7 @@ pub fn compare_sampled(
             ok(all_agree(&[(*x, ax), (*y, ay)]))
         }
         (ExpectedData::Number(v), Value::Number(av)) => ok(numbers_agree(*v, av)),
-        (ExpectedData::Curve { start, end }, Value::Curve { start: a, end: b }) => {
+        (ExpectedData::Curve { start, end, .. }, Value::Curve { start: a, end: b }) => {
             ok(numbers_agree(*start, a) && numbers_agree(*end, b))
         }
         (ExpectedData::Bool(b), Value::Bool(ab)) => ok(*b == ab),

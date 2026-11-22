@@ -93,6 +93,14 @@ impl Slot {
         }
     }
 
+    pub(crate) fn line(value: Value) -> Slot {
+        debug_assert!(matches!(value, Value::Line { .. }));
+        Slot {
+            value,
+            ..Slot::undefined(Kind::Line)
+        }
+    }
+
     pub(crate) fn point(value: Value) -> Slot {
         debug_assert!(matches!(
             value,

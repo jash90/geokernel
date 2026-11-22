@@ -43,6 +43,7 @@ pub mod text;
 
 use self::angle::{AngleDef, AngleGeometry, AngleSource, AngleStyle};
 use self::locus::{LocusData, LocusDef};
+use crate::algo::analysis::{AnalysisCache, AnalysisDef};
 use crate::algo::arc::{ArcData, ArcDef};
 use crate::algo::conic::ConicDef;
 use crate::algo::conic_nd::{ConicData, ConicType};
@@ -515,6 +516,8 @@ pub enum Def {
     Locus(LocusDef),
     /// A locus built from points or a segment graph.
     Discrete(algo::discrete::DiscreteDef),
+    /// A point, number or circle computed from a function or curve.
+    Analysis(AnalysisDef),
     /// A line or conic defined by an equation in `x` and `y`
     /// (`a: 2x + 3y = 6`, `y = m x + b`); the construction keeps the trees
     /// of its coefficients (see [`crate::expr`]). Like [`Def::Expr`], the
@@ -640,6 +643,7 @@ impl Def {
             }
             Def::Locus(d) => d.kind(),
             Def::Discrete(_) => Kind::Locus,
+            Def::Analysis(d) => d.kind(),
         }
     }
 
@@ -729,6 +733,7 @@ impl Def {
             Def::Arc(d) => d.parents(),
             Def::Locus(d) => d.parents(),
             Def::Discrete(d) => d.parents(),
+            Def::Analysis(d) => d.parents(),
         }
     }
 }
@@ -848,6 +853,7 @@ pub struct Construction {
     conic_intersections: Vec<(usize, PairState)>,
     continuous_conic_intersections: bool,
     pub(crate) function_roots: algo::intersect::functions::FunctionRootCache,
+    pub(crate) analysis: AnalysisCache,
     last_update_changed_automatic_root: bool,
     /// The states of the points on paths, with the index of each point, in
     /// creation order.
@@ -1387,6 +1393,7 @@ impl Construction {
         self.lists.truncate(at.lists.min(self.lists.len()));
         self.exprs.truncate(at.exprs, at.len);
         self.function_roots.clear();
+        self.analysis.clear();
         self.conic_intersections.truncate(
             self.conic_intersections
                 .partition_point(|&(owner, _)| owner < at.len),
@@ -1859,6 +1866,7 @@ impl Construction {
     fn propagate_dirty(&mut self, mut dirty: DirtySet, mut from: usize) -> usize {
         self.last_update_changed_automatic_root = false;
         self.function_roots.clear();
+        self.analysis.clear();
         let mut recomputed = 0;
         while let Some(i) = dirty.pop_first(from) {
             // children only add larger indices
@@ -1930,7 +1938,13 @@ impl Construction {
                         }
                     }
                     if new == self.values[i]
-                        && !matches!(def, Def::Measure(MeasureDef::CartesianCurve { .. }))
+                        && !matches!(
+                            def,
+                            Def::Measure(MeasureDef::CartesianCurve { .. })
+                                | Def::Analysis(
+                                    AnalysisDef::ParametricDerivative(_) | AnalysisDef::Spline(_)
+                                )
+                        )
                     {
                         // Nothing downstream can change because of this object.
                         continue;
@@ -2270,7 +2284,10 @@ impl Construction {
 
     /// Evaluates a two-variable function at the given coordinates.
     pub fn function_value_xy(&self, id: Id, x: f64, y: f64) -> Option<f64> {
-        expr::equation::side_value(self, id, x, y)
+        if !matches!(self.value(id), Value::FunctionNVar) {
+            return None;
+        }
+        Some(expr::IntersectionWork::new().sample_system(self, id, x, &[y]))
     }
 
     /// The coefficient entries of the equation object `id` (see
@@ -2368,6 +2385,7 @@ impl Construction {
             Def::Equation(d) => crate::expr::equation::check(self, d),
             Def::Locus(d) => d.check(self),
             Def::Discrete(d) => d.check(self),
+            Def::Analysis(d) => d.check(self),
         }
     }
 
@@ -2472,6 +2490,7 @@ impl Construction {
             Def::Equation(d) => Some(expr::equation::current(self, d)),
             Def::Locus(d) => d.compute(self),
             Def::Discrete(_) => None,
+            Def::Analysis(d) => d.compute(self),
         }
     }
 

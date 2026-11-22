@@ -47,6 +47,9 @@ fn failure(step: usize, label: &str, expected: &str, actual: String) -> Mismatch
 pub fn replay(case: &Case) -> CaseOutcome {
     let mut out = CaseOutcome::default();
     let mut c = Construction::new();
+    if let Some([xmin, xmax, ymin, ymax, xscale, yscale]) = case.view {
+        c.set_locus_view(xmin, xmax, ymin, ymax, xscale, yscale);
+    }
     let mut boundary_outputs = script::BoundaryOutputs::default();
     for (i, line) in case.script.iter().enumerate() {
         let before = c.len();
@@ -140,7 +143,7 @@ pub fn replay(case: &Case) -> CaseOutcome {
                 compare_list(&c, expected, Kind::List, c.elements(id))
             } else if c.kind(id) == Kind::PieChart {
                 crate::compare::compare_pie(expected, c.chart(id).and_then(|d| d.pie.as_ref()))
-            } else if matches!(c.kind(id), Kind::Text | Kind::FunctionNVar) {
+            } else if matches!(c.kind(id), Kind::Text | Kind::FunctionNVar | Kind::Curve) {
                 compare_extra(&c, id, expected)
             } else {
                 compare_sampled(expected, c.kind(id), &actual, &vertices, Some(&sample))

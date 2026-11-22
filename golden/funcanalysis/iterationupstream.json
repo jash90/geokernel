@@ -1,0 +1,235 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "funcanalysis-iterationupstream-001",
+      "group": "funcanalysis",
+      "script": [
+        "R = Iteration(x*2,2,5)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "number", "defined": true, "value": 64.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-iterationupstream-002",
+      "group": "funcanalysis",
+      "script": [
+        "R = Iteration(x*y,{1,1},6)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "number", "defined": true, "value": 720.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-iterationupstream-003",
+      "group": "funcanalysis",
+      "script": [
+        "R = Iteration(x*y,{1,1},0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-iterationupstream-004",
+      "group": "funcanalysis",
+      "script": [
+        "R = Iteration(x*y,{1,1},-1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-iterationupstream-005",
+      "group": "funcanalysis",
+      "script": [
+        "R = Iteration(t*2,t,{(2,3)},5)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "point", "defined": true, "x": 64.0, "y": 96.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-iterationupstream-006",
+      "group": "funcanalysis",
+      "script": [
+        "r = IterationList(x*2,2,5)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 4.0 },
+              { "type": "number", "defined": true, "value": 8.0 },
+              { "type": "number", "defined": true, "value": 16.0 },
+              { "type": "number", "defined": true, "value": 32.0 },
+              { "type": "number", "defined": true, "value": 64.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-iterationupstream-007",
+      "group": "funcanalysis",
+      "script": [
+        "r = IterationList(a+b,a,b,{1,1},5)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 5.0 },
+              { "type": "number", "defined": true, "value": 8.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-iterationupstream-008",
+      "group": "funcanalysis",
+      "script": [
+        "r = IterationList(x*y,{1,1},6)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 6.0 },
+              { "type": "number", "defined": true, "value": 24.0 },
+              { "type": "number", "defined": true, "value": 120.0 },
+              { "type": "number", "defined": true, "value": 720.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-iterationupstream-009",
+      "group": "funcanalysis",
+      "script": [
+        "a = 34",
+        "b = 21",
+        "l = IterationList(Mod(p,q),p,q,{a,b},b)",
+        "r = Iteration(Mod(p,q),p,q,{a,b},3)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "value": 13.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 34.0 },
+          "b": { "type": "number", "defined": true, "value": 21.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 34.0 },
+              { "type": "number", "defined": true, "value": 21.0 },
+              { "type": "number", "defined": true, "value": 13.0 },
+              { "type": "number", "defined": true, "value": 8.0 },
+              { "type": "number", "defined": true, "value": 5.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false }
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 8.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 34.0 },
+          "b": { "type": "number", "defined": true, "value": 13.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 34.0 },
+              { "type": "number", "defined": true, "value": 13.0 },
+              { "type": "number", "defined": true, "value": 8.0 },
+              { "type": "number", "defined": true, "value": 5.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false }
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 5.0 }
+        }
+      ]
+    }
+  ]
+}

@@ -2399,3 +2399,239 @@ cases = ["discrete-voronoi-008"]
 command = "Voronoi"
 form = "point,point,..."
 cases = ["discrete-voronoi-001"]
+
+[[form]]
+command = "Root"
+form = "function"
+cases = ["funcanalysis-forms-001", "funcanalysis-rootedge-012"]
+
+[[form]]
+command = "Root"
+form = "function,number"
+cases = ["funcanalysis-forms-002"]
+
+[[form]]
+command = "Root"
+form = "function,function"
+cases = ["funcanalysis-rootedge-013"]
+
+[[form]]
+command = "Root"
+form = "function,number,number"
+cases = ["funcanalysis-forms-003"]
+
+[[form]]
+command = "Roots"
+form = "function"
+cases = ["funcanalysis-rootsedge-008"]
+
+[[form]]
+command = "Roots"
+form = "function,number,number"
+cases = ["funcanalysis-forms-004"]
+
+[[form]]
+command = "Extremum"
+form = "function"
+cases = ["funcanalysis-forms-005"]
+
+[[form]]
+command = "Extremum"
+form = "function,number,number"
+cases = ["funcanalysis-forms-006"]
+
+[[form]]
+command = "TurningPoint"
+form = "function"
+cases = ["funcanalysis-forms-007"]
+
+[[form]]
+command = "ComplexRoot"
+form = "function"
+cases = ["funcanalysis-forms-008"]
+
+[[form]]
+command = "RootList"
+form = "list"
+cases = ["funcanalysis-rootlistupstream-001", "funcanalysis-rootlistedge-001", "funcanalysis-rootlistedge-002"]
+
+[[form]]
+command = "RootList"
+form = "number,number,..."
+cases = ["funcanalysis-rootlistedge-003"]
+
+[[form]]
+command = "RootList"
+form = "point,point,..."
+cases = ["funcanalysis-rootlistedge-004"]
+
+[[form]]
+command = "Function"
+form = "function,number,number"
+cases = ["funcanalysis-forms-009"]
+
+[[form]]
+command = "Function"
+form = "function,any,number,number"
+cases = ["funcanalysis-forms-010"]
+difference = "numerical-function-analysis: `Function(function, any, number, number)`"
+
+[[form]]
+command = "CurveCartesian"
+form = "point,number,number,number"
+cases = ["funcanalysis-curveedge-011"]
+
+[[form]]
+command = "CurveCartesian"
+form = "vector,number,number,number"
+cases = ["funcanalysis-curveedge-012"]
+
+[[form]]
+command = "ParametricDerivative"
+form = "curve"
+cases = ["funcanalysis-curveedge-005", "funcanalysis-curveupstream-003"]
+
+[[form]]
+command = "Spline"
+form = "list"
+cases = ["funcanalysis-splineupstream-001", "funcanalysis-curveedge-007", "funcanalysis-curveedge-010"]
+
+[[form]]
+command = "Spline"
+form = "list,number"
+cases = ["funcanalysis-splineupstream-002", "funcanalysis-splineupstream-004", "funcanalysis-curveedge-009"]
+
+[[form]]
+command = "Spline"
+form = "list,number,function"
+cases = ["funcanalysis-forms-023"]
+
+[[form]]
+command = "Spline"
+form = "point,point,..."
+cases = ["funcanalysis-curveedge-008"]
+
+[[form]]
+command = "BezierCurve"
+form = "point,point,point,point"
+cases = ["funcanalysis-curveedge-006", "funcanalysis-splineupstream-005"]
+
+[[form]]
+command = "NInvert"
+form = "function"
+cases = ["funcanalysis-inverted-001"]
+
+[[form]]
+command = "SolveODE"
+form = "function,number,number,number,number"
+cases = ["funcanalysis-forms-020"]
+
+[[form]]
+command = "SolveODE"
+form = "function,function,number,number,number,number"
+cases = ["funcanalysis-forms-021"]
+
+[[form]]
+command = "SolveODE"
+form = "function,function,function,number,number,number,number,number"
+cases = ["funcanalysis-forms-022"]
+
+[[form]]
+command = "NSolveODE"
+form = "list,number,list,number"
+cases = ["funcanalysis-nsode-001", "funcanalysis-nsode-002", "funcanalysis-nsode-003"]
+
+[[form]]
+command = "Curvature"
+form = "point,function"
+cases = ["funcanalysis-forms-011"]
+
+[[form]]
+command = "Curvature"
+form = "point,curve"
+cases = ["funcanalysis-forms-012"]
+
+[[form]]
+command = "Curvature"
+form = "point,conic"
+cases = ["funcanalysis-forms-013"]
+
+[[form]]
+command = "CurvatureVector"
+form = "point,function"
+cases = ["funcanalysis-forms-011"]
+
+[[form]]
+command = "CurvatureVector"
+form = "point,curve"
+cases = ["funcanalysis-forms-012"]
+
+[[form]]
+command = "CurvatureVector"
+form = "point,conic"
+cases = ["funcanalysis-forms-013"]
+
+[[form]]
+command = "OsculatingCircle"
+form = "point,function"
+cases = ["funcanalysis-forms-011"]
+
+[[form]]
+command = "OsculatingCircle"
+form = "point,curve"
+cases = ["funcanalysis-forms-012"]
+
+[[form]]
+command = "OsculatingCircle"
+form = "point,conic"
+cases = ["funcanalysis-forms-013"]
+
+[[form]]
+command = "Iteration"
+form = "function,number,number"
+cases = ["funcanalysis-forms-014"]
+
+[[form]]
+command = "Iteration"
+form = "function,list,number"
+cases = ["funcanalysis-forms-015"]
+
+[[form]]
+command = "Iteration"
+form = "function,any,..."
+difference = "numerical-function-analysis: `Iteration(function, any, ...)`, `IterationList(function, any, ...)`"
+
+[[form]]
+command = "IterationList"
+form = "function,number,number"
+cases = ["funcanalysis-forms-014"]
+
+[[form]]
+command = "IterationList"
+form = "function,list,number"
+cases = ["funcanalysis-forms-015"]
+
+[[form]]
+command = "IterationList"
+form = "function,any,..."
+difference = "numerical-function-analysis: `Iteration(function, any, ...)`, `IterationList(function, any, ...)`"
+
+[[form]]
+command = "SlopeField"
+form = "function"
+cases = ["funcanalysis-forms-016"]
+
+[[form]]
+command = "SlopeField"
+form = "function,number"
+cases = ["funcanalysis-forms-017"]
+
+[[form]]
+command = "SlopeField"
+form = "function,number,number"
+cases = ["funcanalysis-forms-018"]
+
+[[form]]
+command = "SlopeField"
+form = "function,number,number,number,number,number,number"
+cases = ["funcanalysis-forms-019"]

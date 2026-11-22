@@ -1,0 +1,230 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "funcanalysis-rootupstream-001",
+      "group": "funcanalysis",
+      "script": [
+        "R = Root(x^3-x)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R_{1}": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "R_{2}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "R_{3}": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-rootupstream-002",
+      "group": "funcanalysis",
+      "script": [
+        "R = Root(x^3-2x^2+x)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R_{1}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "R_{2}": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-rootupstream-003",
+      "group": "funcanalysis",
+      "script": [
+        "R = Root(x^3-3x^2+3x-1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-rootupstream-004",
+      "group": "funcanalysis",
+      "script": [
+        "R = Root(9x^4-x^2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R_{1}": { "type": "point", "defined": true, "x": -0.3333333333333333, "y": 0.0 },
+          "R_{2}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "R_{3}": { "type": "point", "defined": true, "x": 0.3333333333333333, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-rootupstream-005",
+      "group": "funcanalysis",
+      "script": [
+        "R = Root(x^4-4x^2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R_{1}": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "R_{2}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "R_{3}": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-rootupstream-006",
+      "group": "funcanalysis",
+      "script": [
+        "R = Root(x^6-2x^5-4x^4+8x^3)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R_{1}": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "R_{2}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "R_{3}": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-rootupstream-007",
+      "group": "funcanalysis",
+      "script": [
+        "R = Root(x^8-x^4)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R_{1}": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "R_{2}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "R_{3}": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-rootupstream-008",
+      "group": "funcanalysis",
+      "script": [
+        "R = Root((x+1)^99)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-rootupstream-009",
+      "group": "funcanalysis",
+      "script": [
+        "R = Root((x+1)^99+1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-rootupstream-010",
+      "group": "funcanalysis",
+      "script": [
+        "R = Root(If(-.1<x<2,x^3-x))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R_{1}": { "type": "point", "defined": false },
+          "R_{2}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "R_{3}": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-rootupstream-011",
+      "group": "funcanalysis",
+      "script": [
+        "R = Root(sin(pi*x),1.3)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "point", "defined": true, "x": 0.9999999999999147, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-rootupstream-012",
+      "group": "funcanalysis",
+      "script": [
+        "R = Root(sin(pi*x),-3,3)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-rootupstream-013",
+      "group": "funcanalysis",
+      "script": [
+        "R = Root(0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-rootupstream-014",
+      "group": "funcanalysis",
+      "script": [
+        "R = Root(4/5)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "point", "defined": false }
+        }
+      ]
+    }
+  ]
+}

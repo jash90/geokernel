@@ -9,7 +9,7 @@
 //! Split a function's products, quotients and powers once, then evaluate
 //! the numerator and denominator separately at each sample.
 
-use super::eval::{Ctx, Env, Lists};
+use super::eval::{Ctx, Env, Lists, Local, Val};
 use super::{entry, types, Bin, Entry, Lit, Node, Ty};
 use crate::kernel::{Construction, Def, Id, Value};
 use std::borrow::Cow;
@@ -20,21 +20,26 @@ pub(crate) struct FunctionFraction<'a> {
     numerator: u32,
     denominator: Option<u32>,
     budget: Lists,
+    system: bool,
 }
 
 impl<'a> FunctionFraction<'a> {
     pub(crate) fn new(construction: &'a Construction, id: Id) -> Option<Self> {
-        let (Def::Expr(def), Value::Function) = (construction.def(id), construction.value(id))
-        else {
+        let Def::Expr(def) = construction.def(id) else {
             return None;
         };
         let source = entry(construction, def);
-        let mut tree: Cow<'_, Entry> = Cow::Borrowed(source);
-        let (numerator, denominator) = match source.nodes[source.root as usize] {
+        let (root, system) = match (construction.value(id), source.nodes[source.root as usize]) {
+            (Value::Function, _) => (source.root, false),
+            (Value::FunctionNVar, Node::SystemFunction(2, root)) => (root, true),
+            _ => return None,
+        };
+        let mut tree = Cow::Borrowed(source);
+        let (numerator, denominator) = match source.nodes[root as usize] {
             Node::Bin(Bin::Mul | Bin::Div | Bin::Pow, ..) => {
-                split(construction, tree.to_mut(), source.root)
+                split(construction, tree.to_mut(), root)
             }
-            _ => (source.root, None),
+            _ => (root, None),
         };
         Some(Self {
             construction,
@@ -42,7 +47,31 @@ impl<'a> FunctionFraction<'a> {
             numerator,
             denominator,
             budget: Lists::new(Vec::new()),
+            system,
         })
+    }
+
+    /// Whether the denominator depends on a coordinate.
+    pub(crate) fn has_nonconstant_denominator(&self) -> bool {
+        let Some(denominator) = self.denominator else {
+            return false;
+        };
+        let mut pending = vec![denominator];
+        while let Some(i) = pending.pop() {
+            if !self.budget.charge(1) {
+                return true;
+            }
+            let node = self.tree.nodes[i as usize];
+            if matches!(node, Node::Var | Node::VarY | Node::Local(..)) {
+                return true;
+            }
+            pending.extend(super::children(&node));
+        }
+        false
+    }
+
+    pub(crate) fn exhausted(&self) -> bool {
+        self.budget.over()
     }
 
     /// The numerator and denominator at the given point.
@@ -52,8 +81,21 @@ impl<'a> FunctionFraction<'a> {
         } else {
             Env::Pair(x, y)
         };
+        let first = Local {
+            depth: 0,
+            value: Val::N(x),
+            run: None,
+            up: None,
+        };
+        let second = Local {
+            depth: 1,
+            value: Val::N(y),
+            run: None,
+            up: Some(&first),
+        };
         let ctx = Ctx::<true> {
             meter: Some(&self.budget),
+            locals: self.system.then_some(&second),
             ..Ctx::new(self.construction, &self.tree, &env)
         };
         let denominator = self.denominator.map_or(1.0, |i| ctx.fast(i));

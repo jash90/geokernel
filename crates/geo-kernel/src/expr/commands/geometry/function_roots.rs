@@ -3,6 +3,7 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoFunctionInvert.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/FunctionNVar.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoFunction.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/Polynomial.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
@@ -268,7 +269,12 @@ impl IntersectionWork {
     /// The caller checks roots against the graph to exclude holes.
     pub(crate) fn fraction(&self, c: &Construction, id: Id) -> Option<(Vec<f64>, Vec<f64>)> {
         let ctx = self.context(c, id, &Env::None)?;
-        let result = fraction(&ctx, ctx.e.root, self, expr::parse::MAX_DEPTH)?;
+        let result = fraction(
+            &ctx,
+            ctx.e.root,
+            Expansion::graph(self),
+            expr::parse::MAX_DEPTH,
+        )?;
         (!self.exhausted()).then(|| result.into_parts())
     }
 
@@ -277,7 +283,7 @@ impl IntersectionWork {
         ctx: &Ctx<'_, true>,
         node: u32,
     ) -> Option<Vec<f64>> {
-        let f = fraction(ctx, node, self, expr::parse::MAX_DEPTH)?;
+        let f = fraction(ctx, node, Expansion::graph(self), expr::parse::MAX_DEPTH)?;
         let &[scale] = f.denominator.as_slice() else {
             return None;
         };
@@ -293,6 +299,81 @@ impl IntersectionWork {
         .then_some(coefficients)
     }
 
+    /// Extract polynomial factors from the branch of a restricted function.
+    /// Keeping powers factored avoids ill-conditioned expanded coefficients at
+    /// repeated roots. Higher derivatives of ordinary polynomials use coefficients.
+    pub(crate) fn analysis_polynomials(
+        &self,
+        c: &Construction,
+        id: Id,
+        order: usize,
+    ) -> Option<Vec<Vec<f64>>> {
+        let ctx = self.context(c, id, &Env::None)?;
+        let root = match ctx.node(ctx.e.root) {
+            Node::If(_, _, branch, expr::NONE) => branch,
+            _ => {
+                if order == 1 {
+                    let expanded = fraction(
+                        &ctx,
+                        ctx.e.root,
+                        Expansion::graph(self),
+                        expr::parse::MAX_DEPTH,
+                    )?;
+                    if expanded.denominator.len() != 1 || expanded.numerator.len() > 26 {
+                        return None;
+                    }
+                }
+                ctx.e.root
+            }
+        };
+        analysis_polynomials(&ctx, root, order, self, expr::parse::MAX_DEPTH)
+    }
+
+    pub(crate) fn analysis_denominators(&self, c: &Construction, id: Id) -> Vec<Vec<f64>> {
+        let Some(ctx) = self.context(c, id, &Env::None) else {
+            return Vec::new();
+        };
+        let mut results = Vec::new();
+        let mut pending = vec![ctx.e.root];
+        while let Some(i) = pending.pop() {
+            if !self.charge(1) {
+                return Vec::new();
+            }
+            let node = ctx.node(i);
+            if let Node::Bin(Bin::Div, _, b) = node {
+                if let Some(poly) = self.polynomial_at(&ctx, b).filter(|p| p.len() > 1) {
+                    results.push(poly);
+                }
+            }
+            pending.extend(expr::children(&node));
+        }
+        results
+    }
+
+    pub(crate) fn analysis_transcendental(
+        &self,
+        c: &Construction,
+        id: Id,
+    ) -> Option<(u8, [f64; 2])> {
+        let ctx = self.context(c, id, &Env::None)?;
+        let Node::Un(op, a) = ctx.node(ctx.e.root) else {
+            return None;
+        };
+        let operation = match op {
+            Un::Exp => 0,
+            Un::Atan => 1,
+            Un::Ln | Un::Log10 | Un::Log2 => 2,
+            _ => return None,
+        };
+        let poly: [f64; 2] = self.polynomial_at(&ctx, a)?.try_into().ok()?;
+        (poly[1] != 0.0).then_some((operation, poly))
+    }
+
+    pub(crate) fn analysis_is_restricted(&self, c: &Construction, id: Id) -> bool {
+        self.context(c, id, &Env::None)
+            .is_some_and(|ctx| matches!(ctx.node(ctx.e.root), Node::If(_, _, _, expr::NONE)))
+    }
+
     pub(crate) fn constant(&self, c: &Construction, id: Id) -> Option<f64> {
         let ctx = self.context(c, id, &Env::None)?;
         let root = ctx.e.root;
@@ -305,6 +386,61 @@ impl IntersectionWork {
         let ctx = self.context(c, id, &Env::None)?;
         inverse(&ctx, ctx.e.root, value, expr::parse::MAX_DEPTH)
     }
+}
+
+fn analysis_polynomials(
+    ctx: &Ctx<'_, true>,
+    root: u32,
+    order: usize,
+    work: &IntersectionWork,
+    depth: u32,
+) -> Option<Vec<Vec<f64>>> {
+    use crate::expr::NONE;
+    let depth = depth.checked_sub(1)?;
+    if !work.charge(1) {
+        return None;
+    }
+    match ctx.node(root) {
+        Node::Bin(Bin::Mul, a, b) if order == 0 => {
+            let mut first = analysis_polynomials(ctx, a, order, work, depth)?;
+            first.extend(analysis_polynomials(ctx, b, order, work, depth)?);
+            return Some(first);
+        }
+        Node::Bin(Bin::Pow, base, exponent) if order < 2 && !has_variable(ctx, exponent)? => {
+            let exponent = ctx.full_number(exponent);
+            if exponent > 0.0 && exponent.fract() == 0.0 {
+                let mut factors = analysis_polynomials(ctx, base, order, work, depth)?;
+                if order == 1 && exponent % 2.0 == 0.0 {
+                    factors.extend(analysis_polynomials(ctx, base, 0, work, depth)?);
+                }
+                return Some(factors);
+            }
+        }
+        Node::Un(Un::Sqrt | Un::Cbrt | Un::Abs, a) if order == 0 => {
+            return analysis_polynomials(ctx, a, order, work, depth);
+        }
+        Node::If(_, _, branch, NONE) => {
+            return analysis_polynomials(ctx, branch, order, work, depth);
+        }
+        _ => {}
+    }
+    let f = fraction(ctx, root, Expansion::analysis(work), depth)?;
+    if f.denominator.len() != 1 && order > 0 {
+        return None;
+    }
+    let mut poly = f.numerator;
+    for _ in 0..order {
+        if !work.charge(poly.len() as u64) {
+            return None;
+        }
+        poly = poly
+            .iter()
+            .enumerate()
+            .skip(1)
+            .map(|(i, a)| i as f64 * a)
+            .collect();
+    }
+    Some(vec![poly])
 }
 
 /// Isolate the variable through the operations used by the Newton fallback.
@@ -371,10 +507,13 @@ impl Fraction {
         (self.numerator, self.denominator)
     }
 
-    fn add(self, rhs: Self, sign: f64, work: &IntersectionWork) -> Option<Self> {
-        let mut numerator = multiply(&self.numerator, &rhs.denominator, work)?;
-        let other = multiply(&rhs.numerator, &self.denominator, work)?;
-        if !work.charge(numerator.len().max(other.len()) as u64) {
+    fn add(self, rhs: Self, sign: f64, expansion: Expansion<'_>) -> Option<Self> {
+        let mut numerator = multiply(&self.numerator, &rhs.denominator, expansion)?;
+        let other = multiply(&rhs.numerator, &self.denominator, expansion)?;
+        if !expansion
+            .work
+            .charge(numerator.len().max(other.len()) as u64)
+        {
             return None;
         }
         numerator.resize(numerator.len().max(other.len()), 0.0);
@@ -384,40 +523,62 @@ impl Fraction {
         trim(&mut numerator);
         Some(Self {
             numerator,
-            denominator: multiply(&self.denominator, &rhs.denominator, work)?,
+            denominator: multiply(&self.denominator, &rhs.denominator, expansion)?,
         })
     }
 
-    fn mul(self, rhs: &Self, work: &IntersectionWork) -> Option<Self> {
+    fn mul(self, rhs: &Self, expansion: Expansion<'_>) -> Option<Self> {
         Some(Self {
-            numerator: multiply(&self.numerator, &rhs.numerator, work)?,
-            denominator: multiply(&self.denominator, &rhs.denominator, work)?,
+            numerator: multiply(&self.numerator, &rhs.numerator, expansion)?,
+            denominator: multiply(&self.denominator, &rhs.denominator, expansion)?,
         })
     }
 
-    fn compose(coefficients: &[f64], arg: &Self, work: &IntersectionWork) -> Option<Self> {
+    fn compose(coefficients: &[f64], arg: &Self, expansion: Expansion<'_>) -> Option<Self> {
         coefficients
             .iter()
             .rev()
             .try_fold(Self::polynomial(vec![0.0]), |result, &coefficient| {
                 result
-                    .mul(arg, work)?
-                    .add(Self::polynomial(vec![coefficient]), 1.0, work)
+                    .mul(arg, expansion)?
+                    .add(Self::polynomial(vec![coefficient]), 1.0, expansion)
             })
     }
 
-    fn divide(self, rhs: Self, work: &IntersectionWork) -> Option<Self> {
+    fn divide(self, rhs: Self, expansion: Expansion<'_>) -> Option<Self> {
         self.mul(
             &Self {
                 numerator: rhs.denominator,
                 denominator: rhs.numerator,
             },
-            work,
+            expansion,
         )
     }
 }
 
 const MAX_GRAPH_DEGREE: usize = 300;
+
+#[derive(Clone, Copy)]
+struct Expansion<'a> {
+    work: &'a IntersectionWork,
+    max_degree: usize,
+}
+
+impl<'a> Expansion<'a> {
+    fn graph(work: &'a IntersectionWork) -> Self {
+        Self {
+            work,
+            max_degree: MAX_GRAPH_DEGREE,
+        }
+    }
+
+    fn analysis(work: &'a IntersectionWork) -> Self {
+        Self {
+            work,
+            max_degree: usize::MAX - 1,
+        }
+    }
+}
 
 fn trim(coefficients: &mut Vec<f64>) {
     while coefficients.len() > 1 && coefficients.last() == Some(&0.0) {
@@ -425,12 +586,13 @@ fn trim(coefficients: &mut Vec<f64>) {
     }
 }
 
-fn multiply(a: &[f64], b: &[f64], work: &IntersectionWork) -> Option<Vec<f64>> {
-    let len = a.len() + b.len() - 1;
-    if len > MAX_GRAPH_DEGREE + 1 || !work.charge((a.len() * b.len()) as u64) {
+fn multiply(a: &[f64], b: &[f64], expansion: Expansion<'_>) -> Option<Vec<f64>> {
+    let degree = (a.len() - 1).checked_add(b.len() - 1)?;
+    let terms = (a.len() as u64).checked_mul(b.len() as u64)?;
+    if degree > expansion.max_degree || !expansion.work.charge(terms) {
         return None;
     }
-    let mut product = vec![0.0; len];
+    let mut product = vec![0.0; degree + 1];
     for (i, a) in a.iter().enumerate().filter(|(_, a)| **a != 0.0) {
         for (j, b) in b.iter().enumerate() {
             product[i + j] += a * b;
@@ -440,7 +602,7 @@ fn multiply(a: &[f64], b: &[f64], work: &IntersectionWork) -> Option<Vec<f64>> {
     Some(product)
 }
 
-fn fraction(ctx: &Ctx<'_, true>, i: u32, work: &IntersectionWork, depth: u32) -> Option<Fraction> {
+fn fraction(ctx: &Ctx<'_, true>, i: u32, expansion: Expansion<'_>, depth: u32) -> Option<Fraction> {
     let depth = depth.checked_sub(1)?;
     if !has_variable(ctx, i)? {
         return Some(Fraction::polynomial(vec![ctx.full_number(i)]));
@@ -448,10 +610,10 @@ fn fraction(ctx: &Ctx<'_, true>, i: u32, work: &IntersectionWork, depth: u32) ->
     match ctx.node(i) {
         Node::Var => Some(Fraction::polynomial(vec![0.0, 1.0])),
         Node::Apply(f, arg) => {
-            let arg = fraction(ctx, arg, work, depth)?;
-            let applied = work.context(ctx.c, f, &Env::None)?;
+            let arg = fraction(ctx, arg, expansion, depth)?;
+            let applied = expansion.work.context(ctx.c, f, &Env::None)?;
             let callee = if let Some(coefficients) = applied.e.polynomial() {
-                if !work.charge(coefficients.len() as u64) {
+                if !expansion.work.charge(coefficients.len() as u64) {
                     return None;
                 }
                 Fraction::polynomial(if coefficients.is_empty() {
@@ -460,32 +622,35 @@ fn fraction(ctx: &Ctx<'_, true>, i: u32, work: &IntersectionWork, depth: u32) ->
                     coefficients.to_vec()
                 })
             } else {
-                fraction(&applied, applied.e.root, work, depth)?
+                fraction(&applied, applied.e.root, expansion, depth)?
             };
-            Fraction::compose(&callee.numerator, &arg, work)?
-                .divide(Fraction::compose(&callee.denominator, &arg, work)?, work)
+            Fraction::compose(&callee.numerator, &arg, expansion)?.divide(
+                Fraction::compose(&callee.denominator, &arg, expansion)?,
+                expansion,
+            )
         }
         Node::Bin(Bin::Pow, a, b) if !has_variable(ctx, b)? => {
             let exponent = ctx.full_number(b);
+            // The reference polynomial parser also bounds a single expanded power.
             if exponent.fract() != 0.0 || exponent.abs() > MAX_GRAPH_DEGREE as f64 {
                 return None;
             }
-            let mut base = fraction(ctx, a, work, depth)?;
+            let mut base = fraction(ctx, a, expansion, depth)?;
             if exponent < 0.0 {
                 std::mem::swap(&mut base.numerator, &mut base.denominator);
             }
             (0..exponent.abs() as usize).try_fold(Fraction::polynomial(vec![1.0]), |power, _| {
-                power.mul(&base, work)
+                power.mul(&base, expansion)
             })
         }
         Node::Bin(op @ (Bin::Add | Bin::Sub | Bin::Mul | Bin::Div), a, b) => {
-            let a = fraction(ctx, a, work, depth)?;
-            let b = fraction(ctx, b, work, depth)?;
+            let a = fraction(ctx, a, expansion, depth)?;
+            let b = fraction(ctx, b, expansion, depth)?;
             match op {
-                Bin::Add => a.add(b, 1.0, work),
-                Bin::Sub => a.add(b, -1.0, work),
-                Bin::Div => a.divide(b, work),
-                _ => a.mul(&b, work),
+                Bin::Add => a.add(b, 1.0, expansion),
+                Bin::Sub => a.add(b, -1.0, expansion),
+                Bin::Div => a.divide(b, expansion),
+                _ => a.mul(&b, expansion),
             }
         }
         _ => None,
