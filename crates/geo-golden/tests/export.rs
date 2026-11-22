@@ -1614,6 +1614,44 @@ fn an_undefined_object_keeps_its_saved_style_and_recovers_after_export() {
     assert!(!element.contains("NaN"), "{element}");
 }
 
+/// Without the Java reader: a file with a tag the reference gives up at is
+/// imported as its twin, which spells out what the tag had applied by then,
+/// and the import says so.
+#[test]
+fn a_tag_the_reference_gives_up_at_keeps_what_it_had_applied() {
+    let mut twins = 0;
+    for (name, source, applied) in hand_written() {
+        let Some(applied) = applied else { continue };
+        twins += 1;
+        let (given_up, twin) = (
+            geo_import::import(&source).unwrap(),
+            geo_import::import(&applied).unwrap(),
+        );
+        assert_eq!(
+            format!("{:?}", given_up.object_styles),
+            format!("{:?}", twin.object_styles),
+            "{name}"
+        );
+        assert!(
+            given_up
+                .notes
+                .iter()
+                .any(|note| note.contains("gives up the file")),
+            "{name}: {:?}",
+            given_up.notes
+        );
+        assert!(twin.notes.is_empty(), "{name}: {:?}", twin.notes);
+        // The export has the well-formed tag of the twin.
+        let export = |bytes: &[u8]| {
+            let mut wb = Workbench::default();
+            wb.load_for_export(bytes, &name).unwrap();
+            exported_xml(&wb)
+        };
+        assert_eq!(export(&source), export(&applied), "{name}");
+    }
+    assert_eq!(twins, HAND_GIVEN_UP.len());
+}
+
 #[test]
 fn export_refuses_a_document_opened_with_skips() {
     let source = br#"<geogebra><construction>

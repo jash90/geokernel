@@ -80,16 +80,31 @@ every labelled object against both Rust constructions at the golden tolerance
 and checks slider settings and the primary view directly in the Java reader.
 
 The snapshot also holds the presentation of every object, read through
-GeoGebra's getters (`styles`): visibility, condition, colour, opacity, fill,
-dynamic colour, background, layer, label, caption, tooltip, line and point
-style, the fixed, auxiliary, selection and trace flags, decoration, text
-font, rounding and placement, angle arcs, slider placement and animation.
+GeoGebra's getters (`styles`): visibility, view bits, condition, colour,
+opacity, fill, dynamic colour, background, layer, drawing order, label,
+caption, tooltip, line and point style, the fixed, auxiliary, selection, trace
+and other flags, decoration, end and head styles, text font, rounding and
+placement, angle arcs, slider placement and animation.
+
 For a document opened from a file the test snapshots three archives: the
 source file, the export of its import, and the export of the same document
 without its saved styles. The first two must agree in every property of every
-object. A property is proven for a kind where the source differs from the
-third; the test prints the count per kind and requires `yes` in
-`docs/kinds.csv` exactly for the kinds whose whole list is proven.
+object. The third gives what the reader makes of an object without the saved
+tag: `WITNESSES` in the test names, per kind, the objects of the style
+fixtures that may prove a property, and a property is proven by the first of
+them whose source value differs from that. The test compares the result with
+`crates/geo-golden/tests/fixtures/export-proof.json` and fails when the file
+is stale; `GEOKERNEL_EXPORT_BLESS=1` rewrites it. A normal `cargo test` reads
+that file and derives the `export` column of `docs/kinds.csv` from it.
+
+`export-snapshot --lenient <directory>` records what GeoGebra reports while
+loading (`reported`) instead of stopping, and writes `{"failed": ...}` for a
+file its reader gives up. The hand-written files of
+`crates/geo-golden/tests/fixtures/export` are read this way: tags GeoGebra
+does not write, such as a line style without a thickness or a fill whose angle
+is no number. `<name>.applied.xml` beside a file the reader gives up is the
+same file with that tag cut down to what the reader had applied by then; the
+export must load without a report and agree with it.
 
 After building the harness, run the ignored
 `geogebra_reloads_exports_and_matches_the_kernel` test in
