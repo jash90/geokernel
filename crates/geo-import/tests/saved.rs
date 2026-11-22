@@ -8,10 +8,12 @@
 //! circle dragged until the two intersection points swap, tangents, angles
 //! under both angle units).
 
-use geo_golden::compare::compare;
+use geo_golden::compare::{compare, compare_sampled};
 use geo_golden::model::{set_snapshot_schema, Expected};
 use geo_golden::repo_root;
 use geo_import::import;
+use geo_kernel::expr::{work_done, MAX_EVALUATION_WORK};
+use geo_kernel::{script, Construction};
 use serde::Deserialize;
 use std::collections::BTreeMap;
 use std::fs;
@@ -23,6 +25,118 @@ struct Snapshot {
     objects: BTreeMap<String, Expected>,
 }
 
+const EXPRESSION_FIXTURES: [&str; 3] = [
+    "saved-expressions-001",
+    "saved-expressions-002",
+    "saved-expressions-003",
+];
+
+#[test]
+fn saved_expressions_match_geogebra_before_and_after_edits() {
+    let dir = repo_root().join("golden/ggb/saved");
+    let cases: serde_json::Value =
+        serde_json::from_str(include_str!("../../../tools/ggb-harness/saved/saved.json")).unwrap();
+    let mut live: Option<Construction> = None;
+    for (stage, file) in EXPRESSION_FIXTURES.into_iter().enumerate() {
+        let expected_skips = BTreeMap::from([
+            ("bad", "NextPrime"),
+            ("lost", "depends on the skipped object `bad`"),
+            ("multi", "function with multiple variables"),
+            ("control", "checkbox control"),
+            ("button", "button control"),
+            ("field", "text field control"),
+        ]);
+        let snapshot: serde_json::Value =
+            serde_json::from_slice(&fs::read(dir.join(format!("{file}.snapshot"))).unwrap())
+                .unwrap();
+        let imported =
+            within_budget(|| import(&fs::read(dir.join(format!("{file}.xml"))).unwrap())).unwrap();
+        assert!(
+            imported.mismatched.is_empty(),
+            "{file}: {:?}",
+            imported.mismatched
+        );
+        assert_eq!(
+            imported.skipped.len(),
+            expected_skips.len(),
+            "{file}: {:?}",
+            imported.skipped
+        );
+        for skipped in &imported.skipped {
+            assert!(
+                skipped
+                    .reason
+                    .contains(expected_skips[skipped.label.as_str()]),
+                "{file}: {skipped:?}"
+            );
+        }
+        for hidden in ["C", "s", "v_{0x}", "valid"] {
+            assert!(
+                imported.hidden.iter().any(|label| label == hidden),
+                "{file}: {hidden}"
+            );
+        }
+        assert!(!imported.hidden.iter().any(|label| label == "Q"));
+
+        let replay = within_budget(|| script::load(&imported.script.join("\n"))).unwrap();
+        if let Some(live) = &mut live {
+            let case = cases["cases"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|c| c["id"] == file)
+                .unwrap();
+            let step = &case["steps"][stage - 1];
+            let id = live.id(step["label"].as_str().unwrap()).unwrap();
+            within_budget(|| match step["action"].as_str().unwrap() {
+                "move" => {
+                    live.move_point(id, step["x"].as_f64().unwrap(), step["y"].as_f64().unwrap())
+                }
+                "set_number" => live.set_number(id, step["value"].as_f64().unwrap()),
+                action => panic!("unexpected step: {action}"),
+            })
+            .unwrap();
+        }
+        let mut expectations = BTreeMap::new();
+        for (label, value) in snapshot["objects"].as_object().unwrap() {
+            if expected_skips.contains_key(label.as_str()) {
+                assert!(replay.id(label).is_none(), "{file}: {label}");
+            } else {
+                expectations.insert(
+                    label.clone(),
+                    serde_json::from_value(value.clone()).unwrap(),
+                );
+            }
+        }
+        set_snapshot_schema(
+            snapshot["schema"].as_u64().unwrap() as u32,
+            &mut expectations,
+        )
+        .unwrap();
+        for c in std::iter::once(&replay).chain(live.as_ref()) {
+            assert_eq!(c.len(), expectations.len(), "{file}");
+            for (label, expected) in &expectations {
+                let id = c
+                    .id(label)
+                    .unwrap_or_else(|| panic!("{file}: missing {label}"));
+                let sample = |x| within_budget(|| c.function_value(id, x));
+                compare_sampled(expected, c.kind(id), &c.value(id), &[], Some(&sample))
+                    .unwrap_or_else(|why| panic!("{file}: {label}: {why}"));
+            }
+        }
+        if live.is_none() {
+            live = Some(replay);
+        }
+    }
+}
+
+fn within_budget<T>(run: impl FnOnce() -> T) -> T {
+    let before = work_done();
+    let result = run();
+    assert!(work_done() - before <= MAX_EVALUATION_WORK);
+    result
+}
+
 #[test]
 fn files_saved_after_moves_agree_with_what_geogebra_computed_when_saving() {
     let dir = repo_root().join("golden/ggb/saved");
@@ -30,6 +144,11 @@ fn files_saved_after_moves_agree_with_what_geogebra_computed_when_saving() {
         .unwrap()
         .map(|e| e.unwrap().path())
         .filter(|p| p.extension().is_some_and(|e| e == "snapshot"))
+        .filter(|p| {
+            !EXPRESSION_FIXTURES
+                .iter()
+                .any(|id| p.file_stem().unwrap() == *id)
+        })
         .collect();
     names.sort();
     assert!(names.len() >= 116, "only {} saved cases", names.len());

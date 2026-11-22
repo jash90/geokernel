@@ -2,14 +2,12 @@
 """Writes saved/saved.json: constructions that are saved after their free
 points were moved.
 
-Each case gives raw GeoGebra input lines, `move` steps, and optionally the
-angle unit of the kernel. The harness (`harness.sh saved`) runs the lines, moves
-the points, and writes the construction file together with GeoGebra's own values
-at that moment, so the importer can be checked against the state the file was
-saved from: the order of the outputs of a command that makes several objects
-(`Intersect` of a line and a circle, of two circles; `Tangent`) after the
-points moved, and angles saved under each angle unit. The input is
-deterministic (fixed seeds); new cases are appended to their topic.
+Each case gives raw GeoGebra input lines and `move` or `set_number` steps.
+It can also set the angle unit or hide specific objects. The harness
+(`harness.sh saved`) writes the construction file and GeoGebra's own values
+at that moment. The importer checks intersection and tangent output order
+after edits, angles under both units, and values of saved expressions.
+Fixed seeds keep the input deterministic. New cases are appended to their topic.
 """
 
 import json
@@ -39,11 +37,13 @@ def topic(name):
     rng.seed(f"saved-{name}", version=2)
 
 
-def case(name, script, steps, unit=None):
+def case(name, script, steps, unit=None, hidden=None):
     counters[name] = counters.get(name, 0) + 1
     entry = {"id": f"saved-{name}-{counters[name]:03d}"}
     if unit:
         entry["angle_unit"] = unit
+    if hidden:
+        entry["hidden"] = hidden
     entry["script"] = script
     entry["steps"] = steps
     cases.append(entry)
@@ -165,6 +165,28 @@ for unit in ("degree", "radiant"):
                  mv("C", c[0] + r2(-1, 1), c[1] + r2(-1, 1))]
         case("angle", [pt("A", *a), pt("B", *b), pt("C", *c),
                        "a = Angle(B, A, C)", "b = Angle(C, A, B)"], steps, unit)
+
+expressions = [
+    "A = (1, 2)", "B = (4, -1)", "v_{0x} = 2",
+    "C = (x(A), y(B) + 2)", "s = Segment(A, C)",
+    "φ = x(C) + π", "a = sin(30° + v_{0x}°)",
+    "f(x) = If[-4 < x, v_{0x} ⋅ x² + y(C), x - 1]",
+    "t(x) = If[f(x) > 0 ∧ x > 0, f(x)]",
+    "g(x) = If[x ≤ -2 ∨ x ≥ 2, t(x) + 1, If[x ≠ 0, f(x), a]]",
+    "n = If[x(A) ≥ 0, g(x(A)), φ]",
+    "Q = (n, f(y(A)))", "valid = x(A) ≥ 0",
+    "j_{xy}(x) = f(x) + 1", "d = j_{xy}(y(A))",
+    "ang = (v_{0x} + 30)°",
+    "bad = x(A) + NextPrime(v_{0x})", "lost = bad + 1",
+    "multi(x, y) = x + y", "control = Checkbox()",
+    "button = Button()", "field = InputBox(v_{0x})",
+]
+hidden = ["C", "s"]
+case("expressions", expressions, [], hidden=hidden)
+move = mv("A", 2, 1)
+case("expressions", expressions, [move], hidden=hidden)
+case("expressions", expressions,
+     [move, {"action": "set_number", "label": "v_{0x}", "value": 5}], hidden=hidden)
 
 out = Path(__file__).with_name("saved.json")
 lines = ",\n".join("    " + json.dumps(c, separators=(", ", ": ")) for c in cases)

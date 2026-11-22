@@ -46,6 +46,8 @@
 //! any label. `$point(x, y)` gives a free point for any label; GeoGebra's
 //! parser also has a `$point` but it follows the label rule, so this is a
 //! deliberate difference (see `DIFFERENCES.md`).
+//! Both forms can also enclose a coordinate expression to preserve the
+//! kind of a renamed point or vector when loading a construction.
 
 use crate::algo::arc::ArcDef;
 use crate::algo::conic::ConicDef;
@@ -137,7 +139,7 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
         .or_else(|| name.strip_suffix("(y)").map(|f| (f, true)));
     if let Some((f, of_y)) = function {
         let f = f.trim_end();
-        if !is_identifier(f) {
+        if !is_output_label(f) {
             return Err(format!("`{f}` is not a valid object name"));
         }
         check_label(f)?;
@@ -178,7 +180,12 @@ fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option
         return c.add(name, def?).map(Some).map_err(|e| e.to_string());
     }
     if let Some(def) = parse_forced(rhs) {
-        return c.add(name, def?).map(Some).map_err(|e| e.to_string());
+        if let Ok(def) = def {
+            return c.add(name, def).map(Some).map_err(|e| e.to_string());
+        }
+        let open = rhs.find('(').expect("forced forms have parentheses");
+        return crate::expr::define_coordinates(c, name, &rhs[open..], rhs.starts_with("$vector"))
+            .map(Some);
     }
     if rhs.starts_with("Vertex") {
         if let Some((func, args)) = split_call(rhs) {

@@ -1199,6 +1199,26 @@ pub(crate) fn define(
     add(c, name, parsed, kind)
 }
 
+/// Defines a coordinate expression with an explicit kind, regardless of
+/// the label's case.
+pub(crate) fn define_coordinates(
+    c: &mut Construction,
+    name: &str,
+    rhs: &str,
+    vector: bool,
+) -> Result<Id, String> {
+    let parsed = parse::parse(c, rhs)?;
+    if parsed.uses_var || parsed.tys[parsed.root as usize] != Ty::Vec {
+        return Err("expected a point or vector expression".into());
+    }
+    add(
+        c,
+        name,
+        parsed,
+        if vector { Kind::Vector } else { Kind::Point },
+    )
+}
+
 /// Defines a named function. A constant right side (`f(x) = 3`) is still
 /// a function.
 pub(crate) fn define_function(

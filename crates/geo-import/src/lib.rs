@@ -35,9 +35,8 @@
 //!   line is accepted as soon as the kernel runs it;
 //! * a new type of free element (a polygon, a text): one arm in
 //!   `convert::Converter::free_object`;
-//! * an expression (`<expression exp="a + b">` or an argument such as
-//!   `2 * r`): `convert::expression_line` for objects and
-//!   `convert::pass_argument` for arguments; both return `None` today.
+//! * an expression (`<expression exp="a + b">`):
+//!   `convert::expression_line` adapts saved syntax for the kernel parser.
 
 pub mod archive;
 pub mod convert;

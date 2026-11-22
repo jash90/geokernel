@@ -2,8 +2,8 @@
 //!
 //! The items arrive in construction order. Free objects (a point, a vector,
 //! a number) become `A = (x, y)` and `r = 3` with the exact value of the
-//! element; a command becomes `label = Name(args)`, or
-//! `{label, label} = Name(args)` when it has several outputs. Each line is
+//! element. An expression keeps its definition and a command becomes
+//! `label = Name(args)` or `{label, label} = Name(args)`. Each line is
 //! executed on a scratch [`Construction`] before it is accepted, so whatever
 //! the kernel cannot do is skipped with the kernel's message.
 
@@ -19,11 +19,10 @@ use std::collections::{BTreeMap, BTreeSet};
 /// The longest text a reason may quote from the file, in characters.
 const QUOTE_CHARS: usize = 60;
 
-/// The longest label or number literal the importer passes into a script
-/// line (anything longer is not a label the script can use).
 /// The longest reason kept for a skipped object, in characters.
 const MAX_REASON_CHARS: usize = 300;
 
+/// The longest plain label or number passed as an ordinary command argument.
 const MAX_TOKEN_BYTES: usize = 256;
 
 /// `text`, cut to [`QUOTE_CHARS`] characters (with `...`) so that a reason
@@ -208,11 +207,26 @@ impl Converter {
             self.skip("", name, "the command has no labelled output".into());
             return Ok(());
         }
+        if let Some(reason) = control_reason(name) {
+            for label in labelled {
+                self.skip(label, name, reason.into());
+            }
+            return Ok(());
+        }
         let steps = match labelled.iter().find(|l| !is_label(l)) {
             Some(bad) => Err(format!(
                 "`{}` is not a label the script can use",
                 quote(bad)
             )),
+            None if name == "If" && outputs.len() == 1 => {
+                let label = &outputs[0];
+                let result = inputs
+                    .iter()
+                    .map(|arg| expression_line(arg))
+                    .collect::<Result<Vec<_>, _>>()
+                    .map(|args| (format!("{label} = If({})", args.join(", ")), None));
+                return self.accept_expression(label, name, result);
+            }
             None if matches!(name, "Ray" | "Arc" | "Sector")
                 && inputs.iter().any(|arg| bracketed(arg.trim()).is_some()) =>
             {
@@ -491,56 +505,108 @@ impl Converter {
     }
 
     fn element(&mut self, el: Element) -> Result<(), ImportError> {
-        if self.produced.contains(&el.label) {
-            // The result of a command: its value is the kernel's business.
-            self.expressions.remove(&el.label);
-            if let Some(id) = self.kernel.id(&el.label) {
-                let image = is_transform_image(&self.kernel.def(id));
-                if let Some((saved, computed)) = cross_check(&el, &self.kernel.value(id), image) {
-                    self.out.mismatched.push(Mismatch {
-                        label: el.label.clone(),
-                        saved,
-                        computed,
-                    });
-                }
-                if !el.shown {
-                    self.out.hidden.push(el.label);
-                }
-            }
-            return Ok(());
-        }
-        self.claim(&el.label)?;
         let expression = self.expressions.remove(&el.label);
-        let (label, kind) = (el.label.clone(), el.kind.clone());
-        match self.free_object(&el, expression.as_deref())? {
-            Ok(line) => match self.run(&line, std::slice::from_ref(&label))? {
-                Ok(()) => {
-                    self.out.script.push(line);
-                    if !el.shown {
-                        self.out.hidden.push(label);
+        if !self.produced.contains(&el.label) {
+            self.claim(&el.label)?;
+            self.define_element(&el, expression.as_deref())?;
+        }
+        self.record_element(&el);
+        Ok(())
+    }
+
+    fn define_element(
+        &mut self,
+        el: &Element,
+        expression: Option<&str>,
+    ) -> Result<(), ImportError> {
+        if let Some(exp) = expression.filter(|exp| !has_saved_literal(el, exp)) {
+            let result = expression_kind(&el.kind, exp).and_then(|kind| {
+                object_expression(&el.label, kind, exp).map(|line| (line, Some(kind)))
+            });
+            return self.accept_expression(&el.label, &el.kind, result);
+        }
+        match self.free_object(el)? {
+            Ok(line) => match self.run(&line, std::slice::from_ref(&el.label))? {
+                Ok(()) => self.out.script.push(line),
+                Err(e) => self.skip(&el.label, &el.kind, e),
+            },
+            Err(reason) => self.skip(&el.label, &el.kind, reason),
+        }
+        Ok(())
+    }
+
+    fn record_element(&mut self, el: &Element) {
+        if let Some(id) = self.kernel.id(&el.label) {
+            let image = is_transform_image(&self.kernel.def(id));
+            if let Some((saved, computed)) = cross_check(el, &self.kernel.value(id), image) {
+                self.out.mismatched.push(Mismatch {
+                    label: el.label.clone(),
+                    saved,
+                    computed,
+                });
+            }
+            if !el.shown {
+                self.out.hidden.push(el.label.clone());
+            }
+        }
+    }
+
+    /// Roll back any objects that script dispatch creates while trying a
+    /// definition that doesn't yield exactly the saved object.
+    fn accept_expression(
+        &mut self,
+        label: &str,
+        saved_type: &str,
+        line: Result<(String, Option<Kind>), String>,
+    ) -> Result<(), ImportError> {
+        let before = self.kernel.len();
+        let checkpoint = self.kernel.checkpoint();
+        let result = line.and_then(|(line, kind)| {
+            let id = exec(&mut self.kernel, &line).map_err(|error| {
+                for prefix in ["unknown object `", "unknown command `"] {
+                    if let Some(name) = error.strip_prefix(prefix).and_then(|e| e.strip_suffix('`'))
+                    {
+                        if self.skipped.contains_key(name) {
+                            return format!("depends on the skipped object `{}`", quote(name));
+                        }
                     }
                 }
-                Err(e) => self.skip(&label, &kind, e),
-            },
-            Err(reason) => self.skip(&label, &kind, reason),
+                format!("expression: {error}")
+            })?;
+            let Some(id) = id.filter(|&id| {
+                self.kernel.len() == before + 1
+                    && id.index() == before
+                    && self.kernel.label(id) == label
+            }) else {
+                return Err(
+                    "the expression must create exactly one object with the saved label".into(),
+                );
+            };
+            let actual = self.kernel.kind(id);
+            if let Some(kind) = kind.filter(|&kind| kind != actual) {
+                return Err(format!(
+                    "the expression gives a {actual}, expected a {kind}"
+                ));
+            }
+            Ok(line)
+        });
+        match result {
+            Ok(line) => self.out.script.push(line),
+            Err(reason) => {
+                if self.kernel.len() != before {
+                    self.kernel
+                        .rollback(checkpoint)
+                        .map_err(|e| ImportError::Internal(e.to_string()))?;
+                }
+                self.skip(label, saved_type, reason);
+            }
         }
         Ok(())
     }
 
     /// The script line of an element that no command made, or why there is
     /// none. The outer `Result` is for a file that is damaged.
-    fn free_object(
-        &self,
-        el: &Element,
-        expression: Option<&str>,
-    ) -> Result<Result<String, String>, ImportError> {
-        if let Some(exp) = expression {
-            // A constant expression (`(1/2, 3)`, `2^10`) is an independent
-            // object for GeoGebra, whose value is the one the element saved.
-            if !is_literal(exp) && !is_constant_expression(exp) {
-                return Ok(expression_line(exp));
-            }
-        }
+    fn free_object(&self, el: &Element) -> Result<Result<String, String>, ImportError> {
         let label = el.label.as_str();
         if !is_label(label) {
             return Ok(Err(format!(
@@ -599,30 +665,179 @@ impl Converter {
                     Err("the value is not finite".into())
                 }
             }
-            "angle" => Err("a free angle: the kernel has no angle objects".into()),
-            "boolean" => {
-                Err("a free boolean (a check box): the kernel has no free booleans".into())
-            }
+            "angle" => Err("the angle has no saved definition".into()),
+            "boolean" => Err(CHECKBOX_REASON.into()),
             "conic" => Err("a conic that no command made: the kernel only has circles".into()),
-            other => Err(format!("the element type `{other}` is not supported")),
+            other => Err(unsupported_element(other)),
         })
     }
 }
 
-/// An `<expression>` that defines an object (`a + b`, `2 * r`). The kernel has
-/// no expression engine yet; this is where one would plug in, by returning
-/// the script line.
+const CHECKBOX_REASON: &str = "checkbox controls are unsupported";
+
+fn control_reason(name: &str) -> Option<&'static str> {
+    Some(match name {
+        "Button" | "button" => "button controls are unsupported",
+        "Textfield" | "InputBox" | "textfield" => "text field controls are unsupported",
+        "Checkbox" | "CheckBox" => CHECKBOX_REASON,
+        _ => return None,
+    })
+}
+
+fn unsupported_element(kind: &str) -> String {
+    control_reason(kind).map_or_else(
+        || format!("the element type `{}` is not supported", quote(kind)),
+        str::to_owned,
+    )
+}
+
+fn expression_kind(saved_type: &str, exp: &str) -> Result<Kind, String> {
+    Ok(match saved_type {
+        "point" => Kind::Point,
+        "vector" => Kind::Vector,
+        "numeric" => Kind::Number,
+        "angle" => Kind::Angle,
+        "function" => Kind::Function,
+        "functionnvar" => return Err("a function with multiple variables is unsupported".into()),
+        "boolean" if matches!(exp.trim(), "true" | "false" | "True" | "False") => {
+            return Err(CHECKBOX_REASON.into());
+        }
+        "boolean" => Kind::Boolean,
+        "list" => Kind::List,
+        "text" => return Err("text expressions are unsupported".into()),
+        other => return Err(unsupported_element(other)),
+    })
+}
+
+/// Literal objects and independent arithmetic keep the full precision of the
+/// value saved in the element.
+fn has_saved_literal(el: &Element, exp: &str) -> bool {
+    let has_value = match el.kind.as_str() {
+        "point" | "vector" => el.coords.is_some(),
+        "numeric" => el.value.is_some(),
+        _ => false,
+    };
+    has_value && (is_literal(exp) || is_constant_expression(exp))
+}
+
+fn object_expression(label: &str, kind: Kind, exp: &str) -> Result<String, String> {
+    if !is_label(label) {
+        return Err(format!(
+            "`{}` is not a label the script can use",
+            quote(label)
+        ));
+    }
+    if kind == Kind::Function {
+        // The XML writer includes the signature of a named function in `exp`.
+        let signature = exp.split_once('=').and_then(|(lhs, rhs)| {
+            let (name, parameter) = lhs.trim_end().strip_suffix(')')?.split_once('(')?;
+            (!rhs.starts_with('=')).then_some((name.trim(), parameter.trim(), rhs.trim()))
+        });
+        let (parameter, body) = if let Some((name, parameter, body)) = signature {
+            if name != label {
+                return Err(format!(
+                    "the function signature names `{}`, expected `{}`",
+                    quote(name),
+                    quote(label)
+                ));
+            }
+            if parameter.contains(',') {
+                return Err("a function with multiple variables is unsupported".into());
+            }
+            if !matches!(parameter, "x" | "y") {
+                return Err(format!(
+                    "the function parameter `{}` is unsupported",
+                    quote(parameter)
+                ));
+            }
+            (parameter, body)
+        } else {
+            ("x", exp)
+        };
+        return Ok(format!("{label}({parameter}) = {}", expression_line(body)?));
+    }
+    let rhs = expression_line(exp)?;
+    Ok(match kind {
+        Kind::Point if is_vector_label(label) => format!("{label} = $point({rhs})"),
+        Kind::Vector if !is_vector_label(label) => format!("{label} = $vector({rhs})"),
+        _ => format!("{label} = {rhs}"),
+    })
+}
+
+/// Convert saved command brackets to parentheses. The kernel already reads
+/// the saved spellings of comparisons, logical operators, powers and degrees.
 pub fn expression_line(exp: &str) -> Result<String, String> {
-    Err(format!(
-        "the object is defined by the expression `{}`; the kernel has no expressions yet",
-        quote(exp)
-    ))
+    let mut out = String::with_capacity(exp.len());
+    let mut closers = Vec::new();
+    let (mut quoted, mut escaped) = (false, false);
+    for ch in exp.trim().chars() {
+        if ch == '#' {
+            return Err("a script comment marker `#` in an expression is unsupported".into());
+        }
+        if quoted {
+            if matches!(ch, '\n' | '\r') {
+                return Err("a line break inside an expression text literal is unsupported".into());
+            }
+            if ch == '"' && !escaped {
+                quoted = false;
+            }
+            escaped = ch == '\\' && !escaped;
+            out.push(ch);
+            continue;
+        }
+        let normalized = match ch {
+            '"' => {
+                quoted = true;
+                ch
+            }
+            '[' => {
+                let end = out.trim_end().len();
+                let name = out[..end]
+                    .rsplit(|ch: char| !ch.is_ascii_alphanumeric())
+                    .next()
+                    .unwrap_or("");
+                if !name.starts_with(|ch: char| ch.is_ascii_uppercase()) {
+                    return Err("a square bracket must follow a command name".into());
+                }
+                out.truncate(end);
+                closers.push(']');
+                '('
+            }
+            '(' | '{' => {
+                closers.push(if ch == '(' { ')' } else { '}' });
+                ch
+            }
+            ')' | ']' | '}' => {
+                let expected = closers.pop();
+                if expected != Some(ch) {
+                    if ch == ']' || expected == Some(']') {
+                        return Err("mismatched command square brackets in expression".into());
+                    }
+                    return Err(format!("unexpected `{ch}` in expression"));
+                }
+                if ch == ']' {
+                    ')'
+                } else {
+                    ch
+                }
+            }
+            '·' => '*',
+            '\r' | '\n' => ' ',
+            _ => ch,
+        };
+        out.push(normalized);
+    }
+    if quoted {
+        return Err("unclosed text literal in expression".into());
+    }
+    if let Some(closer) = closers.pop() {
+        return Err(format!("missing `{closer}` in expression"));
+    }
+    Ok(out)
 }
 
 /// An argument of a command as a script argument. A label or a number goes
-/// through unchanged; anything else is an expression (`(1, 2)`, `2 * r`,
-/// `{A, B}`), which the kernel cannot read yet. Like [`expression_line`] this
-/// is the place to add one.
+/// through unchanged. Other argument forms need command-specific handling.
 pub fn pass_argument(arg: &str) -> Result<String, String> {
     let arg = arg.trim();
     let short = arg.len() <= MAX_TOKEN_BYTES;
@@ -630,7 +845,7 @@ pub fn pass_argument(arg: &str) -> Result<String, String> {
         Ok(arg.to_string())
     } else {
         Err(format!(
-            "the argument `{}` is an expression; the kernel has no expressions yet",
+            "the argument `{}` is an expression, unsupported by this import form",
             quote(arg)
         ))
     }
