@@ -1383,7 +1383,9 @@ fn check_styles(name: &str, wb: &Workbench, view: Option<FileView>, snap: &Value
         });
         // The canvas tints polygons and angle sectors; an image has its own opacity.
         if c.image(id).is_none() {
-            expected["alpha"] = json!(geo_app_core::style::fill_opacity(c, id));
+            // The reference reads `alpha` as a 32-bit float
+            // (`Float.parseFloat`), whatever decimal the file spells.
+            expected["alpha"] = json!(geo_app_core::style::fill_opacity(c, id) as f32);
         }
         for (key, value) in expected.as_object().unwrap() {
             assert_json(value, &actual[key], &format!("{where_}.{key}"));
@@ -1422,9 +1424,7 @@ fn special(c: &Construction, id: Id) -> Value {
     if let Some(image) = c.image(id) {
         let mut result = json!({
             "type": "image", "defined": defined, "size": image.asset.size(),
-            // The decimal the file holds, not the widened 32-bit value.
-            "background": image.style.background,
-            "alpha": image.style.alpha.to_string().parse::<f64>().unwrap(),
+            "background": image.style.background, "alpha": image.style.alpha,
             "interpolate": image.style.interpolate, "centered": false,
         });
         if let Some(crop) = image.style.crop {
