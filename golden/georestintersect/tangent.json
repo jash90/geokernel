@@ -1,0 +1,181 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "georestintersect-tangent-001",
+      "group": "georestintersect",
+      "script": [
+        "A = (-2, 1)",
+        "B = (2, 1)",
+        "g = Line(A, B)",
+        "q = Curve(t, t^2, t, -2, 2)",
+        "P = Intersect(g, q)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": -2.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 2.0, "y": 0.0 },
+        { "action": "move", "label": "A", "x": -2.0, "y": -1.0 },
+        { "action": "move", "label": "B", "x": 2.0, "y": -1.0 },
+        { "action": "move", "label": "B", "x": -2.0, "y": -1.0 },
+        { "action": "move", "label": "A", "x": -2.0, "y": 1.0 },
+        { "action": "move", "label": "B", "x": 2.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": -4.0 },
+          "q": { "type": "curve", "defined": true, "start": -2.0, "end": 2.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.0, "y": 1.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 4.0, "c": -2.0 },
+          "q": { "type": "curve", "defined": true, "start": -2.0, "end": 2.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -0.5930703308172536, "y": 0.3517324172956866 },
+          "P_{2}": { "type": "point", "defined": true, "x": 0.8430703308172536, "y": 0.7107675827043134 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": -0.0 },
+          "q": { "type": "curve", "defined": true, "start": -2.0, "end": 2.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "P_{2}": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": -1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 4.0, "c": 2.0 },
+          "q": { "type": "curve", "defined": true, "start": -2.0, "end": 2.0 },
+          "P_{1}": { "type": "point", "defined": false },
+          "P_{2}": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": -1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": -1.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": 4.0 },
+          "q": { "type": "curve", "defined": true, "start": -2.0, "end": 2.0 },
+          "P_{1}": { "type": "point", "defined": false },
+          "P_{2}": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": -1.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": -1.0 },
+          "g": { "type": "line", "defined": false },
+          "q": { "type": "curve", "defined": true, "start": -2.0, "end": 2.0 },
+          "P_{1}": { "type": "point", "defined": false },
+          "P_{2}": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": -1.0 },
+          "g": { "type": "line", "defined": true, "a": 2.0, "b": 0.0, "c": 4.0 },
+          "q": { "type": "curve", "defined": true, "start": -2.0, "end": 2.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -2.0, "y": 4.0 },
+          "P_{2}": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": -4.0 },
+          "q": { "type": "curve", "defined": true, "start": -2.0, "end": 2.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.0, "y": 1.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "georestintersect-tangent-002",
+      "group": "georestintersect",
+      "script": [
+        "A = (-2, 1)",
+        "B = (2, 1)",
+        "g = Line(A, B)",
+        "q = Curve(t, t^2, t, -2, 2)",
+        "P = Intersect(q, g)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": -2.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 2.0, "y": 0.0 },
+        { "action": "move", "label": "A", "x": -2.0, "y": -1.0 },
+        { "action": "move", "label": "B", "x": 2.0, "y": -1.0 },
+        { "action": "move", "label": "B", "x": -2.0, "y": -1.0 },
+        { "action": "move", "label": "A", "x": -2.0, "y": 1.0 },
+        { "action": "move", "label": "B", "x": 2.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": -4.0 },
+          "q": { "type": "curve", "defined": true, "start": -2.0, "end": 2.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.0, "y": 1.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 4.0, "c": -2.0 },
+          "q": { "type": "curve", "defined": true, "start": -2.0, "end": 2.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -0.5930703308172536, "y": 0.3517324172956866 },
+          "P_{2}": { "type": "point", "defined": true, "x": 0.8430703308172536, "y": 0.7107675827043134 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": -0.0 },
+          "q": { "type": "curve", "defined": true, "start": -2.0, "end": 2.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "P_{2}": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": -1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 4.0, "c": 2.0 },
+          "q": { "type": "curve", "defined": true, "start": -2.0, "end": 2.0 },
+          "P_{1}": { "type": "point", "defined": false },
+          "P_{2}": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": -1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": -1.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": 4.0 },
+          "q": { "type": "curve", "defined": true, "start": -2.0, "end": 2.0 },
+          "P_{1}": { "type": "point", "defined": false },
+          "P_{2}": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": -1.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": -1.0 },
+          "g": { "type": "line", "defined": false },
+          "q": { "type": "curve", "defined": true, "start": -2.0, "end": 2.0 },
+          "P_{1}": { "type": "point", "defined": false },
+          "P_{2}": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": -1.0 },
+          "g": { "type": "line", "defined": true, "a": 2.0, "b": 0.0, "c": 4.0 },
+          "q": { "type": "curve", "defined": true, "start": -2.0, "end": 2.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -2.0, "y": 4.0 },
+          "P_{2}": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": -4.0 },
+          "q": { "type": "curve", "defined": true, "start": -2.0, "end": 2.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.0, "y": 1.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+        }
+      ]
+    }
+  ]
+}

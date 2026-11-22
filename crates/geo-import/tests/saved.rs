@@ -8,7 +8,9 @@
 //! circle dragged until the two intersection points swap, tangents, angles
 //! under both angle units).
 
-use geo_golden::compare::{compare, compare_conic, compare_list, compare_locus, compare_sampled};
+use geo_golden::compare::{
+    compare, compare_conic, compare_list, compare_locus, compare_object, compare_sampled,
+};
 use geo_golden::model::{set_snapshot_schema, Expected, ExpectedData};
 use geo_golden::repo_root;
 use geo_import::import;
@@ -99,6 +101,31 @@ fn check_review_values(snap: &Snapshot, c: &Construction, skipped: &[&str]) {
             }
         };
         result.unwrap_or_else(|why| panic!("{}: {label}: {why}", snap.id));
+    }
+}
+
+#[test]
+fn saved_curve_intersections_keep_their_output_slots() {
+    for name in [
+        "saved-curve-intersections-001",
+        "saved-curve-intersections-002",
+    ] {
+        let (snap, imported) = fixture(name);
+        assert!(
+            imported.skipped.is_empty(),
+            "{name}: {:?}",
+            imported.skipped
+        );
+        assert!(
+            imported.mismatched.is_empty(),
+            "{name}: {:?}",
+            imported.mismatched
+        );
+        check_review_values(
+            &snap,
+            &script::load(&imported.script.join("\n")).unwrap(),
+            &[],
+        );
     }
 }
 
@@ -479,6 +506,9 @@ fn files_saved_after_moves_agree_with_what_geogebra_computed_when_saving() {
                     // images.rs checks the archive assets and quad snapshots.
                     "saved-images-001",
                     "saved-images-002",
+                    "saved-vertex-image-001",
+                    "saved-vertex-image-002",
+                    "saved-vertex-image-003",
                     // Its values are deliberately stale. The replay test checks the clamped values.
                     "saved-slider-bounds-001",
                 ])
@@ -560,7 +590,13 @@ fn files_saved_after_moves_agree_with_what_geogebra_computed_when_saving() {
                 }
                 continue;
             };
-            match compare(expected, c.kind(id), &c.value(id)) {
+            let kind = c.kind(id);
+            let vertices = if matches!(kind, Kind::Polygon | Kind::PolyLine) {
+                c.vertices(id).collect()
+            } else {
+                Vec::new()
+            };
+            match compare_object(expected, kind, &c.value(id), &vertices) {
                 Ok(_) => compared += 1,
                 Err(why) => failures.push(format!(
                     "{}: `{label}` disagrees: {why}; expected {expected:?}, got {:?}",

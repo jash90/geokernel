@@ -406,6 +406,39 @@ impl Matrix {
         }
     }
 
+    /// Homogeneous image of a Cartesian point (`z = 1`) or derivative
+    /// (`z = 0`). In two dimensions the last coordinate stays equal to `z`.
+    pub(crate) fn curve_coordinates(self, (x, y): (f64, f64), z: f64) -> (f64, f64, f64) {
+        let [a, b, c, d, e, f, g, h, i] = self.data;
+        if self.size == 2 {
+            (a * x + b * y, c * x + d * y, z)
+        } else {
+            (
+                a * x + b * y + c * z,
+                d * x + e * y + f * z,
+                g * x + h * y + i * z,
+            )
+        }
+    }
+
+    /// Substitute the matrix image into a line equation. A constant
+    /// homogeneous scale keeps the residual polynomial in the input.
+    pub(in crate::algo) fn pull_back_affine_line(
+        self,
+        (a, b, c): (f64, f64, f64),
+    ) -> Option<(f64, f64, f64)> {
+        let (x1, y1, w1) = self.curve_coordinates((1.0, 0.0), 0.0);
+        let (x2, y2, w2) = self.curve_coordinates((0.0, 1.0), 0.0);
+        let (x0, y0, w0) = self.curve_coordinates((0.0, 0.0), 1.0);
+        (w1 == 0.0 && w2 == 0.0 && w0 != 0.0).then(|| {
+            (
+                (a * x1 + b * y1) / w0,
+                (a * x2 + b * y2) / w0,
+                c + (a * x0 + b * y0) / w0,
+            )
+        })
+    }
+
     pub(crate) fn conic(self, out: &mut crate::algo::conic_nd::ConicData) {
         let [a, b, c, d, e, f, g, h, i] = self.data;
         if self.size == 2 {
@@ -497,11 +530,6 @@ pub(crate) fn exec(
     };
     let src = c.id(target)?;
     let kind = c.kind(src);
-    if kind == Kind::Function {
-        return Some(Err(
-            "`ApplyMatrix` of a function requires a parametric curve".into(),
-        ));
-    }
     if !matches!(
         kind,
         Kind::Point
@@ -511,6 +539,8 @@ pub(crate) fn exec(
             | Kind::Conic
             | Kind::Polygon
             | Kind::PolyLine
+            | Kind::Curve
+            | Kind::Function
     ) {
         return None;
     }

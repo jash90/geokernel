@@ -128,22 +128,14 @@ public final class SavedExporter {
         List<GeoElement> created = new ArrayList<>();
         Map<String, byte[]> imageAssets = new LinkedHashMap<>();
         List<String> script = new ArrayList<>();
-        for (Object line : (List<?>) input.get("script")) {
-            script.add((String) line);
-            GeoElementND[] out = kernel.getAlgebraProcessor()
-                    .processAlgebraCommandNoExceptionHandling((String) line, false,
-                            new ThrowingErrorHandler((String) line), false, null);
-            if (out == null) {
-                throw new IllegalStateException("no object from " + line);
-            }
-            for (GeoElementND nd : out) {
-                created.add(nd.toGeoElement());
-            }
-        }
+        runCommands(kernel, (List<?>) input.get("script"), script, created);
         if (input.get("images") instanceof List<?> images) {
             for (Object image : images) {
                 created.add(SavedImages.create(kernel, (Map<?, ?>) image, imageAssets));
             }
+        }
+        if (input.get("after_images") instanceof List<?> commands) {
+            runCommands(kernel, commands, script, created);
         }
         if (input.get("hidden") instanceof List<?> hidden) {
             for (Object label : hidden) {
@@ -255,6 +247,23 @@ public final class SavedExporter {
         snapshot.put("objects", objects);
         Files.writeString(outDir.resolve(id + ".snapshot"), Json.write(snapshot),
                 StandardCharsets.UTF_8);
+    }
+
+    private static void runCommands(Kernel kernel, List<?> commands, List<String> script,
+            List<GeoElement> created) {
+        for (Object command : commands) {
+            String line = (String) command;
+            script.add(line);
+            GeoElementND[] out = kernel.getAlgebraProcessor()
+                    .processAlgebraCommandNoExceptionHandling(line, false,
+                            new ThrowingErrorHandler(line), false, null);
+            if (out == null) {
+                throw new IllegalStateException("no object from " + line);
+            }
+            for (GeoElementND nd : out) {
+                created.add(nd.toGeoElement());
+            }
+        }
     }
 
     private static void applyTextStep(Kernel kernel, GeoText text, String action, Map<?, ?> step) {

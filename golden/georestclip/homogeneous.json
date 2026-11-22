@@ -1,0 +1,97 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "georestclip-homogeneous-001",
+      "group": "georestclip",
+      "script": [
+        "g: 100x = -300",
+        "h: 100y = 200",
+        "A = Intersect(g, h)",
+        "B = (-3, -2)",
+        "C = (3, -2)",
+        "p = Polygon(A, B, C)",
+        "f: -3x + 2y = 10",
+        "s = IntersectPath(p, f)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": -4.0, "y": -1.0 },
+        { "action": "move", "label": "C", "x": 5.0, "y": -2.0 }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": 100.0, "b": 0.0, "c": 300.0 },
+          "h": { "type": "line", "defined": true, "a": 0.0, "b": 100.0, "c": -200.0 },
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": -3.0, "y": -2.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": -2.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [-3.0, 2.0],
+              [-3.0, -2.0],
+              [3.0, -2.0]
+            ],
+            "area": 12.0,
+            "signed_area": 12.0
+          },
+          "c": { "type": "segment", "defined": true, "x1": -3.0, "y1": 2.0, "x2": -3.0, "y2": -2.0 },
+          "a": { "type": "segment", "defined": true, "x1": -3.0, "y1": -2.0, "x2": 3.0, "y2": -2.0 },
+          "b": { "type": "segment", "defined": true, "x1": 3.0, "y1": -2.0, "x2": -3.0, "y2": 2.0 },
+          "f": { "type": "line", "defined": true, "a": -3.0, "b": 2.0, "c": -10.0 },
+          "s_{1}": { "type": "segment", "defined": true, "x1": -3.0, "y1": 0.5000000000000002, "x2": -2.3076923076923075, "y2": 1.5384615384615388 }
+        },
+        {
+          "g": { "type": "line", "defined": true, "a": 100.0, "b": 0.0, "c": 300.0 },
+          "h": { "type": "line", "defined": true, "a": 0.0, "b": 100.0, "c": -200.0 },
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": -4.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": -2.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [-3.0, 2.0],
+              [-4.0, -1.0],
+              [3.0, -2.0]
+            ],
+            "area": 11.0,
+            "signed_area": 11.0
+          },
+          "c": { "type": "segment", "defined": true, "x1": -3.0, "y1": 2.0, "x2": -4.0, "y2": -1.0 },
+          "a": { "type": "segment", "defined": true, "x1": -4.0, "y1": -1.0, "x2": 3.0, "y2": -2.0 },
+          "b": { "type": "segment", "defined": true, "x1": 3.0, "y1": -2.0, "x2": -3.0, "y2": 2.0 },
+          "f": { "type": "line", "defined": true, "a": -3.0, "b": 2.0, "c": -10.0 },
+          "s_{1}": { "type": "segment", "defined": true, "x1": -4.0, "y1": -1.0, "x2": -2.3076923076923075, "y2": 1.5384615384615388 }
+        },
+        {
+          "g": { "type": "line", "defined": true, "a": 100.0, "b": 0.0, "c": 300.0 },
+          "h": { "type": "line", "defined": true, "a": 0.0, "b": 100.0, "c": -200.0 },
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": -4.0, "y": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 5.0, "y": -2.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [-3.0, 2.0],
+              [-4.0, -1.0],
+              [5.0, -2.0]
+            ],
+            "area": 14.0,
+            "signed_area": 14.0
+          },
+          "c": { "type": "segment", "defined": true, "x1": -3.0, "y1": 2.0, "x2": -4.0, "y2": -1.0 },
+          "a": { "type": "segment", "defined": true, "x1": -4.0, "y1": -1.0, "x2": 5.0, "y2": -2.0 },
+          "b": { "type": "segment", "defined": true, "x1": 5.0, "y1": -2.0, "x2": -3.0, "y2": 2.0 },
+          "f": { "type": "line", "defined": true, "a": -3.0, "b": 2.0, "c": -10.0 },
+          "s_{1}": { "type": "segment", "defined": true, "x1": -4.0, "y1": -1.0, "x2": -2.25, "y2": 1.6250000000000002 }
+        }
+      ]
+    }
+  ]
+}

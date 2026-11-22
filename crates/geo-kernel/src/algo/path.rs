@@ -22,6 +22,7 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoTangentLine.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoAxes.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoPoint.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoCurveCartesian.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoFunction.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoLine.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoSegment.java
@@ -468,17 +469,17 @@ pub(crate) enum Geom<'a> {
         id: Id,
         n: usize,
     },
-    Curve {
-        c: &'a Construction,
-        id: Id,
-        start: f64,
-        end: f64,
-    },
     /// An arc or sector (`GeoConicPart`) with its record.
     Arc(ArcData),
     Function {
         c: &'a Construction,
         id: Id,
+    },
+    Curve {
+        c: &'a Construction,
+        id: Id,
+        start: f64,
+        end: f64,
     },
 }
 
@@ -692,10 +693,11 @@ impl Geom<'_> {
             Geom::Curve { c, id, .. } => {
                 let (x, y) = (p.x / p.z, p.y / p.z);
                 if let Some(curve) = super::curve::Cartesian::new(c, *id) {
+                    // Keep the current branch when its parameter already fits the point.
                     let (px, py) = curve.value(p.t);
-                    let tolerance = crate::tol::MIN_PRECISION;
-                    if (px - x).hypot(py - y) >= tolerance || !(px.is_finite() && py.is_finite()) {
-                        p.t = curve.closest_with_start((x, y), p.t);
+                    let distance = (px - x).hypot(py - y);
+                    if !distance.is_finite() || distance >= crate::tol::MIN_PRECISION {
+                        p.t = curve.closest_from((x, y), p.t);
                     }
                 }
                 self.path_changed(p);
@@ -723,6 +725,11 @@ impl Geom<'_> {
     /// `Path.pathChanged`: puts the point at its parameter.
     pub(crate) fn path_changed(&self, p: &mut PathState) {
         match self {
+            Geom::Curve { c, id, start, end } => {
+                p.t = p.t.clamp(*start, *end);
+                let (x, y) = c.curve_point(*id, p.t).unwrap_or((f64::NAN, f64::NAN));
+                p.set_coords_2d(x, y, 1.0);
+            }
             Geom::Function { c, id } => {
                 if let Some((a, b)) = c.chart(*id).and_then(|d| d.function_domain()) {
                     p.t = p.t.clamp(a, b);
@@ -774,11 +781,6 @@ impl Geom<'_> {
                 p.set_coords_2d(x, y, 1.0);
             }
             Geom::Arc(a) => a.path_changed(p),
-            Geom::Curve { c, id, start, end } => {
-                p.t = p.t.clamp(*start, *end);
-                let (x, y) = c.curve_point(*id, p.t).unwrap_or((f64::NAN, f64::NAN));
-                p.set_coords_2d(x, y, 1.0);
-            }
         }
     }
 }
@@ -927,6 +929,9 @@ fn defined_line_start(c: &Construction, line: Id) -> Option<(f64, f64, f64)> {
         Def::Lines(d @ LineDef::TangentLine { circle, .. }) => {
             hom(super::lines::tangent_point_on(c, d, circle).flatten())
         }
+        Def::Lines(LineDef::TangentCurvePoint { point, curve }) => {
+            hom(super::lines::curve_tangent_contact(c, point, curve))
+        }
         Def::ConicPart(d @ ConicPartDef::TangentLine { conic, .. }) => {
             hom(super::conic_parts::tangent_point_on(c, d, conic).flatten())
         }
@@ -1054,17 +1059,17 @@ pub(crate) fn geom(c: &Construction, path: Id) -> Geom<'_> {
             Some(n) => Geom::PolyLine { c, id: path, n },
             None => Geom::Undefined,
         },
+        (Kind::Function, Value::Function)
+            if crate::expr::function_signature(c, path).is_some_and(|sig| !sig.boolean) =>
+        {
+            Geom::Function { c, id: path }
+        }
         (Kind::Curve, Value::Curve { start, end }) => Geom::Curve {
             c,
             id: path,
             start,
             end,
         },
-        (Kind::Function, Value::Function)
-            if crate::expr::function_signature(c, path).is_some_and(|sig| !sig.boolean) =>
-        {
-            Geom::Function { c, id: path }
-        }
         _ => Geom::Undefined,
     }
 }
@@ -1369,8 +1374,8 @@ impl Group for PathDef {
                 Ok(id)
             } else {
                 Err(format!(
-                    "`Point` needs a line, segment, ray, circle, conic, polygon, polyline, arc \
-                     or sector, and `{label}` is a {}",
+                    "`Point` needs a line, segment, ray, circle, conic, polygon, polyline, arc, \
+                     sector or curve, and `{label}` is a {}",
                     c.kind(id)
                 ))
             }

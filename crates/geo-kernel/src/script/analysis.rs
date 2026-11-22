@@ -28,7 +28,8 @@ pub(super) fn exec(c: &mut Construction, label: &str, rhs: &str) -> Option<Resul
                 expr::define(c, label, &source, false)
             })());
         }
-        "Function" if args.len() >= 3 => return Some(restrict(c, label, &args)),
+        "Function" if args.len() >= 3 => return Some(restrict(c, label, &args, false)),
+        "$functionInterval" => return Some(restrict(c, label, &args, true)),
         "Root" if args.len() == 2 && args.iter().all(|arg| is_function(c, arg)) => {
             return Some(
                 super::define_resolved(c, label, &format!("Intersect({})", args.join(", ")))
@@ -211,7 +212,7 @@ pub(super) fn argument(c: &mut Construction, text: &str, kind: Kind) -> Result<I
     Err(format!("expected a {kind}, got `{text}`"))
 }
 
-fn restrict(c: &mut Construction, label: &str, args: &[&str]) -> Result<Id, String> {
+fn restrict(c: &mut Construction, label: &str, args: &[&str], legacy: bool) -> Result<Id, String> {
     let (source, variable, a, b) = match *args {
         [source, a, b] => (source, "x", a, b),
         [source, variable, a, b] if super::is_identifier(variable) => (source, variable, a, b),
@@ -225,7 +226,13 @@ fn restrict(c: &mut Construction, label: &str, args: &[&str]) -> Result<Id, Stri
         source.to_owned()
     };
     let body = format!("If(({a}) <= {variable} <= ({b}), {value})");
-    expr::define_parametric_coordinate(c, label, &body, variable)
+    if legacy {
+        let id = expr::define_function_interval(c, label, &body, variable)?;
+        c.remember_construction_source(id, &format!("$functionInterval({})", args.join(", ")));
+        Ok(id)
+    } else {
+        expr::define_parametric_coordinate(c, label, &body, variable)
+    }
 }
 
 fn packed(id: Id) -> Result<u32, String> {

@@ -5,6 +5,7 @@ use geo_app_core::workbench::{FileView, Workbench};
 use geo_golden::compare::{compare_construction_object, numbers_agree};
 use geo_golden::model::{expected_from_json, load_all, Step};
 use geo_golden::repo_root;
+use geo_kernel::algo::path::PathDef;
 use geo_kernel::kernel::image::{ImageCorner, ImagePlacement};
 use geo_kernel::kernel::text::TextPosition;
 use geo_kernel::{Construction, Def, Id, Kind};
@@ -34,6 +35,11 @@ const GOLDEN_CASES: &[(&str, usize)] = &[
     ("export-sliders-001", 0),
     ("export-texts-001", 0),
     ("funcanalysis-curvatureupstream-002", 0),
+    ("georestintersect-affine-002", 0),
+    ("georestintersect-growth-001", 2),
+    ("georestintersect-pathcurve-001", 0),
+    ("georestsmall-dilatecurve-001", 2),
+    ("georestsmall-matrixcurve-001", 0),
     ("lists-objects-001", 0),
     ("locus-slider-001", 0),
     ("paths-chain-001", 1),
@@ -46,6 +52,8 @@ const GOLDEN_CASES: &[(&str, usize)] = &[
 const SAVED_CASES: &[&str] = &[
     "saved-controls-002.xml",
     "saved-curve-branch-001.xml",
+    "saved-curve-intersections-001.xml",
+    "saved-curve-intersections-002.xml",
     "saved-paths-002.xml",
     "saved-images-001.ggb",
     "saved-images-002.ggb",
@@ -456,8 +464,13 @@ fn check_styles(name: &str, wb: &Workbench, view: Option<FileView>, snap: &Value
         if let Some(text) = c.text_presentation(id) {
             assert_json(&json!(text.latex), &actual["latex"], &where_);
         }
-        if let Some(t) = actual.get("curve_parameter") {
-            assert_json(&json!(c.path_state(id).unwrap().parameter()), t, &where_);
+        if matches!(c.def(id), Def::Path(PathDef::On { path } | PathDef::OnParam { path, .. }) if c.kind(path) == Kind::Curve)
+        {
+            assert_json(
+                &json!(c.path_state(id).unwrap().parameter()),
+                &actual["curve_parameter"],
+                &where_,
+            );
         }
         if matches!(c.def(id), Def::Number(_)) {
             let [min, max] = c.slider_bounds(id);
@@ -631,4 +644,29 @@ fn export_refuses_a_document_opened_with_skips() {
         .contains("1 skipped"));
     wb.load_script("A = (1, 2)").unwrap();
     assert!(wb.export_ggb(None).is_ok());
+}
+
+#[test]
+fn export_refuses_a_curve_intersection_with_unlabelled_slots() {
+    let wb =
+        Workbench::from_script("c = Curve(t, t^2, t, -2, 2)\ng: y = 1\n{, P} = Intersect(g, c)")
+            .unwrap();
+    assert!(wb
+        .export_ggb(None)
+        .unwrap_err()
+        .to_string()
+        .contains("unlabelled output slot"));
+}
+
+#[test]
+fn export_refuses_a_curve_intersection_with_noncontiguous_replay_slots() {
+    let wb = Workbench::from_script(
+        "c = Curve(t, t^2, t, -2, 2)\ng: y = 0\nP = Intersect(g, c)\nQ = $boundarySlot(P_{1}, 3)",
+    )
+    .unwrap();
+    assert!(wb
+        .export_ggb(None)
+        .unwrap_err()
+        .to_string()
+        .contains("$boundarySlot"));
 }

@@ -13,7 +13,7 @@ pub(crate) use algebra::{extrema::brent_minimum, polynomial};
 pub(super) mod function_analysis;
 mod geometry;
 mod list;
-mod logical;
+pub(super) mod logical;
 pub(crate) use logical::relation;
 mod statistics;
 pub(super) mod text;

@@ -26,8 +26,21 @@ pub(crate) struct FunctionDerivative<'a> {
 
 impl<'a> FunctionDerivative<'a> {
     pub(crate) fn new(construction: &'a Construction, id: Id) -> Option<Self> {
-        let (Def::Expr(def), Value::Function) = (construction.def(id), construction.value(id))
-        else {
+        if construction.value(id) != Value::Function {
+            return None;
+        }
+        Self::from_expression(construction, id)
+    }
+
+    pub(crate) fn for_curve_graph(construction: &'a Construction, id: Id) -> Option<Self> {
+        if super::function_interval(construction, id).is_some() {
+            return Self::from_expression(construction, id);
+        }
+        Self::new(construction, id)
+    }
+
+    fn from_expression(construction: &'a Construction, id: Id) -> Option<Self> {
+        let Def::Expr(def) = construction.def(id) else {
             return None;
         };
         Some(Self {

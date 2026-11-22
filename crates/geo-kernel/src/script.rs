@@ -396,17 +396,16 @@ fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option
         let open = rhs.find('(').expect("forced forms have parentheses");
         return crate::expr::define_coordinates(c, name, &rhs[open..], form == "$vector").map(Some);
     }
-    if rhs.starts_with("Vertex") {
-        if let Some((func, args)) = split_call(rhs) {
-            if func == "Vertex" {
-                if let Some(def) = crate::algo::point::parse_view_corner(c, &args) {
-                    return c
-                        .add(name, Def::Point(def?))
-                        .map(Some)
-                        .map_err(|e| e.to_string());
-                }
-            }
-            if let Some(def) = PointDef::parse_segment_vertex(c, func, &args) {
+    if rhs.starts_with("Vertex") || rhs.starts_with("Corner") {
+        if let Some((func @ ("Vertex" | "Corner"), args)) = split_call(rhs) {
+            let def = if func == "Vertex" {
+                crate::algo::point::parse_view_corner(c, &args)
+                    .or_else(|| PointDef::parse_segment_vertex(c, func, &args))
+                    .or_else(|| PointDef::parse_image_vertex(c, &args))
+            } else {
+                PointDef::parse_image_vertex(c, &args)
+            };
+            if let Some(def) = def {
                 return c
                     .add(name, Def::Point(def?))
                     .map(Some)
@@ -415,6 +414,9 @@ fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option
         }
     }
     if let Some(result) = crate::expr::define_relation(c, name, rhs) {
+        return result.map(Some);
+    }
+    if let Some(result) = crate::expr::define_geometry_if(c, name, rhs) {
         return result.map(Some);
     }
     if let Some(result) = crate::expr::equation::define_side(c, name, rhs) {
@@ -948,6 +950,7 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
         "Tangent"
             | "Length"
             | "Vertex"
+            | "Corner"
             | "Point"
             | "Barycenter"
             | "Polygon"
@@ -963,6 +966,7 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
             | "Integral"
             | "NIntegral"
             | "IntegralBetween"
+            | "Dilate"
             | "Derivative"
             | "NDerivative"
     ) {
@@ -972,11 +976,13 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
     let is_kind = |arg, kind| c.id(arg).is_some_and(|id| c.kind(id) == kind);
     let inputs: &[(usize, Kind)] = match (func, args.as_slice()) {
         ("Tangent", [f, _]) if is_kind(f, Kind::Function) => &[(1, Kind::Point)],
+        ("Tangent", [_, f]) if is_kind(f, Kind::Curve) => &[(0, Kind::Point)],
         ("Tangent", [_, f]) if is_kind(f, Kind::Function) => &[(0, Kind::Number)],
         ("Length", [f, _, _]) if is_kind(f, Kind::Function) || is_kind(f, Kind::Curve) => {
             &[(1, Kind::Number), (2, Kind::Number)]
         }
         ("Vertex", [s, _]) if is_kind(s, Kind::Segment) => &[(1, Kind::Number)],
+        ("Vertex" | "Corner", [image, _]) if is_kind(image, Kind::Image) => &[(1, Kind::Number)],
         ("Point", [path, _])
             if c.id(path)
                 .is_some_and(|id| crate::algo::path::PATH.contains(&c.kind(id))) =>
@@ -994,6 +1000,10 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
             if is_kind(center, Kind::Point) && crate::expr::plain_number(radius).is_none() =>
         {
             &[(1, Kind::Number)]
+        }
+        ("Dilate", [curve, _]) if is_kind(curve, Kind::Curve) => &[(1, Kind::Number)],
+        ("Dilate", [curve, _, _]) if is_kind(curve, Kind::Curve) => {
+            &[(1, Kind::Number), (2, Kind::Point)]
         }
         // the calculus commands: their number and boolean positions, in
         // the order the commands check them
@@ -1049,7 +1059,8 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
     // geometry commands parse a plain decimal into their own definition
     let live_numbers = matches!(
         func,
-        "LowerSum"
+        "Dilate"
+            | "LowerSum"
             | "UpperSum"
             | "LeftSum"
             | "TrapezoidalSum"
@@ -1071,7 +1082,11 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
                 return None;
             }
             let label = format!("\0arg{}", c.len());
-            crate::expr::argument_object(c, arg, &label, kind).then_some((index, label))
+            let resolved = crate::expr::argument_object(c, arg, &label, kind)
+                || (func == "Tangent"
+                    && kind == Kind::Number
+                    && crate::expr::argument_object(c, arg, &label, Kind::Point));
+            resolved.then_some((index, label))
         })
         .collect();
     for (index, label) in &replacements {
@@ -1129,9 +1144,11 @@ fn parse_multi(c: &Construction, rhs: &str) -> Option<Result<Vec<Def>, String>> 
 /// - exactly one defined: only that output is created, using an indexed
 ///   label for algorithms that assign slots through an output handler;
 /// - none defined: only the first output is created, using the same rule.
+/// - curve and line: create every indexed parameter slot, including those
+///   whose parameters lie outside the curve.
 ///
-/// The workbench can record additional polygonal boundary outputs after a
-/// move reveals more crossings.
+/// The workbench can record additional curve or polygonal boundary outputs
+/// after a move reveals more crossings.
 /// Returns the id of the first object created.
 pub(crate) fn add_outputs(c: &mut Construction, name: &str, defs: Vec<Def>) -> Result<Id, String> {
     if c.id(name).is_some() {
@@ -1183,12 +1200,14 @@ pub(crate) fn add_outputs(c: &mut Construction, name: &str, defs: Vec<Def>) -> R
     }
     let count = defined.iter().filter(|&&d| d).count();
     let indexed = matches!(defs.first(), Some(Def::IntersectBoundary(d)) if d.labels_indexed());
+    let all_indexed =
+        matches!(defs.first(), Some(Def::IntersectBoundary(d)) if d.labels_all_indexed());
     // Construction.getIndexLabel: the prefix is the name up to the first `_`.
     let prefix = match name.split('_').next() {
         Some(p) if !p.is_empty() => p,
         _ => "a",
     };
-    if count < 2 {
+    if count < 2 && !all_indexed {
         let k = defined.iter().position(|&d| d).unwrap_or(0);
         return if indexed {
             c.add(&index_label(c, prefix), defs[k])
@@ -1199,7 +1218,11 @@ pub(crate) fn add_outputs(c: &mut Construction, name: &str, defs: Vec<Def>) -> R
     }
     let at = c.checkpoint();
     let mut first = None;
-    for (def, _) in defs.into_iter().zip(defined).filter(|&(_, d)| d) {
+    for (def, _) in defs
+        .into_iter()
+        .zip(defined)
+        .filter(|&(_, d)| all_indexed || d)
+    {
         let label = index_label(c, prefix);
         match intersect::add_labelled_output(c, &label, def) {
             Ok(id) => {
@@ -1664,7 +1687,24 @@ fn is_output_label(s: &str) -> bool {
 /// for a command that creates one object, and for anything that is not a call.
 /// A saved file uses it to choose between `name = ...` and `{a, b} = ...`.
 pub fn multi_output_count(c: &Construction, rhs: &str) -> Option<Result<usize, String>> {
+    if let Some(def) = conic_clip(c, rhs.trim()) {
+        return Some(Ok(def.segments(c).len().max(1)));
+    }
+    if let Some(("Intersect", args)) = split_call(rhs.trim()) {
+        if intersect::curves::CurveIntersection::seed_pair(c, &args).is_some() {
+            return Some(Ok(1));
+        }
+    }
     parse_multi(c, rhs.trim()).map(|r| r.map(|defs| defs.len()))
+}
+
+fn conic_clip(c: &Construction, rhs: &str) -> Option<crate::algo::polygon_clip::ClipDef> {
+    let (func @ "IntersectPath", args) = split_call(rhs)? else {
+        return None;
+    };
+    crate::algo::polygon_clip::ClipDef::parse(c, func, &args)
+        .ok()
+        .filter(|def| def.is_conic())
 }
 
 /// `{t_{1}, t_{2}} = Tangent(P, k)`: names the outputs of a command that
@@ -1688,6 +1728,34 @@ fn exec_labelled(c: &mut Construction, line: &str) -> Result<Option<Id>, String>
 fn exec_slots(c: &mut Construction, slots: &[&str], rhs: &str) -> Result<Option<Id>, String> {
     if let Some(result) = analysis::exec_slots(c, slots, rhs) {
         return result;
+    }
+    if let Some(clip) = conic_clip(c, rhs) {
+        use crate::algo::polygon::PolygonDef;
+        use crate::algo::polygon_clip::ClipOutput;
+        if slots.len() > clip.output_capacity(c) {
+            return Err("too many output labels for the clipped path".into());
+        }
+        let defs = (0..slots.len())
+            .map(|i| Def::Polygon(PolygonDef::Clip(clip.slot(ClipOutput::Segment, i))))
+            .collect();
+        return add_named_outputs(c, slots, defs);
+    }
+    if let Some((name @ "Intersect", args)) = split_call(rhs) {
+        use intersect::curves::CurveIntersection;
+        if let Some(curve) = CurveIntersection::carrier_pair(c, name, &args) {
+            if slots.len() > CurveIntersection::MAX_SAVED_SLOTS {
+                return Err("too many output labels for the curve intersection".into());
+            }
+            return add_named_outputs(c, slots, curve.saved_slots(slots.len()));
+        }
+        let checkpoint = c.checkpoint();
+        if let Some(def) = CurveIntersection::selected(c, &args) {
+            let result = def.and_then(|def| add_named_outputs(c, slots, vec![def]));
+            if result.is_err() {
+                c.discard_since(checkpoint);
+            }
+            return result;
+        }
     }
     // The command decides how many outputs it has; a longer list of labels is
     // refused before any label is looked at, so the work is bounded by the
@@ -1762,6 +1830,17 @@ pub(crate) fn add_named_outputs(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn saved_curve_intersections_reject_overlong_output_lists() {
+        let mut c = super::load("q = Curve(t, t^2, t, -2, 2)\ng: y = 100").unwrap();
+        let labels = (1..=513).map(|i| format!("P_{{{i}}}")).collect::<Vec<_>>();
+        let line = format!("{{{}}} = Intersect(g, q)", labels.join(","));
+        let before = c.len();
+        let error = super::exec(&mut c, &line).unwrap_err();
+        assert_eq!(error, "too many output labels for the curve intersection");
+        assert_eq!(c.len(), before);
+    }
+
     use super::*;
     use crate::kernel::Value;
 

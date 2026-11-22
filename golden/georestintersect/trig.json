@@ -1,0 +1,99 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "georestintersect-trig-001",
+      "group": "georestintersect",
+      "script": [
+        "A = (0, 0)",
+        "q = Curve(x(A)+5*sin(t), y(A)+5*cos(t), t, 0, 6)",
+        "g: 3x = 4y",
+        "P = Intersect(g, q)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": 1.0, "y": -1.0 },
+        { "action": "move", "label": "A", "x": 1.0, "y": 8.0 },
+        { "action": "move", "label": "A", "x": 0.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "q": { "type": "curve", "defined": true, "start": 0.0, "end": 6.0 },
+          "g": { "type": "line", "defined": true, "a": 3.0, "b": -4.0, "c": 0.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": 3.9999990922046944, "y": 3.000001210393359 },
+          "P_{2}": { "type": "point", "defined": true, "x": -3.9999991839788707, "y": -3.0000010880278642 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": -1.0 },
+          "q": { "type": "curve", "defined": true, "start": 0.0, "end": 6.0 },
+          "g": { "type": "line", "defined": true, "a": 3.0, "b": -4.0, "c": 0.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": 4.000000006024122, "y": 2.9999999954819083 },
+          "P_{2}": { "type": "point", "defined": true, "x": -3.6800000075637467, "y": -2.759999979887308 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 8.0 },
+          "q": { "type": "curve", "defined": true, "start": 0.0, "end": 6.0 },
+          "g": { "type": "line", "defined": true, "a": 3.0, "b": -4.0, "c": 0.0 },
+          "P_{1}": { "type": "point", "defined": false },
+          "P_{2}": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "q": { "type": "curve", "defined": true, "start": 0.0, "end": 6.0 },
+          "g": { "type": "line", "defined": true, "a": 3.0, "b": -4.0, "c": 0.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": 3.9999990922046944, "y": 3.000001210393359 },
+          "P_{2}": { "type": "point", "defined": true, "x": -3.9999991839788707, "y": -3.0000010880278642 }
+        }
+      ]
+    },
+    {
+      "id": "georestintersect-trig-002",
+      "group": "georestintersect",
+      "script": [
+        "A = (0, 0)",
+        "q = Curve(x(A)+5*sin(t), y(A)+5*cos(t), t, 0, 6)",
+        "g: 3x = 4y",
+        "P = Intersect(q, g)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": 1.0, "y": -1.0 },
+        { "action": "move", "label": "A", "x": 1.0, "y": 8.0 },
+        { "action": "move", "label": "A", "x": 0.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "q": { "type": "curve", "defined": true, "start": 0.0, "end": 6.0 },
+          "g": { "type": "line", "defined": true, "a": 3.0, "b": -4.0, "c": 0.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": 3.9999990922046944, "y": 3.000001210393359 },
+          "P_{2}": { "type": "point", "defined": true, "x": -3.9999991839788707, "y": -3.0000010880278642 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": -1.0 },
+          "q": { "type": "curve", "defined": true, "start": 0.0, "end": 6.0 },
+          "g": { "type": "line", "defined": true, "a": 3.0, "b": -4.0, "c": 0.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": 4.000000006024122, "y": 2.9999999954819083 },
+          "P_{2}": { "type": "point", "defined": true, "x": -3.6800000075637467, "y": -2.759999979887308 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 8.0 },
+          "q": { "type": "curve", "defined": true, "start": 0.0, "end": 6.0 },
+          "g": { "type": "line", "defined": true, "a": 3.0, "b": -4.0, "c": 0.0 },
+          "P_{1}": { "type": "point", "defined": false },
+          "P_{2}": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "q": { "type": "curve", "defined": true, "start": 0.0, "end": 6.0 },
+          "g": { "type": "line", "defined": true, "a": 3.0, "b": -4.0, "c": 0.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": 3.9999990922046944, "y": 3.000001210393359 },
+          "P_{2}": { "type": "point", "defined": true, "x": -3.9999991839788707, "y": -3.0000010880278642 }
+        }
+      ]
+    }
+  ]
+}

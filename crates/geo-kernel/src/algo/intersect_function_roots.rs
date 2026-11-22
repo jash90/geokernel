@@ -167,6 +167,27 @@ pub(in crate::algo) fn interval_roots(
     }
 }
 
+/// The same root scan with a fixed sample count, as used for Cartesian curves.
+pub(super) fn fixed_steps_roots(
+    f: &impl Fn(f64) -> f64,
+    left: f64,
+    right: f64,
+    steps: usize,
+    exhausted: impl Fn() -> bool,
+) -> Vec<f64> {
+    let width = right - left;
+    if exhausted() || !width.is_finite() || width < 0.0 {
+        Vec::new()
+    } else if width <= STANDARD_PRECISION {
+        (f(left).abs() < STANDARD_PRECISION)
+            .then_some(left)
+            .into_iter()
+            .collect()
+    } else {
+        scan(f, left, width / steps as f64, steps, &exhausted)
+    }
+}
+
 fn scan(
     f: &impl Fn(f64) -> f64,
     left: f64,

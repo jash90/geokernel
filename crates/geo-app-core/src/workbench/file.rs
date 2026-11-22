@@ -6,7 +6,10 @@
 use super::Workbench;
 use crate::scriptlog::{Log, Rejected};
 use geo_import::export::{self, Definition, Presentation, View};
+use geo_kernel::script::boundary_slot_owner;
 use geo_kernel::script::saved::Property;
+use geo_kernel::{script, Kind};
+use std::collections::BTreeMap;
 
 /// The format of `snapshot_text`. Its first line is a script comment, so a
 /// snapshot is also a plain script; `restore_text` reads exactly this
@@ -136,15 +139,53 @@ impl Workbench {
         if skipped != 0 || mismatched != 0 {
             return Err(export::ExportError::incomplete_import(skipped, mismatched));
         }
-        let definitions = self.log.entries().map(|entry| Definition {
-            line: &entry.line,
-            outputs: &entry.labels,
+        let c = self.construction();
+        // GeoGebra saves slots that appeared after an edit on the original
+        // curve intersection command, even when some are now undefined.
+        let mut grown: BTreeMap<_, _> = self
+            .log
+            .grown_groups()
+            .into_iter()
+            .filter_map(|group| {
+                let owner = c.id(group.labels.first()?)?;
+                c.inputs(owner)
+                    .any(|id| c.kind(id) == Kind::Curve)
+                    .then_some((c.label(owner), group.labels))
+            })
+            .collect();
+        // A script can also supply replay slots explicitly. Keep the
+        // exporter's refusal if their indices would change when grouped.
+        for entry in self.log.entries() {
+            let rhs = entry.rhs();
+            let Some(owner) = boundary_slot_owner(rhs) else {
+                continue;
+            };
+            let Some(outputs) = grown.get(owner) else {
+                continue;
+            };
+            let saved_slot = script::split_call(rhs)
+                .and_then(|(_, args)| args.get(1)?.parse::<usize>().ok())
+                .and_then(|slot| slot.checked_sub(1))
+                .and_then(|slot| outputs.get(slot));
+            if saved_slot != entry.labels.first() {
+                grown.remove(owner);
+            }
+        }
+        let definitions = self.log.entries().filter_map(|entry| {
+            if boundary_slot_owner(entry.rhs()).is_some_and(|owner| grown.contains_key(owner)) {
+                return None;
+            }
+            let outputs = entry
+                .labels
+                .first()
+                .and_then(|label| grown.get(label.as_str()))
+                .unwrap_or(&entry.labels);
+            Some(Definition {
+                line: &entry.line,
+                outputs,
+            })
         });
-        export::ggb(
-            self.construction(),
-            definitions,
-            &self.export_presentation(view),
-        )
+        export::ggb(c, definitions, &self.export_presentation(view))
     }
 
     /// The whole document as a script that `restore_text` (or `load_bytes`)
@@ -572,7 +613,7 @@ mod tests {
     }
 
     /// The saved files of the golden set, and those of them that do not load.
-    const GOLDEN_FILES: usize = 41;
+    const GOLDEN_FILES: usize = 44;
     const GOLDEN_FILES_NOT_LOADED: &[&str] = &[];
 
     #[test]

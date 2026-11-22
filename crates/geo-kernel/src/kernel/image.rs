@@ -522,6 +522,27 @@ impl Construction {
         yscale: f64,
     ) -> Option<[[f64; 2]; 4]> {
         let image = self.image(id)?;
+        let [a, right, up] = self.image_frame(image, xscale, yscale)?;
+        let area = right[0] * up[1] - right[1] * up[0];
+        (area.is_finite() && area != 0.0).then(|| quad(a, right, up))
+    }
+
+    pub(crate) fn image_vertex(&self, id: Id, index: i32) -> Option<Value> {
+        let image = self.image(id)?;
+        if image.placement.is_screen() {
+            return None;
+        }
+        let i = match index {
+            1..=4 => 4 - index as usize,
+            _ => return None,
+        };
+        let [_, _, _, _, xs, ys] = self.locus_view().unwrap_or(super::locus::HEADLESS_VIEW);
+        let [a, right, up] = self.image_frame(image, xs, ys)?;
+        let [x, y] = quad(a, right, up)[i];
+        Some(Value::Point { x, y })
+    }
+
+    fn image_frame(&self, image: &RasterImage, xscale: f64, yscale: f64) -> Option<[[f64; 2]; 3]> {
         let [width, height] = image.asset.size.map(f64::from);
         let resolve = |corner: ImageCorner| match corner {
             ImageCorner::Coordinates(coords) => Some(coords),
@@ -541,7 +562,7 @@ impl Construction {
                 let mut a = a.map_or(Some([0.0, 0.0]), resolve)?;
                 if screen_coords {
                     a = a.map(|coordinate| f64::from(coordinate as i32));
-                    return Some(quad(a, [width, 0.0], [0.0, -height]));
+                    return Some([a, [width, 0.0], [0.0, -height]]);
                 }
                 let (right, up) = match (b, d) {
                     (Some(b), Some(d)) => (delta(resolve(b)?, a), delta(resolve(d)?, a)),
@@ -562,8 +583,7 @@ impl Construction {
                 (a, right, up)
             }
         };
-        let area = right[0] * up[1] - right[1] * up[0];
-        (area.is_finite() && area != 0.0).then(|| quad(a, right, up))
+        Some([a, right, up])
     }
 }
 

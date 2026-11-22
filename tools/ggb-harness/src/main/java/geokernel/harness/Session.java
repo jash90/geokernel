@@ -23,6 +23,7 @@ import org.geogebra.common.kernel.algos.AlgoConicPartCircumcircle;
 import org.geogebra.common.kernel.algos.AlgoConicPartConicPoints;
 import org.geogebra.common.kernel.MyPoint;
 import org.geogebra.common.kernel.algos.AlgoElement;
+import org.geogebra.common.kernel.algos.AlgoIntersectLineCurve;
 import org.geogebra.common.kernel.algos.AlgoIntersectLinePolyLine;
 import org.geogebra.common.kernel.algos.AlgoIntersectPolyLines;
 import org.geogebra.common.kernel.algos.AlgoJoinPointsRay;
@@ -142,7 +143,7 @@ final class Session {
 
     void setView(double[] view) {
         if (!Arrays.stream(view).allMatch(Double::isFinite)
-                || view[0] >= view[1] || view[2] >= view[3] || view[4] <= 0 || view[5] <= 0) {
+                || view[0] > view[1] || view[2] >= view[3] || view[4] <= 0 || view[5] <= 0) {
             throw new IllegalArgumentException("invalid sampling view");
         }
         app.getEuclidianView1().setCoordSystem(-view[0] * view[4], view[3] * view[5], view[4], view[5]);
@@ -237,7 +238,8 @@ final class Session {
                     || (trackRootGrowth && parent instanceof AlgoRoots)) {
                 growingPoints.put(parent, "");
             }
-            if (trackBoundaryGrowth && (parent instanceof AlgoIntersectLinePolyLine
+            if (trackBoundaryGrowth && (parent instanceof AlgoIntersectLineCurve
+                    || parent instanceof AlgoIntersectLinePolyLine
                     || parent instanceof AlgoIntersectPolyLines)) {
                 growingPoints.put(parent, label.split("_", 2)[0] + "_{");
                 recordGrowingPoints();
@@ -1119,9 +1121,19 @@ final class Session {
         String arguments = definition.substring(definition.indexOf('(') + 1, definition.length() - 1);
         GeoElement first = objects.get(arguments.split(",", 2)[0].trim());
         switch (command) {
+            case "If":
+                List<String> ifArgs = arguments(definition);
+                GeoElement branch = ifArgs.size() > 1 ? objects.get(ifArgs.get(1).trim()) : null;
+                if (branch instanceof GeoLine || branch instanceof GeoConic) {
+                    return schemaType(branch);
+                }
+                return null;
             case "ApplyMatrix":
                 List<String> args = arguments(definition);
                 GeoElement target = args.size() == 2 ? objects.get(args.get(1).trim()) : null;
+                if (target instanceof GeoFunction) {
+                    return "curve";
+                }
                 return target instanceof GeoConic ? "conic"
                         : target == null ? null : schemaType(target);
             case "Polar":

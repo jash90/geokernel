@@ -61,6 +61,7 @@ pub(crate) fn convert_with_assets(
     let mut elements = BTreeMap::new();
     let mut polygon_inputs = BTreeMap::new();
     let mut images = Vec::new();
+    let mut assets = ImageAssets::default();
     for item in &doc.items {
         match item {
             Item::Expression { .. } => {}
@@ -95,7 +96,19 @@ pub(crate) fn convert_with_assets(
                 flags.count(el);
                 if el.kind == "image" && !c.produced.contains(&el.label) {
                     c.claim(&el.label)?;
-                    images.push(el.as_ref());
+                    // Load an image in construction order when its anchors are
+                    // ready, so subsequent commands can use it as an input.
+                    let forward_reference = el.image.as_ref().is_some_and(|image| {
+                        image.start_points.iter().any(|(_, corner)| match corner {
+                            ImageCorner::Coordinates(_) => false,
+                            ImageCorner::Point(source) => c.kernel.id(source).is_none(),
+                        })
+                    });
+                    if forward_reference {
+                        images.push(el.as_ref());
+                    } else {
+                        c.image(el, archive, &mut assets)?;
+                    }
                     continue;
                 }
                 let points = polygon_inputs.get(el.label.as_str()).and_then(|inputs| {
@@ -116,7 +129,6 @@ pub(crate) fn convert_with_assets(
         }
     }
     // Saved corner references can name points that appear later in the file.
-    let mut assets = ImageAssets::default();
     for el in images {
         c.image(el, archive, &mut assets)?;
     }
@@ -543,9 +555,11 @@ impl Converter {
             }),
             _ => false,
         };
+        let legacy_interval = name == "Function" && matches!(inputs.len(), 3 | 4);
         let mut args = Vec::with_capacity(inputs.len());
         for (index, arg) in inputs.iter().enumerate() {
             let raw = text_command
+                || legacy_interval
                 || matches!(name, "Curve" | "CurveCartesian" | "Slider")
                 || (name == "Angle"
                     && inputs.len() == 1
@@ -565,10 +579,10 @@ impl Converter {
             }
             args.push(pass_argument(&arg, raw)?);
         }
-        let name = if name == "CurveCartesian" {
-            "Curve"
-        } else {
-            name
+        let name = match name {
+            "CurveCartesian" => "Curve",
+            "Function" if legacy_interval => "$functionInterval",
+            _ => name,
         };
         if let ("Point", [path], [label]) = (name, args.as_slice(), outputs) {
             if let Some((el, path_id)) = elements.get(label.as_str()).zip(self.kernel.id(path)) {
@@ -601,7 +615,15 @@ impl Converter {
         // GeoGebra saves `Intersect(a, b)` of a line and a conic (or two
         // conics) without an index and lists both points as outputs; the
         // kernel takes the n-th point as `Intersect(a, b, n)`.
-        if name == "Intersect" && args.len() == 2 && outputs.len() >= 2 {
+        if name == "Intersect"
+            && args.len() == 2
+            && outputs.len() >= 2
+            && !args.iter().any(|arg| {
+                self.kernel
+                    .id(arg)
+                    .is_some_and(|id| self.kernel.kind(id) == Kind::Curve)
+            })
+        {
             let swapped = self.circle_intersection_swapped(&args, outputs, elements)?;
             return Ok(outputs
                 .iter()

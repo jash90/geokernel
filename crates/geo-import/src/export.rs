@@ -308,6 +308,18 @@ impl Writer<'_> {
             if name == "$point" || name == "$vector" {
                 return self.expression(id, &syntax(&format!("({})", inputs.join(", ")))?);
             }
+            if name == "Intersect"
+                && inputs.len() == 2
+                && c.inputs(id).any(|id| c.kind(id) == Kind::Curve)
+                && lhs
+                    .strip_prefix('{')
+                    .and_then(|labels| labels.strip_suffix('}'))
+                    .is_some_and(|labels| labels.split(',').any(|label| label.trim().is_empty()))
+            {
+                return Err(failure(format!(
+                    "curve intersection `{label}` has an unlabelled output slot"
+                )));
+            }
             if name.chars().next().is_some_and(char::is_uppercase)
                 && name.chars().all(char::is_alphanumeric)
                 && c.id(name).is_none()

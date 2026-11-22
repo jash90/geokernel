@@ -1,0 +1,95 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "georestsmall-surdpoint-001",
+      "group": "georestsmall",
+      "script": [
+        "A = (1, 1)",
+        "s = SurdText(A)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": 0.5, "y": -0.75 },
+        { "action": "move", "label": "A", "x": 0.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "s": { "type": "text", "defined": true, "text": " \\left( 1 , 1 \\right) " }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.5, "y": -0.75 },
+          "s": { "type": "text", "defined": true, "text": " \\left(  \\frac{ 1 }{ 2 }  , - \\frac{ 3 }{ 4 }  \\right) " }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "s": { "type": "text", "defined": true, "text": " \\left( 0 , 0 \\right) " }
+        }
+      ]
+    },
+    {
+      "id": "georestsmall-surdpoint-002",
+      "group": "georestsmall",
+      "script": [
+        "A = (1, 2)",
+        "B = (2, 3)",
+        "g = Line(A, B)",
+        "P = Intersect(g, xAxis)",
+        "s = SurdText(P)",
+        "Q = (sqrt(2), -sqrt(3) / 2)",
+        "u = SurdText(Q)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 2.0, "y": 2.0 },
+        { "action": "move", "label": "A", "x": 0.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 2.0, "y": -2.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": -1.0 },
+          "xAxis": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "P": { "type": "point", "defined": true, "x": -1.0, "y": -0.0 },
+          "s": { "type": "text", "defined": true, "text": " \\left( -1 , 0 \\right) " },
+          "Q": { "type": "point", "defined": true, "x": 1.4142135623730951, "y": -0.8660254037844386 },
+          "u": { "type": "text", "defined": true, "text": " \\left( \\sqrt{2} , -\\frac{\\sqrt{3}}{2} \\right) " }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -2.0 },
+          "xAxis": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "P": { "type": "point", "defined": false },
+          "s": { "type": "text", "defined": true, "text": " \\left( ? , ? \\right) " },
+          "Q": { "type": "point", "defined": true, "x": 1.4142135623730951, "y": -0.8660254037844386 },
+          "u": { "type": "text", "defined": true, "text": " \\left( \\sqrt{2} , -\\frac{\\sqrt{3}}{2} \\right) " }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 2.0, "c": -4.0 },
+          "xAxis": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "P": { "type": "point", "defined": false },
+          "s": { "type": "text", "defined": true, "text": " \\left( ? , ? \\right) " },
+          "Q": { "type": "point", "defined": true, "x": 1.4142135623730951, "y": -0.8660254037844386 },
+          "u": { "type": "text", "defined": true, "text": " \\left( \\sqrt{2} , -\\frac{\\sqrt{3}}{2} \\right) " }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": -2.0 },
+          "g": { "type": "line", "defined": true, "a": 4.0, "b": 2.0, "c": -4.0 },
+          "xAxis": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": -0.0 },
+          "s": { "type": "text", "defined": true, "text": " \\left( 1 , 0 \\right) " },
+          "Q": { "type": "point", "defined": true, "x": 1.4142135623730951, "y": -0.8660254037844386 },
+          "u": { "type": "text", "defined": true, "text": " \\left( \\sqrt{2} , -\\frac{\\sqrt{3}}{2} \\right) " }
+        }
+      ]
+    }
+  ]
+}

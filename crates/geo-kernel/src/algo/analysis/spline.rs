@@ -121,6 +121,17 @@ impl Spline {
         })
     }
 
+    pub(in crate::algo) fn pieces(&self) -> impl Iterator<Item = (f64, f64, &[[f64; 2]])> {
+        self.knots.windows(2).enumerate().map(|(piece, interval)| {
+            let start = piece * self.stride;
+            (
+                interval[0],
+                interval[1],
+                &self.coefficients[start..start + self.stride],
+            )
+        })
+    }
+
     pub(crate) fn sample(&self, t: f64, derivative: usize) -> Point {
         let piece = self
             .knots
