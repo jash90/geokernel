@@ -558,6 +558,32 @@ fn curve_sample(t: f64, v: &serde_json::Value) -> Result<CurveSample, String> {
     }
 }
 
+/// Whether two lists of numbers have the same bits, so -0 differs from +0.
+fn same_bits(a: &[f64], b: &[f64]) -> bool {
+    a.len() == b.len() && a.iter().zip(b).all(|(p, q)| p.to_bits() == q.to_bits())
+}
+
+/// Where the harness samples a curve: these fractions of its parameter
+/// interval, each parameter computed as `start + (end - start) * fraction`.
+const CURVE_FRACTIONS: [f64; 7] = [0.0, 0.125, 0.25, 0.5, 0.75, 0.875, 1.0];
+
+/// Checks that curve samples sit exactly at the harness's parameters.
+fn check_curve_parameters(start: f64, end: f64, samples: &[CurveSample]) -> Result<(), String> {
+    if samples.is_empty() {
+        return Ok(());
+    }
+    let want: Vec<f64> = CURVE_FRACTIONS
+        .iter()
+        .map(|fraction| start + (end - start) * fraction)
+        .collect();
+    let got: Vec<f64> = samples.iter().map(|s| s.0).collect();
+    if same_bits(&want, &got) {
+        Ok(())
+    } else {
+        Err(format!("curve samples must be at {want:?}, got {got:?}"))
+    }
+}
+
 /// A number field.
 fn number(name: &str, v: &serde_json::Value) -> Result<f64, String> {
     v.as_f64()
@@ -618,7 +644,8 @@ fn function_samples(raw: &RawObject) -> Result<ExpectedData, String> {
         .as_ref()
         .ok_or("defined function needs `samples`")?;
     let xs: Vec<f64> = pairs.iter().map(|p| p.0).collect();
-    if xs != SAMPLE_XS {
+    // bit for bit: a sample at -0 would be another sample than at +0
+    if !same_bits(&xs, &SAMPLE_XS) {
         return Err(format!(
             "function samples must be at {SAMPLE_XS:?}, got {xs:?}"
         ));
@@ -706,7 +733,7 @@ impl TryFrom<RawObject> for Expected {
                 || samples
                     .iter()
                     .zip(SAMPLE_XS)
-                    .any(|(&(x, y, _), want_x)| x != want_x || y != 1.0 - 2.0 * want_x)
+                    .any(|(&(x, y, _), want_x)| !same_bits(&[x, y], &[want_x, 1.0 - 2.0 * want_x]))
             {
                 return Err("unexpected two-variable function samples".into());
             }
@@ -907,11 +934,15 @@ impl TryFrom<RawObject> for Expected {
             },
             Kind::Number | Kind::Angle => ExpectedData::Number(f("value")),
             Kind::Image => ExpectedData::Image,
-            Kind::Curve => ExpectedData::Curve {
-                start: f("start"),
-                end: f("end"),
-                samples: curve_samples()?,
-            },
+            Kind::Curve => {
+                let samples = curve_samples()?;
+                check_curve_parameters(f("start"), f("end"), &samples)?;
+                ExpectedData::Curve {
+                    start: f("start"),
+                    end: f("end"),
+                    samples,
+                }
+            }
             Kind::Vector => ExpectedData::Vector {
                 x: f("x"),
                 y: f("y"),
@@ -1867,7 +1898,7 @@ fn restore_data(old: &mut ExpectedData, new: &ExpectedData, signed: bool) -> Res
             each(a, b, |o, n| restore_sample(o, *n, signed))
         }
         (ExpectedData::FunctionNVar(a), ExpectedData::FunctionNVar(b)) => each(a, b, |o, n| {
-            if (o.0, o.1) != (n.0, n.1) {
+            if !same_bits(&[o.0, o.1], &[n.0, n.1]) {
                 return Err(format!(
                     "sample at {:?} is recorded at {:?}",
                     (o.0, o.1),
@@ -2144,10 +2175,49 @@ mod tests {
         assert!(expected_from_json(&value).is_err());
     }
 
+    /// A curve on [`start`, 1] sampled at the harness's parameters: `first`
+    /// at the start and `rest` at every other parameter.
+    fn curve_json(start: f64, first: &str, rest: &str) -> String {
+        let samples: Vec<String> = CURVE_FRACTIONS
+            .iter()
+            .enumerate()
+            .map(|(i, fraction)| {
+                let t = start + (1.0 - start) * fraction;
+                format!("[{t:?},{}]", if i == 0 { first } else { rest })
+            })
+            .collect();
+        format!(
+            r#"{{"type":"curve","defined":true,"start":{start:?},"end":1.0,"samples_curve":[{}]}}"#,
+            samples.join(",")
+        )
+    }
+
+    #[test]
+    fn curve_samples_sit_at_the_harness_parameters() {
+        let good = curve_json(-1.0, "[1.0,2.0]", "[1.0,2.0]");
+        assert!(parse_file(&file_with(4, &good), "t").is_ok());
+        // the midpoint of [-1, 1] is +0, never -0
+        let forged = good.replace("[0.0,[1.0,2.0]]", "[-0.0,[1.0,2.0]]");
+        assert_ne!(forged, good);
+        assert!(parse_file(&file_with(4, &forged), "t").is_err());
+        let shifted = good.replace("[0.0,[1.0,2.0]]", "[5e-10,[1.0,2.0]]");
+        assert!(parse_file(&file_with(4, &shifted), "t").is_err());
+        // a function is sampled at +0 too
+        let samples: Vec<String> = SAMPLE_XS.iter().map(|x| format!("[{x:?},1.0]")).collect();
+        let function = format!(
+            r#"{{"type":"function","defined":true,"samples":[{}]}}"#,
+            samples.join(",")
+        );
+        assert!(parse_file(&file_with(4, &function), "t").is_ok());
+        let forged = function.replace("[0.0,1.0]", "[-0.0,1.0]");
+        assert_ne!(forged, function);
+        assert!(parse_file(&file_with(4, &forged), "t").is_err());
+    }
+
     #[test]
     fn curve_pie_and_locus_coordinates_carry_their_sign_from_schema_4() {
-        let curve = r#"{"type":"curve","defined":true,"start":0.0,"end":1.0,
-            "samples_curve":[[0.0,[{"infinity":-1},null]],[1.0,[1.0,2.0]]]}"#;
+        let curve = curve_json(0.0, r#"[{"infinity":-1},null]"#, "[1.0,2.0]");
+        let curve = curve.as_str();
         let file = parse_file(&file_with(4, curve), "t").unwrap();
         let Some(ExpectedData::Curve { samples, .. }) = &file.cases[0].snapshots[0]["f"].data
         else {
@@ -2157,11 +2227,10 @@ mod tests {
         assert!(x == f64::NEG_INFINITY && y.is_nan());
         assert_eq!(samples[1].1, Some((1.0, 2.0)));
         assert!(parse_file(&file_with(3, curve), "t").is_err());
-        let legacy = r#"{"type":"curve","defined":true,"start":0.0,"end":1.0,
-            "samples_curve":[[0.0,null]]}"#;
-        assert!(parse_file(&file_with(3, legacy), "t").is_ok());
+        let legacy = curve_json(0.0, "null", "[1.0,2.0]");
+        assert!(parse_file(&file_with(3, &legacy), "t").is_ok());
         // schema 4 always writes the coordinate pair
-        assert!(parse_file(&file_with(4, legacy), "t").is_err());
+        assert!(parse_file(&file_with(4, &legacy), "t").is_err());
 
         let pie = r#"{"type":"piechart","defined":true,"center":[0.0,0.0],"radius":1.0,
             "fractions":[null,{"infinity":1}]}"#;
@@ -2201,9 +2270,10 @@ mod tests {
         assert!(matches!(points[0].0, Some((x, y)) if x.is_nan() && y == 1.0));
 
         // list replay compares a curve element by its bounds only
-        let list = r#"{"type":"list","defined":true,"elements":[{"type":"curve",
-            "defined":true,"start":-1.0,"end":1.0,"samples_curve":[[0.0,[0.0,{"infinity":1}]]]}]}"#;
-        assert!(parse_file(&file_with(4, list), "t").is_err());
+        let element = curve_json(-1.0, "[1.0,2.0]", r#"[0.0,{"infinity":1}]"#);
+        let list = format!(r#"{{"type":"list","defined":true,"elements":[{element}]}}"#);
+        assert!(parse_file(&file_with(4, &element), "t").is_ok());
+        assert!(parse_file(&file_with(4, &list), "t").is_err());
         let bounds = r#"{"type":"list","defined":true,"elements":[{"type":"curve",
             "defined":true,"start":-1.0,"end":1.0}]}"#;
         assert!(parse_file(&file_with(4, bounds), "t").is_ok());
