@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="utf-8"?>
+<geogebra format="5.0" version="5.4.936.0" app="classic" platform="a" xsi:noNamespaceSchemaLocation="https://www.geogebra.org/apps/xsd/ggb.xsd" xmlns="" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<gui>
+	<window width="800" height="600"/>
+	<labelingStyle val="3"/>
+	<font size="12"/>
+</gui>
+<euclidianView>
+	<viewNumber viewNo="1"/>
+	<size width="800" height="600"/>
+	<coordSystem xZero="215" yZero="315" scale="50" yscale="50"/>
+	<evSettings axes="true" grid="false" gridIsBold="false" pointCapturing="3" rightAngleStyle="1" checkboxSize="26" gridType="3"/>
+	<bgColor r="255" g="255" b="255"/>
+	<axesColor r="28" g="28" b="31"/>
+	<gridColor r="180" g="179" b="186"/>
+	<lineStyle axes="1" grid="0"/>
+	<axis id="0" show="true" label="" unitLabel="" tickStyle="1" showNumbers="true"/>
+	<axis id="1" show="true" label="" unitLabel="" tickStyle="1" showNumbers="true"/>
+</euclidianView>
+<algebraView>
+	<mode val="1"/>
+</algebraView>
+<kernel>
+	<continuous val="false"/>
+	<usePathAndRegionParameters val="true"/>
+	<decimals val="2"/>
+	<angleUnit val="degree"/>
+	<algebraStyle val="0" spreadsheet="0"/>
+	<coordStyle val="0"/>
+</kernel>
+<tableview min="0" max="0" step="0"/>
+<scripting blocked="false" disabled="false"/>
+<construction title="" author="" date="">
+<expression label="r" exp="0.25"/>
+<element type="numeric" label="r">
+	<value val="0.25"/>
+	<show object="false" label="true"/>
+</element>
+<expression label="g" exp="0.5"/>
+<element type="numeric" label="g">
+	<value val="0.5"/>
+	<show object="false" label="true"/>
+</element>
+<expression label="b" exp="0.75"/>
+<element type="numeric" label="b">
+	<value val="0.75"/>
+	<show object="false" label="true"/>
+</element>
+<expression label="show" exp="true"/>
+<element type="boolean" label="show">
+	<value val="true"/>
+	<show object="false" label="true"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<checkbox fixed="true"/>
+</element>
+<expression label="A" exp="(0, 0)" type="point"/>
+<element type="point" label="A">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="1" playing="false"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="0" y="0" z="1"/>
+</element>
+<expression label="B" exp="(4, 0)" type="point"/>
+<element type="point" label="B">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="1" playing="false"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="4" y="0" z="1"/>
+</element>
+<element type="point" label="C">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="1" playing="false"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="2" y="5" z="1"/>
+</element>
+<command name="Line">
+	<input a0="A" a1="B"/>
+	<output a0="l"/>
+</command>
+<element type="line" label="l">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="implicit"/>
+	<coords x="0" y="4" z="0"/>
+</element>
+<command name="Circle">
+	<input a0="C" a1="1"/>
+	<output a0="k"/>
+</command>
+<element type="conic" label="k">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="specific"/>
+	<eigenvectors x0="1" y0="0" z0="1" x1="0" y1="1" z1="1"/>
+	<matrix A0="1" A1="1" A2="28" A3="0" A4="-2" A5="-5"/>
+</element>
+<command name="Intersect">
+	<input a0="k" a1="l" a2="1"/>
+	<output a0="Q"/>
+</command>
+<element type="point" label="Q">
+	<show object="true" label="false"/>
+	<condition showObject="show"/>
+	<objColor r="120" g="176" b="70" alpha="0.75" dynamicr="r" dynamicg="g" dynamicb="b" dynamica="1 - r" colorSpace="2"/>
+	<layer val="9"/>
+	<labelOffset x="40" y="-42"/>
+	<labelMode val="9"/>
+	<tooltipMode val="3"/>
+	<trace val="true"/>
+	<fixed val="true"/>
+	<selectionAllowed val="false"/>
+	<auxiliary val="true"/>
+	<caption val="Caption 35"/>
+	<pointSize val="9"/>
+	<pointStyle val="9"/>
+	<coords x="NaN" y="NaN" z="NaN"/>
+</element>
+<command name="Segment">
+	<input a0="A" a1="Q"/>
+	<output a0="s"/>
+</command>
+<element type="segment" label="s">
+	<show object="true" label="false"/>
+	<condition showObject="show"/>
+	<objColor r="160" g="246" b="180" alpha="0" dynamicr="r" dynamicg="g" dynamicb="b" colorSpace="1"/>
+	<layer val="1"/>
+	<labelOffset x="41" y="-43"/>
+	<labelMode val="1"/>
+	<tooltipMode val="1"/>
+	<trace val="true"/>
+	<decoration type="3"/>
+	<fixed val="true"/>
+	<selectionAllowed val="false"/>
+	<auxiliary val="true"/>
+	<caption val="Caption 36"/>
+	<lineStyle thickness="5" type="10" typeHidden="1" opacity="52"/>
+	<eqnStyle style="implicit"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<startStyle val="default"/>
+	<endStyle val="default"/>
+	<coords x="NaN" y="NaN" z="NaN"/>
+</element>
+<command name="Midpoint">
+	<input a0="A" a1="Q"/>
+	<output a0="M"/>
+</command>
+<element type="point" label="M">
+	<show object="true" label="false"/>
+	<condition showObject="show"/>
+	<objColor r="200" g="60" b="34" alpha="0.75" dynamicr="r" dynamicg="g" dynamicb="b" dynamica="1 - r" colorSpace="2"/>
+	<layer val="2"/>
+	<labelOffset x="42" y="-44"/>
+	<labelMode val="2"/>
+	<tooltipMode val="2"/>
+	<trace val="true"/>
+	<fixed val="true"/>
+	<selectionAllowed val="false"/>
+	<auxiliary val="true"/>
+	<caption val="Caption 37"/>
+	<pointSize val="7"/>
+	<pointStyle val="2"/>
+	<coords x="NaN" y="NaN" z="1"/>
+</element>
+</construction>
+</geogebra>

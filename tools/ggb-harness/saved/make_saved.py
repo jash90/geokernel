@@ -578,6 +578,18 @@ style_case(image_points, [
     {"label": "pinned", "file": "generated/tile.png", "screen": [41, 63]},
 ])
 
+# Styled objects that are undefined when the file is saved: the circle is
+# dragged off the line, and the intersection with what depends on it goes.
+style_case([
+    "A = (0, 0)", "B = (4, 0)", "C = (2, 0.5)", "l = Line(A, B)", "k = Circle(C, 1)",
+    "Q = Intersect(l, k, 1)", "s = Segment(A, Q)", "M = Midpoint(A, Q)",
+], [
+    styled("Q", "common point trace"),
+    styled("s", "common line trace", decoration=3),
+    styled("M", "common point trace"),
+    [mv("C", 2, 5)],
+])
+
 out = Path(__file__).with_name("saved.json")
 lines = ",\n".join("    " + json.dumps(c, separators=(", ", ": ")) for c in cases)
 out.write_text('{\n  "cases": [\n' + lines + "\n  ]\n}\n")

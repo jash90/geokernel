@@ -72,6 +72,8 @@ const SAVED_CASES: &[&str] = &[
     "saved-styles-006.xml",
     "saved-styles-007.xml",
     "saved-styles-008.ggb",
+    // Styled objects that are undefined in the saved state.
+    "saved-styles-009.xml",
 ];
 
 const STYLED_FILE: &[u8] = br#"<geogebra format="5.0">
@@ -1033,6 +1035,46 @@ fn geogebra_runs_nothing_from_the_export_of_a_hostile_file() {
     assert_eq!(styles["C"]["dynamic_color"], json!(["r", "1 - r", "r"]));
     assert_eq!(styles["a"]["animation"]["speed"], json!(1.0));
     assert_eq!(snap["objects"]["r"]["value"], json!(0.5));
+}
+
+#[test]
+fn an_undefined_object_keeps_its_saved_style_and_recovers_after_export() {
+    let source = fs::read(repo_root().join("golden/ggb/saved/saved-styles-009.xml")).unwrap();
+    let mut wb = Workbench::default();
+    wb.load_for_export(&source, "undefined").unwrap();
+    let undefined = ["Q", "s", "M"];
+    for label in undefined {
+        let id = wb.construction().id(label).unwrap();
+        assert!(!wb.construction().value(id).is_defined(), "{label}");
+    }
+    let (_, mut again) = round_trip("undefined", &wb, None);
+    // The circle comes back onto the line in both documents.
+    for document in [&mut wb, &mut again] {
+        let center = document.construction().id("C").unwrap();
+        assert!(document.move_point(center, 2.0, 0.5));
+    }
+    for label in undefined {
+        let (before, after) = (wb.construction(), again.construction());
+        let value = before.value(before.id(label).unwrap());
+        assert!(value.is_defined(), "{label}");
+        assert_eq!(value, after.value(after.id(label).unwrap()), "{label}");
+    }
+    // The style written for the undefined point is still written for the
+    // defined one.
+    let xml = exported_xml(&again);
+    let element = &xml[xml.find(r#"label="Q""#).unwrap()..];
+    let element = &element[..element.find("</element>").unwrap()];
+    for tag in [
+        r#"<pointSize val="9"/>"#,
+        r#"<pointStyle val="9"/>"#,
+        r#"<trace val="true"/>"#,
+        r#"<fixed val="true"/>"#,
+        r#"dynamicr="r""#,
+        r#"<condition showObject="show"/>"#,
+    ] {
+        assert!(element.contains(tag), "{tag} in\n{element}");
+    }
+    assert!(!element.contains("NaN"), "{element}");
 }
 
 #[test]
