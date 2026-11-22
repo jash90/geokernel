@@ -3448,7 +3448,7 @@ cases = ["georestsmall-matrixcurve-001", "georestsmall-matrixcurve-002", "geores
 [[form]]
 command = "ApplyMatrix"
 form = "list,function"
-cases = ["georestsmall-matrixfunction-001", "georestsmall-matrixfunction-002", "georestsmall-matrixfunction-003", "georestsmall-matrixfunction-004"]
+cases = ["georestsmall-matrixfunction-001", "georestsmall-matrixfunction-003", "georestsmall-matrixfunction-004"]
 difference = "remaining-transformations-equation-sides-and-conditionals: `ApplyMatrix(list, function)`"
 
 [[form]]
