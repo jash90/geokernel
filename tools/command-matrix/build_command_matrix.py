@@ -39,20 +39,8 @@ EXCLUDED_ALGEBRA = {
     "ImplicitSurface": "Implicit surfaces are 3D-only objects.",
     "ToolImage": "Draws a tool's icon image into the graphics view, not a construction object.",
     "CASLoaded": "Reports whether the CAS view is part of the app, which the kernel has no view of.",
-    "Expand": "Symbolic expansion is outside numeric algebra.",
-    "Factor": "Symbolic factorization uses the CAS.",
-    "Simplify": "Function, list, curve and implicit forms use the CAS. Text formatting is outside numeric algebra.",
-    "CompleteSquare": "Symbolic completion of the square is outside numeric algebra.",
-    "IsFactored": "Inspects symbolic polynomial structure and is outside numeric algebra.",
-    "IFactor": "Symbolic integer-coefficient factorization uses the CAS.",
-    "Solve": "All algebra-input forms delegate to the CAS.",
     "CSolve": "All algebra-input forms delegate to the CAS.",
-    "Solutions": "All algebra-input forms delegate to the CAS.",
     "CSolutions": "All algebra-input forms delegate to the CAS.",
-    "NSolve": "AlgoSolve delegates to the CAS even for numeric equations and initial guesses.",
-    "NSolutions": "AlgoSolve delegates to the CAS even for numeric equations and initial guesses.",
-    "NextPrime": "AlgoNextPreviousPrime obtains the value from the CAS.",
-    "PreviousPrime": "AlgoNextPreviousPrime obtains the value from the CAS.",
 }
 
 EXCLUDED_CHARTS = {
@@ -73,10 +61,25 @@ EXCLUDED_FUNCTION = {
     "ImplicitDerivative": "The implicit derivative command uses the CAS.",
 }
 
+# The 1.0 polynomial CAS decision includes these algebra-input commands.
+# Keep broader argument types in the forms inventory so a supported polynomial
+# subset does not silently exclude the remaining algebra-input forms.
 FORM_NOTES = {
-    "Asymptote": "Conic output is verified. Numeric rational and affine exp, atan or log output is unverified against a full CAS. Implicit polynomials are pending.",
-    "RemovableDiscontinuity": "Numeric hole detection is implemented. Defined results are unverified against a full CAS.",
-    "Factors": "Function factorization uses the CAS. The numeric list of prime/exponent points is a separate form.",
+    "Expand": "Polynomial and rational functions are in scope for the 1.0 CAS.",
+    "Factor": "Exact polynomial and rational functions are in scope for the 1.0 CAS.",
+    "IFactor": "Polynomial and rational functions are in scope for the 1.0 CAS, with bounded radical forms.",
+    "Simplify": "Polynomial and rational functions and number inputs are in scope for the 1.0 CAS.",
+    "CompleteSquare": "Quadratic polynomials, including quadratic polynomials in a power of x.",
+    "IsFactored": "Number and univariate polynomial inputs with the reference degree limit.",
+    "Solve": "Real polynomial equations and small systems are in scope for the 1.0 CAS.",
+    "Solutions": "Real polynomial equations and small systems are in scope for the 1.0 CAS.",
+    "NSolve": "Bounded real polynomial equations and systems with optional variable binding.",
+    "NSolutions": "Bounded real polynomial equations and systems with optional variable binding.",
+    "NextPrime": "Integer inputs within the exact integer range of the numeric object.",
+    "PreviousPrime": "Integer inputs within the exact integer range of the numeric object.",
+    "Asymptote": "Conics and rational functions have reference evidence. Implicit polynomials are pending.",
+    "RemovableDiscontinuity": "Rational holes have reference evidence. Other expressions use a bounded numerical estimate.",
+    "Factors": "Polynomial factors or integer prime factors, each paired with its exponent.",
     "Root": "Seed, interval, polynomial factors and legacy function intersection. Growing additional output labels after creation is pending.",
     "Roots": "Numerical crossings in a supplied interval or the active sampling window. Growing additional output labels after creation is pending.",
     "Extremum": "Polynomial extrema or a bounded numerical search. Growing additional output labels after creation is pending.",
@@ -84,7 +87,7 @@ FORM_NOTES = {
     "SolveODE": "Numeric first-order, parametric and second-order systems. Symbolic function and curve forms, with or without an initial point, use the CAS.",
     "ComplexRoot": "Numeric polynomial roots, returned as points with real and imaginary coordinates.",
 
-    "CommonDenominator": "Number pairs. The function pair delegates to the CAS (AlgoPolynomialCD).",
+    "CommonDenominator": "Number pairs and rational-function pairs.",
     "LeftSide": "Lines and conics. The implicit-curve form needs an implicit curve object.",
     "RightSide": "Lines and conics. The implicit-curve form needs an implicit curve object.",
     "If": "Scalar, coordinate, boolean, text, list and numeric-function branches, and named alternatives of a single line, segment, ray, circle or conic kind.",

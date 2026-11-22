@@ -19,6 +19,8 @@
 //! `-2^2 = -4`), factorials, square roots, negations (`!a^2` is
 //! `(!a)^2`), then elements.
 
+mod cas_input;
+
 use super::commands;
 use super::decimal::Dec;
 use super::eval;
@@ -148,6 +150,7 @@ fn parse_in(c: &Construction, src: &str, mode: Mode<'_>) -> Result<Parsed, Strin
         } else {
             None
         },
+        cas_variables: Vec::new(),
         locals: match mode {
             Mode::System(names) => names.iter().map(|n| (n.to_string(), Elem::Num)).collect(),
             _ => Vec::new(),
@@ -216,6 +219,7 @@ pub(super) struct Parser<'a> {
     split_names: bool,
     /// The variables of the `Sequence`s being parsed, outermost first.
     pub(super) locals: Vec<(String, Elem)>,
+    cas_variables: Vec<String>,
 }
 
 impl Parser<'_> {
@@ -816,6 +820,14 @@ impl Parser<'_> {
     /// A name: a constant, the variable `x`, an object, a built-in function
     /// or a command (`Parser.functionOrCommand`, `FunctionParser`).
     fn name(&mut self, text: &str, call: bool) -> Result<u32, String> {
+        if let Some(index) = self.cas_variables.iter().position(|name| name == text) {
+            let variable = self.push(Node::CasVariable(index as u8));
+            if call {
+                let argument = self.element()?;
+                return Ok(self.push(Node::Bin(Bin::Mul, variable, argument)));
+            }
+            return Ok(variable);
+        }
         // the variable of a `Sequence` hides an object of the same name
         if let Some(depth) = self.locals.iter().rposition(|(name, _)| name == text) {
             let local = self.push(Node::Local(depth as u32, self.locals[depth].1));

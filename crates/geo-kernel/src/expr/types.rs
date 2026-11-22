@@ -116,7 +116,7 @@ fn type_node(
 ) -> Result<(Ty, u32, u64, u64), String> {
     let i = i as usize;
     let (ty, d, k, v) = match nodes[i] {
-        Node::Num(_) | Node::MinusOne => (Ty::Num(0), 1, 1, 0),
+        Node::Num(_) | Node::MinusOne | Node::CasVariable(_) => (Ty::Num(0), 1, 1, 0),
         Node::Bool(_) => (Ty::Bool, 1, 1, 0),
         Node::Text | Node::Relation { .. } => (Ty::Text, 1, 1, 0),
         Node::TextCmd(op, first, count) => {
@@ -389,6 +389,33 @@ fn type_node(
                 state.vars[cond]
                     .saturating_add(state.vars[then])
                     .saturating_add(v),
+            )
+        }
+        Node::Cas(op, a, b) => {
+            let a = a as usize;
+            let b = (b != NONE).then_some(b as usize);
+            let ty = op.result_type(state.tys[a], b.map(|i| state.tys[i]))?;
+            let vars = if op.is_function() {
+                state.vars[a]
+                    .saturating_add(b.map_or(0, |i| state.vars[i]))
+                    .max(u64::from(
+                        state.tys[a] == Ty::Function
+                            || b.is_some_and(|i| state.tys[i] == Ty::Function),
+                    ))
+            } else if matches!(
+                op,
+                super::cas::Op::NextPrime | super::cas::Op::PreviousPrime
+            ) {
+                state.vars[a]
+            } else {
+                0
+            };
+            (
+                ty,
+                1 + state.depth[a].max(b.map_or(0, |i| state.depth[i])),
+                1u64.saturating_add(state.cost[a])
+                    .saturating_add(b.map_or(0, |i| state.cost[i])),
+                vars,
             )
         }
         Node::Apply(f, a) => {

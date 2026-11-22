@@ -138,7 +138,7 @@ pub fn compare_list(
                 _ => Err(format!("expected {:?}, got text {s:?}", w.data)),
             },
             Element::Value(Kind::Function, value) => {
-                let sample = |x| c.function_value(got.function_at(k)?, x);
+                let sample = |x| got.function_sample_at(c, k, x);
                 compare_sampled(w, Kind::Function, &value, &[], Some(&sample))
             }
             Element::Value(kind, value) => compare(w, kind, &value),

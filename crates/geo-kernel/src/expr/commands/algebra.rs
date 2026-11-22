@@ -15,7 +15,7 @@
 
 mod base;
 pub(super) mod extrema;
-mod integers;
+pub(in crate::expr) mod integers;
 pub(crate) mod polynomial;
 
 use crate::expr::eval::{number_of, Ctx, Val};

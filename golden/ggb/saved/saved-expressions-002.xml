@@ -96,7 +96,7 @@
 <expression label="f" exp="f(x) = If[-4 &lt; x, (v_{0x} * x^(2)) + y(C), x - 1]"/>
 <element type="function" label="f">
 	<show object="true" label="false" ev="4"/>
-	<objColor r="153" g="51" b="0" alpha="0"/>
+	<objColor r="0" g="100" b="0" alpha="0"/>
 	<layer val="0"/>
 	<labelMode val="0"/>
 	<fixed val="true"/>
@@ -106,7 +106,7 @@
 <expression label="t" exp="t(x) = If[f(x) &gt; 0 ∧ x &gt; 0, f(x)]"/>
 <element type="function" label="t">
 	<show object="true" label="false" ev="4"/>
-	<objColor r="204" g="0" b="0" alpha="0"/>
+	<objColor r="0" g="0" b="255" alpha="0"/>
 	<layer val="0"/>
 	<labelMode val="0"/>
 	<fixed val="true"/>
@@ -116,7 +116,7 @@
 <expression label="g" exp="g(x) = If[x ≤ -2 ∨ x ≥ 2, t(x) + 1, If[x ≠ 0, f(x), a]]"/>
 <element type="function" label="g">
 	<show object="true" label="false" ev="4"/>
-	<objColor r="153" g="51" b="0" alpha="0"/>
+	<objColor r="0" g="100" b="0" alpha="0"/>
 	<layer val="0"/>
 	<labelMode val="0"/>
 	<fixed val="true"/>
@@ -152,7 +152,7 @@
 <expression label="j_{xy}" exp="j_{xy}(x) = f(x) + 1"/>
 <element type="function" label="j_{xy}">
 	<show object="true" label="false" ev="4"/>
-	<objColor r="0" g="100" b="0" alpha="0"/>
+	<objColor r="204" g="0" b="0" alpha="0"/>
 	<layer val="0"/>
 	<labelMode val="0"/>
 	<fixed val="true"/>
@@ -169,7 +169,7 @@
 	<value val="0.5585053606381855"/>
 	<objColor r="0" g="100" b="0" alpha="0.10000000149011612"/>
 </element>
-<expression label="bad" exp="x(A) + NextPrime[v_{0x}]"/>
+<expression label="bad" exp="x(A) + Limit[x^(2), v_{0x}]"/>
 <element type="numeric" label="bad">
 	<value val="NaN"/>
 </element>

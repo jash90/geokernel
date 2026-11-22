@@ -17,28 +17,17 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/SymbolicPolyFunction.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/ExpressionNode.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/Derivative.java
-//   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/Fractions.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/FunctionVariable.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/MyDouble.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoIntegralNumericInterval.java
-//   source/shared/common/src/main/java/org/geogebra/common/kernel/cas/AlgoDegree.java
-//   source/shared/common/src/main/java/org/geogebra/common/kernel/cas/AlgoCoefficients.java
-//   source/shared/common/src/main/java/org/geogebra/common/kernel/cas/AlgoConicCoefficients.java
-//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoNumeratorDenominator.java
-//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoNumeratorDenominatorFun.java
-//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoPolynomialFromFunction.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoPolynomialFromCoordinates.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
 //! The calculus commands of the function group: the Riemann sums, the
-//! definite and indefinite integrals, the derivatives, the polynomial
-//! queries and the fraction split. The kernel has no CAS, which is also
-//! what the golden harness runs with (a dummy CAS bridge): GeoGebra's own
-//! no-CAS paths decide what each command answers, and a command whose
-//! only no-CAS path is the symbolic CAS one (the derivative of a
-//! non-polynomial, the antiderivative of one) is undefined here, exactly
-//! as it is in the golden data.
+//! definite and indefinite integrals, the derivatives, and polynomial
+//! interpolation. Symbolic derivatives and antiderivatives of
+//! non-polynomials still follow the upstream no-CAS behavior.
 //!
 //! A polynomial source takes the exact path of GeoGebra's
 //! `PolyFunction`: the expression is expanded once per update (the shared
@@ -49,7 +38,7 @@
 
 use super::{Group, Parents};
 use crate::expr::derivative::decimal_to_fraction;
-use crate::expr::equation::{Builder, Poly};
+use crate::expr::equation::Builder;
 use crate::expr::{self, Bin, Element, Entry, IfMode, Node, Parsed, Raw, Un, NONE};
 use crate::kernel::{Construction, Def, Error, Id, Kind, Value};
 use crate::tol::STANDARD_PRECISION;
@@ -148,14 +137,6 @@ pub enum CalculusDef {
         order: Option<u32>,
         numeric: bool,
     },
-    /// `Degree(f)` (`AlgoDegree`).
-    Degree { function: u32 },
-    /// `Numerator(number)` and `Denominator(number)`
-    /// (`AlgoNumeratorDenominator`).
-    Fraction { number: u32, denominator: bool },
-    /// `Numerator(f)` and `Denominator(f)` of a function
-    /// (`AlgoNumeratorDenominatorFun`): a function again.
-    FractionFunction { function: u32, denominator: bool },
     /// `NIntegral(f, a, b, c)` (`AlgoIntegralNumericInterval`): the
     /// antiderivative the rules build, shifted through `(a, b)` and cut
     /// to `[a, c]`.
@@ -168,13 +149,6 @@ pub enum CalculusDef {
     /// `Polynomial(points)`: the interpolating polynomial
     /// (`AlgoPolynomialFromCoordinates`).
     PolynomialPoints { points: u32 },
-    /// `Polynomial(f)` (`AlgoPolynomialFromFunction`): the expanded
-    /// polynomial of a function.
-    PolynomialFunction { function: u32 },
-    /// `Coefficients(f)` (`AlgoCoefficients`): the polynomial
-    /// coefficients, highest power first, in a list whose length follows
-    /// the zeros of the expansion.
-    Coefficients { function: u32 },
 }
 
 /// The object index `x` as an `Id` again.
@@ -192,9 +166,6 @@ impl CalculusDef {
                 | CalculusDef::Derivative { .. }
                 | CalculusDef::NumericInterval { .. }
                 | CalculusDef::PolynomialPoints { .. }
-                | CalculusDef::PolynomialFunction { .. }
-                | CalculusDef::FractionFunction { .. }
-                | CalculusDef::Coefficients { .. }
         )
     }
 
@@ -217,8 +188,6 @@ impl CalculusDef {
 
 pub(crate) struct CalcRecord {
     pub(crate) tree: Option<Entry>,
-    /// The elements of a `Coefficients` list.
-    pub(crate) slots: Vec<crate::expr::Slot>,
 }
 
 /// Initializes the record of a record-backed calculus object and its
@@ -230,22 +199,13 @@ pub(crate) fn initialize(c: &Construction, d: &CalculusDef) -> (Value, CalcRecor
 /// Recomputes the record of a record-backed calculus object and its
 /// value.
 pub(crate) fn refresh(c: &Construction, d: &CalculusDef) -> (Value, CalcRecord) {
-    if matches!(d, CalculusDef::Coefficients { .. }) {
-        return coefficients_record(c, d);
-    }
     let tree = build_record(c, d);
     let value = match &tree {
         // an undefined tree: the rules failed, or the command needs the CAS
         Some(entry) if expr::tree_defined(c, entry) => Value::Function,
         _ => Value::Undefined,
     };
-    (
-        value,
-        CalcRecord {
-            tree,
-            slots: Vec::new(),
-        },
-    )
+    (value, CalcRecord { tree })
 }
 
 impl Group for CalculusDef {
@@ -253,16 +213,11 @@ impl Group for CalculusDef {
         match self {
             CalculusDef::Sum { .. }
             | CalculusDef::DefiniteIntegral { .. }
-            | CalculusDef::IntegralFunctions { .. }
-            | CalculusDef::Degree { .. }
-            | CalculusDef::Fraction { .. } => Kind::Number,
+            | CalculusDef::IntegralFunctions { .. } => Kind::Number,
             CalculusDef::IndefiniteIntegral { .. }
             | CalculusDef::Derivative { .. }
             | CalculusDef::NumericInterval { .. }
-            | CalculusDef::PolynomialPoints { .. }
-            | CalculusDef::PolynomialFunction { .. }
-            | CalculusDef::FractionFunction { .. } => Kind::Function,
-            CalculusDef::Coefficients { .. } => Kind::List,
+            | CalculusDef::PolynomialPoints { .. } => Kind::Function,
         }
     }
 
@@ -299,23 +254,17 @@ impl Group for CalculusDef {
                 Some(e) => Parents::of(&[gid(f), gid(g), gid(a), gid(b), gid(e)]),
                 None => Parents::of(&[gid(f), gid(g), gid(a), gid(b)]),
             },
-            CalculusDef::IndefiniteIntegral { function, .. } | CalculusDef::Degree { function } => {
-                Parents::of(&[gid(function)])
-            }
+            CalculusDef::IndefiniteIntegral { function, .. } => Parents::of(&[gid(function)]),
             CalculusDef::Derivative {
                 function, order, ..
             } => match order {
                 Some(order) => Parents::of(&[gid(function), gid(order)]),
                 None => Parents::of(&[gid(function)]),
             },
-            CalculusDef::Fraction { number, .. } => Parents::of(&[gid(number)]),
-            CalculusDef::FractionFunction { function, .. } => Parents::of(&[gid(function)]),
             CalculusDef::NumericInterval {
                 function, a, b, c, ..
             } => Parents::of(&[gid(function), gid(a), gid(b), gid(c)]),
             CalculusDef::PolynomialPoints { points } => Parents::of(&[gid(points)]),
-            CalculusDef::PolynomialFunction { function }
-            | CalculusDef::Coefficients { function } => Parents::of(&[gid(function)]),
         }
     }
 
@@ -372,16 +321,7 @@ impl Group for CalculusDef {
                 }
             }
             CalculusDef::IndefiniteIntegral { function, .. }
-            | CalculusDef::Degree { function }
-            | CalculusDef::Derivative { function, .. }
-            | CalculusDef::PolynomialFunction { function }
-            | CalculusDef::Coefficients { function } => {
-                c.expect(gid(function), &[Kind::Function])?;
-            }
-            CalculusDef::Fraction { number: n, .. } => {
-                number(gid(n))?;
-            }
-            CalculusDef::FractionFunction { function, .. } => {
+            | CalculusDef::Derivative { function, .. } => {
                 c.expect(gid(function), &[Kind::Function])?;
             }
             CalculusDef::NumericInterval {
@@ -408,25 +348,17 @@ impl Group for CalculusDef {
             CalculusDef::Sum { .. } => sum_value(c, self),
             CalculusDef::DefiniteIntegral { .. } => definite_integral(c, self),
             CalculusDef::IntegralFunctions { .. } => integral_functions(c, self),
-            CalculusDef::Degree { .. } => degree(c, self),
-            CalculusDef::Fraction { .. } => fraction_number(c, self),
             // the record-backed functions answer through their record;
             // this path only decides whether they are defined
             CalculusDef::IndefiniteIntegral { .. }
             | CalculusDef::Derivative { .. }
             | CalculusDef::NumericInterval { .. }
-            | CalculusDef::PolynomialPoints { .. }
-            | CalculusDef::PolynomialFunction { .. }
-            | CalculusDef::FractionFunction { .. } => {
+            | CalculusDef::PolynomialPoints { .. } => {
                 let tree = build_record(c, self);
                 match &tree {
                     Some(entry) if expr::tree_defined(c, entry) => Some(Value::Function),
                     _ => None,
                 }
-            }
-            CalculusDef::Coefficients { .. } => {
-                let (value, _) = coefficients_record(c, self);
-                value.is_defined().then_some(value)
             }
         }
     }
@@ -861,20 +793,6 @@ fn integral_functions(c: &Construction, d: &CalculusDef) -> Option<Value> {
         }
     };
     Some(Value::Number(one - two))
-}
-
-/// `AlgoDegree.compute`: the degree of the polynomial, undefined for
-/// anything else.
-fn degree(c: &Construction, d: &CalculusDef) -> Option<Value> {
-    let CalculusDef::Degree { function } = *d else {
-        unreachable!("the caller matched Degree")
-    };
-    let function = gid(function);
-    let entry = source_entry(c, function)?;
-    let mut builder = Builder::function(entry);
-    let poly = builder.expand(c, entry.root).ok()?;
-    let values = coefficient_values(c, &mut builder, &poly)?;
-    Some(Value::Number((values.len().saturating_sub(1)) as f64))
 }
 
 // ------------------------------------------------------------------ helpers
@@ -1378,37 +1296,6 @@ fn includes_non_continuous_integral(c: &Construction, nodes: &[Node], root: u32)
         }
     }
     false
-}
-
-/// The coefficient of every power of `x`, evaluated, with the
-/// `PolyFunction(c, validCoeffs)` shortening: the last nonzero coefficient
-/// ends the list, which keeps at least one coefficient. `None` when a
-/// coefficient cannot be evaluated.
-///
-/// The coefficient trees are evaluated with one memo over the builder's
-/// arena (see [`Builder::number_values`]): the polynomial powers share
-/// subtrees, and a plain evaluation of a tree like `(a x + b)^300` would
-/// walk each shared subtree once per reference.
-fn coefficient_values(c: &Construction, b: &mut Builder, poly: &Poly) -> Option<Vec<f64>> {
-    let roots = poly.coefficient_roots(b);
-    let mut values = Vec::with_capacity(roots.len());
-    let mut evaluated = b
-        .number_values(c, roots.iter().copied().flatten())
-        .into_iter();
-    for root in roots {
-        values.push(match root {
-            Some(_) => evaluated.next().flatten()?,
-            None => 0.0,
-        });
-    }
-    let mut valid = values.len().min(1);
-    for (i, &v) in values.iter().enumerate() {
-        if v != 0.0 {
-            valid = i + 1;
-        }
-    }
-    values.truncate(valid);
-    Some(values)
 }
 
 /// The antiderivative tree of a polynomial source
@@ -2457,220 +2344,6 @@ fn clone_with_subst(
     dst.push(node)
 }
 
-// ------------------------------------------------------------- the fractions
-
-/// `AlgoNumeratorDenominator.compute` for a number: the unreduced fraction
-/// of its definition when it has one, the closest fraction of its value
-/// otherwise.
-fn fraction_number(c: &Construction, d: &CalculusDef) -> Option<Value> {
-    let CalculusDef::Fraction {
-        number: number_id,
-        denominator,
-    } = *d
-    else {
-        unreachable!("the caller matched Fraction")
-    };
-    let number_id = gid(number_id);
-    // a number with a tree answers from the fraction of its definition;
-    // an infinity such as `2/0` is defined for GeoGebra even though the
-    // value it stores is not finite. Its value is the tree's, which is
-    // what `f.getDouble()` reads.
-    let entry = number_entry(c, number_id);
-    let value = match entry {
-        Some(entry) => expr::value_of_tree(c, &expr::parsed_of(entry)).unwrap_or(f64::NAN),
-        None if c.value(number_id).is_defined() => number(c, number_id),
-        None => return None,
-    };
-    if value.is_nan() {
-        return None;
-    }
-    if let Some(entry) = entry {
-        let mut b = Builder::function(entry);
-        let (top, bottom) = if is_simple_fraction(entry) {
-            let Node::Bin(Bin::Div, top, bottom) =
-                expr::nodes_of(entry)[expr::root_of(entry) as usize]
-            else {
-                unreachable!("is_simple_fraction checked the root")
-            };
-            (
-                b.constant_value(top).unwrap_or(f64::NAN),
-                b.constant_value(bottom).unwrap_or(f64::NAN),
-            )
-        } else {
-            let (num, den) = get_fraction(&mut b, entry.root, true);
-            (
-                num.and_then(|n| b.constant_value(n).filter(|v| v.is_finite()))
-                    .unwrap_or(f64::NAN),
-                den.and_then(|n| b.constant_value(n).filter(|v| v.is_finite()))
-                    .unwrap_or(f64::NAN),
-            )
-        };
-        if is_integer(top) && is_integer(bottom) {
-            let (mut num, mut den) = (top as i64, bottom as i64);
-            let gcd = gcd(num.abs(), den.abs());
-            if den < 0 {
-                num = -num;
-                den = -den;
-            }
-            let value = if gcd == 0 {
-                if denominator {
-                    den
-                } else {
-                    num
-                }
-            } else if denominator {
-                den / gcd
-            } else {
-                num / gcd
-            };
-            return Some(Value::Number(value as f64));
-        }
-    }
-    // the closest fraction of the value
-    let (num, den) = decimal_to_fraction(value, STANDARD_PRECISION);
-    Some(Value::Number(if denominator { den } else { num }))
-}
-
-/// `DoubleUtil.isInteger`.
-fn is_integer(v: f64) -> bool {
-    v.is_finite() && v == v.round()
-}
-
-/// The entry of a number that has a tree, `GeoNumeric.getDefinition`.
-fn number_entry(c: &Construction, id: Id) -> Option<&Entry> {
-    match c.def(id) {
-        Def::Expr(d) => Some(expr::source_entry(c, d)),
-        _ => None,
-    }
-}
-
-/// `ExpressionNode.isSimpleFraction`: an unsigned divide of two plain
-/// number leaves.
-fn is_simple_fraction(entry: &Entry) -> bool {
-    let nodes = expr::nodes_of(entry);
-    let Node::Bin(Bin::Div, top, bottom) = nodes[expr::root_of(entry) as usize] else {
-        return false;
-    };
-    let leaf = |i: u32| {
-        matches!(
-            nodes[i as usize],
-            Node::Num(_) | Node::MinusOne | Node::Degree
-        )
-    };
-    leaf(top) && leaf(bottom)
-}
-
-/// `Fractions.getFraction`: the numerator and denominator trees of the
-/// expression at `i`, `None` standing for the implicit 1. With `expand`
-/// the sums are put over a common denominator (`AlgoNumeratorDenominator`)
-/// and without it they are left alone
-/// (`AlgoNumeratorDenominatorFun`).
-fn get_fraction(b: &mut Builder, i: u32, expand: bool) -> (Option<u32>, Option<u32>) {
-    let side = |b: &mut Builder, i: u32| -> (u32, Option<u32>) {
-        // checkFraction recurses into a subtree that is itself a node,
-        // and leaves the node itself otherwise
-        match b.node(i) {
-            Node::Num(_)
-            | Node::Var
-            | Node::MinusOne
-            | Node::Degree
-            | Node::Obj(_)
-            | Node::Bool(_)
-            | Node::VarY
-            | Node::Local(..) => (i, None),
-            _ => {
-                let (num, den) = get_fraction(b, i, expand);
-                (num.unwrap_or(i), den)
-            }
-        }
-    };
-    let multiply_check = |b: &mut Builder, a: Option<u32>, d: Option<u32>| -> Option<u32> {
-        match (a, d) {
-            (None, None) => None,
-            (Some(a), None) | (None, Some(a)) => Some(a),
-            (Some(a), Some(d)) => Some(b.push(Node::Bin(Bin::Mul, a, d))),
-        }
-    };
-    let Node::Bin(op, left, right) = b.node(i) else {
-        return (Some(i), None);
-    };
-    let (num_l, den_l) = side(b, left);
-    let (num_r, den_r) = side(b, right);
-    match op {
-        Bin::Mul => {
-            let num = b.push(Node::Bin(Bin::Mul, num_l, num_r));
-            let den = multiply_check(b, den_r, den_l);
-            (Some(num), den)
-        }
-        Bin::Div => {
-            let num = multiply_check(b, den_r, Some(num_l));
-            let den = multiply_check(b, den_l, Some(num_r));
-            (num, den)
-        }
-        Bin::Pow => {
-            let exponent = b.constant_value(right);
-            let power_check = |b: &mut Builder, base: Option<u32>, e: u32| -> Option<u32> {
-                base.map(|base| b.push(Node::Bin(Bin::Pow, base, e)))
-            };
-            match exponent {
-                Some(e) if e < 0.0 => {
-                    // a negative exponent swaps the sides, negated
-                    let neg = match b.node(right) {
-                        Node::Num(v) => b.push(Node::Num(-v)),
-                        _ => {
-                            let m = b.push(Node::Num(-1.0));
-                            b.push(Node::Bin(Bin::Mul, m, right))
-                        }
-                    };
-                    let den = power_check(b, Some(num_l), neg);
-                    let num = match den_l {
-                        None => Some(b.push(Node::Num(1.0))),
-                        Some(den_l) => power_check(b, Some(den_l), neg),
-                    };
-                    (num, den)
-                }
-                _ => {
-                    let num = power_check(b, Some(num_l), right);
-                    let den = power_check(b, den_l, right);
-                    (num, den)
-                }
-            }
-        }
-        Bin::Add | Bin::Sub if expand => {
-            let l = multiply_check(b, den_r, Some(num_l)).unwrap();
-            let r = multiply_check(b, den_l, Some(num_r)).unwrap();
-            let num = b.push(Node::Bin(op, l, r));
-            let den = multiply_check(b, den_r, den_l);
-            (Some(num), den)
-        }
-        _ => (Some(i), None),
-    }
-}
-
-/// `AlgoNumeratorDenominatorFun.compute`: the numerator or denominator of
-/// a function, as a function again. The denominator of a whole expression
-/// is the constant 1.
-fn fraction_function(c: &Construction, d: &CalculusDef) -> Option<Entry> {
-    let CalculusDef::FractionFunction {
-        function: function_id,
-        denominator,
-    } = *d
-    else {
-        unreachable!("the caller matched FractionFunction")
-    };
-    let function_id = gid(function_id);
-    let entry = source_entry(c, function_id)?;
-    let mut b = Builder::function(entry);
-    let (num, den) = get_fraction(&mut b, entry.root, false);
-    let root = if denominator {
-        den.unwrap_or_else(|| b.push(Node::Num(1.0)))
-    } else {
-        num?
-    };
-    let parsed = b.finish(c, root).ok()?;
-    Some(expr::function_entry(c, parsed))
-}
-
 // ------------------------------------------------- the numeric interval form
 
 /// `AlgoIntegralNumericInterval.compute`: the antiderivative the rules
@@ -2835,7 +2508,11 @@ fn polcoe(x: &[f64], y: &[f64], cof: &mut [f64]) -> Option<()> {
 /// `buildPolyFunctionExpression`: the expanded polynomial as one tree,
 /// built top-down with the sign and unit-coefficient rules of
 /// `addToPoly`.
-fn poly_from_coefficients(c: &Construction, b: &mut Builder, cof: &[f64]) -> Option<Parsed> {
+pub(crate) fn poly_from_coefficients(
+    c: &Construction,
+    b: &mut Builder,
+    cof: &[f64],
+) -> Option<Parsed> {
     let n = cof.len();
     let mut poly: Option<u32> = None;
     for k in (0..n).rev() {
@@ -2944,16 +2621,6 @@ fn build_record(c: &Construction, d: &CalculusDef) -> Option<Entry> {
         CalculusDef::PolynomialPoints { .. } => {
             polynomial_points_tree(c, d).map(|p| expr::function_entry(c, p))
         }
-        CalculusDef::PolynomialFunction { function } => {
-            // `AlgoPolynomialFromFunction.setFromFunction`: the expansion
-            // as the plain polynomial
-            let entry = source_entry(c, gid(function))?;
-            let mut b = Builder::function(entry);
-            let poly = b.expand(c, entry.root).ok()?;
-            let roots = poly.coefficient_roots(&mut b);
-            poly_function_tree(c, &mut b, &roots).map(|p| expr::function_entry(c, p))
-        }
-        CalculusDef::FractionFunction { .. } => fraction_function(c, d),
         _ => None,
     }
 }
@@ -2992,50 +2659,6 @@ fn has_high_power(c: &Construction, entry: &Entry) -> bool {
         stack.extend(kids);
     }
     false
-}
-
-/// `AlgoCoefficients.compute`: the expansion's coefficients, highest
-/// power first, as the elements of the output list.
-fn coefficients_record(c: &Construction, d: &CalculusDef) -> (Value, CalcRecord) {
-    let CalculusDef::Coefficients { function } = *d else {
-        unreachable!("the caller matched Coefficients")
-    };
-    let function = gid(function);
-    let empty = || {
-        (
-            Value::Undefined,
-            CalcRecord {
-                tree: None,
-                slots: Vec::new(),
-            },
-        )
-    };
-    let Some(entry) = source_entry(c, function) else {
-        return empty();
-    };
-    let mut b = Builder::function(entry);
-    let Ok(poly) = b.expand(c, entry.root) else {
-        // not a polynomial: the number literals of the tree, which is
-        // what the CAS-less `AlgoCoefficients` answers
-        // (`extractConstants`)
-        let constants = expr::constant_literals(entry);
-        let len = constants.len() as u32;
-        let slots = constants
-            .into_iter()
-            .map(crate::expr::Slot::number)
-            .collect();
-        return (Value::List { len }, CalcRecord { tree: None, slots });
-    };
-    let Some(values) = coefficient_values(c, &mut b, &poly) else {
-        return empty();
-    };
-    let slots = values
-        .iter()
-        .rev()
-        .map(|&v| crate::expr::Slot::number(v))
-        .collect::<Vec<_>>();
-    let len = slots.len() as u32;
-    (Value::List { len }, CalcRecord { tree: None, slots })
 }
 
 // ------------------------------------------------------------- the commands
@@ -3218,69 +2841,21 @@ pub(crate) fn exec(
                 },
             )
         }
-        ("Degree", [f]) => {
-            let function = function_argument(c, f)?;
-            add(c, CalculusDef::Degree { function })
-        }
-        ("Coefficients", [f]) => {
-            let function = function_argument(c, f)?;
-            add(c, CalculusDef::Coefficients { function })
-        }
-        ("Numerator", [f]) | ("Denominator", [f]) => {
-            let denominator = func == "Denominator";
-            match crate::script::object(c, f) {
-                Ok(id) if c.expect(id, &[Kind::Function]).is_ok() => add(
-                    c,
-                    CalculusDef::FractionFunction {
-                        function: id.0 as u32,
-                        denominator,
-                    },
-                ),
-                Ok(id) if c.expect(id, &[Kind::Number, Kind::Angle]).is_ok() => add(
-                    c,
-                    CalculusDef::Fraction {
-                        number: id.0 as u32,
-                        denominator,
-                    },
-                ),
-                _ => return None,
-            }
-        }
         ("Polynomial", [single]) => {
-            // a list of points, a named function, or an inline one
-            if let Ok(id) = crate::script::object(c, single) {
-                if c.expect(id, &[Kind::List]).is_ok() {
-                    add(
-                        c,
-                        CalculusDef::PolynomialPoints {
-                            points: id.0 as u32,
-                        },
-                    )
-                } else {
-                    c.expect(id, &[Kind::Function]).is_ok().then_some(())?;
-                    add(
-                        c,
-                        CalculusDef::PolynomialFunction {
-                            function: id.0 as u32,
-                        },
-                    )
-                }
+            let points = if let Ok(id) = crate::script::object(c, single) {
+                c.expect(id, &[Kind::List]).ok()?;
+                id
             } else {
-                // an inline list of points, or an inline function
                 let label = format!("\0arg{}", c.len());
-                if expr::argument_object(c, single, &label, Kind::List) {
-                    let id = c.id(&label)?;
-                    add(
-                        c,
-                        CalculusDef::PolynomialPoints {
-                            points: id.0 as u32,
-                        },
-                    )
-                } else {
-                    let function = function_argument(c, single)?;
-                    add(c, CalculusDef::PolynomialFunction { function })
-                }
-            }
+                expr::argument_object(c, single, &label, Kind::List).then_some(())?;
+                c.id(&label)?
+            };
+            add(
+                c,
+                CalculusDef::PolynomialPoints {
+                    points: points.0 as u32,
+                },
+            )
         }
         ("Polynomial", points) if points.len() >= 2 => {
             let mut ids = Vec::with_capacity(points.len());
@@ -3304,7 +2879,7 @@ pub(crate) fn exec(
 }
 
 /// The function argument of a calculus command: the label of a function
-/// object, or an inline function expression (`Polynomial(sin(x))`) that
+/// object, or an inline function expression (`Derivative(sin(x))`) that
 /// becomes a hidden function object.
 fn function_argument(c: &mut Construction, arg: &str) -> Option<u32> {
     if let Ok(id) = crate::script::object(c, arg) {
@@ -3429,14 +3004,4 @@ fn point_list(c: &mut Construction, ids: &[Id]) -> Option<Id> {
     let root = b.push(Node::List(first, ids.len() as u32));
     let parsed = b.finish(c, root).ok()?;
     expr::add_built(c, &format!("\0pts{}", c.len()), parsed, Kind::List).ok()
-}
-
-/// `Kernel.gcd` of two integers, Euclid's algorithm; `gcd(0, 0)` is 0.
-fn gcd(mut a: i64, mut b: i64) -> i64 {
-    while b != 0 {
-        let t = b;
-        b = a % b;
-        a = t;
-    }
-    a
 }

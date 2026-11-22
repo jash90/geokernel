@@ -22,7 +22,14 @@ pub(crate) struct Slot {
     /// A named geometric object whose equality uses its construction data.
     object: Id,
     equation_revision: u64,
-    text: Option<Arc<String>>,
+    extra: Option<Arc<SlotExtra>>,
+}
+
+#[derive(Debug, PartialEq)]
+enum SlotExtra {
+    Text(String),
+    Polynomial(crate::cas::Poly),
+    Symbolic(String),
 }
 
 impl Slot {
@@ -33,7 +40,7 @@ impl Slot {
             start: 0,
             object: NO_OBJECT,
             equation_revision: 0,
-            text: None,
+            extra: None,
         }
     }
 
@@ -54,7 +61,7 @@ impl Slot {
                 start: 0,
                 object: NO_OBJECT,
                 equation_revision: 0,
-                text: None,
+                extra: None,
             }
         } else {
             // Non-list slots can keep the sign of infinity in the run
@@ -89,7 +96,7 @@ impl Slot {
             start: 0,
             object: NO_OBJECT,
             equation_revision: 0,
-            text: None,
+            extra: None,
         }
     }
 
@@ -112,7 +119,7 @@ impl Slot {
             start: 0,
             object: NO_OBJECT,
             equation_revision: 0,
-            text: None,
+            extra: None,
         }
     }
 
@@ -123,12 +130,28 @@ impl Slot {
             start: 0,
             object: object.unwrap_or(NO_OBJECT),
             equation_revision: 0,
-            text: Some(Arc::new(value.into())),
+            extra: Some(Arc::new(SlotExtra::Text(value.into()))),
         }
     }
 
     pub(crate) fn text_value(&self) -> Option<&str> {
-        self.text.as_deref().map(String::as_str)
+        match self.extra.as_deref()? {
+            SlotExtra::Text(value) => Some(value),
+            _ => None,
+        }
+    }
+
+    pub(super) fn polynomial(value: crate::cas::Poly) -> Slot {
+        Slot {
+            value: Value::Function,
+            extra: Some(Arc::new(SlotExtra::Polynomial(value))),
+            ..Self::undefined(Kind::Function)
+        }
+    }
+
+    pub(super) fn with_symbolic(mut self, text: String) -> Self {
+        self.extra = Some(Arc::new(SlotExtra::Symbolic(text)));
+        self
     }
 
     pub(crate) fn object_id(&self) -> Option<Id> {
@@ -158,7 +181,7 @@ impl Slot {
             start: 0,
             object: NO_OBJECT,
             equation_revision: 0,
-            text: None,
+            extra: None,
         }
     }
 
@@ -170,7 +193,7 @@ impl Slot {
             start,
             object: NO_OBJECT,
             equation_revision: 0,
-            text: None,
+            extra: None,
         }
     }
 
@@ -188,7 +211,7 @@ impl Slot {
             start: 0,
             object: id,
             equation_revision,
-            text: None,
+            extra: None,
         }
     }
 
@@ -202,7 +225,7 @@ impl Slot {
 
     /// Bit equality, so that a change from `0` to `-0` is seen.
     fn same(&self, other: &Slot) -> bool {
-        if self.text != other.text
+        if self.extra != other.extra
             || self.object != other.object
             || self.equation_revision != other.equation_revision
         {
@@ -228,6 +251,7 @@ impl Slot {
         let bits = |v: &Value| -> [u64; 3] {
             match *v {
                 Value::Number(x) => [x.to_bits(), 0, 0],
+                Value::Line { a, b, c } => [a.to_bits(), b.to_bits(), c.to_bits()],
                 Value::Point { x, y } | Value::Vector { x, y } => [x.to_bits(), y.to_bits(), 0],
                 Value::HomogeneousPoint { x, y, z } => [x.to_bits(), y.to_bits(), z.to_bits()],
                 Value::Bool(b) => [u64::from(b), 0, 0],
@@ -441,6 +465,30 @@ impl<'a> List<'a> {
         (slot.kind == Kind::Function)
             .then(|| slot.object_id())
             .flatten()
+    }
+
+    /// Samples a named function or an inline polynomial held by the list.
+    pub fn function_sample_at(&self, c: &Construction, k: usize, x: f64) -> Option<f64> {
+        if k >= self.len() {
+            return None;
+        }
+        let slot = &self.slots[self.start as usize + k];
+        match slot.extra.as_deref() {
+            Some(SlotExtra::Polynomial(p)) => Some(p.value([x, f64::NAN, f64::NAN])),
+            _ => c.function_value(self.function_at(k)?, x),
+        }
+    }
+
+    /// Exact expression displayed for an inline polynomial or solution.
+    pub fn symbolic_at(&self, k: usize) -> Option<String> {
+        if k >= self.len() {
+            return None;
+        }
+        match self.slots[self.start as usize + k].extra.as_deref()? {
+            SlotExtra::Polynomial(value) => Some(super::cas::print_poly(value)),
+            SlotExtra::Symbolic(text) => Some(text.clone()),
+            _ => None,
+        }
     }
 
     /// The raw numeric field read by GgbMat, including NaN and infinity.

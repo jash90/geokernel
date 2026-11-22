@@ -10,6 +10,7 @@
 #   GEOGEBRA_SRC=<path to a GeoGebra checkout> tools/ggb-harness/harness.sh reload <file.xml> <label>...
 #   GEOGEBRA_SRC=<path to a GeoGebra checkout> tools/ggb-harness/harness.sh tpairs [type]
 #   GEOGEBRA_SRC=<path to a GeoGebra checkout> tools/ggb-harness/harness.sh text-canvas
+#   GEOGEBRA_SRC=<path to a GeoGebra checkout> tools/ggb-harness/harness.sh cas-smoke
 #
 # `build`  builds GeoGebra's common-jre with its own Gradle wrapper, records the
 #          class path in build/classpath.txt and compiles the harness.
@@ -42,9 +43,63 @@ shift || true
 ggb="$(cd "$GEOGEBRA_SRC" && pwd)"
 java_opts=(-Xms4g -Xmx4g -XX:+UseG1GC)
 
+giac_version=70507
+
+giac_platform() {
+  case "$(uname -s):$(uname -m)" in
+    Darwin:arm64)
+      giac_classifier=macosx-universal
+      giac_member=libjavagiac-arm64.jnilib
+      giac_sha=610da91a710e94c7cc9c1c3f21f0dc8ccd88faca692fbbcb04da82719e0816bf
+      ;;
+    Linux:x86_64)
+      giac_classifier=linux-amd64
+      giac_member=libjavagiac64.so
+      giac_sha=3e30a4cac3a26372a9ee98bb377e5d52d234f9fb98270f681ceb641b8144cd29
+      ;;
+    *) return 1 ;;
+  esac
+  giac_dir="$build/giac/$giac_version/$giac_classifier"
+}
+
+fetch_giac() (
+  mkdir -p "$giac_dir"
+  local name="javagiac-$giac_version-natives-$giac_classifier.jar"
+  local jar="$giac_dir/$name"
+  local tmp
+  tmp="$(mktemp -d "$giac_dir/.download.XXXXXX")"
+  trap 'rm -rf "$tmp"' EXIT
+  if [ ! -f "$jar" ] || ! printf '%s  %s\n' "$giac_sha" "$jar" | shasum -a 256 -c --status; then
+    local release=https://repo.geogebra.net/releases/fr/ujf-grenoble/javagiac
+    curl --fail --silent --show-error --location --retry 2 \
+      "$release/$giac_version/$name" -o "$tmp/$name"
+    printf '%s  %s\n' "$giac_sha" "$tmp/$name" | shasum -a 256 -c
+    mv -f "$tmp/$name" "$jar"
+  fi
+  unzip -p "$jar" "$giac_member" > "$tmp/$giac_member"
+  mv -f "$tmp/$giac_member" "$giac_dir/$giac_member"
+)
+
+enable_giac() {
+  if ! giac_platform; then
+    echo 'the Giac oracle requires macOS arm64 or Linux x86_64' >&2
+    exit 2
+  fi
+  if [ ! -f "$giac_dir/$giac_member" ]; then
+    echo 'run harness.sh build before enabling the Giac oracle' >&2
+    exit 2
+  fi
+  java_opts+=("-DggbHarness.giac=$giac_dir/$giac_member")
+}
+
+if [ "${GGB_HARNESS_CAS:-0}" = 1 ] || [ "$cmd" = cas-smoke ]; then
+  if [ "$cmd" != build ]; then enable_giac; fi
+fi
+
 case "$cmd" in
   build)
     mkdir -p "$build/classes"
+    if giac_platform; then fetch_giac; fi
     "$ggb/gradlew" -p "$ggb/source/shared" --console=plain -q \
       -I "$here/gradle/classpath.init.gradle" \
       "-DggbHarness.classpathFile=$build/classpath.txt" \
@@ -70,8 +125,24 @@ case "$cmd" in
       files=("$here"/cases/*.json "$here"/cases/reference/*.json)
     fi
     for file in "${files[@]}"; do
-      java "${java_opts[@]}" -cp "$build/classes:$(cat "$build/classpath.txt")" \
-        geokernel.harness.GoldenGenerator "$file" "$repo/golden" "$commit"
+      (
+        run_golden() {
+          java "${java_opts[@]}" -cp "$build/classes:$(cat "$build/classpath.txt")" \
+            geokernel.harness.GoldenGenerator "$file" "$repo/golden" "$commit" "$@"
+        }
+        if [ "${GGB_HARNESS_CAS:-0}" != 1 ]; then
+          case "${file##*/}" in
+            calculus.json)
+              run_golden '!degree'
+              enable_giac
+              run_golden degree
+              exit
+              ;;
+            cas.json) enable_giac ;;
+          esac
+        fi
+        run_golden
+      )
     done
     ;;
   chain)
@@ -82,8 +153,13 @@ case "$cmd" in
     sample="${1:-1}"
     zipstep="${2:-50}"
     for file in "$here"/cases/*.json; do
-      java "${java_opts[@]}" -cp "$build/classes:$(cat "$build/classpath.txt")" \
-        geokernel.harness.GgbExporter "$file" "$repo/golden/ggb" "$sample" "$zipstep"
+      (
+        if [ "${file##*/}" = cas.json ] && [ "${GGB_HARNESS_CAS:-0}" != 1 ]; then
+          enable_giac
+        fi
+        java "${java_opts[@]}" -cp "$build/classes:$(cat "$build/classpath.txt")" \
+          geokernel.harness.GgbExporter "$file" "$repo/golden/ggb" "$sample" "$zipstep"
+      )
     done
     ;;
   saved)
@@ -108,8 +184,12 @@ case "$cmd" in
     java "${java_opts[@]}" -cp "$build/classes:$(cat "$build/classpath.txt")" \
       geokernel.harness.TextCanvas
     ;;
+  cas-smoke)
+    java "${java_opts[@]}" -cp "$build/classes:$(cat "$build/classpath.txt")" \
+      geokernel.harness.GiacOracle
+    ;;
   *)
-    echo "usage: GEOGEBRA_SRC=<checkout> $0 build|golden|chain|ggb|saved|export-snapshot|reload|tpairs|text-canvas" >&2
+    echo "usage: GEOGEBRA_SRC=<checkout> $0 build|golden|chain|ggb|saved|export-snapshot|reload|tpairs|text-canvas|cas-smoke" >&2
     exit 2
     ;;
 esac

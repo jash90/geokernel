@@ -53,7 +53,7 @@
 </element>
 <element type="numeric" label="k">
 	<value val="0"/>
-	<slider min="-3" max="NextPrime[a]" absoluteScreenLocation="true" width="200" x="38" y="138" fixed="false" horizontal="true" showAlgebra="true"/>
+	<slider min="-3" max="Limit[x^(2), a]" absoluteScreenLocation="true" width="200" x="38" y="138" fixed="false" horizontal="true" showAlgebra="true"/>
 	<lineStyle thickness="10" type="0" typeHidden="1" opacity="100"/>
 	<show object="true" label="true"/>
 	<objColor r="28" g="28" b="31" alpha="0.10000000149011612"/>

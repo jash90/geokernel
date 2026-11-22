@@ -873,6 +873,13 @@ impl Poly {
         })
     }
 
+    pub(super) fn univariate_coefficients(&self, b: &mut Builder) -> Option<Vec<Option<u32>>> {
+        self.0
+            .iter()
+            .all(|term| term.y == 0)
+            .then(|| self.coefficient_roots(b))
+    }
+
     /// The coefficient root of every power of `x` from `0` up to the
     /// polynomial's degree, summed like [`Poly::coefficient`] sums one
     /// monomial; `None` for a power no term has, whose coefficient

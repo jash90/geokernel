@@ -1,0 +1,298 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "cas-factored-001",
+      "group": "cas",
+      "script": [
+        "result = IsFactored(x)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "cas-factored-002",
+      "group": "cas",
+      "script": [
+        "result = IsFactored(0.5)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "cas-factored-003",
+      "group": "cas",
+      "script": [
+        "result = IsFactored(5)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "cas-factored-004",
+      "group": "cas",
+      "script": [
+        "result = IsFactored(x^2-1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-factored-005",
+      "group": "cas",
+      "script": [
+        "result = IsFactored(x*(x+1))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "cas-factored-006",
+      "group": "cas",
+      "script": [
+        "result = IsFactored(x*(2*x+2))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-factored-007",
+      "group": "cas",
+      "script": [
+        "result = IsFactored(x^3-1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-factored-008",
+      "group": "cas",
+      "script": [
+        "result = IsFactored(x*(x/2+1/2))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-factored-009",
+      "group": "cas",
+      "script": [
+        "result = IsFactored((x+1)*(x^2-1))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-factored-010",
+      "group": "cas",
+      "script": [
+        "result = IsFactored((1-x)*(1+x))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "cas-factored-011",
+      "group": "cas",
+      "script": [
+        "result = IsFactored(3*x-2*x)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-factored-012",
+      "group": "cas",
+      "script": [
+        "result = IsFactored(x^2-2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "cas-factored-013",
+      "group": "cas",
+      "script": [
+        "result = IsFactored(x^4+4)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-factored-014",
+      "group": "cas",
+      "script": [
+        "result = IsFactored((x^2+1)^2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "cas-factored-015",
+      "group": "cas",
+      "script": [
+        "result = IsFactored(x^4+2*x^2+1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-factored-016",
+      "group": "cas",
+      "script": [
+        "f(x) = (1-x)*(1+x)",
+        "result = IsFactored(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -63.0],
+              [-4.0, -15.0],
+              [-2.0, -3.0],
+              [-1.0, 0.0],
+              [-0.5, 0.75],
+              [0.0, 1.0],
+              [0.5, 0.75],
+              [1.0, 0.0],
+              [2.0, -3.0],
+              [4.0, -15.0],
+              [8.0, -63.0]
+            ]
+          },
+          "result": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "cas-factored-017",
+      "group": "cas",
+      "script": [
+        "f(x) = x^10+2",
+        "result = IsFactored(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.073741826E9],
+              [-4.0, 1048578.0],
+              [-2.0, 1026.0],
+              [-1.0, 3.0],
+              [-0.5, 2.0009765625],
+              [0.0, 2.0],
+              [0.5, 2.0009765625],
+              [1.0, 3.0],
+              [2.0, 1026.0],
+              [4.0, 1048578.0],
+              [8.0, 1.073741826E9]
+            ]
+          },
+          "result": { "type": "boolean", "defined": false }
+        }
+      ]
+    }
+  ]
+}

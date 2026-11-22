@@ -179,6 +179,9 @@ fn polynomial(ctx: &Ctx<'_, false>, i: u32) -> Option<Polynomial> {
 
 fn derivative(ctx: &Ctx<'_, true>, i: u32, depth: u32) -> Option<f64> {
     let depth = depth.checked_sub(1)?;
+    if let Some(rational) = ctx.e.cas_quotient(i) {
+        return rational.slope(ctx.variable(), |n| !ctx.stop(n));
+    }
     if !has_variable(ctx, i)? {
         return Some(0.0);
     }
@@ -609,6 +612,23 @@ fn multiply(a: &[f64], b: &[f64], expansion: Expansion<'_>) -> Option<Vec<f64>> 
 
 fn fraction(ctx: &Ctx<'_, true>, i: u32, expansion: Expansion<'_>, depth: u32) -> Option<Fraction> {
     let depth = depth.checked_sub(1)?;
+    if let Some(rational) = ctx.e.cas_quotient(i) {
+        let coefficients = |poly: &crate::cas::Poly| {
+            let coeffs = poly.coefficients()?;
+            if !expansion.work.charge(coeffs.len() as u64) {
+                return None;
+            }
+            let mut coeffs: Vec<_> = coeffs.into_iter().map(crate::cas::Rat::to_f64).collect();
+            if coeffs.is_empty() {
+                coeffs.push(0.0);
+            }
+            Some(coeffs)
+        };
+        return Some(Fraction {
+            numerator: coefficients(&rational.numerator)?,
+            denominator: coefficients(&rational.denominator)?,
+        });
+    }
     if !has_variable(ctx, i)? {
         return Some(Fraction::polynomial(vec![ctx.full_number(i)]));
     }

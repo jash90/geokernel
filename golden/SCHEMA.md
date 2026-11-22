@@ -290,6 +290,13 @@ stays 1.
 
 ## Known gaps
 
+The `cas` group is recorded with the native Giac oracle. Symbolic function
+results are compared by their sampled values. Finite solution lists are
+recorded in ascending numeric order and system solutions in lexicographic
+tuple order. Sorting retains duplicate entries and preserves the coordinate
+order inside each solution tuple. Assignment lines are compared by their
+coefficients up to scale. Printed forms are outside the golden comparison.
+
 A case that `geo-kernel` cannot reproduce yet is listed in
 `crates/geo-golden/known-gaps.toml` with a reason and the exact objects that
 disagree, as `step:label`. The test fails when a listed case disagrees

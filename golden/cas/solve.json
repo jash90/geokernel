@@ -1,0 +1,1835 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "cas-solve-001",
+      "group": "cas",
+      "script": [
+        "result = Solve(x^3-x)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 1.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 0.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -1.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-002",
+      "group": "cas",
+      "script": [
+        "result = Solutions(x^3-x)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -1.0 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-003",
+      "group": "cas",
+      "script": [
+        "result = NSolve(x^3-x)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 1.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 0.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -1.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-004",
+      "group": "cas",
+      "script": [
+        "result = NSolutions(x^3-x)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -1.0 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-005",
+      "group": "cas",
+      "script": [
+        "result = Solutions(x^2=3)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -1.7320508075688772 },
+              { "type": "number", "defined": true, "value": 1.7320508075688772 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-006",
+      "group": "cas",
+      "script": [
+        "result = Solutions((x-2)^4=0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-007",
+      "group": "cas",
+      "script": [
+        "result = Solutions(x^2=-1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-008",
+      "group": "cas",
+      "script": [
+        "result = Solutions(0*x=1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-009",
+      "group": "cas",
+      "script": [
+        "result = Solutions(x=x)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -8.0],
+                  [-4.0, -4.0],
+                  [-2.0, -2.0],
+                  [-1.0, -1.0],
+                  [-0.5, -0.5],
+                  [0.0, 0.0],
+                  [0.5, 0.5],
+                  [1.0, 1.0],
+                  [2.0, 2.0],
+                  [4.0, 4.0],
+                  [8.0, 8.0]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-010",
+      "group": "cas",
+      "script": [
+        "result = NSolutions(x^6-2*x+1=0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.508660391642 },
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-011",
+      "group": "cas",
+      "script": [
+        "result = NSolutions(x^4+34*x^3=34, x)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -34.00086498588 },
+              { "type": "number", "defined": true, "value": 0.9904738885574 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-012",
+      "group": "cas",
+      "script": [
+        "result = Solutions({x+y=1,x-y=0},{x,y})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.5 },
+                  { "type": "number", "defined": true, "value": 0.5 }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-013",
+      "group": "cas",
+      "script": [
+        "result = Solutions({x^2+y^2=5,x-y=1},{x,y})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 2.0 },
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": -1.0 },
+                  { "type": "number", "defined": true, "value": -2.0 }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-014",
+      "group": "cas",
+      "script": [
+        "result = Solutions({84.36=x*y^3,126.56=x*y^4},{x,y})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 24.983707449153542 },
+                  { "type": "number", "defined": true, "value": 1.5002370791844477 }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-015",
+      "group": "cas",
+      "script": [
+        "result = Solutions({x+y=1,x+y=2},{x,y})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-016",
+      "group": "cas",
+      "script": [
+        "result = Solutions({x+y=1,2*x+2*y=2},{x,y})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, 9.0],
+                      [-4.0, 5.0],
+                      [-2.0, 3.0],
+                      [-1.0, 2.0],
+                      [-0.5, 1.5],
+                      [0.0, 1.0],
+                      [0.5, 0.5],
+                      [1.0, 0.0],
+                      [2.0, -1.0],
+                      [4.0, -3.0],
+                      [8.0, -7.0]
+                    ]
+                  },
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, -8.0],
+                      [-4.0, -4.0],
+                      [-2.0, -2.0],
+                      [-1.0, -1.0],
+                      [-0.5, -0.5],
+                      [0.0, 0.0],
+                      [0.5, 0.5],
+                      [1.0, 1.0],
+                      [2.0, 2.0],
+                      [4.0, 4.0],
+                      [8.0, 8.0]
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-017",
+      "group": "cas",
+      "script": [
+        "f(x) = x^3-x",
+        "result = Solve(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -504.0],
+              [-4.0, -60.0],
+              [-2.0, -6.0],
+              [-1.0, 0.0],
+              [-0.5, 0.375],
+              [0.0, 0.0],
+              [0.5, -0.375],
+              [1.0, 0.0],
+              [2.0, 6.0],
+              [4.0, 60.0],
+              [8.0, 504.0]
+            ]
+          },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 1.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 0.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -1.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-018",
+      "group": "cas",
+      "script": [
+        "g: x=3",
+        "result = Solve(g)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -3.0 },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -3.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-019",
+      "group": "cas",
+      "script": [
+        "g: x+y=1",
+        "h: x-y=0",
+        "result = Solve({g,h})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "h": { "type": "line", "defined": true, "a": 1.0, "b": -1.0, "c": 0.0 },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -0.5 },
+                  { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -0.5 }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-020",
+      "group": "cas",
+      "script": [
+        "g: x+y=1",
+        "h: x-y=0",
+        "result = Solve({g,h}, {x,y})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "h": { "type": "line", "defined": true, "a": 1.0, "b": -1.0, "c": 0.0 },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -0.5 },
+                  { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -0.5 }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-021",
+      "group": "cas",
+      "script": [
+        "f(x) = x^3-x",
+        "result = Solutions(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -504.0],
+              [-4.0, -60.0],
+              [-2.0, -6.0],
+              [-1.0, 0.0],
+              [-0.5, 0.375],
+              [0.0, 0.0],
+              [0.5, -0.375],
+              [1.0, 0.0],
+              [2.0, 6.0],
+              [4.0, 60.0],
+              [8.0, 504.0]
+            ]
+          },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -1.0 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-022",
+      "group": "cas",
+      "script": [
+        "g: x=3",
+        "result = Solutions(g)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -3.0 },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 3.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-023",
+      "group": "cas",
+      "script": [
+        "g: x+y=1",
+        "h: x-y=0",
+        "result = Solutions({g,h})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "h": { "type": "line", "defined": true, "a": 1.0, "b": -1.0, "c": 0.0 },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.5 },
+                  { "type": "number", "defined": true, "value": 0.5 }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-024",
+      "group": "cas",
+      "script": [
+        "g: x+y=1",
+        "h: x-y=0",
+        "result = Solutions({g,h}, {x,y})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "h": { "type": "line", "defined": true, "a": 1.0, "b": -1.0, "c": 0.0 },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.5 },
+                  { "type": "number", "defined": true, "value": 0.5 }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-025",
+      "group": "cas",
+      "script": [
+        "f(x) = x^3-x",
+        "result = NSolve(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -504.0],
+              [-4.0, -60.0],
+              [-2.0, -6.0],
+              [-1.0, 0.0],
+              [-0.5, 0.375],
+              [0.0, 0.0],
+              [0.5, -0.375],
+              [1.0, 0.0],
+              [2.0, 6.0],
+              [4.0, 60.0],
+              [8.0, 504.0]
+            ]
+          },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 1.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 0.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -1.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-026",
+      "group": "cas",
+      "script": [
+        "g: x=3",
+        "result = NSolve(g)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -3.0 },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -3.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-027",
+      "group": "cas",
+      "script": [
+        "g: x+y=1",
+        "h: x-y=0",
+        "result = NSolve({g,h})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "h": { "type": "line", "defined": true, "a": 1.0, "b": -1.0, "c": 0.0 },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -0.5 },
+                  { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -0.5 }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-028",
+      "group": "cas",
+      "script": [
+        "g: x+y=1",
+        "h: x-y=0",
+        "result = NSolve({g,h}, {x,y})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "h": { "type": "line", "defined": true, "a": 1.0, "b": -1.0, "c": 0.0 },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -0.5 },
+                  { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -0.5 }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-029",
+      "group": "cas",
+      "script": [
+        "f(x) = x^3-x",
+        "result = NSolutions(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -504.0],
+              [-4.0, -60.0],
+              [-2.0, -6.0],
+              [-1.0, 0.0],
+              [-0.5, 0.375],
+              [0.0, 0.0],
+              [0.5, -0.375],
+              [1.0, 0.0],
+              [2.0, 6.0],
+              [4.0, 60.0],
+              [8.0, 504.0]
+            ]
+          },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -1.0 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-030",
+      "group": "cas",
+      "script": [
+        "g: x=3",
+        "result = NSolutions(g)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -3.0 },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 3.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-031",
+      "group": "cas",
+      "script": [
+        "g: x+y=1",
+        "h: x-y=0",
+        "result = NSolutions({g,h})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "h": { "type": "line", "defined": true, "a": 1.0, "b": -1.0, "c": 0.0 },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.5 },
+                  { "type": "number", "defined": true, "value": 0.5 }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-032",
+      "group": "cas",
+      "script": [
+        "g: x+y=1",
+        "h: x-y=0",
+        "result = NSolutions({g,h}, {x,y})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "h": { "type": "line", "defined": true, "a": 1.0, "b": -1.0, "c": 0.0 },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.5 },
+                  { "type": "number", "defined": true, "value": 0.5 }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-033",
+      "group": "cas",
+      "script": [
+        "result = Solve(x=x)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": false }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-034",
+      "group": "cas",
+      "script": [
+        "result = Solutions(1=0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-035",
+      "group": "cas",
+      "script": [
+        "result = Solutions(x^4-x^2-1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -1.272019649514069 },
+              { "type": "number", "defined": true, "value": 1.272019649514069 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-036",
+      "group": "cas",
+      "script": [
+        "result = Solutions((x-1)^4-(x-1)^2-1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -0.272019649514069 },
+              { "type": "number", "defined": true, "value": 2.272019649514069 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-037",
+      "group": "cas",
+      "script": [
+        "result = Solutions(x^6-x^3-1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -0.8517996420792429 },
+              { "type": "number", "defined": true, "value": 1.1739849967053284 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-038",
+      "group": "cas",
+      "script": [
+        "result = Solutions((x^2-1)/(x-1)=0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -1.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-039",
+      "group": "cas",
+      "script": [
+        "result = Solve({x+y=1,2*x+2*y=2},{x,y})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+                  { "type": "line", "defined": false }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-040",
+      "group": "cas",
+      "script": [
+        "result = Solutions({x^2=1},{x})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": -1.0 }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-041",
+      "group": "cas",
+      "script": [
+        "result = Solve({x^2=1},{x})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -1.0 },
+                  { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 1.0 }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-042",
+      "group": "cas",
+      "script": [
+        "g: x+y=1",
+        "h: x-y=0",
+        "l = {g,h}",
+        "result = Solutions(l)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "h": { "type": "line", "defined": true, "a": 1.0, "b": -1.0, "c": 0.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": -1.0, "c": 0.0 }
+            ]
+          },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.5 },
+                  { "type": "number", "defined": true, "value": 0.5 }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-043",
+      "group": "cas",
+      "script": [
+        "a = 1",
+        "result = Solve(x^2=a)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 1.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -1.0 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 2.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -2.0 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-044",
+      "group": "cas",
+      "script": [
+        "f(x) = x^2-3",
+        "result = Solutions(f, x)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 61.0],
+              [-4.0, 13.0],
+              [-2.0, 1.0],
+              [-1.0, -2.0],
+              [-0.5, -2.75],
+              [0.0, -3.0],
+              [0.5, -2.75],
+              [1.0, -2.0],
+              [2.0, 1.0],
+              [4.0, 13.0],
+              [8.0, 61.0]
+            ]
+          },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -1.7320508075688772 },
+              { "type": "number", "defined": true, "value": 1.7320508075688772 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-045",
+      "group": "cas",
+      "script": [
+        "result = Solutions({x*y=0},{x,y})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, -8.0],
+                      [-4.0, -4.0],
+                      [-2.0, -2.0],
+                      [-1.0, -1.0],
+                      [-0.5, -0.5],
+                      [0.0, 0.0],
+                      [0.5, 0.5],
+                      [1.0, 1.0],
+                      [2.0, 2.0],
+                      [4.0, 4.0],
+                      [8.0, 8.0]
+                    ]
+                  },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, -8.0],
+                      [-4.0, -4.0],
+                      [-2.0, -2.0],
+                      [-1.0, -1.0],
+                      [-0.5, -0.5],
+                      [0.0, 0.0],
+                      [0.5, 0.5],
+                      [1.0, 1.0],
+                      [2.0, 2.0],
+                      [4.0, 4.0],
+                      [8.0, 8.0]
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-046",
+      "group": "cas",
+      "script": [
+        "result = Solutions({x^2-y^2=0},{x,y})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, -8.0],
+                      [-4.0, -4.0],
+                      [-2.0, -2.0],
+                      [-1.0, -1.0],
+                      [-0.5, -0.5],
+                      [0.0, 0.0],
+                      [0.5, 0.5],
+                      [1.0, 1.0],
+                      [2.0, 2.0],
+                      [4.0, 4.0],
+                      [8.0, 8.0]
+                    ]
+                  },
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, -8.0],
+                      [-4.0, -4.0],
+                      [-2.0, -2.0],
+                      [-1.0, -1.0],
+                      [-0.5, -0.5],
+                      [0.0, 0.0],
+                      [0.5, 0.5],
+                      [1.0, 1.0],
+                      [2.0, 2.0],
+                      [4.0, 4.0],
+                      [8.0, 8.0]
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, 8.0],
+                      [-4.0, 4.0],
+                      [-2.0, 2.0],
+                      [-1.0, 1.0],
+                      [-0.5, 0.5],
+                      [0.0, -0.0],
+                      [0.5, -0.5],
+                      [1.0, -1.0],
+                      [2.0, -2.0],
+                      [4.0, -4.0],
+                      [8.0, -8.0]
+                    ]
+                  },
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, -8.0],
+                      [-4.0, -4.0],
+                      [-2.0, -2.0],
+                      [-1.0, -1.0],
+                      [-0.5, -0.5],
+                      [0.0, 0.0],
+                      [0.5, 0.5],
+                      [1.0, 1.0],
+                      [2.0, 2.0],
+                      [4.0, 4.0],
+                      [8.0, 8.0]
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-047",
+      "group": "cas",
+      "script": [
+        "result = Solutions(6402373705728001-22376988058521600*x+34012249593822720*x^2-30321254007719424*x^3+17950712280921504*x^4-7551527592063024*x^5+2353125040549984*x^6-557921681547048*x^7+102417740732658*x^8-14710753408923*x^9+1661573386473*x^10-147560703732*x^11+10246937272*x^12-549789282*x^13+22323822*x^14-662796*x^15+13566*x^16-171*x^17+x^18 = 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 3.999999999998 },
+              { "type": "number", "defined": true, "value": 5.000000000007 },
+              { "type": "number", "defined": true, "value": 5.999999999983 },
+              { "type": "number", "defined": true, "value": 7.000000000035 },
+              { "type": "number", "defined": true, "value": 7.999999999945 },
+              { "type": "number", "defined": true, "value": 9.000000000068 },
+              { "type": "number", "defined": true, "value": 9.999999999932 },
+              { "type": "number", "defined": true, "value": 11.00000000005 },
+              { "type": "number", "defined": true, "value": 11.99999999997 },
+              { "type": "number", "defined": true, "value": 13.00000000002 },
+              { "type": "number", "defined": true, "value": 13.99999999999 },
+              { "type": "number", "defined": true, "value": 15.0 },
+              { "type": "number", "defined": true, "value": 16.0 },
+              { "type": "number", "defined": true, "value": 17.0 },
+              { "type": "number", "defined": true, "value": 18.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-048",
+      "group": "cas",
+      "script": [
+        "result = NSolutions(6402373705728001-22376988058521600*x+34012249593822720*x^2-30321254007719424*x^3+17950712280921504*x^4-7551527592063024*x^5+2353125040549984*x^6-557921681547048*x^7+102417740732658*x^8-14710753408923*x^9+1661573386473*x^10-147560703732*x^11+10246937272*x^12-549789282*x^13+22323822*x^14-662796*x^15+13566*x^16-171*x^17+x^18)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 3.999999999998 },
+              { "type": "number", "defined": true, "value": 5.000000000007 },
+              { "type": "number", "defined": true, "value": 5.999999999982 },
+              { "type": "number", "defined": true, "value": 7.000000000035 },
+              { "type": "number", "defined": true, "value": 7.999999999945 },
+              { "type": "number", "defined": true, "value": 9.000000000069 },
+              { "type": "number", "defined": true, "value": 9.999999999931 },
+              { "type": "number", "defined": true, "value": 11.00000000006 },
+              { "type": "number", "defined": true, "value": 11.99999999997 },
+              { "type": "number", "defined": true, "value": 13.00000000002 },
+              { "type": "number", "defined": true, "value": 13.99999999999 },
+              { "type": "number", "defined": true, "value": 15.0 },
+              { "type": "number", "defined": true, "value": 16.0 },
+              { "type": "number", "defined": true, "value": 17.0 },
+              { "type": "number", "defined": true, "value": 18.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-049",
+      "group": "cas",
+      "script": [
+        "result = Solutions(2432902008176640001-8752948036761600000*x+13803759753640704000*x^2-12870931245150988800*x^3+8037811822645051776*x^4-3599979517947607200*x^5+1206647803780373360*x^6-311333643161390640*x^7+63030812099294896*x^8-10142299865511450*x^9+1307535010540395*x^10-135585182899530*x^11+11310276995381*x^12-756111184500*x^13+40171771630*x^14-1672280820*x^15+53327946*x^16-1256850*x^17+20615*x^18-210*x^19+x^20 = 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 },
+              { "type": "number", "defined": true, "value": 5.0 },
+              { "type": "number", "defined": true, "value": 6.0 },
+              { "type": "number", "defined": true, "value": 7.0 },
+              { "type": "number", "defined": true, "value": 8.0 },
+              { "type": "number", "defined": true, "value": 9.000000000001 },
+              { "type": "number", "defined": true, "value": 9.999999999999 },
+              { "type": "number", "defined": true, "value": 11.0 },
+              { "type": "number", "defined": true, "value": 12.0 },
+              { "type": "number", "defined": true, "value": 13.0 },
+              { "type": "number", "defined": true, "value": 14.0 },
+              { "type": "number", "defined": true, "value": 15.0 },
+              { "type": "number", "defined": true, "value": 16.0 },
+              { "type": "number", "defined": true, "value": 17.0 },
+              { "type": "number", "defined": true, "value": 18.0 },
+              { "type": "number", "defined": true, "value": 19.0 },
+              { "type": "number", "defined": true, "value": 20.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-050",
+      "group": "cas",
+      "script": [
+        "result = NSolutions(2432902008176640001-8752948036761600000*x+13803759753640704000*x^2-12870931245150988800*x^3+8037811822645051776*x^4-3599979517947607200*x^5+1206647803780373360*x^6-311333643161390640*x^7+63030812099294896*x^8-10142299865511450*x^9+1307535010540395*x^10-135585182899530*x^11+11310276995381*x^12-756111184500*x^13+40171771630*x^14-1672280820*x^15+53327946*x^16-1256850*x^17+20615*x^18-210*x^19+x^20)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 },
+              { "type": "number", "defined": true, "value": 5.0 },
+              { "type": "number", "defined": true, "value": 6.0 },
+              { "type": "number", "defined": true, "value": 7.0 },
+              { "type": "number", "defined": true, "value": 8.0 },
+              { "type": "number", "defined": true, "value": 9.0 },
+              { "type": "number", "defined": true, "value": 10.0 },
+              { "type": "number", "defined": true, "value": 11.0 },
+              { "type": "number", "defined": true, "value": 12.0 },
+              { "type": "number", "defined": true, "value": 13.0 },
+              { "type": "number", "defined": true, "value": 14.0 },
+              { "type": "number", "defined": true, "value": 15.0 },
+              { "type": "number", "defined": true, "value": 16.0 },
+              { "type": "number", "defined": true, "value": 17.0 },
+              { "type": "number", "defined": true, "value": 18.0 },
+              { "type": "number", "defined": true, "value": 19.0 },
+              { "type": "number", "defined": true, "value": 20.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-051",
+      "group": "cas",
+      "script": [
+        "result = Solve(2432902008176640001-8752948036761600000*x+13803759753640704000*x^2-12870931245150988800*x^3+8037811822645051776*x^4-3599979517947607200*x^5+1206647803780373360*x^6-311333643161390640*x^7+63030812099294896*x^8-10142299865511450*x^9+1307535010540395*x^10-135585182899530*x^11+11310276995381*x^12-756111184500*x^13+40171771630*x^14-1672280820*x^15+53327946*x^16-1256850*x^17+20615*x^18-210*x^19+x^20 = 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -1.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -2.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -3.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -4.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -5.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -6.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -7.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -8.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -9.000000000001 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -9.999999999999 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -11.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -12.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -13.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -14.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -15.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -16.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -17.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -18.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -19.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -20.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-052",
+      "group": "cas",
+      "script": [
+        "result = Solutions(x^2/x = 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-053",
+      "group": "cas",
+      "script": [
+        "result = Solve(x^2/x = 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-054",
+      "group": "cas",
+      "script": [
+        "result = NSolutions(x^2/x)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-055",
+      "group": "cas",
+      "script": [
+        "result = Solutions((x-1)^2/(x-1) = 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-056",
+      "group": "cas",
+      "script": [
+        "result = Solve((x-1)^2/(x-1) = 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-057",
+      "group": "cas",
+      "script": [
+        "result = NSolutions((x-1)^2/(x-1))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-058",
+      "group": "cas",
+      "script": [
+        "e1 = Element(Solutions(x^2-3), 1)",
+        "e2 = Element(Solutions(x^2-3), 2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "e1": { "type": "number", "defined": true, "value": -1.7320508075688772 },
+          "e2": { "type": "number", "defined": true, "value": 1.7320508075688772 }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-059",
+      "group": "cas",
+      "script": [
+        "e1 = Element(Solutions(x^3-x), 1)",
+        "e2 = Element(Solutions(x^3-x), 2)",
+        "e3 = Element(Solutions(x^3-x), 3)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "e1": { "type": "number", "defined": true, "value": -1.0 },
+          "e2": { "type": "number", "defined": true, "value": 0.0 },
+          "e3": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-060",
+      "group": "cas",
+      "script": [
+        "e1 = Element(Solutions(x^4-5*x^2+4), 1)",
+        "e2 = Element(Solutions(x^4-5*x^2+4), 2)",
+        "e3 = Element(Solutions(x^4-5*x^2+4), 3)",
+        "e4 = Element(Solutions(x^4-5*x^2+4), 4)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "e1": { "type": "number", "defined": true, "value": -2.0 },
+          "e2": { "type": "number", "defined": true, "value": -1.0 },
+          "e3": { "type": "number", "defined": true, "value": 1.0 },
+          "e4": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "cas-solve-061",
+      "group": "cas",
+      "script": [
+        "first = Element(NSolutions(2432902008176640001-8752948036761600000*x+13803759753640704000*x^2-12870931245150988800*x^3+8037811822645051776*x^4-3599979517947607200*x^5+1206647803780373360*x^6-311333643161390640*x^7+63030812099294896*x^8-10142299865511450*x^9+1307535010540395*x^10-135585182899530*x^11+11310276995381*x^12-756111184500*x^13+40171771630*x^14-1672280820*x^15+53327946*x^16-1256850*x^17+20615*x^18-210*x^19+x^20), 1)",
+        "last = Element(NSolutions(2432902008176640001-8752948036761600000*x+13803759753640704000*x^2-12870931245150988800*x^3+8037811822645051776*x^4-3599979517947607200*x^5+1206647803780373360*x^6-311333643161390640*x^7+63030812099294896*x^8-10142299865511450*x^9+1307535010540395*x^10-135585182899530*x^11+11310276995381*x^12-756111184500*x^13+40171771630*x^14-1672280820*x^15+53327946*x^16-1256850*x^17+20615*x^18-210*x^19+x^20), 20)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "first": { "type": "number", "defined": true, "value": 1.0 },
+          "last": { "type": "number", "defined": true, "value": 20.0 }
+        }
+      ]
+    }
+  ]
+}
