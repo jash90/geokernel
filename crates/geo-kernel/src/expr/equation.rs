@@ -1133,7 +1133,7 @@ pub(crate) fn parents(c: &Construction, d: EquationDef) -> Vec<Id> {
 pub(super) fn side_entry(c: &Construction, equation: Id, left: bool) -> Option<&Entry> {
     let sides = match c.def(equation) {
         Def::Equation(def) => c.equations.get(def.index as usize)?.1.sides,
-        Def::ImplicitCurve(index) => c.implicit_curves.get(index as usize)?.1.sides?,
+        Def::ImplicitCurve(index) => c.implicit_curves.get(index as usize)?.1.sides()?,
         _ => return None,
     };
     c.exprs.entries.get(sides[usize::from(!left)] as usize)

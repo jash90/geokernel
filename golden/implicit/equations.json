@@ -205,7 +205,7 @@
               [0.0, 0.0],
               [1.0, 0.0]
             ],
-            "equation": "x^4 + y = 1",
+            "equation": "x⁴ + y = 1",
             "input_form": false
           }
         }

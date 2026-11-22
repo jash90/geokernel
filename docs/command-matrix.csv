@@ -145,7 +145,7 @@ Curvature,,function,P2,done,3,3,
 OsculatingCircle,,function,P2,done,3,3,
 IterationList,,function,P2,done,3,3,
 RootList,,function,P2,done,3,3,
-ImplicitCurve,,function,P2,todo,3,0,
+ImplicitCurve,,function,P2,done,3,3,
 ImplicitDerivative,,function,,out_of_scope,,,The implicit derivative command uses the CAS.
 NSolveODE,,function,P2,done,1,1,
 Spline,,function,P2,done,4,4,

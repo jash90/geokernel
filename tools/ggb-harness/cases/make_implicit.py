@@ -24,4 +24,17 @@ cases.case(
     ["a = 0", "c: a*x^3 + x^2 + y^2 = 1"],
     [setn("a", 1), setn("a", 0)],
 )
+points = ["A = (1, 1)", "B = (2, 2)", "C = (3, 3)", "D = (4, 0.25)", "E = (5, 0.2)"]
+cases.case("constructors", points + ["pts = {A, B, C, D, E}", "c = ImplicitCurve(pts)"],
+           [mv("E", 4, 0.25), mv("E", 5, 0.2)])
+cases.case("constructors", points + ["c = ImplicitCurve(A, B, C, D, E)"],
+           [mv("D", 4, 4), mv("D", 4, 0.25)])
+cases.case("constructors", ["a = 1", "f(x,y) = x^3/a + y^2 - 1", "c = ImplicitCurve(f)"],
+           [setn("a", 0), setn("a", 2)])
+cases.case("constructors", ["f(x,y) = x*y", "c = ImplicitCurve(f)"], [])
+cases.case("constructors", points[:3] + ["pts = {A, B, C}", "c = ImplicitCurve(pts)"], [])
+cases.case("constructors", points[:2] + ["pts = {A, B}", "c = ImplicitCurve(pts)"],
+           [mv("B", 1, 1), mv("B", 2, 3)])
+cases.case("constructors", ["c = ImplicitCurve(x*y)"], [])
+
 cases.write()

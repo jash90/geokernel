@@ -3403,3 +3403,18 @@ difference = "remaining-transformations-equation-sides-and-conditionals: `ApplyM
 command = "SurdText"
 form = "point"
 cases = ["georestsmall-surdpoint-001", "georestsmall-surdpoint-002"]
+
+[[form]]
+command = "ImplicitCurve"
+form = "list"
+cases = ["implicit-constructors-001", "implicit-constructors-005", "implicit-constructors-006"]
+
+[[form]]
+command = "ImplicitCurve"
+form = "function"
+cases = ["implicit-constructors-003", "implicit-constructors-004"]
+
+[[form]]
+command = "ImplicitCurve"
+form = "point,point,point,point,point,..."
+cases = ["implicit-constructors-002"]

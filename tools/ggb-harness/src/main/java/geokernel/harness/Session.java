@@ -1201,6 +1201,8 @@ final class Session {
             case "SecondAxis":
             case "Directrix":
                 return "line";
+            case "ImplicitCurve":
+                return "implicit";
             case "Asymptote":
                 return first instanceof GeoFunction ? "list" : "line";
             case "Segment":
@@ -1680,7 +1682,8 @@ final class Session {
                     rows.add(Arrays.stream(row).boxed().toList());
                 }
                 f.put("coefficients", rows);
-                f.put("equation", curve.toValueString(StringTemplate.xmlTemplate));
+                f.put("equation", curve.toValueString(curve.isInputForm()
+                        ? StringTemplate.xmlTemplate : StringTemplate.defaultTemplate));
                 f.put("input_form", curve.isInputForm());
                 return f;
             }

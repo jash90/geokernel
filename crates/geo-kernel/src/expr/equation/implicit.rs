@@ -2,7 +2,7 @@
 
 use super::{build_normal, Builder, Entry, NotPolynomial};
 use crate::algo::{conic_nd::ConicData, general_conic};
-use crate::expr::{eval, parse, shift_children, Raw};
+use crate::expr::{eval, parse, shift_children, Element, Node, Raw, Ty};
 use crate::{Construction, Def, Error, Id, Kind, Value};
 
 /// Coefficients indexed by the power of x, then by the power of y.
@@ -12,12 +12,38 @@ pub(crate) const MAX_DEGREE: u32 = 32;
 
 #[derive(Debug)]
 pub(crate) struct Record {
-    pub(super) sides: Option<[u32; 2]>,
+    source: Source,
     pub(crate) kind: Kind,
     pub(crate) coefficients: Coefficients,
     pub(crate) conic: Option<ConicData>,
-    fixed: bool,
     fingerprint: u64,
+}
+
+#[derive(Clone, Copy, Debug)]
+enum Source {
+    Equation([u32; 2]),
+    Matrix,
+    Function(Id),
+    Points(Id),
+}
+
+impl Record {
+    fn new(source: Source) -> Self {
+        Self {
+            source,
+            kind: Kind::ImplicitCurve,
+            coefficients: Vec::new(),
+            conic: None,
+            fingerprint: 0,
+        }
+    }
+
+    pub(super) fn sides(&self) -> Option<[u32; 2]> {
+        match self.source {
+            Source::Equation(sides) => Some(sides),
+            _ => None,
+        }
+    }
 }
 
 pub(super) fn definition(
@@ -33,14 +59,7 @@ pub(super) fn definition(
     let result = add(
         c,
         label,
-        Record {
-            sides: Some([first as u32, first as u32 + 1]),
-            kind: Kind::ImplicitCurve,
-            coefficients: Vec::new(),
-            conic: None,
-            fixed: false,
-            fingerprint: 0,
-        },
+        Record::new(Source::Equation([first as u32, first as u32 + 1])),
     );
     if let Ok(id) = result {
         c.set_equation_form(id, crate::kernel::EquationForm::User)?;
@@ -69,12 +88,9 @@ impl Construction {
             self,
             label,
             Record {
-                sides: None,
-                kind: Kind::ImplicitCurve,
                 fingerprint: fingerprint(&coefficients),
                 coefficients,
-                conic: None,
-                fixed: true,
+                ..Record::new(Source::Matrix)
             },
         )?;
         self.set_equation_form(id, crate::kernel::EquationForm::Implicit)?;
@@ -128,34 +144,53 @@ fn add(c: &mut Construction, label: &str, record: Record) -> Result<Id, Error> {
 
 pub(crate) fn parents(c: &Construction, index: u32) -> Vec<Id> {
     let mut parents = Vec::new();
-    for entry in c.implicit_curves[index as usize]
-        .1
-        .sides
-        .into_iter()
-        .flatten()
-    {
-        parents.extend(&c.exprs.entries[entry as usize].parents);
+    match c.implicit_curves[index as usize].1.source {
+        Source::Equation(sides) => {
+            for entry in sides {
+                parents.extend(&c.exprs.entries[entry as usize].parents);
+            }
+            parents.sort_unstable();
+            parents.dedup();
+        }
+        Source::Function(id) | Source::Points(id) => parents.push(id),
+        Source::Matrix => {}
     }
-    parents.sort_unstable();
-    parents.dedup();
     parents
 }
 
 fn normal(
     c: &Construction,
     lhs: &Entry,
-    rhs: &Entry,
+    rhs: Option<&Entry>,
 ) -> Result<(u32, Coefficients), NotPolynomial> {
     let mut builder = Builder::function(lhs);
-    let offset = builder.nodes.len() as u32;
-    builder.nodes.extend(rhs.nodes.iter().map(|node| {
-        let mut node = *node;
-        shift_children(&mut node, offset);
-        node
-    }));
-    builder.lits.extend(rhs.lits.iter().cloned());
     builder.max_degree = MAX_DEGREE;
-    let poly = build_normal(c, &mut builder, lhs.root, offset + rhs.root)?;
+    let poly = if let Some(rhs) = rhs {
+        let offset = builder.nodes.len() as u32;
+        builder.nodes.extend(rhs.nodes.iter().map(|node| {
+            let mut node = *node;
+            shift_children(&mut node, offset);
+            node
+        }));
+        builder.lits.extend(rhs.lits.iter().cloned());
+        build_normal(c, &mut builder, lhs.root, offset + rhs.root)?
+    } else {
+        let root = match builder.node(lhs.root) {
+            Node::SystemFunction(2, body) => {
+                for node in &mut builder.nodes {
+                    match *node {
+                        Node::Local(0, _) => *node = Node::Var,
+                        Node::Local(1, _) => *node = Node::VarY,
+                        _ => {}
+                    }
+                }
+                body
+            }
+            Node::SystemFunction(..) => return Err(NotPolynomial::ImplicitCurve),
+            _ => lhs.root,
+        };
+        builder.expand(c, root)?
+    };
     let degree = poly.degree();
     if degree > MAX_DEGREE {
         return Err(NotPolynomial::ImplicitCurve);
@@ -195,26 +230,44 @@ fn coefficient_value(c: &Construction, builder: &Builder, root: u32) -> Option<f
 
 pub(crate) fn update(c: &mut Construction, index: u32) -> Value {
     let (owner, record) = &c.implicit_curves[index as usize];
-    if record.fixed {
-        return if record.coefficients.is_empty() {
-            Value::Undefined
-        } else {
-            Value::ImplicitCurve
-        };
-    }
-    let [left, right] = record.sides.expect("an equation has two sides");
-    let result = normal(
-        c,
-        &c.exprs.entries[left as usize],
-        &c.exprs.entries[right as usize],
-    );
-    let Ok((degree, coefficients)) = result else {
-        return Value::Undefined;
-    };
-    let kind = match degree {
-        1 => Kind::Line,
-        2 => Kind::Conic,
-        _ => Kind::ImplicitCurve,
+    let (kind, coefficients) = match record.source {
+        Source::Matrix => {
+            return if record.coefficients.is_empty() {
+                Value::Undefined
+            } else {
+                Value::ImplicitCurve
+            };
+        }
+        Source::Equation([left, right]) => {
+            let Ok((degree, coefficients)) = normal(
+                c,
+                &c.exprs.entries[left as usize],
+                Some(&c.exprs.entries[right as usize]),
+            ) else {
+                return Value::Undefined;
+            };
+            let kind = match degree {
+                1 => Kind::Line,
+                2 => Kind::Conic,
+                _ => Kind::ImplicitCurve,
+            };
+            (kind, coefficients)
+        }
+        Source::Function(id) => {
+            let Def::Expr(def) = c.def(id) else {
+                return Value::Undefined;
+            };
+            let Ok((_, coefficients)) = normal(c, crate::expr::entry(c, def), None) else {
+                return Value::Undefined;
+            };
+            (Kind::ImplicitCurve, coefficients)
+        }
+        Source::Points(id) => {
+            let Some(coefficients) = through_points(c, id) else {
+                return Value::Undefined;
+            };
+            (Kind::ImplicitCurve, coefficients)
+        }
     };
     let owner = Id(*owner);
     let replacing = record.kind != kind;
@@ -329,4 +382,183 @@ pub(crate) fn raw_equation(coefficients: &[Vec<f64>], number: impl Fn(f64) -> St
         number(if constant == 0.0 { 0.0 } else { -constant })
     );
     out
+}
+
+const MAX_INTERPOLATION_DEGREE: usize = 8;
+const MAX_POINTS: usize = point_count(MAX_INTERPOLATION_DEGREE);
+
+const fn point_count(degree: usize) -> usize {
+    (degree + 1) * (degree + 2) / 2 - 1
+}
+
+fn interpolation_degree(points: usize) -> Option<usize> {
+    (1..=MAX_INTERPOLATION_DEGREE).find(|&degree| point_count(degree) == points)
+}
+
+pub(crate) fn command(
+    c: &mut Construction,
+    label: &str,
+    input: &str,
+) -> Option<Result<Id, String>> {
+    let ("ImplicitCurve", args) = crate::script::split_call(input)? else {
+        return None;
+    };
+    let start = c.checkpoint();
+    let result = (|| {
+        let source = if let [argument] = args.as_slice() {
+            let hidden = format!("\0implicit{}", c.len());
+            match c.id(argument) {
+                Some(id) if c.kind(id) == Kind::List => Source::Points(id),
+                Some(id) if c.kind(id) == Kind::FunctionNVar => Source::Function(id),
+                Some(_) => {
+                    return Err(
+                        "ImplicitCurve needs a point list or a function of two variables".into(),
+                    )
+                }
+                None if crate::expr::argument_object(c, argument, &hidden, Kind::List) => {
+                    Source::Points(c.id(&hidden).expect("resolved list"))
+                }
+                None => {
+                    let parsed = parse::parse_equation(c, argument)?;
+                    if !parsed.uses_var
+                        || !parsed.uses_y
+                        || !matches!(parsed.tys[parsed.root as usize], Ty::Num(_))
+                    {
+                        return Err(
+                            "ImplicitCurve needs a point list or a function of two variables"
+                                .into(),
+                        );
+                    }
+                    Source::Function(crate::expr::add(c, &hidden, parsed, Kind::FunctionNVar)?)
+                }
+            }
+        } else {
+            if interpolation_degree(args.len()).is_none() {
+                return Err(
+                    "ImplicitCurve needs a point count that determines a polynomial".into(),
+                );
+            }
+            let mut points = Vec::with_capacity(args.len());
+            for argument in args {
+                if let Some(point) = c.id(argument).filter(|&id| c.kind(id) == Kind::Point) {
+                    points.push(point);
+                } else {
+                    let hidden = format!("\0implicit{}", c.len());
+                    if !crate::expr::argument_object(c, argument, &hidden, Kind::Point) {
+                        return Err(format!("expected a point, got `{argument}`"));
+                    }
+                    points.push(c.id(&hidden).expect("resolved point"));
+                }
+            }
+            let hidden = format!("\0implicit{}", c.len());
+            Source::Points(crate::expr::list_of_objects(c, &hidden, points)?)
+        };
+        let id = add(c, label, Record::new(source)).map_err(|e| e.to_string())?;
+        c.set_equation_form(id, crate::kernel::EquationForm::Implicit)
+            .map_err(|e| e.to_string())?;
+        Ok(id)
+    })();
+    if result.is_err() {
+        c.discard_since(start);
+    }
+    Some(result)
+}
+
+fn through_points(c: &Construction, list: Id) -> Option<Coefficients> {
+    let list = c.elements(list)?;
+    let degree = interpolation_degree(list.len())?;
+    let points = list
+        .iter()
+        .take(MAX_POINTS)
+        .map(|element| match element {
+            Element::Value(Kind::Point, Value::Point { x, y }) => Some((x, y)),
+            _ => None,
+        })
+        .collect::<Option<Vec<_>>>()?;
+
+    for fit_degree in (1..=degree).rev() {
+        let powers: Vec<_> = (0..=fit_degree)
+            .flat_map(|i| (0..=fit_degree - i).map(move |j| (i, j)))
+            .collect();
+        let n = powers.len() - 1;
+        let rows: Vec<Vec<f64>> = points
+            .iter()
+            .take(n)
+            .map(|&(x, y)| {
+                powers
+                    .iter()
+                    .map(|&(i, j)| x.powi(i as i32) * y.powi(j as i32))
+                    .collect()
+            })
+            .collect();
+        if rows.iter().flatten().any(|v| !v.is_finite()) {
+            return None;
+        }
+        // Pick the first coefficient that can be fixed to one. If the fit
+        // is rank deficient, try the lower degree and check all points.
+        for fixed in 0..=n {
+            let Some(solution) = solve(&rows, fixed) else {
+                continue;
+            };
+            let mut coefficients = vec![vec![0.0; degree + 1]; degree + 1];
+            for (&(i, j), coefficient) in powers.iter().zip(solution) {
+                coefficients[i][j] = if coefficient.abs() < crate::tol::STANDARD_PRECISION {
+                    0.0
+                } else {
+                    coefficient
+                };
+            }
+            return points
+                .iter()
+                .all(|&(x, y)| {
+                    crate::plot::implicit::evaluate(&coefficients, x, y).abs()
+                        < crate::tol::MIN_PRECISION
+                })
+                .then_some(coefficients);
+        }
+    }
+    None
+}
+
+fn solve(rows: &[Vec<f64>], fixed: usize) -> Option<Vec<f64>> {
+    let n = rows.len();
+    let mut a: Vec<Vec<f64>> = rows
+        .iter()
+        .map(|row| {
+            let mut coefficients = row.clone();
+            let rhs = -coefficients.remove(fixed);
+            coefficients.push(rhs);
+            coefficients
+        })
+        .collect();
+    let scale = a
+        .iter()
+        .flat_map(|row| &row[..n])
+        .fold(0.0_f64, |scale, &value| scale.max(value.abs()));
+    let minimum_pivot = 64.0 * f64::EPSILON * scale.max(1.0);
+    for k in 0..n {
+        let pivot = (k..n).max_by(|&i, &j| a[i][k].abs().total_cmp(&a[j][k].abs()))?;
+        let divisor = a[pivot][k];
+        if divisor.abs() <= minimum_pivot || !divisor.is_finite() {
+            return None;
+        }
+        a.swap(k, pivot);
+        let (top, bottom) = a.split_at_mut(k + 1);
+        for row in bottom {
+            let factor = row[k] / divisor;
+            for j in k + 1..=n {
+                row[j] -= factor * top[k][j];
+            }
+        }
+    }
+    let mut result = vec![0.0; n];
+    for k in (0..n).rev() {
+        let residual = a[k][n] - (k + 1..n).map(|j| a[k][j] * result[j]).sum::<f64>();
+        result[k] = residual / a[k][k];
+        if !result[k].is_finite() {
+            return None;
+        }
+    }
+    result.insert(fixed, 1.0);
+    Some(result)
 }
