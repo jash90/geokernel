@@ -66,6 +66,8 @@ pub struct ObjectStyle {
     pub caption: String,
     /// `<show label=>`.
     pub show_label: Option<bool>,
+    /// The file had no `<show>` tag, so its reader decides the visibility.
+    pub untagged: bool,
     /// `<layer val=>`. The reader gives an object without the tag the layer
     /// of the object before it, so its absence is kept.
     pub layer: Option<u8>,
@@ -106,7 +108,7 @@ pub struct ObjectStyle {
     /// `<checkbox fixed=>`.
     pub checkbox_fixed: Option<bool>,
     /// Placement of a slider (`<slider>` without its bounds).
-    pub slider: Option<SliderLayout>,
+    pub slider: Option<Box<SliderLayout>>,
     /// `<animation>` of an object that is not a slider.
     pub animation: Option<Box<SliderAnimation>>,
 }

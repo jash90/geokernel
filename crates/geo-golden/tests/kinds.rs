@@ -32,11 +32,15 @@
 //! * `import`, `no` versus the rest: a file of `golden/ggb` imports to an
 //!   object of the kind; `yes` or `partial` is declared.
 //!
-//! * `export`, exact: `yes` for editor objects serialized from their own
-//!   stored data and references (raster images, buttons and input boxes).
-//!   `partial` for construction kinds whose export also depends on supported
-//!   journal forms and command history. `no` for kinds without a writer.
-//!   The Java oracle checks a defined example of each `yes` and `partial` kind.
+//! * `export`, exact: `yes` when the reference application reloads an
+//!   exported object of the kind with every presentation property its source
+//!   file had; the Java oracle (`tests/export.rs`) proves the list of each
+//!   kind and fails when this column disagrees with it. `partial` when a
+//!   named property is not kept: a pie chart loses the colour and filling of
+//!   single slices. `no` for kinds without a writer. The oracle also checks a
+//!   defined example of each `yes` and `partial` kind. A definition the
+//!   writer has no saved form for is refused, never dropped (`DIFFERENCES.md`,
+//!   "Command forms and history").
 //!
 //! Tool coverage is declared in the table.
 //! A row without a kernel kind is `no` in every column.
@@ -1002,10 +1006,11 @@ fn every_kernel_kind_and_upstream_kind_has_a_row() {
         }
         let export = match kk.as_str() {
             "" => "no",
-            "Image" | "Button" | "InputBox" => "yes",
-            "Point" | "Line" | "Segment" | "Ray" | "Vector" | "Circle" | "Conic" | "Arc"
-            | "Sector" | "Number" | "Angle" | "Boolean" | "Function" | "Polygon" | "PolyLine"
-            | "List" | "Text" | "Locus" | "Curve" | "FunctionNVar" | "PieChart" => "partial",
+            "Image" | "Button" | "InputBox" | "Point" | "Line" | "Segment" | "Ray" | "Vector"
+            | "Circle" | "Conic" | "Arc" | "Sector" | "Number" | "Angle" | "Boolean"
+            | "Function" | "Polygon" | "PolyLine" | "List" | "Text" | "Locus" | "Curve"
+            | "FunctionNVar" => "yes",
+            "PieChart" => "partial",
             _ => "no",
         };
         if r["export"] != export {

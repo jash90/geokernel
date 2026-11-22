@@ -617,7 +617,7 @@ mod tests {
     }
 
     /// The saved files of the golden set, and those of them that do not load.
-    const GOLDEN_FILES: usize = 44;
+    const GOLDEN_FILES: usize = 45;
     const GOLDEN_FILES_NOT_LOADED: &[&str] = &[];
 
     #[test]

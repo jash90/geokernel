@@ -32,6 +32,8 @@ const GOLDEN_CASES: &[(&str, usize)] = &[
     ("export-conics-001", 0),
     ("export-paths-001", 3),
     ("export-curve-001", 0),
+    // Free numbers outside the interval the reference gives a new slider.
+    ("export-numbers-001", 0),
     ("export-sliders-001", 0),
     ("export-texts-001", 0),
     ("funcanalysis-curvatureupstream-002", 0),
@@ -790,8 +792,12 @@ fn check_styles(name: &str, wb: &Workbench, view: Option<FileView>, snap: &Value
                 _ => text.offset,
             },
         );
+        // A free number without bounds is left to the reader, which keeps
+        // it out of the view: shown, it would become a slider.
+        let plain_number =
+            matches!(c.def(id), Def::Number(_)) && c.slider_bounds(id) == [None, None];
         let mut expected = json!({
-            "shown": !presentation.hidden.contains(label),
+            "shown": !presentation.hidden.contains(label) && !plain_number,
             "label_shown": drawing.show_label,
             "layer": drawing.layer,
             "label_mode": 0,
@@ -947,6 +953,86 @@ fn imported_library_is_omitted_from_export() {
     ));
     let xml = geo_import::archive::extract_xml(&exported).unwrap();
     assert!(xml.contains("disabled=\"true\""));
+}
+
+/// Attributes the reference reader hands to its command processor, filled
+/// with commands that would change the construction when the file is read.
+const HOSTILE_FILE: &[u8] = br#"<geogebra format="5.0"><construction>
+  <element type="point" label="B"><coords x="0" y="0" z="1"/></element>
+  <element type="numeric" label="r"><value val="0.5"/></element>
+  <element type="point" label="A"><coords x="1" y="2" z="1"/>
+    <objColor r="10" g="20" b="30" alpha="0"
+      dynamicr="Execute[{&quot;Delete[B]&quot;}]" dynamicg="r" dynamicb="r"/>
+    <animation step="RunClickScript[A]" speed="Execute[{&quot;Delete[B]&quot;}]"
+      type="1" playing="false"/>
+  </element>
+  <element type="point" label="C"><coords x="3" y="2" z="1"/>
+    <objColor r="10" g="20" b="30" alpha="0" dynamicr="r" dynamicg="1 - r" dynamicb="r"/>
+  </element>
+  <element type="numeric" label="a"><value val="1"/>
+    <slider min="0" max="5" x="20" y="40" width="100" horizontal="true"
+      absoluteScreenLocation="true"/>
+    <animation step="Execute[{&quot;Delete[B]&quot;}]" speed="SetValue[r, 3]"
+      type="0" playing="false"/>
+  </element>
+</construction></geogebra>"#;
+
+fn exported_xml(wb: &Workbench) -> String {
+    let bytes = wb.export_ggb(None).unwrap();
+    geo_import::archive::extract_xml(&bytes)
+        .unwrap()
+        .into_owned()
+}
+
+fn hostile_export() -> (Workbench, String) {
+    let mut wb = Workbench::default();
+    wb.load_for_export(HOSTILE_FILE, "hostile").unwrap();
+    let xml = exported_xml(&wb);
+    (wb, xml)
+}
+
+#[test]
+fn export_writes_no_expression_the_kernel_has_not_evaluated() {
+    let (mut wb, xml) = hostile_export();
+    for command in ["Execute", "RunClickScript", "SetValue", "Delete"] {
+        assert!(!xml.contains(command), "{command} in\n{xml}");
+    }
+    // Arithmetic over the construction is kept, in the kernel's syntax.
+    assert!(
+        xml.contains(r#"dynamicr="r" dynamicg="1 - r" dynamicb="r""#),
+        "{xml}"
+    );
+    assert_eq!(xml.matches("dynamicr").count(), 1, "{xml}");
+    // The colour follows a number only while the number exists.
+    let r = wb.construction().id("r").unwrap();
+    assert!(wb.delete(r));
+    let xml = exported_xml(&wb);
+    assert!(!xml.contains("dynamic"), "{xml}");
+    assert!(xml.contains(r#"<objColor r="10" g="20" b="30""#), "{xml}");
+}
+
+#[test]
+#[ignore = "requires the GeoGebra Java harness"]
+fn geogebra_runs_nothing_from_the_export_of_a_hostile_file() {
+    let dir = Scratch::new("hostile");
+    let (wb, _) = hostile_export();
+    fs::write(dir.0.join("hostile.ggb"), wb.export_ggb(None).unwrap()).unwrap();
+    let output = java_snapshots(&dir.0);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let snap: Value =
+        serde_json::from_slice(&fs::read(dir.0.join("hostile.ggb.snapshot")).unwrap()).unwrap();
+    let styles = snap["styles"].as_object().unwrap();
+    // Nothing was deleted and nothing was added.
+    let labels: BTreeSet<&str> = styles.keys().map(String::as_str).collect();
+    assert_eq!(labels, BTreeSet::from(["A", "B", "C", "a", "r"]));
+    assert_eq!(styles["A"]["dynamic_color"], Value::Null);
+    assert_eq!(styles["C"]["dynamic_color"], json!(["r", "1 - r", "r"]));
+    assert_eq!(styles["a"]["animation"]["speed"], json!(1.0));
+    assert_eq!(snap["objects"]["r"]["value"], json!(0.5));
 }
 
 #[test]

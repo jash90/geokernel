@@ -23,7 +23,7 @@ CurveCartesian,CURVE_CARTESIAN,Curve,yes,no,no,no,no,no,yes,yes,Cartesian coordi
 ImplicitCurve,IMPLICIT_POLY,,no,no,no,no,no,no,no,no,
 FunctionNVar,FUNCTION_NVAR,FunctionNVar,yes,no,no,no,no,yes,partial,yes,saved numeric functions with supported definitions
 Image,IMAGE,Image,no,no,yes,no,no,yes,yes,yes,PNG and JPEG and first-frame GIF; checked against the saved archive fixtures
-PieChart,PIECHART,PieChart,yes,no,yes,no,no,yes,partial,partial,Clockwise sectors with a world center and radius
+PieChart,PIECHART,PieChart,yes,no,yes,no,no,yes,partial,partial,Clockwise sectors with a world center and radius. Import and export drop the colour and filling of single slices.
 InputBox,TEXTFIELD,InputBox,no,no,no,no,no,no,yes,yes,linked object retained on import
 Button,BUTTON,Button,no,no,no,no,no,no,yes,yes,caption and inert scripts retained on import
 PenStroke,PENSTROKE,,no,no,no,no,no,no,no,no,

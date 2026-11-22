@@ -54,7 +54,6 @@ fn traceable(kind: Kind) -> bool {
             | Kind::List
             | Kind::Locus
             | Kind::Curve
-            | Kind::Text
     )
 }
 
@@ -81,7 +80,27 @@ impl Writer<'_> {
         let saved = self.presentation.object_styles.get(label).copied();
         let shown = !self.presentation.hidden.contains(label);
         let label_shown = saved.and_then(|style| style.show_label);
-        if saved.is_none() || label_shown.is_some() || !shown {
+        // A free number is a slider when it has a bound, or when its file
+        // placed one for it.
+        let numeric = c.slider_bounds(id).map(|n| n.map(|n| n.to_string()));
+        let bounds = match c.def(id) {
+            Def::Number(_) => self
+                .presentation
+                .slider_bounds
+                .get(label)
+                .copied()
+                .unwrap_or_else(|| numeric.each_ref().map(|n| n.as_deref())),
+            _ => [None; 2],
+        };
+        let bounded = bounds.iter().any(Option::is_some);
+        let reader_decides = match saved {
+            // The file had no tag and the object is still visible.
+            Some(saved) => saved.untagged && shown,
+            // The canvas draws nothing for a free number without bounds. Shown,
+            // the reference would make it a slider and clamp its value.
+            None => shown && !bounded && matches!(c.def(id), Def::Number(_)),
+        };
+        if !reader_decides {
             self.xml.tag(
                 "show",
                 &[
@@ -250,20 +269,7 @@ impl Writer<'_> {
         }
 
         self.value(id)?;
-        // A free number is a slider when it has a bound, or when its file
-        // placed one for it.
-        let numeric = c.slider_bounds(id).map(|n| n.map(|n| n.to_string()));
-        let bounds = match c.def(id) {
-            Def::Number(_) => self
-                .presentation
-                .slider_bounds
-                .get(label)
-                .copied()
-                .unwrap_or_else(|| numeric.each_ref().map(|n| n.as_deref())),
-            _ => [None; 2],
-        };
-        let bounded = bounds.iter().any(Option::is_some);
-        let layout = saved.and_then(|style| style.slider.as_ref());
+        let layout = saved.and_then(|style| style.slider.as_deref());
         if bounded || layout.is_some() {
             self.slider(bounds, layout)?;
         }

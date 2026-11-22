@@ -419,3 +419,120 @@ fn defined_against_undefined_is_a_mismatch_both_ways() {
            <element type=\"point\" label=\"M\"/>"));
     assert!(r.mismatched.is_empty());
 }
+
+#[test]
+fn presentation_tags_are_kept_as_the_saved_style() {
+    use geo_import::export::{
+        DynamicColor, Fill, LineStyle, ObjectStyle, Rounding, SliderAnimation, SliderLayout,
+    };
+    let r = ok(
+        "<element type=\"numeric\" label=\"r\"><value val=\"0.5\"/></element>\
+         <element type=\"point\" label=\"A\"><coords x=\"1\" y=\"2\" z=\"1\"/>\
+         <show object=\"true\" label=\"false\"/>\
+         <objColor r=\"10\" g=\"20\" b=\"30\" alpha=\"0.25\" dynamicr=\"r\" dynamicg=\"\" \
+         dynamicb=\"1 - r\" dynamica=\"r\" colorSpace=\"2\" fillType=\"8\" hatchAngle=\"60\" \
+         hatchDistance=\"12\" fillSymbol=\"*\" inverseFill=\"true\"/>\
+         <bgColor r=\"1\" g=\"2\" b=\"3\" alpha=\"128\"/>\
+         <layer val=\"4\"/><labelMode val=\"3\"/><tooltipMode val=\"2\"/>\
+         <trace val=\"true\"/><decoration type=\"2\"/>\
+         <lineStyle thickness=\"7\" type=\"15\" typeHidden=\"2\" opacity=\"99\"/>\
+         <fixed val=\"true\"/><selectionAllowed val=\"false\"/><auxiliary val=\"true\"/>\
+         <caption val=\"Start\"/><pointSize val=\"7\"/><pointStyle val=\"3\"/>\
+         <animation step=\"r\" speed=\"2\" type=\"3\" playing=\"false\"/></element>\
+         <element type=\"numeric\" label=\"a\"><value val=\"1\"/>\
+         <slider min=\"0\" max=\"5\" width=\"150\" x=\"20\" y=\"40\" fixed=\"true\" \
+         horizontal=\"false\" showAlgebra=\"true\" absoluteScreenLocation=\"true\"/></element>\
+         <expression label=\"t\" exp=\"&quot;note&quot;\"/>\
+         <element type=\"text\" label=\"t\"><decimals val=\"4\"/></element>\
+         <element type=\"point\" label=\"B\"><coords x=\"0\" y=\"0\" z=\"1\"/></element>",
+    );
+    assert_eq!(
+        r.object_styles["A"],
+        ObjectStyle {
+            caption: "Start".into(),
+            show_label: Some(false),
+            layer: Some(4),
+            label_mode: Some(3),
+            tooltip_mode: Some(2),
+            color: Some([10, 20, 30]),
+            alpha: Some(0.25),
+            fill: Some(Box::new(Fill {
+                pattern: 8,
+                hatch: Some([60, 12]),
+                symbol: Some("*".into()),
+                inverse: Some(true),
+            })),
+            // An empty channel is 0, as the reference reader fills it in.
+            dynamic_color: Some(Box::new(DynamicColor {
+                red: "r".into(),
+                green: "0".into(),
+                blue: "1 - r".into(),
+                alpha: Some("r".into()),
+                space: 2,
+            })),
+            background: Some([1, 2, 3, 128]),
+            line: Some(LineStyle {
+                thickness: 7,
+                kind: 15,
+                hidden_kind: Some(2),
+                opacity: Some(99),
+            }),
+            point_size: Some(7),
+            point_style: Some(3),
+            fixed: Some(true),
+            auxiliary: Some(true),
+            selection_allowed: Some(false),
+            trace: Some(true),
+            decoration: Some(2),
+            animation: Some(Box::new(SliderAnimation {
+                step: Some("r".into()),
+                speed: Some("2".into()),
+                mode: 3,
+                playing: false,
+            })),
+            ..ObjectStyle::default()
+        }
+    );
+    assert_eq!(
+        r.object_styles["a"].slider,
+        Some(Box::new(SliderLayout {
+            position: Some([20.0, 40.0]),
+            width: Some(150.0),
+            absolute: true,
+            horizontal: false,
+            fixed: true,
+            show_algebra: true,
+        }))
+    );
+    assert_eq!(r.object_styles["t"].rounding, Some(Rounding::Decimals(4)));
+    // An object without any tag still has an entry: its tags stay left out.
+    assert_eq!(
+        r.object_styles["B"],
+        ObjectStyle {
+            untagged: true,
+            ..ObjectStyle::default()
+        }
+    );
+    assert!(!r.object_styles["A"].untagged);
+    assert!(r.hidden.is_empty());
+}
+
+#[test]
+fn expressions_the_kernel_does_not_evaluate_are_not_kept() {
+    let r = ok(
+        "<element type=\"point\" label=\"B\"><coords x=\"0\" y=\"0\" z=\"1\"/></element>\
+         <element type=\"point\" label=\"A\"><coords x=\"1\" y=\"2\" z=\"1\"/>\
+         <objColor r=\"10\" g=\"20\" b=\"30\" alpha=\"0\" \
+         dynamicr=\"Execute[{&quot;Delete[B]&quot;}]\" dynamicg=\"1\" dynamicb=\"missing\"/>\
+         <animation step=\"RunClickScript[A]\" speed=\"x(B) + 1\" type=\"1\"/></element>",
+    );
+    let style = &r.object_styles["A"];
+    assert_eq!(style.color, Some([10, 20, 30]));
+    assert_eq!(style.dynamic_color, None);
+    let animation = style.animation.as_deref().unwrap();
+    assert_eq!(animation.step, None);
+    assert_eq!(animation.speed.as_deref(), Some("x(B) + 1"));
+    let notes = r.notes.join("\n");
+    assert!(notes.contains("dynamic colour of `A`"), "{notes}");
+    assert!(notes.contains("animation step of `A`"), "{notes}");
+}

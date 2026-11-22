@@ -175,6 +175,21 @@
           "action": "initial"
         }
       ]
+    },
+    {
+      "id": "export-numbers-001",
+      "group": "export",
+      "script": [
+        "n = 400",
+        "m = -37.5",
+        "d = n / 8",
+        "P = (m / 10, d / 10)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
     }
   ]
 }

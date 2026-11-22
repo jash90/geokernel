@@ -177,6 +177,7 @@ pub(crate) fn convert_with_assets(
             style.line_thickness = el.thickness.map_or(style.line_thickness, |t| t.min(13));
         }
         saved_style.show_label = el.label_shown;
+        saved_style.untagged = el.shown.is_none();
         if c.kernel.control(id).is_none() {
             saved_style.caption.clone_from(&el.caption);
         }
@@ -981,7 +982,8 @@ impl Converter {
                     computed,
                 });
             }
-            if !el.shown {
+            // Without a `<show>` tag the object stays visible in the editor.
+            if el.shown == Some(false) {
                 self.out.hidden.push(el.label.clone());
             }
         }

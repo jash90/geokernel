@@ -61,8 +61,8 @@ pub struct Element {
     /// The `type` attribute (`point`, `numeric`, `conic`, ...).
     pub kind: String,
     pub label: String,
-    /// `<show object=>`; `true` when absent.
-    pub shown: bool,
+    /// `<show object=>`; `None` without the tag.
+    pub shown: Option<bool>,
     pub layer: u8,
     pub label_shown: Option<bool>,
     pub label_offset: Option<[i32; 2]>,
@@ -548,7 +548,6 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                     let el = Element {
                         kind: attr(e, "type")?.unwrap_or_default(),
                         label: attr(e, "label")?.unwrap_or_default(),
-                        shown: true,
                         ..Element::default()
                     };
                     if empty {
@@ -559,9 +558,8 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                 }
                 "show" if element.is_some() => {
                     let el = element.as_mut().expect("checked above");
-                    if let Some(object) = attr(e, "object")? {
-                        el.shown = object != "false";
-                    }
+                    // Only `true` shows the object, as in the reference reader.
+                    el.shown = Some(attr(e, "object")?.is_some_and(|object| object == "true"));
                     el.label_shown = attr(e, "label")?.map(|label| label == "true");
                 }
                 "layer" if element.is_some() => {
@@ -729,14 +727,14 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                     let flag = |key| attr(e, key).map(|v| v.is_some_and(|v| v == "true"));
                     let el = element.as_mut().expect("checked above");
                     el.slider = Some([attr(e, "min")?, attr(e, "max")?]);
-                    el.object_style.slider = Some(SliderLayout {
+                    el.object_style.slider = Some(Box::new(SliderLayout {
                         position: number("x")?.zip(number("y")?).map(|(x, y)| [x, y]),
                         width: number("width")?,
                         absolute: flag("absoluteScreenLocation")?,
                         horizontal: flag("horizontal")?,
                         fixed: flag("fixed")?,
                         show_algebra: flag("showAlgebra")?,
-                    });
+                    }));
                 }
                 "file"
                 | "inBackground"
