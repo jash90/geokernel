@@ -370,6 +370,9 @@ pub(crate) fn prepare(c: &Construction, def: Def) -> Def {
     else {
         return def;
     };
+    if c1 == c2 && incidence_search_over_budget(c, c1) {
+        return def;
+    }
     for s in c.children(c1) {
         if let Def::IntersectCircles {
             c1: a,
@@ -445,6 +448,10 @@ pub(crate) fn hint(c: &Construction, def: &Def) -> Hint {
         Def::IntersectCircles { c1, c2, .. } if c1 == c2 => first_point_on(c, c1),
         _ => None,
     };
+    point_hint(existing)
+}
+
+pub(crate) fn point_hint(existing: Option<Id>) -> Hint {
     match existing {
         None => Hint::None,
         Some(s) => u32::try_from(s.index()).map_or(Hint::Lookup, Hint::Point),
@@ -480,6 +487,10 @@ fn defined_as_tangent(line_def: Def, circle: Id) -> bool {
 /// if the line and the circles keep their values, for example when a vertex
 /// of a three-point circle slides along the circle.
 pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
+    hidden_parents_with_hint(c, def, None)
+}
+
+pub(crate) fn hidden_parents_with_hint(c: &Construction, def: &Def, hint: Option<Hint>) -> Vec<Id> {
     if let Def::Point(PointDef::Closest { path, .. }) = *def {
         if matches!(c.kind(path), Kind::Polygon | Kind::PolyLine) {
             return super::polygon::inputs(c, path);
@@ -529,7 +540,11 @@ pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
                 }
             }
         }
-        Def::IntersectCircles { c1, c2, .. } if c1 == c2 => push(first_point_on(c, c1)),
+        Def::IntersectCircles { c1, c2, .. } if c1 == c2 => {
+            push(hinted_point(hint.unwrap_or(Hint::Lookup), || {
+                first_point_on(c, c1)
+            }));
+        }
         Def::IntersectCircles { c1, c2, .. } => {
             for s in points_on_both(c, c1, c2) {
                 push(s);
@@ -768,6 +783,9 @@ pub(crate) fn circles(
     special: bool,
     hint: Hint,
 ) -> Option<Value> {
+    if c1 == c2 && incidence_search_over_budget(c, c1) {
+        return None;
+    }
     let (x1, y1, r1) = c.circle(c1)?;
     let (x2, y2, r2) = c.circle(c2)?;
     let a = Conic::new(x1, y1, r1);
@@ -1380,11 +1398,21 @@ fn points_on_both(c: &Construction, a: Id, b: Id) -> [Option<Id>; 6] {
 /// incidence list. Those are the points the circle was drawn through, then
 /// the intersection points of the circle in dependency order
 /// (`AlgoIntersectSingle` adds its point to the conic).
-fn first_point_on(c: &Construction, circle: Id) -> Option<Id> {
+fn incidence_search_over_budget(c: &Construction, circle: Id) -> bool {
+    const MAX_CHILDREN: usize = 250_000;
+    c.child_count(circle) > MAX_CHILDREN && circle_points(c, circle)[0].is_none()
+}
+
+pub(crate) fn first_point_on(c: &Construction, circle: Id) -> Option<Id> {
     circle_points(c, circle)[0].or_else(|| {
+        if incidence_search_over_budget(c, circle) {
+            return None;
+        }
         c.children(circle)
-            .take(250_000)
-            .filter(|&s| intersection_on_circle(c, s, circle))
+            .filter(|&s| {
+                intersection_on_circle(c, s, circle)
+                    && !matches!(c.def(s), Def::IntersectCircles { c1, c2, .. } if c1 == c2)
+            })
             .min_by_key(|&s| c.evaluation_rank(s))
     })
 }
@@ -1411,6 +1439,9 @@ fn shared_circles_point(
             .then_some(s)
     };
     if c1 == c2 {
+        if incidence_search_over_budget(c, c1) {
+            return None;
+        }
         return hinted_point(hint, || first_point_on(c, c1)).and_then(check);
     }
     let from = |x: Id, y: Id| points_on_both(c, x, y)[0].and_then(check);
@@ -1419,8 +1450,28 @@ fn shared_circles_point(
 
 #[cfg(test)]
 mod tests {
+    use super::first_point_on;
+    use crate::algo::measure::MeasureDef;
     use crate::kernel::{Construction, Value};
     use crate::script::load;
+    use crate::Def;
+
+    #[test]
+    fn a_partial_circle_incidence_search_returns_undefined() {
+        let mut c = load("O = (0, 0)\nc = Circle(O, 2)\nX = Intersect(xAxis, c, 1)").unwrap();
+        let circle = c.id("c").unwrap();
+        let point = c.id("X").unwrap();
+        for i in 0..249_999 {
+            c.add(&format!("n{i}"), Def::Measure(MeasureDef::Radius(circle)))
+                .unwrap();
+        }
+        assert_eq!(first_point_on(&c, circle), Some(point));
+        c.add("overflow", Def::Measure(MeasureDef::Radius(circle)))
+            .unwrap();
+        assert_eq!(first_point_on(&c, circle), None);
+        crate::script::exec(&mut c, "H = Intersect(c, c, 1)").unwrap();
+        assert_eq!(xy(&c, "H"), None);
+    }
 
     fn xy(c: &Construction, label: &str) -> Option<(f64, f64)> {
         match c.value(c.id(label).unwrap()) {

@@ -1790,7 +1790,7 @@ fn rigid_point_definitions(
             }),
         ));
     }
-    defs.sort_unstable_by_key(|&(id, _)| id);
+    defs.sort_unstable_by_key(|&(id, _)| c.evaluation_rank(id));
     defs.dedup_by_key(|item| item.0);
     Some(defs)
 }

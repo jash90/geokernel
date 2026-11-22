@@ -69,7 +69,7 @@ use crate::algo::{
 };
 use crate::expr::{self, ExprDef};
 use std::cmp::Reverse;
-use std::collections::{BTreeSet, BinaryHeap, HashMap};
+use std::collections::{BTreeMap, BTreeSet, BinaryHeap, HashMap};
 use std::fmt;
 
 /// Handle of an object inside one [`Construction`].
@@ -1021,9 +1021,13 @@ impl Children {
     }
 
     fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
+    fn len(&self) -> usize {
         match self {
-            Self::Small(ids) => ids.is_empty(),
-            Self::Large(ids) => ids.is_empty(),
+            Self::Small(ids) => ids.len(),
+            Self::Large(ids) => ids.len(),
         }
     }
 
@@ -1064,6 +1068,24 @@ impl Children {
 struct EvaluationOrder {
     ids: Vec<usize>,
     ranks: Vec<usize>,
+}
+
+impl EvaluationOrder {
+    fn discard_since(&mut self, len: usize) {
+        if self
+            .ids
+            .get(len..)
+            .is_some_and(|tail| tail.iter().any(|&id| id < len))
+        {
+            self.ids.retain(|&id| id < len);
+            for (rank, &id) in self.ids.iter().enumerate() {
+                self.ranks[id] = rank;
+            }
+        } else {
+            self.ids.truncate(len);
+        }
+        self.ranks.truncate(len);
+    }
 }
 
 /// The objects waiting to be recomputed during an update; empty between
@@ -1467,7 +1489,7 @@ impl Construction {
     /// from `id` follows these to tell whether `id` can have changed.
     pub fn reads(&self, id: Id) -> Vec<Id> {
         match self.defs.get(id.0) {
-            Some(def) => self.read_ids(def),
+            Some(def) => self.read_ids_with_hint(def, Some(self.hints[id.0])),
             None => Vec::new(),
         }
     }
@@ -1545,6 +1567,10 @@ impl Construction {
             Children::Small(ids) => Some(ids),
             Children::Large(_) => None,
         }
+    }
+
+    pub(crate) fn child_count(&self, id: Id) -> usize {
+        self.children.get(id.0).map_or(0, Children::len)
     }
 
     /// The IDs whose current rules read this object.
@@ -1649,8 +1675,7 @@ impl Construction {
         let mut first_removed = self.elements.len();
         while self.defs.len() > at.len {
             let id = self.defs.len() - 1;
-            let def = self.defs[id];
-            for parent in self.read_ids(&def) {
+            for parent in self.reads(Id(id)) {
                 if let Some(children) = self.children.get_mut(parent.0) {
                     children.remove(Id(id));
                 }
@@ -1667,8 +1692,7 @@ impl Construction {
                 self.object_scripts.remove(&label);
             }
         }
-        self.evaluation_order.ids.truncate(at.len);
-        self.evaluation_order.ranks.truncate(at.len);
+        self.evaluation_order.discard_since(at.len);
         // A removed object may have opened an element before a surviving
         // one if it was created after navigating back. Normally only the
         // tail changes, so a brief probe need not scan the whole protocol.
@@ -1798,10 +1822,11 @@ impl Construction {
         };
         let old = self.def(id);
         let dependents = self.replacement_dependents(id).map_err(refuse)?;
-        let old_reads: Vec<_> = dependents
+        let old_reads: BTreeMap<_, _> = dependents
             .into_iter()
+            .chain(std::iter::once(id))
             .map(|child| {
-                let mut parents = self.read_ids(&self.defs[child.0]);
+                let mut parents = self.reads(child);
                 parents.sort_unstable();
                 parents.dedup();
                 (child, parents)
@@ -1847,20 +1872,35 @@ impl Construction {
             if def.kind() != old.kind() && !self.children[id.0].is_empty() {
                 return Err(refuse("a dependent object requires the original kind"));
             }
-            let mut parents = self.read_ids(&def);
-            parents.retain(|&parent| axis::get(parent).is_none());
-            parents.sort_unstable();
-            parents.dedup();
-            let order = parents
+            // Read the prospective definitions before committing. Reordering
+            // must account for new indirect reads as well as the replacement's
+            // own inputs, so a rejected cycle leaves the live graph intact.
+            self.defs[id.0] = def;
+            let changed: BTreeMap<_, _> = old_reads
                 .iter()
-                .any(|&parent| self.evaluation_rank(parent) >= self.evaluation_rank(id))
-                .then(|| self.replacement_order(id, &parents, new.0))
+                .filter_map(|(&child, old_reads)| {
+                    let mut parents = self.reads(child);
+                    parents.sort_unstable();
+                    parents.dedup();
+                    (parents != *old_reads).then_some((child, parents))
+                })
+                .collect();
+            self.defs[id.0] = old;
+            let order = changed
+                .iter()
+                .any(|(&child, parents)| {
+                    parents.iter().any(|&parent| {
+                        axis::get(parent).is_none()
+                            && self.evaluation_rank(parent) >= self.evaluation_rank(child)
+                    })
+                })
+                .then(|| self.replacement_order(&changed, new.0))
                 .transpose()
                 .map_err(refuse)?;
-            Ok((new, def, parents, order))
+            Ok((new, def, changed, order))
         })();
 
-        let (new, mut def, parents, order) = match replacement {
+        let (new, mut def, changed, order) = match replacement {
             Ok(staged) => staged,
             Err(error) => {
                 self.discard_since(checkpoint);
@@ -1892,16 +1932,6 @@ impl Construction {
         }
         self.by_label.insert(label, id);
 
-        for parent in self.read_ids(&old) {
-            if let Some(children) = self.children.get_mut(parent.0) {
-                children.remove(id);
-            }
-        }
-        for parent in parents {
-            if let Some(children) = self.children.get_mut(parent.0) {
-                children.insert(id);
-            }
-        }
         let slot = self.paths.partition_point(|(owner, _)| *owner < id.0);
         if self
             .paths
@@ -1916,14 +1946,9 @@ impl Construction {
         self.defs[id.0] = def;
         self.values[id.0] = value;
         self.hints[id.0] = hint;
-        if let Some(order) = order {
-            self.evaluation_order = order;
-        }
-        for (child, old) in old_reads {
-            let mut new = self.read_ids(&self.defs[child.0]);
-            new.sort_unstable();
-            new.dedup();
-            for &parent in &old {
+        for (child, new) in changed {
+            let old = &old_reads[&child];
+            for &parent in old {
                 if new.binary_search(&parent).is_err() {
                     if let Some(children) = self.children.get_mut(parent.0) {
                         children.remove(child);
@@ -1931,9 +1956,7 @@ impl Construction {
                 }
             }
             for parent in new {
-                if old.binary_search(&parent).is_err()
-                    && self.evaluation_rank(parent) < self.evaluation_rank(child)
-                {
+                if old.binary_search(&parent).is_err() {
                     if let Some(children) = self.children.get_mut(parent.0) {
                         children.insert(child);
                     }
@@ -1945,10 +1968,54 @@ impl Construction {
         if let Some(source) = source {
             self.remember_construction_source(id, &source);
         }
-        self.propagate_from(id, true);
+        let mut dirty = std::mem::take(&mut self.dirty);
+        dirty.fit(self.len());
+        if let Some(order) = order {
+            self.evaluation_order = order;
+            self.refresh_circle_hints(&mut dirty);
+        }
+        for child in self.children(id) {
+            dirty.insert(self.evaluation_rank(child));
+        }
+        self.propagate_dirty(dirty, 0, true);
         // A checkpoint only stores lengths, so it cannot restore a changed definition.
         self.generation += 1;
         Ok(Some(id))
+    }
+
+    fn refresh_circle_hints(&mut self, dirty: &mut DirtySet) {
+        let mut first_points = HashMap::new();
+        for i in 0..self.len() {
+            let Def::IntersectCircles { c1, c2, .. } = self.defs[i] else {
+                continue;
+            };
+            if c1 != c2 {
+                continue;
+            }
+            let rank = self.evaluation_rank(Id(i));
+            // One scan per circle, over edges already bounded by the reorder.
+            let point = *first_points
+                .entry(c1)
+                .or_insert_with(|| algo::intersect::first_point_on(self, c1));
+            let hint = algo::intersect::point_hint(
+                point.filter(|&point| self.evaluation_rank(point) < rank),
+            );
+            if hint == self.hints[i] {
+                continue;
+            }
+            let old = self.reads(Id(i));
+            self.hints[i] = hint;
+            let new = self.reads(Id(i));
+            for parent in old.into_iter().filter(|parent| !new.contains(parent)) {
+                self.children[parent.0].remove(Id(i));
+            }
+            for parent in new {
+                if let Some(children) = self.children.get_mut(parent.0) {
+                    children.insert(Id(i));
+                }
+            }
+            dirty.insert(rank);
+        }
     }
 
     fn replacement_dependents(&self, start: Id) -> Result<BTreeSet<Id>, &'static str> {
@@ -1972,8 +2039,7 @@ impl Construction {
     /// Prepares a replacement's order before any existing object is changed.
     fn replacement_order(
         &self,
-        target: Id,
-        parents: &[Id],
+        changed: &BTreeMap<Id, Vec<Id>>,
         len: usize,
     ) -> Result<EvaluationOrder, &'static str> {
         const MAX_OBJECTS: usize = 250_000;
@@ -2000,12 +2066,20 @@ impl Construction {
                 locus_inputs[driver.0].push(Id(i));
             }
         }
+        let mut added = vec![Vec::new(); len];
+        for (&child, parents) in changed {
+            for parent in parents {
+                if let Some(children) = added.get_mut(parent.0) {
+                    children.push(child);
+                }
+            }
+        }
         let successors = |i: usize| {
             self.children[i]
                 .iter()
+                .filter(|child| child.0 < len && !changed.contains_key(child))
                 .chain(locus_inputs[i].iter().copied())
-                .filter(|&child| child.0 < len && child != target)
-                .chain(parents.binary_search(&Id(i)).is_ok().then_some(target))
+                .chain(added[i].iter().copied())
         };
         let mut remaining = MAX_EDGES;
         let mut indegree = vec![0; len];
@@ -2064,10 +2138,14 @@ impl Construction {
     /// reads (for example the line an intersection was prepared with), and
     /// its list. An object may appear more than once.
     pub(crate) fn read_ids(&self, def: &Def) -> Vec<Id> {
+        self.read_ids_with_hint(def, None)
+    }
+
+    fn read_ids_with_hint(&self, def: &Def, hint: Option<algo::intersect::Hint>) -> Vec<Id> {
         if let Def::Locus(d) = *def {
             return locus::reads(self, d);
         }
-        let mut ids = algo::intersect::hidden_parents(self, def);
+        let mut ids = algo::intersect::hidden_parents_with_hint(self, def, hint);
         ids.extend(algo::path::hidden_parents(self, def));
         ids.extend(algo::vector::hidden_parents(self, def));
         ids.extend(algo::predicate::hidden_parents(self, def));
@@ -2187,7 +2265,7 @@ impl Construction {
             }
         }
         // An object that is read twice is still one child.
-        let mut parents = self.read_ids(&def);
+        let mut parents = self.read_ids_with_hint(&def, self.hints.last().copied());
         parents.sort_unstable();
         parents.dedup();
         for parent in parents {
@@ -2580,10 +2658,6 @@ impl Construction {
     /// taking cost a few bit operations, which matters when a point has tens
     /// of thousands of children.
     fn propagate(&mut self, start: Id) -> usize {
-        self.propagate_from(start, false)
-    }
-
-    fn propagate_from(&mut self, start: Id, refresh_definitions: bool) -> usize {
         // Taken out so that `compute` can borrow `self`. If `compute` panics
         // the set is lost, and `fit` gives a clean one on the next update.
         let mut dirty = std::mem::take(&mut self.dirty);
@@ -2591,7 +2665,7 @@ impl Construction {
         for child in self.children[start.0].iter() {
             dirty.insert(self.evaluation_rank(child));
         }
-        self.propagate_dirty(dirty, self.evaluation_rank(start), refresh_definitions)
+        self.propagate_dirty(dirty, self.evaluation_rank(start), false)
     }
 
     fn propagate_dirty(
@@ -3550,6 +3624,105 @@ impl Construction {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn edits_after_redefinitions_match_a_rebuild_in_rank_order() {
+        use crate::script::{exec, load};
+        use std::collections::BTreeMap;
+
+        for offset in [0, 1, 2] {
+            let initial = [
+                "O = (0, 0)",
+                "c = Circle(O, 5)",
+                "A = (-6, 0)",
+                "B = (6, 0)",
+                "g = Line(A, B)",
+                "X = Intersect(g, c, 1)",
+                "H = Intersect(c, c, 1)",
+                "v: x = 0",
+                "Y = Intersect(v, c, 1)",
+                "Q = (-6, 0)",
+                "R = (-6, 0)",
+                "a = 2",
+                "b = a + 1",
+                "n = 4",
+            ];
+            let mut c = load(&initial.join("\n")).unwrap();
+            let mut definitions = BTreeMap::new();
+            let remember = |definitions: &mut BTreeMap<String, String>, line: &str| {
+                let name = crate::script::assignment_label(line).unwrap();
+                definitions.insert(name.to_owned(), line.to_owned());
+            };
+            for line in initial {
+                remember(&mut definitions, line);
+            }
+            let check = |c: &Construction, definitions: &BTreeMap<String, String>| {
+                let mut ranked: Vec<_> = c.ids().collect();
+                ranked.sort_unstable_by_key(|&id| c.evaluation_rank(id));
+                let mut fresh = Construction::new();
+                for (rank, id) in ranked.into_iter().enumerate() {
+                    let label = c.label(id);
+                    assert_eq!(c.evaluation_rank(id), rank);
+                    let rebuilt = exec(&mut fresh, &definitions[label]).unwrap().unwrap();
+                    assert!(
+                        c.value(id).identical(&fresh.value(rebuilt)),
+                        "{label}: {:?} vs {:?}",
+                        c.value(id),
+                        fresh.value(rebuilt)
+                    );
+                    for child in c.direct_dependents(id) {
+                        assert!(
+                            c.evaluation_rank(child) > rank,
+                            "{} -> {}",
+                            label,
+                            c.label(child)
+                        );
+                    }
+                }
+            };
+            check(&c, &definitions);
+            for line in [
+                "A = Q + (0, 0)",
+                "Q = R + (0, 0)",
+                "a = 2 n",
+                "A = R + (1, 0)",
+            ] {
+                exec(&mut c, line).unwrap();
+                remember(&mut definitions, line);
+                check(&c, &definitions);
+            }
+            let checkpoint = c.checkpoint();
+            exec(&mut c, "unused = 9").unwrap();
+            c.rollback(checkpoint).unwrap();
+            check(&c, &definitions);
+            let x = f64::from(offset);
+            for (label, y) in [("R", 1.0), ("O", 2.0), ("R", 8.0), ("O", 0.0)] {
+                c.move_point(c.id(label).unwrap(), x, y).unwrap();
+                remember(&mut definitions, &format!("{label} = ({x}, {y})"));
+                check(&c, &definitions);
+            }
+            c.set_number(c.id("n").unwrap(), x).unwrap();
+            remember(&mut definitions, &format!("n = {x}"));
+            check(&c, &definitions);
+        }
+    }
+
+    #[test]
+    fn rigid_frame_installs_constraints_in_evaluation_order() {
+        let mut c = crate::script::load("A = (0, 0)\nC = (1, 2)\nB = (4, 0)\nn = 2").unwrap();
+        for line in ["C = (1, n)", "C = (1, 2)"] {
+            crate::script::exec(&mut c, line).unwrap();
+        }
+        let pivot = c.id("B").unwrap();
+        let vertex = c.id("C").unwrap();
+        assert!(vertex < pivot && c.evaluation_rank(pivot) < c.evaluation_rank(vertex));
+        let checkpoint = c.checkpoint();
+        crate::script::exec(&mut c, "p = RigidPolygon(A, B, C)").unwrap();
+        assert_eq!(c.rigid_replacements[0].1, pivot);
+        assert_eq!(c.rigid_replacements[1].1, vertex);
+        c.rollback(checkpoint).unwrap();
+        assert!(c.def(vertex).is_free());
+    }
+
     #[test]
     fn replacement_preserves_scripts_and_saved_presentation() {
         use crate::kernel::control::{encode_text, ControlScript};
