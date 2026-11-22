@@ -109,6 +109,9 @@ impl Walker<'_> {
             Node::Bool(_) => 0.0,
             Node::Var => 1.0,
             Node::FnName(_) | Node::Call(..) => f64::NAN,
+            // No rule for the financial commands, as GeoGebra's derivative
+            // tree has none for the operations behind them.
+            Node::Financial(..) => f64::NAN,
             Node::Un(Un::Floor | Un::Ceil | Un::Round, _) => 0.0,
             // The rule is the tree `0 / x`, regardless of the argument.
             Node::Un(Un::Sgn, _) => 0.0 / self.x,
@@ -284,7 +287,7 @@ impl Walker<'_> {
                 }
             }
             Bin::Pow => self.power(a, b, depth)?,
-            Bin::Round2 => 0.0,
+            Bin::Round2 | Bin::FoldCount => 0.0,
             Bin::Atan2 => {
                 let (u, v) = (self.value(a), self.value(b));
                 let (du, dv) = (self.gradient(a, depth)?, self.gradient(b, depth)?);

@@ -56,6 +56,7 @@ use crate::algo::general_conic::GeneralConicDef;
 use crate::algo::intersect;
 use crate::algo::lines::LineDef;
 use crate::algo::measure::MeasureDef;
+use crate::algo::optimize::OptimizeDef;
 use crate::algo::point::PointDef;
 use crate::algo::polygon::PolygonDef;
 use crate::algo::predicate::PredicateDef;
@@ -141,6 +142,12 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
     if let Some(style) = equation::parse_style(line) {
         return style?.apply(c).map(|_| None);
     }
+    // `SetConstructionStep(n)` is a scripting command: it changes the
+    // construction's own state and returns its argument, so a script line
+    // of it creates no object (`CmdSetConstructionStep`).
+    if let Some(arg) = construction_step_argument(line) {
+        return set_construction_step(c, arg).map(|()| None);
+    }
     if line.starts_with('{') {
         return exec_labelled(c, line);
     }
@@ -193,6 +200,12 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
             return Err(format!("`{f}` is not a valid object name"));
         }
         check_label(f)?;
+        // `g(x) = SlowPlot(f)` is a function of its own making
+        if !of_y {
+            if let Some(("SlowPlot", args)) = split_call(rhs.trim()) {
+                return slow_plot(c, f, &args);
+            }
+        }
         return crate::expr::define_function(c, f, rhs.trim(), of_y).map(Some);
     }
     if let Some((label, arguments)) = split_call(name) {
@@ -218,9 +231,249 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
     define_after_label(c, name, rhs.trim())
 }
 
+/// `SlowPlot(f[, repeat])`: the drawn-up-to-here view of the function `f`.
+/// The hidden number between 0 and 1 that GeoGebra animates starts at 0,
+/// so the static function is the part left of the view (`CmdSlowPlot`);
+/// the repeat flag only changes how the animation runs again.
+fn slow_plot(c: &mut Construction, name: &str, args: &[&str]) -> Result<Option<Id>, String> {
+    if args.is_empty() || args.len() > 2 {
+        return Err(format!(
+            "`SlowPlot` does not take {} argument(s)",
+            args.len()
+        ));
+    }
+    let start = c.checkpoint();
+    let result = (|| {
+        // the function itself may be written inline, as GeoGebra's argument
+        // resolver wraps it
+        let function = match c.id(args[0]).filter(|&id| c.kind(id) == Kind::Function) {
+            Some(id) => id,
+            None => {
+                let label = format!("\u{0}spf{}", c.len());
+                crate::expr::define_function(c, &label, args[0], false)
+                    .map_err(|e| e.to_string())?
+            }
+        };
+        if let Some(repeat) = args.get(1) {
+            // the repeat flag is read as a double: a number or a boolean
+            let numeric = crate::expr::plain_number(repeat).is_some()
+                || matches!(*repeat, "true" | "false")
+                || c.id(repeat).is_some_and(
+                    |id| matches!(c.kind(id), k if k.is_number() || k == Kind::Boolean),
+                );
+            if !numeric {
+                return Err(format!("`{repeat}` is not a number"));
+            }
+        }
+        let var = format!("\u{0}slow{}", c.len());
+        slider(c, &var, &["0", "1"]).map_err(|e| e.to_string())?;
+        // the view corners the drawn stretch runs between
+        let mut corner = |n: &str| -> Result<Id, String> {
+            let label = format!("\u{0}sp{}{}", n, c.len());
+            let def = crate::algo::point::parse_view_corner(c, &[n])
+                .unwrap_or_else(|| unreachable!("`Corner` of a number is a view corner"))
+                .map_err(|e| e.to_string())?;
+            c.add(&label, Def::Point(def)).map_err(|e| e.to_string())
+        };
+        let (first, second) = (corner("1")?, corner("2")?);
+        let body = format!(
+            "If(x < x({}) + {var} * (x({}) - x({})), {}(x))",
+            c.label(first),
+            c.label(second),
+            c.label(first),
+            c.label(function)
+        );
+        crate::expr::define_function(c, name, &body, false).map(Some)
+    })();
+    if result.is_err() {
+        c.discard_since(start);
+    }
+    result
+}
+
+fn construction_step_argument(input: &str) -> Option<&str> {
+    input
+        .strip_prefix("SetConstructionStep(")?
+        .strip_suffix(')')
+        .map(str::trim)
+}
+
+/// Whether an accepted script line changes the construction protocol step
+/// instead of defining an object. The app journals these lines for replay.
+pub fn is_construction_step_command(line: &str) -> bool {
+    let line = split_comment(line).0.trim();
+    construction_step_argument(line).is_some()
+        || line
+            .split_once(['=', ':'])
+            .is_some_and(|(_, rhs)| construction_step_argument(rhs.trim()).is_some())
+}
+
+fn set_construction_step(c: &mut Construction, arg: &str) -> Result<(), String> {
+    let value =
+        crate::expr::argument_number(c, arg).ok_or_else(|| format!("`{arg}` is not a number"))?;
+    c.set_construction_step(value);
+    Ok(())
+}
+
+/// The source argument of `ToComplex`/`ToPolar`/`ToPoint`: an existing
+/// object, or an inline point or arithmetic expression as a hidden object.
+fn convert_source(c: &mut Construction, arg: &str) -> Result<Id, String> {
+    if let Some(id) = c.id(arg) {
+        return Ok(id);
+    }
+    let label = format!("\u{0}conv{}", c.len());
+    for kind in [Kind::Point, Kind::Number] {
+        if crate::expr::argument_object(c, arg, &label, kind) {
+            return Ok(c.id(&label).unwrap());
+        }
+    }
+    Err(format!("cannot convert `{arg}`"))
+}
+
 /// The definition of a labelled line after its name has been read and
 /// checked: the forms of the module documentation other than arithmetic.
 fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Option<Id>, String> {
+    // `name = SetConstructionStep(n)` runs the script too: a scripting
+    // command's returned argument is not labelable, so even the labelled
+    // form creates no object (`CmdSetConstructionStep` via the algebra
+    // processor).
+    if let Some(arg) = construction_step_argument(rhs) {
+        return set_construction_step(c, arg).map(|()| None);
+    }
+    // `name = ToComplex(g)`, `ToPolar(g)` and `ToPoint(g)`: a copy of the
+    // value that only shows in another coordinate style; the argument may
+    // be an inline point literal or arithmetic, which becomes a hidden
+    // object (`AlgoToComplexPolar` accepts point, number, vector, list).
+    if let Some((func @ ("ToComplex" | "ToPolar" | "ToPoint"), args)) = split_call(rhs) {
+        if args.len() != 1 {
+            return Err(format!("`{func}` does not take {} argument(s)", args.len()));
+        }
+        let mode = match func {
+            "ToComplex" => crate::algo::point::CoordMode::Complex,
+            "ToPolar" => crate::algo::point::CoordMode::Polar,
+            _ => crate::algo::point::CoordMode::Cartesian,
+        };
+        let start = c.checkpoint();
+        let result = convert_source(c, args[0]);
+        let result = result.and_then(|source| match c.kind(source) {
+            Kind::Vector => c
+                .add(
+                    name,
+                    Def::Vector(crate::algo::vector::VectorDef::Convert { source, mode }),
+                )
+                .map(Some)
+                .map_err(|e| e.to_string()),
+            _ => c
+                .add(
+                    name,
+                    Def::Point(crate::algo::point::PointDef::Convert { source, mode }),
+                )
+                .map(Some)
+                .map_err(|e| e.to_string()),
+        });
+        if result.is_err() {
+            c.discard_since(start);
+        }
+        return result;
+    }
+    // `name = DynamicCoordinates(P, x, y)`: the point `(x, y)`, an input of
+    // the movable point `P` so that dragging it recomputes
+    // (`AlgoDynamicCoordinates`); the 4-argument form is 3D.
+    if let Some(("DynamicCoordinates", args)) = split_call(rhs) {
+        if args.len() == 4 {
+            return Err("`DynamicCoordinates` with four arguments needs 3D".into());
+        }
+        if args.len() != 3 {
+            return Err(format!(
+                "`DynamicCoordinates` does not take {} argument(s)",
+                args.len()
+            ));
+        }
+        let start = c.checkpoint();
+        let result = (|| {
+            let point = match c.id(args[0]).filter(|&id| c.kind(id) == Kind::Point) {
+                Some(id) => id,
+                None => {
+                    let label = format!("\0dyn{}", c.len());
+                    if !crate::expr::argument_object(c, args[0], &label, Kind::Point) {
+                        return Err(format!("`{}` is not a point", args[0]));
+                    }
+                    c.id(&label).unwrap()
+                }
+            };
+            let mut number = |arg: &str, slot: usize| -> Result<Id, String> {
+                match c.id(arg).filter(|&id| c.kind(id).is_number()) {
+                    Some(id) => Ok(id),
+                    None => {
+                        let label = format!("\0dyn{}_{slot}", c.len());
+                        if crate::expr::argument_object(c, arg, &label, Kind::Number) {
+                            Ok(c.id(&label).unwrap())
+                        } else {
+                            Err(format!("`{arg}` is not a number"))
+                        }
+                    }
+                }
+            };
+            let def = crate::algo::point::PointDef::Dynamic {
+                point,
+                x: number(args[1], 1)?,
+                y: number(args[2], 2)?,
+            };
+            c.add(name, Def::Point(def))
+                .map(Some)
+                .map_err(|e| e.to_string())
+        })();
+        if result.is_err() {
+            c.discard_since(start);
+        }
+        return result;
+    }
+    // `name = SlowPlot(f[, repeat])` without a function label is the same
+    // function under a plain name
+    if let Some(("SlowPlot", args)) = split_call(rhs) {
+        return slow_plot(c, name, &args);
+    }
+    // `name = Maximize(expr, number)` and `Minimize`: the dependent value
+    // may be an inline arithmetic expression, which becomes a hidden
+    // expression object, as GeoGebra's argument resolver makes a temporary
+    // number of it (`CmdMaximize`/`CmdMinimize`).
+    if let Some((func @ ("Maximize" | "Minimize"), args)) = split_call(rhs) {
+        if args.len() != 2 {
+            return Err(format!("`{func}` does not take {} argument(s)", args.len()));
+        }
+        let start = c.checkpoint();
+        let dependent = match c
+            .id(args[0])
+            .filter(|&id| matches!(c.kind(id), Kind::Number | Kind::Angle))
+        {
+            Some(id) => id,
+            None => {
+                let label = format!("\0dep{}", c.len());
+                match crate::expr::define(c, &label, args[0], false) {
+                    Ok(id) => id,
+                    Err(e) => {
+                        c.discard_since(start);
+                        return Err(e.to_string());
+                    }
+                }
+            }
+        };
+        let result = (|| {
+            let independent = object(c, args[1])?;
+            let def = OptimizeDef {
+                dependent,
+                independent,
+                maximize: func == "Maximize",
+            };
+            c.add(name, Def::Optimize(def))
+                .map(Some)
+                .map_err(|e| e.to_string())
+        })();
+        if result.is_err() {
+            c.discard_since(start);
+        }
+        return result;
+    }
     if let Some(result) = with_saved_arguments(c, rhs, |c, call| define_after_label(c, name, call))
     {
         return result;
@@ -385,7 +638,11 @@ fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option
         return result.map(Some);
     }
     if let Some(def) = intersect::growth::parse_slot(c, rhs) {
-        return c.add(name, def?).map(Some).map_err(|e| e.to_string());
+        let (def, owner) = def?;
+        return c
+            .add_output(name, def, owner)
+            .map(Some)
+            .map_err(|e| e.to_string());
     }
     if let Some((form @ ("$point" | "$vector"), args)) = split_call(rhs) {
         match forced_coordinates(form, &args) {
@@ -398,13 +655,9 @@ fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option
     }
     if rhs.starts_with("Vertex") || rhs.starts_with("Corner") {
         if let Some((func @ ("Vertex" | "Corner"), args)) = split_call(rhs) {
-            let def = if func == "Vertex" {
-                crate::algo::point::parse_view_corner(c, &args)
-                    .or_else(|| PointDef::parse_segment_vertex(c, func, &args))
-                    .or_else(|| PointDef::parse_image_vertex(c, &args))
-            } else {
-                PointDef::parse_image_vertex(c, &args)
-            };
+            let def = PointDef::parse_image_vertex(c, &args)
+                .or_else(|| PointDef::parse_segment_vertex(c, func, &args))
+                .or_else(|| crate::algo::point::parse_view_corner(c, &args));
             if let Some(def) = def {
                 return c
                     .add(name, Def::Point(def?))
@@ -585,13 +838,31 @@ fn define_expression_or_command(c: &mut Construction, name: &str, rhs: &str) -> 
         // A call of a command keeps the command's own error.
         Err(e) if is_single_call(c, rhs) => Err(e),
         Err(_) => {
-            let vector = is_vector_label(name)
-                || rhs.split_once('(').is_some_and(|(name, _)| {
-                    VectorDef::vector_result(name.trim()) && call_closes_at_end(rhs, name.len())
-                });
+            let vector = !sum_fold_point(c, rhs)
+                && (is_vector_label(name)
+                    || rhs.split_once('(').is_some_and(|(name, _)| {
+                        VectorDef::vector_result(name.trim()) && call_closes_at_end(rhs, name.len())
+                    }));
             crate::expr::define(c, name, rhs, vector)
         }
     }
+}
+
+/// `Sum` of three or more points or vectors folds to a point: `CmdSum`
+/// wraps the arguments in a list of points, whatever the label says (the
+/// first argument decides; a folded expression that is not a literal or an
+/// object keeps the rule of the label).
+fn sum_fold_point(c: &Construction, rhs: &str) -> bool {
+    let Some(("Sum", args)) = split_call(rhs) else {
+        return false;
+    };
+    args.len() >= 3
+        && ({
+            let first = args[0].trim();
+            matches!(parse_def(c, first), Ok(Def::FreePoint { .. }))
+                || c.id(first)
+                    .is_some_and(|id| matches!(c.kind(id), Kind::Point | Kind::Vector))
+        })
 }
 
 /// `CmdVector` keeps a labelled vector and labels an anonymous one.
@@ -981,7 +1252,7 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
         ("Length", [f, _, _]) if is_kind(f, Kind::Function) || is_kind(f, Kind::Curve) => {
             &[(1, Kind::Number), (2, Kind::Number)]
         }
-        ("Vertex", [s, _]) if is_kind(s, Kind::Segment) => &[(1, Kind::Number)],
+        ("Vertex" | "Corner", [s, _]) if is_kind(s, Kind::Segment) => &[(1, Kind::Number)],
         ("Vertex" | "Corner", [image, _]) if is_kind(image, Kind::Image) => &[(1, Kind::Number)],
         ("Point", [path, _])
             if c.id(path)
@@ -1168,7 +1439,7 @@ pub(crate) fn add_outputs(c: &mut Construction, name: &str, defs: Vec<Def>) -> R
         let at = c.checkpoint();
         let result = c
             .add(name, first)
-            .and_then(|id| c.add(&point, second).map(|_| id));
+            .and_then(|id| c.add_output(&point, second, id).map(|_| id));
         if result.is_err() {
             c.discard_since(at);
         }
@@ -1191,7 +1462,8 @@ pub(crate) fn add_outputs(c: &mut Construction, name: &str, defs: Vec<Def>) -> R
                     .filter(|p| !p.is_empty())
                     .unwrap_or("a");
                 let label = index_label(c, prefix);
-                c.add(&label, second).map_err(|e| e.to_string())?;
+                c.add_output(&label, second, id)
+                    .map_err(|e| e.to_string())?;
                 Ok(id)
             }
             (false, true) => c.add(name, second).map_err(|e| e.to_string()),
@@ -1224,7 +1496,13 @@ pub(crate) fn add_outputs(c: &mut Construction, name: &str, defs: Vec<Def>) -> R
         .filter(|&(_, d)| all_indexed || d)
     {
         let label = index_label(c, prefix);
-        match intersect::add_labelled_output(c, &label, def) {
+        // the indexed outputs of one intersection share the element of
+        // the first (`AlgoIntersectConics` is one construction element)
+        let added = match first {
+            Some(owner) => intersect::add_labelled_output_of(c, &label, def, owner),
+            None => intersect::add_labelled_output(c, &label, def),
+        };
+        match added {
             Ok(id) => {
                 first.get_or_insert(id);
             }
@@ -1477,6 +1755,9 @@ pub(crate) fn parse_def(c: &Construction, rhs: &str) -> Result<Def, String> {
     if let Some(def) = LocusDef::parse(c, func, &args) {
         return def.map(Def::Locus);
     }
+    if let Some(def) = OptimizeDef::parse(c, func, &args) {
+        return def.map(Def::Optimize);
+    }
 
     match (func, args.len()) {
         ("Line", 2) => {
@@ -1699,7 +1980,9 @@ pub fn multi_output_count(c: &Construction, rhs: &str) -> Option<Result<usize, S
 }
 
 fn conic_clip(c: &Construction, rhs: &str) -> Option<crate::algo::polygon_clip::ClipDef> {
-    let (func @ "IntersectPath", args) = split_call(rhs)? else {
+    let (func @ ("IntersectPath" | "IntersectionPaths" | "IntersectRegion"), args) =
+        split_call(rhs)?
+    else {
         return None;
     };
     crate::algo::polygon_clip::ClipDef::parse(c, func, &args)
@@ -1814,7 +2097,11 @@ pub(crate) fn add_named_outputs(
     let mut first = None;
     for (slot, def) in slots.iter().zip(defs) {
         if !slot.is_empty() {
-            match intersect::add_labelled_output(c, slot, def) {
+            let added = match first {
+                Some(owner) => intersect::add_labelled_output_of(c, slot, def, owner),
+                None => intersect::add_labelled_output(c, slot, def),
+            };
+            match added {
                 Ok(id) => {
                     first.get_or_insert(id);
                 }
@@ -1949,6 +2236,28 @@ mod tests {
         // Two points still make a plain line.
         assert!(matches!(c.def(c.id("m").unwrap()), Def::Line(..)));
         assert!(matches!(c.def(c.id("p").unwrap()), Def::Parallel { .. }));
+    }
+
+    #[test]
+    fn set_construction_step_script_and_labelled_forms() {
+        // One object exists, so every set is clamped to step 0; the labelled
+        // form also creates no object, exactly like GeoGebra's processor.
+        let mut c = load("cs = ConstructionStep()\n").unwrap();
+        assert_eq!(c.number(c.id("cs").unwrap()), Some(1.0));
+        assert!(exec(&mut c, "SetConstructionStep(2)").unwrap().is_none());
+        assert_eq!(c.number(c.id("cs").unwrap()), Some(1.0));
+        assert!(exec(&mut c, "a = SetConstructionStep(9)")
+            .unwrap()
+            .is_none());
+        assert!(c.id("a").is_none());
+        assert_eq!(c.number(c.id("cs").unwrap()), Some(1.0));
+
+        let err = load("SetConstructionStep(x)\n").err().unwrap();
+        assert!(
+            err.message.contains("`x` is not a number"),
+            "{}",
+            err.message
+        );
     }
 
     #[test]

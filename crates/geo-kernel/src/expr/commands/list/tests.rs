@@ -349,7 +349,6 @@ fn misplaced_lists_are_errors() {
         "b = Sequence(k, k, 1)",
         "b = Sequence(k, 2, 1, 3)",
         "b = Sequence(k, k, 1, 2, 3, 4)",
-        "b = Sum(l, l)",
         "b = Length(1, 2)",
         "b = l(1, 2)",
         "b = If(a < 3, l, 1)",

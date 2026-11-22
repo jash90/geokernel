@@ -386,7 +386,7 @@ impl Group for ConicPartDef {
         let conic = c.id(arg).filter(|&k| kinds.contains(&c.kind(k)))?;
         let (n, make): (u8, fn(Id, u8) -> Self) = match func {
             "Focus" => (2, |conic, which| ConicPartDef::Focus { conic, which }),
-            "Vertex" => (4, |conic, which| ConicPartDef::Vertex { conic, which }),
+            "Vertex" | "Corner" => (4, |conic, which| ConicPartDef::Vertex { conic, which }),
             "Axes" => (2, |conic, which| ConicPartDef::Axis { conic, which }),
             "Directrix" => (2, |conic, which| ConicPartDef::Directrix { conic, which }),
             "Asymptote" => (2, |conic, which| ConicPartDef::Asymptote { conic, which }),

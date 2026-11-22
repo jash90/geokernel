@@ -1,0 +1,30 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "misc-name-001",
+      "group": "misc",
+      "script": [
+        "txt = \"GeoGebra\"",
+        "a = 5",
+        "n = Name(txt)",
+        "m = Name(a)",
+        "b = Object(\"a\")"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "txt": { "type": "text", "defined": true, "text": "GeoGebra" },
+          "a": { "type": "number", "defined": true, "value": 5.0 },
+          "n": { "type": "text", "defined": true, "text": "txt" },
+          "m": { "type": "text", "defined": true, "text": "a" },
+          "b": { "type": "number", "defined": true, "value": 5.0 }
+        }
+      ]
+    }
+  ]
+}

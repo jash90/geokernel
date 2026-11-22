@@ -2339,6 +2339,122 @@ command = "CurveCartesian"
 form = "number,number,number,number,number"
 cases = ["importgaps-curve-001"]
 
+# financial
+
+[[form]]
+command = "FutureValue"
+form = "number,number,number"
+cases = ["financial-future-001", "financial-future-002", "financial-future-005"]
+[[form]]
+command = "FutureValue"
+form = "number,number,number,number"
+cases = ["financial-future-001", "financial-future-003", "financial-future-006"]
+[[form]]
+command = "FutureValue"
+form = "number,number,number,number,number"
+cases = ["financial-future-001", "financial-future-004"]
+[[form]]
+command = "Payment"
+form = "number,number,number"
+cases = ["financial-payment-001", "financial-payment-002", "financial-payment-005"]
+[[form]]
+command = "Payment"
+form = "number,number,number,number"
+cases = ["financial-payment-001", "financial-payment-003", "financial-payment-006"]
+[[form]]
+command = "Payment"
+form = "number,number,number,number,number"
+cases = ["financial-payment-001", "financial-payment-004", "financial-payment-008"]
+[[form]]
+command = "Periods"
+form = "number,number,number"
+cases = ["financial-periods-002", "financial-periods-005", "financial-periods-006"]
+[[form]]
+command = "Periods"
+form = "number,number,number,number"
+cases = ["financial-periods-001", "financial-periods-003"]
+[[form]]
+command = "Periods"
+form = "number,number,number,number,number"
+cases = ["financial-periods-001", "financial-periods-004", "financial-periods-008"]
+[[form]]
+command = "PresentValue"
+form = "number,number,number"
+cases = ["financial-present-001", "financial-present-002", "financial-present-005"]
+[[form]]
+command = "PresentValue"
+form = "number,number,number,number"
+cases = ["financial-present-001", "financial-present-003", "financial-present-006"]
+[[form]]
+command = "PresentValue"
+form = "number,number,number,number,number"
+cases = ["financial-present-001", "financial-present-004"]
+[[form]]
+command = "Rate"
+form = "number,number,number"
+cases = ["financial-rate-001", "financial-rate-005", "financial-rate-006"]
+[[form]]
+command = "Rate"
+form = "number,number,number,number"
+cases = ["financial-rate-002", "financial-rate-008", "financial-rate-012"]
+[[form]]
+command = "Rate"
+form = "number,number,number,number,number"
+cases = ["financial-rate-003", "financial-rate-009", "financial-rate-012"]
+[[form]]
+command = "Rate"
+form = "number,number,number,number,number,number"
+cases = ["financial-rate-004", "financial-rate-010", "financial-rate-012"]
+[[form]]
+command = "nCr"
+form = "number,number"
+cases = ["financial-ncr-001", "financial-ncr-002", "financial-ncr-003"]
+[[form]]
+command = "nPr"
+form = "number,number"
+cases = ["financial-npr-001", "financial-npr-002", "financial-npr-003"]
+
+# optimization
+
+[[form]]
+command = "Maximize"
+form = "number,number"
+cases = ["misc-optimize-001", "misc-optimize-004", "misc-optimize-006"]
+
+[[form]]
+command = "Minimize"
+form = "number,number"
+cases = ["misc-optimize-001", "misc-optimize-003", "misc-optimize-005"]
+
+# statistics
+
+[[form]]
+command = "Sum"
+form = "list,list"
+cases = ["misc-sum-001", "misc-sum-002", "misc-sum-003"]
+
+[[form]]
+command = "Sum"
+form = "number,..."
+cases = ["misc-sum-004"]
+
+[[form]]
+command = "Sum"
+form = "point,..."
+cases = ["misc-sum-004"]
+
+[[form]]
+command = "Sum"
+form = "function,..."
+cases = ["misc-sum-006"]
+
+[[form]]
+command = "Sum"
+form = "text,..."
+cases = ["misc-sum-004"]
+
+# english
+
 [[form]]
 command = "BarChart"
 form = "list,number"
@@ -2621,7 +2737,129 @@ cases = ["charts-piechart-002"]
 [[form]]
 command = "ConvexHull"
 form = "list"
-cases = ["discrete-upstream-001", "discrete-hull-006", "discrete-hull-007"]
+cases = ["misc-hull-006", "discrete-upstream-001", "discrete-hull-006", "discrete-hull-007"]
+
+[[form]]
+command = "IntersectRegion"
+form = "polygon,polygon"
+cases = ["misc-alias-001"]
+
+[[form]]
+command = "IntersectRegion"
+form = "line,polygon"
+cases = ["misc-alias-004"]
+
+[[form]]
+command = "IntersectionPaths"
+form = "polygon,polygon"
+cases = ["misc-alias-002"]
+
+[[form]]
+command = "IntersectionPaths"
+form = "line,polygon"
+cases = ["misc-alias-005"]
+
+# geogebra
+
+[[form]]
+command = "Corner"
+form = "number"
+cases = ["misc-view-001"]
+
+[[form]]
+command = "AxisStepX"
+form = "()"
+cases = ["misc-view-001"]
+
+[[form]]
+command = "AxisStepY"
+form = "()"
+cases = ["misc-view-001"]
+
+[[form]]
+command = "ConstructionStep"
+form = "()"
+cases = ["misc-protocol-001"]
+
+[[form]]
+command = "ConstructionStep"
+form = "any"
+cases = ["misc-protocol-001"]
+
+[[form]]
+command = "Object"
+form = "text"
+cases = ["misc-name-001"]
+
+[[form]]
+command = "Name"
+form = "any"
+cases = ["misc-name-001"]
+
+[[form]]
+command = "DynamicCoordinates"
+form = "point,number,number"
+cases = ["misc-dynamic-002", "misc-dynamic-003"]
+
+[[form]]
+command = "ToComplex"
+form = "point"
+cases = ["misc-convert-001"]
+
+[[form]]
+command = "ToComplex"
+form = "number"
+cases = ["misc-convert-001"]
+
+[[form]]
+command = "ToComplex"
+form = "list"
+cases = ["misc-convert-002"]
+
+[[form]]
+command = "ToComplex"
+form = "vector"
+cases = ["misc-convert-003"]
+
+[[form]]
+command = "ToPolar"
+form = "point"
+cases = ["misc-convert-001", "misc-convert-004"]
+
+[[form]]
+command = "ToPolar"
+form = "number"
+cases = ["misc-convert-001"]
+
+[[form]]
+command = "ToPolar"
+form = "list"
+cases = ["misc-convert-002"]
+
+[[form]]
+command = "ToPolar"
+form = "vector"
+cases = ["misc-convert-003"]
+
+[[form]]
+command = "ToPoint"
+form = "point"
+cases = ["misc-convert-001"]
+
+[[form]]
+command = "ToPoint"
+form = "number"
+cases = ["misc-convert-001"]
+
+[[form]]
+command = "ToPoint"
+form = "list"
+cases = ["misc-convert-002"]
+
+[[form]]
+command = "ToPoint"
+form = "vector"
+cases = ["misc-convert-003"]
 
 [[form]]
 command = "ConvexHull"
@@ -2631,7 +2869,7 @@ cases = ["discrete-upstream-008", "discrete-hull-001"]
 [[form]]
 command = "Hull"
 form = "list,number"
-cases = ["discrete-upstream-006"]
+cases = ["misc-hull-001", "misc-hull-002", "misc-hull-003", "misc-hull-004", "misc-hull-005", "discrete-upstream-006"]
 
 [[form]]
 command = "DelauneyTriangulation"

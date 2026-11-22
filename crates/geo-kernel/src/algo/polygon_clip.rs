@@ -73,7 +73,10 @@ impl ClipCache {
 impl ClipDef {
     pub(crate) fn parse(c: &Construction, func: &str, args: &[&str]) -> Result<Self, String> {
         let (a, b, xor) = match (func, args) {
-            ("IntersectPath" | "Difference", [a, b]) => (*a, *b, None),
+            ("IntersectPath" | "IntersectionPaths" | "IntersectRegion" | "Difference", [a, b]) => {
+                (*a, *b, None)
+            }
+
             ("Difference", [a, b, xor]) => (*a, *b, Some(*xor)),
             _ => return Err(format!("`{func}` does not take {} argument(s)", args.len())),
         };
@@ -640,6 +643,28 @@ fn remove_collinear(ring: &mut Vec<XY>, work: &IntersectionWork) -> Option<()> {
 mod tests {
     use super::*;
     use crate::{expr, script};
+
+    #[test]
+    fn an_empty_polygon_clip_keeps_the_labelled_point_slot() {
+        // The initial snapshot of misc-alias-003 records an undefined
+        // polygon and an undefined point, with no labelled segment.
+        let mut c = script::load(
+            "A = (0, 0)\nB = (2, 0)\nC = (1, 2)\nD = (5, 5)\nE = (7, 5)\nF = (6, 7)\np = Polygon(A, B, C)\nq = Polygon(D, E, F)",
+        )
+        .unwrap();
+        let before = c.len();
+        let clip = script::exec(&mut c, "r = IntersectRegion(p, q)")
+            .unwrap()
+            .unwrap();
+        let point = c.id("G").expect("the labelled point of the empty clip");
+        assert_eq!(c.kind(clip), Kind::Polygon);
+        assert_eq!(c.kind(point), Kind::Point);
+        assert_eq!(
+            (c.value(clip), c.value(point)),
+            (Value::Undefined, Value::Undefined)
+        );
+        assert_eq!(c.len() - before, 2);
+    }
 
     #[test]
     fn polygon_conic_outputs_share_the_clip_until_the_next_update() {

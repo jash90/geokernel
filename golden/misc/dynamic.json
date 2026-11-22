@@ -1,0 +1,98 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "misc-dynamic-001",
+      "group": "misc",
+      "script": [
+        "P = (1, 1)",
+        "M = DynamicCoordinates(P, x(P) + 2, y(P) * 3)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "P", "x": 5.0, "y": 2.0 },
+        { "action": "move", "label": "P", "x": -1.0, "y": 0.0 },
+        { "action": "move", "label": "P", "x": 1.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "M": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 5.0, "y": 2.0 },
+          "M": { "type": "point", "defined": true, "x": 7.0, "y": 6.0 }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "M": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "M": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 }
+        }
+      ]
+    },
+    {
+      "id": "misc-dynamic-002",
+      "group": "misc",
+      "script": [
+        "P = (1, 1)",
+        "M = DynamicCoordinates(P, 3, -4)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "P", "x": 2.0, "y": 5.0 }
+      ],
+      "snapshots": [
+        {
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "M": { "type": "point", "defined": true, "x": 3.0, "y": -4.0 }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 5.0 },
+          "M": { "type": "point", "defined": true, "x": 3.0, "y": -4.0 }
+        }
+      ]
+    },
+    {
+      "id": "misc-dynamic-003",
+      "group": "misc",
+      "script": [
+        "P = (0, 0)",
+        "q = 4",
+        "M = DynamicCoordinates(P, q, -q)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "q", "value": 1.5 },
+        { "action": "set_number", "label": "q", "value": 0.0 },
+        { "action": "set_number", "label": "q", "value": -2.0 }
+      ],
+      "snapshots": [
+        {
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "q": { "type": "number", "defined": true, "value": 4.0 },
+          "M": { "type": "point", "defined": true, "x": 4.0, "y": -4.0 }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "q": { "type": "number", "defined": true, "value": 1.5 },
+          "M": { "type": "point", "defined": true, "x": 1.5, "y": -1.5 }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "q": { "type": "number", "defined": true, "value": 0.0 },
+          "M": { "type": "point", "defined": true, "x": 0.0, "y": -0.0 }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "q": { "type": "number", "defined": true, "value": -2.0 },
+          "M": { "type": "point", "defined": true, "x": -2.0, "y": 2.0 }
+        }
+      ]
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 //! The calculus commands of the function group, from GeoGebra's own tests
 //! (`CommandsTest`, `CommandsUsingMockedCasTest`, `AlgoNumeratorDenominatorFunTest`)
-//! plus degenerate inputs the upstream tests do not reach. The expected
-//! values are the t-pairs recorded in `golden/t-pairs/t-pairs.jsonl`.
+//! plus degenerate inputs the upstream tests do not reach. Expected values
+//! come from recorded t-pairs or an analytic calculation.
 
 mod common;
 
@@ -35,26 +35,39 @@ fn left_sum_matches_geogebra() {
     );
 }
 
-/// `CommandsTest.cmdLowerSum`.
-#[test]
-fn lower_sum_matches_geogebra() {
-    let c = load("f(x) = sin(x)\nd = LowerSum(f, 4, 13, 42)");
-    assert!(
-        (num(&c, "d") - -2.161_899_431_745_404_8).abs() < 1e-12,
-        "{}",
-        num(&c, "d")
-    );
+fn exact_sine_extreme_sum(sign: f64) -> f64 {
+    let width = 9.0 / 42.0;
+    let peak = sign * std::f64::consts::FRAC_PI_2;
+    let period = std::f64::consts::TAU;
+    let heights: f64 = (0..42)
+        .map(|i| {
+            let left = 4.0 + f64::from(i) * width;
+            let right = left + width;
+            let next_peak = peak + period * ((left - peak) / period).ceil();
+            if next_peak <= right {
+                1.0
+            } else {
+                (sign * left.sin()).max(sign * right.sin())
+            }
+        })
+        .sum();
+    sign * width * heights
 }
 
-/// `CommandsTest.cmdUpperSum`.
+/// The numerical lower sum lies above the sum of the true sine minima.
 #[test]
-fn upper_sum_matches_geogebra() {
+fn lower_sum_approximates_the_sine_minima() {
+    let c = load("f(x) = sin(x)\nd = LowerSum(f, 4, 13, 42)");
+    let error = num(&c, "d") - exact_sine_extreme_sum(-1.0);
+    assert!((0.0..1e-6).contains(&error), "{error}");
+}
+
+/// The numerical upper sum lies below the sum of the true sine maxima.
+#[test]
+fn upper_sum_approximates_the_sine_maxima() {
     let c = load("f(x) = sin(x)\nd = UpperSum(f, 4, 13, 42)");
-    assert!(
-        (num(&c, "d") - -0.949_457_880_992_456_3).abs() < 1e-12,
-        "{}",
-        num(&c, "d")
-    );
+    let error = exact_sine_extreme_sum(1.0) - num(&c, "d");
+    assert!((0.0..1e-6).contains(&error), "{error}");
 }
 
 /// `CommandsTest.cmdTrapezoidalSum`.

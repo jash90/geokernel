@@ -60,6 +60,7 @@
 //! raw coefficients, so their length depends on the raw scale.
 
 use super::lines::LineDef;
+use super::point::CoordMode;
 use super::{normalized_coefficients, Group, Parents, POINT};
 use crate::expr::{Element, List};
 use crate::kernel::{Construction, Def, Error, Id, Kind, Value};
@@ -153,6 +154,9 @@ pub enum VectorDef {
     Direction(Id),
     /// `UnitVector(v)` of a vector, line, segment or ray.
     Unit(Id),
+    /// `ToComplex(v)`, `ToPolar(v)` and `ToPoint(v)`: a copy of the vector
+    /// that only shows in another coordinate style (`AlgoToComplexPolar`).
+    Convert { source: Id, mode: CoordMode },
     /// `OrthogonalVector(v)` and `PerpendicularVector(v)`.
     Ortho(Id),
     /// `UnitOrthogonalVector(v)` and `UnitPerpendicularVector(v)`.
@@ -514,7 +518,8 @@ pub fn start(c: &Construction, id: Id) -> Option<(f64, f64)> {
         Def::Vector(
             VectorDef::Translate { src, .. }
             | VectorDef::Same(src)
-            | VectorDef::ApplyMatrix { src, .. },
+            | VectorDef::ApplyMatrix { src, .. }
+            | VectorDef::Convert { source: src, .. },
         ) => start(c, src),
         Def::Vector(
             VectorDef::Direction(l)
@@ -542,7 +547,8 @@ impl Group for VectorDef {
             | VectorDef::Direction(..)
             | VectorDef::Unit(..)
             | VectorDef::Ortho(..)
-            | VectorDef::UnitOrtho(..) => Kind::Vector,
+            | VectorDef::UnitOrtho(..)
+            | VectorDef::Convert { .. } => Kind::Vector,
             VectorDef::RayPoints(..) | VectorDef::RayVector(..) => Kind::Ray,
             VectorDef::LineVector(..) | VectorDef::OrthoLineVector(..) => Kind::Line,
             VectorDef::ApplyMatrix {
@@ -579,7 +585,8 @@ impl Group for VectorDef {
             | VectorDef::Direction(p)
             | VectorDef::Unit(p)
             | VectorDef::Ortho(p)
-            | VectorDef::UnitOrtho(p) => Parents::of(&[p]),
+            | VectorDef::UnitOrtho(p)
+            | VectorDef::Convert { source: p, .. } => Parents::of(&[p]),
         }
     }
 
@@ -598,6 +605,7 @@ impl Group for VectorDef {
             }
             VectorDef::Position(p) => c.expect(p, POINT),
             VectorDef::Same(v) => c.expect(v, VECTOR),
+            VectorDef::Convert { source, .. } => c.expect(source, VECTOR),
             VectorDef::RayVector(p, v)
             | VectorDef::LineVector(p, v)
             | VectorDef::OrthoLineVector(p, v) => {
@@ -647,6 +655,10 @@ impl Group for VectorDef {
                 let (x, y) = coords(c, p)?;
                 Some(Value::Vector { x, y })
             }
+            VectorDef::Convert { source, .. } => match c.value(source) {
+                Value::Vector { x, y } => Some(Value::Vector { x, y }),
+                _ => None,
+            },
             VectorDef::RayPoints(p, q) => {
                 let (p, q) = (point(c, p)?, point(c, q)?);
                 ray_value(p, raw_through(p, q))

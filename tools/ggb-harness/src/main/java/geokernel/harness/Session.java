@@ -79,6 +79,10 @@ final class Session {
     /** `label: lhs = rhs`, an equation line (its `=` belongs to the definition). */
     private static final Pattern EQUATION =
             Pattern.compile("^([A-Za-z]+(?:_\\{[A-Za-z0-9]+\\})?): (.+)$");
+    /** A scripting command line, which assigns nothing. */
+    private static final Pattern SCRIPTING =
+            Pattern.compile("^(SetConstructionStep|ZoomIn|ZoomOut|SetActiveView)"
+                    + "(?:\\([A-Za-z0-9_{}',.^/ ()+*-]*\\))?$");
     /** A label as the script lines write it, to find the objects an expression reads. */
     private static final Pattern LABEL = Pattern.compile("[A-Za-z]+(?:_\\{[A-Za-z0-9]+\\})?");
     /** Where a function is sampled, in this order (see golden/SCHEMA.md). */
@@ -178,6 +182,18 @@ final class Session {
         }
     }
 
+    /** Runs a scripting command that creates no object of its own, such as
+     * `SetConstructionStep`, and checks that it stayed silent. */
+    private GeoElement runScriptingCommand(String line) {
+        GeoElementND[] out = processor.processAlgebraCommandNoExceptionHandling(
+                line, false, new CommandErrorHandler(line, false), false, null);
+        if (out != null && out.length != 0) {
+            throw new IllegalArgumentException(
+                    "a scripting command created output: " + line);
+        }
+        return null;
+    }
+
     /** Runs one `label = definition` or `label: equation` line and checks
      * what GeoGebra created. */
     GeoElement run(String line) {
@@ -187,6 +203,8 @@ final class Session {
             m = EQUATION.matcher(line);
             if (m.matches() && m.group(2).contains("=")) {
                 equationLine = true;
+            } else if (SCRIPTING.matcher(line).matches()) {
+                return runScriptingCommand(line);
             } else {
                 throw new IllegalArgumentException(
                         "not of the form 'label = definition': " + line);
@@ -262,7 +280,9 @@ final class Session {
         }
         if (out != null && out.length > 0
                 && (definition.startsWith("Difference(")
-                || definition.startsWith("IntersectPath("))) {
+                || definition.startsWith("IntersectPath(")
+                || definition.startsWith("IntersectRegion(")
+                || definition.startsWith("IntersectionPaths("))) {
             return runClipping(line, label, out);
         }
         if (out != null && out.length == 2 && definition.startsWith("Angle(")
@@ -1236,7 +1256,13 @@ final class Session {
             case "RemovableDiscontinuity":
             case "TriangleCenter":
             case "Barycenter":
+            case "Corner":
+            case "DynamicCoordinates":
                 return "point";
+            case "ToComplex":
+            case "ToPolar":
+            case "ToPoint":
+                return first instanceof GeoVector ? "vector" : "point";
             case "Polygon":
             case "RigidPolygon":
                 return "polygon";
@@ -1269,7 +1295,40 @@ final class Session {
             case "Excentricity":
             case "Parameter":
             case "PathParameter":
+            case "Rate":
+            case "Periods":
+            case "Payment":
+            case "FutureValue":
+            case "PresentValue":
+            case "Maximize":
+            case "Minimize":
+            case "AxisStepX":
+            case "AxisStepY":
+            case "ConstructionStep":
                 return "number";
+            case "Sum":
+                // folding points or vectors sums to a point (`CmdSum` wraps
+                // them in a list of points), functions to a function, texts
+                // to a text; the four-argument fold over the function
+                // variable itself stays a function
+                List<String> folded = arguments(definition);
+                GeoElement lead = folded.isEmpty() ? null
+                        : objects.get(folded.get(0).trim());
+                if (folded.size() == 4 && "x".equals(folded.get(1).trim())
+                        && VARIABLE_X.matcher(folded.get(0).trim()).find()) {
+                    return "function";
+                }
+                return !folded.isEmpty()
+                        && (POINT.matcher(folded.get(0).trim()).matches()
+                                || lead instanceof GeoPoint
+                                || lead instanceof GeoVector)
+                                ? "point"
+                        : !folded.isEmpty()
+                                && (folded.get(0).trim().startsWith("\"")
+                                        || folded.get(0).trim().startsWith("{\"")
+                                        || lead instanceof GeoText)
+                                ? "text"
+                        : lead instanceof GeoFunction ? "function" : "number";
             case "Angle":
             case "InteriorAngles":
                 return "angle";
@@ -1304,6 +1363,18 @@ final class Session {
             case "CircumcircleSector":
             case "Sector":
                 return "sector";
+            case "Name":
+                return "text";
+            case "SlowPlot":
+                return "function";
+            case "Object":
+                GeoElement resolved = arguments.startsWith("\"")
+                        ? kernel.lookupLabel(arguments.substring(1, arguments.length() - 1))
+                        : first;
+                return resolved == null ? null : schemaType(resolved);
+            case "IntersectRegion":
+            case "IntersectionPaths":
+                return "polygon";
             default:
                 // a mathematical function such as `sqrt(a)` or `x(A)`
                 return null;

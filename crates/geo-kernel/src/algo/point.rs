@@ -82,6 +82,22 @@ pub enum PointDef {
     Trilinear { ids: [u32; 6] },
     /// `TriangleCenter(A, B, C, n)`.
     TriangleCenter { a: Id, b: Id, c: Id, index: Count },
+    /// `ToComplex(g)`, `ToPolar(g)` and `ToPoint(g)`: a copy of the value
+    /// of a point, number, vector or list (of its first two elements) that
+    /// only shows in another coordinate style (`AlgoToComplexPolar`).
+    Convert { source: Id, mode: CoordMode },
+    /// `DynamicCoordinates(P, x, y)`: the point `(x, y)`, recomputed when
+    /// the movable point `P` moves (`AlgoDynamicCoordinates`).
+    Dynamic { point: Id, x: Id, y: Id },
+}
+
+/// The coordinate style a point or vector prints in (`Kernel.COORD_*`);
+/// `ToComplex`, `ToPolar` and `ToPoint` only change it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CoordMode {
+    Cartesian,
+    Complex,
+    Polar,
 }
 
 pub(crate) fn parse_view_corner(
@@ -106,9 +122,7 @@ fn view_corner(c: &Construction, view: Option<Count>, index: Count) -> Option<Va
     if view.is_some_and(|v| v.value(c) != 1.0) {
         return None;
     }
-    let [xmin, xmax, ymin, ymax, xs, ys] = c
-        .locus_view()
-        .unwrap_or(crate::kernel::locus::HEADLESS_VIEW);
+    let [xmin, xmax, ymin, ymax, xs, ys] = c.view();
     let (left, right, bottom, top) = (
         xmin - 1.0 / xs,
         xmax + 1.0 / xs,
@@ -208,7 +222,7 @@ impl PointDef {
         func: &str,
         args: &[&str],
     ) -> Option<Result<Self, String>> {
-        let ("Vertex", [segment, index]) = (func, args) else {
+        let ("Vertex" | "Corner", [segment, index]) = (func, args) else {
             return None;
         };
         let segment = c.id(segment).filter(|&s| c.kind(s) == Kind::Segment)?;
@@ -483,6 +497,8 @@ impl Group for PointDef {
                 }
             }
             PointDef::Closest { path, point } => Parents::of(&[path, point]),
+            PointDef::Convert { source, .. } => Parents::of(&[source]),
+            PointDef::Dynamic { point, x, y } => Parents::of(&[point, x, y]),
             PointDef::LineIntersection { first, second } => Parents::of(&[first, second]),
             PointDef::Trilinear { ids } => Parents::of(&ids.map(id_of)),
             PointDef::TriangleCenter { a, b, c, index } => {
@@ -534,6 +550,23 @@ impl Group for PointDef {
             PointDef::Closest { path, point } => {
                 c.expect(path, CLOSEST_PATH)?;
                 c.expect(point, POINT)
+            }
+            PointDef::Convert { source, .. } => c.expect(
+                source,
+                &[Kind::Point, Kind::Number, Kind::Vector, Kind::List],
+            ),
+            PointDef::Dynamic { point, x, y } => {
+                c.expect(point, POINT)?;
+                // `CmdDynamicCoordinates` needs a point the user can move
+                if !c.is_movable(point) {
+                    return Err(Error::WrongKind {
+                        label: c.label(point).to_owned(),
+                        expected: POINT,
+                        found: c.kind(point),
+                    });
+                }
+                c.expect(x, NUMBER)?;
+                c.expect(y, NUMBER)
             }
             PointDef::LineIntersection { first, second } => {
                 c.expect(first, CARRIERS)?;
@@ -592,6 +625,35 @@ impl Group for PointDef {
             }
             PointDef::Closest { path, point } => {
                 let (x, y) = closest_coords(c, path, c.point(point)?)?;
+                Some(Value::Point { x, y })
+            }
+            PointDef::Convert { source, .. } => match c.value(source) {
+                Value::Point { x, y } => Some(Value::Point { x, y }),
+                Value::Vector { x, y } => Some(Value::Point { x, y }),
+                Value::Number(x) => Some(Value::Point { x, y: 0.0 }),
+                Value::List { .. } => {
+                    // the first two elements, as doubles
+                    let elements = c.elements(source)?;
+                    let element = |k: usize| {
+                        elements.get(k).and_then(|e| match e {
+                            Element::Value(_, Value::Number(v)) => Some(v),
+                            _ => None,
+                        })
+                    };
+                    Some(Value::Point {
+                        x: element(0)?,
+                        y: element(1)?,
+                    })
+                }
+                _ => None,
+            },
+            PointDef::Dynamic { x, y, .. } => {
+                let (Value::Number(x), Value::Number(y)) = (c.value(x), c.value(y)) else {
+                    return None;
+                };
+                if x.is_nan() || x.is_infinite() || y.is_nan() || y.is_infinite() {
+                    return None;
+                }
                 Some(Value::Point { x, y })
             }
             PointDef::LineIntersection { first, second } => {

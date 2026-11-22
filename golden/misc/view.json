@@ -1,0 +1,36 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "misc-view-001",
+      "group": "misc",
+      "script": [
+        "p = Corner(1)",
+        "q = Corner(2)",
+        "r = Corner(3)",
+        "s = Corner(4)",
+        "t = Corner(5)",
+        "u = Corner(6)",
+        "gx = AxisStepX()",
+        "gy = AxisStepY()"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "p": { "type": "point", "defined": true, "x": -4.32, "y": -5.72 },
+          "q": { "type": "point", "defined": true, "x": 11.72, "y": -5.72 },
+          "r": { "type": "point", "defined": true, "x": 11.72, "y": 6.32 },
+          "s": { "type": "point", "defined": true, "x": -4.32, "y": 6.32 },
+          "t": { "type": "point", "defined": true, "x": 800.0, "y": 600.0 },
+          "u": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "gx": { "type": "number", "defined": true, "value": 1.0 },
+          "gy": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    }
+  ]
+}

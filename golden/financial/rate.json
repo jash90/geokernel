@@ -1,0 +1,242 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "financial-rate-001",
+      "group": "financial",
+      "script": [
+        "r = Rate(4, -200, 1000)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "value": -0.08364541746615056 }
+        }
+      ]
+    },
+    {
+      "id": "financial-rate-002",
+      "group": "financial",
+      "script": [
+        "r = Rate(4, -200, 1000, 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "value": -0.08364541746615056 }
+        }
+      ]
+    },
+    {
+      "id": "financial-rate-003",
+      "group": "financial",
+      "script": [
+        "r = Rate(4, -200, 1000, 0, 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "value": -0.08364541746615056 }
+        }
+      ]
+    },
+    {
+      "id": "financial-rate-004",
+      "group": "financial",
+      "script": [
+        "r = Rate(4, -200, 1000, 0, 0, 0.1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "value": -0.08364541746615056 }
+        }
+      ]
+    },
+    {
+      "id": "financial-rate-005",
+      "group": "financial",
+      "script": [
+        "n = 4",
+        "r = Rate(n, -200, 1000)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 12.0 },
+        { "action": "set_number", "label": "n", "value": 1.0 },
+        { "action": "set_number", "label": "n", "value": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": -0.08364541746615056 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 12.0 },
+          "r": { "type": "number", "defined": true, "value": 0.16942550857963282 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": -0.8 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 4.0 },
+          "r": { "type": "number", "defined": true, "value": -0.08364541746615056 }
+        }
+      ]
+    },
+    {
+      "id": "financial-rate-006",
+      "group": "financial",
+      "script": [
+        "r = Rate(10, -100, 1000)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "financial-rate-007",
+      "group": "financial",
+      "script": [
+        "r = Rate(12, -5, 55)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "value": 0.013647030677824594 }
+        }
+      ]
+    },
+    {
+      "id": "financial-rate-008",
+      "group": "financial",
+      "script": [
+        "r = Rate(12, -5, 55, 1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "value": 0.011130146712657558 }
+        }
+      ]
+    },
+    {
+      "id": "financial-rate-009",
+      "group": "financial",
+      "script": [
+        "r = Rate(4, -200, 1000, 0, 1000)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "financial-rate-010",
+      "group": "financial",
+      "script": [
+        "r = Rate(12, -5, 55, 0, 0, 0.5)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "value": 0.01364703067769356 }
+        }
+      ]
+    },
+    {
+      "id": "financial-rate-011",
+      "group": "financial",
+      "script": [
+        "r = Rate(-4, -200, 1000)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "financial-rate-012",
+      "group": "financial",
+      "script": [
+        "a = Rate(60, -300, 10000)",
+        "b = Rate(42, 4, 13, 1)",
+        "c = Rate(42, 4, 13, 0, 1)",
+        "d = Rate(42, 4, 13, 0, 1, 42)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.021750422875496778 },
+          "b": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": true, "value": -0.9999999999997204 },
+          "d": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "financial-rate-013",
+      "group": "financial",
+      "script": [
+        "r = Rate(1, -1000, 1000)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "financial-rate-014",
+      "group": "financial",
+      "script": [
+        "a = Rate(1, -1000.00001, 1000, 0, 0, 0.1)",
+        "b = Rate(12, -5, 55, 0, 1, 2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 9.999999974752426E-9 },
+          "b": { "type": "number", "defined": true, "value": 0.016231328174462472 }
+        }
+      ]
+    }
+  ]
+}

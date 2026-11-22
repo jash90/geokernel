@@ -5,6 +5,7 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/Kernel.java
 //   source/shared/common/src/main/java/org/geogebra/common/util/MyMath.java
 //   source/shared/common/src/main/java/org/geogebra/common/util/MyMath2.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/statistics/AlgoNpR.java
 //   source/shared/common/src/main/java/org/geogebra/common/util/DoubleUtil.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
@@ -391,6 +392,138 @@ impl std::fmt::Write for Stack {
     }
 }
 
+/// The most factors a combinatorial product multiplies; beyond it the
+/// log-gamma value stands (upstream would multiply every factor without a
+/// bound; see `DIFFERENCES.md`).
+const COMBINATORIAL_FACTOR_LIMIT: u64 = 100_000;
+
+/// `MyMath.binomial(n, k)`: the binomial coefficient, exact through the
+/// log-gamma path for small `n` and through an exact wide product for the
+/// larger ones, `0` wherever the arguments do not make a count.
+pub(crate) fn binomial(n0: f64, k: f64) -> f64 {
+    if n0 == 0.0 && k == 0.0 {
+        return 1.0;
+    }
+    let r = if k > n0 / 2.0 { n0 - k } else { k };
+    if n0 < 1.0 || r < 0.0 || n0 < r {
+        return 0.0;
+    }
+    if !is_equal(java_round(n0) as f64, n0) || !is_equal(java_round(r) as f64, r) {
+        return 0.0;
+    }
+    let (n, r) = (java_round(n0), java_round(r));
+    // `binomLog`: exact for n <= 37.
+    let ncr = (0.5
+        + (ln_gamma(n as f64 + 1.0) - ln_gamma(r as f64 + 1.0) - ln_gamma((n - r) as f64 + 1.0))
+            .exp())
+    .floor();
+    if ncr == f64::INFINITY {
+        return f64::INFINITY;
+    }
+    if n <= 37 {
+        return ncr;
+    }
+    // `binomBig`: every intermediate value is an exact integer that divides
+    // exactly, so a 128-bit product is the exact answer whenever it fits.
+    // A count of factors past the work bound keeps the log-gamma value
+    // (upstream multiplies without a bound; see `DIFFERENCES.md`).
+    if r as u64 > COMBINATORIAL_FACTOR_LIMIT {
+        return ncr;
+    }
+    let mut acc: u128 = 1;
+    let mut dd: u128 = 1;
+    let mut nn = n;
+    while dd <= r as u128 && nn > 0 {
+        acc = match acc.checked_mul(nn as u128) {
+            Some(v) => v,
+            None => return wide_product_binomial(n as f64, r as f64),
+        };
+        acc /= dd;
+        nn -= 1;
+        dd += 1;
+    }
+    acc as f64
+}
+
+/// The `binomBig` fallback beyond 128 bits: a plain product, accurate far
+/// within the comparison tolerance.
+fn wide_product_binomial(n: f64, r: f64) -> f64 {
+    let mut acc = 1.0f64;
+    let mut dd = 1.0f64;
+    let mut nn = n;
+    while dd <= r.min(COMBINATORIAL_FACTOR_LIMIT as f64) {
+        acc *= nn / dd;
+        nn -= 1.0;
+        dd += 1.0;
+    }
+    acc
+}
+
+/// `AlgoNpR.nPr(n, r)`: the number of `r`-element permutations, exact
+/// through the log-gamma path for small `n` and through an exact wide
+/// product for the larger ones, `0` wherever the arguments do not make a
+/// count.
+pub(crate) fn n_pr(n: f64, r: f64) -> f64 {
+    if n == 0.0 && r == 0.0 {
+        return 1.0;
+    }
+    if n < 1.0 || r < 0.0 || n < r {
+        return 0.0;
+    }
+    // An exact integer test, as `AlgoNpR` writes it (`Math.floor(n) != n`).
+    if n.floor() != n || r.floor() != r {
+        return 0.0;
+    }
+    if n.is_infinite() {
+        return f64::INFINITY;
+    }
+    let npr = (0.5 + (ln_gamma(n + 1.0) - ln_gamma(n - r + 1.0)).exp()).floor();
+    if npr == f64::INFINITY {
+        return f64::INFINITY;
+    }
+    if n <= 16.0 {
+        return npr;
+    }
+    // `nPrBig` walks the integers from the decimal of `n - r` plus one to
+    // the decimal of `n`; the decimals come from the doubles, so once `r`
+    // is below the spacing of `n` the two are the same double and the
+    // product is empty (`nPr(1e40, 2)` is 1).
+    let from = n - r;
+    if from == n {
+        return 1.0;
+    }
+    let factors = n - from;
+    // Bound the range before converting to integers. Even the shortest
+    // nonempty range above 2^128 exceeds the factor limit.
+    if factors > COMBINATORIAL_FACTOR_LIMIT as f64 {
+        return npr;
+    }
+    super::eval::work(factors as u64);
+    let mut acc: u128 = 1;
+    let top = n as u128;
+    for factor in from as u128 + 1..=top {
+        acc = match acc.checked_mul(factor) {
+            Some(v) => v,
+            // Keep advancing the integer factors after the accumulator
+            // overflows. Adding 1.0 may not advance a factor above 2^53.
+            None => return (factor..=top).fold(acc as f64, |product, k| product * k as f64),
+        };
+    }
+    acc as f64
+}
+
+/// The number of terms in `AlgoFoldExpression`. The first term is always
+/// included. The remaining indices start after the truncated lower bound.
+pub(crate) fn fold_count(from: f64, to: f64) -> f64 {
+    // An upper endpoint at least as large as i32::MAX would wrap the
+    // reference's loop counter forever.
+    if !from.is_finite() || !to.is_finite() || to >= f64::from(i32::MAX) {
+        return f64::NAN;
+    }
+    let start = f64::from((from as i32).wrapping_add(1));
+    1.0 + (to.floor() - start + 1.0).max(0.0)
+}
+
 /// `MyMath2.factorial`: a table product for small integers, `Γ(x + 1)`
 /// otherwise, undefined below 0 and above 170.624.
 pub(crate) fn factorial(x: f64) -> f64 {
@@ -448,7 +581,7 @@ pub(crate) fn digamma(x: f64) -> f64 {
 /// `ln Γ(x)` for `x > 0` by the Lanczos approximation (`g = 7`, nine
 /// coefficients). GeoGebra calls a library routine here; see
 /// `DIFFERENCES.md`.
-fn ln_gamma(x: f64) -> f64 {
+pub(crate) fn ln_gamma(x: f64) -> f64 {
     const G: f64 = 7.0;
     const P: [f64; 9] = [
         0.999_999_999_999_809_9,
@@ -480,6 +613,62 @@ fn ln_gamma(x: f64) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn binomial_counts_subsets() {
+        // Pascal's recurrence counts subsets independently of the
+        // implementation's factorial ratios.
+        let choose = |n: usize, k: usize| {
+            let mut row = vec![0.0; k + 1];
+            row[0] = 1.0;
+            for i in 1..=n {
+                for j in (1..=i.min(k)).rev() {
+                    row[j] += row[j - 1];
+                }
+            }
+            row[k]
+        };
+        assert_eq!(binomial(5.0, -1.0), 0.0);
+        assert_eq!(binomial(5.0, 1.0), 5.0);
+        assert_eq!(binomial(5.0, 0.0), 1.0);
+        assert_eq!(binomial(0.0, 0.0), 1.0);
+        assert_eq!(binomial(10.0, 3.0), choose(10, 3));
+        // `r` folds to the smaller side.
+        assert_eq!(binomial(10.0, 7.0), choose(10, 3));
+        // a non-integer count is 0, a near-integer one is not.
+        assert_eq!(binomial(5.5, 2.0), 0.0);
+        assert_eq!(binomial(5.000000001, 2.0), choose(5, 2));
+        assert_eq!(binomial(-3.0, 2.0), 0.0);
+        // past the log-gamma path the exact product runs.
+        assert_eq!(binomial(38.0, 19.0), choose(38, 19));
+        assert_eq!(binomial(52.0, 5.0), choose(52, 5));
+        // huge values overflow the exact product but stay within the
+        // comparison tolerance as a plain product.
+        assert!((binomial(200.0, 100.0) / choose(200, 100) - 1.0).abs() < 1e-9);
+        let n = 10_000_000_u64;
+        assert_eq!(binomial(n as f64, 2.0), (n * (n - 1) / 2) as f64);
+        let n = 1_000_000_u64;
+        assert_eq!(binomial(n as f64, 3.0), (n * (n - 1) * (n - 2) / 6) as f64);
+    }
+
+    #[test]
+    fn n_pr_counts_ordered_selections() {
+        assert_eq!(n_pr(8.0, 7.0), (2..=8).product::<u64>() as f64);
+        assert_eq!(n_pr(0.0, 0.0), 1.0);
+        assert_eq!(n_pr(5.0, 0.0), 1.0);
+        assert_eq!(n_pr(5.0, -1.0), 0.0);
+        assert_eq!(n_pr(4.0, 5.0), 0.0);
+        assert_eq!(n_pr(-3.0, 2.0), 0.0);
+        assert_eq!(n_pr(5.000000001, 2.0), 0.0);
+        assert_eq!(n_pr(5.5, 2.0), 0.0);
+        assert_eq!(n_pr(17.0, 16.0), (2..=17).product::<u64>() as f64);
+        assert_eq!(n_pr(20.0, 3.0), 20.0 * 19.0 * 18.0);
+        // 1000P999 is 1000! , far beyond the double range: the log-gamma
+        // path overflows first.
+        assert_eq!(n_pr(1000.0, 999.0), f64::INFINITY);
+        let n = 1_000_000_u64;
+        assert_eq!(n_pr(n as f64, 3.0), (n * (n - 1) * (n - 2)) as f64);
+    }
 
     #[test]
     fn java_round_is_floor_of_x_plus_half() {

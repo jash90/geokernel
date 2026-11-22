@@ -729,6 +729,23 @@ impl TryFrom<RawObject> for Expected {
     }
 }
 
+/// The scripting commands a script line may run without assigning a label
+/// (the harness's `SCRIPTING` pattern).
+const SCRIPTING_COMMANDS: &[&str] = &[
+    "SetConstructionStep(",
+    "ZoomIn(",
+    "ZoomOut(",
+    "SetActiveView(",
+];
+
+/// How many lines of the script run a scripting command of their own.
+fn scripting_lines(script: &[String]) -> usize {
+    script
+        .iter()
+        .filter(|l| SCRIPTING_COMMANDS.iter().any(|c| l.starts_with(c)))
+        .count()
+}
+
 /// Labels created by a script: the text before the first `=` of each line,
 /// without the argument of a function.
 pub fn script_labels(script: &[String]) -> BTreeSet<String> {
@@ -841,8 +858,10 @@ fn validate_case(case: &Case) -> Result<(), String> {
             case.snapshots.len()
         ));
     }
+    // A scripting command assigns nothing (`SetConstructionStep(3)`, as
+    // the harness's SCRIPTING lines); every other line must.
     let labels = script_labels(&case.script);
-    if labels.len() != case.script.len() {
+    if labels.len() + scripting_lines(&case.script) != case.script.len() {
         return Err("script lines must each define a distinct `label = ...`".into());
     }
     let mut previous_keys: Option<BTreeSet<String>> = None;
@@ -870,7 +889,12 @@ fn validate_case(case: &Case) -> Result<(), String> {
                             }
                         }
                     }
-                    if let Some((label, "Difference" | "IntersectPath", _)) = command_args(line) {
+                    if let Some((
+                        label,
+                        "Difference" | "IntersectPath" | "IntersectRegion" | "IntersectionPaths",
+                        _,
+                    )) = command_args(line)
+                    {
                         clip_prefixes.insert(label_prefix(label));
                     }
                     if let Some((label, "Intersect", args)) = command_args(line) {
@@ -1074,12 +1098,14 @@ impl PolygonNames {
             };
             let point = |arg: &str| kind(arg) == Some(Kind::Point);
             if command == "Difference"
-                || command == "IntersectPath"
-                    && args
-                        .iter()
-                        .filter(|&&arg| kind(arg) == Some(Kind::Polygon))
-                        .count()
-                        == 2
+                || matches!(
+                    command,
+                    "IntersectPath" | "IntersectRegion" | "IntersectionPaths"
+                ) && args
+                    .iter()
+                    .filter(|&&arg| kind(arg) == Some(Kind::Polygon))
+                    .count()
+                    == 2
             {
                 names.default_points();
                 names.default_segments();

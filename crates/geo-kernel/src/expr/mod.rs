@@ -229,6 +229,10 @@ pub(crate) enum Node {
     CasVariable(u8),
     Text,
     TextCmd(TextOp, u32, u32),
+    /// A financial command (`Rate`, `Periods`, ...) of three to six
+    /// numbers; the argument roots fill the array from the front, the rest
+    /// stays [`NONE`].
+    Financial(Finance, [u32; 6]),
     Relation {
         objects: [Id; 4],
         count: u8,
@@ -353,6 +357,9 @@ pub(crate) enum CallOp {
     Zip,
     /// `Product(expression, variable, from, to)` (`AlgoFoldExpression`).
     Fold,
+    /// `Sum(expression, variable, from, to)` (`AlgoFoldExpression` with
+    /// `PLUS`, `CmdSum.processSymb`): the same shape, added up.
+    SumFold,
 }
 
 /// The commands that read a list.
@@ -503,6 +510,17 @@ pub(crate) enum Un {
     Not,
 }
 
+/// The five financial commands of `AlgoFinancial`: which of the five
+/// values the fundamental equation is solved for.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Finance {
+    Rate,
+    Periods,
+    Payment,
+    PresentValue,
+    FutureValue,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Bin {
     Add,
@@ -514,6 +532,8 @@ pub(crate) enum Bin {
     /// `log(b, x)`: the base comes first.
     LogB,
     Round2,
+    /// Number of terms in a fold whose expression is independent of the index.
+    FoldCount,
     /// The commands of two numbers (see [`commands`]).
     Mod,
     /// `Div`, the integer quotient.
@@ -523,6 +543,10 @@ pub(crate) enum Bin {
     CommonDenominator,
     Max,
     Min,
+    /// `nCr(n, r)`, the binomial coefficient (`MyMath.binomial`).
+    Ncr,
+    /// `nPr(n, r)`, the number of permutations (`AlgoNpR.nPr`).
+    Npr,
     /// `<`, `>`, `<=`, `>=`: numbers compared with the tolerance 1e-8.
     Less,
     Greater,
@@ -898,7 +922,7 @@ pub(crate) fn is_function_name(name: &str) -> bool {
 
 /// The children of a node.
 pub(crate) fn children(node: &Node) -> impl Iterator<Item = u32> {
-    let mut fixed = [NONE; 4];
+    let mut fixed = [NONE; 6];
     let mut run = 0..0;
     match *node {
         Node::Tuple(a, b)
@@ -934,7 +958,8 @@ pub(crate) fn children(node: &Node) -> impl Iterator<Item = u32> {
         } => {
             fixed[..3].copy_from_slice(&[formula, initial, count]);
         }
-        Node::Seq(a, b, c, d, _) => fixed = [a, b, c, d],
+        Node::Seq(a, b, c, d, _) => fixed[..4].copy_from_slice(&[a, b, c, d]),
+        Node::Financial(_, args) => fixed.copy_from_slice(&args),
         Node::List(first, len) | Node::TextCmd(_, first, len) | Node::Call(_, first, len) => {
             run = first..first.saturating_add(len)
         }
@@ -1007,6 +1032,7 @@ pub(crate) fn shift_children(node: &mut Node, by: u32) {
             shift(d);
         }
         Node::List(first, _) | Node::TextCmd(_, first, _) | Node::Call(_, first, _) => shift(first),
+        Node::Financial(_, args) => args.iter_mut().for_each(shift),
         _ => {}
     }
 }
@@ -1043,6 +1069,7 @@ fn reads_list(nodes: &[Node], tys: &[Ty]) -> bool {
 
 /// The commands that expressions compute themselves; `Length` and `Sum`
 /// also of a list.
+pub(crate) use commands::fmin;
 pub(crate) use commands::polynomial::division_list;
 
 pub(crate) fn is_expression_command(name: &str) -> bool {
@@ -1886,6 +1913,25 @@ pub(crate) fn constant_number(c: &Construction, text: &str) -> Option<(f64, bool
     }
 }
 
+/// The current value of a parsed numeric tree, reading the current values of
+/// its objects.
+pub(crate) fn value_of_tree(c: &Construction, parsed: &parse::Parsed) -> Option<f64> {
+    let entry = Entry::new(c, parsed.clone(), false);
+    match eval::root(c, &entry, None).0 {
+        Raw::Num(v) => Some(v),
+        _ => None,
+    }
+}
+
+/// Reads the current value of a numeric argument without adding an object.
+pub(crate) fn argument_number(c: &Construction, text: &str) -> Option<f64> {
+    let parsed = parse::parse_argument(c, text).ok()?;
+    if parsed.uses_var || parsed.uses_y || !matches!(parsed.tys[parsed.root as usize], Ty::Num(_)) {
+        return None;
+    }
+    value_of_tree(c, &parsed)
+}
+
 /// Defines `name = rhs` as an expression. `vector_label` tells whether a
 /// coordinate result is a vector (lower-case label) or a point. An
 /// expression in `x` defines a function, as `b = x + 1` does in GeoGebra.
@@ -2210,6 +2256,7 @@ fn add_parsed(
                 n,
                 Node::Cmd(..) | Node::If(IfMode::Algo, ..) | Node::Vector(_) | Node::Cas(..)
             )
+            || matches!(n, Node::Financial(..))
             || is_list_node(n)
     });
     // a constant boolean (`b = 1 < 2`) or list stays an expression: there

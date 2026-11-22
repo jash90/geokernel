@@ -70,6 +70,7 @@ use crate::expr::list::Slot;
 use crate::expr::math;
 use crate::expr::parse::{list_arity, list_form, Parser};
 use crate::expr::types::{elem_of, join_elem, of_numbers, ty_of};
+use crate::expr::Bin;
 use crate::expr::{CallOp, Elem, ListOp, Node, Ty, NONE};
 use crate::kernel::{Construction, Kind, Value};
 use std::collections::{BTreeMap, BTreeSet};
@@ -551,12 +552,17 @@ pub(super) fn takes_object(op: ListOp) -> bool {
 }
 
 /// Whether the second operand of `op` is a list rather than a number
-/// (`Sort(values, keys)`, `Product(values, frequencies)`, `Union`,
-/// `Intersection` and `Remove`).
+/// (`Sort(values, keys)`, `Product(values, frequencies)`, `Sum(list,
+/// frequencies)`, `Union`, `Intersection` and `Remove`).
 pub(in crate::expr) fn second_list(op: ListOp) -> bool {
     matches!(
         op,
-        ListOp::Sort | ListOp::Product | ListOp::Union | ListOp::Intersect | ListOp::Remove
+        ListOp::Sort
+            | ListOp::Product
+            | ListOp::Sum
+            | ListOp::Union
+            | ListOp::Intersect
+            | ListOp::Remove
     )
 }
 
@@ -652,7 +658,7 @@ pub(crate) fn call_type(
             return Err("`Frequency` needs a list of data".into());
         }
         CallOp::Zip => Ty::List(elem_of(tys[first as usize])),
-        CallOp::Fold => Ty::Num(0),
+        CallOp::Fold | CallOp::SumFold => Ty::Num(0),
     })
 }
 
@@ -704,7 +710,8 @@ pub(crate) fn call_value<const M: bool>(
 ) -> Option<Val> {
     Some(match op {
         CallOp::IndexOf => Val::N(ctx.index_of(first, len)),
-        CallOp::Fold => Val::N(ctx.fold(first, len)),
+        CallOp::Fold => Val::N(ctx.fold(first, len, true)),
+        CallOp::SumFold => Val::N(ctx.fold(first, len, false)),
         // a list: built by `list`
         _ => {
             let _ = len;
@@ -944,11 +951,21 @@ impl Parser<'_> {
             Tok::Name { text, call: false } if commas[1] == commas[0] + 2 => text.clone(),
             _ => return Ok(None),
         };
+        // Over the function variable `x` the expression stays a function
+        // of it: `resArgsLocalNumVar` binds the name, but `x^2` has
+        // resolved to the function variable already, so every iteration
+        // adds the same function (`Sum(x^2, x, 1, 3)` is the function
+        // `3x^2`, not the number 14).
+        let function_of_x = variable == "x";
         let local = self.locals.len() as u32;
-        self.locals.push((variable, Elem::Num));
+        if !function_of_x {
+            self.locals.push((variable, Elem::Num));
+        }
         self.expect(&Tok::LParen, "(")?;
         let expression = self.expression()?;
-        self.locals.pop();
+        if !function_of_x {
+            self.locals.pop();
+        }
         self.expect(&Tok::Comma, ",")?;
         self.pos += 1;
         self.expect(&Tok::Comma, ",")?;
@@ -956,13 +973,26 @@ impl Parser<'_> {
         self.expect(&Tok::Comma, ",")?;
         let to = self.expression()?;
         self.expect(&Tok::RParen, ")")?;
+        if function_of_x {
+            let count = self.push(Node::Bin(Bin::FoldCount, from, to));
+            let node = if text == "Sum" {
+                Node::Bin(Bin::Mul, expression, count)
+            } else {
+                Node::Bin(Bin::Pow, expression, count)
+            };
+            return Ok(Some(self.push(node)));
+        }
         let first = self.nodes.len() as u32;
         self.push(Node::Item(expression));
         self.push(Node::Local(local, Elem::Num));
         self.push(Node::Item(from));
         self.push(Node::Item(to));
-        let _ = text;
-        Ok(Some(self.push(Node::Call(CallOp::Fold, first, 4))))
+        let op = if text == "Sum" {
+            CallOp::SumFold
+        } else {
+            CallOp::Fold
+        };
+        Ok(Some(self.push(Node::Call(op, first, 4))))
     }
 }
 
@@ -1236,7 +1266,7 @@ impl<const M: bool> Ctx<'_, M> {
     /// `Product(expression, k, from, to)` (`AlgoFoldExpression`): the
     /// expression at `from` (not truncated), then at every whole number up
     /// to `to`, multiplied.
-    pub(crate) fn fold(&self, first: u32, len: u32) -> f64 {
+    pub(crate) fn fold(&self, first: u32, len: u32, multiply: bool) -> f64 {
         let Some(lists) = self.lists else {
             return f64::NAN;
         };
@@ -1267,7 +1297,8 @@ impl<const M: bool> Ctx<'_, M> {
                 _ => f64::NAN,
             }
         };
-        let mut product = value(a);
+        // the first term, whatever the operation is
+        let mut acc = value(a);
         // `(int) from + 1`, which wraps like the int arithmetic of Java,
         // and the loop compares the plain value of `to` (`i <= to.getDouble()`)
         let mut k = (a as i32).wrapping_add(1);
@@ -1275,10 +1306,11 @@ impl<const M: bool> Ctx<'_, M> {
             if !lists.charge(1) {
                 return f64::NAN;
             }
-            product *= value(f64::from(k));
+            let term = value(f64::from(k));
+            acc = if multiply { acc * term } else { acc + term };
             k = k.wrapping_add(1);
         }
-        product
+        acc
     }
 
     /// The element `l(n)` or `Element(l, n)` picks, `None` when there is

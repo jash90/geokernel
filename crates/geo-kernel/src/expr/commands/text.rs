@@ -45,6 +45,7 @@ pub(crate) enum TextOp {
     IndexOf,
     Length,
     Take,
+    Sum,
     /// `First(text[, n])` of a text (`AlgoFirstString`).
     First,
     /// `Last(text[, n])` of a text (`AlgoLastString`).
@@ -74,6 +75,8 @@ pub(super) const NAMES: &[&str] = &[
     "IndexOf",
     "Length",
     "Take",
+    "Name",
+    "Sum",
 ];
 
 pub(super) fn parse(p: &mut Parser<'_>, name: &str) -> Result<Option<u32>, String> {
@@ -97,6 +100,25 @@ pub(super) fn parse(p: &mut Parser<'_>, name: &str) -> Result<Option<u32>, Strin
         "IndexOf" => TextOp::IndexOf,
         "Length" => TextOp::Length,
         "Take" => TextOp::Take,
+        "Name" => return parse_name(p),
+        // `Sum` of texts concatenates them (`TextFold`); of one argument
+        // the list itself, of several the wrapped arguments — but never
+        // two (`CmdSum` wants a list first). Anything else is the
+        // statistics group's command, so it must fall through.
+        "Sum" => {
+            return p.list_command(|p, args, _| {
+                let texty = |p: &Parser<'_>, i: u32| {
+                    p.is_text(i) || p.list_element_type(i) == Some(Elem::Text)
+                };
+                if args.is_empty() || !args.iter().all(|&a| texty(p, a)) {
+                    return Ok(None);
+                }
+                if args.len() == 2 || (args.len() == 1 && p.is_text(args[0])) {
+                    return Ok(None);
+                }
+                Ok(Some(call_node(p, TextOp::Sum, args)))
+            });
+        }
         "First" => TextOp::First,
         "Last" => TextOp::Last,
         "Element" => TextOp::TextElement,
@@ -128,6 +150,26 @@ pub(super) fn parse(p: &mut Parser<'_>, name: &str) -> Result<Option<u32>, Strin
     let args = p.arguments()?;
     let node = call_node(p, op, &args);
     Ok(Some(p.push(node)))
+}
+
+/// `Name(g)`: the label of the object `g` as a fixed string (`AlgoName`).
+/// An object the construction keeps hidden has no label to show; its
+/// formula string is not reproduced here.
+fn parse_name(p: &mut Parser<'_>) -> Result<Option<u32>, String> {
+    let args = p.arguments()?;
+    match args[..] {
+        [arg] => match p.nodes[arg as usize] {
+            Node::Obj(id) => {
+                let label = p.label(id).to_owned();
+                if label.starts_with('\0') {
+                    return Err("`Name` needs an object with a label".into());
+                }
+                Ok(Some(p.text_literal(&label)))
+            }
+            _ => Err("`Name` needs an object".into()),
+        },
+        _ => Err(format!("`Name` does not take {} argument(s)", args.len())),
+    }
 }
 
 fn call_node(p: &mut Parser<'_>, op: TextOp, args: &[u32]) -> Node {
@@ -173,6 +215,8 @@ pub(in crate::expr) fn result_type(
         (Length | LetterToUnicode | TextToUnicode, [Text]) => true,
         (UnicodeToText, [a]) | (Split, [Text, a]) => list(*a),
         (ReplaceAll, [Text, Text, Text]) => true,
+        (Sum, [Text, ..]) => true,
+        (Sum, [Ty::List(Elem::Text)]) => true,
         (IndexOf, [Text, Text]) => true,
         (IndexOf, [Text, Text, n]) | (Take, [Text, n]) => number(*n),
         (Take, [Text, a, b]) => number(*a) && number(*b),
@@ -273,9 +317,8 @@ impl<const M: bool> Ctx<'_, M> {
                 numeric::continued(number(a), level, c.or(boolean).is_some_and(flag))
             }
             Table => table::evaluate(self, &args),
-            UnicodeToLetter | UnicodeToText | ReplaceAll | Take | First | Last | TextElement => {
-                strings::evaluate(self, op, &args)
-            }
+            UnicodeToLetter | UnicodeToText | ReplaceAll | Take | Sum | First | Last
+            | TextElement => strings::evaluate(self, op, &args),
             _ => None,
         }?;
         self.bounded_text(result.len())?;

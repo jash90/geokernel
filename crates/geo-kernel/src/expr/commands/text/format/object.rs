@@ -127,6 +127,7 @@ impl Format {
                     LocusDef::Ode { point, source } => ("Locus", [Some(source), Some(point)]),
                     LocusDef::Numeric(_) => return Some(self.shown(ctx.c.kind(id), value)),
                     LocusDef::SlopeField(source) => ("SlopeField", [Some(source), None]),
+                    LocusDef::Hull(list) => ("Hull", [Some(list), None]),
                 };
                 let args = objects
                     .into_iter()

@@ -28,6 +28,10 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoPoint.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/matrix/Coords.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoAnglePoints.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoConstructionStep.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoStepObject.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoAxisStep.java
+//   source/shared/common/src/main/java/org/geogebra/common/euclidian/EuclidianView.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/kernelND/GeoConicND.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/kernelND/GeoQuadricND.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoAngle.java
@@ -105,6 +109,15 @@ pub enum MeasureDef {
     CrossRatio(Id, Id, Id, Id),
     /// `Angle(A, B, C)`: the angle at `B`, counter-clockwise from `BA` to `BC`.
     Angle(Id, Id, Id),
+    /// `ConstructionStep()`, or of one object (`AlgoConstructionStep`,
+    /// `AlgoStepObject`): the step counter, or the object's construction
+    /// index, plus one.
+    ConstructionStep(Option<Id>),
+    /// `AxisStepX()` and `AxisStepY()` (`AlgoAxisStep`): the grid distance
+    /// of the graphics view the kernel reads.
+    AxisStep {
+        y: bool,
+    },
 }
 
 /// `-eps < v < eps` (GeoGebra's `DoubleUtil.isZero`).
@@ -257,6 +270,93 @@ fn line_line_distance(g: (f64, f64, f64), h: (f64, f64, f64)) -> f64 {
     }
 }
 
+/// The construction index of `id`: its place in the construction, or -1
+/// for the built-in axes (`GeoElement.getConstructionIndex`).
+fn id_index(c: &Construction, id: Id) -> i32 {
+    if c.label(id).is_empty() {
+        -1
+    } else {
+        c.element_of(id)
+    }
+}
+
+/// `ConstructionStep()` and `ConstructionStep(object)` (`AlgoConstructionStep`,
+/// `AlgoStepObject`); `AxisStepX()` and `AxisStepY()` (`AlgoAxisStep`).
+fn parse_construction_step(
+    c: &Construction,
+    func: &str,
+    args: &[&str],
+) -> Result<MeasureDef, String> {
+    // An empty pair of parentheses is no argument, not one empty one.
+    let args = if args == [""] { &[][..] } else { args };
+    match func {
+        "AxisStepX" | "AxisStepY" => {
+            if !args.is_empty() {
+                return Err(format!("`{func}` does not take {} argument(s)", args.len()));
+            }
+            Ok(MeasureDef::AxisStep {
+                y: func == "AxisStepY",
+            })
+        }
+        _ => match args {
+            [] => Ok(MeasureDef::ConstructionStep(None)),
+            [object] => Ok(MeasureDef::ConstructionStep(Some(crate::script::object(
+                c, object,
+            )?))),
+            _ => Err(format!("`{func}` does not take {} argument(s)", args.len())),
+        },
+    }
+}
+
+/// `EuclidianView.setAxesIntervals` with the automatic grid of the default
+/// configuration: the axis numbering step at `scale` pixels per unit, one
+/// number per 100 pixels, cleaned of binary noise; the grid distance is
+/// the same (`DEFAULT_GRID_DIST_FACTOR` 1). The y axis copies the x step
+/// when both scales agree.
+fn axis_grid_step(view: [f64; 6], y: bool) -> f64 {
+    let [_xmin, _xmax, _ymin, _ymax, xscale, yscale] = view;
+    // each axis has its own grid distance, from its own scale
+    // (`getGridDistances`)
+    if y {
+        numbering_step(yscale)
+    } else {
+        numbering_step(xscale)
+    }
+}
+
+/// `setAxesIntervals`: with `units = maxPix / scale`, `pot` its power of
+/// ten and `n = units / pot`, the step is `5 pot` for `n > 5`, `2 pot` for
+/// `n > 2` and `pot` otherwise.
+fn numbering_step(scale: f64) -> f64 {
+    let units = 100.0 / scale;
+    if !(units.is_finite() && units > 0.0) {
+        return 1.0;
+    }
+    let exp = units.log10().floor();
+    // "see #2682": both are cleaned of binary noise.
+    let pot = check_decimal_fraction(10f64.powf(exp));
+    let n = check_decimal_fraction(units / pot);
+    if n > 5.0 {
+        5.0 * pot
+    } else if n > 2.0 {
+        2.0 * pot
+    } else {
+        pot
+    }
+}
+
+/// `DoubleUtil.checkDecimalFraction`: a value within `1e-16` of a
+/// multiple of `1e-5` snaps to it.
+fn check_decimal_fraction(val: f64) -> f64 {
+    let frac = val * 1e5;
+    let round = crate::expr::math::java_round(frac) as f64;
+    if is_equal(frac, round) || (frac - round).abs() <= 1e-16 {
+        round / 1e5
+    } else {
+        val
+    }
+}
+
 impl Group for MeasureDef {
     fn kind(&self) -> Kind {
         if matches!(self, MeasureDef::CartesianCurve { .. }) {
@@ -304,6 +404,11 @@ impl Group for MeasureDef {
             MeasureDef::Area4(a, b, c, d) | MeasureDef::CrossRatio(a, b, c, d) => {
                 Parents::of(&[a, b, c, d])
             }
+            MeasureDef::ConstructionStep(object) => {
+                object.map_or_else(Parents::none, |id| Parents::of(&[id]))
+            }
+            // The view is not an object; `set_view` recomputes these.
+            MeasureDef::AxisStep { .. } => Parents::none(),
         }
     }
 
@@ -351,6 +456,11 @@ impl Group for MeasureDef {
                 c.expect(point, POINT)?;
                 c.expect(path, CLOSEST_PATH)
             }
+            MeasureDef::ConstructionStep(object) => {
+                let _ = object;
+                Ok(())
+            }
+            MeasureDef::AxisStep { .. } => Ok(()),
             MeasureDef::DistanceLines(g, h) => {
                 c.expect(g, CARRIERS)?;
                 c.expect(h, CARRIERS)
@@ -378,6 +488,16 @@ impl Group for MeasureDef {
         let number = |v: f64| Some(Value::Number(v));
         match *self {
             MeasureDef::TextLength(n) => number(n as f64),
+            MeasureDef::ConstructionStep(object) => {
+                let step = match object {
+                    // `AlgoStepObject`: the construction index of the
+                    // object's own entry.
+                    Some(id) => id_index(c, id),
+                    None => c.step(),
+                };
+                number(f64::from(step + 1))
+            }
+            MeasureDef::AxisStep { y } => number(axis_grid_step(c.view(), y)),
             MeasureDef::CartesianCurve {
                 coordinates,
                 bounds: [a, b],
@@ -547,6 +667,9 @@ impl Group for MeasureDef {
         }
         if let ("Length", [f, a, b]) = (func, args) {
             return Some(parse_function_length(c, f, a, b));
+        }
+        if let ("ConstructionStep" | "AxisStepX" | "AxisStepY", _) = (func, args) {
+            return Some(parse_construction_step(c, func, args));
         }
         let known = matches!(
             func,

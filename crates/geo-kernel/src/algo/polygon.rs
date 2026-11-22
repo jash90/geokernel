@@ -1234,9 +1234,13 @@ impl Plan {
         let start = c.checkpoint();
         let mut first = None;
         for (label, item) in self.items {
-            let added = match item {
-                Planned::Def(def) => c.add(&label, def),
-                Planned::List(ids, make) => {
+            // the first object is the construction element; the sides and
+            // the further vertices of the polygon are its outputs and
+            // share it in the protocol
+            let added = match (&first, item) {
+                (Some(owner), Planned::Def(def)) => c.add_output(&label, def, *owner),
+                (None, Planned::Def(def)) => c.add(&label, def),
+                (_, Planned::List(ids, make)) => {
                     c.add_with_list(&label, &ids, |list| Def::Polygon(make(list)))
                 }
             };
@@ -1289,7 +1293,12 @@ pub(crate) fn exec(
     let result = match func {
         "Polygon" => polygon_line(c, name, &args),
         "RigidPolygon" => rigid_polygon_line(c, name, &args),
-        "IntersectPath" | "Difference" => clip_line(c, name, func, &args),
+        // `IntersectRegion` and `IntersectionPaths` are GeoGebra's
+        // deprecated aliases of `IntersectPath` (CommandDispatcher).
+        "IntersectPath" | "IntersectionPaths" | "IntersectRegion" | "Difference" => {
+            clip_line(c, name, func, &args)
+        }
+
         "Segment" if let [a, b, polygon] = args.as_slice() => {
             let checked = (|| {
                 points(c, &[*a, *b])?;
@@ -1342,7 +1351,7 @@ pub(crate) fn exec(
         "Centroid" if n == 1 => single(c, name, args[0], PolygonDef::Centroid),
         "Centroid" => Err(format!("`Centroid` does not take {n} argument(s)")),
         // `Vertex(k)` of a general conic belongs to the conic readers
-        "Vertex" if !(n == 1 && kind_of(c, args[0]) == Some(Kind::Conic)) => {
+        "Vertex" | "Corner" if !(n == 1 && kind_of(c, args[0]) == Some(Kind::Conic)) => {
             vertex_line(c, name, &args)
         }
         "InteriorAngles" if n == 1 => outputs_line(c, name, args[0], Outputs::Angles(true)),
@@ -1609,7 +1618,7 @@ fn clip_line(c: &mut Construction, name: &str, func: &str, args: &[&str]) -> Res
         }
     } else {
         let rings = def.rings(c);
-        let vertices = rings.iter().map(Vec::len).sum();
+        let vertices: usize = rings.iter().map(Vec::len).sum();
         for i in 0..rings.len().max(1) {
             let label = planned_index_label(c, &plan.taken, prefix);
             plan.push(
@@ -1620,11 +1629,15 @@ fn clip_line(c: &mut Construction, name: &str, func: &str, args: &[&str]) -> Res
             );
         }
         plan.taken.remove(name);
-        for (labels, output) in [
-            (POINT_LABELS, ClipOutput::Point),
-            (LINE_LABELS, ClipOutput::Edge),
+        // An empty result still has one output of each kind, of which only
+        // the point is ever labelled (`AlgoPolygonOperation` keeps the
+        // sizes at one); a labelled segment would show in the algebra view,
+        // so the kernel keeps the point alone.
+        for (labels, output, count) in [
+            (POINT_LABELS, ClipOutput::Point, vertices.max(1)),
+            (LINE_LABELS, ClipOutput::Edge, vertices),
         ] {
-            for i in 0..vertices {
+            for i in 0..count {
                 let label = next_indexed_label(c, &plan.taken, labels);
                 plan.push(
                     label,
@@ -1970,6 +1983,28 @@ mod tests {
             .skip(from)
             .map(|id| c.label(id).to_string())
             .collect()
+    }
+
+    #[test]
+    fn intersect_region_and_intersection_paths_alias_intersect_path() {
+        // The deprecated names run the same clipping as `IntersectPath`
+        // (`CommandDispatcher` routes all three to one processor).
+        let script = "A = (0, 0)\nB = (4, 0)\nC = (0, 3)\nD = (4, 3)\n\
+                      p = Polygon(A, B, C)\nq = Polygon(A, B, D)\n";
+        let mut region = load(script).unwrap();
+        run(&mut region, "r = IntersectRegion(p, q)").unwrap();
+        let mut paths = load(script).unwrap();
+        run(&mut paths, "r = IntersectionPaths(p, q)").unwrap();
+        let mut plain = load(script).unwrap();
+        run(&mut plain, "r = IntersectPath(p, q)").unwrap();
+        for c in [&mut region, &mut paths] {
+            // a region intersection labels its outputs with an index
+            assert_eq!(
+                c.value(c.id("r_{1}").unwrap()),
+                plain.value(plain.id("r_{1}").unwrap())
+            );
+            assert_eq!(labels(c, 7), labels(&plain, 7));
+        }
     }
 
     #[test]

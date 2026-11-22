@@ -18,7 +18,7 @@ use crate::kernel::locus::{locus_from_points, LocusData, LocusPoint};
 use crate::script::split_call;
 use crate::{Construction, Def, Error, Id, Kind, Value};
 use std::cmp::Ordering;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 pub(super) type Point = (f64, f64);
 
@@ -119,11 +119,16 @@ impl DiscreteDef {
             return None;
         }
 
+        if graph == PointGraph::Hull {
+            crate::expr::charge(list.len() as u64);
+        }
         let mut points = Vec::new();
         let mut seen = HashSet::new();
         for (i, item) in list.iter().enumerate() {
             work.charge(1)?;
             match item {
+                Element::Value(Kind::Point, Value::Point { x, y })
+                    if graph == PointGraph::Hull && (!x.is_finite() || !y.is_finite()) => {}
                 Element::Value(Kind::Point, Value::Point { x, y }) => {
                     // The first pair looks up both endpoints before adding
                     // them, even when both names refer to the same point.
@@ -209,55 +214,156 @@ fn same_point(a: Point, b: Point) -> bool {
     is_equal(a.0, b.0) && is_equal(a.1, b.1)
 }
 
-/// Build the clockwise boundary with a monotone chain in each scan direction.
-fn hull(points: Vec<Point>, work: &mut Budget) -> Option<Vec<LocusPoint>> {
-    let mut sites = Vec::new();
-    for p in points {
-        work.charge(sites.len() + 1)?;
-        if !sites.iter().any(|&q| same_point(p, q)) {
-            sites.push(p);
-        }
-    }
-    if sites.len() <= 1 {
-        return close(sites, work);
-    }
-    let n = sites.len();
-    work.charge(n * (1 + n.ilog2() as usize))?;
-    sites.sort_unstable_by(|a, b| {
-        a.0.partial_cmp(&b.0)
-            .expect("finite site coordinates")
-            .then_with(|| a.1.partial_cmp(&b.1).expect("finite site coordinates"))
-    });
-
-    let mut boundary = Vec::with_capacity(n);
-    append_hull_side(&mut boundary, sites.iter().copied(), work)?;
-    append_hull_side(&mut boundary, sites.into_iter().rev(), work)?;
-    close(boundary, work)
-}
-
-fn append_hull_side(
-    boundary: &mut Vec<Point>,
-    sites: impl Iterator<Item = Point>,
-    work: &mut Budget,
-) -> Option<()> {
-    let start = boundary.len();
-    for p in sites {
-        work.charge(1)?;
-        while boundary.len() - start >= 2 {
-            work.charge(1)?;
-            let len = boundary.len();
-            let (a, b) = (boundary[len - 2], boundary[len - 1]);
-            let turn = (b.0 - a.0) * (p.1 - a.1) - (b.1 - a.1) * (p.0 - a.0);
-            if turn >= 0.0 {
-                boundary.pop();
-            } else {
-                break;
+/// Sort each axis into bands no wider than the duplicate tolerance. Only
+/// the point's own cell and its eight neighbors can hold an equal point.
+/// Each cell holds at most one retained point. Visiting the cells in input
+/// order keeps the first representative even when a different point
+/// separates the duplicates in either sort order.
+fn deduplicate_hull_points(points: &[Point], work: &mut Budget) -> Option<Vec<Point>> {
+    let count = points.len();
+    // At most three candidates need fewer comparisons than two sorts.
+    if count <= 3 {
+        let mut retained = Vec::new();
+        for &point in points {
+            charge_hull(work, retained.len() + 1)?;
+            if !retained.iter().any(|&prior| same_point(point, prior)) {
+                retained.push(point);
             }
         }
-        boundary.push(p);
+        return Some(retained);
     }
-    // The next side starts at this endpoint. Each side can retain at most n - 1 sites.
-    boundary.pop();
+    let sort_levels = count.ilog2() as usize + 1;
+    charge_hull(work, count * (2 * sort_levels + 12))?;
+    let tolerance = crate::tol::STANDARD_PRECISION;
+    let mut order: Vec<_> = (0..count).collect();
+    let mut cells = vec![[0; 2]; count];
+    let coordinates: [fn(Point) -> f64; 2] = [|(x, _)| x, |(_, y)| y];
+    for (axis, coordinate) in coordinates.into_iter().enumerate() {
+        order.sort_unstable_by(|&a, &b| coordinate(points[a]).total_cmp(&coordinate(points[b])));
+        let (mut band, mut origin) = (0, f64::NEG_INFINITY);
+        for &index in &order {
+            let value = coordinate(points[index]);
+            if value - origin > tolerance {
+                band += 1;
+                origin = value;
+            }
+            cells[index][axis] = band;
+        }
+    }
+
+    let mut occupied = HashMap::<_, Point>::new();
+    let mut retained = Vec::new();
+    for (&point, [x, y]) in points.iter().zip(cells) {
+        let equal = (x - 1..=x + 1).any(|i| {
+            (y - 1..=y + 1).any(|j| {
+                occupied
+                    .get(&[i, j])
+                    .is_some_and(|&prior| same_point(point, prior))
+            })
+        });
+        if !equal {
+            occupied.insert([x, y], point);
+            retained.push(point);
+        }
+    }
+    Some(retained)
+}
+
+/// Jarvis's gift wrapping (Information Processing Letters 2, 1973,
+/// doi:10.1016/0020-0190(73)90020-3). Every edge leaves all other points
+/// on its right, which walks the hull clockwise. On an edge keep only
+/// the farthest point. Charge the work of each sweep before starting it.
+fn hull(points: Vec<Point>, work: &mut Budget) -> Option<Vec<LocusPoint>> {
+    let points = deduplicate_hull_points(&points, work)?;
+    let start = points
+        .iter()
+        .enumerate()
+        .min_by(|(_, a), (_, b)| compare_sites(a, b))?
+        .0;
+    let mut run = vec![sample(points[start], false)];
+    let mut current = start;
+    for _ in 0..points.len() {
+        charge_hull(work, points.len() + 1)?;
+        let (ox, oy) = points[current];
+        let offset = |i: usize| (points[i].0 - ox, points[i].1 - oy);
+        let mut next = usize::from(current == 0 && points.len() > 1);
+        let (mut ax, mut ay) = offset(next);
+        for candidate in (0..points.len()).filter(|&i| i != current) {
+            if candidate == next {
+                continue;
+            }
+            let (bx, by) = offset(candidate);
+            let (ab, ba) = (ax * by, ay * bx);
+            let cross = ab - ba;
+            let roundoff = 8.0 * f64::EPSILON * (ab.abs() + ba.abs());
+            if !cross.is_finite() || (roundoff > 0.0 && cross.abs() <= roundoff) {
+                return rounded_hull_boundary(points, work);
+            }
+            if cross > 0.0 || (cross == 0.0 && bx.hypot(by) > ax.hypot(ay)) {
+                next = candidate;
+                (ax, ay) = (bx, by);
+            }
+        }
+        run.push(sample(points[next], true));
+        if next == start {
+            return Some(run);
+        }
+        current = next;
+    }
+    rounded_hull_boundary(points, work)
+}
+
+fn compare_sites(a: &Point, b: &Point) -> Ordering {
+    a.0.partial_cmp(&b.0)
+        .expect("finite hull coordinates")
+        .then_with(|| a.1.partial_cmp(&b.1).expect("finite hull coordinates"))
+}
+
+/// At a cancellation-sensitive turn, reversing the direction can change
+/// the rounded determinant. Keep a predecessor relation for each
+/// direction of the sorted sites, then trace the two paths. This gives
+/// the directed rounding observed in the oracle, including vertices
+/// that appear on both paths in the near-collinear fixtures.
+fn rounded_hull_boundary(mut sites: Vec<Point>, work: &mut Budget) -> Option<Vec<LocusPoint>> {
+    let n = sites.len();
+    charge_hull(work, n * (n.ilog2() as usize + 3))?;
+    sites.sort_unstable_by(compare_sites);
+    let mut predecessor = vec![0; n];
+    let mut run = vec![sample(sites[0], false)];
+    for forward in [true, false] {
+        let point = |rank| sites[if forward { rank } else { n - 1 - rank }];
+        for rank in 2..n {
+            let (cx, cy) = point(rank);
+            let mut prior = rank - 1;
+            while prior != 0 {
+                charge_hull(work, 1)?;
+                let earlier = predecessor[prior];
+                let (ax, ay) = point(earlier);
+                let (bx, by) = point(prior);
+                let turn = (bx - ax) * (cy - ay) - (by - ay) * (cx - ax);
+                if turn.is_nan() || turn < 0.0 {
+                    break;
+                }
+                prior = earlier;
+            }
+            predecessor[rank] = prior;
+        }
+
+        let begin = run.len();
+        let mut rank = n - 1;
+        while rank != 0 {
+            charge_hull(work, 1)?;
+            run.push(sample(point(rank), true));
+            rank = predecessor[rank];
+        }
+        run[begin..].reverse();
+    }
+    Some(run)
+}
+
+fn charge_hull(work: &mut Budget, units: usize) -> Option<()> {
+    work.charge(units)?;
+    crate::expr::charge(units as u64);
     Some(())
 }
 

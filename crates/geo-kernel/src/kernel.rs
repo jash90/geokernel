@@ -57,6 +57,7 @@ use crate::algo::intersect::{
 };
 use crate::algo::lines::{CommonTangentDef, LineDef};
 use crate::algo::measure::MeasureDef;
+use crate::algo::optimize::OptimizeDef;
 use crate::algo::path::{PathDef, PathState};
 use crate::algo::point::PointDef;
 use crate::algo::polygon::PolygonDef;
@@ -520,6 +521,10 @@ pub enum Def {
     /// `Locus(Q, P)` and `Locus(Q, slider)`; the construction keeps the
     /// points of each locus (see [`Construction::locus`]).
     Locus(LocusDef),
+    /// `Maximize(dep, indep)` / `Minimize(dep, indep)` over a bounded
+    /// number; the search itself runs in
+    /// [`algo::optimize::record`], as a locus record does.
+    Optimize(OptimizeDef),
     /// A locus built from points or a segment graph.
     Discrete(algo::discrete::DiscreteDef),
     /// A point, number or circle computed from a function or curve.
@@ -656,6 +661,7 @@ impl Def {
                 }
             }
             Def::Locus(d) => d.kind(),
+            Def::Optimize(d) => d.kind(),
             Def::Calculus(d) => d.kind(),
             Def::Discrete(_) => Kind::Locus,
             Def::Analysis(d) => d.kind(),
@@ -750,6 +756,7 @@ impl Def {
             Def::Path(d) => d.parents(),
             Def::Arc(d) => d.parents(),
             Def::Locus(d) => d.parents(),
+            Def::Optimize(d) => d.parents(),
             Def::Calculus(d) => d.parents(),
             Def::Discrete(d) => d.parents(),
             Def::Analysis(d) => d.parents(),
@@ -810,6 +817,7 @@ pub struct Checkpoint {
     exprs: usize,
     frozen_line_starts: usize,
     image_assets: usize,
+    step: usize,
     /// How many rollbacks the construction had made when it was taken.
     generation: u64,
 }
@@ -830,6 +838,15 @@ impl fmt::Display for StaleCheckpoint {
 }
 
 impl std::error::Error for StaleCheckpoint {}
+
+/// A definition's place in the construction protocol. An output stores
+/// its representative's def index, and follows its position when it moves.
+#[derive(Clone, Copy)]
+enum ProtocolEntry {
+    Hidden,
+    Element(u32),
+    Output(u32),
+}
 
 /// A geometric construction.
 #[derive(Default)]
@@ -896,6 +913,22 @@ pub struct Construction {
     /// The graphics window used to sample loci. A headless construction
     /// uses the reference window.
     locus_view: Option<[f64; 6]>,
+    /// The graphics window the view-dependent objects read (`Corner`,
+    /// `AxisStepX`, `AxisStepY`); the app keeps it current, a headless
+    /// construction uses the reference window.
+    view_state: Option<[f64; 6]>,
+    /// Definitions that read the graphics window, in creation order.
+    view_readers: Vec<usize>,
+    /// The number of construction elements through the current step.
+    step: usize,
+    /// The def indices of the construction elements (`ceList`) in protocol
+    /// order. A polygon and its sides share one construction element.
+    elements: Vec<u32>,
+    /// Membership in `elements` for each def.
+    element_of: Vec<ProtocolEntry>,
+    /// The indices of the objects that read the construction step, so that
+    /// adding an object or `SetConstructionStep` can recompute them.
+    protocol: Vec<usize>,
     /// Line starts installed by the path mover, with their insertion order
     /// so a rollback can remove starts added to pre-existing lines. The
     /// `Option<Id>` is the locus that installed the start, so a rebuild that
@@ -1141,6 +1174,16 @@ impl Construction {
     }
 
     /// The interval of an angle, including an unbounded numeric angle.
+    /// The coordinate style a point or vector prints in, set by
+    /// `ToComplex`, `ToPolar` and `ToPoint` (`Kernel.COORD_*`).
+    pub fn coordinate_mode(&self, id: Id) -> Option<crate::algo::point::CoordMode> {
+        match self.def(id) {
+            Def::Point(PointDef::Convert { mode, .. })
+            | Def::Vector(VectorDef::Convert { mode, .. }) => Some(mode),
+            _ => None,
+        }
+    }
+
     pub fn angle_style(&self, id: Id) -> Option<AngleStyle> {
         match *self.defs.get(id.0)? {
             Def::AngleObject(d) if d.kind() == Kind::Angle => Some(d.style),
@@ -1326,6 +1369,7 @@ impl Construction {
             exprs: self.exprs.len(),
             frozen_line_starts: self.frozen_line_starts.len(),
             image_assets: self.images.asset_count(),
+            step: self.step,
             generation: self.generation,
         }
     }
@@ -1393,6 +1437,7 @@ impl Construction {
         self.construction_sources.retain(|id, _| id.0 < at.len);
         self.frozen_line_starts
             .retain(|_, &mut (_, _, order, _)| order < at.frozen_line_starts);
+        let mut first_removed = self.elements.len();
         while self.defs.len() > at.len {
             let id = self.defs.len() - 1;
             let def = self.defs[id];
@@ -1408,11 +1453,36 @@ impl Construction {
             self.values.pop();
             self.children.pop();
             self.hints.pop();
+            if let Some(ProtocolEntry::Element(index)) = self.element_of.pop() {
+                first_removed = first_removed.min(index as usize);
+            }
             if let Some(label) = self.labels.pop() {
                 self.by_label.remove(&label);
                 self.object_scripts.remove(&label);
             }
         }
+        // A removed object may have opened an element before a surviving
+        // one if it was created after navigating back. Normally only the
+        // tail changes, so a brief probe need not scan the whole protocol.
+        let elements_changed = first_removed < self.elements.len();
+        if elements_changed {
+            if self.elements[first_removed..]
+                .iter()
+                .all(|&id| id as usize >= at.len)
+            {
+                self.elements.truncate(first_removed);
+            } else {
+                self.elements.retain(|&id| (id as usize) < at.len);
+                self.reindex_elements_from(first_removed);
+            }
+        }
+        let step = at.step.min(self.elements.len());
+        let step_changed = self.step != step;
+        self.step = step;
+        self.protocol
+            .truncate(self.protocol.partition_point(|&i| i < at.len));
+        self.view_readers
+            .truncate(self.view_readers.partition_point(|&i| i < at.len));
         self.lists.truncate(at.lists.min(self.lists.len()));
         self.exprs.truncate(at.exprs, at.len);
         self.function_roots.clear();
@@ -1488,6 +1558,9 @@ impl Construction {
             .get_mut()
             .unwrap_or_else(|e| e.into_inner())
             .clear();
+        if step_changed || elements_changed {
+            self.update_protocol();
+        }
     }
 
     /// Every object `def` reads: its parents, the objects its rule also
@@ -1520,7 +1593,14 @@ impl Construction {
 
     /// Adds an object and computes its value.
     pub fn add(&mut self, label: &str, def: Def) -> Result<Id, Error> {
-        self.add_with_path_state(label, def, None)
+        self.add_with_path_state(label, def, None, None)
+    }
+
+    /// Adds another output of the object `owner`: the same value as
+    /// [`Construction::add`], but the protocol counts it with its owner's
+    /// construction element instead of opening one of its own.
+    pub(crate) fn add_output(&mut self, label: &str, def: Def, owner: Id) -> Result<Id, Error> {
+        self.add_with_path_state(label, def, None, Some(owner))
     }
 
     fn add_with_path_state(
@@ -1528,6 +1608,7 @@ impl Construction {
         label: &str,
         def: Def,
         saved_path: Option<PathState>,
+        owner: Option<Id>,
     ) -> Result<Id, Error> {
         if label.is_empty() {
             return Err(Error::EmptyLabel);
@@ -1590,6 +1671,7 @@ impl Construction {
                 let data = locus::record(self, d, id);
                 self.store_locus(id, data)
             }
+            Def::Optimize(d) => algo::optimize::record(self, d),
             Def::Calculus(d) if d.has_record() => {
                 let (value, record) = algo::calculus::initialize(self, &d);
                 self.calculus.push((id.0, record));
@@ -1617,7 +1699,106 @@ impl Construction {
         self.labels.push(label.to_string());
         self.children.push(Vec::new());
         self.by_label.insert(label.to_string(), id);
+        let element = if let Some(owner) = owner {
+            self.output_entry(owner)
+        } else if label.starts_with('\0') {
+            ProtocolEntry::Hidden
+        } else {
+            let index = self.step;
+            self.elements.insert(index, id.0 as u32);
+            self.step += 1;
+            self.reindex_elements_from(self.step);
+            ProtocolEntry::Element(index as u32)
+        };
+        self.element_of.push(element);
+        let reads_step = matches!(def, Def::Measure(MeasureDef::ConstructionStep(_)));
+        if reads_step {
+            self.protocol.push(id.0);
+        }
+        if matches!(
+            def,
+            Def::Point(crate::algo::point::PointDef::ViewCorner { .. })
+                | Def::Measure(MeasureDef::AxisStep { .. })
+        ) {
+            self.view_readers.push(id.0);
+        }
+        if reads_step || matches!(element, ProtocolEntry::Element(_)) {
+            self.update_protocol();
+        }
         Ok(id)
+    }
+
+    /// The step of the construction protocol (`Construction.getStep`).
+    pub fn step(&self) -> i32 {
+        self.step as i32 - 1
+    }
+
+    /// `CmdSetConstructionStep`: moves the protocol step, clamped to the
+    /// construction, and recomputes the objects that read it. `Math.round`
+    /// returns a long, so clamp before narrowing the index.
+    pub fn set_construction_step(&mut self, value: f64) {
+        let index = crate::expr::math::java_round(value - 1.0);
+        if index < -1 {
+            return;
+        }
+        let step = (index.min(self.elements.len() as i64 - 1) + 1) as usize;
+        if step != self.step {
+            self.step = step;
+            self.update_protocol();
+        }
+    }
+
+    /// The position of the construction element `id` belongs to
+    /// (`GeoElement.getConstructionIndex`: its own for a free object, its
+    /// algorithm's for a dependent one).
+    pub(crate) fn element_of(&self, id: Id) -> i32 {
+        match self.element_of.get(id.0) {
+            Some(ProtocolEntry::Element(index)) => *index as i32,
+            Some(ProtocolEntry::Output(owner)) => self.element_of(Id(*owner as usize)),
+            _ => -1,
+        }
+    }
+
+    fn output_entry(&self, owner: Id) -> ProtocolEntry {
+        match self.element_of[owner.0] {
+            ProtocolEntry::Hidden => ProtocolEntry::Hidden,
+            ProtocolEntry::Element(_) => ProtocolEntry::Output(owner.0 as u32),
+            entry @ ProtocolEntry::Output(_) => entry,
+        }
+    }
+
+    fn reindex_elements_from(&mut self, start: usize) {
+        for (position, &id) in self.elements.iter().enumerate().skip(start) {
+            self.element_of[id as usize] = ProtocolEntry::Element(position as u32);
+        }
+    }
+
+    /// Moves a just-added expression output into its owner's element.
+    pub(crate) fn adopt_output(&mut self, id: Id, owner: Id) {
+        let previous = self.element_of[id.0];
+        self.element_of[id.0] = self.output_entry(owner);
+        if let ProtocolEntry::Element(index) = previous {
+            let index = index as usize;
+            debug_assert_eq!(self.step, index + 1);
+            self.elements.remove(index);
+            self.step = index;
+            self.reindex_elements_from(index);
+            self.update_protocol();
+        }
+    }
+
+    /// Recomputes the objects that read the construction step and whatever
+    /// depends on them (`updateAllConstructionProtocolAlgorithms`).
+    pub(crate) fn update_protocol(&mut self) {
+        if self.protocol.is_empty() {
+            return;
+        }
+        let mut dirty = std::mem::take(&mut self.dirty);
+        dirty.fit(self.defs.len());
+        for &i in &self.protocol {
+            dirty.insert(i);
+        }
+        self.propagate_dirty(dirty, 0);
     }
 
     /// Installs rigid constraints on existing free points after all outputs
@@ -1974,6 +2155,15 @@ impl Construction {
                         continue;
                     }
                 }
+                Def::Optimize(d) => {
+                    let new = algo::optimize::record(self, d);
+                    if new == self.values[i] {
+                        // Nothing downstream can change because of this
+                        // object.
+                        continue;
+                    }
+                    self.values[i] = new;
+                }
                 _ => {
                     let new = self.compute(def, i);
                     if let Def::IntersectBoundary(intersection) = def {
@@ -2251,7 +2441,7 @@ impl Construction {
             return Err(Error::NotFinite);
         }
         let state = PathState::saved(self, path, x, y, bounds);
-        self.add_with_path_state(label, Def::Path(PathDef::On { path }), Some(state))
+        self.add_with_path_state(label, Def::Path(PathDef::On { path }), Some(state), None)
     }
 
     pub(crate) fn add_saved_curve_point(
@@ -2264,7 +2454,7 @@ impl Construction {
             return Err(Error::NotFinite);
         }
         let state = PathState::saved_curve(self, path, t);
-        self.add_with_path_state(label, Def::Path(PathDef::On { path }), Some(state))
+        self.add_with_path_state(label, Def::Path(PathDef::On { path }), Some(state), None)
     }
 
     /// Gives the point on a path `id` the state `state` read from another
@@ -2498,6 +2688,7 @@ impl Construction {
             // the coefficient entries were checked when they were parsed
             Def::Equation(d) => crate::expr::equation::check(self, d),
             Def::Locus(d) => d.check(self),
+            Def::Optimize(d) => d.check(self),
             Def::Calculus(d) => d.check(self),
             Def::Discrete(d) => d.check(self),
             Def::Analysis(d) => d.check(self),
@@ -2607,6 +2798,7 @@ impl Construction {
             Def::Arc(d) => d.compute(self),
             Def::Equation(d) => Some(expr::equation::current(self, d)),
             Def::Locus(d) => d.compute(self),
+            Def::Optimize(d) => d.compute(self),
             Def::Calculus(d) => d.compute(self),
             Def::Discrete(_) => None,
             Def::Analysis(d) => d.compute(self),
@@ -3237,6 +3429,47 @@ mod tests {
         assert_eq!(c.id("C"), None);
         c.rollback(outer).unwrap();
         assert_eq!((c.len(), c.id("B")), (1, None));
+    }
+
+    #[test]
+    fn rollback_restores_step_indices_readers_and_dependents() {
+        for rollback in [false, true] {
+            let mut c = crate::script::load(
+                "s = ConstructionStep()\nA = (0, 0)\na = ConstructionStep(A)\nd = 2 * s\n",
+            )
+            .unwrap();
+            let s = c.id("s").unwrap();
+            let a = c.id("a").unwrap();
+            let d = c.id("d").unwrap();
+            c.set_construction_step(1.0);
+            let checkpoint = c.checkpoint();
+
+            crate::script::exec(&mut c, "B = (1, 1)").unwrap();
+            let abandoned = crate::script::exec(&mut c, "t = ConstructionStep()")
+                .unwrap()
+                .unwrap();
+            assert_eq!(c.number(a), Some(4.0));
+            assert_eq!(c.number(d), Some(6.0));
+            c.set_construction_step(f64::INFINITY);
+            assert_eq!(c.number(s), Some(6.0));
+
+            if rollback {
+                c.rollback(checkpoint).unwrap();
+            } else {
+                c.discard_since(checkpoint);
+            }
+            assert_eq!(c.step(), 0);
+            assert_eq!(c.number(s), Some(1.0));
+            assert_eq!(c.number(a), Some(2.0));
+            assert_eq!(c.number(d), Some(2.0));
+            assert_eq!(c.protocol, [s.0, a.0]);
+
+            c.add("b", Def::Number(4.0)).unwrap();
+            assert_eq!(c.add("q", Def::Number(7.0)), Ok(abandoned));
+            c.set_construction_step(f64::INFINITY);
+            assert_eq!(c.number(abandoned), Some(7.0));
+            assert_eq!(c.number(d), Some(12.0));
+        }
     }
 
     #[test]

@@ -158,6 +158,25 @@ fn type_node(
             )
         }
         Node::Side(..) => (Ty::Num(0), 1, 1, 0),
+        Node::Financial(_, args) => {
+            let args = args
+                .iter()
+                .copied()
+                .take_while(|&a| a != super::NONE)
+                .map(|a| a as usize)
+                .collect::<Vec<_>>();
+            if args.iter().any(|&a| !matches!(state.tys[a], Ty::Num(_))) {
+                return Err("a financial command needs numbers".into());
+            }
+            let depth = args.iter().map(|&a| state.depth[a]).max().unwrap_or(0);
+            let cost = args
+                .iter()
+                .map(|&a| state.cost[a])
+                .fold(2u64, |sum, c| sum.saturating_add(c))
+                .saturating_mul(3);
+            let vars = args.iter().map(|&a| state.vars[a]).sum();
+            (Ty::Num(0), 1 + depth, cost, vars)
+        }
         Node::Apply2(_, a, b) => {
             let (a, b) = (a as usize, b as usize);
             if !matches!((state.tys[a], state.tys[b]), (Ty::Num(_), Ty::Num(_))) {
@@ -883,7 +902,7 @@ pub(super) fn scalar_binary_type(op: Bin, a: Ty, b: Ty) -> Result<Ty, String> {
         (Bin::Pow, Num(x), Num(y)) => Ok(Num(if y > 0 { 0 } else { x })),
         (Bin::Pow, Vec, Num(_)) => Ok(Num(0)),
         (Bin::Round2, Num(x), Num(_)) => Ok(Num(x)),
-        (Bin::Atan2 | Bin::LogB, Num(_), Num(_)) => Ok(Num(0)),
+        (Bin::Atan2 | Bin::LogB | Bin::FoldCount, Num(_), Num(_)) => Ok(Num(0)),
         (op, Num(_), Num(_)) if op.is_command() => Ok(Num(0)),
         (op, _, _) if op.is_command() => Err("the command takes two numbers".into()),
         _ => complex(),

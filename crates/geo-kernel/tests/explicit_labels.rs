@@ -6,7 +6,7 @@
 mod common;
 
 use common::Rng;
-use geo_kernel::script::{exec, load};
+use geo_kernel::script::{exec, load, multi_output_count};
 use geo_kernel::{Construction, Kind, Value};
 use std::panic::{catch_unwind, AssertUnwindSafe};
 
@@ -56,6 +56,22 @@ fn explicit_labels_do_not_depend_on_what_is_defined() {
     let a = c.id("A").unwrap();
     c.move_point(a, 1.0, 1.0).unwrap();
     assert_eq!(c.kind(c.id("v").unwrap()), Kind::Line);
+}
+
+#[test]
+fn deprecated_clip_commands_accept_explicit_conic_output_labels() {
+    let input = "O = (0, 0)\nk = Circle(O, 2)\nA = (-4, 0)\nB = (4, 0)\ns = Segment(A, B)";
+    let expected = load(&format!("{input}\n{{cut}} = IntersectPath(s, k)")).unwrap();
+    let expected = expected.value(expected.id("cut").unwrap());
+    assert!(expected.is_defined());
+    for alias in ["IntersectRegion", "IntersectionPaths"] {
+        let mut c = load(input).unwrap();
+        let call = format!("{alias}(s, k)");
+        assert_eq!(multi_output_count(&c, &call), Some(Ok(1)));
+        let id = exec(&mut c, &format!("{{cut}} = {call}")).unwrap().unwrap();
+        assert_eq!(c.label(id), "cut");
+        assert_eq!(c.value(id), expected);
+    }
 }
 
 #[test]

@@ -1,0 +1,138 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "financial-present-001",
+      "group": "financial",
+      "script": [
+        "a = PresentValue(42, 4, 13)",
+        "b = PresentValue(42, 4, 13, 1)",
+        "c = PresentValue(42, 4, 13, 0, 1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": -0.30952371898803116 },
+          "b": { "type": "number", "defined": true, "value": -0.3095240114882381 },
+          "c": { "type": "number", "defined": true, "value": -13.30951991648534 }
+        }
+      ]
+    },
+    {
+      "id": "financial-present-002",
+      "group": "financial",
+      "script": [
+        "p = PresentValue(10, 0.05, -100)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "p": { "type": "number", "defined": true, "value": 1.1298622209304316 }
+        }
+      ]
+    },
+    {
+      "id": "financial-present-003",
+      "group": "financial",
+      "script": [
+        "p = PresentValue(10, 0.05, -100, 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "p": { "type": "number", "defined": true, "value": 1.1298622209304316 }
+        }
+      ]
+    },
+    {
+      "id": "financial-present-004",
+      "group": "financial",
+      "script": [
+        "p = PresentValue(10, 0.05, -100, 0, 500)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "p": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "financial-present-005",
+      "group": "financial",
+      "script": [
+        "r = 0.02",
+        "p = PresentValue(36, r, -150)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "r", "value": 0.0 },
+        { "action": "set_number", "label": "r", "value": 0.4 },
+        { "action": "set_number", "label": "r", "value": -0.4 },
+        { "action": "set_number", "label": "r", "value": 0.02 }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "value": 0.02 },
+          "p": { "type": "number", "defined": true, "value": 0.29030112961277005 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "p": { "type": "number", "defined": false }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 0.4 },
+          "p": { "type": "number", "defined": true, "value": 3.1837695328067417 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": -0.4 },
+          "p": { "type": "number", "defined": false }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 0.02 },
+          "p": { "type": "number", "defined": true, "value": 0.29030112961277005 }
+        }
+      ]
+    },
+    {
+      "id": "financial-present-006",
+      "group": "financial",
+      "script": [
+        "p = PresentValue(10, 0.05, -100, 1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "p": { "type": "number", "defined": true, "value": 0.2428484430234747 }
+        }
+      ]
+    },
+    {
+      "id": "financial-present-007",
+      "group": "financial",
+      "script": [
+        "p = PresentValue(10, 0, -100)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "p": { "type": "number", "defined": false }
+        }
+      ]
+    }
+  ]
+}

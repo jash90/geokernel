@@ -35,6 +35,10 @@ OUT_OF_SCOPE_GROUPS = {"3d", "spreadsheet", "probability", "cas", "scripting", "
 OUT_OF_SCOPE_COMMANDS = {"var", "cov", "Polyhedron", "CornerThreeD", "Evaluate", "Stadium",
                          "TableToChart", "SelectedElement", "SelectedIndex", "RandomElement"}
 EXCLUDED_ALGEBRA = {
+    "PenStrokeBezier": "A pen stroke reads the pointing device and the tablet state, not the construction.",
+    "ImplicitSurface": "Implicit surfaces are 3D-only objects.",
+    "ToolImage": "Draws a tool's icon image into the graphics view, not a construction object.",
+    "CASLoaded": "Reports whether the CAS view is part of the app, which the kernel has no view of.",
     "CSolve": "All algebra-input forms delegate to the CAS.",
     "CSolutions": "All algebra-input forms delegate to the CAS.",
 }

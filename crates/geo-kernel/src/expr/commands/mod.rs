@@ -10,8 +10,13 @@
 mod algebra;
 pub(super) use algebra::integers::{factor as integer_factors, prime};
 
-pub(crate) use algebra::{extrema::brent_minimum, polynomial};
+pub(crate) use algebra::{
+    extrema::{brent_minimum, fmin},
+    polynomial,
+};
+pub(super) mod financial;
 pub(super) mod function_analysis;
+mod geogebra;
 mod geometry;
 mod list;
 pub(super) mod logical;
@@ -38,6 +43,8 @@ pub(super) fn is_command(name: &str) -> bool {
         statistics::NAMES,
         geometry::NAMES,
         text::NAMES,
+        financial::NAMES,
+        geogebra::NAMES,
     ]
     .iter()
     .any(|names| names.contains(&name))
@@ -65,7 +72,13 @@ pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
     if let Some(node) = statistics::parse(p, text)? {
         return Ok(Some(node));
     }
+    if let Some(node) = financial::parse(p, text)? {
+        return Ok(Some(node));
+    }
     if let Some(node) = geometry::parse(p, text)? {
+        return Ok(Some(node));
+    }
+    if let Some(node) = geogebra::parse(p, text)? {
         return Ok(Some(node));
     }
     algebra::parse(p, text)

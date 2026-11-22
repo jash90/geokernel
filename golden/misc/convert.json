@@ -1,0 +1,174 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "misc-convert-001",
+      "group": "misc",
+      "script": [
+        "A = (1, 2)",
+        "cz = ToComplex(A)",
+        "p = ToPolar(A)",
+        "q = ToPoint(cz)",
+        "n = 3",
+        "w = ToComplex(n)",
+        "e = ToPolar(n)",
+        "r = ToPoint(n)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": -3.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": 0.0, "y": -1.0 },
+        { "action": "move", "label": "A", "x": 1.0, "y": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "cz": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "p": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "q": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "w": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "e": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "r": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 4.0 },
+          "cz": { "type": "point", "defined": true, "x": -3.0, "y": 4.0 },
+          "p": { "type": "point", "defined": true, "x": -3.0, "y": 4.0 },
+          "q": { "type": "point", "defined": true, "x": -3.0, "y": 4.0 },
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "w": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "e": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "r": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": -1.0 },
+          "cz": { "type": "point", "defined": true, "x": 0.0, "y": -1.0 },
+          "p": { "type": "point", "defined": true, "x": 0.0, "y": -1.0 },
+          "q": { "type": "point", "defined": true, "x": 0.0, "y": -1.0 },
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "w": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "e": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "r": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "cz": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "p": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "q": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "w": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "e": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "r": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "misc-convert-002",
+      "group": "misc",
+      "script": [
+        "l = {5, 2}",
+        "u = ToComplex(l)",
+        "v = ToPolar(l)",
+        "w = ToPoint(l)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 5.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "u": { "type": "point", "defined": true, "x": 5.0, "y": 2.0 },
+          "v": { "type": "point", "defined": true, "x": 5.0, "y": 2.0 },
+          "w": { "type": "point", "defined": true, "x": 5.0, "y": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "misc-convert-003",
+      "group": "misc",
+      "script": [
+        "A = (1, 1)",
+        "B = (4, 5)",
+        "w = Vector(A, B)",
+        "u = ToComplex(w)",
+        "v = ToPolar(w)",
+        "q = ToPoint(w)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 1.0, "y": 1.0 },
+        { "action": "move", "label": "B", "x": 4.0, "y": 5.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 5.0 },
+          "w": { "type": "vector", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 3.0, "y": 4.0 },
+          "q": { "type": "vector", "defined": true, "x": 3.0, "y": 4.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "w": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "u": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "q": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 5.0 },
+          "w": { "type": "vector", "defined": true, "x": 3.0, "y": 4.0 },
+          "u": { "type": "vector", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 3.0, "y": 4.0 },
+          "q": { "type": "vector", "defined": true, "x": 3.0, "y": 4.0 }
+        }
+      ]
+    },
+    {
+      "id": "misc-convert-004",
+      "group": "misc",
+      "script": [
+        "A = (0, 0)",
+        "cz = ToComplex(A)",
+        "p = ToPolar(A)",
+        "B = (-2, 0)",
+        "u = ToComplex(B)",
+        "r = ToPolar(B)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "cz": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "p": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "u": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "r": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "cz": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "p": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "u": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        }
+      ]
+    }
+  ]
+}

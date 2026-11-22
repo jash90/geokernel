@@ -161,6 +161,26 @@ pub(crate) fn add_labelled_output(
     name: &str,
     def: Def,
 ) -> Result<Id, String> {
+    add_output_of(c, name, def, None)
+}
+
+/// [`add_labelled_output`] as a further output of the construction element
+/// `owner` (see [`Construction::add_output`]).
+pub(crate) fn add_labelled_output_of(
+    c: &mut Construction,
+    name: &str,
+    def: Def,
+    owner: crate::kernel::Id,
+) -> Result<Id, String> {
+    add_output_of(c, name, def, Some(owner))
+}
+
+fn add_output_of(
+    c: &mut Construction,
+    name: &str,
+    def: Def,
+    owner: Option<crate::kernel::Id>,
+) -> Result<Id, String> {
     let (line, conic) = match def {
         Def::IntersectLineCircle {
             line,
@@ -172,13 +192,23 @@ pub(crate) fn add_labelled_output(
             conic,
             which: 1,
         }) => (line, conic),
-        _ => return c.add(name, def).map_err(|e| e.to_string()),
+        _ => {
+            return match owner {
+                Some(owner) => c.add_output(name, def, owner),
+                None => c.add(name, def),
+            }
+            .map_err(|e| e.to_string())
+        }
     };
     let (line, conic) = (c.label(line), c.label(conic));
     let p = format!("Intersect({line}, {conic}, 1)");
     let q = format!("Intersect({line}, {conic}, 2)");
     let expression = format!("If(x({q}) == x({q}), {q}, If(IsTangent({line}, {conic}), {p}))");
-    crate::expr::define(c, name, &expression, false)
+    let id = crate::expr::define(c, name, &expression, false)?;
+    if let Some(owner) = owner {
+        c.adopt_output(id, owner);
+    }
+    Ok(id)
 }
 
 fn selector_kind(c: &mut Construction, text: &str) -> Result<Kind, String> {

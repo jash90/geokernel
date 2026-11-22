@@ -19,7 +19,7 @@ pub(in crate::expr) mod integers;
 pub(crate) mod polynomial;
 
 use crate::expr::eval::{number_of, Ctx, Val};
-use crate::expr::math::{check_integer, is_equal, is_integer, is_zero, java_round};
+use crate::expr::math::{binomial, check_integer, is_equal, is_integer, is_zero, java_round, n_pr};
 use crate::expr::parse::{list_form, Parser};
 use crate::expr::types::of_numbers;
 use crate::expr::{AlgebraOp, Bin, Elem, ListOp, Node, Ty, NONE};
@@ -47,6 +47,8 @@ pub(super) fn binary_command(name: &str) -> Option<Bin> {
         "CommonDenominator" => Bin::CommonDenominator,
         "Max" => Bin::Max,
         "Min" => Bin::Min,
+        "nCr" => Bin::Ncr,
+        "nPr" => Bin::Npr,
         _ => return None,
     })
 }
@@ -55,7 +57,15 @@ pub(super) fn binary_command(name: &str) -> Option<Bin> {
 pub(super) fn is_binary_command(op: Bin) -> bool {
     matches!(
         op,
-        Bin::Mod | Bin::IntDiv | Bin::Gcd | Bin::Lcm | Bin::CommonDenominator | Bin::Max | Bin::Min
+        Bin::Mod
+            | Bin::IntDiv
+            | Bin::Gcd
+            | Bin::Lcm
+            | Bin::CommonDenominator
+            | Bin::Max
+            | Bin::Min
+            | Bin::Ncr
+            | Bin::Npr
     )
 }
 
@@ -69,6 +79,8 @@ pub(super) fn binary(op: Bin, a: f64, b: f64) -> f64 {
         Bin::CommonDenominator => common_denominator(a, b),
         Bin::Max => max(a, b),
         Bin::Min => min(a, b),
+        Bin::Ncr => binomial(a, b),
+        Bin::Npr => n_pr(a, b),
         _ => f64::NAN,
     }
 }

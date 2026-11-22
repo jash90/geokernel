@@ -144,6 +144,10 @@ impl Format {
     ) -> Option<String> {
         let term = |i, precedence| self.expression(ctx, i, substitute, precedence);
         let (precedence, expr) = match op {
+            Bin::FoldCount => {
+                let count = crate::expr::math::fold_count(ctx.full_number(a), ctx.full_number(b));
+                (8, self.number(count))
+            }
             Bin::Mul if matches!(ctx.node(b), Node::Degree) => {
                 (8, format!("{}{}", term(a, 8)?, term(b, 0)?))
             }

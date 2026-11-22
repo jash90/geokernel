@@ -99,6 +99,9 @@ pub enum LocusDef {
     },
     /// A grid of line segments showing the slope at each sample.
     SlopeField(Id),
+    /// `Hull(list, number)`: the convex hull of a list of points as a
+    /// closed locus (`AlgoConvexHull`); the number is ignored.
+    Hull(Id),
     Numeric(NumericLocus),
 }
 
@@ -215,6 +218,47 @@ impl Construction {
         self.propagate_dirty(dirty, 0);
     }
 
+    /// The graphics window the view-dependent objects read.
+    pub fn view(&self) -> [f64; 6] {
+        self.view_state.or(self.locus_view).unwrap_or(HEADLESS_VIEW)
+    }
+
+    /// Sets the window the view-dependent objects read (`Corner`,
+    /// `AxisStepX`, `AxisStepY`) and recomputes them, as GeoGebra's
+    /// `euclidianViewUpdate` does on every view change. Returns whether any
+    /// view readers needed an update. Loci follow their own sampling window.
+    pub fn set_view(
+        &mut self,
+        xmin: f64,
+        xmax: f64,
+        ymin: f64,
+        ymax: f64,
+        xscale: f64,
+        yscale: f64,
+    ) -> bool {
+        let view = [xmin, xmax, ymin, ymax, xscale, yscale];
+        let valid = view.iter().all(|v| v.is_finite())
+            && xmax > xmin
+            && ymax > ymin
+            && xscale > 0.0
+            && yscale > 0.0;
+        if !valid || self.view_state == Some(view) {
+            return false;
+        }
+        let changed = self.view() != view;
+        self.view_state = Some(view);
+        if !changed || self.view_readers.is_empty() {
+            return false;
+        }
+        let mut dirty = std::mem::take(&mut self.dirty);
+        dirty.fit(self.defs.len());
+        for &i in &self.view_readers {
+            dirty.insert(i);
+        }
+        self.propagate_dirty(dirty, 0);
+        true
+    }
+
     pub(super) fn store_locus(&mut self, id: Id, data: LocusData) -> Value {
         let value = data.value();
         self.loci.push((id.0, data));
@@ -310,6 +354,7 @@ pub(crate) fn reads(c: &Construction, d: LocusDef) -> Vec<Id> {
             return ids;
         }
         LocusDef::SlopeField(source) => return vec![source],
+        LocusDef::Hull(list) => return vec![list],
         LocusDef::Numeric(def) => return def.inputs().collect(),
         LocusDef::Slider { point, .. } | LocusDef::Path { point, .. } => point,
     };
@@ -325,7 +370,10 @@ pub(crate) fn reads(c: &Construction, d: LocusDef) -> Vec<Id> {
         let reads = match d {
             LocusDef::Path { mover, .. } => id != mover && pointer_changeable(c, id),
             LocusDef::Slider { .. } => c.def(id).is_free(),
-            LocusDef::Ode { .. } | LocusDef::SlopeField(_) | LocusDef::Numeric(_) => unreachable!(),
+            LocusDef::Ode { .. }
+            | LocusDef::SlopeField(_)
+            | LocusDef::Hull(_)
+            | LocusDef::Numeric(_) => unreachable!(),
         };
         if is && reads {
             ids.push(id);
@@ -336,7 +384,7 @@ pub(crate) fn reads(c: &Construction, d: LocusDef) -> Vec<Id> {
 
 /// The objects that depend on `mover` and that `q` depends on, `q`
 /// included, in creation order: what a sample recomputes.
-fn chain(c: &Construction, q: Id, mover: Id) -> Vec<usize> {
+pub(crate) fn chain(c: &Construction, q: Id, mover: Id) -> Vec<usize> {
     let anc = ancestors(c, q);
     let mut desc = vec![false; q.0 + 1];
     let mut stack = vec![mover];
@@ -380,7 +428,7 @@ fn is_closed(c: &Construction, path: Id, g: &Geom<'_>) -> bool {
 }
 
 /// What sampling changes, saved to be put back.
-struct Saved {
+pub(crate) struct Saved {
     values: Vec<(usize, Value)>,
     defs: Vec<(usize, Def)>,
     paths: Vec<(usize, PathState)>,
@@ -390,7 +438,7 @@ struct Saved {
 }
 
 impl Saved {
-    fn of(c: &Construction, ids: &[usize]) -> Self {
+    pub(crate) fn of(c: &Construction, ids: &[usize]) -> Self {
         let mut s = Saved {
             values: Vec::with_capacity(ids.len()),
             defs: Vec::with_capacity(ids.len()),
@@ -423,7 +471,7 @@ impl Saved {
     /// first, so that what an expression keeps besides its value (its last
     /// raw result) follows the saved inputs again; then every saved value
     /// and record is written back bit for bit.
-    fn restore(self, c: &mut Construction, chain: &[usize]) {
+    pub(crate) fn restore(self, c: &mut Construction, chain: &[usize]) {
         for &(i, def) in &self.defs {
             c.defs[i] = def;
         }
@@ -457,7 +505,7 @@ impl Saved {
 }
 
 /// Recomputes object `i` from its parents, as an update does.
-fn recompute(c: &mut Construction, i: usize) {
+pub(crate) fn recompute(c: &mut Construction, i: usize) {
     let def = c.defs[i];
     match def {
         Def::Expr(d) => {
@@ -474,6 +522,10 @@ fn recompute(c: &mut Construction, i: usize) {
         }
         // a locus is never between a moving object and the point of a locus
         Def::Locus(_) => {}
+        // Locus and optimizer sampling keep the existing optimum. A live
+        // optimizer would cascade from its own slider into the construction
+        // being sampled. The general construction update still reruns it.
+        Def::Optimize(_) => {}
         Def::Discrete(d) => {
             c.update_locus(i, |c| d.record(c, c.locus(Id(i))));
         }
@@ -494,6 +546,11 @@ pub(crate) fn record(c: &mut Construction, d: LocusDef, owner: Id) -> LocusData 
         LocusDef::Slider { point, slider } => record_slider(c, point, slider),
         LocusDef::Ode { point, source } => record_ode(c, point, source),
         LocusDef::SlopeField(source) => record_slope_field(c, source, None, None, None),
+        LocusDef::Hull(list) => crate::algo::discrete::DiscreteDef::Points {
+            graph: crate::algo::discrete::PointGraph::Hull,
+            list,
+        }
+        .record(c, None),
         LocusDef::Numeric(d) => d.record(c),
     }
 }
@@ -1347,6 +1404,7 @@ impl Group for LocusDef {
                 source: mover,
             } => Parents::of(&[point, mover]),
             LocusDef::SlopeField(source) => Parents::of(&[source]),
+            LocusDef::Hull(list) => Parents::of(&[list]),
             LocusDef::Numeric(d) => d.parents(),
         }
     }
@@ -1367,6 +1425,7 @@ impl Group for LocusDef {
             LocusDef::SlopeField(source) => {
                 return c.expect(source, &[Kind::Function, Kind::FunctionNVar])
             }
+            LocusDef::Hull(list) => return c.expect(list, &[Kind::List]),
             LocusDef::Numeric(d) => return d.check(c),
             LocusDef::Path { point, mover }
             | LocusDef::Slider {
@@ -1397,7 +1456,10 @@ impl Group for LocusDef {
                     return Err(wrong(NUMBER));
                 }
             }
-            LocusDef::Ode { .. } | LocusDef::SlopeField(_) | LocusDef::Numeric(_) => unreachable!(),
+            LocusDef::Ode { .. }
+            | LocusDef::SlopeField(_)
+            | LocusDef::Hull(_)
+            | LocusDef::Numeric(_) => unreachable!(),
         }
         if on_path(c, point) || !is_ancestor(c, mover, point) {
             return Err(Error::WrongKind {
@@ -1420,6 +1482,25 @@ impl Group for LocusDef {
     fn parse(c: &Construction, func: &str, args: &[&str]) -> Option<Result<Self, String>> {
         if let ("SlopeField", [source]) = (func, args) {
             return Some(crate::script::object(c, source).map(LocusDef::SlopeField));
+        }
+        if func == "Hull" {
+            return Some(match args {
+                [list, number] => parse_hull(c, list, number),
+                _ => Err(format!("`Hull` does not take {} argument(s)", args.len())),
+            });
+        }
+        // `ConvexHull(list)` is the same algorithm with the list alone
+        // (`CmdConvexHull` extends `CmdOneListFunction`).
+        if func == "ConvexHull" {
+            return Some(match args {
+                [list] => crate::script::object(c, list)
+                    .map(LocusDef::Hull)
+                    .and_then(|def| def.check(c).map_err(|e| e.to_string()).map(|_| def)),
+                _ => Err(format!(
+                    "`ConvexHull` does not take {} argument(s)",
+                    args.len()
+                )),
+            });
         }
         if func != "Locus" {
             return None;
@@ -1463,7 +1544,28 @@ fn parse_locus(c: &Construction, args: &[&str]) -> Result<LocusDef, String> {
         LocusDef::Ode { .. } => {
             format!("`Locus({a}, {b})` needs a slope function or field and a point")
         }
-        LocusDef::SlopeField(_) | LocusDef::Numeric(_) => unreachable!(),
+        LocusDef::SlopeField(_) | LocusDef::Hull(_) | LocusDef::Numeric(_) => unreachable!(),
     })?;
     Ok(def)
+}
+
+/// `CmdHull`: exactly a list and a number, and the number is only there to
+/// be ignored (the command once had a parameter, and `AlgoConvexHull` runs
+/// without it).
+fn parse_hull(c: &Construction, list: &str, number: &str) -> Result<LocusDef, String> {
+    let list = crate::script::object(c, list)?;
+    if c.kind(list) != Kind::List {
+        return Err(format!(
+            "`Hull` needs a list of points, found `{}`",
+            c.label(list)
+        ));
+    }
+    let number_is_numeric = crate::expr::plain_number(number).is_some()
+        || c.id(number).is_some_and(|id| c.kind(id) == Kind::Number);
+    if !number_is_numeric {
+        return Err(format!(
+            "`Hull` needs a number as its second argument, found `{number}`"
+        ));
+    }
+    Ok(LocusDef::Hull(list))
 }

@@ -1,0 +1,111 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "financial-npr-001",
+      "group": "financial",
+      "script": [
+        "a = nPr(8, 7)",
+        "b = nPr(5, 0)",
+        "c = nPr(5, 6)",
+        "d = nPr(5, -1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 40320.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "financial-npr-002",
+      "group": "financial",
+      "script": [
+        "a = nPr(10, 4)",
+        "b = nPr(16, 8)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 5040.0 },
+          "b": { "type": "number", "defined": true, "value": 5.189184E8 }
+        }
+      ]
+    },
+    {
+      "id": "financial-npr-003",
+      "group": "financial",
+      "script": [
+        "a = nPr(2.5, 2)",
+        "b = nPr(5, 2.5)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "financial-npr-004",
+      "group": "financial",
+      "script": [
+        "a = nPr(1000000, 3)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 9.99997000002E17 }
+        }
+      ]
+    },
+    {
+      "id": "financial-npr-005",
+      "group": "financial",
+      "script": [
+        "a = nPr(10^40, 2)",
+        "b = nPr(10^300, 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "financial-npr-006",
+      "group": "financial",
+      "script": [
+        "a = nPr(10^16, 10)",
+        "b = nPr(9007199254740996, 4)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 9.999999999999955E159 },
+          "b": { "type": "number", "defined": true, "value": 6.582018229284831E63 }
+        }
+      ]
+    }
+  ]
+}
