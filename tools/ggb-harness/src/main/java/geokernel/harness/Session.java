@@ -28,6 +28,7 @@ import org.geogebra.common.kernel.algos.AlgoPointsFromList;
 import org.geogebra.common.kernel.algos.AlgoPointOnPath;
 import org.geogebra.common.kernel.algos.AlgoPointInRegion;
 import org.geogebra.common.kernel.algos.AlgoRayPointVector;
+import org.geogebra.common.kernel.algos.AlgoRoots;
 import org.geogebra.common.kernel.algos.AlgoSemicircle;
 import org.geogebra.common.kernel.commands.AlgebraProcessor;
 import org.geogebra.common.kernel.geos.GeoConic;
@@ -53,6 +54,7 @@ import org.geogebra.common.kernel.kernelND.GeoPointND;
 import org.geogebra.common.kernel.matrix.Coords;
 import org.geogebra.common.main.App;
 import org.geogebra.common.main.error.ErrorHandler;
+import org.geogebra.common.util.debug.Log;
 import org.geogebra.common.main.settings.config.AppConfigDefault;
 import org.geogebra.common.util.AsyncOperation;
 import org.geogebra.common.util.StringUtil;
@@ -106,15 +108,17 @@ final class Session {
     private final Set<GeoElement> conics = Collections.newSetFromMap(new IdentityHashMap<>());
     private final boolean trackBoundaryGrowth;
     private final boolean trackPointListGrowth;
+    private final boolean trackRootGrowth;
     private final Map<AlgoElement, String> growingPoints = new LinkedHashMap<>();
 
     Session() {
-        this(false, false);
+        this(false, false, false);
     }
 
-    Session(boolean trackBoundaryGrowth, boolean trackPointListGrowth) {
+    Session(boolean trackBoundaryGrowth, boolean trackPointListGrowth, boolean trackRootGrowth) {
         this.trackBoundaryGrowth = trackBoundaryGrowth;
         this.trackPointListGrowth = trackPointListGrowth;
+        this.trackRootGrowth = trackRootGrowth;
         LocalizationCommon loc = new LocalizationCommon(2);
         loc.setResourceBundleControl(new Utf8Control());
         app = new AppCommon(loc, new AwtFactoryCommon(), new AppConfigDefault());
@@ -133,8 +137,18 @@ final class Session {
             throw new IllegalArgumentException("expected an assignment to a new label: " + line);
         }
         CommandErrorHandler errors = new CommandErrorHandler(line, true);
-        GeoElementND[] out = processor.processAlgebraCommandNoExceptionHandling(
-                line, false, errors, false, null);
+        Log logger = Log.getLogger();
+        Log.Level level = logger.getLogLevel();
+        GeoElementND[] out;
+        // AppCommon's debug logger throws on runtime exceptions before the
+        // command dispatcher can turn them into errors for the handler.
+        logger.setLogLevel(Log.Level.ERROR);
+        try {
+            out = processor.processAlgebraCommandNoExceptionHandling(
+                    line, false, errors, false, null);
+        } finally {
+            logger.setLogLevel(level);
+        }
         if (!errors.reported || (out != null && out.length != 0)
                 || kernel.lookupLabel(matcher.group(1)) != null) {
             throw new IllegalStateException("GeoGebra did not reject: " + line);
@@ -173,10 +187,12 @@ final class Session {
         }
         GeoElementND[] out = processor.processAlgebraCommandNoExceptionHandling(
                 line, false, new CommandErrorHandler(line, false), false, null);
-        if ((trackBoundaryGrowth || trackPointListGrowth) && out != null && out.length > 0) {
+        if ((trackBoundaryGrowth || trackPointListGrowth || trackRootGrowth)
+                && out != null && out.length > 0) {
             GeoElement first = out[0].toGeoElement();
             AlgoElement parent = first.getParentAlgorithm();
-            if (trackPointListGrowth && parent instanceof AlgoPointsFromList) {
+            if ((trackPointListGrowth && parent instanceof AlgoPointsFromList)
+                    || (trackRootGrowth && parent instanceof AlgoRoots)) {
                 growingPoints.put(parent, "");
             }
             if (trackBoundaryGrowth && (parent instanceof AlgoIntersectLinePolyLine
@@ -207,7 +223,8 @@ final class Session {
                 && out[1].toGeoElement() instanceof GeoPoint) {
             return runFixedAngle(line, label, out);
         }
-        if (out != null && out.length == 2 && isMultiOutput(definition)) {
+        if (out != null && ((out.length == 2 && isMultiOutput(definition))
+                || (out.length == 4 && definition.startsWith("Tangent(")))) {
             return runMulti(line, expected, out);
         }
         if (out != null && out.length > 0 && definition.startsWith("Intersect(")
@@ -799,6 +816,10 @@ final class Session {
 
     /** Whether the definition transforms a polygon (it creates the sides too). */
     private boolean isTransformedPoly(String definition) {
+        if (definition.startsWith("ApplyMatrix(")) {
+            List<String> args = arguments(definition);
+            return args.size() == 2 && objects.get(args.get(1).trim()) instanceof GeoPolygon;
+        }
         if (transformCommand(definition) == null
                 || !(transformedSource(definition) instanceof GeoPolygon)) {
             return false;
@@ -973,7 +994,8 @@ final class Session {
             case "ApplyMatrix":
                 List<String> args = arguments(definition);
                 GeoElement target = args.size() == 2 ? objects.get(args.get(1).trim()) : null;
-                return target == null ? null : schemaType(target);
+                return target instanceof GeoConic ? "conic"
+                        : target == null ? null : schemaType(target);
             case "Polar":
                 return first instanceof GeoLine ? "point" : "line";
             case "Center":
@@ -1088,7 +1110,7 @@ final class Session {
         }
     }
 
-    private static Map<String, Object> describe(GeoElement geo, String type) {
+    static Map<String, Object> describe(GeoElement geo, String type) {
         Map<String, Object> obj = new LinkedHashMap<>();
         obj.put("type", type);
         if (geo instanceof GeoBoolean) {

@@ -42,3 +42,5 @@ eframe = { version = "0.37.0", default-features = false, features = ["x11", "way
 [dev-dependencies]
 egui_kittest = { version = "0.37", features = ["wgpu"] }
 image = { version = "0.25", default-features = false, features = ["png"] }
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"

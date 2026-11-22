@@ -125,13 +125,63 @@ pub(crate) fn check(
                 }
                 let (fd, fc, fv) = super::function_metrics(c, f);
                 (
-                    Ty::Num(0),
+                    match c.def(f) {
+                        Def::Expr(d) if super::entry(c, d).root_ty() == Ty::Bool => Ty::Bool,
+                        _ => Ty::Num(0),
+                    },
                     fd.saturating_add(depth[a]),
-                    fc.saturating_add(fv.saturating_mul(cost[a])),
+                    1u64.saturating_add(fc)
+                        .saturating_add(fv.max(1).saturating_mul(cost[a])),
                     fv.saturating_mul(vars[a]),
                 )
             }
+            Node::Inverse(a) => {
+                let a = a as usize;
+                if !matches!(tys[a], Ty::Num(_)) {
+                    return Err("`Invert` needs a function or matrix".into());
+                }
+                // Inverting an inverse visits its source to check for an
+                // inverse and again to evaluate the original function.
+                (
+                    Ty::Num(0),
+                    1 + depth[a],
+                    cost[a].saturating_mul(2).saturating_add(1),
+                    1,
+                )
+            }
+            Node::Dilate(src, factor, center) => {
+                let (s, f, p) = (src as usize, factor as usize, center as usize);
+                if !matches!(tys[f], Ty::Num(_))
+                    || center != NONE
+                        && (tys[p] != Ty::Vec || vec_kind(c, nodes, &tys, center) != Kind::Point)
+                {
+                    return Err("`Dilate` needs a numeric factor and an optional point".into());
+                }
+                let ty = match tys[s] {
+                    ty @ (Ty::List(_) | Ty::Bool) => ty,
+                    Ty::Num(_) => Ty::Num(0),
+                    _ => return Err("expected a list or a function".into()),
+                };
+                let (pd, pc, pv) = if center == NONE {
+                    (0, 0, 0)
+                } else {
+                    (depth[p], cost[p], vars[p])
+                };
+                (
+                    ty,
+                    1 + depth[s].max(depth[f]).max(pd),
+                    cost[s]
+                        .saturating_add(cost[f])
+                        .saturating_add(pc)
+                        .saturating_add(1),
+                    vars[s].saturating_add(vars[f]).saturating_add(pv),
+                )
+            }
             Node::Local(_) => (Ty::Num(0), 1, 1, 0),
+            Node::Vector(a) => {
+                let a = a as usize;
+                (Ty::Vec, 1 + depth[a], cost[a].saturating_add(1), vars[a])
+            }
             Node::Item(a) => {
                 let a = a as usize;
                 (tys[a], depth[a], cost[a], vars[a])
@@ -206,6 +256,28 @@ fn object_type(c: &Construction, id: Id) -> Result<Ty, String> {
     match (c.kind(id), c.def(id)) {
         (Kind::List, Def::Expr(d)) => Ok(super::entry(c, d).root_ty()),
         (kind, _) => result_type(kind),
+    }
+}
+
+/// A coordinate expression keeps the kind of an object or command. Bare
+/// coordinates are points, as are operations that have a point operand.
+pub(super) fn vec_kind(c: &Construction, nodes: &[Node], tys: &[Ty], i: u32) -> Kind {
+    let kind = |k| if k == Kind::Vector { k } else { Kind::Point };
+    match nodes[i as usize] {
+        Node::Obj(id) => kind(c.kind(id)),
+        Node::Cmd(def, _) => kind(def.kind()),
+        Node::Vector(_) => Kind::Vector,
+        Node::Item(a) | Node::Un(_, a) | Node::If(_, _, a, _) => vec_kind(c, nodes, tys, a),
+        Node::Bin(_, a, b) => {
+            let kinds =
+                [a, b].map(|j| (tys[j as usize] == Ty::Vec).then(|| vec_kind(c, nodes, tys, j)));
+            if kinds.contains(&Some(Kind::Point)) || !kinds.contains(&Some(Kind::Vector)) {
+                Kind::Point
+            } else {
+                Kind::Vector
+            }
+        }
+        _ => Kind::Point,
     }
 }
 

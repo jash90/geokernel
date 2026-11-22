@@ -42,6 +42,11 @@ jobs:
         run: cargo clippy --workspace --all-targets -- -D warnings
       - name: Test
         run: cargo test --workspace
+      # The upstream t-pairs report (pass/gap per command) is the entry
+      # point of the GeoGebra-test-driven workflow; print it so a red
+      # command can be seen in the log without a local run.
+      - name: Upstream t-pairs report
+        run: cargo test -p geo-golden --test tpairs -- --nocapture
       # Timings are only meaningful on a fixed, quiet machine, so CI only
       # makes sure the benchmark still builds.
       - name: Build benchmark

@@ -267,7 +267,7 @@ fn map_children(
             visit(a)?;
             visit(b)?;
         }
-        Node::Un(_, a) | Node::Apply(_, a) | Node::Item(a) => visit(a)?,
+        Node::Un(_, a) | Node::Apply(_, a) | Node::Item(a) | Node::Vector(a) => visit(a)?,
         Node::If(_, a, b, c) | Node::Range(a, b, c) => {
             visit(a)?;
             visit(b)?;
@@ -794,7 +794,7 @@ fn add(
     let first_entry = c.exprs.entries.len();
     let mut indices = Vec::with_capacity(coeffs.len());
     for parsed in coeffs {
-        let entry = Entry::new(parsed, false);
+        let entry = Entry::new(c, parsed, false);
         let index = c.exprs.entries.len() as u32;
         c.exprs.entries.push(entry);
         indices.push(index);

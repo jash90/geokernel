@@ -78,7 +78,13 @@ const DIRECTED: &[Kind] = &[
     Kind::Segment,
     Kind::Ray,
 ];
-const MATRIX_TARGET: &[Kind] = &[Kind::Point, Kind::Vector, Kind::Line];
+const MATRIX_TARGET: &[Kind] = &[
+    Kind::Point,
+    Kind::Vector,
+    Kind::Line,
+    Kind::Polygon,
+    Kind::PolyLine,
+];
 const LIST: &[Kind] = &[Kind::List];
 /// Kinds of object `Translate` moves here. A circle is translated by
 /// [`crate::algo::general_conic::GeneralConicDef`], which keeps its axes,
@@ -149,7 +155,7 @@ pub enum VectorDef {
     Length(Id),
     /// `Dimension(A)` and `Dimension(v)`.
     Dimension(Id),
-    /// `ApplyMatrix(matrix, object)` for a 2D point, vector or line.
+    /// `ApplyMatrix(matrix, object)` for a point, vector, line, polygon or polyline.
     ApplyMatrix { matrix: Id, src: Id, kind: Kind },
     /// `Determinant(matrix)` of a square matrix.
     Determinant(Id),
@@ -666,8 +672,14 @@ impl Group for VectorDef {
                 Some(Value::Number(ggb_length(x, y)))
             }
             VectorDef::Dimension(v) => c.stored_value(v).is_defined().then_some(Value::Number(2.0)),
-            VectorDef::ApplyMatrix { matrix, src, .. } => {
-                matrix::apply(c.elements(matrix)?, c.stored_value(src))
+            VectorDef::ApplyMatrix { matrix, src, kind } => {
+                let transform = c.elements(matrix).and_then(matrix::Matrix::read);
+                match kind {
+                    Kind::Polygon | Kind::PolyLine => {
+                        super::polygon::apply_matrix(c, src, kind, transform)
+                    }
+                    _ => transform?.apply(c.stored_value(src)),
+                }
             }
             VectorDef::Determinant(l) => {
                 matrix::determinant(c.elements(l)?, matrix::budget()).map(Value::Number)

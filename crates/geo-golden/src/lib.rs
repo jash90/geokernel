@@ -7,6 +7,8 @@
 //! * [`replay`] runs a case on the kernel and compares every snapshot.
 //! * [`gaps`] reads the list of known gaps.
 //! * [`report`] ties it together and produces the summary.
+//! * [`tpairs`] replays the verified upstream t-pairs (GeoGebra's own
+//!   kernel tests) and checks them against `t-pairs-gaps.toml`.
 //! * [`forms`] checks which command forms golden data shows (the command
 //!   matrix), and [`table`] reads the CSV tables it uses.
 
@@ -17,6 +19,7 @@ pub mod model;
 pub mod replay;
 pub mod report;
 pub mod table;
+pub mod tpairs;
 
 use std::path::PathBuf;
 

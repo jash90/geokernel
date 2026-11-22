@@ -65,7 +65,7 @@
 use super::measure::{angle_of_points, segment_length};
 use super::polygon_clip::{ClipDef, ClipOutput};
 use super::transform::{parse_transform_for, source_of, Map};
-use super::vector::VectorDef;
+use super::vector::{matrix::Matrix, VectorDef};
 use super::{Group, Parents, NUMBER, POINT};
 use crate::kernel::{Construction, Def, Error, Id, IdList, Kind, Value};
 use crate::script::{object, split_call};
@@ -314,6 +314,7 @@ enum Shape<'a> {
     Moved(Box<Shape<'a>>, Option<Map>),
     /// Another shape translated by a vector (`GeoPoly.translate`).
     Shifted(Box<Shape<'a>>, Option<(f64, f64)>),
+    Applied(Box<Shape<'a>>, Option<Matrix>),
     Empty,
 }
 
@@ -339,6 +340,14 @@ impl<'a> Shape<'a> {
             Def::Transform(def) if matches!(def.kind(), Kind::Polygon | Kind::PolyLine) => {
                 Shape::Moved(Box::new(Shape::of(c, source_of(&def))), def.map(c))
             }
+            Def::Vector(VectorDef::ApplyMatrix {
+                kind: Kind::Polygon | Kind::PolyLine,
+                src,
+                matrix,
+            }) => Shape::Applied(
+                Box::new(Shape::of(c, src)),
+                c.elements(matrix).and_then(Matrix::read),
+            ),
             Def::Vector(VectorDef::Translate {
                 kind: Kind::Polygon | Kind::PolyLine,
                 src,
@@ -359,14 +368,30 @@ impl<'a> Shape<'a> {
             Shape::Points(ids) => ids.len(),
             Shape::Regular(r) => r.n,
             Shape::Clipped(vertices) => vertices.len(),
-            Shape::Moved(inner, ..) | Shape::Shifted(inner, ..) => inner.len(),
+            Shape::Moved(inner, ..) | Shape::Shifted(inner, ..) | Shape::Applied(inner, ..) => {
+                inner.len()
+            }
             Shape::Empty => 0,
+        }
+    }
+
+    fn raw_vertex(&self, c: &Construction, k: usize) -> Option<Value> {
+        match self {
+            Shape::Points(ids) => Some(c.stored_value(*ids.get(k)?)),
+            Shape::Applied(inner, matrix) => (*matrix)?.apply(inner.raw_vertex(c, k)?),
+            _ => {
+                let (x, y) = self.vertex(c, k)?;
+                Some(Value::Point { x, y })
+            }
         }
     }
 
     fn vertex(&self, c: &Construction, k: usize) -> Option<(f64, f64)> {
         match self {
-            Shape::Points(ids) => c.point(*ids.get(k)?),
+            Shape::Points(_) | Shape::Applied(..) => match self.raw_vertex(c, k)?.cartesian() {
+                Value::Point { x, y } => Some((x, y)),
+                _ => None,
+            },
             Shape::Regular(r) => (k < r.n).then(|| r.vertex(k)),
             Shape::Clipped(vertices) => vertices.get(k).copied(),
             Shape::Moved(inner, map) => {
@@ -452,6 +477,15 @@ pub(crate) fn inputs(c: &Construction, poly: Id) -> Vec<Id> {
         Def::Transform(def) if matches!(def.kind(), Kind::Polygon | Kind::PolyLine) => {
             inputs(c, source_of(&def))
         }
+        Def::Vector(VectorDef::ApplyMatrix {
+            kind: Kind::Polygon | Kind::PolyLine,
+            src,
+            matrix,
+        }) => {
+            let mut ids = inputs(c, src);
+            ids.push(matrix);
+            ids
+        }
         Def::Vector(VectorDef::Translate {
             kind: Kind::Polygon | Kind::PolyLine,
             src,
@@ -487,11 +521,18 @@ pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
         Def::Transform(def) if matches!(def.kind(), Kind::Polygon | Kind::PolyLine) => {
             inputs(c, source_of(&def))
         }
-        Def::Vector(VectorDef::Translate {
-            kind: Kind::Polygon | Kind::PolyLine,
-            src,
-            ..
-        }) => inputs(c, src),
+        Def::Vector(
+            VectorDef::Translate {
+                kind: Kind::Polygon | Kind::PolyLine,
+                src,
+                ..
+            }
+            | VectorDef::ApplyMatrix {
+                kind: Kind::Polygon | Kind::PolyLine,
+                src,
+                ..
+            },
+        ) => inputs(c, src),
         _ => Vec::new(),
     };
     parents.extend(super::transform::shear_start_parent(c, def));
@@ -620,6 +661,12 @@ impl Group for PolygonDef {
             PolygonDef::Clip(d) => d.compute(c),
             PolygonDef::ImageVertex { poly, source } => match c.def(poly) {
                 Def::Transform(def) => def.of(Kind::Point, source).compute(c),
+                Def::Vector(VectorDef::ApplyMatrix { matrix, .. }) => VectorDef::ApplyMatrix {
+                    matrix,
+                    src: source,
+                    kind: Kind::Point,
+                }
+                .compute(c),
                 Def::Vector(VectorDef::Translate { by, .. }) => VectorDef::Translate {
                     kind: Kind::Point,
                     src: source,
@@ -1198,7 +1245,6 @@ fn transform_line(
     args: &[&str],
     src: Id,
 ) -> Result<Id, String> {
-    let mut plan = Plan::new(c, name)?;
     let kind = c.kind(src);
     let def = if func == "Translate" {
         if args.len() != 2 {
@@ -1215,6 +1261,17 @@ fn transform_line(
     } else {
         Def::Transform(parse_transform_for(c, func, args, POLY)?)
     };
+    add_transform(c, name, src, def)
+}
+
+pub(super) fn add_transform(
+    c: &mut Construction,
+    name: &str,
+    src: Id,
+    def: Def,
+) -> Result<Id, String> {
+    let mut plan = Plan::new(c, name)?;
+    let kind = c.kind(src);
     let source = match c.def(src) {
         Def::Polygon(PolygonDef::Polygon(list) | PolygonDef::PolyLine(list)) => {
             c.list(list).to_vec()
@@ -1252,6 +1309,45 @@ fn transform_line(
         c.discard_since(checkpoint);
     }
     result
+}
+
+/// ApplyMatrix rebuilds fixed polygons from transformed vertices. For a
+/// variable-size polygon GeoPolygon retains the area scale of the 2D block.
+pub(super) fn apply_matrix(
+    c: &Construction,
+    src: Id,
+    kind: Kind,
+    matrix: Option<Matrix>,
+) -> Option<Value> {
+    let source = Shape::of(c, src);
+    let vertices = (0..source.len()).map(|k| matrix?.apply(source.raw_vertex(c, k)?));
+    if kind == Kind::Polygon {
+        let area = area_of(vertices.map(|v| match v?.cartesian() {
+            Value::Point { x, y } => Some((x, y)),
+            _ => None,
+        }))?;
+        let area = if has_fixed_vertices(c, src) {
+            area
+        } else if let Value::Polygon { area } = c.value(src) {
+            area * matrix?.area_scale()
+        } else {
+            return None;
+        };
+        return Some(Value::Polygon { area });
+    }
+    if source.len() == 0 || matrix.is_none() && !has_fixed_vertices(c, src) {
+        return None;
+    }
+    let mut length = 0.0;
+    let mut prev = None;
+    for value in vertices {
+        let point = value.and_then(Value::point_coords);
+        if let (Some((x, y, w)), Some((u, v, z))) = (prev, point) {
+            length += segment_length(x / w, y / w, u / z, v / z);
+        }
+        prev = point;
+    }
+    length.is_finite().then_some(Value::PolyLine { length })
 }
 
 /// The number of arguments as GeoGebra counts them: `F()` has none.

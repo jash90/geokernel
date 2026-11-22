@@ -115,7 +115,7 @@ fn add_inline_list(
     let index =
         u32::try_from(c.exprs.entries.len()).map_err(|_| Error::UnknownObject.to_string())?;
     let parents = std::mem::take(&mut parsed.parents);
-    let entry = Entry::new(parsed, false);
+    let entry = Entry::new(c, parsed, false);
     with_list(c, &entry, validate_matrix)?;
     c.exprs.entries.push(entry);
     let expression = ExprDef {

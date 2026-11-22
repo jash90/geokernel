@@ -211,6 +211,43 @@ final class Json {
         return sb.toString();
     }
 
+    /** Writes a value on one line with no padding, for a JSON Lines file. */
+    static String writeLine(Object value) {
+        StringBuilder sb = new StringBuilder();
+        writeCompact(sb, value);
+        return sb.toString();
+    }
+
+    private static void writeCompact(StringBuilder sb, Object value) {
+        if (value instanceof Map) {
+            sb.append('{');
+            boolean first = true;
+            for (Map.Entry<?, ?> e : ((Map<?, ?>) value).entrySet()) {
+                if (!first) {
+                    sb.append(',');
+                }
+                first = false;
+                writeString(sb, (String) e.getKey());
+                sb.append(':');
+                writeCompact(sb, e.getValue());
+            }
+            sb.append('}');
+        } else if (value instanceof List) {
+            sb.append('[');
+            boolean first = true;
+            for (Object v : (List<?>) value) {
+                if (!first) {
+                    sb.append(',');
+                }
+                first = false;
+                writeCompact(sb, v);
+            }
+            sb.append(']');
+        } else {
+            writeScalar(sb, value);
+        }
+    }
+
     private static void writeValue(StringBuilder sb, Object value, int indent) {
         if (value instanceof Map) {
             writeObject(sb, (Map<?, ?>) value, indent);
