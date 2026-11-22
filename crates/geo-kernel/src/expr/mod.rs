@@ -1970,6 +1970,45 @@ pub(crate) fn argument_number(c: &Construction, text: &str) -> Option<f64> {
     value_of_tree(c, &parsed)
 }
 
+/// [`argument_number`] for arithmetic this evaluation runs in full, which
+/// tells a tree it does not support from inputs that are undefined right
+/// now. `None` when the text is no numeric argument over the construction,
+/// or when its tree holds a node outside plain arithmetic: a list, a text,
+/// a command computed in a list or by the computer algebra code, anything
+/// [`argument_number`] leaves undefined whatever the inputs. Otherwise the
+/// current value, `NaN` while an input is undefined.
+pub(crate) fn arithmetic_number(c: &Construction, text: &str) -> Option<f64> {
+    let parsed = parse::parse_argument(c, text).ok()?;
+    let arithmetic = parsed.nodes.iter().all(|node| {
+        matches!(
+            node,
+            Node::Num(_)
+                | Node::MinusOne
+                | Node::Degree
+                | Node::Obj(_)
+                | Node::Bool(_)
+                | Node::Un(..)
+                | Node::Bin(..)
+                | Node::If(..)
+                | Node::Cmd(..)
+                | Node::Apply(..)
+                | Node::Tuple(..)
+                | Node::Polar(..)
+                | Node::ObjectDefined(_)
+                | Node::Defined(_)
+        )
+    });
+    if !arithmetic
+        || reads_list(&parsed.nodes, &parsed.tys)
+        || parsed.uses_var
+        || parsed.uses_y
+        || !matches!(parsed.tys[parsed.root as usize], Ty::Num(_))
+    {
+        return None;
+    }
+    value_of_tree(c, &parsed)
+}
+
 /// Defines `name = rhs` as an expression. `vector_label` tells whether a
 /// coordinate result is a vector (lower-case label) or a point. An
 /// expression in `x` defines a function, as `b = x + 1` does in GeoGebra.

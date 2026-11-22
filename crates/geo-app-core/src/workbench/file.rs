@@ -107,13 +107,17 @@ impl Workbench {
         };
         for id in self.object_ids() {
             let label = c.label(id);
-            let color = palette.color(id);
-            let rgb = self
-                .file_object_styles
-                .get(label)
-                .and_then(|style| style.color)
-                .unwrap_or([color.r, color.g, color.b]);
-            presentation.colors.insert(label, rgb);
+            // An object from a file keeps the colour and opacity saved there.
+            if !self.file_object_styles.contains_key(label) {
+                let color = palette.color(id);
+                presentation
+                    .colors
+                    .insert(label, [color.r, color.g, color.b]);
+                let opacity = crate::style::fill_opacity(c, id);
+                if opacity != 0.0 {
+                    presentation.opacity.insert(label, opacity);
+                }
+            }
             if let Some(condition) = self.log.condition_source(label) {
                 presentation.conditions.insert(label, condition);
             }
@@ -135,6 +139,26 @@ impl Workbench {
 
     /// Exports the live document. The window can provide its current view.
     pub fn export_ggb(&self, view: Option<View>) -> Result<Vec<u8>, export::ExportError> {
+        self.export_with(view, None)
+    }
+
+    /// The export with the journal line that made `label` replaced by a form
+    /// no writer knows. An object whose export is the same either way is
+    /// written from its own stored data; the kind table is checked with this.
+    #[doc(hidden)]
+    pub fn export_ggb_without_definition(
+        &self,
+        view: Option<View>,
+        label: &str,
+    ) -> Result<Vec<u8>, export::ExportError> {
+        self.export_with(view, Some(label))
+    }
+
+    fn export_with(
+        &self,
+        view: Option<View>,
+        unlisted: Option<&str>,
+    ) -> Result<Vec<u8>, export::ExportError> {
         let (skipped, mismatched) = self.file_import_losses;
         if skipped != 0 || mismatched != 0 {
             return Err(export::ExportError::incomplete_import(skipped, mismatched));
@@ -171,6 +195,15 @@ impl Workbench {
                 grown.remove(owner);
             }
         }
+        // The same names before the separator, and a form without a writer.
+        let replaced = unlisted.and_then(|label| {
+            let entry = self
+                .log
+                .entries()
+                .find(|entry| entry.labels.iter().any(|made| made == label))?;
+            let names = &entry.line[..entry.line.find([':', '='])?];
+            Some((entry, format!("{names}= $unlisted()")))
+        });
         let definitions = self.log.entries().filter_map(|entry| {
             if boundary_slot_owner(entry.rhs()).is_some_and(|owner| grown.contains_key(owner)) {
                 return None;
@@ -180,10 +213,11 @@ impl Workbench {
                 .first()
                 .and_then(|label| grown.get(label.as_str()))
                 .unwrap_or(&entry.labels);
-            Some(Definition {
-                line: &entry.line,
-                outputs,
-            })
+            let line = match &replaced {
+                Some((changed, line)) if std::ptr::eq(*changed, entry) => line.as_str(),
+                _ => entry.line.as_str(),
+            };
+            Some(Definition { line, outputs })
         });
         export::ggb(c, definitions, &self.export_presentation(view))
     }
@@ -613,7 +647,7 @@ mod tests {
     }
 
     /// The saved files of the golden set, and those of them that do not load.
-    const GOLDEN_FILES: usize = 44;
+    const GOLDEN_FILES: usize = 45;
     const GOLDEN_FILES_NOT_LOADED: &[&str] = &[];
 
     #[test]
