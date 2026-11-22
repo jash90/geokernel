@@ -2852,7 +2852,8 @@ fn build_record(c: &Construction, d: &CalculusDef) -> (Option<Entry>, Option<Ent
             let Some(order) = derivative_order(c, order) else {
                 return (None, None);
             };
-            let Some((x, y)) = curve_coordinates(c, gid(curve), MAX_CURVE_SOURCES, &mut Budget::new())
+            let Some((x, y)) =
+                curve_coordinates(c, gid(curve), MAX_CURVE_SOURCES, &mut Budget::new())
             else {
                 return (None, None);
             };
@@ -2956,8 +2957,7 @@ fn curve_coordinates(
         return None;
     }
     let copy = |entry: &Entry, budget: &mut Budget| {
-        budget
-            .step(c, entry.nodes.len() as u64)
+        (entry.nodes.len() <= MAX_RULE_NODES && budget.step(c, entry.nodes.len() as u64))
             .then(|| expr::function_entry(c, expr::parsed_of(entry)))
     };
     match c.def(id) {
@@ -2981,7 +2981,8 @@ fn curve_coordinates(
             let (x, y) = curve_coordinates(c, source, depth, budget)?;
             let dx = expr::function_entry(c, derivative_tree(c, &x, 1, false)?);
             let dy = expr::function_entry(c, derivative_tree(c, &y, 1, false)?);
-            if !budget.step(c, (dx.nodes.len() + dy.nodes.len()) as u64) {
+            let nodes = dx.nodes.len() + dy.nodes.len();
+            if nodes >= MAX_RULE_NODES || !budget.step(c, nodes as u64) {
                 return None;
             }
             let mut builder = Builder::function(&dy);
@@ -3035,7 +3036,8 @@ fn transform_coordinate_trees(
     [first, second, last]: [[f64; 3]; 3],
     budget: &mut Budget,
 ) -> Option<(Entry, Entry)> {
-    if !budget.step(c, 4 * (x.nodes.len() + y.nodes.len()) as u64) {
+    let nodes = x.nodes.len() + y.nodes.len();
+    if nodes > MAX_RULE_NODES || !budget.step(c, 4 * nodes as u64) {
         return None;
     }
     let mut builder = Builder::function(&x);
@@ -3410,6 +3412,10 @@ fn curve_parameter(c: &Construction, mut id: Id) -> Option<&str> {
                 };
             }
             Def::Analysis(super::analysis::AnalysisDef::Spline(_)) => return Some("t"),
+            Def::Vector(super::vector::VectorDef::ApplyMatrix {
+                kind: Kind::Function,
+                ..
+            }) => return Some("t"),
             Def::Analysis(super::analysis::AnalysisDef::ParametricDerivative(source))
             | Def::Transform(super::transform::TransformDef::Dilate { src: source, .. })
             | Def::Vector(super::vector::VectorDef::ApplyMatrix {

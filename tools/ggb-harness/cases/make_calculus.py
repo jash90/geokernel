@@ -356,5 +356,29 @@ cases.cases[-1]["sample_curves"] = True
 case("curvederivative",
      ["c = Curve(t^2, t^3, t, -2, 2)", "a = ParametricDerivative(c)", "d = Derivative(a)"], [])
 cases.cases[-1]["sample_curves"] = True
+case("curvederivative",
+     ["c = Curve(t^2, t^3, t, -2, 2)", "g(x) = sin(x)"],
+     [{"action": "reject", "line": "d = NDerivative(c, g)"}])
+case("curvederivative",
+     nums(n=1, b=2) + ["c = Curve(t^2, t^3, t, 0, b)", "a = Curve(t, sin(t), t, -1, 1)",
+                       "q = If(n > 0, c, a)", "d = Derivative(q)", "e = NDerivative(q, t)"],
+     [setn("b", -1), setn("b", 3), setn("n", -1), setn("n", 1)])
+cases.cases[-1]["sample_curves"] = True
+case("curvederivative",
+     ["c = Curve(t^2, t^3, t, -2, 2)", "a = ApplyMatrix({{1, 0, 0}, {0, 1, 0}, {1, 0, 2}}, c)",
+      "d = NDerivative(a)"], [])
+cases.cases[-1]["sample_curves"] = True
+case("curvederivative",
+     ["f(x) = x^3", "a = ApplyMatrix({{2, 0}, {0, 3}}, f)", "d = Derivative(a)"], [])
+cases.cases[-1]["sample_curves"] = True
+case("curvederivative",
+     ["f(x) = x^3", "a = ApplyMatrix({{2, 0}, {0, 3}}, f)", "d = Derivative(a, t)"],
+     [{"action": "reject", "line": "e = Derivative(a, x)"}])
+cases.cases[-1]["sample_curves"] = True
+case("curvederivative",
+     nums(n=1) + ["k = 1 / n", "c = Curve(t^2, t^3, t, -2, 2)", "d = Derivative(c, k)",
+                  "e = NDerivative(c, t, k)"],
+     [setn("n", 0), setn("n", 0.5)])
+cases.cases[-1]["sample_curves"] = True
 
 cases.write()

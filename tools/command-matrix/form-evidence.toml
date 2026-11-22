@@ -1958,12 +1958,12 @@ difference = "calculus-commands: The variable forms `Derivative(function, any)`,
 [[form]]
 command = "Derivative"
 form = "curve"
-cases = ["calculus-curvederivative-001", "calculus-curvederivative-002", "calculus-curvederivative-003", "calculus-curvederivative-009", "calculus-curvederivative-010"]
+cases = ["calculus-curvederivative-001", "calculus-curvederivative-002", "calculus-curvederivative-003", "calculus-curvederivative-009", "calculus-curvederivative-010", "calculus-curvederivative-019", "calculus-curvederivative-021", "calculus-curvederivative-023"]
 
 [[form]]
 command = "Derivative"
 form = "curve,number"
-cases = ["calculus-curvederivative-001", "calculus-curvederivative-004", "calculus-curvederivative-005"]
+cases = ["calculus-curvederivative-001", "calculus-curvederivative-004", "calculus-curvederivative-005", "calculus-curvederivative-025"]
 
 [[form]]
 command = "Derivative"
@@ -1979,7 +1979,7 @@ difference = "calculus-commands: The variable forms `Derivative(function, any)`,
 [[form]]
 command = "NDerivative"
 form = "curve"
-cases = ["calculus-curvederivative-001"]
+cases = ["calculus-curvederivative-001", "calculus-curvederivative-018", "calculus-curvederivative-022"]
 
 [[form]]
 command = "NDerivative"
