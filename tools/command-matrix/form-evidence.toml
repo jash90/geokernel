@@ -1386,3 +1386,88 @@ cases = ["geomextras-tangentfunction-001", "geomextras-tangentfunction-002"]
 command = "Vertex"
 form = "segment,number"
 cases = ["geomextras-vertexsegment-001", "geomextras-vertexsegment-002", "geomextras-vertexsegment-003"]
+
+[[form]]
+command = "Invert"
+form = "list"
+cases = ["matrixdilate-upstream-001", "matrixdilate-elimination-002", "vectorforms-matrixlists-003"]
+
+[[form]]
+command = "Invert"
+form = "function"
+cases = ["vectorforms-matrixlists-009", "matrixdilate-inverse-001", "matrixdilate-inverse-002", "matrixdilate-inverse-003"]
+
+[[form]]
+command = "Transpose"
+form = "list"
+cases = ["matrixdilate-upstream-001", "matrixdilate-elimination-001", "matrixdilate-elimination-006", "vectorforms-matrixlists-001"]
+
+[[form]]
+command = "Transpose"
+form = "number,number,..."
+cases = ["vectorforms-matrixlists-005"]
+
+[[form]]
+command = "Transpose"
+form = "point,point,..."
+cases = ["vectorforms-matrixlists-006"]
+
+[[form]]
+command = "ReducedRowEchelonForm"
+form = "list"
+cases = ["matrixdilate-upstream-001", "matrixdilate-elimination-001", "matrixdilate-elimination-004", "vectorforms-matrixlists-002"]
+
+[[form]]
+command = "ReducedRowEchelonForm"
+form = "number,number,..."
+cases = ["vectorforms-matrixlists-007"]
+
+[[form]]
+command = "ReducedRowEchelonForm"
+form = "point,point,..."
+cases = ["vectorforms-matrixlists-008"]
+
+[[form]]
+command = "Dimension"
+form = "list"
+cases = ["vectorforms-matrixlists-004", "matrixdilate-elimination-001", "matrixdilate-elimination-005", "matrixdilate-elimination-007"]
+
+[[form]]
+command = "ApplyMatrix"
+form = "list,conic"
+cases = ["matrixdilate-applyconic-002"]
+
+[[form]]
+command = "ApplyMatrix"
+form = "list,polygon"
+cases = ["matrixdilate-upstream-009", "matrixdilate-applypoly-001", "matrixdilate-applypoly-002"]
+
+[[form]]
+command = "ApplyMatrix"
+form = "list,polyline"
+cases = ["matrixdilate-applypoly-001", "matrixdilate-applypoly-002"]
+
+[[form]]
+command = "ApplyMatrix"
+form = "list,list"
+cases = ["matrixdilate-applylist-001", "matrixdilate-applylist-002", "matrixdilate-applylist-003"]
+
+[[form]]
+command = "Dilate"
+form = "function,number"
+cases = ["matrixdilate-dilatefunction-001"]
+
+[[form]]
+command = "Dilate"
+form = "function,number,point"
+cases = ["matrixdilate-dilatefunction-001", "matrixdilate-dilatefunction-002", "matrixdilate-dilatefunction-003"]
+
+[[form]]
+command = "Dilate"
+form = "list,number"
+cases = ["matrixdilate-dilatelist-001", "matrixdilate-dilatelist-002", "matrixdilate-dilatelist-003"]
+
+[[form]]
+command = "Dilate"
+form = "list,number,point"
+cases = ["matrixdilate-dilatelist-001", "matrixdilate-dilatelist-003"]
