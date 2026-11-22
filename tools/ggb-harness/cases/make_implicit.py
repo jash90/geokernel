@@ -252,6 +252,29 @@ cases.case("trianglecurve", scalene + ["h = 1", "c = TriangleCurve(P, Q, R, (A+B
            [setn("h", 0), setn("h", 2), mv("R", 1.5, 0.5), mv("R", 1, 3)])
 cases.case("trianglecurve", ["c = TriangleCurve((1,1), (2,1/2), (3,1/3), A+B=C)"], [])
 
+cases.case(
+    "regions",
+    ["h = 1", "c: x^4 + y^4 = h", "q: x^4 + y^4 <= h", "b = q(0, 1)",
+     "A = (-2, 0)", "B = (2, 0)", "C = (0, 2)", "s = Segment(A, B)",
+     "p = Polygon(A, B, C)", "P = Intersect(c, s)"],
+    [{"action": "reject", "line": "V = Corner(c)"},
+     {"action": "reject", "line": "V = Vertex(c)"},
+     {"action": "reject", "line": "R = Intersect(c, q)"},
+     {"action": "reject", "line": "R = Intersect(q, c)"},
+     {"action": "reject", "line": "j = IntersectPath(s, c)"},
+     {"action": "reject", "line": "j = IntersectPath(c, p)"},
+     setn("h", -1), setn("h", 1)],
+)
+cases.case(
+    "regions",
+    ["h = 1", "q: x >= 0 && y >= 0 && x + y <= h - 1.5",
+     "c: x^4 - 5*x^2 + y = 0", "g: y = 2*h - 3", "P = Intersect(c, g)",
+     "V = Vertex(q)", "W = Corner(q)", "d: x^4 + y^4 = 1", "A = (h, 0)",
+     "t = Tangent(A, d)"],
+    [setn("h", 2), setn("h", 0), setn("h", 2)],
+)
+cases.cases[-1]["track_boundary_growth"] = True
+
 triangle = ["P = (1, 1)", "Q = (2, 0.5)", "R = (3, 1/3)"]
 cases.case("barycentric", triangle + ["n = 42", "c = Cubic(P, Q, R, n)"],
            [setn("n", 0), setn("n", 42), mv("Q", 1, 1), mv("Q", 2, 0.5)])

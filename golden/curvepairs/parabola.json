@@ -1,0 +1,181 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "curvepairs-parabola-001",
+      "group": "curvepairs",
+      "script": [
+        "a = 1",
+        "b = -3",
+        "c = Curve(t, t^2, t, b, 3)",
+        "d = Curve(2s, a, s, -2, 2)",
+        "P = Intersect(c, d)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "b", "value": 0.0 },
+        { "action": "set_number", "label": "b", "value": 4.0 },
+        { "action": "set_number", "label": "b", "value": -3.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": -3.0 },
+          "c": { "type": "curve", "defined": true, "start": -3.0, "end": 3.0 },
+          "d": { "type": "curve", "defined": true, "start": -2.0, "end": 2.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": -1.0, "y": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": -3.0 },
+          "c": { "type": "curve", "defined": true, "start": -3.0, "end": 3.0 },
+          "d": { "type": "curve", "defined": true, "start": -2.0, "end": 2.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "P_{2}": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "number", "defined": true, "value": -3.0 },
+          "c": { "type": "curve", "defined": true, "start": -3.0, "end": 3.0 },
+          "d": { "type": "curve", "defined": true, "start": -2.0, "end": 2.0 },
+          "P_{1}": { "type": "point", "defined": false },
+          "P_{2}": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": -3.0 },
+          "c": { "type": "curve", "defined": true, "start": -3.0, "end": 3.0 },
+          "d": { "type": "curve", "defined": true, "start": -2.0, "end": 2.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": -2.0, "y": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "curve", "defined": true, "start": 0.0, "end": 3.0 },
+          "d": { "type": "curve", "defined": true, "start": -2.0, "end": 2.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "P_{2}": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "curve", "defined": false },
+          "d": { "type": "curve", "defined": true, "start": -2.0, "end": 2.0 },
+          "P_{1}": { "type": "point", "defined": false },
+          "P_{2}": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": -3.0 },
+          "c": { "type": "curve", "defined": true, "start": -3.0, "end": 3.0 },
+          "d": { "type": "curve", "defined": true, "start": -2.0, "end": 2.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": -2.0, "y": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": -3.0 },
+          "c": { "type": "curve", "defined": true, "start": -3.0, "end": 3.0 },
+          "d": { "type": "curve", "defined": true, "start": -2.0, "end": 2.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": -1.0, "y": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "curvepairs-parabola-002",
+      "group": "curvepairs",
+      "script": [
+        "a = 1",
+        "b = -3",
+        "c = Curve(t, t^2, t, b, 3)",
+        "d = Curve(2s, a, s, -2, 2)",
+        "P = Intersect(d, c)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "b", "value": 0.0 },
+        { "action": "set_number", "label": "b", "value": 4.0 },
+        { "action": "set_number", "label": "b", "value": -3.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": -3.0 },
+          "c": { "type": "curve", "defined": true, "start": -3.0, "end": 3.0 },
+          "d": { "type": "curve", "defined": true, "start": -2.0, "end": 2.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": -1.0, "y": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": -3.0 },
+          "c": { "type": "curve", "defined": true, "start": -3.0, "end": 3.0 },
+          "d": { "type": "curve", "defined": true, "start": -2.0, "end": 2.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "P_{2}": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "number", "defined": true, "value": -3.0 },
+          "c": { "type": "curve", "defined": true, "start": -3.0, "end": 3.0 },
+          "d": { "type": "curve", "defined": true, "start": -2.0, "end": 2.0 },
+          "P_{1}": { "type": "point", "defined": false },
+          "P_{2}": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": -3.0 },
+          "c": { "type": "curve", "defined": true, "start": -3.0, "end": 3.0 },
+          "d": { "type": "curve", "defined": true, "start": -2.0, "end": 2.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": -2.0, "y": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "curve", "defined": true, "start": 0.0, "end": 3.0 },
+          "d": { "type": "curve", "defined": true, "start": -2.0, "end": 2.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "P_{2}": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "curve", "defined": false },
+          "d": { "type": "curve", "defined": true, "start": -2.0, "end": 2.0 },
+          "P_{1}": { "type": "point", "defined": false },
+          "P_{2}": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": -3.0 },
+          "c": { "type": "curve", "defined": true, "start": -3.0, "end": 3.0 },
+          "d": { "type": "curve", "defined": true, "start": -2.0, "end": 2.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": -2.0, "y": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": -3.0 },
+          "c": { "type": "curve", "defined": true, "start": -3.0, "end": 3.0 },
+          "d": { "type": "curve", "defined": true, "start": -2.0, "end": 2.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": -1.0, "y": 1.0 }
+        }
+      ]
+    }
+  ]
+}

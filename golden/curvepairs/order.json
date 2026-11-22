@@ -1,0 +1,29 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "curvepairs-order-001",
+      "group": "curvepairs",
+      "script": [
+        "c = Curve(t, (t + 3)*(t + 1)*(t - 1)*(t - 2), t, -5, 5)",
+        "d = Curve(s, 0, s, -5, 5)",
+        "P = Intersect(c, d)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "curve", "defined": true, "start": -5.0, "end": 5.0 },
+          "d": { "type": "curve", "defined": true, "start": -5.0, "end": 5.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "P_{3}": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "P_{4}": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 }
+        }
+      ]
+    }
+  ]
+}

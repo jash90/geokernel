@@ -138,6 +138,7 @@ fn tokens_of(k: Kind) -> &'static [&'static str] {
         Kind::Curve => &["curve"],
         Kind::ImplicitCurve => &["implicit"],
         Kind::Text => &["text"],
+        Kind::Image => &["image"],
         Kind::Locus => &["locus"],
         _ => &[],
     }
@@ -354,6 +355,18 @@ pub fn script_uses_form(
                             && !["<=", ">=", "!="].iter().any(|op| equation.contains(op)))
                 {
                     kinds[3] = Some(Kind::ImplicitCurve);
+                }
+                if matches!(
+                    command,
+                    "IntersectPath" | "IntersectRegion" | "IntersectionPaths"
+                ) {
+                    // The region clipping overload uses circles and conic parts
+                    // as conic regions.
+                    for kind in &mut kinds {
+                        if matches!(kind, Some(Kind::Circle | Kind::Arc | Kind::Sector)) {
+                            *kind = Some(Kind::Conic);
+                        }
+                    }
                 }
                 if matches!(command, "If" | "CountIf" | "KeepIf") {
                     match (args.as_slice(), kinds.as_mut_slice()) {

@@ -54,7 +54,7 @@ One JSON object per file, stored under `golden/<group>/`.
 | --- | --- | --- |
 | `id` | string | Unique within the whole `golden/` tree. |
 | `group` | string | Command group, equal to the directory name. |
-| `script` | array of string | GeoGebra input-bar lines with English command names, run in order. Every line has the form `label = definition` or, for an equation, `label: lhs = rhs`, so every object has an explicit label. |
+| `script` | array of string | Input-bar lines with English command names, run in order. A definition uses `label = definition`, or `label: definition` for an equation or inequality, so every object has an explicit label. |
 | `view` (optional) | array of six numbers | Initial sampling window, in the order xmin, xmax, ymin, ymax, x scale, y scale. Scales are in pixels per world unit. |
 | `steps` | array of Step | The first step is always `initial`. |
 | `snapshots` | array of Snapshot | Same length as `steps`. `snapshots[i]` is the state after `steps[i]`. |
@@ -82,9 +82,9 @@ creation, the plain label `p` when only one is. Here `p` is the script label
 up to its first `_`, and each output takes the next free index `n`; for
 `n < 10` the short form `p_n` must be free too, so an existing `b_1` makes
 the outputs `b_{2}` and `b_{3}`. Snapshots can gain indexed boundary
-intersection points or default-labelled points from `Point(list)` and
-`Intersect(f, h, a, b)` as those commands gain outputs. Existing keys are retained. Polygon commands
-also give labels to their extra outputs:
+intersection points and indexed vertices of inequalities as their output counts grow.
+`Point(list)` and `Intersect(f, h, a, b)` can add points with default labels.
+Existing keys are retained. Polygon commands also give labels to their extra outputs:
 
 A line `p = Polygon(...)` also creates the sides of the polygon and, for
 `Polygon(A, B, n)`, its new vertices. They are recorded under the labels
@@ -123,6 +123,7 @@ carries no numeric fields. When it is `true` it carries exactly these:
 | `boolean` | `value` | `true` or `false`, a JSON boolean. `defined` is `false` only for the prover-only "unknown" state. |
 | `function` | `samples` | The values at arguments -8, -4, -2, -1, -0.5, 0, 0.5, 1, 2, 4, 8, as pairs `[argument, value]` in this order. Nonfinite values are `null` and boolean values are 1 or 0. For a two-variable slope function, the argument supplies `x` and `y` is zero. An undefined function carries no `samples`. |
 | `function_nvar` | `samples_xy` | For an equation side, triples `[x, y, value]` at the function sample coordinates with `y = 1 - 2*x`. A non-finite output is `null`. |
+| `image` | | Raster placement is sampled with named corner points. The snapshot of the image records its kind and defined state. |
 | `text` | `text` | The exact text string, compared without numeric tolerance or whitespace normalization. LaTeX is recorded as the stored markup. Text position, visibility and style are read from saved construction fixtures. |
 | `relation` | `reports` | The sorted check name and outcome strings from the numerical relation API. Each string has the form `check=outcome`, with `null` for a missing check or outcome. Conic pairs can add `/touch`, `/intersect`, or `/disjoint` to distinguish reports with the same outcome. Localized dialog text is omitted. |
 | `polygon` | `vertices`, `area`, `signed_area` | `vertices` is the list of vertices in order, each `[x, y]`. `area` is GeoGebra's area (never negative), `signed_area` the area with its sign: positive when the vertices run counter-clockwise. |

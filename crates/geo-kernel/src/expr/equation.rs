@@ -133,7 +133,7 @@ pub(crate) fn define(c: &mut Construction, name: &str, text: &str) -> Result<Id,
         variable_powers: false,
         abort_at: u64::MAX,
         coefficient_locals: None,
-        remaining_work: None,
+        expansion_work: None,
         max_degree: u32::MAX,
     };
 
@@ -238,6 +238,20 @@ fn coefficients(
 /// Splits `lhs = rhs` at the one `=` between them: the top-level `=` that
 /// is not part of `==`, `!=`, `<=` or `>=` and sits outside every bracket.
 pub(crate) fn split_equation(text: &str) -> Result<(&str, &str), String> {
+    let (split, ordered) = equation_separator(text)?;
+    match split {
+        Some(i) => Ok((&text[..i], &text[i + 1..])),
+        None if ordered => Err("inequalities are not supported".into()),
+        None => Err("expected an equation `lhs = rhs`".into()),
+    }
+}
+
+/// Whether a definition has a standalone top-level equals sign.
+pub(crate) fn has_equation_separator(text: &str) -> bool {
+    !matches!(equation_separator(text), Ok((None, _)))
+}
+
+fn equation_separator(text: &str) -> Result<(Option<usize>, bool), String> {
     let bytes = text.as_bytes();
     let mut depth = 0i32;
     let mut split = None;
@@ -262,11 +276,7 @@ pub(crate) fn split_equation(text: &str) -> Result<(&str, &str), String> {
             _ => {}
         }
     }
-    match split {
-        Some(i) => Ok((&text[..i], &text[i + 1..])),
-        None if ordered => Err("inequalities are not supported".into()),
-        None => Err("expected an equation `lhs = rhs`".into()),
-    }
+    Ok((split, ordered))
 }
 
 // The polynomial expansion.
@@ -354,9 +364,9 @@ pub(crate) struct Builder {
     /// no-CAS rules set it so that one pass of `rule_derivative` cannot
     /// build a tree far past the budget before the next pass is checked.
     pub(crate) abort_at: u64,
+    expansion_work: Option<u64>,
     max_degree: u32,
     coefficient_locals: Option<[f64; 9]>,
-    remaining_work: Option<usize>,
 }
 
 impl Builder {
@@ -380,9 +390,9 @@ impl Builder {
             function_dependent: false,
             variable_powers: true,
             abort_at: u64::MAX,
+            expansion_work: None,
             max_degree: u32::MAX,
             coefficient_locals: None,
-            remaining_work: None,
         }
     }
 
@@ -396,16 +406,20 @@ impl Builder {
             function_dependent: false,
             variable_powers: true,
             abort_at: u64::MAX,
+            expansion_work: None,
             max_degree: u32::MAX,
             coefficient_locals: None,
-            remaining_work: None,
         }
     }
 
-    fn charge(&mut self, steps: usize) -> Result<(), NotPolynomial> {
-        if let Some(remaining) = &mut self.remaining_work {
-            *remaining = remaining
-                .checked_sub(steps)
+    pub(crate) fn limit_expansion(&mut self, work: u64) {
+        self.expansion_work = Some(work);
+    }
+
+    fn charge_expansion(&mut self, units: u64) -> Result<(), NotPolynomial> {
+        if let Some(left) = &mut self.expansion_work {
+            *left = left
+                .checked_sub(units)
                 .ok_or(NotPolynomial::ImplicitCurve)?;
         }
         Ok(())
@@ -421,7 +435,7 @@ impl Builder {
     /// `ExpressionNode.makePolynomialTree` of the subtree at `i`, with the
     /// operations of `Polynomial.apply` and `Term` on the coefficients.
     pub(crate) fn expand(&mut self, c: &Construction, i: u32) -> Result<Poly, NotPolynomial> {
-        self.charge(1)?;
+        self.charge_expansion(1)?;
         match self.node(i) {
             Node::Var => Ok(Poly(vec![Term {
                 x: 1,
@@ -850,6 +864,10 @@ fn java_int(v: f64) -> i64 {
 }
 
 impl Poly {
+    pub(crate) fn terms(&self) -> &[Term] {
+        &self.0
+    }
+
     /// The degree of the polynomial: the largest sum of the variable
     /// degrees of its terms (`Polynomial.degree`).
     pub(crate) fn degree(&self) -> u32 {
@@ -963,13 +981,14 @@ impl Poly {
     /// `Polynomial.multiply`: every term of this polynomial times every
     /// term of `e`, the variables joined, then [`Poly::simplify`].
     fn mul(&mut self, e: &Poly, b: &mut Builder) -> Result<(), NotPolynomial> {
-        b.charge(self.0.len().saturating_mul(e.0.len()))?;
-        if self.0.len().saturating_mul(e.0.len()) > MAX_PRODUCT_TERMS
+        let count = self.0.len().saturating_mul(e.0.len());
+        if count > MAX_PRODUCT_TERMS
             || (b.max_degree != u32::MAX && self.degree().saturating_add(e.degree()) > b.max_degree)
         {
             return Err(NotPolynomial::ImplicitCurve);
         }
-        let mut out = Vec::with_capacity(self.0.len() * e.0.len());
+        b.charge_expansion(count as u64)?;
+        let mut out = Vec::with_capacity(count);
         for ti in &self.0 {
             for tj in &e.0 {
                 let x = ti.x.checked_add(tj.x).ok_or(NotPolynomial::ImplicitCurve)?;
@@ -1031,7 +1050,8 @@ impl Poly {
     /// constant 0 is dropped, and a polynomial of no terms keeps a single
     /// constant 0.
     fn simplify(&mut self, b: &mut Builder) -> Result<(), NotPolynomial> {
-        b.charge(self.0.len().saturating_mul(self.0.len()))?;
+        let count = self.0.len() as u64;
+        b.charge_expansion(count.saturating_mul(count + 1) / 2)?;
         let mut kept: Vec<Term> = Vec::with_capacity(self.0.len());
         let mut consumed = vec![false; self.0.len()];
         for i in 0..self.0.len() {
@@ -1732,21 +1752,17 @@ mod tests {
     }
 
     #[test]
-    fn nonpolynomial_implicit_curves_and_inequalities_are_refused() {
+    fn unsupported_and_malformed_equations_are_refused() {
         for line in [
             "a: sin(x) = 0",
             "a: x / y = 1",
             "a: sqrt(x) = 1",
-            "a: x < 3",
-            "a: x <= 3",
             "a: x = y = z",
         ] {
             let mut c = Construction::new();
             let err = exec(&mut c, line).unwrap_err();
             assert!(
-                err.contains("implicit curves")
-                    || err.contains("inequalities")
-                    || err.contains("only one `=`"),
+                err.contains("implicit curves") || err.contains("only one `=`"),
                 "{line}: {err}"
             );
         }

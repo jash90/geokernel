@@ -305,11 +305,11 @@ fn substitute_affine(
     affine: [[f64; 3]; 3],
 ) -> Result<[u32; 2], NotPolynomial> {
     const MAX_INPUT_NODES: usize = 512;
-    const WORK_LIMIT: usize = 250_000;
+    const WORK_LIMIT: u64 = 250_000;
     if sides.iter().map(|entry| entry.nodes.len()).sum::<usize>() > MAX_INPUT_NODES {
         return Err(NotPolynomial::ImplicitCurve);
     }
-    builder.remaining_work = Some(WORK_LIMIT);
+    builder.limit_expansion(WORK_LIMIT);
     builder.coefficient_locals = Some(std::array::from_fn(|i| affine[i / 3][i % 3]));
     let x = builder.push(Node::Var);
     let y = builder.push(Node::VarY);
