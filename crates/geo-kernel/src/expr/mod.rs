@@ -69,6 +69,7 @@
 //! a new [`Node`] first. A group without a file yet adds one and registers
 //! it in `commands/mod.rs`.
 
+mod cas;
 mod commands;
 pub(crate) use commands::brent_minimum;
 mod decimal;
@@ -149,6 +150,7 @@ fn sample_system(c: &Construction, id: Id, t: f64, state: &[f64], meter: &eval::
                 ctx.fast(function.root)
             }
         }
+        (Value::FunctionNVar, Node::Cas(..)) => ctx.fast(function.root),
         (Value::FunctionNVar, _) => {
             equation::sample_side(c, id, t, state.first().copied().unwrap_or(0.0), meter)
                 .unwrap_or(f64::NAN)
@@ -223,6 +225,8 @@ pub(crate) enum Node {
     Un(Un, u32),
     Bin(Bin, u32, u32),
     Algebra(AlgebraOp, u32, u32),
+    Cas(cas::Op, u32, u32),
+    CasVariable(u8),
     Text,
     TextCmd(TextOp, u32, u32),
     Relation {
@@ -654,6 +658,7 @@ enum StoredExtra {
     Decimal(Dec),
     Text(Box<TextResult>),
     Polynomial(Vec<f64>),
+    Cas(Box<cas::FunctionResult>),
 }
 
 impl StoredExtra {
@@ -707,7 +712,7 @@ pub(crate) struct Entry {
     /// Whether a function's tree requires checking its branches or transforms
     /// to decide whether it is defined (see [`inputs_defined`]).
     checks_branches: bool,
-    /// Whether this tree or an applied function performs symbolic inversion.
+    /// Whether this tree or an applied function needs an expression work meter.
     inverts: bool,
     /// The objects named in the tree (a function's inputs).
     inputs: Vec<Id>,
@@ -745,12 +750,18 @@ impl Entry {
             && p.nodes.iter().any(|n| {
                 matches!(
                     n,
-                    Node::If(..) | Node::Inverse(_) | Node::Dilate(..) | Node::PolynomialPart(..)
+                    Node::If(..)
+                        | Node::Inverse(_)
+                        | Node::Dilate(..)
+                        | Node::PolynomialPart(..)
+                        | Node::Cas(..)
                 )
             });
         let inverts = p.nodes.iter().any(|node| match *node {
-            Node::Inverse(_) => true,
-            Node::Apply(f, _) => matches!(c.def(f), Def::Expr(d) if entry(c, d).inverts),
+            Node::Inverse(_) | Node::Cas(..) => true,
+            Node::Apply(f, _) | Node::Apply2(f, ..) => {
+                matches!(c.def(f), Def::Expr(d) if entry(c, d).inverts)
+            }
             _ => false,
         });
         let lists = reads_list(&p.nodes, &p.tys);
@@ -794,6 +805,24 @@ impl Entry {
             StoredExtra::Polynomial(coefficients) => Some(coefficients),
             _ => None,
         }
+    }
+
+    fn cas_root(&self) -> Option<(u32, cas::Op, u32, u32)> {
+        let root = match self.nodes[self.root as usize] {
+            Node::SystemFunction(_, inner) => inner,
+            _ => self.root,
+        };
+        match self.nodes[root as usize] {
+            Node::Cas(op, a, b) if op.is_function() => Some((root, op, a, b)),
+            _ => None,
+        }
+    }
+
+    pub(crate) fn cas_quotient(&self, i: u32) -> Option<&crate::cas::Quotient> {
+        let StoredExtra::Cas(form) = &self.extra else {
+            return None;
+        };
+        (self.cas_root()?.0 == i).then(|| form.quotient()).flatten()
     }
 
     fn root_ty(&self) -> Ty {
@@ -878,6 +907,7 @@ pub(crate) fn children(node: &Node) -> impl Iterator<Item = u32> {
         | Node::ListOp(_, a, b)
         | Node::Algebra(_, a, b)
         | Node::PolynomialPart(_, a, b)
+        | Node::Cas(_, a, b)
         | Node::Apply2(_, a, b) => {
             fixed[..2].copy_from_slice(&[a, b]);
         }
@@ -930,6 +960,7 @@ pub(crate) fn shift_children(node: &mut Node, by: u32) {
         | Node::ListOp(_, a, b)
         | Node::Algebra(_, a, b)
         | Node::PolynomialPart(_, a, b)
+        | Node::Cas(_, a, b)
         | Node::Apply2(_, a, b) => {
             shift(a);
             shift(b);
@@ -1312,6 +1343,20 @@ fn evaluate_lists(
 /// Recomputes the expression object `d` and keeps its result; its value,
 /// and whether it changed (see [`store`]).
 pub(crate) fn update(c: &mut Construction, id: Id, d: ExprDef) -> (Value, bool) {
+    let e = entry(c, d);
+    if let (Kind::Function | Kind::FunctionNVar, Some((_, op, a, b))) = (d.kind, e.cas_root()) {
+        let result = cas::function(c, e, op, a, b);
+        let e = &mut c.exprs.entries[d.index as usize];
+        e.raw = Raw::Num(if result.is_some() { 0.0 } else { f64::NAN });
+        e.extra = result.map_or(StoredExtra::None, |form| StoredExtra::Cas(Box::new(form)));
+        let value = if d.kind == Kind::FunctionNVar && matches!(e.extra, StoredExtra::Cas(_)) {
+            Value::FunctionNVar
+        } else {
+            value(d, e.raw)
+        };
+        return (value, true);
+    }
+
     if d.kind == Kind::FunctionNVar {
         return (current(c, d), true);
     }
@@ -1436,6 +1481,7 @@ fn defined_below(ctx: &eval::Ctx<'_, true>, i: u32) -> bool {
         Node::Apply(f, a) => object_defined(ctx.c, f) && defined_below(ctx, a),
         Node::Cmd(def, hint) => command_defined(ctx.c, def, hint),
         Node::Inverse(a) => defined_below(ctx, a) && inverse::sample(ctx, a, 1.0).is_some(),
+        Node::Cas(op, a, b) if op.is_function() => cas::function_at(ctx, op, a, b).is_some(),
         Node::PolynomialPart(remainder, a, b) => {
             commands::polynomial::divide(ctx.c, ctx.e, remainder, a, b).is_some()
         }
@@ -1461,13 +1507,17 @@ fn defined_below(ctx: &eval::Ctx<'_, true>, i: u32) -> bool {
 pub(crate) fn current(c: &Construction, d: ExprDef) -> Value {
     if d.kind == Kind::FunctionNVar {
         let e = entry(c, d);
-        let defined = match e.nodes[e.root as usize] {
-            Node::Side(eq, _) => c.value(eq).is_defined(),
-            Node::SystemFunction(_, root) => {
-                inputs_defined(c, e)
-                    && !matches!(e.nodes[root as usize], Node::Num(v) if v.is_nan())
+        let defined = if let Some((_, op, a, b)) = e.cas_root() {
+            cas::function(c, e, op, a, b).is_some()
+        } else {
+            match e.nodes[e.root as usize] {
+                Node::Side(eq, _) => c.value(eq).is_defined(),
+                Node::SystemFunction(_, root) => {
+                    inputs_defined(c, e)
+                        && !matches!(e.nodes[root as usize], Node::Num(v) if v.is_nan())
+                }
+                _ => false,
             }
-            _ => false,
         };
         return if defined {
             Value::FunctionNVar
@@ -1501,7 +1551,6 @@ pub(crate) fn list(c: &Construction, id: Id) -> Option<List<'_>> {
 fn list_slots(c: &Construction, id: Id) -> Option<&[Slot]> {
     match c.def(id) {
         Def::Expr(d) => Some(&entry(c, d).items),
-        Def::Calculus(_) => c.calculus_record(id).map(|record| record.slots.as_slice()),
         Def::Chart(_) => c.chart(id).map(|data| data.slots.as_slice()),
         _ => None,
     }
@@ -1594,6 +1643,8 @@ pub(crate) fn accepts_text_argument(c: &Construction, source: &str) -> bool {
     parse::parse_argument(c, source).is_ok()
 }
 
+pub(crate) use cas::displayed as symbolic_value;
+
 pub(crate) fn text_value(c: &Construction, id: Id) -> Option<&str> {
     let Def::Expr(d) = c.def(id) else {
         return None;
@@ -1684,9 +1735,9 @@ pub(crate) fn root_of(e: &Entry) -> u32 {
 /// (`AlgoCoefficients.extractConstants`: every `MyDouble` leaf is a
 /// constant — a degree sign included — collected by the pre-order walk of
 /// `ExpressionNode.any`, which covers the tree, not the parser's arena).
-pub(crate) fn constant_literals(e: &Entry) -> Vec<f64> {
+fn constant_literals(e: &Entry, root: u32) -> Vec<f64> {
     let mut out = Vec::new();
-    let mut stack = vec![e.root];
+    let mut stack = vec![root];
     while let Some(i) = stack.pop() {
         match e.nodes[i as usize] {
             Node::Num(v) => out.push(v),
@@ -1717,16 +1768,6 @@ pub(crate) fn parsed_of(e: &Entry) -> parse::Parsed {
         vars: e.vars,
         uses_var: false,
         uses_y: false,
-    }
-}
-
-/// The current value of a tree the calculus commands built, reading the
-/// current values of its objects: what a polynomial coefficient is.
-pub(crate) fn value_of_tree(c: &Construction, parsed: &parse::Parsed) -> Option<f64> {
-    let entry = Entry::new(c, parsed.clone(), false);
-    match eval::root(c, &entry, None).0 {
-        Raw::Num(v) => Some(v),
-        _ => None,
     }
 }
 
@@ -1887,6 +1928,9 @@ fn define_with_coordinates(
         },
     };
     if parsed.uses_var {
+        if parsed.uses_y && matches!(parsed.nodes[parsed.root as usize], Node::Cas(..)) {
+            return add(c, name, parsed, Kind::FunctionNVar);
+        }
         return function(c, name, parsed, false);
     }
     let kind = match parsed.tys[parsed.root as usize] {
@@ -2164,7 +2208,7 @@ fn add_parsed(
         matches!(n, Node::Bin(op, ..) if op.is_command())
             || matches!(
                 n,
-                Node::Cmd(..) | Node::If(IfMode::Algo, ..) | Node::Vector(_)
+                Node::Cmd(..) | Node::If(IfMode::Algo, ..) | Node::Vector(_) | Node::Cas(..)
             )
             || is_list_node(n)
     });

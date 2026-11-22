@@ -13,6 +13,7 @@
 
 pub mod algo;
 pub mod base64;
+mod cas;
 pub mod equation;
 pub mod expr;
 pub mod kernel;

@@ -168,6 +168,14 @@ fn to_digits(mut x: u128) -> Vec<u8> {
 }
 
 impl Dec {
+    pub(super) fn signed_coefficient(&self) -> Option<(i128, i64)> {
+        let Mag::Small(magnitude) = self.mag else {
+            return None;
+        };
+        let coefficient = i128::try_from(magnitude).ok()?;
+        Some((if self.neg { -coefficient } else { coefficient }, self.exp))
+    }
+
     fn zero() -> Dec {
         Dec {
             neg: false,

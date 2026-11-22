@@ -8,6 +8,7 @@
 //! here that its commands need.
 
 mod algebra;
+pub(super) use algebra::integers::{factor as integer_factors, prime};
 
 pub(crate) use algebra::{extrema::brent_minimum, polynomial};
 pub(super) mod function_analysis;
@@ -30,6 +31,7 @@ pub(in crate::expr) use list::{call_type, call_value, second_list};
 pub(super) fn is_command(name: &str) -> bool {
     [
         algebra::NAMES,
+        super::cas::NAMES,
         function_analysis::NAMES,
         logical::NAMES,
         list::NAMES,
@@ -45,6 +47,9 @@ pub(super) fn is_command(name: &str) -> bool {
 /// or `None`, with nothing read, when no group takes it (the two-number
 /// commands and the commands of the script parser are tried next).
 pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
+    if let Some(node) = p.cas_command(text)? {
+        return Ok(Some(node));
+    }
     if let Some(node) = function_analysis::parse(p, text)? {
         return Ok(Some(node));
     }

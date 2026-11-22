@@ -1917,22 +1917,22 @@ cases = ["relationreview-asymptotes-001"]
 [[form]]
 command = "Coefficients"
 form = "function"
-cases = ["calculus-coefficients-001", "calculus-coefficients-011"]
+cases = ["calculus-coefficients-001", "calculus-coefficients-011", "cas-coefficients-001", "cas-coefficients-006"]
 
 [[form]]
 command = "Degree"
 form = "function"
-cases = ["calculus-degree-001", "calculus-degree-009"]
+cases = ["calculus-degree-001", "calculus-degree-009", "cas-coefficients-001", "cas-coefficients-006"]
 
 [[form]]
 command = "Denominator"
 form = "function"
-cases = ["calculus-fraction-013"]
+cases = ["calculus-fraction-013", "cas-projection-001"]
 
 [[form]]
 command = "Denominator"
 form = "number"
-cases = ["calculus-fraction-001"]
+cases = ["calculus-fraction-001", "cas-projection-002", "cas-projection-006"]
 
 [[form]]
 command = "Derivative"
@@ -2077,17 +2077,17 @@ cases = ["calculus-integral-017"]
 [[form]]
 command = "Numerator"
 form = "function"
-cases = ["calculus-fraction-013"]
+cases = ["calculus-fraction-013", "cas-projection-001"]
 
 [[form]]
 command = "Numerator"
 form = "number"
-cases = ["calculus-fraction-001"]
+cases = ["calculus-fraction-001", "cas-projection-002", "cas-projection-006"]
 
 [[form]]
 command = "Polynomial"
 form = "function"
-cases = ["calculus-polynomial-001"]
+cases = ["calculus-polynomial-001", "cas-projection-003"]
 
 [[form]]
 command = "Polynomial"
@@ -2928,6 +2928,170 @@ cases = ["funcanalysis-forms-018"]
 command = "SlopeField"
 form = "function,number,number,number,number,number,number"
 cases = ["funcanalysis-forms-019"]
+
+[[form]]
+command = "Expand"
+form = "function"
+cases = ["cas-expand-004", "cas-expand-005"]
+
+[[form]]
+command = "Factor"
+form = "function"
+cases = ["cas-factor-006", "cas-factor-009"]
+
+[[form]]
+command = "IFactor"
+form = "function"
+cases = ["cas-ifactor-003", "cas-ifactor-004"]
+
+[[form]]
+command = "Simplify"
+form = "function"
+cases = ["cas-simplify-003", "cas-simplify-004"]
+
+[[form]]
+command = "Simplify"
+form = "number"
+cases = ["cas-simplify-005"]
+
+[[form]]
+command = "CompleteSquare"
+form = "function"
+cases = ["cas-square-004"]
+
+[[form]]
+command = "IsFactored"
+form = "function"
+cases = ["cas-factored-016"]
+
+[[form]]
+command = "IsFactored"
+form = "number"
+cases = ["cas-factored-002"]
+
+[[form]]
+command = "NextPrime"
+form = "number"
+cases = ["cas-prime-001", "cas-prime-006"]
+
+[[form]]
+command = "PreviousPrime"
+form = "number"
+cases = ["cas-prime-002"]
+
+[[form]]
+command = "CommonDenominator"
+form = "function,function"
+cases = ["cas-denominator-001", "cas-denominator-002"]
+
+[[form]]
+command = "Coefficients"
+form = "conic"
+cases = ["cas-coefficients-005"]
+
+[[form]]
+command = "Factors"
+form = "function"
+cases = ["cas-factors-001"]
+
+[[form]]
+command = "Factors"
+form = "number"
+cases = ["cas-factors-002"]
+
+[[form]]
+command = "Asymptote"
+form = "function"
+cases = ["cas-delegated-001"]
+
+[[form]]
+command = "RemovableDiscontinuity"
+form = "function"
+cases = ["cas-delegated-002"]
+
+[[form]]
+command = "Solve"
+form = "function"
+cases = ["cas-solve-017"]
+
+[[form]]
+command = "Solve"
+form = "line"
+cases = ["cas-solve-018"]
+
+[[form]]
+command = "Solve"
+form = "list"
+cases = ["cas-solve-019"]
+
+[[form]]
+command = "Solve"
+form = "list,any"
+cases = ["cas-solve-020"]
+difference = "polynomial-cas: `Solve(list, any)`"
+
+[[form]]
+command = "Solutions"
+form = "function"
+cases = ["cas-solve-021"]
+
+[[form]]
+command = "Solutions"
+form = "line"
+cases = ["cas-solve-022"]
+
+[[form]]
+command = "Solutions"
+form = "list"
+cases = ["cas-solve-023"]
+
+[[form]]
+command = "Solutions"
+form = "list,any"
+cases = ["cas-solve-024"]
+difference = "polynomial-cas: `Solutions(list, any)`"
+
+[[form]]
+command = "NSolve"
+form = "function"
+cases = ["cas-solve-025"]
+
+[[form]]
+command = "NSolve"
+form = "line"
+cases = ["cas-solve-026"]
+
+[[form]]
+command = "NSolve"
+form = "list"
+cases = ["cas-solve-027"]
+
+[[form]]
+command = "NSolve"
+form = "list,any"
+cases = ["cas-solve-028"]
+difference = "polynomial-cas: `NSolve(list, any)`"
+
+[[form]]
+command = "NSolutions"
+form = "function"
+cases = ["cas-solve-029"]
+
+[[form]]
+command = "NSolutions"
+form = "line"
+cases = ["cas-solve-030"]
+
+[[form]]
+command = "NSolutions"
+form = "list"
+cases = ["cas-solve-031"]
+
+[[form]]
+command = "NSolutions"
+form = "list,any"
+cases = ["cas-solve-032"]
+difference = "polynomial-cas: `NSolutions(list, any)`"
 
 [[form]]
 command = "Tangent"

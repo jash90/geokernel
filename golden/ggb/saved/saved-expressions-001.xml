@@ -170,7 +170,7 @@
 	<value val="0.5585053606381855"/>
 	<objColor r="0" g="100" b="0" alpha="0.10000000149011612"/>
 </element>
-<expression label="bad" exp="x(A) + NextPrime[v_{0x}]"/>
+<expression label="bad" exp="x(A) + Limit[x^(2), v_{0x}]"/>
 <element type="numeric" label="bad">
 	<value val="NaN"/>
 </element>

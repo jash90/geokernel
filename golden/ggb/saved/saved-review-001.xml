@@ -129,7 +129,7 @@
 <expression label="flat" exp="flat(x) = 4" type="function"/>
 <element type="function" label="flat">
 	<show object="true" label="false"/>
-	<objColor r="0" g="0" b="255" alpha="0"/>
+	<objColor r="204" g="0" b="0" alpha="0"/>
 	<layer val="0"/>
 	<labelMode val="0"/>
 	<animation step="0.1" type="0" playing="false"/>
@@ -209,7 +209,7 @@
 	<eigenvectors x0="0.46732394504169483" y0="0.8840861555248262" z0="1" x1="-0.8840861555248262" y1="0.46732394504169483" z1="1"/>
 	<matrix A0="389.94112549695427" A1="364" A2="-4884" A3="-19.029437251522857" A4="-813.0681092190353" A5="-868"/>
 </element>
-<expression label="e" exp="x(A) + NextPrime[n]"/>
+<expression label="e" exp="x(A) + Limit[x^(2), n]"/>
 <element type="numeric" label="e">
 	<value val="NaN"/>
 </element>

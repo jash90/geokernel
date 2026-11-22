@@ -19,7 +19,7 @@
     "tri = Polygon(A, B, C)",
     "len = 5",
     "el = Ellipse(A, B, len)",
-    "e = x(A) + NextPrime(n)",
+    "e = x(A) + Limit(x^2, n)",
     "lost = e + 1",
     "Euler = ℯ + 1"
   ],

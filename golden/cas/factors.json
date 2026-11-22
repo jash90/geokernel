@@ -1,0 +1,129 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "cas-factors-001",
+      "group": "cas",
+      "script": [
+        "f(x) = x^4+5*x^2+6",
+        "result = Factors(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 4422.0],
+              [-4.0, 342.0],
+              [-2.0, 42.0],
+              [-1.0, 12.0],
+              [-0.5, 7.3125],
+              [0.0, 6.0],
+              [0.5, 7.3125],
+              [1.0, 12.0],
+              [2.0, 42.0],
+              [4.0, 342.0],
+              [8.0, 4422.0]
+            ]
+          },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, 66.0],
+                      [-4.0, 18.0],
+                      [-2.0, 6.0],
+                      [-1.0, 3.0],
+                      [-0.5, 2.25],
+                      [0.0, 2.0],
+                      [0.5, 2.25],
+                      [1.0, 3.0],
+                      [2.0, 6.0],
+                      [4.0, 18.0],
+                      [8.0, 66.0]
+                    ]
+                  },
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, 67.0],
+                      [-4.0, 19.0],
+                      [-2.0, 7.0],
+                      [-1.0, 4.0],
+                      [-0.5, 3.25],
+                      [0.0, 3.0],
+                      [0.5, 3.25],
+                      [1.0, 4.0],
+                      [2.0, 7.0],
+                      [4.0, 19.0],
+                      [8.0, 67.0]
+                    ]
+                  },
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-factors-002",
+      "group": "cas",
+      "script": [
+        "result = Factors(12)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 2.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 3.0 },
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

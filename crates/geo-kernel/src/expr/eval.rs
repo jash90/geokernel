@@ -632,6 +632,7 @@ pub(super) fn root(c: &Construction, e: &Entry, lists: Option<&Lists>) -> (Raw, 
             if matches!(
                 e.nodes[e.root as usize],
                 Node::Algebra(super::AlgebraOp::IsPrime, ..)
+                    | Node::Cas(super::cas::Op::IsFactored, ..)
             ) =>
         {
             (Raw::Num(f64::NAN), None)
@@ -925,6 +926,8 @@ impl<const M: bool> Ctx<'_, M> {
             Node::RootList(_) | Node::FunctionAsymptotes(_) => Ex::plain(N(f64::NAN)),
             Node::Extremum(minimum, f, a, b) => Ex::plain(self.extremum(minimum, f, a, b)),
             Node::PolynomialPart(..) => Ex::plain(N(self.polynomial_value())),
+            Node::Cas(op, a, b) => self.cas_scalar(i, op, a, b),
+            Node::CasVariable(_) => Ex::plain(N(f64::NAN)),
             Node::ObjectDefined(id) => Ex::plain(Val::B(super::object_defined(self.c, id), true)),
             Node::Defined(a) => Ex::plain(Val::B(self.is_defined_argument(a), true)),
             Node::Filter {
@@ -1045,6 +1048,19 @@ impl<const M: bool> Ctx<'_, M> {
 
     pub(super) fn full_number(&self, i: u32) -> f64 {
         self.full(i).num()
+    }
+
+    pub(super) fn cas_parameter(&self, axis: u32) -> f64 {
+        if let Some(local) = self.local(axis) {
+            return local.value.num();
+        }
+        if axis == 0 {
+            self.variable()
+        } else if let Env::Pair(_, y) = *self.env {
+            y
+        } else {
+            f64::NAN
+        }
     }
 
     pub(super) fn variable(&self) -> f64 {
@@ -1311,6 +1327,7 @@ impl<const M: bool> Ctx<'_, M> {
             } => self.iteration_list(mode, formula, initial, count),
             Node::Range(from, to, step) => self.range(from, to, step),
             Node::Algebra(op, a, b) => self.algebra_list(op, a, b),
+            Node::Cas(op, a, _) => self.cas_list(op, a),
             Node::TextCmd(op, first, count) => self.text_list(op, first, count),
             Node::Seq(e, from, to, step, depth) => self.sequence(e, from, to, step, depth),
             Node::Call(op, first, len) => self.call_list(op, first, len),

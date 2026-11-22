@@ -2366,6 +2366,11 @@ impl Construction {
         self.construction_sources.insert(id, source.to_owned());
     }
 
+    /// The displayed value of a symbolic computation.
+    pub fn symbolic_value(&self, id: Id) -> Option<String> {
+        expr::symbolic_value(self, id)
+    }
+
     pub fn text(&self, id: Id) -> Option<&str> {
         expr::text_value(self, id)
     }

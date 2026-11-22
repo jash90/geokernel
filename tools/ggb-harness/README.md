@@ -45,6 +45,27 @@ which builds `common-jre` and its test fixtures and writes their runtime class
 path to `build/classpath.txt` (ignored by git, it holds local paths). The
 harness is then compiled with plain `javac` into `build/classes`.
 
+### Native CAS oracle
+
+On macOS arm64 and Linux x86_64, `build` also downloads the published
+`fr.ujf-grenoble:javagiac:70507` platform JAR from GeoGebra's Maven releases.
+It verifies the pinned SHA-256 and caches the JAR and selected JNI library in
+the ignored `build/giac` directory. This requires `curl`, `shasum`, and `unzip`.
+The Linux artifact requires glibc 2.35 or newer. Use a JDK that matches the
+machine architecture.
+
+```sh
+tools/ggb-harness/harness.sh cas-smoke
+tools/ggb-harness/harness.sh golden cas
+```
+
+`cas-smoke` checks a prime command through the headless app's algebra processor.
+The `cas` golden group and the `calculus` group's `degree` topic select the
+native backend automatically. `GGB_HARNESS_CAS=1` selects it for other
+harness runs. The remaining historical cases default to the dummy backend.
+Giac is a separate GPL reference backend used only to record and check fixtures.
+The Rust workspace and release builds have no runtime or build dependency on it.
+
 `golden` stamps every file with the commit that `git rev-parse HEAD` reports
 for the checkout. Two runs produce byte-identical files.
 

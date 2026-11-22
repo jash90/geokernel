@@ -1,0 +1,280 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "cas-prime-001",
+      "group": "cas",
+      "script": [
+        "a = 3",
+        "next = NextPrime(a)",
+        "previous = PreviousPrime(next)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 100.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "next": { "type": "number", "defined": true, "value": 5.0 },
+          "previous": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 100.0 },
+          "next": { "type": "number", "defined": true, "value": 101.0 },
+          "previous": { "type": "number", "defined": true, "value": 97.0 }
+        }
+      ]
+    },
+    {
+      "id": "cas-prime-002",
+      "group": "cas",
+      "script": [
+        "result = PreviousPrime(5)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": { "type": "number", "defined": true, "value": 3.0 }
+        }
+      ]
+    },
+    {
+      "id": "cas-prime-003",
+      "group": "cas",
+      "script": [
+        "result = PreviousPrime(2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-prime-004",
+      "group": "cas",
+      "script": [
+        "a = 3.4",
+        "next = NextPrime(a)",
+        "previous = PreviousPrime(a)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 3.4 },
+          "next": { "type": "number", "defined": false },
+          "previous": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-prime-005",
+      "group": "cas",
+      "script": [
+        "a = -10",
+        "next = NextPrime(a)",
+        "previous = PreviousPrime(a)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": -10.0 },
+          "next": { "type": "number", "defined": true, "value": 2.0 },
+          "previous": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-prime-006",
+      "group": "cas",
+      "script": [
+        "result = NextPrime(1000000000000)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": { "type": "number", "defined": true, "value": 1.000000000039E12 }
+        }
+      ]
+    },
+    {
+      "id": "cas-prime-007",
+      "group": "cas",
+      "script": [
+        "result = NextPrime(9007199254740991)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": { "type": "number", "defined": true, "value": 9.00719925474099E25 }
+        }
+      ]
+    },
+    {
+      "id": "cas-prime-008",
+      "group": "cas",
+      "script": [
+        "result = NextPrime(9007199254740992)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": { "type": "number", "defined": true, "value": 9.00719925474099E25 }
+        }
+      ]
+    },
+    {
+      "id": "cas-prime-009",
+      "group": "cas",
+      "script": [
+        "result = PreviousPrime(9007199254740992)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": { "type": "number", "defined": true, "value": 9.00719925474099E25 }
+        }
+      ]
+    },
+    {
+      "id": "cas-prime-010",
+      "group": "cas",
+      "script": [
+        "result = NextPrime(9007199254741990)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-prime-011",
+      "group": "cas",
+      "script": [
+        "result = PreviousPrime(9007199254741990)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-prime-012",
+      "group": "cas",
+      "script": [
+        "result = NextPrime(-7)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "cas-prime-013",
+      "group": "cas",
+      "script": [
+        "result = PreviousPrime(-7)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-prime-014",
+      "group": "cas",
+      "script": [
+        "result = NextPrime(-2.5)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "cas-prime-015",
+      "group": "cas",
+      "script": [
+        "result = PreviousPrime(-2.5)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-prime-016",
+      "group": "cas",
+      "script": [
+        "result = NextPrime(1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "cas-prime-017",
+      "group": "cas",
+      "script": [
+        "result = PreviousPrime(1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": { "type": "number", "defined": false }
+        }
+      ]
+    }
+  ]
+}

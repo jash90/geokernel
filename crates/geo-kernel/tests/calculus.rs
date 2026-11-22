@@ -399,14 +399,12 @@ fn coefficients_of_a_function() {
 #[test]
 fn numerator_and_denominator_of_numbers() {
     let script = |expr: &str| format!("a = {expr}\nn = Numerator(a)\nd = Denominator(a)");
-    // the exact tree of an unreduced fraction with huge integers is not
-    // kept on a free number (a known gap); the closest fraction of the
-    // value answers instead
     let cases = [
         ("3/7", 3.0, 7.0),
         ("5/(-8)", -5.0, 8.0),
         ("2/0", 1.0, 0.0),
         ("1234/5678", 617.0, 2839.0),
+        ("123456/789012", 10288.0, 65751.0),
         ("1/(-3)", -1.0, 3.0),
         ("0", 0.0, 1.0),
     ];

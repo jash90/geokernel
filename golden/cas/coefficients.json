@@ -1,0 +1,259 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "cas-coefficients-001",
+      "group": "cas",
+      "script": [
+        "f(x) = x^4+2*x^2",
+        "d = Degree(f)",
+        "l = Coefficients(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 4224.0],
+              [-4.0, 288.0],
+              [-2.0, 24.0],
+              [-1.0, 3.0],
+              [-0.5, 0.5625],
+              [0.0, 0.0],
+              [0.5, 0.5625],
+              [1.0, 3.0],
+              [2.0, 24.0],
+              [4.0, 288.0],
+              [8.0, 4224.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 4.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 0.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-coefficients-002",
+      "group": "cas",
+      "script": [
+        "f(x) = 0*x",
+        "d = Degree(f)",
+        "l = Coefficients(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.0],
+              [-4.0, -0.0],
+              [-2.0, -0.0],
+              [-1.0, -0.0],
+              [-0.5, -0.0],
+              [0.0, 0.0],
+              [0.5, 0.0],
+              [1.0, 0.0],
+              [2.0, 0.0],
+              [4.0, 0.0],
+              [8.0, 0.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-coefficients-003",
+      "group": "cas",
+      "script": [
+        "f(x) = x^2-x^2+x+1",
+        "d = Degree(f)",
+        "l = Coefficients(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -7.0],
+              [-4.0, -3.0],
+              [-2.0, -1.0],
+              [-1.0, 0.0],
+              [-0.5, 0.5],
+              [0.0, 1.0],
+              [0.5, 1.5],
+              [1.0, 2.0],
+              [2.0, 3.0],
+              [4.0, 5.0],
+              [8.0, 9.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-coefficients-004",
+      "group": "cas",
+      "script": [
+        "f(x) = (x-1)*(x+1)^2",
+        "d = Degree(f)",
+        "l = Coefficients(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -441.0],
+              [-4.0, -45.0],
+              [-2.0, -3.0],
+              [-1.0, -0.0],
+              [-0.5, -0.375],
+              [0.0, -1.0],
+              [0.5, -1.125],
+              [1.0, 0.0],
+              [2.0, 9.0],
+              [4.0, 75.0],
+              [8.0, 567.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": -1.0 },
+              { "type": "number", "defined": true, "value": -1.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-coefficients-005",
+      "group": "cas",
+      "script": [
+        "k: x^2+y^2=1",
+        "result = Coefficients(k)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": -1.0 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 0.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-coefficients-006",
+      "group": "cas",
+      "script": [
+        "f(x) = x/x",
+        "d = Degree(f)",
+        "l = Coefficients(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, null],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

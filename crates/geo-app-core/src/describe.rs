@@ -99,6 +99,14 @@ pub fn conic_equation(d: &ConicData) -> String {
 pub fn object_text(c: &Construction, id: Id) -> String {
     if matches!(
         c.kind(id),
+        geo_kernel::Kind::Function | geo_kernel::Kind::FunctionNVar | geo_kernel::Kind::List
+    ) {
+        if let Some(value) = c.symbolic_value(id) {
+            return value;
+        }
+    }
+    if matches!(
+        c.kind(id),
         geo_kernel::Kind::Line
             | geo_kernel::Kind::Ray
             | geo_kernel::Kind::Circle
