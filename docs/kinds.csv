@@ -16,14 +16,14 @@ Polygon,POLYGON,Polygon,yes,yes,yes,yes,yes,yes,yes,partial,Export: its definiti
 PolyLine,POLYLINE,PolyLine,yes,yes,yes,yes,yes,yes,yes,partial,Export: its definition needs a saved form.
 List,LIST,List,yes,no,no,no,no,no,partial,partial,Saved lists with supported expressions and commands. Export: its definition needs a saved form; the drop-down display with its selected index and the font and rounding of a list are not kept.
 Axis,AXIS,,no,no,no,no,no,no,no,no,the window draws the axes from the view settings
-Text,TEXT,Text,yes,yes,yes,no,no,yes,yes,partial,Static and dependent texts with saved world or pixel placement and LaTeX typesetting. An empty text draws nothing. Export: its definition needs a saved form; the symbolic mode is not kept.
+Text,TEXT,Text,yes,partial,yes,no,no,yes,yes,partial,Static and dependent texts with saved world or pixel placement and LaTeX typesetting. An empty text draws nothing. Export: its definition needs a saved form; the symbolic mode is not kept.
 Formula,FORMULA,,no,no,no,no,no,no,no,no,
 Locus,LOCUS,Locus,yes,yes,yes,no,no,no,yes,partial,Tracing loci and integral curves from slopes. Discrete geometry commands also produce loci. Export: its definition needs a saved form; no witness for draw_arrows.
 CurveCartesian,CURVE_CARTESIAN,Curve,yes,no,no,no,no,no,yes,partial,Cartesian coordinates and parameter interval for Length. Export: its definition needs a saved form.
 ImplicitCurve,IMPLICIT_POLY,ImplicitCurve,yes,partial,partial,partial,no,yes,partial,partial,Polynomial equations and saved matrices. Export: its definition needs a saved form.
-FunctionNVar,FUNCTION_NVAR,FunctionNVar,yes,no,no,no,no,yes,partial,partial,saved numeric functions with supported definitions. Export: its definition needs a saved form; the level of detail is not kept.
-Image,IMAGE,Image,no,no,yes,no,no,yes,yes,yes,PNG and JPEG and first-frame GIF; checked against the saved archive fixtures
-PieChart,PIECHART,PieChart,yes,no,yes,no,no,yes,partial,partial,Clockwise sectors with a world center and radius. Export: its definition needs a saved form; the colour and filling of single slices are not kept.
+FunctionNVar,FUNCTION_NVAR,FunctionNVar,yes,no,no,no,no,yes,partial,partial,Numeric functions and two-variable inequalities with supported definitions. Export: its definition needs a saved form; the level of detail is not kept.
+Image,IMAGE,Image,yes,yes,yes,no,no,yes,yes,yes,Raster corners and transforms have recorded cases. Saved fixtures cover PNG and JPEG and first-frame GIF.
+PieChart,PIECHART,PieChart,yes,yes,yes,no,no,yes,partial,partial,Clockwise sectors with a world center and radius. Export: its definition needs a saved form; the colour and filling of single slices are not kept.
 InputBox,TEXTFIELD,InputBox,no,no,no,no,no,no,yes,partial,linked object retained on import. Export: the font and size and position and the length and symbolic mode and alignment and typed text are not kept.
 Button,BUTTON,Button,no,no,no,no,no,no,yes,partial,caption and inert scripts retained on import. Export: the font and size and position and the image are not kept.
 PenStroke,PENSTROKE,,no,no,no,no,no,no,no,no,

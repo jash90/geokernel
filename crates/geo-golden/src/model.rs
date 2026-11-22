@@ -146,6 +146,7 @@ pub enum ExpectedData {
         r: f64,
     },
     Number(f64),
+    Image,
     Curve {
         start: f64,
         end: f64,
@@ -510,6 +511,7 @@ impl TryFrom<RawObject> for Expected {
             "function" => (Kind::Function, &[]),
             "function_nvar" => (Kind::FunctionNVar, &[]),
             "text" => (Kind::Text, &["text"]),
+            "image" => (Kind::Image, &[]),
             "relation" => (Kind::Text, &["reports"]),
             "polygon" => (Kind::Polygon, &["vertices", "area", "signed_area"]),
             "piechart" => (Kind::PieChart, &["center", "radius", "fractions"]),
@@ -732,6 +734,7 @@ impl TryFrom<RawObject> for Expected {
                 r: f("r"),
             },
             Kind::Number | Kind::Angle => ExpectedData::Number(f("value")),
+            Kind::Image => ExpectedData::Image,
             Kind::Curve => ExpectedData::Curve {
                 start: f("start"),
                 end: f("end"),
@@ -767,6 +770,7 @@ const SCRIPTING_COMMANDS: &[&str] = &[
     "ZoomIn(",
     "ZoomOut(",
     "SetActiveView(",
+    "$imageAsset(",
 ];
 
 /// How many lines of the script run a scripting command of their own.
@@ -955,6 +959,7 @@ fn validate_case(case: &Case) -> Result<(), String> {
                                     || boundary(b) && carrier(a)
                                     || a == Some(Kind::Curve) && carrier(b)
                                     || b == Some(Kind::Curve) && carrier(a)
+                                    || (a, b) == (Some(Kind::Curve), Some(Kind::Curve))
                                 {
                                     boundary_prefixes.insert(label_prefix(label));
                                 }
@@ -964,6 +969,13 @@ fn validate_case(case: &Case) -> Result<(), String> {
                                     == (Some(Kind::Function), Some(Kind::Function));
                             }
                             _ => {}
+                        }
+                    }
+                    if let Some((label, "Vertex" | "Corner", args)) = command_args(line) {
+                        if matches!(args.as_slice(), [arg] if arg.contains(['<', '>'])
+                            || snap.get(*arg).is_some_and(|o| o.kind == Kind::FunctionNVar))
+                        {
+                            boundary_prefixes.insert(label_prefix(label));
                         }
                     }
                     if let Some((_, "Point", args)) = command_args(line) {
