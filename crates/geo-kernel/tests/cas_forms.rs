@@ -365,3 +365,46 @@ fn plot_solve_takes_one_equation_and_no_number() {
         rejected(&mut c, line);
     }
 }
+
+#[test]
+fn equations_typed_in_place_solve_like_named_objects() {
+    let c = build(&[
+        "r = Solutions(x+y=1, x)",
+        "s = Solve(x^2+y^2=4, y)",
+        "t = Solutions(x^2=4, x)",
+        "u = Solutions(2x+3y=6, y)",
+    ]);
+    assert_eq!(samples(&c, "r", 0, &[0.0, 3.0]), [1.0, -2.0]);
+    assert_eq!(samples(&c, "s", 1, &[0.0]), [2.0]);
+    assert_eq!(numbers(&c, "t").unwrap(), [-2.0, 2.0]);
+    assert_eq!(samples(&c, "u", 0, &[3.0]), [0.0]);
+}
+
+#[test]
+fn extreme_coefficients_end_undefined_or_defined_never_stuck() {
+    // Coefficients whose exact products leave the rational range, values
+    // that are no numbers, and a conic that degenerates under rounding.
+    let mut c = build(&[
+        "a = 1",
+        "k: 123456789.123456789x^2+987654321.987654321x*y+a*y^2=3.14159265358979",
+        "r = Solutions(k)",
+        "s = Solve(k, y)",
+        "p = PlotSolve(k)",
+        "f = Simplify(k)",
+    ]);
+    for value in [1e300, -1e300, 1e-300, f64::NAN, f64::INFINITY, 0.0, 1.0] {
+        c.set_number(id(&c, "a"), value).ok();
+        for label in ["r", "s", "p"] {
+            if let Some(list) = c.elements(id(&c, label)) {
+                assert!(list.len() <= 2, "{label} at a = {value}");
+            }
+        }
+    }
+    let mut c = build(&["b = 2", "f(x) = x^9-b*x+1", "r = NSolutions(f, x=b)"]);
+    for value in [1e308, -1e308, 1e-320, f64::NAN, f64::NEG_INFINITY, 0.5] {
+        c.set_number(id(&c, "b"), value).ok();
+        if let Some(roots) = numbers(&c, "r") {
+            assert!(roots.len() == 1 && roots[0].is_finite(), "b = {value}");
+        }
+    }
+}
