@@ -79,8 +79,7 @@ impl PartialEq for FunctionResult {
         match (self, other) {
             (Self::Exact(a), Self::Exact(b)) => a == b,
             (Self::Tree(a), Self::Tree(b)) => Arc::ptr_eq(a, b),
-            // Bitwise, so that the function that is nowhere defined equals itself.
-            (Self::Number(a), Self::Number(b)) => a.to_bits() == b.to_bits(),
+            (Self::Number(a), Self::Number(b)) => a == b,
             _ => false,
         }
     }
