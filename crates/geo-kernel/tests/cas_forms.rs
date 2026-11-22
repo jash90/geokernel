@@ -172,6 +172,23 @@ fn a_coordinate_the_kernel_cannot_rewrite_like_the_reference_is_undefined() {
 }
 
 #[test]
+fn simplify_of_a_line_through_fractions_is_defined() {
+    let c = build(&[
+        "A = (1/3, 2/7)",
+        "B = (5/11, 1/13)",
+        "g = Line(A, B)",
+        "r = Simplify(g)",
+    ]);
+    let r = id(&c, "r");
+    assert_eq!(c.value(r), Value::Function);
+    let (ax, ay, bx, by) = (1.0 / 3.0, 2.0 / 7.0, 5.0 / 11.0, 1.0 / 13.0);
+    let slope = (by - ay) / (bx - ax);
+    let at = |x: f64| c.function_value(r, x).unwrap();
+    assert!((at(0.0) - (ay - slope * ax)).abs() < 1e-12);
+    assert!((at(1.0) - (ay + slope * (1.0 - ax))).abs() < 1e-12);
+}
+
+#[test]
 fn hints_that_are_no_variable_or_value_are_refused() {
     let mut c = build(&["f(x) = x^2-3", "g: x+y=1"]);
     for line in [

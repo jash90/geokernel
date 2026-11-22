@@ -116,13 +116,27 @@ pub(super) fn as_function(c: &Construction, id: Id, work: &mut Work<'_>) -> Opti
         }
         _ => return None,
     };
-    let divisor = Rat::from_value(divisor)?;
+    // The reference prints the function with 15 significant digits, so
+    // each ratio is taken in doubles: the exact quotient of two doubles can
+    // leave the range of the exact arithmetic where the reference is
+    // defined.
     let coefficients = coefficients
         .iter()
-        .map(|&v| Rat::from_value(v)?.div(divisor))
+        .map(|&v| significant(v / divisor))
         .collect::<Option<Vec<_>>>()?;
     let function = Quotient::polynomial(Poly::dense(&coefficients));
     transform(Op::Simplify, function, None, work).map(FunctionResult::Exact)
+}
+
+/// A double as the decimal of its 15 significant digits.
+fn significant(value: f64) -> Option<Rat> {
+    if value == 0.0 {
+        return Some(Rat::ZERO);
+    }
+    let text = format!("{value:.14e}");
+    let (mantissa, exponent) = text.split_once('e')?;
+    let digits = mantissa.replace('.', "").parse().ok()?;
+    Rat::decimal(digits, exponent.parse::<i64>().ok()? - 14)
 }
 
 /// The curve whose coordinates are the command applied to the coordinates

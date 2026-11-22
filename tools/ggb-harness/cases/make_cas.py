@@ -432,4 +432,10 @@ curve_case(["k = Curve(sin(t)^2+t, cos(t)*t^2, t, 0, 2)"]
            + results(f"{command}(k)" for command in REWRITES + ("Simplify",)))
 curve_case(["a = 2", "k = Curve(a*sin(t)+t^2, t^3-a, t, 0, 2)", "r1 = Expand(k)",
             "r2 = Simplify(k)"], [setn("a", -1), setn("a", 0.5)])
+
+# A line through points with fractions for coordinates.
+c.case("simplify", ["A = (1/3, 2/7)", "B = (5/11, 1/13)", "g = Line(A, B)",
+                     "result = Simplify(g)"], [mv("B", 0.3, 0.7), mv("A", 0.123456, -0.654321)])
+c.case("simplify", ["A = (0.1, 0.2)", "B = (0.7, 0.3)", "g = Line(A, B)", "k: y=0.1x^2+0.7x-1/3",
+                     "r1 = Simplify(g)", "r2 = Simplify(k)"], [])
 c.write()
