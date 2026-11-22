@@ -196,10 +196,29 @@ fn is_ident_char(c: char) -> bool {
     c.is_alphanumeric() || c == '_'
 }
 
+/// The characters outside string literals, with their byte positions. A
+/// backslash inside a literal escapes the character after it.
+fn unquoted(text: &str) -> impl Iterator<Item = (usize, char)> + '_ {
+    let mut quoted = false;
+    let mut escaped = false;
+    text.char_indices().filter(move |&(_, c)| {
+        if escaped {
+            escaped = false;
+        } else if quoted && c == '\\' {
+            escaped = true;
+        } else if c == '"' {
+            quoted = !quoted;
+        } else {
+            return !quoted;
+        }
+        false
+    })
+}
+
 /// The index just past the bracket that closes the one at `open`.
 fn closing(s: &str, open: usize) -> Option<usize> {
     let mut depth = 0i32;
-    for (i, c) in s[open..].char_indices() {
+    for (i, c) in unquoted(&s[open..]) {
         match c {
             '(' | '[' | '{' => depth += 1,
             ')' | ']' | '}' => {
@@ -214,14 +233,15 @@ fn closing(s: &str, open: usize) -> Option<usize> {
     None
 }
 
-/// Splits at the commas outside brackets; an empty text has no argument.
+/// Splits at the commas outside brackets and string literals; an empty
+/// text has no argument.
 pub fn split_args(s: &str) -> Vec<String> {
     if s.trim().is_empty() {
         return Vec::new();
     }
     let mut out = Vec::new();
     let (mut depth, mut start) = (0i32, 0);
-    for (i, c) in s.char_indices() {
+    for (i, c) in unquoted(s) {
         match c {
             '(' | '[' | '{' => depth += 1,
             ')' | ']' | '}' => depth -= 1,
@@ -237,12 +257,17 @@ pub fn split_args(s: &str) -> Vec<String> {
 }
 
 /// Every call `Name(args)` in an expression, nested ones included, in order.
+/// What a string literal holds is text, not a call.
 pub fn calls(expr: &str) -> Vec<(String, Vec<String>)> {
     let mut out = Vec::new();
-    let mut prev: Option<char> = None;
-    for (i, c) in expr.char_indices() {
-        let starts = c.is_alphabetic() && !prev.is_some_and(|p| is_ident_char(p) || p == '{');
-        prev = Some(c);
+    let mut prev: Option<(usize, char)> = None;
+    for (i, c) in unquoted(expr) {
+        // A name starts after something that is no part of a name; the
+        // closing quote of a literal sits between two unquoted characters.
+        let adjacent = prev.is_some_and(|(at, p)| at + p.len_utf8() == i);
+        let starts = c.is_alphabetic()
+            && !(adjacent && prev.is_some_and(|(_, p)| is_ident_char(p) || p == '{'));
+        prev = Some((i, c));
         if !starts {
             continue;
         }
@@ -385,8 +410,17 @@ pub fn script_uses_form(
                 };
                 if let Some(i) = binding {
                     let mut chars = args[i].chars();
+                    // The solving variable is a name the case does not use
+                    // for anything but a number: the label of a point or a
+                    // text there is that object, not a variable.
+                    let solving = matches!(command, "Solve" | "Solutions" | "NSolve" | "NSolutions");
+                    let other_object = solving
+                        && labels
+                            .get(args[i].trim())
+                            .is_some_and(|&kind| kind != Kind::Number);
                     if chars.next().is_some_and(|c| c.is_alphabetic() || c == '_')
                         && chars.all(is_ident_char)
+                        && !other_object
                     {
                         kinds[i] = Some(Kind::Number);
                     }
@@ -612,6 +646,54 @@ mod tests {
         // `a_{1}(` is no call of `1`, and a name inside a word is no call
         assert_eq!(calls("ab(1)")[0].0, "ab");
         assert_eq!(calls("2 a").len(), 0);
+    }
+
+    #[test]
+    fn a_call_inside_a_text_is_no_call() {
+        assert_eq!(calls("\"Solve(f, x)\"").len(), 0);
+        assert_eq!(calls("\"a \\\" Solve(f, x)\" + \"Factor(f)\"").len(), 0);
+        assert_eq!(
+            calls("Simplify(\"a, b = Expand(c)\")"),
+            [(
+                "Simplify".to_string(),
+                vec!["\"a, b = Expand(c)\"".to_string()]
+            )]
+        );
+        // The bracket inside the text closes nothing.
+        assert_eq!(
+            calls("Length(\"(a\") + Factor(f)"),
+            [
+                ("Length".to_string(), vec!["\"(a\"".to_string()]),
+                ("Factor".to_string(), vec!["f".to_string()]),
+            ]
+        );
+        // A name right after a text is a name of its own.
+        assert_eq!(calls("\"a\"Factor(f)")[0].0, "Factor");
+        assert_eq!(split_args("\"a,b\", c"), ["\"a,b\"", "c"]);
+    }
+
+    #[test]
+    fn the_solving_variable_is_no_existing_object() {
+        let l = labels(&[
+            ("f", Kind::Function),
+            ("P", Kind::Point),
+            ("b", Kind::Number),
+            ("s", Kind::Text),
+        ]);
+        let names: BTreeMap<String, String> = [("Solve", "Solve")]
+            .iter()
+            .map(|(a, b)| (a.to_string(), b.to_string()))
+            .collect();
+        let uses = |line: &str, form: &str| {
+            script_uses_form(&[line.to_string()], &l, &names, "Solve", form)
+        };
+        assert!(uses("r = Solve(f, x)", "function,number"));
+        assert!(uses("r = Solve(f, b)", "function,number"));
+        assert!(!uses("r = Solve(f, P)", "function,number"));
+        assert!(!uses("r = Solve(f, s)", "function,number"));
+        assert!(uses("r = Solve(f, P)", "function,point"));
+        // A call quoted in a text is no evidence.
+        assert!(!uses("r = \"Solve(f, x)\"", "function,number"));
     }
 
     #[test]
