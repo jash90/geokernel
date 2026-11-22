@@ -63,6 +63,8 @@ pub enum PointDef {
     SegmentVertex { segment: Id, index: Count },
     /// `Vertex(n)` or `Vertex(view, n)` in the kernel's graphics view.
     ViewCorner { view: Option<Count>, index: Count },
+    /// World coordinates of a raster image's corner.
+    ImageVertex { image: Id, index: Count },
     /// A segment whose endpoint objects are available even when it is undefined.
     SegmentEndpoint {
         segment: Id,
@@ -191,6 +193,30 @@ fn vertex_index(index: f64) -> Option<usize> {
 }
 
 impl PointDef {
+    pub(crate) fn parse_image_vertex(
+        c: &Construction,
+        args: &[&str],
+    ) -> Option<Result<Self, String>> {
+        let [image, index] = *args else {
+            return None;
+        };
+        let image = c.id(image).filter(|&id| c.kind(id) == Kind::Image)?;
+        Some(count_arg(c, index).map(|index| Self::ImageVertex { image, index }))
+    }
+
+    pub(crate) fn reads_view(self) -> bool {
+        matches!(self, Self::ViewCorner { .. } | Self::ImageVertex { .. })
+    }
+
+    pub(crate) fn hidden_parents(self, c: &Construction) -> &[Id] {
+        if let Self::ImageVertex { image, .. } = self {
+            if let Def::Image(list) = c.def(image) {
+                return c.list(list);
+            }
+        }
+        &[]
+    }
+
     pub(crate) fn parse_segment_vertex(
         c: &Construction,
         func: &str,
@@ -448,6 +474,10 @@ impl Group for PointDef {
                 (Some(id), None) | (None, Some(id)) => Parents::of(&[id]),
                 (None, None) => Parents::none(),
             },
+            PointDef::ImageVertex { image, index } => match index.id() {
+                Some(index) => Parents::of(&[image, index]),
+                None => Parents::of(&[image]),
+            },
             PointDef::Offset { point, vector } => Parents::of(&[point, vector]),
             PointDef::Coordinates { list, .. } => Parents::of(&[list]),
             PointDef::Barycenter { points, weights } => Parents::of(&[points, weights]),
@@ -487,6 +517,10 @@ impl Group for PointDef {
                 if let Some(view) = view {
                     view.check(c)?;
                 }
+                index.check(c)
+            }
+            PointDef::ImageVertex { image, index } => {
+                c.expect(image, &[Kind::Image])?;
                 index.check(c)
             }
             PointDef::Offset { point, vector } => {
@@ -559,6 +593,7 @@ impl Group for PointDef {
     fn compute(&self, c: &Construction) -> Option<Value> {
         match *self {
             PointDef::ViewCorner { view, index } => view_corner(c, view, index),
+            PointDef::ImageVertex { image, index } => c.image_vertex(image, index.value(c) as i32),
             PointDef::Offset { point, vector } => {
                 let (px, py) = c.point(point)?;
                 let Value::Vector { x, y } = c.value(vector) else {

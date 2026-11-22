@@ -204,8 +204,8 @@ pub(in crate::expr) fn result_type(
         (Vertical, [Text, Vec]) => point(1),
         (Rotate, [Text, angle]) => number(*angle),
         (Rotate, [Text, angle, Vec]) => number(*angle) && point(2),
+        (Fraction | Surd, [Vec]) => point(0),
         (Ordinal | Scientific | Surd | Continued | UnicodeToLetter, [x]) => number(*x),
-        (Fraction, [Vec]) => point(0),
         (Fraction, [x] | [x, Bool]) => number(*x),
         (Scientific, [x, y]) => number(*x) && number(*y),
         (Surd, [x, y]) => number(*x) && list(*y),
@@ -309,6 +309,7 @@ impl<const M: bool> Ctx<'_, M> {
             },
             Fraction => Some(numeric::fraction(number(a), b.is_none_or(flag))),
             Scientific => numeric::scientific(number(a), b.map(number)),
+            Surd if self.e.tys[a as usize] == Ty::Vec => Some(numeric::surd_point(self, a)),
             Surd => numeric::surd(self, a, b.unwrap_or(NONE)),
             Continued => {
                 let boolean = b.filter(|&i| self.e.tys[i as usize] == Ty::Bool);
@@ -355,6 +356,9 @@ impl<const M: bool> Ctx<'_, M> {
                 args.get(1)
             }
             TextOp::Vertical => args.get(1),
+            TextOp::Surd => args.first().filter(
+                |&&arg| matches!(self.node(arg), Node::Obj(id) if self.c.kind(id) == Kind::Point),
+            ),
             _ => None,
         };
         if let Some(&anchor) = anchor {

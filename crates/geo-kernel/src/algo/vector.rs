@@ -85,6 +85,8 @@ const MATRIX_TARGET: &[Kind] = &[
     Kind::Line,
     Kind::Polygon,
     Kind::PolyLine,
+    Kind::Curve,
+    Kind::Function,
 ];
 const LIST: &[Kind] = &[Kind::List];
 /// Kinds of object `Translate` moves here. A circle is translated by
@@ -163,7 +165,8 @@ pub enum VectorDef {
     Length(Id),
     /// `Dimension(A)` and `Dimension(v)`.
     Dimension(Id),
-    /// `ApplyMatrix(matrix, object)` for a point, vector, line, polygon or polyline.
+    /// `ApplyMatrix(matrix, object)`, storing the source kind. A function
+    /// becomes a Cartesian curve.
     ApplyMatrix { matrix: Id, src: Id, kind: Kind },
     /// `Determinant(matrix)` of a square matrix.
     Determinant(Id),
@@ -548,6 +551,10 @@ impl Group for VectorDef {
             | VectorDef::Convert { .. } => Kind::Vector,
             VectorDef::RayPoints(..) | VectorDef::RayVector(..) => Kind::Ray,
             VectorDef::LineVector(..) | VectorDef::OrthoLineVector(..) => Kind::Line,
+            VectorDef::ApplyMatrix {
+                kind: Kind::Function,
+                ..
+            } => Kind::Curve,
             VectorDef::Translate { kind, .. } | VectorDef::ApplyMatrix { kind, .. } => kind,
             VectorDef::Length(_)
             | VectorDef::Dimension(_)
@@ -705,6 +712,14 @@ impl Group for VectorDef {
                 match kind {
                     Kind::Polygon | Kind::PolyLine => {
                         super::polygon::apply_matrix(c, src, kind, transform)
+                    }
+                    Kind::Function => {
+                        transform?;
+                        super::curve::function_graph_range(c, src)
+                    }
+                    Kind::Curve => {
+                        transform?;
+                        Some(c.value(src))
                     }
                     _ => transform?.apply(c.stored_value(src)),
                 }

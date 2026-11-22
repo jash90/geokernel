@@ -12,3 +12,4 @@ image = { version = "0.25", default-features = false, features = ["png", "jpeg",
 # Use the same trigonometric rounding on each target. Seeded root finding
 # can amplify a one-bit difference enough to select a different intersection.
 libm = { version = "0.2.16", default-features = false, features = ["force-soft-floats"] }
+geo-latex = { path = "../geo-latex" }

@@ -1,3 +1,8 @@
+// The pixel alignment rules below are adapted from GeoGebra, commit
+// 112919f2d450ec7430a5cd3b65dba226fdc43b74, source/shared/common/src/main/java/
+// org/geogebra/common/euclidian/draw/AlignDrawText.java and DrawText.java.
+// Copyright (c) GeoGebra GmbH. Licensed under the EUPL 1.2.
+
 //! The presentation of a text, alongside its separately stored string.
 
 use super::{Construction, Id, Kind, Value};
@@ -86,6 +91,79 @@ impl Default for TextPresentation {
             horizontal: None,
             vertical: None,
         }
+    }
+}
+
+impl TextPresentation {
+    /// Saved font multiplier converted to drawing points.
+    pub fn drawing_size(self, base: f32) -> f32 {
+        (f64::from(base) * self.size).floor().clamp(4.0, 256.0) as f32
+    }
+
+    /// Placement before alignment, using the caller's world-to-pixel map.
+    pub fn pixel_anchor(
+        self,
+        c: &Construction,
+        project: impl Fn(f64, f64) -> (f64, f64),
+    ) -> Option<(f64, f64)> {
+        let offset = |x, y| (x + f64::from(self.offset[0]), y + f64::from(self.offset[1]));
+        let world = |x, y| {
+            let (sx, sy) = project(x, y);
+            // Screen projection rounds halfway values up before applying offsets.
+            offset((sx + 0.5).floor(), (sy + 0.5).floor())
+        };
+        let (x, y) = match self.position {
+            TextPosition::Origin => {
+                let (x, y) = project(0.0, 0.0);
+                offset(x.trunc(), y.trunc())
+            }
+            TextPosition::World { x, y } => world(x, y),
+            TextPosition::Screen { x, y } => (x.trunc(), y.trunc()),
+            TextPosition::Point(point) | TextPosition::ScreenPoint(point) => {
+                let Value::Point { x, y } = c.value(point) else {
+                    return None;
+                };
+                if matches!(self.position, TextPosition::ScreenPoint(_)) {
+                    (x.trunc(), y.trunc())
+                } else {
+                    world(x, y)
+                }
+            }
+            TextPosition::Undefined => return None,
+        };
+        (x.is_finite() && y.is_finite()).then_some((x, y))
+    }
+
+    /// Top left of a formula or plain text block at its saved anchor.
+    pub fn aligned_top_left(
+        self,
+        [mut x, mut y]: [f32; 2],
+        [width, height]: [f32; 2],
+        first_height: f32,
+        baseline: f32,
+    ) -> [f32; 2] {
+        if self.horizontal.is_some() || self.vertical.is_some() {
+            x += match self.horizontal {
+                Some(-1) => 1.0 - width,
+                Some(0) => 3.0 - (width / 2.0).floor(),
+                _ => 6.0,
+            };
+            let remaining = height - first_height;
+            y += match (self.latex, self.vertical) {
+                (true, Some(-1)) => 6.0,
+                (true, Some(0)) => 7.0 - height / 2.0,
+                (true, _) => -height,
+                (false, Some(-1)) => first_height + 6.0,
+                (false, Some(0)) => remaining / 2.0,
+                (false, _) => -remaining,
+            };
+            x = x.trunc();
+            y = y.trunc();
+        }
+        if !self.latex {
+            y -= baseline;
+        }
+        [x, y]
     }
 }
 

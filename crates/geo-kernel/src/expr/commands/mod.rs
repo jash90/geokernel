@@ -18,7 +18,7 @@ pub(super) mod function_analysis;
 mod geogebra;
 mod geometry;
 mod list;
-mod logical;
+pub(super) mod logical;
 pub(crate) use logical::relation;
 mod statistics;
 pub(super) mod text;

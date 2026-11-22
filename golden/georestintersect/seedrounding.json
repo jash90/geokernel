@@ -1,0 +1,26 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "georestintersect-seedrounding-001",
+      "group": "georestintersect",
+      "script": [
+        "q = Curve(10000000000*(t-1), 0, t, 0, 2)",
+        "r = Curve(1, s, s, -2, 2)",
+        "P = Intersect(q, r, 1, 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "q": { "type": "curve", "defined": true, "start": 0.0, "end": 2.0 },
+          "r": { "type": "curve", "defined": true, "start": -2.0, "end": 2.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": 1.000000082740371, "y": 0.0 }
+        }
+      ]
+    }
+  ]
+}

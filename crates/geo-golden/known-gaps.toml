@@ -681,3 +681,80 @@ mismatches = ["0:R"]
 id = "funcanalysis-discontinuity-006"
 reason = "The headless CAS supplies no denominator roots. The numeric result finds the removable hole at (1, 0)."
 mismatches = ["0:R"]
+
+[[gap]]
+id = "georestintersect-spline-001"
+reason = "IntersectLineSpline leaves the previous point defined when adjacent spline inputs coincide, while the kernel propagates the undefined spline to the intersection"
+mismatches = ["2:P_{1}"]
+
+[[gap]]
+id = "georestclip-largepath-001"
+reason = "Conic clipping caps polylines at 1,000 vertices."
+mismatches = [
+  "0:s_{1}",
+  "0:s_{2}",
+]
+
+[[gap]]
+id = "georestclip-largepath-002"
+reason = "Conic clipping caps polygons at 1,000 vertices."
+mismatches = [
+  "0:s_{1}",
+  "0:s_{2}",
+  "0:s_{3}",
+]
+
+[[gap]]
+id = "georestclip-overlay-001"
+reason = "The polygon overlay traces contours with the interior on the left and chooses its own start vertex. Labelled vertices and edges follow that order."
+mismatches = [
+  "0:M",
+  "0:N",
+  "0:O",
+  "0:P",
+  "0:Q",
+  "0:R",
+  "0:f_1",
+  "0:m",
+  "0:n",
+  "0:r",
+  "0:s",
+  "0:s_{1}",
+  "0:t",
+  "1:I",
+  "1:J",
+  "1:K",
+  "1:L",
+  "1:M",
+  "1:N",
+  "1:O",
+  "1:P",
+  "1:Q",
+  "1:R",
+  "1:f_1",
+  "1:i",
+  "1:j",
+  "1:k",
+  "1:l",
+  "1:m",
+  "1:n",
+  "1:r",
+  "1:r_{1}",
+  "1:s",
+  "1:s_{1}",
+  "1:t",
+]
+
+[[gap]]
+id = "georestsmall-iflimited-001"
+reason = "Geometric If alternatives must be named objects."
+mismatches = [
+  "0:script line 6",
+]
+
+[[gap]]
+id = "georestsmall-surdcomplex-001"
+reason = "The kernel has no complex point mode, so the input point cannot be constructed."
+mismatches = [
+  "0:script line 1",
+]

@@ -837,7 +837,7 @@ fn validate_case(case: &Case) -> Result<(), String> {
     if let Some(view) = case.view {
         let [xmin, xmax, ymin, ymax, xscale, yscale] = view;
         if !view.iter().all(|v| v.is_finite())
-            || xmin >= xmax
+            || xmin > xmax
             || ymin >= ymax
             || xscale <= 0.0
             || yscale <= 0.0
@@ -908,6 +908,8 @@ fn validate_case(case: &Case) -> Result<(), String> {
                                 let (a, b) = (kind(a), kind(b));
                                 if boundary(a) && (boundary(b) || carrier(b))
                                     || boundary(b) && carrier(a)
+                                    || a == Some(Kind::Curve) && carrier(b)
+                                    || b == Some(Kind::Curve) && carrier(a)
                                 {
                                     boundary_prefixes.insert(label_prefix(label));
                                 }

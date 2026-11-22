@@ -53,6 +53,8 @@ pub(crate) mod common_tangents;
 pub(super) mod conics;
 pub(crate) use conics::polynomial_roots;
 pub(super) use conics::{bracketed_root, complex_roots, graph_roots, polynomial_analysis_roots};
+#[path = "intersect_curves.rs"]
+pub(crate) mod curves;
 #[path = "intersect_function_roots.rs"]
 pub(super) mod function_roots;
 #[path = "intersect_functions.rs"]
@@ -250,6 +252,13 @@ pub(crate) fn exec_selected(
         return None;
     };
     let checkpoint = c.checkpoint();
+    if let Some(def) = curves::CurveIntersection::selected(c, &args) {
+        let result = def.and_then(|d| crate::script::add_outputs(c, label, vec![d]));
+        if result.is_err() {
+            c.discard_since(checkpoint);
+        }
+        return Some(result.map(Some));
+    }
     if let Some(defs) = functions::FunctionIntersection::selected(c, &args) {
         let result = defs.and_then(|defs| {
             crate::script::add_outputs(

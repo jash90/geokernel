@@ -32,6 +32,8 @@ pub struct Row {
     pub head: String,
     /// Second line of a dependent object, without the leading `=`.
     pub value: Option<String>,
+    /// Typeset definition (functions) or value (matrices), when available.
+    pub formula: Option<Box<str>>,
     pub free_number: Option<f64>,
     /// The free number is an angle: kept in radians, shown and set in
     /// degrees.

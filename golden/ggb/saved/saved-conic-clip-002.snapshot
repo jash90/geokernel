@@ -1,0 +1,39 @@
+{
+  "schema": 2,
+  "id": "saved-conic-clip-002",
+  "script": [
+    "O = (0, 0)",
+    "k = Circle(O, 2)",
+    "A = (-4, 0)",
+    "B = (4, 0)",
+    "C = (4, 1)",
+    "D = (-4, 1)",
+    "p = PolyLine(A, B, C, D)",
+    "s = Segment(A, B)",
+    "q = IntersectPath(p, k)",
+    "t = IntersectPath(k, s)"
+  ],
+  "objects": {
+    "O": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+    "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 2.0, "r": 2.0 },
+    "A": { "type": "point", "defined": true, "x": -4.0, "y": 0.0 },
+    "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+    "C": { "type": "point", "defined": true, "x": 4.0, "y": 1.0 },
+    "D": { "type": "point", "defined": true, "x": -4.0, "y": 1.0 },
+    "p": {
+      "type": "polyline",
+      "defined": true,
+      "vertices": [
+        [-4.0, 0.0],
+        [4.0, 0.0],
+        [4.0, 1.0],
+        [-4.0, 1.0]
+      ],
+      "length": 17.0
+    },
+    "s": { "type": "segment", "defined": true, "x1": -4.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+    "q_{1}": { "type": "segment", "defined": true, "x1": 1.7320508075688772, "y1": 1.0, "x2": -1.7320508075688774, "y2": 1.0 },
+    "q_{2}": { "type": "segment", "defined": false },
+    "t_{1}": { "type": "segment", "defined": false }
+  }
+}

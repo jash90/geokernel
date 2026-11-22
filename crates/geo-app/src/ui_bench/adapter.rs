@@ -5,7 +5,6 @@
 use crate::app::App;
 use crate::geom::ToEgui;
 use crate::tools::Tool;
-use crate::workbench::Row;
 use eframe::egui::Rect;
 use geo_kernel::kernel::Construction;
 
@@ -26,15 +25,6 @@ pub fn canvas(app: &App, _screen: Rect) -> Rect {
 /// The algebra list.
 pub fn algebra(app: &App, _screen: Rect) -> Rect {
     app.regions.algebra.egui()
-}
-
-/// The height of an algebra row.
-pub fn row_height(row: &Row) -> f32 {
-    if row.free {
-        50.0
-    } else {
-        102.0
-    }
 }
 
 /// One frame of the whole window.

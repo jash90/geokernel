@@ -6,6 +6,7 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoScientificText.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoContinuedFraction.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/cas/AlgoSurdText.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/cas/AlgoSurdTextPoint.java
 //   source/shared/common/src/main/java/org/geogebra/common/util/ScientificFormatAdapter.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
@@ -234,12 +235,7 @@ pub(super) fn surd<const M: bool>(ctx: &Ctx<'_, M>, value: u32, constants: u32) 
         return Some("0".into());
     }
     if constants == NONE {
-        let relation = pslq(&[value * value, value, 1.0], 1e-10, 10, |n| ctx.stop(n));
-        return Some(
-            relation
-                .and_then(|v| quadratic(value, v[0], v[1], v[2]))
-                .unwrap_or_else(|| max_precision(value)),
-        );
+        return Some(quadratic_surd(ctx, value));
     }
 
     // The reference harness has no native CAS evaluation for the final
@@ -271,6 +267,41 @@ pub(super) fn surd<const M: bool>(ctx: &Ctx<'_, M>, value: u32, constants: u32) 
         return Some("?".into());
     }
     Some(max_precision(value))
+}
+
+fn quadratic_surd<const M: bool>(ctx: &Ctx<'_, M>, value: f64) -> String {
+    if value.is_nan() {
+        return "?".into();
+    }
+    if is_zero(value) {
+        return "0".into();
+    }
+    pslq(&[value * value, value, 1.0], 1e-10, 10, |n| ctx.stop(n))
+        .and_then(|v| quadratic(value, v[0], v[1], v[2]))
+        .unwrap_or_else(|| max_precision(value))
+}
+
+pub(super) fn surd_point<const M: bool>(ctx: &Ctx<'_, M>, point: u32) -> String {
+    use crate::expr::{eval::Val, Node};
+    let (x, y) = match ctx.full(point).val {
+        Val::V(x, y) if x.is_finite() && y.is_finite() => (x, y),
+        _ => {
+            // A projective point at infinity is defined in the reference,
+            // but its inhomogeneous coordinates are both NaN.
+            return if matches!(ctx.node(point), Node::Obj(id)
+                if ctx.c.stored_value(id).is_defined())
+            {
+                " \\left( ? , ? \\right) ".into()
+            } else {
+                "(?,?)".into()
+            };
+        }
+    };
+    format!(
+        " \\left( {} , {} \\right) ",
+        quadratic_surd(ctx, x),
+        quadratic_surd(ctx, y)
+    )
 }
 
 /// Remove dependencies between supplied constants so they do not hide a

@@ -18,6 +18,7 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/TangentAlgo.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/cas/AlgoTangentFunctionNumber.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/cas/AlgoTangentFunctionPoint.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/cas/AlgoTangentCurve.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoPolarLine.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersectLineConic.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersect.java
@@ -43,7 +44,7 @@ use super::polygon::{count_arg, Count};
 use super::{
     check_index, line_value, normalized_coefficients, Group, Parents, CIRCLE, LINE_LIKE, POINT,
 };
-use crate::kernel::{Construction, Error, Id, Kind, Value};
+use crate::kernel::{Construction, Def, Error, Id, Kind, Value};
 use crate::script::object;
 use crate::tol::{MAX_PRECISION, MIN_PRECISION, STANDARD_PRECISION};
 
@@ -101,6 +102,11 @@ pub enum LineDef {
         function: Id,
         point: Id,
     },
+    /// Tangent to a Cartesian curve at its tracked or closest parameter.
+    TangentCurvePoint {
+        point: Id,
+        curve: Id,
+    },
     /// A common tangent of two conics, in outer-then-inner order.
     CommonTangent(CommonTangentDef),
     /// Polar line of a point with respect to a circle (`Polar(P, c)`).
@@ -134,6 +140,7 @@ impl Group for LineDef {
                 None => Parents::of(&[function]),
             },
             LineDef::TangentFunctionPoint { function, point } => Parents::of(&[function, point]),
+            LineDef::TangentCurvePoint { point, curve } => Parents::of(&[point, curve]),
             LineDef::CommonTangent(d) => Parents::of(&[d.first, d.second]),
         }
     }
@@ -198,6 +205,10 @@ impl Group for LineDef {
                 c.expect(function, &[Kind::Function])?;
                 c.expect(point, POINT)
             }
+            LineDef::TangentCurvePoint { point, curve } => {
+                c.expect(point, POINT)?;
+                c.expect(curve, &[Kind::Curve])
+            }
             LineDef::Polar { point, circle } => {
                 c.expect(point, POINT)?;
                 c.expect(circle, CIRCLE)
@@ -255,6 +266,12 @@ impl Group for LineDef {
             LineDef::TangentFunctionPoint { function, point } => {
                 function_tangent(c, function, c.point(point)?.0)
             }
+            LineDef::TangentCurvePoint { point, curve } => {
+                let (curve, t) = curve_tangent_parameter(c, point, curve)?;
+                let (x, y) = curve.value(t);
+                let (dx, dy) = curve.first(t);
+                line_value(-dy, dx, x * dy - dx * y)
+            }
             LineDef::CommonTangent(d) => d.value(c),
             LineDef::Polar { point, circle } => {
                 let (px, py) = c.point(point)?;
@@ -301,7 +318,7 @@ impl Group for LineDef {
                 2 => return None,
                 n => Err(arg_count(func, n)),
             },
-            "Tangent" if let [a, b] = args => return parse_function_tangent(c, a, b),
+            "Tangent" if let [a, b] = args => return parse_single_tangent(c, a, b),
             "Tangent" => Err(arg_count(func, args.len())),
             "Polar" => parse_polar(c, func, args),
             _ => return None,
@@ -324,7 +341,7 @@ impl Group for LineDef {
                     Err(bad_kinds(c, func, &ids))
                 }
             })),
-            ("Tangent", 2) if parse_function_tangent(c, args[0], args[1]).is_some() => None,
+            ("Tangent", 2) if parse_single_tangent(c, args[0], args[1]).is_some() => None,
             ("Tangent", 2) => Some(objects(c, args).and_then(|ids| {
                 let (first, second) = (ids[0], ids[1]);
                 match (c.kind(first), c.kind(second)) {
@@ -347,7 +364,13 @@ impl Group for LineDef {
 
 const SEGMENT: &[Kind] = &[Kind::Segment];
 
-fn parse_function_tangent(c: &Construction, a: &str, b: &str) -> Option<Result<LineDef, String>> {
+fn parse_single_tangent(c: &Construction, a: &str, b: &str) -> Option<Result<LineDef, String>> {
+    if let Some(curve) = c.id(b).filter(|&id| c.kind(id) == Kind::Curve) {
+        return Some(object(c, a).and_then(|point| {
+            expect_kinds(c, "Tangent", &[point, curve], &[Kind::Point, Kind::Curve])?;
+            Ok(LineDef::TangentCurvePoint { point, curve })
+        }));
+    }
     let is_function = |id| c.kind(id) == Kind::Function;
     let is_point = |id| c.kind(id) == Kind::Point;
     if let Some(function) = c.id(b).filter(|&id| is_function(id)) {
@@ -361,6 +384,28 @@ fn parse_function_tangent(c: &Construction, a: &str, b: &str) -> Option<Result<L
         let point = c.id(b).filter(|&id| is_point(id))?;
         Some(Ok(LineDef::TangentFunctionPoint { function, point }))
     }
+}
+
+fn curve_tangent_parameter(
+    c: &Construction,
+    point: Id,
+    source: Id,
+) -> Option<(super::curve::Cartesian<'_>, f64)> {
+    use super::path::PathDef;
+    let input = c.point(point)?;
+    let curve = super::curve::Cartesian::new(c, source)?;
+    let t = match c.def(point) {
+        Def::Path(PathDef::On { path } | PathDef::OnParam { path, .. }) if path == source => {
+            c.path_state(point)?.parameter()
+        }
+        _ => curve.closest(input),
+    };
+    Some((curve, t))
+}
+
+pub(super) fn curve_tangent_contact(c: &Construction, point: Id, source: Id) -> Option<(f64, f64)> {
+    let (curve, t) = curve_tangent_parameter(c, point, source)?;
+    Some(curve.value(t))
 }
 
 fn function_tangent(c: &Construction, function: Id, x: f64) -> Option<Value> {
