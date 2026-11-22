@@ -184,6 +184,12 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
             return Err(format!("`{f}` is not a valid object name"));
         }
         check_label(f)?;
+        // `g(x) = SlowPlot(f)` is a function of its own making
+        if !of_y {
+            if let Some(("SlowPlot", args)) = split_call(rhs.trim()) {
+                return slow_plot(c, f, &args);
+            }
+        }
         return crate::expr::define_function(c, f, rhs.trim(), of_y).map(Some);
     }
     if !is_output_label(name) {
@@ -196,6 +202,63 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
 /// `SetConstructionStep(n)`: moves the construction to a step; its
 /// returned argument is a temporary in GeoGebra, so no line of it creates
 /// an object (`CmdSetConstructionStep`).
+/// `SlowPlot(f[, repeat])`: the drawn-up-to-here view of the function `f`.
+/// The hidden number between 0 and 1 that GeoGebra animates starts at 0,
+/// so the static function is the part left of the view (`CmdSlowPlot`);
+/// the repeat flag only changes how the animation runs again.
+fn slow_plot(c: &mut Construction, name: &str, args: &[&str]) -> Result<Option<Id>, String> {
+    if args.is_empty() || args.len() > 2 {
+        return Err(format!("`SlowPlot` does not take {} argument(s)", args.len()));
+    }
+    let start = c.checkpoint();
+    let result = (|| {
+        // the function itself may be written inline, as GeoGebra's argument
+        // resolver wraps it
+        let function = match c.id(args[0]).filter(|&id| c.kind(id) == Kind::Function) {
+            Some(id) => id,
+            None => {
+                let label = format!("\u{0}spf{}", c.len());
+                crate::expr::define_function(c, &label, args[0], false)
+                    .map_err(|e| e.to_string())?
+            }
+        };
+        if let Some(repeat) = args.get(1) {
+            // the repeat flag is read as a double: a number or a boolean
+            let numeric = crate::expr::plain_number(repeat).is_some()
+                || matches!(*repeat, "true" | "false")
+                || c.id(repeat).is_some_and(|id| {
+                    matches!(c.kind(id), k if k.is_number() || k == Kind::Boolean)
+                });
+            if !numeric {
+                return Err(format!("`{repeat}` is not a number"));
+            }
+        }
+        let var = format!("\u{0}slow{}", c.len());
+        slider(c, &var, &["0", "1"]).map_err(|e| e.to_string())?;
+        // the view corners the drawn stretch runs between
+        let mut corner = |n: &str| -> Result<Id, String> {
+            let label = format!("\u{0}sp{}{}", n, c.len());
+            let def = crate::algo::point::parse_view_corner(c, &[n])
+                .unwrap_or_else(|| unreachable!("`Corner` of a number is a view corner"))
+                .map_err(|e| e.to_string())?;
+            c.add(&label, Def::Point(def)).map_err(|e| e.to_string())
+        };
+        let (first, second) = (corner("1")?, corner("2")?);
+        let body = format!(
+            "If(x < x({}) + {var} * (x({}) - x({})), {}(x))",
+            c.label(first),
+            c.label(second),
+            c.label(first),
+            c.label(function)
+        );
+        crate::expr::define_function(c, name, &body, false).map(Some)
+    })();
+    if result.is_err() {
+        c.discard_since(start);
+    }
+    result
+}
+
 fn set_construction_step(c: &mut Construction, arg: &str) -> Result<f64, String> {
     let value = crate::expr::plain_number(arg)
         .or_else(|| c.id(arg).and_then(|id| c.number(id)))
@@ -319,6 +382,11 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
             c.discard_since(start);
         }
         return result;
+    }
+    // `name = SlowPlot(f[, repeat])` without a function label is the same
+    // function under a plain name
+    if let Some(("SlowPlot", args)) = split_call(rhs) {
+        return slow_plot(c, name, &args);
     }
     // `name = Maximize(expr, number)` and `Minimize`: the dependent value
     // may be an inline arithmetic expression, which becomes a hidden

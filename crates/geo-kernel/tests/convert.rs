@@ -90,3 +90,38 @@ fn object_resolves_the_name_at_parse() {
         .unwrap_err()
         .contains("unknown object `c`"));
 }
+
+#[test]
+fn slow_plot_draws_up_to_the_left_view_corner() {
+    let mut c = build(&["f(x) = sin(x)", "g(x) = SlowPlot(f)"]);
+    let (f, g) = (c.id("f").unwrap(), c.id("g").unwrap());
+    // the animating number starts at 0: only the part left of the view
+    assert_eq!(c.function_value(g, -5.0), c.function_value(f, -5.0));
+    // -4.32 is the headless view's left edge: right of it, undefined
+    assert!(c.function_value(g, -4.0).is_none_or(f64::is_nan));
+    // moving the view moves the drawn stretch with it: the left edge at
+    // -3 lets the part left of -3 show
+    c.set_view(-3.0, 10.0, -5.0, 5.0, 50.0, 50.0);
+    assert_eq!(c.function_value(g, -5.0), c.function_value(f, -5.0));
+    assert_eq!(c.function_value(g, -4.0), c.function_value(f, -4.0));
+    assert!(c.function_value(g, -2.0).is_none_or(f64::is_nan));
+    // the repeat flag changes nothing without an animation
+    let d = build(&["f(x) = cos(x)", "h(x) = SlowPlot(f, false)"]);
+    assert_eq!(
+        d.function_value(d.id("h").unwrap(), -5.0),
+        Some((-5.0f64).cos())
+    );
+}
+
+#[test]
+fn slow_plot_accepts_an_inline_function() {
+    let c = build(&["g(x) = SlowPlot(sin(x))"]);
+    assert_eq!(
+        c.function_value(c.id("g").unwrap(), -5.0),
+        Some((-5.0f64).sin())
+    );
+    let mut d = Construction::new();
+    script::exec(&mut d, "f(x) = x").unwrap();
+    let error = script::exec(&mut d, "g(x) = SlowPlot(f, x)").unwrap_err();
+    assert!(error.contains("is not a number"), "{error}");
+}
