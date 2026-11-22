@@ -107,7 +107,7 @@ fn of_kind(kind: Kind) -> &'static [Kind] {
         Kind::Sector => &[Kind::Sector],
         Kind::Locus => &[Kind::Locus],
         Kind::Curve => &[Kind::Curve],
-        Kind::Button | Kind::InputBox | Kind::Image | Kind::PieChart => &[],
+        Kind::Button | Kind::InputBox | Kind::Image | Kind::PieChart | Kind::ImplicitCurve => &[],
     }
 }
 
@@ -373,6 +373,7 @@ impl Map {
             | Value::InputBox
             | Value::Image
             | Value::PieChart
+            | Value::ImplicitCurve
             | Value::Undefined => None,
         }
     }

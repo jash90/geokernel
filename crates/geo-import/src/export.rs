@@ -270,6 +270,9 @@ impl Writer<'_> {
             )));
         }
         let line = script::split_comment(line).0;
+        if line.starts_with("$implicitCoefficients(") {
+            return Ok(());
+        }
         let separator = line
             .find([':', '='])
             .ok_or_else(|| failure(format!("missing definition for `{label}`")))?;

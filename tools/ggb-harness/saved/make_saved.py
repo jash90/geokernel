@@ -60,6 +60,12 @@ def r2(lo=-6.0, hi=6.0):
     return round(rng.uniform(lo, hi), 2)
 
 
+case("curve-branch",
+     ["a = 0", "c = Curve(t^2, t * (t^2 - 1) + a * t, t, -2, 2)",
+      "P = Point(c)", "Q = Point(c)", "p = PathParameter(P)", "q = PathParameter(Q)"],
+     [{"action": "curve_parameter", "label": "P", "value": 1},
+      {"action": "curve_parameter", "label": "Q", "value": -1}])
+
 # A line and a circle: the line is dragged (both points, or one) before saving,
 # including through the direction that swaps the order of the two points.
 topic("lc")
@@ -184,7 +190,7 @@ expressions = [
     "Q = (n, f(y(A)))", "valid = x(A) ≥ 0",
     "j_{xy}(x) = f(x) + 1", "d = j_{xy}(y(A))",
     "ang = (v_{0x} + 30)°",
-    "bad = x(A) + NextPrime(v_{0x})", "lost = bad + 1",
+    "bad = x(A) + Limit(x^2, v_{0x})", "lost = bad + 1",
     "multi(x, y) = x + y", "control = Checkbox()",
     "button = Button()", "field = InputBox(v_{0x})",
 ]
@@ -214,7 +220,7 @@ case("review", ["n = 400", "ang = (n + 30)°", "acute = (n - 10)°",
                 "a = 2π", "d = 1/3", "P = If(n > 0, A, B)",
                 "q = {A, d, 5, a}", "flat(x) = 4", "tri = Polygon(A, B, C)",
                 "len = 5", "el = Ellipse(A, B, len)",
-                "e = x(A) + NextPrime(n)", "lost = e + 1", "Euler = ℯ + 1"],
+                "e = x(A) + Limit(x^2, n)", "lost = e + 1", "Euler = ℯ + 1"],
      [{"action": "angle_style", "label": "ang", "value": 0},
       {"action": "angle_style", "label": "acute", "value": 1},
       {"action": "angle_style", "label": "reflex", "value": 2},
@@ -320,7 +326,7 @@ case("slider-bounds", ["n = Slider(0, 10)", "m = Slider(0, 10)", "k = Slider(0, 
      [{"action": "set_number", "label": "n", "value": 9},
       {"action": "slider_bounds", "label": "n", "max": "a + 3"},
       {"action": "slider_bounds", "label": "m", "min": "a - 1"},
-      {"action": "slider_bounds", "label": "k", "min": "-3", "max": "NextPrime(a)"}])
+      {"action": "slider_bounds", "label": "k", "min": "-3", "max": "Limit(x^2, a)"}])
 
 image_points = ["A = (-2, -1)", "B = (1, 0)", "D = (-1, 2)"]
 anchor_image = {"label": "anchoredImage", "file": "generated/tile.png",
@@ -376,6 +382,8 @@ clip_paths = ["O = (0, 0)", "k = Circle(O, 2)", "A = (-4, 0)", "B = (4, 0)",
               "s = Segment(A, B)", "q = IntersectPath(p, k)", "t = IntersectPath(k, s)"]
 case("conic-clip", clip_paths, [])
 case("conic-clip", clip_paths, [mv("O", 0, 2)])
+
+case("implicit", ["a = 2", "p: x^3/a + y^3 = 1", "q: x^4 + y^4 = 2"], [])
 
 out = Path(__file__).with_name("saved.json")
 lines = ",\n".join("    " + json.dumps(c, separators=(", ", ": ")) for c in cases)

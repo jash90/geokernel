@@ -118,6 +118,7 @@ pub fn object_text(c: &Construction, id: Id) -> String {
         }
     }
     match c.value(id) {
+        Value::ImplicitCurve => c.formatted_equation(id).unwrap_or_default(),
         Value::Conic { .. } => match c.conic(id) {
             Some(d) => conic_equation(&d),
             None => text::label(Label::Undefined).into(),
@@ -157,6 +158,7 @@ pub fn is_known(v: &Value) -> bool {
             | Value::Conic { .. }
             | Value::Function
             | Value::FunctionNVar
+            | Value::ImplicitCurve
             | Value::Text
             | Value::Image
             | Value::PieChart

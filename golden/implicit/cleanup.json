@@ -1,0 +1,74 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "implicit-cleanup-001",
+      "group": "implicit",
+      "script": [
+        "A = (0, 0)",
+        "a = 2",
+        "k = Circle(A, 2*a)",
+        "B = (2, 2)",
+        "M = Midpoint(A, B)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "reject", "line": "P = Intersect((0,1), (2,3))" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "M": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 4.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "M": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "implicit-cleanup-002",
+      "group": "implicit",
+      "script": [
+        "c: x^4 + y^4 = 1",
+        "g: y = 2",
+        "P = Intersect(c, g)",
+        "A = (0, 0)",
+        "a = 2",
+        "k = Circle(A, 2*a)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 1",
+            "input_form": true
+          },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -2.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 4.0 }
+        }
+      ]
+    }
+  ]
+}
