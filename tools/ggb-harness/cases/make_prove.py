@@ -184,4 +184,44 @@ proof("conditions", TRI + ["D = Midpoint(B, C)", "E = Midpoint(A, C)", "f = Line
 proof("conditions", ["A = (0, 0)", "B = (4, 0)", "e = Line(A, B)", "P = Point(e)",
                      "C = (1, 3)"], "AreCollinear(A, P, C)")
 
+# Points on lines, which keep the second free point free, and two outputs of
+# one intersection.
+cases.topic("paths")
+proof("paths", TRI + ["e = Line(A, B)", "P = Point(e, 0.2)", "M = Midpoint(P, C)",
+                      "N = Midpoint(A, C)", "f = Line(M, N)"], "AreParallel(f, e)")
+proof("paths", TRI + ["e = Line(A, B)", "P = Point(e, 0.3)", "f = Line(P, C)", "g = Line(B, C)",
+                      "k = Line(A, f)", "D = Intersect(k, g)"], "AreCollinear(D, B, C)")
+proof("paths", TRI + ["e = Line(A, B)", "P = Point(e, 0.4)", "Q = Point(e, 0.5)",
+                      "M = Midpoint(P, Q)"], "AreCollinear(A, M, B)", [mv("B", 0, 0), mv("B", 5, 1)])
+proof("paths", TRI + ["e = Line(A, B)", "P = Point(e, 0.6)", "f = PerpendicularLine(P, e)",
+                      "g = PerpendicularLine(C, e)"], "AreParallel(f, g)")
+proof("paths", TRI + ["D = (4, 5)", "c = Circle(A, B)", "d = Circle(C, D)",
+                      "P = Intersect(c, d, 1)", "Q = Intersect(c, d, 2)", "f = Line(P, Q)",
+                      "g = Line(A, C)"], "ArePerpendicular(f, g)")
+proof("paths", TRI + ["D = (4, 5)", "c = Circle(A, B)", "g = Line(C, D)",
+                      "P = Intersect(g, c, 1)", "Q = Intersect(g, c, 2)", "M = Midpoint(P, Q)",
+                      "f = Line(A, M)"], "ArePerpendicular(f, g)")
+proof("paths", TRI + ["D = (4, 5)", "c = Circle(A, B)", "g = Line(C, D)",
+                      "P = Intersect(g, c, 1)"], "AreCollinear(P, C, D)")
+proof("paths", TRI + ["c = Circle(A, B)", "g = Line(A, C)", "P = Intersect(g, c, 1)",
+                      "Q = Intersect(g, c, 2)", "M = Midpoint(P, Q)"], "AreEqual(M, A)")
+proof("paths", TRI + ["c = Circle(A, B)", "g = Line(A, C)", "P = Intersect(g, c, 1)",
+                      "M = Midpoint(P, B)", "h = Line(A, M)", "k = Line(P, B)"],
+      "ArePerpendicular(h, k)")
+proof("paths", TRI + ["e = Line(A, B)", "P = Point(e, 0.2)", "Q = Point(e, 0.3)",
+                      "R = Point(e, 0.4)"], "AreCollinear(P, Q, R)")
+proof("paths", ["A = (0, 0)", "B = (5, 1)", "f = PerpendicularBisector(A, B)",
+                "P = Point(f, 0.3)", "c = Circle(P, A)", "d = Circle(P, B)"], "AreEqual(c, d)")
+proof("paths", TRI + ["e = Line(A, B)", "P = Point(e, 0.4)", "f = Line(A, P)"], "AreEqual(f, e)")
+proof("paths", TRI + ["e = Line(A, B)", "P = Point(e, 0.4)", "Q = Point(e, 0.7)",
+                      "f = Line(P, Q)"], "AreEqual(f, e)")
+proof("paths", TRI + ["e = Line(A, B)", "P = Point(e, 0.4)", "f = Line(C, P)",
+                      "g = Line(C, A)"], "AreEqual(f, g)")
+proof("paths", QUAD + ["E = (6, 3)", "f = Line(A, B)", "g = Line(C, D)", "h = Line(E, f)"],
+      "AreParallel(g, h)")
+
+# A statement written as an expression: the reference has the CAS rewrite it.
+cases.topic("expression")
+proof("expression", TRI + ["D = Midpoint(A, B)", "E = Midpoint(B, A)"], "D == E")
+
 cases.write()

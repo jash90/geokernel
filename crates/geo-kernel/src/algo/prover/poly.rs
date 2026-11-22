@@ -146,7 +146,11 @@ impl Poly {
     }
 
     pub(crate) fn degree(&self) -> u32 {
-        self.terms.iter().map(|(m, _)| m.degree()).max().unwrap_or(0)
+        self.terms
+            .iter()
+            .map(|(m, _)| m.degree())
+            .max()
+            .unwrap_or(0)
     }
 
     pub(crate) fn uses_var(&self, index: usize) -> bool {
@@ -161,7 +165,7 @@ impl Poly {
     /// Terms in a canonical order, for equality tests that do not depend on
     /// a monomial order.
     pub(crate) fn canonical(mut self) -> Self {
-        self.terms.sort_by(|a, b| b.0.cmp(&a.0));
+        self.terms.sort_by_key(|t| std::cmp::Reverse(t.0));
         self
     }
 
@@ -319,10 +323,18 @@ mod tests {
     fn block_order_puts_eliminated_variables_first() {
         let order = Order { split: 1, vars: 3 };
         let x = Mono::var(0);
-        let big_free = Mono::var(1).mul(&Mono::var(2)).unwrap().mul(&Mono::var(2)).unwrap();
+        let big_free = Mono::var(1)
+            .mul(&Mono::var(2))
+            .unwrap()
+            .mul(&Mono::var(2))
+            .unwrap();
         assert_eq!(order.cmp(&x, &big_free), Ordering::Greater);
         // grevlex inside a block: y*z^2 is below y^2*z.
-        let other = Mono::var(1).mul(&Mono::var(1)).unwrap().mul(&Mono::var(2)).unwrap();
+        let other = Mono::var(1)
+            .mul(&Mono::var(1))
+            .unwrap()
+            .mul(&Mono::var(2))
+            .unwrap();
         assert_eq!(order.cmp(&big_free, &other), Ordering::Less);
     }
 }

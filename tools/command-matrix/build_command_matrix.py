@@ -133,6 +133,8 @@ PARTIAL = {
     "CircumcircleArc": "CircumcircularArc(point, point, point)",
     "CircumcircleSector": "CircumcircularSector(point, point, point)",
     "Semicircle": "Semicircle(point, point)",
+    "Prove": "Predicate statements (AreCollinear, AreParallel, ArePerpendicular, AreConcurrent, AreConcyclic, AreEqual of points, lines or circles) over points, lines, segments, midpoints, perpendiculars, parallels, perpendicular bisectors, circles, points on paths and indexed circle intersections; arithmetic statements are pending",
+    "ProveDetails": "ProveDetails(boolean) for the statements Prove covers, with conditions read from a unique or variable-disjoint elimination basis; the relation-tool sentences are pending",
     "Arc": "Conic with point endpoints or numeric parameters",
     "Sector": "Conic with point endpoints or numeric parameters",
     "Slope": "Slope(line, segment, ray or function)",

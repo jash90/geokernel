@@ -20,7 +20,7 @@ const MAX_POLYS: usize = 600;
 /// The largest number of terms of one polynomial.
 const MAX_TERMS: usize = 20_000;
 /// The largest coefficient size, in 32-bit limbs.
-const MAX_LIMBS: usize = 4_096;
+const MAX_LIMBS: usize = 64;
 
 struct Pair {
     i: usize,
@@ -79,7 +79,8 @@ pub(crate) fn basis(polys: &[Poly], order: &Order, budget: &Budget) -> Option<Ve
         let others: Vec<Poly> = minimal
             .iter()
             .enumerate()
-            .filter_map(|(i, p)| (i != k).then(|| p.clone()))
+            .filter(|&(i, _)| i != k)
+            .map(|(_, p)| p.clone())
             .collect();
         let flags = vec![true; others.len()];
         let lead = minimal[k].terms[0].clone();
@@ -116,12 +117,9 @@ fn update(
     let mut kept: Vec<(usize, Mono, bool)> = Vec::new();
     for (k, &(g, lcm, coprime)) in candidates.iter().enumerate() {
         let dominated = !coprime
-            && candidates
-                .iter()
-                .enumerate()
-                .any(|(l, &(_, other, _))| {
-                    l != k && other.divides(&lcm) && (other != lcm || l < k)
-                });
+            && candidates.iter().enumerate().any(|(l, &(_, other, _))| {
+                l != k && other.divides(&lcm) && (other != lcm || l < k)
+            });
         if !dominated {
             kept.push((g, lcm, coprime));
         }
@@ -178,7 +176,9 @@ fn combine(
     order: &Order,
     budget: &Budget,
 ) -> Option<Poly> {
-    budget.charge(f.terms.len() + g.terms.len())?;
+    // Coefficient arithmetic grows with the size of the multipliers.
+    let width = 1 + a.size() + b.size();
+    budget.charge((f.terms.len() + g.terms.len()).saturating_mul(width))?;
     let mut terms = Vec::with_capacity(f.terms.len() + g.terms.len());
     let mut x = f.terms.iter().peekable();
     let mut y = g.terms.iter().peekable();
@@ -215,13 +215,7 @@ fn combine(
 }
 
 /// The normal form of `f` by the active polynomials, made primitive.
-fn reduce(
-    f: Poly,
-    all: &[Poly],
-    active: &[bool],
-    order: &Order,
-    budget: &Budget,
-) -> Option<Poly> {
+fn reduce(f: Poly, all: &[Poly], active: &[bool], order: &Order, budget: &Budget) -> Option<Poly> {
     let (r, _) = reduce_scaled(f, all, active, order, budget)?;
     Some(r.primitive())
 }
@@ -237,7 +231,6 @@ fn reduce_scaled(
 ) -> Option<(Poly, Int)> {
     let mut done: Vec<(Mono, Int)> = Vec::new();
     let mut scale = Int::from_i64(1);
-    let one = Int::from_i64(1);
     while let Some((m, c)) = f.terms.first().cloned() {
         budget.charge(1)?;
         let divisor = (0..all.len()).find(|&k| active[k] && all[k].terms[0].0.divides(&m));
@@ -253,7 +246,16 @@ fn reduce_scaled(
         if a.is_negative() {
             return None;
         }
-        f = combine(&f, &a, &Mono::ONE, &all[k], &b, &lg.quotient(&m), order, budget)?;
+        f = combine(
+            &f,
+            &a,
+            &Mono::ONE,
+            &all[k],
+            &b,
+            &lg.quotient(&m),
+            order,
+            budget,
+        )?;
         if !a.is_unit() {
             for (_, dc) in &mut done {
                 *dc = dc.mul(&a);
@@ -277,11 +279,13 @@ fn reduce_scaled(
                 scale = scale.div_exact(&g)?;
             }
         }
-        if done.len() + f.terms.len() > MAX_TERMS {
+        if done.len() + f.terms.len() > MAX_TERMS
+            || scale.size() > MAX_LIMBS
+            || done.iter().any(|(_, c)| c.size() > MAX_LIMBS)
+        {
             return None;
         }
     }
-    let _ = one;
     Some((Poly { terms: done }, scale))
 }
 

@@ -1062,3 +1062,20 @@ mismatches = ["1:b", "2:b"]
 id = "locusequation-boolean-008"
 reason = "Editing the fixed point changes the standalone distance comparison to false. The reference condition passed to the prover reads temporary segment lengths and stays true. Both kernel comparisons use the current distances."
 mismatches = ["2:b"]
+
+# prove
+
+[[gap]]
+id = "prove-expression-001"
+reason = "The statement is an arithmetic Boolean (`D == E`). The reference has the CAS rewrite the expression into a polynomial with extra distance variables before the elimination; the kernel translates only the predicate commands and answers undefined."
+mismatches = ["0:p", "0:q"]
+
+[[gap]]
+id = "prove-relation-001"
+reason = "The relation-tool form of ProveDetails words each condition as a localized sentence from the reference's language files, which the kernel does not carry; it answers an undefined list whenever there is a condition to word."
+mismatches = ["0:r"]
+
+[[gap]]
+id = "prove-relation-002"
+reason = "The relation-tool form of ProveDetails words each condition as a localized sentence from the reference's language files, which the kernel does not carry; it answers an undefined list whenever there is a condition to word."
+mismatches = ["0:r"]

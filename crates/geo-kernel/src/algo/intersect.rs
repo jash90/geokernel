@@ -1250,7 +1250,12 @@ fn on_circle_by_construction(c: &Construction, s: Id, circle: Id) -> bool {
 /// that also lies on the line by construction. The intersection points of
 /// this line and this circle themselves belong to this intersection and are
 /// never chosen.
-pub(crate) fn existing_line_circle_point(c: &Construction, line: Id, line_def: Def, circle: Id) -> Option<Id> {
+pub(crate) fn existing_line_circle_point(
+    c: &Construction,
+    line: Id,
+    line_def: Def,
+    circle: Id,
+) -> Option<Id> {
     let (p, q) = line_points(line_def);
     for t in circle_points(c, circle).into_iter().flatten() {
         if Some(t) == p || Some(t) == q || intersection_on_line(c, t, line) {

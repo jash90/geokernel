@@ -191,9 +191,12 @@ impl System {
                     c.def(line),
                     circle,
                 );
-                self.distinct_from_earlier(c, id, line, circle, [x, y], budget)?;
+                let other = self.distinct_from_earlier(c, id, line, circle, [x, y], budget)?;
                 if let Some(e) = existing {
-                    if e >= id {
+                    // With both conditions the reference's adapter writes
+                    // the exclusion over the other one and fails on the
+                    // missing polynomial.
+                    if e >= id || other {
                         return None;
                     }
                     let e = self.point(e)?;
@@ -230,8 +233,11 @@ impl System {
                 let y = self.new_var(false)?;
                 self.add(equidistant([a[2], a[3]], [a[0], a[1]], [x, y], budget)?);
                 self.add(equidistant([b[2], b[3]], [b[0], b[1]], [x, y], budget)?);
-                self.distinct_from_earlier(c, id, c1, c2, [x, y], budget)?;
+                let other = self.distinct_from_earlier(c, id, c1, c2, [x, y], budget)?;
                 if let [e] = shared.as_slice() {
+                    if other {
+                        return None;
+                    }
                     let e = self.point(*e)?;
                     let t = self.new_var(false)?;
                     self.add(distinct([x, y], e, t, budget)?);
@@ -311,7 +317,7 @@ impl System {
 
     /// The second output of an intersection algorithm differs from the
     /// first one whose equations were made before (`botanaVars` of the
-    /// adapter): `|PQ|^2 * t = 1`.
+    /// adapter): `|PQ|^2 * t = 1`. Tells whether it added that equation.
     fn distinct_from_earlier(
         &mut self,
         c: &Construction,
@@ -320,7 +326,7 @@ impl System {
         second: Id,
         p: [usize; 2],
         budget: &Budget,
-    ) -> Option<()> {
+    ) -> Option<bool> {
         let same_pair = |other: Id| match c.def(other) {
             Def::IntersectLineCircle { line, circle, .. } => (line, circle) == (first, second),
             Def::IntersectCircles { c1, c2, .. } => {
@@ -343,12 +349,12 @@ impl System {
             return None;
         }
         match translated.as_slice() {
-            [] => Some(()),
+            [] => Some(false),
             [other] => {
                 let q = self.point(*other)?;
                 let t = self.new_var(false)?;
                 self.add(distinct(p, q, t, budget)?);
-                Some(())
+                Some(true)
             }
             _ => None,
         }
@@ -379,7 +385,12 @@ impl System {
                 vec![polys]
             }
             PredicateDef::Concyclic(a, b, d, e) => {
-                let points = [self.point(a)?, self.point(b)?, self.point(d)?, self.point(e)?];
+                let points = [
+                    self.point(a)?,
+                    self.point(b)?,
+                    self.point(d)?,
+                    self.point(e)?,
+                ];
                 vec![vec![concyclic(points, budget)?]]
             }
             PredicateDef::Equal(a, b) => self.equal(c, a, b, budget)?,
@@ -508,7 +519,12 @@ fn v(index: usize) -> Poly {
 
 /// `a1*b2 - a2*b1 + c1*(a2 - b2) - c2*(a1 - b1)`: zero when the three points
 /// are collinear (`PPolynomial.collinear`).
-pub(super) fn collinear(a: [usize; 2], b: [usize; 2], d: [usize; 2], budget: &Budget) -> Option<Poly> {
+pub(super) fn collinear(
+    a: [usize; 2],
+    b: [usize; 2],
+    d: [usize; 2],
+    budget: &Budget,
+) -> Option<Poly> {
     let (a1, a2, b1, b2, c1, c2) = (v(a[0]), v(a[1]), v(b[0]), v(b[1]), v(d[0]), v(d[1]));
     a1.mul(&b2, budget)?
         .sub(&a2.mul(&b1, budget)?, budget)?
@@ -550,14 +566,17 @@ fn distinct(p: [usize; 2], q: [usize; 2], t: usize, budget: &Budget) -> Option<P
 /// Whether an intersection with `c1` or `c2` other than theirs was made
 /// before `id`.
 fn earlier_intersection_on(c: &Construction, id: Id, c1: Id, c2: Id) -> bool {
-    c.ids().take_while(|&other| other < id).any(|other| match c.def(other) {
-        Def::IntersectLineCircle { circle, .. } => circle == c1 || circle == c2,
-        Def::IntersectCircles { c1: a, c2: b, .. } => {
-            (a == c1 || a == c2 || b == c1 || b == c2) && !((a, b) == (c1, c2) || (a, b) == (c2, c1))
-        }
-        Def::IntersectConics(_) => true,
-        _ => false,
-    })
+    c.ids()
+        .take_while(|&other| other < id)
+        .any(|other| match c.def(other) {
+            Def::IntersectLineCircle { circle, .. } => circle == c1 || circle == c2,
+            Def::IntersectCircles { c1: a, c2: b, .. } => {
+                (a == c1 || a == c2 || b == c1 || b == c2)
+                    && !((a, b) == (c1, c2) || (a, b) == (c2, c1))
+            }
+            Def::IntersectConics(_) => true,
+            _ => false,
+        })
 }
 
 /// `|AO|^2 - |OB|^2`.
@@ -586,7 +605,8 @@ fn determinant(rows: &[[Poly; 4]], budget: &Budget) -> Option<Poly> {
             .map(|r| {
                 r.iter()
                     .enumerate()
-                    .filter_map(|(k, p)| (k != skip).then(|| p.clone()))
+                    .filter(|&(k, _)| k != skip)
+                    .map(|(_, p)| p.clone())
                     .collect()
             })
             .collect()
@@ -615,7 +635,8 @@ fn det_n(m: &[Vec<Poly>], budget: &Budget) -> Option<Poly> {
             .map(|r| {
                 r.iter()
                     .enumerate()
-                    .filter_map(|(j, p)| (j != k).then(|| p.clone()))
+                    .filter(|&(j, _)| j != k)
+                    .map(|(_, p)| p.clone())
                     .collect()
             })
             .collect();

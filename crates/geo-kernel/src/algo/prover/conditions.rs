@@ -270,16 +270,28 @@ mod tests {
         let y = Poly::var(1);
         let one = Poly::constant(1);
         // x^2 + y^2 is irreducible over the rationals.
-        let circle = x.mul(&x, &b).unwrap().add(&y.mul(&y, &b).unwrap(), &b).unwrap();
+        let circle = x
+            .mul(&x, &b)
+            .unwrap()
+            .add(&y.mul(&y, &b).unwrap(), &b)
+            .unwrap();
         assert!(quadratic_irreducible(&circle));
         // x^2 - y^2 = (x - y)(x + y).
-        let split = x.mul(&x, &b).unwrap().sub(&y.mul(&y, &b).unwrap(), &b).unwrap();
+        let split = x
+            .mul(&x, &b)
+            .unwrap()
+            .sub(&y.mul(&y, &b).unwrap(), &b)
+            .unwrap();
         assert!(!quadratic_irreducible(&split));
         // x*y - x = x*(y - 1).
         let product = x.mul(&y, &b).unwrap().sub(&x, &b).unwrap();
         assert!(!quadratic_irreducible(&product));
         // x^2 - 2 has no rational factor.
-        let surd = x.mul(&x, &b).unwrap().sub(&one.add(&one, &b).unwrap(), &b).unwrap();
+        let surd = x
+            .mul(&x, &b)
+            .unwrap()
+            .sub(&one.add(&one, &b).unwrap(), &b)
+            .unwrap();
         assert!(quadratic_irreducible(&surd));
         // x*y - 1.
         let hyperbola = x.mul(&y, &b).unwrap().sub(&one, &b).unwrap();

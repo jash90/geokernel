@@ -97,7 +97,9 @@ pub(crate) fn decide(c: &Construction, statement: Id, question: Question) -> Out
         Ok(system) => system,
         Err(outcome) => return outcome,
     };
-    system.decide(c, question, &budget).unwrap_or(Outcome::Undecided)
+    system
+        .decide(c, question, &budget)
+        .unwrap_or(Outcome::Undecided)
 }
 
 impl translate::System {
@@ -108,7 +110,7 @@ impl translate::System {
         // The hypotheses form a set: a thesis polynomial equal to a
         // hypothesis is the same element.
         let negated = self.negated_thesis(budget)?;
-        let first = self.with(&[negated.clone()]);
+        let first = self.with(std::slice::from_ref(&negated));
         let elimination = self.eliminate(&first, &substitutions, budget)?;
         if elimination.is_empty() {
             let thesis = self.thesis_factors();
@@ -117,18 +119,24 @@ impl translate::System {
                 return Some(Outcome::False);
             }
             let hypotheses = remove_all(&second, &thesis);
-            return Some(if self.dimension_exceeds(&hypotheses, &substitutions, budget)? {
-                Outcome::Unknown
-            } else {
-                Outcome::TrueOnComponents
-            });
+            return Some(
+                if self.dimension_exceeds(&hypotheses, &substitutions, budget)? {
+                    Outcome::Unknown
+                } else {
+                    Outcome::TrueOnComponents
+                },
+            );
         }
         if !details {
             return Some(Outcome::True(Vec::new()));
         }
         let mut texts = Vec::new();
         if fixed_two {
-            texts.push(conditions::equal_text(c, self.free_points[0], self.free_points[1])?);
+            texts.push(conditions::equal_text(
+                c,
+                self.free_points[0],
+                self.free_points[1],
+            )?);
         }
         match self.best_reading(c, &elimination, &substitutions, budget)? {
             None => return Some(Outcome::TrueUnreadable),
@@ -180,7 +188,34 @@ impl translate::System {
                 .iter()
                 .any(|&(second, pair)| hidden.contains(&(!second, pair)))
             {
-                return None;
+                // Two single factors, equal first and equal second
+                // coordinates of the same two points: the one read second
+                // becomes their equality, with readability one half.
+                let single = |r: &Option<Vec<conditions::Meaning>>| {
+                    r.as_ref().filter(|m| m.len() == 1).map(|m| m[0].clone())
+                };
+                return match (single(&readings[0]), single(&readings[1])) {
+                    (
+                        Some(conditions::Meaning::Hidden {
+                            second: s1,
+                            pair: p1,
+                        }),
+                        Some(conditions::Meaning::Hidden {
+                            second: s2,
+                            pair: p2,
+                        }),
+                    ) if s1 != s2 && p1 == p2 => {
+                        let point = |var: usize| {
+                            self.point_vars
+                                .iter()
+                                .find(|(_, v)| v[0] == var)
+                                .map(|(&id, _)| id)
+                        };
+                        let text = conditions::equal_text(c, point(p1.0)?, point(p1.1)?)?;
+                        Some(Some(vec![text]))
+                    }
+                    _ => None,
+                };
             }
         }
         // Readabilities in quarters: collinear 4, equal 2, lines 3; a
@@ -467,9 +502,7 @@ impl ProveDef {
                 (vec![Slot::boolean(true)], texts.clone(), false)
             }
             Outcome::TrueUnreadable => (vec![Slot::boolean(true)], vec![ELLIPSIS.into()], false),
-            Outcome::TrueOnComponents => {
-                (vec![Slot::boolean(true)], vec![ELLIPSIS.into()], true)
-            }
+            Outcome::TrueOnComponents => (vec![Slot::boolean(true)], vec![ELLIPSIS.into()], true),
         };
         let mut top = head;
         let has_list = !conditions.is_empty();
@@ -539,3 +572,106 @@ fn boolean_argument(c: &mut Construction, text: &str) -> Result<Id, String> {
     Err(format!("expected a Boolean, got `{text}`"))
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::expr::Element;
+
+    fn outcome(script: &str, question: Question) -> Outcome {
+        let c = crate::script::load(script).unwrap();
+        decide(&c, c.id("b").unwrap(), question)
+    }
+
+    const MIDLINE: &str = "A = (0, 0)\nB = (5, 1)\nC = (2, 4)\nD = Midpoint(A, B)\n\
+        E = Midpoint(A, C)\nf = Line(D, E)\ng = Line(B, C)\nb = AreParallel(f, g)";
+
+    #[test]
+    fn proves_the_midline_theorem_with_its_condition() {
+        assert_eq!(
+            outcome(MIDLINE, Question::Details),
+            Outcome::True(vec!["AreEqual[A,B]".into()])
+        );
+        assert_eq!(
+            outcome(
+                "A = (0, 0)\nB = (5, 1)\nC = (2, 4)\nb = AreCollinear(A, B, C)",
+                Question::Prove
+            ),
+            Outcome::False
+        );
+    }
+
+    #[test]
+    fn keeps_the_result_while_points_move() {
+        let mut c =
+            crate::script::load(&format!("{MIDLINE}\np = Prove(b)\nq = ProveDetails(b)")).unwrap();
+        let (a, p, q) = (c.id("A").unwrap(), c.id("p").unwrap(), c.id("q").unwrap());
+        for (x, y) in [(5.0, 1.0), (1.0, 1.0)] {
+            c.move_point(a, x, y).unwrap();
+            assert_eq!(c.value(p), Value::Bool(true));
+            let list = c.elements(q).unwrap();
+            assert_eq!(list.len(), 2);
+            let Some(Element::List(conditions)) = list.get(1) else {
+                panic!("expected the condition list");
+            };
+            assert!(matches!(
+                conditions.get(0),
+                Some(Element::Text("AreEqual[A,B]"))
+            ));
+        }
+    }
+
+    #[test]
+    fn a_large_construction_is_undecided() {
+        // Every midpoint adds two variables; the system outgrows the limit.
+        let mut script = String::from("A = (0, 0)\nB = (5, 1)\nC = (2, 4)\nM0 = Midpoint(A, B)");
+        for i in 1..30 {
+            script.push_str(&format!("\nM{i} = Midpoint(M{}, C)", i - 1));
+        }
+        script.push_str("\nb = AreCollinear(A, M29, C)");
+        assert_eq!(outcome(&script, Question::Prove), Outcome::Undecided);
+    }
+
+    #[test]
+    fn an_exhausted_budget_gives_up() {
+        let c = crate::script::load(MIDLINE).unwrap();
+        let tiny = Budget::new(10);
+        let system = translate::System::build(&c, c.id("b").unwrap(), &Budget::new(PROOF_WORK))
+            .ok()
+            .unwrap();
+        assert_eq!(system.decide(&c, Question::Prove, &tiny), None);
+    }
+
+    #[test]
+    fn lists_for_each_outcome() {
+        let def = ProveDef {
+            statement: Id(0),
+            details: true,
+            relation: false,
+        };
+        let len = |o: Outcome| def.details_value(&o).0;
+        assert_eq!(len(Outcome::Unknown), Value::List { len: 0 });
+        assert_eq!(len(Outcome::False), Value::List { len: 1 });
+        assert_eq!(len(Outcome::True(Vec::new())), Value::List { len: 1 });
+        assert_eq!(len(Outcome::TrueUnreadable), Value::List { len: 2 });
+        assert_eq!(len(Outcome::TrueOnComponents), Value::List { len: 3 });
+        assert_eq!(len(Outcome::Undecided), Value::Undefined);
+        let (_, slots) = def.details_value(&Outcome::TrueOnComponents);
+        assert_eq!(slots[1].run(), Some((3, 1)));
+        assert_eq!(slots[2].text_value(), Some("c"));
+        assert_eq!(slots[3].text_value(), Some("\u{2026}"));
+        let relation = ProveDef {
+            relation: true,
+            ..def
+        };
+        assert_eq!(
+            relation
+                .details_value(&Outcome::True(vec!["AreEqual[A,B]".into()]))
+                .0,
+            Value::Undefined
+        );
+        assert_eq!(
+            relation.details_value(&Outcome::False).0,
+            Value::List { len: 1 }
+        );
+    }
+}

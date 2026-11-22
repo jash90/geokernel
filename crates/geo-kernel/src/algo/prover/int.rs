@@ -371,14 +371,17 @@ mod tests {
         let product = a.mul(&b);
         assert_eq!(
             product.to_string(),
-            "-12193263113702179522496570642237463801111263526900021"
+            "-12193263113702179522618422493004797134336296860222381401"
         );
         assert_eq!(product.div_exact(&b), Some(a.clone()));
         let (q, r) = a.div_rem(&b).unwrap();
         assert_eq!(q.mul(&b).add(&r), a);
         assert!(r.cmp_abs(&b).is_lt());
         assert_eq!(a.sub(&a), Int::zero());
-        assert_eq!(big("-7").div_rem(&Int::from_i64(2)).unwrap().1, Int::from_i64(-1));
+        assert_eq!(
+            big("-7").div_rem(&Int::from_i64(2)).unwrap().1,
+            Int::from_i64(-1)
+        );
     }
 
     #[test]
