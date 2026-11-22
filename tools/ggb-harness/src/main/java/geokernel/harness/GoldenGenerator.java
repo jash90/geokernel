@@ -172,6 +172,11 @@ public final class GoldenGenerator {
                     String line = (String) step.get("line");
                     session.reject(line);
                     outStep.put("line", line);
+                    // The kernel's own failure for the line, checked by the
+                    // Rust replay; GeoGebra's message is not recorded.
+                    if (step.containsKey("error")) {
+                        outStep.put("error", step.get("error"));
+                    }
                     break;
                 }
                 default:

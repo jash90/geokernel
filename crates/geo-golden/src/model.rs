@@ -31,9 +31,20 @@ pub struct Case {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Step {
     Initial,
-    Move { label: String, x: f64, y: f64 },
-    SetNumber { label: String, value: f64 },
-    Reject { line: String },
+    Move {
+        label: String,
+        x: f64,
+        y: f64,
+    },
+    SetNumber {
+        label: String,
+        value: f64,
+    },
+    /// `error`: the kernel's exact failure, when the case asserts it.
+    Reject {
+        line: String,
+        error: Option<String>,
+    },
 }
 
 #[derive(Deserialize)]
@@ -45,6 +56,7 @@ struct RawStep {
     y: Option<f64>,
     value: Option<f64>,
     line: Option<String>,
+    error: Option<String>,
     reference_parse_error: Option<bool>,
 }
 
@@ -53,8 +65,10 @@ impl<'de> Deserialize<'de> for Step {
         use serde::de::Error;
         let raw = RawStep::deserialize(d)?;
         let need = |name: &str| D::Error::custom(format!("step `{}` needs `{name}`", raw.action));
-        if raw.action != "reject" && raw.line.is_some() {
-            return Err(D::Error::custom("only step `reject` takes `line`"));
+        if raw.action != "reject" && (raw.line.is_some() || raw.error.is_some()) {
+            return Err(D::Error::custom(
+                "only step `reject` takes `line` and `error`",
+            ));
         }
         if raw.action != "move" && raw.reference_parse_error.is_some() {
             return Err(D::Error::custom(
@@ -95,6 +109,7 @@ impl<'de> Deserialize<'de> for Step {
                 }
                 Ok(Step::Reject {
                     line: raw.line.ok_or_else(|| need("line"))?,
+                    error: raw.error,
                 })
             }
             other => Err(D::Error::custom(format!("unknown action `{other}`"))),

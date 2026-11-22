@@ -203,12 +203,16 @@ fn apply(c: &mut Construction, step: &Step) -> Result<Option<geo_kernel::Id>, St
                 .map(|recomputed| (recomputed > 0).then_some(id))
                 .map_err(|e| format!("set `{label}`: {e}"))
         }
-        Step::Reject { line } => {
+        Step::Reject { line, error } => {
             let len = c.len();
-            if script::exec(c, line).is_err() && c.len() == len {
-                Ok(None)
-            } else {
-                Err(format!("expected rejection without new objects: {line}"))
+            match script::exec(c, line) {
+                Err(e) if c.len() == len => match error {
+                    Some(want) if *want != e => Err(format!(
+                        "expected the rejection `{want}` of `{line}`, got `{e}`"
+                    )),
+                    _ => Ok(None),
+                },
+                _ => Err(format!("expected rejection without new objects: {line}")),
             }
         }
     }
@@ -218,6 +222,31 @@ fn apply(c: &mut Construction, step: &Step) -> Result<Option<geo_kernel::Id>, St
 mod tests {
     use super::*;
     use crate::model::parse_file;
+
+    #[test]
+    fn a_rejection_with_a_stated_error_checks_it() {
+        let fixture = |error: &str| {
+            format!(
+                r#"{{"schema":1,"generator":"ggb-harness","upstream_commit":"c",
+                "cases":[{{"id":"r","group":"g","script":["a = 1"],
+                "steps":[{{"action":"initial"}},{{"action":"reject","line":"b = Foo(1)","error":"{error}"}}],
+                "snapshots":[{{"a":{{"type":"number","defined":true,"value":1.0}}}},
+                {{"a":{{"type":"number","defined":true,"value":1.0}}}}]}}]}}"#
+            )
+        };
+        let wrong = parse_file(&fixture("no such error"), "t").unwrap();
+        let outcome = replay(&wrong.cases[0]);
+        assert_eq!(outcome.mismatches.len(), 1);
+        let actual = outcome.mismatches[0].actual.clone();
+        let error = actual
+            .split(", got `")
+            .nth(1)
+            .and_then(|rest| rest.strip_suffix('`'))
+            .unwrap()
+            .replace('`', "\\u0060");
+        let right = parse_file(&fixture(&error), "t").unwrap();
+        assert!(replay(&right.cases[0]).mismatches.is_empty());
+    }
 
     #[test]
     fn only_legacy_files_accept_an_angle_as_a_number() {
