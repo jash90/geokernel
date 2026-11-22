@@ -431,31 +431,34 @@ impl Matrix {
     }
 
     /// The image of a Cartesian curve's point (`z = 1`) or derivative
-    /// (`z = 0`). The reference builds the image as an expression
-    /// (`GeoCurveCartesian.matrixTransform`) that `ExpressionNode.multiply`
-    /// and `plus` simplify: a zero entry becomes the constant itself, an
-    /// entry 1 keeps the coordinate, and a constant zero addend is left out.
-    /// So a NaN or infinite coordinate reaches only the image coordinates
-    /// whose entries read it, and a signed zero survives an identity.
+    /// (`z = 0`), for coordinates that are not constant expressions.
     pub(crate) fn curve_image_coordinates(self, (x, y): (f64, f64), z: f64) -> (f64, f64, f64) {
+        let (x, y, w) = self.curve_image_terms((Term::Value(x), Term::Value(y)), z);
+        (x.value(), y.value(), w.value())
+    }
+
+    /// The image of a Cartesian curve's coordinates. The reference builds the
+    /// image as an expression (`GeoCurveCartesian.matrixTransform`) that
+    /// `ExpressionNode.multiply` and `plus` simplify: a zero entry becomes the
+    /// constant entry itself, an entry 1 or a constant zero coordinate keeps
+    /// the coordinate, a constant 1 coordinate gives the entry, and a constant
+    /// zero addend is left out. So a NaN or infinite coordinate reaches only
+    /// the image coordinates whose entries read it, and the sign of a zero
+    /// follows the expression the reference keeps, also through chained
+    /// transforms. `z` is 1 for a point and 0 for a derivative, whose
+    /// constant column is 0.
+    pub(crate) fn curve_image_terms(self, (x, y): (Term, Term), z: f64) -> (Term, Term, Term) {
         let [a, b, c, d, e, f, g, h, i] = self.data;
-        let row = |k: [f64; 3], constant: bool| {
-            let sum = Term::times(x, k[0]).plus(Term::times(y, k[1]));
-            if constant {
-                // the constant column is `plus(MyDouble)`; its derivative is 0
-                sum.plus(Term::constant(k[2] * z)).value()
-            } else {
-                sum.value()
-            }
+        let row = |k: [f64; 3]| {
+            x.times(k[0])
+                .plus(y.times(k[1]))
+                .plus(Term::Constant(k[2] * z))
         };
         if self.size == 2 {
-            (row([a, b, 0.0], false), row([c, d, 0.0], false), z)
+            let row = |p: f64, q: f64| x.times(p).plus(y.times(q));
+            (row(a, b), row(c, d), Term::Constant(z))
         } else {
-            (
-                row([a, b, c], true),
-                row([d, e, f], true),
-                row([g, h, i], true),
-            )
+            (row([a, b, c]), row([d, e, f]), row([g, h, i]))
         }
     }
 
@@ -617,46 +620,46 @@ pub(crate) fn exec(
     Some(result.map(Some))
 }
 
-/// A summand of a curve image expression: a constant zero keeps its sign
-/// and is left out of a sum, like `MyDouble` 0 in `ExpressionNode.plus`.
-#[derive(Clone, Copy)]
-enum Term {
-    Zero(f64),
+/// A coordinate of a curve image expression: a `MyDouble` constant, which
+/// `ExpressionNode.multiply` and `plus` test for 0 and 1, or any other
+/// expression, known by its value only.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) enum Term {
+    Constant(f64),
     Value(f64),
 }
 
 impl Term {
-    /// `coordinate.multiply(entry)`: 0 gives the entry, 1 the coordinate.
-    fn times(coordinate: f64, entry: f64) -> Self {
-        if entry == 0.0 {
-            Term::Zero(entry)
-        } else if entry == 1.0 {
-            Term::Value(coordinate)
+    /// `self.multiply(entry)` for a constant matrix entry.
+    fn times(self, entry: f64) -> Self {
+        if entry == 0.0 || self == Term::Constant(1.0) {
+            Term::Constant(entry)
+        } else if entry == 1.0 || self.is_zero_constant() {
+            self
         } else {
-            Term::Value(entry * coordinate)
-        }
-    }
-
-    fn constant(value: f64) -> Self {
-        if value == 0.0 {
-            Term::Zero(value)
-        } else {
-            Term::Value(value)
+            Term::Value(entry * self.value())
         }
     }
 
     /// `self.plus(other)`: a constant zero on either side is left out.
     fn plus(self, other: Self) -> Self {
-        match (self, other) {
-            (_, Term::Zero(_)) => self,
-            (Term::Zero(_), _) => other,
-            (Term::Value(p), Term::Value(q)) => Term::Value(p + q),
+        if other.is_zero_constant() {
+            self
+        } else if self.is_zero_constant() {
+            other
+        } else {
+            Term::Value(self.value() + other.value())
         }
     }
 
-    fn value(self) -> f64 {
+    /// `isConstantDouble(term, 0)`, true for -0 too.
+    fn is_zero_constant(self) -> bool {
+        matches!(self, Term::Constant(v) if v == 0.0)
+    }
+
+    pub(crate) fn value(self) -> f64 {
         match self {
-            Term::Zero(v) | Term::Value(v) => v,
+            Term::Constant(v) | Term::Value(v) => v,
         }
     }
 }
@@ -700,6 +703,30 @@ mod tests {
         let (x, y) = c.curve_sample(c.id("d").unwrap(), 0.0).unwrap();
         assert!(x == 0.0 && x.is_sign_negative() && y.is_sign_negative());
         assert_eq!(c.curve_sample(c.id("g").unwrap(), -0.5), Some((-0.5, 0.0)));
+    }
+
+    /// `georestsmall-matrixcurve-006`: a 2x2 image with a zero row holds the
+    /// constant +0, which a later projective row keeps as a +0 denominator,
+    /// while a literal 0 coordinate of a curve is an ordinary expression.
+    #[test]
+    fn constant_image_coordinates_survive_a_chained_transform() {
+        use super::Term;
+        assert_eq!(Term::Constant(0.0).times(-1.0), Term::Constant(0.0));
+        assert!(Term::Value(0.0).times(-1.0).value().is_sign_negative());
+        assert_eq!(Term::Constant(1.0).times(5.0), Term::Constant(5.0));
+        assert_eq!(Term::Value(3.0).times(0.0), Term::Constant(0.0));
+        let c = crate::script::load(
+            "c = Curve(t, t, t, -1, 1)\nd = ApplyMatrix({{0, 0}, {0, 1}}, c)\n\
+             e = ApplyMatrix({{0, 0, 1}, {0, 0, 1}, {-1, 0, 0}}, d)\n\
+             k = Curve(0, t, t, -1, 1)\nq = ApplyMatrix({{0, 0, 1}, {0, 0, 1}, {-1, 0, 0}}, k)",
+        )
+        .unwrap();
+        for t in [-0.5, 0.0, 0.5] {
+            let e = c.curve_sample(c.id("e").unwrap(), t);
+            assert_eq!(e, Some((f64::INFINITY, f64::INFINITY)), "{t}");
+            let q = c.curve_sample(c.id("q").unwrap(), t);
+            assert_eq!(q, Some((f64::NEG_INFINITY, f64::NEG_INFINITY)), "{t}");
+        }
     }
 
     #[test]

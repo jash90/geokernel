@@ -150,5 +150,14 @@ c = Curve(t, sqrt(t), t, -1, 1)
 r = {{1, 0, 0}, {0, n, 0}, {0, 0, 1}}
 d = ApplyMatrix(r, c)""", [setn("n", 0), setn("n", 2)], curve=True)
 
+# A curve image keeps a constant zero coordinate as the constant +0, which a
+# later projective row multiplies into a +0 denominator: both coordinates go
+# to positive infinity. Curve(0, t, ...) starts from a literal zero.
+case("matrixcurve", """c = Curve(t, t, t, -1, 1)
+d = ApplyMatrix({{0, 0}, {0, 1}}, c)
+e = ApplyMatrix({{0, 0, 1}, {0, 0, 1}, {-1, 0, 0}}, d)
+k = Curve(0, t, t, -1, 1)
+q = ApplyMatrix({{0, 0, 1}, {0, 0, 1}, {-1, 0, 0}}, k)""", curve=True)
+
 cases.write()
 reference.write("reference")

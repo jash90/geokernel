@@ -1778,6 +1778,204 @@
           }
         }
       ]
+    },
+    {
+      "id": "georestsmall-matrixcurve-006",
+      "group": "georestsmall",
+      "script": [
+        "c = Curve(t, t, t, -1, 1)",
+        "d = ApplyMatrix({{0, 0}, {0, 1}}, c)",
+        "e = ApplyMatrix({{0, 0, 1}, {0, 0, 1}, {-1, 0, 0}}, d)",
+        "k = Curve(0, t, t, -1, 1)",
+        "q = ApplyMatrix({{0, 0, 1}, {0, 0, 1}, {-1, 0, 0}}, k)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "curve",
+            "defined": true,
+            "start": -1.0,
+            "end": 1.0,
+            "samples_curve": [
+              [
+                -1.0,
+                [-1.0, -1.0]
+              ],
+              [
+                -0.75,
+                [-0.75, -0.75]
+              ],
+              [
+                -0.5,
+                [-0.5, -0.5]
+              ],
+              [
+                0.0,
+                [0.0, 0.0]
+              ],
+              [
+                0.5,
+                [0.5, 0.5]
+              ],
+              [
+                0.75,
+                [0.75, 0.75]
+              ],
+              [
+                1.0,
+                [1.0, 1.0]
+              ]
+            ]
+          },
+          "d": {
+            "type": "curve",
+            "defined": true,
+            "start": -1.0,
+            "end": 1.0,
+            "samples_curve": [
+              [
+                -1.0,
+                [0.0, -1.0]
+              ],
+              [
+                -0.75,
+                [0.0, -0.75]
+              ],
+              [
+                -0.5,
+                [0.0, -0.5]
+              ],
+              [
+                0.0,
+                [0.0, 0.0]
+              ],
+              [
+                0.5,
+                [0.0, 0.5]
+              ],
+              [
+                0.75,
+                [0.0, 0.75]
+              ],
+              [
+                1.0,
+                [0.0, 1.0]
+              ]
+            ]
+          },
+          "e": {
+            "type": "curve",
+            "defined": true,
+            "start": -1.0,
+            "end": 1.0,
+            "samples_curve": [
+              [
+                -1.0,
+                [{ "infinity": 1 }, { "infinity": 1 }]
+              ],
+              [
+                -0.75,
+                [{ "infinity": 1 }, { "infinity": 1 }]
+              ],
+              [
+                -0.5,
+                [{ "infinity": 1 }, { "infinity": 1 }]
+              ],
+              [
+                0.0,
+                [{ "infinity": 1 }, { "infinity": 1 }]
+              ],
+              [
+                0.5,
+                [{ "infinity": 1 }, { "infinity": 1 }]
+              ],
+              [
+                0.75,
+                [{ "infinity": 1 }, { "infinity": 1 }]
+              ],
+              [
+                1.0,
+                [{ "infinity": 1 }, { "infinity": 1 }]
+              ]
+            ]
+          },
+          "k": {
+            "type": "curve",
+            "defined": true,
+            "start": -1.0,
+            "end": 1.0,
+            "samples_curve": [
+              [
+                -1.0,
+                [0.0, -1.0]
+              ],
+              [
+                -0.75,
+                [0.0, -0.75]
+              ],
+              [
+                -0.5,
+                [0.0, -0.5]
+              ],
+              [
+                0.0,
+                [0.0, 0.0]
+              ],
+              [
+                0.5,
+                [0.0, 0.5]
+              ],
+              [
+                0.75,
+                [0.0, 0.75]
+              ],
+              [
+                1.0,
+                [0.0, 1.0]
+              ]
+            ]
+          },
+          "q": {
+            "type": "curve",
+            "defined": true,
+            "start": -1.0,
+            "end": 1.0,
+            "samples_curve": [
+              [
+                -1.0,
+                [{ "infinity": -1 }, { "infinity": -1 }]
+              ],
+              [
+                -0.75,
+                [{ "infinity": -1 }, { "infinity": -1 }]
+              ],
+              [
+                -0.5,
+                [{ "infinity": -1 }, { "infinity": -1 }]
+              ],
+              [
+                0.0,
+                [{ "infinity": -1 }, { "infinity": -1 }]
+              ],
+              [
+                0.5,
+                [{ "infinity": -1 }, { "infinity": -1 }]
+              ],
+              [
+                0.75,
+                [{ "infinity": -1 }, { "infinity": -1 }]
+              ],
+              [
+                1.0,
+                [{ "infinity": -1 }, { "infinity": -1 }]
+              ]
+            ]
+          }
+        }
+      ]
     }
   ]
 }

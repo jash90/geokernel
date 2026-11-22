@@ -16,7 +16,10 @@ use crate::expr::IntersectionWork;
 use crate::tol::STANDARD_PRECISION;
 use crate::{Construction, Id, Value};
 
-use super::{transform::TransformDef, vector::matrix::Matrix};
+use super::{
+    transform::TransformDef,
+    vector::matrix::{Matrix, Term},
+};
 
 /// Bounds of the reference function-to-curve conversion. Only legacy saved
 /// interval functions carry a domain in addition to their expression.
@@ -205,17 +208,24 @@ fn line_coefficients(
     Some(coefficients)
 }
 
-fn matrix_value(matrix: Matrix, value: (f64, f64)) -> (f64, f64) {
-    let (x, y, w) = matrix.curve_image_coordinates(value, 1.0);
+/// The image of a curve point under a matrix. A 2x2 image keeps its
+/// coordinate expressions, constants included, for a later transform; a
+/// 3x3 image divides (`GeoCurveCartesian.matrixTransform`) and is no
+/// constant any more.
+fn matrix_terms(matrix: Matrix, value: (Term, Term)) -> (Term, Term) {
+    let (x, y, w) = matrix.curve_image_terms(value, 1.0);
     if matrix.size() == 2 {
-        // a 2x2 image has no division (`GeoCurveCartesian.matrixTransform`)
         return (x, y);
     }
-    (x / w, y / w)
+    (
+        Term::Value(x.value() / w.value()),
+        Term::Value(y.value() / w.value()),
+    )
 }
 
-fn matrix_first(matrix: Matrix, value: (f64, f64), first: (f64, f64)) -> (f64, f64) {
-    let (x, y, w) = matrix.curve_image_coordinates(value, 1.0);
+fn matrix_first(matrix: Matrix, value: (Term, Term), first: (f64, f64)) -> (f64, f64) {
+    let (x, y, w) = matrix.curve_image_terms(value, 1.0);
+    let (x, y, w) = (x.value(), y.value(), w.value());
     let (dx, dy, dw) = matrix.curve_image_coordinates(first, 0.0);
     if matrix.size() == 2 {
         return (dx, dy);
@@ -442,7 +452,23 @@ impl<'a> Cartesian<'a> {
                 let (x, y) = original.value(t);
                 (ratio * (x - cx) + cx, ratio * (y - cy) + cy)
             }
-            CurveSource::MatrixCurve(original, matrix) => matrix_value(*matrix, original.value(t)),
+            CurveSource::MatrixCurve(..) | CurveSource::MatrixGraph { .. } => {
+                let (x, y) = self.value_terms(t);
+                (x.value(), y.value())
+            }
+        }
+    }
+
+    /// The coordinates at `t` as the expressions of the reference: only a
+    /// matrix image can hold a constant coordinate.
+    fn value_terms(&self, t: f64) -> (Term, Term) {
+        if !self.has_budget() {
+            return (Term::Value(f64::NAN), Term::Value(f64::NAN));
+        }
+        match &self.source {
+            CurveSource::MatrixCurve(original, matrix) => {
+                matrix_terms(*matrix, original.value_terms(t))
+            }
             CurveSource::MatrixGraph {
                 construction,
                 function,
@@ -457,7 +483,11 @@ impl<'a> Cartesian<'a> {
                     },
                     |f| f.value(t),
                 );
-                matrix_value(*matrix, (t, y))
+                matrix_terms(*matrix, (Term::Value(t), Term::Value(y)))
+            }
+            _ => {
+                let (x, y) = self.value(t);
+                (Term::Value(x), Term::Value(y))
             }
         }
     }
@@ -486,7 +516,7 @@ impl<'a> Cartesian<'a> {
                 (ratio * dx, ratio * dy)
             }
             CurveSource::MatrixCurve(original, matrix) => {
-                matrix_first(*matrix, original.value(t), original.first(t))
+                matrix_first(*matrix, original.value_terms(t), original.first(t))
             }
             CurveSource::MatrixGraph {
                 construction,
@@ -503,7 +533,7 @@ impl<'a> Cartesian<'a> {
                     || (evaluate(t), slope(evaluate, t)),
                     |f| (f.value(t), f.slope(t)),
                 );
-                matrix_first(*matrix, (t, y), (1.0, dy))
+                matrix_first(*matrix, (Term::Value(t), Term::Value(y)), (1.0, dy))
             }
         }
     }
