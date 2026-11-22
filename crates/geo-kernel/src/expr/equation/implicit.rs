@@ -525,8 +525,10 @@ pub(crate) fn command(
     label: &str,
     input: &str,
 ) -> Option<Result<Id, String>> {
-    let (command @ ("ImplicitCurve" | "Cubic" | "TriangleCurve" | "LocusEquation"), args) =
-        crate::script::split_call(input)?
+    let (
+        command @ ("ImplicitCurve" | "Cubic" | "TriangleCurve" | "LocusEquation" | "Envelope"),
+        args,
+    ) = crate::script::split_call(input)?
     else {
         return None;
     };
@@ -534,6 +536,8 @@ pub(crate) fn command(
     let result = (|| {
         let source = if command == "LocusEquation" {
             Source::LocusEquation(locus_equation::Definition::parse(c, &args)?)
+        } else if command == "Envelope" {
+            Source::LocusEquation(locus_equation::Definition::parse_envelope(c, &args)?)
         } else if command == "Cubic" {
             let [a, b, d, n] = args.as_slice() else {
                 return Err("Cubic needs three points and a number".into());

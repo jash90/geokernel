@@ -860,3 +860,8 @@ mismatches = ["0:c", "1:c", "2:c", "3:c"]
 id = "locusequation-boolean-001"
 reason = "The reference Boolean stays true after edits to the fixed distance make the equality false. The kernel updates the Boolean while the implicit equation follows the new distance."
 mismatches = ["2:b", "3:b"]
+
+[[gap]]
+id = "envelope-circle-002"
+reason = "The oracle reports a zero equation for the moving circle with a free numeric radius. The kernel leaves that symbolic family undefined."
+mismatches = ["0:c", "1:c", "2:c"]

@@ -42,6 +42,20 @@ impl PlanePolynomial {
         }
         Some(Self(product))
     }
+
+    pub(crate) fn derivative(&self, index: usize, work: &mut Work<'_>) -> Option<Self> {
+        work.spend(self.0.len())?;
+        let mut derivative = Equation::new();
+        for (&power, &coefficient) in &self.0 {
+            let exponent = i128::from(power[index]);
+            if exponent != 0 {
+                let mut power = power;
+                power[index] -= 1;
+                derivative.insert(power, coefficient.mul(Rat::new(exponent, 1)?)?);
+            }
+        }
+        Some(Self(derivative))
+    }
 }
 
 pub(crate) fn project_plane(equations: Vec<PlanePolynomial>, work: &mut Work<'_>) -> Option<Poly> {

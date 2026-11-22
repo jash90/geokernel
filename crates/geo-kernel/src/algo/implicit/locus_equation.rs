@@ -17,6 +17,7 @@ pub(crate) enum Definition {
     Traced { point: Id, mover: Id },
     Condition { boolean: Id, mover: Id },
     UnsupportedLocus(Id),
+    Envelope { path: Id, mover: Id },
 }
 
 impl Definition {
@@ -58,10 +59,42 @@ impl Definition {
         }
     }
 
+    pub(crate) fn parse_envelope(c: &Construction, args: &[&str]) -> Result<Self, String> {
+        let path_kind = |id| {
+            matches!(
+                c.kind(id),
+                Kind::Line
+                    | Kind::Ray
+                    | Kind::Segment
+                    | Kind::Circle
+                    | Kind::Conic
+                    | Kind::Arc
+                    | Kind::Sector
+                    | Kind::PolyLine
+                    | Kind::Polygon
+                    | Kind::Function
+                    | Kind::Curve
+                    | Kind::ImplicitCurve
+                    | Kind::Locus
+                    | Kind::List
+            )
+        };
+        if let [path, mover] = *args {
+            if let (Some(path), Some(mover)) = (c.id(path).filter(|&id| path_kind(id)), c.id(mover))
+            {
+                if c.kind(mover) == Kind::Point {
+                    return Ok(Self::Envelope { path, mover });
+                }
+            }
+        }
+        Err("Envelope needs a named path and a named moving point".into())
+    }
+
     pub(crate) fn parents(self, c: &Construction) -> Option<Box<[Id]>> {
         let roots = match self {
             Self::Traced { point, mover } => [point, mover],
             Self::Condition { boolean, mover } => [boolean, mover],
+            Self::Envelope { path, mover } => [path, mover],
             Self::UnsupportedLocus(locus) => return Some(Box::new([locus])),
         };
         construction_parents(c, roots)
@@ -100,6 +133,31 @@ impl Definition {
                         system.path(mover_path(c, mover)?, &system.position.clone())?,
                     ]
                 }
+            }
+            Self::Envelope { path, mover } => {
+                let driver_path = mover_path(c, mover)?;
+                system =
+                    Geometry::new(c, mover, [Polynomial::variable(0), Polynomial::variable(1)]);
+                if !system.depends(path, 0)? {
+                    return None;
+                }
+                let driver = system.path(driver_path, &system.position.clone())?;
+                let family = system.path(path, &output)?;
+                if c.circle(driver_path)
+                    .is_some_and(|(_, _, radius)| radius == 0.0)
+                    || system.fixed_zero_radius(path)?
+                {
+                    return Some(vec![vec![0.0]]);
+                }
+                // The two gradients in the mover coordinates must be
+                // dependent at a contact along the driver's path.
+                let du = driver.derivative(0, &mut system.work)?;
+                let dv = driver.derivative(1, &mut system.work)?;
+                let fu = family.derivative(0, &mut system.work)?;
+                let fv = family.derivative(1, &mut system.work)?;
+                let lhs = du.product(&fv, &mut system.work)?;
+                let rhs = dv.product(&fu, &mut system.work)?;
+                vec![driver, family, system.subtract(lhs, &rhs)?]
             }
             Self::UnsupportedLocus(_) => return None,
         };
@@ -204,6 +262,19 @@ impl<'a> Geometry<'a> {
 
     fn constant(value: f64) -> Option<Polynomial> {
         Some(Polynomial::constant(Rat::from_value(value)?))
+    }
+
+    fn fixed_zero_radius(&mut self, path: Id) -> Option<bool> {
+        let Def::Conic(ConicDef::SegmentRadius { segment, .. }) = self.c.def(path) else {
+            return Some(false);
+        };
+        let Def::Segment(a, b) = self.c.def(segment) else {
+            return None;
+        };
+        if self.depends(segment, 0)? {
+            return Some(false);
+        }
+        Some(self.c.point(a)? == self.c.point(b)?)
     }
 
     fn point(&mut self, id: Id, depth: usize) -> Option<Point> {

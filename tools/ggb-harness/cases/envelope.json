@@ -1,0 +1,8 @@
+{
+  "cases": [
+    {"id": "envelope-parabola-001", "group": "envelope", "script": ["A = (-3, -1)", "B = (3, -1)", "F = (0, 1)", "g = Line(A, B)", "P = Point(g)", "b = PerpendicularBisector(P, F)", "c = Envelope(b, P)"], "steps": [{"action": "initial"}, {"action": "move", "label": "F", "x": 0.0, "y": -1.0}, {"action": "move", "label": "F", "x": 1.0, "y": 2.0}, {"action": "move", "label": "B", "x": 3.0, "y": 1.0}]},
+    {"id": "envelope-circle-001", "group": "envelope", "script": ["O = (0, 0)", "A = (2, 0)", "k = Circle(O, A)", "P = Point(k)", "g = Line(O, P)", "n = PerpendicularLine(P, g)", "c = Envelope(n, P)"], "steps": [{"action": "initial"}, {"action": "move", "label": "A", "x": 0.0, "y": 0.0}, {"action": "move", "label": "A", "x": 3.0, "y": 0.0}, {"action": "move", "label": "O", "x": 1.0, "y": 1.0}]},
+    {"id": "envelope-circle-002", "group": "envelope", "script": ["A = (-3, 0)", "B = (3, 0)", "g = Line(A, B)", "P = Point(g)", "r = 2", "k = Circle(P, r)", "c = Envelope(k, P)"], "steps": [{"action": "initial"}, {"action": "move", "label": "B", "x": -3.0, "y": 0.0}, {"action": "move", "label": "B", "x": 3.0, "y": 0.0}]},
+    {"id": "envelope-circle-003", "group": "envelope", "script": ["A = (-3, 0)", "B = (3, 0)", "R = (-3, 2)", "s = Segment(A, R)", "g = Line(A, B)", "P = Point(g)", "k = Circle(P, s)", "c = Envelope(k, P)"], "steps": [{"action": "initial"}, {"action": "move", "label": "R", "x": -3.0, "y": 1.0}, {"action": "move", "label": "R", "x": -3.0, "y": 0.0}, {"action": "move", "label": "R", "x": -3.0, "y": 2.0}, {"action": "move", "label": "B", "x": 3.0, "y": 2.0}]}
+  ]
+}

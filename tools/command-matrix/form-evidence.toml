@@ -3608,3 +3608,9 @@ cases = ["locusequation-circle-001", "locusequation-parabola-001", "locusequatio
 command = "LocusEquation"
 form = "boolean,point"
 cases = ["locusequation-boolean-002"]
+
+[[form]]
+command = "Envelope"
+form = "path,point"
+cases = ["envelope-parabola-001", "envelope-circle-001", "envelope-circle-003"]
+difference = "algebraic-geometry: `Envelope(path, point)`"
