@@ -57,6 +57,8 @@ pub(crate) struct System {
     /// How many coordinates of the first two free points are fixed.
     fixed_coordinates: usize,
     budget_vars: usize,
+    /// The statement has no translation in the reference either.
+    unknown: bool,
 }
 
 type Built = Result<System, Outcome>;
@@ -88,6 +90,7 @@ impl System {
             circle_vars: BTreeMap::new(),
             fixed_coordinates: 4,
             budget_vars: MAX_VARS,
+            unknown: false,
         };
         let predecessors = predecessors(c, statement).ok_or(Outcome::Undecided)?;
         // A line of fixed slope (an axis) makes the reference give up.
@@ -100,9 +103,13 @@ impl System {
         for &id in &predecessors {
             system.object(c, id, budget).ok_or(Outcome::Undecided)?;
         }
-        system
-            .statement(c, predicate, budget)
-            .ok_or(Outcome::Undecided)?;
+        if system.statement(c, predicate, budget).is_none() {
+            return Err(if system.unknown {
+                Outcome::Unknown
+            } else {
+                Outcome::Undecided
+            });
+        }
         Ok(system)
     }
 
@@ -172,6 +179,9 @@ impl System {
                 self.point_vars.insert(id, [x, y]);
             }
             Def::IntersectLineCircle { line, circle, .. } => {
+                if !proper_circle(c, circle) {
+                    return None;
+                }
                 // One output of `Intersect(line, circle, n)`. The unindexed
                 // command makes the same definition with labels `P_{1}`,
                 // `P_{2}`; its algorithm is in the construction list and does
@@ -185,12 +195,7 @@ impl System {
                 let y = self.new_var(false)?;
                 self.add(collinear([g[0], g[1]], [g[2], g[3]], [x, y], budget)?);
                 self.add(equidistant([k[2], k[3]], [k[0], k[1]], [x, y], budget)?);
-                let existing = crate::algo::intersect::existing_line_circle_point(
-                    c,
-                    line,
-                    c.def(line),
-                    circle,
-                );
+                let existing = existing_point(c, line, circle)?;
                 let other = self.distinct_from_earlier(c, id, line, circle, [x, y], budget)?;
                 if let Some(e) = existing {
                     // With both conditions the reference's adapter writes
@@ -206,6 +211,9 @@ impl System {
                 self.point_vars.insert(id, [x, y]);
             }
             Def::IntersectCircles { c1, c2, .. } => {
+                if !proper_circle(c, c1) || !proper_circle(c, c2) {
+                    return None;
+                }
                 let a = self.circle(c1)?;
                 let b = self.circle(c2)?;
                 // Points already on both circles: the reference takes them
@@ -304,6 +312,9 @@ impl System {
                     // (`ProverBotanasMethod.setHypotheses`).
                     self.fixed_coordinates = 2;
                 } else {
+                    if !proper_circle(c, path) {
+                        return None;
+                    }
                     let k = self.circle(path)?;
                     self.add(equidistant([k[2], k[3]], [k[0], k[1]], [x, y], budget)?);
                 }
@@ -423,6 +434,12 @@ impl System {
                 ])
             }
             (Kind::Circle, Kind::Circle) => {
+                // A circle of radius zero is a single-point conic for the
+                // reference; its equality test then has no translation.
+                if !proper_circle(c, a) || !proper_circle(c, b) {
+                    self.unknown = true;
+                    return None;
+                }
                 let (k, l) = (self.circle(a)?, self.circle(b)?);
                 let radius = |v: [usize; 4]| square_distance([v[0], v[1]], [v[2], v[3]], budget);
                 Some(vec![
@@ -554,6 +571,49 @@ pub(super) fn square_distance(a: [usize; 2], b: [usize; 2], budget: &Budget) -> 
     let dx = v(a[0]).sub(&v(b[0]), budget)?;
     let dy = v(a[1]).sub(&v(b[1]), budget)?;
     dx.mul(&dx, budget)?.add(&dy.mul(&dy, budget)?, budget)
+}
+
+/// Whether the circle is a circle of positive radius now, which the
+/// reference's `isCircle` tests.
+fn proper_circle(c: &Construction, id: Id) -> bool {
+    matches!(c.value(id), Value::Circle { r, .. } if r > 0.0 && r.is_finite())
+}
+
+/// The point on both the line and the circle by construction that the
+/// reference's `AlgoIntersectLineConic.handleSpecialCase` finds, if any. A
+/// point on the circle as its path that the line was drawn through counts
+/// too; when such a point competes with another candidate, the reference's
+/// order is not reproduced. `None` when undecidable.
+fn existing_point(c: &Construction, line: Id, circle: Id) -> Option<Option<Id>> {
+    let kernel = crate::algo::intersect::existing_line_circle_point(c, line, c.def(line), circle);
+    let through: Vec<Id> = match c.def(line) {
+        Def::Line(p, q) | Def::Segment(p, q) => vec![p, q],
+        Def::Perpendicular { through, .. } | Def::Parallel { through, .. } => vec![through],
+        _ => Vec::new(),
+    };
+    let on_path: Vec<Id> = through
+        .into_iter()
+        .filter(|&p| {
+            matches!(
+                c.def(p),
+                Def::Path(PathDef::On { path } | PathDef::OnParam { path, .. }) if path == circle
+            )
+        })
+        .collect();
+    if matches!(c.def(line), Def::Segment(..)) && kernel.is_none() {
+        // The segment's end points are not among the kernel's candidates.
+        let ends = crate::algo::intersect::circle_points(c, circle);
+        if let Def::Segment(p, q) = c.def(line) {
+            if ends.contains(&Some(p)) || ends.contains(&Some(q)) {
+                return None;
+            }
+        }
+    }
+    match (kernel, on_path.as_slice()) {
+        (found, []) => Some(found),
+        (None, [p]) => Some(Some(*p)),
+        _ => None,
+    }
 }
 
 /// `|PQ|^2 * t - 1`: P and Q differ.

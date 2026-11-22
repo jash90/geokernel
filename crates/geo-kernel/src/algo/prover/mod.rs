@@ -41,8 +41,9 @@ use crate::expr::Slot;
 use crate::kernel::{Construction, Id, Kind, Value};
 use poly::{Order, Poly};
 
-/// The work allowance of one proof, in polynomial term operations.
-const PROOF_WORK: u64 = 4_000_000;
+/// The work allowance of one proof, in term operations weighted by the
+/// size of the coefficients involved.
+const PROOF_WORK: u64 = 30_000_000;
 
 /// A work counter. Every operation charges it; an exhausted budget makes the
 /// computation give up.
@@ -529,6 +530,11 @@ pub(crate) fn define(c: &mut Construction, label: &str, input: &str) -> Option<R
     let (name @ ("Prove" | "ProveDetails"), args) = crate::script::split_call(input)? else {
         return None;
     };
+    // An object named like the command keeps its own meaning, such as the
+    // element lookup of a list.
+    if c.id(name).is_some() {
+        return None;
+    }
     let details = name == "ProveDetails";
     let start = c.checkpoint();
     let result = (|| {

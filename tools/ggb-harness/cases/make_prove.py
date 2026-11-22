@@ -224,4 +224,18 @@ proof("paths", QUAD + ["E = (6, 3)", "f = Line(A, B)", "g = Line(C, D)", "h = Li
 cases.topic("expression")
 proof("expression", TRI + ["D = Midpoint(A, B)", "E = Midpoint(B, A)"], "D == E")
 
+# Points on a circle that lie on a line through them, a list named like the
+# command, and circles of radius zero.
+cases.topic("review")
+proof("review", ["O = (0, 0)", "A = (4, 0)", "c = Circle(O, A)", "P = Point(c, 0.25)",
+                 "g = Line(O, P)", "Q = Intersect(g, c, 2)"], "AreEqual(P, Q)")
+proof("review", ["O = (0, 0)", "A = (4, 0)", "c = Circle(O, A)", "P = Point(c, 0.25)",
+                 "g = Line(O, P)", "Q = Intersect(g, c, 1)", "M = Midpoint(P, Q)"],
+      "AreEqual(M, O)")
+proof("review", ["A = (0, 0)", "B = (0, 0)", "c = Circle(A, B)", "d = Circle(A, B)"],
+      "AreEqual(c, d)", [mv("B", 1, 0)])
+proof("review", ["A = (0, 0)", "B = (2, 1)", "c = Circle(A, B)", "d = Circle(A, B)"],
+      "AreEqual(c, d)", [mv("B", 0, 0)])
+cases.case("review", ["Prove = {2, 3}", "n = Prove(1)"], [])
+
 cases.write()

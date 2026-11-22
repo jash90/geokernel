@@ -73,6 +73,8 @@ that runs `Prover.decideStatement`, synchronously and without a timeout, as the
 desktop app's prover does, with the algebraic engine selected. The numerical
 engine and the external Wu prover of the desktop app are not on the harness
 class path.
+The desktop app abandons a proof after five seconds and pins Giac 70501; the
+oracle has no deadline and uses the Giac library this script downloads.
 Giac is a separate GPL reference backend used only to record and check fixtures.
 The Rust workspace and release builds have no runtime or build dependency on it.
 

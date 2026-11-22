@@ -1,0 +1,222 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "prove-review-001",
+      "group": "prove",
+      "script": [
+        "O = (0, 0)",
+        "A = (4, 0)",
+        "c = Circle(O, A)",
+        "P = Point(c, 0.25)",
+        "g = Line(O, P)",
+        "Q = Intersect(g, c, 2)",
+        "b = AreEqual(P, Q)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 4.0 },
+          "P": { "type": "point", "defined": true, "x": 2.4492935982947064E-16, "y": -4.0 },
+          "g": { "type": "line", "defined": true, "a": 4.0, "b": 2.4492935982947064E-16, "c": -0.0 },
+          "Q": { "type": "point", "defined": true, "x": -2.4492935982947064E-16, "y": 4.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": false }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-review-002",
+      "group": "prove",
+      "script": [
+        "O = (0, 0)",
+        "A = (4, 0)",
+        "c = Circle(O, A)",
+        "P = Point(c, 0.25)",
+        "g = Line(O, P)",
+        "Q = Intersect(g, c, 1)",
+        "M = Midpoint(P, Q)",
+        "b = AreEqual(M, O)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 4.0 },
+          "P": { "type": "point", "defined": true, "x": 2.4492935982947064E-16, "y": -4.0 },
+          "g": { "type": "line", "defined": true, "a": 4.0, "b": 2.4492935982947064E-16, "c": -0.0 },
+          "Q": { "type": "point", "defined": true, "x": 2.4492935982947064E-16, "y": -4.0 },
+          "M": { "type": "point", "defined": true, "x": 2.4492935982947064E-16, "y": -4.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[A,O]" }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-review-003",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (0, 0)",
+        "c = Circle(A, B)",
+        "d = Circle(A, B)",
+        "b = AreEqual(c, d)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 1.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.0 },
+          "d": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": false },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 1.0 },
+          "d": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 1.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": false },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-review-004",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (2, 1)",
+        "c = Circle(A, B)",
+        "d = Circle(A, B)",
+        "b = AreEqual(c, d)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.23606797749979 },
+          "d": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.23606797749979 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[A,B]" }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.0 },
+          "d": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[A,B]" }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-review-005",
+      "group": "prove",
+      "script": [
+        "Prove = {2, 3}",
+        "n = Prove(1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "Prove": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 }
+            ]
+          },
+          "n": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    }
+  ]
+}

@@ -1079,3 +1079,13 @@ mismatches = ["0:r"]
 id = "prove-relation-002"
 reason = "The relation-tool form of ProveDetails words each condition as a localized sentence from the reference's language files, which the kernel does not carry; it answers an undefined list whenever there is a condition to word."
 mismatches = ["0:r"]
+
+[[gap]]
+id = "prove-review-001"
+reason = "Not the prover: the line is drawn through a point on the circle as its path. The reference's `Intersect(g, c, n)` finds that point on both objects by incidence and makes it intersection 1, so intersection 2 is the other point. The kernel's numeric intersection does not count path points as incident and keeps its fixed order, so Q and the Boolean differ. Prove and ProveDetails agree."
+mismatches = ["0:Q", "0:b"]
+
+[[gap]]
+id = "prove-review-002"
+reason = "Not the prover: the line is drawn through a point on the circle as its path. The reference's `Intersect(g, c, n)` finds that point on both objects by incidence and makes it intersection 1. The kernel's numeric intersection does not count path points as incident and keeps its fixed order, so Q, M and the Boolean differ. Prove and ProveDetails agree."
+mismatches = ["0:M", "0:Q", "0:b"]
