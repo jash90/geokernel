@@ -131,6 +131,7 @@ final class Session {
         LocalizationCommon loc = new LocalizationCommon(2);
         loc.setResourceBundleControl(new Utf8Control());
         app = new AppCommon(loc, new AwtFactoryCommon(), new AppConfigDefault());
+        GiacOracle.configure(app);
         kernel = app.getKernel();
         processor = kernel.getAlgebraProcessor();
     }
