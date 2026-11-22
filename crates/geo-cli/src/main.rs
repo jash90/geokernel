@@ -153,12 +153,14 @@ fn write_svg(c: &Construction, view: View, path: &str) -> Result<(), String> {
 
 fn print_objects(c: &Construction) {
     for id in c.ids().filter(|&id| !c.label(id).starts_with('\0')) {
-        println!(
-            "  {:<4} {:<8} {}",
-            c.label(id),
-            c.kind(id).to_string(),
-            describe(c, id)
-        );
+        let label = c.label(id);
+        let kind = c.kind(id).to_string();
+        let value = describe(c, id);
+        if let Some(source) = c.construction_source(id) {
+            println!("  {label:<4} {kind:<8} {value}  [{source}]");
+        } else {
+            println!("  {label:<4} {kind:<8} {value}");
+        }
     }
 }
 

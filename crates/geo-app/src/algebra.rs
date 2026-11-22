@@ -407,10 +407,11 @@ fn paint_control(
             .max_rect(rect)
             .layout(egui::Layout::left_to_right(egui::Align::Center)),
     );
-    if !app.wb.is_visible(row.id) {
+    let def = c.def(row.id);
+    if !matches!(def, Def::Boolean(_)) && !app.wb.is_visible(row.id) {
         field.disable();
     }
-    let response = match c.def(row.id) {
+    let response = match def {
         Def::Boolean(mut value) => {
             let response = field.checkbox(&mut value, caption);
             if response.changed() {

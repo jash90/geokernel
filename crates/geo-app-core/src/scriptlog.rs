@@ -35,6 +35,7 @@ use geo_kernel::kernel::control::{decode_text, encode_text, visibility_boolean};
 use geo_kernel::kernel::text::TextPosition;
 use geo_kernel::kernel::{Construction, Def, EquationForm, Id, Value};
 use geo_kernel::script::equation::{parse_style, Style as EquationStyle};
+use geo_kernel::script::saved::{self, mark_inline_arguments, Property, INLINE_ARGUMENTS};
 use geo_kernel::script::text::{parse_properties, Properties as TextProperties};
 use geo_kernel::script::{
     boundary_slot_owner, find_unquoted, restore_boundary_labels, split_comment, BoundaryOutputs,
@@ -54,6 +55,14 @@ const LABELS: &str = "# labels: ";
 const MOVE_POINTS: &str = "$movePoints";
 const ANGLE_STYLE: &str = "$angleStyle";
 const SHOW_OBJECT: &str = "$showObject";
+
+fn snapshot_labels(comment: &str) -> Option<&str> {
+    if saved::inline_argument_positions(comment).is_some() {
+        comment.split_once(LABELS).map(|(_, labels)| labels)
+    } else {
+        comment.strip_prefix(LABELS)
+    }
+}
 
 fn has_recorded_growth(src: &str) -> bool {
     src.lines().any(|line| {
@@ -78,10 +87,10 @@ impl Entry {
     /// line keeps its `:` (`a: 2x + 3y = 6`), so its definition is the
     /// whole equation.
     pub fn rhs(&self) -> &str {
-        let rhs = self
-            .line
+        let body = split_comment(&self.line).0;
+        let rhs = body
             .find([':', '='])
-            .and_then(|i| self.line.get(i + 1..))
+            .and_then(|i| body.get(i + 1..))
             .map_or("", str::trim);
         geo_kernel::script::saved_definition(rhs).unwrap_or(rhs)
     }
@@ -136,6 +145,7 @@ enum Op {
     },
     MovePoints(Vec<Position<String>>),
     TextProperties(Box<str>),
+    SavedProperty(Box<Property>),
     EquationStyle {
         label: String,
         form: EquationForm,
@@ -147,7 +157,17 @@ enum Op {
 /// before any `=`; an equation (`f: 2x + 3y = 6`, whose `=` is part of the
 /// definition) keeps its `:`, which the script of the kernel reads.
 pub fn normalize(input: &str) -> String {
-    normalize_definition(split_comment(input).0)
+    let (body, comment) = split_comment(input);
+    normalize_saved_definition(body, comment)
+}
+
+fn normalize_saved_definition(body: &str, comment: Option<&str>) -> String {
+    let mut line = normalize_definition(body);
+    if let Some(positions) = comment.and_then(saved::inline_argument_positions) {
+        use std::fmt::Write as _;
+        let _ = write!(line, " {INLINE_ARGUMENTS}{positions}");
+    }
+    line
 }
 
 fn normalize_definition(input: &str) -> String {
@@ -169,12 +189,16 @@ enum Directive<'a> {
     Visible(&'a str, bool),
     Condition(&'a str, &'a str),
     TextProperties(TextProperties<'a>),
+    SavedProperty(Property),
     EquationStyle(EquationStyle<'a>),
 }
 
 /// The directive on a normalised line, if it is one (a definition always has
 /// an `=`).
 fn directive(line: &str) -> Option<Result<Directive<'_>, String>> {
+    if let Some(property) = saved::parse(line) {
+        return Some(property.map(Directive::SavedProperty));
+    }
     if let Some(props) = parse_properties(line) {
         return Some(props.map(Directive::TextProperties));
     }
@@ -334,7 +358,9 @@ pub fn check_names(line: &str) -> Result<(), String> {
 
 /// The identifiers of a script line.
 fn tokens(line: &str) -> impl Iterator<Item = &str> {
-    line.split(|c: char| !(c.is_alphanumeric() || matches!(c, '_' | '{' | '}' | '\'')))
+    split_comment(line)
+        .0
+        .split(|c: char| !(c.is_alphanumeric() || matches!(c, '_' | '{' | '}' | '\'')))
         .filter(|t| !t.is_empty())
 }
 
@@ -479,7 +505,7 @@ impl Log {
         if !labels.is_empty() {
             self.ops.push(Op::Define(Entry {
                 labels,
-                line: line.to_owned(),
+                line: mark_inline_arguments(line.to_owned()),
             }));
         }
     }
@@ -654,6 +680,7 @@ impl Log {
             Op::Define(e) if grouped => !e.labels.iter().any(|label| labels.contains(label)),
             Op::Define(e) => e.labels != labels,
             Op::Set { label, .. } | Op::EquationStyle { label, .. } => !labels.contains(label),
+            Op::SavedProperty(property) => !labels.iter().any(|label| label == property.label()),
             Op::Freeze { .. } | Op::MovePoints(_) | Op::TextProperties(_) => true,
         });
         self.removed.extend(labels);
@@ -808,6 +835,21 @@ impl Log {
                         kept.ops.push(Op::TextProperties(line.into()));
                     }
                 }
+                Op::SavedProperty(property) => {
+                    if !gone.contains(property.label()) && property.apply(&mut c).is_ok() {
+                        match &mut same {
+                            Some(n) => *n = i + 1,
+                            None => kept.ops.push((*op).clone()),
+                        }
+                    } else {
+                        diverge(&mut kept, &mut same);
+                        if !gone.contains(property.label()) {
+                            if let Some(property) = property.as_ref().clone().restore(&mut c).0 {
+                                kept.ops.push(Op::SavedProperty(Box::new(property)));
+                            }
+                        }
+                    }
+                }
                 Op::EquationStyle { label, form } => {
                     if gone.contains(label) && c.id(label).is_none() {
                         diverge(&mut kept, &mut same);
@@ -936,6 +978,13 @@ impl Log {
                     if let Some(line) = replay_text_properties(&mut c, line, &gone, Some(previous))?
                     {
                         kept.ops.push(Op::TextProperties(line.into()));
+                    }
+                }
+                Op::SavedProperty(property) => {
+                    if !gone.contains(property.label()) {
+                        if let Some(property) = property.as_ref().clone().restore(&mut c).0 {
+                            kept.ops.push(Op::SavedProperty(Box::new(property)));
+                        }
                     }
                 }
                 Op::EquationStyle { label, form } => {
@@ -1074,6 +1123,7 @@ impl Log {
                     writeln!(out, ")")
                 }
                 Op::TextProperties(line) => writeln!(out, "{line}"),
+                Op::SavedProperty(property) => writeln!(out, "{property}"),
                 Op::EquationStyle { label, form } => {
                     writeln!(
                         out,
@@ -1133,6 +1183,11 @@ impl Log {
                 self.set_condition(c, target, &decode_text(condition)?)?;
                 return Ok(Vec::new());
             }
+            Directive::SavedProperty(property) => {
+                property.apply(c)?;
+                self.ops.push(Op::SavedProperty(Box::new(property)));
+                return Ok(Vec::new());
+            }
             Directive::TextProperties(props) => {
                 props.apply(c)?;
                 self.ops.push(Op::TextProperties(props.to_string().into()));
@@ -1184,8 +1239,8 @@ impl Log {
         let mut gone: BTreeSet<String> = BTreeSet::new();
         for (i, raw) in src.lines().enumerate() {
             let (body, comment) = split_comment(raw);
-            let listed = comment.and_then(|comment| comment.strip_prefix(LABELS));
-            let line = normalize_definition(body);
+            let listed = comment.and_then(snapshot_labels);
+            let line = normalize_saved_definition(body, comment);
             if line.is_empty() {
                 continue;
             }
@@ -1284,7 +1339,7 @@ impl Log {
         let grow = !has_recorded_growth(src);
         for (i, raw) in src.lines().enumerate() {
             let (body, comment) = split_comment(raw);
-            let line = normalize_definition(body);
+            let line = normalize_saved_definition(body, comment);
             if line.is_empty() {
                 continue;
             }
@@ -1299,7 +1354,7 @@ impl Log {
             check_names(&line).map_err(at)?;
             let before = c.len();
             let labels = comment
-                .and_then(|comment| comment.strip_prefix(LABELS))
+                .and_then(snapshot_labels)
                 .map(|labels| labels.split(',').map(str::trim).collect::<Vec<_>>());
             let first = labels
                 .as_ref()

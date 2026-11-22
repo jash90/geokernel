@@ -97,14 +97,24 @@ pub fn load(src: &str) -> Result<Construction, ScriptError> {
 }
 
 pub mod equation;
+pub mod saved;
 pub mod text;
 
 /// Runs one line. Returns the first output, or `Ok(None)` if the line
 /// creates nothing. Internal objects for inline arguments precede the outputs.
 pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
-    let line = split_comment(raw).0.trim();
+    let (line, comment) = split_comment(raw);
+    let line = line.trim();
+    let lowered = comment
+        .and_then(saved::inline_argument_positions)
+        .map(|positions| saved::lower_marked_arguments(line, positions))
+        .transpose()?;
+    let line = lowered.as_deref().unwrap_or(line);
     if line.is_empty() {
         return Ok(None);
+    }
+    if let Some(property) = saved::parse(line) {
+        return property?.apply(c).map(|()| None);
     }
     if let Some(result) = text::apply(c, line) {
         return result.map(|_| None);
@@ -233,6 +243,7 @@ fn with_saved_arguments<T>(
     if !args.iter().any(|arg| arg.starts_with("$arg(")) {
         return None;
     }
+    let before = c.len();
     let start = c.checkpoint();
     let result = (|| {
         let args = args
@@ -248,6 +259,14 @@ fn with_saved_arguments<T>(
     })();
     if result.is_err() {
         c.discard_since(start);
+    } else {
+        let source = saved::command_with_inline_arguments(rhs).map(|(source, _)| source);
+        for index in before..c.len() {
+            let id = Id(index);
+            if !c.label(id).starts_with('\0') {
+                c.remember_construction_source(id, source.as_deref().unwrap_or(rhs));
+            }
+        }
     }
     Some(result)
 }

@@ -1443,7 +1443,10 @@ pub(crate) fn argument_object(c: &mut Construction, text: &str, label: &str, kin
     };
     let kind = match (kind, parsed.tys[parsed.root as usize]) {
         (Kind::Number, Ty::Num(1)) => Kind::Angle,
-        (Kind::Number, Ty::Num(_)) | (Kind::List, Ty::List(_)) | (Kind::Boolean, Ty::Bool) | (Kind::Point, Ty::Vec) => kind,
+        (Kind::Number, Ty::Num(_))
+        | (Kind::List, Ty::List(_))
+        | (Kind::Boolean, Ty::Bool)
+        | (Kind::Point, Ty::Vec) => kind,
         _ => return false,
     };
     !parsed.uses_var && add(c, label, parsed, kind).is_ok()

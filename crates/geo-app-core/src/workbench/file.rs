@@ -203,6 +203,112 @@ mod tests {
     }
 
     #[test]
+    fn review_inline_definition_is_visible_and_replayable() {
+        let mut wb = Workbench::default();
+        wb.load_bytes(
+            include_bytes!("../../../../golden/ggb/saved/saved-inline-001.xml"),
+            "inline.xml",
+        )
+        .unwrap();
+        let check = |wb: &mut Workbench| {
+            let row = wb.rows().iter().find(|row| row.label == "s").unwrap();
+            assert_eq!(row.head, "s = Segment(A, A + (2, 0))");
+            assert_eq!(wb.definition("s"), Some("Segment(A, A + (2, 0))"));
+        };
+        check(&mut wb);
+        let snapshot = wb.snapshot_text();
+        assert!(snapshot.contains("s = Segment(A, A + (2, 0))"));
+        assert!(!snapshot.contains("$arg("));
+        wb.load_script(&snapshot).unwrap();
+        check(&mut wb);
+        wb.run_line("definition = Text(s, false)").unwrap();
+        let c = wb.construction();
+        assert_eq!(
+            c.text(c.id("definition").unwrap()),
+            Some("Segment(A, A + (2, 0))")
+        );
+        let svg = geo_kernel::svg::render(c, geo_kernel::svg::View::fit(c), 800, 600);
+        assert!(svg.contains("Segment(A, A + (2, 0))"));
+    }
+
+    #[test]
+    fn review_saved_slider_bounds_use_later_objects_and_survive_replay() {
+        let mut wb = Workbench::default();
+        wb.load_bytes(
+            include_bytes!("../../../../golden/ggb/saved/saved-slider-bounds-001.xml"),
+            "slider-bounds.xml",
+        )
+        .unwrap();
+        let id = |wb: &Workbench, label| wb.construction().id(label).unwrap();
+        let value = |wb: &Workbench, label| wb.construction().value(id(wb, label));
+        assert_eq!(value(&wb, "n"), Value::Number(5.0));
+        assert_eq!(value(&wb, "m"), Value::Number(1.0));
+        assert_eq!(value(&wb, "q"), Value::Number(10.0));
+        assert!(wb
+            .notice
+            .as_deref()
+            .unwrap_or("")
+            .contains("slider `k` bounds: maximum"));
+        assert!(wb.set_number(id(&wb, "k"), -4.0));
+        assert_eq!(value(&wb, "k"), Value::Number(-3.0));
+        assert!(wb.set_number(id(&wb, "a"), 4.0));
+        assert!(wb.set_number(id(&wb, "n"), 99.0));
+        assert_eq!(value(&wb, "n"), Value::Number(7.0));
+        assert!(wb.set_number(id(&wb, "m"), -99.0));
+        assert_eq!(value(&wb, "m"), Value::Number(3.0));
+        assert_round_trip(&mut wb, "saved slider bounds");
+        assert!(wb.set_number(id(&wb, "n"), -50.0));
+        assert_eq!(value(&wb, "n"), Value::Number(-50.0));
+        assert!(wb.set_number(id(&wb, "m"), 50.0));
+        assert_eq!(value(&wb, "m"), Value::Number(50.0));
+
+        let mut c = Construction::new();
+        let slider = c.add_saved_slider("n", 9.0, 0.0, 5.0).unwrap();
+        assert_eq!(c.value(slider), Value::Number(5.0));
+    }
+
+    #[test]
+    fn review_point_scripts_survive_without_running() {
+        let mut wb = Workbench::default();
+        wb.load_bytes(
+            include_bytes!("../../../../golden/ggb/saved/saved-object-scripts-001.xml"),
+            "object-scripts.xml",
+        )
+        .unwrap();
+        assert!(wb
+            .notice
+            .as_deref()
+            .unwrap_or("")
+            .contains("scripts are not executed"));
+        let snapshot = wb.snapshot_text();
+        for source in [
+            "SetValue(a, 7)",
+            "SetValue(a, 8)",
+            r#"ggbApplet.setValue("a", 9);"#,
+            r#"ggbApplet.setValue("a", 10);"#,
+        ] {
+            assert!(snapshot.contains(&geo_kernel::kernel::control::encode_text(source)));
+        }
+        assert_round_trip(&mut wb, "inert point scripts");
+        let c = wb.construction();
+        let scripts: Vec<_> = c
+            .object_scripts("A")
+            .iter()
+            .map(|script| (script.language.as_str(), script.event.as_str()))
+            .collect();
+        assert_eq!(
+            scripts,
+            [
+                ("ggbscript", "click"),
+                ("ggbscript", "update"),
+                ("javascript", "dragEnd"),
+                ("javascript", "change")
+            ]
+        );
+        assert_eq!(c.value(c.id("a").unwrap()), Value::Number(2.0));
+    }
+
+    #[test]
     fn inline_inputs_stay_anonymous_through_edits_and_replay() {
         let mut wb = Workbench::default();
         wb.load_bytes(

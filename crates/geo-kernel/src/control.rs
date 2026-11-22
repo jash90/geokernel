@@ -24,6 +24,16 @@ impl Construction {
         Some(&self.controls[index].1)
     }
 
+    /// Imported object scripts, including those attached to controls.
+    pub fn object_scripts(&self, label: &str) -> &[ControlScript] {
+        if let Some(scripts) = self.object_scripts.get(label) {
+            return scripts;
+        }
+        self.id(label)
+            .and_then(|id| self.control(id))
+            .map_or(&[], |control| &control.scripts)
+    }
+
     /// Changes a free checkbox and updates its mathematical dependents.
     pub fn set_boolean(&mut self, id: Id, value: bool) -> Result<usize, crate::kernel::Error> {
         self.last_update_changed_automatic_root = false;
@@ -105,11 +115,18 @@ pub(crate) fn define(
         }
         _ => return Err("invalid control definition".into()),
     };
-    let (scripts, []) = scripts.as_chunks::<3>() else {
-        return Err("invalid control script fields".into());
-    };
     let caption = decode_text(caption)?;
-    let scripts = scripts
+    let scripts = decode_scripts(scripts)?;
+    let id = c.add(label, def).map_err(|e| e.to_string())?;
+    c.controls.push((id, Control { caption, scripts }));
+    Ok(id)
+}
+
+pub(crate) fn decode_scripts(fields: &[&str]) -> Result<Vec<ControlScript>, String> {
+    let (scripts, []) = fields.as_chunks::<3>() else {
+        return Err("invalid object script fields".into());
+    };
+    scripts
         .iter()
         .map(|&[language, event, text]| {
             Ok(ControlScript {
@@ -118,8 +135,11 @@ pub(crate) fn define(
                 text: decode_text(text)?,
             })
         })
-        .collect::<Result<_, String>>()?;
-    let id = c.add(label, def).map_err(|e| e.to_string())?;
-    c.controls.push((id, Control { caption, scripts }));
-    Ok(id)
+        .collect()
+}
+
+pub fn encode_scripts(scripts: &[ControlScript]) -> impl Iterator<Item = String> + '_ {
+    scripts.iter().flat_map(|script| {
+        [&script.language, &script.event, &script.text].map(|field| encode_text(field))
+    })
 }

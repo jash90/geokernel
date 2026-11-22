@@ -138,6 +138,7 @@ pub fn render_visible(
     let mut segments = String::new();
     let mut circles = String::new();
     let mut points = String::new();
+    let mut definitions = String::new();
 
     // Used to draw an "infinite" line as a segment longer than the view.
     let (mx, my) = (0.5 * (view.xmin + view.xmax), 0.5 * (view.ymin + view.ymax));
@@ -149,6 +150,9 @@ pub fn render_visible(
         .ids()
         .filter(|&id| !c.label(id).starts_with('\0') && visible(id))
     {
+        if let Some(source) = c.construction_source(id) {
+            let _ = writeln!(definitions, "{} = {}", escape(c.label(id)), escape(source));
+        }
         match c.value(id) {
             v @ Value::Line { .. } => {
                 let Some((a, b, k)) = v.unit_line() else {
@@ -369,6 +373,9 @@ pub fn render_visible(
         out,
         r##"<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">"##
     );
+    if !definitions.is_empty() {
+        let _ = writeln!(out, "<desc>{}</desc>", definitions.trim_end());
+    }
     let _ = writeln!(
         out,
         r##"<rect width="100%" height="100%" fill="#ffffff"/>"##

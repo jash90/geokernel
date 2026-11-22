@@ -22,6 +22,7 @@ import org.geogebra.common.kernel.CircularDefinitionException;
 import org.geogebra.common.kernel.Kernel;
 import org.geogebra.common.kernel.LinearEquationRepresentable;
 import org.geogebra.common.kernel.QuadraticEquationRepresentable;
+import org.geogebra.common.kernel.arithmetic.NumberValue;
 import org.geogebra.common.kernel.geos.GeoAngle;
 import org.geogebra.common.kernel.geos.GeoBoolean;
 import org.geogebra.common.kernel.geos.GeoButton;
@@ -178,6 +179,24 @@ public final class SavedExporter {
                         QuadraticEquationRepresentable.Form.valueOf((String) step.get("form")));
             } else if ("rename".equals(action)) {
                 geo.rename((String) step.get("name"));
+            } else if ("slider_bounds".equals(action) && geo instanceof GeoNumeric n) {
+                var algebra = kernel.getAlgebraProcessor();
+                NumberValue min = step.get("min") instanceof String expr
+                        ? algebra.evaluateToNumeric(expr, null) : null;
+                NumberValue max = step.get("max") instanceof String expr
+                        ? algebra.evaluateToNumeric(expr, null) : null;
+                if (min == null) {
+                    n.setIntervalMin(null);
+                    n.setIntervalMax(max);
+                } else {
+                    n.setIntervalMax(max);
+                    n.setIntervalMin(min);
+                }
+            } else if ("object_script".equals(action)) {
+                var language = ScriptType.valueOf((String) step.get("language"));
+                var event = EventType.valueOf((String) step.get("event"));
+                geo.setScript(language.newScript(app, (String) step.get("text")), event);
+                continue;
             } else if ("click_script".equals(action)) {
                 geo.setScript(ScriptType.GGBSCRIPT.newScript(app, (String) step.get("text")),
                         EventType.CLICK);

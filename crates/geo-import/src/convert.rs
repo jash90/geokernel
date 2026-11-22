@@ -11,10 +11,11 @@ use crate::xml::{Document, Element, Item};
 use crate::{ImportError, Imported, Mismatch, Skipped};
 use geo_kernel::algo::conic_nd::{ConicData, ConicType};
 use geo_kernel::algo::general_conic::GeneralConicDef;
-use geo_kernel::kernel::control::{encode_text, visibility_boolean};
+use geo_kernel::kernel::control::{encode_scripts, encode_text, visibility_boolean};
 use geo_kernel::kernel::text::{TextFont, TextOverrides, TextPosition};
 use geo_kernel::kernel::{angle::AngleStyle, Def};
 use geo_kernel::script::equation::Style as EquationStyle;
+use geo_kernel::script::saved::Property;
 use geo_kernel::script::text::{
     literal as text_literal, push_escaped_char, Properties as TextProperties,
 };
@@ -98,6 +99,10 @@ pub fn convert(doc: Document) -> Result<Imported, ImportError> {
             }
         }
     }
+    for el in elements.values() {
+        c.restore_slider(el);
+        c.retain_scripts(el);
+    }
     for (&label, element) in &elements {
         if let Some(condition) = &element.condition {
             if c.kernel.id(label).is_some() {
@@ -147,6 +152,7 @@ struct Flags {
     fixed: usize,
     auxiliary: usize,
     start_points: usize,
+    has_scripts: bool,
 }
 
 impl Flags {
@@ -154,9 +160,13 @@ impl Flags {
         self.fixed += el.fixed as usize;
         self.auxiliary += el.auxiliary as usize;
         self.start_points += el.start_point as usize;
+        self.has_scripts |= !el.scripts.is_empty();
     }
 
     fn notes(&self, notes: &mut Vec<String>) {
+        if self.has_scripts {
+            notes.push("object scripts are not executed".into());
+        }
         for (n, what) in [
             (self.fixed, "fixed (the kernel has no fixed flag)"),
             (self.auxiliary, "auxiliary objects"),
@@ -459,7 +469,8 @@ impl Converter {
         };
         let mut args = Vec::with_capacity(inputs.len());
         for (index, arg) in inputs.iter().enumerate() {
-            let raw = text_command || matches!(name, "Curve" | "CurveCartesian" | "Slider")
+            let raw = text_command
+                || matches!(name, "Curve" | "CurveCartesian" | "Slider")
                 || (index == 0 && matches!(name, "Locus" | "SlopeField"));
             let arg = expression_line(arg)?;
             if !self.skipped.is_empty() {
@@ -705,6 +716,71 @@ impl Converter {
         }
     }
 
+    fn restore_slider(&mut self, el: &Element) {
+        let Some(saved) = &el.slider else { return };
+        if literal_slider_bounds(el).is_some_and(|[min, max]| {
+            self.kernel
+                .id(&el.label)
+                .and_then(|id| self.kernel.slider_interval(id))
+                == Some((min, max))
+        }) {
+            return;
+        }
+
+        let label = quote(&el.label);
+        let mut bounds = [None, None];
+        for ((bound, saved), endpoint) in bounds.iter_mut().zip(saved).zip(["minimum", "maximum"]) {
+            if let Some(source) = saved {
+                match expression_line(source) {
+                    Ok(source) => *bound = Some(source),
+                    Err(reason) => self
+                        .out
+                        .notes
+                        .push(format!("slider `{label}` {endpoint}: {}", quote(&reason))),
+                }
+            }
+        }
+        if bounds == [None, None] {
+            if *saved == [None, None] {
+                self.out
+                    .notes
+                    .push(format!("slider `{label}` has no saved endpoints"));
+            }
+            return;
+        }
+        let property = Property::SliderBounds {
+            label: el.label.clone(),
+            bounds,
+        };
+        let (restored, errors) = property.restore(&mut self.kernel);
+        if let Some(property) = restored {
+            self.out.script.push(property.to_string());
+        }
+        for reason in errors {
+            self.out
+                .notes
+                .push(format!("slider `{label}` bounds: {}", quote(&reason)));
+        }
+    }
+
+    fn retain_scripts(&mut self, el: &Element) {
+        if el.scripts.is_empty()
+            || self
+                .kernel
+                .id(&el.label)
+                .is_some_and(|id| self.kernel.control(id).is_some())
+        {
+            return;
+        }
+        self.out.script.push(
+            Property::ObjectScripts {
+                label: el.label.clone(),
+                scripts: el.scripts.clone(),
+            }
+            .to_string(),
+        );
+    }
+
     fn apply_text_style(&mut self, el: &Element, font_size: f64) {
         let Some(style) = el
             .text
@@ -931,11 +1007,7 @@ impl Converter {
                 };
                 let v = number(text)?;
                 if v.is_finite() {
-                    if let Some([min, max]) = el
-                        .slider
-                        .as_ref()
-                        .and_then(|[min, max]| Some([num(min)?, num(max)?]))
-                    {
+                    if let Some([min, max]) = literal_slider_bounds(el) {
                         Ok(format!("{label} = $slider({v}, {min}, {max})"))
                     } else {
                         Ok(format!("{label} = {v}"))
@@ -979,9 +1051,7 @@ fn control_line(label: &str, form: &str, value: Option<&str>, element: Option<&E
         args.insert(0, value.to_string());
     }
     if let Some(el) = element {
-        for script in &el.scripts {
-            args.extend([&script.language, &script.event, &script.text].map(|s| encode_text(s)));
-        }
+        args.extend(encode_scripts(&el.scripts));
     }
     format!("{label} = {form}({})", args.join(", "))
 }
@@ -995,6 +1065,11 @@ fn unsupported_element(kind: &str) -> String {
         _ => return format!("the element type `{}` is not supported", quote(kind)),
     };
     format!("element type `{kind}`: {reason}")
+}
+
+fn literal_slider_bounds(el: &Element) -> Option<[f64; 2]> {
+    let [min, max] = el.slider.as_ref()?;
+    Some([num(min.as_deref()?)?, num(max.as_deref()?)?])
 }
 
 fn expression_kind(saved_type: &str) -> Result<Kind, String> {

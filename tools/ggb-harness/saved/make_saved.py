@@ -311,6 +311,23 @@ case("text-template", text_template, [latex])
 case("text-template", text_template,
      [latex, {"action": "set_number", "label": "a", "value": 3.141592653589793}])
 
+case("slider-bounds", ["n = Slider(0, 10)", "m = Slider(0, 10)", "k = Slider(0, 10)", "a = 2", "q = 2n"],
+     [{"action": "set_number", "label": "n", "value": 9},
+      {"action": "slider_bounds", "label": "n", "max": "a + 3"},
+      {"action": "slider_bounds", "label": "m", "min": "a - 1"},
+      {"action": "slider_bounds", "label": "k", "min": "-3", "max": "NextPrime(a)"}])
+
+case("object-scripts", ["A = (1, 2)", "check = false", "a = 2"],
+     [{"action": "condition", "label": "A", "expression": "check"},
+      {"action": "click_script", "label": "A", "text": "SetValue(a, 7)"},
+      {"action": "object_script", "label": "A", "event": "UPDATE",
+       "language": "GGBSCRIPT", "text": "SetValue(a, 8)"},
+      {"action": "object_script", "label": "A", "event": "DRAG_END",
+       "language": "JAVASCRIPT", "text": 'ggbApplet.setValue("a", 9);'},
+      {"action": "object_script", "label": "A", "event": "EDITOR_KEY_TYPED",
+       "language": "JAVASCRIPT", "text": 'ggbApplet.setValue("a", 10);'}],
+     hidden=["check"])
+
 out = Path(__file__).with_name("saved.json")
 lines = ",\n".join("    " + json.dumps(c, separators=(", ", ": ")) for c in cases)
 out.write_text('{\n  "cases": [\n' + lines + "\n  ]\n}\n")

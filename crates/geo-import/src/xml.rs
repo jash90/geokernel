@@ -16,10 +16,9 @@
 //!   `<show object=/>`.
 //! * `<kernel>`: `Kernel.getKernelXML` (decimals, angle unit, continuity).
 //!
-//! * `<matrix A0= .. A5=>` of a conic, `<slider>` bounds, control captions
-//!   and scripts, and `<condition showObject=>` visibility rules.
-//! * `<matrix A0= .. A5=>` of a conic, its `<eqnStyle>`, and the flags `<fixed>`,
-//!   `<auxiliary>`, `<condition>`, and non-text `<startPoint>` (counted for a note).
+//! * Conic `<matrix A0= .. A5=>` and `<eqnStyle>`, numeric `<slider>` bounds,
+//!   captions, object scripts, and `<condition showObject=>` visibility rules.
+//! * `<fixed>`, `<auxiliary>`, and non-text `<startPoint>` are counted for a note.
 //! * Text placement and style: `<startPoint>`, `<absoluteScreenLocation>`,
 //!   `<labelOffset>`, `<font>`, and `<isLaTeX>`.
 //!
@@ -72,7 +71,7 @@ pub struct Element {
     pub condition: Option<String>,
     pub caption: String,
     pub scripts: Vec<ControlScript>,
-    pub slider: Option<[String; 2]>,
+    pub slider: Option<[Option<String>; 2]>,
     /// A `<startPoint>` of a vector: not used, counted for a note.
     pub start_point: bool,
     pub text: Option<Box<TextStyle>>,
@@ -399,11 +398,7 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                     element.as_mut().expect("checked above").caption =
                         attr(e, "val")?.unwrap_or_default();
                 }
-                "ggbscript" | "javascript"
-                    if element.as_ref().is_some_and(|el| {
-                        matches!(el.kind.as_str(), "boolean" | "button" | "textfield")
-                    }) =>
-                {
+                "ggbscript" | "javascript" if element.is_some() => {
                     let scripts = &mut element.as_mut().expect("checked above").scripts;
                     for (attribute, event) in [
                         ("val", "click"),
@@ -421,9 +416,8 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                     }
                 }
                 "slider" if element.is_some() => {
-                    if let (Some(min), Some(max)) = (attr(e, "min")?, attr(e, "max")?) {
-                        element.as_mut().expect("checked above").slider = Some([min, max]);
-                    }
+                    element.as_mut().expect("checked above").slider =
+                        Some([attr(e, "min")?, attr(e, "max")?]);
                 }
                 "startPoint" | "absoluteScreenLocation" | "labelOffset" | "isLaTeX" | "font"
                     if element.as_ref().is_some_and(|el| el.kind == "text") =>

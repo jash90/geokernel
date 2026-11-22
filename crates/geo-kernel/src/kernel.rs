@@ -37,6 +37,7 @@ mod axis;
 pub mod control;
 #[path = "algo/locus.rs"]
 pub mod locus;
+mod slider;
 pub mod text;
 
 use self::angle::{AngleDef, AngleGeometry, AngleSource, AngleStyle};
@@ -844,7 +845,9 @@ pub struct Construction {
     /// The intervals of the free numbers made by `Slider`, with the index of
     /// each number, in creation order.
     sliders: Vec<(usize, f64, f64)>,
+    saved_slider_bounds: HashMap<Id, [Option<slider::Bound>; 2]>,
     controls: Vec<(Id, control::Control)>,
+    pub(crate) object_scripts: HashMap<String, Vec<control::ControlScript>>,
 }
 
 /// The objects waiting to be recomputed during an update; empty between
@@ -1246,6 +1249,13 @@ impl Construction {
         debug_assert_eq!(at.generation, self.generation, "a checkpoint of this call");
         self.controls
             .truncate(self.controls.partition_point(|(id, _)| id.0 < at.len));
+        self.saved_slider_bounds.retain(|id, bounds| {
+            id.0 < at.len
+                && bounds
+                    .iter()
+                    .flatten()
+                    .all(|bound| bound.exists_before(at.len))
+        });
         self.discard_text_presentations(at.len);
         self.equation_forms.retain(|id, _| id.0 < at.len);
         self.construction_sources.retain(|id, _| id.0 < at.len);
@@ -1268,6 +1278,7 @@ impl Construction {
             self.hints.pop();
             if let Some(label) = self.labels.pop() {
                 self.by_label.remove(&label);
+                self.object_scripts.remove(&label);
             }
         }
         self.lists.truncate(at.lists.min(self.lists.len()));
@@ -1678,19 +1689,12 @@ impl Construction {
         if !v.is_finite() {
             return Err(Error::NotFinite);
         }
-        // A slider keeps its value in its interval (`GeoNumeric.setValue`).
-        let (new_def, v) = match (new_def, self.slider_interval(id)) {
-            (Def::Number(_), Some((min, max))) => {
-                let v = if v < min {
-                    min
-                } else if v > max {
-                    max
-                } else {
-                    v
-                };
-                (Def::Number(v), v)
-            }
-            (d, _) => (d, v),
+        // A slider keeps its value in its active interval.
+        let (new_def, v) = if matches!(new_def, Def::Number(_)) {
+            let v = self.clamp_slider(id, v);
+            (Def::Number(v), v)
+        } else {
+            (new_def, v)
         };
         // A changed number loses its exact decimal (`GeoNumeric.setValue`),
         // which changes what reads it even when the value stays.
@@ -2122,7 +2126,8 @@ impl Construction {
             && expr::is_independent_text(self, id)
     }
 
-    pub(crate) fn construction_source(&self, id: Id) -> Option<&str> {
+    /// Original source retained for definitions that need it for display.
+    pub fn construction_source(&self, id: Id) -> Option<&str> {
         self.construction_sources.get(&id).map(String::as_str)
     }
 

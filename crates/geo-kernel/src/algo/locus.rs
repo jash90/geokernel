@@ -189,55 +189,6 @@ impl Construction {
         self.propagate_dirty(dirty, 0);
     }
 
-    /// The interval of a free number made by `Slider(min, max)`; `None`
-    /// for any other object.
-    pub fn slider_interval(&self, id: Id) -> Option<(f64, f64)> {
-        match self.defs.get(id.0)? {
-            Def::Number(_) => self
-                .sliders
-                .binary_search_by_key(&id.0, |&(owner, _, _)| owner)
-                .ok()
-                .map(|slot| (self.sliders[slot].1, self.sliders[slot].2)),
-            _ => None,
-        }
-    }
-
-    /// Adds a slider, `Slider(min, max)` (`CmdSlider`): a free number with an
-    /// interval, which `Locus(Q, slider)` runs through and which
-    /// [`Construction::set_number`] keeps its value in. A new number is 0,
-    /// put in the interval (`GeoNumeric.setIntervalMin` and `Max`).
-    pub fn add_slider(&mut self, label: &str, min: f64, max: f64) -> Result<Id, Error> {
-        if !(min.is_finite() && max.is_finite()) {
-            return Err(Error::NotFinite);
-        }
-        let reversed = min > max;
-        let value = if reversed {
-            0.0
-        } else {
-            0.0_f64.clamp(min, max)
-        };
-        self.add_saved_slider(label, value, min, max)
-    }
-
-    /// Restores an existing slider with its saved value and interval.
-    pub fn add_saved_slider(
-        &mut self,
-        label: &str,
-        value: f64,
-        min: f64,
-        max: f64,
-    ) -> Result<Id, Error> {
-        if !(min.is_finite() && max.is_finite()) {
-            return Err(Error::NotFinite);
-        }
-        let id = self.add(label, Def::Number(value))?;
-        self.sliders.push((id.0, min, max));
-        if min > max {
-            self.values[id.0] = Value::Undefined;
-        }
-        Ok(id)
-    }
-
     fn locus_slot(&self, i: usize) -> Option<usize> {
         self.loci.binary_search_by_key(&i, |&(owner, _)| owner).ok()
     }
