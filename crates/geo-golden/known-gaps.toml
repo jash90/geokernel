@@ -896,6 +896,16 @@ reason = "Expand, Factor, IFactor and Simplify of a curve send each coordinate t
 mismatches = ["0:r1", "0:r2"]
 
 [[gap]]
+id = "cas-degree-001"
+reason = "Solutions(x^3 + y = 0, x) answers the cube root (-y)^(1/3) as a function in GeoGebra. The kernel solves one equation with a parameter for a variable of degree one or two only, so it answers an undefined list."
+mismatches = ["0:result"]
+
+[[gap]]
+id = "cas-degree-002"
+reason = "Solutions(x y^2 + y = 1, y) answers the two roots (+-sqrt(4x + 1) - 1) / (2x) in GeoGebra. The kernel solves a quadratic with a parameter only when its leading coefficient is a number, so it answers an undefined list."
+mismatches = ["0:result"]
+
+[[gap]]
 id = "georestintersect-spline-001"
 reason = "IntersectLineSpline leaves the previous point defined when adjacent spline inputs coincide, while the kernel propagates the undefined spline to the intersection"
 mismatches = ["2:P_{1}"]

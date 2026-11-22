@@ -662,4 +662,11 @@ c.case("simplify", ["A = (1/3, 2/7)", "B = (5/11, 1/13)", "g = Line(A, B)",
                      "result = Simplify(g)"], [mv("B", 0.3, 0.7), mv("A", 0.123456, -0.654321)])
 c.case("simplify", ["A = (0.1, 0.2)", "B = (0.7, 0.3)", "g = Line(A, B)", "k: y=0.1x^2+0.7x-1/3",
                      "r1 = Simplify(g)", "r2 = Simplify(k)"], [])
+
+# A variable of degree three or more, and a leading coefficient that
+# depends on the parameter.
+c.case("degree", ["result = Solutions(x^3+y=0, x)"], [])
+c.case("degree", ["result = Solutions(x*y^2+y=1, y)"], [])
+c.case("degree", ["r1 = Solutions(x^3+y=0, y)", "r2 = Solve(x^3+y=0, y)",
+                  "r3 = Solutions(x*y^2+y=1, x)"], [])
 c.write()
