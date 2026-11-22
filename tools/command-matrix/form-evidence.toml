@@ -161,7 +161,7 @@ cases = ["polygon-derived-001", "polygon-derived-002", "polygon-derived-003"]
 [[form]]
 command = "Circle"
 form = "point,number"
-cases = ["arcs-conicparams-001", "arcs-conicparams-002", "arcs-conicparams-003"]
+cases = ["arcs-conicparams-001", "arcs-conicparams-002", "arcs-conicparams-003", "inlineargs-points-001"]
 
 [[form]]
 command = "Circle"
@@ -886,7 +886,7 @@ cases = ["paths-polyline-001", "paths-polyline-002", "paths-polyline-003"]
 [[form]]
 command = "Polygon"
 form = "point,point,number"
-cases = ["paths-polygon-005", "polygon-labels-005", "polygon-regsmall-001"]
+cases = ["paths-polygon-005", "polygon-labels-005", "polygon-regsmall-001", "inlineargs-points-002"]
 
 [[form]]
 command = "Polygon"

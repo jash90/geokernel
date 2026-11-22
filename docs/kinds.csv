@@ -16,14 +16,14 @@ Polygon,POLYGON,Polygon,yes,yes,yes,yes,yes,yes,yes,partial,
 PolyLine,POLYLINE,PolyLine,yes,yes,yes,yes,yes,yes,yes,partial,
 List,LIST,List,yes,no,no,no,no,no,partial,partial,Saved lists with supported expressions and commands
 Axis,AXIS,,no,no,no,no,no,no,no,no,the window draws the axes from the view settings
-Text,TEXT,Text,yes,yes,yes,no,no,yes,yes,partial,Static and dependent texts with saved world or pixel placement and LaTeX typesetting. An empty text draws nothing.
+Text,TEXT,Text,yes,partial,yes,no,no,yes,yes,partial,Static and dependent texts with saved world or pixel placement and LaTeX typesetting. An empty text draws nothing.
 Formula,FORMULA,,no,no,no,no,no,no,no,no,
 Locus,LOCUS,Locus,yes,yes,yes,no,no,no,yes,partial,Tracing loci and integral curves from slopes. Discrete geometry commands also produce loci.
 CurveCartesian,CURVE_CARTESIAN,Curve,yes,no,no,no,no,no,yes,partial,Cartesian coordinates and parameter interval for Length
 ImplicitCurve,IMPLICIT_POLY,ImplicitCurve,yes,partial,partial,partial,no,yes,partial,partial,Polynomial equations and saved matrices.
 FunctionNVar,FUNCTION_NVAR,FunctionNVar,yes,no,no,no,no,yes,partial,partial,saved numeric functions with supported definitions
 Image,IMAGE,Image,no,no,yes,no,no,yes,yes,yes,PNG and JPEG and first-frame GIF; checked against the saved archive fixtures
-PieChart,PIECHART,PieChart,yes,no,yes,no,no,yes,partial,partial,Clockwise sectors with a world center and radius
+PieChart,PIECHART,PieChart,yes,yes,yes,no,no,yes,partial,partial,Clockwise sectors with a world center and radius
 InputBox,TEXTFIELD,InputBox,no,no,no,no,no,no,yes,yes,linked object retained on import
 Button,BUTTON,Button,no,no,no,no,no,no,yes,yes,caption and inert scripts retained on import
 PenStroke,PENSTROKE,,no,no,no,no,no,no,no,no,
