@@ -43,11 +43,12 @@ use crate::algo::conic::ConicDef;
 use crate::algo::conic_nd::{ConicData, ConicType};
 use crate::algo::conic_parts::ConicPartDef;
 use crate::algo::general_conic::GeneralConicDef;
+use crate::algo::intersect::common_tangents::CommonTangentState;
 use crate::algo::intersect::{
     boundary::BoundaryDef,
     pair::{PairDef, PairState},
 };
-use crate::algo::lines::LineDef;
+use crate::algo::lines::{CommonTangentDef, LineDef};
 use crate::algo::measure::MeasureDef;
 use crate::algo::path::{PathDef, PathState};
 use crate::algo::point::PointDef;
@@ -724,9 +725,13 @@ pub struct Construction {
     /// The output permutation and previous positions of conic intersections.
     conic_intersections: Vec<(usize, PairState)>,
     continuous_conic_intersections: bool,
+    pub(crate) function_roots: algo::intersect::functions::FunctionRootCache,
+    last_update_changed_automatic_root: bool,
     /// The states of the points on paths, with the index of each point, in
     /// creation order.
     paths: Vec<(usize, PathState)>,
+    /// Helper intersection states for common tangents starting on an arc.
+    limited_common_tangents: Vec<(usize, CommonTangentState)>,
     /// The records of the arcs and sectors, with the index of each object,
     /// in creation order.
     arcs: Vec<(usize, ArcData)>,
@@ -889,6 +894,13 @@ impl Construction {
                     .conic_intersection_slot(id.0)
                     .expect("conic intersection state");
                 Def::IntersectConics(d.with_state(&self.conic_intersections[slot].1))
+            }
+            Def::Lines(LineDef::CommonTangent(d)) => {
+                self.common_tangent_slot(id.0).map_or(def, |slot| {
+                    Def::Lines(LineDef::CommonTangent(
+                        d.with_state(&self.limited_common_tangents[slot].1),
+                    ))
+                })
             }
             _ => def,
         }
@@ -1119,6 +1131,7 @@ impl Construction {
         }
         self.lists.truncate(at.lists.min(self.lists.len()));
         self.exprs.truncate(at.exprs, at.len);
+        self.function_roots.clear();
         self.conic_intersections.truncate(
             self.conic_intersections
                 .partition_point(|&(owner, _)| owner < at.len),
@@ -1136,6 +1149,10 @@ impl Construction {
         while self.arcs.last().is_some_and(|&(owner, _)| owner >= at.len) {
             self.arcs.pop();
         }
+        self.limited_common_tangents.truncate(
+            self.limited_common_tangents
+                .partition_point(|&(owner, _)| owner < at.len),
+        );
         while self
             .equations
             .last()
@@ -1196,7 +1213,7 @@ impl Construction {
             return Err(Error::DuplicateLabel(axis.label.to_string()));
         }
         self.check(&def)?;
-        let def = algo::intersect::prepare(self, def);
+        let mut def = algo::intersect::prepare(self, def);
 
         let id = Id(self.defs.len());
         // compute reads the hint of the new object from `hints`
@@ -1224,6 +1241,11 @@ impl Construction {
                 self.arcs.push((id.0, record));
                 algo::arc::value(d.kind() == Kind::Sector, &record)
             }
+            Def::Lines(LineDef::CommonTangent(d)) if d.has_state(self) => {
+                let (state, value) = d.create(self);
+                self.limited_common_tangents.push((id.0, state));
+                value.unwrap_or(Value::Undefined)
+            }
             Def::Equation(d) => {
                 let (value, record) = crate::expr::equation::initialize(self, d);
                 if let Some(record) = record {
@@ -1239,6 +1261,11 @@ impl Construction {
             }
             _ => self.compute(def, id.0),
         };
+        if let Def::IntersectBoundary(intersection) = def {
+            if let Some(saved) = intersection.with_root(value) {
+                def = Def::IntersectBoundary(saved);
+            }
+        }
         // An object that is read twice is still one child.
         let mut parents = self.read_ids(&def);
         parents.sort_unstable();
@@ -1340,6 +1367,7 @@ impl Construction {
     /// its `special` flag is set; with the flag false, moving that point
     /// still recomputes the intersection, which does not change.
     pub fn move_point(&mut self, id: Id, x: f64, y: f64) -> Result<usize, Error> {
+        self.last_update_changed_automatic_root = false;
         if let Some(axis) = axis::get(id) {
             return Err(Error::NotFree(axis.label.to_string()));
         }
@@ -1372,6 +1400,41 @@ impl Construction {
         Ok(self.propagate(id))
     }
 
+    /// Moves free points together, recomputing their shared descendants once.
+    pub fn move_points(&mut self, points: &[(Id, f64, f64)]) -> Result<usize, Error> {
+        for &(id, x, y) in points {
+            if let Some(axis) = axis::get(id) {
+                return Err(Error::NotFree(axis.label.to_string()));
+            }
+            let def = self.defs.get(id.0).ok_or(Error::UnknownObject)?;
+            if !matches!(def, Def::FreePoint { .. }) {
+                return Err(Error::NotFree(self.labels[id.0].clone()));
+            }
+            if !(x.is_finite() && y.is_finite()) {
+                return Err(Error::NotFinite);
+            }
+        }
+
+        let mut dirty = std::mem::take(&mut self.dirty);
+        dirty.fit(self.defs.len());
+        let mut first = self.defs.len();
+        for &(id, x, y) in points {
+            let Def::FreePoint { x: old_x, y: old_y } = self.defs[id.0] else {
+                unreachable!("all points were validated before moving");
+            };
+            if old_x.to_bits() == x.to_bits() && old_y.to_bits() == y.to_bits() {
+                continue;
+            }
+            self.defs[id.0] = Def::FreePoint { x, y };
+            self.values[id.0] = Value::Point { x, y };
+            first = first.min(id.0);
+            for &child in &self.children[id.0] {
+                dirty.insert(child.0);
+            }
+        }
+        Ok(self.propagate_dirty(dirty, first))
+    }
+
     /// [`Self::move_point`] for a point made by `Point(path)`:
     /// `GeoPoint.setCoords`, which projects the point onto its path. A move
     /// to the point's own coordinates is not skipped: the projection can
@@ -1398,6 +1461,7 @@ impl Construction {
     /// Changes a free number and recomputes everything that depends on it.
     /// Returns how many dependent objects were recomputed.
     pub fn set_number(&mut self, id: Id, v: f64) -> Result<usize, Error> {
+        self.last_update_changed_automatic_root = false;
         if let Some(axis) = axis::get(id) {
             return Err(Error::NotFree(axis.label.to_string()));
         }
@@ -1449,6 +1513,12 @@ impl Construction {
         Ok(self.propagate(id))
     }
 
+    /// True when the last coordinate or value update moved an automatic
+    /// intersection's hidden Newton start point.
+    pub fn last_update_changed_automatic_root(&self) -> bool {
+        self.last_update_changed_automatic_root
+    }
+
     /// Recomputes the descendants of `start` in creation order.
     ///
     /// A set of dirty indices ([`DirtySet`]) gives the order: the smallest
@@ -1469,6 +1539,8 @@ impl Construction {
     }
 
     fn propagate_dirty(&mut self, mut dirty: DirtySet, mut from: usize) -> usize {
+        self.last_update_changed_automatic_root = false;
+        self.function_roots.clear();
         let mut recomputed = 0;
         while let Some(i) = dirty.pop_first(from) {
             // children only add larger indices
@@ -1501,6 +1573,11 @@ impl Construction {
                         continue;
                     }
                 }
+                Def::Lines(LineDef::CommonTangent(d)) if d.has_state(self) => {
+                    if !self.update_common_tangent(i, d) {
+                        continue;
+                    }
+                }
                 Def::Equation(d) => {
                     if !self.update_equation(i, d) {
                         continue;
@@ -1513,6 +1590,12 @@ impl Construction {
                 }
                 _ => {
                     let new = self.compute(def, i);
+                    if let Def::IntersectBoundary(intersection) = def {
+                        if let Some(saved) = intersection.with_root(new) {
+                            self.defs[i] = Def::IntersectBoundary(saved);
+                            self.last_update_changed_automatic_root = true;
+                        }
+                    }
                     if new == self.values[i] {
                         // Nothing downstream can change because of this object.
                         continue;
@@ -1571,6 +1654,25 @@ impl Construction {
         self.conic_intersections
             .binary_search_by_key(&i, |&(owner, _)| owner)
             .ok()
+    }
+
+    fn common_tangent_slot(&self, i: usize) -> Option<usize> {
+        self.limited_common_tangents
+            .binary_search_by_key(&i, |&(owner, _)| owner)
+            .ok()
+    }
+
+    #[inline(never)]
+    fn update_common_tangent(&mut self, i: usize, d: CommonTangentDef) -> bool {
+        let slot = self
+            .common_tangent_slot(i)
+            .expect("limited common tangent state");
+        let mut state = std::mem::take(&mut self.limited_common_tangents[slot].1);
+        let value = state.update(self, d).unwrap_or(Value::Undefined);
+        self.limited_common_tangents[slot].1 = state;
+        let changed = value != self.values[i];
+        self.values[i] = value;
+        changed
     }
 
     fn create_conic_intersection(&self, d: PairDef) -> PairState {

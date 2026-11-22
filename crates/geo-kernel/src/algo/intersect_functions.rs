@@ -14,28 +14,67 @@ use super::conics::graph_roots;
 use super::function_roots::{check_root, interval_roots, root_near};
 use crate::algo::conic_nd::ConicType;
 use crate::algo::{curve, Group, Parents, CARRIERS, CONIC_OBJECTS};
-use crate::expr::Raw;
+use crate::expr::{IntersectionWork, Raw};
 use crate::kernel::{Construction, Error, Id, Kind, Value};
 use crate::tol::{MIN_PRECISION, STANDARD_PRECISION};
+use std::{collections::HashMap, sync::Mutex};
 
 const FUNCTION: &[Kind] = &[Kind::Function];
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub(super) struct FunctionIntersection {
     function: Id,
     other: Id,
     method: Method,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 enum Method {
     Polynomial(u32),
     Indexed(u32),
     ConstantIndex(u32),
-    Seed { point: u32, line_first: bool },
-    Automatic,
+    Seed {
+        point: u32,
+        line_first: bool,
+    },
+    /// The most recent successful x coordinate, stored as float bits.
+    Automatic(u64),
     Conic(u32),
-    Interval { left: u32, right: u32, slot: u32 },
+    Interval {
+        left: u32,
+        right: u32,
+        slot: u32,
+    },
+}
+
+type Point = (f64, f64);
+
+/// Root lists shared by output slots until a dependency update or rollback.
+#[derive(Default)]
+pub(crate) struct FunctionRootCache(Mutex<HashMap<FunctionIntersection, Vec<Point>>>);
+
+impl FunctionRootCache {
+    pub(crate) fn clear(&mut self) {
+        self.0.get_mut().expect("function root cache").clear();
+    }
+
+    fn get<R>(
+        &self,
+        key: FunctionIntersection,
+        solve: impl FnOnce() -> Vec<Point>,
+        read: impl FnOnce(&[Point]) -> R,
+    ) -> R {
+        if let Some(points) = self.0.lock().expect("function root cache").get(&key) {
+            return read(points);
+        }
+        let points = solve();
+        let result = read(&points);
+        self.0
+            .lock()
+            .expect("function root cache")
+            .insert(key, points);
+        result
+    }
 }
 
 impl FunctionIntersection {
@@ -65,10 +104,10 @@ impl FunctionIntersection {
     }
 
     fn outputs(self, c: &Construction) -> Vec<Self> {
-        if self.method == Method::Automatic {
+        if matches!(self.method, Method::Automatic(_)) {
             return vec![self];
         }
-        let count = self.points(c).len().max(1) as u32;
+        let count = self.with_points(c, |points| points.len()).max(1) as u32;
         (0..count).map(|slot| self.with_slot(slot)).collect()
     }
 
@@ -77,14 +116,15 @@ impl FunctionIntersection {
             return None;
         };
         let (function, other) = Self::pair(c, first, second)?;
+        let work = IntersectionWork::new();
         let method = if CONIC_OBJECTS.contains(&c.kind(other)) {
             Method::Conic(0)
-        } else if c.function_fraction(function).is_some()
-            && (c.kind(other) != Kind::Function || c.function_fraction(other).is_some())
+        } else if work.fraction(c, function).is_some()
+            && (c.kind(other) != Kind::Function || work.fraction(c, other).is_some())
         {
             Method::Polynomial(0)
         } else {
-            Method::Automatic
+            Method::Automatic(0)
         };
         Some(
             Self {
@@ -176,50 +216,91 @@ impl FunctionIntersection {
             .collect()
     }
 
-    fn value(self, c: &Construction, x: f64) -> f64 {
-        c.function_value(self.function, x).unwrap_or(f64::NAN)
+    pub(super) fn with_root(self, value: Value) -> Option<Self> {
+        let (Method::Automatic(previous), Value::Point { x, .. }) = (self.method, value) else {
+            return None;
+        };
+        let bits = x.to_bits();
+        (bits != previous).then_some(Self {
+            method: Method::Automatic(bits),
+            ..self
+        })
+    }
+
+    fn with_points<R>(self, c: &Construction, read: impl FnOnce(&[(f64, f64)]) -> R) -> R {
+        let key = match self.method {
+            Method::Seed { .. } | Method::Automatic(_) => self,
+            _ if CONIC_OBJECTS.contains(&c.kind(self.other)) => Self {
+                method: Method::Conic(0),
+                ..self
+            },
+            _ => self.with_slot(0),
+        };
+        c.function_roots.get(key, || self.points(c), read)
     }
 
     fn points(self, c: &Construction) -> Vec<(f64, f64)> {
+        let work = IntersectionWork::new();
+        let points = self.solve(c, &work);
+        if work.exhausted() {
+            Vec::new()
+        } else {
+            points
+        }
+    }
+
+    fn solve(self, c: &Construction, work: &IntersectionWork) -> Vec<(f64, f64)> {
         let other = c.kind(self.other);
         if CONIC_OBJECTS.contains(&other) {
-            return self.conic_points(c);
+            return self.conic_points(c, work);
         }
-        let f = |x| self.value(c, x);
+        let f = |x| work.sample(c, self.function, x);
         if other == Kind::Function {
-            let g = |x| c.function_value(self.other, x).unwrap_or(f64::NAN);
+            let g = |x| work.sample(c, self.other, x);
             let difference = |x| f(x) - g(x);
             match self.method {
                 Method::Interval { left, right, .. } => {
                     let (Some(left), Some(right)) = (number(c, left), number(c, right)) else {
                         return Vec::new();
                     };
-                    interval_roots(&difference, left, right)
+                    interval_roots(&difference, left, right, || work.exhausted())
                 }
-                Method::Seed { .. } | Method::Automatic => self
+                Method::Seed { .. } | Method::Automatic(_) => self
                     .seed(c)
                     .and_then(|seed| {
                         root_near(
                             &difference,
                             |x| {
-                                c.function_derivative(self.function, x)
-                                    .zip(c.function_derivative(self.other, x))
+                                work.derivative(c, self.function, x)
+                                    .zip(work.derivative(c, self.other, x))
                                     .map_or_else(|| curve::slope(difference, x), |(a, b)| a - b)
                             },
                             seed,
+                            || {
+                                if let Some(target) = work.constant(c, self.other) {
+                                    work.inverse(c, self.function, target)
+                                } else {
+                                    let target = work.constant(c, self.function)?;
+                                    work.inverse(c, self.other, target)
+                                }
+                            },
                         )
                     })
                     .into_iter()
                     .collect(),
                 _ => match (
-                    c.function_fraction(self.function),
-                    c.function_fraction(self.other),
+                    work.fraction(c, self.function),
+                    work.fraction(c, self.other),
                 ) {
-                    (Some((p, q)), Some((r, s))) => {
-                        graph_roots(&subtract(product(&p, &s), product(&r, &q)))
-                            .into_iter()
-                            .filter(|&x| difference(x).abs() < MIN_PRECISION)
-                            .collect()
+                    (Some((p, q)), Some((r, s)))
+                        if work.charge((p.len() * s.len() + r.len() * q.len()) as u64) =>
+                    {
+                        graph_roots(&subtract(product(&p, &s), product(&r, &q)), &|units| {
+                            work.charge(units)
+                        })
+                        .into_iter()
+                        .filter(|&x| difference(x).abs() < MIN_PRECISION)
+                        .collect()
                     }
                     _ => Vec::new(),
                 },
@@ -228,7 +309,7 @@ impl FunctionIntersection {
             .filter_map(|x| finite_point(x, f(x)))
             .collect()
         } else {
-            self.line_points(c, &f)
+            self.line_points(c, &f, work)
         }
     }
 
@@ -238,17 +319,23 @@ impl FunctionIntersection {
                 Raw::Vec(x, y) if x.is_finite() && y.is_finite() => Some(x),
                 _ => None,
             },
-            _ => Some(0.0),
+            Method::Automatic(bits) => Some(f64::from_bits(bits)),
+            _ => None,
         }
     }
 
-    fn line_points(self, c: &Construction, f: &impl Fn(f64) -> f64) -> Vec<(f64, f64)> {
+    fn line_points(
+        self,
+        c: &Construction,
+        f: &impl Fn(f64) -> f64,
+        work: &IntersectionWork,
+    ) -> Vec<(f64, f64)> {
         let Some(line) = Carrier::of(c, self.other) else {
             return Vec::new();
         };
         let (a, b, d) = line.line;
         let vertical = b.abs() < STANDARD_PRECISION;
-        let numeric = matches!(self.method, Method::Seed { .. } | Method::Automatic);
+        let numeric = matches!(self.method, Method::Seed { .. } | Method::Automatic(_));
         let line_value = |x: f64| -(a * x + d) / b;
         let difference = |x| f(x) - line_value(x);
         let roots = if numeric {
@@ -261,10 +348,15 @@ impl FunctionIntersection {
                 root_near(
                     &difference,
                     |x| {
-                        c.function_derivative(self.function, x)
+                        work.derivative(c, self.function, x)
                             .map_or_else(|| curve::slope(difference, x), |v| v + a / b)
                     },
                     seed,
+                    || {
+                        (a == 0.0)
+                            .then(|| work.inverse(c, self.function, -d / b))
+                            .flatten()
+                    },
                 )
                 .and_then(|x| {
                     // CmdIntersect reaches function/function before the
@@ -285,8 +377,13 @@ impl FunctionIntersection {
             root.into_iter().collect()
         } else if vertical {
             vec![-d / a]
-        } else if let Some((p, q)) = c.function_fraction(self.function) {
-            graph_roots(&subtract(p, product(&[-d / b, -a / b], &q)))
+        } else if let Some((p, q)) = work.fraction(c, self.function) {
+            if !work.charge((2 * q.len()) as u64) {
+                return Vec::new();
+            }
+            graph_roots(&subtract(p, product(&[-d / b, -a / b], &q)), &|units| {
+                work.charge(units)
+            })
         } else {
             return Vec::new();
         };
@@ -309,7 +406,7 @@ impl FunctionIntersection {
             .collect()
     }
 
-    fn conic_points(self, c: &Construction) -> Vec<(f64, f64)> {
+    fn conic_points(self, c: &Construction, work: &IntersectionWork) -> Vec<(f64, f64)> {
         let part = c.arc(self.other);
         let Some(conic) = part.map(|p| p.conic).or_else(|| c.conic(self.other)) else {
             return Vec::new();
@@ -318,16 +415,19 @@ impl FunctionIntersection {
             return Vec::new();
         }
         let [xx, yy, constant, xy, linear_x, linear_y] = conic.matrix;
-        let f = |x| self.value(c, x);
-        let roots = if let Some((p, q)) = c
-            .function_fraction(self.function)
+        let f = |x| work.sample(c, self.function, x);
+        let roots = if let Some((p, q)) = work
+            .fraction(c, self.function)
             .filter(|(_, q)| q.len() == 1)
         {
+            if !work.charge((p.len() * (p.len() + 4)) as u64) {
+                return Vec::new();
+            }
             let y: Vec<_> = p.into_iter().map(|a| a / q[0]).collect();
             let mut residual = vec![constant, 2.0 * linear_x, xx];
             add(&mut residual, product(&y, &[2.0 * linear_y, 2.0 * xy]));
             add(&mut residual, product(&y, &product(&y, &[yy])));
-            let mut roots = graph_roots(&residual);
+            let mut roots = graph_roots(&residual, &|units| work.charge(units));
             roots.dedup_by(|a, b| (*a - *b).abs() <= MIN_PRECISION);
             roots
         } else {
@@ -348,11 +448,15 @@ impl FunctionIntersection {
                 },
                 left,
                 right,
+                || work.exhausted(),
             )
         };
         // The solver uses the full conic even when the input is a conic part.
         let mut points = Vec::with_capacity(roots.len());
         for (x, y) in roots.into_iter().filter_map(|x| finite_point(x, f(x))) {
+            if !work.charge(points.len() as u64 + 1) {
+                return Vec::new();
+            }
             if points
                 .iter()
                 .all(|&(a, b): &(f64, f64)| (x - a).powi(2) + (y - b).powi(2) >= STANDARD_PRECISION)
@@ -393,9 +497,9 @@ impl Group for FunctionIntersection {
             | Method::Interval { slot, .. }
             | Method::Polynomial(slot)
             | Method::Conic(slot) => slot,
-            Method::Seed { .. } | Method::Automatic => 0,
+            Method::Seed { .. } | Method::Automatic(_) => 0,
         };
-        let (x, y) = *self.points(c).get(slot as usize)?;
+        let (x, y) = self.with_points(c, |points| points.get(slot as usize).copied())?;
         Some(Value::Point { x, y })
     }
 
@@ -416,7 +520,9 @@ fn index(n: f64) -> u32 {
 }
 
 fn polynomial(c: &Construction, id: Id) -> bool {
-    c.function_fraction(id).is_some_and(|(_, q)| q.len() == 1)
+    IntersectionWork::new()
+        .fraction(c, id)
+        .is_some_and(|(_, q)| q.len() == 1)
 }
 
 fn finite_point(x: f64, y: f64) -> Option<(f64, f64)> {
@@ -443,4 +549,66 @@ fn add(a: &mut Vec<f64>, b: Vec<f64>) {
 fn subtract(mut a: Vec<f64>, b: Vec<f64>) -> Vec<f64> {
     add(&mut a, b.into_iter().map(|b| -b).collect());
     a
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{expr::work_done, script};
+
+    #[test]
+    fn interval_slots_share_charged_root_search() {
+        use super::FunctionIntersection;
+        use crate::algo::intersect::boundary::BoundaryDef;
+
+        fn update_work(slots: u32) -> u64 {
+            let mut c = script::load("a = 0\nf(x) = sin(x - a)\nh(x) = 0").unwrap();
+            let defs = FunctionIntersection::selected(&mut c, &["f", "h", "0", "60"])
+                .unwrap()
+                .unwrap();
+            assert!(defs.len() >= slots as usize);
+            for slot in 0..slots {
+                c.add(
+                    &format!("R{slot}"),
+                    BoundaryDef::function(defs[slot as usize]),
+                )
+                .unwrap();
+            }
+            let a = c.id("a").unwrap();
+            let before = work_done();
+            assert_eq!(c.set_number(a, 0.3).unwrap(), slots as usize + 1);
+            work_done() - before
+        }
+
+        let single = update_work(1);
+        assert!(single >= 400, "interval probes must charge work: {single}");
+        assert_eq!(
+            update_work(16),
+            single,
+            "a slot must reuse the update's roots"
+        );
+    }
+
+    #[test]
+    fn rebuilding_an_undefined_automatic_point_keeps_its_last_root() {
+        let mut c = script::load(concat!(
+            "a = 0\nb = 0\nf(x) = sin(x - a)\nh(x) = b\n",
+            "R = Intersect(f, h)"
+        ))
+        .unwrap();
+        let a = c.id("a").unwrap();
+        let b = c.id("b").unwrap();
+        let r = c.id("R").unwrap();
+        for x in 1..=4 {
+            c.set_number(a, f64::from(x)).unwrap();
+        }
+        c.set_number(b, 2.0).unwrap();
+        assert!(c.point(r).is_none());
+        let mut rebuilt = script::load("a = 4\nb = 2\nf(x) = sin(x - a)\nh(x) = b").unwrap();
+        rebuilt.add("R", c.def(r)).unwrap();
+        for c in [&mut c, &mut rebuilt] {
+            c.set_number(b, 0.0).unwrap();
+            let (x, _) = c.point(r).unwrap();
+            assert!((x - 4.0).abs() < 1e-9, "{x}");
+        }
+    }
 }

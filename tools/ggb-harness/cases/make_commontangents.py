@@ -24,4 +24,13 @@ cases.case("conics", ["c = Conic({1, 0, 0, 0, 0, -1})",
 cases.case("conics", ["c = Conic({1, 4, -4, 0, 0, 0})", "A = (4, 3)", "r = 1",
                       "d = Circle(A, r)", "t = Tangent(d, c)"], [mv("A", 5, 3)])
 
+arc = ["O = (0, 0)", "A = (1, 0)", "B = (0, 1)", "k = CircularArc(O, A, B)",
+       "D = (4, 0)", "r = 1", "d = Circle(D, r)"]
+cases.case("arc", [*arc, "t = Tangent(k, d)"], [])
+cases.case("arc", [*arc, "t = Tangent(d, k)"], [])
+cases.case("arc", [arc[0], "A = (-0.6, -0.8)", "B = (-1, 1)", *arc[3:],
+                  "t = Tangent(k, d)"], [mv("A", 1, 0), mv("B", -1, -1)])
+cases.case("arc", [arc[0], "A = (-1, -1)", "B = (-1, 1)", *arc[3:],
+                  "t = Tangent(k, d)"], [mv("A", 1, 0), mv("B", -1, -1)])
+
 cases.write()

@@ -28,6 +28,7 @@ import org.geogebra.common.kernel.algos.AlgoPointsFromList;
 import org.geogebra.common.kernel.algos.AlgoPointOnPath;
 import org.geogebra.common.kernel.algos.AlgoPointInRegion;
 import org.geogebra.common.kernel.algos.AlgoRayPointVector;
+import org.geogebra.common.kernel.algos.AlgoRoots;
 import org.geogebra.common.kernel.algos.AlgoSemicircle;
 import org.geogebra.common.kernel.commands.AlgebraProcessor;
 import org.geogebra.common.kernel.geos.GeoConic;
@@ -106,15 +107,17 @@ final class Session {
     private final Set<GeoElement> conics = Collections.newSetFromMap(new IdentityHashMap<>());
     private final boolean trackBoundaryGrowth;
     private final boolean trackPointListGrowth;
+    private final boolean trackRootGrowth;
     private final Map<AlgoElement, String> growingPoints = new LinkedHashMap<>();
 
     Session() {
-        this(false, false);
+        this(false, false, false);
     }
 
-    Session(boolean trackBoundaryGrowth, boolean trackPointListGrowth) {
+    Session(boolean trackBoundaryGrowth, boolean trackPointListGrowth, boolean trackRootGrowth) {
         this.trackBoundaryGrowth = trackBoundaryGrowth;
         this.trackPointListGrowth = trackPointListGrowth;
+        this.trackRootGrowth = trackRootGrowth;
         LocalizationCommon loc = new LocalizationCommon(2);
         loc.setResourceBundleControl(new Utf8Control());
         app = new AppCommon(loc, new AwtFactoryCommon(), new AppConfigDefault());
@@ -173,10 +176,12 @@ final class Session {
         }
         GeoElementND[] out = processor.processAlgebraCommandNoExceptionHandling(
                 line, false, new CommandErrorHandler(line, false), false, null);
-        if ((trackBoundaryGrowth || trackPointListGrowth) && out != null && out.length > 0) {
+        if ((trackBoundaryGrowth || trackPointListGrowth || trackRootGrowth)
+                && out != null && out.length > 0) {
             GeoElement first = out[0].toGeoElement();
             AlgoElement parent = first.getParentAlgorithm();
-            if (trackPointListGrowth && parent instanceof AlgoPointsFromList) {
+            if ((trackPointListGrowth && parent instanceof AlgoPointsFromList)
+                    || (trackRootGrowth && parent instanceof AlgoRoots)) {
                 growingPoints.put(parent, "");
             }
             if (trackBoundaryGrowth && (parent instanceof AlgoIntersectLinePolyLine

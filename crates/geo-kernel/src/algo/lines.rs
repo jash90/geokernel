@@ -38,6 +38,7 @@
 //! decides "undefined" on those raw values; the rules below build the same
 //! raw triple and keep it (see [`Value::Line`]).
 
+pub use super::intersect::common_tangents::CommonTangentDef;
 use super::polygon::{count_arg, Count};
 use super::{
     check_index, line_value, normalized_coefficients, Group, Parents, CIRCLE, LINE_LIKE, POINT,
@@ -101,7 +102,7 @@ pub enum LineDef {
         point: Id,
     },
     /// A common tangent of two conics, in outer-then-inner order.
-    CommonTangent { first: Id, second: Id, which: u8 },
+    CommonTangent(CommonTangentDef),
     /// Polar line of a point with respect to a circle (`Polar(P, c)`).
     Polar {
         point: Id,
@@ -133,7 +134,7 @@ impl Group for LineDef {
                 None => Parents::of(&[function]),
             },
             LineDef::TangentFunctionPoint { function, point } => Parents::of(&[function, point]),
-            LineDef::CommonTangent { first, second, .. } => Parents::of(&[first, second]),
+            LineDef::CommonTangent(d) => Parents::of(&[d.first, d.second]),
         }
     }
 
@@ -180,17 +181,13 @@ impl Group for LineDef {
                 c.expect(circle, CIRCLE)?;
                 check_index(which)
             }
-            LineDef::CommonTangent {
-                first,
-                second,
-                which,
-            } => {
-                c.expect(first, super::CONIC_OBJECTS)?;
-                c.expect(second, super::CONIC_OBJECTS)?;
-                if which < 4 {
+            LineDef::CommonTangent(d) => {
+                c.expect(d.first, super::CONIC_OBJECTS)?;
+                c.expect(d.second, super::CONIC_OBJECTS)?;
+                if d.which < 4 {
                     Ok(())
                 } else {
-                    Err(Error::BadIndex(which))
+                    Err(Error::BadIndex(d.which))
                 }
             }
             LineDef::TangentFunctionNumber { function, at } => {
@@ -258,11 +255,7 @@ impl Group for LineDef {
             LineDef::TangentFunctionPoint { function, point } => {
                 function_tangent(c, function, c.point(point)?.0)
             }
-            LineDef::CommonTangent {
-                first,
-                second,
-                which,
-            } => super::intersect::common_tangents::tangent(c, first, second, which),
+            LineDef::CommonTangent(d) => d.value(c),
             LineDef::Polar { point, circle } => {
                 let (px, py) = c.point(point)?;
                 let (cx, cy, r) = c.circle(circle)?;
@@ -807,13 +800,7 @@ pub(crate) fn tangent_point_on(c: &Construction, d: LineDef, circle: Id) -> Opti
             }
             tangent_points_of(a.diameter(g.1, -g.0), &a)[which as usize]
         })()),
-        LineDef::CommonTangent {
-            first,
-            second,
-            which,
-        } if first == circle => Some(super::intersect::common_tangents::contact(
-            c, first, second, which,
-        )),
+        LineDef::CommonTangent(d) if d.first == circle => Some(d.contact(c)),
         _ => None,
     }
 }

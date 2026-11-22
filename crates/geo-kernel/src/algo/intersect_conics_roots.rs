@@ -157,12 +157,19 @@ impl Complex {
 
 /// One Laguerre root. Use Horner's method to evaluate the polynomial and
 /// its two derivatives together, then take the larger Laguerre denominator.
-fn laguerre(coefficients: &[Complex], remaining: &mut usize) -> Option<Complex> {
+fn laguerre(
+    coefficients: &[Complex],
+    remaining: &mut usize,
+    charge: &impl Fn(u64) -> bool,
+) -> Option<Complex> {
     let degree = (coefficients.len() - 1) as f64;
     let (&leading, tail) = coefficients.split_last()?;
     let mut x = Complex(-1.0, 0.0);
     let mut previous = Complex(f64::INFINITY, f64::INFINITY);
     while *remaining != 0 {
+        if !charge(coefficients.len() as u64) {
+            return None;
+        }
         *remaining -= 1;
         let mut value = leading;
         let mut first = Complex::ZERO;
@@ -208,7 +215,7 @@ fn quartic_candidates(coefficients: [f64; 5]) -> Option<[f64; 4]> {
     let mut remaining = ROOT_ITERATIONS;
     for (i, slot) in roots.iter_mut().enumerate() {
         let degree = 4 - i;
-        let root = laguerre(&coefficients[..=degree], &mut remaining)?;
+        let root = laguerre(&coefficients[..=degree], &mut remaining, &|_| true)?;
         *slot = root.0;
         let mut carry = coefficients[degree];
         for coefficient in coefficients[..degree].iter_mut().rev() {
@@ -221,8 +228,16 @@ fn quartic_candidates(coefficients: [f64; 5]) -> Option<[f64; 4]> {
     Some(roots)
 }
 
-fn newton(coefficients: &[f64], derivative: &[f64], mut x: f64) -> Option<f64> {
+fn newton(
+    coefficients: &[f64],
+    derivative: &[f64],
+    mut x: f64,
+    charge: &impl Fn(u64) -> bool,
+) -> Option<f64> {
     for _ in 0..ROOT_ITERATIONS {
+        if !charge((coefficients.len() + derivative.len()) as u64) {
+            return None;
+        }
         let next = x - evaluate_polynomial(coefficients, x) / evaluate_polynomial(derivative, x);
         if !next.is_finite() {
             return None;
@@ -369,7 +384,7 @@ fn quartic(coefficients: [f64; 5]) -> ([f64; 4], usize) {
         let polished = if value(left) * value(right) < 0.0 {
             brent(&coefficients, left, right)
         } else {
-            newton(&coefficients, &derivative, x)
+            newton(&coefficients, &derivative, x, &|_| true)
         };
         let root = if let Some(polished) = polished {
             let root = better(polished, x);
@@ -431,8 +446,11 @@ pub(crate) fn polynomial_roots(coefficients: [f64; 5]) -> ([f64; 4], usize) {
 /// Real roots of the polynomial obtained by substituting a graph into
 /// another equation. Above degree four, use the same Laguerre iteration and
 /// deflation as the quartic solver, then polish against the original input.
-pub(in crate::algo::intersect) fn graph_roots(coefficients: &[f64]) -> Vec<f64> {
-    if coefficients.iter().any(|a| !a.is_finite()) {
+pub(in crate::algo::intersect) fn graph_roots(
+    coefficients: &[f64],
+    charge: &impl Fn(u64) -> bool,
+) -> Vec<f64> {
+    if !charge(coefficients.len() as u64) || coefficients.iter().any(|a| !a.is_finite()) {
         return Vec::new();
     }
     let Some(degree) = coefficients.iter().rposition(|&a| a != 0.0) else {
@@ -440,6 +458,10 @@ pub(in crate::algo::intersect) fn graph_roots(coefficients: &[f64]) -> Vec<f64> 
     };
     let coefficients = &coefficients[..=degree];
     let mut roots = if degree <= 4 {
+        // Fixed-size solver: charge for the small polynomial path as a unit.
+        if !charge((degree + 1) as u64) {
+            return Vec::new();
+        }
         let mut input = [0.0; 5];
         input[..=degree].copy_from_slice(coefficients);
         let (roots, count) = polynomial_roots(input);
@@ -456,7 +478,10 @@ pub(in crate::algo::intersect) fn graph_roots(coefficients: &[f64]) -> Vec<f64> 
             results.push(0.0);
         }
         for degree in (1..working.len()).rev() {
-            let Some(root) = laguerre(&working[..=degree], &mut remaining) else {
+            if !charge(degree as u64) {
+                return Vec::new();
+            }
+            let Some(root) = laguerre(&working[..=degree], &mut remaining, charge) else {
                 break;
             };
             results.push(root.0);
@@ -476,7 +501,10 @@ pub(in crate::algo::intersect) fn graph_roots(coefficients: &[f64]) -> Vec<f64> 
             .collect();
         let value = |x| evaluate_polynomial(coefficients, x).abs();
         for x in &mut results {
-            if let Some(refined) = newton(coefficients, &derivative, *x) {
+            if !charge((4 * coefficients.len()) as u64) {
+                return Vec::new();
+            }
+            if let Some(refined) = newton(coefficients, &derivative, *x, charge) {
                 if value(refined) < value(*x) {
                     *x = refined;
                 }

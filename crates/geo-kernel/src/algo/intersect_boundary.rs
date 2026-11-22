@@ -43,6 +43,15 @@ impl BoundaryDef {
         Def::IntersectBoundary(Self(Intersection::Function(def)))
     }
 
+    pub(crate) fn with_root(self, value: Value) -> Option<Self> {
+        match self.0 {
+            Intersection::Function(d) => {
+                d.with_root(value).map(|d| Self(Intersection::Function(d)))
+            }
+            _ => None,
+        }
+    }
+
     pub(crate) fn labels_indexed(self) -> bool {
         match self.0 {
             Intersection::Edges(d) => d.labels_indexed(),

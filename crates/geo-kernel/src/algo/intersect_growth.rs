@@ -53,10 +53,20 @@ impl BoundaryOutputs {
         &mut self,
         c: &mut Construction,
         changed: Id,
+        record: impl FnMut(&Construction, Id, &str),
+    ) {
+        self.grow_after(c, std::iter::once(changed), record);
+    }
+
+    /// Visits each affected group once after an edit of one or more inputs.
+    pub fn grow_after(
+        &mut self,
+        c: &mut Construction,
+        changed: impl Iterator<Item = Id> + Clone,
         mut record: impl FnMut(&Construction, Id, &str),
     ) {
         for group in &mut self.groups {
-            if !group.dependencies.contains(&changed) {
+            if !changed.clone().any(|id| group.dependencies.contains(&id)) {
                 continue;
             }
             let Def::IntersectBoundary(def) = c.def(group.first) else {

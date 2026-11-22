@@ -2,6 +2,7 @@
 // commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoRoots.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoRootNewton.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/roots/RealRootUtil.java
 //   source/shared/common/src/main/java/org/geogebra/common/util/DoubleUtil.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
@@ -13,6 +14,7 @@ pub(super) fn root_near(
     f: &impl Fn(f64) -> f64,
     derivative: impl Fn(f64) -> f64,
     seed: f64,
+    inverse: impl FnOnce() -> Option<f64>,
 ) -> Option<f64> {
     let accepted = |&x: &f64| x.is_finite() && f(x).abs() < MIN_PRECISION;
     if let Some(x) =
@@ -20,23 +22,29 @@ pub(super) fn root_near(
     {
         return Some(x);
     }
-    let (left, right) = defined_interval(f, seed - 0.5, seed + 0.5)?;
-    if let Some(x) = bracketed_root(f, left, right, seed, STANDARD_PRECISION).filter(accepted) {
-        return Some(x);
-    }
+    let root = defined_interval(f, seed - 0.5, seed + 0.5).and_then(|(left, right)| {
+        bracketed_root(f, left, right, seed, STANDARD_PRECISION)
+            .filter(accepted)
+            .or_else(|| {
+                let start = if f(seed).is_finite() {
+                    seed
+                } else {
+                    (0.9 * left + 0.1 * right + right) / 2.0
+                };
+                newton(f, derivative, start).filter(accepted)
+            })
+    });
+    root.or_else(|| inverse().filter(accepted))
+}
 
-    let mut x = if f(seed).is_finite() {
-        seed
-    } else {
-        (0.9 * left + 0.1 * right + right) / 2.0
-    };
+fn newton(f: &impl Fn(f64) -> f64, derivative: impl Fn(f64) -> f64, mut x: f64) -> Option<f64> {
     for _ in 0..50 {
         let next = x - f(x) / derivative(x);
         if (next - x).abs() <= 1e-6 {
-            return accepted(&next).then_some(next);
+            return Some(next);
         }
         if !next.is_finite() {
-            return accepted(&x).then_some(x);
+            return Some(x);
         }
         x = next;
     }
@@ -48,7 +56,15 @@ fn defined_interval(f: &impl Fn(f64) -> f64, left: f64, right: f64) -> Option<(f
         (true, true) => Some((left, right)),
         (true, false) => Some((left, defined_border(f, right, left))),
         (false, true) => Some((defined_border(f, left, right), right)),
-        _ => None,
+        (false, false) => {
+            let middle = left.midpoint(right);
+            f(middle).is_finite().then(|| {
+                (
+                    defined_border(f, left, middle),
+                    defined_border(f, right, middle),
+                )
+            })
+        }
     }
 }
 
@@ -103,15 +119,20 @@ pub(super) fn check_root(x: f64, f: &impl Fn(f64) -> f64) -> Option<f64> {
 
 /// AlgoRoots uses one sample per five view pixels. Double the density if
 /// crossings fill the grid. The headless view uses 50 pixels per unit.
-pub(super) fn interval_roots(f: &impl Fn(f64) -> f64, a: f64, b: f64) -> Vec<f64> {
+pub(super) fn interval_roots(
+    f: &impl Fn(f64) -> f64,
+    a: f64,
+    b: f64,
+    exhausted: impl Fn() -> bool,
+) -> Vec<f64> {
     const MAX_SAMPLES: usize = 400;
     let (left, right) = if a <= b { (a, b) } else { (b, a) };
     let width = right - left;
-    if !width.is_finite() {
+    if !width.is_finite() || exhausted() {
         return Vec::new();
     }
     if width < STANDARD_PRECISION {
-        return if f(left).abs() < STANDARD_PRECISION {
+        return if f(left).abs() < STANDARD_PRECISION && !exhausted() {
             vec![left]
         } else {
             Vec::new()
@@ -119,7 +140,7 @@ pub(super) fn interval_roots(f: &impl Fn(f64) -> f64, a: f64, b: f64) -> Vec<f64
     }
     let mut samples = (width * 10.0).round().clamp(50.0, MAX_SAMPLES as f64) as usize;
     loop {
-        let roots = scan(f, left, width / samples as f64, samples);
+        let roots = scan(f, left, width / samples as f64, samples, &exhausted);
         if roots.len() < samples / 2 || samples * 2 >= MAX_SAMPLES {
             return roots;
         }
@@ -127,11 +148,20 @@ pub(super) fn interval_roots(f: &impl Fn(f64) -> f64, a: f64, b: f64) -> Vec<f64
     }
 }
 
-fn scan(f: &impl Fn(f64) -> f64, left: f64, step: f64, samples: usize) -> Vec<f64> {
+fn scan(
+    f: &impl Fn(f64) -> f64,
+    left: f64,
+    step: f64,
+    samples: usize,
+    exhausted: &impl Fn() -> bool,
+) -> Vec<f64> {
     let mut roots = Vec::new();
     let mut sample_root = f64::NEG_INFINITY;
     let mut previous = f64::NAN;
     for i in 0..=samples {
+        if exhausted() {
+            return Vec::new();
+        }
         let x = left + i as f64 * step;
         let y = f(x);
         if opposite(y, previous) {
@@ -155,6 +185,9 @@ fn scan(f: &impl Fn(f64) -> f64, left: f64, step: f64, samples: usize) -> Vec<f6
             }
         }
         previous = y;
+    }
+    if exhausted() {
+        return Vec::new();
     }
     roots.dedup_by(|a, b| (*a - *b).abs() < STANDARD_PRECISION);
     roots

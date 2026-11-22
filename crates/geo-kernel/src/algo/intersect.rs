@@ -54,7 +54,7 @@ mod conics;
 #[path = "intersect_function_roots.rs"]
 mod function_roots;
 #[path = "intersect_functions.rs"]
-mod functions;
+pub(crate) mod functions;
 #[path = "intersect_growth.rs"]
 pub(crate) mod growth;
 #[path = "intersect_pair.rs"]
@@ -414,9 +414,8 @@ fn defined_as_tangent(line_def: Def, circle: Id) -> bool {
         line_def,
         Def::Lines(
             LineDef::TangentPoint { circle: k, .. } | LineDef::TangentLine { circle: k, .. }
-                | LineDef::CommonTangent { first: k, .. }
         ) if k == circle
-    )
+    ) || matches!(line_def, Def::Lines(LineDef::CommonTangent(d)) if d.first == circle)
 }
 
 /// Points that an intersection reads besides its line and circles.
@@ -455,8 +454,8 @@ pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
                 Def::Lines(LineDef::TangentLine {
                     line: g, circle: k, ..
                 }) if k == circle => push(Some(g)),
-                Def::Lines(LineDef::CommonTangent { first, second, .. }) if first == circle => {
-                    push(Some(second));
+                Def::Lines(LineDef::CommonTangent(d)) if d.first == circle => {
+                    push(Some(d.second));
                 }
                 _ => {}
             }
@@ -464,9 +463,9 @@ pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
         Def::ConicPart(ConicPartDef::IntersectLine { line, conic, .. }) => {
             let line_def = c.def(line);
             push(existing_line_conic_point(c, line, line_def, conic));
-            if let Def::Lines(LineDef::CommonTangent { first, second, .. }) = line_def {
-                if first == conic {
-                    push(Some(second));
+            if let Def::Lines(LineDef::CommonTangent(d)) = line_def {
+                if d.first == conic {
+                    push(Some(d.second));
                 }
             }
         }
@@ -619,7 +618,7 @@ pub(crate) fn line_general_conic(
     // A tangent of this conic has one point, the tangent algorithm's own.
     let tangent = match line_def {
         Def::ConicPart(d) => super::conic_parts::tangent_point_on(c, d, conic),
-        Def::Lines(d @ LineDef::CommonTangent { .. }) => lines::tangent_point_on(c, d, conic),
+        Def::Lines(d @ LineDef::CommonTangent(_)) => lines::tangent_point_on(c, d, conic),
         _ => None,
     };
     if let Some(point) = tangent {

@@ -1,0 +1,189 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "intersectgrowth-interval-001",
+      "group": "intersectgrowth",
+      "script": [
+        "f(x) = x^3 - x",
+        "h(x) = 0",
+        "a = -2",
+        "b = 0.5",
+        "R = Intersect(f, h, a, b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "value": 2.0 },
+        { "action": "set_number", "label": "b", "value": 0.5 },
+        { "action": "set_number", "label": "b", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -504.0],
+              [-4.0, -60.0],
+              [-2.0, -6.0],
+              [-1.0, 0.0],
+              [-0.5, 0.375],
+              [0.0, 0.0],
+              [0.5, -0.375],
+              [1.0, 0.0],
+              [2.0, 6.0],
+              [4.0, 60.0],
+              [8.0, 504.0]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.0],
+              [1.0, 0.0],
+              [2.0, 0.0],
+              [4.0, 0.0],
+              [8.0, 0.0]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "b": { "type": "number", "defined": true, "value": 0.5 },
+          "R_{1}": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "R_{2}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        },
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -504.0],
+              [-4.0, -60.0],
+              [-2.0, -6.0],
+              [-1.0, 0.0],
+              [-0.5, 0.375],
+              [0.0, 0.0],
+              [0.5, -0.375],
+              [1.0, 0.0],
+              [2.0, 6.0],
+              [4.0, 60.0],
+              [8.0, 504.0]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.0],
+              [1.0, 0.0],
+              [2.0, 0.0],
+              [4.0, 0.0],
+              [8.0, 0.0]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "b": { "type": "number", "defined": true, "value": 2.0 },
+          "R_{1}": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "R_{2}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 }
+        },
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -504.0],
+              [-4.0, -60.0],
+              [-2.0, -6.0],
+              [-1.0, 0.0],
+              [-0.5, 0.375],
+              [0.0, 0.0],
+              [0.5, -0.375],
+              [1.0, 0.0],
+              [2.0, 6.0],
+              [4.0, 60.0],
+              [8.0, 504.0]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.0],
+              [1.0, 0.0],
+              [2.0, 0.0],
+              [4.0, 0.0],
+              [8.0, 0.0]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "b": { "type": "number", "defined": true, "value": 0.5 },
+          "R_{1}": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "R_{2}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": false }
+        },
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -504.0],
+              [-4.0, -60.0],
+              [-2.0, -6.0],
+              [-1.0, 0.0],
+              [-0.5, 0.375],
+              [0.0, 0.0],
+              [0.5, -0.375],
+              [1.0, 0.0],
+              [2.0, 6.0],
+              [4.0, 60.0],
+              [8.0, 504.0]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.0],
+              [1.0, 0.0],
+              [2.0, 0.0],
+              [4.0, 0.0],
+              [8.0, 0.0]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "b": { "type": "number", "defined": true, "value": 2.0 },
+          "R_{1}": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "R_{2}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 }
+        }
+      ]
+    }
+  ]
+}

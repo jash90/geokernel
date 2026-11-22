@@ -649,6 +649,92 @@ const BOUNDARY_GROWTH: &str = "A = (0, 0)\nB = (2, 0)\nC = (2, 2)\nD = (0, 2)\n\
     p = Polygon(A, B, C, D)\nG = (-1, 3)\nH = (3, 3)\ng = Line(G, H)\nR = Intersect(g, p)";
 
 #[test]
+fn boundary_outputs_grow_only_after_the_whole_translation() {
+    let mut w = Workbench::from_script(BOUNDARY_GROWTH).unwrap();
+    let points = ["G", "H"].map(|label| w.construction().id(label).unwrap());
+    let labels_before = labels(&w);
+    w.begin_gesture();
+    assert!(w.translate(&points, (0.0, -6.0)));
+    w.end_gesture();
+    // The intermediate tilted line crosses the square twice. The line as
+    // a whole has moved from above the square to below it.
+    assert_eq!(labels(&w), labels_before);
+    assert!(w.undo());
+    assert!(w.redo());
+    assert_eq!(labels(&w), labels_before);
+
+    let mut saved = Workbench::default();
+    saved
+        .load_bytes(w.snapshot_text().as_bytes(), "construction")
+        .unwrap();
+    assert_eq!(labels(&saved), labels_before);
+
+    let points = ["G", "H"].map(|label| saved.construction().id(label).unwrap());
+    assert!(saved.translate(&points, (0.0, 4.0)));
+    let second = saved.construction().id("R_{2}").unwrap();
+    assert!(matches!(
+        saved.construction().value(second),
+        Value::Point { y: 1.0, .. }
+    ));
+
+    assert!(saved.delete(points[0]));
+    let c = saved.construction();
+    assert_eq!(c.value(c.id("H").unwrap()), Value::Point { x: 3.0, y: 1.0 });
+    assert!(c.id("R_{2}").is_none());
+}
+
+#[test]
+fn interleaved_boundary_groups_replay_after_unrelated_deletion() {
+    let src = "Z = (9, 9)\nA = (0, 0)\nB = (2, 0)\nC = (2, 2)\nD = (0, 2)\n\
+        p = Polygon(A, B, C, D)\nn = 3\nE = (n, 0.5)\nF = (n + 2, 0.5)\n\
+        G = (n + 2, 1.5)\nH = (n, 1.5)\nq = Polygon(E, F, G, H)\nR = Intersect(p, q)\n\
+        u = 3\nsLine: y = u\nS = Intersect(sLine, p)\nv = 3\ntLine: y = v\nT = Intersect(tLine, q)";
+    let mut w = Workbench::from_script(src).unwrap();
+    let [n, u, v] = ["n", "u", "v"].map(|label| w.construction().id(label).unwrap());
+    for label in ["R_{2}", "S_{2}", "T_{2}"] {
+        assert!(w.construction().id(label).is_none());
+    }
+
+    assert!(w.set_number(u, 0.5));
+    assert!(w.set_number(n, 1.0));
+    let pair_points = ["R_{1}", "R_{2}"].map(|label| {
+        let c = w.construction();
+        c.value(c.id(label).unwrap())
+    });
+    assert!(pair_points.contains(&Value::Point { x: 2.0, y: 0.5 }));
+    assert!(pair_points.contains(&Value::Point { x: 2.0, y: 1.5 }));
+    assert!(w.set_number(u, 3.0));
+    assert!(w.set_number(v, 1.0));
+    assert!(w.set_number(n, 3.0));
+    w.run_line("W = Midpoint(T_{1}, T_{2})").unwrap();
+
+    let before = labels(&w);
+    assert!(w.delete(w.construction().id("Z").unwrap()));
+    let after = &before[1..];
+    assert_eq!(labels(&w), after);
+    assert!(w.undo());
+    assert_eq!(labels(&w), before);
+    assert!(w.redo());
+    assert_eq!(labels(&w), after);
+
+    let mut saved = Workbench::default();
+    assert!(saved.restore_text(&w.snapshot_text()).unwrap().is_empty());
+    assert_eq!(labels(&saved), after);
+    for (label, rhs) in [
+        ("R_{2}", "Intersect(p, q)"),
+        ("S_{2}", "Intersect(sLine, p)"),
+    ] {
+        let id = saved.construction().id(label).unwrap();
+        assert_eq!(saved.construction().value(id), Value::Undefined);
+        assert_eq!(saved.definition(label), Some(rhs));
+    }
+    let c = saved.construction();
+    assert_eq!(c.value(c.id("W").unwrap()), Value::Point { x: 4.0, y: 1.0 });
+    assert!(saved.set_number(c.id("n").unwrap(), 1.0));
+    assert_eq!(labels(&saved), after);
+}
+
+#[test]
 fn a_boundary_output_born_during_a_drag_survives_replay() {
     let mut w = Workbench::from_script(BOUNDARY_GROWTH).unwrap();
     let point = w.construction().id("G").unwrap();
@@ -730,4 +816,42 @@ fn script_moves_can_reveal_boundary_outputs_used_by_later_lines() {
     let w = Workbench::from_script(&script).unwrap();
     let id = w.construction().id("S").unwrap();
     assert!(matches!(w.construction().value(id), Value::Point { .. }));
+}
+
+#[test]
+fn automatic_intersection_follows_its_root_through_journal_replay() {
+    let mut w = Workbench::default();
+    for line in [
+        "a = 0",
+        "f(x) = sin(x - a)",
+        "R = Intersect(f, xAxis)",
+        "U = (2, 3)",
+    ] {
+        w.run_line(line).unwrap();
+    }
+    let a = w.construction().id("a").unwrap();
+    for x in 1..=4 {
+        assert!(w.set_number(a, f64::from(x)));
+    }
+    let check = |w: &Workbench, expected: f64| {
+        let c = w.construction();
+        let Value::Point { x, y } = c.value(c.id("R").unwrap()) else {
+            panic!("undefined intersection");
+        };
+        assert!(
+            (x - expected).abs() < 1e-9 && y.abs() < 1e-9,
+            "R = ({x}, {y})"
+        );
+    };
+    check(&w, 4.0);
+    assert!(w.undo());
+    check(&w, 3.0);
+    assert!(w.redo());
+    check(&w, 4.0);
+    assert!(w.delete(w.construction().id("U").unwrap()));
+    check(&w, 4.0);
+    let mut reloaded = Workbench::default();
+    let problems = reloaded.restore_text(&w.snapshot_text()).unwrap();
+    assert!(problems.is_empty(), "{problems:?}");
+    check(&reloaded, 4.0);
 }

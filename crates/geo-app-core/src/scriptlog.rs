@@ -22,6 +22,7 @@
 //! plain script; `load_tolerant` checks it.
 //! A crossing revealed by a move is saved as a slot definition after that
 //! move. Its exact label and its origin survive further moves and replay.
+//! A simultaneous move is saved as one `$movePoints` directive.
 
 use geo_kernel::algo::measure::MeasureDef;
 use geo_kernel::kernel::{Construction, Def, Id};
@@ -37,6 +38,7 @@ pub const DIRECTIVES: [&str; 3] = ["SetCoords", "SetValue", "SetVisibleInView"];
 
 /// Starts the list of labels after a definition in a snapshot.
 const LABELS: &str = "# labels: ";
+const MOVE_POINTS: &str = "$movePoints";
 
 fn has_recorded_growth(src: &str) -> bool {
     src.lines().any(|line| {
@@ -90,10 +92,17 @@ pub enum Setting {
     Number(f64),
 }
 
+type Position<L> = (L, f64, f64);
+
 #[derive(Clone, Debug, PartialEq)]
 enum Op {
     Define(Entry),
-    Set { label: String, to: Setting },
+    Set {
+        label: String,
+        to: Setting,
+        ordered: bool,
+    },
+    MovePoints(Vec<Position<String>>),
 }
 
 /// Rewrites `f: Line(A, B)` as `f = Line(A, B)` and removes a trailing `#`
@@ -112,10 +121,10 @@ pub fn normalize(input: &str) -> String {
 }
 
 /// A script line that sets the state of an object instead of defining one.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 enum Directive<'a> {
-    Coords(&'a str, f64, f64),
-    Value(&'a str, f64),
+    Set(&'a str, Setting),
+    MovePoints(Vec<Position<&'a str>>),
     Visible(&'a str, bool),
 }
 
@@ -127,15 +136,25 @@ fn directive(line: &str) -> Option<Result<Directive<'_>, String>> {
     }
     let (name, rest) = line.split_once('(')?;
     let name = name.trim();
-    if !DIRECTIVES.contains(&name) {
+    if name != MOVE_POINTS && !DIRECTIVES.contains(&name) {
         return None;
     }
     let parse = || -> Option<Directive<'_>> {
         let args: Vec<&str> = rest.strip_suffix(')')?.split(',').map(str::trim).collect();
         let num = |s: &str| s.parse::<f64>().ok();
         match (name, args.as_slice()) {
-            ("SetCoords", [l, x, y]) => Some(Directive::Coords(l, num(x)?, num(y)?)),
-            ("SetValue", [l, v]) => Some(Directive::Value(l, num(v)?)),
+            ("SetCoords", [l, x, y]) => Some(Directive::Set(l, Setting::Point(num(x)?, num(y)?))),
+            (MOVE_POINTS, args) => {
+                let (points, []) = args.as_chunks::<3>() else {
+                    return None;
+                };
+                points
+                    .iter()
+                    .map(|&[label, x, y]| Some((label, num(x)?, num(y)?)))
+                    .collect::<Option<Vec<_>>>()
+                    .map(Directive::MovePoints)
+            }
+            ("SetValue", [l, v]) => Some(Directive::Set(l, Setting::Number(num(v)?))),
             ("SetVisibleInView", [l, "1", shown]) => {
                 Some(Directive::Visible(l, shown.parse().ok()?))
             }
@@ -143,6 +162,26 @@ fn directive(line: &str) -> Option<Result<Directive<'_>, String>> {
         }
     };
     Some(parse().ok_or_else(|| format!("cannot read `{line}`")))
+}
+
+fn replay_move_points(
+    c: &mut Construction,
+    points: &[Position<impl AsRef<str>>],
+    gone: Option<&BTreeSet<String>>,
+) -> Result<Vec<Position<Id>>, String> {
+    let mut positions = Vec::with_capacity(points.len());
+    for (label, x, y) in points {
+        let label = label.as_ref();
+        if let Some(id) = c.id(label) {
+            positions.push((id, *x, *y));
+        } else if !gone.is_some_and(|gone| gone.contains(label)) {
+            return Err(format!("`{label}` is missing"));
+        }
+    }
+    if !positions.is_empty() {
+        c.move_points(&positions).map_err(|e| e.to_string())?;
+    }
+    Ok(positions)
 }
 
 /// A line that `Log::load_tolerant` left out.
@@ -278,7 +317,7 @@ impl Log {
     fn entries(&self) -> impl Iterator<Item = &Entry> {
         self.ops.items().into_iter().filter_map(|op| match op {
             Op::Define(e) => Some(e),
-            Op::Set { .. } => None,
+            Op::Set { .. } | Op::MovePoints(_) => None,
         })
     }
 
@@ -286,7 +325,7 @@ impl Log {
     pub(crate) fn entries_rev(&self) -> impl Iterator<Item = &Entry> {
         self.ops.items_rev().filter_map(|op| match op {
             Op::Define(e) => Some(e),
-            Op::Set { .. } => None,
+            Op::Set { .. } | Op::MovePoints(_) => None,
         })
     }
 
@@ -306,22 +345,43 @@ impl Log {
         }
     }
 
-    /// Records a new value of a free object. A move right after a move of the
-    /// same object replaces it: only the state at the next line matters.
+    /// Records a new value of a free object.
     pub fn record_set(&mut self, label: &str, to: Setting) {
-        if let Some(Op::Set { label: l, .. }) = self.ops.last() {
-            if l == label {
-                self.ops.replace_last(Op::Set {
-                    label: label.to_owned(),
-                    to,
-                });
-                return;
-            }
-        }
-        self.ops.push(Op::Set {
+        self.push_set(label, to, false);
+    }
+
+    pub(crate) fn record_update(&mut self, c: &Construction, label: &str, to: Setting) {
+        self.push_set(label, to, c.last_update_changed_automatic_root());
+    }
+
+    fn push_set(&mut self, label: &str, to: Setting, ordered: bool) {
+        let set = Op::Set {
             label: label.to_owned(),
             to,
-        });
+            ordered,
+        };
+        // A hidden Newton start point follows each successful root. Keep
+        // any edit that moved it, since the next edit starts from there.
+        if !ordered
+            && matches!(
+                self.ops.last(),
+                Some(Op::Set { label: previous, ordered: false, .. }) if previous == label
+            )
+        {
+            self.ops.replace_last(set);
+        } else {
+            self.ops.push(set);
+        }
+    }
+
+    pub(crate) fn record_move_points(&mut self, c: &Construction, points: &[Position<Id>]) {
+        if !points.is_empty() {
+            let points = points
+                .iter()
+                .map(|&(id, x, y)| (c.label(id).to_owned(), x, y))
+                .collect();
+            self.ops.push(Op::MovePoints(points));
+        }
     }
 
     pub(crate) fn boundary_outputs(&self, c: &Construction) -> BoundaryOutputs {
@@ -342,9 +402,9 @@ impl Log {
         &mut self,
         c: &mut Construction,
         groups: &mut BoundaryOutputs,
-        changed: Id,
+        changed: impl Iterator<Item = Id> + Clone,
     ) {
-        groups.grow(c, changed, |c, id, line| self.record(c, id.index(), line));
+        groups.grow_after(c, changed, |c, id, line| self.record(c, id.index(), line));
     }
 
     pub(crate) fn grown_groups(&self) -> Vec<GrownOutputs<'_>> {
@@ -431,6 +491,7 @@ impl Log {
             Op::Define(e) if grouped => !e.labels.iter().any(|label| labels.contains(label)),
             Op::Define(e) => e.labels != labels,
             Op::Set { label, .. } => !labels.contains(label),
+            Op::MovePoints(_) => true,
         });
         self.removed.extend(labels);
         true
@@ -482,7 +543,7 @@ impl Log {
                         }
                     }
                 }
-                Op::Set { label, to } => {
+                Op::Set { label, to, ordered } => {
                     let Some(id) = c.id(label) else {
                         if gone.contains(label) {
                             diverge(&mut kept, &mut same);
@@ -498,14 +559,30 @@ impl Log {
                     // A set right after a set of the same object is merged
                     // into it by `record_set` (after a `remove` they can
                     // meet): the journal and `kept` part there.
-                    let merges = |n: usize| {
-                        n > 0 && matches!(ops[n - 1], Op::Set { label: l, .. } if l == label)
-                    };
+                    let keep_order = *ordered || c.last_update_changed_automatic_root();
+                    let merges = !keep_order
+                        && i > 0
+                        && matches!(
+                            &ops[i - 1],
+                            Op::Set { label: previous, ordered: false, .. } if previous == label
+                        );
                     match same {
-                        Some(n) if n == i && !merges(n) => same = Some(i + 1),
+                        Some(n) if n == i && !merges && keep_order == *ordered => {
+                            same = Some(i + 1)
+                        }
                         _ => {
                             diverge(&mut kept, &mut same);
-                            kept.record_set(label, *to);
+                            kept.push_set(label, *to, keep_order);
+                        }
+                    }
+                }
+                Op::MovePoints(points) => {
+                    let positions = replay_move_points(&mut c, points, Some(&gone))?;
+                    match &mut same {
+                        Some(n) if positions.len() == points.len() => *n = i + 1,
+                        _ => {
+                            diverge(&mut kept, &mut same);
+                            kept.record_move_points(&c, &positions);
                         }
                     }
                 }
@@ -569,7 +646,7 @@ impl Log {
                         }
                     }
                 }
-                Op::Set { label, to } => {
+                Op::Set { label, to, ordered } => {
                     let Some(id) = c.id(label) else {
                         if gone.contains(label) {
                             continue;
@@ -581,7 +658,15 @@ impl Log {
                         Setting::Number(v) => c.set_number(id, v),
                     };
                     result.map_err(|e| format!("`{label}`: {e}"))?;
-                    kept.record_set(label, *to);
+                    kept.push_set(
+                        label,
+                        *to,
+                        *ordered || c.last_update_changed_automatic_root(),
+                    );
+                }
+                Op::MovePoints(points) => {
+                    let positions = replay_move_points(&mut c, points, Some(&gone))?;
+                    kept.record_move_points(&c, &positions);
                 }
             }
         }
@@ -663,11 +748,23 @@ impl Log {
                 Op::Set {
                     label,
                     to: Setting::Point(x, y),
+                    ..
                 } => writeln!(out, "SetCoords({label}, {x}, {y})"),
                 Op::Set {
                     label,
                     to: Setting::Number(v),
+                    ..
                 } => writeln!(out, "SetValue({label}, {v})"),
+                Op::MovePoints(points) => {
+                    let _ = write!(out, "{MOVE_POINTS}(");
+                    for (i, (label, x, y)) in points.iter().enumerate() {
+                        if i > 0 {
+                            out.push_str(", ");
+                        }
+                        let _ = write!(out, "{label}, {x}, {y}");
+                    }
+                    writeln!(out, ")")
+                }
             };
         }
         for label in &self.hidden {
@@ -677,26 +774,36 @@ impl Log {
     }
 
     /// Applies a directive line to `c` and records it.
-    fn apply(&mut self, c: &mut Construction, d: Directive) -> Result<Option<Id>, String> {
-        let label = match d {
-            Directive::Coords(l, ..) | Directive::Value(l, _) | Directive::Visible(l, _) => l,
-        };
-        let id = c.id(label).ok_or_else(|| format!("`{label}` is missing"))?;
-        let result = match d {
-            Directive::Coords(_, x, y) => c.move_point(id, x, y).map(|_| Setting::Point(x, y)),
-            Directive::Value(_, v) => c.set_number(id, v).map(|_| Setting::Number(v)),
-            Directive::Visible(_, shown) => {
+    fn apply(&mut self, c: &mut Construction, d: Directive) -> Result<Vec<Id>, String> {
+        let (id, label, to) = match d {
+            Directive::Set(label, to) => {
+                let id = c.id(label).ok_or_else(|| format!("`{label}` is missing"))?;
+                (id, label, to)
+            }
+            Directive::MovePoints(points) => {
+                let points = replay_move_points(c, &points, None)?;
+                self.record_move_points(c, &points);
+                return Ok(points.into_iter().map(|(id, _, _)| id).collect());
+            }
+            Directive::Visible(label, shown) => {
+                if c.id(label).is_none() {
+                    return Err(format!("`{label}` is missing"));
+                }
                 if shown {
                     self.hidden.remove(label);
                 } else {
                     self.hidden.insert(label.to_owned());
                 }
-                return Ok(None);
+                return Ok(Vec::new());
             }
         };
-        let to = result.map_err(|e| format!("`{label}`: {e}"))?;
-        self.record_set(label, to);
-        Ok(Some(id))
+        let result = match to {
+            Setting::Point(x, y) => c.move_point(id, x, y),
+            Setting::Number(v) => c.set_number(id, v),
+        };
+        result.map_err(|e| format!("`{label}`: {e}"))?;
+        self.record_update(c, label, to);
+        Ok(vec![id])
     }
 
     /// Builds a log and construction from a script, keeping every line that
@@ -748,8 +855,9 @@ impl Log {
             } else {
                 match parsed {
                     Some(d) => d.and_then(|d| {
-                        if let Some(id) = log.apply(&mut c, d)?.filter(|_| grow) {
-                            log.grow_boundary_outputs(&mut c, &mut groups, id);
+                        let changed = log.apply(&mut c, d)?;
+                        if grow && !changed.is_empty() {
+                            log.grow_boundary_outputs(&mut c, &mut groups, changed.into_iter());
                         }
                         Ok(())
                     }),
@@ -828,10 +936,9 @@ impl Log {
             }
             let at = |e: String| format!("line {}: {e}", i + 1);
             if let Some(d) = directive(&line) {
-                if let Some(changed) = log.apply(&mut c, d.map_err(at)?).map_err(at)? {
-                    if grow {
-                        log.grow_boundary_outputs(&mut c, &mut groups, changed);
-                    }
+                let changed = log.apply(&mut c, d.map_err(at)?).map_err(at)?;
+                if grow && !changed.is_empty() {
+                    log.grow_boundary_outputs(&mut c, &mut groups, changed.into_iter());
                 }
                 continue;
             }

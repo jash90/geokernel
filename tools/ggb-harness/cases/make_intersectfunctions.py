@@ -69,4 +69,12 @@ case("conicpart", ["O = (0, 0)", "A = (1, 0)", "B = (0, 1)",
      "f, k", [setn("a", 0.5), mv("A", -1, 0), setn("a", 1)])
 case("degenerate", ["f(x) = (x - 1)^2 + 1", "k = Conic({1, -1, 0, 0, 0, 0})"], "f, k")
 
+case("fallback", ["f(x) = sqrt(0.09 - x^2)", "h(x) = 0.1"], "f, h")
+case("fallback", ["f(x) = exp(x)", "h(x) = 1000"], "f, h")
+case("fallback", ["a = 1", "f(x) = 3 - (a + exp(x - 2))", "h(x) = -998"],
+     "h, f", [setn("a", 11)])
+case("fallback", ["g: y = 1", "f(x) = ln(x - 2)"], "f, g")
+
+case("interval", ["f(x) = x^2", "h(x) = 0.000000000001"], "f, h, -5, 5")
+
 cases.write()
