@@ -623,8 +623,8 @@ pub(crate) enum Elem {
 }
 
 /// The last result of an expression, with infinities kept: GeoGebra keeps
-/// them in a dependent number (`1/(1/0)` is 0), although the object shows
-/// as undefined. A boolean is kept as 1 or 0.
+/// them in a dependent number (`1/(1/0)` is 0) and in the coordinates of a
+/// vector, which shows as undefined. A boolean is kept as 1 or 0.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(crate) enum Raw {
     Num(f64),
@@ -1822,12 +1822,14 @@ pub(crate) fn raw(c: &Construction, d: ExprDef) -> Raw {
     entry(c, d).raw
 }
 
-/// The value an object shows for a result. A dependent point with an
-/// infinite coordinate is undefined (`AlgoDependentPoint`); a number or a
-/// vector keeps its infinity in [`Raw`] but shows as undefined too.
+/// The value an object shows for a result. An infinite number is a value
+/// like any other (`GeoNumeric.isDefined` only refuses NaN). A dependent
+/// point with an infinite coordinate is undefined (`AlgoDependentPoint`);
+/// an angle or a vector keeps its infinity in [`Raw`] but shows as
+/// undefined.
 pub(crate) fn value(d: ExprDef, raw: Raw) -> Value {
     match (d.kind, raw) {
-        (Kind::Number, Raw::Num(v)) if v.is_finite() => Value::Number(v),
+        (Kind::Number, Raw::Num(v)) if !v.is_nan() => Value::Number(v),
         (Kind::Angle, Raw::Num(v)) if v.is_finite() => Value::Number(d.angle_style.value(v)),
         (Kind::Point, Raw::Vec(x, y)) if x.is_finite() && y.is_finite() => Value::Point { x, y },
         (Kind::Vector, Raw::Vec(x, y)) if x.is_finite() && y.is_finite() => Value::Vector { x, y },

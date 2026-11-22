@@ -1422,6 +1422,13 @@ final class Session {
         return true;
     }
 
+    /**
+     * Whether an infinite number is recorded as such (schema 3, the golden
+     * files) or as undefined like every other value that is not finite
+     * (schema 2, which the snapshot and t-pair writers still produce).
+     */
+    static boolean recordInfinity;
+
     static Map<String, Object> describe(GeoElement geo, String type, boolean sampleCurves) {
         Map<String, Object> object = describe(geo, type);
         if (sampleCurves && geo instanceof GeoCurveCartesian curve && curve.isDefined()) {
@@ -1508,6 +1515,14 @@ final class Session {
                 }
                 obj.put("samples_xy", samples);
             }
+            return obj;
+        }
+        if (recordInfinity && type.equals("number") && geo.isDefined()
+                && Double.isInfinite(((GeoNumeric) geo).getDouble())) {
+            // GeoGebra keeps an infinite number defined; schema 3 records
+            // which infinity it holds in place of a value
+            obj.put("defined", true);
+            obj.put("infinity", ((GeoNumeric) geo).getDouble() > 0 ? 1L : -1L);
             return obj;
         }
         Map<String, Object> fields = geo.isDefined() ? fields(geo, type) : null;

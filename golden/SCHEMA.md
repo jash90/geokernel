@@ -18,7 +18,7 @@ One JSON object per file, stored under `golden/<group>/`.
 
 ```json
 {
-  "schema": 2,
+  "schema": 3,
   "generator": "ggb-harness",
   "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
   "cases": []
@@ -27,7 +27,7 @@ One JSON object per file, stored under `golden/<group>/`.
 
 | Field | Type | Meaning |
 | --- | --- | --- |
-| `schema` | integer | `1` stores angles as numbers. `2` records the angle type explicitly. |
+| `schema` | integer | `1` stores angles as numbers. `2` records the angle type explicitly. `3` also records an infinite number as such. |
 | `generator` | string | `ggb-harness` for golden data, `format-sample` for the fixture. |
 | `upstream_commit` | string or null | Full GeoGebra commit the values were recorded from. `null` only in the fixture. |
 | `cases` | array of Case | See below. |
@@ -112,7 +112,7 @@ carries no numeric fields. When it is `true` it carries exactly these:
 | `line` | `a`, `b`, `c` | Raw GeoGebra coefficients of `a*x + b*y + c = 0`, not normalised. |
 | `segment` | `x1`, `y1`, `x2`, `y2` | Start point and end point, in that order. |
 | `circle` | `cx`, `cy`, `r` | Centre and radius. |
-| `number` | `value` | The numeric value. |
+| `number` | `value` or `infinity` | The numeric value. From schema 3 a number that is `Infinity` or `-Infinity` in GeoGebra is defined and carries `infinity`, 1 or -1, in place of `value`. |
 | `angle` | `value` | The angle in radians, recorded in schema 2. |
 | `vector` | `x`, `y` | The vector's coordinates. Where GeoGebra draws it from (its start point) is not recorded. |
 | `ray` | `x`, `y`, `a`, `b`, `c` | Start point `(x, y)` and the raw GeoGebra coefficients of the line `a*x + b*y + c = 0` it lies on, not normalised. The ray points along `(b, -a)`. |
@@ -180,7 +180,8 @@ takes longer than 500 ms, which makes the points depend on the machine; no
 case comes near it, and `geo-kernel` has no such limit.
 
 All numbers are finite JSON numbers that round-trip to the same `f64`.
-A value that is not finite in GeoGebra is recorded as `defined: false`.
+A value that is not finite in GeoGebra is recorded as `defined: false`,
+except, from schema 3 on, a number that holds an infinity (see below).
 This includes a point at infinity and a circle whose centre is at infinity,
 both of which GeoGebra itself reports as defined. A polygon with a vertex at
 infinity is recorded as undefined; in a polyline such a vertex is `null`, and
@@ -196,6 +197,7 @@ array is present, replay checks every sample at the existing tolerance.
 These rules are applied by the Rust side (`crates/geo-golden`).
 
 - Two numbers `p` and `q` agree when `|p - q| <= 1e-9 * max(1, |p|, |q|)`.
+  An infinite number agrees only with the same infinity.
 - An object that is undefined in GeoGebra must be undefined in `geo-kernel`,
   and the other way round.
 - The object types must be equal.
@@ -277,6 +279,17 @@ The type `locus` and the `Slider` line were added the same way, in schema
 
 Schema 2 distinguishes `angle` from `number`, including inside lists. Only
 schema 1 permits an expected number to match an angle in the kernel.
+
+Schema 3 records a number whose value is `Infinity` or `-Infinity` (group
+`infinity`). GeoGebra keeps such a number defined: `GeoNumeric.isDefined`
+only refuses NaN. It is written `{ "type": "number", "defined": true,
+"infinity": 1 }`, or `-1` for the negative one, also as a list element.
+Angles, coordinates and every other value keep the rule above. Schema 1
+and 2 wrote an infinite number as `defined: false`, like an undefined one,
+so in those files an undefined number also agrees with an infinite number
+in the kernel; in schema 3 it agrees with an undefined number only. The
+files written before are not regenerated: they keep their schema version
+and their meaning.
 
 Script lines may also be equations in `x` and `y` (group `equations`),
 written `label: lhs = rhs` as GeoGebra's input bar reads them: a linear

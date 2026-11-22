@@ -35,6 +35,7 @@ public final class GoldenGenerator {
             System.err.println("usage: GoldenGenerator <cases.json> <golden dir> <upstream commit> [topic or !topic]");
             System.exit(2);
         }
+        Session.recordInfinity = true;
         Path casesFile = Path.of(args[0]);
         Path goldenDir = Path.of(args[1]);
         String commit = args[2];
@@ -81,7 +82,7 @@ public final class GoldenGenerator {
 
         for (Map.Entry<String, List<Object>> e : byFile.entrySet()) {
             Map<String, Object> file = new LinkedHashMap<>();
-            file.put("schema", 2L);
+            file.put("schema", 3L);
             file.put("generator", "ggb-harness");
             file.put("upstream_commit", commit);
             file.put("cases", e.getValue());

@@ -141,7 +141,7 @@ Snapshot encoding:
 | `GeoLine` | `line` with the raw fields `x`, `y`, `z` as `a`, `b`, `c` |
 | `GeoSegment` | `segment` with its start point and end point |
 | `GeoConic` from `Circle` | `circle` with the midpoint and the first half-axis |
-| `GeoNumeric` | `number` |
+| `GeoNumeric` | `number`; one that holds `Infinity` or `-Infinity` is defined and carries `infinity` (1 or -1) in place of `value` |
 | `GeoAngle` | `angle` with a radian `value` |
 | `GeoVector` | `vector` with `x`, `y` |
 | `GeoRay` | `ray` with the inhomogeneous start point `x`, `y` and the raw fields `x`, `y`, `z` as `a`, `b`, `c`; a start point at infinity is undefined |
@@ -150,7 +150,10 @@ Snapshot encoding:
 | `GeoPolyLine` | `polyline` with `getPointsND()` as `vertices` (`null` for an undefined point or a point at infinity) and `getLength()` as `length` |
 | `GeoLocus` | `locus` with `getPoints()` as `points`, each `[x, y, getLineTo()]` (`x` and `y` `null` when not finite) |
 
-New files use schema 2, which records angles separately in every group.
+New files use schema 3, which records angles separately in every group and
+an infinite number as such (`golden/SCHEMA.md`). The snapshots of the export
+oracle and the verified t-pairs keep the schema 2 encoding, where an infinite
+number is written as undefined.
 Schema 1 files use the legacy numeric encoding for angles.
 
 `defined` is GeoGebra's `isDefined()` and, in addition, every recorded field

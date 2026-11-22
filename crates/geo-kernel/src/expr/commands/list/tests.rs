@@ -24,8 +24,8 @@ fn list_literals_hold_numbers_points_booleans_and_lists() {
     assert_eq!(elems(&c, "l"), "{1, 2, 3}");
     assert_eq!(elems(&c, "m"), "{}");
     // an element is computed with the exact decimals of its literals, then
-    // kept as a double; a value that is not finite is an undefined number
-    assert_eq!(elems(&c, "n"), "{0.3, ?number, ?number}");
+    // kept as a double; an infinite one is a value, NaN an undefined number
+    assert_eq!(elems(&c, "n"), "{0.3, inf, ?number}");
     // a tuple is a point; an object keeps its kind; an operation with a
     // point in it is a point
     assert_eq!(elems(&c, "p"), "{(1, 2), (1, 2), v(1, 1), (2, 3), v(2, 2)}");
@@ -109,7 +109,7 @@ fn length_and_sum_read_the_elements_as_doubles() {
     assert_eq!(num(&c, "h"), 0.0);
     assert_eq!(num(&c, "k"), 0.1 + 0.2);
     assert_eq!(num(&c, "m"), 2.0);
-    assert_eq!(c.value(c.id("p").unwrap()), Value::Undefined);
+    assert_eq!(num(&c, "p"), f64::INFINITY);
     assert_eq!(num(&c, "q"), 2.0);
     let n = c.id("n").unwrap();
     // `Sum(l, n)` truncates `n`; 0 is an empty sum, past the end undefined
@@ -1034,11 +1034,12 @@ fn remove_undefined_keeps_the_defined_elements() {
          f = RemoveUndefined({(1, 1), (1 / 0, 2)})",
     )
     .unwrap();
-    assert_eq!(elems(&c, "a"), "{1, 2, 3}");
+    // an infinite number is defined and stays (`lists-undef-001`)
+    assert_eq!(elems(&c, "a"), "{1, inf, 2, 3}");
     assert_eq!(elems(&c, "b"), "{}");
     // a defined list with undefined elements is itself defined
-    assert_eq!(elems(&c, "d"), "{{1, ?number}, {2, 3}}");
-    assert_eq!(elems(&c, "e"), "{true}");
+    assert_eq!(elems(&c, "d"), "{{1, inf}, {2, 3}}");
+    assert_eq!(elems(&c, "e"), "{true, inf}");
     assert_eq!(elems(&c, "f"), "{(1, 1)}");
     rebuilt(&c);
 }

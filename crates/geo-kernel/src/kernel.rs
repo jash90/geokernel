@@ -236,6 +236,8 @@ pub enum Value {
         cy: f64,
         r: f64,
     },
+    /// A number. It is never NaN (that is [`Value::Undefined`]) but may be
+    /// `∞` or `-∞`, which the reference keeps as a defined value.
     Number(f64),
     Vector {
         x: f64,
@@ -364,6 +366,41 @@ impl Value {
         }
     }
 
+    /// Whether `other` is this value bit for bit. Unlike `==` it tells `0`
+    /// from `-0`: a dependent `1 / v` turns that sign into the sign of an
+    /// infinity, so the update must not take the two for the same value.
+    fn identical(&self, other: &Value) -> bool {
+        fn parts(v: &Value) -> [f64; 5] {
+            match *v {
+                Value::Point { x, y } | Value::Vector { x, y } => [x, y, 0.0, 0.0, 0.0],
+                Value::HomogeneousPoint { x, y, z } => [x, y, z, 0.0, 0.0],
+                Value::Line { a, b, c } => [a, b, c, 0.0, 0.0],
+                Value::Segment { x1, y1, x2, y2 } => [x1, y1, x2, y2, 0.0],
+                Value::Circle { cx, cy, r } => [cx, cy, r, 0.0, 0.0],
+                Value::Ray { x, y, a, b, c } => [x, y, a, b, c],
+                Value::Curve { start, end } => [start, end, 0.0, 0.0, 0.0],
+                Value::Number(v)
+                | Value::Polygon { area: v }
+                | Value::PolyLine { length: v }
+                | Value::Arc { length: v }
+                | Value::Sector { area: v } => [v, 0.0, 0.0, 0.0, 0.0],
+                Value::Bool(_)
+                | Value::Button
+                | Value::InputBox
+                | Value::Image
+                | Value::PieChart
+                | Value::Function
+                | Value::Text
+                | Value::FunctionNVar
+                | Value::List { .. }
+                | Value::Conic { .. }
+                | Value::Locus { .. }
+                | Value::Undefined => [0.0; 5],
+            }
+        }
+        self == other && parts(self).map(f64::to_bits) == parts(other).map(f64::to_bits)
+    }
+
     fn is_finite(&self) -> bool {
         match *self {
             Value::Point { x, y } => x.is_finite() && y.is_finite(),
@@ -373,7 +410,7 @@ impl Value {
                 x1.is_finite() && y1.is_finite() && x2.is_finite() && y2.is_finite()
             }
             Value::Circle { cx, cy, r } => cx.is_finite() && cy.is_finite() && r.is_finite(),
-            Value::Number(v) => v.is_finite(),
+            Value::Number(v) => !v.is_nan(),
             Value::Vector { x, y } => x.is_finite() && y.is_finite(),
             Value::Ray { x, y, a, b, c } => [x, y, a, b, c].iter().all(|v| v.is_finite()),
             Value::Bool(_) | Value::Button | Value::InputBox | Value::Image | Value::PieChart => {
@@ -1242,9 +1279,9 @@ impl Construction {
     }
 
     /// `±∞` when `id` is an expression number whose value is infinite.
-    /// [`Self::value`] reports such a number undefined, but GeoGebra counts
-    /// it as defined, and expressions that read it use the infinite value
-    /// (`1 / (r - a)` with `a = ∞` is `-0`).
+    /// GeoGebra counts such a number as defined: [`Self::value`] reports
+    /// it as `Value::Number` of that infinity, and expressions that read
+    /// it use the infinite value (`1 / (r - a)` with `a = ∞` is `-0`).
     pub fn infinite_number(&self, id: Id) -> Option<f64> {
         match self.defs.get(id.0)? {
             &Def::Expr(d) if d.kind().is_number() && d.angle_style == AngleStyle::Unbounded => {
@@ -1253,6 +1290,24 @@ impl Construction {
                     _ => None,
                 }
             }
+            _ => None,
+        }
+    }
+
+    /// The coordinates of the expression vector `id` when one of them is
+    /// infinite and neither is NaN. [`Self::value`] reports such a vector
+    /// undefined, but GeoGebra counts it as defined, and expressions that
+    /// read it use the coordinates (`x(v)` is `∞`).
+    pub fn infinite_vector(&self, id: Id) -> Option<(f64, f64)> {
+        match self.defs.get(id.0)? {
+            &Def::Expr(d) if d.kind() == Kind::Vector => match expr::raw(self, d) {
+                expr::Raw::Vec(x, y)
+                    if (x.is_infinite() || y.is_infinite()) && !(x.is_nan() || y.is_nan()) =>
+                {
+                    Some((x, y))
+                }
+                _ => None,
+            },
             _ => None,
         }
     }
@@ -2157,7 +2212,7 @@ impl Construction {
                 }
                 Def::Optimize(d) => {
                     let new = algo::optimize::record(self, d);
-                    if new == self.values[i] {
+                    if new.identical(&self.values[i]) {
                         // Nothing downstream can change because of this
                         // object.
                         continue;
@@ -2172,7 +2227,7 @@ impl Construction {
                             self.last_update_changed_automatic_root = true;
                         }
                     }
-                    if new == self.values[i]
+                    if new.identical(&self.values[i])
                         && def.kind() != Kind::Curve
                         && !matches!(
                             def,
@@ -2251,7 +2306,7 @@ impl Construction {
         let mut state = std::mem::take(&mut self.limited_common_tangents[slot].1);
         let value = state.update(self, d).unwrap_or(Value::Undefined);
         self.limited_common_tangents[slot].1 = state;
-        let changed = value != self.values[i];
+        let changed = !value.identical(&self.values[i]);
         self.values[i] = value;
         changed
     }
@@ -2294,7 +2349,7 @@ impl Construction {
         }
         .unwrap_or(Value::Undefined);
         self.conic_intersections[latest].1 = parent;
-        let changed = new != self.values[i];
+        let changed = !new.identical(&self.values[i]);
         self.values[i] = new;
         changed
     }

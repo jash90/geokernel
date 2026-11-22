@@ -162,10 +162,15 @@ fn check_contagion(case: &Case) -> Result<(), String> {
             continue;
         }
         let parents = &case.deps[id.index()];
-        // An expression reads an infinite expression number as a value, as
-        // GeoGebra does, which counts it as defined (`1 / (r - a)` with
-        // `a = ∞` is `-0`): for expressions such a parent is not undefined.
-        let read_as_value = |p: Id| case.expr[id.index()] && case.c.infinite_number(p).is_some();
+        // An expression reads an infinite angle, or a vector with an
+        // infinite coordinate, as a value, as GeoGebra does, which counts
+        // it as defined (`x(v)` is `∞`): for expressions such a parent,
+        // which shows as undefined, is not undefined. An infinite number
+        // is a defined value in the first place.
+        let read_as_value = |p: Id| {
+            case.expr[id.index()]
+                && (case.c.infinite_number(p).is_some() || case.c.infinite_vector(p).is_some())
+        };
         // A point at a parameter keeps the parameter it had when the number
         // becomes undefined (`PathParameter.setT` ignores NaN).
         let kept_parameter = |p: Id| matches!(case.c.def(id), Def::Path(PathDef::OnParam { param, .. }) if param == p);

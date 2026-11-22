@@ -91,14 +91,18 @@ fn degrees_make_floor_work_in_whole_degrees() {
 }
 
 #[test]
-fn infinity_is_kept_behind_an_undefined_number() {
-    let mut c = load("a = 2\nc = 1/a\nd = 1/c\nf = atan(c)\n").unwrap();
+fn an_infinite_number_is_a_defined_value() {
+    // `GeoNumeric.isDefined` only refuses NaN (golden group `infinity`)
+    let mut c = load("a = 2\nc = 1/a\nd = 1/c\nf = atan(c)\ng = c - c\n").unwrap();
     let a = c.id("a").unwrap();
     c.set_number(a, 0.0).unwrap();
-    assert_eq!(c.value(c.id("c").unwrap()), Value::Undefined);
+    assert_eq!(num(&c, "c"), f64::INFINITY);
+    assert_eq!(c.infinite_number(c.id("c").unwrap()), Some(f64::INFINITY));
+    assert_eq!(c.value(c.id("g").unwrap()), Value::Undefined);
     assert_eq!(num(&c, "d"), 0.0);
     assert_eq!(num(&c, "f"), std::f64::consts::FRAC_PI_2);
     c.set_number(a, -0.0).unwrap();
+    assert_eq!(num(&c, "c"), f64::NEG_INFINITY);
     assert_eq!(num(&c, "f"), -std::f64::consts::FRAC_PI_2);
     assert!(num(&c, "d").is_sign_negative());
     // the same through a point that moves from 0 to -0
@@ -383,7 +387,7 @@ fn literals_names_and_commands_follow_the_input_bar() {
             assert_eq!(c.def(c.id(label).unwrap()), def, "{line}");
         }
     }
-    assert_eq!(c.value(c.id("u").unwrap()), Value::Undefined);
+    assert_eq!(c.value(c.id("u").unwrap()), Value::Number(f64::INFINITY));
     // `e` and `Mod` are labels; `e` then wins over Euler's number
     exec(&mut c, "e = 5").unwrap();
     exec(&mut c, "b = 2e").unwrap();

@@ -105,17 +105,33 @@ pub struct Expected {
     pub data: Option<ExpectedData>,
     /// A number recorded when the file format also encoded angles as numbers.
     pub(crate) legacy_angle_number: bool,
+    /// An undefined number recorded when the file format wrote a number
+    /// that is infinite in GeoGebra as undefined too (schema 1 and 2): it
+    /// also stands for an infinite number.
+    pub(crate) legacy_infinite_number: bool,
 }
 
 impl Expected {
-    fn set_angle_encoding(&mut self, legacy: bool) {
-        self.legacy_angle_number = legacy && self.kind == Kind::Number;
+    fn set_encoding(&mut self, encoding: Encoding) {
+        self.legacy_angle_number = encoding.angles_as_numbers && self.kind == Kind::Number;
+        self.legacy_infinite_number =
+            encoding.infinity_as_undefined && self.kind == Kind::Number && self.data.is_none();
         if let Some(ExpectedData::List(elements)) = &mut self.data {
             for element in elements {
-                element.set_angle_encoding(legacy);
+                element.set_encoding(encoding);
             }
         }
     }
+}
+
+/// What a schema version leaves out of a recorded number.
+#[derive(Debug, Clone, Copy)]
+struct Encoding {
+    /// Angles are recorded as numbers (schema 1).
+    angles_as_numbers: bool,
+    /// A number that is infinite in GeoGebra is recorded as undefined
+    /// (schema 1 and 2).
+    infinity_as_undefined: bool,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -537,11 +553,13 @@ impl TryFrom<RawObject> for Expected {
                 kind,
                 data: None,
                 legacy_angle_number: false,
+                legacy_infinite_number: false,
             });
         }
         if kind == Kind::Function {
             return Ok(Expected {
                 legacy_angle_number: false,
+                legacy_infinite_number: false,
                 kind,
                 data: Some(function_samples(&raw)?),
             });
@@ -562,11 +580,13 @@ impl TryFrom<RawObject> for Expected {
                 kind,
                 data: Some(ExpectedData::FunctionNVar(samples)),
                 legacy_angle_number: false,
+                legacy_infinite_number: false,
             });
         }
         if kind == Kind::Conic {
             return Ok(Expected {
                 legacy_angle_number: false,
+                legacy_infinite_number: false,
                 kind,
                 data: Some(conic_data(&raw)?),
             });
@@ -574,12 +594,28 @@ impl TryFrom<RawObject> for Expected {
         if matches!(kind, Kind::Arc | Kind::Sector) {
             return Ok(Expected {
                 legacy_angle_number: false,
+                legacy_infinite_number: false,
                 kind,
                 data: Some(arc_data(&raw)?),
             });
         }
-        let expected: BTreeSet<&str> = names.iter().copied().collect();
         let got: BTreeSet<&str> = raw.fields.keys().map(String::as_str).collect();
+        // Schema 3: a number that is infinite in GeoGebra is defined and
+        // carries the sign of its infinity in place of a value.
+        if kind == Kind::Number && got.len() == 1 && got.contains("infinity") {
+            let value = match raw.fields["infinity"].as_i64() {
+                Some(1) => f64::INFINITY,
+                Some(-1) => f64::NEG_INFINITY,
+                _ => return Err("a number's `infinity` must be 1 or -1".into()),
+            };
+            return Ok(Expected {
+                kind,
+                data: Some(ExpectedData::Number(value)),
+                legacy_angle_number: false,
+                legacy_infinite_number: false,
+            });
+        }
+        let expected: BTreeSet<&str> = names.iter().copied().collect();
         if expected != got {
             return Err(format!(
                 "defined {} must carry exactly {names:?}, got {got:?}",
@@ -593,6 +629,7 @@ impl TryFrom<RawObject> for Expected {
                 kind,
                 data: Some(ExpectedData::Relation(reports)),
                 legacy_angle_number: false,
+                legacy_infinite_number: false,
             });
         }
         if kind == Kind::Text {
@@ -603,12 +640,14 @@ impl TryFrom<RawObject> for Expected {
                 kind,
                 data: Some(ExpectedData::Text(text.to_owned())),
                 legacy_angle_number: false,
+                legacy_infinite_number: false,
             });
         }
         if kind == Kind::Boolean {
             return match raw.fields["value"].as_bool() {
                 Some(b) => Ok(Expected {
                     legacy_angle_number: false,
+                    legacy_infinite_number: false,
                     kind,
                     data: Some(ExpectedData::Bool(b)),
                 }),
@@ -619,6 +658,7 @@ impl TryFrom<RawObject> for Expected {
             let vertices = vertices(&raw.fields["vertices"], false)?;
             return Ok(Expected {
                 legacy_angle_number: false,
+                legacy_infinite_number: false,
                 kind,
                 data: Some(ExpectedData::Polygon {
                     vertices: vertices.into_iter().flatten().collect(),
@@ -630,6 +670,7 @@ impl TryFrom<RawObject> for Expected {
         if kind == Kind::PolyLine {
             return Ok(Expected {
                 legacy_angle_number: false,
+                legacy_infinite_number: false,
                 kind,
                 data: Some(ExpectedData::PolyLine {
                     vertices: vertices(&raw.fields["vertices"], true)?,
@@ -640,6 +681,7 @@ impl TryFrom<RawObject> for Expected {
         if kind == Kind::Locus {
             return Ok(Expected {
                 legacy_angle_number: false,
+                legacy_infinite_number: false,
                 kind,
                 data: Some(ExpectedData::Locus(locus_points(&raw.fields["points"])?)),
             });
@@ -653,6 +695,7 @@ impl TryFrom<RawObject> for Expected {
                 .collect::<Result<Vec<_>, _>>()?;
             return Ok(Expected {
                 legacy_angle_number: false,
+                legacy_infinite_number: false,
                 kind,
                 data: Some(ExpectedData::List(elements)),
             });
@@ -666,6 +709,7 @@ impl TryFrom<RawObject> for Expected {
                     .map_err(|e| e.to_string())?;
             return Ok(Expected {
                 legacy_angle_number: false,
+                legacy_infinite_number: false,
                 kind,
                 data: Some(ExpectedData::Pie {
                     center: (center[0], center[1]),
@@ -723,6 +767,7 @@ impl TryFrom<RawObject> for Expected {
         };
         Ok(Expected {
             legacy_angle_number: false,
+            legacy_infinite_number: false,
             kind,
             data: Some(data),
         })
@@ -786,20 +831,29 @@ pub fn line_label(lhs: &str) -> String {
         .to_string()
 }
 
-fn legacy_angle_numbers(schema: u32) -> Result<bool, String> {
+fn encoding(schema: u32) -> Result<Encoding, String> {
     match schema {
-        1 => Ok(true),
-        2 => Ok(false),
+        1 | 2 => Ok(Encoding {
+            angles_as_numbers: schema == 1,
+            infinity_as_undefined: true,
+        }),
+        3 => Ok(Encoding {
+            angles_as_numbers: false,
+            infinity_as_undefined: false,
+        }),
         _ => Err(format!("unsupported schema {schema}")),
     }
 }
 
 /// Parses one snapshot object from JSON, in the format of `golden/SCHEMA.md`
-/// (the `object` field of a verified t-pair output). Angles keep the current
-/// encoding: they are recorded as the angle type there.
+/// (the `object` field of a verified t-pair output). The pairs were recorded
+/// in the schema 2 encoding: angles carry the angle type, an infinite number
+/// is written as undefined.
 pub fn expected_from_json(v: &serde_json::Value) -> Result<Expected, String> {
     let raw: RawObject = serde_json::from_value(v.clone()).map_err(|e| format!("object: {e}"))?;
-    Expected::try_from(raw)
+    let mut expected = Expected::try_from(raw)?;
+    expected.set_encoding(encoding(2)?);
+    Ok(expected)
 }
 
 /// Apply the file's angle encoding to a snapshot read outside a replay case,
@@ -808,9 +862,9 @@ pub fn set_snapshot_schema(
     schema: u32,
     snapshot: &mut BTreeMap<String, Expected>,
 ) -> Result<(), String> {
-    let legacy = legacy_angle_numbers(schema)?;
+    let encoding = encoding(schema)?;
     for expected in snapshot.values_mut() {
-        expected.set_angle_encoding(legacy);
+        expected.set_encoding(encoding);
     }
     Ok(())
 }
@@ -819,7 +873,7 @@ pub fn set_snapshot_schema(
 pub fn parse_file(text: &str, source: &str) -> Result<File, String> {
     let mut file: File =
         serde_json::from_str(text).map_err(|e| format!("{source}: malformed JSON: {e}"))?;
-    legacy_angle_numbers(file.schema).map_err(|e| format!("{source}: {e}"))?;
+    encoding(file.schema).map_err(|e| format!("{source}: {e}"))?;
     for case in &mut file.cases {
         case.generator = file.generator.clone();
         for snapshot in &mut case.snapshots {
@@ -1355,7 +1409,7 @@ mod tests {
     fn malformed_files_fail_loudly() {
         for bad in [
             "not json",
-            &GOOD.replace("\"schema\":1", "\"schema\":3"),
+            &GOOD.replace("\"schema\":1", "\"schema\":4"),
             &GOOD.replace("\"y\":0.0", "\"z\":0.0"),
             &GOOD.replace("\"initial\"", "\"teleport\""),
             &GOOD.replace("\"A\":{", "\"B\":{"),
@@ -1367,6 +1421,35 @@ mod tests {
             ),
         ] {
             assert!(parse_file(bad, "t").is_err(), "accepted: {bad}");
+        }
+    }
+
+    #[test]
+    fn an_infinite_number_is_recorded_only_from_schema_3() {
+        let parse = |json: &str| serde_json::from_str::<Expected>(json);
+        let plus = parse(r#"{"type":"number","defined":true,"infinity":1}"#).unwrap();
+        assert_eq!(plus.data, Some(ExpectedData::Number(f64::INFINITY)));
+        let minus = parse(r#"{"type":"number","defined":true,"infinity":-1}"#).unwrap();
+        assert_eq!(minus.data, Some(ExpectedData::Number(f64::NEG_INFINITY)));
+        for bad in [
+            r#"{"type":"number","defined":true,"infinity":0}"#,
+            r#"{"type":"number","defined":true,"infinity":1,"value":1.0}"#,
+            r#"{"type":"number","defined":false,"infinity":1}"#,
+            r#"{"type":"angle","defined":true,"infinity":1}"#,
+            r#"{"type":"vector","defined":true,"infinity":1}"#,
+        ] {
+            assert!(parse(bad).is_err(), "accepted: {bad}");
+        }
+        // an undefined number of schema 1 or 2 may stand for an infinite
+        // one, of schema 3 it is undefined and nothing else
+        let undefined = r#"{"type":"number","defined":false}"#;
+        for (schema, legacy) in [(1, true), (2, true), (3, false)] {
+            let mut snapshot = BTreeMap::from([("a".to_string(), parse(undefined).unwrap())]);
+            set_snapshot_schema(schema, &mut snapshot).unwrap();
+            assert_eq!(
+                snapshot["a"].legacy_infinite_number, legacy,
+                "schema {schema}"
+            );
         }
     }
 

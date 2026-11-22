@@ -44,8 +44,6 @@ impl Slot {
         }
     }
 
-    /// A number element; one that is not finite shows as undefined, like a
-    /// number object.
     pub(crate) fn with_value(kind: Kind, value: Value) -> Slot {
         Self {
             value,
@@ -53,30 +51,13 @@ impl Slot {
         }
     }
 
+    /// A number element. An infinite one keeps its value, like a number
+    /// object (`GeoNumeric.isDefined` only refuses NaN).
     pub(crate) fn number(v: f64) -> Slot {
-        if v.is_finite() {
-            Slot {
-                kind: Kind::Number,
-                value: Value::Number(v),
-                start: 0,
-                object: NO_OBJECT,
-                equation_revision: 0,
-                extra: None,
-            }
+        if v.is_nan() {
+            Slot::undefined(Kind::Number)
         } else {
-            // Non-list slots can keep the sign of infinity in the run
-            // offset. Ordinary list readers still see an undefined number.
-            let start = if v == f64::INFINITY {
-                1
-            } else if v == f64::NEG_INFINITY {
-                2
-            } else {
-                0
-            };
-            Slot {
-                start,
-                ..Slot::undefined(Kind::Number)
-            }
+            Slot::with_value(Kind::Number, Value::Number(v))
         }
     }
 
@@ -499,8 +480,6 @@ impl<'a> List<'a> {
         let slot = &self.slots[self.start as usize + k];
         match (slot.kind, slot.value, slot.start) {
             (_, Value::Number(v), _) => Some(v),
-            (Kind::Number, Value::Undefined, 1) => Some(f64::INFINITY),
-            (Kind::Number, Value::Undefined, 2) => Some(f64::NEG_INFINITY),
             (Kind::Number | Kind::Angle, Value::Undefined, _) => Some(f64::NAN),
             _ => None,
         }
