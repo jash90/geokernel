@@ -82,4 +82,25 @@ cases.case("vertex", [
     "P = Vertex(q)",
 ], [])
 
+# CommandsTest.cmdDilate uses the origin and a supplied center.
+cases.case("dilate", [
+    image_asset, pt("A", 2, 3), pt("B", 5, 3), pt("D", 1, 5), pt("O", 1, 1),
+    num("n", 0.5), "r = 1/n",
+    image("im", f"world(false, false, point({encoded('A')}), point({encoded('B')}), point({encoded('D')}))"),
+    "u = Dilate(im, r)", "v = Dilate(im, r, O)",
+    "P = Corner(u, 1)", "Q = Corner(u, 3)", "R = Corner(v, 1)", "S = Corner(v, 4)",
+], [mv("A", 1, 2), mv("O", -1, 2), setn("n", 0), setn("n", -1), setn("n", 0.5)])
+cases.case("dilate", [
+    image_asset, pt("A", 2, 3), num("n", 2),
+    image("centered", f"world(true, false, point({encoded('A')}), _, _)"),
+    image("fixed", "screen(12, 18)"),
+    "u = Dilate(centered, n)", "v = Dilate(fixed, n, A)",
+    "P = Corner(u, 1)", "Q = Corner(u, 3)", "R = Corner(v, 1)",
+], [setn("n", 0), setn("n", -2), mv("A", -1, 3), setn("n", 2)])
+cases.case("dilate", [
+    image_asset, pt("A", 2, 3),
+    image("im", f"world(false, false, point({encoded('A')}), _, _)"),
+    "u = Dilate(im, 2, (1, 1))", "P = Corner(u, 2)", "Q = Corner(u, 4)",
+], [mv("A", 1, 2)])
+
 cases.write()

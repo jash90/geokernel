@@ -3533,3 +3533,13 @@ cases = ["corners-raster-001"]
 command = "Corner"
 form = "number,number"
 cases = ["corners-view-001"]
+
+[[form]]
+command = "Dilate"
+form = "image,number"
+cases = ["corners-dilate-001", "corners-dilate-002"]
+
+[[form]]
+command = "Dilate"
+form = "image,number,point"
+cases = ["corners-dilate-001", "corners-dilate-002", "corners-dilate-003"]

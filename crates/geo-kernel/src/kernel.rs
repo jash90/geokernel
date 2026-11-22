@@ -1696,6 +1696,9 @@ impl Construction {
         }
         self.defs.push(def);
         self.values.push(value);
+        if def.kind() == Kind::Image {
+            self.register_transformed_image(id, def);
+        }
         self.labels.push(label.to_string());
         self.children.push(Vec::new());
         self.by_label.insert(label.to_string(), id);
@@ -2173,7 +2176,7 @@ impl Construction {
                         }
                     }
                     if new == self.values[i]
-                        && def.kind() != Kind::Curve
+                        && !matches!(def.kind(), Kind::Curve | Kind::Image)
                         && !matches!(
                             def,
                             Def::Conditional {
@@ -2185,7 +2188,8 @@ impl Construction {
                         // Nothing downstream can change because of this object.
                         continue;
                     }
-                    // Curves and conditional conics can change shape at constant summary values.
+                    // Curves, images and conditional conics can change shape
+                    // at constant summary values.
                     self.values[i] = new;
                 }
             }

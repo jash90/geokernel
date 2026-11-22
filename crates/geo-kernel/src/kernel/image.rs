@@ -3,7 +3,8 @@
 
 //! Raster assets and the placement of their instances in a construction.
 
-use super::{Construction, Def, Id, Value};
+use super::{Construction, Def, Id, Kind, Value};
+use crate::algo::transform::TransformDef;
 use image::{AnimationDecoder as _, ImageDecoder, ImageFormat, ImageReader, Limits};
 use std::collections::{hash_map::RandomState, BTreeMap, HashMap, HashSet};
 use std::hash::BuildHasher;
@@ -16,6 +17,7 @@ const MAX_DIMENSION: u32 = 4096;
 const MAX_RASTER_MEMORY: u64 = 128 << 20;
 
 const MAX_ASSET_ENTRIES: usize = 4096;
+const MAX_TRANSFORM_DEPTH: usize = 32;
 // Charge cumulative input (before inflation or hex parsing) and attempted pixels.
 // Failed decodes do not return work to either allowance.
 const MAX_ASSET_INPUT: u64 = 64 << 20;
@@ -304,6 +306,71 @@ impl Images {
 }
 
 impl Construction {
+    pub(super) fn register_transformed_image(&mut self, id: Id, def: Def) {
+        let Some((source, _)) = Self::image_dilation(def) else {
+            return;
+        };
+        let Some(image) = self.image(source) else {
+            return;
+        };
+        let placement = if image.placement.is_screen() {
+            image.placement
+        } else {
+            ImagePlacement::World {
+                corners: [None; 3],
+                centered: false,
+                screen_coords: false,
+            }
+        };
+        self.images.instances.insert(
+            id,
+            RasterImage {
+                asset: image.asset.clone(),
+                name: image.name.clone(),
+                placement,
+                style: image.style,
+            },
+        );
+    }
+
+    fn image_dilation(def: Def) -> Option<(Id, TransformDef)> {
+        match def {
+            Def::Transform(
+                d @ TransformDef::Dilate {
+                    kind: Kind::Image,
+                    src,
+                    ..
+                },
+            ) => Some((src, d)),
+            _ => None,
+        }
+    }
+
+    pub(crate) fn dilated_image_value(&self, def: TransformDef) -> Option<Value> {
+        let (source, dilation) = Self::image_dilation(Def::Transform(def))?;
+        let [_, _, _, _, xs, ys] = self.locus_view().unwrap_or(super::locus::HEADLESS_VIEW);
+        self.dilated_image_frame(source, dilation, [xs, ys], MAX_TRANSFORM_DEPTH)?;
+        Some(Value::Image)
+    }
+
+    fn dilated_image_frame(
+        &self,
+        source: Id,
+        dilation: TransformDef,
+        scale: [f64; 2],
+        depth: usize,
+    ) -> Option<[[f64; 2]; 3]> {
+        let frame = self.image_frame(source, scale, depth.checked_sub(1)?)?;
+        if self.image(source)?.placement.is_screen() {
+            return Some(frame);
+        }
+        let map = dilation.map(self)?;
+        map_frame(frame, |[x, y]| {
+            let (x, y) = map.point(x, y);
+            [x, y]
+        })
+    }
+
     /// Charge the declared compressed raster size before allocating its bytes.
     pub fn reserve_image_input(&mut self, bytes: u64) -> Result<(), String> {
         if bytes > MAX_ASSET_BYTES {
@@ -521,8 +588,7 @@ impl Construction {
         xscale: f64,
         yscale: f64,
     ) -> Option<[[f64; 2]; 4]> {
-        let image = self.image(id)?;
-        let [a, right, up] = self.image_frame(image, xscale, yscale)?;
+        let [a, right, up] = self.image_frame(id, [xscale, yscale], MAX_TRANSFORM_DEPTH)?;
         let area = right[0] * up[1] - right[1] * up[0];
         (area.is_finite() && area != 0.0).then(|| quad(a, right, up))
     }
@@ -537,12 +603,24 @@ impl Construction {
             _ => return None,
         };
         let [_, _, _, _, xs, ys] = self.locus_view().unwrap_or(super::locus::HEADLESS_VIEW);
-        let [a, right, up] = self.image_frame(image, xs, ys)?;
+        let [a, right, up] = self.image_frame(id, [xs, ys], MAX_TRANSFORM_DEPTH)?;
         let [x, y] = quad(a, right, up)[i];
         Some(Value::Point { x, y })
     }
 
-    fn image_frame(&self, image: &RasterImage, xscale: f64, yscale: f64) -> Option<[[f64; 2]; 3]> {
+    fn image_frame(
+        &self,
+        id: Id,
+        [xscale, yscale]: [f64; 2],
+        depth: usize,
+    ) -> Option<[[f64; 2]; 3]> {
+        if self.value(id) != Value::Image {
+            return None;
+        }
+        if let Some((source, dilation)) = Self::image_dilation(self.def(id)) {
+            return self.dilated_image_frame(source, dilation, [xscale, yscale], depth);
+        }
+        let image = self.image(id)?;
         let [width, height] = image.asset.size.map(f64::from);
         let resolve = |corner: ImageCorner| match corner {
             ImageCorner::Coordinates(coords) => Some(coords),
@@ -602,6 +680,21 @@ impl<T> ImagePlacement<T> {
 
 fn delta(to: [f64; 2], from: [f64; 2]) -> [f64; 2] {
     [to[0] - from[0], to[1] - from[1]]
+}
+
+fn map_frame(
+    [a, right, up]: [[f64; 2]; 3],
+    map: impl Fn([f64; 2]) -> [f64; 2],
+) -> Option<[[f64; 2]; 3]> {
+    let b = map([a[0] + right[0], a[1] + right[1]]);
+    let d = map([a[0] + up[0], a[1] + up[1]]);
+    let a = map(a);
+    let frame = [a, delta(b, a), delta(d, a)];
+    frame
+        .iter()
+        .flatten()
+        .all(|v| v.is_finite())
+        .then_some(frame)
 }
 
 fn quad(a: [f64; 2], r: [f64; 2], u: [f64; 2]) -> [[f64; 2]; 4] {

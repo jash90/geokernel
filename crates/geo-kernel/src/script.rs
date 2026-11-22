@@ -1294,8 +1294,10 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
         {
             &[(1, Kind::Number)]
         }
-        ("Dilate", [curve, _]) if is_kind(curve, Kind::Curve) => &[(1, Kind::Number)],
-        ("Dilate", [curve, _, _]) if is_kind(curve, Kind::Curve) => {
+        ("Dilate", [src, _]) if is_kind(src, Kind::Curve) || is_kind(src, Kind::Image) => {
+            &[(1, Kind::Number)]
+        }
+        ("Dilate", [src, _, _]) if is_kind(src, Kind::Curve) || is_kind(src, Kind::Image) => {
             &[(1, Kind::Number), (2, Kind::Point)]
         }
         // the calculus commands: their number and boolean positions, in
