@@ -922,6 +922,39 @@
           }
         }
       ]
+    },
+    {
+      "id": "funcrest-freehandpoints-007",
+      "group": "funcrest",
+      "script": [
+        "l = First(Function({-1, 1, 0, 1/0, 2}), 3)",
+        "m = First(Function({-1, 1, 0, 0/0, 2}), 3)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": false },
+              { "type": "point", "defined": false },
+              { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": false },
+              { "type": "point", "defined": false },
+              { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+            ]
+          }
+        }
+      ]
     }
   ]
 }

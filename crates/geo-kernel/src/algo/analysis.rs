@@ -106,18 +106,25 @@ impl AnalysisCache {
     /// Puts the spline states of the construction copy of the locus
     /// `owner` in place of the live ones (`AlgoLocusSliderND` samples its
     /// own copy, whose objects keep their states between updates) and
-    /// returns the live ones.
-    pub(crate) fn enter_copy(&self, owner: usize) -> SplineStates {
+    /// returns the live ones. The copy is made when the locus first
+    /// samples: each spline of it starts as a new object with the list as
+    /// it is then.
+    pub(crate) fn enter_copy(&self, c: &Construction, owner: usize) -> SplineStates {
+        let mut live = self.spline_points.lock().expect("spline states");
         let copy = self
             .copy_spline_points
             .lock()
             .expect("copy spline states")
             .remove(&owner)
-            .unwrap_or_default();
-        std::mem::replace(
-            &mut *self.spline_points.lock().expect("spline states"),
-            copy,
-        )
+            .unwrap_or_else(|| {
+                live.iter()
+                    .map(|(&spline, &(input, _))| {
+                        let points = c.elements(input.points).map_or(0, |l| l.len());
+                        (spline, (input, points))
+                    })
+                    .collect()
+            });
+        std::mem::replace(&mut *live, copy)
     }
 
     /// Restores the live spline states and keeps the copy's for the next

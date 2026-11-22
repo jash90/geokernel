@@ -244,6 +244,7 @@ case("freehandpoints", "f = Function({-1, 1, 0, 1/0, 2})\nl = First(f, 3)\ng(x) 
      [reject("m = First(g, 1)"), reject("m = First(x^2, 1)")])
 case("freehandpoints", "n = 2\nl = First(Function({-2, 4, 1, 5, 2}), n)\nm = First(Function({0, 1, n, 2, 3}), 3)",
      [setn("n", 3), setn("n", 4), setn("n", 2)])
+case("freehandpoints", "l = First(Function({-1, 1, 0, 1/0, 2}), 3)\nm = First(Function({-1, 1, 0, 0/0, 2}), 3)")
 
 cases.write()
 

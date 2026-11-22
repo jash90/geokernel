@@ -1816,8 +1816,11 @@ impl<const M: bool> Ctx<'_, M> {
         let values: Vec<f64> = (0..len)
             .map(|k| {
                 let slot = lists.read(self.c, s + k);
+                // any number, also an undefined or infinite one, as
+                // `AlgoFunctionFreehand` reads `evaluateDouble`
                 match (slot.kind, slot.value) {
                     (Kind::Number, Value::Number(v)) => Some(v),
+                    (Kind::Number, _) => Some(f64::NAN),
                     _ => None,
                 }
             })

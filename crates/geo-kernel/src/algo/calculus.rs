@@ -950,7 +950,7 @@ pub(crate) fn freehand_points_of(values: &[f64]) -> Vec<(f64, f64)> {
     (2..values.len())
         .map(|i| {
             let x = min + step * (i - 2) as f64;
-            (x, freehand_value_of(values, x))
+            (x, freehand_value_at(values.len(), |k| values[k], x))
         })
         .collect()
 }
@@ -958,23 +958,19 @@ pub(crate) fn freehand_points_of(values: &[f64]) -> Vec<(f64, f64)> {
 /// `Operation.FREEHAND`: the value at `x` of the freehand function of the
 /// list `{min, max, y1, ..., yn+1}`. The `n` steps divide `[min, max]`
 /// evenly; outside the interval and for a reversed interval the value is
-/// undefined.
+/// undefined. It reads at most four cells.
 fn freehand_value(c: &Construction, list: Id, x: f64) -> f64 {
     let Some(list) = c.elements(list) else {
         return f64::NAN;
     };
-    let values: Vec<f64> = (0..list.len())
-        .map(|k| list.numeric_cell(k).unwrap_or(f64::NAN))
-        .collect();
-    freehand_value_of(&values, x)
+    freehand_value_at(list.len(), |k| list.numeric_cell(k).unwrap_or(f64::NAN), x)
 }
 
-fn freehand_value_of(values: &[f64], x: f64) -> f64 {
-    if values.len() < 4 {
+fn freehand_value_at(len: usize, at: impl Fn(usize) -> f64, x: f64) -> f64 {
+    if len < 4 {
         return f64::NAN;
     }
-    let at = |k: usize| values[k];
-    let n = values.len() - 3;
+    let n = len - 3;
     let (min, max) = (at(0), at(1));
     if min > max || x > max || x < min {
         return f64::NAN;
@@ -3679,4 +3675,23 @@ fn derivative_walks_a_long_condition_list_at_one_depth() {
     }
     let entry = expr::function_entry(&c, b.finish(&c, root).unwrap());
     assert!(rule_derivative(&c, &entry, 1).is_some());
+}
+
+#[test]
+fn freehand_samples_read_a_few_cells_each() {
+    // 100 000 samples of a 100 000-value freehand function: each sample
+    // interpolates between two cells, as `Operation.FREEHAND` does
+    let mut c = Construction::new();
+    for line in [
+        "L = Sequence(k, k, 1, 100000)",
+        "f = Function(L)",
+        "R = Sequence(f(1 + k / 100000), k, 1, 100000)",
+    ] {
+        crate::script::exec(&mut c, line).unwrap();
+    }
+    let start = std::time::Instant::now();
+    assert!(c.value(c.id("R").unwrap()).is_defined());
+    crate::script::exec(&mut c, "g = Sequence(f(1 + k / 50000), k, 1, 100000)").unwrap();
+    assert!(c.value(c.id("g").unwrap()).is_defined());
+    assert!(start.elapsed() < std::time::Duration::from_secs(10));
 }

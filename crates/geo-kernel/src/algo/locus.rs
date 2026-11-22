@@ -548,7 +548,7 @@ pub(crate) fn record(c: &mut Construction, d: LocusDef, owner: Id) -> LocusData 
     // The reference samples a copy of the construction: the remembered
     // states of the live objects stay as they were, and the copy keeps its
     // own between updates.
-    let live = c.analysis.enter_copy(owner.0);
+    let live = c.analysis.enter_copy(c, owner.0);
     let data = record_samples(c, d, owner);
     c.analysis.leave_copy(owner.0, live);
     data
