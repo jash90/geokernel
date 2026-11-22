@@ -209,7 +209,7 @@ fn same_point(a: Point, b: Point) -> bool {
     is_equal(a.0, b.0) && is_equal(a.1, b.1)
 }
 
-/// Visit the extreme points clockwise, wrapping from the lexicographic minimum.
+/// Build the clockwise boundary with a monotone chain in each scan direction.
 fn hull(points: Vec<Point>, work: &mut Budget) -> Option<Vec<LocusPoint>> {
     let mut sites = Vec::new();
     for p in points {
@@ -218,29 +218,47 @@ fn hull(points: Vec<Point>, work: &mut Budget) -> Option<Vec<LocusPoint>> {
             sites.push(p);
         }
     }
-    work.charge(sites.len())?;
-    let first = *sites.iter().min_by(|a, b| {
+    if sites.len() <= 1 {
+        return close(sites, work);
+    }
+    let n = sites.len();
+    work.charge(n * (1 + n.ilog2() as usize))?;
+    sites.sort_unstable_by(|a, b| {
         a.0.partial_cmp(&b.0)
-            .unwrap_or(Ordering::Equal)
-            .then_with(|| a.1.total_cmp(&b.1))
-    })?;
-    let mut vertices = vec![first];
-    let mut a = first;
-    loop {
-        work.charge(sites.len() + 1)?;
-        let mut next = a;
-        for &p in &sites {
-            let turn = (next.0 - a.0) * (p.1 - a.1) - (next.1 - a.1) * (p.0 - a.0);
-            if turn > 0.0 || turn == 0.0 && dist_sq(a, p) > dist_sq(a, next) {
-                next = p;
+            .expect("finite site coordinates")
+            .then_with(|| a.1.partial_cmp(&b.1).expect("finite site coordinates"))
+    });
+
+    let mut boundary = Vec::with_capacity(n);
+    append_hull_side(&mut boundary, sites.iter().copied(), work)?;
+    append_hull_side(&mut boundary, sites.into_iter().rev(), work)?;
+    close(boundary, work)
+}
+
+fn append_hull_side(
+    boundary: &mut Vec<Point>,
+    sites: impl Iterator<Item = Point>,
+    work: &mut Budget,
+) -> Option<()> {
+    let start = boundary.len();
+    for p in sites {
+        work.charge(1)?;
+        while boundary.len() - start >= 2 {
+            work.charge(1)?;
+            let len = boundary.len();
+            let (a, b) = (boundary[len - 2], boundary[len - 1]);
+            let turn = (b.0 - a.0) * (p.1 - a.1) - (b.1 - a.1) * (p.0 - a.0);
+            if turn >= 0.0 {
+                boundary.pop();
+            } else {
+                break;
             }
         }
-        if next == first {
-            return close(vertices, work);
-        }
-        vertices.push(next);
-        a = next;
+        boundary.push(p);
     }
+    // The next side starts at this endpoint. Each side can retain at most n - 1 sites.
+    boundary.pop();
+    Some(())
 }
 
 /// Preserve the reference's per-axis perturbation of repeated coordinates.
@@ -487,6 +505,19 @@ fn add(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn nearly_collinear_hull_finishes_within_a_small_work_budget() {
+        let points = vec![
+            (0.01999999999999999, 0.21),
+            (-0.01999999999999999, 0.13999999999999999),
+            (0.30000000000000004, 0.7),
+        ];
+        // Roundoff can retain a site in both passes. Allow both sides and closure.
+        let max_vertices = 2 * points.len() - 1;
+        let locus = hull(points, &mut Budget(40)).expect("three sites must fit the budget");
+        assert!((2..=max_vertices).contains(&locus.len()));
+    }
 
     #[test]
     fn sampling_a_locus_restores_the_spanning_tree_at_one_site() {

@@ -1,3 +1,7 @@
+// Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
+// Licensed by GeoGebra GmbH under the EUPL 1.2.
+// Textbook red-black insertion fix-up reproducing the ordering of GeoGebra's Java sorted set.
+
 use super::Budget;
 use std::cmp::Ordering;
 

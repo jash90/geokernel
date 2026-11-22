@@ -1,5 +1,8 @@
 """Replay upstream discrete-command tests and construction updates."""
 
+from decimal import Decimal
+from math import inf, nextafter
+
 from caselib import Cases, mv, setn
 
 
@@ -146,5 +149,34 @@ c.case("path", [
     "p = {a,b,c,d}", "n = 1", "weighted = n > 0",
     "g = ShortestDistance(p, A, D, weighted)", "h = ShortestDistance(p, A, D, true)",
 ], [setn("n", 0), mv("B", 1, 2), mv("B", 1, 1)])
+
+
+def hull_roundoff_case(points):
+    sites = ",".join(f"({Decimal(str(x)):f},{Decimal(str(y)):f})" for x, y in points)
+    c.case("hullreview", [f"g = ConvexHull({{{sites}}})"], [])
+
+
+# The three-site cycle and a finite seven-site disagreement in gift wrapping.
+hull_roundoff_case([
+    (0.01999999999999999, 0.21),
+    (-0.01999999999999999, 0.13999999999999999),
+    (0.30000000000000004, 0.7),
+])
+hull_roundoff_case([
+    (0.29, 0.4225), (0.44, 0.535), (0.79, 0.7975), (0.49, 0.5725),
+    (-0.54, -0.20000000000000004), (0.63, 0.6775), (-0.38, -0.08),
+])
+
+c.topic("hullreview")
+for n in range(5, 13):
+    for slope, offset in ((1.75, 0.175), (-0.7, 0.21), (0.75, -0.205), (-2.5, -0.4)):
+        points = []
+        for x in c.rng.sample(range(-99, 100), n):
+            x = x / 100
+            y = slope * x + offset
+            points.append((x, nextafter(y, c.rng.choice([-inf, inf, y]))))
+        hull_roundoff_case(points)
+    for _ in range(2):
+        hull_roundoff_case([c.rp() for _ in range(n)])
 
 c.write()
