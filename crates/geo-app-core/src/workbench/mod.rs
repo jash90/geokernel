@@ -331,10 +331,14 @@ impl Workbench {
     /// Runs what the user typed: `f = Line(A, B)`, `f: Line(A, B)`, or just a
     /// definition, which gets the next free label of its kind.
     pub fn run_line(&mut self, input: &str) -> Result<(), String> {
+        let line = normalize(input);
+        if self.construction.id(&line).is_some() {
+            return Ok(());
+        }
         // The label is chosen once the open tool use is taken back, so that
         // it does not skip the labels of its points.
         let line = self.outside_tool_use(|w| {
-            let line = w.with_label(normalize(input));
+            let line = w.with_label(line);
             w.exec_lines(std::slice::from_ref(&line), false)
                 .map(|()| line)
         })?;
@@ -368,6 +372,12 @@ impl Workbench {
     /// the whole group stays. A tool use in progress does not finish: its
     /// points go first (see `outside_tool_use`).
     pub fn run_lines(&mut self, lines: &[String]) -> Result<(), String> {
+        if lines.iter().all(|line| {
+            let line = normalize(line);
+            line.is_empty() || self.construction.id(&line).is_some()
+        }) {
+            return Ok(());
+        }
         self.outside_tool_use(|w| w.exec_lines(lines, false))
     }
 
@@ -471,13 +481,14 @@ impl Workbench {
             }
             let before = self.construction.len();
             let step_before = self.construction.step();
+            let target = geo_kernel::script::assignment_target(&self.construction, &line);
             // Only lines that succeeded go into the log: a failed one would
             // fail again on every replay.
             match exec_definition(&mut self.construction, &line) {
                 Ok(first) => {
                     let added = self.construction.len() > before;
                     let moved_step = !added && self.construction.step() != step_before;
-                    let replaced = first.is_some_and(|id| id.index() < before);
+                    let replaced = target.is_some() && first == target;
                     if added || moved_step || replaced {
                         self.log
                             .record_definition(&self.construction, before, first, &line);
@@ -624,7 +635,7 @@ impl Workbench {
             return false;
         };
         let made: Vec<String> = made.to_vec();
-        if !next.remove_from(label, &self.construction) {
+        if !next.remove(label, &self.construction) {
             return false;
         }
         // A deletion inside a gesture (the eraser's stroke) keeps it: the

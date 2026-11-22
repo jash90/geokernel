@@ -46,6 +46,36 @@ fn both_label_forms_and_bare_definitions_work() {
 }
 
 #[test]
+fn bare_label_reads_leave_the_journal_version_and_undo_unchanged() {
+    let mut w = Workbench::default();
+    w.run_line("A = (1, 2)").unwrap();
+    let text = w.snapshot_text();
+    let version = w.version();
+    w.run_line("A").unwrap();
+    w.run_lines(&[" A # read".into()]).unwrap();
+    assert_eq!(w.version(), version);
+    assert_eq!(w.undo_depth(), (1, 0));
+    assert_eq!(w.snapshot_text(), text);
+    assert_eq!(w.log.rhs_of("A"), Some("(1, 2)"));
+
+    let mut restored = Workbench::default();
+    assert!(restored
+        .restore_text(&format!("{text}\nA\nA # labels: A\n"))
+        .unwrap()
+        .is_empty());
+    for document in [&w, &restored] {
+        let bytes = document.export_ggb(None).unwrap();
+        let xml = geo_import::archive::extract_xml(&bytes).unwrap();
+        assert!(xml.contains(r#"label="A" exp="(1, 2)""#), "{xml}");
+    }
+
+    assert!(w.undo());
+    assert!(w.construction().id("A").is_none());
+    assert!(w.redo());
+    assert_eq!(w.snapshot_text(), text);
+}
+
+#[test]
 fn failed_line_changes_nothing() {
     let mut w = triangle();
     let n = w.construction().len();
@@ -1429,6 +1459,39 @@ fn deleting_a_replacement_parent_removes_the_active_dependents() {
         .unwrap()
         .is_empty());
     check(&restored, false);
+}
+
+#[test]
+fn deleting_a_superseded_parent_keeps_the_redefined_object_and_its_dependents() {
+    for (replacement, tail, expected) in [
+        ("(0, 0)", "C = (4, 1)", Value::Point { x: 0.0, y: 0.0 }),
+        ("(n, 1 / n)", "n = 2", Value::Point { x: 4.0, y: 1.0 }),
+    ] {
+        let mut w = Workbench::from_script(&format!("X = (1, 1)\nA = X + (1, 0)\nB = 2 A\n{tail}"))
+            .unwrap();
+        w.run_line(&format!("A = {replacement}")).unwrap();
+        let before = w.snapshot_text();
+        let check = |w: &Workbench| {
+            let c = w.construction();
+            assert!(c.id("X").is_none());
+            let tail = tail.split_once(' ').unwrap().0;
+            assert_eq!(labels(w), ["A", "B", tail]);
+            assert_eq!(c.value(c.id("B").unwrap()), expected);
+            assert_eq!(w.log.rhs_of("A"), Some(replacement));
+        };
+        assert!(w.delete(w.construction().id("X").unwrap()));
+        check(&w);
+        assert!(w.undo());
+        assert_eq!(w.snapshot_text(), before);
+        assert!(w.redo());
+        check(&w);
+        let mut restored = Workbench::default();
+        assert!(restored
+            .restore_text(&w.snapshot_text())
+            .unwrap()
+            .is_empty());
+        check(&restored);
+    }
 }
 
 /// A failed undo keeps its step: the stacks go back to exactly what they
