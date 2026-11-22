@@ -1,0 +1,79 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "textobjects-unicode-001",
+      "group": "textobjects",
+      "script": [
+        "a = LetterToUnicode(\"X\")",
+        "t = UnicodeToLetter(44)",
+        "l = TextToUnicode(\"GeoGebra\")",
+        "u = UnicodeToText({41,42,43,44,45})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 88.0 },
+          "t": { "type": "text", "defined": true, "text": "," },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 71.0 },
+              { "type": "number", "defined": true, "value": 101.0 },
+              { "type": "number", "defined": true, "value": 111.0 },
+              { "type": "number", "defined": true, "value": 71.0 },
+              { "type": "number", "defined": true, "value": 101.0 },
+              { "type": "number", "defined": true, "value": 98.0 },
+              { "type": "number", "defined": true, "value": 114.0 },
+              { "type": "number", "defined": true, "value": 97.0 }
+            ]
+          },
+          "u": { "type": "text", "defined": true, "text": ")*+,-" }
+        }
+      ]
+    },
+    {
+      "id": "textobjects-unicode-002",
+      "group": "textobjects",
+      "script": [
+        "s = \"A😀é\"",
+        "l = TextToUnicode(s)",
+        "u = UnicodeToText(l)",
+        "n = Length(s)",
+        "a = LetterToUnicode(\"😀\")",
+        "t = Take(s, 2, 3)",
+        "j = IndexOf(\"é\", s)",
+        "e = UnicodeToText({65, \"ignored\", 937})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "s": { "type": "text", "defined": true, "text": "A😀é" },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 65.0 },
+              { "type": "number", "defined": true, "value": 55357.0 },
+              { "type": "number", "defined": true, "value": 56832.0 },
+              { "type": "number", "defined": true, "value": 233.0 }
+            ]
+          },
+          "u": { "type": "text", "defined": true, "text": "A😀é" },
+          "n": { "type": "number", "defined": true, "value": 4.0 },
+          "a": { "type": "number", "defined": false },
+          "t": { "type": "text", "defined": true, "text": "😀" },
+          "j": { "type": "number", "defined": true, "value": 4.0 },
+          "e": { "type": "text", "defined": true, "text": "AΩ" }
+        }
+      ]
+    }
+  ]
+}

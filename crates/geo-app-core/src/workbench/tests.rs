@@ -1,5 +1,17 @@
 use super::*;
 
+#[test]
+fn typed_text_preserves_punctuation_and_does_not_require_a_label() {
+    let mut wb = Workbench::from_script("P = (3, 4)").unwrap();
+    wb.run_line(r#""P = " + P"#).unwrap();
+    wb.run_line(r#""Heading: value #1""#).unwrap();
+    wb.run_line(r#"alias: "x = y""#).unwrap();
+    let c = wb.construction();
+    let texts: Vec<_> = c.ids().filter_map(|id| c.text(id)).collect();
+    assert_eq!(texts, ["P = (3, 4)", "Heading: value #1", "x = y"]);
+    assert_eq!(c.text(c.id("alias").unwrap()), Some("x = y"));
+}
+
 fn triangle() -> Workbench {
     Workbench::from_script(include_str!("../../../../examples/triangle.geo")).unwrap()
 }
@@ -212,6 +224,57 @@ fn rows_describe_free_and_dependent_objects() {
     assert_eq!(rows[3].head, "r =");
     assert_eq!(rows[4].head, "E = Midpoint(A, B)");
     assert_eq!(rows[4].value.as_deref(), Some("(-1.17, 3.89)"));
+}
+
+#[test]
+fn equation_rows_keep_the_typed_form_after_a_coefficient_edit() {
+    let mut w =
+        Workbench::from_script("a = 2\nl: y = a x + 1\nm: 2x - y = -1\np: y = a x^2 - x + 1\n")
+            .unwrap();
+    let expected = [
+        ("l", "y = 2 x + 1"),
+        ("m", "2x - y = -1"),
+        ("p", "y = 2 x² - x + 1"),
+    ];
+    for (label, value) in expected {
+        let row = w.rows().iter().find(|row| row.label == label).unwrap();
+        assert_eq!(row.value.as_deref(), Some(value), "{label}");
+    }
+    let a = w.construction().id("a").unwrap();
+    assert!(w.set_number(a, -3.0));
+    let row = w.rows().iter().find(|row| row.label == "p").unwrap();
+    assert_eq!(row.value.as_deref(), Some("y = -3 x² - x + 1"));
+}
+
+#[test]
+fn imported_equation_rows_keep_the_saved_form_through_replay() {
+    let saved = include_bytes!("../../../../golden/ggb/saved/saved-text-equations-001.xml");
+    let mut w = Workbench::default();
+    w.load_bytes(saved, "saved equation forms").unwrap();
+    let expected = [
+        ("l", "y = 2 x + 1"),
+        ("p", "y = 2 x² - x + 1"),
+        ("e", "y = 2x + 1"),
+        ("g", "-2x + y - 1 = 0"),
+        ("r", "X = (0, 1) + u (1, 2)"),
+    ];
+    let assert_rows = |w: &mut Workbench| {
+        for (label, value) in expected {
+            let row = w.rows().iter().find(|row| row.label == label).unwrap();
+            assert_eq!(row.value.as_deref(), Some(value), "{label}");
+        }
+    };
+    assert_rows(&mut w);
+
+    let mut restored = Workbench::default();
+    assert!(restored
+        .restore_text(&w.snapshot_text())
+        .unwrap()
+        .is_empty());
+    assert_rows(&mut restored);
+    restored.run_line("B' = (2, 4)").unwrap();
+    assert!(restored.undo());
+    assert_rows(&mut restored);
 }
 
 #[test]
@@ -645,6 +708,230 @@ fn every_deletion_of_one_gesture_is_one_undo_step() {
     assert!(w.undo());
     assert_eq!(labels(&w), ["A", "B", "C"]);
 }
+
+/// A locus freezes the start point of a line without one (the foot from the
+/// origin, `PathMoverLine.init` installing `setStandardStartPoint`): the
+/// parameter of a point on the line is measured from it. GeoGebra keeps that
+/// start when the locus is deleted (it was installed on the line itself), so
+/// the point stays where it was; the rebuild of a deletion keeps it too.
+#[test]
+fn deleting_a_locus_keeps_the_frozen_start_of_its_line() {
+    let src = "M = (0, 0)\nR = (2, 0)\nk = Circle(M, R)\nQ = (5, 1)\nh = Polar(Q, k)\n\
+               P = Point(h)\nt = PathParameter(P)\nB = (1, 3)\nC = Midpoint(P, B)\nL = Locus(C, P)\n";
+    let mut w = Workbench::from_script(src).unwrap();
+    let p = w.construction().id("P").unwrap();
+    let t = w.construction().id("t").unwrap();
+    let q = w.construction().id("Q").unwrap();
+    // the line moves after the locus froze its start: the parameter of P is
+    // measured from the start it had then, which stays with the line
+    assert!(w.move_point(q, 3.0, 2.0));
+    assert!(w.move_point(p, 1.0, 1.0));
+    let (at, param) = (w.construction().value(p), w.construction().value(t));
+    let l = w.construction().id("L").unwrap();
+    assert!(w.delete(l));
+    assert_eq!(
+        w.construction().value(p),
+        at,
+        "the point stays where it was"
+    );
+    assert_eq!(
+        w.construction().value(t),
+        param,
+        "its parameter keeps the frozen start"
+    );
+}
+
+/// Moves recorded before the locus were made with no frozen start on the
+/// line: the live foot of the line was the origin (`PathMoverLine` before
+/// `init` installed the start point). A rebuild of a deletion must not
+/// install the start before the entry that froze it, or those moves
+/// replay from a different origin and the point ends up elsewhere. Moves
+/// after the locus are measured from the frozen start, as in GeoGebra, which
+/// does not rebuild on a deletion at all.
+#[test]
+fn a_deletion_keeps_a_point_moved_before_the_locus() {
+    let src = "M = (0, 0)\nR = (2, 0)\nk = Circle(M, R)\nQ = (5, 1)\nh = Polar(Q, k)\n\
+               P = Point(h)\nB = (1, 3)\nC = Midpoint(P, B)\nZ = (7, 7)\n";
+    let mut w = Workbench::from_script(src).unwrap();
+    let p = w.construction().id("P").unwrap();
+    let q = w.construction().id("Q").unwrap();
+    // before the locus: P moves along h, then h itself moves and P follows
+    assert!(w.move_point(p, 1.0, 1.0));
+    assert!(w.move_point(q, 3.0, 2.0));
+    // the locus freezes the foot of h as it is then
+    w.run_line("L = Locus(C, P)").unwrap();
+    // after the locus: h moves again and P follows from the frozen start
+    assert!(w.move_point(q, 4.0, 1.0));
+    let at = w.construction().value(p);
+    let z = w.construction().id("Z").unwrap();
+    assert!(w.delete(z));
+    assert_eq!(
+        w.construction().value(p),
+        at,
+        "P stays exactly where it was before the deletion"
+    );
+}
+
+/// A start whose locus entry is gone has to live in the journal, not only
+/// in the construction: GeoGebra keeps the start for the rest of the
+/// session (it installed it on the line itself), so deleting the locus
+/// writes the start where the locus entry was, and every later replay —
+/// further deletions, and the undo and redo of them — installs it at the
+/// same place again, reproducing the points bit for bit.
+#[test]
+fn later_deletions_and_their_undo_keep_the_frozen_start() {
+    let src = "M = (0, 0)\nR = (2, 0)\nk = Circle(M, R)\nQ = (5, 1)\nh = Polar(Q, k)\n\
+               P = Point(h)\nB = (1, 3)\nC = Midpoint(P, B)\nZ = (7, 7)\nY = (8, 8)\n";
+    let mut w = Workbench::from_script(src).unwrap();
+    let p = w.construction().id("P").unwrap();
+    let q = w.construction().id("Q").unwrap();
+    // before the locus: P moves along h, then h itself moves and P follows
+    assert!(w.move_point(p, 1.0, 1.0));
+    assert!(w.move_point(q, 3.0, 2.0));
+    // the locus freezes the foot of h as it is then
+    w.run_line("L = Locus(C, P)").unwrap();
+    // after the locus: h moves again and P follows from the frozen start
+    assert!(w.move_point(q, 4.0, 1.0));
+    let at = w.construction().value(p);
+    // Every deletion rebuilds the construction, which renumbers the
+    // objects, so each id is read again just before it goes.
+    assert!(w.delete(w.construction().id("L").unwrap()));
+    assert_eq!(w.construction().value(p), at, "deleting the locus keeps P");
+    assert!(w.delete(w.construction().id("Z").unwrap()));
+    assert_eq!(
+        w.construction().value(p),
+        at,
+        "the first later deletion keeps P"
+    );
+    assert!(w.delete(w.construction().id("Y").unwrap()));
+    assert_eq!(
+        w.construction().value(p),
+        at,
+        "the second later deletion keeps P"
+    );
+    // the deletions undone replay the journal again, and the locus comes
+    // back with the state before its own deletion
+    assert!(w.undo());
+    assert_eq!(
+        w.construction().value(p),
+        at,
+        "undo of the second deletion keeps P"
+    );
+    assert!(w.undo());
+    assert_eq!(
+        w.construction().value(p),
+        at,
+        "undo of the first deletion keeps P"
+    );
+    assert!(w.undo());
+    assert_eq!(
+        w.construction().value(p),
+        at,
+        "undo of the locus deletion keeps P"
+    );
+    assert!(w.redo());
+    assert_eq!(
+        w.construction().value(p),
+        at,
+        "redo of the locus deletion keeps P"
+    );
+    assert!(w.redo());
+    assert_eq!(
+        w.construction().value(p),
+        at,
+        "redo of the first deletion keeps P"
+    );
+}
+
+/// A saved script does not keep the frozen start (GeoGebra's files do not
+/// save the point either): the journal entry that carries the start over
+/// rebuilds is internal and never written, so a reload starts without one —
+/// the moves replay from the live foot of the line — and the next locus
+/// computation installs a fresh one, on the line as it is then.
+#[test]
+fn a_saved_script_does_not_keep_the_frozen_start() {
+    let src = "M = (0, 0)\nR = (2, 0)\nk = Circle(M, R)\nQ = (5, 1)\nh = Polar(Q, k)\n\
+               P = Point(h)\nB = (1, 3)\nC = Midpoint(P, B)\n";
+    let mut w = Workbench::from_script(src).unwrap();
+    let p = w.construction().id("P").unwrap();
+    let q = w.construction().id("Q").unwrap();
+    assert!(w.move_point(p, 1.0, 1.0));
+    assert!(w.move_point(q, 3.0, 2.0));
+    w.run_line("L = Locus(C, P)").unwrap();
+    assert!(w.move_point(q, 4.0, 1.0));
+    let at = w.construction().value(p);
+    assert!(w.delete(w.construction().id("L").unwrap()));
+    assert_eq!(w.construction().value(p), at, "deleting the locus keeps P");
+
+    let mut re = Workbench::default();
+    assert!(re.restore_text(&w.snapshot_text()).unwrap().is_empty());
+    let value = |w: &Workbench| w.construction().value(w.construction().id("P").unwrap());
+    assert_ne!(
+        value(&re),
+        at,
+        "a reload does not keep the start the locus froze"
+    );
+    // the next locus computation installs a fresh one, and the entry its
+    // own deletion writes keeps that one too
+    re.run_line("L = Locus(C, P)").unwrap();
+    let fresh = value(&re);
+    assert!(re.delete(re.construction().id("L").unwrap()));
+    assert_eq!(
+        value(&re),
+        fresh,
+        "the fresh start stays when its locus goes"
+    );
+}
+
+/// A start entry whose line is deleted goes with the line: the rebuild
+/// drops it like the entries that used the line, instead of failing on a
+/// label that is no longer there.
+#[test]
+fn deleting_the_line_drops_the_start_entry_it_kept() {
+    let src = "M = (0, 0)\nR = (2, 0)\nk = Circle(M, R)\nQ = (5, 1)\nh = Polar(Q, k)\n\
+               P = Point(h)\nB = (1, 3)\nC = Midpoint(P, B)\n";
+    let mut w = Workbench::from_script(src).unwrap();
+    let p = w.construction().id("P").unwrap();
+    let q = w.construction().id("Q").unwrap();
+    assert!(w.move_point(p, 1.0, 1.0));
+    w.run_line("L = Locus(C, P)").unwrap();
+    assert!(w.move_point(q, 4.0, 1.0));
+    // the deletion of the locus writes the start entry into the journal
+    assert!(w.delete(w.construction().id("L").unwrap()));
+    // the circle goes, and with it the line, the point on it and the entry
+    // that kept the line's start
+    assert!(w.delete(w.construction().id("k").unwrap()));
+    assert!(w.construction().id("P").is_none());
+    assert!(w.construction().id("h").is_none());
+    assert_eq!(labels(&w), ["M", "R", "Q", "B"]);
+}
+
+/// The same with the locus itself deleted: the journal entry its deletion
+/// writes belongs after the moves the locus found in place (they replayed
+/// with no start, the live foot of the line) and before the moves made
+/// after it (measured from the start, as the frozen start stays with the
+/// line in GeoGebra).
+#[test]
+fn deleting_the_locus_keeps_a_point_moved_before_it() {
+    let src = "M = (0, 0)\nR = (2, 0)\nk = Circle(M, R)\nQ = (5, 1)\nh = Polar(Q, k)\n\
+               P = Point(h)\nB = (1, 3)\nC = Midpoint(P, B)\n";
+    let mut w = Workbench::from_script(src).unwrap();
+    let p = w.construction().id("P").unwrap();
+    let q = w.construction().id("Q").unwrap();
+    assert!(w.move_point(p, 1.0, 1.0));
+    assert!(w.move_point(q, 3.0, 2.0));
+    w.run_line("L = Locus(C, P)").unwrap();
+    assert!(w.move_point(q, 4.0, 1.0));
+    let at = w.construction().value(p);
+    let l = w.construction().id("L").unwrap();
+    assert!(w.delete(l));
+    assert_eq!(
+        w.construction().value(p),
+        at,
+        "P stays exactly where it was before the deletion"
+    );
+}
+
 const BOUNDARY_GROWTH: &str = "A = (0, 0)\nB = (2, 0)\nC = (2, 2)\nD = (0, 2)\n\
     p = Polygon(A, B, C, D)\nG = (-1, 3)\nH = (3, 3)\ng = Line(G, H)\nR = Intersect(g, p)";
 

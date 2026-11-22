@@ -1,5 +1,6 @@
 package geokernel.harness;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -15,7 +16,11 @@ import org.geogebra.common.factories.AwtFactoryCommon;
 import org.geogebra.common.jre.headless.AppCommon;
 import org.geogebra.common.jre.headless.LocalizationCommon;
 import org.geogebra.common.jre.headless.Utf8Control;
+import org.geogebra.common.jre.io.MyXMLioJre;
+import org.geogebra.common.kernel.CircularDefinitionException;
 import org.geogebra.common.kernel.Kernel;
+import org.geogebra.common.kernel.LinearEquationRepresentable;
+import org.geogebra.common.kernel.QuadraticEquationRepresentable;
 import org.geogebra.common.kernel.geos.GeoAngle;
 import org.geogebra.common.kernel.geos.GeoBoolean;
 import org.geogebra.common.kernel.geos.GeoButton;
@@ -30,6 +35,7 @@ import org.geogebra.common.kernel.geos.GeoNumeric;
 import org.geogebra.common.kernel.geos.GeoPoint;
 import org.geogebra.common.kernel.geos.GeoPolygon;
 import org.geogebra.common.kernel.geos.GeoSegment;
+import org.geogebra.common.kernel.geos.GeoText;
 import org.geogebra.common.kernel.geos.GeoVector;
 import org.geogebra.common.kernel.kernelND.GeoElementND;
 import org.geogebra.common.main.error.ErrorHandler;
@@ -45,11 +51,12 @@ import org.geogebra.common.util.AsyncOperation;
  * id, optionally an {@code angle_unit} ({@code degree} or {@code radiant}), raw
  * GeoGebra input lines, optional {@code hidden} labels, and {@code move} or
  * {@code set_number} steps. Steps can also enable point animation, set an
- * angle style, or rename an object. The lines are given to the
+ * angle or equation style, position or style a text, or rename an object. The lines are given to the
  * algebra processor as typed (so a command that makes several objects, such as
  * {@code P = Intersect(f, k)}, gives all of them), the moves are applied, and
  * then, with nothing else done in between, the case is written as
- * {@code <out dir>/<id>.xml} (the text {@code app.getXML()} returns) and
+ * {@code <out dir>/<id>.xml} (the text {@code app.getXML()} returns, or the
+ * GeoGebra archive {@code <id>.ggb} when {@code archive} is true) and
  * {@code <out dir>/<id>.snapshot}: the value of every labelled object at the
  * same moment, in the field format of the golden files. The snapshot is not a
  * golden file (it has the extension {@code .snapshot}) so the golden loader
@@ -81,7 +88,7 @@ public final class SavedExporter {
             } catch (RuntimeException e) {
                 throw new IllegalStateException("case " + id + " failed: " + e.getMessage(), e);
             }
-            produced.add(id + ".xml");
+            produced.add(id + (Boolean.TRUE.equals(input.get("archive")) ? ".ggb" : ".xml"));
             produced.add(id + ".snapshot");
         }
         try (var files = Files.list(outDir)) {
@@ -152,8 +159,21 @@ public final class SavedExporter {
                 }
             } else if ("angle_style".equals(action) && geo instanceof GeoAngle angle) {
                 angle.setAngleStyle(((Number) step.get("value")).intValue());
+            } else if ("line_style".equals(action) && geo instanceof GeoLine line) {
+                var form = LinearEquationRepresentable.Form.valueOf((String) step.get("form"));
+                if (form == LinearEquationRepresentable.Form.PARAMETRIC) {
+                    line.setToParametricForm((String) step.get("parameter"));
+                } else {
+                    line.setEquationForm(form);
+                }
+            } else if ("conic_style".equals(action) && geo instanceof GeoConic conic) {
+                conic.setEquationForm(
+                        QuadraticEquationRepresentable.Form.valueOf((String) step.get("form")));
             } else if ("rename".equals(action)) {
                 geo.rename((String) step.get("name"));
+            } else if (geo instanceof GeoText text && action instanceof String name
+                    && name.startsWith("text_")) {
+                applyTextStep(kernel, text, name, step);
             } else {
                 throw new IllegalArgumentException("invalid saved step " + step);
             }
@@ -166,7 +186,17 @@ public final class SavedExporter {
                 objects.put(geo.getLabelSimple(), describe(geo));
             }
         }
-        Files.writeString(outDir.resolve(id + ".xml"), app.getXML(), StandardCharsets.UTF_8);
+        if (Boolean.TRUE.equals(input.get("archive"))) {
+            ByteArrayOutputStream zip = new ByteArrayOutputStream();
+            ((MyXMLioJre) app.getXMLio()).writeGeoGebraFile(zip, false);
+            Path target = outDir.resolve(id + ".ggb");
+            byte[] bytes = zip.toByteArray();
+            if (!Files.exists(target) || !GgbExporter.sameEntries(Files.readAllBytes(target), bytes)) {
+                Files.write(target, bytes);
+            }
+        } else {
+            Files.writeString(outDir.resolve(id + ".xml"), app.getXML(), StandardCharsets.UTF_8);
+        }
         Map<String, Object> snapshot = new LinkedHashMap<>();
         snapshot.put("schema", 2L);
         snapshot.put("id", id);
@@ -174,6 +204,34 @@ public final class SavedExporter {
         snapshot.put("objects", objects);
         Files.writeString(outDir.resolve(id + ".snapshot"), Json.write(snapshot),
                 StandardCharsets.UTF_8);
+    }
+
+    private static void applyTextStep(Kernel kernel, GeoText text, String action, Map<?, ?> step) {
+        switch (action) {
+            case "text_screen":
+                text.setAbsoluteScreenLocActive(true);
+                text.setAbsoluteScreenLoc(((Number) step.get("x")).intValue(),
+                        ((Number) step.get("y")).intValue());
+                break;
+            case "text_world":
+                text.setRealWorldLoc(number(step.get("x")), number(step.get("y")));
+                break;
+            case "text_anchor":
+                try {
+                    text.setStartPoint((GeoPoint) kernel.lookupLabel((String) step.get("point")));
+                } catch (CircularDefinitionException e) {
+                    throw new IllegalArgumentException("circular text anchor " + step, e);
+                }
+                break;
+            case "text_font":
+                text.setLaTeX(Boolean.TRUE.equals(step.get("latex")), false);
+                text.setSerifFont(Boolean.TRUE.equals(step.get("serif")));
+                text.setFontSizeMultiplier(number(step.get("size")));
+                text.setFontStyle(((Number) step.get("style")).intValue());
+                break;
+            default:
+                throw new IllegalArgumentException("invalid saved text step " + step);
+        }
     }
 
     private static double number(Object value) {
@@ -189,7 +247,7 @@ public final class SavedExporter {
         Map<String, Object> f = new LinkedHashMap<>();
         boolean ok = geo.isDefined();
         if (geo instanceof GeoBoolean || geo instanceof GeoFunction || geo instanceof GeoVector
-                || geo instanceof GeoList || geo instanceof GeoPolygon) {
+                || geo instanceof GeoList || geo instanceof GeoPolygon || geo instanceof GeoText) {
             return Session.describe(geo, Session.typeOf(geo));
         } else if (geo instanceof GeoFunctionNVar) {
             return Session.describe(geo, "function");

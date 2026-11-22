@@ -169,13 +169,15 @@ pub fn value_string(c: &Construction, id: Id) -> Option<String> {
         (Value::Undefined, kind) => match kind {
             Kind::Number => Some("NaN".into()),
             Kind::Point | Kind::Vector => Some("(NaN, NaN)".into()),
-            Kind::Boolean => Some("?".into()),
+            Kind::Boolean | Kind::List => Some("?".into()),
+            Kind::Text => Some(String::new()),
             _ => None,
         },
         (Value::Number(n), _) => ggb_double(*n),
         (Value::Point { x, y }, _) => text(*x, *y),
         (Value::Vector { x, y }, _) => text(*x, *y),
         (Value::Bool(b), _) => Some(b.to_string()),
+        (Value::Text, _) => c.text(id).map(str::to_owned),
         (Value::Segment { x1, y1, x2, y2 }, _) => ggb_double((x2 - x1).hypot(y2 - y1)),
         (_, Kind::List) => list_string(c.elements(id)?),
         _ => None,
@@ -201,6 +203,7 @@ fn list_string(list: geo_kernel::expr::List<'_>) -> Option<String> {
             ) => parts.push(format!("({}, {})", ggb_double(x)?, ggb_double(y)?)),
             Element::Value(Kind::Boolean, Value::Bool(b)) => parts.push(b.to_string()),
             Element::List(inner) => parts.push(list_string(inner)?),
+            Element::Text(s) => parts.push(format!("\"{s}\"")),
             _ => return None,
         }
     }

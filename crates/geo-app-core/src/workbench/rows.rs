@@ -74,9 +74,8 @@ pub(crate) fn same_value(a: Value, b: Value) -> bool {
     }
 }
 
-/// What a row was made from: the value and, for a conic, the bits of its
-/// matrix (zero for any other kind).
-pub(crate) type RowKey = (Value, [u64; 6]);
+/// A row's value, conic matrix, and equation display revision.
+pub(crate) type RowKey = (Value, [u64; 6], Option<u64>);
 
 /// The [`RowKey`] of `id`, without allocating.
 fn row_key(c: &Construction, id: Id) -> RowKey {
@@ -87,11 +86,22 @@ fn row_key(c: &Construction, id: Id) -> RowKey {
             .map_or([u64::MAX; 6], |d| d.matrix.map(f64::to_bits)),
         _ => [0; 6],
     };
-    (value, matrix)
+    let display = match value {
+        Value::Line { .. }
+        | Value::Ray { .. }
+        | Value::Circle { .. }
+        | Value::Conic { .. }
+        | Value::Undefined => c.equation_display_revision(id),
+        _ => None,
+    };
+    (value, matrix, display)
 }
 
 /// Whether two row keys are the same bit for bit.
 fn same_key(a: RowKey, b: RowKey) -> bool {
+    if a.2 != b.2 {
+        return false;
+    }
     match (a.0, b.0) {
         (Value::Conic { ty }, Value::Conic { ty: ty2 }) => ty == ty2 && a.1 == b.1,
         _ => same_value(a.0, b.0),
@@ -100,10 +110,21 @@ fn same_key(a: RowKey, b: RowKey) -> bool {
 
 fn same_row_value(c: &Construction, id: Id, row: &Row, old: RowKey, new: RowKey) -> bool {
     if matches!((old.0, new.0), (Value::Text, Value::Text)) {
-        row.value.as_deref() == c.text(id)
+        if row.free {
+            is_joined(
+                &row.head,
+                &[&row.label, " = ", c.text(id).unwrap_or_default()],
+            )
+        } else {
+            row.value.as_deref() == c.text(id)
+        }
     } else {
         same_key(old, new)
     }
+}
+
+fn is_free(c: &Construction, id: Id) -> bool {
+    c.def(id).is_free() || (c.kind(id) == Kind::Text && c.is_independent_text(id))
 }
 
 /// The number of a free number or angle, edited in place.
@@ -235,7 +256,7 @@ fn value_parts(c: &Construction, id: Id) -> (String, Option<f64>) {
 /// The row of `id` made from scratch.
 fn make_row(c: &Construction, id: Id, src: Source) -> Row {
     let label = c.label(id);
-    let free = c.def(id).is_free();
+    let free = is_free(c, id);
     let mut row = Row {
         id,
         kind: c.kind(id),
@@ -293,7 +314,7 @@ fn still_fits(
     made_from: RowKey,
     key: RowKey,
 ) -> bool {
-    let free = c.def(id).is_free();
+    let free = is_free(c, id);
     let number = free_number(c, id);
     // A free object's or number's head follows from its label and value.
     let same_head = free || number.is_some() || {
@@ -307,6 +328,8 @@ fn still_fits(
         && same_row_value(c, id, row, made_from, key)
         && row.siblings.iter().eq(siblings(src, &row.label))
         && same_head
+        // Revision counters identify changes only within a construction.
+        && (key.2.is_none() || row.value.as_deref() == Some(&describe::object_text(c, id)))
 }
 
 /// Puts the value parts into `row`, whose definition part is in place: a

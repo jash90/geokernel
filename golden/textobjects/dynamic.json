@@ -1,0 +1,111 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "textobjects-dynamic-001",
+      "group": "textobjects",
+      "script": [
+        "a = 1.2345",
+        "P = (1.2345, -2.7654)",
+        "caption = \"a = \" + a + \"; P = \" + P",
+        "size = Length(caption)",
+        "quote = \"A # B\""
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "P", "x": -3.125, "y": 0.004 },
+        { "action": "set_number", "label": "a", "value": -4.555 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.2345 },
+          "P": { "type": "point", "defined": true, "x": 1.2345, "y": -2.7654 },
+          "caption": { "type": "text", "defined": true, "text": "a = 1.23; P = (1.23, -2.77)" },
+          "size": { "type": "number", "defined": true, "value": 27.0 },
+          "quote": { "type": "text", "defined": true, "text": "A # B" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.2345 },
+          "P": { "type": "point", "defined": true, "x": -3.125, "y": 0.004 },
+          "caption": { "type": "text", "defined": true, "text": "a = 1.23; P = (-3.13, 0)" },
+          "size": { "type": "number", "defined": true, "value": 24.0 },
+          "quote": { "type": "text", "defined": true, "text": "A # B" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -4.555 },
+          "P": { "type": "point", "defined": true, "x": -3.125, "y": 0.004 },
+          "caption": { "type": "text", "defined": true, "text": "a = -4.55; P = (-3.13, 0)" },
+          "size": { "type": "number", "defined": true, "value": 25.0 },
+          "quote": { "type": "text", "defined": true, "text": "A # B" }
+        }
+      ]
+    },
+    {
+      "id": "textobjects-dynamic-002",
+      "group": "textobjects",
+      "script": [
+        "a = 1",
+        "b = 1 / a",
+        "P = (b, a)",
+        "alpha = 32.125°",
+        "s = \"b = \" + b + \"; P = \" + P + \"; angle = \" + alpha",
+        "t = alpha + \" is the angle\""
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "alpha": { "type": "angle", "defined": true, "value": 0.5606870222031783 },
+          "s": { "type": "text", "defined": true, "text": "b = 1; P = (1, 1); angle = 32.13°" },
+          "t": { "type": "text", "defined": true, "text": "32.13° is the angle" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": false },
+          "P": { "type": "point", "defined": false },
+          "alpha": { "type": "angle", "defined": true, "value": 0.5606870222031783 },
+          "s": { "type": "text", "defined": true, "text": "b = ∞; P = ?; angle = 32.13°" },
+          "t": { "type": "text", "defined": true, "text": "32.13° is the angle" }
+        }
+      ]
+    },
+    {
+      "id": "textobjects-dynamic-003",
+      "group": "textobjects",
+      "script": [
+        "a = 1",
+        "P = If(a > 0, (2, 3))",
+        "s = \"P = \" + P",
+        "u = \"ratio = \" + sqrt(a)",
+        "t = \"\" + (-0.005) + \"; \" + 99999999.01 + \"; \" + 0.000000002"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "s": { "type": "text", "defined": true, "text": "P = (2, 3)" },
+          "u": { "type": "text", "defined": true, "text": "ratio = 1" },
+          "t": { "type": "text", "defined": true, "text": "-0.01; 99999999.01; 0" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "P": { "type": "point", "defined": false },
+          "s": { "type": "text", "defined": true, "text": "P = ?" },
+          "u": { "type": "text", "defined": true, "text": "ratio = ?" },
+          "t": { "type": "text", "defined": true, "text": "-0.01; 99999999.01; 0" }
+        }
+      ]
+    }
+  ]
+}

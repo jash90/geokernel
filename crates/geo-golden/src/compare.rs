@@ -93,6 +93,10 @@ pub fn compare_list(
     for (k, (w, g)) in want.iter().zip(got.iter()).enumerate() {
         match g {
             Element::List(inner) => compare_list(c, w, Kind::List, Some(inner)),
+            Element::Text(s) => match &w.data {
+                Some(ExpectedData::Text(text)) if text == s => Ok(Sign::NotApplicable),
+                _ => Err(format!("expected {:?}, got text {s:?}", w.data)),
+            },
             Element::Value(Kind::Function, value) => {
                 let sample = |x| c.function_value(got.function_at(k)?, x);
                 compare_sampled(w, Kind::Function, &value, &[], Some(&sample))

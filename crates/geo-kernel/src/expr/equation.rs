@@ -9,6 +9,7 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDependentConic.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoLine.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoConic.java
+//   source/shared/common/src/main/java/org/geogebra/common/main/settings/config/equationforms/DefaultEquationBehaviour.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
@@ -62,7 +63,9 @@ use super::parse;
 use super::{children, eval, math, shift_children, types, Bin, Entry, Lit, Node, Raw, Ty, NONE};
 use crate::algo;
 use crate::algo::conic_nd::ConicData;
-use crate::kernel::{Construction, Def, EquationDef, EquationRecord, Error, Id, Kind, Value};
+use crate::kernel::{
+    Construction, Def, EquationDef, EquationForm, EquationRecord, Error, Id, Kind, Value,
+};
 use crate::tol::STANDARD_PRECISION;
 
 /// `Polynomial.MAX_ALLOWED_DEGREE`: the largest exponent of a polynomial
@@ -884,7 +887,11 @@ fn add(
         },
     ));
     match c.add(name, Def::Equation(EquationDef { conic, index })) {
-        Ok(id) => Ok(id),
+        Ok(id) => {
+            // Classic's algebra-input form keeps the sides of the typed equation.
+            c.set_equation_form(id, EquationForm::User)?;
+            Ok(id)
+        }
         Err(e) => {
             c.equations.pop();
             c.exprs.entries.truncate(first_entry);
@@ -920,10 +927,13 @@ pub(crate) fn check(c: &Construction, d: EquationDef) -> Result<(), Error> {
     Ok(())
 }
 
-/// The objects the equation reads: the parents of its coefficients.
+/// The objects the equation reads: both its coefficients and its typed sides.
 pub(crate) fn parents(c: &Construction, d: EquationDef) -> Vec<Id> {
     let mut out = Vec::new();
-    for &e in entries(c, d) {
+    let Some((_, record)) = c.equations.get(d.index as usize) else {
+        return out;
+    };
+    for &e in record.coeffs.iter().chain(&record.sides) {
         for &p in &c.exprs.entries[e as usize].parents {
             if !out.contains(&p) {
                 out.push(p);
@@ -934,7 +944,7 @@ pub(crate) fn parents(c: &Construction, d: EquationDef) -> Vec<Id> {
 }
 
 /// The original side of a user equation, with its free coordinate variables.
-fn side_entry(c: &Construction, equation: Id, left: bool) -> Option<&Entry> {
+pub(super) fn side_entry(c: &Construction, equation: Id, left: bool) -> Option<&Entry> {
     let Def::Equation(def) = c.def(equation) else {
         return None;
     };

@@ -83,7 +83,7 @@ PARTIAL = {
     "Incircle": "Incircle(point, point, point)",
     "Center": "Center(circle or conic); Center(segment)",
     "Diameter": "Diameter(line or segment, circle or conic)",
-    "Length": "Point, vector, segment, list, quoted text, locus sample count, conic part, function or Cartesian curve between bounds",
+    "Length": "Point, vector, segment, list, text, locus sample count, conic part, function or Cartesian curve between bounds",
     "Radius": "Radius(conic or conic part); defined for circle and single-point types",
     "Circumference": "Conic, conic part, polygon or locus",
     "Perimeter": "Polygon, conic, conic part or locus",

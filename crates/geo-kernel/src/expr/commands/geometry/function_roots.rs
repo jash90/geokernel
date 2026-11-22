@@ -105,12 +105,8 @@ fn function_context<'a, const M: bool>(
         return None;
     };
     Some(Ctx {
-        c,
-        e: expr::entry(c, def),
-        env,
-        lists: None,
         meter,
-        locals: None,
+        ..Ctx::new(c, expr::entry(c, def), env)
     })
 }
 

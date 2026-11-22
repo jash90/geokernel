@@ -1,0 +1,26 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "textobjects-replace-001",
+      "group": "textobjects",
+      "script": [
+        "t = ReplaceAll(\"3cos(t)+cos(2y)\", \"cos\", \"sin\")",
+        "u = ReplaceAll(\"3cos(t)+cos(2y)\", \"(\", \"[\")",
+        "v = ReplaceAll(\"3cos(t)\", \"\", \"*\")"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "text", "defined": true, "text": "3sin(t)+sin(2y)" },
+          "u": { "type": "text", "defined": true, "text": "3cos[t)+cos[2y)" },
+          "v": { "type": "text", "defined": true, "text": "*3*c*o*s*(*t*)*" }
+        }
+      ]
+    }
+  ]
+}

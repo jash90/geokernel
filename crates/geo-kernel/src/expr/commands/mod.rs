@@ -15,6 +15,7 @@ mod list;
 mod logical;
 pub(crate) use logical::relation;
 mod statistics;
+pub(super) mod text;
 
 use super::eval::{Ctx, Val};
 use super::parse::Parser;
@@ -30,6 +31,7 @@ pub(super) fn is_command(name: &str) -> bool {
         list::NAMES,
         statistics::NAMES,
         geometry::NAMES,
+        text::NAMES,
     ]
     .iter()
     .any(|names| names.contains(&name))
@@ -39,6 +41,9 @@ pub(super) fn is_command(name: &str) -> bool {
 /// or `None`, with nothing read, when no group takes it (the two-number
 /// commands and the commands of the script parser are tried next).
 pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
+    if let Some(node) = text::parse(p, text)? {
+        return Ok(Some(node));
+    }
     if let Some(node) = logical::parse(p, text)? {
         return Ok(Some(node));
     }
