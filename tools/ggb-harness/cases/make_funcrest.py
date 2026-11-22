@@ -188,6 +188,8 @@ case("slowplot", "A = (0, 0)\nB = (2, 2)\nl = Line(A, B)\ng = SlowPlot(l, false)
      [anim(100), mv("B", 0, 2), anim(1), mv("B", 2, 4), anim(250)])
 case("slowplot", "n = 1\nf(x) = x / n\ng = SlowPlot(f)\np = a + 0\nu = g(-4)",
      [anim(30), setn("n", 0), anim(30), setn("n", 2), anim(30)])
+case("slowplot", "A = (0, 0)\nB = (2, 2)\nl = Line(A, B)\ng = SlowPlot(l, 1)\np = a + 0\nu = g(0)",
+     [anim(160), mv("B", 2, 0), anim(160)])
 
 # ---------------------------------------------------------------- Derivative
 case("derivative", "n = 0\nk = n/n\nf(x) = x^3 + 1\ng = Derivative(f, k)\nh = NDerivative(f, k)\n"

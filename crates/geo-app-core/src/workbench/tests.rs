@@ -237,6 +237,65 @@ fn a_slow_plot_slider_assignment_survives_undo_and_redo() {
 }
 
 #[test]
+fn slow_plot_hides_its_source_and_plays_its_slider() {
+    let mut w = Workbench::default();
+    w.run_line("f(x) = sin(x)").unwrap();
+    w.run_line("g = SlowPlot(f, false)").unwrap();
+    let c = w.construction();
+    let (f, a) = (c.id("f").unwrap(), c.id("a").unwrap());
+    assert!(!w.is_visible(f));
+    assert!(w.is_visible(a));
+    assert!(w.is_animating());
+    for _ in 0..400 {
+        w.animate(30.0);
+    }
+    // played once to the upper end, without journal entries of its own
+    assert!(!w.is_animating());
+    assert_eq!(w.construction().value(a), Value::Number(1.0));
+    assert!(w.undo());
+    assert!(w.construction().id("g").is_none());
+    assert!(w.is_visible(w.construction().id("f").unwrap()));
+}
+
+#[test]
+fn a_typed_stroke_keeps_its_points_through_a_rebuild_in_another_view() {
+    let mut w = Workbench::default();
+    // 10 pixels per unit: the stroke is subdivided less than in the 50
+    // pixels per unit of a construction a rebuild starts from
+    w.set_view(crate::interact::ViewTransform::new(
+        geo_kernel::svg::View {
+            xmin: -40.0,
+            xmax: 40.0,
+            ymin: -40.0,
+            ymax: 40.0,
+        },
+        800.0,
+        800.0,
+    ));
+    w.run_line("s = PenStroke((-3, 3), (4, 3), (2, 5))")
+        .unwrap();
+    w.run_line("A = (1, 1)").unwrap();
+    let bits = |w: &Workbench| {
+        let c = w.construction();
+        let stroke = c.stroke(c.id("s").unwrap()).unwrap();
+        stroke
+            .triplets()
+            .iter()
+            .map(|v| v.to_bits())
+            .collect::<Vec<_>>()
+    };
+    let before = bits(&w);
+    assert_eq!(before.len(), 3 * 16, "smoothed at 10 pixels per unit");
+    assert_eq!(
+        w.definition("s"),
+        Some("PenStroke((-3, 3), (4, 3), (2, 5))")
+    );
+    let id = w.construction().id("A").unwrap();
+    assert!(w.delete(id));
+    assert_eq!(bits(&w), before);
+}
+
+#[test]
 fn set_number_recomputes_dependents_and_undoes() {
     let mut w = triangle();
     let r = w.construction().id("r").unwrap();

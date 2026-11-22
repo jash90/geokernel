@@ -62,7 +62,7 @@ Cubic,,geometry,P1,done,1,1,
 TriangleCurve,,geometry,P1,done,1,1,
 Vertex,,geometry,P1,partial,12,9,"Conic, polygon, polyline and graphics view corners. Indexed polygon, polyline, segment and raster image corners. Polynomial inequality borders."
 PolyLine,,geometry,P1,done,4,4,Live list with optional Boolean or separate points with an optional false flag
-PenStroke,,geometry,P1,todo,2,0,
+PenStroke,,geometry,P1,done,2,2,Literal points smoothed into cubic pieces in the view and frozen; saved strokes restore their points.
 PenStrokeBezier,,english,,out_of_scope,,,"A pen stroke reads the pointing device and the tablet state, not the construction."
 PointIn,,geometry,P1,done,1,1,"PointIn(polygon, conic or conic part as a single region argument)"
 AffineRatio,,geometry,P1,done,1,1,"AffineRatio(point, point, point)"
@@ -428,7 +428,7 @@ AxisStepY,,geogebra,P2,done,1,1,
 ConstructionStep,,geogebra,P2,done,2,2,
 Object,,geogebra,P2,done,1,1,
 Name,,geogebra,P2,done,1,1,
-SlowPlot,,geogebra,P2,todo,4,0,"Functions and lines follow an editable slider and the view bounds. Automatic animation, source visibility and repeat behavior remain open."
+SlowPlot,,geogebra,P2,done,4,4,"Functions and lines follow a slider that plays with the reference's frame step, automatic increment and repeat modes; the source graph is hidden."
 ToolImage,,geogebra,,out_of_scope,,,"Draws a tool's icon image into the graphics view, not a construction object."
 DynamicCoordinates,,geogebra,P2,done,1,1,
 SetConstructionStep,,geogebra,P2,done,1,1,

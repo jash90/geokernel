@@ -2360,6 +2360,122 @@
           "u": { "type": "number", "defined": true, "value": -2.0 }
         }
       ]
+    },
+    {
+      "id": "funcrest-slowplot-013",
+      "group": "funcrest",
+      "script": [
+        "A = (0, 0)",
+        "B = (2, 2)",
+        "l = Line(A, B)",
+        "g = SlowPlot(l, 1)",
+        "p = a + 0",
+        "u = g(0)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "animate", "frames": 160.0 },
+        { "action": "move", "label": "B", "x": 2.0, "y": 0.0 },
+        { "action": "animate", "frames": 160.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "l": { "type": "line", "defined": true, "a": -2.0, "b": 2.0, "c": 0.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, null],
+              [0.5, null],
+              [1.0, null],
+              [2.0, null],
+              [4.0, null],
+              [8.0, null]
+            ]
+          },
+          "p": { "type": "number", "defined": true, "value": 0.0 },
+          "u": { "type": "number", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "l": { "type": "line", "defined": true, "a": -2.0, "b": 2.0, "c": 0.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0],
+              [-4.0, -4.0],
+              [-2.0, -2.0],
+              [-1.0, -1.0],
+              [-0.5, -0.5],
+              [0.0, 0.0],
+              [0.5, 0.5],
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [4.0, 4.0],
+              [8.0, null]
+            ]
+          },
+          "p": { "type": "number", "defined": true, "value": 0.533 },
+          "u": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 2.0, "c": 0.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, -0.0],
+              [0.5, -0.0],
+              [1.0, -0.0],
+              [2.0, -0.0],
+              [4.0, -0.0],
+              [8.0, null]
+            ]
+          },
+          "p": { "type": "number", "defined": true, "value": 0.533 },
+          "u": { "type": "number", "defined": true, "value": -0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 2.0, "c": 0.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, null],
+              [0.5, null],
+              [1.0, null],
+              [2.0, null],
+              [4.0, null],
+              [8.0, null]
+            ]
+          },
+          "p": { "type": "number", "defined": true, "value": 0.067 },
+          "u": { "type": "number", "defined": false }
+        }
+      ]
     }
   ]
 }

@@ -165,13 +165,13 @@ impl StrokeData {
     /// subpath, and the stroke ends with a break.
     pub fn from_triplets(triplets: &[f64]) -> Self {
         let mut points = Vec::with_capacity(triplets.len() / 3 + 1);
-        for t in triplets.chunks_exact(3) {
-            if t[0].is_finite() {
-                let segment = Segment::from_code(t[2]);
+        for &[x, y, code] in triplets.as_chunks::<3>().0 {
+            if x.is_finite() {
+                let segment = Segment::from_code(code);
                 if segment == Segment::Move && !points.is_empty() {
                     trailing_break(&mut points);
                 }
-                points.push(StrokePoint::new(t[0], t[1], segment));
+                points.push(StrokePoint::new(x, y, segment));
             } else {
                 points.push(StrokePoint::BREAK);
             }

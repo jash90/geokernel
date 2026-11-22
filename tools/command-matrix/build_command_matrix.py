@@ -91,7 +91,8 @@ FORM_NOTES = {
     "LeftSide": "Lines, conics and implicit polynomial equations.",
     "RightSide": "Lines, conics and implicit polynomial equations.",
     "If": "Scalar, coordinate, boolean, text, list and numeric-function branches, plus same-kind geometry alternatives with live shape records.",
-    "SlowPlot": "Functions and lines follow an editable slider and the view bounds. Automatic animation, source visibility and repeat behavior remain open.",
+    "SlowPlot": "Functions and lines follow a slider that plays with the reference's frame step, automatic increment and repeat modes; the source graph is hidden.",
+    "PenStroke": "Literal points smoothed into cubic pieces in the view and frozen; saved strokes restore their points.",
     "Relation": "Numerical reports for supported objects. CAS function comparisons and the symbolic prover are outside scope.",
 }
 P1_GROUPS = {"geometry", "conic", "transformation"}

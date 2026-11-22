@@ -68,6 +68,7 @@ One JSON object per file, stored under `golden/<group>/`.
 | `set_number` | `label`, `value` | Set the free number `label` to `value`. |
 | `set_slider_bounds` | `label`, `min`, `max` | Edit the endpoints of a free number's slider. |
 | `reject` | `line` | Check that the command reports an error and creates no output. |
+| `animate` | `frames` | Run that many frames of the playing sliders at 30 frames per second, the rate of a first frame: every playing number takes one animation step, the newest first, then what depends on the changed ones is updated once. |
 
 A `move` step may include `reference_parse_error`, which records whether the
 reference threw a parse error during the update. The snapshot still records
@@ -134,6 +135,7 @@ carries no numeric fields. When it is `true` it carries exactly these:
 | `conic` | `conic_type`, `matrix`, and the parts of the type (below) | A general conic: an object made by `Conic`, `Ellipse`, `Hyperbola` or `Parabola`, or the image of one under a transformation. Every other conic object of GeoGebra is a `circle`, an `arc` or a `sector`. |
 | `curve` | `start`, `end` | The lower and upper parameters of a Cartesian curve. Length cases measure the coordinates over this interval or a supplied interval. |
 | `locus` | `points` | The points of a locus or slope field, in order, each `[x, y, lineTo]`: `lineTo` is `true` when the point is joined to the one before it and `false` when it starts a new piece. `x` and `y` are both `null` for an undefined point, which GeoGebra may append at the end. See below for the view the points depend on. |
+| `stroke` | `points` | The points of a pen stroke, in order, each `[x, y, code]`: the segment code is `1` for the start of a subpath, `0` for a line from the point before, `4` for a control point and `3` for the end of a cubic piece whose two control points come just before. A subpath break is `[null, null, 0]`; `y` alone is `null` where it is not finite. |
 | `arc`, `sector` | `value`, `conic_type`, and further fields of the type (below) | A part of a circle or conic (GeoGebra's `GeoConicPart`), made by `CircularArc`, `CircumcircularArc`, `Semicircle` or `Arc` (an `arc`), or by `CircularSector`, `CircumcircularSector` or `Sector` (a `sector`). `value` is the length of an arc and the area of a sector. |
 
 A `conic` carries `conic_type`, a string, and `matrix`, the six numbers

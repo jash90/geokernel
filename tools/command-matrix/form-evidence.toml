@@ -849,6 +849,18 @@ form = "point"
 cases = ["arcs-chain-001", "arcs-chain-002", "arcs-points-001"]
 
 [[form]]
+command = "PenStroke"
+form = "point,point,..."
+cases = ["stroke-points-003", "stroke-points-004", "stroke-points-010"]
+difference = "geometry-command-arguments: `PenStroke(point, point, ...)`"
+
+[[form]]
+command = "PenStroke"
+form = "number,number,..."
+cases = ["stroke-numbers-001", "stroke-numbers-002", "stroke-numbers-003"]
+difference = "geometry-command-arguments: `PenStroke(number, number, ...)`"
+
+[[form]]
 command = "Perimeter"
 form = "polygon"
 cases = ["polygon-derived-001", "polygon-derived-002", "polygon-derived-003"]
@@ -2797,6 +2809,30 @@ form = "line,polygon"
 cases = ["misc-alias-005"]
 
 # geogebra
+
+[[form]]
+command = "SlowPlot"
+form = "function"
+cases = ["funcrest-slowplot-001", "funcrest-slowplot-007"]
+difference = "numerical-function-analysis: `SlowPlot(function)`, `SlowPlot(function, number)`, `SlowPlot(line)`, `SlowPlot(line, number)`"
+
+[[form]]
+command = "SlowPlot"
+form = "function,number"
+cases = ["funcrest-slowplot-002", "funcrest-slowplot-009"]
+difference = "numerical-function-analysis: `SlowPlot(function)`, `SlowPlot(function, number)`, `SlowPlot(line)`, `SlowPlot(line, number)`"
+
+[[form]]
+command = "SlowPlot"
+form = "line"
+cases = ["funcrest-slowplot-006"]
+difference = "numerical-function-analysis: `SlowPlot(function)`, `SlowPlot(function, number)`, `SlowPlot(line)`, `SlowPlot(line, number)`"
+
+[[form]]
+command = "SlowPlot"
+form = "line,number"
+cases = ["funcrest-slowplot-013"]
+difference = "numerical-function-analysis: `SlowPlot(function)`, `SlowPlot(function, number)`, `SlowPlot(line)`, `SlowPlot(line, number)`"
 
 [[form]]
 command = "Corner"
