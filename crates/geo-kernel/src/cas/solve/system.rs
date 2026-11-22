@@ -14,7 +14,7 @@ const MAX_TERMS: usize = 256;
 const MAX_DEGREE: usize = 16;
 const MAX_SOLUTIONS: usize = 256;
 
-pub(in crate::cas) type Equation = BTreeMap<[u8; 3], Rat>;
+pub(crate) type Equation<const N: usize = 3> = BTreeMap<[u8; N], Rat>;
 
 #[derive(Debug, PartialEq)]
 pub(crate) enum SystemRoots {
@@ -154,11 +154,17 @@ pub(crate) fn systems(
     Some(SystemRoots::Finite(results))
 }
 
-fn degree(power: &[u8; 3]) -> usize {
+fn degree<const N: usize>(power: &[u8; N]) -> usize {
     power.iter().map(|&e| usize::from(e)).sum()
 }
 
-fn basis(equations: &[Equation], work: &mut Work<'_>) -> Option<Vec<Equation>> {
+pub(crate) fn basis<const N: usize>(
+    equations: &[Equation<N>],
+    work: &mut Work<'_>,
+) -> Option<Vec<Equation<N>>> {
+    if equations.len() > MAX_EQUATIONS {
+        return None;
+    }
     let mut basis = Vec::new();
     for polynomial in equations {
         let polynomial = polynomial
@@ -188,11 +194,11 @@ fn basis(equations: &[Equation], work: &mut Work<'_>) -> Option<Vec<Equation>> {
     Some(basis)
 }
 
-fn insert_reduced(
-    mut pending: Equation,
-    basis: &mut Vec<Equation>,
+fn insert_reduced<const N: usize>(
+    mut pending: Equation<N>,
+    basis: &mut Vec<Equation<N>>,
     work: &mut Work<'_>,
-) -> Option<Option<Equation>> {
+) -> Option<Option<Equation<N>>> {
     let mut remainder = Equation::new();
     while let Some((&power, &coefficient)) = pending.last_key_value() {
         work.spend(basis.len() + 1)?;
@@ -214,7 +220,7 @@ fn insert_reduced(
         }
     }
     if let Some((&power, &leading)) = remainder.last_key_value() {
-        if power == [0; 3] {
+        if power == [0; N] {
             return Some(Some(remainder));
         }
         if basis.len() == MAX_BASIS {
@@ -229,14 +235,14 @@ fn insert_reduced(
     Some(None)
 }
 
-fn s_polynomial(
-    left: &Equation,
-    right: &Equation,
+fn s_polynomial<const N: usize>(
+    left: &Equation<N>,
+    right: &Equation<N>,
     work: &mut Work<'_>,
-) -> Option<Option<Equation>> {
+) -> Option<Option<Equation<N>>> {
     let (&a, _) = left.last_key_value()?;
     let (&b, _) = right.last_key_value()?;
-    if (0..3).all(|i| a[i] == 0 || b[i] == 0) {
+    if (0..N).all(|i| a[i] == 0 || b[i] == 0) {
         return Some(None);
     }
     let lcm = std::array::from_fn(|i| a[i].max(b[i]));
@@ -252,18 +258,17 @@ fn s_polynomial(
     Some(Some(result))
 }
 
-fn difference(power: [u8; 3], subtract: [u8; 3]) -> Option<[u8; 3]> {
-    Some([
-        power[0].checked_sub(subtract[0])?,
-        power[1].checked_sub(subtract[1])?,
-        power[2].checked_sub(subtract[2])?,
-    ])
+fn difference<const N: usize>(mut power: [u8; N], subtract: [u8; N]) -> Option<[u8; N]> {
+    for (a, b) in power.iter_mut().zip(subtract) {
+        *a = a.checked_sub(b)?;
+    }
+    Some(power)
 }
 
-fn add_shifted(
-    target: &mut Equation,
-    source: &Equation,
-    shift: [u8; 3],
+pub(crate) fn add_shifted<const N: usize>(
+    target: &mut Equation<N>,
+    source: &Equation<N>,
+    shift: [u8; N],
     scale: Rat,
     work: &mut Work<'_>,
 ) -> Option<()> {
@@ -274,6 +279,9 @@ fn add_shifted(
             return None;
         }
         let coefficient = coefficient.mul(scale)?;
+        if coefficient == Rat::ZERO {
+            continue;
+        }
         match target.entry(power) {
             Entry::Vacant(slot) => {
                 slot.insert(coefficient);

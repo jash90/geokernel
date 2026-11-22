@@ -20,7 +20,7 @@ Text,TEXT,Text,yes,partial,yes,no,no,yes,yes,partial,Static and dependent texts 
 Formula,FORMULA,,no,no,no,no,no,no,no,no,
 Locus,LOCUS,Locus,yes,yes,yes,no,no,no,yes,partial,Tracing loci and integral curves from slopes. Discrete geometry commands also produce loci. Export: its definition needs a saved form; no witness for draw_arrows.
 CurveCartesian,CURVE_CARTESIAN,Curve,yes,no,no,no,no,no,yes,partial,Cartesian coordinates and parameter interval for Length. Export: its definition needs a saved form.
-ImplicitCurve,IMPLICIT_POLY,ImplicitCurve,yes,partial,partial,partial,no,yes,partial,partial,Polynomial equations and saved matrices. Export: its definition needs a saved form.
+ImplicitCurve,IMPLICIT_POLY,ImplicitCurve,yes,partial,partial,partial,no,yes,partial,partial,Polynomial equations and constructed implicit curves with import of saved matrices. Export: its definition needs a saved form.
 FunctionNVar,FUNCTION_NVAR,FunctionNVar,yes,no,no,no,no,yes,partial,partial,Numeric functions and two-variable inequalities with supported definitions. Export: its definition needs a saved form; the level of detail is not kept.
 Image,IMAGE,Image,yes,yes,yes,no,no,yes,yes,yes,Raster corners and transforms have recorded cases. Saved fixtures cover PNG and JPEG and first-frame GIF.
 PieChart,PIECHART,PieChart,yes,yes,yes,no,no,yes,partial,partial,Clockwise sectors with a world center and radius. Export: its definition needs a saved form; the colour and filling of single slices are not kept.

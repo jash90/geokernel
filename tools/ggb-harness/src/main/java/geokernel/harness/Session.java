@@ -1318,6 +1318,8 @@ final class Session {
             case "ImplicitCurve":
             case "Cubic":
             case "TriangleCurve":
+            case "LocusEquation":
+            case "Envelope":
                 return "implicit";
             case "Asymptote":
                 return first instanceof GeoFunction || first instanceof GeoImplicitCurve ? "list" : "line";
