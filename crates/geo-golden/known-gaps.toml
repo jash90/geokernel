@@ -1005,8 +1005,13 @@ mismatches = ["2:m"]
 
 [[gap]]
 id = "funcrest-derivative-004"
-reason = "The 260-point spline exceeds the kernel work budget for dense elimination. It yields an undefined source and two undefined derivatives at that step. All three recover when the point count returns to five."
-mismatches = ["1:d", "1:e", "1:s"]
+reason = "The 260-point spline system is solved with the reference elimination and agrees bit for bit on the x coordinates. Seven of its y inputs sin(k) (k = 18, 64, 89, 131, 202, 224, 233) differ by one ulp: the kernel evaluates sin with the portable fdlibm algorithm, the recording JVM with its Math.sin intrinsic. The ill-conditioned 260-piece monomial system amplifies the ulp to a relative 1.5e-9 in y(0.875). Both derivatives agree."
+mismatches = ["1:s"]
+
+[[gap]]
+id = "funcrest-splinelong-003"
+reason = "Platform rounding of Math.pow in the spline matrix. The kernel computes the integer powers of the knots correctly rounded; the recording JVM's Math.pow intrinsic is off by one ulp when the exact power lies within about 0.003 ulp of a rounding midpoint, which happens for 24 entries of this 120-point quartic system (for example (1/119)^3). The ill-conditioned system amplifies those ulps beyond 1e-9 in the curve and its derivative. The later steps, including the stale point-count check, agree."
+mismatches = ["1:d", "1:s"]
 
 [[gap]]
 id = "funcrest-svd-008"

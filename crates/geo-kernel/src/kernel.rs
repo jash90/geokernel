@@ -1523,6 +1523,7 @@ impl Construction {
         self.function_roots.clear();
         self.clips.clear();
         self.analysis.clear();
+        self.analysis.truncate(at.len);
         self.conic_intersections.truncate(
             self.conic_intersections
                 .partition_point(|&(owner, _)| owner < at.len),
@@ -2824,6 +2825,12 @@ impl Construction {
 
     /// `def` is the definition of the object at index `i`.
     fn compute(&self, def: Def, i: usize) -> Value {
+        if let Def::Analysis(AnalysisDef::Spline(input)) = def {
+            return self
+                .analysis
+                .spline_object(self, i, input)
+                .unwrap_or(Value::Undefined);
+        }
         self.compute_with(def, |c| c.hints[i])
     }
 

@@ -185,6 +185,39 @@ case("derivative", "n = 5\ns = Spline(Sequence((k, sin(k)), k, 1, n))\nd = Deriv
      [setn("n", 260), setn("n", 5)])
 cases.cases[-1]["sample_curves"] = True
 
+# ------------------------------------------------------------ long splines
+# Splines over exact inputs, so the long systems compare the elimination
+# itself: an open spline growing to 260 points and back, a closed one, a
+# quartic one that becomes undefined with too few points, and coincident
+# points.
+cases.topic("splinelong")
+case("splinelong", "n = 5\ns = Spline(Sequence((k, Mod(k^2, 7)), k, 1, n))\nd = Derivative(s)\ne = NDerivative(s)",
+     [setn("n", 260), setn("n", 5)])
+cases.cases[-1]["sample_curves"] = True
+case("splinelong", "n = 6\nl = Append(Sequence((k, Mod(k, 3)), k, 0, n), (0, 0))\ns = Spline(l)\nd = Derivative(s)",
+     [setn("n", 200), setn("n", 6)])
+cases.cases[-1]["sample_curves"] = True
+case("splinelong", "n = 6\ns = Spline(Sequence((k, Mod(k, 2)), k, 1, n), 4)\nd = Derivative(s)",
+     [setn("n", 120), setn("n", 3), setn("n", 6)])
+cases.cases[-1]["sample_curves"] = True
+case("splinelong", "A = (1, 1)\nl = {(0, 0), A, (3, 0), (4, 2)}\ns = Spline(l)\nd = Derivative(s)\ne = NDerivative(s)",
+     [mv("A", 0, 0), mv("A", 3, 0), mv("A", 1, 1)])
+cases.cases[-1]["sample_curves"] = True
+# The degree is checked against the number of points of the last solve
+# that passed the check (the initial list at creation).
+case("splinelong", "n = 5\ns = Spline(Sequence((k, Mod(k^2, 7)), k, 1, n))\nd = Derivative(s)",
+     [setn("n", 2), setn("n", 5), setn("n", 4)])
+cases.cases[-1]["sample_curves"] = True
+case("splinelong", "n = 2\ns = Spline(Sequence((k, k^2), k, 1, n))",
+     [setn("n", 3), setn("n", 6)])
+cases.cases[-1]["sample_curves"] = True
+case("splinelong", "n = 6\ns = Spline(Sequence((k, Mod(k, 2)), k, 1, n), 4)\nd = Derivative(s)",
+     [setn("n", 3), setn("n", 6), setn("n", 4)])
+cases.cases[-1]["sample_curves"] = True
+case("splinelong", "n = 4\ns = Spline(Sequence((k, Mod(k, 3)), k, 1, n))\nd = Derivative(s)\ne = NDerivative(s)",
+     [setn("n", 3), setn("n", 2), setn("n", 1), setn("n", 4), setn("n", 0)])
+cases.cases[-1]["sample_curves"] = True
+
 cases.write()
 
 cases = Cases("funcrest")

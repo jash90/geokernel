@@ -54,6 +54,11 @@ type Point = (f64, f64);
 pub(crate) struct AnalysisCache {
     roots: Mutex<HashMap<RootInput, Vec<Point>>>,
     splines: Mutex<HashMap<SplineInput, Option<Arc<Spline>>>>,
+    /// For each spline object (owner index and definition), the number of
+    /// points of its last solve that passed the degree check. Unlike the
+    /// solves it outlives the propagation pass; rollback drops the entries
+    /// of removed objects.
+    spline_points: Mutex<Vec<(usize, SplineInput, usize)>>,
     ode_systems: Mutex<HashMap<[u32; 4], Vec<LocusData>>>,
 }
 
@@ -93,6 +98,50 @@ impl AnalysisCache {
         result
     }
 
+    /// Drops the spline states of the objects from `len` on.
+    pub(crate) fn truncate(&mut self, len: usize) {
+        self.spline_points
+            .get_mut()
+            .expect("spline states")
+            .retain(|&(owner, ..)| owner < len);
+    }
+
+    /// The value of the spline object `owner`. `AlgoSpline.compute` checks
+    /// the degree against the size of its point array, which it resizes
+    /// only after the check passed: the number of points of the last solve
+    /// that passed, or of the list when the command was created. A spline
+    /// whose list shrank below the degree and grew again stays undefined.
+    pub(crate) fn spline_object(
+        &self,
+        c: &Construction,
+        owner: usize,
+        input: SplineInput,
+    ) -> Option<Value> {
+        let points = c.elements(input.points)?.len();
+        let mut states = self.spline_points.lock().expect("spline states");
+        // The first solve of an object (its creation) sizes the array.
+        let k = match states
+            .iter()
+            .position(|&(o, i, _)| o == owner && i == input)
+        {
+            Some(k) => k,
+            None => {
+                states.retain(|&(o, ..)| o != owner);
+                states.push((owner, input, points));
+                states.len() - 1
+            }
+        };
+        if !spline_degree(c, input).is_some_and(|d| (3..=states[k].2).contains(&d)) {
+            return None;
+        }
+        states[k].2 = points;
+        drop(states);
+        self.spline(c, input).map(|_| Value::Curve {
+            start: 0.0,
+            end: 1.0,
+        })
+    }
+
     pub(super) fn spline(&self, c: &Construction, input: SplineInput) -> Option<Arc<Spline>> {
         if let Some(spline) = self.splines.lock().expect("spline cache").get(&input) {
             return spline.clone();
@@ -103,6 +152,18 @@ impl AnalysisCache {
             .expect("spline cache")
             .insert(input, spline.clone());
         spline
+    }
+}
+
+/// The degree of a spline: `(int) degree.getDouble()`, 3 by default.
+pub(super) fn spline_degree(c: &Construction, input: SplineInput) -> Option<usize> {
+    match input.degree {
+        Some(id) => {
+            let degree = c.number(Id(id as usize))?;
+            // Java's narrowing: NaN is 0, out of range saturates
+            Some(if degree.is_nan() { 0 } else { degree.max(0.0) as usize })
+        }
+        None => Some(3),
     }
 }
 
@@ -230,10 +291,17 @@ impl Group for AnalysisDef {
                 };
                 Some(value)
             }
-            Self::Spline(input) => c.analysis.spline(c, input).map(|_| Value::Curve {
-                start: 0.0,
-                end: 1.0,
-            }),
+            // without an object, the check reads the current list
+            Self::Spline(input) => {
+                let points = c.elements(input.points)?.len();
+                if !spline_degree(c, input).is_some_and(|d| (3..=points).contains(&d)) {
+                    return None;
+                }
+                c.analysis.spline(c, input).map(|_| Value::Curve {
+                    start: 0.0,
+                    end: 1.0,
+                })
+            }
         }
     }
 

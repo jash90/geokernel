@@ -2110,6 +2110,31 @@ fn differentiate_node(c: &Construction, b: &mut Builder, i: u32, depth: u32) -> 
         // FunctionVariable.derivative: the variable itself derives to 1,
         // every other leaf (MyDouble, an object) to 0
         Node::Var => b.push(Node::Num(1.0)),
+        Node::If(IfMode::List, ..) => {
+            // An `IF_LIST` is one node holding its lists of conditions and
+            // payloads, so its pieces are siblings, not a nesting: walk the
+            // chain at one depth and charge each piece.
+            let mut pieces = Vec::new();
+            let mut node = i;
+            while let Node::If(IfMode::List, cond, then, rest) = b.node(node) {
+                expr::charge(1);
+                pieces.push((cond, differentiate_node(c, b, then, depth + 1)));
+                if b.exhausted || rest == u32::MAX {
+                    node = u32::MAX;
+                    break;
+                }
+                node = rest;
+            }
+            let mut root = if node == u32::MAX {
+                u32::MAX
+            } else {
+                differentiate_node(c, b, node, depth + 1)
+            };
+            for (cond, then) in pieces.into_iter().rev() {
+                root = b.push(Node::If(IfMode::List, cond, then, root));
+            }
+            root
+        }
         Node::If(mode, cond, then, rest) => {
             // IF and IF_ELSE keep the condition and differentiate the
             // payload
