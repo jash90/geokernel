@@ -37,7 +37,7 @@ pub enum ViewRequest {
 /// (the owner's choice), one named switch each. `OURS` is what the window
 /// runs; `REFERENCE` follows the reference app, for tests that compare
 /// with its observed behaviour.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct OwnerRules {
     /// `hit::SIDE_TAKES_THE_POLYGON`.
     pub side_takes_the_polygon: bool,
@@ -45,6 +45,28 @@ pub struct OwnerRules {
     pub refused_drag_notice: bool,
     /// `interact::EVERY_DRAG_IS_A_STEP`.
     pub every_drag_is_a_step: bool,
+    /// Every view change is one undo step right after its gesture (spec
+    /// F3). The reference app stores view changes lazily: a drag's at its
+    /// release, a run of wheel or keyboard zooms at the next canvas press
+    /// (the wheel alone adds no step), a zoom-tool click's when the tool
+    /// is left, and a zoom button's never.
+    pub view_changes_are_steps: bool,
+    /// The wheel zooms by one fixed `camera::WHEEL_ZOOM_FACTOR` per event,
+    /// whatever its delta (`wrapMouseWheelMoved`). Ours keeps the zoom
+    /// proportional to the scroll amount (spec D2), x1.1 a notch.
+    pub wheel_zoom_fixed_per_event: bool,
+    /// The dead bands of a pinch: the reference app's zoom step waits for
+    /// 10 px of changed finger distance and its pan for 5 px of a moved
+    /// midpoint (`twoTouchMoveCommon`). Ours tracks the fingers exactly
+    /// (spec H4).
+    pub pinch_bands: crate::camera::PinchBands,
+    /// A pan locks to one axis — within the first 40 px of the drag a move
+    /// of more than 5 px within ±25° of an axis locks that axis until the
+    /// other component exceeds 50 px (`SnapController`, spec D13). Ours
+    /// keeps both axes free.
+    pub pan_axis_lock: bool,
+    /// The smallest and largest scale the view allows (spec D15).
+    pub scale_limits: crate::view::ScaleLimits,
 }
 
 impl OwnerRules {
@@ -52,11 +74,21 @@ impl OwnerRules {
         side_takes_the_polygon: crate::hit::SIDE_TAKES_THE_POLYGON,
         refused_drag_notice: crate::interact::REFUSED_DRAG_NOTICE,
         every_drag_is_a_step: crate::interact::EVERY_DRAG_IS_A_STEP,
+        view_changes_are_steps: true,
+        wheel_zoom_fixed_per_event: false,
+        pinch_bands: crate::camera::PinchBands::OURS,
+        pan_axis_lock: false,
+        scale_limits: crate::view::ScaleLimits::OURS,
     };
     pub const REFERENCE: OwnerRules = OwnerRules {
         side_takes_the_polygon: false,
         refused_drag_notice: false,
         every_drag_is_a_step: false,
+        view_changes_are_steps: false,
+        wheel_zoom_fixed_per_event: true,
+        pinch_bands: crate::camera::PinchBands::REFERENCE,
+        pan_axis_lock: true,
+        scale_limits: crate::view::ScaleLimits::REFERENCE,
     };
 }
 
@@ -110,6 +142,29 @@ pub struct App {
     pub tool_press: Option<crate::toolpress::ToolPress>,
     /// The delete tool's drag is erasing (spec E11).
     pub erasing: bool,
+    /// The view change in progress, for its undo step
+    /// (`OwnerRules::view_changes_are_steps`).
+    pub view_gesture: crate::camera::ViewGesture,
+    /// Two fingers pinched the view in the last frame (the frame's zoom is
+    /// the pinch's).
+    pub pinching: bool,
+    /// The places of the pointers that can pinch — the touches by their
+    /// id, the mouse as `MOUSE` — in the area's own whole pixels, for the
+    /// pinch's own rule (`camera::Pinch` measures the fingers).
+    pub fingers: std::collections::BTreeMap<crate::gesture::PointerId, (f64, f64)>,
+    /// The pinch in progress (`twoTouchStart` .. `twoTouchEnd`), while
+    /// two fingers hold the view.
+    pub pinch: Option<crate::camera::Pinch>,
+    /// An axis the current drag rescales (`camera::axis_scale`), with the
+    /// world value the press grabbed on it.
+    pub axis: Option<crate::camera::AxisDrag>,
+    /// The press of a zoom rectangle drag, in the area's pixels.
+    pub rect_from: Option<(f64, f64)>,
+    /// The pointer's last place of the rectangle drag, for its preview.
+    pub rect_to: Option<(f64, f64)>,
+    /// The zoom factor the keyboard asked for (Ctrl + plus / minus), about
+    /// the last pointer position (spec D14).
+    pub key_zoom: Option<f64>,
     /// A text field had the keyboard in the previous frame.
     pub was_typing: bool,
     /// Where the labels were painted in the last frame, in the area's
@@ -120,10 +175,16 @@ pub struct App {
 }
 
 impl App {
-    /// How new and dragged free points are captured to the grid at `scale`
-    /// pixels per unit (on while the grid or the axes are shown).
-    pub fn snap(&self, scale: f64) -> Snap {
-        Snap::new(&self.metrics, scale, self.decor.grid || self.decor.axes)
+    /// How new and dragged free points are captured to the grid at
+    /// `xscale` / `yscale` pixels per unit (on while the grid or the axes
+    /// are shown; each axis captures by its own step).
+    pub fn snap(&self, xscale: f64, yscale: f64) -> Snap {
+        Snap::new(
+            &self.metrics,
+            xscale,
+            yscale,
+            self.decor.grid || self.decor.axes,
+        )
     }
 
     pub fn new(wb: Workbench, load_error: Option<String>) -> Self {
@@ -160,6 +221,14 @@ impl App {
             press_view: None,
             tool_press: None,
             erasing: false,
+            view_gesture: crate::camera::ViewGesture::default(),
+            pinching: false,
+            fingers: std::collections::BTreeMap::new(),
+            pinch: None,
+            axis: None,
+            rect_from: None,
+            rect_to: None,
+            key_zoom: None,
             was_typing: false,
             label_rects: RefCell::new(Vec::new()),
             text_rects: RefCell::new(Vec::new()),
@@ -213,6 +282,15 @@ impl App {
     pub fn set_metrics(&mut self, metrics: Metrics) {
         self.metrics = metrics;
         self.gesture = Gesture::new(&metrics);
+        self.gesture.set_pan_lock(self.rules.pan_axis_lock);
+    }
+
+    /// Sets the rules the window runs by (`OwnerRules`) and what follows
+    /// them elsewhere: the pointer automaton keeps the reference app's pan
+    /// axis lock while the rules ask for it.
+    pub fn set_rules(&mut self, rules: OwnerRules) {
+        self.rules = rules;
+        self.gesture.set_pan_lock(rules.pan_axis_lock);
     }
 
     /// Makes `tool` the active tool and the one its group shows. A tool use

@@ -152,7 +152,7 @@ fn tool_preview(r: &mut Runner, n: usize) {
 
 fn zoom(r: &mut Runner, n: usize) {
     let at = r.canvas().center();
-    let mut last = r.app.camera.map(|c| c.scale);
+    let mut last = r.app.camera.map(|c| c.xscale);
     let frames = r.frames(
         n,
         |_, i| {
@@ -160,7 +160,7 @@ fn zoom(r: &mut Runner, n: usize) {
             vec![moved(at), Event::Zoom(f)]
         },
         |r, f| {
-            let now = r.app.camera.map(|c| c.scale);
+            let now = r.app.camera.map(|c| c.xscale);
             f.ok = now != last;
             last = now;
         },

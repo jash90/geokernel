@@ -13,10 +13,13 @@ use crate::theme;
 use crate::tools::{Pick, Tool};
 use crate::view::{self, Camera};
 use eframe::egui::{self, pos2, vec2, Rect, Sense, Stroke, Ui};
+use geo_app_core::camera;
 use geo_app_core::text::{self, Label};
 use geo_kernel::kernel::{Id, Kind};
 
-const ZOOM_BUTTON: f64 = 1.25;
+/// The zoom of the buttons over the drawing (`EuclidianView
+/// .MODE_ZOOM_FACTOR`, 1.5, about the centre).
+const ZOOM_BUTTON: f64 = 1.5;
 const ZOOM_TOOL: f64 = 1.5;
 const LOCUS_SCALE_RATIO: f64 = 1.5;
 const LOCUS_SAMPLE_INTERVAL: f64 = 0.08;
@@ -98,22 +101,39 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         return;
     }
     // Opening or closing the keyboard, or resizing the window, keeps the
-    // top left corner of the drawing in place, not its centre. A view
-    // request is made for the new size, so it comes after.
-    if let (Some(cam), Some((old, _))) = (app.camera, app.view) {
-        let old = old.egui();
-        if old.size() != rect.size() {
-            app.camera = Some(cam.resized((old.width() as f64, old.height() as f64), (w, h)));
-        }
-    }
+    // world point at the centre of the drawing there (`keepCenter`; spec
+    // D11): the camera names the centre's world point itself, so there is
+    // nothing to move. A view request is made for the new size, so it
+    // comes after.
+    let bounds = view::content_bounds(app.wb.construction());
     let request = app.view_request.take();
     if app.camera.is_none() || request.is_some() {
-        let bounds = view::content_bounds(app.wb.construction());
+        // A fit asked for (`setViewShowAllObjects`) measures the drawn
+        // shapes through the view it leaves; the first frame of a document
+        // has none and fits the content bounds.
+        let was = app.camera;
+        let t = was.map(|c| c.transform(w, h));
         app.camera = Some(match request {
             Some(ViewRequest::Standard) => Camera::STANDARD,
-            Some(ViewRequest::Fit) => Camera::fit(bounds, w, h),
-            Some(ViewRequest::Initial) | None => Camera::initial(bounds, w, h),
+            Some(ViewRequest::Fit) => {
+                let c = app.wb.construction();
+                t.as_ref()
+                    .and_then(|t| Camera::fit_drawn(c, t, w, h, app.rules.scale_limits))
+                    .unwrap_or_else(|| Camera::fit(bounds, w, h, app.rules.scale_limits))
+            }
+            Some(ViewRequest::Initial) | None => {
+                Camera::initial(bounds, w, h, app.rules.scale_limits)
+            }
         });
+        // A fit or the standard view is one undo step
+        // (`setViewShowAllObjects(storeUndo)` / `setStandardView(true)`),
+        // never the view a document opens with.
+        if let (Some(before), Some(now)) = (was, app.camera) {
+            if matches!(request, Some(ViewRequest::Fit | ViewRequest::Standard)) {
+                app.wb.set_camera(now);
+                app.wb.record_view_step(before);
+            }
+        }
     }
     // Ids are only valid until the construction is rebuilt (undo, redo,
     // delete, open): a drag or a half-finished tool must not outlive that.
@@ -133,42 +153,162 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         }
     }
     let mut cam = app.camera.unwrap_or(Camera::STANDARD);
+    // A camera that an undo or redo step restored becomes the view this
+    // frame starts from.
+    if let Some(restored) = app.wb.take_restored_view() {
+        cam = restored;
+        app.camera = Some(cam);
+        app.view_gesture = Default::default();
+        app.pinching = false;
+    }
     let to_local = |pos: egui::Pos2| {
         let d = pos - rect.min;
         (d.x as f64, d.y as f64)
     };
 
-    let zoom = if response.hovered() {
-        let (scroll, pinch, touch) = ui.input(|i| {
-            (
-                i.smooth_scroll_delta().y as f64,
-                i.zoom_delta() as f64,
-                i.multi_touch(),
-            )
-        });
-        let factor = view::zoom_factor(scroll, pinch);
-        match touch {
-            Some(t) => gesture.pinch(
-                factor,
-                t.center_pos.core(),
-                (t.translation_delta.x, t.translation_delta.y),
-            ),
-            None => {
-                let center = response.hover_pos().unwrap_or(rect.center());
-                gesture.zoom(factor, center.core())
+    // The camera as it was before this frame changed it: where a view
+    // gesture (a wheel run, a pinch) begins.
+    let cam0 = cam;
+
+    // The wheel of this frame, from its raw events: the zoom is
+    // proportional to the scroll amount (the owner's rule, spec D2), so
+    // egui's smoothed delta is no measure of it; the reference app zooms
+    // one fixed x1.1 per event whatever its delta. The wheel belongs to a
+    // text field that has the keyboard (`isTextfieldHasFocus`). It zooms about the
+    // pointer while that is over the drawing; horizontal scrolling zooms
+    // nothing; Alt strengthens the zoom (`wrapMouseWheelMoved`).
+    let typing = ui.ctx().egui_wants_keyboard_input();
+    let (notches, events, alt) = if response.hovered() && !typing {
+        ui.input(|i| {
+            let (mut n, mut e, mut alt) = (0.0, 0.0, false);
+            for ev in &i.events {
+                if let egui::Event::MouseWheel {
+                    unit,
+                    delta,
+                    modifiers,
+                    ..
+                } = *ev
+                {
+                    let d = camera::wheel_notches(
+                        unit == egui::MouseWheelUnit::Line,
+                        delta.y as f64,
+                        delta.x as f64,
+                    );
+                    n += d;
+                    // The signed count of the events that zoom: only their
+                    // sign decides in or out for the reference app.
+                    e += d.signum();
+                    alt |= modifiers.alt;
+                }
             }
-        }
+            (n, e, alt)
+        })
     } else {
-        None
+        (0.0, 0.0, false)
     };
-    if let Some(z) = zoom {
-        let (sx, sy) = to_local(z.center.egui());
-        if z.factor != 1.0 {
-            cam.zoom_at(z.factor, sx, sy, w, h);
+    let wheel = if notches != 0.0 || events != 0.0 {
+        camera::wheel_zoom_factor(app.rules.wheel_zoom_fixed_per_event, notches, events, alt)
+    } else {
+        1.0
+    };
+    // A trackpad's pinch, as the platform reports it (egui's zoom events,
+    // unsmoothed): like the wheel, it zooms about the pointer only when
+    // no text field has focus. Two touch pointers pinch under the fingers.
+    let native = if response.hovered() && !typing {
+        ui.input(|i| {
+            i.events
+                .iter()
+                .filter_map(|e| match *e {
+                    egui::Event::Zoom(f) => Some(f as f64),
+                    _ => None,
+                })
+                .product::<f64>()
+        })
+    } else {
+        1.0
+    };
+    let wheel = wheel * native;
+    let mut zoomed = wheel != 1.0;
+
+    // The zoom the keyboard asked for (Ctrl + plus / minus, spec D14):
+    // about the last pointer position, by the wheel factor.
+    if let Some(f) = app.key_zoom.take() {
+        zoomed = true;
+        let at = ui
+            .input(|i| i.pointer.latest_pos())
+            .unwrap_or(rect.center());
+        if rect.contains(at) {
+            let (sx, sy) = to_local(at);
+            cam.zoom_at(f, sx, sy, w, h, app.rules.scale_limits);
+        } else {
+            cam.zoom_at(f, 0.5 * w, 0.5 * h, w, h, app.rules.scale_limits);
         }
-        if z.pan != (0.0, 0.0) {
-            cam.pan_pixels(z.pan.0 as f64, z.pan.1 as f64);
-        }
+    }
+
+    // Two fingers pinch (`twoTouchStart` .. `twoTouchEnd`): each move of a
+    // finger, as its event came and wherever the other one stands, is one
+    // step of the pinch's own rule — the owner's tracks the fingers
+    // exactly (spec H4), the reference's lags behind its dead bands
+    // (`camera::Pinch`). The places of the pointers a pinch may measure
+    // are kept every frame, whole pixels as the reference counts them, so
+    // the pinch begins wherever its fingers stand. A trackpad's pinch
+    // (the platform's zoom events) is a zoom like the wheel's, about the
+    // pointer; the frame's wheel or keyboard zoom stands down while two
+    // fingers pinch.
+    let pinching = gesture.pinching();
+    {
+        let ids = pinching.then(|| gesture.pinch_ids()).flatten();
+        let bands = app.rules.pinch_bands;
+        let limits = app.rules.scale_limits;
+        let mut fingers = std::mem::take(&mut app.fingers);
+        let mut pinch = app.pinch;
+        ui.input(|i| {
+            for ev in &i.events {
+                let (id, at, down) = match *ev {
+                    egui::Event::Touch {
+                        id,
+                        pos,
+                        phase: egui::TouchPhase::Cancel | egui::TouchPhase::End,
+                        ..
+                    } => (id.0, to_local(pos), false),
+                    egui::Event::Touch { id, pos, .. } => (id.0, to_local(pos), true),
+                    egui::Event::PointerMoved(pos) => (MOUSE, to_local(pos), true),
+                    _ => continue,
+                };
+                if !down {
+                    fingers.remove(&id);
+                    continue;
+                }
+                fingers.insert(id, (at.0.round(), at.1.round()));
+                let Some((first, second)) = ids else {
+                    continue;
+                };
+                if id != first && id != second {
+                    continue;
+                }
+                if let (Some(a), Some(b)) = (fingers.get(&first), fingers.get(&second)) {
+                    let (a, b) = (*a, *b);
+                    match pinch.as_mut() {
+                        // The pinch is on: one move of a finger is one
+                        // step (`twoTouchMove`).
+                        Some(p) => camera::pinch_move(&mut cam, p, a, b, w, h, limits),
+                        // Both fingers are down: the pinch begins here
+                        // (`twoTouchStart`).
+                        None => pinch = Some(camera::Pinch::start(a, b, bands)),
+                    }
+                }
+            }
+        });
+        app.fingers = fingers;
+        app.pinch = pinching.then_some(pinch).flatten();
+    }
+    if !pinching && zoomed {
+        let center = response.hover_pos().unwrap_or(rect.center());
+        let (sx, sy) = to_local(center);
+        cam.zoom_at(wheel, sx, sy, w, h, app.rules.scale_limits);
+    }
+    if pinching {
+        zoomed = false;
     }
 
     let tool = app.tool.tool();
@@ -280,12 +420,66 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     // point tool drags the point its press made or found (spec E4); a press
     // of another tool that picked does not pan; else a press on a point
     // does not pan.
+    //
+    // A modifier press pans from anywhere (`shallMoveView` /
+    // `specialMoveEvent`): Shift without Ctrl, or the Space bar held. A
+    // press on an axis rescales that axis instead of panning when the view
+    // can be scaled there (`moveAxesPossible`): the view-move tool, or any
+    // tool with Shift. The zoom in tool drags a rectangle out (`processZoomRectangle`);
+    // its zoom out kin has no rectangle.
+    let shift = fed.pressed_mods.shift && !fed.pressed_mods.ctrl;
+    let space = ui.input(|i| i.key_down(egui::Key::Space));
+    let modifiers_pan = shift || space;
+    // Which axis the press sits on, within the press's reach
+    // (`HitDetector.addXAxis` / `addYAxis`: `< threshold`).
+    let axis_under = |pt: &ViewTransform, (sx, sy): (f64, f64)| -> Option<bool> {
+        let (ox, oy) = pt.world_to_screen(0.0, 0.0);
+        let reach = press_reach.threshold;
+        let x = (sy - oy).abs() < reach;
+        let y = (sx - ox).abs() < reach;
+        match (x, y) {
+            (false, false) => None,
+            (true, false) => Some(true),
+            (false, true) => Some(false),
+            // Both at the origin: the nearer axis.
+            (true, true) => Some((sy - oy).abs() <= (sx - ox).abs()),
+        }
+    };
     let mut grabbed = None;
     let mut refused = None;
     let mut erase = false;
+    let mut axis = None;
+    let mut rect_from = None;
     let intents = gesture.end_frame(|origin| {
         let ((sx, sy), pt) = at_press(app, origin.egui());
         let c = app.wb.construction();
+        if tool == Tool::ZoomIn || tool == Tool::ZoomOut {
+            // A drag of the zoom in tool over empty space zooms to the
+            // rectangle it draws; one that starts on an object zooms
+            // nothing, and the zoom out tool has no rectangle.
+            let empty =
+                hit::pick(c, &pt, (sx, sy), &press_reach, None, |id| shown(app, id)).is_none();
+            if tool == Tool::ZoomIn && empty {
+                rect_from = Some((sx, sy));
+                return Grab::Rect;
+            }
+            return Grab::Nothing;
+        }
+        // A press on an axis with the view-move tool, or with Shift held
+        // (`mousePressedTranslatedView`): the drag rescales that axis.
+        if let Some(x_axis) = axis_under(&pt, (sx, sy)) {
+            if tool == Tool::MoveView || (modifiers_pan && tool != Tool::Delete) {
+                let (wx, wy) = pt.screen_to_world(sx, sy);
+                axis = Some(camera::AxisDrag {
+                    x: x_axis,
+                    grabbed: if x_axis { wx } else { wy },
+                });
+                return Grab::Axis;
+            }
+        }
+        if modifiers_pan || tool == Tool::MoveView {
+            return Grab::Pan;
+        }
         if move_tool {
             if let Some(id) = app.label_at((sx, sy)) {
                 let old = app.wb.label_offset(id).unwrap_or((0.0, 0.0));
@@ -300,7 +494,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             // The press position, captured to the grid with no offset
             // (`wrapMousePressed` calls `transformCoords`).
             let press = app
-                .snap(pt.scale())
+                .snap(pt.xscale(), pt.yscale())
                 .capture(pt.screen_to_world(sx, sy), (0.0, 0.0));
             grabbed = if c.kind(id) == Kind::Text {
                 Drag::text(c, id, (sx, sy), press)
@@ -313,9 +507,6 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             refused = Some(id);
             return Grab::Nothing;
         }
-        if tool == Tool::MoveView {
-            return Grab::Pan;
-        }
         if tool == Tool::Delete {
             erase = true;
             return Grab::Point;
@@ -323,7 +514,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         if let (true, Some(press)) = (press_tool, app.tool_press) {
             if let Some(id) = press.point {
                 let at = app
-                    .snap(pt.scale())
+                    .snap(pt.xscale(), pt.yscale())
                     .capture(pt.screen_to_world(sx, sy), (0.0, 0.0));
                 grabbed = Drag::begin(c, id, at);
                 if grabbed.is_some() {
@@ -367,10 +558,20 @@ pub fn show(app: &mut App, ui: &mut Ui) {
                 app.wb.selected = Some(drag.id());
             }
         }
+        // A drag that only changes the view (a pan, an axis rescale, a
+        // zoom rectangle) holds no object.
+        app.axis = axis;
+        app.rect_from = rect_from;
     }
     if let (Some(pos), Some(mut drag)) = (intents.drag_to, app.drag) {
+        // A drag that a pinch suspended and that now goes on is a gesture
+        // of its own (the pinch's step lies between).
+        if !app.wb.gesture_open() {
+            app.wb.begin_gesture();
+        }
         let (sx, sy) = to_local(pos.egui());
-        match drag.step(&t, &app.snap(t.scale()), sx, sy) {
+        let now = cam.transform(w, h);
+        match drag.step(&now, &app.snap(now.xscale(), now.yscale()), sx, sy) {
             Step::Point { x, y } => {
                 app.wb.move_point(drag.id(), x, y);
             }
@@ -382,6 +583,30 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             Step::Text(movement) => app.wb.move_text(drag.id(), movement),
         }
         app.drag = Some(drag);
+    }
+    // An axis drag rescales its axis about the origin so that the grabbed
+    // tick follows the pointer (`scaleXAxis` / `scaleYAxis`).
+    if let (Some(pos), Some(axis)) = (intents.drag_to, app.axis) {
+        let (sx, sy) = to_local(pos.egui());
+        let v = cam.transform(w, h).view();
+        let (ox, oy) = cam.transform(w, h).world_to_screen(0.0, 0.0);
+        cam = camera::axis_scale(
+            &cam,
+            axis.x,
+            camera::ScreenAxis {
+                zero: if axis.x { ox } else { oy },
+                size: if axis.x { w } else { h },
+                min: if axis.x { v.xmin } else { v.ymin },
+                max: if axis.x { v.xmax } else { v.ymax },
+            },
+            axis.grabbed,
+            if axis.x { sx } else { sy },
+            app.rules.scale_limits,
+        );
+    }
+    // The rectangle the zoom in tool drags out, for its preview.
+    if let (Some(pos), true) = (intents.drag_to, app.rect_from.is_some()) {
+        app.rect_to = Some(to_local(pos.egui()));
     }
     // The eraser deletes what it meets once the pointer went beyond the
     // click threshold (`draggingBeyondThreshold`), at each position the
@@ -402,6 +627,31 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     if let Some((dx, dy)) = intents.pan {
         cam.pan_pixels(dx as f64, dy as f64);
     }
+    // The zoom rectangle the release applies (`processZoomRectangle`):
+    // only the zoom in tool's, and only from 30 px on in both directions.
+    if intents.end_drag {
+        if let (Some(from), Some(to)) = (app.rect_from, app.rect_to) {
+            let (x0, y0, x1, y1) = camera::zoom_rectangle(from, to, w, h);
+            if x1 - x0 >= camera::ZOOM_RECT_THRESHOLD && y1 - y0 >= camera::ZOOM_RECT_THRESHOLD {
+                let t_now = cam.transform(w, h);
+                let wx0 = t_now.screen_to_world(x0, y0).0;
+                let wx1 = t_now.screen_to_world(x1, y0).0;
+                let wy0 = t_now.screen_to_world(x0, y1).1;
+                let wy1 = t_now.screen_to_world(x0, y0).1;
+                cam = Camera::showing(
+                    view::Bounds {
+                        xmin: wx0,
+                        ymin: wy0,
+                        xmax: wx1,
+                        ymax: wy1,
+                    },
+                    w,
+                    h,
+                    app.rules.scale_limits,
+                );
+            }
+        }
+    }
     end_drag(app, &intents);
     // The automaton alone decides a click (egui's click rules take no part
     // in the drawing); the release must still be over the drawing, not over
@@ -412,8 +662,10 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     if let Some(pos) = tap.map(ToEgui::egui) {
         let local = to_local(pos);
         match tool {
-            Tool::ZoomIn => cam.zoom_at(ZOOM_TOOL, local.0, local.1, w, h),
-            Tool::ZoomOut => cam.zoom_at(1.0 / ZOOM_TOOL, local.0, local.1, w, h),
+            // The zoom tools' click is one undo step at once (the owner's
+            // rule; the reference stores it when the tool is left).
+            Tool::ZoomIn => zoom_click(app, &mut cam, ZOOM_TOOL, local, w, h),
+            Tool::ZoomOut => zoom_click(app, &mut cam, 1.0 / ZOOM_TOOL, local, w, h),
             Tool::MoveView => {}
             // Its press picked already (spec E1).
             _ if press_tool => {}
@@ -444,9 +696,68 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         }
     }
     let early = fed.early_release.filter(|_| fed.owned.is_none());
+    // The release of a press the area no longer knows (a tap the frame
+    // after its press, or one in its very frame) reads the view the press
+    // was made in: the area may have changed size in between (the keyboard
+    // closing on the press keeps the centre, spec D11, not the corner).
+    let press_t = app.press_view.map(|(_, t)| t).unwrap_or(t);
     for pos in early.into_iter().chain(fed.late_release) {
-        release_tool(app, &t, to_local(pos), &press_reach);
+        release_tool(app, &press_t, to_local(pos), &press_reach);
     }
+
+    // The undo steps of the view (`OwnerRules::view_changes_are_steps`):
+    // under the owner's rule every view gesture — a pan, an axis rescale,
+    // a zoom rectangle, a pinch, a run of wheel or keyboard zoom — is one
+    // step right after it; under the reference's a run of wheel or
+    // keyboard zooms waits for the next canvas press, which stores it —
+    // one step for every view change since — exactly as the reference app
+    // keeps it (`storeUndoInfoIfSetCoordSystemOccurred`, spec F3).
+    if fed.owned.is_some() && !app.rules.view_changes_are_steps {
+        if let Some(before) = app.view_gesture.end(cam0) {
+            app.wb.record_view_step(before);
+        }
+    }
+    app.wb.set_camera(cam);
+    if intents
+        .started
+        .is_some_and(|g| matches!(g, Grab::Pan | Grab::Axis | Grab::Rect))
+    {
+        if let Some(before) = app.view_gesture.begin(cam0) {
+            app.wb.record_view_step(before);
+        }
+    }
+    if pinching && !app.pinching {
+        // A drag the pinch suspends ends its own step here; the pinch is a
+        // gesture of its own until the last other finger lifts.
+        app.wb.end_gesture();
+        if let Some(before) = app.view_gesture.begin(cam0) {
+            app.wb.record_view_step(before);
+        }
+    }
+    if !pinching && app.pinching {
+        if let Some(before) = app.view_gesture.end(cam) {
+            app.wb.record_view_step(before);
+        }
+    }
+    app.pinching = pinching;
+    if let Some(before) = app
+        .view_gesture
+        .zoom_run(cam0, zoomed, app.rules.view_changes_are_steps)
+    {
+        app.wb.record_view_step(before);
+    }
+    if intents.cancel_view {
+        if let Some(back) = app.view_gesture.cancel(cam) {
+            cam = back;
+            app.wb.set_camera(cam);
+        }
+    }
+    if intents.end_drag {
+        if let Some(before) = app.view_gesture.end(cam) {
+            app.wb.record_view_step(before);
+        }
+    }
+
     let cursor = match tool {
         _ if app.drag.is_some() || app.gesture.panning() => Some(egui::CursorIcon::Grabbing),
         Tool::MoveView => Some(egui::CursorIcon::Grab),
@@ -494,9 +805,35 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         },
     );
     preview(app, &painter, rect, &t, response.hover_pos());
+    // The rectangle the zoom in tool drags out, snapped to the view's ratio
+    // when it is near it (`updateSelectionRectangle`).
+    if let (Some(from), Some(to)) = (app.rect_from, app.rect_to) {
+        let (x0, y0, x1, y1) = camera::zoom_rectangle(from, to, w, h);
+        let r = Rect::from_min_max(
+            rect.min + vec2(x0 as f32, y0 as f32),
+            rect.min + vec2(x1 as f32, y1 as f32),
+        );
+        painter.rect_filled(r, 2.0, theme::POLYGON.gamma_multiply(0.08));
+        painter.rect_stroke(
+            r,
+            2.0,
+            Stroke::new(1.5, theme::CURVE),
+            egui::StrokeKind::Outside,
+        );
+    }
     overlay(app, ui, rect, w, h, &mut cam);
     app.camera = Some(cam);
     app.view = Some((rect.core(), cam.transform(w, h)));
+}
+
+/// The zoom of a zoom tool's click, as one undo step at once (the owner's
+/// rule, `OwnerRules::view_changes_are_steps`; the reference app stores it when
+/// the tool is left, `endOfMode`).
+fn zoom_click(app: &mut App, cam: &mut Camera, factor: f64, at: (f64, f64), w: f64, h: f64) {
+    let before = *cam;
+    cam.zoom_at(factor, at.0, at.1, w, h, app.rules.scale_limits);
+    app.wb.set_camera(*cam);
+    app.wb.record_view_step(before);
 }
 
 fn sample_loci(app: &mut App, ui: &Ui, t: ViewTransform) {
@@ -505,7 +842,7 @@ fn sample_loci(app: &mut App, ui: &Ui, t: ViewTransform) {
         return;
     }
     let now = ui.input(|i| i.time);
-    if let Some([xmin, xmax, ymin, ymax, scale, _]) = c.locus_view() {
+    if let Some([xmin, xmax, ymin, ymax, xscale, yscale]) = c.locus_view() {
         // The sampler already covers half a view past each edge.
         let (mx, my) = ((xmax - xmin) * 0.5, (ymax - ymin) * 0.5);
         let v = t.view();
@@ -513,7 +850,8 @@ fn sample_loci(app: &mut App, ui: &Ui, t: ViewTransform) {
             && v.xmax <= xmax + mx
             && v.ymin >= ymin - my
             && v.ymax <= ymax + my
-            && (1.0 / LOCUS_SCALE_RATIO..=LOCUS_SCALE_RATIO).contains(&(t.scale() / scale))
+            && (1.0 / LOCUS_SCALE_RATIO..=LOCUS_SCALE_RATIO).contains(&(t.xscale() / xscale))
+            && (1.0 / LOCUS_SCALE_RATIO..=LOCUS_SCALE_RATIO).contains(&(t.yscale() / yscale))
         {
             return;
         }
@@ -563,6 +901,9 @@ fn end_drag(app: &mut App, intents: &Intents) {
         }
         app.drag = None;
         app.erasing = false;
+        app.axis = None;
+        app.rect_from = None;
+        app.rect_to = None;
     }
 }
 
@@ -577,6 +918,8 @@ fn release_tool(app: &mut App, t: &ViewTransform, pos: (f64, f64), reach: &hit::
 struct Fed {
     /// The position of the last primary press among the events.
     pressed: Option<egui::Pos2>,
+    /// The modifiers held at that press.
+    pressed_mods: egui::Modifiers,
     /// The last primary button event was a release.
     released: bool,
     /// The position of the last primary press that was the area's.
@@ -593,6 +936,7 @@ struct Fed {
 fn feed(gesture: &mut Gesture, events: &[egui::Event], owns: impl Fn(egui::Pos2) -> bool) -> Fed {
     let mut fed = Fed {
         pressed: None,
+        pressed_mods: egui::Modifiers::NONE,
         released: false,
         owned: None,
         early_release: None,
@@ -608,12 +952,13 @@ fn feed(gesture: &mut Gesture, events: &[egui::Event], owns: impl Fn(egui::Pos2)
                 pos,
                 button,
                 pressed: down,
-                ..
+                modifiers,
             } => {
                 let primary = button == egui::PointerButton::Primary;
                 if primary {
                     if down {
                         fed.pressed = Some(pos);
+                        fed.pressed_mods = modifiers;
                         fed.late_release = None;
                     } else if fed.pressed.is_none() {
                         fed.early_release.get_or_insert(pos);
@@ -676,7 +1021,9 @@ fn click(app: &mut App, t: &ViewTransform, pos: (f64, f64), hit: Option<Id>) {
     }
     // A new point takes the position captured to the grid
     // (`transformCoords` in `updateNewPoint`).
-    let world = app.snap(t.scale()).apply(t.screen_to_world(pos.0, pos.1));
+    let world = app
+        .snap(t.xscale(), t.yscale())
+        .apply(t.screen_to_world(pos.0, pos.1));
     let hit_owned: Option<(String, Kind)> = hit.map(|id| {
         let c = app.wb.construction();
         (c.label(id).to_owned(), c.kind(id))
@@ -781,23 +1128,61 @@ fn overlay(app: &mut App, ui: &mut Ui, rect: Rect, w: f64, h: f64, cam: &mut Cam
     style_bar(app, ui, rect, cam);
     let right = rect.right() - 35.0;
     let bottom = rect.bottom() - 33.0;
-    let buttons = [
+    // The home button sits above the others and shows only while the view
+    // is not the standard one (`ZoomController`: `onHomePressed` is offered
+    // when `!isStandardView()`).
+    let home = !cam.is_standard();
+    let mut buttons = Vec::new();
+    if home {
+        buttons.push((Icon::Home, text::label(Label::StandardView)));
+    }
+    buttons.extend([
         (Icon::Fit, text::label(Label::ShowAllObjects)),
         (Icon::ZoomIn, text::label(Label::ZoomIn)),
         (Icon::ZoomOut, text::label(Label::ZoomOut)),
         (Icon::Fullscreen, text::label(Label::Fullscreen)),
-    ];
+    ]);
+    let n = buttons.len();
     for (i, (icon, tip)) in buttons.into_iter().enumerate() {
-        let center = pos2(right, bottom - 44.0 * (3 - i) as f32);
+        let center = pos2(right, bottom - 44.0 * (n - 1 - i) as f32);
         if !floating::round_button(ui, &mut app.overlays, tip, center, icon, true, tip).clicked() {
             continue;
         }
         match icon {
+            // Zoom to fit (`onZoomToFitPressed`): the drawn shapes' bounds
+            // with 3 per cent free, no ratio kept, and a stored undo step
+            // (`setViewShowAllObjects(true, ...)`).
             Icon::Fit => {
-                *cam = Camera::fit(view::content_bounds(app.wb.construction()), w, h);
+                let t = cam.transform(w, h);
+                if let Some(fit) =
+                    Camera::fit_drawn(app.wb.construction(), &t, w, h, app.rules.scale_limits)
+                {
+                    let before = *cam;
+                    *cam = fit;
+                    app.wb.set_camera(*cam);
+                    app.wb.record_view_step(before);
+                }
             }
-            Icon::ZoomIn => cam.zoom_at(ZOOM_BUTTON, 0.5 * w, 0.5 * h, w, h),
-            Icon::ZoomOut => cam.zoom_at(1.0 / ZOOM_BUTTON, 0.5 * w, 0.5 * h, w, h),
+            // The zoom buttons (`zoomInOut`): x1.5 about the centre, never
+            // an undo step.
+            Icon::ZoomIn => {
+                cam.zoom_at(ZOOM_BUTTON, 0.5 * w, 0.5 * h, w, h, app.rules.scale_limits)
+            }
+            Icon::ZoomOut => cam.zoom_at(
+                1.0 / ZOOM_BUTTON,
+                0.5 * w,
+                0.5 * h,
+                w,
+                h,
+                app.rules.scale_limits,
+            ),
+            // The standard view (`onHomePressed`), stored as a step.
+            Icon::Home => {
+                let before = *cam;
+                *cam = Camera::STANDARD;
+                app.wb.set_camera(*cam);
+                app.wb.record_view_step(before);
+            }
             _ => {
                 let full = ui.ctx().input(|i| i.viewport().fullscreen.unwrap_or(false));
                 ui.ctx()
@@ -875,7 +1260,14 @@ fn style_bar(app: &mut App, ui: &mut Ui, rect: Rect, cam: &mut Camera) {
             match icon {
                 Icon::Axes => app.decor.axes = !app.decor.axes,
                 Icon::Grid => app.decor.grid = !app.decor.grid,
-                _ => *cam = Camera::STANDARD,
+                // The standard view, stored as a step like the home button
+                // over the drawing (`setStandardView(true)`).
+                _ => {
+                    let before = *cam;
+                    *cam = Camera::STANDARD;
+                    app.wb.set_camera(*cam);
+                    app.wb.record_view_step(before);
+                }
             }
         }
     }

@@ -19,28 +19,32 @@ use geo_kernel::kernel::text::TextPosition;
 use geo_kernel::kernel::{Construction, Def, Id, Kind, Value};
 use geo_kernel::svg::View;
 
-/// Maps between world and screen coordinates with one uniform scale.
+/// Maps between world and screen coordinates, with one scale per axis
+/// (`EuclidianView.xscale` / `.yscale`, spec D1).
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct ViewTransform {
     view: View,
-    scale: f64,
+    xscale: f64,
+    yscale: f64,
     ox: f64,
     oy: f64,
     height: f64,
 }
 
 impl ViewTransform {
-    /// Fits `view` into a `width` x `height` area, centred, keeping the aspect ratio.
+    /// The transform of a `view` in a `width` x `height` area: each axis
+    /// fills the area on its own, so the scales come apart when the view
+    /// is not as wide as it is high.
     #[inline]
     pub fn new(view: View, width: f64, height: f64) -> Self {
         let vw = (view.xmax - view.xmin).max(f64::MIN_POSITIVE);
         let vh = (view.ymax - view.ymin).max(f64::MIN_POSITIVE);
-        let scale = (width / vw).min(height / vh);
         ViewTransform {
             view,
-            scale,
-            ox: 0.5 * (width - vw * scale),
-            oy: 0.5 * (height - vh * scale),
+            xscale: width / vw,
+            yscale: height / vh,
+            ox: 0.0,
+            oy: 0.0,
             height,
         }
     }
@@ -57,25 +61,31 @@ impl ViewTransform {
         self.view
     }
 
-    /// Pixels per world unit.
+    /// Pixels per world unit on the x axis.
     #[inline]
-    pub fn scale(&self) -> f64 {
-        self.scale
+    pub fn xscale(&self) -> f64 {
+        self.xscale
+    }
+
+    /// Pixels per world unit on the y axis.
+    #[inline]
+    pub fn yscale(&self) -> f64 {
+        self.yscale
     }
 
     #[inline]
     pub fn world_to_screen(&self, x: f64, y: f64) -> (f64, f64) {
         (
-            self.ox + (x - self.view.xmin) * self.scale,
-            self.height - self.oy - (y - self.view.ymin) * self.scale,
+            self.ox + (x - self.view.xmin) * self.xscale,
+            self.height - self.oy - (y - self.view.ymin) * self.yscale,
         )
     }
 
     #[inline]
     pub fn screen_to_world(&self, sx: f64, sy: f64) -> (f64, f64) {
         (
-            self.view.xmin + (sx - self.ox) / self.scale,
-            self.view.ymin + (self.height - self.oy - sy) / self.scale,
+            self.view.xmin + (sx - self.ox) / self.xscale,
+            self.view.ymin + (self.height - self.oy - sy) / self.yscale,
         )
     }
 }
@@ -482,7 +492,12 @@ mod tests {
         let c = triangle();
         let t = crate::view::Camera::STANDARD.transform(800.0, 600.0);
         let mut drag = Drag::begin(&c, c.id("A").unwrap(), (0.0, 0.0)).unwrap();
-        let snap = Snap::new(&crate::metrics::Metrics::desktop(), t.scale(), true);
+        let snap = Snap::new(
+            &crate::metrics::Metrics::desktop(),
+            t.xscale(),
+            t.yscale(),
+            true,
+        );
         let (sx, sy) = t.world_to_screen(3.0, 2.0);
         assert_eq!(
             point_step(&mut drag, &t, &snap, sx + 5.0, sy - 5.0),
@@ -540,7 +555,12 @@ mod tests {
     fn a_dependent_drag_counts_from_the_captured_press() {
         let c = load("A = (1, 1.01)\nB = (3, 1.01)\nk = Circle(A, B)\n");
         let t = crate::view::Camera::STANDARD.transform(892.0, 747.0);
-        let snap = Snap::new(&crate::metrics::Metrics::desktop(), t.scale(), true);
+        let snap = Snap::new(
+            &crate::metrics::Metrics::desktop(),
+            t.xscale(),
+            t.yscale(),
+            true,
+        );
         let press = snap.capture((1.0, 3.01), (0.0, 0.0));
         assert_eq!(press, (1.0, 3.0));
         let mut drag = Drag::begin(&c, c.id("k").unwrap(), press).unwrap();
@@ -558,7 +578,12 @@ mod tests {
     fn a_dependent_drag_captures_its_first_free_point() {
         let c = load("A = (1, 1.01)\nB = (3, 2.01)\nf = Line(A, B)\n");
         let t = crate::view::Camera::STANDARD.transform(892.0, 747.0);
-        let snap = Snap::new(&crate::metrics::Metrics::desktop(), t.scale(), true);
+        let snap = Snap::new(
+            &crate::metrics::Metrics::desktop(),
+            t.xscale(),
+            t.yscale(),
+            true,
+        );
         let press = snap.capture((2.0, 1.51), (0.0, 0.0));
         assert_eq!(press, (2.0, 1.51));
         let mut drag = Drag::begin(&c, c.id("f").unwrap(), press).unwrap();

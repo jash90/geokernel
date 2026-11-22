@@ -237,9 +237,14 @@ impl<'s> Runner<'s> {
     fn pin_camera(&mut self, zoom: f64) {
         let r = self.canvas();
         let (w, h) = (r.width() as f64, r.height() as f64);
-        let mut cam = Camera::fit(view::content_bounds(self.app.wb.construction()), w, h);
+        let mut cam = Camera::fit(
+            view::content_bounds(self.app.wb.construction()),
+            w,
+            h,
+            view::ScaleLimits::OURS,
+        );
         if zoom != 1.0 {
-            cam.zoom_at(zoom, w / 2.0, h / 2.0, w, h);
+            cam.zoom_at(zoom, w / 2.0, h / 2.0, w, h, view::ScaleLimits::OURS);
         }
         self.app.camera = Some(cam);
     }
@@ -267,7 +272,7 @@ impl<'s> Runner<'s> {
                 Value::Circle { cx, cy, r } => inside(&[(cx - r, cy - r), (cx + r, cy + r)]),
                 v @ Value::Line { .. } => v.unit_line().is_some_and(|(a, b, k)| {
                     let (mx, my) = t.screen_to_world(w / 2.0, h / 2.0);
-                    (a * mx + b * my + k).abs() * t.scale() <= w.hypot(h) / 2.0
+                    (a * mx + b * my + k).abs() * t.xscale().max(t.yscale()) <= w.hypot(h) / 2.0
                 }),
                 Value::Polygon { .. } => {
                     let pts: Vec<(f64, f64)> = c.vertices(id).flatten().collect();
