@@ -1293,13 +1293,6 @@ reason = "the kernel refuses the input: `Fit({(0,0),(1,1),(2,4)},{x^2,sin(x),x})
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:1185"
-category = "kernel-mismatch"
-reason = "Undefined does not match `{7, 3}` (expected a value, kernel is undefined)"
-mismatches = ["l5"]
-
-[[gap]]
-
 id = "commands/CommandsTest.java:119"
 category = "text-formatting"
 reason = "values agree but `GeoList` of kind list has no GeoGebra-style text yet; GeoGebra prints `{1, 0}`"
@@ -3436,56 +3429,6 @@ reason = "string `1.6666666666666667`, GeoGebra prints `1.66666666666667`"
 mismatches = ["frac3"]
 
 [[gap]]
-
-
-id = "commands/CommandsTest.java:2997"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Numerator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2998"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Numerator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2999"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Numerator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3000"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Numerator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3001"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Numerator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3002"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Numerator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3003"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Numerator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3004"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Numerator`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:3020"
 category = "text-formatting"
 reason = "values agree but `GeoList` of kind list has no GeoGebra-style text yet; GeoGebra prints `{(2, -0.8193286198336103), (3, 0), (4, 0.8193286198336103), 2.8284271247461903}`"
@@ -4078,44 +4021,6 @@ id = "commands/CommandsTest.java:3343"
 category = "cascade"
 reason = "the kernel refuses the input: unknown object `(1,1)`; the method's step `commands/CommandsTest.java:3342` fails earlier here, so the object is missing only in its wake"
 mismatches = ["step"]
-
-[[gap]]
-
-
-id = "commands/CommandsTest.java:3348"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `?`"
-mismatches = ["f"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3349"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `x^(2) - x + 1`"
-mismatches = ["g"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3350"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `(-x^(3)) + x`"
-mismatches = ["h"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3351"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `(8 * x^(3)) + (36 * x^(2)) + (54 * x) + 27`"
-mismatches = ["p"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3352"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `x^(2)`"
-mismatches = ["q"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3353"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `x^(2) - x`"
-mismatches = ["r"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3358"
