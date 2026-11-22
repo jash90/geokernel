@@ -43,6 +43,7 @@ pub mod text;
 use self::angle::{AngleDef, AngleGeometry, AngleSource, AngleStyle};
 use self::locus::{LocusData, LocusDef};
 use crate::algo::arc::{ArcData, ArcDef};
+use crate::algo::optimize::OptimizeDef;
 use crate::algo::conic::ConicDef;
 use crate::algo::conic_nd::{ConicData, ConicType};
 use crate::algo::conic_parts::ConicPartDef;
@@ -502,6 +503,10 @@ pub enum Def {
     /// `Locus(Q, P)` and `Locus(Q, slider)`; the construction keeps the
     /// points of each locus (see [`Construction::locus`]).
     Locus(LocusDef),
+    /// `Maximize(dep, indep)` / `Minimize(dep, indep)` over a bounded
+    /// number; the search itself runs in
+    /// [`algo::optimize::record`], as a locus record does.
+    Optimize(OptimizeDef),
     /// A line or conic defined by an equation in `x` and `y`
     /// (`a: 2x + 3y = 6`, `y = m x + b`); the construction keeps the trees
     /// of its coefficients (see [`crate::expr`]). Like [`Def::Expr`], the
@@ -624,6 +629,7 @@ impl Def {
                 }
             }
             Def::Locus(d) => d.kind(),
+            Def::Optimize(d) => d.kind(),
         }
     }
 
@@ -703,6 +709,7 @@ impl Def {
             Def::Path(d) => d.parents(),
             Def::Arc(d) => d.parents(),
             Def::Locus(d) => d.parents(),
+            Def::Optimize(d) => d.parents(),
         }
     }
 }
@@ -1452,6 +1459,7 @@ impl Construction {
                 self.loci.push((id.0, data));
                 value
             }
+            Def::Optimize(d) => algo::optimize::record(self, d),
             _ => self.compute(def, id.0),
         };
         if let Def::IntersectBoundary(intersection) = def {
@@ -1849,6 +1857,15 @@ impl Construction {
                     if !self.update_locus(i, d) {
                         continue;
                     }
+                }
+                Def::Optimize(d) => {
+                    let new = algo::optimize::record(self, d);
+                    if new == self.values[i] {
+                        // Nothing downstream can change because of this
+                        // object.
+                        continue;
+                    }
+                    self.values[i] = new;
                 }
                 _ => {
                     let new = self.compute(def, i);
@@ -2294,6 +2311,7 @@ impl Construction {
             // the coefficient entries were checked when they were parsed
             Def::Equation(d) => crate::expr::equation::check(self, d),
             Def::Locus(d) => d.check(self),
+            Def::Optimize(d) => d.check(self),
         }
     }
 
@@ -2391,6 +2409,7 @@ impl Construction {
             Def::Arc(d) => d.compute(self),
             Def::Equation(d) => Some(expr::equation::current(self, d)),
             Def::Locus(d) => d.compute(self),
+            Def::Optimize(d) => d.compute(self),
         }
     }
 

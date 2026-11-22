@@ -22,13 +22,21 @@ impl<const M: bool> Ctx<'_, M> {
     }
 }
 
+/// `ExtremumFinder.findMinimum` with the tolerance GeoGebra calls it with
+/// (`5e-8`): `None` is its `NaN` (an undefined sample or the iteration
+/// limit), so a maximum is searched as the minimum of the negated
+/// function, as `findMaximum` does.
+pub(crate) fn fmin(a: f64, b: f64, f: impl FnMut(f64) -> f64) -> Option<f64> {
+    brent(a, b, f, |_| false)
+}
+
 /// Brent minimization with a golden-section step whenever interpolation
 /// falls outside the bracket or would make insufficient progress. The
 /// bracket updates and trial limit follow `ExtremumFinder.findMinimum`.
 fn brent(
     mut a: f64,
     mut b: f64,
-    f: impl Fn(f64) -> f64,
+    mut f: impl FnMut(f64) -> f64,
     stop: impl Fn(u64) -> bool,
 ) -> Option<f64> {
     let ratio = (3.0 - 5.0_f64.sqrt()) * 0.5;

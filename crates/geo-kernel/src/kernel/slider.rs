@@ -50,6 +50,13 @@ impl Construction {
         Some((min?, max?))
     }
 
+    /// Writes the value of the free number `id`, as a drag or a slider
+    /// sample does (`GeoNumeric.setValue`).
+    pub(crate) fn set_free_number(&mut self, id: Id, value: f64) {
+        self.defs[id.0] = Def::Number(value);
+        self.values[id.0] = Value::Number(value);
+    }
+
     pub(super) fn clamp_slider(&self, id: Id, value: f64) -> f64 {
         clamp(value, self.slider_bounds(id))
     }

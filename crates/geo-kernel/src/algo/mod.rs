@@ -30,6 +30,7 @@ pub mod intersect;
 mod kimberling;
 pub mod lines;
 pub mod measure;
+pub mod optimize;
 pub mod path;
 pub mod point;
 pub mod polygon;

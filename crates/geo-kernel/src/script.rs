@@ -56,6 +56,7 @@ use crate::algo::general_conic::GeneralConicDef;
 use crate::algo::intersect;
 use crate::algo::lines::LineDef;
 use crate::algo::measure::MeasureDef;
+use crate::algo::optimize::OptimizeDef;
 use crate::algo::point::PointDef;
 use crate::algo::polygon::PolygonDef;
 use crate::algo::predicate::PredicateDef;
@@ -215,6 +216,47 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
         .and_then(|s| s.strip_suffix(')'))
     {
         return set_construction_step(c, arg.trim()).map(|_| None);
+    }
+    // `name = Maximize(expr, number)` and `Minimize`: the dependent value
+    // may be an inline arithmetic expression, which becomes a hidden
+    // expression object, as GeoGebra's argument resolver makes a temporary
+    // number of it (`CmdMaximize`/`CmdMinimize`).
+    if let Some((func @ ("Maximize" | "Minimize"), args)) = split_call(rhs) {
+        if args.len() != 2 {
+            return Err(format!("`{func}` does not take {} argument(s)", args.len()));
+        }
+        let start = c.checkpoint();
+        let dependent = match c
+            .id(args[0])
+            .filter(|&id| matches!(c.kind(id), Kind::Number | Kind::Angle))
+        {
+            Some(id) => id,
+            None => {
+                let label = format!("\0dep{}", c.len());
+                match crate::expr::define(c, &label, args[0], false) {
+                    Ok(id) => id,
+                    Err(e) => {
+                        c.discard_since(start);
+                        return Err(e.to_string());
+                    }
+                }
+            }
+        };
+        let result = (|| {
+            let independent = object(c, args[1])?;
+            let def = OptimizeDef {
+                dependent,
+                independent,
+                maximize: func == "Maximize",
+            };
+            c.add(name, Def::Optimize(def))
+                .map(Some)
+                .map_err(|e| e.to_string())
+        })();
+        if result.is_err() {
+            c.discard_since(start);
+        }
+        return result;
     }
     if let Some(result) = with_saved_arguments(c, rhs, |c, call| define_after_label(c, name, call))
     {
@@ -1354,6 +1396,9 @@ pub(crate) fn parse_def(c: &Construction, rhs: &str) -> Result<Def, String> {
     }
     if let Some(def) = LocusDef::parse(c, func, &args) {
         return def.map(Def::Locus);
+    }
+    if let Some(def) = OptimizeDef::parse(c, func, &args) {
+        return def.map(Def::Optimize);
     }
 
     match (func, args.len()) {

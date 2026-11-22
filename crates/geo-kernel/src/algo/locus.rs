@@ -350,7 +350,7 @@ pub(crate) fn reads(c: &Construction, d: LocusDef) -> Vec<Id> {
 
 /// The objects that depend on `mover` and that `q` depends on, `q`
 /// included, in creation order: what a sample recomputes.
-fn chain(c: &Construction, q: Id, mover: Id) -> Vec<usize> {
+pub(crate) fn chain(c: &Construction, q: Id, mover: Id) -> Vec<usize> {
     let anc = ancestors(c, q);
     let mut desc = vec![false; q.0 + 1];
     let mut stack = vec![mover];
@@ -394,7 +394,7 @@ fn is_closed(c: &Construction, path: Id, g: &Geom<'_>) -> bool {
 }
 
 /// What sampling changes, saved to be put back.
-struct Saved {
+pub(crate) struct Saved {
     values: Vec<(usize, Value)>,
     defs: Vec<(usize, Def)>,
     paths: Vec<(usize, PathState)>,
@@ -403,7 +403,7 @@ struct Saved {
 }
 
 impl Saved {
-    fn of(c: &Construction, ids: &[usize]) -> Self {
+    pub(crate) fn of(c: &Construction, ids: &[usize]) -> Self {
         let mut s = Saved {
             values: Vec::with_capacity(ids.len()),
             defs: Vec::with_capacity(ids.len()),
@@ -431,7 +431,7 @@ impl Saved {
     /// first, so that what an expression keeps besides its value (its last
     /// raw result) follows the saved inputs again; then every saved value
     /// and record is written back bit for bit.
-    fn restore(self, c: &mut Construction, chain: &[usize]) {
+    pub(crate) fn restore(self, c: &mut Construction, chain: &[usize]) {
         for &(i, def) in &self.defs {
             c.defs[i] = def;
         }
@@ -460,7 +460,7 @@ impl Saved {
 }
 
 /// Recomputes object `i` from its parents, as an update does.
-fn recompute(c: &mut Construction, i: usize) {
+pub(crate) fn recompute(c: &mut Construction, i: usize) {
     let def = c.defs[i];
     match def {
         Def::Expr(d) => {

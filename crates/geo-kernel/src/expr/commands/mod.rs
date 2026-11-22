@@ -9,6 +9,7 @@
 
 mod algebra;
 
+pub(crate) use algebra::fmin;
 pub(crate) use algebra::polynomial;
 pub(super) mod financial;
 mod geometry;
