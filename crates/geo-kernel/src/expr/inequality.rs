@@ -72,7 +72,15 @@ fn compute(c: &Construction, source: Id) -> Option<Outcome> {
     }
     let mut borders = Vec::new();
     let mut stopped = false;
-    let tree = Tree::build(c, &mut builder, root, &mut borders, &mut stopped, &work)?;
+    let tree = Tree::build(
+        c,
+        &mut builder,
+        root,
+        false,
+        &mut borders,
+        &mut stopped,
+        &work,
+    )?;
     let at = Plane { c, e, work: &work };
     let mut vertices = Vec::new();
     for (i, a) in borders.iter().enumerate() {
@@ -223,7 +231,7 @@ impl Border {
                 .map(|row| row.first().copied().unwrap_or_default())
                 .collect()
         };
-        let mut roots = plane_polynomial::real_roots(&coefficients, work);
+        let mut roots = plane_polynomial::unscaled_roots(&coefficients, work);
         roots.sort_by(f64::total_cmp);
         if !work.charge((roots.len() * (coefficients.len() + 1)) as u64) {
             return None;
@@ -504,7 +512,9 @@ enum Tree {
     Empty,
     Border(usize),
     Constant(bool),
-    Not(Box<Tree>),
+    /// `NO_OPERATION`, which `IneqTree.valueAround` has no case for: it
+    /// reads its left side and is unknown.
+    Unknown(Box<Tree>),
     Pair(Bin, Box<Tree>, Box<Tree>),
 }
 
@@ -513,6 +523,7 @@ impl Tree {
         c: &Construction,
         builder: &mut Builder,
         root: u32,
+        negate: bool,
         borders: &mut Vec<Border>,
         stopped: &mut bool,
         work: &IntersectionWork,
@@ -523,20 +534,47 @@ impl Tree {
         if !work.charge(1) {
             return None;
         }
+        // `FunctionNVar.initIneqs` pushes a negation into the operations
+        // (`adjustOp`), down to the comparisons, where a NaN residual still
+        // reads as false.
+        let mut child = |builder: &mut Builder, i, negate| {
+            Self::build(c, builder, i, negate, borders, stopped, work).map(Box::new)
+        };
         let tree = match builder.node(root) {
-            Node::Bin(op, a, b) if op.is_logic() => Self::Pair(
-                op,
-                Box::new(Self::build(c, builder, a, borders, stopped, work)?),
-                Box::new(Self::build(c, builder, b, borders, stopped, work)?),
-            ),
-            Node::Un(Un::Not, a) => Self::Not(Box::new(Self::build(
-                c, builder, a, borders, stopped, work,
-            )?)),
+            Node::Bin(Bin::Implies, a, b) => {
+                let op = if negate { Bin::And } else { Bin::Or };
+                let left = child(builder, a, !negate)?;
+                Self::Pair(op, left, child(builder, b, negate)?)
+            }
+            // A negated `XOR` becomes `NO_OPERATION`, which
+            // `IneqTree.valueAround` reads as unknown.
+            Node::Bin(Bin::Xor, a, b) if negate => {
+                let left = child(builder, a, negate)?;
+                child(builder, b, negate)?;
+                Self::Unknown(left)
+            }
+            Node::Bin(op, a, b) if op.is_logic() => {
+                let op = match (op, negate) {
+                    (Bin::And, true) => Bin::Or,
+                    (Bin::Or, true) => Bin::And,
+                    (op, _) => op,
+                };
+                let left = child(builder, a, negate)?;
+                Self::Pair(op, left, child(builder, b, negate)?)
+            }
+            Node::Un(Un::Not, a) => *child(builder, a, !negate)?,
             Node::Bin(
                 op @ (Bin::Greater | Bin::GreaterEqual | Bin::Less | Bin::LessEqual),
                 a,
                 b,
             ) => {
+                let op = match (op, negate) {
+                    (Bin::Greater, true) => Bin::LessEqual,
+                    (Bin::GreaterEqual, true) => Bin::Less,
+                    (Bin::Less, true) => Bin::GreaterEqual,
+                    (Bin::LessEqual, true) => Bin::Greater,
+                    (op, _) => op,
+                };
                 let (a, b) = if matches!(op, Bin::Less | Bin::LessEqual) {
                     (b, a)
                 } else {
@@ -602,10 +640,10 @@ impl Tree {
                 }
             }
             Node::Obj(id) => match c.value(id) {
-                crate::Value::Bool(v) => Self::Constant(v),
+                crate::Value::Bool(v) => Self::Constant(v != negate),
                 _ => return None,
             },
-            Node::Bool(value) => Self::Constant(value),
+            Node::Bool(value) => Self::Constant(value != negate),
             _ => return None,
         };
         Some(tree)
@@ -648,9 +686,9 @@ impl Tree {
                 }
             }
             Self::Constant(v) => 1 << u8::from(*v),
-            Self::Not(a) => {
-                let a = a.truth(borders, x, y, at)?;
-                (a >> 1) | ((a & 1) << 1)
+            Self::Unknown(a) => {
+                a.truth(borders, x, y, at)?;
+                3
             }
             Self::Pair(op, a, b) => {
                 let a = a.truth(borders, x, y, at)?;

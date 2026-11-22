@@ -470,8 +470,9 @@ impl Workbench {
             }
             let before = self.construction.len();
             let step_before = self.construction.step();
-            let assigns_slider =
-                geo_kernel::script::is_slider_assignment(&self.construction, &line);
+            let slider = crate::scriptlog::slider_target(&self.construction, &line);
+            let assigns_slider = slider.is_some()
+                || geo_kernel::script::is_slider_assignment(&self.construction, &line);
             // Only lines that succeeded go into the log: a failed one would
             // fail again on every replay.
             match exec_definition(&mut self.construction, &line) {
@@ -489,6 +490,9 @@ impl Workbench {
                                 self.construction.len() - before,
                             );
                         }
+                    }
+                    if let Some(id) = slider.filter(|_| mutated) {
+                        self.grow_boundary_outputs(std::iter::once(id));
                     }
                     updated |= mutated;
                 }

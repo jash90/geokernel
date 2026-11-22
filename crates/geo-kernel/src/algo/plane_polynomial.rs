@@ -146,7 +146,14 @@ fn resultant(
     Some(determinant)
 }
 
-pub(crate) fn real_roots(coefficients: &[f64], work: &IntersectionWork) -> Vec<f64> {
+/// Real roots from the coefficients as they are (`EquationSolver`
+/// solves a quadratic with its own coefficients): no rescaling that could
+/// shrink a small leading coefficient into a lower degree.
+pub(crate) fn unscaled_roots(coefficients: &[f64], work: &IntersectionWork) -> Vec<f64> {
+    graph_roots(coefficients, &|units| work.charge(units))
+}
+
+fn real_roots(coefficients: &[f64], work: &IntersectionWork) -> Vec<f64> {
     let scale = coefficients.iter().fold(0.0_f64, |m, c| m.max(c.abs()));
     if scale == 0.0 || !scale.is_finite() {
         return Vec::new();

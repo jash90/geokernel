@@ -24,6 +24,18 @@ id = "intersectgrowth-interval-005"
 reason = "AlgoRoots.initPoints unlabels the undefined second slot when the interval collapses; when it is defined again it is labelled with the next default point label A, which the harness reads besides the old label R_{2}. The kernel keeps one fixed label per output, so the slot stays R_{2} and no A exists"
 mismatches = ["2:A", "3:A", "4:A"]
 
+[[gap]]
+id = "intersectgrowth-interval-007"
+reason = "When b moves to 5.5, R = Intersect(f, h, b, 3) loses its roots and AlgoRoots.initPoints removes its second output A, which frees the label before S = Intersect(g, h, 0, b) grows; S then names its roots 4 and 5 A and B. The kernel keeps A on R's undefined slot, so S's new outputs are B and C"
+mismatches = ["2:A", "2:B"]
+
+# corners
+
+[[gap]]
+id = "corners-review-004"
+reason = "AlgoVertexIneq keeps the intersection helper it created on the first update. The helper for y > x^n and x > 1 was made while n = 2 made the border polynomial; after n becomes 0.5 that cached polynomial helper still evaluates the border on the vertical line and finds (1, 1). Which helper exists depends on the edit history, so the kernel leaves the variable exponent undefined instead"
+mismatches = ["1:P_{1}"]
+
 # conic
 
 [[gap]]

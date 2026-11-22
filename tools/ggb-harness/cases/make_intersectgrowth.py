@@ -37,4 +37,8 @@ cases.case("interval", ["f(x) = cos(x)", "h(x) = 0", "a = 0", "b = 1",
                          "R = Intersect(f, h, a, b)"],
            [setn("b", value) for value in (5, 0, 8, 1, 11)])
 cases.cases[-1]["track_root_growth"] = True
+cases.case("interval", ["b = 1.5", "f(x) = (x - 1) (x - 2)", "g(x) = (x - 3) (x - 4) (x - 5)",
+                         "h(x) = 0", "R = Intersect(f, h, b, 3)", "S = Intersect(g, h, 0, b)"],
+           [setn("b", 0.5), setn("b", 5.5)])
+cases.cases[-1]["track_root_growth"] = True
 cases.write()

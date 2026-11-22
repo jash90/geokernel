@@ -56,6 +56,11 @@
     {"id": "corners-inequality-014", "group": "corners", "script": ["h = 2", "P = Corner(x > -1 && y > 0 && x + y < h)"], "steps": [{"action": "initial"}, {"action": "set_number", "label": "h", "value": -2.0}, {"action": "set_number", "label": "h", "value": 3.0}]},
     {"id": "corners-inequality-015", "group": "corners", "script": ["P = Corner(x^2 < 4 && y > sqrt(x + 3) && y < 5)"], "steps": [{"action": "initial"}]},
     {"id": "corners-inequality-016", "group": "corners", "script": ["P = Vertex(y > cos(x) && x^2 > 0)"], "steps": [{"action": "initial"}]},
-    {"id": "corners-inequality-017", "group": "corners", "script": ["P = Vertex(x < exp(y) && y^2 < 1)"], "steps": [{"action": "initial"}]}
+    {"id": "corners-inequality-017", "group": "corners", "script": ["P = Vertex(x < exp(y) && y^2 < 1)"], "steps": [{"action": "initial"}]},
+    {"id": "corners-review-001", "group": "corners", "script": ["P = Vertex(x > sin(y) && y^2 + 100000*y + 10000000000 > 0)"], "steps": [{"action": "initial"}]},
+    {"id": "corners-review-002", "group": "corners", "script": ["P = Corner(!(y > sqrt(x)) && x > -2 && y > 0)"], "steps": [{"action": "initial"}]},
+    {"id": "corners-review-003", "group": "corners", "script": ["k = 1", "a = sqrt(k)", "P = Vertex(!(y > sin(x) + a) && x > 0 && y > 0)"], "steps": [{"action": "initial"}, {"action": "set_number", "label": "k", "value": -1.0}, {"action": "set_number", "label": "k", "value": 1.0}], "track_boundary_growth": true},
+    {"id": "corners-review-004", "group": "corners", "script": ["n = 2", "P = Vertex(y > x^n && x > 1 && y > 0)"], "steps": [{"action": "initial"}, {"action": "set_number", "label": "n", "value": 0.5}, {"action": "set_number", "label": "n", "value": 2.0}], "track_boundary_growth": true},
+    {"id": "corners-review-005", "group": "corners", "script": ["q(x,y) = (x > 1 -> y > 2) && x < 3 && y < 4 && y > sqrt(x - 5)", "P = Vertex(q)"], "steps": [{"action": "initial"}]}
   ]
 }

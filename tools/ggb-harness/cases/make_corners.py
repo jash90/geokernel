@@ -213,4 +213,17 @@ cases.case("inequality", ["P = Corner(x^2 < 4 && y > sqrt(x + 3) && y < 5)"], []
 cases.case("inequality", ["P = Vertex(y > cos(x) && x^2 > 0)"], [])
 cases.case("inequality", ["P = Vertex(x < exp(y) && y^2 < 1)"], [])
 
+# Review reproducers: a tiny normalized quadratic coefficient, negated
+# borders that read NaN, and a variable exponent edited away and back.
+cases.case("review", ["P = Vertex(x > sin(y) && y^2 + 100000*y + 10000000000 > 0)"], [])
+cases.case("review", ["P = Corner(!(y > sqrt(x)) && x > -2 && y > 0)"], [])
+cases.case("review", ["k = 1", "a = sqrt(k)", "P = Vertex(!(y > sin(x) + a) && x > 0 && y > 0)"],
+           [setn("k", -1), setn("k", 1)])
+cases.cases[-1]["track_boundary_growth"] = True
+cases.case("review", ["n = 2", "P = Vertex(y > x^n && x > 1 && y > 0)"],
+           [setn("n", 0.5), setn("n", 2)])
+cases.cases[-1]["track_boundary_growth"] = True
+cases.case("review", ["q(x,y) = (x > 1 -> y > 2) && x < 3 && y < 4 && y > sqrt(x - 5)",
+                      "P = Vertex(q)"], [])
+
 cases.write()

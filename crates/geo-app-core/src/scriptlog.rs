@@ -1340,9 +1340,13 @@ impl Log {
                     None => check_names(&line).and_then(|()| {
                         let expected = (checked || listed.is_some()).then_some(named.as_slice());
                         let before = c.len();
+                        let slider = slider_target(&c, &line);
                         let first = log.define_checked(&mut c, &line, expected)?;
                         if let Some(id) = first.filter(|_| grow && c.len() > before) {
                             groups.record(&c, &line, id, c.len() - before);
+                        }
+                        if let Some(id) = slider.filter(|_| grow) {
+                            log.grow_boundary_outputs(&mut c, &mut groups, std::iter::once(id));
                         }
                         Ok(())
                     }),
@@ -1445,6 +1449,7 @@ impl Log {
             let labels = comment
                 .and_then(snapshot_labels)
                 .map(|labels| labels.split(',').map(str::trim).collect::<Vec<_>>());
+            let slider = slider_target(&c, &line);
             let first = labels
                 .as_ref()
                 .and_then(|labels| restore_boundary_labels(&mut c, &line, labels))
@@ -1454,10 +1459,23 @@ impl Log {
             if let Some(id) = first.filter(|_| grow && c.len() > before) {
                 groups.record(&c, &line, id, c.len() - before);
             }
+            if let Some(id) = slider.filter(|_| grow) {
+                log.grow_boundary_outputs(&mut c, &mut groups, std::iter::once(id));
+            }
         }
         log.prune_image_assets(&mut c);
         Ok((c, log))
     }
+}
+
+/// The number that a slider assignment such as `b = 10` sets: its
+/// dependents can reveal more outputs of a growing command.
+pub(crate) fn slider_target(c: &Construction, line: &str) -> Option<Id> {
+    if !geo_kernel::script::is_slider_assignment(c, line) {
+        return None;
+    }
+    let (name, _) = line.split_once('=')?;
+    c.id(name.trim())
 }
 
 #[cfg(test)]
