@@ -183,6 +183,7 @@ impl Walker<'_> {
             | Node::SystemFunction(..)
             | Node::RootList(..)
             | Node::FunctionAsymptotes(..)
+            | Node::VertexForm(..)
             | Node::Iteration { .. }
             | Node::Cas(..)
             | Node::CasVariable(_)

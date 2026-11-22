@@ -203,7 +203,9 @@ fn corpus() -> Vec<Case> {
                     wb.set_number(id, *value);
                 }
                 Step::Redefine { line } => wb.run_line(line).unwrap(),
-                Step::Reject { .. } | Step::Delete { .. } => panic!("{name}: unexpected step"),
+                Step::Reject { .. } | Step::Delete { .. } | Step::SetSliderBounds { .. } => {
+                    panic!("{name}: unexpected step")
+                }
             }
         }
         let c = wb.construction();

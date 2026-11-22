@@ -161,6 +161,9 @@ pub(super) struct Cartesian<'a> {
 enum CurveSource<'a> {
     Coordinates([Id; 2], Box<[FunctionDerivative<'a>; 2]>),
     Spline(std::sync::Arc<super::analysis::Spline>),
+    /// A curve derivative: both coordinates sample the calculus record's
+    /// two trees (`Derivative(curve)`).
+    Calculus(&'a Construction, Id),
     ParametricDerivative(Box<Cartesian<'a>>),
     Dilated {
         original: Box<Cartesian<'a>>,
@@ -222,6 +225,7 @@ impl<'a> Cartesian<'a> {
     fn with_depth(c: &'a Construction, id: Id, depth: u8) -> Option<Self> {
         use super::{analysis::AnalysisDef, measure::MeasureDef, vector::VectorDef};
         use crate::{Def, Kind};
+        let id = c.conditional_source(id)?;
         let Value::Curve { start, end } = c.value(id) else {
             return None;
         };
@@ -241,6 +245,9 @@ impl<'a> Cartesian<'a> {
             }
             Def::Analysis(AnalysisDef::Spline(input)) => {
                 CurveSource::Spline(c.analysis.spline(c, input)?)
+            }
+            Def::Calculus(super::calculus::CalculusDef::CurveDerivative { .. }) => {
+                CurveSource::Calculus(c, id)
             }
             Def::Analysis(AnalysisDef::ParametricDerivative(id)) => {
                 CurveSource::ParametricDerivative(Box::new(Self::with_depth(
@@ -347,6 +354,9 @@ impl<'a> Cartesian<'a> {
                 let y = work.curve_polynomial(c, *y)?;
                 line_coefficients(&x, &y, (a, b, constant), work)?
             }
+            // a derivative curve keeps its own trees; a line intersection
+            // falls back to the numeric path
+            CurveSource::Calculus(..) => return None,
             CurveSource::Spline(spline) => {
                 return Some(LinePolynomial::Spline(spline, (a, b, constant)));
             }
@@ -411,6 +421,7 @@ impl<'a> Cartesian<'a> {
         match &self.source {
             CurveSource::Coordinates(_, f) => (f[0].value(t), f[1].value(t)),
             CurveSource::Spline(spline) => spline.sample(t, 0),
+            CurveSource::Calculus(c, id) => calculus_sample(c, *id, t),
             CurveSource::ParametricDerivative(original) => {
                 let (x, _) = original.value(t);
                 let (dx, dy) = original.first(t);
@@ -451,6 +462,11 @@ impl<'a> Cartesian<'a> {
         match &self.source {
             CurveSource::Coordinates(_, f) => (f[0].slope(t), f[1].slope(t)),
             CurveSource::Spline(spline) => spline.sample(t, 1),
+            CurveSource::Calculus(c, id) => {
+                let x = |t| calculus_sample(c, *id, t).0;
+                let y = |t| calculus_sample(c, *id, t).1;
+                (slope(x, t), slope(y, t))
+            }
             CurveSource::ParametricDerivative(original) => {
                 let (dx, dy) = original.first(t);
                 let (ddx, ddy) = original.second(t);
@@ -569,6 +585,25 @@ impl Construction {
     /// Evaluates a Cartesian curve at its parameter, including nonfinite coordinates.
     pub fn curve_sample(&self, id: Id, parameter: f64) -> Option<(f64, f64)> {
         Some(Cartesian::new(self, id)?.value(parameter))
+    }
+}
+
+/// Both coordinates of the calculus-backed curve `id` at `t`: the two
+/// derivative trees of its record.
+fn calculus_sample(c: &Construction, id: Id, t: f64) -> (f64, f64) {
+    match c.calculus_record(id) {
+        Some(record) => {
+            let x = record
+                .tree
+                .as_ref()
+                .map_or(f64::NAN, |e| crate::expr::sample_tree(c, e, t));
+            let y = record
+                .tree2
+                .as_ref()
+                .map_or(f64::NAN, |e| crate::expr::sample_tree(c, e, t));
+            (x, y)
+        }
+        None => (f64::NAN, f64::NAN),
     }
 }
 

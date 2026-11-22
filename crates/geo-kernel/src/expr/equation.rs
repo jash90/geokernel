@@ -132,6 +132,7 @@ pub(crate) fn define(c: &mut Construction, name: &str, text: &str) -> Result<Id,
         function_dependent: false,
         variable_powers: false,
         abort_at: u64::MAX,
+        exhausted: false,
         coefficient_locals: None,
         expansion_work: None,
         max_degree: u32::MAX,
@@ -364,6 +365,7 @@ pub(crate) struct Builder {
     /// no-CAS rules set it so that one pass of `rule_derivative` cannot
     /// build a tree far past the budget before the next pass is checked.
     pub(crate) abort_at: u64,
+    pub(crate) exhausted: bool,
     expansion_work: Option<u64>,
     max_degree: u32,
     coefficient_locals: Option<[f64; 9]>,
@@ -380,6 +382,18 @@ impl Builder {
         self.nodes[i as usize]
     }
 
+    /// Append a coordinate tree after charging its nodes in the caller.
+    pub(crate) fn append_tree(&mut self, entry: &Entry) -> u32 {
+        let offset = self.nodes.len() as u32;
+        self.nodes
+            .extend(entry.nodes.iter().copied().map(|mut node| {
+                shift_children(&mut node, offset);
+                node
+            }));
+        self.lits.extend_from_slice(&entry.lits);
+        offset + entry.root
+    }
+
     /// A builder over the whole tree of the function `e`, which the
     /// calculus commands expand (see `algo::calculus`).
     pub(crate) fn function(e: &super::Entry) -> Self {
@@ -390,6 +404,7 @@ impl Builder {
             function_dependent: false,
             variable_powers: true,
             abort_at: u64::MAX,
+            exhausted: false,
             expansion_work: None,
             max_degree: u32::MAX,
             coefficient_locals: None,
@@ -406,6 +421,7 @@ impl Builder {
             function_dependent: false,
             variable_powers: true,
             abort_at: u64::MAX,
+            exhausted: false,
             expansion_work: None,
             max_degree: u32::MAX,
             coefficient_locals: None,

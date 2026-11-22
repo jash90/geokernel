@@ -360,7 +360,7 @@ impl Workbench {
         }
         let kind = self.log.rebuild().ok().and_then(|(mut scratch, _)| {
             let id = exec_definition(&mut scratch, &format!("Probe_ = {line}")).ok()??;
-            Some(scratch.kind(id))
+            Some(scratch.kind(scratch.id("Probe_").unwrap_or(id)))
         });
         let label = next_label(kind.unwrap_or(Kind::Line), |l| {
             self.construction.id(l).is_some()
@@ -467,7 +467,7 @@ impl Workbench {
     fn exec_lines(&mut self, lines: &[String], in_tool: bool) -> Result<(), String> {
         let snapshot = self.copy(&self.log);
         let n0 = self.construction.len();
-        let mut step_changed = false;
+        let mut updated = false;
         let mut redefined = false;
         let mut failure = None;
         for raw in lines {
@@ -482,14 +482,17 @@ impl Workbench {
             let before = self.construction.len();
             let step_before = self.construction.step();
             let target = geo_kernel::script::assignment_target(&self.construction, &line);
+            let assigns_slider =
+                geo_kernel::script::is_slider_assignment(&self.construction, &line);
             // Only lines that succeeded go into the log: a failed one would
             // fail again on every replay.
             match exec_definition(&mut self.construction, &line) {
                 Ok(first) => {
                     let added = self.construction.len() > before;
-                    let moved_step = !added && self.construction.step() != step_before;
+                    let mutated =
+                        !added && (assigns_slider || self.construction.step() != step_before);
                     let replaced = target.is_some() && first == target;
-                    if added || moved_step || replaced {
+                    if added || mutated || replaced {
                         self.log
                             .record_definition(&self.construction, before, first, &line);
                         if let Some(first) = first.filter(|_| added) {
@@ -504,7 +507,7 @@ impl Workbench {
                             self.grow_boundary_outputs(std::iter::once(first));
                         }
                     }
-                    step_changed |= moved_step;
+                    updated |= mutated;
                     redefined |= replaced;
                 }
                 Err(e) => {
@@ -517,7 +520,7 @@ impl Workbench {
         if objects_added || redefined {
             self.objects_changed();
         }
-        let changed = objects_added || step_changed || redefined;
+        let changed = objects_added || updated || redefined;
         match failure {
             Some(e) => {
                 if changed {
@@ -635,9 +638,6 @@ impl Workbench {
             return false;
         };
         let made: Vec<String> = made.to_vec();
-        if !next.remove(label, &self.construction) {
-            return false;
-        }
         // A deletion inside a gesture (the eraser's stroke) keeps it: the
         // whole stroke is one undo step.
         // Only the starts the deleted entry froze are written into the
@@ -648,9 +648,12 @@ impl Workbench {
         let mut placed = 0;
         for (line, x, y, owner) in self.construction.frozen_line_starts() {
             if made.iter().any(|m| m == &owner) {
-                next.keep_frozen_start(at + placed, &line, x, y);
+                next.keep_frozen_start(at + 1 + placed, &line, x, y);
                 placed += 1;
             }
+        }
+        if !next.remove(label, &self.construction) {
+            return false;
         }
         let gesture = self.gesture.take();
         let restored = self.restore(next);

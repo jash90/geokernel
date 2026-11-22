@@ -380,6 +380,116 @@
           }
         }
       ]
+    },
+    {
+      "id": "misc-sum-010",
+      "group": "misc",
+      "script": [
+        "A = (0, 0)",
+        "u = (1, 2)",
+        "v = (-3, 5)",
+        "w = (2, -7)",
+        "d = IsDefined(Sum({u, v, w}))"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "reject", "line": "s1 = Sum(u)" },
+        { "action": "reject", "line": "s2 = Sum(u, v)" },
+        { "action": "reject", "line": "s3 = Sum(u, v, w)" },
+        { "action": "reject", "line": "s4 = Sum(u, v, w, u)" },
+        { "action": "reject", "line": "s5 = Sum(A, v, w)" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "v": { "type": "vector", "defined": true, "x": -3.0, "y": 5.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -7.0 },
+          "d": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "v": { "type": "vector", "defined": true, "x": -3.0, "y": 5.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -7.0 },
+          "d": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "v": { "type": "vector", "defined": true, "x": -3.0, "y": 5.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -7.0 },
+          "d": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "v": { "type": "vector", "defined": true, "x": -3.0, "y": 5.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -7.0 },
+          "d": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "v": { "type": "vector", "defined": true, "x": -3.0, "y": 5.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -7.0 },
+          "d": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "v": { "type": "vector", "defined": true, "x": -3.0, "y": 5.0 },
+          "w": { "type": "vector", "defined": true, "x": 2.0, "y": -7.0 },
+          "d": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "misc-sum-011",
+      "group": "misc",
+      "script": [
+        "n = 1",
+        "A = (0, 0)",
+        "B = (1/n, n)",
+        "u = Vector(A, B)",
+        "v = (-1, 2)",
+        "w = (3, -4)",
+        "d = IsDefined(Sum({u, v, w}))"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 0.0 },
+        { "action": "set_number", "label": "n", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 1.0 },
+          "v": { "type": "vector", "defined": true, "x": -1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 3.0, "y": -4.0 },
+          "d": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": false },
+          "u": { "type": "vector", "defined": false },
+          "v": { "type": "vector", "defined": true, "x": -1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 3.0, "y": -4.0 },
+          "d": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.5, "y": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 0.5, "y": 2.0 },
+          "v": { "type": "vector", "defined": true, "x": -1.0, "y": 2.0 },
+          "w": { "type": "vector", "defined": true, "x": 3.0, "y": -4.0 },
+          "d": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
     }
   ]
 }

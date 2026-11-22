@@ -66,4 +66,7 @@ cases.case("deletion", ["X = (1, 1)", "A = X + (1, 0)", "B = 2 A", "C = (4, 1)"]
 cases.case("deletion", ["X = (1, 1)", "A = X + (1, 0)", "B = 2 A", "n = 2"],
            [redefine("A = (n, 1 / n)"), {"action": "delete", "label": "X"},
             setn("n", 0), setn("n", 4)])
+cases.case("locus", ["P = Point(xAxis)", "a = 1", "Q = (x(P), a)",
+                    "l = Locus(Q, P)", "b = 2"],
+           [redefine("Q = (x(P), 1 / b)"), setn("b", 0), setn("b", 4)])
 cases.write()

@@ -252,6 +252,7 @@ pub(crate) enum Node {
     Extremum(bool, u32, u32, u32),
     RootList(u32),
     FunctionAsymptotes(u32),
+    VertexForm(u32),
     Iteration {
         mode: IterationMode,
         collect: bool,
@@ -432,6 +433,8 @@ pub(crate) enum ListOp {
     Cross,
     /// `Determinant(matrix)` and `MatrixRank(matrix)` inside expressions.
     Determinant,
+    Normalize,
+    Svd,
     MatrixRank,
     Transpose,
     Rref,
@@ -457,9 +460,10 @@ pub(crate) enum IfMode {
     /// `AlgoIf`, the command of an expression that is not a function of
     /// `x` in its conditions: the first true condition picks its branch;
     /// an undefined condition is false; no true condition and no else
-    /// branch is undefined. The result has the most general type of the
-    /// branches: a number in a point result is the point `(v, 0)`.
+    /// branch is undefined. The result type widens in argument order.
     Algo,
+    /// Another condition in the same `AlgoIf` call.
+    AlgoNext,
     /// `Operation.IF_ELSE`, a function with one condition in `x` that
     /// reads no object, and an else branch: an undefined condition gives
     /// `NaN`. A condition that reads an object is a helper function whose
@@ -954,6 +958,7 @@ pub(crate) fn children(node: &Node) -> impl Iterator<Item = u32> {
         Node::Defined(a)
         | Node::RootList(a)
         | Node::FunctionAsymptotes(a)
+        | Node::VertexForm(a)
         | Node::SystemFunction(_, a) => fixed[0] = a,
         Node::Iteration {
             formula,
@@ -1019,6 +1024,7 @@ pub(crate) fn shift_children(node: &mut Node, by: u32) {
         Node::Defined(a)
         | Node::RootList(a)
         | Node::FunctionAsymptotes(a)
+        | Node::VertexForm(a)
         | Node::SystemFunction(_, a) => shift(a),
         Node::Iteration {
             formula,
@@ -1060,6 +1066,7 @@ fn is_list_node(node: &Node) -> bool {
             | Node::Extremum(..)
             | Node::RootList(..)
             | Node::FunctionAsymptotes(..)
+            | Node::VertexForm(..)
             | Node::Iteration { .. }
             | Node::Base { .. }
             | Node::Apply2(..)
@@ -1570,13 +1577,9 @@ fn defined_below(ctx: &eval::Ctx<'_, true>, i: u32) -> bool {
             defined_below(ctx, source)
                 && !crate::algo::transform::zero_dilation(ctx.full_number(factor))
         }
-        Node::If(IfMode::Algo, cond, then, rest) => {
-            if matches!(ctx.full(cond).val, eval::Val::B(true, _)) {
-                defined_below(ctx, then)
-            } else {
-                rest != NONE && defined_below(ctx, rest)
-            }
-        }
+        Node::If(IfMode::Algo | IfMode::AlgoNext, ..) => ctx
+            .if_alternative(i)
+            .is_some_and(|branch| defined_below(ctx, branch)),
         Node::If(..) => true,
         node => children(&node).all(|child| defined_below(ctx, child)),
     }
@@ -1674,6 +1677,15 @@ pub(crate) fn function_value(c: &Construction, f: Id, x: f64) -> Option<f64> {
         (Def::Chart(_), Value::Function) => c.chart(f).map(|data| data.sample(x)),
         _ => None,
     }
+}
+
+/// Whether the function object `f` has no expression tree and answers by
+/// sampling: a chart function or a freehand function of a list.
+pub(crate) fn is_sampled_function(c: &Construction, f: Id) -> bool {
+    matches!(
+        c.def(f),
+        Def::Chart(_) | Def::Calculus(crate::algo::calculus::CalculusDef::Freehand { .. })
+    )
 }
 
 /// The attributes that must agree before comparing two univariate functions.
@@ -1836,6 +1848,12 @@ fn constant_literals(e: &Entry, root: u32) -> Vec<f64> {
 
 /// The parsed tree of an entry again, for the copy an order-zero
 /// derivative is.
+/// The parameter name a Cartesian curve's coordinate function uses, for
+/// the variable forms of the derivative commands.
+pub(crate) fn curve_parameter(e: &Entry) -> Option<&str> {
+    e.curve_parameter.as_deref()
+}
+
 pub(crate) fn parsed_of(e: &Entry) -> parse::Parsed {
     parse::Parsed {
         root: e.root,
@@ -2268,6 +2286,29 @@ pub(crate) fn define_function(
     function(c, name, parsed, of_y)
 }
 
+pub(crate) fn define_slow_plot(
+    c: &mut Construction,
+    name: &str,
+    source: Id,
+    slider: Id,
+    corners: [Id; 2],
+) -> Result<Id, String> {
+    let mut b = equation::Builder::empty();
+    let [left, right] = corners.map(|id| {
+        let corner = b.push(Node::Obj(id));
+        b.push(Node::Un(Un::X, corner))
+    });
+    let width = b.push(Node::Bin(Bin::Sub, right, left));
+    let fraction = b.push(Node::Obj(slider));
+    let extent = b.push(Node::Bin(Bin::Mul, fraction, width));
+    let cutoff = b.push(Node::Bin(Bin::Add, left, extent));
+    let x = b.push(Node::Var);
+    let condition = b.push(Node::Bin(Bin::Less, x, cutoff));
+    let value = b.push(Node::Apply(source, x));
+    let root = b.push(Node::If(IfMode::List, condition, value, NONE));
+    function(c, name, b.finish(c, root)?, false)
+}
+
 pub(crate) fn define_system_function(
     c: &mut Construction,
     label: &str,
@@ -2333,6 +2374,14 @@ pub(crate) fn function_interval(c: &Construction, id: Id) -> Option<Option<[f64;
         return None;
     };
     Some(entry(c, def).interval?.range)
+}
+
+/// Whether the slope expression `text` reads `x` and whether it reads
+/// `y`; `None` when it does not parse. The symbolic `SolveODE` forms
+/// refuse a slope that reads neither (a number).
+pub(crate) fn slope_variables(c: &Construction, text: &str) -> Option<(bool, bool)> {
+    let parsed = parse::parse_equation(c, text).ok()?;
+    Some((parsed.uses_var, parsed.uses_y))
 }
 
 /// Hidden two-variable function for a slope field or integral curve.

@@ -1,0 +1,124 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "funcrest-emptyfunction-001",
+      "group": "funcrest",
+      "script": [
+        "f = Function()"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, null],
+              [0.5, null],
+              [1.0, null],
+              [2.0, null],
+              [4.0, null],
+              [8.0, null]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "funcrest-emptyfunction-002",
+      "group": "funcrest",
+      "script": [
+        "f = Function()",
+        "a = f(1)",
+        "g(x) = f(x) + 1"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, null],
+              [0.5, null],
+              [1.0, null],
+              [2.0, null],
+              [4.0, null],
+              [8.0, null]
+            ]
+          },
+          "a": { "type": "number", "defined": false },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, null],
+              [0.5, null],
+              [1.0, null],
+              [2.0, null],
+              [4.0, null],
+              [8.0, null]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "funcrest-emptyfunction-003",
+      "group": "funcrest",
+      "script": [
+        "f = Function()",
+        "d = Derivative(f)",
+        "i = Integral(f, 0, 1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, null],
+              [0.5, null],
+              [1.0, null],
+              [2.0, null],
+              [4.0, null],
+              [8.0, null]
+            ]
+          },
+          "d": { "type": "function", "defined": false },
+          "i": { "type": "number", "defined": false }
+        }
+      ]
+    }
+  ]
+}

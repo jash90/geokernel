@@ -1,0 +1,235 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "odesymbolic-nocas-001",
+      "group": "odesymbolic",
+      "script": [
+        "a = 1",
+        "f(x) = -x/a",
+        "P = (1, 1)",
+        "g = SolveODE(f)",
+        "h = SolveODE(f, P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "move", "label": "P", "x": 2.0, "y": -1.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 8.0],
+              [-4.0, 4.0],
+              [-2.0, 2.0],
+              [-1.0, 1.0],
+              [-0.5, 0.5],
+              [0.0, -0.0],
+              [0.5, -0.5],
+              [1.0, -1.0],
+              [2.0, -2.0],
+              [4.0, -4.0],
+              [8.0, -8.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "g": { "type": "function", "defined": false },
+          "h": { "type": "function", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, null],
+              [0.5, null],
+              [1.0, null],
+              [2.0, null],
+              [4.0, null],
+              [8.0, null]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "g": { "type": "function", "defined": false },
+          "h": { "type": "function", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, null],
+              [0.5, null],
+              [1.0, null],
+              [2.0, null],
+              [4.0, null],
+              [8.0, null]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": -1.0 },
+          "g": { "type": "function", "defined": false },
+          "h": { "type": "function", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 4.0],
+              [-4.0, 2.0],
+              [-2.0, 1.0],
+              [-1.0, 0.5],
+              [-0.5, 0.25],
+              [0.0, -0.0],
+              [0.5, -0.25],
+              [1.0, -0.5],
+              [2.0, -1.0],
+              [4.0, -2.0],
+              [8.0, -4.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": -1.0 },
+          "g": { "type": "function", "defined": false },
+          "h": { "type": "function", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "odesymbolic-nocas-002",
+      "group": "odesymbolic",
+      "script": [
+        "b = 1",
+        "c = Curve(t^2, 2t, t, 0, b)",
+        "P = (1, 1)",
+        "g = SolveODE(c)",
+        "h = SolveODE(c, P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "value": -1.0 },
+        { "action": "move", "label": "P", "x": 2.0, "y": 0.0 },
+        { "action": "set_number", "label": "b", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": {
+            "type": "curve",
+            "defined": true,
+            "start": 0.0,
+            "end": 1.0,
+            "samples_curve": [
+              [
+                0.0,
+                [0.0, 0.0]
+              ],
+              [
+                0.125,
+                [0.015625, 0.25]
+              ],
+              [
+                0.25,
+                [0.0625, 0.5]
+              ],
+              [
+                0.5,
+                [0.25, 1.0]
+              ],
+              [
+                0.75,
+                [0.5625, 1.5]
+              ],
+              [
+                0.875,
+                [0.765625, 1.75]
+              ],
+              [
+                1.0,
+                [1.0, 2.0]
+              ]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "g": { "type": "function", "defined": false },
+          "h": { "type": "function", "defined": false }
+        },
+        {
+          "b": { "type": "number", "defined": true, "value": -1.0 },
+          "c": { "type": "curve", "defined": false },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "g": { "type": "function", "defined": false },
+          "h": { "type": "function", "defined": false }
+        },
+        {
+          "b": { "type": "number", "defined": true, "value": -1.0 },
+          "c": { "type": "curve", "defined": false },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "g": { "type": "function", "defined": false },
+          "h": { "type": "function", "defined": false }
+        },
+        {
+          "b": { "type": "number", "defined": true, "value": 2.0 },
+          "c": {
+            "type": "curve",
+            "defined": true,
+            "start": 0.0,
+            "end": 2.0,
+            "samples_curve": [
+              [
+                0.0,
+                [0.0, 0.0]
+              ],
+              [
+                0.25,
+                [0.0625, 0.5]
+              ],
+              [
+                0.5,
+                [0.25, 1.0]
+              ],
+              [
+                1.0,
+                [1.0, 2.0]
+              ],
+              [
+                1.5,
+                [2.25, 3.0]
+              ],
+              [
+                1.75,
+                [3.0625, 3.5]
+              ],
+              [
+                2.0,
+                [4.0, 4.0]
+              ]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "g": { "type": "function", "defined": false },
+          "h": { "type": "function", "defined": false }
+        }
+      ]
+    }
+  ]
+}

@@ -1070,6 +1070,8 @@ struct EvaluationOrder {
     ranks: Vec<usize>,
 }
 
+const MAX_REDEFINITION_EDGES: usize = 1_000_000;
+
 impl EvaluationOrder {
     fn discard_since(&mut self, len: usize) {
         if self
@@ -1821,7 +1823,10 @@ impl Construction {
             )
         };
         let old = self.def(id);
-        let dependents = self.replacement_dependents(id).map_err(refuse)?;
+        let locus_inputs = self.locus_order_inputs().map_err(refuse)?;
+        let dependents = self
+            .replacement_dependents(id, &locus_inputs)
+            .map_err(refuse)?;
         let old_reads: BTreeMap<_, _> = dependents
             .into_iter()
             .chain(std::iter::once(id))
@@ -1838,7 +1843,6 @@ impl Construction {
         self.by_label.remove(&label);
         self.replacement_label = Some(label.clone());
         let result = define(self);
-        self.replacement_label = None;
 
         let replacement = (|| {
             let new = result
@@ -1872,6 +1876,22 @@ impl Construction {
             if def.kind() != old.kind() && !self.children[id.0].is_empty() {
                 return Err(refuse("a dependent object requires the original kind"));
             }
+            let mut remaining = MAX_REDEFINITION_EDGES;
+            let mut pending = vec![new];
+            let mut seen = BTreeSet::new();
+            while let Some(owner) = pending.pop() {
+                for parent in self.reads(owner) {
+                    remaining = remaining.checked_sub(1).ok_or_else(|| {
+                        refuse("the dependency graph exceeds the redefinition budget")
+                    })?;
+                    if old_reads.contains_key(&parent) {
+                        return Err(refuse("a replacement cannot introduce a dependency cycle"));
+                    }
+                    if parent.0 >= checkpoint.len && parent.0 < self.len() && seen.insert(parent) {
+                        pending.push(parent);
+                    }
+                }
+            }
             // Read the prospective definitions before committing. Reordering
             // must account for new indirect reads as well as the replacement's
             // own inputs, so a rejected cycle leaves the live graph intact.
@@ -1894,11 +1914,12 @@ impl Construction {
                             && self.evaluation_rank(parent) >= self.evaluation_rank(child)
                     })
                 })
-                .then(|| self.replacement_order(&changed, new.0))
+                .then(|| self.replacement_order(&changed, &locus_inputs, new.0))
                 .transpose()
                 .map_err(refuse)?;
             Ok((new, def, changed, order))
         })();
+        self.replacement_label = None;
 
         let (new, mut def, changed, order) = match replacement {
             Ok(staged) => staged,
@@ -1977,6 +1998,14 @@ impl Construction {
         for child in self.children(id) {
             dirty.insert(self.evaluation_rank(child));
         }
+        for child in old_reads.keys().copied() {
+            if matches!(
+                self.def(child),
+                Def::Locus(LocusDef::Path { .. } | LocusDef::Slider { .. })
+            ) {
+                dirty.insert(self.evaluation_rank(child));
+            }
+        }
         self.propagate_dirty(dirty, 0, true);
         // A checkpoint only stores lengths, so it cannot restore a changed definition.
         self.generation += 1;
@@ -2018,13 +2047,45 @@ impl Construction {
         }
     }
 
-    fn replacement_dependents(&self, start: Id) -> Result<BTreeSet<Id>, &'static str> {
-        const MAX_EDGES: usize = 1_000_000;
-        let mut remaining = MAX_EDGES;
+    /// Loci watch free inputs during edits. Redefinition also needs the
+    /// point and driver they sample, which define which inputs to watch.
+    fn locus_order_inputs(&self) -> Result<BTreeMap<Id, Vec<Id>>, &'static str> {
+        if self.loci.len() > MAX_REDEFINITION_EDGES / 2 {
+            return Err("the loci exceed the redefinition budget");
+        }
+        let mut inputs = BTreeMap::<_, Vec<_>>::new();
+        for &(i, _) in &self.loci {
+            if let Def::Locus(
+                LocusDef::Path {
+                    point,
+                    mover: driver,
+                }
+                | LocusDef::Slider {
+                    point,
+                    slider: driver,
+                },
+            ) = self.defs[i]
+            {
+                inputs.entry(point).or_default().push(Id(i));
+                inputs.entry(driver).or_default().push(Id(i));
+            }
+        }
+        Ok(inputs)
+    }
+
+    fn replacement_dependents(
+        &self,
+        start: Id,
+        locus_inputs: &BTreeMap<Id, Vec<Id>>,
+    ) -> Result<BTreeSet<Id>, &'static str> {
+        let mut remaining = MAX_REDEFINITION_EDGES;
         let mut pending = vec![start];
         let mut seen = BTreeSet::new();
         while let Some(id) = pending.pop() {
-            for child in self.children(id) {
+            for child in self
+                .children(id)
+                .chain(locus_inputs.get(&id).into_iter().flatten().copied())
+            {
                 remaining = remaining
                     .checked_sub(1)
                     .ok_or("the dependent objects exceed the redefinition budget")?;
@@ -2040,36 +2101,21 @@ impl Construction {
     fn replacement_order(
         &self,
         changed: &BTreeMap<Id, Vec<Id>>,
+        locus_inputs: &BTreeMap<Id, Vec<Id>>,
         len: usize,
     ) -> Result<EvaluationOrder, &'static str> {
         const MAX_OBJECTS: usize = 250_000;
-        const MAX_EDGES: usize = 1_000_000;
         if len > MAX_OBJECTS {
             return Err("the dependency graph exceeds the redefinition budget");
         }
-        // Loci monitor only the inputs relevant to ordinary edits. Their two
-        // inputs still have to precede them and count toward cycle detection.
-        let mut locus_inputs = vec![Vec::new(); len];
-        for (i, def) in self.defs[..len].iter().enumerate() {
-            if let Def::Locus(
-                LocusDef::Path {
-                    point,
-                    mover: driver,
-                }
-                | LocusDef::Slider {
-                    point,
-                    slider: driver,
-                },
-            ) = *def
-            {
-                locus_inputs[point.0].push(Id(i));
-                locus_inputs[driver.0].push(Id(i));
-            }
-        }
         let mut added = vec![Vec::new(); len];
+        let mut remaining = MAX_REDEFINITION_EDGES;
         for (&child, parents) in changed {
             for parent in parents {
                 if let Some(children) = added.get_mut(parent.0) {
+                    remaining = remaining
+                        .checked_sub(1)
+                        .ok_or("the dependency graph exceeds the redefinition budget")?;
                     children.push(child);
                 }
             }
@@ -2078,10 +2124,10 @@ impl Construction {
             self.children[i]
                 .iter()
                 .filter(|child| child.0 < len && !changed.contains_key(child))
-                .chain(locus_inputs[i].iter().copied())
+                .chain(locus_inputs.get(&Id(i)).into_iter().flatten().copied())
                 .chain(added[i].iter().copied())
         };
-        let mut remaining = MAX_EDGES;
+        let mut remaining = MAX_REDEFINITION_EDGES;
         let mut indegree = vec![0; len];
         for i in 0..len {
             for child in successors(i) {
@@ -2127,7 +2173,7 @@ impl Construction {
     }
 
     pub(crate) fn predecessor_storage_len(&self, id: Id) -> usize {
-        if self.evaluation_order.ids.is_empty() {
+        if self.evaluation_order.ids.is_empty() && self.replacement_label.is_none() {
             id.0 + 1
         } else {
             self.len()
@@ -2166,6 +2212,11 @@ impl Construction {
         if let Some(list) = def.list() {
             ids.extend_from_slice(self.list(list));
         }
+        if let Def::Optimize(d) = *def {
+            if let Some(watched) = d.watched() {
+                ids.extend_from_slice(self.list(watched));
+            }
+        }
         ids
     }
 
@@ -2199,6 +2250,9 @@ impl Construction {
         }
         self.check(&def)?;
         let mut def = algo::intersect::prepare(self, def);
+        if let Def::Optimize(d) = def {
+            def = Def::Optimize(d.attach(self)?);
+        }
 
         let id = Id(self.defs.len());
         // compute reads the hint of the new object from `hints`
@@ -2443,16 +2497,22 @@ impl Construction {
         make: impl FnOnce(IdList) -> Def,
     ) -> Result<Id, Error> {
         let start = self.lists.len();
-        let list = match (u32::try_from(start), u32::try_from(ids.len())) {
-            (Ok(start), Ok(len)) if start.checked_add(len).is_some() => IdList { start, len },
-            _ => return Err(Error::UnknownObject),
-        };
-        self.lists.extend_from_slice(ids);
+        let list = self.store_list(ids)?;
         let result = self.add(label, make(list));
         if result.is_err() {
             self.lists.truncate(start);
         }
         result
+    }
+
+    pub(crate) fn store_list(&mut self, ids: &[Id]) -> Result<IdList, Error> {
+        let start = self.lists.len();
+        let list = match (u32::try_from(start), u32::try_from(ids.len())) {
+            (Ok(start), Ok(len)) if start.checked_add(len).is_some() => IdList { start, len },
+            _ => return Err(Error::UnknownObject),
+        };
+        self.lists.extend_from_slice(ids);
+        Ok(list)
     }
 
     /// The objects of a stored list. A handle that this construction did not
@@ -2593,6 +2653,15 @@ impl Construction {
     /// Changes a free number and recomputes everything that depends on it.
     /// Returns how many dependent objects were recomputed.
     pub fn set_number(&mut self, id: Id, v: f64) -> Result<usize, Error> {
+        self.update_number(id, v, true)
+    }
+
+    /// A numeric assignment to a slider sets its value outside the drag interval too.
+    pub(crate) fn assign_slider_number(&mut self, id: Id, v: f64) -> Result<usize, Error> {
+        self.update_number(id, v, false)
+    }
+
+    fn update_number(&mut self, id: Id, v: f64, clamp_slider: bool) -> Result<usize, Error> {
         self.last_update_changed_automatic_root = false;
         if let Some(axis) = axis::get(id) {
             return Err(Error::NotFree(axis.label.to_string()));
@@ -2611,7 +2680,7 @@ impl Construction {
             return Err(Error::NotFinite);
         }
         // A slider keeps its value in its active interval.
-        let (new_def, v) = if matches!(new_def, Def::Number(_)) {
+        let (new_def, v) = if clamp_slider && matches!(new_def, Def::Number(_)) {
             let v = self.clamp_slider(id, v);
             (Def::Number(v), v)
         } else {
@@ -2782,7 +2851,13 @@ impl Construction {
                         && !matches!(
                             def,
                             Def::Conditional {
-                                kind: Kind::Circle | Kind::Conic,
+                                kind: Kind::Circle
+                                    | Kind::Conic
+                                    | Kind::Polygon
+                                    | Kind::PolyLine
+                                    | Kind::Arc
+                                    | Kind::Sector
+                                    | Kind::Locus,
                                 ..
                             }
                         )
@@ -2790,8 +2865,7 @@ impl Construction {
                         // Nothing downstream can change because of this object.
                         continue;
                     }
-                    // Curves, images and conditional conics can change shape
-                    // at constant summary values.
+                    // Shape records can change while their summary values stay equal.
                     self.values[i] = new;
                 }
             }
@@ -3130,10 +3204,19 @@ impl Construction {
     /// The record of the arc or sector `id`: its conic, the range of its
     /// parameter and its measures. `None` for any other object.
     pub fn arc(&self, id: Id) -> Option<ArcData> {
-        match self.defs.get(id.0)? {
-            Def::Arc(d) if d.has_record() => self.arc_slot(id.0).map(|slot| self.arcs[slot].1),
-            _ => None,
+        let source = self.conditional_source(id)?;
+        let Def::Arc(d) = self.defs.get(source.0)? else {
+            return None;
+        };
+        if !d.has_record() {
+            return None;
         }
+        let arc = self.arcs[self.arc_slot(source.0)?].1;
+        Some(if source == id {
+            arc
+        } else {
+            arc.conditional_copy()
+        })
     }
 
     /// Where the state of object `i` is kept in `paths`.
@@ -3246,13 +3329,8 @@ impl Construction {
     /// any other defined circle the record GeoGebra's circle commands make.
     /// `None` for other objects and for an undefined circle that keeps no
     /// record. A record may be undefined ([`ConicData::defined`]).
-    pub fn conic(&self, mut id: Id) -> Option<ConicData> {
-        while let Def::Conditional { args, .. } = self.defs.get(id.0)? {
-            if !self.values[id.0].is_defined() {
-                return None;
-            }
-            id = expr::conditional_branch(self, self.list(*args))?;
-        }
+    pub fn conic(&self, id: Id) -> Option<ConicData> {
+        let id = self.conditional_source(id)?;
         match self.defs.get(id.0)? {
             Def::ImplicitCurve(index)
                 if self.kind(id) == Kind::Conic && self.value(id).is_defined() =>
@@ -3267,6 +3345,21 @@ impl Construction {
                 _ => None,
             },
         }
+    }
+
+    /// The active source of a conditional object. Branches precede their
+    /// result in the construction.
+    pub(crate) fn conditional_source(&self, mut id: Id) -> Option<Id> {
+        for _ in 0..=id.0 {
+            let Some(Def::Conditional { args, .. }) = self.defs.get(id.0) else {
+                return Some(id);
+            };
+            if !self.values[id.0].is_defined() {
+                return None;
+            }
+            id = expr::conditional_branch(self, self.list(*args))?;
+        }
+        None
     }
 
     /// The current contents of a text object.
@@ -3677,6 +3770,17 @@ mod tests {
                             c.label(child)
                         );
                     }
+                    for parent in c
+                        .reads(id)
+                        .into_iter()
+                        .filter(|parent| parent.index() < c.len())
+                    {
+                        assert!(
+                            c.direct_dependents(parent).any(|child| child == id),
+                            "missing edge {} -> {label}",
+                            c.label(parent)
+                        );
+                    }
                 }
             };
             check(&c, &definitions);
@@ -3693,6 +3797,7 @@ mod tests {
             let checkpoint = c.checkpoint();
             exec(&mut c, "unused = 9").unwrap();
             c.rollback(checkpoint).unwrap();
+            assert!(exec(&mut c, "a = b + 1").is_err());
             check(&c, &definitions);
             let x = f64::from(offset);
             for (label, y) in [("R", 1.0), ("O", 2.0), ("R", 8.0), ("O", 0.0)] {
@@ -3721,6 +3826,26 @@ mod tests {
         assert_eq!(c.rigid_replacements[1].1, vertex);
         c.rollback(checkpoint).unwrap();
         assert!(c.def(vertex).is_free());
+    }
+
+    #[test]
+    fn a_locus_follows_the_free_inputs_of_its_redefined_point() {
+        use crate::script::{exec, load};
+
+        let mut c = load("P = Point(xAxis)\na = 1\nQ = (x(P), a)\nl = Locus(Q, P)\nb = 2").unwrap();
+        let b = c.id("b").unwrap();
+        let locus = c.id("l").unwrap();
+        exec(&mut c, "Q = (x(P), 1 / b)").unwrap();
+        assert!(c.direct_dependents(b).any(|id| id == locus));
+        for b_value in [2, 0, 4] {
+            c.set_number(b, f64::from(b_value)).unwrap();
+            let rebuilt = load(&format!(
+                "P = Point(xAxis)\nb = {b_value}\nQ = (x(P), 1 / b)\nl = Locus(Q, P)"
+            ))
+            .unwrap();
+            let points = |c: &Construction| c.locus(c.id("l").unwrap()).map(|l| l.points.clone());
+            assert_eq!(points(&c), points(&rebuilt));
+        }
     }
 
     #[test]

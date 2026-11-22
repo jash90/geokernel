@@ -33,6 +33,17 @@ enum SlotExtra {
 }
 
 impl Slot {
+    /// The numeric field, including NaN and infinity.
+    pub(super) fn numeric_cell(&self) -> Option<f64> {
+        match (self.kind, self.value, self.start) {
+            (_, Value::Number(v), _) => Some(v),
+            (Kind::Number, Value::Undefined, 1) => Some(f64::INFINITY),
+            (Kind::Number, Value::Undefined, 2) => Some(f64::NEG_INFINITY),
+            (Kind::Number | Kind::Angle, Value::Undefined, _) => Some(f64::NAN),
+            _ => None,
+        }
+    }
+
     pub(crate) fn undefined(kind: Kind) -> Slot {
         Slot {
             kind,
@@ -477,12 +488,7 @@ impl<'a> List<'a> {
         if k >= self.len() {
             return None;
         }
-        let slot = &self.slots[self.start as usize + k];
-        match (slot.kind, slot.value, slot.start) {
-            (_, Value::Number(v), _) => Some(v),
-            (Kind::Number | Kind::Angle, Value::Undefined, _) => Some(f64::NAN),
-            _ => None,
-        }
+        self.slots[self.start as usize + k].numeric_cell()
     }
 
     /// The elements in order.

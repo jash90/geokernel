@@ -269,7 +269,8 @@ fn if_picks_a_list_branch() {
          n = Length(If(a > 0, {1, 2}))\n\
          m = If(a > 0, {a, 2}, {3})\n\
          k = If(a > 2, {1}, a > 0, {a, a, a}, {})\n\
-         j = {If(a > 0, {a}, {0}), 5}",
+         j = {If(a > 0, {a}, {0}), 5}\n\
+         b = If(a > 0, {1}, 2)",
     )
     .unwrap();
     assert_eq!(elems(&c, "l"), "{1, 2}");
@@ -277,6 +278,7 @@ fn if_picks_a_list_branch() {
     assert_eq!(elems(&c, "m"), "{1, 2}");
     assert_eq!(elems(&c, "k"), "{1, 1, 1}");
     assert_eq!(elems(&c, "j"), "{{1}, 5}");
+    assert_eq!(elems(&c, "b"), "{1}");
     let a = c.id("a").unwrap();
     c.set_number(a, -1.0).unwrap();
     assert_eq!(flat(&c, c.id("l").unwrap()), None);
@@ -284,13 +286,13 @@ fn if_picks_a_list_branch() {
     assert_eq!(elems(&c, "m"), "{3}");
     assert_eq!(elems(&c, "k"), "{}");
     assert_eq!(elems(&c, "j"), "{{0}, 5}");
+    assert_eq!(flat(&c, c.id("b").unwrap()), None);
     rebuilt(&c);
     c.set_number(a, 3.0).unwrap();
     assert_eq!(elems(&c, "l"), "{1, 2}");
     assert_eq!(num(&c, "n"), 2.0);
     assert_eq!(elems(&c, "k"), "{1}");
-    // a list and a number do not fit together as branches
-    assert!(exec(&mut c, "b = If(a > 0, {1}, 2)").is_err());
+    assert_eq!(elems(&c, "b"), "{1}");
 }
 
 #[test]
@@ -351,7 +353,7 @@ fn misplaced_lists_are_errors() {
         "b = Sequence(k, k, 1, 2, 3, 4)",
         "b = Length(1, 2)",
         "b = l(1, 2)",
-        "b = If(a < 3, l, 1)",
+        "b = If(l, 1, 2)",
     ] {
         let mut c = load(base).unwrap();
         assert!(exec(&mut c, line).is_err(), "`{line}` was accepted");

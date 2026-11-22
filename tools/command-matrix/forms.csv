@@ -158,7 +158,7 @@ Excentricity,conic,1,conic
 Eccentricity,conic,1,conic
 Axes,conic,1,conic
 Sort,list,3,"list | list,list | point,point,..."
-First,list,5,"list | text | list,number | text,number | locus,number"
+First,list,6,"list | text | list,number | text,number | locus,number | function,number"
 Last,list,5,"function | list | text | list,number | text,number"
 Take,list,4,"list,number | text,number | list,number,number | text,number,number"
 RemoveUndefined,list,1,list
@@ -230,7 +230,7 @@ AxisStepY,geogebra,1,()
 ConstructionStep,geogebra,2,() | any
 Object,geogebra,1,text
 Name,geogebra,1,any
-SlowPlot,geogebra,2,"function | function,number"
+SlowPlot,geogebra,4,"function | function,number | line | line,number"
 DynamicCoordinates,geogebra,1,"point,number,number"
 SetConstructionStep,geogebra,1,number
 Maximize,optimization,2,"number,number | number,point"
@@ -247,7 +247,7 @@ ToPolar,geogebra,4,list | number | point | vector
 ToPoint,geogebra,4,list | number | point | vector
 nCr,english,1,"number,number"
 nPr,english,1,"number,number"
-IsVertexForm,function,1,function
+IsVertexForm,function,10,"function | number | angle | line | segment | ray | conic | circle | arc | sector"
 Expand,algebra,6,function | list | line | conic | implicit | curve
 Factor,algebra,6,function | list | line | conic | implicit | curve
 IFactor,algebra,6,function | list | line | conic | implicit | curve

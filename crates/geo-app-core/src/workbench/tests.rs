@@ -58,6 +58,9 @@ fn bare_label_reads_leave_the_journal_version_and_undo_unchanged() {
     assert_eq!(w.snapshot_text(), text);
     assert_eq!(w.log.rhs_of("A"), Some("(1, 2)"));
 
+    let clean = Workbench::from_script("A = (1, 2)").unwrap();
+    let clean_bytes = clean.export_ggb(None).unwrap();
+    let expected_xml = geo_import::archive::extract_xml(&clean_bytes).unwrap();
     let mut restored = Workbench::default();
     assert!(restored
         .restore_text(&format!("{text}\nA\nA # labels: A\n"))
@@ -66,7 +69,8 @@ fn bare_label_reads_leave_the_journal_version_and_undo_unchanged() {
     for document in [&w, &restored] {
         let bytes = document.export_ggb(None).unwrap();
         let xml = geo_import::archive::extract_xml(&bytes).unwrap();
-        assert!(xml.contains(r#"label="A" exp="(1, 2)""#), "{xml}");
+        assert_eq!(xml, expected_xml);
+        assert!(xml.contains(r#"<coords x="1" y="2" z="1"/>"#));
     }
 
     assert!(w.undo());
@@ -264,6 +268,22 @@ fn moving_a_dependent_object_is_rejected() {
     assert!(!w.move_point(o, 1.0, 1.0));
     assert_eq!(w.version(), v);
     assert!(!w.can_undo());
+}
+
+#[test]
+fn a_slow_plot_slider_assignment_survives_undo_and_redo() {
+    let mut w = Workbench::from_script("f(x) = x\ng = SlowPlot(f)\np = g(2)\n").unwrap();
+    let value = |w: &Workbench| {
+        let c = w.construction();
+        c.value(c.id("p").unwrap())
+    };
+    assert_eq!(value(&w), Value::Undefined);
+    w.run_line("a = 2").unwrap();
+    assert_eq!(value(&w), Value::Number(2.0));
+    assert!(w.undo());
+    assert_eq!(value(&w), Value::Undefined);
+    assert!(w.redo());
+    assert_eq!(value(&w), Value::Number(2.0));
 }
 
 #[test]

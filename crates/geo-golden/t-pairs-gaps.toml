@@ -1834,9 +1834,9 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1875"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Function`"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `DataFunction[{}, {},x]`"
+mismatches = ["f"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1876"
@@ -1846,9 +1846,9 @@ mismatches = ["g"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1877"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Function`"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `freehand(x)`"
+mismatches = ["h"]
 
 [[gap]]
 id = "commands/CommandsTest.java:188"
@@ -2283,42 +2283,6 @@ reason = "the kernel refuses the input: unknown command `IsInRegion`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:2499"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsVertexForm`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2500"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsVertexForm`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2501"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsVertexForm`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2502"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsVertexForm`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2503"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsVertexForm`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2504"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsVertexForm`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:2543"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `DataFunction`"
@@ -2410,33 +2374,27 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2588"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Function`"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `freehand(x)`"
+mismatches = ["freehandFunc"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2589"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `freehandFunc`; the method's step `commands/CommandsTest.java:2576` fails earlier here, so the object is missing only in its wake"
+category = "unsupported-command"
+reason = "the kernel refuses the input: `freehandFunc` is a function, expected a segment or point or locus"
 mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2600"
-category = "unsupported-command"
-reason = "the kernel refuses the input: `Line` does not take 3 argument(s)"
+category = "error-behaviour"
+reason = "the kernel refuses the input: unknown object `x+y=17`"
 mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2601"
-category = "unsupported-command"
-reason = "the kernel refuses the input: `Line` does not take 4 argument(s)"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2602"
-category = "unsupported-command"
-reason = "the kernel refuses the input: `Line` does not take 4 argument(s)"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoLine` of kind line has no the reference-style text yet; the reference prints `0.5x + y = 1.5`"
+mismatches = ["g"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2603"
@@ -2578,9 +2536,9 @@ mismatches = ["intervalMax"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2712"
-category = "unsupported-command"
-reason = "the kernel refuses the input: `ptPath` is a point, expected a number"
-mismatches = ["step"]
+category = "kernel-mismatch"
+reason = "Point { x: 3.000000000000307, y: 9.0 } does not match `(3, 9)` (values differ)"
+mismatches = ["A"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2718"
@@ -2644,9 +2602,9 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2765"
-category = "unsupported-command"
-reason = "the kernel refuses the input: `ptPath` is a point, expected a number"
-mismatches = ["step"]
+category = "kernel-mismatch"
+reason = "Point { x: 2.999999999999956, y: -1.0 } does not match `(3, -1)` (values differ)"
+mismatches = ["A"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2770"
@@ -2839,18 +2797,6 @@ id = "commands/CommandsTest.java:2962"
 category = "text-formatting"
 reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `NInvert[sin(x)]`"
 mismatches = ["ni"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2968"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Normalize`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2969"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Normalize`"
-mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2988"
@@ -4606,15 +4552,15 @@ mismatches = ["numericalIntegral3"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4238"
-category = "cas"
-reason = "the kernel refuses the input: unknown command `SolveODE`"
-mismatches = ["step"]
+category = "kernel-mismatch"
+reason = "Function does not match `?` (expected undefined, kernel has a value)"
+mismatches = ["f"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4239"
-category = "cas"
-reason = "the kernel refuses the input: unknown command `SolveODE`"
-mismatches = ["step"]
+category = "kernel-mismatch"
+reason = "Function does not match `?` (expected undefined, kernel has a value)"
+mismatches = ["g"]
 
 [[gap]]
 id = "commands/CommandsTest.java:424"
@@ -4848,12 +4794,6 @@ mismatches = ["step"]
 id = "commands/CommandsTest.java:4414"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `Syy`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:4419"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `SVD`"
 mismatches = ["step"]
 
 [[gap]]
@@ -6202,9 +6142,9 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsUsingMockedCasTest.java:82"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Derivative`"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `(6 * x)`"
+mismatches = ["g"]
 
 [[gap]]
 id = "commands/CommandsUsingMockedCasTest.java:83"
@@ -6220,9 +6160,9 @@ mismatches = ["h"]
 
 [[gap]]
 id = "commands/CommandsUsingMockedCasTest.java:85"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Derivative`"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `(6 * x)`"
+mismatches = ["p"]
 
 [[gap]]
 id = "commands/CommandsUsingMockedCasTest.java:90"

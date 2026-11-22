@@ -36,6 +36,7 @@ pub enum Step {
     Move { label: String, x: f64, y: f64 },
     SetNumber { label: String, value: f64 },
     Delete { label: String },
+    SetSliderBounds { label: String, min: f64, max: f64 },
     Reject { line: String },
     Redefine { line: String },
 }
@@ -49,6 +50,8 @@ struct RawStep {
     y: Option<f64>,
     value: Option<f64>,
     infinity: Option<i8>,
+    min: Option<f64>,
+    max: Option<f64>,
     line: Option<String>,
     reference_parse_error: Option<bool>,
 }
@@ -63,6 +66,11 @@ impl<'de> Deserialize<'de> for Step {
         }
         if raw.action != "set_number" && raw.infinity.is_some() {
             return Err(D::Error::custom("only `set_number` takes `infinity`"));
+        }
+        if raw.action != "set_slider_bounds" && (raw.min.is_some() || raw.max.is_some()) {
+            return Err(D::Error::custom(
+                "only step `set_slider_bounds` takes `min` and `max`",
+            ));
         }
         if raw.action != "move" && raw.reference_parse_error.is_some() {
             return Err(D::Error::custom(
@@ -108,6 +116,18 @@ impl<'de> Deserialize<'de> for Step {
                 }
                 Ok(Step::Delete {
                     label: raw.label.ok_or_else(|| need("label"))?,
+                })
+            }
+            "set_slider_bounds" => {
+                if raw.x.is_some() || raw.y.is_some() || raw.value.is_some() {
+                    return Err(D::Error::custom(
+                        "step `set_slider_bounds` takes only `label`, `min` and `max`",
+                    ));
+                }
+                Ok(Step::SetSliderBounds {
+                    label: raw.label.ok_or_else(|| need("label"))?,
+                    min: raw.min.ok_or_else(|| need("min"))?,
+                    max: raw.max.ok_or_else(|| need("max"))?,
                 })
             }
             "reject" | "redefine" => {

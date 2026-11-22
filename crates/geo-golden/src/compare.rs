@@ -953,6 +953,35 @@ mod tests {
     }
 
     #[test]
+    fn curve_and_two_variable_samples_keep_infinite_values() {
+        let c = geo_kernel::script::load("c = Curve(t, 1/t, t, -1, 1)\nf(x, y) = y/x").unwrap();
+        for (label, kind) in [("c", Kind::Curve), ("f", Kind::FunctionNVar)] {
+            let id = c.id(label).unwrap();
+            for (sample, agrees) in [
+                (None, false),
+                (Some(f64::NEG_INFINITY), false),
+                (Some(f64::INFINITY), true),
+            ] {
+                let data = if kind == Kind::Curve {
+                    ExpectedData::Curve {
+                        start: -1.0,
+                        end: 1.0,
+                        samples: vec![(0.0, sample.map(|y| (0.0, y)))],
+                    }
+                } else {
+                    ExpectedData::FunctionNVar(vec![(0.0, 1.0, sample)])
+                };
+                let expected = Expected {
+                    kind,
+                    legacy_angle_number: false,
+                    data: Some(data),
+                };
+                assert_eq!(compare_extra(&c, id, &expected).is_ok(), agrees, "{label}");
+            }
+        }
+    }
+
+    #[test]
     fn functions_are_compared_by_samples() {
         let mut samples = vec![Some(1.0); 11];
         samples[0] = None;

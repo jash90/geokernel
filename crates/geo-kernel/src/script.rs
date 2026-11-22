@@ -171,6 +171,14 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
         return Ok(None);
     }
     let (name, rhs, colon) = assignment(line).ok_or("expected `name = definition`")?;
+    if let Some((id, value)) = (!colon)
+        .then(|| slider_assignment_value(c, name, rhs))
+        .flatten()
+    {
+        c.assign_slider_number(id, value)
+            .map_err(|e| e.to_string())?;
+        return Ok(None);
+    }
     if let Some(label) = definition_label(name) {
         if let Some(id) = c.resolve_label(label) {
             let original = c.label(id);
@@ -272,9 +280,7 @@ fn define_assignment(
 }
 
 /// `SlowPlot(f[, repeat])`: the drawn-up-to-here view of the function `f`.
-/// The hidden number between 0 and 1 that GeoGebra animates starts at 0,
-/// so the static function is the part left of the view (`CmdSlowPlot`);
-/// the repeat flag only changes how the animation runs again.
+/// The slider starts at zero and controls how far across the view to plot.
 fn slow_plot(c: &mut Construction, name: &str, args: &[&str]) -> Result<Option<Id>, String> {
     if args.is_empty() || args.len() > 2 {
         return Err(format!(
@@ -286,17 +292,31 @@ fn slow_plot(c: &mut Construction, name: &str, args: &[&str]) -> Result<Option<I
     let result = (|| {
         // the function itself may be written inline, as GeoGebra's argument
         // resolver wraps it
-        let function = match c.id(args[0]).filter(|&id| c.kind(id) == Kind::Function) {
+        let function = match c.id(args[0]).filter(|&id| match c.kind(id) {
+            Kind::Line => true,
+            Kind::Function => {
+                !crate::expr::function_signature(c, id).is_some_and(|sig| sig.boolean)
+            }
+            _ => false,
+        }) {
             Some(id) => id,
             None => {
                 let label = format!("\u{0}spf{}", c.len());
-                crate::expr::define_function(c, &label, args[0], false)
-                    .map_err(|e| e.to_string())?
+                let resolved = resolve_geometry_arguments(c, args[0]);
+                let line = parse_def(c, resolved.as_deref().unwrap_or(args[0]))
+                    .ok()
+                    .filter(|def| def.kind() == Kind::Line);
+                if let Some(def) = line {
+                    c.add(&label, def).map_err(|e| e.to_string())?
+                } else {
+                    crate::expr::argument_function(c, args[0], &label)
+                        .ok_or("SlowPlot needs a real-valued function")?
+                }
             }
         };
         if let Some(repeat) = args.get(1) {
             // the repeat flag is read as a double: a number or a boolean
-            let numeric = crate::expr::plain_number(repeat).is_some()
+            let numeric = crate::expr::argument_number(c, repeat).is_some()
                 || matches!(*repeat, "true" | "false")
                 || c.id(repeat).is_some_and(
                     |id| matches!(c.kind(id), k if k.is_number() || k == Kind::Boolean),
@@ -305,25 +325,28 @@ fn slow_plot(c: &mut Construction, name: &str, args: &[&str]) -> Result<Option<I
                 return Err(format!("`{repeat}` is not a number"));
             }
         }
-        let var = format!("\u{0}slow{}", c.len());
-        slider(c, &var, &["0", "1"]).map_err(|e| e.to_string())?;
-        // the view corners the drawn stretch runs between
-        let mut corner = |n: &str| -> Result<Id, String> {
-            let label = format!("\u{0}sp{}{}", n, c.len());
-            let def = crate::algo::point::parse_view_corner(c, &[n])
-                .unwrap_or_else(|| unreachable!("`Corner` of a number is a view corner"))
+        let label = (0..=c.len() / 23 + 1)
+            .flat_map(|index| (b'a'..=b'w').map(move |letter| (index, char::from(letter))))
+            .map(|(index, letter)| {
+                if index == 0 {
+                    letter.to_string()
+                } else {
+                    format!("{letter}_{{{index}}}")
+                }
+            })
+            .find(|label| label != name && c.id(label).is_none() && check_label(label).is_ok())
+            .ok_or("no label available for the SlowPlot slider")?;
+        let slider = c.add_slider(&label, 0.0, 1.0).map_err(|e| e.to_string())?;
+        let mut corner = |index| {
+            let label = format!("\0sp{}", c.len());
+            let def = crate::algo::point::parse_view_corner(c, &[index])
+                .expect("corner of the view")
                 .map_err(|e| e.to_string())?;
             c.add(&label, Def::Point(def)).map_err(|e| e.to_string())
         };
-        let (first, second) = (corner("1")?, corner("2")?);
-        let body = format!(
-            "If(x < x({}) + {var} * (x({}) - x({})), {}(x))",
-            c.label(first),
-            c.label(second),
-            c.label(first),
-            c.label(function)
-        );
-        crate::expr::define_function(c, name, &body, false).map(Some)
+        let corners = [corner("1")?, corner("2")?];
+        crate::expr::define_slow_plot(c, name, function, slider, corners)?;
+        Ok(Some(slider))
     })();
     if result.is_err() {
         c.discard_since(start);
@@ -373,6 +396,12 @@ fn convert_source(c: &mut Construction, arg: &str) -> Result<Id, String> {
 /// The definition of a labelled line after its name has been read and
 /// checked: the forms of the module documentation other than arithmetic.
 fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Option<Id>, String> {
+    let inline = inline_arguments(c, rhs);
+    let rhs = inline.as_deref().unwrap_or(rhs);
+    if let Some(result) = with_saved_arguments(c, rhs, |c, call| define_after_label(c, name, call))
+    {
+        return result;
+    }
     // `name = SetConstructionStep(n)` runs the script too: a scripting
     // command's returned argument is not labelable, so even the labelled
     // form creates no object (`CmdSetConstructionStep` via the algebra
@@ -473,7 +502,7 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
     if let Some(("SlowPlot", args)) = split_call(rhs) {
         return slow_plot(c, name, &args);
     }
-    // `name = Maximize(expr, number)` and `Minimize`: the dependent value
+    // `name = Maximize(expr, independent)` and `Minimize`: the dependent value
     // may be an inline arithmetic expression, which becomes a hidden
     // expression object, as GeoGebra's argument resolver makes a temporary
     // number of it (`CmdMaximize`/`CmdMinimize`).
@@ -499,12 +528,10 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
             }
         };
         let result = (|| {
-            let independent = object(c, args[1])?;
-            let def = OptimizeDef {
-                dependent,
-                independent,
-                maximize: func == "Maximize",
-            };
+            let independent = object(c, args[1])
+                .or_else(|_| analysis::argument(c, args[1], Kind::Point))
+                .or_else(|_| analysis::argument(c, args[1], Kind::Number))?;
+            let def = OptimizeDef::new(c, dependent, independent, func == "Maximize");
             c.add(name, Def::Optimize(def))
                 .map(Some)
                 .map_err(|e| e.to_string())
@@ -512,12 +539,6 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
         if result.is_err() {
             c.discard_since(start);
         }
-        return result;
-    }
-    let inline = inline_arguments(c, rhs);
-    let rhs = inline.as_deref().unwrap_or(rhs);
-    if let Some(result) = with_saved_arguments(c, rhs, |c, call| define_after_label(c, name, call))
-    {
         return result;
     }
     let start = c.checkpoint();
@@ -558,6 +579,20 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
         c.discard_since(start);
     }
     result
+}
+
+/// Whether the line assigns a literal value to an existing slider.
+pub fn is_slider_assignment(c: &Construction, line: &str) -> bool {
+    split_comment(line)
+        .0
+        .split_once('=')
+        .is_some_and(|(name, rhs)| slider_assignment_value(c, name.trim(), rhs.trim()).is_some())
+}
+
+fn slider_assignment_value(c: &Construction, name: &str, rhs: &str) -> Option<(Id, f64)> {
+    let id = c.id(name)?;
+    c.slider_interval(id)?;
+    Some((id, crate::expr::plain_number(rhs)?))
 }
 
 fn implicit_multi_output(c: &Construction, rhs: &str) -> bool {
@@ -635,11 +670,27 @@ fn with_saved_arguments(
     rhs: &str,
     run: impl FnOnce(&mut Construction, &str) -> Result<Option<Id>, String>,
 ) -> Option<Result<Option<Id>, String>> {
-    if !rhs.contains("$arg(") {
+    if !rhs.contains("$arg(") && !rhs.contains("Maximize") && !rhs.contains("Minimize") {
         return None;
     }
     let (command, args) = split_call(rhs)?;
-    if !args.iter().any(|arg| arg.starts_with("$arg(")) {
+    let sources: Vec<_> = args
+        .iter()
+        .map(|&arg| {
+            arg.strip_prefix("$arg(")
+                .and_then(|s| s.strip_suffix(')'))
+                .map(str::trim)
+                .or_else(|| {
+                    arg.split_once('(')
+                        .is_some_and(|(name, _)| {
+                            matches!(name.trim(), "Maximize" | "Minimize")
+                                && call_closes_at_end(arg, name.len())
+                        })
+                        .then_some(arg)
+                })
+        })
+        .collect();
+    if sources.iter().all(Option::is_none) {
         return None;
     }
     let before = c.len();
@@ -648,12 +699,11 @@ fn with_saved_arguments(
     let result = (|| {
         let args = args
             .iter()
-            .map(
-                |arg| match arg.strip_prefix("$arg(").and_then(|s| s.strip_suffix(')')) {
-                    Some(source) => saved_argument(c, source.trim(), 0),
-                    None => Ok((*arg).to_owned()),
-                },
-            )
+            .zip(sources)
+            .map(|(&arg, source)| match source {
+                Some(source) => saved_argument(c, source, 0),
+                None => Ok(arg.to_owned()),
+            })
             .collect::<Result<Vec<_>, String>>()?;
         let call = format!("{command}({})", args.join(", "));
         implicit = implicit_multi_output(c, &call);
@@ -700,10 +750,9 @@ fn saved_argument(c: &mut Construction, source: &str, depth: usize) -> Result<St
             }
         }
     }
-    let nested_vector = call
-        .as_ref()
-        .is_some_and(|(command, _)| *command == "Vector");
-    if !nested_vector && crate::expr::define_saved_argument(c, &label, source).is_ok() {
+    let optimize = matches!(call.as_ref(), Some(("Maximize" | "Minimize", _)));
+    let vector = matches!(call.as_ref(), Some(("Vector", _)));
+    if !optimize && !vector && crate::expr::define_saved_argument(c, &label, source).is_ok() {
         return Ok(label);
     }
     let Some((command, args)) = call else {
@@ -715,7 +764,7 @@ fn saved_argument(c: &mut Construction, source: &str, depth: usize) -> Result<St
     let args = args
         .into_iter()
         .map(|arg| {
-            if crate::expr::plain_number(arg).is_some() {
+            if !optimize && crate::expr::plain_number(arg).is_some() {
                 Ok(arg.to_owned())
             } else {
                 saved_argument(c, arg, depth + 1)
@@ -985,10 +1034,8 @@ fn define_expression_or_command(c: &mut Construction, name: &str, rhs: &str) -> 
     }
 }
 
-/// `Sum` of three or more points or vectors folds to a point: `CmdSum`
-/// wraps the arguments in a list of points, whatever the label says (the
-/// first argument decides; a folded expression that is not a literal or an
-/// object keeps the rule of the label).
+/// `Sum` of three or more point arguments folds to a point, independently
+/// of the output label.
 fn sum_fold_point(c: &Construction, rhs: &str) -> bool {
     let Some(("Sum", args)) = split_call(rhs) else {
         return false;
@@ -997,8 +1044,7 @@ fn sum_fold_point(c: &Construction, rhs: &str) -> bool {
         && ({
             let first = args[0].trim();
             matches!(parse_def(c, first), Ok(Def::FreePoint { .. }))
-                || c.id(first)
-                    .is_some_and(|id| matches!(c.kind(id), Kind::Point | Kind::Vector))
+                || c.id(first).is_some_and(|id| c.kind(id) == Kind::Point)
         })
 }
 
@@ -1369,6 +1415,7 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
         name.trim(),
         "Tangent"
             | "Length"
+            | "Line"
             | "Vertex"
             | "Corner"
             | "Point"
@@ -1393,8 +1440,27 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
         return None;
     }
     let (func, mut args) = split_call(rhs)?;
+    let inline_source = match (func, args.first().and_then(|arg| split_call(arg))) {
+        ("Derivative" | "NDerivative", Some(("Curve" | "CurveCartesian", coords))) => {
+            let label = format!("\0curve{}", c.len());
+            define_cartesian_curve(c, &label, &coords)
+                .ok()
+                .map(|_| label)
+        }
+        ("Point", Some(("Segment", _))) => {
+            let label = format!("\0path{}", c.len());
+            let def = parse_def(c, args[0]).ok()?;
+            c.add(&label, def).ok().map(|_| label)
+        }
+        _ => None,
+    };
+    if let Some(source) = &inline_source {
+        args[0] = source;
+    }
     let is_kind = |arg, kind| c.id(arg).is_some_and(|id| c.kind(id) == kind);
     let inputs: &[(usize, Kind)] = match (func, args.as_slice()) {
+        ("Line", [_, _]) => &[(0, Kind::Point), (1, Kind::Point)],
+        ("Point", [_]) if inline_source.is_some() => &[],
         ("Tangent", [f, _]) if is_kind(f, Kind::ImplicitCurve) => &[(1, Kind::Point)],
         ("Tangent", [_, f]) if is_kind(f, Kind::ImplicitCurve) => &[(0, Kind::Point)],
         ("Tangent", [f, _]) if is_kind(f, Kind::Function) => &[(1, Kind::Point)],
@@ -1424,11 +1490,10 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
         }
         ("Point" | "Polygon" | "PolyLine", [_]) | ("PolyLine", [_, _]) => &[(0, Kind::List)],
         ("Barycenter", [_, _]) => &[(0, Kind::List), (1, Kind::List)],
-        ("Circle", [center, radius])
-            if is_kind(center, Kind::Point) && crate::expr::plain_number(radius).is_none() =>
-        {
-            &[(1, Kind::Number)]
+        ("Circle", [_, radius]) if crate::expr::plain_number(radius).is_none() => {
+            &[(0, Kind::Point), (1, Kind::Number), (1, Kind::Point)]
         }
+        ("Circle", [_, _]) => &[(0, Kind::Point)],
         ("Dilate", [src, _]) if is_kind(src, Kind::Curve) || is_kind(src, Kind::Image) => {
             &[(1, Kind::Number)]
         }
@@ -1477,12 +1542,9 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
         ("IntegralBetween", [f, _, _]) if is_kind(f, Kind::Function) => {
             &[(1, Kind::Number), (2, Kind::Number)]
         }
-        ("Derivative" | "NDerivative", [f, order]) if is_kind(f, Kind::Function) => {
-            &[(1, Kind::Number)]
-        }
-        ("Derivative" | "NDerivative", [f, _, order]) if is_kind(f, Kind::Function) => {
-            &[(2, Kind::Number)]
-        }
+        ("Derivative" | "NDerivative", [_]) => &[],
+        ("Derivative" | "NDerivative", [_, _]) => &[(1, Kind::Number)],
+        ("Derivative" | "NDerivative", [_, _, _]) => &[(2, Kind::Number)],
         _ => return None,
     };
     // the calculus commands keep their numbers as live objects; the
@@ -1511,7 +1573,7 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
             {
                 return None;
             }
-            let label = format!("\0arg{}", c.len());
+            let label = format!("\0input{}", c.len());
             let resolved = crate::expr::argument_object(c, arg, &label, kind)
                 || (func == "Tangent"
                     && kind == Kind::Number
@@ -1522,7 +1584,8 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
     for (index, label) in &replacements {
         args[*index] = label;
     }
-    (!replacements.is_empty()).then(|| format!("{func}({})", args.join(", ")))
+    (inline_source.is_some() || !replacements.is_empty())
+        .then(|| format!("{func}({})", args.join(", ")))
 }
 
 /// Asks the groups for a command that creates several objects.
@@ -1839,7 +1902,7 @@ fn is_letter(c: u16) -> bool {
         | 0xffa1..=0xffdc)
 }
 
-fn is_identifier(s: &str) -> bool {
+pub(crate) fn is_identifier(s: &str) -> bool {
     let mut chars = s.chars();
     match chars.next() {
         Some(ch) if ch.is_alphabetic() || ch == '_' => {}

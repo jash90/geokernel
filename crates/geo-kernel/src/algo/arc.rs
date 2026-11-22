@@ -155,6 +155,14 @@ pub struct ArcData {
 }
 
 impl ArcData {
+    pub(crate) fn conditional_copy(self) -> Self {
+        // The copied parameters leave the separate arc-length field at zero.
+        Self {
+            arc_length: 0.0,
+            ..self
+        }
+    }
+
     /// A new `GeoConicPart`: every number 0, positive orientation.
     fn new(sector: bool) -> Self {
         ArcData {

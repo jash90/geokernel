@@ -366,6 +366,9 @@ enum Shape<'a> {
 
 impl<'a> Shape<'a> {
     fn of(c: &'a Construction, id: Id) -> Shape<'a> {
+        let Some(id) = c.conditional_source(id) else {
+            return Shape::Empty;
+        };
         let image = image_vertices(c, id);
         if !image.is_empty() {
             return Shape::Points(image);

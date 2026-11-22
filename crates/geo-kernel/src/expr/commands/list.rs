@@ -960,6 +960,7 @@ impl Parser<'_> {
         // adds the same function (`Sum(x^2, x, 1, 3)` is the function
         // `3x^2`, not the number 14).
         let function_of_x = variable == "x";
+        let saved = self.saved();
         let local = self.locals.len() as u32;
         if !function_of_x {
             self.locals.push((variable, Elem::Num));
@@ -976,6 +977,12 @@ impl Parser<'_> {
         self.expect(&Tok::Comma, ",")?;
         let to = self.expression()?;
         self.expect(&Tok::RParen, ")")?;
+        if text == "Sum"
+            && (self.coordinate_kind(from).is_some() || self.coordinate_kind(to).is_some())
+        {
+            self.reset(saved);
+            return Ok(None);
+        }
         if function_of_x {
             let count = self.push(Node::Bin(Bin::FoldCount, from, to));
             let node = if text == "Sum" {

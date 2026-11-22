@@ -44,6 +44,7 @@ import org.geogebra.common.kernel.algos.AlgoVertexIneq;
 import org.geogebra.common.kernel.commands.AlgebraProcessor;
 import org.geogebra.common.kernel.geos.GeoConic;
 import org.geogebra.common.kernel.geos.GeoConicPart;
+import org.geogebra.common.kernel.geos.GeoCurveCartesian;
 import org.geogebra.common.kernel.geos.GeoElement;
 import org.geogebra.common.kernel.geos.GeoFunction;
 import org.geogebra.common.kernel.geos.GeoFunctionNVar;
@@ -290,7 +291,10 @@ final class Session {
         String transformed = functionLine ? null : transformedType(definition);
         String expected = functionLine ? (m.group(2).contains(",") ? "function_nvar" : "function")
                 : transformed != null ? transformed : expectedType(label, definition);
-        if (objects.containsKey(label) || kernel.lookupLabel(label) != null) {
+        GeoElement existing = kernel.lookupLabel(label);
+        // A command can create a slider that a later assignment names explicitly.
+        if (objects.containsKey(label) || (existing != null
+                && (!(existing instanceof GeoNumeric n) || !n.isIndependent()))) {
             throw new IllegalArgumentException("label used twice: " + label);
         }
         if (definition.startsWith("$image(")) {
@@ -419,6 +423,10 @@ final class Session {
         if (out != null && out.length >= 1 && isTransformedPoly(definition)) {
             return runPolygon(line, label, out);
         }
+        if (out != null && out.length == 0 && definition.startsWith("SlowPlot(")
+                && kernel.lookupLabel(label) instanceof GeoFunction plotted) {
+            out = new GeoElementND[] {plotted};
+        }
         // A transformed segment or ray with labelled end points also creates
         // the image points (see `transformedOutputs`); the segment or ray is
         // the first output. Any other object gives exactly one output.
@@ -437,6 +445,9 @@ final class Session {
         if (!labelled && !waiting) {
             throw new IllegalStateException("GeoGebra labelled '" + line + "' as "
                     + geo.getLabelSimple());
+        }
+        if ("conditional".equals(expected)) {
+            expected = schemaType(geo);
         }
         boolean expression = expected == null;
         boolean planeInequality = geo instanceof GeoFunctionNVar f && f.isBooleanFunction()
@@ -754,7 +765,7 @@ final class Session {
 
     /** Sets a free number and updates everything that depends on it. */
     void setNumber(String label, double value) {
-        GeoElement geo = lookup(label);
+        GeoElement geo = kernel.lookupLabel(label);
         if (!(geo instanceof GeoNumeric) || !geo.isIndependent()) {
             throw new IllegalArgumentException(label + " is not a free number");
         }
@@ -764,6 +775,16 @@ final class Session {
             throw new IllegalStateException("GeoGebra stored " + n.getDouble()
                     + " instead of " + value + " in " + label);
         }
+        n.updateCascade();
+    }
+
+    /** Edits the lower and upper endpoints of an independent number. */
+    void setSliderBounds(String label, double min, double max) {
+        if (!(lookup(label) instanceof GeoNumeric n) || !n.isIndependent()) {
+            throw new IllegalArgumentException(label + " is not a free number");
+        }
+        n.setIntervalMin(min);
+        n.setIntervalMax(max);
         n.updateCascade();
     }
 
@@ -1373,7 +1394,7 @@ final class Session {
                 if (branch instanceof GeoLine || branch instanceof GeoConic) {
                     return schemaType(branch);
                 }
-                return null;
+                return "conditional";
             case "ApplyMatrix":
                 List<String> args = arguments(definition);
                 GeoElement target = args.size() == 2 ? objects.get(args.get(1).trim()) : null;
@@ -1426,9 +1447,12 @@ final class Session {
             case "Voronoi":
             case "Locus":
             case "SlopeField":
-            case "SolveODE":
             case "NSolveODE":
                 return "locus";
+            case "SolveODE":
+                // the one- and two-argument symbolic forms make a function
+                // (undefined without a CAS), the numeric forms a locus
+                return arguments(definition).size() < 3 ? "function" : "locus";
             case "Curve":
             case "CurveCartesian":
             case "Spline":
@@ -1444,6 +1468,12 @@ final class Session {
             case "Function":
             case "NInvert":
                 return "function";
+            case "Derivative":
+            case "NDerivative":
+                // a curve input differentiates componentwise to a curve
+                return first instanceof GeoCurveCartesian
+                        || arguments(definition).get(0).trim().startsWith("Curve(")
+                        ? "curve" : "function";
             case "LineGraph":
                 return "function";
             case "DotPlot":
@@ -1522,12 +1552,22 @@ final class Session {
             case "Payment":
             case "FutureValue":
             case "PresentValue":
-            case "Maximize":
-            case "Minimize":
             case "AxisStepX":
             case "AxisStepY":
             case "ConstructionStep":
                 return "number";
+            case "Maximize":
+            case "Minimize":
+                // the result is a copy of the independent object
+                List<String> optimizerArgs = arguments(definition);
+                GeoElement independent = optimizerArgs.size() > 1
+                        ? objects.get(optimizerArgs.get(1).trim()) : null;
+                return independent instanceof GeoPoint ? "point" : "number";
+            case "SVD":
+            case "Normalize":
+                return "list";
+            case "IsVertexForm":
+                return "boolean";
             case "Sum":
                 // folding points or vectors sums to a point (`CmdSum` wraps
                 // them in a list of points), functions to a function, texts

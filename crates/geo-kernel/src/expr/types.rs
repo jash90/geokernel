@@ -313,6 +313,38 @@ fn type_node(
                 0,
             )
         }
+        Node::VertexForm(a) => {
+            let a = a as usize;
+            let functionable = match nodes[a] {
+                Node::Obj(id) => {
+                    c.kind(id).is_number()
+                        || matches!(
+                            c.kind(id),
+                            Kind::Line
+                                | Kind::Ray
+                                | Kind::Segment
+                                | Kind::Conic
+                                | Kind::Circle
+                                | Kind::Arc
+                                | Kind::Sector
+                        )
+                }
+                Node::Apply(_, x) if matches!(nodes[x as usize], Node::Var) => true,
+                _ => {
+                    matches!(state.tys[a], Ty::Num(_))
+                        || state.tys[a] == Ty::Bool && state.vars[a] > 0
+                }
+            };
+            if !functionable {
+                return Err("IsVertexForm needs a function, number, line or conic".into());
+            }
+            (
+                Ty::Bool,
+                state.depth[a] + 1,
+                state.cost[a].saturating_add(1),
+                0,
+            )
+        }
         Node::RootList(a) => {
             let a = a as usize;
             if !matches!(state.tys[a], Ty::List(_)) || state.vars[a] != 0 {
@@ -375,14 +407,14 @@ fn type_node(
                 (state.tys[then], 0, 0, 0)
             } else {
                 let r = rest as usize;
-                (
-                    join(state.tys[then], state.tys[r])?,
-                    state.depth[r],
-                    state.cost[r],
-                    state.vars[r],
-                )
+                let ty = match mode {
+                    IfMode::Algo => conditional_type(nodes, &state.tys, then, r),
+                    IfMode::AlgoNext => state.tys[then],
+                    _ => join(state.tys[then], state.tys[r])?,
+                };
+                (ty, state.depth[r], state.cost[r], state.vars[r])
             };
-            if mode != IfMode::Algo && !matches!(ty, Ty::Num(_)) {
+            if matches!(mode, IfMode::Else | IfMode::List) && !matches!(ty, Ty::Num(_)) {
                 // `CmdIf.checkAdd`: the branches must be functions
                 return Err("the branches of a function's `If` must be numbers".into());
             }
@@ -549,6 +581,9 @@ fn type_node(
             (Ty::List(elem), 1 + d, k, v)
         }
         Node::ListOp(op, l, n) => {
+            if op == ListOp::Normalize && !normalize_points_fit(c, nodes, &state.tys, l) {
+                return Err("Normalize cannot read a mixed list as points".into());
+            }
             let elem = match state.tys[l as usize] {
                 Ty::List(e) => e,
                 _ => {
@@ -767,6 +802,35 @@ pub(super) fn join_elem(a: Elem, b: Elem) -> Elem {
     }
 }
 
+/// The reference reads every entry as a point when the first entry is a
+/// point or the last entry is a point after a numeric scan.
+fn normalize_points_fit(c: &Construction, nodes: &[Node], types: &[Ty], list: u32) -> bool {
+    let fits = |len: usize, first_numeric: bool, is_point: &dyn Fn(usize) -> bool| {
+        len == 0 || !(is_point(0) || first_numeric && is_point(len - 1)) || (0..len).all(is_point)
+    };
+    match nodes[list as usize] {
+        Node::List(start, len) if len != 0 => {
+            let is_point = |i: usize| {
+                let item = start + i as u32;
+                types[item as usize] == Ty::Vec && vec_kind(c, nodes, types, item) == Kind::Point
+            };
+            fits(
+                len as usize,
+                matches!(types[start as usize], Ty::Num(_)),
+                &is_point,
+            )
+        }
+        Node::Obj(id) => c.elements(id).is_none_or(|items| {
+            let first_numeric =
+                matches!(items.get(0), Some(super::Element::Value(kind, _)) if kind.is_number());
+            fits(items.len(), first_numeric, &|i| {
+                items.raw_point(i).is_some()
+            })
+        }),
+        _ => true,
+    }
+}
+
 /// The type of one element of a list (`GeoList.createTemplateElement` for
 /// an empty one: a number).
 pub(super) fn ty_of(e: Elem) -> Result<Ty, String> {
@@ -915,9 +979,32 @@ pub(super) fn scalar_binary_type(op: Bin, a: Ty, b: Ty) -> Result<Ty, String> {
     }
 }
 
-/// The type of `AlgoIf`'s result: `GeoList.getGenericElement` keeps the
-/// first branch's type unless a later one can take it, which a point does
-/// for a number.
+/// Widen through the alternatives of one call until the first incompatible
+/// assignment. A nested `If` expression is a single alternative.
+fn conditional_type(nodes: &[Node], types: &[Ty], first: usize, mut next: usize) -> Ty {
+    let mut result = types[first];
+    for _ in 0..super::commands::logical::MAX_IF_ALTERNATIVES {
+        let (branch, tail) = match nodes[next] {
+            Node::If(IfMode::AlgoNext, _, branch, rest) => (branch as usize, rest),
+            _ => (next, NONE),
+        };
+        result = match (result, types[branch]) {
+            (Ty::Bool | Ty::Num(1), t @ Ty::Num(n)) if n != 1 => t,
+            (Ty::Bool | Ty::Num(_), Ty::Vec) => Ty::Vec,
+            (Ty::List(a), Ty::List(b)) => Ty::List(join_elem(a, b)),
+            (a, b) if a == b => a,
+            (Ty::Num(a), Ty::Num(b)) if a != 1 && b != 1 => Ty::Num(b),
+            _ => break,
+        };
+        if tail == NONE {
+            break;
+        }
+        next = tail as usize;
+    }
+    result
+}
+
+/// Combine the numeric branches of a conditional function.
 fn join(a: Ty, b: Ty) -> Result<Ty, String> {
     match (a, b) {
         (Ty::Num(x), Ty::Num(_)) => Ok(Ty::Num(x)),

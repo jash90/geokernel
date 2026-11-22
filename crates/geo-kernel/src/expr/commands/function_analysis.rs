@@ -6,12 +6,14 @@
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
+mod svd;
+
 use crate::expr::{
-    eval::{slot_val, Ctx, Env, Local, Val, MAX_ELEMENTS},
+    eval::{function_entry, number_of, slot_val, Ctx, Env, Local, Val, MAX_ELEMENTS},
     lex::Tok,
-    parse::Parser,
+    parse::{list_form, Parser},
     types::{elem_of, ty_of},
-    Elem, IterationMode, Node, Slot, Ty,
+    Bin, Elem, Entry, IterationMode, ListOp, Node, Slot, Ty, NONE,
 };
 use crate::{Kind, Value};
 
@@ -22,10 +24,35 @@ pub(super) const NAMES: &[&str] = &[
     "NInvert",
     "nroot",
     "Asymptote",
+    "Normalize",
+    "SVD",
+    "IsVertexForm",
 ];
 
 pub(super) fn parse(p: &mut Parser<'_>, name: &str) -> Result<Option<u32>, String> {
     let node = match name {
+        "IsVertexForm" => {
+            let uses_var = p.uses_var;
+            let result = p.function_command(|_, args, _| match args {
+                [a] => Ok(Some(Node::VertexForm(*a))),
+                _ => Err("IsVertexForm needs a function".into()),
+            });
+            p.uses_var = uses_var;
+            return result;
+        }
+        "SVD" => {
+            return p
+                .list_command(|_, args, lists| list_form(name, ListOp::Svd, false, args, lists));
+        }
+        "Normalize" => {
+            return p.list_command(|p, args, lists| {
+                if !args.is_empty() && args.iter().all(|&a| point_argument(p, a)) {
+                    let list = p.wrap_list(args);
+                    return Ok(Some(Node::ListOp(ListOp::Normalize, list, NONE)));
+                }
+                list_form(name, ListOp::Normalize, false, args, lists)
+            });
+        }
         "nroot" => {
             let args = p.arguments()?;
             let [number, degree] = args[..] else {
@@ -74,6 +101,219 @@ pub(super) fn parse(p: &mut Parser<'_>, name: &str) -> Result<Option<u32>, Strin
         _ => return Ok(None),
     };
     Ok(Some(p.push(node)))
+}
+
+impl<const M: bool> Ctx<'_, M> {
+    pub(in crate::expr) fn vertex_form(&self, root: u32) -> Val {
+        match self.node(root) {
+            Node::Obj(id) if matches!(self.c.kind(id), Kind::Conic | Kind::Circle) => {
+                let vertex_form = self.c.conic(id).is_some_and(|conic| {
+                    let [xx, yy, _, xy, x, y] = conic.matrix;
+                    let zero = crate::tol::STANDARD_PRECISION;
+                    conic.defined
+                        && yy.abs() < zero
+                        && xy.abs() < zero
+                        && y.abs() >= zero
+                        && xx != 0.0
+                        && x == 0.0
+                });
+                Val::B(vertex_form, true)
+            }
+            Node::Apply(f, x) if matches!(self.node(x), Node::Var) => {
+                let source = function_entry(self.c, f).or_else(|| {
+                    self.c
+                        .calculus_record(f)
+                        .filter(|_| self.c.value(f) == Value::Function)?
+                        .tree
+                        .as_ref()
+                });
+                source.map_or(Val::B(false, true), |entry| {
+                    self.vertex_expression(entry, entry.root)
+                })
+            }
+            _ => self.vertex_expression(self.e, root),
+        }
+    }
+
+    fn vertex_expression(&self, entry: &Entry, root: u32) -> Val {
+        if self.stop(4 * (u64::from(root) + 1)) {
+            return Val::B(false, false);
+        }
+        // Children precede their parents, so a subtree shared by several
+        // branches is classified once.
+        let mut constants = Vec::with_capacity(root as usize + 1);
+        for node in &entry.nodes[..=root as usize] {
+            let constant = match *node {
+                Node::Num(_) | Node::MinusOne | Node::Degree | Node::Bool(_) => true,
+                Node::Bin(op, a, b) if !op.is_command() => {
+                    constants[a as usize] && constants[b as usize]
+                }
+                Node::Un(_, a) => constants[a as usize],
+                _ => false,
+            };
+            constants.push(constant);
+        }
+        let node = |i: u32| entry.nodes[i as usize];
+        let strip = |mut i, ops: &[Bin]| {
+            for _ in 0..=root {
+                let Node::Bin(op, a, b) = node(i) else {
+                    break;
+                };
+                if !ops.contains(&op) {
+                    break;
+                }
+                i = match (constants[a as usize], constants[b as usize]) {
+                    (true, _) => b,
+                    (_, true) => a,
+                    _ => break,
+                };
+            }
+            i
+        };
+        let add = [Bin::Add, Bin::Sub];
+        let term = strip(strip(root, &add), &[Bin::Mul]);
+        let result = match node(term) {
+            Node::Bin(Bin::Pow, base, exponent) => {
+                matches!(node(exponent), Node::Num(2.0))
+                    && matches!(node(strip(base, &add)), Node::Var)
+            }
+            _ => false,
+        };
+        Val::B(result, true)
+    }
+}
+
+fn point_argument(p: &Parser<'_>, node: u32) -> bool {
+    match p.node(node) {
+        Node::Obj(id) => p.c.kind(id) == Kind::Point,
+        Node::Vector(_) => false,
+        _ => p.is_point_or_vector(node),
+    }
+}
+
+pub(super) fn normalize<const M: bool>(ctx: &Ctx<'_, M>, l: u32) -> Option<(u32, u32)> {
+    let lists = ctx.lists?;
+    let (start, len) = ctx.list(l)?;
+    if len == 0 || !lists.charge(2 * u64::from(len)) {
+        return None;
+    }
+    let read = |i| lists.read(ctx.c, start + i);
+    let points = match (read(0).kind, read(len - 1).kind) {
+        (Kind::Point, Kind::Point) => true,
+        (first, last) if first.is_number() && last.is_number() => false,
+        (first, last) if first.is_number() && last != Kind::Point => return Some((lists.len(), 0)),
+        _ => return None,
+    };
+    let coordinate = |slot: Slot| {
+        if points {
+            match slot_val(&slot) {
+                Val::V(x, y) => [x, y],
+                _ => [f64::NAN; 2],
+            }
+        } else {
+            [
+                slot.numeric_cell()
+                    .or_else(|| number_of(slot))
+                    .unwrap_or(f64::NAN),
+                0.0,
+            ]
+        }
+    };
+    let mut min = [f64::INFINITY; 2];
+    let mut max = [f64::NEG_INFINITY; 2];
+    for i in 0..len {
+        let slot = read(i);
+        if points && slot.kind != Kind::Point {
+            return None;
+        }
+        for (axis, value) in coordinate(slot).into_iter().enumerate() {
+            min[axis] = min[axis].min(value);
+            max[axis] = max[axis].max(value);
+        }
+    }
+    let scale = std::array::from_fn::<_, 2, _>(|i| {
+        if max[i] == min[i] {
+            max[i]
+        } else {
+            max[i] - min[i]
+        }
+    });
+    let out = lists.reserve(len)?;
+    for i in 0..len {
+        let xy = coordinate(read(i));
+        let scaled = |axis: usize| {
+            if scale[axis] == 0.0 {
+                0.0
+            } else {
+                (xy[axis] - min[axis]) / scale[axis]
+            }
+        };
+        let slot = if points {
+            Slot::coords(Kind::Point, scaled(0), scaled(1))
+        } else {
+            Slot::number(scaled(0))
+        };
+        lists.set(out + i, slot);
+    }
+    Some((out, len))
+}
+
+pub(super) fn svd<const M: bool>(ctx: &Ctx<'_, M>, l: u32) -> Option<(u32, u32)> {
+    let lists = ctx.lists?;
+    let (start, rows) = ctx.list(l)?;
+    if rows == 0 {
+        return None;
+    }
+    let (_, cols) = lists.read(ctx.c, start).run()?;
+    if cols == 0 || !lists.charge(u64::from(rows) * u64::from(cols)) {
+        return None;
+    }
+    let wide = rows < cols;
+    let [height, rank] = if wide { [cols, rows] } else { [rows, cols] }.map(|n| n as usize);
+    let mut columns = vec![vec![0.0; height]; rank];
+    for i in 0..rows {
+        let (input, length) = lists.read(ctx.c, start + i).run()?;
+        if length < cols {
+            return None;
+        }
+        for j in 0..cols {
+            let x = number_of(lists.read(ctx.c, input + j)).filter(|x| x.is_finite())?;
+            if wide {
+                columns[i as usize][j as usize] = x;
+            } else {
+                columns[j as usize][i as usize] = x;
+            }
+        }
+    }
+    let (mut left, singular, mut right) = svd::decompose(columns, |work| lists.charge(work))?;
+    if wide {
+        std::mem::swap(&mut left, &mut right);
+    }
+    let mut diag = vec![vec![0.0; rank]; rank];
+    for (i, sigma) in singular.into_iter().enumerate() {
+        diag[i][i] = sigma;
+        // Choose a sign from the largest entry of the left vector.
+        let pivot = left[i].iter().max_by(|a, b| a.abs().total_cmp(&b.abs()))?;
+        if *pivot < 0.0 {
+            for value in left[i].iter_mut().chain(&mut right[i]) {
+                *value = -*value;
+            }
+        }
+    }
+    let out = lists.reserve(3)?;
+    for (i, matrix) in [left, diag, right].into_iter().enumerate() {
+        let rows = matrix[0].len() as u32;
+        let run = lists.reserve(rows)?;
+        for row in 0..rows {
+            let cells = lists.reserve(rank as u32)?;
+            for (col, column) in matrix.iter().enumerate() {
+                lists.set(cells + col as u32, Slot::number(column[row as usize]));
+            }
+            lists.set(run + row, Slot::list(cells, rank as u32));
+        }
+        lists.set(out + i as u32, Slot::list(run, rows));
+    }
+    Some((out, 3))
 }
 
 fn parse_iteration(p: &mut Parser<'_>, collect: bool) -> Result<Node, String> {

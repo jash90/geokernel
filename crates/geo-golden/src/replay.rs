@@ -143,6 +143,9 @@ fn replay_document(case: &Case) -> CaseOutcome {
                 .is_some_and(|id| document.set_number(id, *value))
                 .then_some(())
                 .ok_or_else(|| format!("cannot set `{label}`")),
+            Step::SetSliderBounds { .. } => {
+                Err("unexpected slider bounds edit in a deletion case".into())
+            }
         };
         if let Err(error) = result {
             out.mismatches
@@ -278,6 +281,14 @@ fn apply(c: &mut Construction, step: &Step) -> Result<Option<geo_kernel::Id>, St
                 Some(replaced) if replaced == id => Ok(Some(id)),
                 _ => Err(format!("expected one replacement: {line}")),
             }
+        }
+        Step::SetSliderBounds { label, min, max } => {
+            script::saved::Property::SliderBounds {
+                label: label.clone(),
+                bounds: [Some(min.to_string()), Some(max.to_string())],
+            }
+            .apply(c)?;
+            Ok(None)
         }
         Step::Reject { line } => {
             let len = c.len();

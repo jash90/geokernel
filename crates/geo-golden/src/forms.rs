@@ -321,13 +321,11 @@ pub fn arg_kind(arg: &str, labels: &BTreeMap<String, Kind>) -> Option<Kind> {
     None
 }
 
-/// The right-hand sides of a script, without comments.
+/// The right-hand sides and standalone commands of a script, without comments.
 fn definitions(script: &[String]) -> impl Iterator<Item = &str> {
-    script.iter().filter_map(|l| {
-        geo_kernel::script::split_comment(l)
-            .0
-            .split_once('=')
-            .map(|(_, rhs)| rhs)
+    script.iter().map(|l| {
+        let line = geo_kernel::script::split_comment(l).0;
+        line.split_once('=').map_or(line, |(_, rhs)| rhs)
     })
 }
 

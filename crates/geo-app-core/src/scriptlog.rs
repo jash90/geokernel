@@ -560,7 +560,7 @@ impl Log {
         })
     }
 
-    /// Records the objects with index `from..` in `c`, or a protocol step.
+    /// Records new objects, a slider assignment or a protocol step.
     pub fn record(&mut self, c: &Construction, from: usize, line: &str) {
         self.record_definition(c, from, None, line);
     }
@@ -575,7 +575,10 @@ impl Log {
         let labels: Vec<String> = definition_outputs(c, from, first, line)
             .map(|id| c.label(id).to_owned())
             .collect();
-        if !labels.is_empty() || geo_kernel::script::is_construction_step_command(line) {
+        if !labels.is_empty()
+            || geo_kernel::script::is_construction_step_command(line)
+            || geo_kernel::script::is_slider_assignment(c, line)
+        {
             self.ops.push(Op::Define(Entry {
                 labels,
                 line: mark_inline_arguments(line.to_owned()),
@@ -1503,7 +1506,10 @@ impl Log {
                     .map(str::trim)
                     .filter(|l| !l.is_empty())
                     .collect(),
-                None if is_directive || geo_kernel::script::is_construction_step_command(&line) => {
+                None if is_directive
+                    || geo_kernel::script::is_construction_step_command(&line)
+                    || geo_kernel::script::is_slider_assignment(&c, &line) =>
+                {
                     Vec::new()
                 }
                 None => defined_labels(&line).collect(),
@@ -1562,14 +1568,18 @@ impl Log {
             return Ok(Some(id));
         }
         // Validate the expected label before changing an existing definition.
-        if let (Some(id), Some(expected)) =
-            (geo_kernel::script::assignment_target(c, line), expected)
-        {
-            let label = c.label(id);
-            if expected != [label] {
-                return Err(format!(
-                    "it would redefine {label:?} instead of creating {expected:?}"
-                ));
+        if let Some(expected) = expected {
+            if geo_kernel::script::is_slider_assignment(c, line) {
+                if !expected.is_empty() {
+                    return Err("a slider assignment creates no objects".into());
+                }
+            } else if let Some(id) = geo_kernel::script::assignment_target(c, line) {
+                let label = c.label(id);
+                if expected != [label] {
+                    return Err(format!(
+                        "it would redefine {label:?} instead of creating {expected:?}"
+                    ));
+                }
             }
         }
         let at = c.checkpoint();
