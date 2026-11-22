@@ -80,7 +80,7 @@ impl BoundaryOutputs {
                     break;
                 };
                 let label = script::index_label(c, &group.prefix);
-                let Ok(id) = c.add(&label, Def::IntersectBoundary(output)) else {
+                let Ok(id) = c.add_output(&label, Def::IntersectBoundary(output), group.first) else {
                     break;
                 };
                 group.slots = slot + 1;
@@ -135,7 +135,7 @@ pub fn boundary_slot_owner(rhs: &str) -> Option<&str> {
     slot_args(rhs).map(|(owner, _)| owner)
 }
 
-pub(crate) fn parse_slot(c: &Construction, rhs: &str) -> Option<Result<Def, String>> {
+pub(crate) fn parse_slot(c: &Construction, rhs: &str) -> Option<Result<(Def, Id), String>> {
     if !rhs.starts_with(SLOT_COMMAND) {
         return None;
     }
@@ -146,7 +146,7 @@ pub(crate) fn parse_slot(c: &Construction, rhs: &str) -> Option<Result<Def, Stri
             .ok_or_else(|| format!("unknown object `{anchor}`"))?;
         if let Def::IntersectBoundary(def) = c.def(id) {
             if let Some(def) = def.grown_slot(slot) {
-                return Ok(Def::IntersectBoundary(def));
+                return Ok((Def::IntersectBoundary(def), id));
             }
         }
         Err(format!(

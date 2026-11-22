@@ -145,11 +145,8 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
     // `SetConstructionStep(n)` is a scripting command: it changes the
     // construction's own state and returns its argument, so a script line
     // of it creates no object (`CmdSetConstructionStep`).
-    if let Some(arg) = line
-        .strip_prefix("SetConstructionStep(")
-        .and_then(|s| s.strip_suffix(')'))
-    {
-        return set_construction_step(c, arg.trim()).map(|_| None);
+    if let Some(arg) = construction_step_argument(line) {
+        return set_construction_step(c, arg).map(|()| None);
     }
     if line.starts_with('{') {
         return exec_labelled(c, line);
@@ -234,9 +231,6 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
     define_after_label(c, name, rhs.trim())
 }
 
-/// `SetConstructionStep(n)`: moves the construction to a step; its
-/// returned argument is a temporary in GeoGebra, so no line of it creates
-/// an object (`CmdSetConstructionStep`).
 /// `SlowPlot(f[, repeat])`: the drawn-up-to-here view of the function `f`.
 /// The hidden number between 0 and 1 that GeoGebra animates starts at 0,
 /// so the static function is the part left of the view (`CmdSlowPlot`);
@@ -297,14 +291,28 @@ fn slow_plot(c: &mut Construction, name: &str, args: &[&str]) -> Result<Option<I
     result
 }
 
-fn set_construction_step(c: &mut Construction, arg: &str) -> Result<f64, String> {
-    // `arg[0].evaluateDouble()`: any constant numeric expression
-    let value = crate::expr::constant_number(c, arg)
-        .map(|(value, _)| value)
-        .or_else(|| c.id(arg).and_then(|id| c.number(id)))
+fn construction_step_argument(input: &str) -> Option<&str> {
+    input
+        .strip_prefix("SetConstructionStep(")?
+        .strip_suffix(')')
+        .map(str::trim)
+}
+
+/// Whether an accepted script line changes the construction protocol step
+/// instead of defining an object. The app journals these lines for replay.
+pub fn is_construction_step_command(line: &str) -> bool {
+    let line = split_comment(line).0.trim();
+    construction_step_argument(line).is_some()
+        || line.split_once(['=', ':']).is_some_and(|(_, rhs)| {
+            construction_step_argument(rhs.trim()).is_some()
+        })
+}
+
+fn set_construction_step(c: &mut Construction, arg: &str) -> Result<(), String> {
+    let value = crate::expr::argument_number(c, arg)
         .ok_or_else(|| format!("`{arg}` is not a number"))?;
     c.set_construction_step(value);
-    Ok(value)
+    Ok(())
 }
 
 /// The source argument of `ToComplex`/`ToPolar`/`ToPoint`: an existing
@@ -329,11 +337,8 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
     // command's returned argument is not labelable, so even the labelled
     // form creates no object (`CmdSetConstructionStep` via the algebra
     // processor).
-    if let Some(arg) = rhs
-        .strip_prefix("SetConstructionStep(")
-        .and_then(|s| s.strip_suffix(')'))
-    {
-        return set_construction_step(c, arg.trim()).map(|_| None);
+    if let Some(arg) = construction_step_argument(rhs) {
+        return set_construction_step(c, arg).map(|()| None);
     }
     // `name = ToComplex(g)`, `ToPolar(g)` and `ToPoint(g)`: a copy of the
     // value that only shows in another coordinate style; the argument may
@@ -633,7 +638,8 @@ fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option
         return result.map(Some);
     }
     if let Some(def) = intersect::growth::parse_slot(c, rhs) {
-        return c.add(name, def?).map(Some).map_err(|e| e.to_string());
+        let (def, owner) = def?;
+        return c.add_output(name, def, owner).map(Some).map_err(|e| e.to_string());
     }
     if let Some((form @ ("$point" | "$vector"), args)) = split_call(rhs) {
         match forced_coordinates(form, &args) {
@@ -1450,7 +1456,7 @@ pub(crate) fn add_outputs(c: &mut Construction, name: &str, defs: Vec<Def>) -> R
                     .filter(|p| !p.is_empty())
                     .unwrap_or("a");
                 let label = index_label(c, prefix);
-                c.add(&label, second).map_err(|e| e.to_string())?;
+                c.add_output(&label, second, id).map_err(|e| e.to_string())?;
                 Ok(id)
             }
             (false, true) => c.add(name, second).map_err(|e| e.to_string()),
@@ -1967,7 +1973,9 @@ pub fn multi_output_count(c: &Construction, rhs: &str) -> Option<Result<usize, S
 }
 
 fn conic_clip(c: &Construction, rhs: &str) -> Option<crate::algo::polygon_clip::ClipDef> {
-    let (func @ "IntersectPath", args) = split_call(rhs)? else {
+    let (func @ ("IntersectPath" | "IntersectionPaths" | "IntersectRegion"), args) =
+        split_call(rhs)?
+    else {
         return None;
     };
     crate::algo::polygon_clip::ClipDef::parse(c, func, &args)
@@ -2082,7 +2090,11 @@ pub(crate) fn add_named_outputs(
     let mut first = None;
     for (slot, def) in slots.iter().zip(defs) {
         if !slot.is_empty() {
-            match intersect::add_labelled_output(c, slot, def) {
+            let added = match first {
+                Some(owner) => intersect::add_labelled_output_of(c, slot, def, owner),
+                None => intersect::add_labelled_output(c, slot, def),
+            };
+            match added {
                 Ok(id) => {
                     first.get_or_insert(id);
                 }

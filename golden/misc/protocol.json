@@ -132,6 +132,102 @@
           "k": { "type": "number", "defined": true, "value": 2.0 }
         }
       ]
+    },
+    {
+      "id": "misc-protocol-005",
+      "group": "misc",
+      "script": [
+        "cs = ConstructionStep()",
+        "A = (0, 0)",
+        "B = (1, 1)",
+        "SetConstructionStep(1)",
+        "SetConstructionStep(1/0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "cs": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "misc-protocol-006",
+      "group": "misc",
+      "script": [
+        "cs = ConstructionStep()",
+        "A = (0, 0)",
+        "B = (1, 1)",
+        "SetConstructionStep(1)",
+        "SetConstructionStep(3000000000)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "cs": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "misc-protocol-007",
+      "group": "misc",
+      "script": [
+        "A = (1, 2)",
+        "T = ToPoint((3, 4))",
+        "D = (3, 4)",
+        "s = ConstructionStep(D)",
+        "t = ConstructionStep(T)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "T": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "t": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "misc-protocol-008",
+      "group": "misc",
+      "script": [
+        "cs = ConstructionStep()",
+        "A = (0, 0)",
+        "B = (1, 1)",
+        "C = (2, 2)",
+        "SetConstructionStep(1)",
+        "D = (3, 3)",
+        "ds = ConstructionStep(D)",
+        "SetConstructionStep(1/0)",
+        "bs = ConstructionStep(B)",
+        "aa = ConstructionStep(A)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "cs": { "type": "number", "defined": true, "value": 8.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "ds": { "type": "number", "defined": true, "value": 2.0 },
+          "bs": { "type": "number", "defined": true, "value": 5.0 },
+          "aa": { "type": "number", "defined": true, "value": 4.0 }
+        }
+      ]
     }
   ]
 }

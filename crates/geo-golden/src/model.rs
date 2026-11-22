@@ -729,8 +729,6 @@ impl TryFrom<RawObject> for Expected {
     }
 }
 
-/// Labels created by a script: the text before the first `=` of each line,
-/// without the argument of a function.
 /// The scripting commands a script line may run without assigning a label
 /// (the harness's `SCRIPTING` pattern).
 const SCRIPTING_COMMANDS: &[&str] = &[
@@ -748,6 +746,8 @@ fn scripting_lines(script: &[String]) -> usize {
         .count()
 }
 
+/// Labels created by a script: the text before the first `=` of each line,
+/// without the argument of a function.
 pub fn script_labels(script: &[String]) -> BTreeSet<String> {
     script
         .iter()

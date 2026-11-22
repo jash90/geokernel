@@ -338,7 +338,10 @@ impl Workbench {
     /// `(1, 2)`. The label class follows the kind of the result, found by
     /// running the line on a scratch copy.
     fn with_label(&self, line: String) -> String {
-        if line.is_empty() || find_unquoted(&line, '=').is_some() {
+        if line.is_empty()
+            || find_unquoted(&line, '=').is_some()
+            || geo_kernel::script::is_construction_step_command(&line)
+        {
             return line;
         }
         let kind = self.log.rebuild().ok().and_then(|(mut scratch, _)| {
@@ -444,6 +447,7 @@ impl Workbench {
     fn exec_lines(&mut self, lines: &[String], in_tool: bool) -> Result<(), String> {
         let snapshot = self.copy(&self.log);
         let n0 = self.construction.len();
+        let mut step_changed = false;
         let mut failure = None;
         for raw in lines {
             let line = normalize(raw);
@@ -455,11 +459,14 @@ impl Workbench {
                 break;
             }
             let before = self.construction.len();
+            let step_before = self.construction.step();
             // Only lines that succeeded go into the log: a failed one would
             // fail again on every replay.
             match exec_definition(&mut self.construction, &line) {
                 Ok(first) => {
-                    if self.construction.len() > before {
+                    let added = self.construction.len() > before;
+                    let moved_step = !added && self.construction.step() != step_before;
+                    if added || moved_step {
                         self.log.record(&self.construction, before, &line);
                         if let Some(first) = first {
                             self.boundary_outputs.record(
@@ -470,6 +477,7 @@ impl Workbench {
                             );
                         }
                     }
+                    step_changed |= moved_step;
                 }
                 Err(e) => {
                     failure = Some(e);
@@ -477,10 +485,11 @@ impl Workbench {
                 }
             }
         }
-        let changed = self.construction.len() != n0;
-        if changed {
+        let objects_added = self.construction.len() != n0;
+        if objects_added {
             self.objects_changed();
         }
+        let changed = objects_added || step_changed;
         match failure {
             Some(e) => {
                 if changed {

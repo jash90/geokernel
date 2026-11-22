@@ -817,6 +817,7 @@ pub struct Checkpoint {
     exprs: usize,
     frozen_line_starts: usize,
     image_assets: usize,
+    step: usize,
     /// How many rollbacks the construction had made when it was taken.
     generation: u64,
 }
@@ -837,6 +838,15 @@ impl fmt::Display for StaleCheckpoint {
 }
 
 impl std::error::Error for StaleCheckpoint {}
+
+/// A definition's place in the construction protocol. An output stores
+/// its representative's def index, and follows its position when it moves.
+#[derive(Clone, Copy)]
+enum ProtocolEntry {
+    Hidden,
+    Element(u32),
+    Output(u32),
+}
 
 /// A geometric construction.
 #[derive(Default)]
@@ -907,20 +917,13 @@ pub struct Construction {
     /// `AxisStepX`, `AxisStepY`); the app keeps it current, a headless
     /// construction uses the reference window.
     view_state: Option<[f64; 6]>,
-    /// The step of the construction protocol: -1 before the first object,
-    /// then the index of the last construction element while the step
-    /// follows the construction (`Construction.getStep`).
-    step: i32,
-    /// The construction elements of the protocol (`ceList`): the def index
-    /// of each element in creation order. One line of input is one element
-    /// (`Polygon(A, B, C)` counts once); the extra objects it creates
-    /// (the sides, the indexed outputs of `Intersect`) share it.
+    /// The number of construction elements through the current step.
+    step: usize,
+    /// The def indices of the construction elements (`ceList`) in protocol
+    /// order. A polygon and its sides share one construction element.
     elements: Vec<u32>,
-    /// For every def, the position in `elements` of the element it belongs
-    /// to: its own for a free object or the first output of a command, the
-    /// owner's for every further output (`GeoElement.getConstructionIndex`
-    /// reads its algorithm's index).
-    element_of: Vec<u32>,
+    /// Membership in `elements` for each def.
+    element_of: Vec<ProtocolEntry>,
     /// The indices of the objects that read the construction step, so that
     /// adding an object or `SetConstructionStep` can recompute them.
     protocol: Vec<usize>,
@@ -1364,6 +1367,7 @@ impl Construction {
             exprs: self.exprs.len(),
             frozen_line_starts: self.frozen_line_starts.len(),
             image_assets: self.images.asset_count(),
+            step: self.step,
             generation: self.generation,
         }
     }
@@ -1431,6 +1435,7 @@ impl Construction {
         self.construction_sources.retain(|id, _| id.0 < at.len);
         self.frozen_line_starts
             .retain(|_, &mut (_, _, order, _)| order < at.frozen_line_starts);
+        let mut first_removed = self.elements.len();
         while self.defs.len() > at.len {
             let id = self.defs.len() - 1;
             let def = self.defs[id];
@@ -1446,21 +1451,34 @@ impl Construction {
             self.values.pop();
             self.children.pop();
             self.hints.pop();
-            self.element_of.pop();
+            if let Some(ProtocolEntry::Element(index)) = self.element_of.pop() {
+                first_removed = first_removed.min(index as usize);
+            }
             if let Some(label) = self.labels.pop() {
                 self.by_label.remove(&label);
                 self.object_scripts.remove(&label);
             }
         }
-        // The protocol rolls back with the objects: the elements that went
-        // are gone, the step cannot point past the last one that stays and
-        // no reader of the step may be stale (`Construction.remove`).
-        let elements = self.elements.partition_point(|&i| (i as usize) < at.len);
-        self.elements.truncate(elements);
-        if self.step >= elements as i32 {
-            self.step = elements as i32 - 1;
+        // A removed object may have opened an element before a surviving
+        // one if it was created after navigating back. Normally only the
+        // tail changes, so a brief probe need not scan the whole protocol.
+        let elements_changed = first_removed < self.elements.len();
+        if elements_changed {
+            if self.elements[first_removed..]
+                .iter()
+                .all(|&id| id as usize >= at.len)
+            {
+                self.elements.truncate(first_removed);
+            } else {
+                self.elements.retain(|&id| (id as usize) < at.len);
+                self.reindex_elements_from(first_removed);
+            }
         }
-        self.protocol.retain(|&i| i < at.len);
+        let step = at.step.min(self.elements.len());
+        let step_changed = self.step != step;
+        self.step = step;
+        self.protocol
+            .truncate(self.protocol.partition_point(|&i| i < at.len));
         self.lists.truncate(at.lists.min(self.lists.len()));
         self.exprs.truncate(at.exprs, at.len);
         self.function_roots.clear();
@@ -1536,6 +1554,9 @@ impl Construction {
             .get_mut()
             .unwrap_or_else(|e| e.into_inner())
             .clear();
+        if step_changed || elements_changed {
+            self.update_protocol();
+        }
     }
 
     /// Every object `def` reads: its parents, the objects its rule also
@@ -1574,7 +1595,7 @@ impl Construction {
     /// Adds another output of the object `owner`: the same value as
     /// [`Construction::add`], but the protocol counts it with its owner's
     /// construction element instead of opening one of its own.
-    pub fn add_output(&mut self, label: &str, def: Def, owner: Id) -> Result<Id, Error> {
+    pub(crate) fn add_output(&mut self, label: &str, def: Def, owner: Id) -> Result<Id, Error> {
         self.add_with_path_state(label, def, None, Some(owner))
     }
 
@@ -1674,73 +1695,84 @@ impl Construction {
         self.labels.push(label.to_string());
         self.children.push(Vec::new());
         self.by_label.insert(label.to_string(), id);
-        // Every element opened here moves the protocol step onto itself
-        // (`addToConstructionList` does `++step`); a further output leaves
-        // the step on its owner's element.
-        let element = match owner {
-            Some(owner) => self.element_of[owner.0],
-            None => {
-                self.elements.push(id.0 as u32);
-                self.step = (self.step + 1).min(self.elements.len() as i32 - 1);
-                self.elements.len() as u32 - 1
-            }
+        let element = if let Some(owner) = owner {
+            self.output_entry(owner)
+        } else if label.starts_with('\0') {
+            ProtocolEntry::Hidden
+        } else {
+            let index = self.step;
+            self.elements.insert(index, id.0 as u32);
+            self.step += 1;
+            self.reindex_elements_from(self.step);
+            ProtocolEntry::Element(index as u32)
         };
         self.element_of.push(element);
-        if let Def::Measure(MeasureDef::ConstructionStep(_)) = def {
+        let reads_step = matches!(def, Def::Measure(MeasureDef::ConstructionStep(_)));
+        if reads_step {
             self.protocol.push(id.0);
         }
-        self.update_protocol();
+        if reads_step || matches!(element, ProtocolEntry::Element(_)) {
+            self.update_protocol();
+        }
         Ok(id)
     }
 
     /// The step of the construction protocol (`Construction.getStep`).
     pub fn step(&self) -> i32 {
-        self.step
+        self.step as i32 - 1
     }
 
     /// `CmdSetConstructionStep`: moves the protocol step, clamped to the
-    /// construction, and recomputes the objects that read it. The clamped
-    /// value stays a `long` until the end, as `Math.round` returns one:
-    /// `SetConstructionStep(infinity)` reaches the last step instead of
-    /// wrapping.
+    /// construction, and recomputes the objects that read it. `Math.round`
+    /// returns a long, so clamp before narrowing the index.
     pub fn set_construction_step(&mut self, value: f64) {
-        let mut new_step = crate::expr::math::java_round(value - 1.0) as f64;
-        let steps = self.elements.len() as f64;
-        if new_step >= steps {
-            new_step = steps - 1.0;
-        }
-        // `(int)` of the double: saturating, as Java casts are
-        let new_step = new_step as i32;
-        if new_step == self.step || new_step < -1 {
+        let index = crate::expr::math::java_round(value - 1.0);
+        if index < -1 {
             return;
         }
-        self.step = new_step;
-        self.update_protocol();
+        let step = (index.min(self.elements.len() as i64 - 1) + 1) as usize;
+        if step != self.step {
+            self.step = step;
+            self.update_protocol();
+        }
     }
 
     /// The position of the construction element `id` belongs to
     /// (`GeoElement.getConstructionIndex`: its own for a free object, its
     /// algorithm's for a dependent one).
     pub(crate) fn element_of(&self, id: Id) -> i32 {
-        self.element_of.get(id.0).map_or(-1, |&e| e as i32)
+        match self.element_of.get(id.0) {
+            Some(ProtocolEntry::Element(index)) => *index as i32,
+            Some(ProtocolEntry::Output(owner)) => self.element_of(Id(*owner as usize)),
+            _ => -1,
+        }
     }
 
-    /// Moves the just-added object `id` into the construction element of
-    /// `owner`: the entry it opened itself, if any, is the last one and
-    /// closes again. For the outputs that an expression defines (the
-    /// selector of a line/circle intersection), which [`Self::add_output`]
-    /// cannot reach.
-    pub(crate) fn adopt_output(&mut self, id: Id, owner: Id) {
-        if self.elements.last() == Some(&(id.0 as u32)) {
-            self.elements.pop();
-            if self.step >= self.elements.len() as i32 {
-                self.step = self.elements.len() as i32 - 1;
-            }
+    fn output_entry(&self, owner: Id) -> ProtocolEntry {
+        match self.element_of[owner.0] {
+            ProtocolEntry::Hidden => ProtocolEntry::Hidden,
+            ProtocolEntry::Element(_) => ProtocolEntry::Output(owner.0 as u32),
+            entry @ ProtocolEntry::Output(_) => entry,
         }
-        if let Some(&element) = self.element_of.get(owner.0) {
-            if let Some(slot) = self.element_of.get_mut(id.0) {
-                *slot = element;
-            }
+    }
+
+    fn reindex_elements_from(&mut self, start: usize) {
+        for (position, &id) in self.elements.iter().enumerate().skip(start) {
+            self.element_of[id as usize] = ProtocolEntry::Element(position as u32);
+        }
+    }
+
+    /// Moves a just-added expression output into its owner's element.
+    pub(crate) fn adopt_output(&mut self, id: Id, owner: Id) {
+        let previous = self.element_of[id.0];
+        self.element_of[id.0] = self.output_entry(owner);
+        if let ProtocolEntry::Element(index) = previous {
+            let index = index as usize;
+            debug_assert_eq!(self.step, index + 1);
+            self.elements.remove(index);
+            self.step = index;
+            self.reindex_elements_from(index);
+            self.update_protocol();
         }
     }
 
@@ -3368,6 +3400,47 @@ mod tests {
         assert_eq!(c.id("C"), None);
         c.rollback(outer).unwrap();
         assert_eq!((c.len(), c.id("B")), (1, None));
+    }
+
+    #[test]
+    fn rollback_restores_step_indices_readers_and_dependents() {
+        for rollback in [false, true] {
+            let mut c = crate::script::load(
+                "s = ConstructionStep()\nA = (0, 0)\na = ConstructionStep(A)\nd = 2 * s\n",
+            )
+            .unwrap();
+            let s = c.id("s").unwrap();
+            let a = c.id("a").unwrap();
+            let d = c.id("d").unwrap();
+            c.set_construction_step(1.0);
+            let checkpoint = c.checkpoint();
+
+            crate::script::exec(&mut c, "B = (1, 1)").unwrap();
+            let abandoned = crate::script::exec(&mut c, "t = ConstructionStep()")
+                .unwrap()
+                .unwrap();
+            assert_eq!(c.number(a), Some(4.0));
+            assert_eq!(c.number(d), Some(6.0));
+            c.set_construction_step(f64::INFINITY);
+            assert_eq!(c.number(s), Some(6.0));
+
+            if rollback {
+                c.rollback(checkpoint).unwrap();
+            } else {
+                c.discard_since(checkpoint);
+            }
+            assert_eq!(c.step(), 0);
+            assert_eq!(c.number(s), Some(1.0));
+            assert_eq!(c.number(a), Some(2.0));
+            assert_eq!(c.number(d), Some(2.0));
+            assert_eq!(c.protocol, [s.0, a.0]);
+
+            c.add("b", Def::Number(4.0)).unwrap();
+            assert_eq!(c.add("q", Def::Number(7.0)), Ok(abandoned));
+            c.set_construction_step(f64::INFINITY);
+            assert_eq!(c.number(abandoned), Some(7.0));
+            assert_eq!(c.number(d), Some(12.0));
+        }
     }
 
     #[test]

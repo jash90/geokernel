@@ -77,40 +77,70 @@ fn a_group_with_a_failing_line_is_rolled_back_whole() {
 
 #[test]
 fn a_view_change_refreshes_the_rows_of_view_dependent_objects() {
-    let mut w = Workbench::default();
-    w.run_line("p = Corner(3)").unwrap();
-    w.run_line("g = AxisStepX()").unwrap();
-    w.run_line("q = p + (g, 0)").unwrap();
-    let mut head = |w: &mut Workbench, label: &str| {
-        w.rows()
-            .iter()
-            .find(|r| r.label == label)
-            .map(|r| r.value.clone().unwrap_or_default())
-            .unwrap_or_default()
-    };
-    let first = head(&mut w, "g");
+    let mut w = Workbench::from_script(
+        "p = Corner(3)\ng = AxisStepX()\nh = AxisStepY()\ns = x(p) + g + h\n",
+    )
+    .unwrap();
+    assert_eq!(row_value(&mut w, "g"), "1");
+    assert_eq!(row_value(&mut w, "h"), "1");
     let v = w.version();
-    // the same view changes nothing
-    // a pan moves the corner and the grid step with it
-    let pan = crate::interact::ViewTransform::new(
-        geo_kernel::svg::View {
-            xmin: 100.0,
-            ymin: 200.0,
-            xmax: 118.0,
-            ymax: 212.0,
-        },
-        800.0,
-        600.0,
-    );
+    let view = geo_kernel::svg::View {
+        xmin: 100.0,
+        ymin: 200.0,
+        xmax: 116.0,
+        ymax: 212.0,
+    };
+    let pan = crate::interact::ViewTransform::new(view, 800.0, 600.0);
     w.set_view(pan);
     assert!(w.version() > v);
-    // publishing the same view again changes nothing
+    assert_eq!(row_value(&mut w, "p"), "(116.02, 212.02)");
+    assert_eq!(row_value(&mut w, "s"), "118.02");
+
+    let zoom = crate::interact::ViewTransform::new(view, 300.0, 240.0);
+    w.set_view(zoom);
+    assert_eq!(row_value(&mut w, "g"), "5");
+    assert_eq!(row_value(&mut w, "h"), "2");
+    assert_eq!(row_value(&mut w, "s"), "123.05");
     let v = w.version();
-    w.set_view(pan);
+    w.set_view(zoom);
     assert_eq!(w.version(), v);
-    let second = head(&mut w, "g");
-    assert_ne!(first, second, "the axis step row keeps its old value");
-    assert_eq!(head(&mut w, "p"), "(118.02, 212.02)");
+
+    w.run_line("extra = 1").unwrap();
+    assert!(w.undo());
+    // The rows can be read before the window publishes its view again.
+    w.rows();
+    w.set_view(zoom);
+    assert_eq!(row_value(&mut w, "g"), "5");
+    assert_eq!(row_value(&mut w, "h"), "2");
+    assert_eq!(row_value(&mut w, "s"), "123.05");
+}
+
+fn row_value<'a>(w: &'a mut Workbench, label: &str) -> &'a str {
+    w.rows()
+        .iter()
+        .find(|r| r.label == label)
+        .and_then(|r| r.value.as_deref())
+        .unwrap()
+}
+
+#[test]
+fn a_construction_step_refreshes_rows_and_survives_replay() {
+    let mut w = Workbench::from_script("s = ConstructionStep()\nA = (1, 2)\n").unwrap();
+    assert_eq!(row_value(&mut w, "s"), "2");
+    w.run_line("SetConstructionStep(1)").unwrap();
+    assert_eq!(row_value(&mut w, "s"), "1");
+    assert!(w.undo());
+    assert_eq!(row_value(&mut w, "s"), "2");
+    assert!(w.redo());
+    assert_eq!(row_value(&mut w, "s"), "1");
+
+    let mut restored = Workbench::default();
+    assert!(restored.restore_text(&w.snapshot_text()).unwrap().is_empty());
+    assert_eq!(row_value(&mut restored, "s"), "1");
+
+    let bad = ["SetConstructionStep(1/0)".into(), "q = Line(A, Z)".into()];
+    assert!(w.run_lines(&bad).is_err());
+    assert_eq!(row_value(&mut w, "s"), "1");
 }
 
 #[test]
