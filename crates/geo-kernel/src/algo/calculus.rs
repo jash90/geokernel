@@ -518,24 +518,31 @@ fn sum_value(c: &Construction, d: &CalculusDef) -> Option<Value> {
         Sum::Left | Sum::Rectangle | Sum::Trapezoid => {
             let upper = if sum == Sum::Trapezoid { n + 1 } else { n };
             let mut total = 0.0;
+            let (mut first, mut last) = (f64::NAN, f64::NAN);
             for i in 0..upper {
                 if !budget.step(c, 1) {
                     return None;
                 }
+                // `ad + 0 * STEP` is NaN for an infinite step
                 let left = ad + i as f64 * step;
                 let value = if rectangle {
                     let d = dd.unwrap();
                     // the divider must not run past the right bound
-                    let right_border = ad.max(bd);
-                    f((left + d * step).min(right_border))
+                    let right_border = java_max(ad, bd);
+                    f(java_min(right_border, left + d * step))
                 } else {
                     f(left)
                 };
+                if i == 0 {
+                    first = value;
+                }
+                last = value;
                 total += value;
             }
             if sum == Sum::Trapezoid {
-                // the two end heights were counted once too many
-                total -= (f(ad) + f(ad + n as f64 * step)) / 2.0;
+                // the two end heights `yval[0]` and `yval[N]` were counted
+                // once too many
+                total -= (first + last) / 2.0;
             }
             total
         }
@@ -580,8 +587,8 @@ fn lower_upper_area(
     // `kernel.getViewsXMin` of a construction without views: the bounds of
     // the one graphics view, and `App.countPixels` at its scale.
     let view = c.locus_view().unwrap_or(HEADLESS_VIEW);
-    let visible_min = ad.min(bd).max(view[0]);
-    let visible_max = ad.max(bd).min(view[1]);
+    let visible_min = java_max(java_min(ad, bd), view[0]);
+    let visible_max = java_min(java_max(ad, bd), view[1]);
     let x_zero = (0.0 - view[0]) * PIXELS_PER_UNIT;
     let count_pixels =
         |min: f64, max: f64| (x_zero + max * PIXELS_PER_UNIT) - (x_zero + min * PIXELS_PER_UNIT);
@@ -621,8 +628,8 @@ fn lower_upper_area(
             if y < min {
                 min_sample = right;
             }
-            left = (min_sample - sub_step).max(left);
-            right = (min_sample + sub_step).min(right);
+            left = java_max(left, min_sample - sub_step);
+            right = java_min(right, min_sample + sub_step);
         }
         let Some(x) = expr::brent_minimum(left, right, SUM_TOLERANCE, fmin, |n| !budget.step(c, n))
         else {
@@ -668,6 +675,38 @@ fn function_defined(
     let _ = f;
     let end = f(bd);
     end.is_finite()
+}
+
+/// `Math.min` of the reference: NaN when either argument is NaN, and `-0.0`
+/// below `0.0`. `f64::min` returns the other argument for a NaN.
+fn java_min(a: f64, b: f64) -> f64 {
+    if a.is_nan() || b.is_nan() {
+        f64::NAN
+    } else if a == 0.0 && b == 0.0 {
+        if a.is_sign_negative() {
+            a
+        } else {
+            b
+        }
+    } else {
+        a.min(b)
+    }
+}
+
+/// `Math.max` of the reference: NaN when either argument is NaN, and `0.0`
+/// above `-0.0`.
+fn java_max(a: f64, b: f64) -> f64 {
+    if a.is_nan() || b.is_nan() {
+        f64::NAN
+    } else if a == 0.0 && b == 0.0 {
+        if a.is_sign_positive() {
+            a
+        } else {
+            b
+        }
+    } else {
+        a.max(b)
+    }
 }
 
 /// `DoubleUtil.isZero(v)`: within `Kernel.STANDARD_PRECISION`.

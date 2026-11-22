@@ -965,6 +965,16 @@ mismatches = ["0:r"]
 id = "infinity-legacy-155"
 reason = "Same script as funcanalysis-asymptote-007: the headless harness uses CASFactoryDummy and returns an empty list. The numeric result has the logarithmic pole x=0."
 mismatches = ["0:r"]
+
+[[gap]]
+id = "infinity-outputs-039"
+reason = "LowerSum of a constant function up to an infinite bound is positive or negative infinity in the reference, with the sign of the step. The first rectangle starts at 1 + 0 * Infinity, which is NaN, and the reference's minimum search still returns a height on that bracket. The kernel's search requires a finite bracket and leaves the sum undefined, as for UpperSum in calculus-sums-012. The other sums of infinity-outputs-032 to infinity-outputs-045 agree."
+mismatches = ["1:s", "2:s", "4:s"]
+
+[[gap]]
+id = "infinity-outputs-040"
+reason = "UpperSum of a constant function up to an infinite bound is positive or negative infinity in the reference, with the sign of the step. The first rectangle starts at 1 + 0 * Infinity, which is NaN, and the kernel's minimum search requires a finite bracket, as in calculus-sums-012."
+mismatches = ["1:s", "2:s", "4:s"]
 # odesymbolic
 
 [[gap]]

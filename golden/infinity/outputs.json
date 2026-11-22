@@ -3553,6 +3553,1812 @@
           }
         }
       ]
+    },
+    {
+      "id": "infinity-outputs-032",
+      "group": "infinity",
+      "script": [
+        "a = 1",
+        "b = 5",
+        "f(x) = 1 + 1/x",
+        "s = LowerSum(f, a, b, 4)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "infinity": 1 },
+        { "action": "set_number", "label": "b", "infinity": -1 },
+        { "action": "set_number", "label": "b", "value": 5.0 },
+        { "action": "set_number", "label": "b", "infinity": 1 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 5.283333371776806 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": -1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 5.283333371776806 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-033",
+      "group": "infinity",
+      "script": [
+        "a = 1",
+        "b = 5",
+        "f(x) = 1 + 1/x",
+        "s = UpperSum(f, a, b, 4)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "infinity": 1 },
+        { "action": "set_number", "label": "b", "infinity": -1 },
+        { "action": "set_number", "label": "b", "value": 5.0 },
+        { "action": "set_number", "label": "b", "infinity": 1 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 6.083333333333333 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": -1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 6.083333333333333 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-034",
+      "group": "infinity",
+      "script": [
+        "a = 1",
+        "b = 5",
+        "f(x) = 1 + 1/x",
+        "s = LeftSum(f, a, b, 4)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "infinity": 1 },
+        { "action": "set_number", "label": "b", "infinity": -1 },
+        { "action": "set_number", "label": "b", "value": 5.0 },
+        { "action": "set_number", "label": "b", "infinity": 1 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 6.083333333333333 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": -1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 6.083333333333333 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-035",
+      "group": "infinity",
+      "script": [
+        "a = 1",
+        "b = 5",
+        "f(x) = 1 + 1/x",
+        "s = RectangleSum(f, a, b, 4, 0.5)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "infinity": 1 },
+        { "action": "set_number", "label": "b", "infinity": -1 },
+        { "action": "set_number", "label": "b", "value": 5.0 },
+        { "action": "set_number", "label": "b", "infinity": 1 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 5.574603174603174 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": -1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 5.574603174603174 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-036",
+      "group": "infinity",
+      "script": [
+        "a = 1",
+        "b = 5",
+        "f(x) = 1 + 1/x",
+        "s = RectangleSum(f, a, b, 4, 0)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "infinity": 1 },
+        { "action": "set_number", "label": "b", "infinity": -1 },
+        { "action": "set_number", "label": "b", "value": 5.0 },
+        { "action": "set_number", "label": "b", "infinity": 1 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 6.083333333333333 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": -1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 6.083333333333333 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-037",
+      "group": "infinity",
+      "script": [
+        "a = 1",
+        "b = 5",
+        "f(x) = 1 + 1/x",
+        "s = RectangleSum(f, a, b, 4, 1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "infinity": 1 },
+        { "action": "set_number", "label": "b", "infinity": -1 },
+        { "action": "set_number", "label": "b", "value": 5.0 },
+        { "action": "set_number", "label": "b", "infinity": 1 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 5.283333333333333 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": -1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 5.283333333333333 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-038",
+      "group": "infinity",
+      "script": [
+        "a = 1",
+        "b = 5",
+        "f(x) = 1 + 1/x",
+        "s = TrapezoidalSum(f, a, b, 4)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "infinity": 1 },
+        { "action": "set_number", "label": "b", "infinity": -1 },
+        { "action": "set_number", "label": "b", "value": 5.0 },
+        { "action": "set_number", "label": "b", "infinity": 1 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 5.683333333333334 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": -1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 5.683333333333334 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-039",
+      "group": "infinity",
+      "script": [
+        "a = 1",
+        "b = 5",
+        "f(x) = 1",
+        "s = LowerSum(f, a, b, 4)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "infinity": 1 },
+        { "action": "set_number", "label": "b", "infinity": -1 },
+        { "action": "set_number", "label": "b", "value": 5.0 },
+        { "action": "set_number", "label": "b", "infinity": 1 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": -1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-040",
+      "group": "infinity",
+      "script": [
+        "a = 1",
+        "b = 5",
+        "f(x) = 1",
+        "s = UpperSum(f, a, b, 4)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "infinity": 1 },
+        { "action": "set_number", "label": "b", "infinity": -1 },
+        { "action": "set_number", "label": "b", "value": 5.0 },
+        { "action": "set_number", "label": "b", "infinity": 1 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": -1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-041",
+      "group": "infinity",
+      "script": [
+        "a = 1",
+        "b = 5",
+        "f(x) = 1",
+        "s = LeftSum(f, a, b, 4)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "infinity": 1 },
+        { "action": "set_number", "label": "b", "infinity": -1 },
+        { "action": "set_number", "label": "b", "value": 5.0 },
+        { "action": "set_number", "label": "b", "infinity": 1 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": -1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-042",
+      "group": "infinity",
+      "script": [
+        "a = 1",
+        "b = 5",
+        "f(x) = 1",
+        "s = RectangleSum(f, a, b, 4, 0.5)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "infinity": 1 },
+        { "action": "set_number", "label": "b", "infinity": -1 },
+        { "action": "set_number", "label": "b", "value": 5.0 },
+        { "action": "set_number", "label": "b", "infinity": 1 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": -1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-043",
+      "group": "infinity",
+      "script": [
+        "a = 1",
+        "b = 5",
+        "f(x) = 1",
+        "s = RectangleSum(f, a, b, 4, 0)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "infinity": 1 },
+        { "action": "set_number", "label": "b", "infinity": -1 },
+        { "action": "set_number", "label": "b", "value": 5.0 },
+        { "action": "set_number", "label": "b", "infinity": 1 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": -1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-044",
+      "group": "infinity",
+      "script": [
+        "a = 1",
+        "b = 5",
+        "f(x) = 1",
+        "s = RectangleSum(f, a, b, 4, 1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "infinity": 1 },
+        { "action": "set_number", "label": "b", "infinity": -1 },
+        { "action": "set_number", "label": "b", "value": 5.0 },
+        { "action": "set_number", "label": "b", "infinity": 1 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": -1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-045",
+      "group": "infinity",
+      "script": [
+        "a = 1",
+        "b = 5",
+        "f(x) = 1",
+        "s = TrapezoidalSum(f, a, b, 4)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "infinity": 1 },
+        { "action": "set_number", "label": "b", "infinity": -1 },
+        { "action": "set_number", "label": "b", "value": 5.0 },
+        { "action": "set_number", "label": "b", "infinity": 1 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": -1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
     }
   ]
 }

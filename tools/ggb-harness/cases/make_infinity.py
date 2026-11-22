@@ -166,6 +166,18 @@ for line in ("r = d / (a - a)", "r = Length(w) / 0", "r = x(A) / 0", "r = y(B) /
 # overflows at both ends of the samples while `a` moves.
 case("outputs", [num("a", 1), num("b", 1), "f(x) = (a x + b)^300"],
      [setn("a", 2), setn("a", 0), setn("a", 1)])
+# Riemann sums up to an infinite bound: the first border is a + 0 * Infinity,
+# which is NaN, and the clamps of AlgoFunctionAreaSums (Math.min and Math.max)
+# keep a NaN argument. A constant function still has a value there.
+for function in ("1 + 1/x", "1"):
+    for line in ("s = LowerSum(f, a, b, 4)", "s = UpperSum(f, a, b, 4)",
+                 "s = LeftSum(f, a, b, 4)", "s = RectangleSum(f, a, b, 4, 0.5)",
+                 "s = RectangleSum(f, a, b, 4, 0)", "s = RectangleSum(f, a, b, 4, 1)",
+                 "s = TrapezoidalSum(f, a, b, 4)"):
+        case("outputs", [num("a", 1), num("b", 5), f"f(x) = {function}", line],
+             [{"action": "set_number", "label": "b", "infinity": 1},
+              {"action": "set_number", "label": "b", "infinity": -1}, setn("b", 5),
+              {"action": "set_number", "label": "b", "infinity": 1}])
 
 # ------------------------------------------------------- commands with an infinite number
 # Every command whose answer changed when an infinite number became a

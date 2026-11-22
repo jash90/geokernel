@@ -641,6 +641,29 @@ fn sums_read_an_infinite_subdivision_count_and_bound() {
     assert_eq!(num(&c, "e"), -2.0);
 }
 
+/// `AlgoFunctionAreaSums` clamps with `Math.min` and `Math.max`, which keep a
+/// NaN argument: the first border `1 + 0 * Infinity` stays NaN, so a function
+/// that is NaN there leaves every sum undefined, while a constant function
+/// keeps its value (`infinity-outputs-032` to `infinity-outputs-045`).
+#[test]
+fn sum_clamps_keep_a_nan_border() {
+    for line in [
+        "s = LeftSum(f, 1, b, 4)",
+        "s = RectangleSum(f, 1, b, 4, 0.5)",
+        "s = RectangleSum(f, 1, b, 4, 0)",
+        "s = RectangleSum(f, 1, b, 4, 1)",
+        "s = TrapezoidalSum(f, 1, b, 4)",
+    ] {
+        let mut c = load(&format!("b = 5\nf(x) = 1 + 1/x\n{line}"));
+        assert!(defined(&c, "s"), "{line}");
+        set_number(&mut c, "b", f64::INFINITY);
+        assert!(!defined(&c, "s"), "{line}");
+        let mut c = load(&format!("b = 5\nf(x) = 1\n{line}"));
+        set_number(&mut c, "b", f64::NEG_INFINITY);
+        assert_eq!(num(&c, "s"), f64::NEG_INFINITY, "{line}");
+    }
+}
+
 /// The loops that finish one subtree per exponent or coefficient stay
 /// inside the work budget and bounded memory: a sum of thousands of
 /// powers, a degree-300 polynomial of slider coefficients, and a high
